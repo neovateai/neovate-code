@@ -1,0 +1,22 @@
+---
+description: General Rules
+globs: 
+---
+
+## General
+
+- This is a node cli project.
+- Don't be lazy, write all the code to implement features I ask for.
+- Keep a log of what, why and how you did what you did in ".llms/fyi.md". Keep it updated.
+
+## File Structure
+
+- src/: Source code.
+
+## Code Style
+
+- Use TypeScript.
+- File names should be in lowercase with dash separators.
+- Api, commands and config in README.md should be ordered alphabetically.
+- Test. 1) Use vitest for test cases, not jest. 2) Test cases should be in the same file as the code that is being tested. e.g. `foo.test.ts` for `foo.ts`.
+

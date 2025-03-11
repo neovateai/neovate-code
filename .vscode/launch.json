@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug cli",
+      "program": "${workspaceFolder}/src/cli.ts",
+      "args": ["create a.txt with some romantic text"],
+      "runtimeExecutable": "tsx",
+      "runtimeArgs": [],
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal",
+      "sourceMaps": true
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+---
+description: Rules for TypeScript files
+globs: *.ts, *.tsx, *.js, *.jsx
+---
+
+# Your rule content
+
+- Files are ending with a new line at the end of the file.
+- Do not use specifiers for `fs` and `path` modules.
+- Do use `pathe` instead of `path` module for windows compatibility.
+- Use `printWidth: 80, singleQuote: true, trailingComma: all, indent_style: space, indent_width: 2` for code formatting.

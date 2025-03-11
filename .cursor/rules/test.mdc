@@ -1,0 +1,8 @@
+---
+description: Rules for test files
+globs: *.test.ts, *.test.tsx, *.test.js, *.test.jsx
+---
+
+# Your rule content
+
+- Do use `test()` instead of `describe() + it()` for test cases.
