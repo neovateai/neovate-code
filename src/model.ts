@@ -41,6 +41,7 @@ const MODELS_ALIAS = {
   'OpenRouter/openai/gpt-4o-2024-11-20': 'openai/gpt-4o-2024-11-20',
   'OpenRouter/openai/o1-mini': 'openai/o1-mini',
   'OpenRouter/openai/gpt-4-turbo': 'openai/gpt-4-turbo',
+  'OpenRouter/openai/gpt-3.5-turbo-0613': 'openai/gpt-3.5-turbo-0613',
   'OpenRouter/anthropic/claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
   'Tencent/deepseek-chat': 'deepseek-v3',
   'Tencent/deepseek-reasoner': 'deepseek-r1',
@@ -80,6 +81,7 @@ const OPEN_ROUTER_MODELS = [
   'OpenRouter/openai/gpt-4o-2024-11-20', // function.description has 2014 string limit
   'OpenRouter/openai/o1-mini', // don't support tools
   'OpenRouter/openai/gpt-4-turbo', // function.description has 2014 string limit
+  'OpenRouter/openai/gpt-3.5-turbo-0613',
   'OpenRouter/anthropic/claude-3.5-sonnet',
 ] as const;
 const TENCENT_MODELS = [

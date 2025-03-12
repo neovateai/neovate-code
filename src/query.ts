@@ -2,6 +2,7 @@ import { CoreMessage, generateText } from 'ai';
 import { getModel } from './model';
 import { fileEditTool } from './tools/FileEditTool/FileEditTool';
 import { fileReadTool } from './tools/FileReadTool/FileReadTool';
+import { bashTool } from './tools/BashTool/BashTool';
 
 type Message = CoreMessage;
 
@@ -21,6 +22,7 @@ export async function query(opts: QueryOptions) {
     tools: {
       fileRead: fileReadTool,
       fileEdit: fileEditTool,
+      bash: bashTool,
     },
     onStepFinish: (step) => {
       // console.log('step', step);
