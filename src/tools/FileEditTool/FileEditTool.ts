@@ -50,5 +50,6 @@ export const fileEditTool = tool({
     mkdirSync(dir, { recursive: true });
     const enc = 'utf8';
     writeFileSync(fullFilePath, updatedFile, enc);
+    return 'Created';
   },
 });

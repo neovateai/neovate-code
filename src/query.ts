@@ -10,13 +10,14 @@ interface QueryOptions {
   messages: Message[];
   systemPrompt: string[];
   context: Record<string, string>;
+  model: ReturnType<typeof getModel>;
 }
 
 export async function query(opts: QueryOptions) {
-  const { messages, systemPrompt } = opts;
+  const { messages, systemPrompt, model } = opts;
   console.log('>> messages', messages);
   const result = await generateText({
-    model: getModel('deepseek-r1-distill-llama-70b'),
+    model,
     messages,
     system: systemPrompt.join('\n'),
     tools: {
@@ -29,5 +30,5 @@ export async function query(opts: QueryOptions) {
     },
   });
 
-  return result.text;
+  return result;
 }
