@@ -12,7 +12,7 @@ async function main() {
     context: {},
     systemPrompt: getSystemPrompt(),
   });
-  console.log(result);
+  console.log('>> result', result);
 }
 
 main().catch(console.error);
