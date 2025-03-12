@@ -1,4 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai';
+import assert from 'assert';
 
 const GROQ_MODELS = [
   'qwen-qwq-32b',
@@ -16,9 +17,9 @@ const GOOGLE_MODELS = [
 ] as const;
 
 export type ModelType =
-  | typeof GROQ_MODELS[number]
-  | typeof DEEPSEEK_MODELS[number]
-  | typeof GOOGLE_MODELS[number];
+  | (typeof GROQ_MODELS)[number]
+  | (typeof DEEPSEEK_MODELS)[number]
+  | (typeof GOOGLE_MODELS)[number];
 
 export function getModel(model: ModelType) {
   let apiKey;
@@ -32,7 +33,11 @@ export function getModel(model: ModelType) {
   } else if (GROQ_MODELS.includes(model as any)) {
     apiKey = process.env.GROQ_API_KEY;
     baseURL = process.env.GROQ_BASE_URL;
+  } else {
+    throw new Error(`Unsupported model: ${model}`);
   }
+  assert(apiKey, `apiKey is required for model ${model}`);
+  assert(baseURL, `baseURL is required for model ${model}`);
   const openai = createOpenAI({
     apiKey,
     baseURL,
