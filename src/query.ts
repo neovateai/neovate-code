@@ -15,7 +15,7 @@ export async function query(opts: QueryOptions) {
   const { messages, systemPrompt } = opts;
   console.log('>> messages', messages);
   const result = await generateText({
-    model: getModel('Tencent/deepseek-reasoner'),
+    model: getModel('deepseek-r1-distill-llama-70b'),
     messages,
     system: systemPrompt.join('\n'),
     tools: {

@@ -1,6 +1,34 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import assert from 'assert';
 
+/**
+ * Model Tools Support
+ *
+^ Platform ^ Model ^ Support ^
+| DeepSeek | V3 | ✅ |
+| DeepSeek | R1 | ❌ |
+| SiliconFlow | V3 | ✅ |
+| SiliconFlow | R1 | ❌ |
+| Aliyun | V3 | ❌ |
+| Aliyun | R1 | ❌ |
+| Doubao | V3 | ✅ |
+| Doubao | R1 | ✅ |
+| Tencent | V3 | ❌ |
+| Tencent | R1 | ❌ |
+| Groq | qwen-qwq-32b | ✅ |
+| Groq | deepseek-r1-distill-qwen-32b | ❌ |
+| Groq | deepseek-r1-distill-llama-70b | ✅ |
+| Grok | grok-2-1212 | ❌ |
+| Gemini | 2.0-flash-001 | ✅ |
+| Gemini | 2.0-flash-thinking-exp-01-21 | ❌ |
+| Gemini | 2.0-pro-exp-02-05 | ✅ |
+| OpenRouter | qwen/qwq-32b | ❌ |
+| OpenRouter | openai/gpt-4o-2024-11-20 | ✅ |
+| OpenRouter | openai/o1-mini | ❌ |
+| OpenRouter | openai/gpt-4-turbo | ✅ |
+| OpenRouter | anthropic/claude-3.5-sonnet | ✅ |
+*/
+
 const MODELS_ALIAS = {
   'Sili/deepseek-chat': 'Pro/deepseek-ai/DeepSeek-V3',
   'Sili/deepseek-reasoner': 'Pro/deepseek-ai/DeepSeek-R1',
