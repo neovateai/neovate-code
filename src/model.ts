@@ -22,6 +22,7 @@ import assert from 'assert';
 | Gemini | 2.0-flash-001 | ✅ |
 | Gemini | 2.0-flash-thinking-exp-01-21 | ❌ |
 | Gemini | 2.0-pro-exp-02-05 | ✅ |
+| Gemini | gemma-3-27b-it | ❌ |
 | OpenRouter | qwen/qwq-32b | ❌ |
 | OpenRouter | openai/gpt-4o-2024-11-20 | ✅ |
 | OpenRouter | openai/o1-mini | ❌ |
@@ -60,6 +61,7 @@ const GOOGLE_MODELS = [
   'gemini-2.0-flash-001',
   'gemini-2.0-flash-thinking-exp-01-21', // don't support tools
   'gemini-2.0-pro-exp-02-05',
+  'gemma-3-27b-it', // don't support tools
 ] as const;
 const SILICONFLOW_MODELS = [
   'Sili/deepseek-chat',
