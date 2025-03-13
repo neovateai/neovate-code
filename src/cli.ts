@@ -5,6 +5,7 @@ import { getSystemPrompt } from './constants/prompts';
 import { getModel } from './model';
 import { query } from './query';
 import { getTools } from './tools';
+import { INIT_PROMPT } from './commands/init';
 
 async function main() {
   dotenv.config();
@@ -12,7 +13,13 @@ async function main() {
   console.log(argv);
   let messages: CoreMessage[] = [];
   if (argv._.length > 0) {
-    messages = [{ role: 'user', content: argv._[0] as string }];
+    let content = argv._[0] as string;
+    if (argv._[0] === 'init') {
+      content = INIT_PROMPT;
+    }
+    messages = [{ role: 'user', content }];
+  } else {
+    throw new Error('No command provided');
   }
   // const model = getModel('deepseek-r1-distill-llama-70b');
   const model = getModel('Doubao/deepseek-chat');
