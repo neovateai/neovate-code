@@ -1,9 +1,9 @@
+import { CoreMessage } from 'ai';
 import dotenv from 'dotenv';
 import yParser from 'yargs-parser';
 import { getSystemPrompt } from './constants/prompts';
-import { query } from './query';
-import { CoreMessage } from 'ai';
 import { getModel } from './model';
+import { query } from './query';
 
 async function main() {
   dotenv.config();

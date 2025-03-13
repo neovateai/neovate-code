@@ -1,8 +1,8 @@
 import { CoreMessage, generateText } from 'ai';
 import { getModel } from './model';
+import { bashTool } from './tools/BashTool/BashTool';
 import { fileEditTool } from './tools/FileEditTool/FileEditTool';
 import { fileReadTool } from './tools/FileReadTool/FileReadTool';
-import { bashTool } from './tools/BashTool/BashTool';
 
 type Message = CoreMessage;
 

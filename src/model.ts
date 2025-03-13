@@ -93,9 +93,7 @@ const TENCENT_MODELS = [
   'Tencent/deepseek-chat', // don't support tools
   'Tencent/deepseek-reasoner', // don't support tools
 ] as const;
-const OLLAMA_MODELS = [
-  'Ollama/qwq:32b',
-] as const;
+const OLLAMA_MODELS = ['Ollama/qwq:32b'] as const;
 
 export type ModelType =
   | (typeof GROQ_MODELS)[number]
@@ -118,7 +116,7 @@ export function getModel(model: ModelType) {
       baseURL: 'http://127.0.0.1:11434/api',
     });
     // @ts-ignore
-    return ollama(MODELS_ALIAS[model] as ModelType || model);
+    return ollama((MODELS_ALIAS[model] as ModelType) || model);
   }
 
   if (GOOGLE_MODELS.includes(model as any)) {
@@ -159,5 +157,5 @@ export function getModel(model: ModelType) {
     baseURL,
   });
   // @ts-ignore
-  return openai(MODELS_ALIAS[model] as ModelType || model);
+  return openai((MODELS_ALIAS[model] as ModelType) || model);
 }
