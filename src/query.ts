@@ -6,6 +6,7 @@ import { fileReadTool } from './tools/FileReadTool/FileReadTool';
 import { fileWriteTool } from './tools/FileWriteTool/FileWriteTool';
 import { grepTool } from './tools/GrepTool/GrepTool';
 import { lsTool } from './tools/LsTool/LsTool';
+import { globTool } from './tools/GlobTool/GlobTool';
 
 type Message = CoreMessage;
 
@@ -30,6 +31,7 @@ export async function query(opts: QueryOptions) {
       ls: lsTool,
       fileWrite: fileWriteTool,
       grep: grepTool,
+      glob: globTool,
     },
     onStepFinish: (step) => {
       // console.log('step', step);
