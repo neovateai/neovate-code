@@ -3,6 +3,7 @@ import { getModel } from './model';
 import { bashTool } from './tools/BashTool/BashTool';
 import { fileEditTool } from './tools/FileEditTool/FileEditTool';
 import { fileReadTool } from './tools/FileReadTool/FileReadTool';
+import { lsTool } from './tools/LsTool/LsTool';
 
 type Message = CoreMessage;
 
@@ -24,6 +25,7 @@ export async function query(opts: QueryOptions) {
       fileRead: fileReadTool,
       fileEdit: fileEditTool,
       bash: bashTool,
+      ls: lsTool,
     },
     onStepFinish: (step) => {
       // console.log('step', step);

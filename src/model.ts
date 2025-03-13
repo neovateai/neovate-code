@@ -29,7 +29,7 @@ import { createOllama } from 'ollama-ai-provider';
 | OpenRouter | openai/o1-mini | ❌ |
 | OpenRouter | openai/gpt-4-turbo | ✅ |
 | OpenRouter | anthropic/claude-3.5-sonnet | ✅ |
-| Ollama | qwq:latest | ✅ |
+| Ollama | qwq:32b | ❌ |
 */
 
 const MODELS_ALIAS = {
@@ -37,6 +37,8 @@ const MODELS_ALIAS = {
   'Sili/deepseek-reasoner': 'Pro/deepseek-ai/DeepSeek-R1',
   'Aliyun/deepseek-chat': 'deepseek-v3',
   'Aliyun/deepseek-reasoner': 'deepseek-r1',
+  'Aliyun/qwq-32b': 'qwq-32b',
+  'Aliyun/qwq-plus': 'qwq-plus',
   // TODO: model name should be customized
   'Doubao/deepseek-chat': 'ep-20250210151255-r5x5s',
   'Doubao/deepseek-reasoner': 'ep-20250210151757-wvgcj',
@@ -73,6 +75,8 @@ const SILICONFLOW_MODELS = [
 const ALIYUN_MODELS = [
   'Aliyun/deepseek-chat', // don't support tools
   'Aliyun/deepseek-reasoner', // don't support tools
+  'Aliyun/qwq-32b', // stream only
+  'Aliyun/qwq-plus', // stream only
 ] as const;
 const DOUBAO_MODELS = [
   'Doubao/deepseek-chat',
@@ -113,7 +117,7 @@ export function getModel(model: ModelType) {
 
   if (OLLAMA_MODELS.includes(model as any)) {
     const ollama = createOllama({
-      baseURL: 'http://127.0.0.1:11434/api',
+      baseURL: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/api',
     });
     // @ts-ignore
     return ollama((MODELS_ALIAS[model] as ModelType) || model);
