@@ -1,9 +1,7 @@
 import { tool } from 'ai';
-import { execSync } from 'child_process';
 import { readdirSync } from 'fs';
 import { basename, isAbsolute, join, relative, sep } from 'path';
 import { resolve } from 'path';
-import { cwd } from 'process';
 import { z } from 'zod';
 
 const MAX_FILES = 1000;
