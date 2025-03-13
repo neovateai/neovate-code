@@ -6,6 +6,7 @@ import { fileWriteTool } from './tools/FileWriteTool';
 import { globTool } from './tools/GlobTool';
 import { grepTool } from './tools/GrepTool';
 import { lsTool } from './tools/LsTool';
+import { ThinkTool } from './tools/ThinkTool';
 
 export const getAllTools = () => {
   return {
@@ -16,6 +17,7 @@ export const getAllTools = () => {
     fileWrite: fileWriteTool,
     grep: grepTool,
     glob: globTool,
+    think: ThinkTool,
     // agent: AgentTool,
   };
 };

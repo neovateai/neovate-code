@@ -25,7 +25,7 @@ async function main() {
       context: {},
       systemPrompt: getSystemPrompt(),
       model,
-      tools: getTools(),
+      tools: await getTools(),
     });
     let toolCalls: string[] = [];
     for (const step of result.steps) {
