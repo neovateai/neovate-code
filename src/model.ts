@@ -1,5 +1,6 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import assert from 'assert';
+import { createOllama } from 'ollama-ai-provider';
 
 /**
  * Model Tools Support
@@ -28,6 +29,7 @@ import assert from 'assert';
 | OpenRouter | openai/o1-mini | ❌ |
 | OpenRouter | openai/gpt-4-turbo | ✅ |
 | OpenRouter | anthropic/claude-3.5-sonnet | ✅ |
+| Ollama | qwq:latest | ✅ |
 */
 
 const MODELS_ALIAS = {
@@ -46,6 +48,7 @@ const MODELS_ALIAS = {
   'OpenRouter/anthropic/claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
   'Tencent/deepseek-chat': 'deepseek-v3',
   'Tencent/deepseek-reasoner': 'deepseek-r1',
+  'Ollama/qwq:32b': 'qwq:32b',
 } as const;
 
 const GROQ_MODELS = [
@@ -90,6 +93,9 @@ const TENCENT_MODELS = [
   'Tencent/deepseek-chat', // don't support tools
   'Tencent/deepseek-reasoner', // don't support tools
 ] as const;
+const OLLAMA_MODELS = [
+  'Ollama/qwq:32b',
+] as const;
 
 export type ModelType =
   | (typeof GROQ_MODELS)[number]
@@ -100,11 +106,21 @@ export type ModelType =
   | (typeof DOUBAO_MODELS)[number]
   | (typeof GROK_MODELS)[number]
   | (typeof OPEN_ROUTER_MODELS)[number]
-  | (typeof TENCENT_MODELS)[number];
+  | (typeof TENCENT_MODELS)[number]
+  | (typeof OLLAMA_MODELS)[number];
 
 export function getModel(model: ModelType) {
   let apiKey;
   let baseURL;
+
+  if (OLLAMA_MODELS.includes(model as any)) {
+    const ollama = createOllama({
+      baseURL: 'http://127.0.0.1:11434/api',
+    });
+    // @ts-ignore
+    return ollama(MODELS_ALIAS[model] as ModelType || model);
+  }
+
   if (GOOGLE_MODELS.includes(model as any)) {
     apiKey = process.env.GOOGLE_API_KEY;
     baseURL = process.env.GOOGLE_BASE_URL;
@@ -135,6 +151,7 @@ export function getModel(model: ModelType) {
   } else {
     throw new Error(`Unsupported model: ${model}`);
   }
+
   assert(apiKey, `apiKey is required for model ${model}`);
   assert(baseURL, `baseURL is required for model ${model}`);
   const openai = createOpenAI({

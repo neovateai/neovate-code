@@ -14,7 +14,9 @@ async function main() {
     messages = [{ role: 'user', content: argv._[0] as string }];
   }
   // const model = getModel('deepseek-r1-distill-llama-70b');
-  const model = getModel('Doubao/deepseek-chat');
+  // const model = getModel('Doubao/deepseek-chat');
+  const model = getModel('Ollama/qwq:32b');
+  // const model = getModel('qwen-qwq-32b');
   while (true) {
     const result = await query({
       messages,

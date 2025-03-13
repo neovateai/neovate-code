@@ -11,6 +11,9 @@ dependencies:
   ai:
     specifier: ^4.1.54
     version: 4.1.54(react@19.0.0)(zod@3.24.2)
+  ollama-ai-provider:
+    specifier: ^1.2.0
+    version: 1.2.0(zod@3.24.2)
   pathe:
     specifier: ^2.0.3
     version: 2.0.3
@@ -636,6 +639,25 @@ packages:
     resolution: {integrity: sha512-SppoicMGpZvbF1l3z4x7No3OlIjP7QJvC9XR7AhZr1kL133KHnKPztkKDc+Ir4aJ/1VhTySrtKhrsycmrMQfvg==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
+    dev: false
+
+  /ollama-ai-provider@1.2.0(zod@3.24.2):
+    resolution: {integrity: sha512-jTNFruwe3O/ruJeppI/quoOUxG7NA6blG3ZyQj3lei4+NnJo7bi3eIRWqlVpRlu/mbzbFXeJSBuYQWF6pzGKww==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
+    dependencies:
+      '@ai-sdk/provider': 1.0.10
+      '@ai-sdk/provider-utils': 2.1.11(zod@3.24.2)
+      partial-json: 0.1.7
+      zod: 3.24.2
+    dev: false
+
+  /partial-json@0.1.7:
+    resolution: {integrity: sha512-Njv/59hHaokb/hRUjce3Hdv12wd60MtM9Z5Olmn+nehe0QDAsRtRbJPvJ0Z91TusF0SuZRIvnM+S4l6EIP8leA==}
     dev: false
 
   /pathe@2.0.3:
