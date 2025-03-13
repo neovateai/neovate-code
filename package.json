@@ -34,6 +34,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^1.2.1",
     "ai": "^4.1.54",
+    "lodash-es": "^4.17.21",
     "ollama-ai-provider": "^1.2.0",
     "pathe": "^2.0.3",
     "zod": "^3.24.2"

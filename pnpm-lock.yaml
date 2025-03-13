@@ -11,6 +11,9 @@ dependencies:
   ai:
     specifier: ^4.1.54
     version: 4.1.54(react@19.0.0)(zod@3.24.2)
+  lodash-es:
+    specifier: ^4.17.21
+    version: 4.17.21
   ollama-ai-provider:
     specifier: ^1.2.0
     version: 1.2.0(zod@3.24.2)
@@ -625,6 +628,10 @@ packages:
       '@types/diff-match-patch': 1.0.36
       chalk: 5.4.1
       diff-match-patch: 1.0.5
+    dev: false
+
+  /lodash-es@4.17.21:
+    resolution: {integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==}
     dev: false
 
   /lodash@4.17.21:

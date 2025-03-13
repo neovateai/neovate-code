@@ -4,6 +4,7 @@ import { bashTool } from './tools/BashTool/BashTool';
 import { fileEditTool } from './tools/FileEditTool/FileEditTool';
 import { fileReadTool } from './tools/FileReadTool/FileReadTool';
 import { fileWriteTool } from './tools/FileWriteTool/FileWriteTool';
+import { grepTool } from './tools/GrepTool/GrepTool';
 import { lsTool } from './tools/LsTool/LsTool';
 
 type Message = CoreMessage;
@@ -28,6 +29,7 @@ export async function query(opts: QueryOptions) {
       bash: bashTool,
       ls: lsTool,
       fileWrite: fileWriteTool,
+      grep: grepTool,
     },
     onStepFinish: (step) => {
       // console.log('step', step);
