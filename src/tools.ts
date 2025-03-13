@@ -1,11 +1,11 @@
-import { AgentTool } from './tools/AgentTool/AgentTool';
-import { bashTool } from './tools/BashTool/BashTool';
+// import { AgentTool } from './tools/AgentTool';
+import { bashTool } from './tools/BashTool';
 import { fileEditTool } from './tools/FileEditTool/FileEditTool';
-import { fileReadTool } from './tools/FileReadTool/FileReadTool';
-import { fileWriteTool } from './tools/FileWriteTool/FileWriteTool';
-import { globTool } from './tools/GlobTool/GlobTool';
-import { grepTool } from './tools/GrepTool/GrepTool';
-import { lsTool } from './tools/LsTool/LsTool';
+import { fileReadTool } from './tools/FileReadTool';
+import { fileWriteTool } from './tools/FileWriteTool';
+import { globTool } from './tools/GlobTool';
+import { grepTool } from './tools/GrepTool';
+import { lsTool } from './tools/LsTool';
 
 export const getAllTools = () => {
   return {
