@@ -1,0 +1,39 @@
+import { tool } from 'ai';
+import { z } from 'zod';
+import { getModel } from '../../model';
+import { query } from '../../query';
+import { getTools } from '../../tools';
+
+// const getAgentTools = async () => {
+//   const tools = await getTools();
+//   // No recursive agents
+//   return Object.fromEntries(
+//     Object.entries(tools).filter(([_key, tool]) => tool !== AgentTool),
+//   );
+// };
+
+export const AgentTool = tool({
+  description: `
+  AgentTool
+
+  - Use this tool when you need to perform an open ended search that may require multiple rounds of globbing and grepping
+  - When you are doing an open ended search that may require multiple rounds of globbing and grepping, use the Agent tool instead
+  `,
+  parameters: z.object({
+    prompt: z.string().describe('The task for agent to perform'),
+  }),
+  execute: async ({ prompt }) => {
+    console.log(`[AgentTool] Starting agent with prompt: ${prompt}`);
+    throw new Error('Not implemented');
+    // const start = Date.now();
+    // const result = await query({
+    //   messages: [
+    //     { role: 'user', content: prompt },
+    //   ],
+    //   systemPrompt: [],
+    //   context: {},
+    //   model: getModel('Doubao/deepseek-chat'),
+    //   tools: await getAgentTools(),
+    // });
+  },
+});

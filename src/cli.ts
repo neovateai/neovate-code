@@ -4,6 +4,7 @@ import yParser from 'yargs-parser';
 import { getSystemPrompt } from './constants/prompts';
 import { getModel } from './model';
 import { query } from './query';
+import { getTools } from './tools';
 
 async function main() {
   dotenv.config();
@@ -24,6 +25,7 @@ async function main() {
       context: {},
       systemPrompt: getSystemPrompt(),
       model,
+      tools: getTools(),
     });
     let toolCalls: string[] = [];
     for (const step of result.steps) {
@@ -35,13 +37,15 @@ async function main() {
         messages.push({ role: 'assistant', content: step.toolCalls });
       }
       if (step.toolResults.length > 0) {
-        // TODO: fix this upstream. for some reason, the tool does not include the type,
-        // against the spec.
-        for (const toolResult of step.toolResults) {
-          if (!toolResult.type) {
-            toolResult.type = 'tool-result';
-          }
-        }
+        // // TODO: fix this upstream. for some reason, the tool does not include the type,
+        // // against the spec.
+        // for (const toolResult of step.toolResults) {
+        //   // @ts-ignore
+        //   if (!toolResult.type) {
+        //     // @ts-ignore
+        //     toolResult.type = 'tool-result';
+        //   }
+        // }
         messages.push({ role: 'tool', content: step.toolResults });
       }
     }
