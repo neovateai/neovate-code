@@ -32,60 +32,39 @@ import { createOllama } from 'ollama-ai-provider';
 | Ollama | qwq:32b | ❌ |
 */
 
-const MODELS_ALIAS = {
-  'Sili/deepseek-chat': 'Pro/deepseek-ai/DeepSeek-V3',
-  'Sili/deepseek-reasoner': 'Pro/deepseek-ai/DeepSeek-R1',
-  'Aliyun/deepseek-chat': 'deepseek-v3',
-  'Aliyun/deepseek-reasoner': 'deepseek-r1',
-  'Aliyun/qwq-32b': 'qwq-32b',
-  'Aliyun/qwq-plus': 'qwq-plus',
-  // TODO: model name should be customized
-  'Doubao/deepseek-chat': 'ep-20250210151255-r5x5s',
-  'Doubao/deepseek-reasoner': 'ep-20250210151757-wvgcj',
-  'OpenRouter/qwen/qwq-32b': 'qwen/qwq-32b',
-  'OpenRouter/openai/gpt-4o-2024-11-20': 'openai/gpt-4o-2024-11-20',
-  'OpenRouter/openai/o1-mini': 'openai/o1-mini',
-  'OpenRouter/openai/gpt-4-turbo': 'openai/gpt-4-turbo',
-  'OpenRouter/openai/gpt-3.5-turbo-0613': 'openai/gpt-3.5-turbo-0613',
-  'OpenRouter/anthropic/claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
-  'Tencent/deepseek-chat': 'deepseek-v3',
-  'Tencent/deepseek-reasoner': 'deepseek-r1',
-  'Ollama/qwq:32b': 'qwq:32b',
-  'Vscode/gpt-4o': 'gpt-4o',
-  'Vscode/claude-3.5-sonnet': 'claude-3.5-sonnet',
-} as const;
-
 const GROQ_MODELS = [
-  'qwen-qwq-32b',
-  'deepseek-r1-distill-qwen-32b',
-  'deepseek-r1-distill-llama-70b',
+  'Groq/qwen-qwq-32b',
+  'Groq/deepseek-r1-distill-qwen-32b',
+  'Groq/deepseek-r1-distill-llama-70b',
 ] as const;
 const DEEPSEEK_MODELS = [
-  'deepseek-chat',
-  'deepseek-reasoner', // don't support tools
+  'DeepSeek/deepseek-chat',
+  'DeepSeek/deepseek-reasoner', // don't support tools
 ] as const;
 const GOOGLE_MODELS = [
-  'gemini-2.0-flash-001',
-  'gemini-2.0-flash-thinking-exp-01-21', // don't support tools
-  'gemini-2.0-pro-exp-02-05',
-  'gemma-3-27b-it', // don't support tools
+  'Google/gemini-2.0-flash-001',
+  'Google/gemini-2.0-flash-thinking-exp-01-21', // don't support tools
+  'Google/gemini-2.0-pro-exp-02-05',
+  'Google/gemma-3-27b-it', // don't support tools
 ] as const;
 const SILICONFLOW_MODELS = [
-  'Sili/deepseek-chat',
-  'Sili/deepseek-reasoner', // don't support tools
+  'SiliconFlow/DeepSeek-V3',
+  'SiliconFlow/DeepSeek-R1', // don't support tools
 ] as const;
 const ALIYUN_MODELS = [
-  'Aliyun/deepseek-chat', // don't support tools
-  'Aliyun/deepseek-reasoner', // don't support tools
-  'Aliyun/qwq-32b', // stream only
-  'Aliyun/qwq-plus', // stream only
+  'Aliyun/deepseek-v3', // don't support tools
+  'Aliyun/deepseek-r1', // don't support tools
+  'Aliyun/qwq-32b', // stream only (don't work)
+  'Aliyun/qwq-plus', // stream only (don't work)
 ] as const;
 const DOUBAO_MODELS = [
-  'Doubao/deepseek-chat',
-  'Doubao/deepseek-reasoner', // support tools!!!
+  // DeepSeek-Chat
+  'Doubao/ep-20250210151255-r5x5s',
+  // DeepSeek-Reasoner
+  'Doubao/ep-20250210151757-wvgcj',
 ] as const;
 const GROK_MODELS = [
-  'grok-2-1212', // don't work
+  'Grok/grok-2-1212', // don't work
 ] as const;
 const OPEN_ROUTER_MODELS = [
   'OpenRouter/qwen/qwq-32b', // don't support tools
@@ -94,13 +73,25 @@ const OPEN_ROUTER_MODELS = [
   'OpenRouter/openai/gpt-4-turbo', // function.description has 2014 string limit
   'OpenRouter/openai/gpt-3.5-turbo-0613',
   'OpenRouter/anthropic/claude-3.5-sonnet',
+  'OpenRouter/anthropic/claude-3.7-sonnet',
+  'OpenRouter/anthropic/claude-3.7-sonnet-thought',
+
 ] as const;
 const TENCENT_MODELS = [
-  'Tencent/deepseek-chat', // don't support tools
-  'Tencent/deepseek-reasoner', // don't support tools
+  'Tencent/deepseek-v3', // don't support tools
+  'Tencent/deepseek-r1', // don't support tools
 ] as const;
 const OLLAMA_MODELS = ['Ollama/qwq:32b'] as const;
-const VSCODE_MODELS = ['Vscode/gpt-4o', 'Vscode/claude-3.5-sonnet'] as const;
+const VSCODE_MODELS = [
+  'Vscode/gpt-4o',
+  'Vscode/claude-3.5-sonnet',
+  'Vscode/claude-3.7-sonnet',
+  'Vscode/claude-3.7-sonnet-thought',
+  'Vscode/gpt-3.5-turbo',
+  'Vscode/gemini-2.0-flash',
+  'Vscode/o3-mini',
+  'Vscode/o1-ga',
+] as const;
 
 export type ModelType =
   | (typeof GROQ_MODELS)[number]
@@ -123,8 +114,7 @@ export function getModel(model: ModelType) {
     const ollama = createOllama({
       baseURL: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/api',
     });
-    // @ts-ignore
-    return ollama((MODELS_ALIAS[model] as ModelType) || model);
+    return ollama(getRealModel(model));
   }
 
   if (GOOGLE_MODELS.includes(model as any)) {
@@ -167,6 +157,16 @@ export function getModel(model: ModelType) {
     apiKey,
     baseURL,
   });
-  // @ts-ignore
-  return openai((MODELS_ALIAS[model] as ModelType) || model);
+  return openai(getRealModel(model));
+}
+
+// e.g.
+// 'OpenRouter/openai/gpt-4o-2024-11-20' -> 'openai/gpt-4o-2024-11-20'
+// 'foo/bar' -> 'bar'
+function getRealModel(model: ModelType) {
+  if (model.includes('/')) {
+    return model.split('/').slice(1).join('/');
+  } else {
+    return model;
+  }
 }

@@ -5,11 +5,11 @@ import { getTools } from './tools';
 
 /**
  * A simple test function that makes an AI call using the provided model and prompt.
- * @param model The model identifier
- * @param prompt The text prompt to send to the AI
  */
-export async function test(model: ModelType, prompt: string): Promise<void> {
+export async function test(): Promise<void> {
+  const model = 'Vscode/claude-3.5-sonnet';
   const modelInstance = getModel(model);
+  const prompt = 'What is the weather in Tokyo?';
 
   console.log(`Testing model: ${model}`);
   console.log(`Prompt: ${prompt}`);

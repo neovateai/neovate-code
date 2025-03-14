@@ -1,17 +1,19 @@
 import { CoreMessage, Tool, generateText, streamText } from 'ai';
-import { getModel } from './model';
+import { ModelType, getModel } from './model';
 
 interface QueryOptions {
   messages: CoreMessage[];
   systemPrompt: string[];
   context: Record<string, string>;
-  model: ReturnType<typeof getModel>;
+  model: ModelType;
   tools: Record<string, Tool>;
   stream?: boolean;
+  outputStream?: boolean;
 }
 
 export async function query(opts: QueryOptions) {
-  const { messages, systemPrompt, model, tools, stream = false } = opts;
+  const { messages, systemPrompt, tools, stream = false, outputStream = false } = opts;
+  const model = getModel(opts.model);
   console.log('>> messages', messages);
   if (stream) {
     const result = await streamText({
@@ -21,7 +23,9 @@ export async function query(opts: QueryOptions) {
       tools,
     });
     for await (const text of result.textStream) {
-      // process.stdout.write(text + '\n');
+      if (outputStream) {
+        process.stdout.write(text + '\n');
+      }
     }
     return {
       steps: await result.steps,

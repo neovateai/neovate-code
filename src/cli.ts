@@ -2,7 +2,6 @@ import { CoreMessage } from 'ai';
 import dotenv from 'dotenv';
 import yParser from 'yargs-parser';
 import { getSystemPrompt } from './constants/prompts';
-import { getModel } from './model';
 import { query } from './query';
 import { getTools } from './tools';
 import { INIT_PROMPT } from './commands/init';
@@ -12,6 +11,13 @@ async function main() {
   dotenv.config();
   const argv = yParser(process.argv.slice(2));
   console.log(argv);
+
+  // for test
+  if (argv._[0] === 'test') {
+    await test();
+    return;
+  }
+
   let messages: CoreMessage[] = [];
   if (argv._.length > 0) {
     let content = argv._[0] as string;
@@ -19,23 +25,28 @@ async function main() {
       content = INIT_PROMPT;
     }
     messages = [{ role: 'user', content }];
-    if (argv._[0] === 'test') {
-      await test('Vscode/claude-3.5-sonnet', 'What is the weather in Tokyo?');
-      // await test('Vscode/claude-3.5-sonnet', 'Introudce Tokyo?');
-      return;
-    }
   } else {
     throw new Error('No command provided');
   }
-  // const model = getModel('deepseek-r1-distill-llama-70b');
-  // const model = getModel('Doubao/deepseek-chat');
-  const model = getModel('Vscode/claude-3.5-sonnet');
-  // const model = getModel('Aliyun/qwq-32b');
-  // const model = getModel('gemini-2.0-flash-001');
-  // const model = getModel('OpenRouter/anthropic/claude-3.5-sonnet');
-  // const model = getModel('Ollama/qwq:32b');
-  // const model = getModel('qwen-qwq-32b');
-  // const model = getModel('Aliyun/qwq-plus');
+
+  /**
+   * Models that worked:
+   * - Groq/qwen-qwq-32b
+   * - Groq/deepseek-r1-distill-llama-70b
+   * - DeepSeek/deepseek-chat
+   * - Vscode/claude-3.5-sonnet
+   * - Doubao/ep-20250210151255-r5x5s (DeepSeek-Chat)
+   * - Doubao/ep-20250210151757-wvgcj (DeepSeek-Reasoner)
+   * - Google/gemini-2.0-flash-001 (don't work???)
+   * - Google/gemini-2.0-pro-exp-02-05 (don't support stream)
+   * - OpenRouter/anthropic/claude-3.5-sonnet
+   */
+  const model = 'Vscode/claude-3.7-sonnet';
+  let stream = true;
+  // @ts-ignore
+  if (model === 'Google/gemini-2.0-pro-exp-02-05') {
+    stream = false;
+  }
   while (true) {
     const result = await query({
       messages,
@@ -43,7 +54,7 @@ async function main() {
       systemPrompt: getSystemPrompt(),
       model,
       tools: await getTools(),
-      stream: true,
+      stream,
     });
     let toolCalls: string[] = [];
     for (const step of result.steps) {
@@ -68,7 +79,7 @@ async function main() {
       }
     }
     if (toolCalls.length > 0) {
-      // console.log(`Tools called: ${toolCalls.join(', ')}`);
+      console.log(`Tools called: ${toolCalls.join(', ')}`);
     } else {
       console.log(`>> result.text: ${result.text}`);
       break;
