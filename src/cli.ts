@@ -23,6 +23,8 @@ async function main() {
   }
   // const model = getModel('deepseek-r1-distill-llama-70b');
   const model = getModel('Doubao/deepseek-chat');
+  // const model = getModel('gemini-2.0-flash-001');
+  // const model = getModel('OpenRouter/anthropic/claude-3.5-sonnet');
   // const model = getModel('Ollama/qwq:32b');
   // const model = getModel('qwen-qwq-32b');
   // const model = getModel('Aliyun/qwq-plus');
