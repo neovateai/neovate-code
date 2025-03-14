@@ -51,6 +51,8 @@ const MODELS_ALIAS = {
   'Tencent/deepseek-chat': 'deepseek-v3',
   'Tencent/deepseek-reasoner': 'deepseek-r1',
   'Ollama/qwq:32b': 'qwq:32b',
+  'Vscode/gpt-4o': 'gpt-4o',
+  'Vscode/claude-3.5-sonnet': 'claude-3.5-sonnet',
 } as const;
 
 const GROQ_MODELS = [
@@ -98,6 +100,7 @@ const TENCENT_MODELS = [
   'Tencent/deepseek-reasoner', // don't support tools
 ] as const;
 const OLLAMA_MODELS = ['Ollama/qwq:32b'] as const;
+const VSCODE_MODELS = ['Vscode/gpt-4o', 'Vscode/claude-3.5-sonnet'] as const;
 
 export type ModelType =
   | (typeof GROQ_MODELS)[number]
@@ -109,7 +112,8 @@ export type ModelType =
   | (typeof GROK_MODELS)[number]
   | (typeof OPEN_ROUTER_MODELS)[number]
   | (typeof TENCENT_MODELS)[number]
-  | (typeof OLLAMA_MODELS)[number];
+  | (typeof OLLAMA_MODELS)[number]
+  | (typeof VSCODE_MODELS)[number];
 
 export function getModel(model: ModelType) {
   let apiKey;
@@ -150,6 +154,9 @@ export function getModel(model: ModelType) {
   } else if (TENCENT_MODELS.includes(model as any)) {
     apiKey = process.env.TENCENT_API_KEY;
     baseURL = process.env.TENCENT_BASE_URL;
+  } else if (VSCODE_MODELS.includes(model as any)) {
+    apiKey = process.env.VSCODE_API_KEY;
+    baseURL = process.env.VSCODE_BASE_URL;
   } else {
     throw new Error(`Unsupported model: ${model}`);
   }

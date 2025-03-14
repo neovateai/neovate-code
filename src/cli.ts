@@ -6,6 +6,7 @@ import { getModel } from './model';
 import { query } from './query';
 import { getTools } from './tools';
 import { INIT_PROMPT } from './commands/init';
+import { test } from './test';
 
 async function main() {
   dotenv.config();
@@ -18,11 +19,18 @@ async function main() {
       content = INIT_PROMPT;
     }
     messages = [{ role: 'user', content }];
+    if (argv._[0] === 'test') {
+      await test('Vscode/claude-3.5-sonnet', 'What is the weather in Tokyo?');
+      // await test('Vscode/claude-3.5-sonnet', 'Introudce Tokyo?');
+      return;
+    }
   } else {
     throw new Error('No command provided');
   }
   // const model = getModel('deepseek-r1-distill-llama-70b');
-  const model = getModel('Doubao/deepseek-chat');
+  // const model = getModel('Doubao/deepseek-chat');
+  const model = getModel('Vscode/claude-3.5-sonnet');
+  // const model = getModel('Aliyun/qwq-32b');
   // const model = getModel('gemini-2.0-flash-001');
   // const model = getModel('OpenRouter/anthropic/claude-3.5-sonnet');
   // const model = getModel('Ollama/qwq:32b');
@@ -35,6 +43,7 @@ async function main() {
       systemPrompt: getSystemPrompt(),
       model,
       tools: await getTools(),
+      stream: true,
     });
     let toolCalls: string[] = [];
     for (const step of result.steps) {
@@ -61,7 +70,7 @@ async function main() {
     if (toolCalls.length > 0) {
       // console.log(`Tools called: ${toolCalls.join(', ')}`);
     } else {
-      console.log(result.text);
+      console.log(`>> result.text: ${result.text}`);
       break;
     }
   }
