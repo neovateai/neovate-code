@@ -45,10 +45,17 @@ export async function getClientsTools(clients: Record<string, MCPClient>) {
   for (const [name, client] of Object.entries(clients)) {
     const clientTools = await client.tools();
     for (const [toolName, tool] of Object.entries(clientTools)) {
-      tools[`${name}-${toolName}`] = tool;
+      tools[normalizeToolName(name, toolName)] = tool;
     }
   }
   return tools;
+}
+
+function normalizeToolName(name: string, toolName: string) {
+  let ret = `${name}-${toolName}`;
+  // replace all non-alphanumeric characters with a dash
+  ret = ret.replace(/[^a-zA-Z0-9]/g, '-');
+  return ret;
 }
 
 export async function closeClients(clients: Record<string, MCPClient>) {
