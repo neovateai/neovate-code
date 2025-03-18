@@ -5,6 +5,7 @@ AI pair programming CLI that enhances your development workflow.
 ## Features
 
 - 🤖 AI-powered pair programming assistance
+- 🔍 Support MCP servers
 - 📝 More features coming soon...
 
 ## Installation
