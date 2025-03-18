@@ -6,6 +6,7 @@ import { query } from './query';
 import { getTools } from './tools';
 import { INIT_PROMPT } from './commands/init';
 import { test } from './test';
+import { closeClients, createClients, getClientsTools } from './mcp';
 
 async function main() {
   dotenv.config();
@@ -41,50 +42,71 @@ async function main() {
    * - Google/gemini-2.0-pro-exp-02-05 (don't support stream)
    * - OpenRouter/anthropic/claude-3.5-sonnet
    */
-  const model = 'Vscode/claude-3.7-sonnet';
+  const model = 'Vscode/claude-3.5-sonnet';
   let stream = true;
   // @ts-ignore
   if (model === 'Google/gemini-2.0-pro-exp-02-05') {
     stream = false;
   }
-  while (true) {
-    const result = await query({
-      messages,
-      context: {},
-      systemPrompt: getSystemPrompt(),
-      model,
-      tools: await getTools(),
-      stream,
-    });
-    let toolCalls: string[] = [];
-    for (const step of result.steps) {
-      if (step.text.length > 0) {
-        messages.push({ role: 'assistant', content: step.text });
+  const clients = await createClients({
+    'Fetch': {
+      type: 'stdio',
+      command: 'uvx',
+      args: ['mcp-server-fetch'],
+    },
+  });
+
+  try {
+    while (true) {
+      const tools = {
+        ...await getTools(),
+        ...await getClientsTools(clients),
+      };
+      const result = await query({
+        messages,
+        context: {},
+        systemPrompt: getSystemPrompt(),
+        model,
+        tools,
+        stream,
+      });
+      let toolCalls: string[] = [];
+      for (const step of result.steps) {
+        if (step.text.length > 0) {
+          messages.push({ role: 'assistant', content: step.text });
+        }
+        if (step.toolCalls.length > 0) {
+          toolCalls.push(...step.toolCalls.map((toolCall) => toolCall.toolName));
+          messages.push({ role: 'assistant', content: step.toolCalls });
+        }
+        if (step.toolResults.length > 0) {
+          // // TODO: fix this upstream. for some reason, the tool does not include the type,
+          // // against the spec.
+          // for (const toolResult of step.toolResults) {
+          //   // @ts-ignore
+          //   if (!toolResult.type) {
+          //     // @ts-ignore
+          //     toolResult.type = 'tool-result';
+          //   }
+          // }
+          messages.push({ role: 'tool', content: step.toolResults });
+        }
       }
-      if (step.toolCalls.length > 0) {
-        toolCalls.push(...step.toolCalls.map((toolCall) => toolCall.toolName));
-        messages.push({ role: 'assistant', content: step.toolCalls });
-      }
-      if (step.toolResults.length > 0) {
-        // // TODO: fix this upstream. for some reason, the tool does not include the type,
-        // // against the spec.
-        // for (const toolResult of step.toolResults) {
-        //   // @ts-ignore
-        //   if (!toolResult.type) {
-        //     // @ts-ignore
-        //     toolResult.type = 'tool-result';
-        //   }
-        // }
-        messages.push({ role: 'tool', content: step.toolResults });
+      if (toolCalls.length > 0) {
+        console.log(`Tools called: ${toolCalls.join(', ')}`);
+      } else {
+        console.log(`>> result.text: ${result.text}`);
+        break;
       }
     }
-    if (toolCalls.length > 0) {
-      console.log(`Tools called: ${toolCalls.join(', ')}`);
-    } else {
-      console.log(`>> result.text: ${result.text}`);
-      break;
-    }
+  } catch (error) {
+    console.error('Error in main loop:');
+    console.error(error);
+  } finally {
+    await closeClients(clients);
   }
 }
 
-main().catch(console.error);
+main().catch(console.error).finally(() => {
+  process.exit(0);
+});

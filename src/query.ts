@@ -14,7 +14,7 @@ interface QueryOptions {
 export async function query(opts: QueryOptions) {
   const { messages, systemPrompt, tools, stream = false, outputStream = false } = opts;
   const model = getModel(opts.model);
-  console.log('>> messages', messages);
+  console.log('>> messages', JSON.stringify(messages, null, 2));
   if (stream) {
     const result = await streamText({
       model,
