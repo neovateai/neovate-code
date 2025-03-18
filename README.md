@@ -46,7 +46,7 @@ Create `.takumi/mcp.json` file.
     "Brave Search": {
       "command": "env",
       "args": [
-        "BRAVE_API_KEY=BSANaFDlxI_3p9e0Q_Vkto1p2OPKxK7",
+        "BRAVE_API_KEY=YOUR_BRAVE_API_KEY",
         "npx",
         "-y",
         "@modelcontextprotocol/server-brave-search"
