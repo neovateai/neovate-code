@@ -1,12 +1,19 @@
 import { CoreMessage } from 'ai';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 import yParser from 'yargs-parser';
-import { getSystemPrompt } from './constants/prompts';
-import { query } from './query';
-import { getTools } from './tools';
 import { INIT_PROMPT } from './commands/init';
-import { test } from './test';
+import { PRODUCT_NAME } from './constants/product';
+import { getSystemPrompt } from './constants/prompts';
 import { closeClients, createClients, getClientsTools } from './mcp';
+import { query } from './query';
+import { test } from './test';
+import { getTools } from './tools';
+
+function getCwd() {
+  return process.cwd();
+}
 
 async function main() {
   dotenv.config();
@@ -42,25 +49,34 @@ async function main() {
    * - Google/gemini-2.0-pro-exp-02-05 (don't support stream)
    * - OpenRouter/anthropic/claude-3.5-sonnet
    */
-  const model = 'Vscode/claude-3.5-sonnet';
+  const model = 'Doubao/ep-20250210151255-r5x5s';
   let stream = true;
   // @ts-ignore
   if (model === 'Google/gemini-2.0-pro-exp-02-05') {
     stream = false;
   }
-  const clients = await createClients({
-    'Fetch': {
-      type: 'stdio',
-      command: 'uvx',
-      args: ['mcp-server-fetch'],
-    },
-  });
+  const mcpConfigPath = path.join(
+    getCwd(),
+    `.${PRODUCT_NAME.toLowerCase()}/mcp.json`,
+  );
+  console.log('mcpConfigPath', mcpConfigPath);
+  const mcpConfig = (() => {
+    if (fs.existsSync(mcpConfigPath)) {
+      console.log(`Using MCP config from ${mcpConfigPath}`);
+      return JSON.parse(fs.readFileSync(mcpConfigPath, 'utf-8'));
+    } else {
+      console.log(`No MCP config found at ${mcpConfigPath}`);
+      return {};
+    }
+  })();
+  console.log('mcpConfig.mcpServers', mcpConfig.mcpServers);
+  const clients = await createClients(mcpConfig.mcpServers || {});
 
   try {
     while (true) {
       const tools = {
-        ...await getTools(),
-        ...await getClientsTools(clients),
+        ...(await getTools()),
+        ...(await getClientsTools(clients)),
       };
       const result = await query({
         messages,
@@ -76,7 +92,9 @@ async function main() {
           messages.push({ role: 'assistant', content: step.text });
         }
         if (step.toolCalls.length > 0) {
-          toolCalls.push(...step.toolCalls.map((toolCall) => toolCall.toolName));
+          toolCalls.push(
+            ...step.toolCalls.map((toolCall) => toolCall.toolName),
+          );
           messages.push({ role: 'assistant', content: step.toolCalls });
         }
         if (step.toolResults.length > 0) {
@@ -104,9 +122,12 @@ async function main() {
     console.error(error);
   } finally {
     await closeClients(clients);
+    console.log('Closed clients');
   }
 }
 
-main().catch(console.error).finally(() => {
-  process.exit(0);
-});
+main()
+  .catch(console.error)
+  .finally(() => {
+    process.exit(0);
+  });

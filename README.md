@@ -26,6 +26,7 @@ More detailed usage instructions coming soon.
 ```
 "create a.txt with some romantic text"
 "fetch https://sorrycc.com/about and generate a svg as a.svg for this"
+"search and tell me how old is zhaobenshan"
 ```
 
 ## License

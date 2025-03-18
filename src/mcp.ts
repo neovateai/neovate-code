@@ -14,19 +14,27 @@ type MCPClient = Awaited<ReturnType<typeof experimental_createMCPClient>>;
  *
  */
 type MCPServer = {
-  type: 'stdio';
+  type?: 'stdio';
   command: string;
   args: string[];
+  env?: Record<string, string>;
 } | {
-  type: 'sse';
+  type?: 'sse';
   url: string;
+  env?: Record<string, string>;
 };
 
 export async function createClients(servers: Record<string, MCPServer>): Promise<Record<string, MCPClient>> {
   const clients: Record<string, MCPClient> = {};
   for (const [name, server] of Object.entries(servers)) {
+    // Check if server has 'command' property to determine its type
+    if ('command' in server) {
+      server.type = 'stdio';
+    } else if ('url' in server) {
+      server.type = 'sse';
+    }
     clients[name] = await experimental_createMCPClient({
-      transport: server,
+      transport: server as any,
     });
   }
   return clients;
