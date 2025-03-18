@@ -49,7 +49,7 @@ async function main() {
    * - Google/gemini-2.0-pro-exp-02-05 (don't support stream)
    * - OpenRouter/anthropic/claude-3.5-sonnet
    */
-  const model = 'Doubao/ep-20250210151255-r5x5s';
+  const model = argv.model || 'Doubao/ep-20250210151255-r5x5s';
   let stream = true;
   // @ts-ignore
   if (model === 'Google/gemini-2.0-pro-exp-02-05') {

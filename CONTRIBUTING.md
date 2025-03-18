@@ -1,5 +1,10 @@
 # CONTRIBUTING
 
+## Prepare
+
+1. Prepare at least one API key of the following services: Groq, Doubao, Google, DeepSeek, OpenRouter. Doubao and OpenRouter is recommended.
+2. Copy `.env.example` to `.env` and set the API key.
+
 ## Development
 
 Common commands:
@@ -7,11 +12,10 @@ Common commands:
 ```bash
 $ pnpm install
 $ pnpm dev
-$ pnpm dev "create a.txt with some romantic text"
+$ pnpm dev "create a.txt with some romantic text" --model=DeepSeek/deepseek-chat
 $ pnpm build
 ```
 
 ## Debug
 
-Press `⌘+⇧+D` to open the debug view, then select `Debug cli`.
-
+If you want to debug the CLI, press `⌘+⇧+D` to open the debug view, then select `Debug cli`.
