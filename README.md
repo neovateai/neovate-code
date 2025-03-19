@@ -8,26 +8,18 @@ AI pair programming CLI that enhances your development workflow.
 - 🔍 Support MCP servers
 - 📝 More features coming soon...
 
-## Installation
-
-```bash
-$ pnpm add takumi -g
-```
-
 ## Usage
 
 ```bash
-$ takumi --model=<model> <prompt>
+$ npx -y takumi <prompt> --model=<model>
 ```
-
-More detailed usage instructions coming soon.
 
 ### Usage Examples
 
 Basic usage.
 
 ```bash
-$ takumi --model=Groq/qwen-qwq-32b "create a.txt with some romantic text"
+$ GROQ_API_KEY=gsk_xxxx npx -y takumi --model=Groq/qwen-qwq-32b "create a.txt with some romantic text"
 ```
 
 With MCP.
@@ -59,16 +51,8 @@ Create `.takumi/mcp.json` file.
 And then try the following commands.
 
 ```bash
-$ takumi --model=DeepSeek/deepseek-chat "fetch https://sorrycc.com/about and tell me who is sorrycc"
-$ takumi --model=DeepSeek/deepseek-chat "search and tell me how old is zhaobenshan"
-```
-
-## Prompt Examples
-
-```
-"create a.txt with some romantic text"
-"fetch https://sorrycc.com/about and generate a svg as a.svg for this"
-"search and tell me how old is zhaobenshan"
+$ DEEPSEEK_API_KEY=sk-xxxx npx -y takumi --model=DeepSeek/deepseek-chat "fetch https://sorrycc.com/about and tell me who is sorrycc"
+$ DEEPSEEK_API_KEY=sk-xxxx npx -y takumi --model=DeepSeek/deepseek-chat "search and tell me how old is zhaobenshan"
 ```
 
 ## License
