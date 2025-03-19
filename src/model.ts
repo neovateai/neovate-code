@@ -126,33 +126,33 @@ export function getModel(model: ModelType) {
 
   if (GOOGLE_MODELS.includes(model as any)) {
     apiKey = process.env.GOOGLE_API_KEY;
-    baseURL = process.env.GOOGLE_BASE_URL;
+    baseURL = 'https://generativelanguage.googleapis.com/v1beta/';
   } else if (DEEPSEEK_MODELS.includes(model as any)) {
     apiKey = process.env.DEEPSEEK_API_KEY;
-    baseURL = process.env.DEEPSEEK_BASE_URL;
+    baseURL = 'https://api.deepseek.com/v1';
   } else if (GROQ_MODELS.includes(model as any)) {
     apiKey = process.env.GROQ_API_KEY;
-    baseURL = process.env.GROQ_BASE_URL;
+    baseURL = 'https://api.groq.com/openai/v1';
   } else if (SILICONFLOW_MODELS.includes(model as any)) {
     apiKey = process.env.SILICONFLOW_API_KEY;
-    baseURL = process.env.SILICONFLOW_BASE_URL;
+    baseURL = 'https://api.siliconflow.com/v1';
   } else if (ALIYUN_MODELS.includes(model as any)) {
     apiKey = process.env.ALIYUN_API_KEY;
-    baseURL = process.env.ALIYUN_BASE_URL;
+    baseURL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
   } else if (DOUBAO_MODELS.includes(model as any)) {
     apiKey = process.env.DOUBAO_API_KEY;
-    baseURL = process.env.DOUBAO_BASE_URL;
+    baseURL = 'https://ark.cn-beijing.volces.com/api/v3';
   } else if (GROK_MODELS.includes(model as any)) {
     apiKey = process.env.GROK_API_KEY;
-    baseURL = process.env.GROK_BASE_URL;
+    baseURL = 'https://api.grok.com/v1';
   } else if (OPEN_ROUTER_MODELS.includes(model as any)) {
     apiKey = process.env.OPEN_ROUTER_API_KEY;
-    baseURL = process.env.OPEN_ROUTER_BASE_URL;
+    baseURL = 'https://openrouter.ai/api/v1';
   } else if (TENCENT_MODELS.includes(model as any)) {
     apiKey = process.env.TENCENT_API_KEY;
-    baseURL = process.env.TENCENT_BASE_URL;
+    baseURL = 'https://api.lkeap.cloud.tencent.com/v1';
   } else if (VSCODE_MODELS.includes(model as any)) {
-    apiKey = process.env.VSCODE_API_KEY;
+    apiKey = 'none';
     baseURL = process.env.VSCODE_BASE_URL;
   } else if (GROKMIRROR_MODELS.includes(model as any)) {
     apiKey = process.env.GROKMIRROR_API_KEY;

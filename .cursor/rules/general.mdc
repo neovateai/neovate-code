@@ -3,6 +3,8 @@ description: General Rules
 globs: 
 alwaysApply: false
 ---
+# General
+- Use pnpm to install dependencies
 
 # Build & Test Commands
 - Build: `bun build src/cli.ts --minify --outfile dist/cli.mjs --target=node`
