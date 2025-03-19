@@ -5,6 +5,9 @@
   "files": [
     "dist"
   ],
+  "bin": {
+    "takumi": "./dist/cli.mjs"
+  },
   "scripts": {
     "dev": "tsx ./src/cli.ts",
     "format": "prettier --write .",
