@@ -1,3 +1,4 @@
+#!/usr/bin/env -S node --no-warnings=ExperimentalWarning --enable-source-maps
 import { CoreMessage } from 'ai';
 import dotenv from 'dotenv';
 import fs from 'fs';
