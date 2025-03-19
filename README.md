@@ -59,7 +59,7 @@ Create `.takumi/mcp.json` file.
 And then try the following commands.
 
 ```bash
-$ takumi --model=DeepSeek/deepseek-chat "fetch https://sorrycc.com/about and generate a svg as a.svg for this"
+$ takumi --model=DeepSeek/deepseek-chat "fetch https://sorrycc.com/about and tell me who is sorrycc"
 $ takumi --model=DeepSeek/deepseek-chat "search and tell me how old is zhaobenshan"
 ```
 

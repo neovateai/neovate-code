@@ -22,7 +22,7 @@ async function main() {
 
   // for test
   if (argv._[0] === 'test') {
-    await test();
+    await test(argv);
     return;
   }
 

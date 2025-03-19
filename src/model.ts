@@ -92,6 +92,12 @@ const VSCODE_MODELS = [
   'Vscode/o3-mini',
   'Vscode/o1-ga',
 ] as const;
+const GROKMIRROR_MODELS = [
+  'GrokMirror/grok-2',
+  'GrokMirror/grok-3',
+  'GrokMirror/grok-3-think',
+  'GrokMirror/grok-3-deepsearch',
+] as const;
 
 export type ModelType =
   | (typeof GROQ_MODELS)[number]
@@ -104,7 +110,8 @@ export type ModelType =
   | (typeof OPEN_ROUTER_MODELS)[number]
   | (typeof TENCENT_MODELS)[number]
   | (typeof OLLAMA_MODELS)[number]
-  | (typeof VSCODE_MODELS)[number];
+  | (typeof VSCODE_MODELS)[number]
+  | (typeof GROKMIRROR_MODELS)[number];
 
 export function getModel(model: ModelType) {
   let apiKey;
@@ -147,6 +154,9 @@ export function getModel(model: ModelType) {
   } else if (VSCODE_MODELS.includes(model as any)) {
     apiKey = process.env.VSCODE_API_KEY;
     baseURL = process.env.VSCODE_BASE_URL;
+  } else if (GROKMIRROR_MODELS.includes(model as any)) {
+    apiKey = process.env.GROKMIRROR_API_KEY;
+    baseURL = process.env.GROKMIRROR_BASE_URL;
   } else {
     throw new Error(`Unsupported model: ${model}`);
   }

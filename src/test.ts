@@ -3,10 +3,29 @@ import { getModel, ModelType } from './model';
 import { z } from 'zod';
 import { getTools } from './tools';
 
+export async function test(argv: any): Promise<void> {
+  const model = argv.model || 'GrokMirror/grok-3-think';
+  const modelInstance = getModel(model);
+  const prompt = argv.prompt || 'What is the difference between Claude-3-Opus and Claude-3-Sonnet?';
+
+  console.log(`Testing model: ${model}`);
+  console.log(`Prompt: ${prompt}`);
+  console.log('Response:');
+
+  const result = await streamText({
+    model: modelInstance,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  for await (const text of result.textStream) {
+    process.stdout.write(text);
+  }
+}
+
 /**
  * A simple test function that makes an AI call using the provided model and prompt.
  */
-export async function test(): Promise<void> {
+export async function test2(): Promise<void> {
   const model = 'Vscode/claude-3.5-sonnet';
   const modelInstance = getModel(model);
   const prompt = 'What is the weather in Tokyo?';
