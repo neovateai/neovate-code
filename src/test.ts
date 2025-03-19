@@ -1,12 +1,14 @@
 import { generateText, streamText } from 'ai';
-import { getModel, ModelType } from './model';
 import { z } from 'zod';
+import { ModelType, getModel } from './model';
 import { getTools } from './tools';
 
 export async function test(argv: any): Promise<void> {
   const model = argv.model || 'GrokMirror/grok-3-think';
   const modelInstance = getModel(model);
-  const prompt = argv.prompt || 'What is the difference between Claude-3-Opus and Claude-3-Sonnet?';
+  const prompt =
+    argv.prompt ||
+    'What is the difference between Claude-3-Opus and Claude-3-Sonnet?';
 
   console.log(`Testing model: ${model}`);
   console.log(`Prompt: ${prompt}`);

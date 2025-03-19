@@ -2,8 +2,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 
 export const ThinkTool = tool({
-  description:
-    `
+  description: `
 [ThinkTool]
 
 This is a no-op tool that logs a thought. It is inspired by the tau-bench think tool.

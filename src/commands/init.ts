@@ -1,4 +1,4 @@
-import { PRODUCT_NAME } from "../constants/product";
+import { PRODUCT_NAME } from '../constants/product';
 
 export const INIT_PROMPT = `
 Please analyze this codebase and create a ${PRODUCT_NAME}.md file containing:

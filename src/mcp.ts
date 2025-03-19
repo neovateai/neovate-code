@@ -1,4 +1,4 @@
-import { experimental_createMCPClient, Tool } from 'ai';
+import { Tool, experimental_createMCPClient } from 'ai';
 
 type MCPClient = Awaited<ReturnType<typeof experimental_createMCPClient>>;
 /**
@@ -13,18 +13,22 @@ type MCPClient = Awaited<ReturnType<typeof experimental_createMCPClient>>;
     url: 'https://my-server.com/sse',
  *
  */
-type MCPServer = {
-  type?: 'stdio';
-  command: string;
-  args: string[];
-  env?: Record<string, string>;
-} | {
-  type?: 'sse';
-  url: string;
-  env?: Record<string, string>;
-};
+type MCPServer =
+  | {
+      type?: 'stdio';
+      command: string;
+      args: string[];
+      env?: Record<string, string>;
+    }
+  | {
+      type?: 'sse';
+      url: string;
+      env?: Record<string, string>;
+    };
 
-export async function createClients(servers: Record<string, MCPServer>): Promise<Record<string, MCPClient>> {
+export async function createClients(
+  servers: Record<string, MCPServer>,
+): Promise<Record<string, MCPClient>> {
   const clients: Record<string, MCPClient> = {};
   for (const [name, server] of Object.entries(servers)) {
     // Check if server has 'command' property to determine its type
@@ -59,7 +63,5 @@ function normalizeToolName(name: string, toolName: string) {
 }
 
 export async function closeClients(clients: Record<string, MCPClient>) {
-  await Promise.all(
-    Object.values(clients).map((client) => client.close()),
-  );
+  await Promise.all(Object.values(clients).map((client) => client.close()));
 }

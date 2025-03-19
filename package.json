@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "tsx ./src/cli.ts",
     "format": "prettier --write .",
-    "build": "bun build src/cli.ts --minify --outfile dist/cli.mjs --target=node"
+    "build": "bun build src/cli.ts --minify --outfile dist/cli.mjs --target=node",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "cli",
@@ -27,7 +29,8 @@
     "@types/yargs-parser": "^21.0.3",
     "prettier": "^3.5.3",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.2.1",

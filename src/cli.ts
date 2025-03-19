@@ -6,6 +6,7 @@ import yParser from 'yargs-parser';
 import { INIT_PROMPT } from './commands/init';
 import { PRODUCT_NAME } from './constants/product';
 import { getSystemPrompt } from './constants/prompts';
+import { getContext } from './context';
 import { closeClients, createClients, getClientsTools } from './mcp';
 import { query } from './query';
 import { test } from './test';
@@ -78,9 +79,10 @@ async function main() {
         ...(await getTools()),
         ...(await getClientsTools(clients)),
       };
+      const context = await getContext();
       const result = await query({
         messages,
-        context: {},
+        context,
         systemPrompt: getSystemPrompt(),
         model,
         tools,

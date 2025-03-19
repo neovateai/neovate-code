@@ -34,6 +34,9 @@ function listDirectory(initialPath: string, cwd: string) {
       continue;
     }
     for (const child of children) {
+      if (child.name === 'node_modules') {
+        continue;
+      }
       if (child.isDirectory()) {
         queue.push(join(path, child.name) + sep);
       } else {

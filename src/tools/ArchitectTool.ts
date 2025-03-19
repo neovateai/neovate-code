@@ -19,7 +19,8 @@ IMPORTANT: Do not attempt to write the code or use any string modification tools
 `.trim();
 
 export const ArchitectTool = tool({
-  description: 'Your go-to tool for any technical or coding task. Analyzes requirements and breaks them down into clear, actionable implementation steps. Use this whenever you need help planning how to implement a feature, solve a technical problem, or structure your code.',
+  description:
+    'Your go-to tool for any technical or coding task. Analyzes requirements and breaks them down into clear, actionable implementation steps. Use this whenever you need help planning how to implement a feature, solve a technical problem, or structure your code.',
   parameters: z.object({
     prompt: z
       .string()
@@ -31,12 +32,12 @@ export const ArchitectTool = tool({
   }),
   execute: async ({ prompt, context }) => {
     console.log(`[ArchitectTool] prompt: ${prompt}, context: ${context}`);
-    const content = context ? `<context>${context}</context>\n\n${prompt}` : prompt;
+    const content = context
+      ? `<context>${context}</context>\n\n${prompt}`
+      : prompt;
     const result = await query({
       model: getModel('Doubao/deepseek-chat'),
-      messages: [
-        { role: 'user', content },
-      ],
+      messages: [{ role: 'user', content }],
       // TODO: add tools
       tools: {},
       // TODO: add context

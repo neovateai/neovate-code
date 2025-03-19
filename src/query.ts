@@ -4,7 +4,7 @@ import { ModelType, getModel } from './model';
 interface QueryOptions {
   messages: CoreMessage[];
   systemPrompt: string[];
-  context: Record<string, string>;
+  context: Record<string, any>;
   model: ModelType;
   tools: Record<string, Tool>;
   stream?: boolean;
@@ -12,14 +12,28 @@ interface QueryOptions {
 }
 
 export async function query(opts: QueryOptions) {
-  const { messages, systemPrompt, tools, stream = false, outputStream = false } = opts;
+  const {
+    messages,
+    systemPrompt,
+    context,
+    tools,
+    stream = false,
+    outputStream = false,
+  } = opts;
   const model = getModel(opts.model);
   console.log('>> messages', JSON.stringify(messages, null, 2));
+  const system = [
+    ...systemPrompt,
+    `As you answer the user's questions, you can use the following context:`,
+    ...Object.entries(context).map(
+      ([key, value]) => `<context name="${key}">${value}</context>`,
+    ),
+  ].join('\n');
   if (stream) {
     const result = await streamText({
       model,
       messages,
-      system: systemPrompt.join('\n'),
+      system,
       tools,
     });
     for await (const text of result.textStream) {
@@ -37,7 +51,7 @@ export async function query(opts: QueryOptions) {
     const result = await generateText({
       model,
       messages,
-      system: systemPrompt.join('\n'),
+      system,
       tools,
     });
     return result;

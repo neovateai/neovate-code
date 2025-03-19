@@ -75,7 +75,6 @@ const OPEN_ROUTER_MODELS = [
   'OpenRouter/anthropic/claude-3.5-sonnet',
   'OpenRouter/anthropic/claude-3.7-sonnet',
   'OpenRouter/anthropic/claude-3.7-sonnet-thought',
-
 ] as const;
 const TENCENT_MODELS = [
   'Tencent/deepseek-v3', // don't support tools
@@ -121,7 +120,7 @@ export function getModel(model: ModelType) {
     const ollama = createOllama({
       baseURL: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/api',
     });
-    return ollama(getRealModel(model));
+    return ollama(stripProviderPrefix(model));
   }
 
   if (GOOGLE_MODELS.includes(model as any)) {
@@ -167,13 +166,13 @@ export function getModel(model: ModelType) {
     apiKey,
     baseURL,
   });
-  return openai(getRealModel(model));
+  return openai(stripProviderPrefix(model));
 }
 
 // e.g.
 // 'OpenRouter/openai/gpt-4o-2024-11-20' -> 'openai/gpt-4o-2024-11-20'
 // 'foo/bar' -> 'bar'
-function getRealModel(model: ModelType) {
+function stripProviderPrefix(model: ModelType) {
   if (model.includes('/')) {
     return model.split('/').slice(1).join('/');
   } else {
