@@ -1,3 +1,11 @@
+## 0.0.3
+
+`2025-03-20`
+
+- feat: improve logs by [@sorrycc](https://github.com/sorrycc)
+- fix: remove unnecessary source map flag from CLI shebang for cleaner execution by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.2
 
 `2025-03-19`
