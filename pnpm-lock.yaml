@@ -26,6 +26,9 @@ dependencies:
   pathe:
     specifier: ^2.0.3
     version: 2.0.3
+  picocolors:
+    specifier: ^1.1.1
+    version: 1.1.1
   yargs-parser:
     specifier: ^21.1.1
     version: 21.1.1
@@ -2099,7 +2102,6 @@ packages:
 
   /picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
-    dev: true
 
   /pify@4.0.1:
     resolution: {integrity: sha512-uB80kBFb/tfd68bVleG9T5GGsGPjJrLAUpR5PZIrhBnIaRTQRjqdJSsIKkOP6OAIFbj7GOrcudc5pNjZ+geV2g==}

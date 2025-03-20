@@ -149,7 +149,6 @@ export const lsTool = tool({
       ),
   }),
   execute: async ({ path }) => {
-    console.log(`[LsTool] Listing directory: ${path}`);
     const fullFilePath = isAbsolute(path) ? path : resolve(getCwd(), path);
     const result = listDirectory(fullFilePath, getCwd()).sort();
     const tree = createFileTree(result);

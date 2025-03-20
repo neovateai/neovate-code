@@ -23,7 +23,6 @@ GlobTool
     path: z.string().optional().describe('The directory to search in'),
   }),
   execute: async ({ pattern, path }) => {
-    console.log(`[GlobTool] Searching for files matching pattern: ${pattern}`);
     const start = Date.now();
     const paths = await glob([pattern], {
       cwd: path ?? getCwd(),

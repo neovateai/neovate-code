@@ -36,7 +36,7 @@ export const ArchitectTool = tool({
       ? `<context>${context}</context>\n\n${prompt}`
       : prompt;
     const result = await query({
-      model: getModel('Doubao/deepseek-chat'),
+      model: 'Doubao/ep-20250210151255-r5x5s',
       messages: [{ role: 'user', content }],
       // TODO: add tools
       tools: {},

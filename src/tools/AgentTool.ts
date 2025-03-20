@@ -23,7 +23,6 @@ export const AgentTool = tool({
     prompt: z.string().describe('The task for agent to perform'),
   }),
   execute: async ({ prompt }) => {
-    console.log(`[AgentTool] Starting agent with prompt: ${prompt}`);
     throw new Error('Not implemented');
     // const start = Date.now();
     // const result = await query({

@@ -22,7 +22,6 @@ The tool simply logs your thought process for better transparency and does not e
     thought: z.string().describe('Your thoughts.'),
   }),
   execute: async ({ thought }) => {
-    console.log(`[ThinkTool] Logging thought: ${thought}`);
     return {
       thought,
     };

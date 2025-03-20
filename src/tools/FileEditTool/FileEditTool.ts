@@ -41,7 +41,6 @@ export const fileEditTool = tool({
     new_string: z.string().describe('The text to replace the old_string with'),
   }),
   execute: async ({ file_path, old_string, new_string }) => {
-    console.log(`[FileEditTool] Editing file: ${file_path}`);
     const { patch, updatedFile } = applyEdit(file_path, old_string, new_string);
     const fullFilePath = isAbsolute(file_path)
       ? file_path

@@ -1,4 +1,5 @@
 // import { AgentTool } from './tools/AgentTool';
+import { Tool } from 'ai';
 import { bashTool } from './tools/BashTool';
 import { fileEditTool } from './tools/FileEditTool/FileEditTool';
 import { fileReadTool } from './tools/FileReadTool';
@@ -7,6 +8,7 @@ import { globTool } from './tools/GlobTool';
 import { grepTool } from './tools/GrepTool';
 import { lsTool } from './tools/LsTool';
 import { ThinkTool } from './tools/ThinkTool';
+import { logTool } from './logger';
 
 export const getAllTools = () => {
   return {
@@ -30,4 +32,19 @@ export const getTools = async () => {
     ...tools,
     ...mcpTools,
   };
+};
+
+export const withLogger = (tools: Record<string, Tool>) => {
+  return Object.fromEntries(
+    Object.entries(tools).map(([key, tool]) => {
+      const newTool = {
+        ...tool,
+        execute: async (args: any, options: any) => {
+          logTool(`Tool ${key} called with args: ${JSON.stringify(args)}`);
+          return tool.execute!(args, options);
+        },
+      };
+      return [key, newTool];
+    }),
+  );
 };

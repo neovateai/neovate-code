@@ -18,7 +18,6 @@ export const fileReadTool = tool({
     file_path: z.string(),
   }),
   execute: async ({ file_path }) => {
-    console.log(`[FileReadTool] Reading file: ${file_path}`);
     // TODO: truncate if needed
     const content = fs.readFileSync(file_path, 'utf8');
     const ext = path.extname(file_path).toLowerCase();

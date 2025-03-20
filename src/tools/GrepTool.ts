@@ -19,7 +19,6 @@ export const grepTool = tool({
       .describe('The file pattern to include in the search'),
   }),
   execute: async ({ pattern, path, include }) => {
-    console.log(`[GrepTool] Searching for pattern: ${pattern}`);
     const start = Date.now();
     const cmd = 'rg';
     const args = ['-li', pattern];

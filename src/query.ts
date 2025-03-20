@@ -1,5 +1,6 @@
 import { CoreMessage, Tool, generateText, streamText } from 'ai';
 import { ModelType, getModel } from './model';
+import { logAction, logInfo } from './logger';
 
 interface QueryOptions {
   messages: CoreMessage[];
@@ -21,7 +22,8 @@ export async function query(opts: QueryOptions) {
     outputStream = false,
   } = opts;
   const model = getModel(opts.model);
-  console.log('>> messages', JSON.stringify(messages, null, 2));
+  console.log();
+  logAction(`Asking model... (with ${messages.length} messages)`);
   const system = [
     ...systemPrompt,
     `As you answer the user's questions, you can use the following context:`,

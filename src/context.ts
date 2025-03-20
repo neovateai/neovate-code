@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { memoize, omit } from 'lodash-es';
 import { PRODUCT_NAME } from './constants/product';
 import { lsTool } from './tools/LsTool';
 import { execFileNoThrow } from './utils/execFileNoThrow';
@@ -139,7 +140,7 @@ export async function getReadme() {
   return fs.readFileSync(readmePath, 'utf-8');
 }
 
-export const getContext = async () => {
+export const getContext = memoize(async () => {
   const directoryStructure = await getDirectoryStructure();
   const gitStatus = await getGitStatus();
   const codeStyle = await getCodeStyle();
@@ -151,4 +152,4 @@ export const getContext = async () => {
     ...(codeStyle ? { codeStyle } : {}),
     ...(readme ? { readme } : {}),
   };
-};
+});

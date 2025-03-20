@@ -20,7 +20,6 @@ Before using this tool:
     content: z.string(),
   }),
   execute: async ({ file_path, content }) => {
-    console.log(`[FileWriteTool] Writing file: ${file_path}`);
     const fullFilePath = isAbsolute(file_path)
       ? file_path
       : resolve(getCwd(), file_path);

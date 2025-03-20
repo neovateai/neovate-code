@@ -54,7 +54,6 @@ Before using this tool, please follow these steps:
       .describe('Optional timeout in milliseconds (max 600000)'),
   }),
   execute: async ({ command, timeout = 1800000 }) => {
-    console.log(`[BashTool] Executing command: ${command}`);
     const result = execSync(command, { timeout });
     return result.toString();
   },
