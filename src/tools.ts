@@ -10,6 +10,7 @@ import { lsTool } from './tools/LsTool';
 import { ThinkTool } from './tools/ThinkTool';
 import { logTool } from './logger';
 import pc from 'picocolors';
+import { deserializeToolName } from './mcp';
 
 export const getAllTools = () => {
   return {
@@ -41,7 +42,7 @@ export const withLogger = (tools: Record<string, Tool>) => {
       const newTool = {
         ...tool,
         execute: async (args: any, options: any) => {
-          logTool(`Tool ${pc.bold(key)} called with args: ${JSON.stringify(args)}`);
+          logTool(`Tool ${pc.bold(deserializeToolName(key))} called with args: ${JSON.stringify(args)}`);
           return tool.execute!(args, options);
         },
       };
@@ -49,3 +50,4 @@ export const withLogger = (tools: Record<string, Tool>) => {
     }),
   );
 };
+
