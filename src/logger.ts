@@ -5,7 +5,7 @@ export function logError(message: string) {
 }
 
 export function logPrompt(message: string) {
-  console.log(pc.green(`> ${message}`));
+  console.log(pc.green(pc.bold(`> ${message}`)));
 }
 
 export function logTool(message: string) {

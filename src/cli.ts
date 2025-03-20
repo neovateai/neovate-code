@@ -25,9 +25,11 @@ async function main() {
   if (argv._.length > 0) {
     let prompt = argv._[0] as string;
     if (argv._[0] === 'init') {
+      logPrompt('/init');
       prompt = INIT_PROMPT;
+    } else {
+      logPrompt(prompt);
     }
-    logPrompt(prompt);
     console.log();
     messages = [{ role: 'user', content: prompt }];
   } else {

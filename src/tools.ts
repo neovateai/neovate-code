@@ -9,6 +9,7 @@ import { grepTool } from './tools/GrepTool';
 import { lsTool } from './tools/LsTool';
 import { ThinkTool } from './tools/ThinkTool';
 import { logTool } from './logger';
+import pc from 'picocolors';
 
 export const getAllTools = () => {
   return {
@@ -40,7 +41,7 @@ export const withLogger = (tools: Record<string, Tool>) => {
       const newTool = {
         ...tool,
         execute: async (args: any, options: any) => {
-          logTool(`Tool ${key} called with args: ${JSON.stringify(args)}`);
+          logTool(`Tool ${pc.bold(key)} called with args: ${JSON.stringify(args)}`);
           return tool.execute!(args, options);
         },
       };
