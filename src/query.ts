@@ -1,6 +1,6 @@
 import { CoreMessage, Tool, generateText, streamText } from 'ai';
 import { ModelType, getModel } from './model';
-import { logAction, logInfo } from './logger';
+import { logAction, logInfo, logMessages, logQueryResult } from './logger';
 
 interface QueryOptions {
   messages: CoreMessage[];
@@ -24,6 +24,7 @@ export async function query(opts: QueryOptions) {
   const model = getModel(opts.model);
   console.log();
   logAction(`Asking model... (with ${messages.length} messages)`);
+  logMessages(messages);
   const system = [
     ...systemPrompt,
     `As you answer the user's questions, you can use the following context:`,
@@ -43,12 +44,14 @@ export async function query(opts: QueryOptions) {
         process.stdout.write(text + '\n');
       }
     }
-    return {
+    const finalResult = {
       steps: await result.steps,
       toolCalls: await result.toolCalls,
       toolResults: await result.toolResults,
       text: await result.text,
     };
+    logQueryResult(finalResult);
+    return finalResult;
   } else {
     const result = await generateText({
       model,
@@ -56,6 +59,7 @@ export async function query(opts: QueryOptions) {
       system,
       tools,
     });
+    logQueryResult(result);
     return result;
   }
 }

@@ -43,7 +43,7 @@ async function main() {
     process.exit(1);
   }
   const stream = (() => {
-    if (model === 'Google/gemini-2.0-pro-exp-02-05') {
+    if (model === 'Google/gemini-2.0-pro-exp-02-05' || model === 'Google/gemini-2.5-pro-exp-03-25') {
       return false;
     }
     return argv.stream !== 'false';
@@ -54,10 +54,10 @@ async function main() {
   );
   const mcpConfig = (() => {
     if (fs.existsSync(mcpConfigPath)) {
-      console.log(`Using MCP config from ${path.relative(getCwd(), mcpConfigPath)}`);
+      logInfo(`Using MCP config from ${path.relative(getCwd(), mcpConfigPath)}`);
       return JSON.parse(fs.readFileSync(mcpConfigPath, 'utf-8'));
     } else {
-      console.log(`No MCP config found at ${path.relative(getCwd(), mcpConfigPath)}`);
+      logInfo(`No MCP config found at ${path.relative(getCwd(), mcpConfigPath)}`);
       return {};
     }
   })();
@@ -65,7 +65,6 @@ async function main() {
   logInfo(`Using model: ${model}`);
   logInfo(`Using stream: ${stream}`);
   logInfo(`Using MCP servers: ${Object.keys(mcpConfig.mcpServers || {}).join(', ')}`);
-  console.log();
 
   const clients = await createClients(mcpConfig.mcpServers || {});
   const tools = withLogger({

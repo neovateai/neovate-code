@@ -8,11 +8,19 @@ export function logPrompt(message: string) {
   console.log(pc.green(pc.bold(`> ${message}`)));
 }
 
-export function logTool(message: string) {
-  console.log(pc.blue(message));
+export function logMessages(messages: any[]) {
+  if (process.env.DEBUG) {
+    console.log(pc.gray(`>>> Messages: ${messages}`));
+  }
 }
 
-export function logMcp(message: string) {
+export function logQueryResult(result: any) {
+  if (process.env.DEBUG) {
+    console.log(pc.gray(`<<< Query Result: ${JSON.stringify(result, null, 2)}`));
+  }
+}
+
+export function logTool(message: string) {
   console.log(pc.blue(message));
 }
 
