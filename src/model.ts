@@ -45,6 +45,7 @@ const GOOGLE_MODELS = [
   'Google/gemini-2.0-flash-001',
   'Google/gemini-2.0-flash-thinking-exp-01-21', // don't support tools
   'Google/gemini-2.0-pro-exp-02-05',
+  'Google/gemini-2.5-pro-exp-03-25',
   'Google/gemma-3-27b-it', // don't support tools
 ] as const;
 const SILICONFLOW_MODELS = [
@@ -76,6 +77,7 @@ const OPEN_ROUTER_MODELS = [
   'OpenRouter/anthropic/claude-3.7-sonnet',
   'OpenRouter/anthropic/claude-3.7-sonnet-thought',
   'OpenRouter/mistralai/mistral-small-3.1-24b-instruct',
+  'OpenRouter/deepseek/deepseek-chat-v3-0324',
 ] as const;
 const TENCENT_MODELS = [
   'Tencent/deepseek-v3', // don't support tools

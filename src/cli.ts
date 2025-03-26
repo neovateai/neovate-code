@@ -46,7 +46,7 @@ async function main() {
     if (model === 'Google/gemini-2.0-pro-exp-02-05') {
       return false;
     }
-    return true;
+    return argv.stream !== 'false';
   })();
   const mcpConfigPath = path.join(
     getCwd(),
