@@ -10,7 +10,7 @@ export function logPrompt(message: string) {
 
 export function logMessages(messages: any[]) {
   if (process.env.DEBUG) {
-    console.log(pc.gray(`>>> Messages: ${messages}`));
+    console.log(pc.gray(`>>> Messages: ${JSON.stringify(messages, null, 2)}`));
   }
 }
 

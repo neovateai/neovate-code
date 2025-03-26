@@ -4,6 +4,30 @@ function getCwd(): string {
   return process.cwd();
 }
 
+export function getPlanPrompt(): string[] {
+  return [
+    `
+我们现在进入的是 Plan Mode 。
+
+1、除 Plan.md 外不要修改和添加任何文件，而是要产出完整详细的 step by step 的执行计划。
+2、如果用户的需求不明确，请不要直接制定计划，而是先要求用户补充信息，以帮助用户更清楚地理清楚需求。一旦这些问题得到解答，写一份详尽的执行计划。
+3、如果用户调整了需求，则需要重新产出执行计划。
+4、需要用 FileEditTool 或 FileWriteTool 保存记录到 Plan.md 文件里。这个文件里面包含两部分：一部分是用户的需求，另一部分是你需要产出的详尽的计划。
+比如。
+<requirements>
+...
+</requirements>
+<plans>
+</plans>
+5、requirements 和 plans 的部分都需要不断调整和迭代，其中 requirements 需要做合并和总结且始终包含原始需求，而 plans 需要重新写一份。
+6、如果 plan.md 编写完成，请返回 DONE，以便于我结束整个流程。
+7、请用中文回复。
+
+用户的需求如下。
+    `,
+  ];
+}
+
 export function getSystemPrompt(): string[] {
   const env = {
     platform: 'macOS',

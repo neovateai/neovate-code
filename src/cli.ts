@@ -1,17 +1,19 @@
 #!/usr/bin/env -S node --no-warnings=ExperimentalWarning
 import { CoreMessage } from 'ai';
+import assert from 'assert';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import yParser from 'yargs-parser';
 import { INIT_PROMPT } from './commands/init';
 import { PRODUCT_NAME } from './constants/product';
-import { getSystemPrompt } from './constants/prompts';
+import { getPlanPrompt, getSystemPrompt } from './constants/prompts';
 import { getContext } from './context';
 import { logError, logInfo, logPrompt } from './logger';
 import { closeClients, createClients, getClientsTools } from './mcp';
 import { query } from './query';
 import { getTools, withLogger } from './tools';
+import inquirer from 'inquirer';
 
 function getCwd() {
   return process.cwd();
@@ -21,12 +23,25 @@ async function main() {
   dotenv.config();
   const argv = yParser(process.argv.slice(2));
 
+  let disableMCP = false;
+  let planMode = false;
   let messages: CoreMessage[] = [];
+  const extraSystemPrompts: string[] = [];
   if (argv._.length > 0) {
     let prompt = argv._[0] as string;
     if (argv._[0] === 'init') {
       logPrompt('/init');
+      disableMCP = true;
       prompt = INIT_PROMPT;
+    } else if (argv._[0] === 'plan') {
+      logPrompt('/plan');
+      disableMCP = true;
+      planMode = true;
+      prompt = `
+${getPlanPrompt().join('\n')}
+${argv._[1]}
+      `;
+      assert(prompt, 'Prompt is required');
     } else {
       logPrompt(prompt);
     }
@@ -43,7 +58,10 @@ async function main() {
     process.exit(1);
   }
   const stream = (() => {
-    if (model === 'Google/gemini-2.0-pro-exp-02-05' || model === 'Google/gemini-2.5-pro-exp-03-25') {
+    if (
+      model === 'Google/gemini-2.0-pro-exp-02-05' ||
+      model === 'Google/gemini-2.5-pro-exp-03-25'
+    ) {
       return false;
     }
     return argv.stream !== 'false';
@@ -54,17 +72,23 @@ async function main() {
   );
   const mcpConfig = (() => {
     if (fs.existsSync(mcpConfigPath)) {
-      logInfo(`Using MCP config from ${path.relative(getCwd(), mcpConfigPath)}`);
+      logInfo(
+        `Using MCP config from ${path.relative(getCwd(), mcpConfigPath)}`,
+      );
       return JSON.parse(fs.readFileSync(mcpConfigPath, 'utf-8'));
     } else {
-      logInfo(`No MCP config found at ${path.relative(getCwd(), mcpConfigPath)}`);
+      logInfo(
+        `No MCP config found at ${path.relative(getCwd(), mcpConfigPath)}`,
+      );
       return {};
     }
   })();
 
   logInfo(`Using model: ${model}`);
   logInfo(`Using stream: ${stream}`);
-  logInfo(`Using MCP servers: ${Object.keys(mcpConfig.mcpServers || {}).join(', ')}`);
+  logInfo(
+    `Using MCP servers: ${Object.keys(mcpConfig.mcpServers || {}).join(', ')}`,
+  );
 
   const clients = await createClients(mcpConfig.mcpServers || {});
   const tools = withLogger({
@@ -77,7 +101,10 @@ async function main() {
       const result = await query({
         messages,
         context,
-        systemPrompt: getSystemPrompt(),
+        systemPrompt: [
+          ...getSystemPrompt(),
+          ...extraSystemPrompts,
+        ],
         model,
         tools,
         stream,
@@ -102,7 +129,23 @@ async function main() {
       } else {
         // console.log(`>> result.text: ${result.text}`);
         logInfo(`${result.text}`);
-        break;
+        if (planMode) {
+          if (result.text.toUpperCase().includes('DONE')) {
+            break;
+          } else {
+            const input = await inquirer.prompt([
+              {
+                type: 'input',
+                name: 'input',
+                message: 'Answer: ',
+              },
+            ]);
+            assert(input, 'Input is required');
+            messages.push({ role: 'user', content: input.input });
+          }
+        } else {
+          break;
+        }
       }
     }
   } catch (error) {
