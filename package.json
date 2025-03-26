@@ -39,7 +39,8 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.2.1",
-    "ai": "^4.1.61",
+    "@types/lodash-es": "^4.17.12",
+    "ai": "^4.2.5",
     "dotenv": "^16.4.7",
     "glob": "^11.0.1",
     "lodash-es": "^4.17.21",

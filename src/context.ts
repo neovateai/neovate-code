@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { memoize, omit } from 'lodash-es';
+import { memoize } from 'lodash-es';
 import { PRODUCT_NAME } from './constants/product';
 import { lsTool } from './tools/LsTool';
 import { execFileNoThrow } from './utils/execFileNoThrow';
