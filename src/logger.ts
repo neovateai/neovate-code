@@ -8,15 +8,9 @@ export function logPrompt(message: string) {
   console.log(pc.green(pc.bold(`> ${message}`)));
 }
 
-export function logMessages(messages: any[]) {
+export function logDebug(message: string) {
   if (process.env.DEBUG) {
-    console.log(pc.gray(`>>> Messages: ${JSON.stringify(messages, null, 2)}`));
-  }
-}
-
-export function logQueryResult(result: any) {
-  if (process.env.DEBUG) {
-    console.log(pc.gray(`<<< Query Result: ${JSON.stringify(result, null, 2)}`));
+    console.log(pc.gray(`>>> ${message}`));
   }
 }
 

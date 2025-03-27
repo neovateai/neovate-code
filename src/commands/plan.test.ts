@@ -1,5 +1,9 @@
 import { expect, test } from 'vitest';
-import { askUserForMoreInformation, isRequirementsComplete, removeThinkTags } from './plan';
+import {
+  askUserForMoreInformation,
+  isRequirementsComplete,
+  removeThinkTags,
+} from './plan';
 
 // test('isRequirementsComplete', async () => {
 //   const result = await isRequirementsComplete(['create a.txt include text foo']);

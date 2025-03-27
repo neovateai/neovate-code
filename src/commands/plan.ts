@@ -1,6 +1,7 @@
 import assert from 'assert';
 import fs from 'fs';
 import inquirer from 'inquirer';
+import { Config } from '../config';
 import { logInfo } from '../logger';
 import { query } from '../query';
 
@@ -9,13 +10,15 @@ const MAX_STEPS = 5;
 export async function runPlan(opts: {
   prompt: string;
   maxSteps?: number;
+  config: Config;
 }) {
+  const { config } = opts;
   assert(opts.prompt, 'Prompt is required');
   let requirements = [opts.prompt];
   let steps = 0;
   const maxSteps = opts.maxSteps || MAX_STEPS;
   while (true) {
-    const isComplete = await isRequirementsComplete(requirements);
+    const isComplete = await isRequirementsComplete(requirements, config);
     logInfo(`> isComplete: ${isComplete}`);
     if (isComplete) {
       break;
@@ -24,7 +27,7 @@ export async function runPlan(opts: {
     if (steps > maxSteps) {
       break;
     }
-    const moreInfo = await askUserForMoreInformation(requirements);
+    const moreInfo = await askUserForMoreInformation(requirements, config);
     requirements.push(removeThinkTags(moreInfo));
     logInfo(`> Need more information: \n${removeThinkTags(moreInfo)}`);
     const result = await inquirer.prompt([
@@ -37,7 +40,7 @@ export async function runPlan(opts: {
     requirements.push(result.input);
   }
   logInfo(`> request for detailed plan`);
-  const detailedPlan = await requestDetailedPlan(requirements);
+  const detailedPlan = await requestDetailedPlan(requirements, config);
   fs.writeFileSync('Plan.md', removeThinkTags(detailedPlan));
 }
 
@@ -60,7 +63,10 @@ export function removeThinkTags(text: string) {
   return text;
 }
 
-export async function requestDetailedPlan(requirements: string[]) {
+export async function requestDetailedPlan(
+  requirements: string[],
+  config: Config,
+) {
   const result = await query({
     systemPrompt: [
       `You are a helpful assistant that produces a detailed step by step plan for the user's requirements.`,
@@ -74,7 +80,7 @@ ${requirements.join('\n')}
         `,
       },
     ],
-    model: 'Groq/qwen-qwq-32b',
+    model: config.model,
     context: {},
     tools: {},
     stream: false,
@@ -82,7 +88,10 @@ ${requirements.join('\n')}
   return result.text;
 }
 
-export async function askUserForMoreInformation(requirements: string[]) {
+export async function askUserForMoreInformation(
+  requirements: string[],
+  config: Config,
+) {
   const result = await query({
     systemPrompt: [
       `Don't answer the user's question, just ask the user for more information for better quality answer later.`,
@@ -96,7 +105,7 @@ ${requirements.join('\n')}
         `,
       },
     ],
-    model: 'Groq/qwen-qwq-32b',
+    model: config.smallModel,
     context: {},
     tools: {},
     stream: false,
@@ -104,7 +113,10 @@ ${requirements.join('\n')}
   return result.text;
 }
 
-export async function isRequirementsComplete(requirements: string[]) {
+export async function isRequirementsComplete(
+  requirements: string[],
+  config: Config,
+) {
   const result = await query({
     systemPrompt: [
       `You are a helpful assistant that checks if the requirements are complete. answer YES or NO.`,
@@ -118,7 +130,7 @@ ${requirements.join('\n')}
         `,
       },
     ],
-    model: 'Groq/qwen-qwq-32b',
+    model: config.smallModel,
     context: {},
     tools: {},
     stream: false,
