@@ -64,7 +64,9 @@ export async function getConfig(opts: {
   })();
 
   const builtinTools = await getTools();
-  const context = await getContext();
+  const context = await getContext({
+    codebase: argv.codebase,
+  });
   return {
     model,
     smallModel,

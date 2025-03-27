@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { memoize } from 'lodash-es';
 import path from 'path';
+import { getCodebaseContext } from './codebase';
 import { PRODUCT_NAME } from './constants/product';
 import { lsTool } from './tools/LsTool';
 import { execFileNoThrow } from './utils/execFileNoThrow';
@@ -140,16 +141,31 @@ export async function getReadme() {
   return fs.readFileSync(readmePath, 'utf-8');
 }
 
-export const getContext = memoize(async () => {
+type ContextResult = {
+  directoryStructure?: string;
+  gitStatus?: string;
+  codeStyle?: string;
+  readme?: string;
+};
+
+export const getContext: (opts: {
+  codebase?: boolean | string;
+}) => Promise<ContextResult> = memoize(async (opts) => {
   const directoryStructure = await getDirectoryStructure();
   const gitStatus = await getGitStatus();
   const codeStyle = await getCodeStyle();
   const readme = await getReadme();
+  const codebase = opts.codebase
+    ? await getCodebaseContext({
+        include: typeof opts.codebase === 'string' ? opts.codebase : undefined,
+      })
+    : undefined;
   return {
     // TODO: ...config.context
     ...(directoryStructure ? { directoryStructure } : {}),
     ...(gitStatus ? { gitStatus } : {}),
     ...(codeStyle ? { codeStyle } : {}),
     ...(readme ? { readme } : {}),
+    ...(codebase ? { codebase } : {}),
   };
 });

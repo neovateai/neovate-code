@@ -1,12 +1,12 @@
 #!/usr/bin/env -S node --no-warnings=ExperimentalWarning
 import dotenv from 'dotenv';
 import yParser from 'yargs-parser';
+import { getCodebaseContext } from './codebase';
 import { runAct } from './commands/act';
 import { runInit } from './commands/init';
 import { runPlan } from './commands/plan';
 import { getConfig, printConfig } from './config';
 import { logError, logPrompt } from './logger';
-import { getCodebaseContext } from './codebase';
 
 async function main() {
   dotenv.config();

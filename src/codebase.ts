@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import util from 'util';
 
-const REPOMIX_COMMAND = 'repomix --include "src,package.json,README.md"';
+const REPOMIX_COMMAND = 'repomix';
 const OUTPUT_FILENAME = 'repomix-output.txt';
 const MAX_FILE_SIZE_BYTES = 500 * 1024;
 const OUTPUT_FILE_PATH = path.resolve(process.cwd(), OUTPUT_FILENAME);
@@ -16,13 +16,21 @@ const OUTPUT_FILE_PATH = path.resolve(process.cwd(), OUTPUT_FILENAME);
  * @returns {Promise<string>} 返回 repomix-output.txt 的文件内容。
  * @throws {Error} 如果 repomix 命令未找到、执行失败、输出文件不存在或过大，则抛出错误。
  */
-export async function getCodebaseContext(): Promise<string> {
+export async function getCodebaseContext(opts: {
+  include?: string;
+}): Promise<string> {
   const execPromise = util.promisify(child_process.exec);
 
-  console.log(`正在执行命令: ${REPOMIX_COMMAND}`);
+  const include = opts.include || 'src,package.json,README.md';
+  const command = `${REPOMIX_COMMAND} --include "${include}"`;
+
+  if (fs.existsSync(OUTPUT_FILE_PATH)) {
+    fs.unlinkSync(OUTPUT_FILE_PATH);
+  }
+  console.log(`正在执行命令: ${command}`);
 
   try {
-    const { stdout, stderr } = await execPromise(REPOMIX_COMMAND);
+    const { stdout, stderr } = await execPromise(command);
     if (stdout) console.log('repomix stdout:', stdout);
     if (stderr) console.warn('repomix stderr:', stderr);
 

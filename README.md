@@ -11,7 +11,7 @@ AI pair programming CLI that enhances your development workflow.
 ## Usage
 
 ```bash
-$ npx -y takumi <prompt> --model=<model>
+$ npx -y takumi <prompt> --model=<model> --small-model=<smallModel> --codebase
 ```
 
 ### Usage Examples
