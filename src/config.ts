@@ -77,6 +77,7 @@ export async function getConfig(opts: {
 
 export function printConfig(config: Config) {
   logInfo(`Using model: ${config.model}`);
+  logInfo(`Using small model: ${config.smallModel}`);
   logInfo(`Using stream: ${config.stream}`);
   logInfo(
     `Using MCP servers: ${Object.keys(config.mcpConfig.mcpServers || {}).join(', ')}`,

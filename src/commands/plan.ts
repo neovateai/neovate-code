@@ -42,6 +42,7 @@ export async function runPlan(opts: {
   logInfo(`> request for detailed plan`);
   const detailedPlan = await requestDetailedPlan(requirements, config);
   fs.writeFileSync('Plan.md', removeThinkTags(detailedPlan));
+  logInfo(`> Plan saved to Plan.md`);
 }
 
 /**
@@ -69,7 +70,7 @@ export async function requestDetailedPlan(
 ) {
   const result = await query({
     systemPrompt: [
-      `You are a helpful assistant that produces a detailed step by step plan for the user's requirements.`,
+      `You are a helpful assistant that produces a detailed step by step plan for the user's requirements. In Chinese.`,
     ],
     messages: [
       {
@@ -94,7 +95,7 @@ export async function askUserForMoreInformation(
 ) {
   const result = await query({
     systemPrompt: [
-      `Don't answer the user's question, just ask the user for more information for better quality answer later.`,
+      `Don't answer the user's question, just ask the user for more information for better quality answer later. Answer in Chinese.`,
     ],
     messages: [
       {
