@@ -81,7 +81,7 @@ ${requirements.join('\n')}
       },
     ],
     model: config.model,
-    context: {},
+    context: config.context,
     tools: {},
     stream: false,
   });
@@ -106,7 +106,7 @@ ${requirements.join('\n')}
       },
     ],
     model: config.smallModel,
-    context: {},
+    context: config.context,
     tools: {},
     stream: false,
   });
@@ -131,7 +131,7 @@ ${requirements.join('\n')}
       },
     ],
     model: config.smallModel,
-    context: {},
+    context: config.context,
     tools: {},
     stream: false,
   });
