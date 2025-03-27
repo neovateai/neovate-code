@@ -6,6 +6,31 @@ import { logInfo } from '../logger';
 import { query } from '../query';
 
 const MAX_STEPS = 5;
+const REQUIREMENTS_FILE = 'REQUIREMENTS.md';
+const DONE_MARK = '!DONE';
+
+function writeRequirementsToFile(requirements: string[]) {
+  fs.writeFileSync(REQUIREMENTS_FILE, requirements.join('\n'), 'utf-8');
+  logInfo(
+    `> Requirements saved to ${REQUIREMENTS_FILE}. You can edit this file directly to modify requirements.`,
+  );
+}
+
+function readRequirementsFromFile(): string[] {
+  if (!fs.existsSync(REQUIREMENTS_FILE)) {
+    return [];
+  }
+  const requirements = fs
+    .readFileSync(REQUIREMENTS_FILE, 'utf-8')
+    .split('\n')
+    .filter(Boolean);
+  if (requirements.length > 0) {
+    logInfo(
+      `> Loaded ${requirements.length} existing requirements from ${REQUIREMENTS_FILE}`,
+    );
+  }
+  return requirements;
+}
 
 export async function runPlan(opts: {
   prompt: string;
@@ -14,7 +39,9 @@ export async function runPlan(opts: {
 }) {
   const { config } = opts;
   assert(opts.prompt, 'Prompt is required');
-  let requirements = [opts.prompt];
+  let requirements = readRequirementsFromFile();
+  requirements.push(opts.prompt);
+  writeRequirementsToFile(requirements);
   let steps = 0;
   const maxSteps = opts.maxSteps || MAX_STEPS;
   while (true) {
@@ -29,6 +56,7 @@ export async function runPlan(opts: {
     }
     const moreInfo = await askUserForMoreInformation(requirements, config);
     requirements.push(removeThinkTags(moreInfo));
+    writeRequirementsToFile(requirements);
     logInfo(`> Need more information: \n${removeThinkTags(moreInfo)}`);
     const result = await inquirer.prompt([
       {
@@ -38,6 +66,7 @@ export async function runPlan(opts: {
       },
     ]);
     requirements.push(result.input);
+    writeRequirementsToFile(requirements);
   }
   logInfo(`> request for detailed plan`);
   const detailedPlan = await requestDetailedPlan(requirements, config);
@@ -118,6 +147,9 @@ export async function isRequirementsComplete(
   requirements: string[],
   config: Config,
 ) {
+  if (requirements.some((req) => req.includes(DONE_MARK))) {
+    return true;
+  }
   const result = await query({
     systemPrompt: [
       `You are a helpful assistant that checks if the requirements are complete. answer YES or NO.`,
