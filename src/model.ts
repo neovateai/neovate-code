@@ -30,6 +30,7 @@ import { createOllama } from 'ollama-ai-provider';
 | OpenRouter | openai/gpt-4-turbo | ✅ |
 | OpenRouter | anthropic/claude-3.5-sonnet | ✅ |
 | Ollama | qwq:32b | ❌ |
+| Inference | * | ❌ |
 */
 
 const GROQ_MODELS = [
@@ -100,6 +101,13 @@ const GROKMIRROR_MODELS = [
   'GrokMirror/grok-3-think',
   'GrokMirror/grok-3-deepsearch',
 ] as const;
+const INFERENCE_MODELS = [
+  'Inference/deepseek/deepseek-r1/fp-8',
+  'Inference/deepseek/deepseek-v3/fp-8',
+  'Inference/deepseek/deepseek-v3-0324/fp-8',
+  'Inference/google/gemma-3-27b-instruct/bf-16',
+  'Inference/qwen/qwen2.5-7b-instruct/bf-16',
+] as const;
 
 export type ModelType =
   | (typeof GROQ_MODELS)[number]
@@ -113,7 +121,8 @@ export type ModelType =
   | (typeof TENCENT_MODELS)[number]
   | (typeof OLLAMA_MODELS)[number]
   | (typeof VSCODE_MODELS)[number]
-  | (typeof GROKMIRROR_MODELS)[number];
+  | (typeof GROKMIRROR_MODELS)[number]
+  | (typeof INFERENCE_MODELS)[number];
 
 export function getModel(model: ModelType) {
   let apiKey;
@@ -159,6 +168,10 @@ export function getModel(model: ModelType) {
   } else if (GROKMIRROR_MODELS.includes(model as any)) {
     apiKey = process.env.GROKMIRROR_API_KEY;
     baseURL = process.env.GROKMIRROR_BASE_URL;
+  } else if (INFERENCE_MODELS.includes(model as any)) {
+    apiKey = process.env.INFERENCE_API_KEY;
+    baseURL = 'https://api.inference.net/v1';
+    console.log('Inference model', model, apiKey, baseURL);
   } else {
     throw new Error(`Unsupported model: ${model}`);
   }

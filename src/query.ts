@@ -68,7 +68,7 @@ export async function query(opts: QueryOptions) {
   const model = getModel(opts.model);
   console.log();
   logAction(`Asking model... (with ${messages.length} messages)`);
-  logDebug(`>>> Messages: ${JSON.stringify(messages, null, 2)}`);
+  logDebug(`Messages: ${JSON.stringify(messages, null, 2)}`);
   const system = [
     ...systemPrompt,
     `As you answer the user's questions, you can use the following context:`,
@@ -94,7 +94,7 @@ export async function query(opts: QueryOptions) {
       toolResults: await result.toolResults,
       text: await result.text,
     };
-    logDebug(`>>> Query Result: ${JSON.stringify(finalResult, null, 2)}`);
+    logDebug(`Query Result: ${JSON.stringify(finalResult, null, 2)}`);
     return finalResult;
   } else {
     const result = await generateText({

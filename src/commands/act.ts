@@ -1,6 +1,6 @@
 import { Config } from '../config';
 import { getSystemPrompt } from '../constants/prompts';
-import { logError, logInfo } from '../logger';
+import { logDebug, logError, logInfo } from '../logger';
 import { closeClients, createClients, getClientsTools } from '../mcp';
 import { queryWithTools } from '../query';
 import { withLogger } from '../tools';
@@ -22,9 +22,10 @@ export async function runAct(opts: { prompt: string; config: Config }) {
       context,
       tools,
     });
-  } catch (error) {
+  } catch (error: any) {
     logError('Error in act:');
-    console.error(error);
+    logError(error.message);
+    logDebug(error.stack);
   } finally {
     await closeClients(clients);
   }
