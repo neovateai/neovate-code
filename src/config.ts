@@ -26,7 +26,7 @@ export async function getConfig(opts: {
 }): Promise<Config> {
   const { argv } = opts;
 
-  const model = argv.model;
+  const model = argv.model || 'OpenAI/gpt-3.5-turbo-0613';
   if (!model) {
     throw new Error('Model is required');
   }

@@ -25,7 +25,9 @@ export async function runAct(opts: { prompt: string; config: Config }) {
   } catch (error: any) {
     logError('Error in act:');
     logError(error.message);
-    logDebug(error.stack);
+    if (process.env.DEBUG) {
+      console.error(error);
+    }
   } finally {
     await closeClients(clients);
   }

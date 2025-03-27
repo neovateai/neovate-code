@@ -6,6 +6,7 @@ import { runInit } from './commands/init';
 import { runPlan } from './commands/plan';
 import { getConfig, printConfig } from './config';
 import { logError, logPrompt } from './logger';
+import { getCodebaseContext } from './codebase';
 
 async function main() {
   dotenv.config();
@@ -20,6 +21,11 @@ async function main() {
     process.exit(1);
   }
   switch (command) {
+    // tmp command for testing
+    case '__test':
+      logPrompt('/__test');
+      await getCodebaseContext();
+      break;
     case 'plan':
       logPrompt('/plan');
       await runPlan({
