@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import yParser from 'yargs-parser';
 import { INIT_PROMPT } from './commands/init';
+import { runPlan } from './commands/plan';
 import { PRODUCT_NAME } from './constants/product';
 import { getPlanPrompt, getSystemPrompt } from './constants/prompts';
 import { getContext } from './context';
@@ -29,11 +30,17 @@ async function main() {
   const extraSystemPrompts: string[] = [];
   if (argv._.length > 0) {
     let prompt = argv._[0] as string;
-    if (argv._[0] === 'init') {
+    if (argv._[0] === 'plan') {
+      logPrompt('/plan');
+      await runPlan({
+        prompt: argv._[1] as string,
+      });
+      process.exit(0);
+    } else if (argv._[0] === 'init') {
       logPrompt('/init');
       disableMCP = true;
       prompt = INIT_PROMPT;
-    } else if (argv._[0] === 'plan') {
+    } else if (argv._[0] === 'plan(original)') {
       logPrompt('/plan');
       disableMCP = true;
       planMode = true;
