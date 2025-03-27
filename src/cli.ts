@@ -24,7 +24,7 @@ async function main() {
     // tmp command for testing
     case '__test':
       logPrompt('/__test');
-      await getCodebaseContext();
+      await getCodebaseContext({});
       break;
     case 'plan':
       logPrompt('/plan');
