@@ -42,6 +42,9 @@ export async function runPlan(opts: {
 }) {
   const { config } = opts;
   assert(opts.prompt, 'Prompt is required');
+  if (fs.existsSync(REQUIREMENTS_FILE)) {
+    fs.unlinkSync(REQUIREMENTS_FILE);
+  }
   let requirements = readRequirementsFromFile();
   requirements.push(opts.prompt);
   writeRequirementsToFile(opts.prompt);
