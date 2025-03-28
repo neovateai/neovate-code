@@ -37,6 +37,10 @@ async function main() {
       logPrompt('/init');
       await runInit({ config });
       break;
+    case 'act':
+      logPrompt('/act');
+      await runAct({ prompt: argv._[1] as string, config });
+      break;
     default:
       const prompt = command;
       logPrompt(prompt);
