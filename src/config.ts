@@ -103,7 +103,7 @@ function stringToMcpServerConfigs(mcpValues: string) {
   let i = 0;
   for (const value of values) {
     const config = stringToMcpServerConfig(value);
-    const name = `default-${i}`;
+    const name = `server-${i}`;
     configs[name] = config;
     i++;
   }
