@@ -50,6 +50,17 @@ export async function getConfig(opts: {
     `.${PRODUCT_NAME.toLowerCase()}/mcp.json`,
   );
   const mcpConfig = (() => {
+    // Check if mcp argument is provided
+    if (argv.mcp) {
+      const mcpValues = argv.mcp;
+      const mcpServers = stringToMcpServerConfigs(mcpValues);
+      logInfo(`Using MCP servers from command line: ${mcpValues}`);
+      return {
+        mcpServers,
+      };
+    }
+
+    // Fallback to config file if no mcp argument
     if (fs.existsSync(mcpConfigPath)) {
       logInfo(
         `Using MCP config from ${path.relative(getCwd(), mcpConfigPath)}`,
@@ -84,4 +95,34 @@ export function printConfig(config: Config) {
   logInfo(
     `Using MCP servers: ${Object.keys(config.mcpConfig.mcpServers || {}).join(', ')}`,
   );
+}
+
+function stringToMcpServerConfigs(mcpValues: string) {
+  const configs: Record<string, any> = {};
+  const values = mcpValues.split(',');
+  let i = 0;
+  for (const value of values) {
+    const config = stringToMcpServerConfig(value);
+    const name = `default-${i}`;
+    configs[name] = config;
+    i++;
+  }
+  return configs;
+}
+
+function stringToMcpServerConfig(mcpValue: string) {
+  const isSSE =
+    typeof mcpValue === 'string' && mcpValue.toLowerCase().startsWith('http');
+  if (isSSE) {
+    return {
+      type: 'sse',
+      url: mcpValue,
+    };
+  } else {
+    const parts = mcpValue.split(' ');
+    return {
+      command: parts[0],
+      args: parts.slice(1),
+    };
+  }
 }
