@@ -1,6 +1,7 @@
-import { Tool, experimental_createMCPClient } from 'ai';
+import { MCPTransport, Tool, experimental_createMCPClient as createMCPClient } from 'ai';
+import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
 
-type MCPClient = Awaited<ReturnType<typeof experimental_createMCPClient>>;
+type MCPClient = Awaited<ReturnType<typeof createMCPClient>>;
 /**
  *
     type: 'stdio',
@@ -27,17 +28,20 @@ type MCPServer =
     };
 
 export async function createClients(
-  servers: Record<string, MCPServer>,
+  servers: Record<string, MCPServer | MCPTransport>,
 ): Promise<Record<string, MCPClient>> {
   const clients: Record<string, MCPClient> = {};
-  for (const [name, server] of Object.entries(servers)) {
+  for (let [name, server] of Object.entries(servers)) {
     // Check if server has 'command' property to determine its type
     if ('command' in server) {
-      server.type = 'stdio';
+      server = new StdioMCPTransport({
+        command: server.command,
+        args: server.args,
+      });
     } else if ('url' in server) {
       server.type = 'sse';
     }
-    clients[name] = await experimental_createMCPClient({
+    clients[name] = await createMCPClient({
       transport: server as any,
     });
   }
