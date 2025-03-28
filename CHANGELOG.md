@@ -1,3 +1,29 @@
+## 0.0.4
+
+`2025-03-28`
+
+- refact: enhance MCP server configuration by improving server naming and command handling logic by [@sorrycc](https://github.com/sorrycc)
+- refact: update MCP client creation to use new transport types and improve server handling by [@sorrycc](https://github.com/sorrycc)
+- fix: rename default server naming convention to server-{index} in MCP server config by [@sorrycc](https://github.com/sorrycc)
+- feat: add act command as an alias by [@sorrycc](https://github.com/sorrycc)
+- feat: support --mcp to specify the mcp server by [@sorrycc](https://github.com/sorrycc)
+- fix: remove existing requirements file before updating with new prompt in plan command by [@sorrycc](https://github.com/sorrycc)
+- refact: update file handling in plan command and adjust .gitignore for new file names by [@sorrycc](https://github.com/sorrycc)
+- feat: implement requirements management in plan command with file read/write functionality by [@sorrycc](https://github.com/sorrycc)
+- fix: update getCodebaseContext call in CLI to use an empty object for improved context handling by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance CLI usage with new options for small model and codebase context by [@sorrycc](https://github.com/sorrycc)
+- feat: add getCodebaseContext function and temporary CLI command for testing by [@sorrycc](https://github.com/sorrycc)
+- fix: update context assignment in plan command to use config.context by [@sorrycc](https://github.com/sorrycc)
+- feat: add Inference models and enhance logging in query and act commands by [@sorrycc](https://github.com/sorrycc)
+- refact: act init and plan commands by [@sorrycc](https://github.com/sorrycc)
+- feat: new plan mode by [@sorrycc](https://github.com/sorrycc)
+- feat: basic plan mode by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance logging in CLI and query handling, adding support for new model and improved debug messages by [@sorrycc](https://github.com/sorrycc)
+- feat: add new models to the list and update CLI stream handling by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename tool name serialization functions and enhance deserialization for improved logging by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance logging and CLI prompt display by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.3
 
 `2025-03-20`
