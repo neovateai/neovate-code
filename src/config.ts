@@ -122,7 +122,6 @@ function stringToMcpServerConfig(mcpValue: string) {
   } else {
     const parts = mcpValue.split(' ');
     const command = parts[0];
-    console.log('command', command, parts);
     let name = 'command-server';
     const X_COMMANDS = ['npx', 'pnpx', 'tnpx', 'bunx', 'uvx'];
     if (X_COMMANDS.includes(parts[0])) {
