@@ -103,7 +103,7 @@ function stringToMcpServerConfigs(mcpValues: string) {
   let i = 0;
   for (const value of values) {
     const config = stringToMcpServerConfig(value);
-    const name = `server-${i}`;
+    const name = `${config.name}-${i}`;
     configs[name] = config;
     i++;
   }
@@ -115,13 +115,28 @@ function stringToMcpServerConfig(mcpValue: string) {
     typeof mcpValue === 'string' && mcpValue.toLowerCase().startsWith('http');
   if (isSSE) {
     return {
+      name: 'sse-server',
       type: 'sse',
       url: mcpValue,
     };
   } else {
     const parts = mcpValue.split(' ');
+    const command = parts[0];
+    console.log('command', command, parts);
+    let name = 'command-server';
+    const X_COMMANDS = ['npx', 'pnpx', 'tnpx', 'bunx', 'uvx'];
+    if (X_COMMANDS.includes(parts[0])) {
+      if (parts[1]) {
+        name = (parts[1] === '-y' && parts[2]) ? parts[2] : parts[1];
+      }
+    } else if (parts[0] === 'env' && X_COMMANDS.includes(parts[2])) {
+      if (parts[3]) {
+        name = parts[3] === '-y' && parts[4] ? parts[4] : parts[3];
+      }
+    }
     return {
-      command: parts[0],
+      name,
+      command,
       args: parts.slice(1),
     };
   }
