@@ -157,11 +157,19 @@ Create `.takumi/mcp.json` file.
 }
 ```
 
+> Obtain `YOUR_BRAVE_API_KEY` from [modelcontextprotocol.io](modelcontextprotocol.io)
+
 And then try the following commands.
 
 ```bash
 $ DEEPSEEK_API_KEY=sk-xxxx npx -y takumi --model=DeepSeek/deepseek-chat "fetch https://sorrycc.com/about and tell me who is sorrycc"
 $ DEEPSEEK_API_KEY=sk-xxxx npx -y takumi --model=DeepSeek/deepseek-chat "search and tell me how old is zhaobenshan"
+```
+
+> Error: spawn uvx ENOENT
+
+```base
+brew install uv
 ```
 
 ## License
