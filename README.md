@@ -157,7 +157,7 @@ Create `.takumi/mcp.json` file.
 }
 ```
 
-> Obtain `YOUR_BRAVE_API_KEY` from [modelcontextprotocol.io](modelcontextprotocol.io)
+> Obtain `YOUR_BRAVE_API_KEY` from https://brave.com/search/api/ .
 
 And then try the following commands.
 
