@@ -38,11 +38,12 @@ function readRequirementsFromFile(): string[] {
 export async function runPlan(opts: {
   prompt: string;
   maxSteps?: number;
+  clean?: boolean;
   config: Config;
 }) {
-  const { config } = opts;
+  const { config, clean = false } = opts;
   assert(opts.prompt, 'Prompt is required');
-  if (fs.existsSync(REQUIREMENTS_FILE)) {
+  if (fs.existsSync(REQUIREMENTS_FILE) && clean) {
     fs.unlinkSync(REQUIREMENTS_FILE);
   }
   let requirements = readRequirementsFromFile();
