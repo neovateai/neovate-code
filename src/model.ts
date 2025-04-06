@@ -70,10 +70,17 @@ const GROK_MODELS = [
 ] as const;
 const OPEN_ROUTER_MODELS = [
   'OpenRouter/qwen/qwq-32b', // don't support tools
-  'OpenRouter/openai/gpt-4o-2024-11-20', // function.description has 2014 string limit
   'OpenRouter/openai/o1-mini', // don't support tools
   'OpenRouter/openai/gpt-4-turbo', // function.description has 2014 string limit
   'OpenRouter/openai/gpt-3.5-turbo-0613',
+  'OpenRouter/openai/gpt-4.5-preview',
+  'OpenRouter/openai/o3-mini-high',
+  'OpenRouter/openai/o3-mini',
+  'OpenRouter/openai/o1',
+  'OpenRouter/openai/gpt-4-32k',
+  'OpenRouter/openai/gpt-4o', // function.description has 2014 string limit
+  'OpenRouter/openai/gpt-4o-mini',
+  'OpenRouter/openai/o1-preview',
   'OpenRouter/anthropic/claude-3.5-sonnet',
   'OpenRouter/anthropic/claude-3.7-sonnet',
   'OpenRouter/anthropic/claude-3.7-sonnet-thought',
@@ -108,6 +115,19 @@ const INFERENCE_MODELS = [
   'Inference/google/gemma-3-27b-instruct/bf-16',
   'Inference/qwen/qwen2.5-7b-instruct/bf-16',
 ] as const;
+const OPENAI_MODELS = [
+  'OpenAI/gpt-4.5-preview',
+  'OpenAI/o3-mini-high',
+  'OpenAI/o3-mini',
+  'OpenAI/o1',
+  'OpenAI/gpt-4-32k',
+  'OpenAI/gpt-4-turbo',
+  'OpenAI/gpt-4o',
+  'OpenAI/gpt-4o-mini',
+  'OpenAI/o1-preview',
+  'OpenAI/o1-mini',
+  'OpenAI/gpt-3.5-turbo-0613',
+] as const;
 
 export type ModelType =
   | (typeof GROQ_MODELS)[number]
@@ -122,7 +142,8 @@ export type ModelType =
   | (typeof OLLAMA_MODELS)[number]
   | (typeof VSCODE_MODELS)[number]
   | (typeof GROKMIRROR_MODELS)[number]
-  | (typeof INFERENCE_MODELS)[number];
+  | (typeof INFERENCE_MODELS)[number]
+  | (typeof OPENAI_MODELS)[number];
 
 export function getModel(model: ModelType) {
   let apiKey;
@@ -171,7 +192,9 @@ export function getModel(model: ModelType) {
   } else if (INFERENCE_MODELS.includes(model as any)) {
     apiKey = process.env.INFERENCE_API_KEY;
     baseURL = 'https://api.inference.net/v1';
-    console.log('Inference model', model, apiKey, baseURL);
+  } else if (OPENAI_MODELS.includes(model as any)) {
+    apiKey = process.env.OPENAI_API_KEY;
+    baseURL = 'https://api.openai.com/v1';
   } else {
     throw new Error(`Unsupported model: ${model}`);
   }

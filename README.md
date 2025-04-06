@@ -113,15 +113,38 @@ OpenRouter
 > Need to set `OPENROUTER_API_KEY` in the environment variables.
 
 - OpenRouter/qwen/qwq-32b (don't support tools)
-- OpenRouter/openai/gpt-4o-2024-11-20 (function.description has 2014 string limit)
-- OpenRouter/openai/o1-mini (don't support tools)
-- OpenRouter/openai/gpt-4-turbo (function.description has 2014 string limit)
+- OpenRouter/openai/gpt-4.5-preview
+- OpenRouter/openai/o3-mini-high
+- OpenRouter/openai/o3-mini
+- OpenRouter/openai/o1
+- OpenRouter/openai/gpt-4-32k
+- OpenRouter/openai/gpt-4-turbo
+- OpenRouter/openai/gpt-4o
+- OpenRouter/openai/gpt-4o-mini
+- OpenRouter/openai/o1-preview
+- OpenRouter/openai/o1-mini
 - OpenRouter/openai/gpt-3.5-turbo-0613
 - OpenRouter/anthropic/claude-3.5-sonnet
 - OpenRouter/anthropic/claude-3.7-sonnet
 - OpenRouter/anthropic/claude-3.7-sonnet-thought
 - OpenRouter/mistralai/mistral-small-3.1-24b-instruct
 - OpenRouter/deepseek/deepseek-chat-v3-0324
+
+OpenAI
+
+> Need to set `OPENAI_API_KEY` in the environment variables.
+
+- OpenAI/gpt-4.5-preview
+- OpenAI/o3-mini-high
+- OpenAI/o3-mini
+- OpenAI/o1
+- OpenAI/gpt-4-32k
+- OpenAI/gpt-4-turbo
+- OpenAI/gpt-4o
+- OpenAI/gpt-4o-mini
+- OpenAI/o1-preview
+- OpenAI/o1-mini
+- OpenAI/gpt-3.5-turbo-0613
 
 ### Usage Examples
 
