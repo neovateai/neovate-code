@@ -1,3 +1,14 @@
+## 0.0.6
+
+`2025-04-07`
+
+- feat: enhance context handling in getConfig and runAct to support conditional tool loading based on environment variable by [@sorrycc](https://github.com/sorrycc)
+- feat: update model lists in README and model.ts to include new OpenRouter and OpenAI models by [@sorrycc](https://github.com/sorrycc)
+- feat: add clean option to runPlan for removing requirements file by [@sorrycc](https://github.com/sorrycc)
+- Merge pull request #1 from umijs/docs-tips by @chencheng (云谦)
+- Update README.md by @chencheng (云谦)
+
+
 ## 0.0.5
 
 `2025-03-28`
