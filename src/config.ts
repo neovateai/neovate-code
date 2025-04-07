@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import yargsParser from 'yargs-parser';
 import { PRODUCT_NAME } from './constants/product';
+import { getSystemPrompt } from './constants/prompts';
 import { getContext } from './context';
 import { logInfo } from './logger';
 import { ModelType } from './model';
@@ -19,6 +20,7 @@ export type Config = {
   mcpConfig: any;
   builtinTools: Record<string, Tool>;
   context: Record<string, any>;
+  systemPrompt: string[];
 };
 
 export async function getConfig(opts: {
@@ -85,6 +87,7 @@ export async function getConfig(opts: {
     mcpConfig,
     builtinTools,
     context,
+    systemPrompt: getSystemPrompt(),
   };
 }
 
@@ -126,7 +129,7 @@ function stringToMcpServerConfig(mcpValue: string) {
     const X_COMMANDS = ['npx', 'pnpx', 'tnpx', 'bunx', 'uvx'];
     if (X_COMMANDS.includes(parts[0])) {
       if (parts[1]) {
-        name = (parts[1] === '-y' && parts[2]) ? parts[2] : parts[1];
+        name = parts[1] === '-y' && parts[2] ? parts[2] : parts[1];
       }
     } else if (parts[0] === 'env' && X_COMMANDS.includes(parts[2])) {
       if (parts[3]) {

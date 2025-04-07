@@ -1,13 +1,13 @@
 import { Config } from '../config';
-import { getSystemPrompt } from '../constants/prompts';
-import { logDebug, logError, logInfo } from '../logger';
+import { logError } from '../logger';
 import { closeClients, createClients, getClientsTools } from '../mcp';
 import { queryWithTools } from '../query';
 import { withLogger } from '../tools';
 
 export async function runAct(opts: { prompt: string; config: Config }) {
   const { config } = opts;
-  const { model, stream, builtinTools, context, mcpConfig } = config;
+  const { model, stream, builtinTools, context, mcpConfig, systemPrompt } =
+    config;
   const clients = await createClients(mcpConfig.mcpServers || {});
   const tools = withLogger({
     ...builtinTools,
@@ -16,7 +16,7 @@ export async function runAct(opts: { prompt: string; config: Config }) {
   try {
     await queryWithTools({
       messages: [{ role: 'user', content: opts.prompt }],
-      systemPrompt: getSystemPrompt(),
+      systemPrompt,
       model,
       stream,
       context,
