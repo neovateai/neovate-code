@@ -77,9 +77,15 @@ export async function getConfig(opts: {
   })();
 
   const builtinTools = await getTools();
-  const context = await getContext({
+  let context = await getContext({
     codebase: argv.codebase,
   });
+  let systemPrompt = getSystemPrompt();
+  if (process.env.CODE === 'none') {
+    systemPrompt = [];
+    context = {};
+  }
+  systemPrompt.push(`return one tool at most each time.`);
   return {
     model,
     smallModel,
@@ -87,7 +93,7 @@ export async function getConfig(opts: {
     mcpConfig,
     builtinTools,
     context,
-    systemPrompt: getSystemPrompt(),
+    systemPrompt,
   };
 }
 

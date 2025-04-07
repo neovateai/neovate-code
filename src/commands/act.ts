@@ -10,7 +10,7 @@ export async function runAct(opts: { prompt: string; config: Config }) {
     config;
   const clients = await createClients(mcpConfig.mcpServers || {});
   const tools = withLogger({
-    ...builtinTools,
+    ...(process.env.CODE === 'none' ? {} : builtinTools),
     ...(await getClientsTools(clients)),
   });
   try {
