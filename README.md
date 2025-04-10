@@ -106,7 +106,10 @@ Grok
 
 > Need to set `GROK_API_KEY` in the environment variables.
 
-- Grok/grok-2-1212 (don't work)
+- Grok/grok-3-mini-beta
+- Grok/grok-3-mini-fast-beta
+- Grok/grok-3-beta
+- Grok/grok-3-fast-beta
 
 OpenRouter
 
