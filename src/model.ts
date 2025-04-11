@@ -91,6 +91,7 @@ const OPEN_ROUTER_MODELS = [
   'OpenRouter/mistralai/mistral-small-3.1-24b-instruct',
   'OpenRouter/deepseek/deepseek-chat-v3-0324',
   'OpenRouter/openrouter/quasar-alpha',
+  'OpenRouter/openrouter/optimus-alpha',
 ] as const;
 const TENCENT_MODELS = [
   'Tencent/deepseek-v3', // don't support tools
