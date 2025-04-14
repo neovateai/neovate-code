@@ -58,13 +58,22 @@ export async function callTool(
   toolUse: {
     toolName: string;
     arguments: Record<string, string>;
-  }
+  },
+  timeout?: number,
 ) {
   const tool = tools[toolUse.toolName];
   if (!tool) {
     throw new Error(`Tool ${toolUse.toolName} not found`);
   }
-  return tool.execute!(toolUse.arguments, {} as any);
+
+  const toolPromise = tool.execute!(toolUse.arguments, {} as any);
+  timeout ||= 1000 * 60 * 1;
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(`Tool ${toolUse.toolName} execution timed out after ${timeout}ms`));
+    }, timeout);
+  });
+  return Promise.race([toolPromise, timeoutPromise]);
 }
 
 /**
