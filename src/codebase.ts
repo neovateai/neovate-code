@@ -11,11 +11,6 @@ const OUTPUT_FILENAME = 'repomix-output.txt';
 const MAX_FILE_SIZE_BYTES = 500 * 1024;
 const OUTPUT_FILE_PATH = path.resolve(process.cwd(), OUTPUT_FILENAME);
 
-/**
- * 执行 repomix 命令并获取其输出文件内容。
- * @returns {Promise<string>} 返回 repomix-output.txt 的文件内容。
- * @throws {Error} 如果 repomix 命令未找到、执行失败、输出文件不存在或过大，则抛出错误。
- */
 export async function getCodebaseContext(opts: {
   include?: string;
 }): Promise<string> {
@@ -27,26 +22,26 @@ export async function getCodebaseContext(opts: {
   if (fs.existsSync(OUTPUT_FILE_PATH)) {
     fs.unlinkSync(OUTPUT_FILE_PATH);
   }
-  console.log(`正在执行命令: ${command}`);
+  console.log(`Executing command: ${command}`);
 
   try {
     const { stdout, stderr } = await execPromise(command);
     if (stdout) console.log('repomix stdout:', stdout);
     if (stderr) console.warn('repomix stderr:', stderr);
 
-    console.log('repomix 命令执行成功。');
+    console.log('repomix command executed successfully.');
   } catch (error: any) {
     if (
       error.code === 'ENOENT' ||
       (error.message && error.message.includes('command not found'))
     ) {
-      console.error('错误：全局 repomix 命令未找到。');
+      console.error('Error: Global repomix command not found.');
       throw new Error(
-        '全局 repomix 命令未找到，请确保已全局安装 repomix 并将其添加到系统 PATH 环境变量中。',
+        'Global repomix command not found. Please ensure repomix is installed globally and added to the system PATH environment variable.',
       );
     } else {
-      console.error('repomix 命令执行失败:', error);
-      throw new Error(`repomix 命令执行失败: ${error.message}`);
+      console.error('repomix command execution failed:', error);
+      throw new Error(`repomix command execution failed: ${error.message}`);
     }
   }
 
@@ -55,29 +50,29 @@ export async function getCodebaseContext(opts: {
 
     if (stats.size > MAX_FILE_SIZE_BYTES) {
       console.error(
-        `错误：${OUTPUT_FILENAME} 文件大小 (${stats.size} bytes) 超出限制 (${MAX_FILE_SIZE_BYTES} bytes)。`,
+        `Error: ${OUTPUT_FILENAME} file size (${stats.size} bytes) exceeds limit (${MAX_FILE_SIZE_BYTES} bytes).`,
       );
       throw new Error(
-        `${OUTPUT_FILENAME} 文件大小 (${stats.size} bytes) 超出限制 (${MAX_FILE_SIZE_BYTES} bytes)。`,
+        `${OUTPUT_FILENAME} file size (${stats.size} bytes) exceeds limit (${MAX_FILE_SIZE_BYTES} bytes).`,
       );
     }
 
     console.log(
-      `${OUTPUT_FILENAME} 文件检查通过 (大小: ${stats.size} bytes)。`,
+      `${OUTPUT_FILENAME} file check passed (size: ${stats.size} bytes).`,
     );
 
     const content = fs.readFileSync(OUTPUT_FILE_PATH, 'utf-8');
-    console.log(`成功读取 ${OUTPUT_FILENAME} 文件内容。`);
+    console.log(`Successfully read ${OUTPUT_FILENAME} file content.`);
     return content;
   } catch (error: any) {
     if (error.code === 'ENOENT') {
-      console.error(`错误：未找到 repomix 输出文件 ${OUTPUT_FILENAME}。`);
+      console.error(`Error: repomix output file ${OUTPUT_FILENAME} not found.`);
       throw new Error(
-        `执行 repomix 后未找到输出文件 ${OUTPUT_FILENAME}。请检查 repomix 是否成功生成了该文件。`,
+        `Output file ${OUTPUT_FILENAME} not found after executing repomix. Please check if repomix successfully generated the file.`,
       );
     } else {
-      console.error(`读取或检查文件 ${OUTPUT_FILENAME} 时出错:`, error);
-      throw new Error(`处理文件 ${OUTPUT_FILENAME} 时出错: ${error.message}`);
+      console.error(`Error reading or checking file ${OUTPUT_FILENAME}:`, error);
+      throw new Error(`Error processing file ${OUTPUT_FILENAME}: ${error.message}`);
     }
   }
 }
