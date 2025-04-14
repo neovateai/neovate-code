@@ -5,7 +5,6 @@
  - Groq/qwen-qwq-32b
  - Groq/deepseek-r1-distill-llama-70b
  - DeepSeek/deepseek-chat (Less clever than DeepSeek with Doubao)
- - Vscode/claude-3.5-sonnet
  - Doubao/ep-2025021015xxxx-xxxx (DeepSeek-Chat)
  - Doubao/ep-2025021015xxxx-xxxx (DeepSeek-Reasoner)
  - Google/gemini-2.0-flash-001 (don't work???)

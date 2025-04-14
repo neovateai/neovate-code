@@ -98,16 +98,6 @@ const TENCENT_MODELS = [
   'Tencent/deepseek-r1', // don't support tools
 ] as const;
 const OLLAMA_MODELS = ['Ollama/qwq:32b'] as const;
-const VSCODE_MODELS = [
-  'Vscode/gpt-4o',
-  'Vscode/claude-3.5-sonnet',
-  'Vscode/claude-3.7-sonnet',
-  'Vscode/claude-3.7-sonnet-thought',
-  'Vscode/gpt-3.5-turbo',
-  'Vscode/gemini-2.0-flash',
-  'Vscode/o3-mini',
-  'Vscode/o1-ga',
-] as const;
 const INFERENCE_MODELS = [
   'Inference/deepseek/deepseek-r1/fp-8',
   'Inference/deepseek/deepseek-v3/fp-8',
@@ -140,7 +130,6 @@ export type ModelType =
   | (typeof OPEN_ROUTER_MODELS)[number]
   | (typeof TENCENT_MODELS)[number]
   | (typeof OLLAMA_MODELS)[number]
-  | (typeof VSCODE_MODELS)[number]
   | (typeof INFERENCE_MODELS)[number]
   | (typeof OPENAI_MODELS)[number];
 
@@ -185,9 +174,6 @@ export function getModel(model: ModelType) {
   } else if (TENCENT_MODELS.includes(model as any)) {
     apiKey = process.env.TENCENT_API_KEY;
     baseURL = 'https://api.lkeap.cloud.tencent.com/v1';
-  } else if (VSCODE_MODELS.includes(model as any)) {
-    apiKey = 'none';
-    baseURL = process.env.VSCODE_BASE_URL;
   } else if (INFERENCE_MODELS.includes(model as any)) {
     apiKey = process.env.INFERENCE_API_KEY;
     baseURL = 'https://api.inference.net/v1';
