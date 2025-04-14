@@ -1,8 +1,5 @@
 // import { AgentTool } from './tools/AgentTool';
 import { Tool } from 'ai';
-import pc from 'picocolors';
-import { logTool } from './logger';
-import { deserializeToolName } from './mcp';
 import { bashTool } from './tools/BashTool';
 import { fileEditTool } from './tools/FileEditTool/FileEditTool';
 import { fileReadTool } from './tools/FileReadTool';
@@ -12,7 +9,7 @@ import { grepTool } from './tools/GrepTool';
 import { lsTool } from './tools/LsTool';
 import { ThinkTool } from './tools/ThinkTool';
 
-export const getAllTools = () => {
+export const getTools = async () => {
   return {
     fileRead: fileReadTool,
     fileEdit: fileEditTool,
@@ -24,33 +21,6 @@ export const getAllTools = () => {
     think: ThinkTool,
     // agent: AgentTool,
   };
-};
-
-export const getTools = async () => {
-  const tools = getAllTools();
-  // TODO: add MCP tools
-  const mcpTools = {};
-  return {
-    ...tools,
-    ...mcpTools,
-  };
-};
-
-export const withLogger = (tools: Record<string, Tool>) => {
-  return Object.fromEntries(
-    Object.entries(tools).map(([key, tool]) => {
-      const newTool = {
-        ...tool,
-        execute: async (args: any, options: any) => {
-          logTool(
-            `Tool ${pc.bold(deserializeToolName(key))} called with args: ${JSON.stringify(args)}`,
-          );
-          return tool.execute!(args, options);
-        },
-      };
-      return [key, newTool];
-    }),
-  );
 };
 
 export async function callTool(
