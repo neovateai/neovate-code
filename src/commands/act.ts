@@ -1,21 +1,20 @@
 import { Config } from '../config';
 import { logError } from '../logger';
 import { closeClients, createClients, getClientsTools } from '../mcp';
-import { queryWithTools } from '../query';
-import { withLogger } from '../tools';
+import { query } from '../query2';
 
 export async function runAct(opts: { prompt: string; config: Config }) {
   const { config } = opts;
   const { model, stream, builtinTools, context, mcpConfig, systemPrompt } =
     config;
   const clients = await createClients(mcpConfig.mcpServers || {});
-  const tools = withLogger({
+  const tools = {
     ...(process.env.CODE === 'none' ? {} : builtinTools),
     ...(await getClientsTools(clients)),
-  });
+  };
   try {
-    await queryWithTools({
-      messages: [{ role: 'user', content: opts.prompt }],
+    await query({
+      prompt: opts.prompt,
       systemPrompt,
       model,
       stream,

@@ -3,37 +3,6 @@ import { createXai } from '@ai-sdk/xai';
 import assert from 'assert';
 import { createOllama } from 'ollama-ai-provider';
 
-/**
- * Model Tools Support
- *
-^ Platform ^ Model ^ Support ^
-| DeepSeek | V3 | ✅ |
-| DeepSeek | R1 | ❌ |
-| SiliconFlow | V3 | ✅ |
-| SiliconFlow | R1 | ❌ |
-| Aliyun | V3 | ❌ |
-| Aliyun | R1 | ❌ |
-| Doubao | V3 | ✅ |
-| Doubao | R1 | ✅ |
-| Tencent | V3 | ❌ |
-| Tencent | R1 | ❌ |
-| Groq | qwen-qwq-32b | ✅ |
-| Groq | deepseek-r1-distill-qwen-32b | ❌ |
-| Groq | deepseek-r1-distill-llama-70b | ✅ |
-| Grok | grok-2-1212 | ❌ |
-| Gemini | 2.0-flash-001 | ✅ |
-| Gemini | 2.0-flash-thinking-exp-01-21 | ❌ |
-| Gemini | 2.0-pro-exp-02-05 | ✅ |
-| Gemini | gemma-3-27b-it | ❌ |
-| OpenRouter | qwen/qwq-32b | ❌ |
-| OpenRouter | openai/gpt-4o-2024-11-20 | ✅ |
-| OpenRouter | openai/o1-mini | ❌ |
-| OpenRouter | openai/gpt-4-turbo | ✅ |
-| OpenRouter | anthropic/claude-3.5-sonnet | ✅ |
-| Ollama | qwq:32b | ❌ |
-| Inference | * | ❌ |
-*/
-
 const GROQ_MODELS = [
   'Groq/qwen-qwq-32b',
   'Groq/deepseek-r1-distill-qwen-32b',
@@ -41,22 +10,22 @@ const GROQ_MODELS = [
 ] as const;
 const DEEPSEEK_MODELS = [
   'DeepSeek/deepseek-chat',
-  'DeepSeek/deepseek-reasoner', // don't support tools
+  'DeepSeek/deepseek-reasoner',
 ] as const;
 const GOOGLE_MODELS = [
   'Google/gemini-2.0-flash-001',
-  'Google/gemini-2.0-flash-thinking-exp-01-21', // don't support tools
+  'Google/gemini-2.0-flash-thinking-exp-01-21',
   'Google/gemini-2.0-pro-exp-02-05',
   'Google/gemini-2.5-pro-exp-03-25',
-  'Google/gemma-3-27b-it', // don't support tools
+  'Google/gemma-3-27b-it',
 ] as const;
 const SILICONFLOW_MODELS = [
   'SiliconFlow/DeepSeek-V3',
-  'SiliconFlow/DeepSeek-R1', // don't support tools
+  'SiliconFlow/DeepSeek-R1',
 ] as const;
 const ALIYUN_MODELS = [
-  'Aliyun/deepseek-v3', // don't support tools
-  'Aliyun/deepseek-r1', // don't support tools
+  'Aliyun/deepseek-v3',
+  'Aliyun/deepseek-r1',
   'Aliyun/qwq-32b', // stream only (don't work)
   'Aliyun/qwq-plus', // stream only (don't work)
 ] as const;
@@ -73,8 +42,8 @@ const GROK_MODELS = [
   'Grok/grok-3-mini-fast-beta',
 ] as const;
 const OPEN_ROUTER_MODELS = [
-  'OpenRouter/qwen/qwq-32b', // don't support tools
-  'OpenRouter/openai/o1-mini', // don't support tools
+  'OpenRouter/qwen/qwq-32b',
+  'OpenRouter/openai/o1-mini',
   'OpenRouter/openai/gpt-4-turbo', // function.description has 2014 string limit
   'OpenRouter/openai/gpt-3.5-turbo-0613',
   'OpenRouter/openai/gpt-4.5-preview',
