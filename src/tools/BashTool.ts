@@ -54,7 +54,12 @@ Before using this tool, please follow these steps:
       .describe('Optional timeout in milliseconds (max 600000)'),
   }),
   execute: async ({ command, timeout = 1800000 }) => {
-    const result = execSync(command, { timeout });
-    return result.toString();
+    try {
+      const result = execSync(command, { timeout });
+      return result.toString();
+    } catch (error: any) {
+      console.error(error);
+      return 'Error: ' + error.toString();
+    }
   },
 });

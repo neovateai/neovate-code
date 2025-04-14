@@ -13,7 +13,7 @@ const DONE_MARK = '!DONE';
 function writeRequirementsToFile(requirement: string) {
   const requirements = readRequirementsFromFile();
   requirements.push(requirement);
-  fs.writeFileSync(REQUIREMENTS_FILE, requirements.join('\n'), 'utf-8');
+  fs.writeFileSync(REQUIREMENTS_FILE, requirements.join('\n\n'), 'utf-8');
   logInfo(
     `> Requirements saved to ${REQUIREMENTS_FILE}. You can edit this file directly to modify requirements.`,
   );
