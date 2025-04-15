@@ -43,6 +43,9 @@ const GROK_MODELS = [
 ] as const;
 const OPEN_ROUTER_MODELS = [
   'OpenRouter/qwen/qwq-32b',
+  'OpenRouter/openai/gpt-4.1',
+  'OpenRouter/openai/gpt-4.1-mini',
+  'OpenRouter/openai/gpt-4.1-nano',
   'OpenRouter/openai/o1-mini',
   'OpenRouter/openai/gpt-4-turbo', // function.description has 2014 string limit
   'OpenRouter/openai/gpt-3.5-turbo-0613',
@@ -75,6 +78,9 @@ const INFERENCE_MODELS = [
   'Inference/qwen/qwen2.5-7b-instruct/bf-16',
 ] as const;
 const OPENAI_MODELS = [
+  'OpenAI/gpt-4.1',
+  'OpenAI/gpt-4.1-mini',
+  'OpenAI/gpt-4.1-nano',
   'OpenAI/gpt-4.5-preview',
   'OpenAI/o3-mini-high',
   'OpenAI/o3-mini',
