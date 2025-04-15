@@ -23,6 +23,17 @@ export const getTools = async () => {
   };
 };
 
+export const getAskTools = async () => {
+  return {
+    fileRead: fileReadTool,
+    bash: bashTool,
+    ls: lsTool,
+    grep: grepTool,
+    glob: globTool,
+    think: ThinkTool,
+  };
+};
+
 export async function callTool(
   tools: Record<string, Tool>,
   toolUse: {
@@ -46,17 +57,6 @@ export async function callTool(
   return Promise.race([toolPromise, timeoutPromise]);
 }
 
-/**
-e.g.
-
-I'm going to use the ping tool to test the server connection.
-<use_tool>
-  <tool_name>ping</tool_name>
-  <arguments>
-    {"message": "test ping"}
-  </arguments>
-</use_tool>
- */
 export function parseToolUse(text: string): {
   message: string;
   toolUse: { toolName: string; arguments: Record<string, string> } | null;
