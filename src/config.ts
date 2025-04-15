@@ -28,7 +28,7 @@ export async function getConfig(opts: {
 }): Promise<Config> {
   const { argv } = opts;
 
-  const model = argv.model || 'OpenAI/gpt-3.5-turbo-0613';
+  const model = argv.model;
   if (!model) {
     throw new Error('Model is required');
   }
@@ -42,6 +42,7 @@ export async function getConfig(opts: {
       model === 'Google/gemini-2.0-pro-exp-02-05' ||
       model === 'Google/gemini-2.5-pro-exp-03-25'
     ) {
+      console.log('Using stream: false since Gemini pro models do not support streaming');
       return false;
     }
     return argv.stream !== 'false';
