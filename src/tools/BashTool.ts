@@ -56,10 +56,10 @@ Before using this tool, please follow these steps:
   execute: async ({ command, timeout = 1800000 }) => {
     try {
       const result = execSync(command, { timeout });
-      return result.toString();
+      return { success: true, output: result.toString() };
     } catch (error: any) {
       console.error(error);
-      return 'Error: ' + error.toString();
+      return { success: false, output: error.toString() };
     }
   },
 });
