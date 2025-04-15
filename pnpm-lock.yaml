@@ -41,6 +41,9 @@ importers:
       inquirer:
         specifier: ^12.5.0
         version: 12.5.2(@types/node@22.14.0)
+      jsonrepair:
+        specifier: ^3.12.0
+        version: 3.12.0
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -1190,6 +1193,10 @@ packages:
   jsondiffpatch@0.6.0:
     resolution: {integrity: sha512-3QItJOXp2AP1uv7waBkao5nCvhEv+QmJAd38Ybq7wNI74Q+BBmnLn4EDKz6yI9xGAIQoUF87qHt+kc1IVxB4zQ==}
     engines: {node: ^18.0.0 || >=20.0.0}
+    hasBin: true
+
+  jsonrepair@3.12.0:
+    resolution: {integrity: sha512-SWfjz8SuQ0wZjwsxtSJ3Zy8vvLg6aO/kxcp9TWNPGwJKgTZVfhNEQBMk/vPOpYCDFWRxD6QWuI6IHR1t615f0w==}
     hasBin: true
 
   less-loader@12.2.0:
@@ -2841,6 +2848,8 @@ snapshots:
       '@types/diff-match-patch': 1.0.36
       chalk: 5.4.1
       diff-match-patch: 1.0.5
+
+  jsonrepair@3.12.0: {}
 
   less-loader@12.2.0(less@4.3.0):
     dependencies:

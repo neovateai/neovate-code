@@ -138,9 +138,11 @@ Always adhere to this format for the tool use to ensure proper parsing and execu
     ${Object.entries(tools)
       .map(([key, tool]) => {
         return `
-## ${key}
-Description: ${tool.description}
-Input JSON Schema: ${JSON.stringify(tool.parameters.jsonSchema || zodToJsonSchema(tool.parameters))}
+<tool>
+<key>${key}</key>
+<description>${tool.description}</description>
+<input_json_schema>${JSON.stringify(tool.parameters.jsonSchema || zodToJsonSchema(tool.parameters))}</input_json_schema>
+</tool>
     `.trim();
       })
       .join('\n')}

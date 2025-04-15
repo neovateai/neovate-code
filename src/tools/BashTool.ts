@@ -26,12 +26,9 @@ const BANNED_COMMANDS = [
 export const bashTool = tool({
   description: `
 You are a command line tool that can execute commands in the terminal.
-
 Before using this tool, please follow these steps:
-
 1. Security Check:
    - Verify that the command is not one of the banned commands: ${BANNED_COMMANDS.join(', ')}.
-
 2. Usage notes:
   - The command argument is required.
   - You can specify an optional timeout in milliseconds (up to 600000ms / 10 minutes). If not specified, commands will timeout after 30 minutes.
@@ -39,12 +36,12 @@ Before using this tool, please follow these steps:
   - When issuing multiple commands, use the ';' or '&&' operator to separate them. DO NOT use newlines (newlines are ok in quoted strings).
   - IMPORTANT: All commands share the same shell session. Shell state (environment variables, virtual environments, current directory, etc.) persist between commands.
   - Try to maintain your current working directory throughout the session by using absolute paths and avoiding usage of \`cd\`. You may use \`cd\` if the User explicitly requests it.
-  <good-example>
-  pytest /foo/bar/tests
-  </good-example>
-  <bad-example>
-  cd /foo/bar && pytest tests
-  </bad-example>
+<good-example>
+pytest /foo/bar/tests
+</good-example>
+<bad-example>
+cd /foo/bar && pytest tests
+</bad-example>
   `,
   parameters: z.object({
     command: z.string().describe('The command to execute'),
@@ -58,8 +55,7 @@ Before using this tool, please follow these steps:
       const result = execSync(command, { timeout });
       return { success: true, output: result.toString() };
     } catch (error: any) {
-      console.error(error);
-      return { success: false, output: error.toString() };
+      return { success: false, output: error.message };
     }
   },
 });

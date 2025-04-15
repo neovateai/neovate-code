@@ -19,15 +19,25 @@ export const fileReadTool = tool({
   }),
   execute: async ({ file_path }) => {
     // TODO: truncate if needed
-    const content = fs.readFileSync(file_path, 'utf8');
-    const ext = path.extname(file_path).toLowerCase();
-    if (IMAGE_EXTENSIONS.has(ext)) {
-      throw new Error("File is an image. It's not supported yet.");
+    try {
+      const content = fs.readFileSync(file_path, 'utf8');
+      const ext = path.extname(file_path).toLowerCase();
+      if (IMAGE_EXTENSIONS.has(ext)) {
+        throw new Error("File is an image. It's not supported yet.");
+      }
+      return {
+        success: true,
+        data: {
+          filePath: file_path,
+          content,
+          totalLines: content.split('\n').length,
+        },
+      };
+    } catch (e) {
+      return {
+        success: false,
+        error: e instanceof Error ? e.message : 'Unknown error',
+      };
     }
-    return {
-      filePath: file_path,
-      content,
-      totalLines: content.split('\n').length,
-    };
   },
 });

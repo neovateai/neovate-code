@@ -8,6 +8,7 @@ import { globTool } from './tools/GlobTool';
 import { grepTool } from './tools/GrepTool';
 import { lsTool } from './tools/LsTool';
 import { ThinkTool } from './tools/ThinkTool';
+import { jsonrepair } from 'jsonrepair';
 
 export const getTools = async () => {
   return {
@@ -71,7 +72,16 @@ export function parseToolUse(text: string): {
   const tool = toolMatch[0];
   const toolName = tool.match(/<tool_name>(.*?)<\/tool_name>/)?.[1];
   const argsMatch = tool.match(/<arguments>([\s\S]*?)<\/arguments>/)?.[1];
-  const args = argsMatch ? JSON.parse(argsMatch.trim()) : {};
+  const args = (() => {
+    if (!argsMatch) {
+      return {};
+    }
+    try {
+      return JSON.parse(argsMatch.trim());
+    } catch (e) {
+      return JSON.parse(jsonrepair(argsMatch.trim()));
+    }
+  })();
   if (!toolName) {
     throw new Error("No tool name found");
   }
