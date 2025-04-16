@@ -8,10 +8,11 @@ import { globTool } from './tools/GlobTool';
 import { grepTool } from './tools/GrepTool';
 import { lsTool } from './tools/LsTool';
 import { ThinkTool } from './tools/ThinkTool';
+import { todoReadTool, todoWriteTool } from './tools/TodoTool';
 import { jsonrepair } from 'jsonrepair';
 
-export const getTools = async () => {
-  return {
+export const getTools = async (opts?: { tasks?: boolean }) => {
+  const tools = {
     fileRead: fileReadTool,
     fileEdit: fileEditTool,
     bash: bashTool,
@@ -22,6 +23,17 @@ export const getTools = async () => {
     think: ThinkTool,
     // agent: AgentTool,
   };
+  
+  // Add todo tools if tasks feature is enabled
+  if (opts?.tasks) {
+    return {
+      ...tools,
+      todoRead: todoReadTool,
+      todoWrite: todoWriteTool,
+    };
+  }
+  
+  return tools;
 };
 
 export const getAskTools = async () => {

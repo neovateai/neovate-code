@@ -21,6 +21,7 @@ export type Config = {
   builtinTools: Record<string, Tool>;
   context: Record<string, any>;
   systemPrompt: string[];
+  tasks: boolean;
 };
 
 export async function getConfig(opts: {
@@ -77,11 +78,14 @@ export async function getConfig(opts: {
     }
   })();
 
-  const builtinTools = await getTools();
+  // Check if tasks feature is enabled
+  const tasks = !!argv.tasks;
+
+  const builtinTools = await getTools({ tasks });
   let context = await getContext({
     codebase: argv.codebase,
   });
-  let systemPrompt = getSystemPrompt();
+  let systemPrompt = getSystemPrompt({ tasks });
   if (process.env.CODE === 'none') {
     systemPrompt = [];
     context = {};
@@ -95,6 +99,7 @@ export async function getConfig(opts: {
     builtinTools,
     context,
     systemPrompt,
+    tasks,
   };
 }
 
@@ -105,6 +110,7 @@ export function printConfig(config: Config) {
   logInfo(
     `Using MCP servers: ${Object.keys(config.mcpConfig.mcpServers || {}).join(', ')}`,
   );
+  logInfo(`Tasks feature: ${config.tasks ? 'enabled' : 'disabled'}`);
 }
 
 function stringToMcpServerConfigs(mcpValues: string) {

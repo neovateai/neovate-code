@@ -8,7 +8,7 @@ export async function runInit(opts: { config: Config }) {
   const { model, stream, builtinTools, context } = config;
   await query({
     prompt: INIT_PROMPT,
-    systemPrompt: getSystemPrompt(),
+    systemPrompt: getSystemPrompt({}),
     model,
     stream,
     context,

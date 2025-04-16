@@ -1,12 +1,11 @@
 import { Tool } from 'ai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { PRODUCT_NAME } from './product';
 
 function getCwd(): string {
   return process.cwd();
 }
 
-export function getSystemPrompt(): string[] {
+export function getSystemPrompt(opts: { tasks?: boolean }): string[] {
   const env = {
     platform: 'macOS',
   };
@@ -77,6 +76,48 @@ When making changes to files, first understand the file's code conventions. Mimi
 
 # Code style
 - IMPORTANT: DO NOT ADD ***ANY*** COMMENTS unless asked
+
+${opts.tasks ? `
+# Task Management
+You have access to the TodoWrite and TodoRead tools to help you manage tasks. Use these tools VERY frequently to ensure that you are tracking your tasks and giving the user visibility into your progress.
+Here are some guidelines for when to use these tools:
+- Immediately after a user asks you to do a task, write it to the todo list using the TodoWrite tool
+- As soon as you start working on a task, update the todo item to be in_progress using the TodoWrite tool
+- When you are done with a task, mark it as completed using the TodoWrite tool
+- If you think of a follow-up task while working on a task, add it to the todo list using the TodoWrite tool
+- Refer to the todo list often to ensure you don't miss any required tasks
+- Update the todo list frequently, after every task so that the use can track progress.
+
+It is critical that you mark todos as completed as soon as you are done with a task. Do not batch up multiple tasks before marking them as completed.
+
+Examples:
+
+<example>
+user: Run the build and fix any type errors
+assistant:
+I'm going to use the TodoWrite tool to write the following items to the todo list:
+- Run the build
+- Fix any type errors
+
+assistant:
+I'm now going to run the build using Bash.
+
+assistant:
+Looks like I found 10 type errors. I'm going to use the TodoWrite tool to write 10 items to the todo list.
+
+assistant:
+marking the first todo as in_progress
+
+assistant:
+Let me start working on the first item...
+
+assistant;
+The first itme has been fixed, let me mark the first todo as completed, and move on to the second item...
+..
+..
+</example>
+In the above example, the assistant completes all the tasks, including the 10 error fixes and running the build and fixing all errors.
+`.trim() : ''}
 
 # Doing tasks
 The user will primarily request you perform software engineering tasks. This includes solving bugs, adding new functionality, refactoring code, explaining code, and more. For these tasks the following steps are recommended:
