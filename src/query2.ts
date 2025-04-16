@@ -2,7 +2,6 @@ import { CoreMessage, Tool, generateText, streamText } from 'ai';
 import pc from 'picocolors';
 import { getToolsPrompt } from './constants/prompts';
 import { logAction, logDebug, logTool } from './logger';
-import { deserializeToolName } from './mcp';
 import { ModelType, getModel } from './model';
 import { callTool, parseToolUse } from './tools';
 
@@ -72,7 +71,7 @@ export async function query(opts: QueryOptions) {
     if (toolUse) {
       messages.push({ role: 'assistant', content: text });
       logTool(
-        `Tool ${pc.bold(deserializeToolName(toolUse.toolName))} called with args: ${JSON.stringify(toolUse.arguments)}`,
+        `Tool ${pc.bold(toolUse.toolName)} called with args: ${JSON.stringify(toolUse.arguments)}`,
       );
       const toolResult = await callTool(tools, toolUse);
       messages.push({ role: 'user', content: JSON.stringify(toolResult) });
