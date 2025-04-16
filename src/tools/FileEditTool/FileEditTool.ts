@@ -41,14 +41,31 @@ export const fileEditTool = tool({
     new_string: z.string().describe('The text to replace the old_string with'),
   }),
   execute: async ({ file_path, old_string, new_string }) => {
-    const { patch, updatedFile } = applyEdit(file_path, old_string, new_string);
-    const fullFilePath = isAbsolute(file_path)
-      ? file_path
-      : resolve(getCwd(), file_path);
-    const dir = dirname(fullFilePath);
-    mkdirSync(dir, { recursive: true });
-    const enc = 'utf8';
-    writeFileSync(fullFilePath, updatedFile, enc);
-    return 'Created';
+    try {
+      const { patch, updatedFile } = applyEdit(
+        file_path,
+        old_string,
+        new_string,
+      );
+      const fullFilePath = isAbsolute(file_path)
+        ? file_path
+        : resolve(getCwd(), file_path);
+      const dir = dirname(fullFilePath);
+      mkdirSync(dir, { recursive: true });
+      const enc = 'utf8';
+      writeFileSync(fullFilePath, updatedFile, enc);
+      return {
+        success: true,
+        patch,
+        updatedFile,
+      };
+    } catch (e) {
+      return {
+        success: false,
+        error: e instanceof Error ? e.message : 'Unknown error',
+        patch: null,
+        updatedFile: null,
+      };
+    }
   },
 });

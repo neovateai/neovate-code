@@ -9,7 +9,7 @@ function getCwd(): string {
   return process.cwd();
 }
 
-interface Hunk {
+export interface Hunk {
   oldStart: number;
   oldLines: number;
   newStart: number;
