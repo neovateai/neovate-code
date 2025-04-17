@@ -4,7 +4,7 @@ import { dirname } from 'path';
 import { resolve } from 'path';
 import { isAbsolute } from 'path';
 import { z } from 'zod';
-import { applyEdit } from './applyEdit';
+import { applyEdit } from '../utils/applyEdit';
 
 const description = `
 This is a tool for editing files. For moving or renaming files, you should generally use the Bash tool with the 'mv' command instead. For larger edits, use the Write tool to overwrite files.

@@ -1,8 +1,9 @@
 // import { AgentTool } from './tools/AgentTool';
 import { Tool } from 'ai';
+import { jsonrepair } from 'jsonrepair';
 import { BashTool } from './tools/BashTool';
 import { BatchTool } from './tools/BatchTool';
-import { FileEditTool } from './tools/FileEditTool/FileEditTool';
+import { FileEditTool } from './tools/FileEditTool';
 import { FileReadTool } from './tools/FileReadTool';
 import { FileWriteTool } from './tools/FileWriteTool';
 import { GlobTool } from './tools/GlobTool';
@@ -11,7 +12,6 @@ import { LSTool } from './tools/LsTool';
 import { ThinkTool } from './tools/ThinkTool';
 import { todoReadTool, todoWriteTool } from './tools/TodoTool';
 import { WebFetchTool } from './tools/WebFetchTool';
-import { jsonrepair } from 'jsonrepair';
 
 export const getTools = async (opts?: { tasks?: boolean }) => {
   const tools = {
@@ -78,7 +78,11 @@ export async function callTool(
   timeout ||= 1000 * 60 * 1;
   const timeoutPromise = new Promise((_, reject) => {
     setTimeout(() => {
-      reject(new Error(`Tool ${toolUse.toolName} execution timed out after ${timeout}ms`));
+      reject(
+        new Error(
+          `Tool ${toolUse.toolName} execution timed out after ${timeout}ms`,
+        ),
+      );
     }, timeout);
   });
   return Promise.race([toolPromise, timeoutPromise]);
@@ -90,7 +94,7 @@ export function parseToolUse(text: string): {
 } {
   const toolMatch = text.match(/<use_tool>[\s\S]*?<\/use_tool>/);
   const message = toolMatch
-    ? text.replace(toolMatch[0], "").trim()
+    ? text.replace(toolMatch[0], '').trim()
     : text.trim();
   if (!toolMatch) {
     return { message, toolUse: null };
@@ -109,7 +113,7 @@ export function parseToolUse(text: string): {
     }
   })();
   if (!toolName) {
-    throw new Error("No tool name found");
+    throw new Error('No tool name found');
   }
   return { message, toolUse: { toolName, arguments: args } };
 }
