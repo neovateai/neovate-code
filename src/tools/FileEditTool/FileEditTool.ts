@@ -33,7 +33,7 @@ function getCwd(): string {
   return process.cwd();
 }
 
-export const fileEditTool = tool({
+export const FileEditTool = tool({
   description,
   parameters: z.object({
     file_path: z.string().describe('The absolute path to the file to modify'),

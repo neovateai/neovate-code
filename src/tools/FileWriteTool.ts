@@ -7,7 +7,7 @@ function getCwd() {
   return process.cwd();
 }
 
-export const fileWriteTool = tool({
+export const FileWriteTool = tool({
   description: `
 Write a file to the local filesystem. Overwrites the existing file if there is one.
 Before using this tool:

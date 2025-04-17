@@ -8,7 +8,7 @@ function getCwd() {
 
 const LIMIT = 100;
 
-export const globTool = tool({
+export const GlobTool = tool({
   description: `
 GlobTool
 

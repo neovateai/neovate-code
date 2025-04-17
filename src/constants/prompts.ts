@@ -180,7 +180,7 @@ Always adhere to this format for the tool use to ensure proper parsing and execu
       .map(([key, tool]) => {
         return `
 <tool>
-<key>${key}</key>
+<name>${key}</name>
 <description>${tool.description}</description>
 <input_json_schema>${JSON.stringify(tool.parameters.jsonSchema || zodToJsonSchema(tool.parameters))}</input_json_schema>
 </tool>

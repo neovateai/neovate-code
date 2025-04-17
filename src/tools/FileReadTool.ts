@@ -12,7 +12,7 @@ const IMAGE_EXTENSIONS = new Set([
   '.webp',
 ]);
 
-export const fileReadTool = tool({
+export const FileReadTool = tool({
   description: 'Read a file from the local filesystem.',
   parameters: z.object({
     file_path: z.string(),

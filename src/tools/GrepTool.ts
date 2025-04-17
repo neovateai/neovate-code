@@ -8,7 +8,7 @@ function getCwd() {
   return process.cwd();
 }
 
-export const grepTool = tool({
+export const GrepTool = tool({
   description: 'Search for a pattern in a file or directory.',
   parameters: z.object({
     pattern: z.string().describe('The pattern to search for'),

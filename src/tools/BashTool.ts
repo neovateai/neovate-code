@@ -23,7 +23,7 @@ const BANNED_COMMANDS = [
   'safari',
 ];
 
-export const bashTool = tool({
+export const BashTool = tool({
   description: `
 You are a command line tool that can execute commands in the terminal.
 Before using this tool, please follow these steps:

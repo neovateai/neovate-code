@@ -1,29 +1,31 @@
 // import { AgentTool } from './tools/AgentTool';
 import { Tool } from 'ai';
-import { bashTool } from './tools/BashTool';
-import { fileEditTool } from './tools/FileEditTool/FileEditTool';
-import { fileReadTool } from './tools/FileReadTool';
-import { fileWriteTool } from './tools/FileWriteTool';
-import { globTool } from './tools/GlobTool';
-import { grepTool } from './tools/GrepTool';
-import { lsTool } from './tools/LsTool';
+import { BashTool } from './tools/BashTool';
+import { FileEditTool } from './tools/FileEditTool/FileEditTool';
+import { FileReadTool } from './tools/FileReadTool';
+import { FileWriteTool } from './tools/FileWriteTool';
+import { GlobTool } from './tools/GlobTool';
+import { GrepTool } from './tools/GrepTool';
+import { LSTool } from './tools/LsTool';
 import { ThinkTool } from './tools/ThinkTool';
 import { todoReadTool, todoWriteTool } from './tools/TodoTool';
+import { WebFetchTool } from './tools/WebFetchTool';
 import { jsonrepair } from 'jsonrepair';
 
 export const getTools = async (opts?: { tasks?: boolean }) => {
   const tools = {
-    fileRead: fileReadTool,
-    fileEdit: fileEditTool,
-    bash: bashTool,
-    ls: lsTool,
-    fileWrite: fileWriteTool,
-    grep: grepTool,
-    glob: globTool,
-    think: ThinkTool,
-    // agent: AgentTool,
+    FileReadTool,
+    FileEditTool,
+    BashTool,
+    LSTool,
+    FileWriteTool,
+    GrepTool,
+    GlobTool,
+    ThinkTool,
+    WebFetchTool,
+    // AgentTool,
   };
-  
+
   // Add todo tools if tasks feature is enabled
   if (opts?.tasks) {
     return {
@@ -32,18 +34,19 @@ export const getTools = async (opts?: { tasks?: boolean }) => {
       todoWrite: todoWriteTool,
     };
   }
-  
+
   return tools;
 };
 
 export const getAskTools = async () => {
   return {
-    fileRead: fileReadTool,
-    bash: bashTool,
-    ls: lsTool,
-    grep: grepTool,
-    glob: globTool,
-    think: ThinkTool,
+    FileReadTool,
+    BashTool,
+    LSTool,
+    GrepTool,
+    GlobTool,
+    ThinkTool,
+    WebFetchTool,
   };
 };
 
