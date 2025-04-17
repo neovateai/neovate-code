@@ -3,7 +3,7 @@ import { memoize } from 'lodash-es';
 import path from 'path';
 import { getCodebaseContext } from './codebase';
 import { PRODUCT_NAME } from './constants/product';
-import { lsTool } from './tools/LsTool';
+import { LSTool } from './tools/LsTool';
 import { execFileNoThrow } from './utils/execFileNoThrow';
 
 function getCwd() {
@@ -11,7 +11,7 @@ function getCwd() {
 }
 
 export async function getDirectoryStructure() {
-  const files = await lsTool.execute(
+  const files = await LSTool.execute(
     { path: '.' },
     {
       toolCallId: 'ls',

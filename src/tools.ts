@@ -1,6 +1,7 @@
 // import { AgentTool } from './tools/AgentTool';
 import { Tool } from 'ai';
 import { BashTool } from './tools/BashTool';
+import { BatchTool } from './tools/BatchTool';
 import { FileEditTool } from './tools/FileEditTool/FileEditTool';
 import { FileReadTool } from './tools/FileReadTool';
 import { FileWriteTool } from './tools/FileWriteTool';
@@ -23,6 +24,7 @@ export const getTools = async (opts?: { tasks?: boolean }) => {
     GlobTool,
     ThinkTool,
     WebFetchTool,
+    BatchTool,
     // AgentTool,
   };
 
@@ -47,8 +49,13 @@ export const getAskTools = async () => {
     GlobTool,
     ThinkTool,
     WebFetchTool,
+    BatchTool,
   };
 };
+
+export interface ToolContext {
+  tools: Record<string, Tool>;
+}
 
 export async function callTool(
   tools: Record<string, Tool>,
@@ -63,7 +70,11 @@ export async function callTool(
     throw new Error(`Tool ${toolUse.toolName} not found`);
   }
 
-  const toolPromise = tool.execute!(toolUse.arguments, {} as any);
+  // TODO: should not use ai sdk's tool interface, but use our own
+  // @ts-ignore
+  const toolPromise = tool.execute!(toolUse.arguments, {
+    tools,
+  } as ToolContext);
   timeout ||= 1000 * 60 * 1;
   const timeoutPromise = new Promise((_, reject) => {
     setTimeout(() => {
