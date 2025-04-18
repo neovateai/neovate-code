@@ -8,7 +8,7 @@ import util from 'util';
 
 const REPOMIX_COMMAND = 'repomix';
 const OUTPUT_FILENAME = 'repomix-output.txt';
-const MAX_FILE_SIZE_BYTES = 500 * 1024;
+const MAX_FILE_SIZE_BYTES = 800 * 1024;
 const OUTPUT_FILE_PATH = path.resolve(process.cwd(), OUTPUT_FILENAME);
 
 export async function getCodebaseContext(opts: {
