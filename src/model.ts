@@ -13,9 +13,7 @@ const DEEPSEEK_MODELS = [
   'DeepSeek/deepseek-reasoner',
 ] as const;
 const GOOGLE_MODELS = [
-  'Google/gemini-2.0-flash-001',
-  'Google/gemini-2.0-flash-thinking-exp-01-21',
-  'Google/gemini-2.0-pro-exp-02-05',
+  'Google/gemini-2.5-flash-preview-04-17',
   'Google/gemini-2.5-pro-exp-03-25',
   'Google/gemma-3-27b-it',
 ] as const;
