@@ -71,8 +71,13 @@ export async function getCodebaseContext(opts: {
         `Output file ${OUTPUT_FILENAME} not found after executing repomix. Please check if repomix successfully generated the file.`,
       );
     } else {
-      console.error(`Error reading or checking file ${OUTPUT_FILENAME}:`, error);
-      throw new Error(`Error processing file ${OUTPUT_FILENAME}: ${error.message}`);
+      console.error(
+        `Error reading or checking file ${OUTPUT_FILENAME}:`,
+        error,
+      );
+      throw new Error(
+        `Error processing file ${OUTPUT_FILENAME}: ${error.message}`,
+      );
     }
   }
 }

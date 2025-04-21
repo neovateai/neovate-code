@@ -11,7 +11,9 @@
   "scripts": {
     "dev": "tsx ./src/cli.ts",
     "format": "prettier --write .",
-    "build": "bun build src/cli.ts --minify --outfile dist/cli.mjs --target=node",
+    "build:cli": "bun build src/cli.ts --minify --outfile dist/cli.mjs --target=node",
+    "build:index": "bun build src/index.ts --minify --outfile dist/index.mjs --target=node",
+    "build": "npm run build:cli && npm run build:index",
     "release": "utools release --git-tag --github-release --changelog",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -36,6 +38,7 @@
     "@types/yargs-parser": "^21.0.3",
     "@umijs/tools": "^0.1.36",
     "ai": "^4.3.9",
+    "defu": "^6.1.4",
     "dotenv": "^16.5.0",
     "glob": "^11.0.1",
     "inquirer": "^12.5.2",

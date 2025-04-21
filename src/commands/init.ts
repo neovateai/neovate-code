@@ -1,11 +1,10 @@
-import { Config } from '../config';
 import { PRODUCT_NAME } from '../constants/product';
 import { getSystemPrompt } from '../constants/prompts';
 import { query } from '../query2';
+import { Context } from '../types';
 
-export async function runInit(opts: { config: Config }) {
-  const { config } = opts;
-  const { model, stream, builtinTools, context } = config;
+export async function runInit(opts: { context: Context }) {
+  const { model, stream, builtinTools, context } = opts.context.config;
   await query({
     prompt: INIT_PROMPT,
     systemPrompt: getSystemPrompt({}),

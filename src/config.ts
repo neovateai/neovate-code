@@ -7,6 +7,7 @@ import { getSystemPrompt } from './constants/prompts';
 import { getContext } from './context';
 import { logInfo } from './logger';
 import { ModelType } from './model';
+import type { Plugin } from './plugin/types';
 import { getTools } from './tools';
 
 function getCwd() {
@@ -22,6 +23,7 @@ export type Config = {
   context: Record<string, any>;
   systemPrompt: string[];
   tasks: boolean;
+  plugins: Plugin[];
 };
 
 export async function getConfig(opts: {
@@ -43,7 +45,9 @@ export async function getConfig(opts: {
       model === 'Google/gemini-2.0-pro-exp-02-05' ||
       model === 'Google/gemini-2.5-pro-exp-03-25'
     ) {
-      console.log('Using stream: false since Gemini pro models do not support streaming');
+      console.log(
+        'Using stream: false since Gemini pro models do not support streaming',
+      );
       return false;
     }
     return argv.stream !== 'false';
@@ -100,6 +104,7 @@ export async function getConfig(opts: {
     context,
     systemPrompt,
     tasks,
+    plugins: [],
   };
 }
 

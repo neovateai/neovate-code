@@ -77,7 +77,9 @@ When making changes to files, first understand the file's code conventions. Mimi
 # Code style
 - IMPORTANT: DO NOT ADD ***ANY*** COMMENTS unless asked
 
-${opts.tasks ? `
+${
+  opts.tasks
+    ? `
 # Task Management
 You have access to the TodoWrite and TodoRead tools to help you manage tasks. Use these tools VERY frequently to ensure that you are tracking your tasks and giving the user visibility into your progress.
 Here are some guidelines for when to use these tools:
@@ -117,7 +119,9 @@ The first itme has been fixed, let me mark the first todo as completed, and move
 ..
 </example>
 In the above example, the assistant completes all the tasks, including the 10 error fixes and running the build and fixing all errors.
-`.trim() : ''}
+`.trim()
+    : ''
+}
 
 # Doing tasks
 The user will primarily request you perform software engineering tasks. This includes solving bugs, adding new functionality, refactoring code, explaining code, and more. For these tasks the following steps are recommended:

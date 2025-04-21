@@ -4,6 +4,7 @@ import inquirer from 'inquirer';
 import { Config } from '../config';
 import { logInfo } from '../logger';
 import { query } from '../query';
+import { Context } from '../types';
 
 const MAX_STEPS = 5;
 const PLAN_FILE = 'PLAN.md';
@@ -35,22 +36,19 @@ function readRequirementsFromFile(): string[] {
   return requirements;
 }
 
-export async function runPlan(opts: {
-  prompt: string;
-  maxSteps?: number;
-  clean?: boolean;
-  config: Config;
-}) {
-  const { config, clean = false } = opts;
-  assert(opts.prompt, 'Prompt is required');
-  if (fs.existsSync(REQUIREMENTS_FILE) && clean) {
+export async function runPlan(opts: { context: Context }) {
+  const { config, argv } = opts.context;
+  const prompt = argv._[1] as string;
+  const clean = argv.clean;
+  assert(prompt, 'Prompt is required');
+  if (fs.existsSync(REQUIREMENTS_FILE)) {
     fs.unlinkSync(REQUIREMENTS_FILE);
   }
   let requirements = readRequirementsFromFile();
-  requirements.push(opts.prompt);
-  writeRequirementsToFile(opts.prompt);
+  requirements.push(prompt);
+  writeRequirementsToFile(prompt);
   let steps = 0;
-  const maxSteps = opts.maxSteps || MAX_STEPS;
+  const maxSteps = clean ? 1 : MAX_STEPS;
   while (true) {
     requirements = readRequirementsFromFile();
     const isComplete = await isRequirementsComplete(requirements, config);

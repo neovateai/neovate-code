@@ -27,14 +27,16 @@ export const WebFetchTool = tool({
   description: 'Fetch content from url',
   parameters: z.object({
     url: z.string().url().describe('The url to fetch content from'),
-    prompt: z.string().describe('The prompt to run on the fetched content')
+    prompt: z.string().describe('The prompt to run on the fetched content'),
   }),
   execute: async ({ url, prompt }) => {
     try {
       // 1) Fetch content from URL
       const response = await fetch(url);
       if (!response.ok) {
-        throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch ${url}: ${response.status} ${response.statusText}`,
+        );
       }
       const content = await response.text();
 

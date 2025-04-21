@@ -1,10 +1,11 @@
-import { Config } from '../config';
 import { logError } from '../logger';
 import { closeClients, createClients, getClientsTools } from '../mcp';
 import { query } from '../query2';
+import { Context } from '../types';
 
-export async function runAct(opts: { prompt: string; config: Config }) {
-  const { config } = opts;
+export async function runAct(opts: { context: Context }) {
+  const { config, argv } = opts.context;
+  const prompt = argv._[1] as string;
   const { model, stream, builtinTools, context, mcpConfig, systemPrompt } =
     config;
   const clients = await createClients(mcpConfig.mcpServers || {});
@@ -14,7 +15,7 @@ export async function runAct(opts: { prompt: string; config: Config }) {
   };
   try {
     await query({
-      prompt: opts.prompt,
+      prompt,
       systemPrompt,
       model,
       stream,

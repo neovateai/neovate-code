@@ -43,7 +43,7 @@ export async function query(opts: QueryOptions) {
       // let tmpText = '';
       for await (const chunk of result.textStream) {
         text += chunk;
-        if (text.includes("<") || text.includes("<use_tool>")) {
+        if (text.includes('<') || text.includes('<use_tool>')) {
         } else {
           process.stdout.write(chunk);
         }
