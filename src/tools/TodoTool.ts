@@ -3,50 +3,51 @@ import { randomUUID } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import { PRODUCT_NAME } from '../constants/product';
+import { Context } from '../types';
 
-const uuid = (() => {
-  const uuid = randomUUID().replace(/-/g, '');
-  return uuid;
-})();
+export function createTodoTool(opts: { context: Context }) {
+  const uuid = (() => {
+    const uuid = randomUUID().replace(/-/g, '');
+    return uuid;
+  })();
 
-function getCwd() {
-  return process.cwd();
-}
-
-function ensureTodoDirectory() {
-  const todoDir = path.join(
-    getCwd(),
-    `.${PRODUCT_NAME.toLowerCase()}`,
-    'todos',
-  );
-  if (!fs.existsSync(todoDir)) {
-    fs.mkdirSync(todoDir, { recursive: true });
+  function getCwd() {
+    return process.cwd();
   }
-  return todoDir;
-}
 
-function getTodoFilePath() {
-  const todoDir = ensureTodoDirectory();
-  return path.join(todoDir, `${uuid}.json`);
-}
-
-function readTodos() {
-  const filePath = getTodoFilePath();
-  if (!fs.existsSync(filePath)) {
-    return [];
+  function ensureTodoDirectory() {
+    const todoDir = path.join(
+      getCwd(),
+      `.${opts.context.config.productName.toLowerCase()}`,
+      'todos',
+    );
+    if (!fs.existsSync(todoDir)) {
+      fs.mkdirSync(todoDir, { recursive: true });
+    }
+    return todoDir;
   }
-  try {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(content);
-  } catch (error) {
-    console.error(`[TodoTool] Error reading todos:`, error);
-    return [];
-  }
-}
 
-export const todoWriteTool = tool({
-  description: `
+  function getTodoFilePath() {
+    const todoDir = ensureTodoDirectory();
+    return path.join(todoDir, `${uuid}.json`);
+  }
+
+  function readTodos() {
+    const filePath = getTodoFilePath();
+    if (!fs.existsSync(filePath)) {
+      return [];
+    }
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      return JSON.parse(content);
+    } catch (error) {
+      console.error(`[TodoTool] Error reading todos:`, error);
+      return [];
+    }
+  }
+
+  const todoWriteTool = tool({
+    description: `
 Use this tool to update your to-do list for the current session. This tool should be used proactively as often as possible to track progress,
 and to ensure that any new tasks or ideas are captured appropriately. Err towards using this tool more often than less, especially in the following situations:
 - Immediately after a user message, to capture any new tasks or update existing tasks
@@ -60,34 +61,34 @@ and to ensure that any new tasks or ideas are captured appropriately. Err toward
 Being proactive with todo management helps you stay organized and ensures you don't forget important tasks. Adding todos demonstrates attentiveness and thoroughness.
 It is critical that you mark todos as completed as soon as you are done with a task. Do not batch up multiple tasks before marking them as completed.
   `.trim(),
-  parameters: z.object({
-    todos: z.array(
-      z.object({
-        content: z.string().min(1, 'Content cannot be empty'),
-        status: z.enum(['pending', 'in_progress', 'completed']),
-        priority: z.enum(['high', 'medium', 'low']),
-        id: z.string(),
-      }),
-    ),
-  }),
-  execute: async ({ todos }) => {
-    try {
-      const filePath = getTodoFilePath();
-      const oldTodos = readTodos();
-      fs.writeFileSync(filePath, JSON.stringify(todos, null, 2));
-      return { success: true, data: { oldTodos, newTodos: todos } };
-    } catch (error) {
-      console.error(`[TodoTool] Error writing todos:`, error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-    }
-  },
-});
+    parameters: z.object({
+      todos: z.array(
+        z.object({
+          content: z.string().min(1, 'Content cannot be empty'),
+          status: z.enum(['pending', 'in_progress', 'completed']),
+          priority: z.enum(['high', 'medium', 'low']),
+          id: z.string(),
+        }),
+      ),
+    }),
+    execute: async ({ todos }) => {
+      try {
+        const filePath = getTodoFilePath();
+        const oldTodos = readTodos();
+        fs.writeFileSync(filePath, JSON.stringify(todos, null, 2));
+        return { success: true, data: { oldTodos, newTodos: todos } };
+      } catch (error) {
+        console.error(`[TodoTool] Error writing todos:`, error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
+    },
+  });
 
-export const todoReadTool = tool({
-  description: `
+  const todoReadTool = tool({
+    description: `
 Use this tool to read the current to-do list for the session. This tool should be used proactively and frequently to ensure that you are aware of
 the status of the current task list. You should make use of this tool as often as possible, especially in the following situations:
 - At the beginning of conversations to see what's pending
@@ -105,17 +106,23 @@ Usage:
 - Use this information to track progress and plan next steps
 - If no todos exist yet, an empty list will be returned
   `.trim(),
-  parameters: z.object({}),
-  execute: async () => {
-    try {
-      const todos = readTodos();
-      return { success: true, data: { todos } };
-    } catch (error) {
-      console.error(`[TodoTool] Error reading todos:`, error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-    }
-  },
-});
+    parameters: z.object({}),
+    execute: async () => {
+      try {
+        const todos = readTodos();
+        return { success: true, data: { todos } };
+      } catch (error) {
+        console.error(`[TodoTool] Error reading todos:`, error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
+    },
+  });
+
+  return {
+    todoWriteTool,
+    todoReadTool,
+  };
+}

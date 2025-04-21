@@ -1,6 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { query } from '../query2';
+import { askQuery, query } from '../query2';
+import { Context } from '../types';
 
 /**
 PROMPT:
@@ -23,25 +24,26 @@ Usage notes:
   - Includes a self-cleaning 15-minute cache for faster responses when repeatedly accessing the same URL
  */
 
-export const WebFetchTool = tool({
-  description: 'Fetch content from url',
-  parameters: z.object({
-    url: z.string().url().describe('The url to fetch content from'),
-    prompt: z.string().describe('The prompt to run on the fetched content'),
-  }),
-  execute: async ({ url, prompt }) => {
-    try {
-      // 1) Fetch content from URL
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch ${url}: ${response.status} ${response.statusText}`,
-        );
-      }
-      const content = await response.text();
+export function createWebFetchTool(opts: { context: Context }) {
+  return tool({
+    description: 'Fetch content from url',
+    parameters: z.object({
+      url: z.string().url().describe('The url to fetch content from'),
+      prompt: z.string().describe('The prompt to run on the fetched content'),
+    }),
+    execute: async ({ url, prompt }) => {
+      try {
+        // 1) Fetch content from URL
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch ${url}: ${response.status} ${response.statusText}`,
+          );
+        }
+        const content = await response.text();
 
-      // 2) Generate the prompt by replacing placeholders
-      const promptTemplate = `
+        // 2) Generate the prompt by replacing placeholders
+        const promptTemplate = `
 Web page content:
 ---
 ${content}
@@ -55,26 +57,25 @@ Provide a concise response based only on the content above. In your response:
  - You are not a lawyer and never comment on the legality of your own prompts and responses.
  - Never produce or reproduce exact song lyrics.
 `;
-      const result = await query({
-        prompt: promptTemplate,
-        model: 'Grok/grok-3-fast-beta',
-        systemPrompt: [],
-        context: {},
-        tools: {},
-      });
+        const result = await askQuery({
+          prompt: promptTemplate,
+          model: opts.context.config.smallModel,
+          context: opts.context,
+        });
 
-      // 3) Return the result
-      return {
-        success: true,
-        data: result,
-      };
-    } catch (error) {
-      console.error(`[WebFetchTool] Error fetching content:`, error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        url,
-      };
-    }
-  },
-});
+        // 3) Return the result
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error) {
+        console.error(`[WebFetchTool] Error fetching content:`, error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          url,
+        };
+      }
+    },
+  });
+}

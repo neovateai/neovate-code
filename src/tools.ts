@@ -1,4 +1,3 @@
-// import { AgentTool } from './tools/AgentTool';
 import { Tool } from 'ai';
 import { jsonrepair } from 'jsonrepair';
 import { BashTool } from './tools/BashTool';
@@ -10,11 +9,12 @@ import { GlobTool } from './tools/GlobTool';
 import { GrepTool } from './tools/GrepTool';
 import { LSTool } from './tools/LsTool';
 import { ThinkTool } from './tools/ThinkTool';
-import { todoReadTool, todoWriteTool } from './tools/TodoTool';
-import { WebFetchTool } from './tools/WebFetchTool';
+import { createTodoTool } from './tools/TodoTool';
+import { createWebFetchTool } from './tools/WebFetchTool';
+import { Context } from './types';
 
-export const getTools = async (opts?: { tasks?: boolean }) => {
-  const tools = {
+export const getAllTools = async (opts: { context: Context }) => {
+  return {
     FileReadTool,
     FileEditTool,
     BashTool,
@@ -23,32 +23,22 @@ export const getTools = async (opts?: { tasks?: boolean }) => {
     GrepTool,
     GlobTool,
     ThinkTool,
-    WebFetchTool,
+    WebFetchTool: createWebFetchTool(opts),
     BatchTool,
-    // AgentTool,
+    ...(opts.context.config.tasks
+      ? createTodoTool({ context: opts.context })
+      : {}),
   };
-
-  // Add todo tools if tasks feature is enabled
-  if (opts?.tasks) {
-    return {
-      ...tools,
-      todoRead: todoReadTool,
-      todoWrite: todoWriteTool,
-    };
-  }
-
-  return tools;
 };
 
-export const getAskTools = async () => {
+export const getAskTools = async (opts: { context: Context }) => {
   return {
     FileReadTool,
-    BashTool,
     LSTool,
     GrepTool,
     GlobTool,
     ThinkTool,
-    WebFetchTool,
+    WebFetchTool: createWebFetchTool(opts),
     BatchTool,
   };
 };

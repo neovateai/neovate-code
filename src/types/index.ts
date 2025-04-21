@@ -1,6 +1,7 @@
 import type yargsParser from 'yargs-parser';
 import { Config } from '../config';
 import * as logger from '../logger';
+import { MCPClient } from '../mcp';
 import { PluginManager } from '../plugin/plugin_manager';
 import type { Plugin } from '../plugin/types';
 
@@ -18,4 +19,5 @@ export interface Context {
   config: Config;
   pluginManager: PluginManager<Plugin>;
   pluginContext: PluginContext;
+  mcpClients: Record<string, MCPClient>;
 }

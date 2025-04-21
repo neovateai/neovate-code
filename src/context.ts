@@ -2,8 +2,8 @@ import fs from 'fs';
 import { memoize } from 'lodash-es';
 import path from 'path';
 import { getCodebaseContext } from './codebase';
-import { PRODUCT_NAME } from './constants/product';
 import { LSTool } from './tools/LsTool';
+import { Context } from './types';
 import { execFileNoThrow } from './utils/execFileNoThrow';
 
 function getCwd() {
@@ -114,12 +114,15 @@ ${authorLog || '(no recent commits)'}`.trim();
 const STYLE_PROMPT =
   'The codebase follows strict style guidelines shown below. All code changes must strictly adhere to these guidelines to maintain consistency and quality.';
 
-export async function getCodeStyle() {
+export async function getCodeStyle(opts: { context: Context }) {
   const styles: string[] = [];
   let currentDir = getCwd();
 
   while (currentDir !== path.parse(currentDir).root) {
-    const stylePath = path.join(currentDir, `${PRODUCT_NAME}.md`);
+    const stylePath = path.join(
+      currentDir,
+      `${opts.context.config.productName}.md`,
+    );
     if (fs.existsSync(stylePath)) {
       styles.push(
         `Contents of ${stylePath}:\n\n${fs.readFileSync(stylePath, 'utf-8')}`,
@@ -149,15 +152,18 @@ type ContextResult = {
 };
 
 export const getContext: (opts: {
-  codebase?: boolean | string;
+  context: Context;
 }) => Promise<ContextResult> = memoize(async (opts) => {
   const directoryStructure = await getDirectoryStructure();
   const gitStatus = await getGitStatus();
-  const codeStyle = await getCodeStyle();
+  const codeStyle = await getCodeStyle({ context: opts.context });
   const readme = await getReadme();
-  const codebase = opts.codebase
+  const codebase = opts.context.argv.codebase
     ? await getCodebaseContext({
-        include: typeof opts.codebase === 'string' ? opts.codebase : undefined,
+        include:
+          typeof opts.context.argv.codebase === 'string'
+            ? opts.context.argv.codebase
+            : undefined,
       })
     : undefined;
   return {

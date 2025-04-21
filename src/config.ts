@@ -1,14 +1,10 @@
-import { Tool } from 'ai';
 import fs from 'fs';
 import path from 'path';
 import yargsParser from 'yargs-parser';
-import { PRODUCT_NAME } from './constants/product';
 import { getSystemPrompt } from './constants/prompts';
-import { getContext } from './context';
 import { logInfo } from './logger';
 import { ModelType } from './model';
 import type { Plugin } from './plugin/types';
-import { getTools } from './tools';
 
 function getCwd() {
   return process.cwd();
@@ -19,17 +15,17 @@ export type Config = {
   smallModel: ModelType;
   stream: boolean;
   mcpConfig: any;
-  builtinTools: Record<string, Tool>;
-  context: Record<string, any>;
   systemPrompt: string[];
   tasks: boolean;
   plugins: Plugin[];
+  productName: string;
 };
 
 export async function getConfig(opts: {
   argv: yargsParser.Arguments;
+  productName: string;
 }): Promise<Config> {
-  const { argv } = opts;
+  const { argv, productName } = opts;
 
   const model = argv.model;
   if (!model) {
@@ -55,7 +51,7 @@ export async function getConfig(opts: {
 
   const mcpConfigPath = path.join(
     getCwd(),
-    `.${PRODUCT_NAME.toLowerCase()}/mcp.json`,
+    `.${productName.toLowerCase()}/mcp.json`,
   );
   const mcpConfig = (() => {
     // Check if mcp argument is provided
@@ -85,26 +81,20 @@ export async function getConfig(opts: {
   // Check if tasks feature is enabled
   const tasks = !!argv.tasks;
 
-  const builtinTools = await getTools({ tasks });
-  let context = await getContext({
-    codebase: argv.codebase,
-  });
   let systemPrompt = getSystemPrompt({ tasks });
   if (process.env.CODE === 'none') {
     systemPrompt = [];
-    context = {};
   }
   systemPrompt.push(`return one tool at most each time.`);
   return {
     model,
     smallModel,
     stream,
-    mcpConfig,
-    builtinTools,
-    context,
-    systemPrompt,
     tasks,
+    mcpConfig,
+    systemPrompt,
     plugins: [],
+    productName,
   };
 }
 

@@ -5,7 +5,7 @@ import {
 } from 'ai';
 import { Experimental_StdioMCPTransport as StdioMCPTransport } from 'ai/mcp-stdio';
 
-type MCPClient = Awaited<ReturnType<typeof createMCPClient>>;
+export type MCPClient = Awaited<ReturnType<typeof createMCPClient>>;
 /**
  *
     type: 'stdio',

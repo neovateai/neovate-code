@@ -1,22 +1,88 @@
 import { CoreMessage, Tool, generateText, streamText } from 'ai';
 import pc from 'picocolors';
 import { getToolsPrompt } from './constants/prompts';
+import { getContext } from './context';
 import { logAction, logDebug, logTool } from './logger';
+import { getClientsTools } from './mcp';
 import { ModelType, getModel } from './model';
-import { callTool, parseToolUse } from './tools';
+import { callTool, getAllTools, parseToolUse } from './tools';
+import { getAskTools } from './tools';
+import { Context } from './types';
+
+interface AskQueryOptions {
+  context: Context;
+  prompt: string;
+  model?: ModelType | ReturnType<typeof getModel>;
+}
+
+export async function askQuery(opts: AskQueryOptions) {
+  const tools = {
+    ...(process.env.CODE === 'none'
+      ? {}
+      : await getAskTools({ context: opts.context })),
+    ...(await getClientsTools(opts.context.mcpClients)),
+  };
+  const queryContext =
+    process.env.CODE === 'none'
+      ? {}
+      : await getContext({
+          context: opts.context,
+        });
+  await query({
+    ...opts,
+    model: opts.model || opts.context.config.model,
+    systemPrompt: opts.context.config.systemPrompt,
+    queryContext,
+    tools,
+  });
+}
+
+interface EditQueryOptions {
+  context: Context;
+  prompt: string;
+}
+
+export async function editQuery(opts: EditQueryOptions) {
+  const tools = {
+    ...(process.env.CODE === 'none'
+      ? {}
+      : await getAllTools({ context: opts.context })),
+    ...(await getClientsTools(opts.context.mcpClients)),
+  };
+  const queryContext =
+    process.env.CODE === 'none'
+      ? {}
+      : await getContext({
+          context: opts.context,
+        });
+  await query({
+    ...opts,
+    model: opts.context.config.model,
+    systemPrompt: opts.context.config.systemPrompt,
+    queryContext,
+    tools,
+  });
+}
 
 interface QueryOptions {
-  model: ModelType;
+  model: ModelType | ReturnType<typeof getModel>;
   prompt: string;
   systemPrompt: string[];
-  context: Record<string, any>;
+  queryContext: Record<string, any>;
   tools: Record<string, Tool>;
-  stream?: boolean;
+  context: Context;
 }
 
 export async function query(opts: QueryOptions) {
-  const model = getModel(opts.model);
-  const { prompt, systemPrompt, context, tools, stream } = opts;
+  const model =
+    typeof opts.model === 'string' ? getModel(opts.model) : opts.model;
+  const {
+    prompt,
+    systemPrompt,
+    queryContext: codeContext,
+    tools,
+    context,
+  } = opts;
   console.log();
   const messages: CoreMessage[] = [{ role: 'user', content: prompt }];
   while (true) {
@@ -27,7 +93,7 @@ export async function query(opts: QueryOptions) {
       ...systemPrompt,
       ...(hasTools ? getToolsPrompt(tools) : []),
       `====\n\nCONTEXT\n\nAs you answer the user's questions, you can use the following context:`,
-      ...Object.entries(context).map(
+      ...Object.entries(codeContext).map(
         ([key, value]) => `<context name="${key}">${value}</context>`,
       ),
     ].join('\n');
@@ -37,7 +103,7 @@ export async function query(opts: QueryOptions) {
       system,
     };
     let text = '';
-    if (stream) {
+    if (context.config.stream) {
       const result = await streamText(llmOpts);
       text = '';
       // let tmpText = '';
