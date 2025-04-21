@@ -7,8 +7,11 @@ import { getConfig } from './config';
 import * as logger from './logger';
 import { logError } from './logger';
 import { closeClients, createClients } from './mcp';
-import { PluginManager } from './plugin/plugin_manager';
+import { PluginHookType, PluginManager } from './plugin/pluginManager';
 import type { Plugin } from './plugin/types';
+
+// Private export may be deprecated in the future
+export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
 
 async function buildContext(opts: RunCliOpts) {
   dotenv.config();
@@ -24,12 +27,27 @@ async function buildContext(opts: RunCliOpts) {
     command,
     logger,
   };
+  // hook: config
+  const resolvedConfig = await pluginManager.apply({
+    hook: 'config',
+    args: [{ command }],
+    type: PluginHookType.SeriesMerge,
+    memo: config,
+    pluginContext,
+  });
+  // hook: configResolved
+  await pluginManager.apply({
+    hook: 'configResolved',
+    args: [resolvedConfig],
+    type: PluginHookType.Series,
+    pluginContext,
+  });
   const mcpClients = await createClients(config.mcpConfig.mcpServers || {});
   return {
     argv,
     command,
     cwd,
-    config,
+    config: resolvedConfig,
     pluginManager,
     pluginContext,
     mcpClients,

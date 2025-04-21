@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { PluginHookType, PluginManager } from './plugin_manager';
+import { PluginHookType, PluginManager } from './pluginManager';
 import type { Plugin } from './types';
 
 test('PluginManager should execute plugins in correct order (pre -> normal -> post)', async () => {
