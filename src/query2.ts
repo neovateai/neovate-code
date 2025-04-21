@@ -30,7 +30,7 @@ export async function askQuery(opts: AskQueryOptions) {
         });
   await query({
     ...opts,
-    model: opts.model || opts.context.config.model,
+    model: opts.model,
     systemPrompt: opts.context.config.systemPrompt,
     queryContext,
     tools,
@@ -57,7 +57,6 @@ export async function editQuery(opts: EditQueryOptions) {
         });
   await query({
     ...opts,
-    model: opts.context.config.model,
     systemPrompt: opts.context.config.systemPrompt,
     queryContext,
     tools,
@@ -65,7 +64,7 @@ export async function editQuery(opts: EditQueryOptions) {
 }
 
 interface QueryOptions {
-  model: ModelType | ReturnType<typeof getModel>;
+  model?: ModelType | ReturnType<typeof getModel>;
   prompt: string;
   systemPrompt: string[];
   queryContext: Record<string, any>;
@@ -75,7 +74,9 @@ interface QueryOptions {
 
 export async function query(opts: QueryOptions) {
   const model =
-    typeof opts.model === 'string' ? getModel(opts.model) : opts.model;
+    typeof opts.model === 'string' || !opts.model
+      ? getModel(opts.model || opts.context.config.model)
+      : opts.model;
   const {
     prompt,
     systemPrompt,
