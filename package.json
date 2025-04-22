@@ -5,6 +5,7 @@
   "files": [
     "dist"
   ],
+  "main": "./dist/index.mjs",
   "bin": {
     "takumi": "./dist/cli.mjs"
   },
