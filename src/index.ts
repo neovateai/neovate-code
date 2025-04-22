@@ -16,12 +16,18 @@ export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
 async function buildContext(opts: RunCliOpts) {
   dotenv.config();
   const cwd = process.cwd();
-  const argv = yargsParser(process.argv.slice(2));
+  const argv = yargsParser(process.argv.slice(2), {
+    alias: {
+      // add m for model
+      m: 'model',
+    },
+  });
   const command = argv._[0] as string;
   const config = await getConfig({ argv, productName: opts.productName });
   const plugins = [...(config.plugins || []), ...(opts.plugins || [])];
   const pluginManager = new PluginManager(plugins);
   const pluginContext = {
+    argv,
     config,
     cwd,
     command,
@@ -30,7 +36,7 @@ async function buildContext(opts: RunCliOpts) {
   // hook: config
   const resolvedConfig = await pluginManager.apply({
     hook: 'config',
-    args: [{ command }],
+    args: [{ context: pluginContext }],
     type: PluginHookType.SeriesMerge,
     memo: config,
     pluginContext,

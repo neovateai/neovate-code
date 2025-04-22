@@ -10,6 +10,7 @@ export interface PluginContext {
   cwd: string;
   command: string;
   logger: typeof logger;
+  argv: yargsParser.Arguments;
 }
 
 export interface Context {

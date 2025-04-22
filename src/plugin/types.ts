@@ -5,7 +5,7 @@ export const PluginSchema = z.object({
   name: z.string().optional(),
   config: z
     .function(
-      z.tuple([z.object({ command: z.string() })]),
+      z.tuple([z.object({ context: z.any() })]),
       z.union([z.any(), z.promise(z.any()), z.null()]),
     )
     .optional(),
