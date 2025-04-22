@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { createRequire } from 'module';
 import yargsParser from 'yargs-parser';
 import { runAct } from './commands/act';
 import { runCommit } from './commands/commit';
@@ -9,7 +10,6 @@ import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './plugin/pluginManager';
 import type { Plugin } from './plugin/types';
 import * as logger from './utils/logger';
-import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 
