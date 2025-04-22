@@ -34,14 +34,13 @@ export const ArchitectTool = tool({
     const content = context
       ? `<context>${context}</context>\n\n${prompt}`
       : prompt;
+    // @ts-ignore
     const result = await query({
       model: 'Doubao/ep-20250210151255-r5x5s',
-      messages: [{ role: 'user', content }],
-      // TODO: add tools
-      tools: {},
+      prompt: content,
       // TODO: add context
-      context: {},
       systemPrompt: [ARCHITECT_SYSTEM_PROMPT],
+      queryContext: {},
     });
     console.log(`[ArchitectTool] result: ${result}`);
     return result;

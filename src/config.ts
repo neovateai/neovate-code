@@ -3,7 +3,7 @@ import path from 'path';
 import yargsParser from 'yargs-parser';
 import { getSystemPrompt } from './prompts/prompts';
 import { logInfo } from './utils/logger';
-import { ModelType } from './model';
+import { ModelType } from './llm/model';
 import type { Plugin } from './plugin/types';
 
 function getCwd() {

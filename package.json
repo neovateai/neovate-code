@@ -16,7 +16,8 @@
     "build": "npm run build:cli && npm run build:index",
     "release": "utools release --git-tag --github-release --changelog",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "cli",
