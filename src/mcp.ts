@@ -65,8 +65,9 @@ export async function getClientsTools(clients: Record<string, MCPClient>) {
 
 function serializeToolName(name: string, toolName: string) {
   let ret = `mcp__${name}__${toolName}`;
+  ret = ret.replace(/[-]/g, '_');
   // replace all non-alphanumeric characters with a dash
-  ret = ret.replace(/[^a-zA-Z0-9]/g, '_');
+  // ret = ret.replace(/[^a-zA-Z0-9]/g, '_');
   return ret;
 }
 

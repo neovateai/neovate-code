@@ -1,10 +1,10 @@
 import fs from 'fs';
 import { memoize } from 'lodash-es';
 import path from 'path';
-import { getCodebaseContext } from './codebase';
 import { LSTool } from '../tools/LsTool';
 import { Context } from '../types';
 import { execFileNoThrow } from '../utils/execFileNoThrow';
+import { getCodebaseContext } from './codebase';
 
 function getCwd() {
   return process.cwd();

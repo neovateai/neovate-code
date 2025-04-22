@@ -1,5 +1,6 @@
 import { Tool } from 'ai';
 import { jsonrepair } from 'jsonrepair';
+import { Context } from '../types';
 import { BashTool } from './BashTool';
 import { BatchTool } from './BatchTool';
 import { FileEditTool } from './FileEditTool';
@@ -11,7 +12,6 @@ import { LSTool } from './LsTool';
 import { ThinkTool } from './ThinkTool';
 import { createTodoTool } from './TodoTool';
 import { createWebFetchTool } from './WebFetchTool';
-import { Context } from '../types';
 
 export const getAllTools = async (opts: { context: Context }) => {
   return {
@@ -57,7 +57,9 @@ export async function callTool(
 ) {
   const tool = tools[toolUse.toolName];
   if (!tool) {
-    throw new Error(`Tool ${toolUse.toolName} not found`);
+    throw new Error(
+      `Tool ${toolUse.toolName} not found in ${Object.keys(tools).join(', ')}`,
+    );
   }
 
   // TODO: should not use ai sdk's tool interface, but use our own

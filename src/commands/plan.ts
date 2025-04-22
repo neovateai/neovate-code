@@ -2,8 +2,8 @@ import assert from 'assert';
 import fs from 'fs';
 import inquirer from 'inquirer';
 import { askQuery } from '../llm/query';
-import { logInfo } from '../utils/logger';
 import { Context } from '../types';
+import { logInfo } from '../utils/logger';
 
 const MAX_STEPS = 5;
 const PLAN_FILE = 'PLAN.md';
