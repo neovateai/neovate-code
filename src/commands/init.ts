@@ -1,4 +1,4 @@
-import { editQuery } from '../query';
+import { editQuery } from '../llm/query';
 import { Context } from '../types';
 
 export async function runInit(opts: { context: Context }) {

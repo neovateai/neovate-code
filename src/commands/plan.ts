@@ -1,9 +1,9 @@
 import assert from 'assert';
 import fs from 'fs';
 import inquirer from 'inquirer';
+import { askQuery } from '../llm/query';
 import { logInfo } from '../logger';
 import { Context } from '../types';
-import { askQuery } from '../query';
 
 const MAX_STEPS = 5;
 const PLAN_FILE = 'PLAN.md';
@@ -59,7 +59,10 @@ export async function runPlan(opts: { context: Context }) {
     if (steps > maxSteps) {
       break;
     }
-    const moreInfo = await askUserForMoreInformation(requirements, opts.context);
+    const moreInfo = await askUserForMoreInformation(
+      requirements,
+      opts.context,
+    );
     const strippedMoreInfo = removeThinkTags(moreInfo);
     requirements.push(strippedMoreInfo);
     writeRequirementsToFile(strippedMoreInfo);

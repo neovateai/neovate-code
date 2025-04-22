@@ -1,7 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { getModel } from '../model';
-import { query } from '../query';
+import { query } from '../llm/query';
 
 const ARCHITECT_SYSTEM_PROMPT = `
 You are an expert software architect. Your role is to analyze technical requirements and produce clear, actionable implementation plans.
@@ -45,6 +44,6 @@ export const ArchitectTool = tool({
       systemPrompt: [ARCHITECT_SYSTEM_PROMPT],
     });
     console.log(`[ArchitectTool] result: ${result}`);
-    return result.text;
+    return result;
   },
 });

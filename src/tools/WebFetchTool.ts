@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { askQuery } from '../query';
+import { askQuery } from '../llm/query';
 import { Context } from '../types';
 
 /**

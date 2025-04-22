@@ -1,13 +1,13 @@
 import { CoreMessage, Tool, generateText, streamText } from 'ai';
 import pc from 'picocolors';
-import { getToolsPrompt } from './constants/prompts';
-import { getContext } from './context';
-import { logAction, logDebug, logTool } from './logger';
-import { getClientsTools } from './mcp';
+import { getToolsPrompt } from '../constants/prompts';
+import { getContext } from '../context';
+import { logAction, logDebug, logTool } from '../logger';
+import { getClientsTools } from '../mcp';
+import { callTool, getAllTools, parseToolUse } from '../tools';
+import { getAskTools } from '../tools';
+import { Context } from '../types';
 import { ModelType, getModel } from './model';
-import { callTool, getAllTools, parseToolUse } from './tools';
-import { getAskTools } from './tools';
-import { Context } from './types';
 
 interface AskQueryOptions {
   context: Context;
@@ -81,13 +81,7 @@ export async function query(opts: QueryOptions) {
     typeof opts.model === 'string' || !opts.model
       ? getModel(opts.model || opts.context.config.model)
       : opts.model;
-  const {
-    prompt,
-    systemPrompt,
-    queryContext,
-    tools,
-    context,
-  } = opts;
+  const { prompt, systemPrompt, queryContext, tools, context } = opts;
   console.log();
   const messages: CoreMessage[] = [{ role: 'user', content: prompt }];
   while (true) {
