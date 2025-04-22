@@ -1,3 +1,10 @@
+## 0.0.10
+
+`2025-04-22`
+
+- refact: reorganize imports in config, index, and query files for consistency and clarity by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.9
 
 `2025-04-22`
