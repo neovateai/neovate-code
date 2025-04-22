@@ -1,10 +1,9 @@
 import assert from 'assert';
 import fs from 'fs';
 import inquirer from 'inquirer';
-import { Config } from '../config';
 import { logInfo } from '../logger';
-import { query } from '../query';
 import { Context } from '../types';
+import { askQuery } from '../query';
 
 const MAX_STEPS = 5;
 const PLAN_FILE = 'PLAN.md';
@@ -51,7 +50,7 @@ export async function runPlan(opts: { context: Context }) {
   const maxSteps = clean ? 1 : MAX_STEPS;
   while (true) {
     requirements = readRequirementsFromFile();
-    const isComplete = await isRequirementsComplete(requirements, config);
+    const isComplete = await isRequirementsComplete(requirements, opts.context);
     logInfo(`> isComplete: ${isComplete}`);
     if (isComplete) {
       break;
@@ -60,7 +59,7 @@ export async function runPlan(opts: { context: Context }) {
     if (steps > maxSteps) {
       break;
     }
-    const moreInfo = await askUserForMoreInformation(requirements, config);
+    const moreInfo = await askUserForMoreInformation(requirements, opts.context);
     const strippedMoreInfo = removeThinkTags(moreInfo);
     requirements.push(strippedMoreInfo);
     writeRequirementsToFile(strippedMoreInfo);
@@ -77,7 +76,7 @@ export async function runPlan(opts: { context: Context }) {
   }
   logInfo(`> request for detailed plan`);
   requirements = readRequirementsFromFile();
-  const detailedPlan = await requestDetailedPlan(requirements, config);
+  const detailedPlan = await requestDetailedPlan(requirements, opts.context);
   fs.writeFileSync(PLAN_FILE, removeThinkTags(detailedPlan));
   logInfo(`> Plan saved to ${PLAN_FILE}`);
 }
@@ -103,78 +102,56 @@ export function removeThinkTags(text: string) {
 
 export async function requestDetailedPlan(
   requirements: string[],
-  config: Config,
+  context: Context,
 ) {
-  const result = await query({
+  const result = await askQuery({
     systemPrompt: [
       `You are a helpful assistant that produces a detailed step by step plan for the user's requirements. In Chinese.`,
     ],
-    messages: [
-      {
-        role: 'user',
-        content: `
+    prompt: `
 Requirements:
 ${requirements.join('\n')}
-        `,
-      },
-    ],
-    model: config.model,
-    context: config.codeContext,
-    tools: {},
-    stream: false,
+    `,
+    context,
   });
-  return result.text;
+  return result;
 }
 
 export async function askUserForMoreInformation(
   requirements: string[],
-  config: Config,
+  context: Context,
 ) {
-  const result = await query({
+  const result = await askQuery({
     systemPrompt: [
       `Don't answer the user's question, just ask the user for more information for better quality answer later. Answer in Chinese.`,
     ],
-    messages: [
-      {
-        role: 'user',
-        content: `
+    prompt: `
 Requirements:
 ${requirements.join('\n')}
-        `,
-      },
-    ],
-    model: config.smallModel,
-    context: config.codeContext,
-    tools: {},
-    stream: false,
+    `,
+    model: context.config.smallModel,
+    context,
   });
-  return result.text;
+  return result;
 }
 
 export async function isRequirementsComplete(
   requirements: string[],
-  config: Config,
+  context: Context,
 ) {
   if (requirements.some((req) => req.includes(DONE_MARK))) {
     return true;
   }
-  const result = await query({
+  const result = await askQuery({
     systemPrompt: [
       `You are a helpful assistant that checks if the requirements are complete. answer YES or NO.`,
     ],
-    messages: [
-      {
-        role: 'user',
-        content: `
+    prompt: `
 Requirements:
 ${requirements.join('\n')}
         `,
-      },
-    ],
-    model: config.smallModel,
-    context: config.codeContext,
-    tools: {},
-    stream: false,
+    model: context.config.smallModel,
+    context,
   });
-  return result.text.includes('YES');
+  return result.includes('YES');
 }

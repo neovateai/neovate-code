@@ -1,109 +1,153 @@
 import { CoreMessage, Tool, generateText, streamText } from 'ai';
-import { logAction, logDebug, logInfo } from './logger';
+import pc from 'picocolors';
+import { getToolsPrompt } from './constants/prompts';
+import { getContext } from './context';
+import { logAction, logDebug, logTool } from './logger';
+import { getClientsTools } from './mcp';
 import { ModelType, getModel } from './model';
+import { callTool, getAllTools, parseToolUse } from './tools';
+import { getAskTools } from './tools';
+import { Context } from './types';
 
-interface QueryOptions {
-  messages: CoreMessage[];
-  systemPrompt: string[];
-  context: Record<string, any>;
-  model: ModelType;
-  tools: Record<string, Tool>;
-  stream?: boolean;
-  outputStream?: boolean;
+interface AskQueryOptions {
+  context: Context;
+  prompt: string;
+  model?: ModelType | ReturnType<typeof getModel>;
+  systemPrompt?: string[];
 }
 
-const MAX_QUERY_WITH_TOOLS_STEPS = 5;
+export async function askQuery(opts: AskQueryOptions) {
+  const tools: any = {
+    ...(process.env.CODE === 'none'
+      ? {}
+      : await getAskTools({ context: opts.context })),
+    ...(await getClientsTools(opts.context.mcpClients)),
+  };
+  const queryContext =
+    process.env.CODE === 'none'
+      ? {}
+      : await getContext({
+          context: opts.context,
+        });
+  return await query({
+    ...opts,
+    model: opts.model,
+    systemPrompt: opts.systemPrompt || opts.context.config.systemPrompt,
+    queryContext,
+    tools,
+  });
+}
 
-export async function queryWithTools(opts: QueryOptions) {
-  const messages = opts.messages;
-  let results = [];
-  let steps = 0;
-  while (true) {
-    const result = await query(opts);
-    results.push(result);
+interface EditQueryOptions {
+  context: Context;
+  prompt: string;
+  model?: ModelType | ReturnType<typeof getModel>;
+  systemPrompt?: string[];
+}
 
-    steps++;
-    if (steps > MAX_QUERY_WITH_TOOLS_STEPS) {
-      return {
-        results,
-        lastResult: result,
-      };
-    }
+export async function editQuery(opts: EditQueryOptions) {
+  const tools = {
+    ...(process.env.CODE === 'none'
+      ? {}
+      : await getAllTools({ context: opts.context })),
+    ...(await getClientsTools(opts.context.mcpClients)),
+  };
+  const queryContext =
+    process.env.CODE === 'none'
+      ? {}
+      : await getContext({
+          context: opts.context,
+        });
+  return await query({
+    ...opts,
+    model: opts.model,
+    systemPrompt: opts.systemPrompt || opts.context.config.systemPrompt,
+    queryContext,
+    tools,
+  });
+}
 
-    let toolCalls: string[] = [];
-    for (const step of result.steps) {
-      if (step.text.length > 0) {
-        messages.push({ role: 'assistant', content: step.text });
-      }
-      if (step.toolCalls.length > 0) {
-        toolCalls.push(...step.toolCalls.map((toolCall) => toolCall.toolName));
-        messages.push({ role: 'assistant', content: step.toolCalls });
-      }
-      if (step.toolResults.length > 0) {
-        messages.push({ role: 'tool', content: step.toolResults });
-      }
-    }
-
-    if (toolCalls.length > 0) {
-      logDebug(`Tools called: ${toolCalls.join(', ')}`);
-    } else {
-      logInfo(`${result.text}`);
-      return {
-        results,
-        lastResult: result,
-      };
-    }
-  }
+interface QueryOptions {
+  model?: ModelType | ReturnType<typeof getModel>;
+  prompt: string;
+  systemPrompt: string[];
+  queryContext: Record<string, any>;
+  tools: Record<string, Tool>;
+  context: Context;
 }
 
 export async function query(opts: QueryOptions) {
-  let {
-    messages,
+  const model =
+    typeof opts.model === 'string' || !opts.model
+      ? getModel(opts.model || opts.context.config.model)
+      : opts.model;
+  const {
+    prompt,
     systemPrompt,
-    context,
+    queryContext,
     tools,
-    stream = false,
-    outputStream = false,
+    context,
   } = opts;
-  const model = getModel(opts.model);
   console.log();
-  logAction(`Asking model... (with ${messages.length} messages)`);
-  logDebug(`Messages: ${JSON.stringify(messages, null, 2)}`);
-  const system = [
-    ...systemPrompt,
-    `As you answer the user's questions, you can use the following context:`,
-    ...Object.entries(context).map(
-      ([key, value]) => `<context name="${key}">${value}</context>`,
-    ),
-  ].join('\n');
-  if (stream) {
-    const result = await streamText({
+  const messages: CoreMessage[] = [{ role: 'user', content: prompt }];
+  while (true) {
+    logAction(`Asking model... (with ${messages.length} messages)`);
+    logDebug(`Messages: ${JSON.stringify(messages, null, 2)}`);
+    const hasTools = Object.keys(tools).length > 0;
+    const system = [
+      ...systemPrompt,
+      ...(hasTools ? getToolsPrompt(tools) : []),
+      `====\n\nCONTEXT\n\nAs you answer the user's questions, you can use the following context:`,
+      ...Object.entries(queryContext).map(
+        ([key, value]) => `<context name="${key}">${value}</context>`,
+      ),
+    ].join('\n');
+    const llmOpts = {
       model,
       messages,
       system,
-      tools,
-    });
-    for await (const text of result.textStream) {
-      if (outputStream) {
-        process.stdout.write(text + '\n');
-      }
-    }
-    const finalResult = {
-      steps: await result.steps,
-      toolCalls: await result.toolCalls,
-      toolResults: await result.toolResults,
-      text: await result.text,
     };
-    logDebug(`Query Result: ${JSON.stringify(finalResult, null, 2)}`);
-    return finalResult;
-  } else {
-    const result = await generateText({
-      model,
-      messages,
-      system,
-      tools,
-    });
-    logDebug(`>>> Query Result: ${JSON.stringify(result, null, 2)}`);
-    return result;
+    let text = '';
+    if (context.config.stream) {
+      const result = await streamText(llmOpts);
+      text = '';
+      // let tmpText = '';
+      for await (const chunk of result.textStream) {
+        text += chunk;
+        if (text.includes('<') || text.includes('<use_tool>')) {
+        } else {
+          process.stdout.write(chunk);
+        }
+        // if (chunk.includes('<') || tmpText.length) {
+        //   tmpText += chunk;
+        //   if (tmpText.includes('>')) {
+        //     if (!tmpText.includes('<use_tool>')) {
+        //       process.stdout.write(tmpText);
+        //     }
+        //     text += tmpText;
+        //     tmpText = '';
+        //   }
+        // } else {
+        //   if (!text.includes('<use_tool>')) {
+        //     process.stdout.write(chunk);
+        //   }
+        // }
+      }
+    } else {
+      const result = await generateText(llmOpts);
+      console.log(result.text);
+      text = result.text;
+    }
+    const { toolUse } = parseToolUse(text);
+    if (toolUse) {
+      messages.push({ role: 'assistant', content: text });
+      logTool(
+        `Tool ${pc.bold(toolUse.toolName)} called with args: ${JSON.stringify(toolUse.arguments)}`,
+      );
+      const toolResult = await callTool(tools, toolUse);
+      messages.push({ role: 'user', content: JSON.stringify(toolResult) });
+    } else {
+      return text;
+    }
   }
 }
