@@ -1,3 +1,33 @@
+## 0.0.8
+
+`2025-04-22`
+
+- refact: add type checking command to package.json, update model import path, and remove obsolete plugin manager tests by [@sorrycc](https://github.com/sorrycc)
+- refact: move tool-related functions to a new tools.ts file and update imports in query.ts by [@sorrycc](https://github.com/sorrycc)
+- refact: restructure imports and introduce new context management files by [@sorrycc](https://github.com/sorrycc)
+- refact: reorganize query imports and remove unused .gitkeep file by [@sorrycc](https://github.com/sorrycc)
+- refact: consolidate query functions and remove deprecated files by [@sorrycc](https://github.com/sorrycc)
+- refact: enhance plugin manager with new hook types and add tests by [@sorrycc](https://github.com/sorrycc)
+- refact: streamline model handling in query functions by [@sorrycc](https://github.com/sorrycc)
+- refact: lots of changes by [@sorrycc](https://github.com/sorrycc)
+- refact: add plugin manager by [@sorrycc](https://github.com/sorrycc)
+- feat: add BatchTool by [@sorrycc](https://github.com/sorrycc)
+- feat: add WebFetchTool by [@sorrycc](https://github.com/sorrycc)
+- feat(TodoTool): enhance descriptions for todo management tools to promote proactive usage by [@sorrycc](https://github.com/sorrycc)
+- feat(TodoTool): implement task management tools and integrate with config by [@sorrycc](https://github.com/sorrycc)
+- fix(FileEditTool): catch error by [@sorrycc](https://github.com/sorrycc)
+- refactor(mcp): update tool name serialization format and remove unused deserialization function by [@sorrycc](https://github.com/sorrycc)
+- feat: add jsonrepair for improved JSON parsing error handling by [@sorrycc](https://github.com/sorrycc)
+- refactor(BashTool): enhance execution response structure to include success status by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename getAllTools to getTools and streamline tool retrieval process by [@sorrycc](https://github.com/sorrycc)
+- feat: add timeout functionality to tool execution with error handling by [@sorrycc](https://github.com/sorrycc)
+- fix: update requirement file formatting and enhance error handling in BashTool execution by [@sorrycc](https://github.com/sorrycc)
+- feat: tool calling with structure prompt by [@sorrycc](https://github.com/sorrycc)
+- feat: add new OpenRouter model 'optimus-alpha' to the model list in model.ts by [@sorrycc](https://github.com/sorrycc)
+- feat: update model.ts to include new Grok models and integrate XAI SDK by [@sorrycc](https://github.com/sorrycc)
+- feat: add new OpenRouter model 'quasar-alpha' to the model list in model.ts by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.7
 
 `2025-04-07`
