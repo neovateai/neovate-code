@@ -4,8 +4,8 @@ import { getToolsPrompt } from '../prompts/prompts';
 import { getContext } from '../context/context';
 import { logAction, logDebug, logTool } from '../utils/logger';
 import { getClientsTools } from '../mcp';
-import { callTool, getAllTools, parseToolUse } from '../tools';
-import { getAskTools } from '../tools';
+import { callTool, getAllTools, parseToolUse } from '../tools/tools';
+import { getAskTools } from '../tools/tools';
 import { Context } from '../types';
 import { ModelType, getModel } from './model';
 

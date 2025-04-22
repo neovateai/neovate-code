@@ -1,17 +1,17 @@
 import { Tool } from 'ai';
 import { jsonrepair } from 'jsonrepair';
-import { BashTool } from './tools/BashTool';
-import { BatchTool } from './tools/BatchTool';
-import { FileEditTool } from './tools/FileEditTool';
-import { FileReadTool } from './tools/FileReadTool';
-import { FileWriteTool } from './tools/FileWriteTool';
-import { GlobTool } from './tools/GlobTool';
-import { GrepTool } from './tools/GrepTool';
-import { LSTool } from './tools/LsTool';
-import { ThinkTool } from './tools/ThinkTool';
-import { createTodoTool } from './tools/TodoTool';
-import { createWebFetchTool } from './tools/WebFetchTool';
-import { Context } from './types';
+import { BashTool } from './BashTool';
+import { BatchTool } from './BatchTool';
+import { FileEditTool } from './FileEditTool';
+import { FileReadTool } from './FileReadTool';
+import { FileWriteTool } from './FileWriteTool';
+import { GlobTool } from './GlobTool';
+import { GrepTool } from './GrepTool';
+import { LSTool } from './LsTool';
+import { ThinkTool } from './ThinkTool';
+import { createTodoTool } from './TodoTool';
+import { createWebFetchTool } from './WebFetchTool';
+import { Context } from '../types';
 
 export const getAllTools = async (opts: { context: Context }) => {
   return {
