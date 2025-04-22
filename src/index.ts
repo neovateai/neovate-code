@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import yargsParser from 'yargs-parser';
 import { runAct } from './commands/act';
+import { runCommit } from './commands/commit';
 import { runInit } from './commands/init';
 import { runPlan } from './commands/plan';
 import { getConfig } from './config';
@@ -8,7 +9,6 @@ import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './plugin/pluginManager';
 import type { Plugin } from './plugin/types';
 import * as logger from './utils/logger';
-import { logError } from './utils/logger';
 
 // Private export may be deprecated in the future
 export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
@@ -78,14 +78,18 @@ export async function runCli(opts: RunCliOpts) {
         logger.logPrompt('/init');
         await runInit({ context });
         break;
+      case 'commit':
+        logger.logPrompt('/commit');
+        await runCommit({ context });
+        break;
       default:
         logger.logPrompt(command);
         await runAct({ context, prompt: command });
         break;
     }
   } catch (error: any) {
-    logError('Error:');
-    logError(error.message);
+    logger.logError('Error:');
+    logger.logError(error.message);
     if (process.env.DEBUG) {
       console.error(error);
     }
