@@ -54,9 +54,9 @@ or line breaks.
 
 /**
  * TODO:
- * - [ ] Handle toooo large diff, e.g. pnpm-lock.yaml
+ * - [ ] Handle toooo large diff, e.g. pnpm-lock.yaml, package-lock.json, ...
  */
 async function getStagedDiff() {
-  const changed = execSync('git diff --cached');
+  const changed = execSync(`git diff --cached -- ':!pnpm-lock.yaml' ':!package-lock.json' ':!yarn.lock'`);
   return changed.toString();
 }
