@@ -25,7 +25,11 @@ ${diff}
   if (argv.commit) {
     execSync(`git commit -m "${message}"`);
     if (argv.push) {
-      execSync('git push');
+      // TODO: push when there's a remote
+      const hasRemote = execSync('git remote').toString().trim().length > 0;
+      if (hasRemote) {
+        execSync('git push');
+      }
     }
   }
   if (argv.copy) {
