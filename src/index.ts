@@ -9,6 +9,9 @@ import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './plugin/pluginManager';
 import type { Plugin } from './plugin/types';
 import * as logger from './utils/logger';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 // Private export may be deprecated in the future
 export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
@@ -18,11 +21,14 @@ async function buildContext(opts: RunCliOpts) {
   const cwd = process.cwd();
   const argv = yargsParser(process.argv.slice(2), {
     alias: {
-      // add m for model
       m: 'model',
+      v: 'version',
     },
   });
-  const command = argv._[0] as string;
+  let command = argv._[0] as string;
+  if (argv.version) {
+    command = 'version';
+  }
   const config = await getConfig({ argv, productName: opts.productName });
   const plugins = [...(config.plugins || []), ...(opts.plugins || [])];
   const pluginManager = new PluginManager(plugins);
@@ -81,6 +87,9 @@ export async function runCli(opts: RunCliOpts) {
       case 'commit':
         logger.logPrompt('/commit');
         await runCommit({ context });
+        break;
+      case 'version':
+        console.log(require('../package.json').version);
         break;
       default:
         logger.logPrompt(command);

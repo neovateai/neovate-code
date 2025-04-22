@@ -63,14 +63,8 @@ export async function getConfig(opts: {
 
     // Fallback to config file if no mcp argument
     if (fs.existsSync(mcpConfigPath)) {
-      logInfo(
-        `Using MCP config from ${path.relative(getCwd(), mcpConfigPath)}`,
-      );
       return JSON.parse(fs.readFileSync(mcpConfigPath, 'utf-8'));
     } else {
-      logInfo(
-        `No MCP config found at ${path.relative(getCwd(), mcpConfigPath)}`,
-      );
       return {};
     }
   })();
