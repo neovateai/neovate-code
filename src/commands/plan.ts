@@ -2,7 +2,7 @@ import assert from 'assert';
 import fs from 'fs';
 import inquirer from 'inquirer';
 import { askQuery } from '../llm/query';
-import { logInfo } from '../logger';
+import { logInfo } from '../utils/logger';
 import { Context } from '../types';
 
 const MAX_STEPS = 5;

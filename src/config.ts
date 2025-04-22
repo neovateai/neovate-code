@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import yargsParser from 'yargs-parser';
-import { getSystemPrompt } from './constants/prompts';
-import { logInfo } from './logger';
+import { getSystemPrompt } from './prompts/prompts';
+import { logInfo } from './utils/logger';
 import { ModelType } from './model';
 import type { Plugin } from './plugin/types';
 

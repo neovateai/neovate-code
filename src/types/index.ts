@@ -1,6 +1,6 @@
 import type yargsParser from 'yargs-parser';
 import { Config } from '../config';
-import * as logger from '../logger';
+import * as logger from '../utils/logger';
 import { MCPClient } from '../mcp';
 import { PluginManager } from '../plugin/pluginManager';
 import type { Plugin } from '../plugin/types';

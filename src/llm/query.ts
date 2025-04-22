@@ -1,8 +1,8 @@
 import { CoreMessage, Tool, generateText, streamText } from 'ai';
 import pc from 'picocolors';
-import { getToolsPrompt } from '../constants/prompts';
-import { getContext } from '../context';
-import { logAction, logDebug, logTool } from '../logger';
+import { getToolsPrompt } from '../prompts/prompts';
+import { getContext } from '../context/context';
+import { logAction, logDebug, logTool } from '../utils/logger';
 import { getClientsTools } from '../mcp';
 import { callTool, getAllTools, parseToolUse } from '../tools';
 import { getAskTools } from '../tools';
