@@ -1,12 +1,12 @@
 import { CoreMessage, Tool, generateText, streamText } from 'ai';
 import pc from 'picocolors';
-import { getToolsPrompt } from '../prompts/prompts';
 import { getContext } from '../context/context';
-import { logAction, logDebug, logTool } from '../utils/logger';
 import { getClientsTools } from '../mcp';
+import { getToolsPrompt } from '../prompts/prompts';
 import { callTool, getAllTools, parseToolUse } from '../tools/tools';
 import { getAskTools } from '../tools/tools';
 import { Context } from '../types';
+import { logAction, logDebug, logTool } from '../utils/logger';
 import { ModelType, getModel } from './model';
 
 interface AskQueryOptions {
@@ -77,10 +77,8 @@ interface QueryOptions {
 }
 
 export async function query(opts: QueryOptions) {
-  const model =
-    typeof opts.model === 'string' || !opts.model
-      ? getModel(opts.model || opts.context.config.model)
-      : opts.model;
+  let model = opts.model || opts.context.config.model;
+  model = typeof model === 'string' ? getModel(model) : model;
   const { prompt, systemPrompt, queryContext, tools, context } = opts;
   console.log();
   const messages: CoreMessage[] = [{ role: 'user', content: prompt }];

@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import yargsParser from 'yargs-parser';
-import { getSystemPrompt } from './prompts/prompts';
-import { logInfo } from './utils/logger';
 import { ModelType } from './llm/model';
 import type { Plugin } from './plugin/types';
+import { getSystemPrompt } from './prompts/prompts';
+import { logInfo } from './utils/logger';
 
 function getCwd() {
   return process.cwd();
@@ -28,9 +28,6 @@ export async function getConfig(opts: {
   const { argv, productName } = opts;
 
   const model = argv.model;
-  if (!model) {
-    throw new Error('Model is required');
-  }
 
   // Small model is the model to use for the small and fast queries
   // It's the same as the main model if not specified

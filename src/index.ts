@@ -4,11 +4,11 @@ import { runAct } from './commands/act';
 import { runInit } from './commands/init';
 import { runPlan } from './commands/plan';
 import { getConfig } from './config';
-import * as logger from './utils/logger';
-import { logError } from './utils/logger';
 import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './plugin/pluginManager';
 import type { Plugin } from './plugin/types';
+import * as logger from './utils/logger';
+import { logError } from './utils/logger';
 
 // Private export may be deprecated in the future
 export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
@@ -19,7 +19,7 @@ async function buildContext(opts: RunCliOpts) {
   const argv = yargsParser(process.argv.slice(2));
   const command = argv._[0] as string;
   const config = await getConfig({ argv, productName: opts.productName });
-  const plugins = [...(config.plugins || [])];
+  const plugins = [...(config.plugins || []), ...(opts.plugins || [])];
   const pluginManager = new PluginManager(plugins);
   const pluginContext = {
     config,
