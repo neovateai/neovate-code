@@ -4,6 +4,11 @@ import { askQuery } from '../llm/query';
 import { Context } from '../types';
 
 export async function runCommit(opts: { context: Context }) {
+  try {
+    execSync('git --version', { stdio: 'ignore' });
+  } catch (error) {
+    throw new Error('Git is not installed or not available in PATH');
+  }
   const argv = opts.context.argv;
   const hasChanged =
     execSync('git status --porcelain').toString().trim().length > 0;
@@ -58,12 +63,49 @@ or line breaks.
 `;
 
 /**
- * TODO:
- * - [ ] Handle toooo large diff, e.g. pnpm-lock.yaml, package-lock.json, ...
+ * Get the staged diff while handling large files
+ * - Excludes common lockfiles and large file types
+ * - Limits diff size to prevent context overflow
  */
 async function getStagedDiff() {
-  const changed = execSync(
-    `git diff --cached -- ':!pnpm-lock.yaml' ':!package-lock.json' ':!yarn.lock'`,
-  );
-  return changed.toString();
+  // Exclude lockfiles and common large file types
+  const excludePatterns = [
+    ':!pnpm-lock.yaml',
+    ':!package-lock.json',
+    ':!yarn.lock',
+    ':!*.min.js',
+    ':!*.bundle.js',
+    ':!dist/**',
+    ':!build/**',
+    ':!*.gz',
+    ':!*.zip',
+    ':!*.tar',
+    ':!*.tgz',
+    ':!*.woff',
+    ':!*.woff2',
+    ':!*.ttf',
+    ':!*.png',
+    ':!*.jpg',
+    ':!*.jpeg',
+    ':!*.gif',
+    ':!*.ico',
+    ':!*.svg',
+    ':!*.pdf',
+  ].join(' ');
+
+  // Get the diff with exclusions
+  const changed = execSync(`git diff --cached -- ${excludePatterns}`);
+  const diff = changed.toString();
+
+  // Limit diff size - 100KB is a reasonable limit for most LLM contexts
+  const MAX_DIFF_SIZE = 100 * 1024; // 100KB
+
+  if (diff.length > MAX_DIFF_SIZE) {
+    // If diff is too large, truncate and add a note
+    const truncatedDiff = diff.substring(0, MAX_DIFF_SIZE);
+    return truncatedDiff +
+      '\n\n[Diff truncated due to size. Total diff size: ' +
+      (diff.length / 1024).toFixed(2) + 'KB]';
+  }
+  return diff;
 }
