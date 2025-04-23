@@ -1,3 +1,4 @@
+import assert from 'assert';
 import dotenv from 'dotenv';
 import { createRequire } from 'module';
 import yargsParser from 'yargs-parser';
@@ -54,6 +55,8 @@ async function buildContext(opts: RunCliOpts) {
     type: PluginHookType.Series,
     pluginContext,
   });
+  assert(resolvedConfig.model, 'Model is required');
+  assert(resolvedConfig.smallModel, 'Small model is required');
   const mcpClients = await createClients(config.mcpConfig.mcpServers || {});
   return {
     argv,

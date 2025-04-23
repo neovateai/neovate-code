@@ -3,6 +3,31 @@ import { createXai } from '@ai-sdk/xai';
 import assert from 'assert';
 import { createOllama } from 'ollama-ai-provider';
 
+export const MODEL_ALIAS = {
+  // Claude
+  'sonnet-3.5': 'OpenRouter/anthropic/claude-3.5-sonnet',
+  'sonnet': 'OpenRouter/anthropic/claude-3.7-sonnet',
+  // Qwen
+  'qwq': 'Groq/qwen-qwq-32b',
+  // DeepSeek
+  'deepseek': 'DeepSeek/deepseek-chat',
+  'r1': 'DeepSeek/deepseek-reasoner',
+  // OpenAI
+  '41': 'OpenAI/gpt-4.1',
+  'o1': 'OpenAI/o1',
+  '4': 'OpenAI/gpt-4',
+  '4o': 'OpenAI/gpt-4o',
+  '3': 'OpenAI/gpt-3.5-turbo',
+  // Google
+  'flash': 'Google/gemini-2.5-flash-preview-04-17',
+  'gemini': 'Google/gemini-2.5-pro-exp-03-25',
+  // Grok
+  'grok': 'Grok/grok-3-fast-beta',
+  // Other
+  'quasar': 'OpenRouter/openrouter/quasar-alpha',
+  'optimus': 'OpenRouter/openrouter/optimus-alpha',
+};
+
 const GROQ_MODELS = [
   'Groq/qwen-qwq-32b',
   'Groq/deepseek-r1-distill-qwen-32b',
@@ -89,7 +114,7 @@ const OPENAI_MODELS = [
   'OpenAI/gpt-4o-mini',
   'OpenAI/o1-preview',
   'OpenAI/o1-mini',
-  'OpenAI/gpt-3.5-turbo-0613',
+  'OpenAI/gpt-3.5-turbo',
 ] as const;
 
 export type ModelType =

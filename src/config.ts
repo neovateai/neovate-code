@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import yargsParser from 'yargs-parser';
-import { ModelType } from './llm/model';
+import { MODEL_ALIAS, ModelType } from './llm/model';
 import type { Plugin } from './plugin/types';
 import { getSystemPrompt } from './prompts/prompts';
 import { logInfo } from './utils/logger';
@@ -27,11 +27,19 @@ export async function getConfig(opts: {
 }): Promise<Config> {
   const { argv, productName } = opts;
 
-  const model = argv.model;
+  const model = (() => {
+    if (!argv.model) return undefined;
+    const alias = MODEL_ALIAS[argv.model as keyof typeof MODEL_ALIAS];
+    return alias || argv.model;
+  })();
 
   // Small model is the model to use for the small and fast queries
   // It's the same as the main model if not specified
-  const smallModel = argv.smallModel || model;
+  const smallModel = (() => {
+    if (!argv.smallModel) return undefined;
+    const alias = MODEL_ALIAS[argv.smallModel as keyof typeof MODEL_ALIAS];
+    return alias || argv.smallModel;
+  })() || model;
 
   const stream = (() => {
     if (
