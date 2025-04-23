@@ -25,6 +25,7 @@ async function buildContext(opts: RunCliOpts) {
     alias: {
       m: 'model',
       v: 'version',
+      l: 'language',
     },
   });
   let command = argv._[0] as string;
@@ -78,7 +79,7 @@ interface RunCliOpts {
 export async function runCli(opts: RunCliOpts) {
   const context = await buildContext(opts);
   const { command } = context;
-  
+
   try {
     switch (command) {
       case 'plan':

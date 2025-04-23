@@ -87,7 +87,9 @@ export async function query(opts: QueryOptions) {
     logDebug(`Messages: ${JSON.stringify(messages, null, 2)}`);
     const hasTools = Object.keys(tools).length > 0;
     const system = [
-      ...systemPrompt,
+      ...(systemPrompt.map((prompt) => {
+        return prompt.replace(/\{language\}/g, context.config.language);
+      })),
       ...(hasTools ? getToolsPrompt(tools) : []),
       `====\n\nCONTEXT\n\nAs you answer the user's questions, you can use the following context:`,
       ...Object.entries(queryContext).map(

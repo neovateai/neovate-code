@@ -19,6 +19,7 @@ export type Config = {
   tasks: boolean;
   plugins: Plugin[];
   productName: string;
+  language: string;
 };
 
 export async function getConfig(opts: {
@@ -94,6 +95,7 @@ export async function getConfig(opts: {
     systemPrompt,
     plugins: [],
     productName,
+    language: argv.language || 'English',
   };
 }
 
