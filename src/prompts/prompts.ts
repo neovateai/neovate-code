@@ -6,8 +6,14 @@ function getCwd(): string {
 }
 
 export function getSystemPrompt(opts: { tasks?: boolean }): string[] {
+  const platform =
+    process.platform === 'darwin'
+      ? 'macOS'
+      : process.platform === 'win32'
+        ? 'Windows'
+        : 'Linux';
   const env = {
-    platform: 'macOS',
+    platform,
   };
   return [
     `
