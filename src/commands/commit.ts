@@ -6,8 +6,16 @@ import { Context } from '../types';
 export async function runCommit(opts: { context: Context }) {
   try {
     execSync('git --version', { stdio: 'ignore' });
-  } catch (error) {
-    throw new Error('Git is not installed or not available in PATH');
+    execSync('git config user.name', { stdio: 'ignore' });
+    execSync('git config user.email', { stdio: 'ignore' });
+  } catch (error: any) {
+    if (error.message.includes('user.name')) {
+      throw new Error('Git user name is not configured. Please run: git config --global user.name "Your Name"');
+    } else if (error.message.includes('user.email')) {
+      throw new Error('Git user email is not configured. Please run: git config --global user.email "your.email@example.com"');
+    } else {
+      throw new Error('Git is not installed or not available in PATH');
+    }
   }
   const argv = opts.context.argv;
   const hasChanged =
@@ -19,6 +27,9 @@ export async function runCommit(opts: { context: Context }) {
     execSync('git add .');
   }
   const diff = await getStagedDiff();
+  if (diff.length === 0) {
+    throw new Error('No changes to commit');
+  }
   const message = await askQuery({
     systemPrompt: [COMMIT_PROMPT],
     prompt: `
@@ -27,20 +38,33 @@ ${diff}
     `,
     context: opts.context,
   });
+  checkCommitMessage(message);
   if (argv.commit) {
     const noVerify = argv.noVerify ? '--no-verify' : '';
     execSync(`git commit -m "${message}" ${noVerify}`);
     if (argv.push) {
-      // TODO: push when there's a remote
       const hasRemote = execSync('git remote').toString().trim().length > 0;
       if (hasRemote) {
-        execSync('git push');
+        try {
+          execSync('git push');
+        } catch (error) {
+          console.error('Failed to push changes:', error);
+        }
       }
     }
   }
   if (argv.copy) {
     clipboardy.writeSync(message);
     console.log('Copied to clipboard');
+  }
+}
+
+function checkCommitMessage(message: string) {
+  if (message.length > 72) {
+    throw new Error(`Commit message is too long: ${message}`);
+  }
+  if (message.length === 0) {
+    throw new Error('Commit message is empty');
   }
 }
 
@@ -103,9 +127,12 @@ async function getStagedDiff() {
   if (diff.length > MAX_DIFF_SIZE) {
     // If diff is too large, truncate and add a note
     const truncatedDiff = diff.substring(0, MAX_DIFF_SIZE);
-    return truncatedDiff +
+    return (
+      truncatedDiff +
       '\n\n[Diff truncated due to size. Total diff size: ' +
-      (diff.length / 1024).toFixed(2) + 'KB]';
+      (diff.length / 1024).toFixed(2) +
+      'KB]'
+    );
   }
   return diff;
 }
