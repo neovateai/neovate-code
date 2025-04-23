@@ -6,6 +6,7 @@ import { runAct } from './commands/act';
 import { runCommit } from './commands/commit';
 import { runInit } from './commands/init';
 import { runPlan } from './commands/plan';
+import { runWatch } from './commands/watch';
 import { getConfig } from './config';
 import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './plugin/pluginManager';
@@ -77,6 +78,7 @@ interface RunCliOpts {
 export async function runCli(opts: RunCliOpts) {
   const context = await buildContext(opts);
   const { command } = context;
+  
   try {
     switch (command) {
       case 'plan':
@@ -93,6 +95,10 @@ export async function runCli(opts: RunCliOpts) {
         break;
       case 'version':
         console.log(require('../package.json').version);
+        break;
+      case 'watch':
+        logger.logPrompt('/watch');
+        await runWatch({ context });
         break;
       default:
         logger.logPrompt(command);

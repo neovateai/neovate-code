@@ -40,6 +40,7 @@
     "@types/yargs-parser": "^21.0.3",
     "@umijs/tools": "^0.1.36",
     "ai": "^4.3.9",
+    "chokidar": "^4.0.3",
     "clipboardy": "^4.0.0",
     "defu": "^6.1.4",
     "dotenv": "^16.5.0",
