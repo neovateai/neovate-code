@@ -1,8 +1,9 @@
 import chokidar from 'chokidar';
 import fs from 'fs';
 import path from 'path';
-import { Context } from '../types';
 import { editQuery } from '../llm/query';
+import { Context } from '../types';
+import { logError } from '../utils/logger';
 
 const fileChanged = new Set<string>();
 
@@ -37,6 +38,9 @@ export async function runWatch(opts: { context: Context }) {
     if (!isJS) {
       return;
     }
+    if (fileIsTooLarge(filePath)) {
+      return;
+    }
     fileChanged.add(filePath);
     processFileChanged(context).catch(console.error);
   });
@@ -50,16 +54,21 @@ async function processFileChanged(context: Context) {
     return;
   }
   isProcessing = true;
-  for (const path of fileChanged) {
-    const content = fs.readFileSync(path, 'utf-8');
-    const aiCommentResult = getAIComment(content);
-    if (aiCommentResult) {
-      console.log(`File ${path} has been changed with AI comments`);
-      await processFileWithAI(context, path, content, aiCommentResult);
+  try {
+    for (const path of fileChanged) {
+      const content = fs.readFileSync(path, 'utf-8');
+      const aiCommentResult = getAIComment(content);
+      if (aiCommentResult) {
+        console.log(`File ${path} has been changed with AI comments`);
+        await processFileWithAI(context, path, content, aiCommentResult);
+      }
+      fileChanged.delete(path);
     }
+  } catch (e: any) {
+    logError(e.message);
+  } finally {
+    isProcessing = false;
   }
-  fileChanged.clear();
-  isProcessing = false;
   if (fileChanged.size > 0) {
     processFileChanged(context).catch(console.error);
   }
@@ -79,10 +88,18 @@ export function getAIComment(content: string): AICommentResult | null {
         lineNums.push(index);
         comments.push(comment);
         const lowerComment = comment.toLowerCase();
-        const trimmedComment = lowerComment.replace(/^(\/\/|#|--|;+)/, '').trim();
-        if (trimmedComment.startsWith('ai!') || trimmedComment.endsWith('ai!')) {
+        const trimmedComment = lowerComment
+          .replace(/^(\/\/|#|--|;+)/, '')
+          .trim();
+        if (
+          trimmedComment.startsWith('ai!') ||
+          trimmedComment.endsWith('ai!')
+        ) {
           hasAction = '!';
-        } else if (trimmedComment.startsWith('ai?') || trimmedComment.endsWith('ai?')) {
+        } else if (
+          trimmedComment.startsWith('ai?') ||
+          trimmedComment.endsWith('ai?')
+        ) {
           hasAction = '?';
         }
       }
@@ -94,31 +111,36 @@ export function getAIComment(content: string): AICommentResult | null {
   return { lineNums, comments, hasAction };
 }
 
+function fileIsTooLarge(filePath: string) {
+  const stats = fs.statSync(filePath);
+  return stats.size > 100 * 1024; // 100KB
+}
+
 async function processFileWithAI(
   context: Context,
   path: string,
   content: string,
-  aiCommentResult: AICommentResult
+  aiCommentResult: AICommentResult,
 ) {
   console.log(`Processing file ${path} with AI`);
   console.log(`Found ${aiCommentResult.comments.length} AI comments`);
   console.log(`Action type: ${aiCommentResult.hasAction || 'none'}`);
   if (aiCommentResult.hasAction === '!') {
-    const lines = content.split('\n');
-    for (const index of aiCommentResult.lineNums) {
-      lines[index] = `${lines[index]}`;
-    }
-    const code = lines.join('\n');
+    // const lines = content.split('\n');
+    // for (const index of aiCommentResult.lineNums) {
+    //   lines[index] = `${lines[index]}`;
+    // }
+    // const code = lines.join('\n');
     const prompt = `
 ${PROMPT}
 <code path="${path}">
-${code}
+${content}
 </code>
     `;
     await editQuery({
       prompt,
       context,
-    })
+    });
   } else if (aiCommentResult.hasAction === '?') {
     throw new Error('Not implemented');
   }
