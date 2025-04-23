@@ -106,7 +106,7 @@ async function processFileWithAI(
   if (aiCommentResult.hasAction === '!') {
     const lines = content.split('\n');
     for (const index of aiCommentResult.lineNums) {
-      lines[index] = `█${lines[index]}`;
+      lines[index] = `${lines[index]}`;
     }
     const code = lines.join('\n');
     const prompt = `
@@ -126,7 +126,7 @@ ${code}
 
 const PROMPT = `
 I've written your instructions in comments in the code and marked them with "ai"
-You can see the "AI" comments shown below (marked with █).
+You can see the "AI" comments shown below (marked with AI! prefix).
 Find them in the code files I've shared with you, and follow their instructions.
 
 After completing those instructions, also be sure to remove all the "AI" comments from the code too.
