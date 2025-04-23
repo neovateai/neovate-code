@@ -23,7 +23,8 @@ ${diff}
     context: opts.context,
   });
   if (argv.commit) {
-    execSync(`git commit -m "${message}"`);
+    const noVerify = argv.noVerify ? '--no-verify' : '';
+    execSync(`git commit -m "${message}" ${noVerify}`);
     if (argv.push) {
       // TODO: push when there's a remote
       const hasRemote = execSync('git remote').toString().trim().length > 0;
