@@ -1,3 +1,16 @@
+## 0.0.11
+
+`2025-04-23`
+
+- fix: check for remote before pushing in commit command by [@sorrycc](https://github.com/sorrycc)
+- style: improve code formatting and import order by [@sorrycc](https://github.com/sorrycc)
+- feat: add version command and update module setting by [@sorrycc](https://github.com/sorrycc)
+- fix: exclude lock files from staged diff in commit command by [@sorrycc](https://github.com/sorrycc)
+- feat: add commit command to generate commit messages by [@sorrycc](https://github.com/sorrycc)
+- refact: enhance plugin context by adding argv and updating config hook signature by [@sorrycc](https://github.com/sorrycc)
+- refact: update import statements for consistency and enhance error messaging in tools by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.10
 
 `2025-04-22`
