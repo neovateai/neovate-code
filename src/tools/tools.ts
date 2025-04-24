@@ -54,6 +54,7 @@ export async function callTool(
     toolName: string;
     arguments: Record<string, string>;
   },
+  queryId: string,
   context: Context,
   timeout?: number,
 ) {
@@ -68,7 +69,7 @@ export async function callTool(
   // hook: toolStart
   await context.pluginManager.apply({
     hook: 'toolStart',
-    args: [{ toolUse }],
+    args: [{ toolUse, queryId }],
     type: PluginHookType.Series,
     pluginContext: context.pluginContext,
   });
@@ -93,7 +94,7 @@ export async function callTool(
   // hook: toolEnd
   await context.pluginManager.apply({
     hook: 'toolEnd',
-    args: [{ toolUse, startTime: start, endTime: end }],
+    args: [{ toolUse, startTime: start, endTime: end, queryId }],
     type: PluginHookType.Series,
     pluginContext: context.pluginContext,
   });

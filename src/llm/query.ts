@@ -1,4 +1,5 @@
 import { CoreMessage, Tool, generateText, streamText } from 'ai';
+import { randomUUID } from 'crypto';
 import pc from 'picocolors';
 import { getContext } from '../context/context';
 import { getClientsTools } from '../mcp';
@@ -79,32 +80,45 @@ interface QueryOptions {
 
 export async function query(opts: QueryOptions) {
   const start = Date.now();
-  // hook: queryStart
-  await opts.context.pluginManager.apply({
-    hook: 'queryStart',
-    args: [{ prompt: opts.prompt }],
-    type: PluginHookType.Series,
-    pluginContext: opts.context.pluginContext,
-  });
+  const id = randomUUID();
   let model = opts.model || opts.context.config.model;
   model = typeof model === 'string' ? getModel(model) : model;
   const { prompt, systemPrompt, queryContext, tools, context } = opts;
   console.log();
-  const messages: CoreMessage[] = [{ role: 'user', content: prompt }];
+  const messages: CoreMessage[] = [];
+  const hasTools = Object.keys(tools).length > 0;
+  const system = [
+    ...systemPrompt.map((prompt) => {
+      return prompt.replace(/\{language\}/g, context.config.language);
+    }),
+    ...(hasTools ? getToolsPrompt(tools) : []),
+    `====\n\nCONTEXT\n\nAs you answer the user's questions, you can use the following context:`,
+    ...Object.entries(queryContext).map(
+      ([key, value]) => `<context name="${key}">${value}</context>`,
+    ),
+  ].join('\n');
+  async function addMessage(newMessages: CoreMessage[]) {
+    messages.push(...newMessages);
+    // hook: message
+    await opts.context.pluginManager.apply({
+      hook: 'message',
+      args: [{ messages: newMessages, queryId: id }],
+      type: PluginHookType.Series,
+      pluginContext: opts.context.pluginContext,
+    });
+  }
+  // hook: queryStart
+  await opts.context.pluginManager.apply({
+    hook: 'queryStart',
+    args: [{ prompt: opts.prompt, id, system }],
+    type: PluginHookType.Series,
+    pluginContext: opts.context.pluginContext,
+  });
+  await addMessage([{ role: 'user', content: prompt }]);
+  console.log('messages', messages);
   while (true) {
     logAction(`Asking model... (with ${messages.length} messages)`);
     logDebug(`Messages: ${JSON.stringify(messages, null, 2)}`);
-    const hasTools = Object.keys(tools).length > 0;
-    const system = [
-      ...systemPrompt.map((prompt) => {
-        return prompt.replace(/\{language\}/g, context.config.language);
-      }),
-      ...(hasTools ? getToolsPrompt(tools) : []),
-      `====\n\nCONTEXT\n\nAs you answer the user's questions, you can use the following context:`,
-      ...Object.entries(queryContext).map(
-        ([key, value]) => `<context name="${key}">${value}</context>`,
-      ),
-    ].join('\n');
     const llmOpts = {
       model,
       messages,
@@ -136,27 +150,27 @@ export async function query(opts: QueryOptions) {
         //   }
         // }
       }
+      process.stdout.write('\n');
     } else {
       const result = await generateText(llmOpts);
       console.log(result.text);
       text = result.text;
     }
     // hook: query
-    text = await opts.context.pluginManager.apply({
+    await opts.context.pluginManager.apply({
       hook: 'query',
-      args: [{ prompt }],
-      memo: text,
-      type: PluginHookType.SeriesLast,
+      args: [{ prompt, text, id }],
+      type: PluginHookType.Series,
       pluginContext: opts.context.pluginContext,
     });
     const { toolUse } = parseToolUse(text);
     if (toolUse) {
-      messages.push({ role: 'assistant', content: text });
+      await addMessage([{ role: 'assistant', content: text }]);
       logTool(
         `Tool ${pc.bold(toolUse.toolName)} called with args: ${JSON.stringify(toolUse.arguments)}`,
       );
-      const toolResult = await callTool(tools, toolUse, context);
-      messages.push({ role: 'user', content: JSON.stringify(toolResult) });
+      const toolResult = await callTool(tools, toolUse, id, context);
+      await addMessage([{ role: 'user', content: JSON.stringify(toolResult) }]);
     } else {
       const end = Date.now();
       // hook: queryEnd
@@ -171,6 +185,7 @@ export async function query(opts: QueryOptions) {
             messages,
             startTime: start,
             endTime: end,
+            id,
           },
         ],
         type: PluginHookType.Series,

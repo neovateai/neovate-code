@@ -1,11 +1,16 @@
 import assert from 'assert';
+import { randomUUID } from 'crypto';
+import { format } from 'date-fns';
 import dotenv from 'dotenv';
 import { createRequire } from 'module';
+import os from 'os';
+import path from 'path';
 import yargsParser from 'yargs-parser';
 import { getConfig } from './config';
 import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
 import type { Plugin } from './pluginManager/types';
+import { sessionPlugin } from './plugins/session';
 import * as logger from './utils/logger';
 
 const require = createRequire(import.meta.url);
@@ -26,16 +31,44 @@ async function buildContext(opts: RunCliOpts) {
   if (argv.version) {
     command = 'version';
   }
+  const sessionId = randomUUID();
+  const homeDir = os.homedir();
+  const configDir = path.join(homeDir, `.${opts.productName.toLowerCase()}`);
+  const configPath = path.join(configDir, 'config.json');
+  const sessionPath = path.join(
+    configDir,
+    'sessions',
+    `${opts.productName}-${format(new Date(), 'yyyy-MM-dd_HH_mm_ss')}-${sessionId}.json`,
+  );
   const config = await getConfig({ argv, productName: opts.productName });
-  const plugins = [...(config.plugins || []), ...(opts.plugins || [])];
+  const buildinPlugins = [sessionPlugin];
+  const plugins = [
+    ...buildinPlugins,
+    ...(config.plugins || []),
+    ...(opts.plugins || []),
+  ];
   const pluginManager = new PluginManager(plugins);
+  const paths = {
+    configDir,
+    configPath,
+    sessionPath,
+  };
   const pluginContext = {
     argv,
     config,
     cwd,
     command,
     logger,
+    paths,
+    sessionId,
   };
+  // hook: cliStart
+  await pluginManager.apply({
+    hook: 'cliStart',
+    args: [],
+    type: PluginHookType.Series,
+    pluginContext,
+  });
   // hook: config
   const resolvedConfig = await pluginManager.apply({
     hook: 'config',
@@ -62,6 +95,8 @@ async function buildContext(opts: RunCliOpts) {
     pluginManager,
     pluginContext,
     mcpClients,
+    paths,
+    sessionId,
   };
 }
 
@@ -74,13 +109,6 @@ export async function runCli(opts: RunCliOpts) {
   const context = await buildContext(opts);
   const { command } = context;
   const start = Date.now();
-  // hook: cliStart
-  await context.pluginManager.apply({
-    hook: 'cliStart',
-    args: [],
-    type: PluginHookType.Series,
-    pluginContext: context.pluginContext,
-  });
   try {
     switch (command) {
       case 'plan':

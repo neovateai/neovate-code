@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PluginContext } from '../types';
 
 const ToolUseSchema = z.object({
   toolName: z.string(),
@@ -32,7 +33,10 @@ export const PluginSchema = z.object({
     )
     .optional(),
   toolStart: z
-    .function(z.tuple([z.object({ toolUse: ToolUseSchema })]), z.void())
+    .function(
+      z.tuple([z.object({ toolUse: ToolUseSchema, queryId: z.string() })]),
+      z.void(),
+    )
     .optional(),
   toolEnd: z
     .function(
@@ -41,16 +45,39 @@ export const PluginSchema = z.object({
           toolUse: ToolUseSchema,
           startTime: z.number(),
           endTime: z.number(),
+          queryId: z.string(),
         }),
       ]),
       z.void(),
     )
     .optional(),
   queryStart: z
-    .function(z.tuple([z.object({ prompt: z.string() })]), z.void())
+    .function(
+      z.tuple([
+        z.object({
+          prompt: z.string(),
+          id: z.string(),
+          system: z.array(z.string()),
+        }),
+      ]),
+      z.void(),
+    )
     .optional(),
   query: z
-    .function(z.tuple([z.object({ prompt: z.string() })]), z.void())
+    .function(
+      z.tuple([
+        z.object({ prompt: z.string(), text: z.string(), id: z.string() }),
+      ]),
+      z.void(),
+    )
+    .optional(),
+  message: z
+    .function(
+      z.tuple([
+        z.object({ messages: z.array(MessageSchema), queryId: z.string() }),
+      ]),
+      z.void(),
+    )
     .optional(),
   queryEnd: z
     .function(
@@ -63,6 +90,7 @@ export const PluginSchema = z.object({
           messages: z.array(MessageSchema),
           startTime: z.number(),
           endTime: z.number(),
+          id: z.string(),
         }),
       ]),
       z.void(),
@@ -70,4 +98,11 @@ export const PluginSchema = z.object({
     .optional(),
 });
 
-export type Plugin = z.infer<typeof PluginSchema>;
+type InferedPlugin = z.infer<typeof PluginSchema>;
+type AddThisToMethods<T, ThisType> = {
+  [K in keyof T]: T[K] extends (...args: infer Args) => infer Return
+    ? (this: ThisType, ...args: Args) => Return
+    : T[K];
+};
+// TODO: fix this context don't work
+export type Plugin = AddThisToMethods<InferedPlugin, PluginContext>;
