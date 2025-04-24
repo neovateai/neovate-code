@@ -115,7 +115,6 @@ export async function query(opts: QueryOptions) {
     pluginContext: opts.context.pluginContext,
   });
   await addMessage([{ role: 'user', content: prompt }]);
-  console.log('messages', messages);
   while (true) {
     logAction(`Asking model... (with ${messages.length} messages)`);
     logDebug(`Messages: ${JSON.stringify(messages, null, 2)}`);
@@ -185,6 +184,7 @@ export async function query(opts: QueryOptions) {
             messages,
             startTime: start,
             endTime: end,
+            text,
             id,
           },
         ],

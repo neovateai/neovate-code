@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import pc from 'picocolors';
 import { Config } from '../config';
 import { Plugin } from '../pluginManager/types';
 import { PluginContext } from '../types';
@@ -18,10 +19,15 @@ function write() {
     throw new Error('Session path not set');
   }
   const dir = path.dirname(sessionPath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(sessionPath, JSON.stringify(data, null, 2));
+  } catch (e) {
+    console.error(pc.red('Failed to write session file'));
+    console.error(e);
   }
-  fs.writeFileSync(sessionPath, JSON.stringify(data, null, 2));
 }
 
 export const sessionPlugin: Plugin = {
@@ -70,8 +76,16 @@ export const sessionPlugin: Plugin = {
     write();
   },
   query: async function (this: PluginContext, { prompt, text, id }) {},
-  queryEnd: async function (this: PluginContext, { prompt, id }) {
+  queryEnd: async function (this: PluginContext, { prompt, text, id }) {
     data.queries[id].endTime = new Date().toISOString();
+    data.queries[id].duration =
+      new Date(data.queries[id].endTime).getTime() -
+      new Date(data.queries[id].startTime).getTime();
+    data.queries[id].items.push({
+      type: 'finalResponse',
+      data: text,
+    });
+    write();
   },
   toolStart: async function (this: PluginContext, { queryId }) {},
   toolEnd: async function (this: PluginContext, { queryId }) {},

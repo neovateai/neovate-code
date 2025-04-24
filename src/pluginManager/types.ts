@@ -91,6 +91,7 @@ export const PluginSchema = z.object({
           startTime: z.number(),
           endTime: z.number(),
           id: z.string(),
+          text: z.string(),
         }),
       ]),
       z.void(),
