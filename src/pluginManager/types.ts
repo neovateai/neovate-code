@@ -27,6 +27,7 @@ export const PluginSchema = z.object({
         z.object({
           startTime: z.number(),
           endTime: z.number(),
+          error: z.any().optional(),
         }),
       ]),
       z.void(),

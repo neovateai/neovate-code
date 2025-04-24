@@ -41,11 +41,17 @@ export const sessionPlugin: Plugin = {
     sessionPath = paths.sessionPath;
     write();
   },
-  cliEnd: async function (this: PluginContext) {
+  cliEnd: async function (this: PluginContext, { error }) {
     data.session.endTime = new Date().toISOString();
     data.session.duration =
       new Date(data.session.endTime).getTime() -
       new Date(data.session.startTime).getTime();
+    if (error) {
+      data.queries.push({
+        type: 'error',
+        data: error.toString(),
+      });
+    }
     write();
     console.log();
     console.log(`Session saved to ${sessionPath}`);

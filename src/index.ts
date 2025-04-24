@@ -137,11 +137,10 @@ export async function runCli(opts: RunCliOpts) {
         ).runAct({ context, prompt: command });
         break;
     }
-    const end = Date.now();
     // hook: cliEnd
     await context.pluginManager.apply({
       hook: 'cliEnd',
-      args: [{ startTime: start, endTime: end }],
+      args: [{ startTime: start, endTime: Date.now(), error: null }],
       type: PluginHookType.Series,
       pluginContext: context.pluginContext,
     });
@@ -151,6 +150,12 @@ export async function runCli(opts: RunCliOpts) {
   } catch (error: any) {
     logger.logError('Error:');
     logger.logError(error.message);
+    await context.pluginManager.apply({
+      hook: 'cliEnd',
+      args: [{ startTime: start, endTime: Date.now(), error }],
+      type: PluginHookType.Series,
+      pluginContext: context.pluginContext,
+    });
     if (process.env.DEBUG) {
       console.error(error);
     }
