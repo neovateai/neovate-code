@@ -1,6 +1,6 @@
 import { Tool } from 'ai';
 import { jsonrepair } from 'jsonrepair';
-import { PluginHookType } from '../plugin/pluginManager';
+import { PluginHookType } from '../pluginManager/pluginManager';
 import { Context } from '../types';
 import { BashTool } from './BashTool';
 import { BatchTool } from './BatchTool';

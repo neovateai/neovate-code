@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import yargsParser from 'yargs-parser';
 import { MODEL_ALIAS, ModelType } from './llm/model';
-import type { Plugin } from './plugin/types';
+import type { Plugin } from './pluginManager/types';
 import { getSystemPrompt } from './prompts/prompts';
 import { logInfo } from './utils/logger';
 

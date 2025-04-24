@@ -4,8 +4,8 @@ import { createRequire } from 'module';
 import yargsParser from 'yargs-parser';
 import { getConfig } from './config';
 import { closeClients, createClients } from './mcp';
-import { PluginHookType, PluginManager } from './plugin/pluginManager';
-import type { Plugin } from './plugin/types';
+import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
+import type { Plugin } from './pluginManager/types';
 import * as logger from './utils/logger';
 
 const require = createRequire(import.meta.url);
@@ -110,7 +110,6 @@ export async function runCli(opts: RunCliOpts) {
         break;
     }
     const end = Date.now();
-    console.log(`Time taken: ${end - start}ms`);
     // hook: cliEnd
     await context.pluginManager.apply({
       hook: 'cliEnd',
