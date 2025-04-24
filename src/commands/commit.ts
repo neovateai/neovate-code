@@ -10,9 +10,13 @@ export async function runCommit(opts: { context: Context }) {
     execSync('git config user.email', { stdio: 'ignore' });
   } catch (error: any) {
     if (error.message.includes('user.name')) {
-      throw new Error('Git user name is not configured. Please run: git config --global user.name "Your Name"');
+      throw new Error(
+        'Git user name is not configured. Please run: git config --global user.name "Your Name"',
+      );
     } else if (error.message.includes('user.email')) {
-      throw new Error('Git user email is not configured. Please run: git config --global user.email "your.email@example.com"');
+      throw new Error(
+        'Git user email is not configured. Please run: git config --global user.email "your.email@example.com"',
+      );
     } else {
       throw new Error('Git is not installed or not available in PATH');
     }

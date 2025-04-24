@@ -36,11 +36,12 @@ export async function getConfig(opts: {
 
   // Small model is the model to use for the small and fast queries
   // It's the same as the main model if not specified
-  const smallModel = (() => {
-    if (!argv.smallModel) return undefined;
-    const alias = MODEL_ALIAS[argv.smallModel as keyof typeof MODEL_ALIAS];
-    return alias || argv.smallModel;
-  })() || model;
+  const smallModel =
+    (() => {
+      if (!argv.smallModel) return undefined;
+      const alias = MODEL_ALIAS[argv.smallModel as keyof typeof MODEL_ALIAS];
+      return alias || argv.smallModel;
+    })() || model;
 
   const stream = (() => {
     if (

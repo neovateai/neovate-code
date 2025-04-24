@@ -56,6 +56,9 @@ async function processFileChanged(context: Context) {
   isProcessing = true;
   try {
     for (const path of fileChanged) {
+      if (!fs.existsSync(path)) {
+        continue;
+      }
       const content = fs.readFileSync(path, 'utf-8');
       const aiCommentResult = getAIComment(content);
       if (aiCommentResult) {
@@ -112,8 +115,12 @@ export function getAIComment(content: string): AICommentResult | null {
 }
 
 function fileIsTooLarge(filePath: string) {
-  const stats = fs.statSync(filePath);
-  return stats.size > 100 * 1024; // 100KB
+  try {
+    const stats = fs.statSync(filePath);
+    return stats.size > 100 * 1024; // 100KB
+  } catch (e) {
+    return true;
+  }
 }
 
 async function processFileWithAI(

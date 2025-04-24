@@ -6,5 +6,4 @@ runCli({
   productName: 'TAKUMI',
 })
   .catch(console.error)
-  .finally(() => {
-  });
+  .finally(() => {});
