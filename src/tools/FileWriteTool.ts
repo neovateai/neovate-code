@@ -28,7 +28,14 @@ Before using this tool:
     const enc = 'utf-8';
     const oldContent = oldFileExists ? readFileSync(fullFilePath, enc) : null;
     mkdirSync(dir, { recursive: true });
-    writeFileSync(fullFilePath, content, enc);
+    writeFileSync(fullFilePath, addNewLineIfMissing(content), enc);
     return `File written successfully: ${fullFilePath}`;
   },
 });
+
+function addNewLineIfMissing(content: string) {
+  if (!content.endsWith('\n')) {
+    return content + '\n';
+  }
+  return content;
+}
