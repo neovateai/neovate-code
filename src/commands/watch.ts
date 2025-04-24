@@ -1,4 +1,3 @@
-import chokidar from 'chokidar';
 import fs from 'fs';
 import path from 'path';
 import { editQuery } from '../llm/query';
@@ -15,6 +14,7 @@ interface AICommentResult {
 
 export async function runWatch(opts: { context: Context }) {
   const { context } = opts;
+  const chokidar = await import('chokidar');
   const watcher = chokidar.watch(context.cwd, {
     ignoreInitial: true,
     ignored: (path) => {
