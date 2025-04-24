@@ -2,11 +2,6 @@ import assert from 'assert';
 import dotenv from 'dotenv';
 import { createRequire } from 'module';
 import yargsParser from 'yargs-parser';
-import { runAct } from './commands/act';
-import { runCommit } from './commands/commit';
-import { runInit } from './commands/init';
-import { runPlan } from './commands/plan';
-import { runWatch } from './commands/watch';
 import { getConfig } from './config';
 import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './plugin/pluginManager';
@@ -84,27 +79,32 @@ export async function runCli(opts: RunCliOpts) {
     switch (command) {
       case 'plan':
         logger.logPrompt('/plan');
-        await runPlan({ context });
+        await (await import('./commands/plan.js')).runPlan({ context });
         break;
       case 'init':
         logger.logPrompt('/init');
-        await runInit({ context });
+        await (await import('./commands/init.js')).runInit({ context });
         break;
       case 'commit':
         logger.logPrompt('/commit');
-        await runCommit({ context });
+        await (await import('./commands/commit.js')).runCommit({ context });
         break;
       case 'version':
         console.log(require('../package.json').version);
         break;
       case 'watch':
         logger.logPrompt('/watch');
-        await runWatch({ context });
+        await (await import('./commands/watch.js')).runWatch({ context });
         break;
       default:
         logger.logPrompt(command);
-        await runAct({ context, prompt: command });
+        await (
+          await import('./commands/act.js')
+        ).runAct({ context, prompt: command });
         break;
+    }
+    if (command !== 'watch') {
+      process.exit(0);
     }
   } catch (error: any) {
     logger.logError('Error:');
