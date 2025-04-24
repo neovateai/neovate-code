@@ -138,7 +138,7 @@ export async function query(opts: QueryOptions) {
       logTool(
         `Tool ${pc.bold(toolUse.toolName)} called with args: ${JSON.stringify(toolUse.arguments)}`,
       );
-      const toolResult = await callTool(tools, toolUse);
+      const toolResult = await callTool(tools, toolUse, context);
       messages.push({ role: 'user', content: JSON.stringify(toolResult) });
     } else {
       return text;

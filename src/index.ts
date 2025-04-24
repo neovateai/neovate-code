@@ -20,7 +20,6 @@ async function buildContext(opts: RunCliOpts) {
     alias: {
       m: 'model',
       v: 'version',
-      l: 'language',
     },
   });
   let command = argv._[0] as string;
@@ -40,7 +39,7 @@ async function buildContext(opts: RunCliOpts) {
   // hook: config
   const resolvedConfig = await pluginManager.apply({
     hook: 'config',
-    args: [{ context: pluginContext }],
+    args: [],
     type: PluginHookType.SeriesMerge,
     memo: config,
     pluginContext,
@@ -48,7 +47,7 @@ async function buildContext(opts: RunCliOpts) {
   // hook: configResolved
   await pluginManager.apply({
     hook: 'configResolved',
-    args: [resolvedConfig],
+    args: [{ resolvedConfig }],
     type: PluginHookType.Series,
     pluginContext,
   });
@@ -74,7 +73,14 @@ interface RunCliOpts {
 export async function runCli(opts: RunCliOpts) {
   const context = await buildContext(opts);
   const { command } = context;
-
+  const start = Date.now();
+  // hook: cliStart
+  await context.pluginManager.apply({
+    hook: 'cliStart',
+    args: [],
+    type: PluginHookType.Series,
+    pluginContext: context.pluginContext,
+  });
   try {
     switch (command) {
       case 'plan':
@@ -103,6 +109,15 @@ export async function runCli(opts: RunCliOpts) {
         ).runAct({ context, prompt: command });
         break;
     }
+    const end = Date.now();
+    console.log(`Time taken: ${end - start}ms`);
+    // hook: cliEnd
+    await context.pluginManager.apply({
+      hook: 'cliEnd',
+      args: [{ startTime: start, endTime: end }],
+      type: PluginHookType.Series,
+      pluginContext: context.pluginContext,
+    });
     if (command !== 'watch') {
       process.exit(0);
     }

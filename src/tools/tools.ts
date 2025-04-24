@@ -1,5 +1,6 @@
 import { Tool } from 'ai';
 import { jsonrepair } from 'jsonrepair';
+import { PluginHookType } from '../plugin/pluginManager';
 import { Context } from '../types';
 import { BashTool } from './BashTool';
 import { BatchTool } from './BatchTool';
@@ -53,6 +54,7 @@ export async function callTool(
     toolName: string;
     arguments: Record<string, string>;
   },
+  context: Context,
   timeout?: number,
 ) {
   const tool = tools[toolUse.toolName];
@@ -62,6 +64,14 @@ export async function callTool(
     );
   }
 
+  const start = Date.now();
+  // hook: toolStart
+  await context.pluginManager.apply({
+    hook: 'toolStart',
+    args: [{ toolUse }],
+    type: PluginHookType.Series,
+    pluginContext: context.pluginContext,
+  });
   // TODO: should not use ai sdk's tool interface, but use our own
   // @ts-ignore
   const toolPromise = tool.execute!(toolUse.arguments, {
@@ -77,7 +87,17 @@ export async function callTool(
       );
     }, timeout);
   });
-  return Promise.race([toolPromise, timeoutPromise]);
+  const result = await Promise.race([toolPromise, timeoutPromise]);
+  const end = Date.now();
+  // console.log(`Tool ${toolUse.toolName} execution took ${end - start}ms`);
+  // hook: toolEnd
+  await context.pluginManager.apply({
+    hook: 'toolEnd',
+    args: [{ toolUse, startTime: start, endTime: end }],
+    type: PluginHookType.Series,
+    pluginContext: context.pluginContext,
+  });
+  return result;
 }
 
 export function parseToolUse(text: string): {
