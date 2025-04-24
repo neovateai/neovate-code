@@ -2,6 +2,7 @@ import { CoreMessage, Tool, generateText, streamText } from 'ai';
 import pc from 'picocolors';
 import { getContext } from '../context/context';
 import { getClientsTools } from '../mcp';
+import { PluginHookType } from '../pluginManager/pluginManager';
 import { getToolsPrompt } from '../prompts/prompts';
 import { callTool, getAllTools, parseToolUse } from '../tools/tools';
 import { getAskTools } from '../tools/tools';
@@ -77,6 +78,14 @@ interface QueryOptions {
 }
 
 export async function query(opts: QueryOptions) {
+  const start = Date.now();
+  // hook: queryStart
+  await opts.context.pluginManager.apply({
+    hook: 'queryStart',
+    args: [{ prompt: opts.prompt }],
+    type: PluginHookType.Series,
+    pluginContext: opts.context.pluginContext,
+  });
   let model = opts.model || opts.context.config.model;
   model = typeof model === 'string' ? getModel(model) : model;
   const { prompt, systemPrompt, queryContext, tools, context } = opts;
@@ -132,6 +141,14 @@ export async function query(opts: QueryOptions) {
       console.log(result.text);
       text = result.text;
     }
+    // hook: query
+    text = await opts.context.pluginManager.apply({
+      hook: 'query',
+      args: [{ prompt }],
+      memo: text,
+      type: PluginHookType.SeriesLast,
+      pluginContext: opts.context.pluginContext,
+    });
     const { toolUse } = parseToolUse(text);
     if (toolUse) {
       messages.push({ role: 'assistant', content: text });
@@ -141,6 +158,24 @@ export async function query(opts: QueryOptions) {
       const toolResult = await callTool(tools, toolUse, context);
       messages.push({ role: 'user', content: JSON.stringify(toolResult) });
     } else {
+      const end = Date.now();
+      // hook: queryEnd
+      await opts.context.pluginManager.apply({
+        hook: 'queryEnd',
+        args: [
+          {
+            prompt,
+            systemPrompt,
+            queryContext,
+            tools,
+            messages,
+            startTime: start,
+            endTime: end,
+          },
+        ],
+        type: PluginHookType.Series,
+        pluginContext: opts.context.pluginContext,
+      });
       return text;
     }
   }

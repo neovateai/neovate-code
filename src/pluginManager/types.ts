@@ -1,14 +1,13 @@
 import { z } from 'zod';
 
-const ContextSchema = z.object({
-  command: z.string(),
-  args: z.array(z.string()),
-  options: z.record(z.string(), z.any()),
-});
-
 const ToolUseSchema = z.object({
   toolName: z.string(),
   arguments: z.record(z.string(), z.string()),
+});
+
+const MessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string(),
 });
 
 export const PluginSchema = z.object({
@@ -25,7 +24,6 @@ export const PluginSchema = z.object({
     .function(
       z.tuple([
         z.object({
-          context: ContextSchema,
           startTime: z.number(),
           endTime: z.number(),
         }),
@@ -41,6 +39,28 @@ export const PluginSchema = z.object({
       z.tuple([
         z.object({
           toolUse: ToolUseSchema,
+          startTime: z.number(),
+          endTime: z.number(),
+        }),
+      ]),
+      z.void(),
+    )
+    .optional(),
+  queryStart: z
+    .function(z.tuple([z.object({ prompt: z.string() })]), z.void())
+    .optional(),
+  query: z
+    .function(z.tuple([z.object({ prompt: z.string() })]), z.void())
+    .optional(),
+  queryEnd: z
+    .function(
+      z.tuple([
+        z.object({
+          prompt: z.string(),
+          systemPrompt: z.array(z.string()),
+          queryContext: z.record(z.string(), z.any()),
+          tools: z.record(z.string(), z.any()),
+          messages: z.array(MessageSchema),
           startTime: z.number(),
           endTime: z.number(),
         }),
