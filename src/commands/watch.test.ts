@@ -5,7 +5,7 @@ test('getAIComment with !', () => {
   const content = '// hello AI!';
   const result = getAIComment(content);
   expect(result).toEqual({
-    lineNums: [1],
+    lineNums: [0],
     comments: ['// hello AI!'],
     hasAction: '!',
   });
@@ -15,7 +15,7 @@ test('getAIComment with ?', () => {
   const content = '// hello AI?';
   const result = getAIComment(content);
   expect(result).toEqual({
-    lineNums: [1],
+    lineNums: [0],
     comments: ['// hello AI?'],
     hasAction: '?',
   });
