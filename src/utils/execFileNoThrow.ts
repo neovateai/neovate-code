@@ -3,14 +3,11 @@ import { execFile } from 'child_process';
 const MS_IN_SECOND = 1000;
 const SECONDS_IN_MINUTE = 60;
 
-function getCwd() {
-  return process.cwd();
-}
-
 /**
  * execFile, but always resolves (never throws)
  */
 export function execFileNoThrow(
+  cwd: string,
   file: string,
   args: string[],
   abortSignal?: AbortSignal,
@@ -26,7 +23,7 @@ export function execFileNoThrow(
           maxBuffer: 1_000_000,
           signal: abortSignal,
           timeout,
-          cwd: getCwd(),
+          cwd,
         },
         (error, stdout, stderr) => {
           if (error) {

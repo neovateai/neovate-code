@@ -6,10 +6,6 @@ import type { Plugin } from './pluginManager/types';
 import { getSystemPrompt } from './prompts/prompts';
 import { logInfo } from './utils/logger';
 
-function getCwd() {
-  return process.cwd();
-}
-
 export type Config = {
   model: ModelType;
   smallModel: ModelType;
@@ -25,6 +21,7 @@ export type Config = {
 export async function getConfig(opts: {
   argv: yargsParser.Arguments;
   productName: string;
+  cwd: string;
 }): Promise<Config> {
   const { argv, productName } = opts;
 
@@ -57,7 +54,7 @@ export async function getConfig(opts: {
   })();
 
   const mcpConfigPath = path.join(
-    getCwd(),
+    opts.cwd,
     `.${productName.toLowerCase()}/mcp.json`,
   );
   const mcpConfig = (() => {
@@ -82,7 +79,7 @@ export async function getConfig(opts: {
   // Check if tasks feature is enabled
   const tasks = !!argv.tasks;
 
-  let systemPrompt = getSystemPrompt({ tasks });
+  let systemPrompt = getSystemPrompt({ tasks, cwd: opts.cwd });
   if (process.env.CODE === 'none') {
     systemPrompt = [];
   }

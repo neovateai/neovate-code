@@ -5,10 +5,6 @@ function detectFileEncoding(filePath: string): BufferEncoding {
   return 'utf-8';
 }
 
-function getCwd(): string {
-  return process.cwd();
-}
-
 export interface Hunk {
   oldStart: number;
   oldLines: number;
@@ -36,13 +32,14 @@ function getPatch(options: {
 }
 
 export function applyEdit(
+  cwd: string,
   file_path: string,
   old_string: string,
   new_string: string,
 ): { patch: Hunk[]; updatedFile: string } {
   const fullFilePath = isAbsolute(file_path)
     ? file_path
-    : resolve(getCwd(), file_path);
+    : resolve(cwd, file_path);
 
   let originalFile;
   let updatedFile;

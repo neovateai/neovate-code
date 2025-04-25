@@ -1,16 +1,13 @@
 import fs from 'fs';
 import { memoize } from 'lodash-es';
 import path from 'path';
-import { LSTool } from '../tools/LsTool';
+import { createLSTool } from '../tools/LsTool';
 import { Context } from '../types';
 import { execFileNoThrow } from '../utils/execFileNoThrow';
 import { getCodebaseContext } from './codebase';
 
-function getCwd() {
-  return process.cwd();
-}
-
-export async function getDirectoryStructure() {
+export async function getDirectoryStructure(opts: { context: Context }) {
+  const LSTool = createLSTool(opts);
   const files = await LSTool.execute(
     { path: '.' },
     {
@@ -21,9 +18,10 @@ export async function getDirectoryStructure() {
   return files;
 }
 
-export async function getGitStatus() {
+export async function getGitStatus(opts: { context: Context }) {
   const isGit = await (async () => {
     const { code } = await execFileNoThrow(
+      opts.context.cwd,
       'git',
       ['rev-parse', '--is-inside-work-tree'],
       undefined,
@@ -37,6 +35,7 @@ export async function getGitStatus() {
   }
   const branch = await (async () => {
     const { stdout } = await execFileNoThrow(
+      opts.context.cwd,
       'git',
       ['branch', '--show-current'],
       undefined,
@@ -47,6 +46,7 @@ export async function getGitStatus() {
   })();
   const mainBranch = await (async () => {
     const { stdout } = await execFileNoThrow(
+      opts.context.cwd,
       'git',
       ['rev-parse', '--abbrev-ref', 'origin/HEAD'],
       undefined,
@@ -57,6 +57,7 @@ export async function getGitStatus() {
   })();
   const status = await (async () => {
     const { stdout } = await execFileNoThrow(
+      opts.context.cwd,
       'git',
       ['status', '--short'],
       undefined,
@@ -67,6 +68,7 @@ export async function getGitStatus() {
   })();
   const log = await (async () => {
     const { stdout } = await execFileNoThrow(
+      opts.context.cwd,
       'git',
       ['log', '--oneline', '-n', '5'],
       undefined,
@@ -77,6 +79,7 @@ export async function getGitStatus() {
   })();
   const author = await (async () => {
     const { stdout } = await execFileNoThrow(
+      opts.context.cwd,
       'git',
       ['config', 'user.email'],
       undefined,
@@ -87,6 +90,7 @@ export async function getGitStatus() {
   })();
   const authorLog = await (async () => {
     const { stdout } = await execFileNoThrow(
+      opts.context.cwd,
       'git',
       ['log', '--author', author, '--oneline', '-n', '5'],
       undefined,
@@ -116,7 +120,7 @@ const STYLE_PROMPT =
 
 export async function getCodeStyle(opts: { context: Context }) {
   const styles: string[] = [];
-  let currentDir = getCwd();
+  let currentDir = opts.context.cwd;
 
   while (currentDir !== path.parse(currentDir).root) {
     const stylePath = path.join(
@@ -136,8 +140,8 @@ export async function getCodeStyle(opts: { context: Context }) {
   return `${STYLE_PROMPT}\n\n${styles.reverse().join('\n\n')}`;
 }
 
-export async function getReadme() {
-  const readmePath = path.join(getCwd(), 'README.md');
+export async function getReadme(opts: { context: Context }) {
+  const readmePath = path.join(opts.context.cwd, 'README.md');
   if (!fs.existsSync(readmePath)) {
     return null;
   }
@@ -154,10 +158,12 @@ type ContextResult = {
 export const getContext: (opts: {
   context: Context;
 }) => Promise<ContextResult> = memoize(async (opts) => {
-  const directoryStructure = await getDirectoryStructure();
-  const gitStatus = await getGitStatus();
+  const directoryStructure = await getDirectoryStructure({
+    context: opts.context,
+  });
+  const gitStatus = await getGitStatus({ context: opts.context });
   const codeStyle = await getCodeStyle({ context: opts.context });
-  const readme = await getReadme();
+  const readme = await getReadme({ context: opts.context });
   const codebase = opts.context.argv.codebase
     ? await getCodebaseContext({
         include:
