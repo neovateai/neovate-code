@@ -6,15 +6,17 @@
     "dist"
   ],
   "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "bin": {
     "takumi": "./dist/cli.mjs"
   },
   "scripts": {
     "dev": "tsx ./src/cli.ts",
     "format": "prettier --write .",
+    "build:type": "tsc --project tsconfig.json --emitDeclarationOnly",
     "build:cli": "bun build src/cli.ts --minify --outfile dist/cli.mjs --target=node",
     "build:index": "bun build src/index.ts --minify --outfile dist/index.mjs --target=node",
-    "build": "npm run build:cli && npm run build:index",
+    "build": "npm run build:cli && npm run build:index && build:type",
     "release": "utools release --git-tag --github-release --changelog",
     "test": "vitest run",
     "test:watch": "vitest",
