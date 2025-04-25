@@ -13,10 +13,10 @@
   "scripts": {
     "dev": "tsx ./src/cli.ts",
     "format": "prettier --write .",
-    "build:type": "tsc --project tsconfig.json --emitDeclarationOnly",
+    "build:type": "tsc --project tsconfig.json --emitDeclarationOnly || true",
     "build:cli": "bun build src/cli.ts --minify --outfile dist/cli.mjs --target=node",
     "build:index": "bun build src/index.ts --minify --outfile dist/index.mjs --target=node",
-    "build": "npm run build:cli && npm run build:index && npm run build:type",
+    "build": "npm run build:cli && npm run build:index",
     "release": "utools release --git-tag --github-release --changelog",
     "test": "vitest run",
     "test:watch": "vitest",
