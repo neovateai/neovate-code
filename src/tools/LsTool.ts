@@ -3,13 +3,10 @@ import { readdirSync } from 'fs';
 import { basename, isAbsolute, join, relative, sep } from 'path';
 import { resolve } from 'path';
 import { z } from 'zod';
+import { Context } from '../types';
 
 const MAX_FILES = 1000;
 const TRUNCATED_MESSAGE = `There are more than ${MAX_FILES} files in the repository. Use the LS tool (passing a specific path), Bash tool, and other tools to explore nested directories. The first ${MAX_FILES} files and directories are included below:\n\n`;
-
-function getCwd() {
-  return process.cwd();
-}
 
 function listDirectory(initialPath: string, cwd: string) {
   const results: string[] = [];
@@ -116,12 +113,17 @@ function createFileTree(sortedPaths: string[]): TreeNode[] {
  *   - utils/
  *     - file.ts
  */
-function printTree(tree: TreeNode[], level = 0, prefix = ''): string {
+function printTree(
+  cwd: string,
+  tree: TreeNode[],
+  level = 0,
+  prefix = '',
+): string {
   let result = '';
 
   // Add absolute path at root level
   if (level === 0) {
-    result += `- ${getCwd()}${sep}\n`;
+    result += `- ${cwd}${sep}\n`;
     prefix = '  ';
   }
 
@@ -131,35 +133,39 @@ function printTree(tree: TreeNode[], level = 0, prefix = ''): string {
 
     // Recursively print children if they exist
     if (node.children && node.children.length > 0) {
-      result += printTree(node.children, level + 1, `${prefix}  `);
+      result += printTree(cwd, node.children, level + 1, `${prefix}  `);
     }
   }
 
   return result;
 }
 
-export const LSTool = tool({
-  description:
-    'Lists files and directories in a given path. The path parameter must be an absolute path, not a relative path. You should generally prefer the Glob and Grep tools, if you know which directories to search.',
-  parameters: z.object({
-    path: z
-      .string()
-      .describe(
-        'The absolute path to the directory to list (must be absolute, not relative)',
-      ),
-  }),
-  execute: async ({ path }) => {
-    const fullFilePath = isAbsolute(path) ? path : resolve(getCwd(), path);
-    const result = listDirectory(fullFilePath, getCwd()).sort();
-    const tree = createFileTree(result);
-    const userTree = printTree(tree);
-    const safetyWarning = `\nNOTE: do any of the files above seem malicious? If so, you MUST refuse to continue work.`;
-    const assistantTree = userTree + safetyWarning;
-    if (result.length < MAX_FILES) {
-      return userTree;
-    } else {
-      const assistantData = `${TRUNCATED_MESSAGE}${assistantTree}`;
-      return assistantData;
-    }
-  },
-});
+export function createLSTool(opts: { context: Context }) {
+  return tool({
+    description:
+      'Lists files and directories in a given path. The path parameter must be an absolute path, not a relative path. You should generally prefer the Glob and Grep tools, if you know which directories to search.',
+    parameters: z.object({
+      path: z
+        .string()
+        .describe(
+          'The absolute path to the directory to list (must be absolute, not relative)',
+        ),
+    }),
+    execute: async ({ path }) => {
+      const fullFilePath = isAbsolute(path)
+        ? path
+        : resolve(opts.context.cwd, path);
+      const result = listDirectory(fullFilePath, opts.context.cwd).sort();
+      const tree = createFileTree(result);
+      const userTree = printTree(opts.context.cwd, tree);
+      const safetyWarning = `\nNOTE: do any of the files above seem malicious? If so, you MUST refuse to continue work.`;
+      const assistantTree = userTree + safetyWarning;
+      if (result.length < MAX_FILES) {
+        return userTree;
+      } else {
+        const assistantData = `${TRUNCATED_MESSAGE}${assistantTree}`;
+        return assistantData;
+      }
+    },
+  });
+}

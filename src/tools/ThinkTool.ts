@@ -1,8 +1,10 @@
 import { tool } from 'ai';
 import { z } from 'zod';
+import { Context } from '../types';
 
-export const ThinkTool = tool({
-  description: `
+export function createThinkTool(opts: { context: Context }) {
+  return tool({
+    description: `
 [ThinkTool]
 
 This is a no-op tool that logs a thought. It is inspired by the tau-bench think tool.
@@ -18,12 +20,13 @@ Common use cases:
 
 The tool simply logs your thought process for better transparency and does not execute any code or make changes.
     `.trim(),
-  parameters: z.object({
-    thought: z.string().describe('Your thoughts.'),
-  }),
-  execute: async ({ thought }) => {
-    return {
-      thought,
-    };
-  },
-});
+    parameters: z.object({
+      thought: z.string().describe('Your thoughts.'),
+    }),
+    execute: async ({ thought }) => {
+      return {
+        thought,
+      };
+    },
+  });
+}

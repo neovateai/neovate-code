@@ -2,30 +2,30 @@ import { Tool } from 'ai';
 import { jsonrepair } from 'jsonrepair';
 import { PluginHookType } from '../pluginManager/pluginManager';
 import { Context } from '../types';
-import { BashTool } from './BashTool';
-import { BatchTool } from './BatchTool';
-import { FileEditTool } from './FileEditTool';
-import { FileReadTool } from './FileReadTool';
-import { FileWriteTool } from './FileWriteTool';
-import { GlobTool } from './GlobTool';
-import { GrepTool } from './GrepTool';
-import { LSTool } from './LsTool';
-import { ThinkTool } from './ThinkTool';
+import { createBashTool } from './BashTool';
+import { createBatchTool } from './BatchTool';
+import { createFileEditTool } from './FileEditTool';
+import { createFileReadTool } from './FileReadTool';
+import { createFileWriteTool } from './FileWriteTool';
+import { createGlobTool } from './GlobTool';
+import { createGrepTool } from './GrepTool';
+import { createLSTool } from './LsTool';
+import { createThinkTool } from './ThinkTool';
 import { createTodoTool } from './TodoTool';
 import { createWebFetchTool } from './WebFetchTool';
 
 export const getAllTools = async (opts: { context: Context }) => {
   return {
-    FileReadTool,
-    FileEditTool,
-    BashTool,
-    LSTool,
-    FileWriteTool,
-    GrepTool,
-    GlobTool,
-    ThinkTool,
+    FileReadTool: createFileReadTool(opts),
+    FileEditTool: createFileEditTool(opts),
+    BashTool: createBashTool(opts),
+    LSTool: createLSTool(opts),
+    FileWriteTool: createFileWriteTool(opts),
+    GrepTool: createGrepTool(opts),
+    GlobTool: createGlobTool(opts),
+    ThinkTool: createThinkTool(opts),
     WebFetchTool: createWebFetchTool(opts),
-    BatchTool,
+    BatchTool: createWebFetchTool(opts),
     ...(opts.context.config.tasks
       ? createTodoTool({ context: opts.context })
       : {}),
@@ -34,13 +34,13 @@ export const getAllTools = async (opts: { context: Context }) => {
 
 export const getAskTools = async (opts: { context: Context }) => {
   return {
-    FileReadTool,
-    LSTool,
-    GrepTool,
-    GlobTool,
-    ThinkTool,
+    FileReadTool: createFileReadTool(opts),
+    LSTool: createLSTool(opts),
+    GrepTool: createGrepTool(opts),
+    GlobTool: createGlobTool(opts),
+    ThinkTool: createThinkTool(opts),
     WebFetchTool: createWebFetchTool(opts),
-    BatchTool,
+    BatchTool: createBatchTool(opts),
   };
 };
 

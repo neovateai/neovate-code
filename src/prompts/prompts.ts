@@ -1,11 +1,10 @@
 import { Tool } from 'ai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
-function getCwd(): string {
-  return process.cwd();
-}
-
-export function getSystemPrompt(opts: { tasks?: boolean }): string[] {
+export function getSystemPrompt(opts: {
+  tasks?: boolean;
+  cwd: string;
+}): string[] {
   const platform =
     process.platform === 'darwin'
       ? 'macOS'
@@ -146,7 +145,7 @@ You MUST answer concisely with fewer than 4 lines of text (not including tool us
 # Environment
 Here is useful information about the environment you are running in:
 <env>
-Working directory: ${getCwd()}
+Working directory: ${opts.cwd}
 Is directory a git repo: YES
 Platform: ${env.platform}
 Today's date: ${new Date().toLocaleDateString()}

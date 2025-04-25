@@ -4,6 +4,7 @@ import { dirname } from 'path';
 import { resolve } from 'path';
 import { isAbsolute } from 'path';
 import { z } from 'zod';
+import { Context } from '../types';
 import { applyEdit } from '../utils/applyEdit';
 
 const description = `
@@ -29,43 +30,44 @@ If you want to create a new file, use:
 Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.
 `;
 
-function getCwd(): string {
-  return process.cwd();
+export function createFileEditTool(opts: { context: Context }) {
+  return tool({
+    description,
+    parameters: z.object({
+      file_path: z.string().describe('The absolute path to the file to modify'),
+      old_string: z.string().describe('The text to replace'),
+      new_string: z
+        .string()
+        .describe('The text to replace the old_string with'),
+    }),
+    execute: async ({ file_path, old_string, new_string }) => {
+      try {
+        const { patch, updatedFile } = applyEdit(
+          opts.context.cwd,
+          file_path,
+          old_string,
+          new_string,
+        );
+        const fullFilePath = isAbsolute(file_path)
+          ? file_path
+          : resolve(opts.context.cwd, file_path);
+        const dir = dirname(fullFilePath);
+        mkdirSync(dir, { recursive: true });
+        const enc = 'utf8';
+        writeFileSync(fullFilePath, updatedFile, enc);
+        return {
+          success: true,
+          patch,
+          updatedFile,
+        };
+      } catch (e) {
+        return {
+          success: false,
+          error: e instanceof Error ? e.message : 'Unknown error',
+          patch: null,
+          updatedFile: null,
+        };
+      }
+    },
+  });
 }
-
-export const FileEditTool = tool({
-  description,
-  parameters: z.object({
-    file_path: z.string().describe('The absolute path to the file to modify'),
-    old_string: z.string().describe('The text to replace'),
-    new_string: z.string().describe('The text to replace the old_string with'),
-  }),
-  execute: async ({ file_path, old_string, new_string }) => {
-    try {
-      const { patch, updatedFile } = applyEdit(
-        file_path,
-        old_string,
-        new_string,
-      );
-      const fullFilePath = isAbsolute(file_path)
-        ? file_path
-        : resolve(getCwd(), file_path);
-      const dir = dirname(fullFilePath);
-      mkdirSync(dir, { recursive: true });
-      const enc = 'utf8';
-      writeFileSync(fullFilePath, updatedFile, enc);
-      return {
-        success: true,
-        patch,
-        updatedFile,
-      };
-    } catch (e) {
-      return {
-        success: false,
-        error: e instanceof Error ? e.message : 'Unknown error',
-        patch: null,
-        updatedFile: null,
-      };
-    }
-  },
-});

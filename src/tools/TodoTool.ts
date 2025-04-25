@@ -11,13 +11,9 @@ export function createTodoTool(opts: { context: Context }) {
     return uuid;
   })();
 
-  function getCwd() {
-    return process.cwd();
-  }
-
   function ensureTodoDirectory() {
     const todoDir = path.join(
-      getCwd(),
+      opts.context.cwd,
       `.${opts.context.config.productName.toLowerCase()}`,
       'todos',
     );

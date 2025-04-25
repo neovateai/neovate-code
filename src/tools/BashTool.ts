@@ -1,6 +1,7 @@
 import { tool } from 'ai';
 import { execSync } from 'child_process';
 import { z } from 'zod';
+import { Context } from '../types';
 
 const MAX_OUTPUT_LENGTH = 30000;
 const BANNED_COMMANDS = [
@@ -23,8 +24,9 @@ const BANNED_COMMANDS = [
   'safari',
 ];
 
-export const BashTool = tool({
-  description: `
+export function createBashTool(opts: { context: Context }) {
+  return tool({
+    description: `
 You are a command line tool that can execute commands in the terminal.
 Before using this tool, please follow these steps:
 1. Security Check:
@@ -43,19 +45,20 @@ pytest /foo/bar/tests
 cd /foo/bar && pytest tests
 </bad-example>
   `,
-  parameters: z.object({
-    command: z.string().describe('The command to execute'),
-    timeout: z
-      .number()
-      .optional()
-      .describe('Optional timeout in milliseconds (max 600000)'),
-  }),
-  execute: async ({ command, timeout = 1800000 }) => {
-    try {
-      const result = execSync(command, { timeout });
-      return { success: true, output: result.toString() };
-    } catch (error: any) {
-      return { success: false, output: error.message };
-    }
-  },
-});
+    parameters: z.object({
+      command: z.string().describe('The command to execute'),
+      timeout: z
+        .number()
+        .optional()
+        .describe('Optional timeout in milliseconds (max 600000)'),
+    }),
+    execute: async ({ command, timeout = 1800000 }) => {
+      try {
+        const result = execSync(command, { timeout });
+        return { success: true, output: result.toString() };
+      } catch (error: any) {
+        return { success: false, output: error.message };
+      }
+    },
+  });
+}
