@@ -1,3 +1,26 @@
+## 0.0.12
+
+`2025-04-25`
+
+- feat: add error logging to session by [@sorrycc](https://github.com/sorrycc)
+- feat: add final response and duration to session log by [@sorrycc](https://github.com/sorrycc)
+- feat: add session logging plugin by [@sorrycc](https://github.com/sorrycc)
+- feat: add query lifecycle plugin hooks by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename plugin directory to pluginManager by [@sorrycc](https://github.com/sorrycc)
+- feat: add cli and tool lifecycle plugin hooks by [@sorrycc](https://github.com/sorrycc)
+- perf: dynamically import commands for faster startup by [@sorrycc](https://github.com/sorrycc)
+- fix: ensure written files end with a newline by [@sorrycc](https://github.com/sorrycc)
+- feat: add language configuration option by [@sorrycc](https://github.com/sorrycc)
+- fix: prevent --plan in act and set OS dynamically in prompt by [@sorrycc](https://github.com/sorrycc)
+- fix: improve error handling and skip large files in watch command by [@sorrycc](https://github.com/sorrycc)
+- fix: remove marker and update prompt for AI comments in watch by [@sorrycc](https://github.com/sorrycc)
+- fix: enhance commit command with config checks and validation by [@sorrycc](https://github.com/sorrycc)
+- fix: check git exists and improve large diff handling in commit by [@sorrycc](https://github.com/sorrycc)
+- feat: add --no-verify option to commit command by [@sorrycc](https://github.com/sorrycc)
+- feat: add watch command by [@sorrycc](https://github.com/sorrycc)
+- feat: add support for model aliases by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.11
 
 `2025-04-23`
