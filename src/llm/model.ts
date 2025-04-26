@@ -2,6 +2,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createXai } from '@ai-sdk/xai';
 import assert from 'assert';
 import { createOllama } from 'ollama-ai-provider';
+import { ApiKeys } from '../config';
 
 export const MODEL_ALIAS = {
   // Claude
@@ -131,7 +132,7 @@ export type ModelType =
   | (typeof INFERENCE_MODELS)[number]
   | (typeof OPENAI_MODELS)[number];
 
-export function getModel(model: ModelType) {
+export function getModel(model: ModelType, apiKeys?: ApiKeys) {
   let apiKey;
   let baseURL;
 
@@ -143,40 +144,40 @@ export function getModel(model: ModelType) {
   }
 
   if (GOOGLE_MODELS.includes(model as any)) {
-    apiKey = process.env.GOOGLE_API_KEY;
+    apiKey = apiKeys?.['google'] || process.env.GOOGLE_API_KEY;
     baseURL = 'https://generativelanguage.googleapis.com/v1beta/';
   } else if (DEEPSEEK_MODELS.includes(model as any)) {
-    apiKey = process.env.DEEPSEEK_API_KEY;
+    apiKey = apiKeys?.['deepseek'] || process.env.DEEPSEEK_API_KEY;
     baseURL = 'https://api.deepseek.com/v1';
   } else if (GROQ_MODELS.includes(model as any)) {
-    apiKey = process.env.GROQ_API_KEY;
+    apiKey = apiKeys?.['groq'] || process.env.GROQ_API_KEY;
     baseURL = 'https://api.groq.com/openai/v1';
   } else if (SILICONFLOW_MODELS.includes(model as any)) {
-    apiKey = process.env.SILICONFLOW_API_KEY;
+    apiKey = apiKeys?.['siliconflow'] || process.env.SILICONFLOW_API_KEY;
     baseURL = 'https://api.siliconflow.com/v1';
   } else if (ALIYUN_MODELS.includes(model as any)) {
-    apiKey = process.env.ALIYUN_API_KEY;
+    apiKey = apiKeys?.['aliyun'] || process.env.ALIYUN_API_KEY;
     baseURL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
   } else if (DOUBAO_MODELS.includes(model as any)) {
-    apiKey = process.env.DOUBAO_API_KEY;
+    apiKey = apiKeys?.['doubao'] || process.env.DOUBAO_API_KEY;
     baseURL = 'https://ark.cn-beijing.volces.com/api/v3';
   } else if (GROK_MODELS.includes(model as any)) {
-    apiKey = process.env.GROK_API_KEY;
+    apiKey = apiKeys?.['grok'] || process.env.GROK_API_KEY;
     const xai = createXai({
       apiKey,
     });
     return xai(stripProviderPrefix(model));
   } else if (OPEN_ROUTER_MODELS.includes(model as any)) {
-    apiKey = process.env.OPEN_ROUTER_API_KEY;
+    apiKey = apiKeys?.['openrouter'] || process.env.OPEN_ROUTER_API_KEY;
     baseURL = 'https://openrouter.ai/api/v1';
   } else if (TENCENT_MODELS.includes(model as any)) {
-    apiKey = process.env.TENCENT_API_KEY;
+    apiKey = apiKeys?.['tencent'] || process.env.TENCENT_API_KEY;
     baseURL = 'https://api.lkeap.cloud.tencent.com/v1';
   } else if (INFERENCE_MODELS.includes(model as any)) {
-    apiKey = process.env.INFERENCE_API_KEY;
+    apiKey = apiKeys?.['inference'] || process.env.INFERENCE_API_KEY;
     baseURL = 'https://api.inference.net/v1';
   } else if (OPENAI_MODELS.includes(model as any)) {
-    apiKey = process.env.OPENAI_API_KEY;
+    apiKey = apiKeys?.['openai'] || process.env.OPENAI_API_KEY;
     baseURL = 'https://api.openai.com/v1';
   } else {
     throw new Error(`Unsupported model: ${model}`);
