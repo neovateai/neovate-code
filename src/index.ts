@@ -26,6 +26,7 @@ async function buildContext(opts: RunCliOpts) {
       m: 'model',
       v: 'version',
     },
+    boolean: ['plan'],
   });
   let command = argv._[0] as string;
   if (argv.version) {

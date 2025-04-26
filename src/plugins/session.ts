@@ -47,10 +47,10 @@ export const sessionPlugin: Plugin = {
       new Date(data.session.endTime).getTime() -
       new Date(data.session.startTime).getTime();
     if (error) {
-      data.queries.push({
+      data.session.error = {
         type: 'error',
         data: error.toString(),
-      });
+      };
     }
     write();
     console.log();
@@ -99,6 +99,8 @@ export const sessionPlugin: Plugin = {
 
 function formatSessionConfig(config: Config) {
   let ret: any = { ...config };
-  delete ret.systemPrompt;
+  if (!process.env.DEBUG) {
+    delete ret.systemPrompt;
+  }
   return ret;
 }

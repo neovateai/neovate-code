@@ -91,7 +91,7 @@ export async function query(opts: QueryOptions) {
     ...systemPrompt.map((prompt) => {
       return prompt.replace(/\{language\}/g, context.config.language);
     }),
-    ...(hasTools ? getToolsPrompt(tools) : []),
+    ...(hasTools ? [getToolsPrompt(tools)] : []),
     `====\n\nCONTEXT\n\nAs you answer the user's questions, you can use the following context:`,
     ...Object.entries(queryContext).map(
       ([key, value]) => `<context name="${key}">${value}</context>`,
