@@ -1,3 +1,10 @@
+## 0.0.14
+
+`2025-04-27`
+
+- feat: add debug log and close MCP clients in runCli by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.13
 
 `2025-04-27`
