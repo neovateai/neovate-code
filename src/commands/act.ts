@@ -7,6 +7,15 @@ import { Context } from '../types';
 
 export async function runAct(opts: { context: Context; prompt: string }) {
   const { argv } = opts.context;
+
+  // Validate initial prompt
+  if (!opts.prompt || opts.prompt.trim() === '') {
+    console.error(
+      pc.red('Error: Empty prompt. Please provide a valid prompt.'),
+    );
+    return;
+  }
+
   if (argv.plan) {
     const systemPrompt = [
       // ...opts.context.config.systemPrompt,
@@ -48,13 +57,25 @@ export async function runAct(opts: { context: Context; prompt: string }) {
       if (confirmPlan) {
         break;
       } else {
-        const { modifyPlan } = await inquirer.prompt([
-          {
-            type: 'input',
-            name: 'modifyPlan',
-            message: pc.cyan('Please modify the plan, here is my request:'),
-          },
-        ]);
+        // Validate plan modification input
+        let modifyPlan = '';
+        while (!modifyPlan || modifyPlan.trim() === '') {
+          const response = await inquirer.prompt([
+            {
+              type: 'input',
+              name: 'modifyPlan',
+              message: pc.cyan('Please modify the plan, here is my request:'),
+              validate: (input) => {
+                if (!input || input.trim() === '') {
+                  return 'Please provide feedback to modify the plan. Or press Ctrl+C to cancel.';
+                }
+                return true;
+              },
+            },
+          ]);
+          modifyPlan = response.modifyPlan;
+        }
+
         messages.push({
           role: 'assistant',
           content: result,
