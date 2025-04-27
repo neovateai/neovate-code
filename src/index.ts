@@ -37,12 +37,10 @@ async function buildContext(opts: RunCliOpts) {
   const configDir = path.join(homeDir, `.${opts.productName.toLowerCase()}`);
   const configPath = path.join(configDir, 'config.json');
   const sessionPathDir = opts.sessionPath ?? path.join(configDir, 'sessions');
-  const sessionPath =
-    opts.sessionPath ??
-    path.join(
-      sessionPathDir,
-      `${opts.productName}-${format(new Date(), 'yyyy-MM-dd_HH_mm_ss')}-${sessionId}.json`,
-    );
+  const sessionPath = path.join(
+    sessionPathDir,
+    `${opts.productName}-${format(new Date(), 'yyyy-MM-dd_HH_mm_ss')}-${sessionId}.json`,
+  );
   const config = await getConfig({ argv, productName: opts.productName, cwd });
   const buildinPlugins = [sessionPlugin];
   const plugins = [
