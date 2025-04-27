@@ -1,4 +1,5 @@
 import { CoreMessage, Tool, generateText, streamText } from 'ai';
+import assert from 'assert';
 import { randomUUID } from 'crypto';
 import pc from 'picocolors';
 import { getContext } from '../context/context';
@@ -13,7 +14,8 @@ import { ModelType, getModel } from './model';
 
 interface AskQueryOptions {
   context: Context;
-  prompt: string;
+  prompt?: string;
+  messages?: CoreMessage[];
   model?: ModelType | ReturnType<typeof getModel>;
   systemPrompt?: string[];
 }
@@ -71,7 +73,8 @@ export async function editQuery(opts: EditQueryOptions) {
 
 interface QueryOptions {
   model?: ModelType | ReturnType<typeof getModel>;
-  prompt: string;
+  prompt?: string;
+  messages?: CoreMessage[];
   systemPrompt: string[];
   queryContext: Record<string, any>;
   tools: Record<string, Tool>;
@@ -79,13 +82,14 @@ interface QueryOptions {
 }
 
 export async function query(opts: QueryOptions) {
+  assert(opts.messages || opts.prompt, 'prompt or messages is required');
   const start = Date.now();
   const id = randomUUID();
   let model = opts.model || opts.context.config.model;
   model = typeof model === 'string' ? getModel(model) : model;
   const { prompt, systemPrompt, queryContext, tools, context } = opts;
   console.log();
-  const messages: CoreMessage[] = [];
+  const messages: CoreMessage[] = opts.messages || [];
   const hasTools = Object.keys(tools).length > 0;
   const system = [
     ...systemPrompt.map((prompt) => {
@@ -114,7 +118,9 @@ export async function query(opts: QueryOptions) {
     type: PluginHookType.Series,
     pluginContext: opts.context.pluginContext,
   });
-  await addMessage([{ role: 'user', content: prompt }]);
+  if (!opts.messages && prompt) {
+    await addMessage([{ role: 'user', content: prompt }]);
+  }
   while (true) {
     logAction(`Asking model... (with ${messages.length} messages)`);
     logDebug(`Messages: ${JSON.stringify(messages, null, 2)}`);

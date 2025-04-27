@@ -1,3 +1,4 @@
+import { CoreMessage } from 'ai';
 import inquirer from 'inquirer';
 import pc from 'picocolors';
 import { MODEL_ALIAS } from '../llm/model';
@@ -16,35 +17,66 @@ export async function runAct(opts: { context: Context; prompt: string }) {
       const alias = MODEL_ALIAS[argv.planModel as keyof typeof MODEL_ALIAS];
       return alias || argv.planModel;
     })();
-    const result = await askQuery({
-      systemPrompt,
-      prompt: opts.prompt,
-      context: opts.context,
-      model,
-    });
-    console.log();
-    console.log(pc.cyan('Here is the Plan.\n===='));
-    console.log(result);
-    console.log();
-
-    // Confirm with user before proceeding
-    const { confirmPlan } = await inquirer.prompt([
+    const messages: CoreMessage[] = [
       {
-        type: 'confirm',
-        name: 'confirmPlan',
-        message: pc.cyan('Do you want to proceed with this plan?'),
-        default: true,
+        role: 'user',
+        content: opts.prompt,
       },
-    ]);
-
-    if (confirmPlan) {
-      await editQuery({
-        prompt: result,
+    ];
+    let result = null;
+    while (true) {
+      result = await askQuery({
+        systemPrompt,
+        messages,
         context: opts.context,
+        model,
       });
-    } else {
-      console.log(pc.yellow('Plan execution cancelled.'));
+      console.log();
+      console.log(pc.cyan('Here is the Plan.\n===='));
+      console.log(result);
+      console.log();
+
+      // Confirm with user before proceeding
+      const { confirmPlan } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'confirmPlan',
+          message: pc.cyan('Do you want to proceed with this plan?'),
+          default: true,
+        },
+      ]);
+      if (confirmPlan) {
+        break;
+      } else {
+        const { modifyPlan } = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'modifyPlan',
+            message: pc.cyan('Please modify the plan, here is my request:'),
+          },
+        ]);
+        messages.push({
+          role: 'assistant',
+          content: result,
+        });
+        messages.push({
+          role: 'user',
+          content: `
+Please modify the plan, here is my request:
+${modifyPlan}
+          `,
+        });
+      }
     }
+    await editQuery({
+      prompt: `
+Please implement the plan step by step.
+
+Here is the plan:
+${result}
+      `,
+      context: opts.context,
+    });
   } else {
     await editQuery({
       prompt: opts.prompt,
