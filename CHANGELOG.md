@@ -1,3 +1,18 @@
+## 0.0.13
+
+`2025-04-27`
+
+- fix: handle potentially undefined mcpConfig when creating clients by [@sorrycc](https://github.com/sorrycc)
+- fix: add iteration limit to plan modification by [@sorrycc](https://github.com/sorrycc)
+- fix: validate prompt inputs are not empty by [@sorrycc](https://github.com/sorrycc)
+- feat: allow interactive plan modification before execution by [@sorrycc](https://github.com/sorrycc)
+- feat: add --plan option to generate and confirm execution plan by [@sorrycc](https://github.com/sorrycc)
+- feat: cli run cwd use config.root by [@聪小陈](https://github.com/聪小陈) in [#4](https://github.com/umijs/takumi/pull/4)
+- fix: correct line number indexing in watch test cases by [@sorrycc](https://github.com/sorrycc)
+- fix: remove build:type from build script and make it fail-safe by [@sorrycc](https://github.com/sorrycc)
+- feat: add build types by [@聪小陈](https://github.com/聪小陈) in [#3](https://github.com/umijs/takumi/pull/3)
+
+
 ## 0.0.12
 
 `2025-04-25`
