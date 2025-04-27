@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import pc from 'picocolors';
 import { Config } from '../config';
 import { Plugin } from '../pluginManager/types';
 import { PluginContext } from '../types';
@@ -25,8 +24,7 @@ function write() {
     }
     fs.writeFileSync(sessionPath, JSON.stringify(data, null, 2));
   } catch (e) {
-    console.error(pc.red('Failed to write session file'));
-    console.error(e);
+    throw new Error(`Failed to write session file: ${e}`);
   }
 }
 
@@ -53,8 +51,6 @@ export const sessionPlugin: Plugin = {
       };
     }
     write();
-    console.log();
-    console.log(`Session saved to ${sessionPath}`);
   },
   config: async function (this: PluginContext) {
     return {};

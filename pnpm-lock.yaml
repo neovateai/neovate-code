@@ -26,6 +26,9 @@ importers:
       '@types/yargs-parser':
         specifier: ^21.0.3
         version: 21.0.3
+      '@umijs/clack-prompts':
+        specifier: ^0.0.5
+        version: 0.0.5
       '@umijs/tools':
         specifier: ^0.1.36
         version: 0.1.36(postcss@8.5.3)(typescript@5.8.3)
@@ -727,6 +730,9 @@ packages:
   '@types/yargs-parser@21.0.3':
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
 
+  '@umijs/clack-prompts@0.0.5':
+    resolution: {integrity: sha512-oeHo4KN7tnCbsIo37E+4HiEvC5Ye3fUIVg1JvEXsko2QpaFjg6oXFsuEOI/s5hdzc1sBX8KUIgQrxVSCX4ykRA==}
+
   '@umijs/mako-darwin-arm64@0.11.9':
     resolution: {integrity: sha512-RI57dHmWw/iaqta+N8ZkxlZYcczVF6m3UDcA80GDxpu9m3zbnKih+qNFMFc6jLCS9jFwZTwGkT7+91slyWT+ng==}
     engines: {node: '>= 10'}
@@ -1313,6 +1319,10 @@ packages:
     resolution: {integrity: sha512-LnQR4bZ9IADDRSkvpqMGvt/tEJWclzklNgSw48V5EAaAeDd6qGvN8ei6k5p0tvxSR171VmGyHuTiAOfxAbr8kA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
+  is-unicode-supported@1.3.0:
+    resolution: {integrity: sha512-43r2mRvz+8JRIKnWJ+3j8JtjRKZ6GmjzfaE/qiBJnikNnYv/6bagRJ1kUhNk8R5EX/GkobD+r+sfxCPJsiKBLQ==}
+    engines: {node: '>=12'}
+
   is-what@3.14.1:
     resolution: {integrity: sha512-sNxgpk9793nzSs7bA6JQJGeIuRBQhAaNGG77kzYQgMkrID+lS6SlK07K5LaptscDlSaIgH+GPFzf+d75FVxozA==}
 
@@ -1808,6 +1818,9 @@ packages:
   signal-exit@4.1.0:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
+
+  sisteransi@1.0.5:
+    resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
 
   slice-ansi@5.0.0:
     resolution: {integrity: sha512-FC+lgizVPfie0kkhqUScwRu1O/lF6NOgJmlCgK+/LYxDCTk8sGelYaHDhFcDN+Sn3Cv+3VSa4Byeo+IMCzpMgQ==}
@@ -2602,6 +2615,13 @@ snapshots:
 
   '@types/yargs-parser@21.0.3': {}
 
+  '@umijs/clack-prompts@0.0.5':
+    dependencies:
+      is-unicode-supported: 1.3.0
+      picocolors: 1.1.1
+      sisteransi: 1.0.5
+      wrap-ansi: 8.1.0
+
   '@umijs/mako-darwin-arm64@0.11.9':
     optional: true
 
@@ -3259,6 +3279,8 @@ snapshots:
 
   is-stream@3.0.0: {}
 
+  is-unicode-supported@1.3.0: {}
+
   is-what@3.14.1: {}
 
   is-wsl@3.1.0:
@@ -3740,6 +3762,8 @@ snapshots:
   siginfo@2.0.0: {}
 
   signal-exit@4.1.0: {}
+
+  sisteransi@1.0.5: {}
 
   slice-ansi@5.0.0:
     dependencies:

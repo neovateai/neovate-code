@@ -2,6 +2,7 @@ import { execSync } from 'child_process';
 import clipboardy from 'clipboardy';
 import { askQuery } from '../llm/query';
 import { Context } from '../types';
+import * as logger from '../utils/logger2';
 
 export async function runCommit(opts: { context: Context }) {
   try {
@@ -79,7 +80,7 @@ ${repoStyle}
   }
   if (argv.copy) {
     clipboardy.writeSync(message);
-    console.log('Copied to clipboard');
+    logger.logResult('Commit message copied to clipboard');
   }
 }
 

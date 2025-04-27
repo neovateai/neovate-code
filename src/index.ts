@@ -12,35 +12,29 @@ import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
 import type { Plugin } from './pluginManager/types';
 import { keywordContextPlugin } from './plugins/keyword-context';
 import { sessionPlugin } from './plugins/session';
-import * as logger from './utils/logger';
+import { Context } from './types';
+import * as logger1 from './utils/logger';
+import * as logger from './utils/logger2';
 
 const require = createRequire(import.meta.url);
 
 // Private export may be deprecated in the future
 export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
 
-async function buildContext(opts: RunCliOpts) {
+async function buildContext(
+  opts: RunCliOpts & { argv: any; command: string },
+): Promise<Context> {
   dotenv.config();
+  const { argv, command } = opts;
   const cwd = opts.root ?? process.cwd();
-  const argv = yargsParser(process.argv.slice(2), {
-    alias: {
-      m: 'model',
-      v: 'version',
-    },
-    boolean: ['plan'],
-  });
-  let command = argv._[0] as string;
-  if (argv.version) {
-    command = 'version';
-  }
-  const sessionId = randomUUID();
+  const sessionId = randomUUID().slice(0, 4);
   const homeDir = os.homedir();
   const configDir = path.join(homeDir, `.${opts.productName.toLowerCase()}`);
   const configPath = path.join(configDir, 'config.json');
   const sessionPathDir = opts.sessionPath ?? path.join(configDir, 'sessions');
   const sessionPath = path.join(
     sessionPathDir,
-    `${opts.productName}-${format(new Date(), 'yyyy-MM-dd_HH_mm_ss')}-${sessionId}.json`,
+    `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${sessionId}.json`,
   );
   const config = await getConfig({ argv, productName: opts.productName, cwd });
   const buildinPlugins = [sessionPlugin, keywordContextPlugin];
@@ -60,11 +54,26 @@ async function buildContext(opts: RunCliOpts) {
     config,
     cwd,
     command,
-    logger,
+    logger: logger1,
     paths,
     sessionId,
   };
   // hook: cliStart
+  logger.logIntro({
+    productName: opts.productName,
+    version: require('../package.json').version,
+  });
+  logger.logGeneralInfo({
+    infos: {
+      log: sessionPath.replace(homeDir, '~'),
+      workspace: cwd,
+      model: config.model,
+      ...(config.smallModel !== config.model && {
+        'small model': config.smallModel,
+      }),
+      ...(!config.stream && { stream: 'false' }),
+    },
+  });
   await pluginManager.apply({
     hook: 'cliStart',
     args: [],
@@ -110,39 +119,53 @@ interface RunCliOpts {
 }
 
 export async function runCli(opts: RunCliOpts) {
-  const context = await buildContext(opts);
-  const { command, argv } = context;
+  let context: Context | null = null;
   const start = Date.now();
   try {
+    const argv = yargsParser(process.argv.slice(2), {
+      alias: {
+        m: 'model',
+        v: 'version',
+      },
+      boolean: ['plan'],
+    });
+    let command = argv._[0] as string;
+    if (argv.version) {
+      command = 'version';
+    }
+    if (command === 'version') {
+      const productName = opts.productName.toLowerCase();
+      console.log(`${productName}@${require('../package.json').version}`);
+      return;
+    }
+    context = await buildContext({ ...opts, argv, command });
     switch (command) {
       case 'plan':
-        logger.logPrompt('/plan');
+        logger.logCommand({ command: 'plan' });
         await (await import('./commands/plan.js')).runPlan({ context });
         break;
       case 'init':
-        logger.logPrompt('/init');
+        logger.logCommand({ command: 'init' });
         await (await import('./commands/init.js')).runInit({ context });
         break;
       case 'commit':
-        logger.logPrompt('/commit');
+        logger.logCommand({ command: 'commit' });
         await (await import('./commands/commit.js')).runCommit({ context });
         break;
-      case 'version':
-        console.log(require('../package.json').version);
-        break;
       case 'watch':
-        logger.logPrompt('/watch');
+        logger.logCommand({ command: 'watch' });
         await (await import('./commands/watch.js')).runWatch({ context });
         break;
       case 'ask':
-        logger.logPrompt('/ask');
+        logger.logCommand({ command: 'ask' });
         const askPrompt = argv._.slice(1).join(' ');
+        logger.logUserInput({ input: askPrompt });
         await (
           await import('./commands/ask.js')
         ).runAsk({ context, prompt: askPrompt });
         break;
       default:
-        logger.logPrompt(command);
+        logger.logUserInput({ input: command });
         await (
           await import('./commands/act.js')
         ).runAct({ context, prompt: command });
@@ -158,21 +181,25 @@ export async function runCli(opts: RunCliOpts) {
     if (command !== 'watch') {
       // TODO: fix hard code
       await closeClients(context.mcpClients);
+      logger.logOutro();
       process.exit(0);
     }
   } catch (error: any) {
-    logger.logError('Error:');
-    logger.logError(error.message);
-    await context.pluginManager.apply({
-      hook: 'cliEnd',
-      args: [{ startTime: start, endTime: Date.now(), error }],
-      type: PluginHookType.Series,
-      pluginContext: context.pluginContext,
-    });
+    if (context) {
+      await context.pluginManager.apply({
+        hook: 'cliEnd',
+        args: [{ startTime: start, endTime: Date.now(), error }],
+        type: PluginHookType.Series,
+        pluginContext: context.pluginContext,
+      });
+    }
+    logger.logError({ error: error.message });
     if (process.env.DEBUG) {
       console.error(error);
     }
   } finally {
-    await closeClients(context.mcpClients);
+    if (context) {
+      await closeClients(context.mcpClients);
+    }
   }
 }
