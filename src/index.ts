@@ -111,7 +111,7 @@ interface RunCliOpts {
 
 export async function runCli(opts: RunCliOpts) {
   const context = await buildContext(opts);
-  const { command } = context;
+  const { command, argv } = context;
   const start = Date.now();
   try {
     switch (command) {
@@ -133,6 +133,13 @@ export async function runCli(opts: RunCliOpts) {
       case 'watch':
         logger.logPrompt('/watch');
         await (await import('./commands/watch.js')).runWatch({ context });
+        break;
+      case 'ask':
+        logger.logPrompt('/ask');
+        const askPrompt = argv._.slice(1).join(' ');
+        await (
+          await import('./commands/ask.js')
+        ).runAsk({ context, prompt: askPrompt });
         break;
       default:
         logger.logPrompt(command);
