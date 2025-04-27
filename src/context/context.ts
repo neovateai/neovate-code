@@ -170,6 +170,7 @@ export const getContext: (opts: {
           typeof opts.context.argv.codebase === 'string'
             ? opts.context.argv.codebase
             : undefined,
+        context: opts.context,
       })
     : undefined;
   return {
