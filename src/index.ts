@@ -113,6 +113,7 @@ interface RunCliOpts {
 }
 
 export async function runCli(opts: RunCliOpts) {
+  console.log('runCli', opts);
   const context = await buildContext(opts);
   const { command } = context;
   const start = Date.now();
@@ -152,6 +153,8 @@ export async function runCli(opts: RunCliOpts) {
       pluginContext: context.pluginContext,
     });
     if (command !== 'watch') {
+      // TODO: fix hard code
+      await closeClients(context.mcpClients);
       process.exit(0);
     }
   } catch (error: any) {
