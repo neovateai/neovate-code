@@ -113,7 +113,6 @@ interface RunCliOpts {
 }
 
 export async function runCli(opts: RunCliOpts) {
-  console.log('runCli', opts);
   const context = await buildContext(opts);
   const { command } = context;
   const start = Date.now();
