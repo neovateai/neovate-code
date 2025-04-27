@@ -47,7 +47,7 @@ ${recentCommits}
 Please follow a similar style for this commit message while still adhering to the structure guidelines.
 `;
     } catch (error) {
-      console.log(
+      console.error(
         'Could not analyze repository commit style. Using default style.',
       );
     }
