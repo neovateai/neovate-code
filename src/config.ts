@@ -48,9 +48,6 @@ export async function getConfig(opts: {
       model === 'Google/gemini-2.0-pro-exp-02-05' ||
       model === 'Google/gemini-2.5-pro-exp-03-25'
     ) {
-      console.log(
-        'Using stream: false since Gemini pro models do not support streaming',
-      );
       return false;
     }
     return argv.stream !== 'false';

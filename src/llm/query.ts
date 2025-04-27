@@ -1,7 +1,6 @@
 import { CoreMessage, Tool, generateText, streamText } from 'ai';
 import assert from 'assert';
 import { randomUUID } from 'crypto';
-import pc from 'picocolors';
 import { getContext } from '../context/context';
 import { getClientsTools } from '../mcp';
 import { PluginHookType } from '../pluginManager/pluginManager';
@@ -9,7 +8,7 @@ import { getToolsPrompt } from '../prompts/prompts';
 import { callTool, getAllTools, parseToolUse } from '../tools/tools';
 import { getAskTools } from '../tools/tools';
 import { Context } from '../types';
-import { logAction, logDebug, logTool } from '../utils/logger';
+import * as logger from '../utils/logger2';
 import { ModelType, getModel } from './model';
 
 interface AskQueryOptions {
@@ -108,7 +107,6 @@ export async function query(opts: QueryOptions) {
       ? getModel(model, opts.context.config.apiKeys)
       : model;
   const { prompt, systemPrompt, queryContext, tools, context } = opts;
-  console.log();
   const messages: CoreMessage[] = opts.messages || [];
   const hasTools = Object.keys(tools).length > 0;
   const system = [
@@ -142,8 +140,10 @@ export async function query(opts: QueryOptions) {
     await addMessage([{ role: 'user', content: prompt }]);
   }
   while (true) {
-    logAction(`Asking model... (with ${messages.length} messages)`);
-    logDebug(`Messages: ${JSON.stringify(messages, null, 2)}`);
+    const thinkDone = logger.spinThink({
+      productName: context.config.productName,
+    });
+    logger.logDebug(`Messages: ${JSON.stringify(messages, null, 2)}`);
     const llmOpts = {
       model,
       messages,
@@ -154,11 +154,17 @@ export async function query(opts: QueryOptions) {
       const result = await streamText(llmOpts);
       text = '';
       // let tmpText = '';
+      let think = null;
       for await (const chunk of result.textStream) {
+        if (!think) {
+          thinkDone();
+          think = logger.logThink({ productName: context.config.productName });
+        }
         text += chunk;
         if (text.includes('<') || text.includes('<use_tool>')) {
         } else {
-          process.stdout.write(chunk);
+          think.text(chunk);
+          // process.stdout.write(chunk);
         }
         // if (chunk.includes('<') || tmpText.length) {
         //   tmpText += chunk;
@@ -175,10 +181,13 @@ export async function query(opts: QueryOptions) {
         //   }
         // }
       }
-      process.stdout.write('\n');
+      // process.stdout.write('\n');
     } else {
       const result = await generateText(llmOpts);
-      console.log(result.text);
+      thinkDone();
+      logger
+        .logThink({ productName: context.config.productName })
+        .text(result.text);
       text = result.text;
     }
     // hook: query
@@ -191,11 +200,17 @@ export async function query(opts: QueryOptions) {
     const { toolUse } = parseToolUse(text);
     if (toolUse) {
       await addMessage([{ role: 'assistant', content: text }]);
-      logTool(
-        `Tool ${pc.bold(toolUse.toolName)} called with args: ${JSON.stringify(toolUse.arguments)}`,
-      );
+      // logTool(
+      //   `Tool ${pc.bold(toolUse.toolName)} called with args: ${JSON.stringify(toolUse.arguments)}`,
+      // );
+      const toolLogger = logger.logTool({ toolUse });
       const toolResult = await callTool(tools, toolUse, id, context);
-      await addMessage([{ role: 'user', content: JSON.stringify(toolResult) }]);
+      const result =
+        typeof toolResult === 'string'
+          ? toolResult
+          : JSON.stringify(toolResult);
+      toolLogger.result(result);
+      await addMessage([{ role: 'user', content: result }]);
     } else {
       const end = Date.now();
       // hook: queryEnd
