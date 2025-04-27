@@ -89,7 +89,9 @@ async function buildContext(opts: RunCliOpts) {
   });
   assert(resolvedConfig.model, 'Model is required');
   assert(resolvedConfig.smallModel, 'Small model is required');
-  const mcpClients = await createClients(config.mcpConfig.mcpServers || {});
+  const mcpClients = await createClients(
+    resolvedConfig.mcpConfig?.mcpServers || {},
+  );
   return {
     argv,
     command,
