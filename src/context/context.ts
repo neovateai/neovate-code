@@ -5,6 +5,7 @@ import { createLSTool } from '../tools/LsTool';
 import { Context } from '../types';
 import { execFileNoThrow } from '../utils/execFileNoThrow';
 import { getCodebaseContext } from './codebase';
+import { getFileContext } from './contextFiles';
 
 export async function getDirectoryStructure(opts: { context: Context }) {
   const LSTool = createLSTool(opts);
@@ -173,6 +174,11 @@ export const getContext: (opts: {
         context: opts.context,
       })
     : undefined;
+  // TODO: cannot get context.config.files
+  const files = opts.context.pluginContext.config.files
+    ? await getFileContext(opts.context.pluginContext.config.files)
+    : undefined;
+
   return {
     // TODO: ...config.context
     ...(directoryStructure ? { directoryStructure } : {}),
@@ -180,5 +186,6 @@ export const getContext: (opts: {
     ...(codeStyle ? { codeStyle } : {}),
     ...(readme ? { readme } : {}),
     ...(codebase ? { codebase } : {}),
+    ...(files ? { files } : {}),
   };
 });

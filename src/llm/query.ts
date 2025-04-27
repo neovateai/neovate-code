@@ -27,6 +27,14 @@ export async function askQuery(opts: AskQueryOptions) {
       : await getAskTools({ context: opts.context })),
     ...(await getClientsTools(opts.context.mcpClients)),
   };
+
+  await opts.context.pluginManager.apply({
+    hook: 'contextStart',
+    args: [{ prompt: opts.prompt }],
+    type: PluginHookType.Series,
+    pluginContext: opts.context.pluginContext,
+  });
+
   const queryContext =
     process.env.CODE === 'none'
       ? {}
@@ -64,7 +72,7 @@ export async function editQuery(opts: EditQueryOptions) {
     pluginContext: opts.context.pluginContext,
   });
 
-  const queryContext =
+  let queryContext =
     process.env.CODE === 'none'
       ? {}
       : await getContext({
