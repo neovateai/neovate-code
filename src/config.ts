@@ -6,6 +6,8 @@ import type { Plugin } from './pluginManager/types';
 import { getSystemPrompt } from './prompts/prompts';
 import { logInfo } from './utils/logger';
 
+export type ApiKeys = Record<string, string>;
+
 export type Config = {
   model: ModelType;
   smallModel: ModelType;
@@ -16,6 +18,7 @@ export type Config = {
   plugins: Plugin[];
   productName: string;
   language: string;
+  apiKeys: ApiKeys;
 };
 
 export async function getConfig(opts: {
@@ -52,6 +55,21 @@ export async function getConfig(opts: {
     }
     return argv.stream !== 'false';
   })();
+
+  const apiKeys: ApiKeys = {};
+  if (argv.apiKey) {
+    const keys = Array.isArray(argv.apiKey) ? argv.apiKey : [argv.apiKey];
+    for (const key of keys) {
+      const [provider, value] = key.split('=');
+      if (provider && value) {
+        const lowerProvider = provider.toLowerCase();
+        apiKeys[lowerProvider] = value;
+        logInfo(`Using API key from command line for: ${provider}`);
+      } else {
+        console.warn(`Invalid --api-key format: ${key}. Use <provider>=<key>.`);
+      }
+    }
+  }
 
   const mcpConfigPath = path.join(
     opts.cwd,
@@ -94,6 +112,7 @@ export async function getConfig(opts: {
     plugins: [],
     productName,
     language: argv.language || 'English',
+    apiKeys,
   };
 }
 

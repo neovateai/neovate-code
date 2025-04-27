@@ -86,7 +86,10 @@ export async function query(opts: QueryOptions) {
   const start = Date.now();
   const id = randomUUID();
   let model = opts.model || opts.context.config.model;
-  model = typeof model === 'string' ? getModel(model) : model;
+  model =
+    typeof model === 'string'
+      ? getModel(model, opts.context.config.apiKeys)
+      : model;
   const { prompt, systemPrompt, queryContext, tools, context } = opts;
   console.log();
   const messages: CoreMessage[] = opts.messages || [];
