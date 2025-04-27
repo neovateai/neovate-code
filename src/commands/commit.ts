@@ -34,11 +34,31 @@ export async function runCommit(opts: { context: Context }) {
   if (diff.length === 0) {
     throw new Error('No changes to commit');
   }
+
+  let repoStyle = '';
+  if (argv.followStyle) {
+    try {
+      const recentCommits = execSync(
+        'git log -n 10 --pretty=format:"%s"',
+      ).toString();
+      repoStyle = `
+# Recent commits in this repository:
+${recentCommits}
+Please follow a similar style for this commit message while still adhering to the structure guidelines.
+`;
+    } catch (error) {
+      console.log(
+        'Could not analyze repository commit style. Using default style.',
+      );
+    }
+  }
+
   const message = await askQuery({
     systemPrompt: [COMMIT_PROMPT],
     prompt: `
 # Diffs:
 ${diff}
+${repoStyle}
     `,
     context: opts.context,
   });
