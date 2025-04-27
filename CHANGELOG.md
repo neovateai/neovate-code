@@ -1,3 +1,10 @@
+## 0.0.15
+
+`2025-04-27`
+
+- refactor: remove debug log from runCli function by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.14
 
 `2025-04-27`
