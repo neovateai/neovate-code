@@ -5,6 +5,8 @@ import { MODEL_ALIAS } from '../llm/model';
 import { askQuery, editQuery } from '../llm/query';
 import { Context } from '../types';
 
+const MAX_PLAN_ITERATIONS = 10;
+
 export async function runAct(opts: { context: Context; prompt: string }) {
   const { argv } = opts.context;
 
@@ -33,7 +35,9 @@ export async function runAct(opts: { context: Context; prompt: string }) {
       },
     ];
     let result = null;
-    while (true) {
+    let iterationCount = 0;
+    while (iterationCount < MAX_PLAN_ITERATIONS) {
+      iterationCount++;
       result = await askQuery({
         systemPrompt,
         messages,
@@ -57,6 +61,15 @@ export async function runAct(opts: { context: Context; prompt: string }) {
       if (confirmPlan) {
         break;
       } else {
+        if (iterationCount === MAX_PLAN_ITERATIONS) {
+          console.warn(
+            pc.yellow(
+              `Maximum plan modification attempts (${MAX_PLAN_ITERATIONS}) reached. Proceeding with current plan.`,
+            ),
+          );
+          break;
+        }
+
         // Validate plan modification input
         let modifyPlan = '';
         while (!modifyPlan || modifyPlan.trim() === '') {
@@ -64,7 +77,9 @@ export async function runAct(opts: { context: Context; prompt: string }) {
             {
               type: 'input',
               name: 'modifyPlan',
-              message: pc.cyan('Please modify the plan, here is my request:'),
+              message: pc.cyan(
+                `Please modify the plan (attempt ${iterationCount}/${MAX_PLAN_ITERATIONS}), here is my request:`,
+              ),
               validate: (input) => {
                 if (!input || input.trim() === '') {
                   return 'Please provide feedback to modify the plan. Or press Ctrl+C to cancel.';
