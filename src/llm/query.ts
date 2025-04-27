@@ -56,12 +56,29 @@ export async function editQuery(opts: EditQueryOptions) {
       : await getAllTools({ context: opts.context })),
     ...(await getClientsTools(opts.context.mcpClients)),
   };
+
+  await opts.context.pluginManager.apply({
+    hook: 'contextStart',
+    args: [{ prompt: opts.prompt }],
+    type: PluginHookType.Series,
+    pluginContext: opts.context.pluginContext,
+  });
+
   const queryContext =
     process.env.CODE === 'none'
       ? {}
       : await getContext({
           context: opts.context,
         });
+
+  await opts.context.pluginManager.apply({
+    hook: 'context',
+    type: PluginHookType.SeriesMerge,
+    args: [{ prompt: opts.prompt }],
+    memo: queryContext,
+    pluginContext: opts.context.pluginContext,
+  });
+
   return await query({
     ...opts,
     model: opts.model,

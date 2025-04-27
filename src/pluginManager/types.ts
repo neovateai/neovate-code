@@ -52,6 +52,12 @@ export const PluginSchema = z.object({
       z.void(),
     )
     .optional(),
+  contextStart: z
+    .function(z.tuple([z.object({ prompt: z.string() })]), z.void())
+    .optional(),
+  context: z
+    .function(z.tuple([z.object({ prompt: z.string() })]), z.void())
+    .optional(),
   queryStart: z
     .function(
       z.tuple([
