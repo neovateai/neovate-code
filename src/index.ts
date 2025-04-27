@@ -10,6 +10,7 @@ import { getConfig } from './config';
 import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
 import type { Plugin } from './pluginManager/types';
+import { fileContextPlugin } from './plugins/fileContext';
 import { keywordContextPlugin } from './plugins/keyword-context';
 import { sessionPlugin } from './plugins/session';
 import { Context } from './types';
@@ -36,7 +37,11 @@ async function buildContext(
     `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${sessionId}.json`,
   );
   const config = await getConfig({ argv, productName: opts.productName, cwd });
-  const buildinPlugins = [sessionPlugin, keywordContextPlugin];
+  const buildinPlugins = [
+    sessionPlugin,
+    keywordContextPlugin,
+    fileContextPlugin,
+  ];
   const plugins = [
     ...buildinPlugins,
     ...(config.plugins || []),

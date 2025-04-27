@@ -357,9 +357,9 @@ export async function getFilesByPrompt(opts: {
           const stat = await fs.stat(filePath);
           return stat.isFile() || stat.isDirectory() ? filePath : null;
         } catch (error: any) {
-          logError(
-            `[file-context] File path does not exist: ${filePath}, error: ${error.message}`,
-          );
+          logError({
+            error: `[file-context] File path does not exist: ${filePath}, error: ${error.message}`,
+          });
           return null;
         }
       }),
