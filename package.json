@@ -13,6 +13,7 @@
   "scripts": {
     "dev": "tsx ./src/cli.ts",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "build:type": "tsc --project tsconfig.json --emitDeclarationOnly || true",
     "build:cli": "bun build src/cli.ts --minify --outfile dist/cli.mjs --target=node",
     "build:index": "bun build src/index.ts --minify --outfile dist/index.mjs --target=node",
