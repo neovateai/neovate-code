@@ -182,7 +182,7 @@ export const getContext: (opts: {
     cwd: opts.context.cwd,
   });
 
-  const files =
+  const _files =
     promptFiles.length > 0 ? await getFileContext(promptFiles) : undefined;
 
   return {
@@ -192,6 +192,6 @@ export const getContext: (opts: {
     ...(codeStyle ? { codeStyle } : {}),
     ...(readme ? { readme } : {}),
     ...(codebase ? { codebase } : {}),
-    ...(files ? { files } : {}),
+    // ...(files ? { files } : {}),
   };
 });

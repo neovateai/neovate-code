@@ -72,7 +72,7 @@ export async function editQuery(opts: EditQueryOptions) {
     pluginContext: opts.context.pluginContext,
   });
 
-  let queryContext =
+  const queryContext =
     process.env.CODE === 'none'
       ? {}
       : await getContext({
