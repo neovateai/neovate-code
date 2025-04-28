@@ -37,6 +37,7 @@ Used for tasks that involve code generation, file modification, running commands
 * `--language <language>`: Specify the language of the output, defaults to `en`.
 * `--codebase <includes>`: Specify the path to the codebase to use.
 
+
 **Examples:**
 
 ```bash
@@ -183,3 +184,33 @@ takumi --version
 # or
 takumi -v
 ```
+
+## `test`
+
+Runs the project tests and supports automatic AI-powered fixing of test failures.
+
+**Syntax:**
+
+```bash
+takumi test [options]
+```
+
+**Description:**
+
+Runs the project's test suite (default: `npm run test`). If the tests fail, Takumi will automatically attempt to fix the problem using AI, then re-run the tests.
+This process repeats until the tests pass or the maximum number of attempts is reached (default: 10).
+
+**Options:**
+
+* `--test-cmd <command>`: Specify a custom test command (e.g., `npx vitest run src/tests/index.test.ts`). Default is `npm run test`.
+
+**Examples:**
+
+```bash
+# Run the default test command
+takumi test
+
+# Run a specific test file with a custom command
+takumi test --test-cmd "npx vitest run src/tests/index.test.ts"
+```
+
