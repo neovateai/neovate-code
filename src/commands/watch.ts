@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { editQuery } from '../llm/query';
 import { Context } from '../types';
-import * as logger from '../utils/logger2';
+import * as logger from '../utils/logger';
 
 const fileChanged = new Set<string>();
 

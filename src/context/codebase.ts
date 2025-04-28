@@ -4,7 +4,7 @@ import path from 'pathe';
 import color from 'picocolors';
 import util from 'util';
 import { Context } from '../types';
-import { logDebug, logError, logInfo } from '../utils/logger';
+import * as logger from '../utils/logger';
 
 const REPOMIX_COMMAND = 'repomix';
 const OUTPUT_FILENAME = 'repomix-output.txt';
@@ -30,11 +30,11 @@ export async function getCodebaseContext(opts: {
     fs.unlinkSync(OUTPUT_FILE_PATH);
   }
 
-  logDebug(`> Codebase Executing command: ${command}`);
+  logger.logDebug(`> Codebase Executing command: ${command}`);
 
   try {
     await execPromise(command);
-    logInfo('> Codebase context generated successfully with repomix.');
+    logger.logInfo('> Codebase context generated successfully with repomix.');
   } catch (error: any) {
     handleRepomixExecutionError(error);
   }
@@ -47,7 +47,7 @@ function handleRepomixExecutionError(error: any): never {
     error.code === 'ENOENT' ||
     (error.message && error.message.includes('command not found'))
   ) {
-    logError('The repomix has not been installed.');
+    logger.logError({ error: 'The repomix has not been installed.' });
     console.log(color.gray('# Install using npm'));
     console.log(color.green('$ npm install -g repomix'));
     console.log(color.gray('# Or install using pnpm'));
@@ -61,7 +61,9 @@ function handleRepomixExecutionError(error: any): never {
     );
   }
 
-  logError(`Failed to execute repomix command: ${error.message}`);
+  logger.logError({
+    error: `Failed to execute repomix command: ${error.message}`,
+  });
   throw new Error(`Failed to execute repomix command: ${error.message}`);
 }
 
@@ -71,28 +73,30 @@ function readAndValidateOutputFile(filePath: string): string {
 
     if (stats.size > MAX_FILE_SIZE_BYTES) {
       const errorMessage = `${OUTPUT_FILENAME} file size (${stats.size} bytes) exceeds limit (${MAX_FILE_SIZE_BYTES} bytes).`;
-      logError(`Error: ${errorMessage}`);
+      logger.logError({ error: errorMessage });
       throw new Error(errorMessage);
     }
 
-    logInfo(
+    logger.logInfo(
       `${OUTPUT_FILENAME} file check passed (size: ${stats.size} bytes).`,
     );
 
     const content = fs.readFileSync(filePath, 'utf-8');
-    logInfo(`Successfully read ${OUTPUT_FILENAME} file content.`);
+    logger.logInfo(`Successfully read ${OUTPUT_FILENAME} file content.`);
     return content;
   } catch (error: any) {
     if (error.code === 'ENOENT') {
-      logError(`Error: repomix output file ${OUTPUT_FILENAME} not found.`);
+      logger.logError({
+        error: `Error: repomix output file ${OUTPUT_FILENAME} not found.`,
+      });
       throw new Error(
         `Output file ${OUTPUT_FILENAME} not found after executing repomix. Please check if repomix successfully generated the file.`,
       );
     }
 
-    logError(
-      `Error reading or checking file ${OUTPUT_FILENAME}: ${error.message}`,
-    );
+    logger.logError({
+      error: `Error reading or checking file ${OUTPUT_FILENAME}: ${error.message}`,
+    });
     throw new Error(
       `Error processing file ${OUTPUT_FILENAME}: ${error.message}`,
     );

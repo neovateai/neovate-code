@@ -3,7 +3,7 @@ import fs from 'fs';
 import inquirer from 'inquirer';
 import { askQuery } from '../llm/query';
 import { Context } from '../types';
-import { logInfo } from '../utils/logger';
+import * as logger from '../utils/logger';
 
 const MAX_STEPS = 5;
 const PLAN_FILE = 'PLAN.md';
@@ -14,7 +14,7 @@ function writeRequirementsToFile(requirement: string) {
   const requirements = readRequirementsFromFile();
   requirements.push(requirement);
   fs.writeFileSync(REQUIREMENTS_FILE, requirements.join('\n\n'), 'utf-8');
-  logInfo(
+  logger.logInfo(
     `> Requirements saved to ${REQUIREMENTS_FILE}. You can edit this file directly to modify requirements.`,
   );
 }
@@ -28,7 +28,7 @@ function readRequirementsFromFile(): string[] {
     .split('\n')
     .filter(Boolean);
   if (requirements.length > 0) {
-    logInfo(
+    logger.logInfo(
       `> Loaded ${requirements.length} existing requirements from ${REQUIREMENTS_FILE}`,
     );
   }
@@ -51,7 +51,7 @@ export async function runPlan(opts: { context: Context }) {
   while (true) {
     requirements = readRequirementsFromFile();
     const isComplete = await isRequirementsComplete(requirements, opts.context);
-    logInfo(`> isComplete: ${isComplete}`);
+    logger.logInfo(`> isComplete: ${isComplete}`);
     if (isComplete) {
       break;
     }
@@ -66,7 +66,7 @@ export async function runPlan(opts: { context: Context }) {
     const strippedMoreInfo = removeThinkTags(moreInfo);
     requirements.push(strippedMoreInfo);
     writeRequirementsToFile(strippedMoreInfo);
-    logInfo(`> Need more information: \n${strippedMoreInfo}`);
+    logger.logInfo(`> Need more information: \n${strippedMoreInfo}`);
     const result = await inquirer.prompt([
       {
         type: 'input',
@@ -77,11 +77,11 @@ export async function runPlan(opts: { context: Context }) {
     requirements.push(result.input);
     writeRequirementsToFile(result.input);
   }
-  logInfo(`> request for detailed plan`);
+  logger.logInfo(`> request for detailed plan`);
   requirements = readRequirementsFromFile();
   const detailedPlan = await requestDetailedPlan(requirements, opts.context);
   fs.writeFileSync(PLAN_FILE, removeThinkTags(detailedPlan));
-  logInfo(`> Plan saved to ${PLAN_FILE}`);
+  logger.logInfo(`> Plan saved to ${PLAN_FILE}`);
 }
 
 /**

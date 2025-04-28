@@ -1,6 +1,6 @@
 import { Plugin } from '../pluginManager/types';
 import { PluginContext } from '../types';
-import { logDebug, logInfo } from '../utils/logger';
+import * as logger from '../utils/logger';
 
 export const keywordContextPlugin: Plugin = {
   name: 'keyword-context-plugin',
@@ -10,13 +10,13 @@ export const keywordContextPlugin: Plugin = {
     }
 
     if (prompt.includes('@codebase')) {
-      logDebug(
+      logger.logDebug(
         `[keyword-context] Detected project-related keywords, will automatically add project context`,
       );
 
       if (!this.argv.codebase) {
         this.argv.codebase = true;
-        logInfo(`[keyword-context] Codebase context analysis enabled`);
+        logger.logInfo(`[keyword-context] Codebase context analysis enabled`);
       }
     }
   },
