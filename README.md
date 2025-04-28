@@ -9,13 +9,13 @@
 
 ## Key Features
 
-- **LLMs Providers** to use various LLMs from providers like OpenAI, Groq, DeepSeek, Google, Anthropic, OpenRouter, and more.
+- **LLMs Providers** to use various LLMs from providers.
 - **File Operations** to read, write, and edit files directly through AI commands.
 - **Codebase Navigation & Search** to explore and search your project.
 - **Command Execution** to run shell commands safely.
 - **Plan Mode** to break down complex tasks into manageable steps, and execute the plan step by step.
-- **Automated Commit Messages** to generate concise and conventional commit messages based on staged changes.
-- **Project Initialization** to analyze your project and generate a `TAKUMI.md` guidelines file for the AI to follow later.
+- **Automated Commit Messages** to generate concise and conventional commit messages.
+- **Project Initialization** to generate a `TAKUMI.md` guidelines file for the AI to follow later.
 - **File Watching** to monitor files for specific AI instructions in comments.
 - **Model Aliases** to use aliases for models.
 - **MCP Support** to integrate external tools and services.
