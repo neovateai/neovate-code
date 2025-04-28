@@ -28,6 +28,20 @@ export const myPlugin: Plugin = {
 
 Plugins interact with Takumi by implementing specific hook functions. Here's a breakdown of the available hooks, when they are called, and their purpose.
 
+### `cliEnd`
+
+-   **Type:** `(opts: { startTime: number, endTime: number, error?: any }) => void`
+-   **Arguments:** `[{ startTime, endTime, error }]`
+
+Perform cleanup tasks, log final statistics, or handle errors globally at the very end of the CLI execution. Runs even if errors occurred.
+
+### `cliStart`
+
+-   **Type:** `() => void`
+-   **Arguments:** `[]`
+
+Perform initial setup tasks when the CLI starts, right after the intro log.
+
 ### `config`
 
 -   **Type:** `() => Promise<Partial<Config> | null> | Partial<Config> | null`
@@ -42,40 +56,12 @@ Modify the initial configuration object before it's fully resolved. Called early
 
 Perform actions based on the final, resolved configuration. Called after all `config` hooks have run.
 
-### `generalInfo`
+### `context`
 
--   **Type:** `() => Promise<Record<string, string>> | Record<string, string>`
--   **Arguments:** `[]`
+-   **Type:** `(opts: { prompt: string }) => Promise<Record<string, any>> | Record<string, any>`
+-   **Arguments:** `[{ prompt }]`
 
-Add or modify key-value pairs displayed in the initial "General Info" log section. Called after configuration is resolved. Results are merged.
-
-### `cliStart`
-
--   **Type:** `() => void`
--   **Arguments:** `[]`
-
-Perform initial setup tasks when the CLI starts, right after the intro log.
-
-### `cliEnd`
-
--   **Type:** `(opts: { startTime: number, endTime: number, error?: any }) => void`
--   **Arguments:** `[{ startTime, endTime, error }]`
-
-Perform cleanup tasks, log final statistics, or handle errors globally at the very end of the CLI execution. Runs even if errors occurred.
-
-### `toolStart`
-
--   **Type:** `(opts: { toolUse: ToolUse, queryId: string }) => void`
--   **Arguments:** `[{ toolUse, queryId }]`
-
-Called just before a specific tool is executed during an LLM query cycle.
-
-### `toolEnd`
-
--   **Type:** `(opts: { toolUse: ToolUse, startTime: number, endTime: number, queryId: string }) => void`
--   **Arguments:** `[{ toolUse, startTime, endTime, queryId }]`
-
-Called immediately after a tool finishes execution.
+Add additional key-value pairs to the context object that will be sent to the LLM. Called after default context is gathered. Results are merged.
 
 ### `contextStart`
 
@@ -84,26 +70,12 @@ Called immediately after a tool finishes execution.
 
 Called before Takumi starts gathering context (like file structure, git status) for an LLM query.
 
-### `context`
+### `generalInfo`
 
--   **Type:** `(opts: { prompt: string }) => Promise<Record<string, any>> | Record<string, any>`
--   **Arguments:** `[{ prompt }]`
+-   **Type:** `() => Promise<Record<string, string>> | Record<string, string>`
+-   **Arguments:** `[]`
 
-Add additional key-value pairs to the context object that will be sent to the LLM. Called after default context is gathered. Results are merged.
-
-### `queryStart`
-
--   **Type:** `(opts: { prompt: string, id: string, system: string[] }) => void`
--   **Arguments:** `[{ prompt, id, system }]`
-
-Called just before the main loop for an LLM query begins (which might involve multiple LLM calls if tools are used).
-
-### `query`
-
--   **Type:** `(opts: { prompt: string, text: string, id: string }) => void`
--   **Arguments:** `[{ prompt, text, id }]`
-
-Called after receiving a text response from the LLM within a query cycle, *before* checking if the response contains a tool call.
+Add or modify key-value pairs displayed in the initial "General Info" log section. Called after configuration is resolved. Results are merged.
 
 ### `message`
 
@@ -112,9 +84,37 @@ Called after receiving a text response from the LLM within a query cycle, *befor
 
 Called whenever messages (user, assistant, or tool results formatted as user messages) are added to the conversation history during a query cycle.
 
+### `query`
+
+-   **Type:** `(opts: { prompt: string, text: string, id: string }) => void`
+-   **Arguments:** `[{ prompt, text, id }]`
+
+Called after receiving a text response from the LLM within a query cycle, *before* checking if the response contains a tool call.
+
 ### `queryEnd`
 
 -   **Type:** `(opts: { prompt: string, systemPrompt: string[], queryContext: Record<string, any>, tools: Record<string, any>, messages: CoreMessage[], startTime: number, endTime: number, id: string, text: string }) => void`
 -   **Arguments:** `[{ prompt, systemPrompt, queryContext, tools, messages, startTime, endTime, id, text }]`
 
 Called after the entire query cycle (including any tool calls) is complete and a final text response is ready.
+
+### `queryStart`
+
+-   **Type:** `(opts: { prompt: string, id: string, system: string[] }) => void`
+-   **Arguments:** `[{ prompt, id, system }]`
+
+Called just before the main loop for an LLM query begins (which might involve multiple LLM calls if tools are used).
+
+### `toolEnd`
+
+-   **Type:** `(opts: { toolUse: ToolUse, startTime: number, endTime: number, queryId: string }) => void`
+-   **Arguments:** `[{ toolUse, startTime, endTime, queryId }]`
+
+Called immediately after a tool finishes execution.
+
+### `toolStart`
+
+-   **Type:** `(opts: { toolUse: ToolUse, queryId: string }) => void`
+-   **Arguments:** `[{ toolUse, queryId }]`
+
+Called just before a specific tool is executed during an LLM query cycle.
