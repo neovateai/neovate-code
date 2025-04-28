@@ -173,6 +173,10 @@ export async function runCli(opts: RunCliOpts) {
         logger.logCommand({ command: 'watch' });
         await (await import('./commands/watch.js')).runWatch({ context });
         break;
+      case 'test':
+        logger.logCommand({ command: 'test' });
+        await (await import('./commands/test.js')).runTest({ context });
+        break;
       case 'ask':
         logger.logCommand({ command: 'ask' });
         const prompt = argv._[1] as string;
