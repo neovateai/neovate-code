@@ -27,8 +27,12 @@ AI pair programming CLI to enhance your development workflow.
 
 ```bash
 $ npm install -g takumi
-$ takumi -v
-takumi@0.0.1
+# or
+$ pnpm add -g takumi
+# or
+$ bun add -g takumi
+# or
+$ yarn global add takumi
 ```
 
 ## Usage
