@@ -27,4 +27,4 @@ This file provides guidelines for AI agents working on this codebase.
 
 - Follow existing patterns and conventions in the codebase.
 - Keep functions small and focused.
-- Verify changes with tests and typechecking before concluding.
+- Verify changes with tests before concluding.
