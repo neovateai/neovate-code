@@ -20,6 +20,7 @@ export const PluginSchema = z.object({
   configResolved: z
     .function(z.tuple([z.object({ resolvedConfig: z.any() })]), z.void())
     .optional(),
+  generalInfo: z.function(z.tuple([]), z.any()).optional(),
   cliStart: z.function(z.tuple([]), z.void()).optional(),
   cliEnd: z
     .function(

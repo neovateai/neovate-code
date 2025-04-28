@@ -83,25 +83,33 @@ async function buildContext(
     type: PluginHookType.Series,
     pluginContext,
   });
+  const defaultInfos = {
+    log: sessionPath.replace(homeDir, '~'),
+    workspace: cwd,
+    model:
+      typeof resolvedConfig.model === 'string'
+        ? resolvedConfig.model
+        : resolvedConfig.model.modelId,
+    ...(resolvedConfig.smallModel !== resolvedConfig.model && {
+      'small model':
+        typeof resolvedConfig.smallModel === 'string'
+          ? resolvedConfig.smallModel
+          : resolvedConfig.smallModel.modelId,
+    }),
+    ...(!resolvedConfig.stream && { stream: 'false' }),
+    ...(resolvedConfig.mcpConfig.mcpServers && {
+      mcp: Object.keys(resolvedConfig.mcpConfig.mcpServers).join(', '),
+    }),
+  };
+  const infos = await pluginManager.apply({
+    hook: 'generalInfo',
+    args: [],
+    type: PluginHookType.SeriesMerge,
+    memo: defaultInfos,
+    pluginContext,
+  });
   logger.logGeneralInfo({
-    infos: {
-      log: sessionPath.replace(homeDir, '~'),
-      workspace: cwd,
-      model:
-        typeof resolvedConfig.model === 'string'
-          ? resolvedConfig.model
-          : resolvedConfig.model.modelId,
-      ...(resolvedConfig.smallModel !== resolvedConfig.model && {
-        'small model':
-          typeof resolvedConfig.smallModel === 'string'
-            ? resolvedConfig.smallModel
-            : resolvedConfig.smallModel.modelId,
-      }),
-      ...(!resolvedConfig.stream && { stream: 'false' }),
-      ...(resolvedConfig.mcpConfig.mcpServers && {
-        mcp: Object.keys(resolvedConfig.mcpConfig.mcpServers).join(', '),
-      }),
-    },
+    infos,
   });
   assert(resolvedConfig.model, 'Model is required');
   assert(resolvedConfig.smallModel, 'Small model is required');
