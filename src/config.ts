@@ -19,7 +19,6 @@ export type Config = {
   productName: string;
   language: string;
   apiKeys: ApiKeys;
-  files?: string[];
 };
 
 export async function getConfig(opts: {
