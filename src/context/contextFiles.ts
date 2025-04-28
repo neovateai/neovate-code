@@ -2,7 +2,7 @@
 import * as fsSync from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
-import { logDebug } from '../utils/logger';
+import { logDebug, logError } from '../utils/logger';
 
 interface FileContent {
   path: string;
@@ -306,6 +306,76 @@ export function renderFilesToXml(files: Array<FileContent>): string {
     .join('');
 
   return `<files>This section contains the contents of the repository's files.\n${fileContents}\n</files>`;
+}
+
+// TODO: Need to support @src
+const FILE_PATTERN = /@([^\s"]+(?:\.[a-zA-Z0-9]+|\/[^\s"]+))(?:\s|"|$)/g;
+
+const IGNORE_KEYWORDS = ['@codebase', '@bigfish'];
+
+/**
+ * Extracts file references from a prompt string
+ * @param opts Options containing prompt and current working directory
+ * @returns Array of file paths
+ */
+export async function getFilesByPrompt(opts: {
+  prompt?: string;
+  cwd: string;
+}): Promise<string[]> {
+  const { prompt, cwd } = opts;
+  if (!prompt) {
+    return [];
+  }
+
+  // Check if the prompt contains file reference markers and doesn't contain ignore keywords
+  if (
+    !prompt.includes('@') ||
+    IGNORE_KEYWORDS.some((keyword) => prompt.includes(keyword))
+  ) {
+    return [];
+  }
+
+  const fileMatches = prompt.match(FILE_PATTERN);
+  if (!fileMatches) {
+    return [];
+  }
+
+  // Process found file references
+  const promptFiles = (
+    await Promise.all(
+      fileMatches.map(async (fileRef) => {
+        // Skip invalid references
+        if (!fileRef?.startsWith('@')) {
+          return null;
+        }
+
+        // Extract and parse file path
+        const cleanPath = fileRef.replace('@', '').trim();
+        const filePath = path.resolve(cwd, cleanPath);
+
+        try {
+          const stat = await fs.stat(filePath);
+          return stat.isFile() || stat.isDirectory() ? filePath : null;
+        } catch (error: any) {
+          logError(
+            `[file-context] File path does not exist: ${filePath}, error: ${error.message}`,
+          );
+          return null;
+        }
+      }),
+    )
+  ).filter((item) => item !== null);
+
+  // Record results and return
+  if (promptFiles.length > 0) {
+    logDebug(
+      `[file-context] Detected file references: ${promptFiles.join(', ')}`,
+    );
+    return promptFiles;
+  }
+
+  logDebug(`[file-context] No valid file references detected`);
+  return [];
 }
 
 /**

@@ -40,6 +40,7 @@ export async function askQuery(opts: AskQueryOptions) {
       ? {}
       : await getContext({
           context: opts.context,
+          prompt: opts.prompt,
         });
   return await query({
     ...opts,
@@ -77,6 +78,7 @@ export async function editQuery(opts: EditQueryOptions) {
       ? {}
       : await getContext({
           context: opts.context,
+          prompt: opts.prompt,
         });
 
   await opts.context.pluginManager.apply({
