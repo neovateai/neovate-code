@@ -6,7 +6,6 @@ This file provides guidelines for AI agents working on this codebase.
 
 - **Build:** `npm run build`
 - **Format:** `npm run format` (Uses Prettier)
-- **Typecheck:** `npm run typecheck`
 - **Test:** `npm run test`
 - **Test Watch:** `npm run test:watch`
 - **Run Single Test:** `npm run test -- <test_file_path>` or `npm run test -- -t "<test_name>"`

@@ -36,7 +36,7 @@ takumi@0.0.1
 It's recommended to set API keys for the LLMs providers first. GOOGLE、OPENAI、GROQ、DEEPSEEK、OPENROUTER and others are supported, checkout [llms.md](./docs/llms.md) for more details.
 
 ```bash
-export OPENAI_API_KEY="sk-..."
+$ export OPENAI_API_KEY="sk-..."
 ```
 
 Generate a `TAKUMI.md` file to guide the AI to follow later.
@@ -48,13 +48,13 @@ $ takumi init -m <model>
 Let the AI to act on the codebase.
 
 ```bash
-$ takumi "<your_request>" -m <model>
+$ takumi "<your_request>" -m <model> -q
 ```
 
 Let the AI to plan the steps before act to the codebase.
 
 ```bash
-$ takumi "<your_request>" -m <model> --plan
+$ takumi "<your_request>" -m <model> --plan -q
 ```
 
 After the modification, use `takumi commit` to generate the commit message.

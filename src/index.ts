@@ -128,8 +128,9 @@ export async function runCli(opts: RunCliOpts) {
       alias: {
         m: 'model',
         v: 'version',
+        q: 'quiet',
       },
-      boolean: ['plan', 'stream'],
+      boolean: ['plan', 'stream', 'quiet'],
     });
     let command = argv._[0] as string;
     if (argv.version) {
