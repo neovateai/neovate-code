@@ -182,6 +182,10 @@ export async function runCli(opts: RunCliOpts) {
         const prompt = argv._[1] as string;
         await (await import('./commands/ask.js')).runAsk({ context, prompt });
         break;
+      case 'lint':
+        logger.logCommand({ command: 'lint' });
+        await (await import('./commands/lint.js')).runLint({ context });
+        break;
       default:
         await (
           await import('./commands/act.js')
