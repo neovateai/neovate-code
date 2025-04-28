@@ -90,21 +90,23 @@ export async function runAct(opts: { context: Context; prompt: string }) {
     throw new Error('Empty prompt. Please provide a valid prompt.');
   }
 
+  let prompt = opts.prompt;
   if (argv.plan) {
     const planResult = await plan(opts);
     if (planResult) {
       logger.logAction({ message: 'Implement the plan step by step.' });
-      await editQuery({
-        prompt: `\nPlease implement the plan step by step.\nHere is the plan:\n${planResult}\n      `,
-        context: opts.context,
-      });
+      prompt = `
+Please implement the plan step by step.
+Here is the plan:
+${planResult}
+      `.trim();
     } else {
       logger.logWarn('Plan generation failed or was aborted.');
     }
-  } else {
-    await editQuery({
-      prompt: opts.prompt,
-      context: opts.context,
-    });
   }
+
+  await editQuery({
+    prompt,
+    context: opts.context,
+  });
 }
