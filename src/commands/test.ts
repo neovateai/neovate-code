@@ -1,5 +1,4 @@
 import { execSync } from 'child_process';
-import pc from 'picocolors';
 import { editQuery } from '../llm/query';
 import { Context } from '../types';
 import * as logger from '../utils/logger';
