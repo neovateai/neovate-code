@@ -1,3 +1,21 @@
+## 0.0.16
+
+`2025-04-28`
+
+- refactor: ensure user input logging for act and ask commands by [@sorrycc](https://github.com/sorrycc)
+- feat: add interactive mode to act and ask commands by [@sorrycc](https://github.com/sorrycc)
+- refactor: simplify prompt handling in act command by [@sorrycc](https://github.com/sorrycc)
+- refactor: extract plan logic in act command by [@sorrycc](https://github.com/sorrycc)
+- refactor: consolidate logger utility by [@sorrycc](https://github.com/sorrycc)
+- refactor: enhance CLI interaction using clack-prompts by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance CLI output using clack-prompts by [@sorrycc](https://github.com/sorrycc)
+- feat: add --follow-style flag to analyze repo commit history by [@NanLan](https://github.com/NanLan) in [#8](https://github.com/umijs/takumi/pull/8)
+- feat: add keyword context plugin for automatic codebase analysis by [@阿平](https://github.com/阿平) in [#7](https://github.com/umijs/takumi/pull/7)
+- feat: add ask command to cli by [@NanLan](https://github.com/NanLan) in [#5](https://github.com/umijs/takumi/pull/5)
+- refactor: remove redundant sessionPath assignment by [@sorrycc](https://github.com/sorrycc)
+- feat(config): support --api-key argument by [@coderPerseus](https://github.com/coderPerseus) in [#6](https://github.com/umijs/takumi/pull/6)
+
+
 ## 0.0.15
 
 `2025-04-27`
