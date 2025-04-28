@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { editQuery } from '../llm/query';
 import { Context } from '../types';
-import { logError } from '../utils/logger';
+import * as logger from '../utils/logger2';
 
 const fileChanged = new Set<string>();
 
@@ -44,7 +44,7 @@ export async function runWatch(opts: { context: Context }) {
     fileChanged.add(filePath);
     processFileChanged(context).catch(console.error);
   });
-  console.log(`Watching for changes in ${context.cwd}`);
+  logger.logAction({ message: `Watching for changes in ${context.cwd}` });
 }
 
 let isProcessing = false;
@@ -68,7 +68,7 @@ async function processFileChanged(context: Context) {
       fileChanged.delete(path);
     }
   } catch (e: any) {
-    logError(e.message);
+    logger.logError({ error: e.message });
   } finally {
     isProcessing = false;
   }

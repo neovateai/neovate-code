@@ -1,9 +1,9 @@
 import { CoreMessage } from 'ai';
-import inquirer from 'inquirer';
 import pc from 'picocolors';
 import { MODEL_ALIAS } from '../llm/model';
 import { askQuery, editQuery } from '../llm/query';
 import { Context } from '../types';
+import * as logger from '../utils/logger2';
 
 const MAX_PLAN_ITERATIONS = 10;
 
@@ -44,53 +44,25 @@ export async function runAct(opts: { context: Context; prompt: string }) {
         context: opts.context,
         model,
       });
-      console.log();
-      console.log(pc.cyan('Here is the Plan.\n===='));
-      console.log(result);
-      console.log();
-
-      // Confirm with user before proceeding
-      const { confirmPlan } = await inquirer.prompt([
-        {
-          type: 'confirm',
-          name: 'confirmPlan',
-          message: pc.cyan('Do you want to proceed with this plan?'),
-          default: true,
-        },
-      ]);
+      const confirmPlan = await logger.confirm({
+        message: `This is the plan. Do you want to proceed this step by step?`,
+        active: pc.green('Yes, proceed'),
+        inactive: pc.red('No, modify the plan'),
+      });
       if (confirmPlan) {
         break;
       } else {
         if (iterationCount === MAX_PLAN_ITERATIONS) {
-          console.warn(
-            pc.yellow(
-              `Maximum plan modification attempts (${MAX_PLAN_ITERATIONS}) reached. Proceeding with current plan.`,
-            ),
+          logger.logWarn(
+            `Maximum plan modification attempts (${MAX_PLAN_ITERATIONS}) reached. Proceeding with current plan.`,
           );
           break;
         }
-
         // Validate plan modification input
-        let modifyPlan = '';
-        while (!modifyPlan || modifyPlan.trim() === '') {
-          const response = await inquirer.prompt([
-            {
-              type: 'input',
-              name: 'modifyPlan',
-              message: pc.cyan(
-                `Please modify the plan (attempt ${iterationCount}/${MAX_PLAN_ITERATIONS}), here is my request:`,
-              ),
-              validate: (input) => {
-                if (!input || input.trim() === '') {
-                  return 'Please provide feedback to modify the plan. Or press Ctrl+C to cancel.';
-                }
-                return true;
-              },
-            },
-          ]);
-          modifyPlan = response.modifyPlan;
-        }
-
+        const modifyPlan = await logger.getUserInput({
+          message: `user: (${iterationCount}/${MAX_PLAN_ITERATIONS} attempt)`,
+          placeholder: `Your request to modify the plan`,
+        });
         messages.push({
           role: 'assistant',
           content: result,
@@ -98,16 +70,17 @@ export async function runAct(opts: { context: Context; prompt: string }) {
         messages.push({
           role: 'user',
           content: `
-Please modify the plan, here is my request:
+Please modify the plan.
+Here is my request:
 ${modifyPlan}
           `,
         });
       }
     }
+    logger.logAction({ message: 'Implement the plan step by step.' });
     await editQuery({
       prompt: `
 Please implement the plan step by step.
-
 Here is the plan:
 ${result}
       `,
