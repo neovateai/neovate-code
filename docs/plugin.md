@@ -63,8 +63,6 @@ Perform initial setup tasks when the CLI starts, right after the intro log.
 
 Perform cleanup tasks, log final statistics, or handle errors globally at the very end of the CLI execution. Runs even if errors occurred.
 
----
-
 ### `toolStart`
 
 -   **Type:** `(opts: { toolUse: ToolUse, queryId: string }) => void`
