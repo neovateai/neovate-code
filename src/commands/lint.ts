@@ -28,16 +28,6 @@ export async function runLint(opts: { context: Context }) {
     } catch (error: any) {
       errorOutput =
         error.stdout?.toString() || error.stderr?.toString() || error.message;
-
-      // if lint command not found, throw error
-      if (/Command failed/.test(errorOutput)) {
-        throw new Error(
-          `Lint command "${lintCmd}" not found. Please install or configure your linter.`,
-        );
-        break;
-      }
-
-      // auto fix lint with AI
       logger.logAction({
         message: `Lint failed (attempt ${iterationCount + 1}/${MAX_TEST_ITERATIONS})`,
       });
