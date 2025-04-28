@@ -63,17 +63,6 @@ async function buildContext(
     productName: opts.productName,
     version: require('../package.json').version,
   });
-  logger.logGeneralInfo({
-    infos: {
-      log: sessionPath.replace(homeDir, '~'),
-      workspace: cwd,
-      model: config.model,
-      ...(config.smallModel !== config.model && {
-        'small model': config.smallModel,
-      }),
-      ...(!config.stream && { stream: 'false' }),
-    },
-  });
   await pluginManager.apply({
     hook: 'cliStart',
     args: [],
@@ -94,6 +83,20 @@ async function buildContext(
     args: [{ resolvedConfig }],
     type: PluginHookType.Series,
     pluginContext,
+  });
+  logger.logGeneralInfo({
+    infos: {
+      log: sessionPath.replace(homeDir, '~'),
+      workspace: cwd,
+      model: resolvedConfig.model,
+      ...(resolvedConfig.smallModel !== resolvedConfig.model && {
+        'small model': resolvedConfig.smallModel,
+      }),
+      ...(!resolvedConfig.stream && { stream: 'false' }),
+      ...(resolvedConfig.mcpConfig.mcpServers && {
+        mcp: Object.keys(resolvedConfig.mcpConfig.mcpServers).join(', '),
+      }),
+    },
   });
   assert(resolvedConfig.model, 'Model is required');
   assert(resolvedConfig.smallModel, 'Small model is required');

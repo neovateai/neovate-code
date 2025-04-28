@@ -48,9 +48,10 @@ ${recentCommits}
 Please follow a similar style for this commit message while still adhering to the structure guidelines.
 `;
     } catch (error) {
-      console.error(
-        'Could not analyze repository commit style. Using default style.',
-      );
+      logger.logError({
+        error:
+          'Could not analyze repository commit style. Using default style.',
+      });
     }
   }
 
@@ -66,11 +67,15 @@ ${repoStyle}
   checkCommitMessage(message);
   if (argv.commit) {
     const noVerify = argv.noVerify ? '--no-verify' : '';
+    logger.logAction({ message: 'Commit the changes.' });
     execSync(`git commit -m "${message}" ${noVerify}`);
     if (argv.push) {
       const hasRemote = execSync('git remote').toString().trim().length > 0;
       if (hasRemote) {
         try {
+          logger.logAction({
+            message: 'Push the changes to the remote repository.',
+          });
           execSync('git push');
         } catch (error) {
           console.error('Failed to push changes:', error);

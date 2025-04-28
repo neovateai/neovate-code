@@ -32,8 +32,25 @@ export function logUserInput(opts: { input: string }) {
   );
 }
 
-export function getUserInput() {
-  const input = p.text({ message: pc.bold(pc.blueBright('user:')) });
+export async function getUserInput(opts: {
+  message?: string;
+  placeholder?: string;
+  validate?: (input: string) => string | void;
+}) {
+  const input = await p.text({
+    message: pc.bold(pc.blueBright(opts.message || 'user:')),
+    placeholder: opts.placeholder,
+    validate:
+      opts.validate ||
+      ((input) => {
+        if (!input || input.trim() === '') {
+          return `Empty input is not allowed.`;
+        }
+      }),
+  });
+  if (p.isCancel(input)) {
+    throw new Error('User cancelled the input.');
+  }
   return input;
 }
 
@@ -86,15 +103,40 @@ export function logError(opts: { error: any }) {
   p.cancel(`❌`);
 }
 
+export function logAction(opts: { message: string }) {
+  p.log.step(pc.cyan(`[ACTION] ${opts.message}`));
+}
+
+export function logWarn(message: string) {
+  p.log.warn(pc.yellow(`[WARN] ${message}`));
+}
+
 export function logDebug(message: string) {
   if (process.env.DEBUG) {
-    console.debug(message);
+    console.debug(`[DEBUG] ${message}`);
   }
+}
+
+export async function confirm(opts: {
+  message: string;
+  active?: string;
+  inactive?: string;
+  initialValue?: boolean;
+}) {
+  return await p.confirm(opts);
 }
 
 async function test2() {
   console.log();
   p.intro(`${pc.bold('Takumi')} ${pc.dim('v0.0.1')}`);
+  const text = await getUserInput({
+    message: 'Your Plan',
+  });
+  console.log(text);
+  const result = await p.confirm({
+    message: 'Do you want to proceed?',
+  });
+  console.log(result);
   p.note(
     `
 ↳ log: ${pc.dim('~/.takumi/sessions/xxxx.log')}

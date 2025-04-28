@@ -4,7 +4,7 @@ import yargsParser from 'yargs-parser';
 import { MODEL_ALIAS, ModelType } from './llm/model';
 import type { Plugin } from './pluginManager/types';
 import { getSystemPrompt } from './prompts/prompts';
-import { logInfo } from './utils/logger';
+import * as logger from './utils/logger2';
 
 export type ApiKeys = Record<string, string>;
 
@@ -61,9 +61,10 @@ export async function getConfig(opts: {
       if (provider && value) {
         const lowerProvider = provider.toLowerCase();
         apiKeys[lowerProvider] = value;
-        logInfo(`Using API key from command line for: ${provider}`);
       } else {
-        console.warn(`Invalid --api-key format: ${key}. Use <provider>=<key>.`);
+        logger.logError({
+          error: `Invalid --api-key format: ${key}. Use <provider>=<key>.`,
+        });
       }
     }
   }
@@ -77,7 +78,7 @@ export async function getConfig(opts: {
     if (argv.mcp) {
       const mcpValues = argv.mcp;
       const mcpServers = stringToMcpServerConfigs(mcpValues);
-      logInfo(`Using MCP servers from command line: ${mcpValues}`);
+      logger.logDebug(`Using MCP servers from command line: ${mcpValues}`);
       return {
         mcpServers,
       };
@@ -111,16 +112,6 @@ export async function getConfig(opts: {
     language: argv.language || 'English',
     apiKeys,
   };
-}
-
-export function printConfig(config: Config) {
-  logInfo(`Using model: ${config.model}`);
-  logInfo(`Using small model: ${config.smallModel}`);
-  logInfo(`Using stream: ${config.stream}`);
-  logInfo(
-    `Using MCP servers: ${Object.keys(config.mcpConfig.mcpServers || {}).join(', ')}`,
-  );
-  logInfo(`Tasks feature: ${config.tasks ? 'enabled' : 'disabled'}`);
 }
 
 function stringToMcpServerConfigs(mcpValues: string) {
