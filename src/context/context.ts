@@ -5,6 +5,7 @@ import { createLSTool } from '../tools/LsTool';
 import { Context } from '../types';
 import { execFileNoThrow } from '../utils/execFileNoThrow';
 import { getCodebaseContext } from './codebase';
+import { getFileContext, getFilesByPrompt } from './contextFiles';
 
 export async function getDirectoryStructure(opts: { context: Context }) {
   const LSTool = createLSTool(opts);
@@ -157,6 +158,7 @@ type ContextResult = {
 
 export const getContext: (opts: {
   context: Context;
+  prompt?: string;
 }) => Promise<ContextResult> = memoize(async (opts) => {
   const directoryStructure = await getDirectoryStructure({
     context: opts.context,
@@ -173,6 +175,16 @@ export const getContext: (opts: {
         context: opts.context,
       })
     : undefined;
+
+  // Process file references in the prompt
+  const promptFiles = await getFilesByPrompt({
+    prompt: opts.prompt,
+    cwd: opts.context.cwd,
+  });
+
+  const files =
+    promptFiles.length > 0 ? await getFileContext(promptFiles) : undefined;
+
   return {
     // TODO: ...config.context
     ...(directoryStructure ? { directoryStructure } : {}),
@@ -180,5 +192,6 @@ export const getContext: (opts: {
     ...(codeStyle ? { codeStyle } : {}),
     ...(readme ? { readme } : {}),
     ...(codebase ? { codebase } : {}),
+    ...(files ? { files } : {}),
   };
 });
