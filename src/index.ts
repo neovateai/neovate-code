@@ -87,9 +87,15 @@ async function buildContext(
     infos: {
       log: sessionPath.replace(homeDir, '~'),
       workspace: cwd,
-      model: resolvedConfig.model,
+      model:
+        typeof resolvedConfig.model === 'string'
+          ? resolvedConfig.model
+          : resolvedConfig.model.modelId,
       ...(resolvedConfig.smallModel !== resolvedConfig.model && {
-        'small model': resolvedConfig.smallModel,
+        'small model':
+          typeof resolvedConfig.smallModel === 'string'
+            ? resolvedConfig.smallModel
+            : resolvedConfig.smallModel.modelId,
       }),
       ...(!resolvedConfig.stream && { stream: 'false' }),
       ...(resolvedConfig.mcpConfig.mcpServers && {
