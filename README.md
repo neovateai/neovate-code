@@ -5,7 +5,9 @@
 [![](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml)
 [![](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
 
-**AI pair programming CLI to enhance your development workflow.**
+AI pair programming CLI to enhance your development workflow.
+
+> Please consider following this project's author, [sorrycc](https://github.com/sorrycc), and consider starring the project to show your ❤️ and support.
 
 ## Key Features
 
