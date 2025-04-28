@@ -91,6 +91,8 @@ export async function runAct(opts: { context: Context; prompt: string }) {
   let prompt = opts.prompt;
   if (!prompt || prompt.trim() === '') {
     prompt = await logger.getUserInput();
+  } else {
+    logger.logUserInput({ input: prompt });
   }
 
   if (argv.plan) {

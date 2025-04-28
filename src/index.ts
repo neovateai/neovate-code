@@ -161,17 +161,10 @@ export async function runCli(opts: RunCliOpts) {
         break;
       case 'ask':
         logger.logCommand({ command: 'ask' });
-        const askPrompt = argv._.slice(1).join(' ');
-        logger.logUserInput({ input: askPrompt });
-        await (
-          await import('./commands/ask.js')
-        ).runAsk({ context, prompt: askPrompt });
+        const prompt = argv._[1] as string;
+        await (await import('./commands/ask.js')).runAsk({ context, prompt });
         break;
       default:
-        if (!command) {
-          throw new Error('Empty prompt. Please provide a valid prompt.');
-        }
-        logger.logUserInput({ input: command });
         await (
           await import('./commands/act.js')
         ).runAct({ context, prompt: command });

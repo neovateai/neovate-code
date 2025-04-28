@@ -7,6 +7,8 @@ export async function runAsk(opts: { context: Context; prompt: string }) {
   let prompt = opts.prompt;
   if (!prompt || prompt.trim() === '') {
     prompt = await logger.getUserInput();
+  } else {
+    logger.logUserInput({ input: prompt });
   }
   await askQuery({
     prompt,
