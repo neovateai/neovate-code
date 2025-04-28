@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import { MODEL_ALIAS } from '../llm/model';
 import { askQuery, editQuery } from '../llm/query';
 import { Context } from '../types';
-import * as logger from '../utils/logger2';
+import * as logger from '../utils/logger';
 
 const MAX_PLAN_ITERATIONS = 10;
 
@@ -12,10 +12,7 @@ export async function runAct(opts: { context: Context; prompt: string }) {
 
   // Validate initial prompt
   if (!opts.prompt || opts.prompt.trim() === '') {
-    console.error(
-      pc.red('Error: Empty prompt. Please provide a valid prompt.'),
-    );
-    return;
+    throw new Error('Empty prompt. Please provide a valid prompt.');
   }
 
   if (argv.plan) {

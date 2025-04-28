@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import clipboardy from 'clipboardy';
 import { askQuery } from '../llm/query';
 import { Context } from '../types';
-import * as logger from '../utils/logger2';
+import * as logger from '../utils/logger';
 
 export async function runCommit(opts: { context: Context }) {
   try {

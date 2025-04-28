@@ -8,7 +8,7 @@ import { getToolsPrompt } from '../prompts/prompts';
 import { callTool, getAllTools, parseToolUse } from '../tools/tools';
 import { getAskTools } from '../tools/tools';
 import { Context } from '../types';
-import * as logger from '../utils/logger2';
+import * as logger from '../utils/logger';
 import { ModelType, getModel } from './model';
 
 interface AskQueryOptions {

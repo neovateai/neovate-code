@@ -4,7 +4,7 @@ import yargsParser from 'yargs-parser';
 import { MODEL_ALIAS, ModelType } from './llm/model';
 import type { Plugin } from './pluginManager/types';
 import { getSystemPrompt } from './prompts/prompts';
-import * as logger from './utils/logger2';
+import * as logger from './utils/logger';
 
 export type ApiKeys = Record<string, string>;
 

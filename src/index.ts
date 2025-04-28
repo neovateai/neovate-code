@@ -13,8 +13,7 @@ import type { Plugin } from './pluginManager/types';
 import { keywordContextPlugin } from './plugins/keyword-context';
 import { sessionPlugin } from './plugins/session';
 import { Context } from './types';
-import * as logger1 from './utils/logger';
-import * as logger from './utils/logger2';
+import * as logger from './utils/logger';
 
 const require = createRequire(import.meta.url);
 
@@ -54,7 +53,7 @@ async function buildContext(
     config,
     cwd,
     command,
-    logger: logger1,
+    logger,
     paths,
     sessionId,
   };
@@ -168,6 +167,9 @@ export async function runCli(opts: RunCliOpts) {
         ).runAsk({ context, prompt: askPrompt });
         break;
       default:
+        if (!command) {
+          throw new Error('Empty prompt. Please provide a valid prompt.');
+        }
         logger.logUserInput({ input: command });
         await (
           await import('./commands/act.js')
