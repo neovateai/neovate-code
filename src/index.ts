@@ -129,7 +129,7 @@ export async function runCli(opts: RunCliOpts) {
         m: 'model',
         v: 'version',
       },
-      boolean: ['plan'],
+      boolean: ['plan', 'stream'],
     });
     let command = argv._[0] as string;
     if (argv.version) {
