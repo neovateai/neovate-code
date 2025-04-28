@@ -13,6 +13,7 @@ export async function runAsk(opts: { context: Context; prompt: string }) {
   await askQuery({
     prompt,
     context: opts.context,
+    isUserInputPrompt: true,
   });
   if (!argv.quiet) {
     while (true) {
@@ -20,6 +21,7 @@ export async function runAsk(opts: { context: Context; prompt: string }) {
       await askQuery({
         prompt,
         context: opts.context,
+        isUserInputPrompt: true,
       });
     }
   }

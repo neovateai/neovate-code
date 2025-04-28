@@ -17,6 +17,7 @@ interface AskQueryOptions {
   messages?: CoreMessage[];
   model?: ModelType | ReturnType<typeof getModel>;
   systemPrompt?: string[];
+  isUserInputPrompt?: boolean;
 }
 
 export async function askQuery(opts: AskQueryOptions) {
@@ -40,6 +41,7 @@ export async function askQuery(opts: AskQueryOptions) {
       : await getContext({
           context: opts.context,
           prompt: opts.prompt,
+          isUserInputPrompt: opts.isUserInputPrompt,
         });
   return await query({
     ...opts,
@@ -55,6 +57,7 @@ interface EditQueryOptions {
   prompt: string;
   model?: ModelType | ReturnType<typeof getModel>;
   systemPrompt?: string[];
+  isUserInputPrompt?: boolean;
 }
 
 export async function editQuery(opts: EditQueryOptions) {
@@ -78,6 +81,7 @@ export async function editQuery(opts: EditQueryOptions) {
       : await getContext({
           context: opts.context,
           prompt: opts.prompt,
+          isUserInputPrompt: opts.isUserInputPrompt,
         });
 
   await opts.context.pluginManager.apply({

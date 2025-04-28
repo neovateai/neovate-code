@@ -115,6 +115,7 @@ ${planResult}
   await editQuery({
     prompt,
     context: opts.context,
+    isUserInputPrompt: true,
   });
 
   if (!argv.quiet) {
@@ -123,6 +124,7 @@ ${planResult}
       await editQuery({
         prompt,
         context: opts.context,
+        isUserInputPrompt: true,
       });
     }
   }

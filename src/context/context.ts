@@ -159,6 +159,7 @@ type ContextResult = {
 export const getContext: (opts: {
   context: Context;
   prompt?: string;
+  isUserInputPrompt?: boolean;
 }) => Promise<ContextResult> = memoize(async (opts) => {
   const directoryStructure = await getDirectoryStructure({
     context: opts.context,
@@ -177,12 +178,15 @@ export const getContext: (opts: {
     : undefined;
 
   // Process file references in the prompt
-  const promptFiles = await getFilesByPrompt({
-    prompt: opts.prompt,
-    cwd: opts.context.cwd,
-  });
+  const promptFiles =
+    opts.isUserInputPrompt && opts.prompt
+      ? await getFilesByPrompt({
+          prompt: opts.prompt,
+          cwd: opts.context.cwd,
+        })
+      : [];
 
-  const _files =
+  const files =
     promptFiles.length > 0 ? await getFileContext(promptFiles) : undefined;
 
   return {
@@ -192,6 +196,6 @@ export const getContext: (opts: {
     ...(codeStyle ? { codeStyle } : {}),
     ...(readme ? { readme } : {}),
     ...(codebase ? { codebase } : {}),
-    // ...(files ? { files } : {}),
+    ...(files ? { files } : {}),
   };
 });
