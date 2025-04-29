@@ -89,7 +89,7 @@ async function buildContext(
     model:
       typeof resolvedConfig.model === 'string'
         ? resolvedConfig.model
-        : resolvedConfig.model.modelId,
+        : resolvedConfig.model?.modelId,
     ...(resolvedConfig.smallModel !== resolvedConfig.model && {
       'small model':
         typeof resolvedConfig.smallModel === 'string'
