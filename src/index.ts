@@ -85,7 +85,7 @@ async function buildContext(
   });
   const defaultInfos = {
     log: sessionPath.replace(homeDir, '~'),
-    workspace: cwd,
+    workspace: cwd.replace(homeDir, '~'),
     model:
       typeof resolvedConfig.model === 'string'
         ? resolvedConfig.model
