@@ -1,3 +1,12 @@
+## 0.0.18
+
+`2025-04-29`
+
+- feat: add help command and --help flag by [@sorrycc](https://github.com/sorrycc)
+- refactor: handle optional modelId in buildContext by [@sorrycc](https://github.com/sorrycc)
+- refactor: replace home dir with ~ in workspace path by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.17
 
 `2025-04-29`
