@@ -224,7 +224,7 @@ function generateFindingsSummary(findings: Finding[]): string {
   return `Found ${findings.length} issues`;
 }
 
-// todo:
+// todo
 // - [ ] --deep
 
 export async function runReview(opts: { context: Context }) {

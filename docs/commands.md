@@ -253,3 +253,45 @@ $ takumi lint
 $ takumi lint --lint-cmd "npx eslint src/"
 ```
 
+## `review`
+
+Performs an AI-powered code review on specified files, directories, or staged changes in Git.
+
+**Syntax:**
+
+```bash
+takumi review <file1.ts> [file2.js ...] [path/to/dir/ ...] [options]
+# or
+takumi review --diff [options]
+```
+
+**Description:**
+
+Conducts a thorough code review, analyzing the provided files or staged changes for potential issues, code smells, best practices violations, and other concerns. The review results are saved as a structured JSON file, which includes findings categorized by severity level and suggestions for improvement.
+
+**Options:**
+
+* `--rule <text_or_filepath>`: Specify custom review rules either as direct text or a path to a file containing rules. These rules help tailor the review to project-specific guidelines.
+* `--output`, `-o <filepath>`: Specify the output file path for the review results. Defaults to `review-result-[timestamp].json` in the current directory.
+* `--diff`: Review only the staged changes in Git instead of specified files.
+* Accepts general configuration options (e.g., `-m, --model`, `--api-key`, etc.).
+
+**Examples:**
+
+```bash
+# Review specific files
+takumi review src/component.tsx src/utils/helpers.ts
+
+# Review all files in a directory
+takumi review src/components/
+
+# Review with custom rules from a file
+takumi review src/components/ --rule code-standards.txt
+
+# Review staged changes in Git
+takumi review --diff
+
+# Save review results to a specific file
+takumi review src/components/ --output review-results.json
+```
+

@@ -67,6 +67,12 @@ After the modification, use `takumi commit` to generate the commit message.
 $ takumi commit -m <model> --stage --commit
 ```
 
+Analyze your code with AI-powered review to identify potential issues and improvements.
+
+```bash
+$ takumi review src/commands/review.ts --rule review-rule-example.md
+```
+
 Checkout [commands.md](./docs/commands.md) for more details.
 
 ## Contributing
