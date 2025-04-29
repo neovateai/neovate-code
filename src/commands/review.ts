@@ -12,7 +12,7 @@ export async function runReview(opts: { context: Context }) {
   const paths = argv._.slice(1).map(String);
 
   if (paths.length === 0) {
-    logError('Error: No files or directories specified for review.');
+    logError({ error: 'Error: No files or directories specified for review.' });
     console.log(
       'Usage: takumi review <file1.ts> [file2.js ...] [path/to/dir/ ...]',
     );
@@ -37,7 +37,9 @@ export async function runReview(opts: { context: Context }) {
           // Store the original inputPath for display purposes but use absolute path for reading
           filesToReview.push({ path: inputPath, content });
         } catch (error: any) {
-          logError(`Error reading file ${inputPath}: ${error.message}`);
+          logError({
+            error: `Error reading file ${inputPath}: ${error.message}`,
+          });
         }
       } else if (stats.isDirectory()) {
         try {
@@ -56,29 +58,36 @@ export async function runReview(opts: { context: Context }) {
                   const content = fs.readFileSync(entryPath, 'utf-8');
                   filesToReview.push({ path: displayPath, content });
                 } catch (error: any) {
-                  logError(
-                    `Error reading file ${displayPath}: ${error.message}`,
-                  );
+                  logError({
+                    error: `Error reading file ${displayPath}: ${error.message}`,
+                  });
                 }
               }
               // Skip subdirectories (non-recursive)
             } catch (error: any) {
-              logError(`Error accessing ${displayPath}: ${error.message}`);
+              logError({
+                error: `Error accessing ${displayPath}: ${error.message}`,
+              });
             }
           }
         } catch (error: any) {
-          logError(`Error reading directory ${inputPath}: ${error.message}`);
+          logError({
+            error: `Error reading directory ${inputPath}: ${error.message}`,
+          });
         }
       }
     } catch (error: any) {
-      logError(`Error accessing path ${inputPath}: ${error.message}`);
+      logError({
+        error: `Error accessing path ${inputPath}: ${error.message}`,
+      });
     }
   }
 
   if (filesToReview.length === 0) {
-    logError(
-      'No valid files found for review. Please check the specified paths.',
-    );
+    logError({
+      error:
+        'No valid files found for review. Please check the specified paths.',
+    });
     return;
   }
 
@@ -116,7 +125,7 @@ export async function runReview(opts: { context: Context }) {
       context: opts.context,
     });
   } catch (error: any) {
-    logError(`Error querying LLM: ${error.message}`);
+    logError({ error: `Error querying LLM: ${error.message}` });
   }
 }
 
