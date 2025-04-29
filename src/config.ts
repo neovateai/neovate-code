@@ -114,7 +114,7 @@ export async function getConfig(opts: {
   };
 }
 
-function stringToMcpServerConfigs(mcpValues: string) {
+export function stringToMcpServerConfigs(mcpValues: string) {
   const configs: Record<string, any> = {};
   const values = mcpValues.split(',');
   let i = 0;

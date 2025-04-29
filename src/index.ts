@@ -12,10 +12,21 @@ import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
 import type { Plugin } from './pluginManager/types';
 import { keywordContextPlugin } from './plugins/keyword-context';
 import { sessionPlugin } from './plugins/session';
-import { Context } from './types';
+import { CommandRequiredConfig, Context } from './types';
 import * as logger from './utils/logger';
 
 const require = createRequire(import.meta.url);
+
+const commandRequirements: Record<string, CommandRequiredConfig> = {
+  default: {
+    requireModel: true,
+    requireSmallModel: true,
+  },
+  config: {
+    requireModel: false,
+    requireSmallModel: false,
+  },
+};
 
 // Private export may be deprecated in the future
 export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
@@ -86,18 +97,21 @@ async function buildContext(
   const defaultInfos = {
     log: sessionPath.replace(homeDir, '~'),
     workspace: cwd,
-    model:
-      typeof resolvedConfig.model === 'string'
-        ? resolvedConfig.model
-        : resolvedConfig.model.modelId,
-    ...(resolvedConfig.smallModel !== resolvedConfig.model && {
-      'small model':
-        typeof resolvedConfig.smallModel === 'string'
-          ? resolvedConfig.smallModel
-          : resolvedConfig.smallModel.modelId,
+    ...(resolvedConfig.model && {
+      model:
+        typeof resolvedConfig.model === 'string'
+          ? resolvedConfig.model
+          : resolvedConfig.model.modelId,
     }),
+    ...(resolvedConfig.smallModel &&
+      resolvedConfig.smallModel !== resolvedConfig.model && {
+        'small model':
+          typeof resolvedConfig.smallModel === 'string'
+            ? resolvedConfig.smallModel
+            : resolvedConfig.smallModel.modelId,
+      }),
     ...(!resolvedConfig.stream && { stream: 'false' }),
-    ...(resolvedConfig.mcpConfig.mcpServers && {
+    ...(resolvedConfig.mcpConfig?.mcpServers && {
       mcp: Object.keys(resolvedConfig.mcpConfig.mcpServers).join(', '),
     }),
   };
@@ -111,8 +125,14 @@ async function buildContext(
   logger.logGeneralInfo({
     infos,
   });
-  assert(resolvedConfig.model, 'Model is required');
-  assert(resolvedConfig.smallModel, 'Small model is required');
+  const requirements =
+    commandRequirements[command] || commandRequirements.default;
+  if (requirements.requireModel) {
+    assert(resolvedConfig.model, 'Model is required');
+  }
+  if (requirements.requireSmallModel) {
+    assert(resolvedConfig.smallModel, 'Small model is required');
+  }
   const mcpClients = await createClients(config.mcpConfig.mcpServers || {});
   return {
     argv,
@@ -164,6 +184,10 @@ export async function runCli(opts: RunCliOpts) {
       case 'init':
         logger.logCommand({ command: 'init' });
         await (await import('./commands/init.js')).runInit({ context });
+        break;
+      case 'config':
+        logger.logCommand({ command: 'config' });
+        await (await import('./commands/config.js')).runConfig({ context });
         break;
       case 'commit':
         logger.logCommand({ command: 'commit' });
