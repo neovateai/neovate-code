@@ -59,11 +59,12 @@ export const sessionPlugin: Plugin = {
     data!.session.resolvedConfig = formatSessionConfig(resolvedConfig);
     write();
   },
-  queryStart: async function (this: PluginContext, { prompt, id }) {
+  queryStart: async function (this: PluginContext, { prompt, id, tools }) {
     data.queries[id] = {
       startTime: new Date().toISOString(),
       items: [],
     };
+    data.queries[id].tools = Object.keys(tools);
     write();
   },
   message: async function (this: PluginContext, { messages, queryId }) {
@@ -90,7 +91,6 @@ export const sessionPlugin: Plugin = {
       type: 'finalResponse',
       data: text,
     });
-    data.queries[id].tools = Object.keys(tools);
     if (process.env.DEBUG) {
       data.queries[id].systemPrompt = systemPrompt;
     }
