@@ -185,6 +185,16 @@ takumi --version
 takumi -v
 ```
 
+## `help`
+
+Displays the help information for the Takumi CLI.
+
+**Syntax:**
+
+```bash
+takumi help
+```
+
 ## `test`
 
 Runs the project tests and supports automatic AI-powered fixing of test failures.
