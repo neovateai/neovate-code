@@ -96,7 +96,7 @@ async function buildContext(
   });
   const defaultInfos = {
     log: sessionPath.replace(homeDir, '~'),
-    workspace: cwd,
+    workspace: cwd.replace(homeDir, '~'),
     ...(resolvedConfig.model && {
       model:
         typeof resolvedConfig.model === 'string'
@@ -163,16 +163,22 @@ export async function runCli(opts: RunCliOpts) {
         m: 'model',
         v: 'version',
         q: 'quiet',
+        h: 'help',
       },
-      boolean: ['plan', 'stream', 'quiet'],
+      boolean: ['plan', 'stream', 'quiet', 'help'],
     });
     let command = argv._[0] as string;
-    if (argv.version) {
-      command = 'version';
-    }
-    if (command === 'version') {
+    if (argv.version || command === 'version') {
       const productName = opts.productName.toLowerCase();
       console.log(`${productName}@${require('../package.json').version}`);
+      return;
+    }
+    if (argv.help || command === 'help') {
+      await (
+        await import('./commands/help.js')
+      ).runHelp({
+        productName: opts.productName,
+      });
       return;
     }
     context = await buildContext({ ...opts, argv, command });
@@ -205,6 +211,10 @@ export async function runCli(opts: RunCliOpts) {
         logger.logCommand({ command: 'ask' });
         const prompt = argv._[1] as string;
         await (await import('./commands/ask.js')).runAsk({ context, prompt });
+        break;
+      case 'lint':
+        logger.logCommand({ command: 'lint' });
+        await (await import('./commands/lint.js')).runLint({ context });
         break;
       default:
         await (

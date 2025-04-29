@@ -177,13 +177,13 @@ export const getContext: (opts: {
     : undefined;
 
   // Process file references in the prompt
-  const promptFiles = await getFilesByPrompt({
-    prompt: opts.prompt,
-    cwd: opts.context.cwd,
-  });
+  // const promptFiles = await getFilesByPrompt({
+  //   prompt: opts.prompt,
+  //   cwd: opts.context.cwd,
+  // });
 
-  const _files =
-    promptFiles.length > 0 ? await getFileContext(promptFiles) : undefined;
+  // const files =
+  //   promptFiles.length > 0 ? await getFileContext(promptFiles) : undefined;
 
   return {
     // TODO: ...config.context

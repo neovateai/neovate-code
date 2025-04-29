@@ -1,3 +1,24 @@
+## 0.0.18
+
+`2025-04-29`
+
+- feat: add help command and --help flag by [@sorrycc](https://github.com/sorrycc)
+- refactor: handle optional modelId in buildContext by [@sorrycc](https://github.com/sorrycc)
+- refactor: replace home dir with ~ in workspace path by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.17
+
+`2025-04-29`
+
+- feat: add lint command and implement linting functionality by [@NanLan](https://github.com/NanLan) in [#15](https://github.com/umijs/takumi/pull/15)
+- feat: support test command and test-cmd param by [@NanLan](https://github.com/NanLan) in [#12](https://github.com/umijs/takumi/pull/12)
+- refactor: disable file context inclusion in main context by [@sorrycc](https://github.com/sorrycc)
+- feat: add generalInfo plugin hook by [@sorrycc](https://github.com/sorrycc)
+- feat: handle model object in context building by [@sorrycc](https://github.com/sorrycc)
+- feat: add file context management for prompt references by [@阿平](https://github.com/阿平) in [#13](https://github.com/umijs/takumi/pull/13)
+
+
 ## 0.0.16
 
 `2025-04-28`

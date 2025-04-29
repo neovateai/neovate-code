@@ -185,6 +185,16 @@ takumi --version
 takumi -v
 ```
 
+## `help`
+
+Displays the help information for the Takumi CLI.
+
+**Syntax:**
+
+```bash
+takumi help
+```
+
 ## `test`
 
 Runs the project tests and supports automatic AI-powered fixing of test failures.
@@ -212,6 +222,35 @@ takumi test
 
 # Run a specific test file with a custom command
 takumi test --test-cmd "npx vitest run src/tests/index.test.ts"
+```
+
+## `lint`
+
+Runs the project linter and supports automatic AI-powered fixing of lint errors.
+
+**Syntax:**
+
+```bash
+takumi lint [options]
+```
+
+**Description:**
+
+Runs the project's lint command (default: `npm run lint`). If linting fails, Takumi will automatically attempt to fix the problem using AI, then re-run the linter. This process repeats until the linter passes or the maximum number of attempts is reached (default: 10). If the lint command does not exist, an error is shown and no AI fix is attempted.
+
+**Options:**
+
+* `--lint-cmd <command>`: Specify a custom lint command (e.g., `npx eslint src/`). Default is `npm run lint`.
+* Accepts general configuration options (e.g., `-m, --model`, `--api-key`, etc.).
+
+**Examples:**
+
+```bash
+# Run the default lint command
+$ takumi lint
+
+# Run a specific linter with a custom command
+$ takumi lint --lint-cmd "npx eslint src/"
 ```
 
 ## `config`
