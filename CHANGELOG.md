@@ -1,3 +1,13 @@
+## 0.0.19
+
+`2025-04-29`
+
+- fix: use resolvedConfig for mcpServers in buildContext by [@sorrycc](https://github.com/sorrycc)
+- feat: track tools used in query session by [@sorrycc](https://github.com/sorrycc)
+- feat: pass tool information to query plugin hooks by [@sorrycc](https://github.com/sorrycc)
+- refactor: remove model alias file by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.18
 
 `2025-04-29`
