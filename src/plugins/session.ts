@@ -78,7 +78,10 @@ export const sessionPlugin: Plugin = {
     write();
   },
   query: async function (this: PluginContext, { prompt, text, id }) {},
-  queryEnd: async function (this: PluginContext, { prompt, text, id }) {
+  queryEnd: async function (
+    this: PluginContext,
+    { systemPrompt, prompt, text, id, tools },
+  ) {
     data.queries[id].endTime = new Date().toISOString();
     data.queries[id].duration =
       new Date(data.queries[id].endTime).getTime() -
@@ -87,6 +90,10 @@ export const sessionPlugin: Plugin = {
       type: 'finalResponse',
       data: text,
     });
+    data.queries[id].tools = Object.keys(tools);
+    if (process.env.DEBUG) {
+      data.queries[id].systemPrompt = systemPrompt;
+    }
     write();
   },
   toolStart: async function (this: PluginContext, { queryId }) {},

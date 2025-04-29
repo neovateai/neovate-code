@@ -66,6 +66,7 @@ export const PluginSchema = z.object({
           prompt: z.string(),
           id: z.string(),
           system: z.array(z.string()),
+          tools: z.record(z.string(), z.any()),
         }),
       ]),
       z.void(),
@@ -74,7 +75,11 @@ export const PluginSchema = z.object({
   query: z
     .function(
       z.tuple([
-        z.object({ prompt: z.string(), text: z.string(), id: z.string() }),
+        z.object({
+          prompt: z.string(),
+          text: z.string(),
+          id: z.string(),
+        }),
       ]),
       z.void(),
     )
