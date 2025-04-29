@@ -191,6 +191,9 @@ export async function runCli(opts: RunCliOpts) {
       case 'lint':
         logger.logCommand({ command: 'lint' });
         await (await import('./commands/lint.js')).runLint({ context });
+      case 'review':
+        logger.logCommand({ command: 'review' });
+        await (await import('./commands/review.js')).runReview({ context });
         break;
       default:
         await (
