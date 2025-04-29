@@ -121,7 +121,7 @@ or line breaks.
  * - Excludes common lockfiles and large file types
  * - Limits diff size to prevent context overflow
  */
-async function getStagedDiff() {
+export async function getStagedDiff() {
   // Exclude lockfiles and common large file types
   const excludePatterns = [
     ':!pnpm-lock.yaml',

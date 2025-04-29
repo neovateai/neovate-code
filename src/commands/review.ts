@@ -4,6 +4,7 @@ import { askQuery } from '../llm/query';
 import { Context } from '../types';
 import { checkContentSize } from '../utils/contentSizeCheck';
 import { logAction, logError, logInfo } from '../utils/logger';
+import { getStagedDiff } from './commit';
 
 interface Finding {
   level: string;
@@ -224,7 +225,6 @@ function generateFindingsSummary(findings: Finding[]): string {
 }
 
 // todo:
-// - [ ] --diff
 // - [ ] --deep
 
 export async function runReview(opts: { context: Context }) {
@@ -235,10 +235,13 @@ export async function runReview(opts: { context: Context }) {
   // Get file/directory paths from arguments (excluding the command name 'review')
   const paths = argv._.slice(1).map(String);
 
-  if (paths.length === 0) {
+  // Check if using --diff flag
+  const useDiff = argv.diff === true;
+
+  if (!useDiff && paths.length === 0) {
     logError({ error: 'Error: No files or directories specified for review.' });
     console.log(
-      'Usage: takumi review <file1.ts> [file2.js ...] [path/to/dir/ ...] [--rule <text_or_filepath>] [--output <filepath>]',
+      'Usage: takumi review <file1.ts> [file2.js ...] [path/to/dir/ ...] [--rule <text_or_filepath>] [--output <filepath>] [--diff]',
     );
     return;
   }
@@ -250,25 +253,50 @@ export async function runReview(opts: { context: Context }) {
       : pathe.resolve(cwd, outputPath)
     : getDefaultOutputPath(cwd);
 
-  // Collect file contents
-  const filesToReview = collectFilesToReview(paths, cwd);
+  let filesToReview: { path: string; content: string }[] = [];
+  let fileListText = '';
+  let combinedContent = '';
 
-  if (filesToReview.length === 0) {
-    logError({
-      error:
-        'No valid files found for review. Please check the specified paths.',
-    });
-    return;
+  // Decide whether to use git diff or file paths for review
+  if (useDiff) {
+    try {
+      const diff = await getStagedDiff();
+
+      if (!diff || diff.trim().length === 0) {
+        logError({ error: 'No staged changes to review.' });
+        return;
+      }
+
+      combinedContent = diff;
+      fileListText = '- Staged changes in git repository';
+      filesToReview = []; // Empty array as we're not using files directly
+    } catch (error: any) {
+      logError({ error: error.message });
+      return;
+    }
+  } else {
+    // Collect file contents using the original approach
+    filesToReview = collectFilesToReview(paths, cwd);
+
+    if (filesToReview.length === 0) {
+      logError({
+        error:
+          'No valid files found for review. Please check the specified paths.',
+      });
+      return;
+    }
+
+    // Generate file list text for the prompt
+    fileListText = filesToReview.map((f) => `- ${f.path}`).join('\n');
+
+    // Combine all file contents
+    for (const file of filesToReview) {
+      combinedContent += `// File: ${file.path}\n${file.content}\n\n`;
+    }
   }
 
   // Max content size limit (100KB)
   const MAX_CONTENT_SIZE = 100 * 1024;
-
-  // Combine all file contents
-  let combinedContent = '';
-  for (const file of filesToReview) {
-    combinedContent += `// File: ${file.path}\n${file.content}\n\n`;
-  }
 
   const { content: processedContent, isTruncated } = checkContentSize(
     combinedContent,
@@ -280,7 +308,6 @@ export async function runReview(opts: { context: Context }) {
   }
 
   combinedContent = processedContent;
-  const fileListText = filesToReview.map((f) => `- ${f.path}`).join('\n');
 
   // Get current model name
   const modelName =

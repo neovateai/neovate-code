@@ -3,13 +3,6 @@
 ## Overview
 This document defines the rules and guidelines for code review in our project. These rules will be used by automated tools and human reviewers to ensure code quality and consistency.
 
-## Severity Levels
-- **Critical** - Must be fixed immediately; blocks merging
-- **High** - Must be fixed before merging
-- **Medium** - Should be fixed before merging
-- **Low** - Should be addressed but won't block merging
-- **Info** - Informational only, no action required
-
 ## Rule Categories
 
 ### 1. Code Structure and Organization
@@ -87,11 +80,3 @@ Some rules have automatic fixers available:
 - Logging: Can replace console.log with logger.info
 - Loop efficiency: Can transform for loops to optimized forms
 - Type safety: Can suggest proper types for 'any' in some contexts
-
-## Exemptions
-Rules can be exempted in specific cases with proper documentation:
-- Add a comment `// review-ignore: rule-id` on the line before the violation
-- For file-level exemptions, add at the top of the file: `// review-ignore-file: rule-id`
-
-## Custom Project Rules
-Teams can define additional project-specific rules in `.cursor/rules/review.mdc`.
