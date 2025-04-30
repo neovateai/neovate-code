@@ -34,6 +34,7 @@ Used for tasks that involve code generation, file modification, running commands
 * `-q, --quiet`: Enable non-interactive quiet mode.
 * `--plan`: Before executing the task, Takumi will first generate a step-by-step execution plan. It will present this plan to you for confirmation or modification. This allows for interactive refinement before any changes are made.
 * `--plan-model <model>`: Specify a different language model to use specifically for the planning phase when `--plan` is active. Defaults to the model specified by `--model`.
+* `--plugin <plugin>`: Specify a plugin to use.
 * `--language <language>`: Specify the language of the output, defaults to `en`.
 * `--codebase <includes>`: Specify the path to the codebase to use.
 

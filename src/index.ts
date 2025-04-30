@@ -42,11 +42,18 @@ async function buildContext(
     `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${sessionId}.json`,
   );
   const config = await getConfig({ argv, productName: opts.productName, cwd });
+  const argsPlugins: Plugin[] = [];
+  for (const plugin of argv.plugin || []) {
+    const pluginPath = path.resolve(cwd, plugin);
+    const pluginObject = require(pluginPath);
+    argsPlugins.push(pluginObject.default || pluginObject);
+  }
   const buildinPlugins = [sessionPlugin, keywordContextPlugin];
   const plugins = [
     ...buildinPlugins,
     ...(config.plugins || []),
     ...(opts.plugins || []),
+    ...argsPlugins,
   ];
   const pluginManager = new PluginManager(plugins);
   const paths = {
@@ -171,6 +178,7 @@ export async function runCli(opts: RunCliOpts) {
         q: 'quiet',
         h: 'help',
       },
+      array: ['plugin'],
       boolean: ['plan', 'stream', 'quiet', 'help'],
     });
     let command = argv._[0] as string;
