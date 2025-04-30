@@ -32,8 +32,3 @@ export interface Context {
   paths: Paths;
   sessionId: string;
 }
-
-export interface CommandRequiredConfig {
-  requireModel?: boolean;
-  requireSmallModel?: boolean;
-}

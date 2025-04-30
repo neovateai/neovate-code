@@ -12,21 +12,10 @@ import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
 import type { Plugin } from './pluginManager/types';
 import { keywordContextPlugin } from './plugins/keyword-context';
 import { sessionPlugin } from './plugins/session';
-import { CommandRequiredConfig, Context } from './types';
+import { Context } from './types';
 import * as logger from './utils/logger';
 
 const require = createRequire(import.meta.url);
-
-const commandRequirements: Record<string, CommandRequiredConfig> = {
-  default: {
-    requireModel: true,
-    requireSmallModel: true,
-  },
-  config: {
-    requireModel: false,
-    requireSmallModel: false,
-  },
-};
 
 // Private export may be deprecated in the future
 export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
@@ -125,12 +114,8 @@ async function buildContext(
   logger.logGeneralInfo({
     infos,
   });
-  const requirements =
-    commandRequirements[command] || commandRequirements.default;
-  if (requirements.requireModel) {
+  if (command !== 'config') {
     assert(resolvedConfig.model, 'Model is required');
-  }
-  if (requirements.requireSmallModel) {
     assert(resolvedConfig.smallModel, 'Small model is required');
   }
   const mcpClients = await createClients(
