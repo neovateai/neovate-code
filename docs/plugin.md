@@ -42,6 +42,13 @@ Perform cleanup tasks, log final statistics, or handle errors globally at the ve
 
 Perform initial setup tasks when the CLI starts, right after the intro log.
 
+### `commands`
+
+-   **Type:** `() => Promise<Record<string, any>> | Record<string, any>`
+-   **Arguments:** `[]`
+
+Add or modify commands that can be executed by the user.
+
 ### `config`
 
 -   **Type:** `() => Promise<Partial<Config> | null> | Partial<Config> | null`

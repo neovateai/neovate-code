@@ -7,6 +7,12 @@ import os from 'os';
 import path from 'path';
 import yargsParser from 'yargs-parser';
 import { getConfig } from './config';
+import {
+  AskQueryOptions,
+  EditQueryOptions,
+  askQuery,
+  editQuery,
+} from './llm/query';
 import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
 import type { Plugin } from './pluginManager/types';
@@ -53,9 +59,21 @@ async function buildContext(
     config,
     cwd,
     command,
-    logger,
     paths,
     sessionId,
+    logger,
+    askQuery: (opts: Omit<AskQueryOptions, 'context'>) => {
+      return askQuery({
+        context,
+        ...opts,
+      });
+    },
+    editQuery: (opts: Omit<EditQueryOptions, 'context'>) => {
+      return editQuery({
+        context,
+        ...opts,
+      });
+    },
   };
   // hook: cliStart
   logger.logIntro({
@@ -121,7 +139,7 @@ async function buildContext(
   const mcpClients = await createClients(
     resolvedConfig.mcpConfig.mcpServers || {},
   );
-  return {
+  const context: Context = {
     argv,
     command,
     cwd,
@@ -132,6 +150,7 @@ async function buildContext(
     paths,
     sessionId,
   };
+  return context;
 }
 
 interface RunCliOpts {
@@ -169,45 +188,57 @@ export async function runCli(opts: RunCliOpts) {
       return;
     }
     context = await buildContext({ ...opts, argv, command });
-    switch (command) {
-      case 'plan':
-        logger.logCommand({ command: 'plan' });
-        await (await import('./commands/plan.js')).runPlan({ context });
-        break;
-      case 'init':
-        logger.logCommand({ command: 'init' });
-        await (await import('./commands/init.js')).runInit({ context });
-        break;
-      case 'config':
-        logger.logCommand({ command: 'config' });
-        await (await import('./commands/config.js')).runConfig({ context });
-        break;
-      case 'commit':
-        logger.logCommand({ command: 'commit' });
-        await (await import('./commands/commit.js')).runCommit({ context });
-        break;
-      case 'watch':
-        logger.logCommand({ command: 'watch' });
-        await (await import('./commands/watch.js')).runWatch({ context });
-        break;
-      case 'test':
-        logger.logCommand({ command: 'test' });
-        await (await import('./commands/test.js')).runTest({ context });
-        break;
-      case 'ask':
-        logger.logCommand({ command: 'ask' });
-        const prompt = argv._[1] as string;
-        await (await import('./commands/ask.js')).runAsk({ context, prompt });
-        break;
-      case 'lint':
-        logger.logCommand({ command: 'lint' });
-        await (await import('./commands/lint.js')).runLint({ context });
-        break;
-      default:
-        await (
-          await import('./commands/act.js')
-        ).runAct({ context, prompt: command });
-        break;
+    const pluginCommands = await context.pluginManager.apply({
+      hook: 'commands',
+      args: [],
+      memo: {},
+      type: PluginHookType.SeriesMerge,
+      pluginContext: context.pluginContext,
+    });
+    if (pluginCommands[command]) {
+      logger.logCommand({ command });
+      await pluginCommands[command]();
+    } else {
+      switch (command) {
+        case 'plan':
+          logger.logCommand({ command });
+          await (await import('./commands/plan.js')).runPlan({ context });
+          break;
+        case 'init':
+          logger.logCommand({ command });
+          await (await import('./commands/init.js')).runInit({ context });
+          break;
+        case 'config':
+          logger.logCommand({ command: 'config' });
+          await (await import('./commands/config.js')).runConfig({ context });
+          break;
+        case 'commit':
+          logger.logCommand({ command });
+          await (await import('./commands/commit.js')).runCommit({ context });
+          break;
+        case 'watch':
+          logger.logCommand({ command });
+          await (await import('./commands/watch.js')).runWatch({ context });
+          break;
+        case 'test':
+          logger.logCommand({ command });
+          await (await import('./commands/test.js')).runTest({ context });
+          break;
+        case 'ask':
+          logger.logCommand({ command });
+          const prompt = argv._[1] as string;
+          await (await import('./commands/ask.js')).runAsk({ context, prompt });
+          break;
+        case 'lint':
+          logger.logCommand({ command });
+          await (await import('./commands/lint.js')).runLint({ context });
+          break;
+        default:
+          await (
+            await import('./commands/act.js')
+          ).runAct({ context, prompt: command });
+          break;
+      }
     }
     // hook: cliEnd
     await context.pluginManager.apply({

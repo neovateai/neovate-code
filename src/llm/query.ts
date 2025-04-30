@@ -11,7 +11,7 @@ import { Context } from '../types';
 import * as logger from '../utils/logger';
 import { ModelType, getModel } from './model';
 
-interface AskQueryOptions {
+export interface AskQueryOptions {
   context: Context;
   prompt?: string;
   messages?: CoreMessage[];
@@ -50,7 +50,7 @@ export async function askQuery(opts: AskQueryOptions) {
   });
 }
 
-interface EditQueryOptions {
+export interface EditQueryOptions {
   context: Context;
   prompt: string;
   model?: ModelType | ReturnType<typeof getModel>;

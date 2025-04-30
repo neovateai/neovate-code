@@ -110,6 +110,7 @@ export const PluginSchema = z.object({
       z.void(),
     )
     .optional(),
+  commands: z.function(z.tuple([]), z.any()).optional(),
 });
 
 type InferedPlugin = z.infer<typeof PluginSchema>;
