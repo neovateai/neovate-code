@@ -142,7 +142,7 @@ export async function query(opts: QueryOptions) {
   // hook: queryStart
   await opts.context.pluginManager.apply({
     hook: 'queryStart',
-    args: [{ prompt: opts.prompt, id, system }],
+    args: [{ prompt: opts.prompt, id, system, tools }],
     type: PluginHookType.Series,
     pluginContext: opts.context.pluginContext,
   });
@@ -203,7 +203,7 @@ export async function query(opts: QueryOptions) {
     // hook: query
     await opts.context.pluginManager.apply({
       hook: 'query',
-      args: [{ prompt, text, id }],
+      args: [{ prompt, text, id, tools }],
       type: PluginHookType.Series,
       pluginContext: opts.context.pluginContext,
     });
