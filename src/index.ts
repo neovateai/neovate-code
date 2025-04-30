@@ -86,18 +86,21 @@ async function buildContext(
   const defaultInfos = {
     log: sessionPath.replace(homeDir, '~'),
     workspace: cwd.replace(homeDir, '~'),
-    model:
-      typeof resolvedConfig.model === 'string'
-        ? resolvedConfig.model
-        : resolvedConfig.model?.modelId,
-    ...(resolvedConfig.smallModel !== resolvedConfig.model && {
-      'small model':
-        typeof resolvedConfig.smallModel === 'string'
-          ? resolvedConfig.smallModel
-          : resolvedConfig.smallModel.modelId,
+    ...(resolvedConfig.model && {
+      model:
+        typeof resolvedConfig.model === 'string'
+          ? resolvedConfig.model
+          : resolvedConfig.model.modelId,
     }),
+    ...(resolvedConfig.smallModel &&
+      resolvedConfig.smallModel !== resolvedConfig.model && {
+        'small model':
+          typeof resolvedConfig.smallModel === 'string'
+            ? resolvedConfig.smallModel
+            : resolvedConfig.smallModel.modelId,
+      }),
     ...(!resolvedConfig.stream && { stream: 'false' }),
-    ...(resolvedConfig.mcpConfig.mcpServers && {
+    ...(resolvedConfig.mcpConfig?.mcpServers && {
       mcp: Object.keys(resolvedConfig.mcpConfig.mcpServers).join(', '),
     }),
   };
@@ -111,8 +114,10 @@ async function buildContext(
   logger.logGeneralInfo({
     infos,
   });
-  assert(resolvedConfig.model, 'Model is required');
-  assert(resolvedConfig.smallModel, 'Small model is required');
+  if (command !== 'config') {
+    assert(resolvedConfig.model, 'Model is required');
+    assert(resolvedConfig.smallModel, 'Small model is required');
+  }
   const mcpClients = await createClients(
     resolvedConfig.mcpConfig.mcpServers || {},
   );
@@ -172,6 +177,10 @@ export async function runCli(opts: RunCliOpts) {
       case 'init':
         logger.logCommand({ command: 'init' });
         await (await import('./commands/init.js')).runInit({ context });
+        break;
+      case 'config':
+        logger.logCommand({ command: 'config' });
+        await (await import('./commands/config.js')).runConfig({ context });
         break;
       case 'commit':
         logger.logCommand({ command: 'commit' });

@@ -253,3 +253,32 @@ $ takumi lint
 $ takumi lint --lint-cmd "npx eslint src/"
 ```
 
+## `config`
+
+Interactive wizard to guide users through Takumi configuration.
+
+**Syntax:**
+
+```bash
+takumi config
+```
+
+**Description:**
+
+This command launches an interactive wizard that guides you through setting up Takumi configuration options. It helps configure:
+
+* Default large model - For main AI operations
+* Small model (optional) - For faster, more economical simple queries
+* API keys - Based on your selected models
+* Streaming mode - Toggle response streaming
+* Tasks feature - Enable specialized task processing
+* Language preference - Choose between English or Chinese
+* MCP servers - Configure Model Control Protocol servers
+
+All settings are saved to `~/.takumi/config.json` and apply globally across all projects.
+
+**Examples:**
+
+```bash
+takumi config
+```
