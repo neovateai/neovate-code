@@ -9,6 +9,7 @@ import { callTool, getAllTools, parseToolUse } from '../tools/tools';
 import { getAskTools } from '../tools/tools';
 import { Context } from '../types';
 import * as logger from '../utils/logger';
+import { StreamRenderer, renderMarkdown } from '../utils/markdown';
 import { ModelType, getModel } from './model';
 
 export interface AskQueryOptions {
@@ -163,8 +164,9 @@ export async function query(opts: QueryOptions) {
     if (context.config.stream) {
       const result = await streamText(llmOpts);
       text = '';
-      // let tmpText = '';
       let think = null;
+      const streamRenderer = new StreamRenderer();
+
       for await (const chunk of result.textStream) {
         if (!think) {
           thinkDone();
@@ -173,7 +175,8 @@ export async function query(opts: QueryOptions) {
         text += chunk;
         if (text.includes('<') || text.includes('<use_tool>')) {
         } else {
-          think.text(chunk);
+          const renderedChunk = streamRenderer.append(chunk);
+          think.text(renderedChunk);
           // process.stdout.write(chunk);
         }
         // if (chunk.includes('<') || tmpText.length) {
@@ -195,9 +198,10 @@ export async function query(opts: QueryOptions) {
     } else {
       const result = await generateText(llmOpts);
       thinkDone();
+      const renderedText = renderMarkdown(result.text);
       logger
         .logThink({ productName: context.config.productName })
-        .text(result.text);
+        .text(renderedText);
       text = result.text;
     }
     // hook: query
