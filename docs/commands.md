@@ -10,7 +10,7 @@ takumi [command] [prompt_or_args] [options]
 
 Most commands accept general options for configuration, such as model selection, API keys, and context settings.
 
-## `` (Default Command)
+## (Default Command)
 
 This is the primary and default command used to instruct Takumi to perform actions, modify code, or execute tasks based on your prompt.
 
