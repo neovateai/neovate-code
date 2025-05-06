@@ -77,7 +77,7 @@ ${repoStyle}
       if (attempts >= maxAttempts) {
         throw error;
       }
-      logger.logWarn(`Attempt ${attempts}/${maxAttempts} failed. Retrying...`);
+      logger.logWarn(`Attempt to generate commit message failed. Retrying...`);
     }
   }
 
