@@ -18,6 +18,7 @@ Commands:
   watch                Monitor files for changes and execute AI instructions found in comments (e.g., // AI! <instruction>).
   version              Display the version number.
   help                 Show this help message.
+  run <prompt>         Run a command based on the prompt.
 
 General Options:
   -m, --model <model>  Specify the language model to use.
@@ -60,6 +61,7 @@ Examples:
   ${productName} init -m gemini-pro
   ${productName} test --test-cmd "vitest run tests/specific.test.ts"
   ${productName} watch
+  ${productName} run "Create a new file in the src/utils directory"
 `.trimEnd(),
   );
 }
