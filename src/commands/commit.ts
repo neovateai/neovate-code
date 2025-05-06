@@ -55,16 +55,32 @@ Please follow a similar style for this commit message while still adhering to th
     }
   }
 
-  const message = await askQuery({
-    systemPrompt: [COMMIT_PROMPT],
-    prompt: `
+  // Generate the commit message
+  let message = '';
+  let attempts = 0;
+  const maxAttempts = 3;
+  while (attempts < maxAttempts) {
+    try {
+      message = await askQuery({
+        systemPrompt: [COMMIT_PROMPT],
+        prompt: `
 # Diffs:
 ${diff}
 ${repoStyle}
-    `,
-    context: opts.context,
-  });
-  checkCommitMessage(message);
+        `,
+        context: opts.context,
+      });
+      checkCommitMessage(message);
+      break;
+    } catch (error) {
+      attempts++;
+      if (attempts >= maxAttempts) {
+        throw error;
+      }
+      logger.logWarn(`Attempt ${attempts}/${maxAttempts} failed. Retrying...`);
+    }
+  }
+
   if (argv.commit) {
     const noVerify = argv.noVerify ? '--no-verify' : '';
     logger.logAction({ message: 'Commit the changes.' });
