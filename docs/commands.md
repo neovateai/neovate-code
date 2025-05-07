@@ -283,3 +283,47 @@ All settings are saved to `~/.takumi/config.json` and apply globally across all 
 ```bash
 takumi config
 ```
+
+## `run`
+Execute shell commands using natural language, without needing to remember complex command syntax.
+
+**Syntax:**
+
+```bash
+takumi run "<prompt>"
+```
+
+**Description:**
+
+This command allows you to describe operations in everyday language, and Takumi will convert it into appropriate shell commands and execute them. This is especially useful for users unfamiliar with specific command parameters or syntax. Takumi will first show you the command it plans to execute, then execute it after your confirmation.
+
+**Options:**
+- `--yes`: Automatically execute the command without asking for confirmation
+- `--dry-run`: Show the command that would be executed without actually running it
+
+
+**Examples:**
+
+```bash
+# Undo the last commit
+takumi run "Undo the last commit"
+
+# View git repository history in text graph format
+takumi run "View git repository history in text graph format"
+
+# Used wrong username and email for git commit
+takumi run "Used wrong username and email for git commit"
+
+# Find all files containing a specific text
+takumi run "Find all files containing the text 'TODO' in the src directory"
+
+# Clean up node_modules and reinstall dependencies
+takumi run "Clean up node_modules and reinstall all dependencies"
+
+# Show the command without executing it
+takumi run "Delete all .log files" --dry-run
+
+# Execute command without confirmation
+takumi run "Create a backup of the database" --yes
+
+```

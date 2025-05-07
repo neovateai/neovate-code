@@ -17,6 +17,7 @@ Please follow these rules:
 4. Avoid using potentially dangerous commands (such as rm -rf /)
 5. Provide complete commands, avoiding placeholders
 6. Reply with only one command, don't provide multiple options or explanations
+7. When no suitable command can be found, return the recommended command directly
 
 Examples:
 User: "List all files in the current directory"
@@ -30,6 +31,9 @@ Reply: "find . -name '*.log' -exec grep -l 'error' {} \\;"
 
 User: "ls -la" (user directly provided a command)
 Reply: "ls -la"
+
+User: "I want to compress all images in the current directory"
+Reply: "find . -type f \( -iname \"*.jpg\" -o -iname \"*.jpeg\" -o -iname \"*.png\" \) -exec mogrify -quality 85% {} \\;"
 `;
 
 /**
@@ -79,7 +83,73 @@ async function aiToShellCommand(
     model,
   });
 
-  return result.trim();
+  return removeThoughts(result.trim());
+}
+
+function removeThoughts(message: string) {
+  // e.g. gemini-2.5-pro-exp-03-25 contains <thought>...</thought>
+  return message.replace(/<thought>[\s\S]*?<\/thought>/gm, '');
+}
+
+/**
+ * Run shell command
+ */
+async function runShellCommand(opts: { context: Context; prompt: string }) {
+  const { argv } = opts.context;
+  let prompt = opts.prompt;
+
+  // Use AI to convert natural language to shell command
+  logger.logAction({
+    message: `AI is converting natural language to shell command...`,
+  });
+  const command = await aiToShellCommand(prompt, opts.context);
+
+  // Display the generated command and request confirmation
+  logger.logInfo(
+    `
+${pc.bold(pc.blueBright('AI generated shell command:'))}
+${command}
+  `.trim(),
+  );
+
+  // If dry-run mode is enabled, only display the command without executing
+  if (argv['dry-run']) {
+    logger.logInfo('Dry run mode: Command will not be executed');
+    return;
+  }
+
+  // If --yes mode is enabled, execute the command without confirmation
+  if (argv.yes) {
+    logger.logAction({ message: `Executing command: ${command}` });
+    const result = await executeShell(command, opts.context.cwd);
+
+    if (result.success) {
+      console.log(result.output);
+    } else {
+      logger.logError({ error: `Command execution failed: ${result.output}` });
+    }
+    return;
+  }
+
+  // Default behavior: request confirmation
+  const confirmExecution = await logger.confirm({
+    message: '',
+    active: pc.green('Execute'),
+    inactive: pc.red('Cancel'),
+  });
+
+  if (confirmExecution && !logger.isCancel(confirmExecution)) {
+    logger.logAction({ message: `Executing command: ${command}` });
+    const result = await executeShell(command, opts.context.cwd);
+
+    if (result.success) {
+      console.log(result.output);
+    } else {
+      logger.logError({ error: `Command execution failed: ${result.output}` });
+    }
+  } else {
+    logger.logInfo('Command execution cancelled');
+  }
 }
 
 /**
@@ -97,40 +167,13 @@ export async function runRun(opts: { context: Context; prompt: string }) {
   }
 
   // Use AI to convert natural language to shell command
-  logger.logAction({
-    message: `AI is converting natural language to shell command...`,
-  });
-  const command = await aiToShellCommand(prompt, opts.context);
-
-  // Display the generated command and request confirmation
-  const confirmExecution = await logger.confirm({
-    message: `
-${pc.bold(pc.blueBright('AI generated shell command:'))}
-${pc.reset(pc.dim(command))}
-    `.trim(),
-    active: pc.green('Execute'),
-    inactive: pc.red('Cancel'),
-  });
-
-  if (confirmExecution) {
-    // Execute the generated command
-    logger.logAction({ message: `Executing command: ${command}` });
-    const result = await executeShell(command, opts.context.cwd);
-
-    if (result.success) {
-      console.log(result.output);
-    } else {
-      logger.logError({ error: `Command execution failed: ${result.output}` });
-    }
-  } else {
-    logger.logInfo('Command execution cancelled');
-  }
+  await runShellCommand({ context: opts.context, prompt });
 
   // If not in quiet mode, continue receiving user input
   if (!argv.quiet) {
     while (true) {
       const nextPrompt = await logger.getUserInput();
-      await runRun({
+      await runShellCommand({
         context: opts.context,
         prompt: nextPrompt,
       });

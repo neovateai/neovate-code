@@ -1,5 +1,6 @@
 import * as p from '@umijs/clack-prompts';
 import pc from 'picocolors';
+import { StreamRenderer } from './markdown';
 
 export function logIntro(opts: { productName: string; version: string }) {
   console.log();
@@ -74,6 +75,18 @@ export function logThink(opts: { productName: string }) {
   };
 }
 
+const streamRenderer = new StreamRenderer();
+
+export function logThinkMarkdown(opts: { productName: string }) {
+  const productName = opts.productName.toLowerCase();
+  const task = p.taskLog(pc.bold(pc.magentaBright(`${productName}:`)));
+  return {
+    text: (text: string) => {
+      task.text = streamRenderer.append(text);
+    },
+  };
+}
+
 export function logTool(opts: {
   toolUse: {
     toolName: string;
@@ -129,4 +142,8 @@ export async function confirm(opts: {
   initialValue?: boolean;
 }) {
   return await p.confirm(opts);
+}
+
+export function isCancel(result: unknown) {
+  return p.isCancel(result);
 }
