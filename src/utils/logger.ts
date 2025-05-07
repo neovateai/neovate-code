@@ -37,11 +37,13 @@ export async function getUserInput(opts?: {
   message?: string;
   placeholder?: string;
   validate?: (input: string) => string | void;
+  defaultValue?: string;
 }) {
   opts = opts || {};
   const input = await p.text({
     message: pc.bold(pc.blueBright(opts.message || 'user:')),
     placeholder: opts.placeholder,
+    initialValue: opts.defaultValue,
     validate:
       opts.validate ||
       ((input) => {

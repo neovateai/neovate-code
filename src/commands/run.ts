@@ -1,3 +1,4 @@
+import * as p from '@umijs/clack-prompts';
 import { CoreMessage } from 'ai';
 import { execSync } from 'child_process';
 import pc from 'picocolors';
@@ -102,7 +103,7 @@ async function runShellCommand(opts: { context: Context; prompt: string }) {
   logger.logAction({
     message: `AI is converting natural language to shell command...`,
   });
-  const command = await aiToShellCommand(prompt, opts.context);
+  let command = await aiToShellCommand(prompt, opts.context);
 
   // Display the generated command and request confirmation
   logger.logInfo(
@@ -132,8 +133,33 @@ ${command}
   }
 
   // Default behavior: request confirmation
+  const execution = await p.select({
+    message: 'Confirm execution',
+    options: [
+      { value: 'execute', label: 'Execute' },
+      { value: 'edit', label: 'Edit' },
+      { value: 'cancel', label: 'Cancel' },
+    ],
+  });
+
+  if (logger.isCancel(execution)) {
+    logger.logInfo('Command execution cancelled');
+    return;
+  }
+
+  if (execution === 'edit') {
+    const editedCommand = await logger.getUserInput({
+      message: 'Edit command',
+      defaultValue: command,
+    });
+
+    if (editedCommand) {
+      command = editedCommand;
+    }
+  }
+
   const confirmExecution = await logger.confirm({
-    message: '',
+    message: `Execute command: ${pc.reset(pc.gray(command))}`,
     active: pc.green('Execute'),
     inactive: pc.red('Cancel'),
   });
@@ -143,7 +169,7 @@ ${command}
     const result = await executeShell(command, opts.context.cwd);
 
     if (result.success) {
-      console.log(result.output);
+      logger.logInfo(result.output);
     } else {
       logger.logError({ error: `Command execution failed: ${result.output}` });
     }
