@@ -18,7 +18,7 @@ import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
 import type { Plugin } from './pluginManager/types';
 import { keywordContextPlugin } from './plugins/keyword-context';
 import { sessionPlugin } from './plugins/session';
-import { Context } from './types';
+import { Context, PluginContext } from './types';
 import * as logger from './utils/logger';
 
 const require = createRequire(import.meta.url);
@@ -293,3 +293,5 @@ export async function runCli(opts: RunCliOpts) {
     }
   }
 }
+
+export type { Plugin, PluginContext };
