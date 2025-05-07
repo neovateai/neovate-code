@@ -254,6 +254,10 @@ export async function runCli(opts: RunCliOpts) {
             await import('./commands/run.js')
           ).runRun({ context, prompt: runPrompt });
           break;
+        case 'log':
+          logger.logCommand({ command });
+          await (await import('./commands/log.js')).runLog({ context });
+          break;
         default:
           await (
             await import('./commands/act.js')
