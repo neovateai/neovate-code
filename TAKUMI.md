@@ -27,3 +27,4 @@ This file provides guidelines for AI agents working on this codebase.
 - Follow existing patterns and conventions in the codebase.
 - Keep functions small and focused.
 - Verify changes with tests before concluding.
+- Don't run typecheck script, it's broken by dependencies!!!
