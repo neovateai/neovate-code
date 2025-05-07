@@ -67,16 +67,33 @@ export class StreamRenderer {
     try {
       const completeRendered = marked.parse(this.buffer) as string;
       const currentRendered = completeRendered.trimEnd();
-      let newContent = '';
-      if (currentRendered.startsWith(this.previousRendered)) {
-        newContent = currentRendered.substring(this.previousRendered.length);
-      } else {
-        newContent = currentRendered;
-      }
+
+      const newContent = this.getDiff(this.previousRendered, currentRendered);
       this.previousRendered = currentRendered;
       return newContent;
     } catch (error) {
       return chunk;
     }
+  }
+
+  private getDiff(oldText: string, newText: string): string {
+    if (newText.startsWith(oldText)) {
+      return newText.substring(oldText.length);
+    }
+
+    let i = 0;
+    while (
+      i < oldText.length &&
+      i < newText.length &&
+      oldText[i] === newText[i]
+    ) {
+      i++;
+    }
+
+    if (i > 0) {
+      return newText.substring(i);
+    }
+
+    return newText;
   }
 }

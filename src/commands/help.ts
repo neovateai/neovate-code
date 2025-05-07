@@ -18,6 +18,7 @@ Commands:
   watch                Monitor files for changes and execute AI instructions found in comments (e.g., // AI! <instruction>).
   version              Display the version number.
   help                 Show this help message.
+  run <prompt>         Run a command based on the prompt.
 
 General Options:
   -m, --model <model>  Specify the language model to use.
@@ -46,6 +47,10 @@ Default Command Options:
 'test' Command Options:
   --test-cmd <cmd>     Specify a custom command to run tests (default: 'npm run test').
 
+'run' Command Options:
+  --yes                Automatically confirm the execution of the generated command.
+  --dry-run            Display the generated command without executing it.
+
 Model Aliases:
 ${Object.entries(modelAliases)
   .map(([alias, model]) => `  ${alias}: ${model}`)
@@ -60,6 +65,7 @@ Examples:
   ${productName} init -m gemini-pro
   ${productName} test --test-cmd "vitest run tests/specific.test.ts"
   ${productName} watch
+  ${productName} run "Create a new file in the src/utils directory"
 `.trimEnd(),
   );
 }
