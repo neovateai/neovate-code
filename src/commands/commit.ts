@@ -77,10 +77,11 @@ ${repoStyle}
       attempts++;
       if (attempts >= maxAttempts) {
         throw error;
+      } else {
+        logger.logWarn(
+          `Attempt to generate commit message failed since ${error.message}. Retrying...`,
+        );
       }
-      logger.logWarn(
-        `Attempt to generate commit message failed since ${error.message}. Retrying...`,
-      );
     }
   }
 
@@ -109,7 +110,11 @@ ${repoStyle}
 }
 
 function checkCommitMessage(message: string) {
-  if (message.length > 72) {
+  // make length check a litter more lenient
+  // since sometimes it needs a little more informations
+  // e.g.
+  // - `build: add dev dependencies for basement, axios, git-repo-info, urllib, and zx`
+  if (message.length > 90) {
     throw new Error(`Commit message is too long: ${message}`);
   }
   if (message.length === 0) {
