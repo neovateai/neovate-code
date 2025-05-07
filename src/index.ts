@@ -83,9 +83,11 @@ async function buildContext(
     },
   };
   // hook: cliStart
+  const pkg = await import('../package.json');
+  const version = opts.version || pkg.version;
   logger.logIntro({
     productName: opts.productName,
-    version: require('../package.json').version,
+    version,
   });
   await pluginManager.apply({
     hook: 'cliStart',
@@ -165,6 +167,8 @@ interface RunCliOpts {
   productName: string;
   root?: string;
   sessionPath?: string;
+  npmName?: string;
+  version?: string;
 }
 
 export async function runCli(opts: RunCliOpts) {
@@ -182,9 +186,11 @@ export async function runCli(opts: RunCliOpts) {
       boolean: ['plan', 'stream', 'quiet', 'help'],
     });
     let command = argv._[0] as string;
+    const pkg = await import('../package.json');
     if (argv.version || command === 'version') {
-      const productName = opts.productName.toLowerCase();
-      console.log(`${productName}@${require('../package.json').version}`);
+      const name = opts.npmName || opts.productName.toLowerCase();
+      const version = opts.version || pkg.version;
+      console.log(`${name}@${version}`);
       return;
     }
     if (argv.help || command === 'help') {
