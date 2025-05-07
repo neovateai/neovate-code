@@ -25,7 +25,7 @@ export const getAllTools = async (opts: { context: Context }) => {
     GlobTool: createGlobTool(opts),
     ThinkTool: createThinkTool(opts),
     WebFetchTool: createWebFetchTool(opts),
-    BatchTool: createWebFetchTool(opts),
+    BatchTool: createBatchTool(opts),
     ...(opts.context.config.tasks
       ? createTodoTool({ context: opts.context })
       : {}),
