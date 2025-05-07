@@ -70,14 +70,17 @@ ${repoStyle}
         `,
         context: opts.context,
       });
+      message = removeThoughts(message);
       checkCommitMessage(message);
       break;
-    } catch (error) {
+    } catch (error: any) {
       attempts++;
       if (attempts >= maxAttempts) {
         throw error;
       }
-      logger.logWarn(`Attempt to generate commit message failed. Retrying...`);
+      logger.logWarn(
+        `Attempt to generate commit message failed since ${error.message}. Retrying...`,
+      );
     }
   }
 
@@ -112,6 +115,11 @@ function checkCommitMessage(message: string) {
   if (message.length === 0) {
     throw new Error('Commit message is empty');
   }
+}
+
+function removeThoughts(message: string) {
+  // e.g. gemini-2.5-pro-exp-03-25 contains <thought>...</thought>
+  return message.replace(/<thought>[\s\S]*?<\/thought>/gm, '');
 }
 
 const COMMIT_PROMPT = `
