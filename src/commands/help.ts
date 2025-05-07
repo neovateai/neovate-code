@@ -47,6 +47,10 @@ Default Command Options:
 'test' Command Options:
   --test-cmd <cmd>     Specify a custom command to run tests (default: 'npm run test').
 
+'run' Command Options:
+  --yes                Automatically confirm the execution of the generated command.
+  --dry-run            Display the generated command without executing it.
+
 Model Aliases:
 ${Object.entries(modelAliases)
   .map(([alias, model]) => `  ${alias}: ${model}`)
