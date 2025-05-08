@@ -313,6 +313,9 @@ export function log2Html(logData: any): string {
       </div>
     </div>
     
+    ${
+      Object.keys(logData.queries).length > 0
+        ? `
     <div class="section">
       <h2 class="section-title">Queries</h2>
       ${Object.entries(logData.queries)
@@ -365,6 +368,9 @@ export function log2Html(logData: any): string {
         )
         .join('')}
     </div>
+    `
+        : ''
+    }
   </div>
 </body>
 </html>`;

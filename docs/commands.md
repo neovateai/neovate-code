@@ -328,3 +328,35 @@ takumi run "Delete all .log files" --dry-run
 takumi run "Create a backup of the database" --yes
 
 ```
+
+## `log`
+
+Processes a Takumi log file and generates an HTML visualization for easier review.
+
+**Syntax:**
+
+```bash
+takumi log <log_file_path> [options]
+```
+
+**Description:**
+
+Converts a Takumi JSON log file into a formatted HTML file for better readability and analysis. This is particularly useful for reviewing complex interactions, debugging issues, or sharing session results with team members.
+
+**Options:**
+
+* `--open`: Automatically open the generated HTML file in the default browser after creation.
+* `--latest`: Automatically find and process the most recent log file in the logs directory.
+
+**Examples:**
+
+```bash
+# Convert a specific log file to HTML
+takumi log ~/.takumi/logs/session-20250508.json
+
+# Convert a specific log file and open it in the browser
+takumi log ~/.takumi/logs/session-20250508.json --open
+
+# Convert the latest log file to HTML and open it
+takumi log --latest --open
+```

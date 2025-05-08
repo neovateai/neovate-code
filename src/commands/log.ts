@@ -6,10 +6,14 @@ import { log2Html } from '../utils/log2Html';
 import * as logger from '../utils/logger';
 
 export async function runLog(opts: { context: Context }) {
-  const { argv } = opts.context;
-  const logFile = argv._[1] as string;
+  const { argv, paths } = opts.context;
+  const logFile = argv.latest ? paths.sessionPath : (argv._[1] as string);
   if (!logFile) {
-    logger.logError({ error: 'Please provide a log file path' });
+    logger.logError({
+      error: argv.latest
+        ? 'No log files found in the sessionPath'
+        : 'Please provide a log file path',
+    });
     process.exit(0);
   }
   if (!fs.existsSync(logFile)) {
@@ -27,7 +31,10 @@ export async function runLog(opts: { context: Context }) {
     if (argv.open) {
       await open(htmlFilePath);
     }
-  } catch (error: any) {
-    logger.logError({ error: `Failed to process log file: ${error.message}` });
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error occurred';
+    logger.logError({ error: `Failed to process log file: ${errorMessage}` });
+    process.exit(1);
   }
 }
