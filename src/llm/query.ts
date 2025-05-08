@@ -165,13 +165,13 @@ export async function query(opts: QueryOptions) {
       const result = await streamText(llmOpts);
       text = '';
       let think = null;
-
       for await (const chunk of result.textStream) {
         if (!think) {
           thinkDone();
-          think = logger.logThinkMarkdown({
-            productName: context.config.productName,
-          });
+          think = logger.logThink({ productName: context.config.productName });
+          // think = logger.logThinkMarkdown({
+          //   productName: context.config.productName,
+          // });
         }
         text += chunk;
         if (text.includes('<') || text.includes('<use_tool>')) {
@@ -198,10 +198,10 @@ export async function query(opts: QueryOptions) {
     } else {
       const result = await generateText(llmOpts);
       thinkDone();
-      const renderedText = renderMarkdown(result.text);
+      // const renderedText = renderMarkdown(result.text);
       logger
         .logThink({ productName: context.config.productName })
-        .text(renderedText);
+        .text(result.text);
       text = result.text;
     }
     // hook: query
