@@ -59,10 +59,16 @@ Please follow a similar style for this commit message while still adhering to th
   let message = '';
   let attempts = 0;
   const maxAttempts = 3;
+  const systemPrompt = [COMMIT_PROMPT];
+  if (argv.language) {
+    systemPrompt.push(`
+Use ${argv.language} to generate the commit message.
+`);
+  }
   while (attempts < maxAttempts) {
     try {
       message = await askQuery({
-        systemPrompt: [COMMIT_PROMPT],
+        systemPrompt,
         prompt: `
 # Diffs:
 ${diff}
