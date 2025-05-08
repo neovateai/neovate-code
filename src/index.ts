@@ -12,7 +12,7 @@ import {
   EditQueryOptions,
   askQuery,
   editQuery,
-} from './llm/query';
+} from './llms/query';
 import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
 import type { Plugin } from './pluginManager/types';

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { editQuery } from '../llm/query';
+import { editQuery } from '../llms/query';
 import { Context } from '../types';
 import * as logger from '../utils/logger';
 

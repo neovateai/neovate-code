@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import yargsParser from 'yargs-parser';
-import { AUTO_SELECT_MODELS, MODEL_ALIAS, ModelType } from './llm/model';
+import { AUTO_SELECT_MODELS, MODEL_ALIAS, ModelType } from './llms/model';
 import type { Plugin } from './pluginManager/types';
 import { getSystemPrompt } from './prompts/prompts';
 import * as logger from './utils/logger';

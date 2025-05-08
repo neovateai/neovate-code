@@ -1,6 +1,6 @@
 import { execSync } from 'child_process';
 import clipboardy from 'clipboardy';
-import { askQuery } from '../llm/query';
+import { askQuery } from '../llms/query';
 import { Context } from '../types';
 import * as logger from '../utils/logger';
 

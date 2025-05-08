@@ -1,4 +1,4 @@
-import { askQuery } from '../llm/query';
+import { askQuery } from '../llms/query';
 import { Context } from '../types';
 import * as logger from '../utils/logger';
 

@@ -1,4 +1,4 @@
-import { MODEL_ALIAS } from '../llm/model';
+import { MODEL_ALIAS } from '../llms/model';
 
 export async function runHelp(opts: { productName: string }) {
   const modelAliases = MODEL_ALIAS;
