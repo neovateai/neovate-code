@@ -18,13 +18,14 @@ import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
 import type { Plugin } from './pluginManager/types';
 import { keywordContextPlugin } from './plugins/keyword-context';
 import { sessionPlugin } from './plugins/session';
-import { Context } from './types';
+import type { Context, PluginContext } from './types';
 import * as logger from './utils/logger';
 
 const require = createRequire(import.meta.url);
 
 // Private export may be deprecated in the future
 export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
+export { Plugin, PluginContext };
 
 async function buildContext(
   opts: RunCliOpts & { argv: any; command: string },
