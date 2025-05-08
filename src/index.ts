@@ -15,7 +15,7 @@ import {
 } from './llms/query';
 import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
-import type { Plugin } from './pluginManager/types';
+import type { Command, Plugin } from './pluginManager/types';
 import { keywordContextPlugin } from './plugins/keyword-context';
 import { sessionPlugin } from './plugins/session';
 import type { Context, PluginContext } from './types';
@@ -206,13 +206,16 @@ export async function runCli(opts: RunCliOpts) {
     const pluginCommands = await context.pluginManager.apply({
       hook: 'commands',
       args: [],
-      memo: {},
+      memo: [],
       type: PluginHookType.SeriesMerge,
       pluginContext: context.pluginContext,
     });
-    if (pluginCommands[command]) {
+    const matchedCommand = pluginCommands.find(
+      (c: Command) => c.name === command,
+    );
+    if (matchedCommand) {
       logger.logCommand({ command });
-      await pluginCommands[command]();
+      await matchedCommand.fn();
     } else {
       switch (command) {
         case 'plan':
