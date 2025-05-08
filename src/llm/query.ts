@@ -73,7 +73,7 @@ export async function editQuery(opts: EditQueryOptions) {
     pluginContext: opts.context.pluginContext,
   });
 
-  const queryContext =
+  let queryContext =
     process.env.CODE === 'none'
       ? {}
       : await getContext({
@@ -81,7 +81,7 @@ export async function editQuery(opts: EditQueryOptions) {
           prompt: opts.prompt,
         });
 
-  await opts.context.pluginManager.apply({
+  queryContext = await opts.context.pluginManager.apply({
     hook: 'context',
     type: PluginHookType.SeriesMerge,
     args: [{ prompt: opts.prompt }],
