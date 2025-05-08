@@ -31,6 +31,12 @@ async function buildContext(
   opts: RunCliOpts & { argv: any; command: string },
 ): Promise<Context> {
   dotenv.config();
+  const pkg = await import('../package.json');
+  const version = opts.version || pkg.version;
+  logger.logIntro({
+    productName: opts.productName,
+    version,
+  });
   const { argv, command } = opts;
   const cwd = opts.root ?? process.cwd();
   const sessionId = randomUUID().slice(0, 4);
@@ -84,12 +90,6 @@ async function buildContext(
     },
   };
   // hook: cliStart
-  const pkg = await import('../package.json');
-  const version = opts.version || pkg.version;
-  logger.logIntro({
-    productName: opts.productName,
-    version,
-  });
   await pluginManager.apply({
     hook: 'cliStart',
     args: [],
