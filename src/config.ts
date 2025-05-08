@@ -41,7 +41,7 @@ export async function getConfig(opts: {
     for (const [apiKeyEnvName, modelName] of AUTO_SELECT_MODELS) {
       if (process.env[apiKeyEnvName]) {
         logger.logWarn(
-          `Using model '${modelName}' from AUTO_SELECT_MODELS as its API key '${apiKeyEnvName}' is set.`,
+          `Using model '${modelName}' as its API key '${apiKeyEnvName}' is set.`,
         );
         return modelName as ModelType;
       }
