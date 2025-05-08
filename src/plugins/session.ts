@@ -75,14 +75,21 @@ export const sessionPlugin: Plugin = {
   ) {
     data.fileChanges.push({
       type: 'editFile',
-      data: { filePath, oldContent, newContent },
+      data: {
+        filePath,
+        oldContent,
+        newContent,
+        startTime: new Date().toISOString(),
+      },
     });
+    write();
   },
   createFile: async function (this: PluginContext, { filePath, content }) {
     data.fileChanges.push({
       type: 'createFile',
-      data: { filePath, content },
+      data: { filePath, content, startTime: new Date().toISOString() },
     });
+    write();
   },
   message: async function (this: PluginContext, { messages, queryId }) {
     data.queries[queryId].items.push(
