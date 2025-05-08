@@ -26,6 +26,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Build project
+        run: npm run build
+
       # - name: Type check
       #   run: pnpm typecheck
 

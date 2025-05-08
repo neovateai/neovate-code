@@ -5,7 +5,7 @@
 [![](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml)
 [![](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
 
-AI pair programming CLI to enhance your development workflow.
+Pronounced `/tɑːˈkuːmi/`, a coding agent CLI to enhance your development workflow.
 
 > Please consider following this project's author, [sorrycc](https://github.com/sorrycc), and consider starring the project to show your ❤️ and support.
 
@@ -47,6 +47,8 @@ Generate a `TAKUMI.md` file to guide the AI to follow later.
 
 ```bash
 $ takumi init -m <model>
+# or use tak for short
+$ tak init -m <model>
 ```
 
 Let the AI to act on the codebase.
