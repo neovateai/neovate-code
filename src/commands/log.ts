@@ -2,6 +2,7 @@ import fs from 'fs';
 import open from 'open';
 import path from 'path';
 import { Context } from '../types';
+import { log2Html } from '../utils/log2html';
 import * as logger from '../utils/logger';
 
 export async function runLog(opts: { context: Context }) {
@@ -21,7 +22,7 @@ export async function runLog(opts: { context: Context }) {
       path.dirname(logFile),
       `${path.basename(logFile, '.json')}.html`,
     );
-    fs.writeFileSync(htmlFilePath, generateHtml(logData));
+    fs.writeFileSync(htmlFilePath, log2Html(logData));
     logger.logInfo(`HTML log file generated at: ${htmlFilePath}`);
     if (argv.open) {
       await open(htmlFilePath);
@@ -29,8 +30,4 @@ export async function runLog(opts: { context: Context }) {
   } catch (error: any) {
     logger.logError({ error: `Failed to process log file: ${error.message}` });
   }
-}
-
-function generateHtml(logData: any): string {
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Log Viewer</title><style>body{line-height:1.6;padding:20px;max-width:1200px;margin:0 auto;background:#f5f5f5;}pre{background:white;padding:15px;border-radius:5px;box-shadow:0 2px 4px rgba(0,0,0,0.1);overflow-x:auto;}</style></head><body><pre>${JSON.stringify(logData, null, 2)}</pre></body></html>`;
 }
