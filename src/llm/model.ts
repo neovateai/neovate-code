@@ -66,6 +66,7 @@ const GROK_MODELS = [
   'Grok/grok-3-mini-fast-beta',
 ] as const;
 const OPEN_ROUTER_MODELS = [
+  'OpenRouter/deepseek/deepseek-chat-v3-0324:free',
   'OpenRouter/qwen/qwq-32b',
   'OpenRouter/openai/gpt-4.1',
   'OpenRouter/openai/gpt-4.1-mini',
@@ -117,6 +118,13 @@ const OPENAI_MODELS = [
   'OpenAI/o1-mini',
   'OpenAI/gpt-3.5-turbo',
 ] as const;
+
+export const AUTO_SELECT_MODELS = [
+  ['OPEN_ROUTER_API_KEY', OPEN_ROUTER_MODELS[0]],
+  ['OPENAI_API_KEY', OPENAI_MODELS[0]],
+  ['GROQ_API_KEY', GROQ_MODELS[0]],
+  ['DEEPSEEK_API_KEY', DEEPSEEK_MODELS[0]],
+];
 
 export type ModelType =
   | (typeof GROQ_MODELS)[number]

@@ -5,6 +5,10 @@
 1. Prepare at least one API key of the following services: Groq, Doubao, Google, DeepSeek, OpenRouter. Doubao and OpenRouter is recommended.
 2. Copy `.env.example` to `.env` and set the API key.
 
+```zsh
+cp .env.example .env
+```
+
 ## Development
 
 Common commands:
