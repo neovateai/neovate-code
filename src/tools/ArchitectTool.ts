@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { query } from '../llm/query';
+import { query } from '../llms/query';
 import { Context } from '../types';
 
 const ARCHITECT_SYSTEM_PROMPT = `

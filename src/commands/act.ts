@@ -1,7 +1,7 @@
 import { CoreMessage } from 'ai';
 import pc from 'picocolors';
-import { MODEL_ALIAS } from '../llm/model';
-import { askQuery, editQuery } from '../llm/query';
+import { MODEL_ALIAS } from '../llms/model';
+import { askQuery, editQuery } from '../llms/query';
 import { Context } from '../types';
 import * as logger from '../utils/logger';
 

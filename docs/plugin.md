@@ -77,6 +77,20 @@ Add additional key-value pairs to the context object that will be sent to the LL
 
 Called before Takumi starts gathering context (like file structure, git status) for an LLM query.
 
+### `editFile`
+
+-   **Type:** `(opts: { filePath: string, oldContent: string, newContent: string }) => void`
+-   **Arguments:** `[{ filePath, oldContent, newContent }]`
+
+Called when a file is edited.
+
+### `createFile`
+
+-   **Type:** `(opts: { filePath: string, content: string }) => void`
+-   **Arguments:** `[{ filePath, content }]`
+
+Called when a file is created.
+
 ### `generalInfo`
 
 -   **Type:** `() => Promise<Record<string, string>> | Record<string, string>`

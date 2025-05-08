@@ -99,6 +99,7 @@ Analyzes the output of `git diff --cached` (staged changes) and uses an LLM to g
 * `--copy`: Copy the generated commit message to the system clipboard.
 * `--follow-style`: Analyze the last 10 commit messages in the repository and instruct the AI to follow a similar style, while still adhering to the basic structure.
 * `--no-verify`: Pass the `--no-verify` flag to the `git commit` command, bypassing pre-commit hooks. Only relevant if `--commit` is used.
+* `--language <language>`: Specify the language of the commit message, defaults to `en`.
 
 **Examples:**
 

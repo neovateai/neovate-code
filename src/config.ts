@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import yargsParser from 'yargs-parser';
-import { AUTO_SELECT_MODELS, MODEL_ALIAS, ModelType } from './llm/model';
+import { AUTO_SELECT_MODELS, MODEL_ALIAS, ModelType } from './llms/model';
 import type { Plugin } from './pluginManager/types';
 import { getSystemPrompt } from './prompts/prompts';
 import * as logger from './utils/logger';
@@ -41,13 +41,11 @@ export async function getConfig(opts: {
     for (const [apiKeyEnvName, modelName] of AUTO_SELECT_MODELS) {
       if (process.env[apiKeyEnvName]) {
         logger.logWarn(
-          `Using model '${modelName}' as its API key '${apiKeyEnvName}' is set.`,
+          `Using model '${modelName}' as model is not specified but '${apiKeyEnvName}' is set.`,
         );
         return modelName as ModelType;
       }
     }
-
-    });
   })();
 
   // Small model is the model to use for the small and fast queries

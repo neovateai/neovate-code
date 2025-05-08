@@ -2,7 +2,7 @@ import fs from 'fs';
 import inquirer from 'inquirer';
 import path from 'pathe';
 import { ApiKeys, Config, stringToMcpServerConfigs } from '../config';
-import { MODEL_ALIAS, ModelType } from '../llm/model';
+import { MODEL_ALIAS, ModelType } from '../llms/model';
 import { Context } from '../types';
 import * as logger from '../utils/logger';
 

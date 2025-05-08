@@ -2,7 +2,7 @@ import * as p from '@umijs/clack-prompts';
 import { CoreMessage } from 'ai';
 import { execSync } from 'child_process';
 import pc from 'picocolors';
-import { askQuery } from '../llm/query';
+import { askQuery } from '../llms/query';
 import { Context } from '../types';
 import * as logger from '../utils/logger';
 

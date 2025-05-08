@@ -1,6 +1,6 @@
 import { execSync } from 'child_process';
 import clipboardy from 'clipboardy';
-import { askQuery } from '../llm/query';
+import { askQuery } from '../llms/query';
 import { Context } from '../types';
 import * as logger from '../utils/logger';
 
@@ -59,10 +59,16 @@ Please follow a similar style for this commit message while still adhering to th
   let message = '';
   let attempts = 0;
   const maxAttempts = 3;
+  const systemPrompt = [COMMIT_PROMPT];
+  if (argv.language) {
+    systemPrompt.push(`
+Use ${argv.language} to generate the commit message.
+`);
+  }
   while (attempts < maxAttempts) {
     try {
       message = await askQuery({
-        systemPrompt: [COMMIT_PROMPT],
+        systemPrompt,
         prompt: `
 # Diffs:
 ${diff}
