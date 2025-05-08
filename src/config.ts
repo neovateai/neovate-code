@@ -46,8 +46,6 @@ export async function getConfig(opts: {
         return modelName as ModelType;
       }
     }
-
-    });
   })();
 
   // Small model is the model to use for the small and fast queries
