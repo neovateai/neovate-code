@@ -156,25 +156,31 @@ ${command}
     if (editedCommand) {
       command = editedCommand;
     }
+
+    const confirmExecution = await logger.confirm({
+      message: `Execute command: ${pc.reset(pc.gray(command))}`,
+      active: pc.green('Execute'),
+      inactive: pc.red('Cancel'),
+    });
+
+    if (logger.isCancel(confirmExecution)) {
+      logger.logInfo('Command execution cancelled');
+      return;
+    }
   }
 
-  const confirmExecution = await logger.confirm({
-    message: `Execute command: ${pc.reset(pc.gray(command))}`,
-    active: pc.green('Execute'),
-    inactive: pc.red('Cancel'),
-  });
-
-  if (confirmExecution && !logger.isCancel(confirmExecution)) {
-    logger.logAction({ message: `Executing command: ${command}` });
-    const result = await executeShell(command, opts.context.cwd);
-
-    if (result.success) {
-      logger.logInfo(result.output);
-    } else {
-      logger.logError({ error: `Command execution failed: ${result.output}` });
-    }
-  } else {
+  if (execution === 'cancel') {
     logger.logInfo('Command execution cancelled');
+    return;
+  }
+
+  logger.logAction({ message: `Executing command: ${command}` });
+  const result = await executeShell(command, opts.context.cwd);
+
+  if (result.success) {
+    logger.logInfo(result.output);
+  } else {
+    logger.logError({ error: `Command execution failed: ${result.output}` });
   }
 }
 
