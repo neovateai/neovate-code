@@ -2,7 +2,7 @@ import fs from 'fs';
 import open from 'open';
 import path from 'path';
 import { Context } from '../types';
-import { log2Html } from '../utils/log2html';
+import { log2Html } from '../utils/log2Html';
 import * as logger from '../utils/logger';
 
 export async function runLog(opts: { context: Context }) {
