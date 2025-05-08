@@ -1,3 +1,25 @@
+## 0.0.20
+
+`2025-05-08`
+
+- build: Configure API Extractor for d.ts bundling by [@sorrycc](https://github.com/sorrycc)
+- build: Update dependencies and set moduleResolution to bundler by [@sorrycc](https://github.com/sorrycc)
+- refactor: Log raw text from LLM responses by [@sorrycc](https://github.com/sorrycc)
+- fix: Use plugin manager result to update queryContext by [@sorrycc](https://github.com/sorrycc)
+- feat: add 'tak' alias for takumi CLI by [@sorrycc](https://github.com/sorrycc)
+- feat: increase commit message length limit, fix retry logging by [@sorrycc](https://github.com/sorrycc)
+- fix: correct BatchTool creation in tools.ts by [@sorrycc](https://github.com/sorrycc)
+- feat: support dynamic package name and version in CLI by [@sorrycc](https://github.com/sorrycc)
+- feat: add run command to execute shell commands via AI by [@阿平](https://github.com/阿平) in [#20](https://github.com/umijs/takumi/pull/20)
+- fix: remove <thought> tags and enhance retry log by [@sorrycc](https://github.com/sorrycc)
+- fix: improve commit message generation retry log by [@sorrycc](https://github.com/sorrycc)
+- fix: add retry logic to commit message generation by [@sorrycc](https://github.com/sorrycc)
+- feat: support markdown format output by [@coderPerseus](https://github.com/coderPerseus) in [#17](https://github.com/umijs/takumi/pull/17)
+- feat: add --plugin option to load plugins by [@sorrycc](https://github.com/sorrycc)
+- feat: add commands plugin hook by [@sorrycc](https://github.com/sorrycc)
+- feat: add config command by [@jalever](https://github.com/jalever) in [#16](https://github.com/umijs/takumi/pull/16)
+
+
 ## 0.0.19
 
 `2025-04-29`
