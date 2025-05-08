@@ -47,12 +47,6 @@ export async function getConfig(opts: {
       }
     }
 
-    // If no model could be determined, critical error.
-    const autoSelectModelsInfo = AUTO_SELECT_MODELS.map(
-      ([key, model]) => `${model} (requires ${key})`,
-    ).join(', ');
-    logger.logError({
-      error: `CRITICAL: No model specified via --model, and no model from AUTO_SELECT_MODELS has its API key set. Checked: ${autoSelectModelsInfo || 'AUTO_SELECT_MODELS is empty.'}`,
     });
   })();
 
