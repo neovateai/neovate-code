@@ -59,6 +59,24 @@ export const PluginSchema = z.object({
   context: z
     .function(z.tuple([z.object({ prompt: z.string() })]), z.void())
     .optional(),
+  editFile: z
+    .function(
+      z.tuple([
+        z.object({
+          filePath: z.string(),
+          oldContent: z.string(),
+          newContent: z.string(),
+        }),
+      ]),
+      z.void(),
+    )
+    .optional(),
+  createFile: z
+    .function(
+      z.tuple([z.object({ filePath: z.string(), content: z.string() })]),
+      z.void(),
+    )
+    .optional(),
   queryStart: z
     .function(
       z.tuple([

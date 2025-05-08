@@ -7,9 +7,11 @@ import { PluginContext } from '../types';
 const data: {
   session: any;
   queries: Record<string, any>;
+  fileChanges: any[];
 } = {
   session: {},
   queries: {},
+  fileChanges: [],
 };
 let sessionPath: string | null = null;
 
@@ -66,6 +68,21 @@ export const sessionPlugin: Plugin = {
     };
     data.queries[id].tools = Object.keys(tools);
     write();
+  },
+  editFile: async function (
+    this: PluginContext,
+    { filePath, oldContent, newContent },
+  ) {
+    data.fileChanges.push({
+      type: 'editFile',
+      data: { filePath, oldContent, newContent },
+    });
+  },
+  createFile: async function (this: PluginContext, { filePath, content }) {
+    data.fileChanges.push({
+      type: 'createFile',
+      data: { filePath, content },
+    });
   },
   message: async function (this: PluginContext, { messages, queryId }) {
     data.queries[queryId].items.push(

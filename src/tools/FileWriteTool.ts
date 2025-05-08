@@ -2,6 +2,7 @@ import { tool } from 'ai';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, isAbsolute, resolve } from 'path';
 import { z } from 'zod';
+import { PluginHookType } from '../pluginManager/pluginManager';
 import { Context } from '../types';
 
 export function createFileWriteTool(opts: { context: Context }) {
@@ -25,6 +26,27 @@ Before using this tool:
       const oldFileExists = existsSync(fullFilePath);
       const enc = 'utf-8';
       const oldContent = oldFileExists ? readFileSync(fullFilePath, enc) : null;
+      if (oldContent) {
+        await opts.context.pluginManager.apply({
+          hook: 'editFile',
+          args: [
+            {
+              filePath: fullFilePath,
+              oldContent: oldContent,
+              newContent: content,
+            },
+          ],
+          type: PluginHookType.Series,
+          pluginContext: opts.context.pluginContext,
+        });
+      } else {
+        await opts.context.pluginManager.apply({
+          hook: 'createFile',
+          args: [{ filePath: fullFilePath, content: content }],
+          type: PluginHookType.Series,
+          pluginContext: opts.context.pluginContext,
+        });
+      }
       mkdirSync(dir, { recursive: true });
       writeFileSync(fullFilePath, addNewLineIfMissing(content), enc);
       return `File written successfully: ${fullFilePath}`;

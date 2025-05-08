@@ -1,9 +1,10 @@
 import { tool } from 'ai';
 import { mkdirSync, writeFileSync } from 'fs';
-import { dirname } from 'path';
-import { resolve } from 'path';
+import fs from 'fs';
+import path from 'path';
 import { isAbsolute } from 'path';
 import { z } from 'zod';
+import { PluginHookType } from '../pluginManager/pluginManager';
 import { Context } from '../types';
 import { applyEdit } from '../utils/applyEdit';
 
@@ -50,11 +51,22 @@ export function createFileEditTool(opts: { context: Context }) {
         );
         const fullFilePath = isAbsolute(file_path)
           ? file_path
-          : resolve(opts.context.cwd, file_path);
-        const dir = dirname(fullFilePath);
+          : path.resolve(opts.context.cwd, file_path);
+        const dir = path.dirname(fullFilePath);
         mkdirSync(dir, { recursive: true });
-        const enc = 'utf8';
-        writeFileSync(fullFilePath, updatedFile, enc);
+        await opts.context.pluginManager.apply({
+          hook: 'editFile',
+          args: [
+            {
+              filePath: fullFilePath,
+              oldContent: fs.readFileSync(fullFilePath, 'utf-8'),
+              newContent: updatedFile,
+            },
+          ],
+          type: PluginHookType.Series,
+          pluginContext: opts.context.pluginContext,
+        });
+        writeFileSync(fullFilePath, updatedFile, 'utf-8');
         return {
           success: true,
           patch,
