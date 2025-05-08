@@ -5,7 +5,6 @@ import { createLSTool } from '../tools/LsTool';
 import { Context } from '../types';
 import { execFileNoThrow } from '../utils/execFileNoThrow';
 import { getCodebaseContext } from './codebase';
-import { getFileContext, getFilesByPrompt } from './contextFiles';
 
 export async function getDirectoryStructure(opts: { context: Context }) {
   const LSTool = createLSTool(opts);
