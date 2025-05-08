@@ -308,7 +308,7 @@ export function log2Html(logData: any): string {
         </div>
         <div class="card">
           <div class="card-title">MCP Servers</div>
-          <div>${Object.keys(logData.session.resolvedConfig.mcpConfig.mcpServers).join('、')}</div>
+          <div>${Object.keys(logData.session.resolvedConfig.mcpConfig?.mcpServers || {}).length ? Object.keys(logData.session.resolvedConfig.mcpConfig.mcpServers).join('、') : '-'}</div>
         </div>
       </div>
     </div>
