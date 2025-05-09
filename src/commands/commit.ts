@@ -1,5 +1,7 @@
+import * as p from '@umijs/clack-prompts';
 import { execSync } from 'child_process';
 import clipboardy from 'clipboardy';
+import pc from 'picocolors';
 import { askQuery } from '../llms/query';
 import { Context } from '../types';
 import * as logger from '../utils/logger';
@@ -91,27 +93,122 @@ ${repoStyle}
     }
   }
 
-  if (argv.commit) {
-    const noVerify = argv.noVerify ? '--no-verify' : '';
-    logger.logAction({ message: 'Commit the changes.' });
-    execSync(`git commit -m "${message}" ${noVerify}`);
-    if (argv.push) {
-      const hasRemote = execSync('git remote').toString().trim().length > 0;
-      if (hasRemote) {
-        try {
-          logger.logAction({
-            message: 'Push the changes to the remote repository.',
-          });
-          execSync('git push');
-        } catch (error) {
-          console.error('Failed to push changes:', error);
-        }
+  // Check if interactive mode is needed
+  const isNonInteractiveParam =
+    argv.stage || argv.commit || argv.noVerify || argv.copy;
+  if (argv.interactive && !isNonInteractiveParam) {
+    await handleInteractiveMode(message, opts.context);
+  } else {
+    // Non-interactive mode logic
+    if (argv.commit) {
+      await commitChanges(message, argv.noVerify);
+      if (argv.push) {
+        await pushChanges();
       }
     }
+    if (argv.copy) {
+      copyToClipboard(message);
+    }
   }
-  if (argv.copy) {
-    clipboardy.writeSync(message);
-    logger.logResult('Commit message copied to clipboard');
+}
+
+function copyToClipboard(message: string) {
+  clipboardy.writeSync(message);
+  logger.logResult('Commit message copied to clipboard');
+}
+
+async function commitChanges(message: string, skipHooks = false) {
+  const noVerify = skipHooks ? '--no-verify' : '';
+  logger.logAction({ message: 'Commit the changes.' });
+  execSync(`git commit -m "${message}" ${noVerify}`);
+  logger.logResult('Commit message committed');
+}
+
+async function pushChanges() {
+  const hasRemote = execSync('git remote').toString().trim().length > 0;
+  if (hasRemote) {
+    try {
+      logger.logAction({
+        message: 'Push changes to remote repository.',
+      });
+      execSync('git push');
+      logger.logResult('Changes pushed to remote repository');
+    } catch (error) {
+      console.error('Push changes failed:', error);
+    }
+  } else {
+    logger.logWarn('No remote repository configured, cannot push');
+  }
+}
+
+// Handle interactive mode
+async function handleInteractiveMode(message: string, context: Context) {
+  logger.logResult(`Generated commit message: ${pc.cyan(message)}`);
+
+  // Ask user what to do next
+  const action = await p.select({
+    message: pc.bold(
+      pc.blueBright('What do you want to do with this commit message?'),
+    ),
+    options: [
+      { label: 'Copy to clipboard', value: 'copy' },
+      { label: 'Commit changes', value: 'commit' },
+      { label: 'Commit and push changes', value: 'push' },
+      { label: 'Edit commit message', value: 'edit' },
+      { label: 'Cancel', value: 'cancel' },
+    ],
+  });
+
+  if (p.isCancel(action)) {
+    logger.logAction({ message: 'Operation cancelled' });
+    return;
+  }
+
+  // Execute actions based on user selection
+  switch (action) {
+    case 'copy':
+      copyToClipboard(message);
+      break;
+    case 'commit':
+      await commitChanges(message);
+      break;
+    case 'push':
+      // Ask if pre-commit hooks should be skipped
+      const skipHooksResult = await p.confirm({
+        message: pc.bold(pc.blueBright('Should pre-commit hooks be skipped?')),
+        active: 'Yes',
+        inactive: 'No',
+        initialValue: false,
+      });
+
+      // Check if the result was cancelled
+      if (p.isCancel(skipHooksResult)) {
+        logger.logAction({ message: 'Operation cancelled' });
+        return;
+      }
+
+      // Execute the commit
+      await commitChanges(message, skipHooksResult);
+      await pushChanges();
+      break;
+    case 'edit':
+      // Ask user to edit the commit message
+      const editedMessage = await p.text({
+        message: pc.bold(pc.blueBright('Edit the commit message:')),
+        initialValue: message,
+      });
+
+      if (p.isCancel(editedMessage)) {
+        logger.logAction({ message: 'Operation cancelled' });
+        return;
+      }
+
+      // Use the edited message again to show the operation options
+      await handleInteractiveMode(editedMessage, context);
+      break;
+    case 'cancel':
+      logger.logAction({ message: 'Operation cancelled' });
+      break;
   }
 }
 

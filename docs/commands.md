@@ -99,6 +99,7 @@ Analyzes the output of `git diff --cached` (staged changes) and uses an LLM to g
 * `--copy`: Copy the generated commit message to the system clipboard.
 * `--follow-style`: Analyze the last 10 commit messages in the repository and instruct the AI to follow a similar style, while still adhering to the basic structure.
 * `--no-verify`: Pass the `--no-verify` flag to the `git commit` command, bypassing pre-commit hooks. Only relevant if `--commit` is used.
+* `-i, --interactive`: Enable interactive mode, allowing you to choose what to do with the generated commit message (copy, commit, push, edit, or cancel). Not used with other action flags like `--copy`, `--commit`, etc.
 * `--language <language>`: Specify the language of the commit message, defaults to `en`.
 
 **Examples:**
@@ -115,6 +116,9 @@ takumi commit --stage --commit --push
 
 # Stage, commit, bypassing hooks
 takumi commit --stage --commit --no-verify
+
+# Use interactive mode to choose what to do with the generated message
+takumi commit -i
 ```
 
 ## `init`
@@ -326,8 +330,6 @@ takumi run "Delete all .log files" --dry-run
 
 # Execute command without confirmation
 takumi run "Create a backup of the database" --yes
-
-```
 
 ## `log`
 
