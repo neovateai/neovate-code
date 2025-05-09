@@ -44,7 +44,7 @@ Perform initial setup tasks when the CLI starts, right after the intro log.
 
 ### `commands`
 
--   **Type:** `() => Promise<Record<string, any>> | Record<string, any>`
+-   **Type:** `() => Promise<{ name: string, description: string, fn: () => Promise<void> }[]> | { name: string, description: string, fn: () => Promise<void> }[]`
 -   **Arguments:** `[]`
 
 Add or modify commands that can be executed by the user.

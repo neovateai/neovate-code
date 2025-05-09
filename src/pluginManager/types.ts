@@ -11,6 +11,12 @@ const MessageSchema = z.object({
   content: z.string(),
 });
 
+const CommandSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  fn: z.function(z.tuple([]), z.any()),
+});
+
 export const PluginSchema = z.object({
   enforce: z.enum(['pre', 'post']).optional(),
   name: z.string().optional(),
@@ -128,7 +134,7 @@ export const PluginSchema = z.object({
       z.void(),
     )
     .optional(),
-  commands: z.function(z.tuple([]), z.any()).optional(),
+  commands: z.function(z.tuple([]), z.array(CommandSchema)).optional(),
 });
 
 type InferedPlugin = z.infer<typeof PluginSchema>;
@@ -139,3 +145,5 @@ type AddThisToMethods<T, ThisType> = {
 };
 // TODO: fix this context don't work
 export type Plugin = AddThisToMethods<InferedPlugin, PluginContext>;
+
+export type Command = z.infer<typeof CommandSchema>;
