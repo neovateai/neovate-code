@@ -43,6 +43,7 @@ Default Command Options:
   --copy               Copy the generated commit message to the clipboard.
   --follow-style       Analyze recent commits and instruct AI to follow a similar style.
   --no-verify          Pass '--no-verify' to 'git commit' (requires --commit).
+  -i, --interactive    Enable interactive mode for selecting actions after message generation.
 
 'test' Command Options:
   --test-cmd <cmd>     Specify a custom command to run tests (default: 'npm run test').
@@ -62,6 +63,7 @@ Examples:
   ${productName} ask "Where are environment variables configured?"
   ${productName} commit --stage --commit --push
   ${productName} commit --copy
+  ${productName} commit -i
   ${productName} init -m gemini-pro
   ${productName} test --test-cmd "vitest run tests/specific.test.ts"
   ${productName} watch
