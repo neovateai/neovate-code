@@ -182,9 +182,10 @@ export async function runCli(opts: RunCliOpts) {
         v: 'version',
         q: 'quiet',
         h: 'help',
+        i: 'interactive',
       },
       array: ['plugin'],
-      boolean: ['plan', 'stream', 'quiet', 'help'],
+      boolean: ['plan', 'stream', 'quiet', 'help', 'interactive'],
     });
     let command = argv._[0] as string;
     const pkg = await import('../package.json');
