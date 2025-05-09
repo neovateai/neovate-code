@@ -55,7 +55,10 @@ async function buildContext(
     const pluginObject = require(pluginPath);
     argsPlugins.push(pluginObject.default || pluginObject);
   }
-  const buildinPlugins = [sessionPlugin, keywordContextPlugin];
+  const buildinPlugins =
+    command === 'log'
+      ? [keywordContextPlugin]
+      : [sessionPlugin, keywordContextPlugin];
   const plugins = [
     ...buildinPlugins,
     ...(config.plugins || []),
@@ -139,9 +142,11 @@ async function buildContext(
     memo: defaultInfos,
     pluginContext,
   });
-  logger.logGeneralInfo({
-    infos,
-  });
+  if (command !== 'log') {
+    logger.logGeneralInfo({
+      infos,
+    });
+  }
   if (command !== 'config') {
     assert(resolvedConfig.model, 'Model is required');
     assert(resolvedConfig.smallModel, 'Small model is required');

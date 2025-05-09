@@ -1,3 +1,4 @@
+import assert from 'assert';
 import fs from 'fs';
 import open from 'open';
 import path from 'path';
@@ -7,19 +8,27 @@ import * as logger from '../utils/logger';
 
 export async function runLog(opts: { context: Context }) {
   const { argv, paths } = opts.context;
-  const logFile = argv.latest ? paths.sessionPath : (argv._[1] as string);
-  if (!logFile) {
-    logger.logError({
-      error: argv.latest
-        ? 'No log files found in the sessionPath'
-        : 'Please provide a log file path',
-    });
-    process.exit(0);
+  let logFile = argv._[1] as string;
+  if (argv.latest) {
+    const logDir = path.join(paths.configDir, 'sessions');
+    assert(fs.existsSync(logDir), `Log directory does not exist: ${logDir}`);
+    const logFiles = fs
+      .readdirSync(logDir)
+      .filter((file) => file.endsWith('.json'))
+      .map((file) => ({
+        name: file,
+        path: path.join(logDir, file),
+        mtime: fs.statSync(path.join(logDir, file)).mtime.getTime(),
+      }))
+      .sort((a, b) => b.mtime - a.mtime);
+
+    assert(logFiles.length > 0, 'No log files found in the sessions directory');
+
+    logFile = logFiles[0].path;
+    logger.logInfo(`Using latest log file: ${logFile}`);
   }
-  if (!fs.existsSync(logFile)) {
-    logger.logError({ error: `Log file does not exist: ${logFile}` });
-    process.exit(0);
-  }
+  assert(logFile, 'Please provide a log file path or use --latest flag');
+  assert(fs.existsSync(logFile), `Log file does not exist: ${logFile}`);
   try {
     const logData = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
     const htmlFilePath = path.join(
