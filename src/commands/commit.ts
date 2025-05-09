@@ -175,7 +175,7 @@ async function handleInteractiveMode(message: string, context: Context) {
     case 'push':
       // Ask if pre-commit hooks should be skipped
       const skipHooksResult = await p.confirm({
-        message: 'Should pre-commit hooks be skipped?',
+        message: pc.bold(pc.blueBright('Should pre-commit hooks be skipped?')),
         active: 'Yes',
         inactive: 'No',
         initialValue: false,
