@@ -1,15 +1,46 @@
 import fs from 'fs';
 import inquirer from 'inquirer';
 import path from 'pathe';
-import { ApiKeys, Config, stringToMcpServerConfigs } from '../config';
+import {
+  ApiKeys,
+  Config,
+  getConfigPaths,
+  stringToMcpServerConfigs,
+} from '../config';
 import { MODEL_ALIAS, ModelType } from '../llms/model';
 import { Context } from '../types';
 import * as logger from '../utils/logger';
 
 export async function runConfig(opts: { context: Context }) {
   const { context } = opts;
-  const configDir = path.dirname(context.paths.configPath);
-  const configExists = fs.existsSync(context.paths.configPath);
+  const { globalConfigPath, projectConfigPath } = getConfigPaths({
+    productName: context.config.productName,
+    cwd: context.cwd,
+  });
+
+  const { configType } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'configType',
+      message: 'Which configuration would you like to set up?',
+      choices: [
+        {
+          name: 'Global configuration (applies to all projects)',
+          value: 'global',
+        },
+        {
+          name: 'Project configuration (applies only to this project)',
+          value: 'project',
+        },
+      ],
+      default: 'global',
+    },
+  ]);
+
+  const configPath =
+    configType === 'global' ? globalConfigPath : projectConfigPath;
+  const configDir = path.dirname(configPath);
+  const configExists = fs.existsSync(configPath);
 
   if (!fs.existsSync(configDir)) {
     fs.mkdirSync(configDir, { recursive: true });
@@ -18,24 +49,22 @@ export async function runConfig(opts: { context: Context }) {
   let currentConfig: Partial<Config> = {};
   if (configExists) {
     try {
-      const configContent = fs.readFileSync(context.paths.configPath, 'utf-8');
+      const configContent = fs.readFileSync(configPath, 'utf-8');
       currentConfig = JSON.parse(configContent);
     } catch (error: any) {
       logger.logWarn(`Unable to read existing config: ${error.message}`);
     }
   }
 
-  logger.logInfo('Welcome to Takumi configuration wizard!');
+  logger.logInfo(
+    `Welcome to Takumi configuration wizard! [${configType === 'global' ? 'Global' : 'Project'} config]`,
+  );
 
   const config = await promptForConfig(currentConfig);
 
   try {
-    fs.writeFileSync(
-      context.paths.configPath,
-      JSON.stringify(config, null, 2),
-      'utf-8',
-    );
-    logger.logInfo(`Configuration saved to ${context.paths.configPath}`);
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+    logger.logInfo(`Configuration saved to ${configPath}`);
   } catch (error: any) {
     logger.logError({
       error: `Failed to save configuration: ${error.message}`,
@@ -130,6 +159,55 @@ async function promptForConfig(
     },
   ]);
 
+  const { configurePlugins } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'configurePlugins',
+      message: `Configure plugins? (Default: ${currentConfig.pluginPaths && currentConfig.pluginPaths.length > 0 ? 'Yes' : 'No'})`,
+      default: !!(
+        currentConfig.pluginPaths && currentConfig.pluginPaths.length > 0
+      ),
+    },
+  ]);
+
+  let pluginPaths = currentConfig.pluginPaths || [];
+  if (configurePlugins) {
+    pluginPaths = await managePlugins(pluginPaths);
+  }
+
+  const { configureSystemPrompt } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'configureSystemPrompt',
+      message: `Configure custom system prompt instructions? (Default: ${currentConfig.customSystemPrompt && currentConfig.customSystemPrompt.length > 0 ? 'Yes' : 'No'})`,
+      default: !!(
+        currentConfig.customSystemPrompt &&
+        currentConfig.customSystemPrompt.length > 0
+      ),
+    },
+  ]);
+
+  let customSystemPrompt = currentConfig.customSystemPrompt || [];
+  if (configureSystemPrompt) {
+    const { customInstructions } = await inquirer.prompt([
+      {
+        type: 'editor',
+        name: 'customInstructions',
+        message:
+          'Enter additional custom system instructions (one per line):\nThese will be added to the default system prompt.',
+        default: currentConfig.customSystemPrompt
+          ? currentConfig.customSystemPrompt.join('\n')
+          : '',
+      },
+    ]);
+
+    if (customInstructions) {
+      customSystemPrompt = customInstructions
+        .split('\n')
+        .filter((line: string) => line.trim());
+    }
+  }
+
   const { configureMcp } = await inquirer.prompt([
     {
       type: 'confirm',
@@ -194,7 +272,9 @@ async function promptForConfig(
     stream,
     tasks,
     language,
+    customSystemPrompt,
     mcpConfig,
+    pluginPaths,
   };
 }
 
@@ -247,4 +327,110 @@ async function promptForApiKeys(
   }
 
   return apiKeys;
+}
+
+async function managePlugins(currentPaths: string[]): Promise<string[]> {
+  const paths = [...currentPaths];
+  let continueEditing = true;
+
+  while (continueEditing) {
+    if (paths.length > 0) {
+      logger.logInfo('\nCurrent plugins:');
+      paths.forEach((path, index) => {
+        logger.logInfo(`${index + 1}. ${path}`);
+      });
+    } else {
+      logger.logInfo('\nNo plugins configured.');
+    }
+
+    const { action } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'action',
+        message: 'What would you like to do?',
+        choices: [
+          { name: 'Add a new plugin', value: 'add' },
+          ...(paths.length > 0
+            ? [{ name: 'Remove a plugin', value: 'remove' }]
+            : []),
+          ...(paths.length > 0
+            ? [{ name: 'Edit a plugin path', value: 'edit' }]
+            : []),
+          { name: 'Done managing plugins', value: 'done' },
+        ],
+      },
+    ]);
+
+    switch (action) {
+      case 'add':
+        const { newPath } = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'newPath',
+            message:
+              'Enter plugin path or package name (e.g., "./plugins/my-plugin.js" or "takumi-plugin-xyz"):',
+            validate: (input: string) =>
+              input.trim() !== '' ? true : 'Plugin path cannot be empty',
+          },
+        ]);
+        paths.push(newPath.trim());
+        logger.logInfo(`Added plugin: ${newPath.trim()}`);
+        break;
+
+      case 'remove':
+        if (paths.length > 0) {
+          const { pathIndex } = await inquirer.prompt([
+            {
+              type: 'list',
+              name: 'pathIndex',
+              message: 'Select a plugin to remove:',
+              choices: paths.map((path, index) => ({
+                name: `${index + 1}. ${path}`,
+                value: index,
+              })),
+            },
+          ]);
+          const removedPath = paths.splice(pathIndex, 1)[0];
+          logger.logInfo(`Removed plugin: ${removedPath}`);
+        }
+        break;
+
+      case 'edit':
+        if (paths.length > 0) {
+          const { pathIndex } = await inquirer.prompt([
+            {
+              type: 'list',
+              name: 'pathIndex',
+              message: 'Select a plugin to edit:',
+              choices: paths.map((path, index) => ({
+                name: `${index + 1}. ${path}`,
+                value: index,
+              })),
+            },
+          ]);
+
+          const { updatedPath } = await inquirer.prompt([
+            {
+              type: 'input',
+              name: 'updatedPath',
+              message: 'Enter new path or package name:',
+              default: paths[pathIndex],
+              validate: (input: string) =>
+                input.trim() !== '' ? true : 'Plugin path cannot be empty',
+            },
+          ]);
+
+          const oldPath = paths[pathIndex];
+          paths[pathIndex] = updatedPath.trim();
+          logger.logInfo(`Updated plugin: ${oldPath} → ${updatedPath.trim()}`);
+        }
+        break;
+
+      case 'done':
+        continueEditing = false;
+        break;
+    }
+  }
+
+  return paths;
 }
