@@ -279,9 +279,11 @@ This command launches an interactive wizard that guides you through setting up T
 * Streaming mode - Toggle response streaming
 * Tasks feature - Enable specialized task processing
 * Language preference - Choose between English or Chinese
+* Custom system instructions - Add additional custom instructions to the AI system prompt
+* Plugins - Manage plugins to extend Takumi's functionality
 * MCP servers - Configure Model Control Protocol servers
 
-All settings are saved to `~/.takumi/config.json` and apply globally across all projects.
+You can choose to configure either global settings (applying to all projects) or project-specific settings. Global settings are saved to `~/.takumi/config.json`, while project settings are saved to `./.takumi/config.json` in the current project directory.
 
 **Examples:**
 
