@@ -26,6 +26,10 @@ Used for tasks that involve code generation, file modification, running commands
 
 **Options:**
 
+* `-a, --approval-mode <approval-mode>`: Specify the approval mode for tool execution(defaults to 'suggest').
+  * `suggest(default)`: Read-only mode; any file modification or command execution requires user confirmation.
+  * `auto-edit`: File modifications and patches are applied automatically, but command execution still requires user confirmation.
+  * `full-auto`: Fully automatic mode; all file operations and command executions proceed without user confirmation.
 * `-m, --model <model>`: Specify the language model to use.
 * `--small-model <model>`: Specify a smaller language model to use.
 * `--api-key <provider=key>`: Specify the API key for the provider.
