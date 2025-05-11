@@ -1,9 +1,54 @@
 #!/usr/bin/env -S node --no-warnings=ExperimentalWarning
-import { runCli } from '.';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { _checkAndUpdate, runCli } from '.';
 
-runCli({
-  plugins: [],
-  productName: 'TAKUMI',
-})
+async function checkUpdate() {
+  if (process.env.TAKUMI_SELF_UPDATE === 'none') {
+    return;
+  }
+  const pkg = await import('../package.json');
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const installDir = path.resolve(__dirname, '../');
+  const isLocal = !installDir.includes('node_modules');
+  if (isLocal) {
+    return;
+  }
+  await _checkAndUpdate({
+    name: pkg.name,
+    version: pkg.version,
+    debug: process.env.DEBUG !== undefined,
+    registryBase: 'https://registry.npmjs.org',
+    channel: 'latest',
+    skipOnCI: true,
+    updateCheckIntervalMs: 0,
+    dryRun: false,
+    installDir,
+    onDisplay: (info) => {
+      if (info.needReinstall) {
+        console.log(
+          `New version ${info.version} of ${info.packageName} is available, but requires reinstallation.`,
+        );
+        console.log(`Run \`npm install -g ${info.packageName}\` to update.`);
+        console.log(`Changelog: ${info.changelogUrl}`);
+      } else {
+        console.log(
+          `${info.packageName} has been updated to ${info.version}, restart to apply.`,
+        );
+        console.log(`Changelog: ${info.changelogUrl}`);
+      }
+    },
+  });
+}
+
+async function main() {
+  await checkUpdate();
+  await runCli({
+    plugins: [],
+    productName: 'TAKUMI',
+  });
+}
+
+main()
   .catch(console.error)
   .finally(() => {});
