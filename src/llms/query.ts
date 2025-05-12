@@ -202,8 +202,7 @@ export async function query(opts: QueryOptions) {
         //   }
         // }
       }
-      const tokenUsage = await result.usage;
-      tokenUsageForLog = tokenUsage;
+      tokenUsageForLog = await result.usage;
       // process.stdout.write('\n');
     } else {
       const result = await generateText(llmOpts);
@@ -213,8 +212,7 @@ export async function query(opts: QueryOptions) {
         .logThink({ productName: context.config.productName })
         .text(result.text);
       text = result.text;
-      const tokenUsage = await result.usage;
-      tokenUsageForLog = tokenUsage;
+      tokenUsageForLog = await result.usage;
     }
     logger.logUsage({
       promptTokens: tokenUsageForLog?.promptTokens,
