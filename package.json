@@ -80,5 +80,9 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write"
+  },
+  "upgear": {
+    "needReinstall": false,
+    "changelogUrl": "https://github.com/umijs/takumi/blob/master/CHANGELOG.md"
   }
 }
