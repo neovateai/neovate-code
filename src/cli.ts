@@ -1,4 +1,5 @@
 #!/usr/bin/env -S node --no-warnings=ExperimentalWarning
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { _checkAndUpdate, runCli } from '.';
@@ -7,8 +8,10 @@ async function checkUpdate() {
   if (process.env.TAKUMI_SELF_UPDATE === 'none') {
     return;
   }
-  const pkg = await import('../package.json');
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const pkg = JSON.parse(
+    fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8'),
+  );
   const installDir = path.resolve(__dirname, '../');
   const isLocal = !installDir.includes('node_modules');
   if (isLocal) {
