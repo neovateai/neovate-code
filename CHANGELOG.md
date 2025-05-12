@@ -1,3 +1,11 @@
+## 0.0.23
+
+`2025-05-12`
+
+- style: Remove ellipsis from thinking spinner message by [@sorrycc](https://github.com/sorrycc)
+- refactor: Use fs.readFileSync to load package.json by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.22
 
 `2025-05-12`
