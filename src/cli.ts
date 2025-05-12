@@ -1,6 +1,7 @@
 #!/usr/bin/env -S node --no-warnings=ExperimentalWarning
 import fs from 'fs';
 import path from 'path';
+import pc from 'picocolors';
 import { fileURLToPath } from 'url';
 import { _checkAndUpdate, runCli } from '.';
 
@@ -30,15 +31,17 @@ async function checkUpdate() {
     onDisplay: (info) => {
       if (info.needReinstall) {
         console.log(
-          `New version ${info.version} of ${info.packageName} is available, but requires reinstallation.`,
+          `New version ${pc.green(info.version)} of ${pc.cyan(info.packageName)} is available, but ${pc.yellow('requires reinstallation')}.`,
         );
-        console.log(`Run \`npm install -g ${info.packageName}\` to update.`);
-        console.log(`Changelog: ${info.changelogUrl}`);
+        console.log(`Run ${pc.cyan(`\`npm install -g ${info.packageName}\``)}`);
+        console.log(`Changelog: ${pc.blue(info.changelogUrl)}`);
+        console.log(pc.dim(`-`.repeat(60)));
       } else {
         console.log(
-          `${info.packageName} has been updated to ${info.version}, restart to apply.`,
+          `${pc.cyan(info.packageName)} has been updated to ${pc.green(info.version)}, ${pc.yellow('restart to apply')}.`,
         );
-        console.log(`Changelog: ${info.changelogUrl}`);
+        console.log(`Changelog: ${pc.blue(info.changelogUrl)}`);
+        console.log(pc.dim(`-`.repeat(60)));
       }
     },
   });
