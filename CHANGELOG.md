@@ -1,3 +1,10 @@
+## 0.0.24
+
+`2025-05-12`
+
+- feat: display CLI version by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.23
 
 `2025-05-12`
