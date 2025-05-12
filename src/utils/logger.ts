@@ -61,7 +61,7 @@ export async function getUserInput(opts?: {
 export function spinThink(opts: { productName: string }) {
   const productName = opts.productName.toLowerCase();
   const spinner1 = p.spinner();
-  spinner1.start(pc.bold(pc.magentaBright(`${productName} is thinking...`)));
+  spinner1.start(pc.bold(pc.magentaBright(`${productName} is thinking`)));
   return () => {
     spinner1.stop('💡');
   };
