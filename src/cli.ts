@@ -4,6 +4,7 @@ import path from 'path';
 import pc from 'picocolors';
 import { fileURLToPath } from 'url';
 import { _checkAndUpdate, runCli } from '.';
+import { logDebug } from './utils/logger';
 
 async function checkUpdate() {
   if (process.env.TAKUMI_SELF_UPDATE === 'none') {
@@ -52,7 +53,11 @@ async function main() {
   const pkg = JSON.parse(
     fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8'),
   );
-  await checkUpdate();
+  try {
+    await checkUpdate();
+  } catch (error) {
+    logDebug(`Error checking update: ${error}`);
+  }
   await runCli({
     plugins: [],
     productName: 'TAKUMI',
