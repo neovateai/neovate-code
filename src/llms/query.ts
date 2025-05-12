@@ -204,12 +204,6 @@ export async function query(opts: QueryOptions) {
       }
       const tokenUsage = await result.usage;
       tokenUsageForLog = tokenUsage;
-      logger.logUsage({
-        promptTokens: tokenUsage.promptTokens,
-        completionTokens: tokenUsage.completionTokens,
-        totalTokens: tokenUsage.totalTokens,
-        generationId,
-      });
       // process.stdout.write('\n');
     } else {
       const result = await generateText(llmOpts);
@@ -221,12 +215,13 @@ export async function query(opts: QueryOptions) {
       text = result.text;
       const tokenUsage = await result.usage;
       tokenUsageForLog = tokenUsage;
-      logger.logUsage({
-        promptTokens: tokenUsage.promptTokens,
-        completionTokens: tokenUsage.completionTokens,
-        totalTokens: tokenUsage.totalTokens,
-      });
     }
+    logger.logUsage({
+      promptTokens: tokenUsageForLog?.promptTokens,
+      completionTokens: tokenUsageForLog?.completionTokens,
+      totalTokens: tokenUsageForLog?.totalTokens,
+      generationId,
+    });
     // hook: query
     await opts.context.pluginManager.apply({
       hook: 'query',
@@ -237,6 +232,7 @@ export async function query(opts: QueryOptions) {
           id,
           tools,
           tokenUsage: tokenUsageForLog,
+          generationId,
         },
       ],
       type: PluginHookType.Series,
