@@ -1,3 +1,10 @@
+## 0.0.22
+
+`2025-05-12`
+
+- feat: add upgear configuration by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.21
 
 `2025-05-12`
