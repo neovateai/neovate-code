@@ -1,3 +1,10 @@
+## 0.0.26
+
+`2025-05-12`
+
+- refactor: Move update check after package.json load by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.25
 
 `2025-05-12`
