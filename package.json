@@ -8,7 +8,7 @@
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "bin": {
-    "tak": "dist/cli.mjs",
+    "ta": "dist/cli.mjs",
     "takumi": "./dist/cli.mjs"
   },
   "scripts": {
