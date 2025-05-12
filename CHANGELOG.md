@@ -1,3 +1,10 @@
+## 0.0.25
+
+`2025-05-12`
+
+- style: Colorize update notification messages by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.24
 
 `2025-05-12`
