@@ -38,16 +38,6 @@ export async function getConfig(opts: {
       );
       return alias || argv.model;
     }
-
-    // Fallback to the first model in AUTO_SELECT_MODELS for which the API key is set
-    for (const [apiKeyEnvName, modelName] of AUTO_SELECT_MODELS) {
-      if (process.env[apiKeyEnvName]) {
-        logger.logWarn(
-          `Using model '${modelName}' as model is not specified but '${apiKeyEnvName}' is set.`,
-        );
-        return modelName as ModelType;
-      }
-    }
   })();
 
   // Small model is the model to use for the small and fast queries
