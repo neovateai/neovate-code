@@ -41,7 +41,7 @@ Used for tasks that involve code generation, file modification, running commands
 * `--plugin <plugin>`: Specify a plugin to use.
 * `--language <language>`: Specify the language of the output, defaults to `en`.
 * `--codebase <includes>`: Specify the path to the codebase to use.
-
+* `--print-token-usage`: Print the token usage of the response.
 
 **Examples:**
 

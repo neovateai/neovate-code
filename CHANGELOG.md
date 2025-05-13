@@ -1,3 +1,12 @@
+## 0.0.29
+
+`2025-05-13`
+
+- feat: add --print-token-usage option to display token usage by [@sorrycc](https://github.com/sorrycc)
+- refactor: move auto model selection to plugin by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename keyword-context.ts to keywordContext.ts by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.28
 
 `2025-05-13`

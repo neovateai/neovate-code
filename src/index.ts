@@ -16,7 +16,8 @@ import {
 import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
 import type { Command, Plugin } from './pluginManager/types';
-import { keywordContextPlugin } from './plugins/keyword-context';
+import { autoSelectModelPlugin } from './plugins/autoSelectModel';
+import { keywordContextPlugin } from './plugins/keywordContext';
 import { sessionPlugin } from './plugins/session';
 import type { Context, PluginContext } from './types';
 import * as logger from './utils/logger';
@@ -56,8 +57,11 @@ async function buildContext(
     const pluginObject = require(pluginPath);
     argsPlugins.push(pluginObject.default || pluginObject);
   }
-
-  const buildinPlugins = [sessionPlugin, keywordContextPlugin];
+  const buildinPlugins = [
+    sessionPlugin,
+    keywordContextPlugin,
+    autoSelectModelPlugin,
+  ];
   const plugins = [
     ...buildinPlugins,
     ...(config.plugins || []),
