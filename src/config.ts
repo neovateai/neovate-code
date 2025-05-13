@@ -17,11 +17,9 @@ export type Config = {
   systemPrompt: string[];
   tasks: boolean;
   plugins: Plugin[];
-  pluginPaths?: string[];
   productName: string;
   language: string;
   apiKeys: ApiKeys;
-  customSystemPrompt: string[];
   approvalModel: ApprovalModel;
 };
 
@@ -210,16 +208,6 @@ export async function getConfig(opts: {
 
   systemPrompt.push(`return one tool at most each time.`);
 
-  if (
-    combinedConfig.customSystemPrompt &&
-    combinedConfig.customSystemPrompt.length > 0
-  ) {
-    systemPrompt = systemPrompt.concat([
-      '# User Custom Instructions',
-      ...combinedConfig.customSystemPrompt,
-    ]);
-  }
-
   return {
     model,
     smallModel,
@@ -231,8 +219,6 @@ export async function getConfig(opts: {
     productName,
     language,
     apiKeys,
-    customSystemPrompt: combinedConfig.customSystemPrompt || [],
-    pluginPaths: combinedConfig.pluginPaths || [],
     approvalModel: getApprovalModel(argv.approvalMode as ApprovalModel),
   };
 }

@@ -159,55 +159,6 @@ async function promptForConfig(
     },
   ]);
 
-  const { configurePlugins } = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'configurePlugins',
-      message: `Configure plugins? (Default: ${currentConfig.pluginPaths && currentConfig.pluginPaths.length > 0 ? 'Yes' : 'No'})`,
-      default: !!(
-        currentConfig.pluginPaths && currentConfig.pluginPaths.length > 0
-      ),
-    },
-  ]);
-
-  let pluginPaths = currentConfig.pluginPaths || [];
-  if (configurePlugins) {
-    pluginPaths = await managePlugins(pluginPaths);
-  }
-
-  const { configureSystemPrompt } = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'configureSystemPrompt',
-      message: `Configure custom system prompt instructions? (Default: ${currentConfig.customSystemPrompt && currentConfig.customSystemPrompt.length > 0 ? 'Yes' : 'No'})`,
-      default: !!(
-        currentConfig.customSystemPrompt &&
-        currentConfig.customSystemPrompt.length > 0
-      ),
-    },
-  ]);
-
-  let customSystemPrompt = currentConfig.customSystemPrompt || [];
-  if (configureSystemPrompt) {
-    const { customInstructions } = await inquirer.prompt([
-      {
-        type: 'editor',
-        name: 'customInstructions',
-        message:
-          'Enter additional custom system instructions (one per line):\nThese will be added to the default system prompt.',
-        default: currentConfig.customSystemPrompt
-          ? currentConfig.customSystemPrompt.join('\n')
-          : '',
-      },
-    ]);
-
-    if (customInstructions) {
-      customSystemPrompt = customInstructions
-        .split('\n')
-        .filter((line: string) => line.trim());
-    }
-  }
-
   const { configureMcp } = await inquirer.prompt([
     {
       type: 'confirm',
@@ -272,9 +223,7 @@ async function promptForConfig(
     stream,
     tasks,
     language,
-    customSystemPrompt,
     mcpConfig,
-    pluginPaths,
   };
 }
 
@@ -327,110 +276,4 @@ async function promptForApiKeys(
   }
 
   return apiKeys;
-}
-
-async function managePlugins(currentPaths: string[]): Promise<string[]> {
-  const paths = [...currentPaths];
-  let continueEditing = true;
-
-  while (continueEditing) {
-    if (paths.length > 0) {
-      logger.logInfo('\nCurrent plugins:');
-      paths.forEach((path, index) => {
-        logger.logInfo(`${index + 1}. ${path}`);
-      });
-    } else {
-      logger.logInfo('\nNo plugins configured.');
-    }
-
-    const { action } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'action',
-        message: 'What would you like to do?',
-        choices: [
-          { name: 'Add a new plugin', value: 'add' },
-          ...(paths.length > 0
-            ? [{ name: 'Remove a plugin', value: 'remove' }]
-            : []),
-          ...(paths.length > 0
-            ? [{ name: 'Edit a plugin path', value: 'edit' }]
-            : []),
-          { name: 'Done managing plugins', value: 'done' },
-        ],
-      },
-    ]);
-
-    switch (action) {
-      case 'add':
-        const { newPath } = await inquirer.prompt([
-          {
-            type: 'input',
-            name: 'newPath',
-            message:
-              'Enter plugin path or package name (e.g., "./plugins/my-plugin.js" or "takumi-plugin-xyz"):',
-            validate: (input: string) =>
-              input.trim() !== '' ? true : 'Plugin path cannot be empty',
-          },
-        ]);
-        paths.push(newPath.trim());
-        logger.logInfo(`Added plugin: ${newPath.trim()}`);
-        break;
-
-      case 'remove':
-        if (paths.length > 0) {
-          const { pathIndex } = await inquirer.prompt([
-            {
-              type: 'list',
-              name: 'pathIndex',
-              message: 'Select a plugin to remove:',
-              choices: paths.map((path, index) => ({
-                name: `${index + 1}. ${path}`,
-                value: index,
-              })),
-            },
-          ]);
-          const removedPath = paths.splice(pathIndex, 1)[0];
-          logger.logInfo(`Removed plugin: ${removedPath}`);
-        }
-        break;
-
-      case 'edit':
-        if (paths.length > 0) {
-          const { pathIndex } = await inquirer.prompt([
-            {
-              type: 'list',
-              name: 'pathIndex',
-              message: 'Select a plugin to edit:',
-              choices: paths.map((path, index) => ({
-                name: `${index + 1}. ${path}`,
-                value: index,
-              })),
-            },
-          ]);
-
-          const { updatedPath } = await inquirer.prompt([
-            {
-              type: 'input',
-              name: 'updatedPath',
-              message: 'Enter new path or package name:',
-              default: paths[pathIndex],
-              validate: (input: string) =>
-                input.trim() !== '' ? true : 'Plugin path cannot be empty',
-            },
-          ]);
-
-          const oldPath = paths[pathIndex];
-          paths[pathIndex] = updatedPath.trim();
-          logger.logInfo(`Updated plugin: ${oldPath} → ${updatedPath.trim()}`);
-        }
-        break;
-
-      case 'done':
-        continueEditing = false;
-        break;
-    }
-  }
-
-  return paths;
 }

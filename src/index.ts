@@ -57,33 +57,10 @@ async function buildContext(
     argsPlugins.push(pluginObject.default || pluginObject);
   }
 
-  const pathPlugins: Plugin[] = [];
-  for (const pluginPath of config.pluginPaths || []) {
-    try {
-      let resolvedPath = pluginPath;
-      if (pluginPath.startsWith('~/') || pluginPath === '~') {
-        resolvedPath = path.join(os.homedir(), pluginPath.slice(1));
-      }
-
-      resolvedPath = path.isAbsolute(resolvedPath)
-        ? resolvedPath
-        : path.resolve(cwd, resolvedPath);
-
-      const pluginObject = require(resolvedPath);
-      pathPlugins.push(pluginObject.default || pluginObject);
-    } catch (error) {
-      logger.logWarn(`Failed to load plugin from path: ${pluginPath}`);
-      if (process.env.DEBUG) {
-        console.error(error);
-      }
-    }
-  }
-
   const buildinPlugins = [sessionPlugin, keywordContextPlugin];
   const plugins = [
     ...buildinPlugins,
     ...(config.plugins || []),
-    ...pathPlugins,
     ...(opts.plugins || []),
     ...argsPlugins,
   ];
