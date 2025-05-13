@@ -1,15 +1,46 @@
 import fs from 'fs';
 import inquirer from 'inquirer';
 import path from 'pathe';
-import { ApiKeys, Config, stringToMcpServerConfigs } from '../config';
+import {
+  ApiKeys,
+  Config,
+  getConfigPaths,
+  stringToMcpServerConfigs,
+} from '../config';
 import { MODEL_ALIAS, ModelType } from '../llms/model';
 import { Context } from '../types';
 import * as logger from '../utils/logger';
 
 export async function runConfig(opts: { context: Context }) {
   const { context } = opts;
-  const configDir = path.dirname(context.paths.configPath);
-  const configExists = fs.existsSync(context.paths.configPath);
+  const { globalConfigPath, projectConfigPath } = getConfigPaths({
+    productName: context.config.productName,
+    cwd: context.cwd,
+  });
+
+  const { configType } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'configType',
+      message: 'Which configuration would you like to set up?',
+      choices: [
+        {
+          name: 'Global configuration (applies to all projects)',
+          value: 'global',
+        },
+        {
+          name: 'Project configuration (applies only to this project)',
+          value: 'project',
+        },
+      ],
+      default: 'global',
+    },
+  ]);
+
+  const configPath =
+    configType === 'global' ? globalConfigPath : projectConfigPath;
+  const configDir = path.dirname(configPath);
+  const configExists = fs.existsSync(configPath);
 
   if (!fs.existsSync(configDir)) {
     fs.mkdirSync(configDir, { recursive: true });
@@ -18,24 +49,22 @@ export async function runConfig(opts: { context: Context }) {
   let currentConfig: Partial<Config> = {};
   if (configExists) {
     try {
-      const configContent = fs.readFileSync(context.paths.configPath, 'utf-8');
+      const configContent = fs.readFileSync(configPath, 'utf-8');
       currentConfig = JSON.parse(configContent);
     } catch (error: any) {
       logger.logWarn(`Unable to read existing config: ${error.message}`);
     }
   }
 
-  logger.logInfo('Welcome to Takumi configuration wizard!');
+  logger.logInfo(
+    `Welcome to Takumi configuration wizard! [${configType === 'global' ? 'Global' : 'Project'} config]`,
+  );
 
   const config = await promptForConfig(currentConfig);
 
   try {
-    fs.writeFileSync(
-      context.paths.configPath,
-      JSON.stringify(config, null, 2),
-      'utf-8',
-    );
-    logger.logInfo(`Configuration saved to ${context.paths.configPath}`);
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+    logger.logInfo(`Configuration saved to ${configPath}`);
   } catch (error: any) {
     logger.logError({
       error: `Failed to save configuration: ${error.message}`,

@@ -23,12 +23,58 @@ export type Config = {
   approvalModel: ApprovalModel;
 };
 
+export function getConfigPaths(opts: { productName: string; cwd: string }): {
+  globalConfigPath: string;
+  projectConfigPath: string;
+} {
+  const { productName, cwd } = opts;
+  const productNameLower = productName.toLowerCase();
+
+  const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+  const globalConfigPath = path.join(
+    homeDir,
+    `.${productNameLower}`,
+    'config.json',
+  );
+
+  const projectConfigPath = path.join(
+    cwd,
+    `.${productNameLower}`,
+    'config.json',
+  );
+
+  return { globalConfigPath, projectConfigPath };
+}
+
+function readConfigFile(filePath: string): Partial<Config> {
+  if (fs.existsSync(filePath)) {
+    try {
+      const configContent = fs.readFileSync(filePath, 'utf-8');
+      return JSON.parse(configContent);
+    } catch (error: any) {
+      logger.logWarn(
+        `Unable to read config file ${filePath}: ${error.message}`,
+      );
+    }
+  }
+  return {};
+}
+
 export async function getConfig(opts: {
   argv: yargsParser.Arguments;
   productName: string;
   cwd: string;
 }): Promise<Config> {
-  const { argv, productName } = opts;
+  const { argv, productName, cwd } = opts;
+
+  const { globalConfigPath, projectConfigPath } = getConfigPaths({
+    productName,
+    cwd,
+  });
+  const globalConfig = readConfigFile(globalConfigPath);
+  const projectConfig = readConfigFile(projectConfigPath);
+
+  const combinedConfig = { ...globalConfig, ...projectConfig };
 
   const model = (() => {
     if (argv.model) {
@@ -38,28 +84,58 @@ export async function getConfig(opts: {
       );
       return alias || argv.model;
     }
+
+    if (combinedConfig.model) {
+      logger.logDebug(`Using model from config file: ${combinedConfig.model}`);
+      return combinedConfig.model;
+    }
+
+    for (const [apiKeyEnvName, modelName] of AUTO_SELECT_MODELS) {
+      if (process.env[apiKeyEnvName]) {
+        logger.logWarn(
+          `Using model '${modelName}' as model is not specified but '${apiKeyEnvName}' is set.`,
+        );
+        return modelName as ModelType;
+      }
+    }
   })();
 
   // Small model is the model to use for the small and fast queries
   // It's the same as the main model if not specified
   const smallModel =
     (() => {
-      if (!argv.smallModel) return undefined;
-      const alias = MODEL_ALIAS[argv.smallModel as keyof typeof MODEL_ALIAS];
-      return alias || argv.smallModel;
+      if (argv.smallModel) {
+        const alias = MODEL_ALIAS[argv.smallModel as keyof typeof MODEL_ALIAS];
+        return alias || argv.smallModel;
+      }
+
+      if (combinedConfig.smallModel) {
+        return combinedConfig.smallModel;
+      }
+
+      return undefined;
     })() || model;
 
   const stream = (() => {
+    if (argv.stream !== undefined) {
+      return argv.stream !== 'false';
+    }
+
+    if (combinedConfig.stream !== undefined) {
+      return combinedConfig.stream;
+    }
+
     if (
       model === 'Google/gemini-2.0-pro-exp-02-05' ||
       model === 'Google/gemini-2.5-pro-exp-03-25'
     ) {
       return false;
     }
-    return argv.stream !== 'false';
+
+    return true;
   })();
 
-  const apiKeys: ApiKeys = {};
+  const apiKeys: ApiKeys = { ...(combinedConfig.apiKeys || {}) };
   if (argv.apiKey) {
     const keys = Array.isArray(argv.apiKey) ? argv.apiKey : [argv.apiKey];
     for (const key of keys) {
@@ -76,11 +152,10 @@ export async function getConfig(opts: {
   }
 
   const mcpConfigPath = path.join(
-    opts.cwd,
+    cwd,
     `.${productName.toLowerCase()}/mcp.json`,
   );
   const mcpConfig = (() => {
-    // Check if mcp argument is provided
     if (argv.mcp) {
       const mcpValues = argv.mcp;
       const mcpServers = stringToMcpServerConfigs(mcpValues);
@@ -90,7 +165,10 @@ export async function getConfig(opts: {
       };
     }
 
-    // Fallback to config file if no mcp argument
+    if (combinedConfig.mcpConfig) {
+      return combinedConfig.mcpConfig;
+    }
+
     if (fs.existsSync(mcpConfigPath)) {
       return JSON.parse(fs.readFileSync(mcpConfigPath, 'utf-8'));
     } else {
@@ -98,14 +176,38 @@ export async function getConfig(opts: {
     }
   })();
 
-  // Check if tasks feature is enabled
-  const tasks = !!argv.tasks;
+  const tasks = (() => {
+    if (argv.tasks !== undefined) {
+      return !!argv.tasks;
+    }
 
-  let systemPrompt = getSystemPrompt({ tasks, cwd: opts.cwd });
+    if (combinedConfig.tasks !== undefined) {
+      return combinedConfig.tasks;
+    }
+
+    return false;
+  })();
+
+  const language = (() => {
+    if (argv.language) {
+      return argv.language;
+    }
+
+    if (combinedConfig.language) {
+      return combinedConfig.language;
+    }
+
+    return 'English';
+  })();
+
+  let systemPrompt = getSystemPrompt({ tasks, cwd });
+
   if (process.env.CODE === 'none') {
     systemPrompt = [];
   }
+
   systemPrompt.push(`return one tool at most each time.`);
+
   return {
     model,
     smallModel,
@@ -113,9 +215,9 @@ export async function getConfig(opts: {
     tasks,
     mcpConfig,
     systemPrompt,
-    plugins: [],
+    plugins: combinedConfig.plugins || [],
     productName,
-    language: argv.language || 'English',
+    language,
     apiKeys,
     approvalModel: getApprovalModel(argv.approvalMode as ApprovalModel),
   };

@@ -285,7 +285,7 @@ This command launches an interactive wizard that guides you through setting up T
 * Language preference - Choose between English or Chinese
 * MCP servers - Configure Model Control Protocol servers
 
-All settings are saved to `~/.takumi/config.json` and apply globally across all projects.
+You can choose to configure either global settings (applying to all projects) or project-specific settings. Global settings are saved to `~/.takumi/config.json`, while project settings are saved to `./.takumi/config.json` in the current project directory.
 
 **Examples:**
 
