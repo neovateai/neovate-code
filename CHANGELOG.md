@@ -1,3 +1,12 @@
+## 0.0.28
+
+`2025-05-13`
+
+- feat: support approval-mode option by [@moonlit](https://github.com/moonlit) in [#29](https://github.com/umijs/takumi/pull/29)
+- feat: add token calculator by [@Holden Hu](https://github.com/Holden Hu) in [#31](https://github.com/umijs/takumi/pull/31)
+- fix: add error handling for update check in CLI by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.27
 
 `2025-05-12`
