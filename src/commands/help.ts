@@ -21,6 +21,7 @@ Commands:
   run <prompt>         Run a command based on the prompt.
 
 General Options:
+  -a, --approval-mode <approval-mode> Specify the approval mode for tool execution(defaults to 'suggest').
   -m, --model <model>  Specify the language model to use.
   --small-model <model> Specify a smaller language model for certain tasks.
   --api-key <provider=key> Specify the API key for a provider (e.g., OPENAI=sk-...).

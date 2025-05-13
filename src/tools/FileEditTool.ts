@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { PluginHookType } from '../pluginManager/pluginManager';
 import { Context } from '../types';
 import { applyEdit } from '../utils/applyEdit';
+import { requestWritePermission } from '../utils/approvalMode';
+import { logInfo } from '../utils/logger';
 
 const description = `
 This is a tool for editing files. For moving or renaming files, you should generally use the Bash tool with the 'mv' command instead. For larger edits, use the Write tool to overwrite files.
@@ -49,10 +51,16 @@ export function createFileEditTool(opts: { context: Context }) {
           old_string,
           new_string,
         );
+        const {
+          config: { approvalModel },
+        } = opts.context;
         const fullFilePath = isAbsolute(file_path)
           ? file_path
           : path.resolve(opts.context.cwd, file_path);
         const dir = path.dirname(fullFilePath);
+
+        await requestWritePermission(approvalModel, fullFilePath);
+
         mkdirSync(dir, { recursive: true });
         await opts.context.pluginManager.apply({
           hook: 'editFile',
@@ -67,6 +75,8 @@ export function createFileEditTool(opts: { context: Context }) {
           pluginContext: opts.context.pluginContext,
         });
         writeFileSync(fullFilePath, updatedFile, 'utf-8');
+
+        logInfo(`File ${file_path} updated`);
         return {
           success: true,
           patch,

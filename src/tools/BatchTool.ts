@@ -1,4 +1,5 @@
 import { tool } from 'ai';
+import { isBoolean } from 'lodash-es';
 import { z } from 'zod';
 import { Context } from '../types';
 
@@ -80,6 +81,9 @@ export function createBatchTool(opts: { context: Context }) {
           });
 
           const result = await Promise.race([toolPromise, timeoutPromise]);
+          if (isBoolean(result.success) && !result.success) {
+            throw new Error(result.error);
+          }
 
           results.push({
             key: invocationKey,
