@@ -181,12 +181,17 @@ export async function runCli(opts: RunCliOpts) {
       alias: {
         m: 'model',
         v: 'version',
-        q: 'quiet',
+        q: 'query',
+        s: 'source',
+        d: 'delete',
+        n: 'name',
+        r: 'rename',
         h: 'help',
         i: 'interactive',
       },
-      array: ['plugin'],
-      boolean: ['plan', 'stream', 'quiet', 'help', 'interactive'],
+      array: ['plugin', 'source'],
+      boolean: ['plan', 'stream', 'help', 'interactive'],
+      string: ['query', 'delete', 'name', 'rename'],
     });
     let command = argv._[0] as string;
     const pkg = await import('../package.json');
@@ -259,6 +264,10 @@ export async function runCli(opts: RunCliOpts) {
           await (
             await import('./commands/run.js')
           ).runRun({ context, prompt: runPrompt });
+          break;
+        case 'doc':
+          logger.logCommand({ command });
+          await (await import('./commands/doc.js')).default(context);
           break;
         default:
           await (
