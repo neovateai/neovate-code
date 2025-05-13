@@ -89,6 +89,13 @@ export function logThinkMarkdown(opts: { productName: string }) {
   };
 }
 
+export function logUsage(usage: Record<string, number | string>) {
+  const text = Object.entries(usage)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(' | ');
+  p.log.info(pc.dim(`[Usage] ${text}`));
+}
+
 export function logTool(opts: {
   toolUse: {
     toolName: string;

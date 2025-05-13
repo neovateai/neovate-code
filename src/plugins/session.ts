@@ -65,6 +65,7 @@ export const sessionPlugin: Plugin = {
     data.queries[id] = {
       startTime: new Date().toISOString(),
       items: [],
+      generations: [],
     };
     data.queries[id].tools = Object.keys(tools);
     write();
@@ -102,7 +103,19 @@ export const sessionPlugin: Plugin = {
     );
     write();
   },
-  query: async function (this: PluginContext, { prompt, text, id }) {},
+  query: async function (
+    this: PluginContext,
+    { id, generationId, tokenUsage },
+  ) {
+    data.queries[id].generations.push([
+      generationId,
+      {
+        promptTokens: tokenUsage.promptTokens,
+        completionTokens: tokenUsage.completionTokens,
+        totalTokens: tokenUsage.totalTokens,
+      },
+    ]);
+  },
   queryEnd: async function (
     this: PluginContext,
     { systemPrompt, prompt, text, id, tools },
