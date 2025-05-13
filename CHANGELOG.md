@@ -1,3 +1,61 @@
+## 0.0.27
+
+`2025-05-12`
+
+
+## 0.0.26
+
+`2025-05-12`
+
+- refactor: Move update check after package.json load by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.25
+
+`2025-05-12`
+
+- style: Colorize update notification messages by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.24
+
+`2025-05-12`
+
+- feat: display CLI version by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.23
+
+`2025-05-12`
+
+- style: Remove ellipsis from thinking spinner message by [@sorrycc](https://github.com/sorrycc)
+- refactor: Use fs.readFileSync to load package.json by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.22
+
+`2025-05-12`
+
+- feat: add upgear configuration by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.21
+
+`2025-05-12`
+
+- feat: add automatic update check by [@sorrycc](https://github.com/sorrycc)
+- feat: add interactive mode to commit command by [@阿平](https://github.com/阿平) in [#27](https://github.com/umijs/takumi/pull/27)
+- refactor: update plugin command structure for clarity by [@sorrycc](https://github.com/sorrycc)
+- refactor: log intro earlier and update model selection warning by [@sorrycc](https://github.com/sorrycc)
+- feat: add language option for commit messages by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename llm directory to llms and update imports by [@sorrycc](https://github.com/sorrycc)
+- fix: remove unnecessary closing bracket in config by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance model selection logic and update environment configuration by [@Holden Hu](https://github.com/Holden Hu) in [#21](https://github.com/umijs/takumi/pull/21)
+- feat: add startTime to file changes in session plugin by [@sorrycc](https://github.com/sorrycc)
+- feat: enable plugins to react to file edits and creations by [@sorrycc](https://github.com/sorrycc)
+- feat: add execution confirmation before running shell commands by [@阿平](https://github.com/阿平) in [#24](https://github.com/umijs/takumi/pull/24)
+
+
 ## 0.0.20
 
 `2025-05-08`

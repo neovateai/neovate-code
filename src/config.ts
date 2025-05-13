@@ -4,6 +4,7 @@ import yargsParser from 'yargs-parser';
 import { AUTO_SELECT_MODELS, MODEL_ALIAS, ModelType } from './llms/model';
 import type { Plugin } from './pluginManager/types';
 import { getSystemPrompt } from './prompts/prompts';
+import { type ApprovalModel, getApprovalModel } from './utils/approvalMode';
 import * as logger from './utils/logger';
 
 export type ApiKeys = Record<string, string>;
@@ -21,6 +22,7 @@ export type Config = {
   language: string;
   apiKeys: ApiKeys;
   customSystemPrompt: string[];
+  approvalModel: ApprovalModel;
 };
 
 export function getConfigPaths(opts: { productName: string; cwd: string }): {
@@ -231,6 +233,7 @@ export async function getConfig(opts: {
     apiKeys,
     customSystemPrompt: combinedConfig.customSystemPrompt || [],
     pluginPaths: combinedConfig.pluginPaths || [],
+    approvalModel: getApprovalModel(argv.approvalMode as ApprovalModel),
   };
 }
 

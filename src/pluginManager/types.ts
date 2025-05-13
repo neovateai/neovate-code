@@ -103,6 +103,12 @@ export const PluginSchema = z.object({
           prompt: z.string(),
           text: z.string(),
           id: z.string(),
+          generationId: z.string(),
+          tokenUsage: z.object({
+            promptTokens: z.number(),
+            completionTokens: z.number(),
+            totalTokens: z.number(),
+          }),
         }),
       ]),
       z.void(),

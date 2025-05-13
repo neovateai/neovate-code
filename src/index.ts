@@ -26,6 +26,7 @@ const require = createRequire(import.meta.url);
 // Private export may be deprecated in the future
 export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
 export { Plugin, PluginContext, PluginHookType };
+export { checkAndUpdate as _checkAndUpdate } from 'upgear';
 
 async function buildContext(
   opts: RunCliOpts & { argv: any; command: string },
@@ -207,6 +208,7 @@ export async function runCli(opts: RunCliOpts) {
         q: 'quiet',
         h: 'help',
         i: 'interactive',
+        a: 'approvalMode',
       },
       array: ['plugin'],
       boolean: ['plan', 'stream', 'quiet', 'help', 'interactive'],
