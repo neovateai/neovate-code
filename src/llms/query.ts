@@ -214,12 +214,14 @@ export async function query(opts: QueryOptions) {
       text = result.text;
       tokenUsageForLog = await result.usage;
     }
-    logger.logUsage({
-      promptTokens: tokenUsageForLog?.promptTokens,
-      completionTokens: tokenUsageForLog?.completionTokens,
-      totalTokens: tokenUsageForLog?.totalTokens,
-      generationId,
-    });
+    if (context.argv.printTokenUsage) {
+      logger.logUsage({
+        promptTokens: tokenUsageForLog?.promptTokens,
+        completionTokens: tokenUsageForLog?.completionTokens,
+        totalTokens: tokenUsageForLog?.totalTokens,
+        generationId,
+      });
+    }
     // hook: query
     await opts.context.pluginManager.apply({
       hook: 'query',
