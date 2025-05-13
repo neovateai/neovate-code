@@ -16,7 +16,7 @@ import {
 import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
 import type { Command, Plugin } from './pluginManager/types';
-import { keywordContextPlugin } from './plugins/keyword-context';
+import { keywordContextPlugin } from './plugins/keywordContext';
 import { sessionPlugin } from './plugins/session';
 import type { Context, PluginContext } from './types';
 import * as logger from './utils/logger';
