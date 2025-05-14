@@ -1,3 +1,13 @@
+## 0.0.30
+
+`2025-05-14`
+
+- fix: update MCP server check to handle empty objects by [@sorrycc](https://github.com/sorrycc)
+- feat: add resolve dependency for plugin path resolution by [@sorrycc](https://github.com/sorrycc)
+- refactor: update config handling and quiet mode logic by [@sorrycc](https://github.com/sorrycc)
+- feat: support hierarchical configuration from global and project level files by [@jalever](https://github.com/jalever) in [#28](https://github.com/umijs/takumi/pull/28)
+
+
 ## 0.0.29
 
 `2025-05-13`
