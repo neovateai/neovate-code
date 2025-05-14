@@ -202,7 +202,7 @@ export async function runRun(opts: { context: Context; prompt: string }) {
   await runShellCommand({ context: opts.context, prompt });
 
   // If not in quiet mode, continue receiving user input
-  if (!argv.quiet) {
+  if (!opts.context.config.quiet) {
     while (true) {
       const nextPrompt = await logger.getUserInput();
       await runShellCommand({

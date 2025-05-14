@@ -2,7 +2,6 @@ import assert from 'assert';
 import { randomUUID } from 'crypto';
 import { format } from 'date-fns';
 import dotenv from 'dotenv';
-import { createRequire } from 'module';
 import os from 'os';
 import path from 'path';
 import yargsParser from 'yargs-parser';
@@ -21,8 +20,6 @@ import { keywordContextPlugin } from './plugins/keywordContext';
 import { sessionPlugin } from './plugins/session';
 import type { Context, PluginContext } from './types';
 import * as logger from './utils/logger';
-
-const require = createRequire(import.meta.url);
 
 // Private export may be deprecated in the future
 export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
@@ -51,12 +48,6 @@ async function buildContext(
     `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${sessionId}.json`,
   );
   const config = await getConfig({ argv, productName: opts.productName, cwd });
-  const argsPlugins: Plugin[] = [];
-  for (const plugin of argv.plugin || []) {
-    const pluginPath = path.resolve(cwd, plugin);
-    const pluginObject = require(pluginPath);
-    argsPlugins.push(pluginObject.default || pluginObject);
-  }
   const buildinPlugins = [
     sessionPlugin,
     keywordContextPlugin,
@@ -66,7 +57,6 @@ async function buildContext(
     ...buildinPlugins,
     ...(config.plugins || []),
     ...(opts.plugins || []),
-    ...argsPlugins,
   ];
   const pluginManager = new PluginManager(plugins);
   const paths = {
@@ -191,7 +181,7 @@ export async function runCli(opts: RunCliOpts) {
         i: 'interactive',
         a: 'approvalMode',
       },
-      array: ['plugin'],
+      array: ['plugin', 'apiKey'],
       boolean: ['plan', 'stream', 'quiet', 'help', 'interactive'],
     });
     let command = argv._[0] as string;
