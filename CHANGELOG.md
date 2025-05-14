@@ -1,3 +1,10 @@
+## 0.0.31
+
+`2025-05-14`
+
+- fix: update approvalModel to approvalMode in tool implementations by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.30
 
 `2025-05-14`
