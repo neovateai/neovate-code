@@ -1,38 +1,38 @@
 import inquirer from 'inquirer';
 import { logWarn } from './logger';
 
-export const ApprovalModel = {
+export const ApprovalMode = {
   suggest: 'suggest',
   'auto-edit': 'auto-edit',
   'full-auto': 'full-auto',
 } as const;
 
-const defaultApprovalModel = ApprovalModel.suggest;
+const defaultApprovalMode = ApprovalMode.suggest;
 
-export type ApprovalModel = (typeof ApprovalModel)[keyof typeof ApprovalModel];
+export type ApprovalMode = (typeof ApprovalMode)[keyof typeof ApprovalMode];
 
-export const getApprovalModel = (approvalModel: ApprovalModel) => {
-  const model = approvalModel || process.env.APPROVAL_MODEL;
+export const getApprovalMode = (approvalMode: ApprovalMode) => {
+  const model = approvalMode || process.env.APPROVAL_MODEL;
 
-  if (!model) return defaultApprovalModel;
-  const modelValue = ApprovalModel[model];
+  if (!model) return defaultApprovalMode;
+  const modelValue = ApprovalMode[model];
 
   if (!modelValue) {
     logWarn(
-      `Invalid approval model: ${model}, using default: ${defaultApprovalModel}`,
+      `Invalid approval model: ${model}, using default: ${defaultApprovalMode}`,
     );
-    return defaultApprovalModel;
+    return defaultApprovalMode;
   }
 
   return modelValue;
 };
 
-export const haveWritePermission = (approvalModel: ApprovalModel) => {
-  return approvalModel !== ApprovalModel.suggest;
+export const haveWritePermission = (approvalMode: ApprovalMode) => {
+  return approvalMode !== ApprovalMode.suggest;
 };
 
-export const haveExecutePermission = (approvalModel: ApprovalModel) => {
-  return approvalModel === ApprovalModel['full-auto'];
+export const haveExecutePermission = (approvalMode: ApprovalMode) => {
+  return approvalMode === ApprovalMode['full-auto'];
 };
 
 interface ApprovalPrompt {
@@ -41,10 +41,10 @@ interface ApprovalPrompt {
 
 const deniedEditFileMessage = 'user denied to edit file';
 export const requestWritePermission = async (
-  approvalModel: ApprovalModel,
+  approvalMode: ApprovalMode,
   filePath: string,
 ) => {
-  if (!haveWritePermission(approvalModel)) {
+  if (!haveWritePermission(approvalMode)) {
     const { isApproved } = await inquirer.prompt<ApprovalPrompt>([
       {
         type: 'confirm',
@@ -63,10 +63,10 @@ export const requestWritePermission = async (
 
 const deniedExecuteCommandMessage = 'user denied to execute command';
 export const requestExecutePermission = async (
-  approvalModel: ApprovalModel,
+  approvalMode: ApprovalMode,
   command: string,
 ) => {
-  if (!haveExecutePermission(approvalModel)) {
+  if (!haveExecutePermission(approvalMode)) {
     const { isApproved } = await inquirer.prompt<ApprovalPrompt>([
       {
         type: 'confirm',
