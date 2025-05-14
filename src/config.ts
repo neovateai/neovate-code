@@ -2,6 +2,7 @@ import defu from 'defu';
 import fs from 'fs';
 import { createRequire } from 'module';
 import path from 'path';
+import resolve from 'resolve';
 import yargsParser from 'yargs-parser';
 import { MODEL_ALIAS, ModelType } from './llms/model';
 import type { Plugin } from './pluginManager/types';
@@ -198,7 +199,7 @@ export async function getConfig(opts: {
 export function normalizePlugins(cwd: string, plugins: (string | Plugin)[]) {
   return plugins.map((plugin) => {
     if (typeof plugin === 'string') {
-      const pluginPath = path.resolve(cwd, plugin);
+      const pluginPath = resolve.sync(plugin, { basedir: cwd });
       const pluginObject = require(pluginPath);
       return pluginObject.default || pluginObject;
     }
