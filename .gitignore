@@ -1,7 +1,6 @@
 /node_modules
 /dist
 /.env
-/.takumi
 /PLAN.md
 /REQUIREMENTS.md
 /repomix-output.txt
