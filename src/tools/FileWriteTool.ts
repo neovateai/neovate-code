@@ -26,10 +26,10 @@ Before using this tool:
           ? file_path
           : resolve(opts.context.cwd, file_path);
         const {
-          config: { approvalModel },
+          config: { approvalMode },
         } = opts.context;
 
-        await requestWritePermission(approvalModel, fullFilePath);
+        await requestWritePermission(approvalMode, fullFilePath);
 
         const dir = dirname(fullFilePath);
         const oldFileExists = existsSync(fullFilePath);

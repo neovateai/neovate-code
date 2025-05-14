@@ -52,14 +52,14 @@ export function createFileEditTool(opts: { context: Context }) {
           new_string,
         );
         const {
-          config: { approvalModel },
+          config: { approvalMode },
         } = opts.context;
         const fullFilePath = isAbsolute(file_path)
           ? file_path
           : path.resolve(opts.context.cwd, file_path);
         const dir = path.dirname(fullFilePath);
 
-        await requestWritePermission(approvalModel, fullFilePath);
+        await requestWritePermission(approvalMode, fullFilePath);
 
         mkdirSync(dir, { recursive: true });
         await opts.context.pluginManager.apply({

@@ -56,10 +56,10 @@ cd /foo/bar && pytest tests
     execute: async ({ command, timeout = 1800000 }) => {
       try {
         const {
-          config: { approvalModel },
+          config: { approvalMode },
         } = opts.context;
 
-        await requestExecutePermission(approvalModel, command);
+        await requestExecutePermission(approvalMode, command);
         const result = execSync(command, { timeout });
         return { success: true, output: result.toString() };
       } catch (error: any) {
