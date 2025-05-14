@@ -124,7 +124,7 @@ async function buildContext(
             : resolvedConfig.smallModel.modelId,
       }),
     ...(!resolvedConfig.stream && { stream: 'false' }),
-    ...(resolvedConfig.mcpConfig?.mcpServers && {
+    ...(Object.keys(resolvedConfig.mcpConfig?.mcpServers || {}).length > 0 && {
       mcp: Object.keys(resolvedConfig.mcpConfig.mcpServers).join(', '),
     }),
   };
