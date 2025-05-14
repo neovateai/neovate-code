@@ -7,7 +7,7 @@ import yargsParser from 'yargs-parser';
 import { MODEL_ALIAS, ModelType } from './llms/model';
 import type { Plugin } from './pluginManager/types';
 import { getSystemPrompt } from './prompts/prompts';
-import { type ApprovalModel, getApprovalModel } from './utils/approvalMode';
+import { type ApprovalMode, getApprovalMode } from './utils/approvalMode';
 import * as logger from './utils/logger';
 
 export type ApiKeys = Record<string, string>;
@@ -26,7 +26,7 @@ export type Config = {
   productName: string;
   language: string;
   apiKeys: ApiKeys;
-  approvalMode: ApprovalModel;
+  approvalMode: ApprovalMode;
   printTokenUsage: boolean;
   quiet: boolean;
 };
@@ -190,7 +190,7 @@ export async function getConfig(opts: {
     productName,
     language: config.language!,
     apiKeys: config.apiKeys!,
-    approvalMode: getApprovalModel(config.approvalMode as ApprovalModel),
+    approvalMode: getApprovalMode(config.approvalMode as ApprovalMode),
     printTokenUsage: !!config.printTokenUsage,
     quiet: !!config.quiet,
   };
