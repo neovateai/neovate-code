@@ -1,99 +1,78 @@
-import { marked } from 'marked';
-import { markedTerminal } from 'marked-terminal';
+import * as p from '@umijs/clack-prompts';
+import { parse, setOptions } from 'marked';
+import TerminalRenderer from 'marked-terminal';
+import type { TerminalRendererOptions } from 'marked-terminal';
 import pc from 'picocolors';
 
-let isInitialized = false;
-
-function initializeRenderer() {
-  if (isInitialized) return;
-
-  marked.use(
-    // @ts-ignore
-    markedTerminal(
-      {
-        code: pc.yellow,
-        blockquote: pc.gray,
-        heading: pc.bold,
-        firstHeading: pc.green,
-        link: pc.blue,
-        table: pc.cyan,
-        emoji: true,
-        tableOptions: {
-          chars: {
-            top: '─',
-            'top-mid': '┬',
-            'top-left': '┌',
-            'top-right': '┐',
-            bottom: '─',
-            'bottom-mid': '┴',
-            'bottom-left': '└',
-            'bottom-right': '┘',
-            left: '│',
-            'left-mid': '├',
-            mid: '─',
-            'mid-mid': '┼',
-            right: '│',
-            'right-mid': '┤',
-            middle: '│',
-          },
-        },
-      },
-      { jsx: true },
-    ),
-  );
-  isInitialized = true;
+interface MarkdownRendererConfig {
+  options: TerminalRendererOptions;
+  parserOptions: {
+    linenos: boolean;
+    jsx: boolean;
+  };
 }
 
+const defaultConfig: MarkdownRendererConfig = {
+  options: {},
+  parserOptions: {
+    linenos: true,
+    jsx: true,
+  },
+};
+
+function createRenderer(config: MarkdownRendererConfig = defaultConfig) {
+  setOptions({
+    // @ts-expect-error missing parser, space props
+    renderer: new TerminalRenderer(config.options, config.parserOptions),
+  });
+
+  return (text: string): string => parse(text, { async: false }).trim();
+}
+
+const renderer = createRenderer();
 export function renderMarkdown(markdown: string): string {
-  initializeRenderer();
   try {
-    const rendered = marked.parse(markdown) as string;
-    return rendered.trimEnd();
+    return renderer(markdown);
   } catch (error) {
+    console.error('Markdown rendering failed:', error);
     return markdown;
   }
 }
 
-export class StreamRenderer {
-  private buffer: string = '';
-  private previousRendered: string = '';
+interface MarkdownTaskLoggerState {
+  lastLinesCount: number;
+  parsedText: string;
+}
 
-  constructor() {
-    initializeRenderer();
+export class MarkdownTaskLogger {
+  private state: MarkdownTaskLoggerState;
+  private task: ReturnType<typeof p.taskLog>;
+
+  constructor(productName: string) {
+    this.state = {
+      lastLinesCount: 0,
+      parsedText: '',
+    };
+    this.task = p.taskLog(pc.bold(pc.magentaBright(`${productName}:`)), {
+      parser: this.parseText.bind(this),
+    });
   }
 
-  append(chunk: string): string {
-    this.buffer += chunk;
-    try {
-      const completeRendered = marked.parse(this.buffer) as string;
-      const currentRendered = completeRendered.trimEnd();
+  private parseText(text: string): string {
+    const lines = text.split('\n');
+    const currentLineCount = lines.length;
+    const lastLine = lines[currentLineCount - 1];
 
-      const newContent = this.getDiff(this.previousRendered, currentRendered);
-      this.previousRendered = currentRendered;
-      return newContent;
-    } catch (error) {
-      return chunk;
+    if (currentLineCount > this.state.lastLinesCount) {
+      const aboveLines = lines.slice(0, -1).join('\n');
+      this.state.lastLinesCount = currentLineCount;
+      this.state.parsedText = `${renderMarkdown(aboveLines)}\n`;
     }
+
+    return `${this.state.parsedText}${lastLine}`;
   }
 
-  private getDiff(oldText: string, newText: string): string {
-    if (newText.startsWith(oldText)) {
-      return newText.substring(oldText.length);
-    }
-
-    let i = 0;
-    while (
-      i < oldText.length &&
-      i < newText.length &&
-      oldText[i] === newText[i]
-    ) {
-      i++;
-    }
-
-    if (i > 0) {
-      return newText.substring(i);
-    }
-
-    return newText;
+  public updateText(text: string): void {
+    this.task.text = text;
   }
 }
