@@ -1,21 +1,19 @@
 import * as p from '@umijs/clack-prompts';
 import { parse, setOptions } from 'marked';
-import TerminalRenderer from 'marked-terminal';
+import TerminalRenderer, { markedTerminal } from 'marked-terminal';
 import type { TerminalRendererOptions } from 'marked-terminal';
 import pc from 'picocolors';
 
 interface MarkdownRendererConfig {
   options: TerminalRendererOptions;
-  parserOptions: {
-    linenos: boolean;
-    jsx: boolean;
-  };
+  parserOptions: Parameters<typeof markedTerminal>[1];
 }
 
 const defaultConfig: MarkdownRendererConfig = {
-  options: {},
+  options: {
+    tab: 0,
+  },
   parserOptions: {
-    linenos: true,
     jsx: true,
   },
 };
@@ -63,13 +61,13 @@ export class MarkdownTaskLogger {
     const currentLineCount = lines.length;
     const lastLine = lines[currentLineCount - 1];
 
-    if (currentLineCount > this.state.lastLinesCount) {
+    if (currentLineCount > 1 && currentLineCount > this.state.lastLinesCount) {
       const aboveLines = lines.slice(0, -1).join('\n');
       this.state.lastLinesCount = currentLineCount;
-      this.state.parsedText = `${renderMarkdown(aboveLines)}\n`;
+      this.state.parsedText = renderMarkdown(aboveLines) + '\n';
     }
 
-    return `${this.state.parsedText}${lastLine}`;
+    return this.state.parsedText + lastLine;
   }
 
   public updateText(text: string): void {

@@ -202,6 +202,7 @@ export async function query(opts: QueryOptions) {
         //   }
         // }
       }
+      think?.text('\n');
       tokenUsageForLog = await result.usage;
       // process.stdout.write('\n');
     } else {
