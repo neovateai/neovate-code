@@ -5,3 +5,5 @@
 /REQUIREMENTS.md
 /repomix-output.txt
 /dist-dts
+/fixtures/*/node_modules
+/fixtures/*/dist
