@@ -1,6 +1,40 @@
 import { Tool } from 'ai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
+// 用于修复 大模型返回的 tools 中的参数格式 不正确 未闭合的问题
+export const XML_FORMAT_VALIDATION_GUIDE_PROMPT = `
+# XML Format Validation Guide
+
+When encountering XML structure issues, please follow these steps:
+
+1. Check XML tag completeness
+   - Ensure all tags have proper opening and closing marks
+   - Verify tags are correctly nested
+   - Validate tag names match properly
+
+2. Handle special characters
+   - Use CDATA sections for content containing special characters
+   - Properly escape XML special characters (&, <, >, ", ')
+
+3. Content validation
+   - Ensure content conforms to expected data structure
+   - Verify required fields exist
+   - Check if values are in correct format
+
+4. Common fix patterns
+   - Fix unclosed tags
+   - Correct tag nesting order
+   - Add missing required attributes
+   - Normalize whitespace characters
+
+Example format:
+<root>
+  <element attribute="value">
+    <![CDATA[Special content]]>
+  </element>
+</root>
+`;
+
 export function getSystemPrompt(opts: {
   tasks?: boolean;
   cwd: string;
@@ -150,6 +184,8 @@ Is directory a git repo: YES
 Platform: ${env.platform}
 Today's date: ${new Date().toLocaleDateString()}
 </env>
+
+${XML_FORMAT_VALIDATION_GUIDE_PROMPT}
 `,
   ];
 }
