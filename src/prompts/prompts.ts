@@ -1,7 +1,7 @@
 import { Tool } from 'ai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
-// 用于修复 大模型返回的 tools 中的参数格式 不正确 未闭合的问题
+// Used to fix the issue where the parameters format in the tools returned by the large model is incorrect and unclosed
 export const XML_FORMAT_VALIDATION_GUIDE_PROMPT = `
 # XML Format Validation Guide
 
