@@ -246,6 +246,14 @@ Ensure the commit message:
 
 Reply only with the one-line commit message, without any additional text, explanations, \
 or line breaks.
+
+## Guidelines
+  - Use present tense, like "add feature" instead of "added feature"
+  - Do not capitalize the first letter
+  - Do not end with a period
+  - Keep it concise and direct, describing the change content
+  - Please do not overthink, directly generate commit text that follows the specification
+  - Must strictly adhere to the above standards, without adding any personal explanations or suggestions
 `;
 
 /**
