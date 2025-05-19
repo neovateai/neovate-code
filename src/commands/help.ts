@@ -30,6 +30,8 @@ General Options:
   -q, --quiet          Enable non-interactive quiet mode (suppress confirmation prompts).
   --language <lang>    Specify the language for the output (defaults to 'en').
   --codebase <includes> Specify codebase paths to include in context.
+  -e, --edit-mode <mode> Specify the file edit mode (defaults to 'search-replace').
+                        Available modes: 'search-replace' or 'whole-file'.
   -h, --help           Show this help message.
   -v, --version        Show version number.
 
