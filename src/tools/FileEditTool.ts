@@ -24,8 +24,8 @@ To make a file edit, provide the following:
 3. new_string: The edited text to replace the old_string
 
 The tool supports two edit modes:
-1. search-replace (default): Replaces one occurrence of old_string with new_string
-2. whole-file: Replaces the entire file content with new_string
+1. search-replace (default): Replaces one occurrence of old_string with new_string. This mode is useful for making targeted changes to specific parts of a file.
+2. whole-file: Replaces the entire file content with new_string. This mode is useful when you want to completely rewrite a file or create a new file.
 
 If you want to create a new file, use:
    - A new file path, including dir name if needed
