@@ -30,6 +30,9 @@ Used for tasks that involve code generation, file modification, running commands
   * `suggest(default)`: Read-only mode; any file modification or command execution requires user confirmation.
   * `auto-edit`: File modifications and patches are applied automatically, but command execution still requires user confirmation.
   * `full-auto`: Fully automatic mode; all file operations and command executions proceed without user confirmation.
+* `-e, --edit-mode <edit-mode>`: Specify the file editing mode (defaults to 'search-replace').
+  * `search-replace(default)`: Traditional mode that performs targeted search and replace operations within files.
+  * `whole-file`: Complete file replacement mode, useful for full file rewrites or template-based generation.
 * `-m, --model <model>`: Specify the language model to use.
 * `--small-model <model>`: Specify a smaller language model to use.
 * `--api-key <provider=key>`: Specify the API key for the provider.
@@ -46,8 +49,11 @@ Used for tasks that involve code generation, file modification, running commands
 **Examples:**
 
 ```bash
-# Ask Takumi to add a feature
+# Ask Takumi to add a feature using search-replace mode (default)
 takumi "Implement a function to calculate the factorial of a number in src/mathUtils.ts"
+
+# Ask Takumi to rewrite an entire file using whole-file mode
+takumi "Rewrite the entire configuration file with new settings" -e whole-file
 
 # Ask Takumi to refactor code, requesting a plan first
 takumi "Refactor the database connection logic in src/db.ts for clarity" --plan
