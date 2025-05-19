@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { isAbsolute, resolve } from 'path';
+import { Config } from '../config';
 
 function detectFileEncoding(filePath: string): BufferEncoding {
   return 'utf-8';
@@ -36,6 +37,7 @@ export function applyEdit(
   file_path: string,
   old_string: string,
   new_string: string,
+  mode: Config['editMode'] = 'search-replace',
 ): { patch: Hunk[]; updatedFile: string } {
   const fullFilePath = isAbsolute(file_path)
     ? file_path
@@ -44,13 +46,23 @@ export function applyEdit(
   let originalFile;
   let updatedFile;
 
-  if (old_string === '') {
-    originalFile = '';
+  if (mode === 'whole-file') {
+    // In whole-file mode, we directly use the new content
+    originalFile =
+      old_string === ''
+        ? ''
+        : readFileSync(fullFilePath, detectFileEncoding(fullFilePath));
     updatedFile = new_string;
   } else {
-    const enc = detectFileEncoding(fullFilePath);
-    originalFile = readFileSync(fullFilePath, enc);
-    updatedFile = originalFile.replace(old_string, () => new_string);
+    // In search-replace mode, we use the existing logic
+    if (old_string === '') {
+      originalFile = '';
+      updatedFile = new_string;
+    } else {
+      const enc = detectFileEncoding(fullFilePath);
+      originalFile = readFileSync(fullFilePath, enc);
+      updatedFile = originalFile.replace(old_string, () => new_string);
+    }
   }
 
   if (updatedFile === originalFile) {
