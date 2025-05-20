@@ -5,5 +5,6 @@
 /REQUIREMENTS.md
 /repomix-output.txt
 /dist-dts
+/.takumi/mcp.json
 /fixtures/*/node_modules
-/fixtures/*/dist
+/fixtures/*/pnpm-lock.yaml

@@ -1,6 +1,9 @@
 # Takumi
 
-[![](https://badgen.net/npm/v/takumi)](https://www.npmjs.com/package/takumi) [![](https://badgen.net/npm/dm/takumi)](https://www.npmjs.com/package/takumi) [![](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml) [![](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
+[![](https://badgen.net/npm/v/takumi)](https://www.npmjs.com/package/takumi)
+[![](https://badgen.net/npm/dm/takumi)](https://www.npmjs.com/package/takumi)
+[![](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml)
+[![](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
 
 Pronounced `/tɑːˈkuːmi/`, a coding agent CLI to enhance your development workflow.
 
@@ -68,37 +71,7 @@ $ takumi commit -m <model> --stage --commit
 
 Checkout [commands.md](./docs/commands.md) for more details.
 
-### Usage with Cursor
-
-Takumi can also be used as an MCP server, add the following to your `<root>/.cursor/mcp.json`:
-
-#### NPX
-
-```json
-{
-  "mcpServers": {
-    "takumi": {
-      "command": "npx",
-      "args": ["-y", "takumi", "<root>"]
-    }
-  }
-}
-```
-
-This exposes the following tools:
-
-### Tools
-
-- `takumi-help`: Display help information for the Takumi CLI.
-- `takumi-version`: Display the current version of Takumi CLI.
-- `takumi-ask`: Ask questions about your codebase without modifying files.
-- `takumi-commit`: Generate conventional commit messages from staged changes.
-- `takumi-init`: Analyze your project and create a TAKUMI.md file with project conventions.
-- `takumi-watch`: Monitor files for special AI comments and execute instructions.
-- `takumi-test`: Run tests with automatic AI-powered fixing of failures.
-- `takumi-lint`: Run linter with automatic AI-powered fixing of errors.
-- `takumi-config`: Launch interactive configuration wizard.
-- `takumi-run`: Execute shell commands using natural language.
+Checkout [as-mcp.md](./docs/as-mcp.md) for more details on how to use Takumi as a MCP server.
 
 ## Contributing
 

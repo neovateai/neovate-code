@@ -22,7 +22,7 @@
     "build:index": "bun build src/index.ts --minify --outfile dist/index.mjs --target=node",
     "build:mcp": "bun build src/mcp-cli.ts --minify --outfile dist/mcp-cli.mjs --target=node",
     "build:dts": "npm run build:type && api-extractor run --local --verbose",
-    "build": "npm run build:cli && npm run build:index && npm run build:mcp && npm run build:type && npm run build:dts",
+    "build": "npm run build:cli && npm run build:index && npm run build:mcp && npm run build:dts",
     "ci": "npm run typecheck && npm run format:check && npm run test",
     "release": "npm run ci && utools release --git-tag --github-release --changelog",
     "test": "vitest run",
