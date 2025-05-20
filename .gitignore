@@ -7,4 +7,3 @@
 /dist-dts
 /.takumi/mcp.json
 /fixtures/*/node_modules
-/fixtures/*/pnpm-lock.yaml
