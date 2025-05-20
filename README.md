@@ -71,8 +71,6 @@ $ takumi commit -m <model> --stage --commit
 
 Checkout [commands.md](./docs/commands.md) for more details.
 
-- Checkout [as-mcp.md](./docs/as-mcp.md) for more details on how to use Takumi as a MCP server.
-
 ## Contributing
 
 Contributions are welcome! Please read the [CONTRIBUTING.md](./CONTRIBUTING.md) file for guidelines on setting up the development environment, running tests, and submitting pull requests.
