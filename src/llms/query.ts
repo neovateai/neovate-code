@@ -176,10 +176,10 @@ export async function query(opts: QueryOptions) {
       for await (const chunk of result.textStream) {
         if (!think) {
           thinkDone();
-          think = logger.logThink({ productName: context.config.productName });
-          // think = logger.logThinkMarkdown({
-          //   productName: context.config.productName,
-          // });
+          // think = logger.logThink({ productName: context.config.productName });
+          think = logger.logThinkWithMarkdown({
+            productName: context.config.productName,
+          });
         }
         text += chunk;
         if (text.includes('<') || text.includes('<use_tool>')) {
@@ -202,15 +202,16 @@ export async function query(opts: QueryOptions) {
         //   }
         // }
       }
+      think?.text('\n');
       tokenUsageForLog = await result.usage;
       // process.stdout.write('\n');
     } else {
       const result = await generateText(llmOpts);
       thinkDone();
-      // const renderedText = renderMarkdown(result.text);
+      const renderedText = renderMarkdown(result.text);
       logger
         .logThink({ productName: context.config.productName })
-        .text(result.text);
+        .text(renderedText);
       text = result.text;
       tokenUsageForLog = await result.usage;
     }
