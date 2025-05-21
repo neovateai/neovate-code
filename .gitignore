@@ -6,3 +6,4 @@
 /repomix-output.txt
 /dist-dts
 /.takumi/mcp.json
+/fixtures/*/node_modules
