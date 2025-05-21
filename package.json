@@ -9,20 +9,17 @@
   "types": "./dist/index.d.ts",
   "bin": {
     "ta": "dist/cli.mjs",
-    "takumi": "./dist/cli.mjs",
-    "takumi-mcp": "./dist/mcp-cli.mjs"
+    "takumi": "./dist/cli.mjs"
   },
   "scripts": {
     "dev": "tsx ./src/cli.ts",
-    "dev:mcp": "mcp-inspector tsx ./src/mcp-cli.ts fixtures/normal",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build:type": "tsc --project tsconfig.json --emitDeclarationOnly --declarationDir dist-dts",
     "build:cli": "bun build src/cli.ts --minify --outfile dist/cli.mjs --target=node",
     "build:index": "bun build src/index.ts --minify --outfile dist/index.mjs --target=node",
-    "build:mcp": "bun build src/mcp-cli.ts --external effect --external @valibot/to-json-schema --minify --outfile dist/mcp-cli.mjs --target=node",
     "build:dts": "npm run build:type && api-extractor run --local --verbose",
-    "build": "npm run build:cli && npm run build:index && npm run build:mcp && npm run build:dts",
+    "build": "npm run build:cli && npm run build:index && npm run build:dts",
     "ci": "npm run typecheck && npm run format:check && npm run test",
     "release": "npm run ci && utools release --git-tag --github-release --changelog",
     "test": "vitest run",

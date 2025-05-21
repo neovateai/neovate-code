@@ -1,25 +1,30 @@
 import { execSync } from 'child_process';
-import { FastMCP, UserError } from 'fastmcp';
-import { existsSync } from 'fs';
+import { FastMCP } from 'fastmcp';
 import path from 'path';
 import { z } from 'zod';
+import { Context } from '../types';
 
-export interface ToolContext {
-  server: FastMCP;
-  root: string;
+export async function runAsMcp(opts: { context: Context }) {
+  const productName = opts.context.config.productName;
+  const name = `${productName} MCP Server`;
+  const version = `0.1.0`;
+  const server = new FastMCP({ name, version });
+  server.start({ transportType: 'stdio' });
+  const root = (() => {
+    const root = opts.context.argv._[1];
+    if (!root) {
+      console.error('Please provide a root directory');
+      process.exit(1);
+    }
+    return path.resolve(process.cwd(), root as string);
+  })();
+  registerTools({ server, root });
 }
 
-function getBinPath(root: string) {
-  const binDir = path.join(root, 'node_modules', '.bin');
-  if (existsSync(binDir)) {
-    return path.join(binDir, 'takumi');
-  }
-  throw new UserError('takumi not found in node_modules/.bin');
-}
-
-export function registerTools(opts: ToolContext) {
+function registerTools(opts: { server: FastMCP; root: string }) {
   const { server, root } = opts;
-  const binPath = getBinPath(root);
+  // path/to/node /path/to/cli.js asmcp /path/to/root
+  const binPath = process.argv[1];
 
   server.addTool({
     name: 'takumi-help',
@@ -75,12 +80,10 @@ export function registerTools(opts: ToolContext) {
         const command = [binPath, 'ask', modelArg, '-q', `"${queryArg}"`]
           .filter(Boolean)
           .join(' ');
-
         const result = execSync(command, {
           cwd: root,
           env: process.env,
         });
-
         return {
           type: 'text',
           text: result.toString(),
@@ -181,12 +184,10 @@ export function registerTools(opts: ToolContext) {
         const command = [binPath, 'init', modelArg, '-q']
           .filter(Boolean)
           .join(' ');
-
         const result = execSync(command, {
           cwd: root,
           env: process.env,
         });
-
         return {
           type: 'text',
           text: result.toString(),
@@ -217,12 +218,10 @@ export function registerTools(opts: ToolContext) {
         const command = [binPath, 'test', testCmdArg, modelArg, '-q']
           .filter(Boolean)
           .join(' ');
-
         const result = execSync(command, {
           cwd: root,
           env: process.env,
         });
-
         return {
           type: 'text',
           text: result.toString(),
@@ -253,12 +252,10 @@ export function registerTools(opts: ToolContext) {
         const command = [binPath, 'lint', lintCmdArg, modelArg, '-q']
           .filter(Boolean)
           .join(' ');
-
         const result = execSync(command, {
           cwd: root,
           env: process.env,
         });
-
         return {
           type: 'text',
           text: result.toString(),
@@ -300,12 +297,10 @@ export function registerTools(opts: ToolContext) {
         ]
           .filter(Boolean)
           .join(' ');
-
         const result = execSync(command, {
           cwd: root,
           env: process.env,
         });
-
         return {
           type: 'text',
           text: result.toString(),

@@ -258,6 +258,10 @@ export async function runCli(opts: RunCliOpts) {
             await import('./commands/run.js')
           ).runRun({ context, prompt: runPrompt });
           break;
+        // case 'asmcp':
+        // logger.logCommand({ command });
+        // await (await import('./commands/asmcp.js')).runAsMcp({ context });
+        // break;
         default:
           await (
             await import('./commands/act.js')

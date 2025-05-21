@@ -1,5 +1,7 @@
 # Takumi as MCP
 
+> WIP, not ready for use.
+
 This document provides information on how to use Takumi as a Model Control Protocol (MCP) server. This allows you to integrate Takumi with other tools and services that support the MCP protocol.
 
 ## General Usage
