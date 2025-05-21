@@ -59,9 +59,9 @@ export function log2Html(logData: any): string {
       --text-color: #1e293b;
       --border-color: #e2e8f0;
     }
-    
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       line-height: 1.6;
@@ -69,9 +69,9 @@ export function log2Html(logData: any): string {
       background: var(--background-color);
       color: var(--text-color);
     }
-    
+
     .container { max-width: 1200px; margin: 0 auto; }
-    
+
     .section {
       background: var(--card-background);
       border-radius: 12px;
@@ -79,39 +79,39 @@ export function log2Html(logData: any): string {
       margin-bottom: 2rem;
       box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     }
-    
+
     .section-title {
       font-size: 1.5rem;
       font-weight: 600;
       margin-bottom: 1rem;
       color: var(--primary-color);
     }
-    
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 1rem;
     }
-    
+
     .card {
       background: var(--card-background);
       border: 1px solid var(--border-color);
       border-radius: 8px;
       padding: 1rem;
     }
-    
+
     .card-title {
       font-weight: 600;
       margin-bottom: 0.5rem;
     }
-    
+
     .chat-container {
       margin-top: 1rem;
       display: flex;
       flex-direction: column;
       gap: 1rem;
     }
-    
+
     .message {
       padding: 0.75rem;
       margin-bottom: 0.5rem;
@@ -119,14 +119,14 @@ export function log2Html(logData: any): string {
       max-width: 80%;
       position: relative;
     }
-    
+
     .user-message {
       background: var(--primary-color);
       color: white;
       margin-left: auto;
       border-bottom-right-radius: 2px;
     }
-    
+
     .assistant-message {
       background: var(--secondary-color);
       color: white;
@@ -288,14 +288,27 @@ export function log2Html(logData: any): string {
       <div class="grid">
         <div class="card">
           <div class="card-title">Start Time</div>
-          <div>${new Date(logData.session.startTime).toLocaleString()}</div>
+          <div>${new Date(logData.session.startTime)
+            .toLocaleString('en-US', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false,
+            })
+            .replace(
+              /(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)/,
+              '$3-$1-$2 $4:$5:$6',
+            )}</div>
         </div>
         <div class="card">
           <div class="card-title">Model</div>
           <div>${getModelDisplay(logData.session.resolvedConfig.model)}</div>
         </div>
         <div class="card">
-          <div class="card-title">SmallModel</div>
+          <div class="card-title">Small Model</div>
           <div>${getModelDisplay(logData.session.resolvedConfig.smallModel)}</div>
         </div>
         <div class="card">
@@ -303,7 +316,7 @@ export function log2Html(logData: any): string {
           <div>${logData.session.resolvedConfig.language}</div>
         </div>
         <div class="card">
-          <div class="card-title">ProductName</div>
+          <div class="card-title">Product Name</div>
           <div>${logData.session.resolvedConfig.productName}</div>
         </div>
         <div class="card">
@@ -312,7 +325,7 @@ export function log2Html(logData: any): string {
         </div>
       </div>
     </div>
-    
+
     ${
       Object.keys(logData.queries).length > 0
         ? `
@@ -322,7 +335,20 @@ export function log2Html(logData: any): string {
         .map(
           ([id, query]: [string, any]) => `
         <div class="card" style="margin-bottom: 1.5rem;">
-          <div class="timestamp">Start: ${new Date(query.startTime).toLocaleString()}</div>
+          <div class="timestamp">Start: ${new Date(query.startTime)
+            .toLocaleString('en-US', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false,
+            })
+            .replace(
+              /(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)/,
+              '$3-$1-$2 $4:$5:$6',
+            )}</div>
           <div class="chat-container">
             ${query.items
               .map((item: any) => {
