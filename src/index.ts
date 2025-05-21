@@ -51,7 +51,7 @@ async function buildContext(
   const config = await getConfig({ argv, productName: opts.productName, cwd });
   const buildinPlugins = [
     // don't add sessionPlugin for log command
-    ...(command === 'log' ? [] :[sessionPlugin]),
+    ...(command === 'log' ? [] : [sessionPlugin]),
     keywordContextPlugin,
     autoSelectModelPlugin,
     xmlFormatPromptPlugin,
@@ -131,14 +131,14 @@ async function buildContext(
       mcp: Object.keys(resolvedConfig.mcpConfig.mcpServers).join(', '),
     }),
   };
-  const infos = await pluginManager.apply({
-    hook: 'generalInfo',
-    args: [],
-    type: PluginHookType.SeriesMerge,
-    memo: defaultInfos,
-    pluginContext,
-  });
   if (command !== 'log') {
+    const infos = await pluginManager.apply({
+      hook: 'generalInfo',
+      args: [],
+      type: PluginHookType.SeriesMerge,
+      memo: defaultInfos,
+      pluginContext,
+    });
     logger.logGeneralInfo({
       infos,
     });
