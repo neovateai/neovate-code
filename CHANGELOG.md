@@ -1,3 +1,21 @@
+## 0.0.32
+
+`2025-05-21`
+
+- fix: enhance log HTML date and text display by [@sorrycc](https://github.com/sorrycc)
+- feat: add log command to view JSON logs as HTML by [@Wu-kung](https://github.com/Wu-kung) in [#22](https://github.com/umijs/takumi/pull/22)
+- feat: add whole-file edit mode by [@Holden Hu](https://github.com/Holden Hu) in [#40](https://github.com/umijs/takumi/pull/40)
+- fix: improve markdown render by [@Roc](https://github.com/Roc) in [#35](https://github.com/umijs/takumi/pull/35)
+- refactor: integrate mcp server into main cli and remove separate mcp-cli (but don't enable for now since its not ready) by [@sorrycc](https://github.com/sorrycc)
+- feat: update Gemini Flash model to preview-05-20 by [@sorrycc](https://github.com/sorrycc)
+- feat: add MCP server integration and CLI tools by [@Wu-kung](https://github.com/Wu-kung) in [#38](https://github.com/umijs/takumi/pull/38)
+- fix: handle newline-separated thoughts in commit message by [@阿平](https://github.com/阿平) in [#41](https://github.com/umijs/takumi/pull/41)
+- feat: add XML format validation guide prompt by [@阿平](https://github.com/阿平) in [#37](https://github.com/umijs/takumi/pull/37)
+- feat: add askQuery and editQuery types to PluginContext by [@阿平](https://github.com/阿平) in [#39](https://github.com/umijs/takumi/pull/39)
+- feat: update Gemini Pro to preview-05-06 by [@sorrycc](https://github.com/sorrycc)
+- fix: spelling error with approvalMode by [@Roc](https://github.com/Roc) in [#34](https://github.com/umijs/takumi/pull/34)
+
+
 ## 0.0.31
 
 `2025-05-14`
