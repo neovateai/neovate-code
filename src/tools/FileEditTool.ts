@@ -23,7 +23,11 @@ To make a file edit, provide the following:
 2. old_string: The text to replace (must be unique within the file, and must match the file contents exactly, including all whitespace and indentation)
 3. new_string: The edited text to replace the old_string
 
-The tool will replace ONE occurrence of old_string with new_string in the specified file.
+The tool supports two edit modes:
+1. search-replace (default): Replaces one occurrence of old_string with new_string. This mode is useful for making targeted changes to specific parts of a file.
+2. whole-file: Replaces the entire file content with new_string. This mode is useful when you want to completely rewrite a file or create a new file.
+
+Current edit mode: {editMode}
 
 If you want to create a new file, use:
    - A new file path, including dir name if needed
@@ -35,7 +39,10 @@ Remember: when making multiple file edits in a row to the same file, you should 
 
 export function createFileEditTool(opts: { context: Context }) {
   return tool({
-    description,
+    description: description.replace(
+      '{editMode}',
+      opts.context.config.editMode,
+    ),
     parameters: z.object({
       file_path: z.string().describe('The absolute path to the file to modify'),
       old_string: z.string().describe('The text to replace'),
@@ -50,6 +57,7 @@ export function createFileEditTool(opts: { context: Context }) {
           file_path,
           old_string,
           new_string,
+          opts.context.config.editMode,
         );
         const {
           config: { approvalMode },

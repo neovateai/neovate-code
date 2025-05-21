@@ -27,6 +27,7 @@ export type Config = {
   language: string;
   apiKeys: ApiKeys;
   approvalMode: ApprovalMode;
+  editMode: 'search-replace' | 'whole-file';
   printTokenUsage: boolean;
   quiet: boolean;
 };
@@ -119,6 +120,7 @@ export async function getConfig(opts: {
     plugins: argv.plugin,
     language: argv.language,
     approvalMode: argv.approvalMode,
+    editMode: argv['edit-mode'] || 'search-replace',
     printTokenUsage: argv.printTokenUsage,
     apiKeys: (() => {
       const apiKeys: ApiKeys = {};
@@ -191,6 +193,7 @@ export async function getConfig(opts: {
     language: config.language!,
     apiKeys: config.apiKeys!,
     approvalMode: getApprovalMode(config.approvalMode as ApprovalMode),
+    editMode: config.editMode!,
     printTokenUsage: !!config.printTokenUsage,
     quiet: !!config.quiet,
   };
