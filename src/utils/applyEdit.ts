@@ -54,7 +54,6 @@ export function applyEdit(
         : readFileSync(fullFilePath, detectFileEncoding(fullFilePath));
     updatedFile = new_string;
   } else {
-    // In search-replace mode, we use the existing logic
     if (old_string === '') {
       originalFile = '';
       updatedFile = new_string;
