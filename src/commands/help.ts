@@ -21,6 +21,7 @@ Commands:
   run <prompt>         Run a command based on the prompt.
 
 General Options:
+  -a, --approval-mode <approval-mode> Specify the approval mode for tool execution(defaults to 'suggest').
   -m, --model <model>  Specify the language model to use.
   --small-model <model> Specify a smaller language model for certain tasks.
   --api-key <provider=key> Specify the API key for a provider (e.g., OPENAI=sk-...).
@@ -29,6 +30,8 @@ General Options:
   -q, --quiet          Enable non-interactive quiet mode (suppress confirmation prompts).
   --language <lang>    Specify the language for the output (defaults to 'en').
   --codebase <includes> Specify codebase paths to include in context.
+  -e, --edit-mode <mode> Specify the file edit mode (defaults to 'search-replace').
+                        Available modes: 'search-replace' or 'whole-file'.
   -h, --help           Show this help message.
   -v, --version        Show version number.
 

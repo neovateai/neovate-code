@@ -47,8 +47,8 @@ Generate a `TAKUMI.md` file to guide the AI to follow later.
 
 ```bash
 $ takumi init -m <model>
-# or use tak for short
-$ tak init -m <model>
+# or use ta for short
+$ ta init -m <model>
 ```
 
 Let the AI to act on the codebase.

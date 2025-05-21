@@ -1,0 +1,3 @@
+{
+  "plugins": ["./.takumi/plugin.js"]
+}

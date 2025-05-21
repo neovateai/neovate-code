@@ -2,6 +2,7 @@ import { tool } from 'ai';
 import { execSync } from 'child_process';
 import { z } from 'zod';
 import { Context } from '../types';
+import { requestExecutePermission } from '../utils/approvalMode';
 
 const MAX_OUTPUT_LENGTH = 30000;
 const BANNED_COMMANDS = [
@@ -54,6 +55,11 @@ cd /foo/bar && pytest tests
     }),
     execute: async ({ command, timeout = 1800000 }) => {
       try {
+        const {
+          config: { approvalMode },
+        } = opts.context;
+
+        await requestExecutePermission(approvalMode, command);
         const result = execSync(command, { timeout });
         return { success: true, output: result.toString() };
       } catch (error: any) {

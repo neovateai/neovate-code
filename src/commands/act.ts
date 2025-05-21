@@ -117,7 +117,7 @@ ${planResult}
     context: opts.context,
   });
 
-  if (!argv.quiet) {
+  if (!opts.context.config.quiet) {
     while (true) {
       const prompt = await logger.getUserInput();
       await editQuery({

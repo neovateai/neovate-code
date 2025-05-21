@@ -65,7 +65,7 @@ You can specify which LLM Takumi should use for its primary tasks and optionally
     **Syntax:** `--plan-model <ModelType>`
 
     ```bash
-    $ takumi act "Refactor database logic" --plan --model OpenAI/gpt-4o --plan-model Google/gemini-2.5-flash-preview-04-17
+    $ takumi act "Refactor database logic" --plan --model 4o --plan-model flash
     ```
 
 ## 3. Model Aliases
@@ -84,7 +84,7 @@ To simplify model selection, Takumi provides short aliases for commonly used mod
 *   `4`: `OpenAI/gpt-4`
 *   `4o`: `OpenAI/gpt-4o`
 *   `3`: `OpenAI/gpt-3.5-turbo`
-*   `flash`: `Google/gemini-2.5-flash-preview-04-17`
+*   `flash`: `Google/gemini-2.5-flash-preview-05-20`
 *   `gemini`: `Google/gemini-2.5-pro-exp-03-25`
 *   `grok`: `Grok/grok-3-fast-beta`
 *   `quasar`: `OpenRouter/openrouter/quasar-alpha`

@@ -20,8 +20,8 @@ export const MODEL_ALIAS = {
   '4o': 'OpenAI/gpt-4o',
   '3': 'OpenAI/gpt-3.5-turbo',
   // Google
-  flash: 'Google/gemini-2.5-flash-preview-04-17',
-  gemini: 'Google/gemini-2.5-pro-exp-03-25',
+  flash: 'Google/gemini-2.5-flash-preview-05-20',
+  gemini: 'Google/gemini-2.5-pro-preview-05-06',
   // Grok
   grok: 'Grok/grok-3-fast-beta',
   // Other
@@ -39,8 +39,9 @@ const DEEPSEEK_MODELS = [
   'DeepSeek/deepseek-reasoner',
 ] as const;
 const GOOGLE_MODELS = [
-  'Google/gemini-2.5-flash-preview-04-17',
+  'Google/gemini-2.5-flash-preview-05-20',
   'Google/gemini-2.5-pro-exp-03-25',
+  'Google/gemini-2.5-pro-preview-05-06',
   'Google/gemma-3-27b-it',
 ] as const;
 const SILICONFLOW_MODELS = [

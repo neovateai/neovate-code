@@ -1,3 +1,96 @@
+## 0.0.31
+
+`2025-05-14`
+
+- fix: update approvalModel to approvalMode in tool implementations by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.30
+
+`2025-05-14`
+
+- fix: update MCP server check to handle empty objects by [@sorrycc](https://github.com/sorrycc)
+- feat: add resolve dependency for plugin path resolution by [@sorrycc](https://github.com/sorrycc)
+- refactor: update config handling and quiet mode logic by [@sorrycc](https://github.com/sorrycc)
+- feat: support hierarchical configuration from global and project level files by [@jalever](https://github.com/jalever) in [#28](https://github.com/umijs/takumi/pull/28)
+
+
+## 0.0.29
+
+`2025-05-13`
+
+- feat: add --print-token-usage option to display token usage by [@sorrycc](https://github.com/sorrycc)
+- refactor: move auto model selection to plugin by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename keyword-context.ts to keywordContext.ts by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.28
+
+`2025-05-13`
+
+- feat: support approval-mode option by [@moonlit](https://github.com/moonlit) in [#29](https://github.com/umijs/takumi/pull/29)
+- feat: add token calculator by [@Holden Hu](https://github.com/Holden Hu) in [#31](https://github.com/umijs/takumi/pull/31)
+- fix: add error handling for update check in CLI by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.27
+
+`2025-05-12`
+
+
+## 0.0.26
+
+`2025-05-12`
+
+- refactor: Move update check after package.json load by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.25
+
+`2025-05-12`
+
+- style: Colorize update notification messages by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.24
+
+`2025-05-12`
+
+- feat: display CLI version by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.23
+
+`2025-05-12`
+
+- style: Remove ellipsis from thinking spinner message by [@sorrycc](https://github.com/sorrycc)
+- refactor: Use fs.readFileSync to load package.json by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.22
+
+`2025-05-12`
+
+- feat: add upgear configuration by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.0.21
+
+`2025-05-12`
+
+- feat: add automatic update check by [@sorrycc](https://github.com/sorrycc)
+- feat: add interactive mode to commit command by [@阿平](https://github.com/阿平) in [#27](https://github.com/umijs/takumi/pull/27)
+- refactor: update plugin command structure for clarity by [@sorrycc](https://github.com/sorrycc)
+- refactor: log intro earlier and update model selection warning by [@sorrycc](https://github.com/sorrycc)
+- feat: add language option for commit messages by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename llm directory to llms and update imports by [@sorrycc](https://github.com/sorrycc)
+- fix: remove unnecessary closing bracket in config by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance model selection logic and update environment configuration by [@Holden Hu](https://github.com/Holden Hu) in [#21](https://github.com/umijs/takumi/pull/21)
+- feat: add startTime to file changes in session plugin by [@sorrycc](https://github.com/sorrycc)
+- feat: enable plugins to react to file edits and creations by [@sorrycc](https://github.com/sorrycc)
+- feat: add execution confirmation before running shell commands by [@阿平](https://github.com/阿平) in [#24](https://github.com/umijs/takumi/pull/24)
+
+
 ## 0.0.20
 
 `2025-05-08`

@@ -2,7 +2,6 @@ import assert from 'assert';
 import { randomUUID } from 'crypto';
 import { format } from 'date-fns';
 import dotenv from 'dotenv';
-import { createRequire } from 'module';
 import os from 'os';
 import path from 'path';
 import yargsParser from 'yargs-parser';
@@ -16,16 +15,17 @@ import {
 import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
 import type { Command, Plugin } from './pluginManager/types';
-import { keywordContextPlugin } from './plugins/keyword-context';
+import { autoSelectModelPlugin } from './plugins/autoSelectModel';
+import { keywordContextPlugin } from './plugins/keywordContext';
 import { sessionPlugin } from './plugins/session';
+import { xmlFormatPromptPlugin } from './plugins/xmlFormatPrompt';
 import type { Context, PluginContext } from './types';
 import * as logger from './utils/logger';
-
-const require = createRequire(import.meta.url);
 
 // Private export may be deprecated in the future
 export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
 export { Plugin, PluginContext, PluginHookType };
+export { checkAndUpdate as _checkAndUpdate } from 'upgear';
 
 async function buildContext(
   opts: RunCliOpts & { argv: any; command: string },
@@ -49,21 +49,17 @@ async function buildContext(
     `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${sessionId}.json`,
   );
   const config = await getConfig({ argv, productName: opts.productName, cwd });
-  const argsPlugins: Plugin[] = [];
-  for (const plugin of argv.plugin || []) {
-    const pluginPath = path.resolve(cwd, plugin);
-    const pluginObject = require(pluginPath);
-    argsPlugins.push(pluginObject.default || pluginObject);
-  }
-  const buildinPlugins =
-    command === 'log'
-      ? [keywordContextPlugin]
-      : [sessionPlugin, keywordContextPlugin];
+  const buildinPlugins = [
+    // don't add sessionPlugin for log command
+    ...(command === 'log' ? [] :[sessionPlugin]),
+    keywordContextPlugin,
+    autoSelectModelPlugin,
+    xmlFormatPromptPlugin,
+  ];
   const plugins = [
     ...buildinPlugins,
     ...(config.plugins || []),
     ...(opts.plugins || []),
-    ...argsPlugins,
   ];
   const pluginManager = new PluginManager(plugins);
   const paths = {
@@ -131,7 +127,7 @@ async function buildContext(
             : resolvedConfig.smallModel.modelId,
       }),
     ...(!resolvedConfig.stream && { stream: 'false' }),
-    ...(resolvedConfig.mcpConfig?.mcpServers && {
+    ...(Object.keys(resolvedConfig.mcpConfig?.mcpServers || {}).length > 0 && {
       mcp: Object.keys(resolvedConfig.mcpConfig.mcpServers).join(', '),
     }),
   };
@@ -188,8 +184,10 @@ export async function runCli(opts: RunCliOpts) {
         q: 'quiet',
         h: 'help',
         i: 'interactive',
+        a: 'approvalMode',
+        e: 'edit-mode',
       },
-      array: ['plugin'],
+      array: ['plugin', 'apiKey'],
       boolean: ['plan', 'stream', 'quiet', 'help', 'interactive'],
     });
     let command = argv._[0] as string;
@@ -268,6 +266,10 @@ export async function runCli(opts: RunCliOpts) {
           logger.logCommand({ command });
           await (await import('./commands/log.js')).runLog({ context });
           break;
+        // case 'asmcp':
+        // logger.logCommand({ command });
+        // await (await import('./commands/asmcp.js')).runAsMcp({ context });
+        // break;
         default:
           await (
             await import('./commands/act.js')

@@ -4,6 +4,8 @@ import { dirname, isAbsolute, resolve } from 'path';
 import { z } from 'zod';
 import { PluginHookType } from '../pluginManager/pluginManager';
 import { Context } from '../types';
+import { requestWritePermission } from '../utils/approvalMode';
+import { logInfo } from '../utils/logger';
 
 export function createFileWriteTool(opts: { context: Context }) {
   return tool({
@@ -19,37 +21,54 @@ Before using this tool:
       content: z.string(),
     }),
     execute: async ({ file_path, content }) => {
-      const fullFilePath = isAbsolute(file_path)
-        ? file_path
-        : resolve(opts.context.cwd, file_path);
-      const dir = dirname(fullFilePath);
-      const oldFileExists = existsSync(fullFilePath);
-      const enc = 'utf-8';
-      const oldContent = oldFileExists ? readFileSync(fullFilePath, enc) : null;
-      if (oldContent) {
-        await opts.context.pluginManager.apply({
-          hook: 'editFile',
-          args: [
-            {
-              filePath: fullFilePath,
-              oldContent: oldContent,
-              newContent: content,
-            },
-          ],
-          type: PluginHookType.Series,
-          pluginContext: opts.context.pluginContext,
-        });
-      } else {
-        await opts.context.pluginManager.apply({
-          hook: 'createFile',
-          args: [{ filePath: fullFilePath, content: content }],
-          type: PluginHookType.Series,
-          pluginContext: opts.context.pluginContext,
-        });
+      try {
+        const fullFilePath = isAbsolute(file_path)
+          ? file_path
+          : resolve(opts.context.cwd, file_path);
+        const {
+          config: { approvalMode },
+        } = opts.context;
+
+        await requestWritePermission(approvalMode, fullFilePath);
+
+        const dir = dirname(fullFilePath);
+        const oldFileExists = existsSync(fullFilePath);
+        const enc = 'utf-8';
+        const oldContent = oldFileExists
+          ? readFileSync(fullFilePath, enc)
+          : null;
+        if (oldContent) {
+          await opts.context.pluginManager.apply({
+            hook: 'editFile',
+            args: [
+              {
+                filePath: fullFilePath,
+                oldContent: oldContent,
+                newContent: content,
+              },
+            ],
+            type: PluginHookType.Series,
+            pluginContext: opts.context.pluginContext,
+          });
+        } else {
+          await opts.context.pluginManager.apply({
+            hook: 'createFile',
+            args: [{ filePath: fullFilePath, content: content }],
+            type: PluginHookType.Series,
+            pluginContext: opts.context.pluginContext,
+          });
+        }
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(fullFilePath, addNewLineIfMissing(content), enc);
+
+        logInfo(`File ${file_path} updated`);
+        return `File written successfully: ${fullFilePath}`;
+      } catch (e) {
+        return {
+          success: false,
+          error: e instanceof Error ? e.message : 'Unknown error',
+        };
       }
-      mkdirSync(dir, { recursive: true });
-      writeFileSync(fullFilePath, addNewLineIfMissing(content), enc);
-      return `File written successfully: ${fullFilePath}`;
     },
   });
 }

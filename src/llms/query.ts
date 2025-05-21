@@ -1,4 +1,10 @@
-import { CoreMessage, Tool, generateText, streamText } from 'ai';
+import {
+  CoreMessage,
+  LanguageModelUsage,
+  Tool,
+  generateText,
+  streamText,
+} from 'ai';
 import assert from 'assert';
 import { randomUUID } from 'crypto';
 import { getContext } from '../context/context';
@@ -151,6 +157,7 @@ export async function query(opts: QueryOptions) {
     await addMessage([{ role: 'user', content: prompt }]);
   }
   while (true) {
+    const generationId = randomUUID();
     const thinkDone = logger.spinThink({
       productName: context.config.productName,
     });
@@ -161,6 +168,7 @@ export async function query(opts: QueryOptions) {
       system,
     };
     let text = '';
+    let tokenUsageForLog: LanguageModelUsage | null = null;
     if (context.config.stream) {
       const result = await streamText(llmOpts);
       text = '';
@@ -168,10 +176,10 @@ export async function query(opts: QueryOptions) {
       for await (const chunk of result.textStream) {
         if (!think) {
           thinkDone();
-          think = logger.logThink({ productName: context.config.productName });
-          // think = logger.logThinkMarkdown({
-          //   productName: context.config.productName,
-          // });
+          // think = logger.logThink({ productName: context.config.productName });
+          think = logger.logThinkWithMarkdown({
+            productName: context.config.productName,
+          });
         }
         text += chunk;
         if (text.includes('<') || text.includes('<use_tool>')) {
@@ -194,20 +202,40 @@ export async function query(opts: QueryOptions) {
         //   }
         // }
       }
+      think?.text('\n');
+      tokenUsageForLog = await result.usage;
       // process.stdout.write('\n');
     } else {
       const result = await generateText(llmOpts);
       thinkDone();
-      // const renderedText = renderMarkdown(result.text);
+      const renderedText = renderMarkdown(result.text);
       logger
         .logThink({ productName: context.config.productName })
-        .text(result.text);
+        .text(renderedText);
       text = result.text;
+      tokenUsageForLog = await result.usage;
+    }
+    if (context.argv.printTokenUsage) {
+      logger.logUsage({
+        promptTokens: tokenUsageForLog?.promptTokens,
+        completionTokens: tokenUsageForLog?.completionTokens,
+        totalTokens: tokenUsageForLog?.totalTokens,
+        generationId,
+      });
     }
     // hook: query
     await opts.context.pluginManager.apply({
       hook: 'query',
-      args: [{ prompt, text, id, tools }],
+      args: [
+        {
+          prompt,
+          text,
+          id,
+          tools,
+          tokenUsage: tokenUsageForLog,
+          generationId,
+        },
+      ],
       type: PluginHookType.Series,
       pluginContext: opts.context.pluginContext,
     });

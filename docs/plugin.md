@@ -79,10 +79,12 @@ Called before Takumi starts gathering context (like file structure, git status) 
 
 ### `editFile`
 
--   **Type:** `(opts: { filePath: string, oldContent: string, newContent: string }) => void`
--   **Arguments:** `[{ filePath, oldContent, newContent }]`
+-   **Type:** `(opts: { filePath: string, oldContent: string, newContent: string, mode?: 'search-replace' | 'whole-file' }) => void`
+-   **Arguments:** `[{ filePath, oldContent, newContent, mode }]`
 
-Called when a file is edited.
+Called when a file is edited. The `mode` parameter indicates the editing mode being used:
+- `search-replace`: Traditional mode for targeted changes within a file
+- `whole-file`: Complete file replacement mode
 
 ### `createFile`
 
