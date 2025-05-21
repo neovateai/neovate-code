@@ -227,7 +227,14 @@ function checkCommitMessage(message: string) {
 
 function removeThoughts(message: string) {
   // e.g. gemini-2.5-pro-exp-03-25 contains <thought>...</thought>
-  return message.replace(/<thought>[\s\S]*?<\/thought>/gm, '');
+  message = message.replace(/<thought>[\s\S]*?<\/thought>/gm, '');
+
+  // eg claude-3.7-sonnet thought ... \n\n ...
+  if (message.indexOf('\n') != -1) {
+    // get the last line from newline-separated lines
+    return message.split('\n').pop() || message;
+  }
+  return message;
 }
 
 const COMMIT_PROMPT = `

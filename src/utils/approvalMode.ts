@@ -12,7 +12,7 @@ const defaultApprovalMode = ApprovalMode.suggest;
 export type ApprovalMode = (typeof ApprovalMode)[keyof typeof ApprovalMode];
 
 export const getApprovalMode = (approvalMode: ApprovalMode) => {
-  const model = approvalMode || process.env.APPROVAL_MODEL;
+  const model = approvalMode || process.env.APPROVAL_MODE;
 
   if (!model) return defaultApprovalMode;
   const modelValue = ApprovalMode[model];

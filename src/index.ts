@@ -18,6 +18,7 @@ import type { Command, Plugin } from './pluginManager/types';
 import { autoSelectModelPlugin } from './plugins/autoSelectModel';
 import { keywordContextPlugin } from './plugins/keywordContext';
 import { sessionPlugin } from './plugins/session';
+import { xmlFormatPromptPlugin } from './plugins/xmlFormatPrompt';
 import type { Context, PluginContext } from './types';
 import * as logger from './utils/logger';
 
@@ -52,6 +53,7 @@ async function buildContext(
     sessionPlugin,
     keywordContextPlugin,
     autoSelectModelPlugin,
+    xmlFormatPromptPlugin,
   ];
   const plugins = [
     ...buildinPlugins,
@@ -257,6 +259,10 @@ export async function runCli(opts: RunCliOpts) {
             await import('./commands/run.js')
           ).runRun({ context, prompt: runPrompt });
           break;
+        // case 'asmcp':
+        // logger.logCommand({ command });
+        // await (await import('./commands/asmcp.js')).runAsMcp({ context });
+        // break;
         default:
           await (
             await import('./commands/act.js')

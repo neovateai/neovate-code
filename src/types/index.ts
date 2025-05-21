@@ -1,5 +1,6 @@
 import type yargsParser from 'yargs-parser';
 import { Config } from '../config';
+import type { AskQueryOptions, EditQueryOptions } from '../llms/query';
 import { MCPClient } from '../mcp';
 import { PluginManager } from '../pluginManager/pluginManager';
 import type { Plugin } from '../pluginManager/types';
@@ -19,6 +20,8 @@ export interface PluginContext {
   argv: yargsParser.Arguments;
   paths: Paths;
   sessionId: string;
+  askQuery: (opts: Omit<AskQueryOptions, 'context'>) => Promise<string>;
+  editQuery: (opts: Omit<EditQueryOptions, 'context'>) => Promise<string>;
 }
 
 export interface Context {
