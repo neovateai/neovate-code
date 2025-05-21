@@ -50,7 +50,8 @@ async function buildContext(
   );
   const config = await getConfig({ argv, productName: opts.productName, cwd });
   const buildinPlugins = [
-    sessionPlugin,
+    // don't add sessionPlugin for log command
+    ...(command === 'log' ? [] : [sessionPlugin]),
     keywordContextPlugin,
     autoSelectModelPlugin,
     xmlFormatPromptPlugin,
@@ -130,16 +131,18 @@ async function buildContext(
       mcp: Object.keys(resolvedConfig.mcpConfig.mcpServers).join(', '),
     }),
   };
-  const infos = await pluginManager.apply({
-    hook: 'generalInfo',
-    args: [],
-    type: PluginHookType.SeriesMerge,
-    memo: defaultInfos,
-    pluginContext,
-  });
-  logger.logGeneralInfo({
-    infos,
-  });
+  if (command !== 'log') {
+    const infos = await pluginManager.apply({
+      hook: 'generalInfo',
+      args: [],
+      type: PluginHookType.SeriesMerge,
+      memo: defaultInfos,
+      pluginContext,
+    });
+    logger.logGeneralInfo({
+      infos,
+    });
+  }
   if (command !== 'config') {
     assert(resolvedConfig.model, 'Model is required');
     assert(resolvedConfig.smallModel, 'Small model is required');
@@ -258,6 +261,10 @@ export async function runCli(opts: RunCliOpts) {
           await (
             await import('./commands/run.js')
           ).runRun({ context, prompt: runPrompt });
+          break;
+        case 'log':
+          logger.logCommand({ command });
+          await (await import('./commands/log.js')).runLog({ context });
           break;
         // case 'asmcp':
         // logger.logCommand({ command });
