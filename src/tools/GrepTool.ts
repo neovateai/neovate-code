@@ -1,8 +1,8 @@
 import { tool } from 'ai';
-import { execFile } from 'child_process';
 import { stat } from 'fs/promises';
 import { isAbsolute, resolve } from 'path';
 import { z } from 'zod';
+import { ripGrep } from '../ripgrep';
 import { Context } from '../types';
 
 export function createGrepTool(opts: { context: Context }) {
@@ -18,7 +18,6 @@ export function createGrepTool(opts: { context: Context }) {
     }),
     execute: async ({ pattern, path, include }) => {
       const start = Date.now();
-      const cmd = 'rg';
       const args = ['-li', pattern];
       if (include) {
         args.push('--glob', include);
@@ -28,25 +27,7 @@ export function createGrepTool(opts: { context: Context }) {
           ? path
           : resolve(opts.context.cwd, path)
         : opts.context.cwd;
-      args.push(absolutePath);
-      const results = await new Promise<string[]>((resolve, reject) => {
-        execFile(
-          cmd,
-          args,
-          {
-            maxBuffer: 1_000_000,
-            timeout: 10_000,
-          },
-          (err, stdout) => {
-            if (err) {
-              console.error(`[GrepTool] Error: ${err}`);
-              resolve([]);
-            }
-            console.log(`[GrepTool] Output: ${stdout}`);
-            resolve(stdout.trim().split('\n').filter(Boolean));
-          },
-        );
-      });
+      const results = await ripGrep(args, absolutePath);
       const stats = await Promise.all(results.map((_) => stat(_)));
       const matches = results
         // Sort by modification time

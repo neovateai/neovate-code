@@ -107,6 +107,9 @@ importers:
       resolve:
         specifier: ^1.22.10
         version: 1.22.10
+      spawn-rx:
+        specifier: ^5.1.2
+        version: 5.1.2
       tsx:
         specifier: ^4.19.4
         version: 4.19.4
