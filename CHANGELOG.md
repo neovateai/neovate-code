@@ -1,3 +1,10 @@
+## 0.0.33
+
+`2025-05-22`
+
+- refactor: extract query context logic into separate function by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.32
 
 `2025-05-21`
