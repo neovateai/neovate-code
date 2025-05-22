@@ -18,6 +18,34 @@ import * as logger from '../utils/logger';
 import { renderMarkdown } from '../utils/markdown';
 import { ModelType, getModel } from './model';
 
+interface GetQueryContextOptions {
+  context: Context;
+  prompt?: string;
+}
+
+async function getQueryContext(opts: GetQueryContextOptions) {
+  await opts.context.pluginManager.apply({
+    hook: 'contextStart',
+    args: [{ prompt: opts.prompt }],
+    type: PluginHookType.Series,
+    pluginContext: opts.context.pluginContext,
+  });
+  const context =
+    process.env.CODE === 'none'
+      ? {}
+      : await getContext({
+          context: opts.context,
+          prompt: opts.prompt,
+        });
+  return await opts.context.pluginManager.apply({
+    hook: 'context',
+    type: PluginHookType.SeriesMerge,
+    args: [{ prompt: opts.prompt }],
+    memo: context,
+    pluginContext: opts.context.pluginContext,
+  });
+}
+
 export interface AskQueryOptions {
   context: Context;
   prompt?: string;
@@ -33,21 +61,10 @@ export async function askQuery(opts: AskQueryOptions) {
       : await getAskTools({ context: opts.context })),
     ...(await getClientsTools(opts.context.mcpClients)),
   };
-
-  await opts.context.pluginManager.apply({
-    hook: 'contextStart',
-    args: [{ prompt: opts.prompt }],
-    type: PluginHookType.Series,
-    pluginContext: opts.context.pluginContext,
+  const queryContext = await getQueryContext({
+    context: opts.context,
+    prompt: opts.prompt,
   });
-
-  const queryContext =
-    process.env.CODE === 'none'
-      ? {}
-      : await getContext({
-          context: opts.context,
-          prompt: opts.prompt,
-        });
   return await query({
     ...opts,
     model: opts.model,
@@ -71,30 +88,10 @@ export async function editQuery(opts: EditQueryOptions) {
       : await getAllTools({ context: opts.context })),
     ...(await getClientsTools(opts.context.mcpClients)),
   };
-
-  await opts.context.pluginManager.apply({
-    hook: 'contextStart',
-    args: [{ prompt: opts.prompt }],
-    type: PluginHookType.Series,
-    pluginContext: opts.context.pluginContext,
+  const queryContext = await getQueryContext({
+    context: opts.context,
+    prompt: opts.prompt,
   });
-
-  let queryContext =
-    process.env.CODE === 'none'
-      ? {}
-      : await getContext({
-          context: opts.context,
-          prompt: opts.prompt,
-        });
-
-  queryContext = await opts.context.pluginManager.apply({
-    hook: 'context',
-    type: PluginHookType.SeriesMerge,
-    args: [{ prompt: opts.prompt }],
-    memo: queryContext,
-    pluginContext: opts.context.pluginContext,
-  });
-
   return await query({
     ...opts,
     model: opts.model,
