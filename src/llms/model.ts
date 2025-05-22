@@ -7,7 +7,8 @@ import { ApiKeys } from '../config';
 export const MODEL_ALIAS = {
   // Claude
   'sonnet-3.5': 'OpenRouter/anthropic/claude-3.5-sonnet',
-  sonnet: 'OpenRouter/anthropic/claude-3.7-sonnet',
+  'sonnet-3.7': 'OpenRouter/anthropic/claude-3.7-sonnet',
+  sonnet: 'OpenRouter/anthropic/claude-sonnet-4',
   // Qwen
   qwq: 'Groq/qwen-qwq-32b',
   // DeepSeek
@@ -86,6 +87,7 @@ const OPEN_ROUTER_MODELS = [
   'OpenRouter/anthropic/claude-3.5-sonnet',
   'OpenRouter/anthropic/claude-3.7-sonnet',
   'OpenRouter/anthropic/claude-3.7-sonnet-thought',
+  'OpenRouter/anthropic/claude-sonnet-4',
   'OpenRouter/mistralai/mistral-small-3.1-24b-instruct',
   'OpenRouter/deepseek/deepseek-chat-v3-0324',
   'OpenRouter/openrouter/quasar-alpha',
