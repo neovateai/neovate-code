@@ -25,6 +25,8 @@ export const MODEL_ALIAS = {
   gemini: 'Google/gemini-2.5-pro-preview-05-06',
   // Grok
   grok: 'Grok/grok-3-fast-beta',
+  // Vercel
+  v0: 'Vercel/v0-1.0-md',
   // Other
   quasar: 'OpenRouter/openrouter/quasar-alpha',
   optimus: 'OpenRouter/openrouter/optimus-alpha',
@@ -121,6 +123,7 @@ const OPENAI_MODELS = [
   'OpenAI/o1-mini',
   'OpenAI/gpt-3.5-turbo',
 ] as const;
+const VERCEL_MODELS = ['Vercel/v0-1.0-md'] as const;
 
 export const AUTO_SELECT_MODELS = [
   ['OPEN_ROUTER_API_KEY', OPEN_ROUTER_MODELS[0]],
@@ -141,7 +144,8 @@ export type ModelType =
   | (typeof TENCENT_MODELS)[number]
   | (typeof OLLAMA_MODELS)[number]
   | (typeof INFERENCE_MODELS)[number]
-  | (typeof OPENAI_MODELS)[number];
+  | (typeof OPENAI_MODELS)[number]
+  | (typeof VERCEL_MODELS)[number];
 
 export function getModel(model: ModelType, apiKeys?: ApiKeys) {
   let apiKey;
@@ -190,6 +194,9 @@ export function getModel(model: ModelType, apiKeys?: ApiKeys) {
   } else if (OPENAI_MODELS.includes(model as any)) {
     apiKey = apiKeys?.['openai'] || process.env.OPENAI_API_KEY;
     baseURL = 'https://api.openai.com/v1';
+  } else if (VERCEL_MODELS.includes(model as any)) {
+    apiKey = apiKeys?.['vercel'] || process.env.VERCEL_API_KEY;
+    baseURL = 'https://api.v0.dev/v1';
   } else {
     throw new Error(`Unsupported model: ${model}`);
   }
