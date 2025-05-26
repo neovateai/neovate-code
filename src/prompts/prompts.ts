@@ -4,6 +4,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 export function getSystemPrompt(opts: {
   tasks?: boolean;
   cwd: string;
+  language: string;
 }): string[] {
   const platform =
     process.platform === 'darwin'
@@ -81,6 +82,8 @@ When making changes to files, first understand the file's code conventions. Mimi
 
 # Code style
 - IMPORTANT: DO NOT ADD ***ANY*** COMMENTS unless asked
+
+Always reply to the user in ${opts.language}.
 
 ${
   opts.tasks

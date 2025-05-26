@@ -179,7 +179,11 @@ export async function getConfig(opts: {
     if (process.env.CODE === 'none') {
       return [];
     }
-    return getSystemPrompt({ tasks: config.tasks, cwd });
+    return getSystemPrompt({
+      tasks: config.tasks,
+      cwd,
+      language: config.language!,
+    });
   })().concat([`return one tool at most each time.`]);
   return {
     model: model as ModelType,
