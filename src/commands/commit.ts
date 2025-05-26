@@ -1,5 +1,5 @@
 import * as p from '@umijs/clack-prompts';
-import { execSync } from 'child_process';
+import { ExecSyncOptionsWithStringEncoding, execSync } from 'child_process';
 import clipboardy from 'clipboardy';
 import pc from 'picocolors';
 import { askQuery } from '../llms/query';
@@ -295,8 +295,12 @@ async function getStagedDiff() {
   ].join(' ');
 
   // Get the diff with exclusions
-  const changed = execSync(`git diff --cached -- ${excludePatterns}`);
-  const diff = changed.toString();
+  const execOptions: ExecSyncOptionsWithStringEncoding = {
+    maxBuffer: 100 * 1024 * 1024, // 100MB buffer
+    encoding: 'utf-8',
+  };
+
+  const diff = execSync(`git diff --cached -- ${excludePatterns}`, execOptions);
 
   // Limit diff size - 100KB is a reasonable limit for most LLM contexts
   const MAX_DIFF_SIZE = 100 * 1024; // 100KB
