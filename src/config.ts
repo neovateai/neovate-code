@@ -169,7 +169,7 @@ export async function getConfig(opts: {
     }
     if (
       model === 'Google/gemini-2.0-pro-exp-02-05' ||
-      model === 'Google/gemini-2.5-pro-exp-03-25'
+      model === 'Google/gemini-2.5-pro-preview-06-05'
     ) {
       return false;
     }
