@@ -36,6 +36,13 @@ export async function run(opts: RunOpts) {
     modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
     modelSettings: {
       providerData: {
+        providerMetadata: {
+          google: {
+            thinkingConfig: {
+              includeThoughts: true,
+            },
+          },
+        },
         // TODO: make this work
         // providerOptions: {
         //   google: {
@@ -115,6 +122,8 @@ export async function run(opts: RunOpts) {
               if (!opts.json) {
                 process.stdout.write(chunk.data.event.textDelta);
               }
+              break;
+            default:
               break;
           }
         }
