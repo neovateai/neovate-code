@@ -24,6 +24,7 @@ import { createWriteTool } from './tools/write';
 export interface RunOpts {
   model: string;
   prompt: string;
+  smallModel?: string;
   stream?: boolean;
   cwd?: string;
   json?: boolean;
@@ -48,6 +49,8 @@ export async function run(opts: RunOpts) {
   });
   const context = new Context({
     cwd: opts.cwd ?? process.cwd(),
+    model: opts.model,
+    smallModel: opts.smallModel,
   });
   const tools = new Tools([
     createWriteTool({ context }),
@@ -165,10 +168,11 @@ export async function runCli() {
       stream: true,
     },
     boolean: ['stream', 'json'],
-    string: ['model'],
+    string: ['model', 'smallModel'],
   });
   const result = await run({
     model: argv.model,
+    smallModel: argv.smallModel,
     stream: argv.stream,
     prompt: argv._[0]! as string,
     cwd: process.cwd(),

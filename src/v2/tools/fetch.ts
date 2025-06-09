@@ -65,7 +65,7 @@ Remembers:
 
         const agent = new Agent({
           name: 'content-summarizer',
-          model: '3',
+          model: opts.context.smallModel,
         });
         const runner = new Runner({
           modelProvider: getDefaultModelProvider(),
