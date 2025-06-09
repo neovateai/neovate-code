@@ -25,7 +25,6 @@ const MODEL_ALIAS: Record<string, string> = {
   'openrouter/deepseek': 'deepseek/deepseek-chat-v3-0324',
   // 'groq/qwq': 'groq/qwen-qwq-32b',
 };
-
 const OPENAI_MODELS = [
   'gpt-4.1',
   'gpt-4',
@@ -37,16 +36,12 @@ const OPENAI_MODELS = [
   'o3',
   'o3-mini',
 ];
-
 const GOOGLE_MODELS = [
   'gemini-2.5-flash-preview-05-20',
   'gemini-2.5-pro-preview-06-05',
 ];
-
 const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'];
-
 const XAI_MODELS = ['grok-3', 'grok-3-fast', 'grok-3-mini', 'grok-3-mini-fast'];
-
 const OPENROUTER_MODELS = [
   'openrouter/quasar-alpha',
   'openrouter/optimus-alpha',
@@ -63,14 +58,11 @@ export function getDefaultModelProvider(): ModelProvider {
       if (!modelName) {
         throw new Error('Model name is required');
       }
-
       modelName = MODEL_ALIAS[modelName] ?? modelName;
-
       // openai
       if (OPENAI_MODELS.includes(modelName)) {
         return aisdk(openai(modelName));
       }
-
       // google
       if (GOOGLE_MODELS.includes(modelName)) {
         const google = createGoogleGenerativeAI({
@@ -80,12 +72,10 @@ export function getDefaultModelProvider(): ModelProvider {
         });
         return aisdk(google(modelName));
       }
-
       // deepseek
       if (DEEPSEEK_MODELS.includes(modelName)) {
         return aisdk(deepseek(modelName));
       }
-
       // xai
       if (XAI_MODELS.includes(modelName)) {
         const xai = createXai({
@@ -93,7 +83,6 @@ export function getDefaultModelProvider(): ModelProvider {
         });
         return aisdk(xai(modelName));
       }
-
       // openrouter
       if (OPENROUTER_MODELS.includes(modelName)) {
         const openrouter = createOpenRouter({
@@ -101,7 +90,6 @@ export function getDefaultModelProvider(): ModelProvider {
         });
         return aisdk(openrouter(modelName));
       }
-
       throw new Error(`Model ${modelName} is not supported`);
     },
   };
