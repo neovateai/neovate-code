@@ -97,3 +97,11 @@ test('tool(bash)', async () => {
   expect(hasBashToolCall).toBe(true);
   expect(fs.existsSync(aDir)).toBe(true);
 });
+
+test.only('tool(fetch)', async () => {
+  const result = await run({
+    ...runOpts,
+    prompt: 'fetch https://sorrycc.com/about and tell me how old is he',
+  });
+  expect(result.finalOutput).toContain('35');
+});

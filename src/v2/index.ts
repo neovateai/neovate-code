@@ -14,6 +14,7 @@ import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
 import { createBashTool } from './tools/bash';
 import { createEditTool } from './tools/edit';
+import { createFetchTool } from './tools/fetch';
 import { createGlobTool } from './tools/glob';
 import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
@@ -56,6 +57,7 @@ export async function run(opts: RunOpts) {
     createBashTool({ context }),
     createGlobTool({ context }),
     createGrepTool({ context }),
+    createFetchTool({ context }),
   ]);
   const codeAgent = createCodeAgent({
     model: opts.model,
