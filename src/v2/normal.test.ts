@@ -58,7 +58,7 @@ test('tool(ls)', async () => {
   const result = await run({
     ...runOpts,
     prompt:
-      'list the dir and tell me the number of ts files, notice number only',
+      'list the dir and tell me the number of ts files, notice number only (using ls tool)',
   });
   expect(result.finalOutput).toContain('2');
 });

@@ -36,13 +36,11 @@ export class Tools {
     .join('\n')}
   `;
     return `
-===
-
-TOOLS
+# TOOLS
 
 You only have access to the tools provided below. You can only use one tool per message, and will receive the result of that tool use in the user's response. You use tools step-by-step to accomplish a given task, with each tool use informed by the result of the previous tool use.
 
-# Tool Use Formatting
+## Tool Use Formatting
 Tool use is formatted using XML-style tags. The tool use is enclosed in <use_tool></use_tool> and each parameter is similarly enclosed within its own set of tags.
 
 Description: Tools have defined input schemas that specify required and optional parameters.
@@ -63,7 +61,7 @@ When using tools, the tool use must be placed at the end of your response, top l
 
 Always adhere to this format for the tool use to ensure proper parsing and execution.
 
-# Available Tools
+## Available Tools
 
 ${availableTools}
     `;
