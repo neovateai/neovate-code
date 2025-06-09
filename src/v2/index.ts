@@ -8,7 +8,7 @@ import {
 import assert from 'assert';
 import yargsParser from 'yargs-parser';
 import { createCodeAgent } from './agents/coder';
-import { Context } from './context';
+import { Context, PromptContext } from './context';
 import { parseMessage } from './parseMessage';
 import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
@@ -67,10 +67,12 @@ export async function run(opts: RunOpts) {
     context,
     tools,
   });
+  const promptContext = new PromptContext(context);
+  await promptContext.init();
   let input: AgentInputItem[] = [
     {
       role: 'system',
-      content: context.getContextPrompt(),
+      content: promptContext.getContext(),
     },
     {
       role: 'user',
