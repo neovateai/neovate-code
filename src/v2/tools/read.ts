@@ -20,7 +20,6 @@ export function createReadTool(opts: { context: Context }) {
     parameters: z.object({
       file_path: z.string(),
     }),
-    strict: true,
     execute: async ({ file_path }) => {
       try {
         const ext = path.extname(file_path).toLowerCase();

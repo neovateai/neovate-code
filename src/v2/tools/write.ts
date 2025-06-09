@@ -12,21 +12,27 @@ export function createWriteTool(opts: { context: Context }) {
       file_path: z.string(),
       content: z.string(),
     }),
-    strict: true,
     execute: async ({ file_path, content }) => {
-      const fullFilePath = path.isAbsolute(file_path)
-        ? file_path
-        : path.resolve(opts.context.cwd, file_path);
-      const oldFileExists = fs.existsSync(fullFilePath);
-      const oldContent = oldFileExists
-        ? fs.readFileSync(fullFilePath, 'utf-8')
-        : null;
-      // TODO: backup old content
-      // TODO: let user know if they want to write to a file that already exists
-      const dir = path.dirname(fullFilePath);
-      fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(fullFilePath, format(content));
-      return `File successfully written to ${file_path}`;
+      try {
+        const fullFilePath = path.isAbsolute(file_path)
+          ? file_path
+          : path.resolve(opts.context.cwd, file_path);
+        const oldFileExists = fs.existsSync(fullFilePath);
+        const oldContent = oldFileExists
+          ? fs.readFileSync(fullFilePath, 'utf-8')
+          : null;
+        // TODO: backup old content
+        // TODO: let user know if they want to write to a file that already exists
+        const dir = path.dirname(fullFilePath);
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(fullFilePath, format(content));
+        return `File successfully written to ${file_path}`;
+      } catch (e) {
+        return {
+          success: false,
+          error: e instanceof Error ? e.message : 'Unknown error',
+        };
+      }
     },
   });
 }

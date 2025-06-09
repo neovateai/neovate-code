@@ -12,7 +12,6 @@ export function createWriteTool(opts: { context: Context }) {
       file_path: z.string(),
       content: z.string(),
     }),
-    strict: true,
     execute: async ({ file_path, content }) => {
       const fullFilePath = path.isAbsolute(file_path)
         ? file_path

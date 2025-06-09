@@ -53,3 +53,12 @@ test('tool(read)', async () => {
   });
   expect(result.finalOutput).toContain('takumi-test-fixture-normal');
 });
+
+test('tool(ls)', async () => {
+  const result = await run({
+    ...runOpts,
+    prompt:
+      'list the dir and tell me the number of ts files, notice number only',
+  });
+  expect(result.finalOutput).toContain('2');
+});

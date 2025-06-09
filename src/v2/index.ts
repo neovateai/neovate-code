@@ -7,11 +7,12 @@ import {
 } from '@openai/agents';
 import assert from 'assert';
 import yargsParser from 'yargs-parser';
-import { createCodeAgent } from './agents/codeAgent';
+import { createCodeAgent } from './agents/coder';
 import { Context } from './context';
 import { parseMessage } from './parseMessage';
 import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
+import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
 import { createWriteTool } from './tools/write';
 
@@ -46,6 +47,7 @@ export async function run(opts: RunOpts) {
   const tools = new Tools([
     createWriteTool({ context }),
     createReadTool({ context }),
+    createLSTool({ context }),
   ]);
   const codeAgent = createCodeAgent({
     model: opts.model,

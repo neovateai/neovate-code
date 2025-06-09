@@ -1,39 +1,35 @@
 import { tool } from '@openai/agents';
-import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import { Context } from '../context';
+import {
+  MAX_FILES,
+  TRUNCATED_MESSAGE,
+  createFileTree,
+  listDirectory,
+  printTree,
+} from '../utils/list';
 
-export function createWriteTool(opts: { context: Context }) {
+export function createLSTool(opts: { context: Context }) {
   return tool({
-    name: 'write',
-    description: 'Write a file to the local filesystem',
+    name: 'ls',
+    description: 'Lists files and directories in a given path.',
     parameters: z.object({
-      file_path: z.string(),
-      content: z.string(),
+      dir_path: z.string().describe('The path to the directory to list.'),
     }),
-    strict: true,
-    execute: async ({ file_path, content }) => {
-      const fullFilePath = path.isAbsolute(file_path)
-        ? file_path
-        : path.resolve(opts.context.cwd, file_path);
-      const oldFileExists = fs.existsSync(fullFilePath);
-      const oldContent = oldFileExists
-        ? fs.readFileSync(fullFilePath, 'utf-8')
-        : null;
-      // TODO: backup old content
-      // TODO: let user know if they want to write to a file that already exists
-      const dir = path.dirname(fullFilePath);
-      fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(fullFilePath, format(content));
-      return `File successfully written to ${file_path}`;
+    execute: async ({ dir_path }) => {
+      const fullFilePath = path.isAbsolute(dir_path)
+        ? dir_path
+        : path.resolve(opts.context.cwd, dir_path);
+      const result = listDirectory(fullFilePath, opts.context.cwd).sort();
+      const tree = createFileTree(result);
+      const userTree = printTree(opts.context.cwd, tree);
+      if (result.length < MAX_FILES) {
+        return userTree;
+      } else {
+        const assistantData = `${TRUNCATED_MESSAGE}${userTree}`;
+        return assistantData;
+      }
     },
   });
-}
-
-function format(content: string) {
-  if (!content.endsWith('\n')) {
-    return content + '\n';
-  }
-  return content;
 }
