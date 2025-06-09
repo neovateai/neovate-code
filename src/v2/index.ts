@@ -15,6 +15,7 @@ import { Tools } from './tool';
 import { createBashTool } from './tools/bash';
 import { createEditTool } from './tools/edit';
 import { createGlobTool } from './tools/glob';
+import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
 import { createWriteTool } from './tools/write';
@@ -54,6 +55,7 @@ export async function run(opts: RunOpts) {
     createEditTool({ context }),
     createBashTool({ context }),
     createGlobTool({ context }),
+    createGrepTool({ context }),
   ]);
   const codeAgent = createCodeAgent({
     model: opts.model,
