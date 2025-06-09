@@ -12,6 +12,7 @@ import { Context } from './context';
 import { parseMessage } from './parseMessage';
 import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
+import { createReadTool } from './tools/read';
 import { createWriteTool } from './tools/write';
 
 export interface RunOpts {
@@ -42,7 +43,10 @@ export async function run(opts: RunOpts) {
   const context = new Context({
     cwd: opts.cwd ?? process.cwd(),
   });
-  const tools = new Tools([createWriteTool({ context })]);
+  const tools = new Tools([
+    createWriteTool({ context }),
+    createReadTool({ context }),
+  ]);
   const codeAgent = createCodeAgent({
     model: opts.model,
     context,
@@ -51,11 +55,7 @@ export async function run(opts: RunOpts) {
   let input: AgentInputItem[] = [
     {
       role: 'system',
-      content: `
-====
-Contexts:
-- cwd: ${context.cwd}
-      `.trim(),
+      content: context.getContextPrompt(),
     },
     {
       role: 'user',
