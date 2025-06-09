@@ -2,6 +2,7 @@ import {
   AgentInputItem,
   FunctionCallItem,
   FunctionCallResultItem,
+  ModelProvider,
   Runner,
 } from '@openai/agents';
 import assert from 'assert';
@@ -13,20 +14,18 @@ import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
 import { createWriteTool } from './tools/write';
 
-export async function runCli() {
-  const argv = yargsParser(process.argv.slice(2), {
-    alias: {
-      model: 'm',
-    },
-    default: {
-      model: 'flash',
-      stream: true,
-    },
-    boolean: ['stream'],
-    string: ['model'],
-  });
+export interface RunOpts {
+  model: string;
+  prompt: string;
+  stream?: boolean;
+  cwd?: string;
+  json?: boolean;
+  modelProvider?: ModelProvider;
+}
+
+export async function run(opts: RunOpts) {
   const runner = new Runner({
-    modelProvider: getDefaultModelProvider(),
+    modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
     modelSettings: {
       providerData: {
         // TODO: make this work
@@ -41,11 +40,11 @@ export async function runCli() {
     },
   });
   const context = new Context({
-    cwd: process.cwd(),
+    cwd: opts.cwd ?? process.cwd(),
   });
   const tools = new Tools([createWriteTool({ context })]);
   const codeAgent = createCodeAgent({
-    model: argv.model,
+    model: opts.model,
     context,
     tools,
   });
@@ -60,13 +59,15 @@ Contexts:
     },
     {
       role: 'user',
-      content: argv._[0]! as string,
+      content: opts.prompt,
     },
   ];
+  let finalOutput: string | null = null;
   while (true) {
     let history: AgentInputItem[] = [];
     let text = '';
-    if (argv.stream) {
+
+    if (opts.stream) {
       const result = await runner.run(codeAgent, input, {
         stream: true,
       });
@@ -81,7 +82,9 @@ Contexts:
               text += textDelta;
               const parsed = parseMessage(text);
               if (parsed[0]?.type === 'text' && parsed[0].partial) {
-                process.stdout.write(textDelta);
+                if (!opts.json) {
+                  process.stdout.write(textDelta);
+                }
               }
               break;
             case 'reasoning':
@@ -101,7 +104,9 @@ Contexts:
 
     const parsed = parseMessage(text);
     if (parsed[0]?.type === 'text') {
-      console.log(parsed[0].content);
+      if (!opts.json) {
+        console.log(parsed[0].content);
+      }
     }
     const toolUse = parsed.find((item) => item.type === 'tool_use');
     if (toolUse) {
@@ -127,8 +132,37 @@ Contexts:
       } as FunctionCallResultItem);
       input = history;
     } else {
-      console.log(JSON.stringify(history, null, 2));
+      input = history;
+      finalOutput = text;
       break;
     }
+  }
+  return {
+    history: input,
+    finalOutput,
+  };
+}
+
+export async function runCli() {
+  const argv = yargsParser(process.argv.slice(2), {
+    alias: {
+      model: 'm',
+    },
+    default: {
+      model: 'flash',
+      stream: true,
+    },
+    boolean: ['stream', 'json'],
+    string: ['model'],
+  });
+  const result = await run({
+    model: argv.model,
+    stream: argv.stream,
+    prompt: argv._[0]! as string,
+    cwd: process.cwd(),
+    json: argv.json,
+  });
+  if (argv.json) {
+    console.log(JSON.stringify(result.history, null, 2));
   }
 }
