@@ -50,12 +50,19 @@ cd /foo/bar && pytest tests
 `.trim(),
     parameters: z.object({
       command: z.string().describe('The command to execute'),
+      timeout: z
+        .number()
+        .optional()
+        .nullable()
+        .describe('Optional timeout in milliseconds (max 600000)'),
     }),
-    execute: async ({ command }) => {
+    execute: async ({ command, timeout = 1800000 }) => {
       try {
         // TODO: refactor with shell wrapper
-        const timeout = 1800000;
-        const result = execSync(command, { timeout, cwd: opts.context.cwd });
+        const result = execSync(command, {
+          timeout: timeout || 1800000,
+          cwd: opts.context.cwd,
+        });
         return { success: true, output: result.toString() };
       } catch (e) {
         return {

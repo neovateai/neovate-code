@@ -11,8 +11,16 @@ export function createGrepTool(opts: { context: Context }) {
     description: `Search for a pattern in a file or directory.`,
     parameters: z.object({
       pattern: z.string().describe('The pattern to search for'),
-      search_path: z.string().describe('The path to search in'),
-      include: z.string().describe('The file pattern to include in the search'),
+      search_path: z
+        .string()
+        .optional()
+        .nullable()
+        .describe('The path to search in'),
+      include: z
+        .string()
+        .optional()
+        .nullable()
+        .describe('The file pattern to include in the search'),
     }),
     execute: async ({ pattern, search_path, include }) => {
       try {

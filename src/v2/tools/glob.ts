@@ -17,12 +17,17 @@ Glob
 `.trim(),
     parameters: z.object({
       pattern: z.string().describe('The glob pattern to match files against'),
+      path: z
+        .string()
+        .optional()
+        .nullable()
+        .describe('The directory to search in'),
     }),
-    execute: async ({ pattern }) => {
+    execute: async ({ pattern, path }) => {
       try {
         const start = Date.now();
         const paths = await glob([pattern], {
-          cwd: opts.context.cwd,
+          cwd: path ?? opts.context.cwd,
           nocase: true,
           nodir: true,
           stat: true,
