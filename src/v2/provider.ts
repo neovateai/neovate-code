@@ -16,8 +16,6 @@ const MODEL_ALIAS: Record<string, string> = {
   flash: 'gemini-2.5-flash-preview-05-20',
   gemini: 'gemini-2.5-pro-preview-06-05',
   grok: 'grok-3-fast-beta',
-  quasar: 'openrouter/quasar-alpha',
-  optimus: 'openrouter/optimus-alpha',
   'openrouter/sonnet-3.5': 'anthropic/claude-3.5-sonnet',
   'openrouter/sonnet-3.7': 'anthropic/claude-3.7-sonnet',
   'openrouter/sonnet': 'anthropic/claude-sonnet-4',
@@ -41,10 +39,13 @@ const GOOGLE_MODELS = [
   'gemini-2.5-pro-preview-06-05',
 ];
 const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'];
-const XAI_MODELS = ['grok-3', 'grok-3-fast', 'grok-3-mini', 'grok-3-mini-fast'];
+const XAI_MODELS = [
+  'grok-3-beta',
+  'grok-3-fast-beta',
+  'grok-3-mini-beta',
+  'grok-3-mini-fast-beta',
+];
 const OPENROUTER_MODELS = [
-  'openrouter/quasar-alpha',
-  'openrouter/optimus-alpha',
   'anthropic/claude-3.5-sonnet',
   'anthropic/claude-3.7-sonnet',
   'anthropic/claude-sonnet-4',
