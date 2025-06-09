@@ -98,7 +98,7 @@ test('tool(bash)', async () => {
   expect(fs.existsSync(aDir)).toBe(true);
 });
 
-test.only('tool(fetch)', async () => {
+test('tool(fetch)', async () => {
   const result = await run({
     ...runOpts,
     prompt: 'fetch https://sorrycc.com/about and tell me how old is he',
