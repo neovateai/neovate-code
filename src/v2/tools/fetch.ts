@@ -1,25 +1,68 @@
 import { Agent, Runner, tool } from '@openai/agents';
+import TurndownService from 'turndown';
 import { z } from 'zod';
 import { Context } from '../context';
 import { getDefaultModelProvider } from '../provider';
 
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5min
+const urlCache = new Map();
+const MAX_CONTENT_LENGTH = 15000; // 15k
+
 export function createFetchTool(opts: { context: Context }) {
   return tool({
     name: 'fetch',
-    description: `Fetch content from url`,
+    description: `
+Fetch content from url.
+Remembers:
+- IMPORTANT: If an MCP-provided web fetch tool is available, prefer using that tool instead of this one, as it may have fewer restrictions. All MCP-provided tools start with "mcp__"
+    `.trim(),
     parameters: z.object({
       url: z.string().url().describe('The url to fetch content from'),
       prompt: z.string().describe('The prompt to run on the fetched content'),
     }),
     execute: async ({ url, prompt }) => {
       try {
+        const startTime = Date.now();
+        const cached = urlCache.get(url);
+        if (cached && cached.durationMs < CACHE_TTL_MS) {
+          return {
+            success: true,
+            data: {
+              ...cached,
+              cached: true,
+              durationMs: Date.now() - startTime,
+            },
+          };
+        }
+
+        try {
+          new URL(url);
+        } catch (e) {
+          throw new Error('Invalid URL');
+        }
+
         const response = await fetch(url);
         if (!response.ok) {
           throw new Error(
             `Failed to fetch ${url}: ${response.status} ${response.statusText}`,
           );
         }
-        const content = await response.text();
+        const rawText = await response.text();
+        const contentType = response.headers.get('content-type') ?? '';
+        const bytes = Buffer.byteLength(rawText, 'utf-8');
+
+        let content;
+        if (contentType.includes('text/html')) {
+          content = new TurndownService().turndown(rawText);
+        } else {
+          content = rawText;
+        }
+
+        if (content.length > MAX_CONTENT_LENGTH) {
+          content =
+            content.substring(0, MAX_CONTENT_LENGTH) + '...[content truncated]';
+        }
+
         const agent = new Agent({
           name: 'content-summarizer',
           model: '3',
@@ -44,7 +87,20 @@ Provide a concise response based only on the content above. In your response:
         const result = await runner.run(agent, input, {
           stream: false,
         });
-        const data = result.finalOutput;
+        const llmResult = result.finalOutput;
+
+        const code = response.status;
+        const codeText = response.statusText;
+        const data = {
+          result: llmResult,
+          code,
+          codeText,
+          url,
+          bytes,
+          contentType,
+          durationMs: Date.now() - startTime,
+        };
+        urlCache.set(url, data);
         return {
           success: true,
           data,
