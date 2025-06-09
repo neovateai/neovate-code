@@ -62,3 +62,25 @@ test('tool(ls)', async () => {
   });
   expect(result.finalOutput).toContain('2');
 });
+
+test('tool(edit)', async () => {
+  fs.mkdirSync(path.join(cwd, 'tmp'), { recursive: true });
+  fs.writeFileSync(
+    path.join(cwd, 'tmp/package.txt'),
+    `
+version: 1.0.0
+name: takumi-test-fixture-normal
+description: A test fixture for takumi
+  `,
+  );
+  const result = await run({
+    ...runOpts,
+    prompt: 'edit tmp/package.txt and update the version to next patch version',
+  });
+  const hasEditToolCall = result.history.some(
+    (h) => h.type === 'function_call' && h.name === 'edit',
+  );
+  expect(hasEditToolCall).toBe(true);
+  const packageTxt = path.join(cwd, 'tmp/package.txt');
+  expect(fs.readFileSync(packageTxt, 'utf-8').includes('1.0.1')).toBe(true);
+});
