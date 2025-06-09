@@ -58,7 +58,6 @@ cd /foo/bar && pytest tests
         const {
           config: { approvalMode },
         } = opts.context;
-
         await requestExecutePermission(approvalMode, command);
         const result = execSync(command, { timeout });
         return { success: true, output: result.toString() };

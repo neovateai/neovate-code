@@ -84,3 +84,16 @@ description: A test fixture for takumi
   const packageTxt = path.join(cwd, 'tmp/package.txt');
   expect(fs.readFileSync(packageTxt, 'utf-8').includes('1.0.1')).toBe(true);
 });
+
+test('tool(bash)', async () => {
+  const result = await run({
+    ...runOpts,
+    prompt: 'make directory tmp/a',
+  });
+  const aDir = path.join(cwd, 'tmp/a');
+  const hasBashToolCall = result.history.some(
+    (h) => h.type === 'function_call' && h.name === 'bash',
+  );
+  expect(hasBashToolCall).toBe(true);
+  expect(fs.existsSync(aDir)).toBe(true);
+});

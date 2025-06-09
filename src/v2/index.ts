@@ -12,6 +12,7 @@ import { Context } from './context';
 import { parseMessage } from './parseMessage';
 import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
+import { createBashTool } from './tools/bash';
 import { createEditTool } from './tools/edit';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
@@ -50,6 +51,7 @@ export async function run(opts: RunOpts) {
     createReadTool({ context }),
     createLSTool({ context }),
     createEditTool({ context }),
+    createBashTool({ context }),
   ]);
   const codeAgent = createCodeAgent({
     model: opts.model,
