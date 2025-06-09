@@ -44,9 +44,9 @@ export class PromptContext {
       directoryStructure: await getDirectoryStructure({
         context: this.context,
       }),
-      gitStatus: await getGitStatus({ context: this.context }),
-      codeStyle: await getCodeStyle({ context: this.context }),
-      readme: await getReadme({ context: this.context }),
+      gitStatus: (await getGitStatus({ context: this.context })) ?? '',
+      codeStyle: (await getCodeStyle({ context: this.context })) ?? '',
+      readme: (await getReadme({ context: this.context })) ?? '',
     };
   }
 

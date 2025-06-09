@@ -88,6 +88,7 @@ export async function run(opts: RunOpts) {
       const result = await runner.run(codeAgent, input, {
         stream: true,
       });
+      let printReasoning = false;
       for await (const chunk of result.toStream()) {
         if (
           chunk.type === 'raw_model_stream_event' &&
@@ -105,8 +106,15 @@ export async function run(opts: RunOpts) {
               }
               break;
             case 'reasoning':
-              console.log('====================REASONING====================');
-              console.log(chunk.data.event);
+              if (!printReasoning) {
+                if (!opts.json) {
+                  process.stdout.write('Thought: ');
+                }
+                printReasoning = true;
+              }
+              if (!opts.json) {
+                process.stdout.write(chunk.data.event.textDelta);
+              }
               break;
           }
         }
@@ -114,6 +122,14 @@ export async function run(opts: RunOpts) {
       history = [...result.history];
     } else {
       const result = await runner.run(codeAgent, input);
+      const reasonItem = result.output.find(
+        (item) => item.type === 'reasoning',
+      );
+      if (reasonItem) {
+        if (!opts.json) {
+          console.log('Thought: ', reasonItem.content[0].text);
+        }
+      }
       assert(result.finalOutput, 'No final output');
       text = result.finalOutput;
       history = [...result.history];
@@ -121,7 +137,7 @@ export async function run(opts: RunOpts) {
 
     const parsed = parseMessage(text);
     if (parsed[0]?.type === 'text') {
-      if (!opts.json) {
+      if (!opts.json && !opts.stream) {
         console.log(parsed[0].content);
       }
     }

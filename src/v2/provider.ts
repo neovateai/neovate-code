@@ -3,8 +3,8 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
 import { createXai } from '@ai-sdk/xai';
 import { ModelProvider } from '@openai/agents';
-import { aisdk } from '@openai/agents-extensions';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { aisdk } from './aiSdk';
 
 const MODEL_ALIAS: Record<string, string> = {
   deepseek: 'deepseek-chat',
@@ -21,8 +21,8 @@ const MODEL_ALIAS: Record<string, string> = {
   'openrouter/sonnet-3.5': 'anthropic/claude-3.5-sonnet',
   'openrouter/sonnet-3.7': 'anthropic/claude-3.7-sonnet',
   'openrouter/sonnet': 'anthropic/claude-sonnet-4',
-  'openrouter/r1': 'openrouter/deepseek/deepseek-r1-0528',
-  'openrouter/deepseek': 'openrouter/deepseek/deepseek-chat-v3-0324',
+  'openrouter/r1': 'deepseek/deepseek-r1-0528',
+  'openrouter/deepseek': 'deepseek/deepseek-chat-v3-0324',
   // 'groq/qwq': 'groq/qwen-qwq-32b',
 };
 
