@@ -6,7 +6,7 @@ import {
 } from '@openai/agents';
 import assert from 'assert';
 import yargsParser from 'yargs-parser';
-import { createCodeAgent } from './agents/code';
+import { createCodeAgent } from './agents/codeAgent';
 import { Context } from './context';
 import { parseMessage } from './parseMessage';
 import { getDefaultModelProvider } from './provider';
@@ -18,18 +18,34 @@ export async function runCli() {
     alias: {
       model: 'm',
     },
+    default: {
+      model: 'flash',
+      stream: true,
+    },
+    boolean: ['stream'],
     string: ['model'],
   });
-  const modelProvider = getDefaultModelProvider();
   const runner = new Runner({
-    modelProvider,
+    modelProvider: getDefaultModelProvider(),
+    modelSettings: {
+      providerData: {
+        // TODO: make this work
+        // providerOptions: {
+        //   google: {
+        //     thinkingConfig: {
+        //       includeThoughts: true,
+        //     },
+        //   },
+        // },
+      },
+    },
   });
   const context = new Context({
     cwd: process.cwd(),
   });
   const tools = new Tools([createWriteTool({ context })]);
   const codeAgent = createCodeAgent({
-    model: argv.model || 'flash',
+    model: argv.model,
     context,
     tools,
   });
@@ -48,14 +64,46 @@ Contexts:
     },
   ];
   while (true) {
-    const result = await runner.run(codeAgent, input);
-    assert(result.finalOutput, 'No final output');
-    const parsed = parseMessage(result.finalOutput);
+    let history: AgentInputItem[] = [];
+    let text = '';
+    if (argv.stream) {
+      const result = await runner.run(codeAgent, input, {
+        stream: true,
+      });
+      for await (const chunk of result.toStream()) {
+        if (
+          chunk.type === 'raw_model_stream_event' &&
+          chunk.data.type === 'model'
+        ) {
+          switch (chunk.data.event.type) {
+            case 'text-delta':
+              const textDelta = chunk.data.event.textDelta;
+              text += textDelta;
+              const parsed = parseMessage(text);
+              if (parsed[0]?.type === 'text' && parsed[0].partial) {
+                process.stdout.write(textDelta);
+              }
+              break;
+            case 'reasoning':
+              console.log('====================REASONING====================');
+              console.log(chunk.data.event);
+              break;
+          }
+        }
+      }
+      history = [...result.history];
+    } else {
+      const result = await runner.run(codeAgent, input);
+      assert(result.finalOutput, 'No final output');
+      text = result.finalOutput;
+      history = [...result.history];
+    }
+
+    const parsed = parseMessage(text);
     if (parsed[0]?.type === 'text') {
       console.log(parsed[0].content);
     }
     const toolUse = parsed.find((item) => item.type === 'tool_use');
-    const history = [...result.history];
     if (toolUse) {
       const name = toolUse.name;
       const args = JSON.stringify(toolUse.params);
