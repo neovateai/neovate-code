@@ -1,0 +1,38 @@
+{
+  "name": "takumi-browser",
+  "version": "1.0.0",
+  "description": "Takumi Browser Mode - Web-based AI programming assistant interface",
+  "private": true,
+  "scripts": {
+    "dev": "umi dev",
+    "build": "umi build",
+    "preview": "umi preview",
+    "setup": "umi setup",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ant-design/x": "^1.1.0",
+    "@umijs/max": "^4.3.28",
+    "antd": "^5.22.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.1",
+    "socket.io-client": "^4.8.0",
+    "zustand": "^4.6.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "typescript": "^5.8.3",
+    "umi": "^4.3.28"
+  },
+  "keywords": [
+    "takumi",
+    "browser",
+    "ai",
+    "programming",
+    "assistant"
+  ],
+  "author": "Takumi Team",
+  "license": "MIT"
+}
