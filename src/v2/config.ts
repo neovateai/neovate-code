@@ -25,9 +25,7 @@ export type Config = {
   quiet: boolean;
   approvalMode: ApprovalMode;
   plugins: string[];
-  mcpConfig: {
-    mcpServers: Record<string, McpServerConfig>;
-  };
+  mcpServers: Record<string, McpServerConfig>;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -36,10 +34,16 @@ const DEFAULT_CONFIG: Partial<Config> = {
   quiet: false,
   approvalMode: 'suggest',
   plugins: [],
-  mcpConfig: {
-    mcpServers: {},
-  },
+  mcpServers: {},
 };
+const VALID_CONFIG_KEYS = [
+  ...Object.keys(DEFAULT_CONFIG),
+  'model',
+  'smallModel',
+];
+const ARRAY_CONFIG_KEYS = ['plugins'];
+const OBJECT_CONFIG_KEYS = ['mcpServers'];
+const BOOLEAN_CONFIG_KEYS = ['stream', 'quiet'];
 
 export class ConfigManager {
   globalConfig: Partial<Config>;
@@ -76,14 +80,71 @@ export class ConfigManager {
     return config;
   }
 
-  saveGlobalConfig(config: Partial<Config>) {
-    this.globalConfig = defu(config, this.globalConfig);
-    saveConfig(this.globalConfigPath, this.globalConfig, DEFAULT_CONFIG);
+  removeConfig(global: boolean, key: string, values?: string[]) {
+    if (!VALID_CONFIG_KEYS.includes(key)) {
+      throw new Error(`Invalid config key: ${key}`);
+    }
+    const config = global ? this.globalConfig : this.projectConfig;
+    const configPath = global ? this.globalConfigPath : this.projectConfigPath;
+    if (values) {
+      (config[key as keyof Config] as any) = (
+        config[key as keyof Config] as string[]
+      ).filter((v) => !values.includes(v));
+    } else {
+      delete config[key as keyof Config];
+    }
+    saveConfig(configPath, config, DEFAULT_CONFIG);
   }
 
-  saveProjectConfig(config: Partial<Config>) {
-    this.projectConfig = defu(config, this.projectConfig);
-    saveConfig(this.projectConfigPath, this.projectConfig, DEFAULT_CONFIG);
+  addConfig(global: boolean, key: string, values: string[]) {
+    if (!VALID_CONFIG_KEYS.includes(key)) {
+      throw new Error(`Invalid config key: ${key}`);
+    }
+    const config = global ? this.globalConfig : this.projectConfig;
+    const configPath = global ? this.globalConfigPath : this.projectConfigPath;
+    if (ARRAY_CONFIG_KEYS.includes(key)) {
+      (config[key as keyof Config] as any) = [
+        ...(config[key as keyof Config] as string[]),
+        ...values,
+      ];
+    } else if (OBJECT_CONFIG_KEYS.includes(key)) {
+      (config[key as keyof Config] as any) = {
+        ...(config[key as keyof Config] as Record<string, McpServerConfig>),
+        ...values,
+      };
+    }
+    saveConfig(configPath, config, DEFAULT_CONFIG);
+  }
+
+  setConfig(global: boolean, key: string, value: string) {
+    if (!VALID_CONFIG_KEYS.includes(key)) {
+      throw new Error(`Invalid config key: ${key}`);
+    }
+    const config = global ? this.globalConfig : this.projectConfig;
+    const configPath = global ? this.globalConfigPath : this.projectConfigPath;
+    let newValue: any = value;
+    if (BOOLEAN_CONFIG_KEYS.includes(key)) {
+      newValue = value === 'true';
+    }
+    (config[key as keyof Config] as any) = newValue;
+    saveConfig(configPath, config, DEFAULT_CONFIG);
+  }
+
+  updateConfig(global: boolean, newConfig: Partial<Config>) {
+    Object.keys(newConfig).forEach((key) => {
+      if (!VALID_CONFIG_KEYS.includes(key)) {
+        throw new Error(`Invalid config key: ${key}`);
+      }
+    });
+    let config = global ? this.globalConfig : this.projectConfig;
+    const configPath = global ? this.globalConfigPath : this.projectConfigPath;
+    config = defu(newConfig, config);
+    if (global) {
+      this.globalConfig = config;
+    } else {
+      this.projectConfig = config;
+    }
+    saveConfig(configPath, config, DEFAULT_CONFIG);
   }
 }
 

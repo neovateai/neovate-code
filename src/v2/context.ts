@@ -3,11 +3,12 @@ import path from 'path';
 import { platform } from 'process';
 import { execFileNoThrow } from '../utils/execFileNoThrow';
 import { Config, ConfigManager } from './config';
+import { PRODUCT_NAME } from './constants';
 import { createLSTool } from './tools/ls';
 
 interface ContextOpts {
-  cwd: string;
-  argvConfig: Partial<Config>;
+  argvConfig?: Partial<Config>;
+  cwd?: string;
   productName?: string;
 }
 
@@ -16,10 +17,14 @@ export class Context {
   productName: string;
   configManager: ConfigManager;
   constructor(opts: ContextOpts) {
-    this.cwd = opts.cwd;
-    const productName = opts.productName || 'TAKUMI';
+    this.cwd = opts.cwd || process.cwd();
+    const productName = opts.productName || PRODUCT_NAME;
     this.productName = productName;
-    this.configManager = new ConfigManager(process.cwd(), productName, {});
+    this.configManager = new ConfigManager(
+      this.cwd,
+      productName,
+      opts.argvConfig || {},
+    );
   }
 }
 
