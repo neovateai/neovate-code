@@ -8,6 +8,8 @@ import {
 import assert from 'assert';
 import yargsParser from 'yargs-parser';
 import { createCodeAgent } from './agents/coder';
+import { Config } from './config';
+import { PRODUCT_NAME } from './constants';
 import { Context, PromptContext } from './context';
 import { parseMessage } from './parseMessage';
 import { getDefaultModelProvider } from './provider';
@@ -22,12 +24,11 @@ import { createReadTool } from './tools/read';
 import { createWriteTool } from './tools/write';
 
 export interface RunOpts {
-  model: string;
+  argvConfig: Partial<Config>;
   prompt: string;
-  smallModel?: string;
-  stream?: boolean;
   cwd?: string;
   json?: boolean;
+  productName?: string;
   modelProvider?: ModelProvider;
 }
 
@@ -46,10 +47,11 @@ export async function run(opts: RunOpts) {
       },
     },
   });
+  const productName = opts.productName ?? PRODUCT_NAME;
   const context = new Context({
     cwd: opts.cwd ?? process.cwd(),
-    model: opts.model,
-    smallModel: opts.smallModel,
+    productName,
+    argvConfig: opts.argvConfig,
   });
   const tools = new Tools([
     createWriteTool({ context }),
@@ -62,7 +64,7 @@ export async function run(opts: RunOpts) {
     createFetchTool({ context }),
   ]);
   const codeAgent = createCodeAgent({
-    model: opts.model,
+    model: context.configManager.config.model,
     context,
     tools,
   });
@@ -83,7 +85,7 @@ export async function run(opts: RunOpts) {
     let history: AgentInputItem[] = [];
     let text = '';
 
-    if (opts.stream) {
+    if (context.configManager.config.stream) {
       const result = await runner.run(codeAgent, input, {
         stream: true,
       });
@@ -138,7 +140,7 @@ export async function run(opts: RunOpts) {
 
     const parsed = parseMessage(text);
     if (parsed[0]?.type === 'text') {
-      if (!opts.json && !opts.stream) {
+      if (!opts.json && !context.configManager.config.stream) {
         console.log(parsed[0].content);
       }
     }
@@ -190,9 +192,11 @@ export async function runCli() {
     string: ['model', 'smallModel'],
   });
   const result = await run({
-    model: argv.model,
-    smallModel: argv.smallModel,
-    stream: argv.stream,
+    argvConfig: {
+      model: argv.model,
+      smallModel: argv.smallModel,
+      stream: argv.stream,
+    },
     prompt: argv._[0]! as string,
     cwd: process.cwd(),
     json: argv.json,

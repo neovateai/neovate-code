@@ -8,7 +8,9 @@ const fixtures = path.join(root, 'fixtures');
 const model = 'flash';
 const cwd = path.join(fixtures, 'normal');
 const runOpts = {
-  model,
+  argvConfig: {
+    model,
+  },
   cwd,
   json: true,
 };

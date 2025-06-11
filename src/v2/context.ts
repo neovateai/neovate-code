@@ -2,25 +2,24 @@ import fs from 'fs';
 import path from 'path';
 import { platform } from 'process';
 import { execFileNoThrow } from '../utils/execFileNoThrow';
+import { Config, ConfigManager } from './config';
 import { createLSTool } from './tools/ls';
 
 interface ContextOpts {
   cwd: string;
-  model: string;
-  smallModel?: string;
+  argvConfig: Partial<Config>;
   productName?: string;
 }
 
 export class Context {
   cwd: string;
-  model: string;
-  smallModel: string;
   productName: string;
+  configManager: ConfigManager;
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
-    this.model = opts.model;
-    this.smallModel = opts.smallModel || opts.model;
-    this.productName = opts.productName || 'TAKUMI';
+    const productName = opts.productName || 'TAKUMI';
+    this.productName = productName;
+    this.configManager = new ConfigManager(process.cwd(), productName, {});
   }
 }
 
