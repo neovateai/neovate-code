@@ -16,6 +16,7 @@ import { closeClients, createClients } from './mcp';
 import { PluginHookType, PluginManager } from './pluginManager/pluginManager';
 import type { Command, Plugin } from './pluginManager/types';
 import { autoSelectModelPlugin } from './plugins/autoSelectModel';
+import { browserPlugin } from './plugins/browser';
 import { keywordContextPlugin } from './plugins/keywordContext';
 import { sessionPlugin } from './plugins/session';
 import { xmlFormatPromptPlugin } from './plugins/xmlFormatPrompt';
@@ -50,6 +51,8 @@ async function buildContext(
   );
   const config = await getConfig({ argv, productName: opts.productName, cwd });
   const buildinPlugins = [
+    // 仅在 browser 模式下添加 browserPlugin
+    ...(command === 'browser' ? [browserPlugin] : []),
     // don't add sessionPlugin for log command
     ...(command === 'log' ? [] : [sessionPlugin]),
     keywordContextPlugin,
@@ -188,7 +191,15 @@ export async function runCli(opts: RunCliOpts) {
         e: 'edit-mode',
       },
       array: ['plugin', 'apiKey'],
-      boolean: ['plan', 'stream', 'quiet', 'help', 'interactive'],
+      boolean: [
+        'plan',
+        'stream',
+        'quiet',
+        'help',
+        'interactive',
+        'browser',
+        'gui',
+      ],
     });
     let command = argv._[0] as string;
     const pkg = await import('../package.json');
@@ -206,7 +217,15 @@ export async function runCli(opts: RunCliOpts) {
       });
       return;
     }
+
+    // gui mode
+    const isBrowserMode = argv.browser || argv.gui;
+    if (isBrowserMode) {
+      command = 'browser';
+    }
+
     context = await buildContext({ ...opts, argv, command });
+
     const pluginCommands = await context.pluginManager.apply({
       hook: 'commands',
       args: [],
@@ -217,6 +236,7 @@ export async function runCli(opts: RunCliOpts) {
     const matchedCommand = pluginCommands.find(
       (c: Command) => c.name === command,
     );
+
     if (matchedCommand) {
       logger.logCommand({ command });
       await matchedCommand.fn();
@@ -270,6 +290,13 @@ export async function runCli(opts: RunCliOpts) {
         // logger.logCommand({ command });
         // await (await import('./commands/asmcp.js')).runAsMcp({ context });
         // break;
+        case 'browser':
+          logger.logCommand({ command });
+          const browserPrompt = argv._[0] as string;
+          await (
+            await import('./commands/browser.js')
+          ).runBrowser({ context, prompt: browserPrompt });
+          break;
         default:
           await (
             await import('./commands/act.js')
@@ -284,7 +311,7 @@ export async function runCli(opts: RunCliOpts) {
       type: PluginHookType.Series,
       pluginContext: context.pluginContext,
     });
-    if (command !== 'watch') {
+    if (command !== 'watch' && !isBrowserMode) {
       // TODO: fix hard code
       await closeClients(context.mcpClients);
       logger.logOutro();

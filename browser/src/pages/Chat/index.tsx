@@ -16,6 +16,7 @@ import { Button, Flex, Space, Spin } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useEffect } from 'react';
 import ChatSender from '@/components/ChatSender';
+import { useSocket } from '@/hooks/useSocket';
 
 const HOT_TOPICS = {
   key: '1',
@@ -129,6 +130,7 @@ const Chat: React.FC = () => {
   const { styles } = useStyle();
   const { messages, setMessageHistory, curConversation, onQuery } =
     useModel('chat');
+  const { socket } = useSocket();
 
   useEffect(() => {
     // history mock

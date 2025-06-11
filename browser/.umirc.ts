@@ -10,8 +10,8 @@ export default defineConfig({
       changeOrigin: true,
       pathRewrite: { '^/api': '/api' },
     },
-    '/ws': {
-      target: 'ws://localhost:3001',
+    '/ws-chat': {
+      target: 'ws://localhost:1024',
       ws: true,
       changeOrigin: true,
     },
@@ -24,7 +24,6 @@ export default defineConfig({
     },
     {
       path: '/chat',
-      name: '对话',
       component: '@/pages/Chat',
     },
     // {
