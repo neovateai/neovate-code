@@ -16,11 +16,11 @@ const MODEL_ALIAS: Record<string, string> = {
   flash: 'gemini-2.5-flash-preview-05-20',
   gemini: 'gemini-2.5-pro-preview-06-05',
   grok: 'grok-3-fast-beta',
-  'openrouter/sonnet-3.5': 'anthropic/claude-3.5-sonnet',
-  'openrouter/sonnet-3.7': 'anthropic/claude-3.7-sonnet',
-  'openrouter/sonnet': 'anthropic/claude-sonnet-4',
-  'openrouter/r1': 'deepseek/deepseek-r1-0528',
-  'openrouter/deepseek': 'deepseek/deepseek-chat-v3-0324',
+  'openrouter/sonnet-3.5': 'openrouter/anthropic/claude-3.5-sonnet',
+  'openrouter/sonnet-3.7': 'openrouter/anthropic/claude-3.7-sonnet',
+  'openrouter/sonnet': 'openrouter/anthropic/claude-sonnet-4',
+  'openrouter/r1': 'openrouter/deepseek/deepseek-r1-0528',
+  'openrouter/deepseek': 'openrouter/deepseek/deepseek-chat-v3-0324',
   // 'groq/qwq': 'groq/qwen-qwq-32b',
 };
 const OPENAI_MODELS = [
@@ -51,6 +51,15 @@ const OPENROUTER_MODELS = [
   'anthropic/claude-sonnet-4',
   'deepseek/deepseek-chat-v3-0324',
   'deepseek/deepseek-r1-0528',
+  'openai/gpt-4.1',
+  'openai/gpt-4',
+  'openai/gpt-4o',
+  'openai/gpt-3.5-turbo',
+  'openai/o1',
+  'openai/o1-mini',
+  'openai/o1-pro',
+  'openai/o3',
+  'openai/o3-mini',
 ];
 
 export function getDefaultModelProvider(): ModelProvider {
@@ -85,11 +94,14 @@ export function getDefaultModelProvider(): ModelProvider {
         return aisdk(xai(modelName));
       }
       // openrouter
-      if (OPENROUTER_MODELS.includes(modelName)) {
-        const openrouter = createOpenRouter({
-          apiKey: process.env.OPEN_ROUTER_API_KEY,
-        });
-        return aisdk(openrouter(modelName));
+      if (modelName.startsWith('openrouter/')) {
+        modelName = modelName.replace('openrouter/', '');
+        if (OPENROUTER_MODELS.includes(modelName)) {
+          const openrouter = createOpenRouter({
+            apiKey: process.env.OPEN_ROUTER_API_KEY,
+          });
+          return aisdk(openrouter(modelName));
+        }
       }
       throw new Error(`Model ${modelName} is not supported`);
     },
