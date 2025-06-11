@@ -1,0 +1,53 @@
+# 依赖
+node_modules/
+.pnp
+.pnp.js
+
+# 构建产物
+/dist
+/build
+.umi
+.umi-production
+.umi-test
+
+# 运行时
+*.tsbuildinfo
+.npm
+.eslintcache
+
+# 环境变量
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 日志
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# 临时文件
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 测试覆盖率
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# 缓存
+.cache/
+.parcel-cache
+
+# 其他
+.history/

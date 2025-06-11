@@ -1,37 +1,39 @@
 {
-  "name": "takumi-browser",
+  "name": "@takumi/browser",
   "version": "1.0.0",
-  "description": "Takumi Browser Mode - Web-based AI programming assistant interface",
-  "private": true,
+  "description": "Takumi Browser Mode - Web interface for AI programming assistant",
+  "main": "dist/index.js",
   "scripts": {
-    "dev": "umi dev",
-    "build": "umi build",
-    "preview": "umi preview",
-    "setup": "umi setup",
-    "typecheck": "tsc --noEmit"
+    "dev": "max dev",
+    "build": "max build"
   },
   "dependencies": {
-    "@ant-design/x": "^1.1.0",
-    "@umijs/max": "^4.3.28",
-    "antd": "^5.22.6",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-markdown": "^9.0.1",
-    "socket.io-client": "^4.8.0",
-    "zustand": "^4.6.1"
+    "@ant-design/icons": "^6.0.0",
+    "@ant-design/x": "^1.0.0",
+    "ahooks": "^3.7.0",
+    "antd": "^5.15.0",
+    "antd-style": "^3.7.1",
+    "dayjs": "^1.11.13",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^9.0.0",
+    "react-syntax-highlighter": "^15.5.0",
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
-    "typescript": "^5.8.3",
-    "umi": "^4.3.28"
+    "@kmijs/preset-bundler": "^0.0.3",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/ws": "^8.5.0",
+    "@umijs/max": "^4.4.11",
+    "typescript": "^5.3.0"
   },
   "keywords": [
     "takumi",
-    "browser",
     "ai",
-    "programming",
-    "assistant"
+    "browser",
+    "web-interface",
+    "programming-assistant"
   ],
   "author": "Takumi Team",
   "license": "MIT"
