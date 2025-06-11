@@ -2,11 +2,13 @@ import { AgentInputItem, ModelProvider, Runner } from '@openai/agents';
 import * as p from '@umijs/clack-prompts';
 import { ExecSyncOptionsWithStringEncoding, execSync } from 'child_process';
 import clipboardy from 'clipboardy';
+import { homedir } from 'os';
 import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
 import * as logger from '../../utils/logger';
 import { createCommitAgent } from '../agents/commit';
+import { ConfigManager } from '../config';
 import { getDefaultModelProvider } from '../provider';
 
 interface GenerateCommitMessageOpts {
@@ -48,12 +50,12 @@ export async function runCommit(opts: RunCliOpts) {
       stage: 's',
       commit: 'c',
       noVerify: 'n',
-      copy: 'p',
       interactive: 'i',
       model: 'm',
     },
     boolean: [
       'stage',
+      'push',
       'commit',
       'noVerify',
       'copy',
@@ -62,6 +64,9 @@ export async function runCommit(opts: RunCliOpts) {
     ],
     string: ['model', 'language'],
   });
+  if (!argv.interactive && !argv.commit && !argv.copy) {
+    argv.interactive = true;
+  }
   try {
     execSync('git --version', { stdio: 'ignore' });
     execSync('git config user.name', { stdio: 'ignore' });
@@ -111,41 +116,35 @@ Please follow a similar style for this commit message while still adhering to th
     }
   }
 
+  const configManager = new ConfigManager(process.cwd(), opts.productName, {
+    model: argv.model,
+    language: argv.language,
+  });
+
   // Generate the commit message
   let message = '';
   let attempts = 0;
   const maxAttempts = 3;
   while (attempts < maxAttempts) {
     try {
+      const stop = logger.spinThink({ productName: opts.productName });
       message = await generateCommitMessage({
         prompt: `
 # Diffs:
 ${diff}
 ${repoStyle}
         `,
-        model: argv.model,
-        language: argv.language,
+        model: configManager.config.model,
+        language: configManager.config.language,
         modelProvider: opts.modelProvider,
       });
-      //       message = await askQuery({
-      //         systemPrompt,
-      //         prompt: `
-      // # Diffs:
-      // ${diff}
-      // ${repoStyle}
-      //         `,
-      //         context: opts.context,
-      //       });
+      stop();
       checkCommitMessage(message);
       break;
     } catch (error: any) {
       attempts++;
       if (attempts >= maxAttempts) {
         throw error;
-      } else {
-        logger.logWarn(
-          `Attempt to generate commit message failed since ${error.message}. Retrying...`,
-        );
       }
     }
   }
