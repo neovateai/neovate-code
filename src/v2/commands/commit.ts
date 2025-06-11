@@ -40,11 +40,37 @@ async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
   return message;
 }
 
+function printHelp(p: string) {
+  console.log(
+    `
+Usage:
+  ${p} commit [options]
+
+Generate intelligent commit messages based on staged changes.
+
+Options:
+  -h, --help                    Show help
+  -s, --stage                   Stage all changes before committing
+  -c, --commit                  Commit changes automatically
+  -n, --no-verify               Skip pre-commit hooks
+  -i, --interactive             Interactive mode (default)
+  -m, --model <model>           Specify model to use
+  --language <language>         Set language for commit message
+  --copy                        Copy commit message to clipboard
+  --push                        Push changes after commit
+  --follow-style                Follow existing repository commit style
+
+Examples:
+  ${p} commit                 Interactive mode - generate and choose action
+  ${p} commit -s -c           Stage all changes and commit automatically
+  ${p} commit --copy          Generate message and copy to clipboard
+  ${p} commit -s -c --push    Stage, commit and push in one command
+  ${p} commit --follow-style  Generate message following repo style
+      `.trim(),
+  );
+}
+
 export async function runCommit(opts: RunCliOpts) {
-  logger.logIntro({
-    productName: opts.productName,
-    version: opts.version,
-  });
   const argv = yargsParser(process.argv.slice(2), {
     alias: {
       stage: 's',
@@ -52,6 +78,7 @@ export async function runCommit(opts: RunCliOpts) {
       noVerify: 'n',
       interactive: 'i',
       model: 'm',
+      help: 'h',
     },
     boolean: [
       'stage',
@@ -61,8 +88,20 @@ export async function runCommit(opts: RunCliOpts) {
       'copy',
       'interactive',
       'followStyle',
+      'help',
     ],
     string: ['model', 'language'],
+  });
+
+  // help
+  if (argv.help) {
+    printHelp(opts.productName.toLowerCase());
+    return;
+  }
+
+  logger.logIntro({
+    productName: opts.productName,
+    version: opts.version,
   });
   if (!argv.interactive && !argv.commit && !argv.copy) {
     argv.interactive = true;
