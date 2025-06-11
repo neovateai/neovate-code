@@ -1,8 +1,10 @@
+import { ModelProvider } from '@openai/agents';
 import { PRODUCT_NAME } from './constants';
 
 export interface RunCliOpts {
-  productName?: string;
-  version?: string;
+  productName: string;
+  version: string;
+  modelProvider?: ModelProvider;
 }
 
 export async function runCli(opts: RunCliOpts) {
@@ -13,6 +15,10 @@ export async function runCli(opts: RunCliOpts) {
     case 'config':
       const { runConfig } = await import('./commands/config');
       await runConfig(opts);
+      break;
+    case 'commit':
+      const { runCommit } = await import('./commands/commit');
+      await runCommit(opts);
       break;
     default:
       const { runDefault } = await import('./commands/default');

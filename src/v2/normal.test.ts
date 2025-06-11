@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { afterEach, beforeEach, expect, test } from 'vitest';
-import { run } from '.';
+import { run } from './commands/default';
 
 const root = path.join(__dirname, '../..');
 const fixtures = path.join(root, 'fixtures');

@@ -171,5 +171,9 @@ function saveConfig(
         JSON.stringify(defaultConfig[key as keyof Config]),
     ),
   );
+  const dir = path.dirname(file);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
   fs.writeFileSync(file, JSON.stringify(filteredConfig, null, 2), 'utf-8');
 }

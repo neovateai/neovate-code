@@ -8,7 +8,7 @@ import {
 import assert from 'assert';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
-import { createCodeAgent } from '../agents/coder';
+import { createCodeAgent } from '../agents/code';
 import { Config } from '../config';
 import { Context, PromptContext } from '../context';
 import { parseMessage } from '../parseMessage';

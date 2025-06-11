@@ -7,7 +7,7 @@ export function createCodeAgent(options: {
   context: Context;
   tools: Tools;
 }) {
-  const codeAgent = new Agent({
+  return new Agent({
     name: 'code',
     instructions: async (context, agent) => {
       return `
@@ -61,5 +61,4 @@ ${options.tools.getToolsPrompt()}
     },
     model: options.model,
   });
-  return codeAgent;
 }
