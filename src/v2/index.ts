@@ -1,5 +1,3 @@
-import { runConfig } from './commands/config';
-import { runDefault } from './commands/default';
 import { PRODUCT_NAME } from './constants';
 
 export interface RunCliOpts {
@@ -13,10 +11,12 @@ export async function runCli(opts: RunCliOpts) {
   const command = process.argv[2];
   switch (command) {
     case 'config':
+      const { runConfig } = await import('./commands/config');
       await runConfig(opts);
       break;
     default:
-      await runDefault();
+      const { runDefault } = await import('./commands/default');
+      await runDefault(opts);
       break;
   }
 }

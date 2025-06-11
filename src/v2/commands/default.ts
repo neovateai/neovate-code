@@ -7,6 +7,7 @@ import {
 } from '@openai/agents';
 import assert from 'assert';
 import yargsParser from 'yargs-parser';
+import { RunCliOpts } from '..';
 import { createCodeAgent } from '../agents/coder';
 import { Config } from '../config';
 import { Context, PromptContext } from '../context';
@@ -176,7 +177,7 @@ export async function run(opts: RunOpts) {
   };
 }
 
-export async function runDefault() {
+export async function runDefault(opts: RunCliOpts) {
   const argv = yargsParser(process.argv.slice(2), {
     alias: {
       model: 'm',
@@ -188,14 +189,16 @@ export async function runDefault() {
     boolean: ['stream', 'json'],
     string: ['model', 'smallModel'],
   });
+  const cwd = process.cwd();
   const result = await run({
     argvConfig: {
       model: argv.model,
       smallModel: argv.smallModel,
       stream: argv.stream,
     },
+    productName: opts.productName,
     prompt: argv._[0]! as string,
-    cwd: process.cwd(),
+    cwd,
     json: argv.json,
   });
   if (argv.json) {
