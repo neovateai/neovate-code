@@ -66,12 +66,14 @@ export async function run(opts: RunOpts) {
     context,
     tools,
   });
-  const promptContext = new PromptContext(context);
-  await promptContext.init();
+  const promptContext = new PromptContext({
+    prompts: [opts.prompt],
+    context,
+  });
   let input: AgentInputItem[] = [
     {
       role: 'system',
-      content: promptContext.getContext(),
+      content: await promptContext.getContext(),
     },
     {
       role: 'user',

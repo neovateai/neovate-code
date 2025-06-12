@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { platform } from 'process';
 import { execFileNoThrow } from '../utils/execFileNoThrow';
+import { getCodebaseContext } from './codebase';
 import { Config, ConfigManager } from './config';
 import { PRODUCT_NAME } from './constants';
 import { createLSTool } from './tools/ls';
@@ -28,19 +29,82 @@ export class Context {
   }
 }
 
+export interface PromptContextOpts {
+  prompts: string[];
+  context: Context;
+}
+
 export class PromptContext {
   context: Context;
-  contextPromptData?: Record<string, string | null>;
-  constructor(context: Context) {
-    this.context = context;
+  prompts: string[];
+  constructor(opts: PromptContextOpts) {
+    this.context = opts.context;
+    this.prompts = opts.prompts;
   }
 
-  async init() {
-    this.contextPromptData = await this.getContextPromptData();
+  addPrompt(prompt: string) {
+    this.prompts.push(prompt);
   }
 
-  getContext() {
-    return [this.getEnvPrompt(), this.getContextPrompt()].join('\n\n');
+  async getContext() {
+    return [await this.getEnvPrompt(), await this.getContextPrompt()].join(
+      '\n\n',
+    );
+  }
+
+  renderFilesToXml(files: string[]): string {
+    const fileContents = files
+      .map(
+        (fc) => `
+      <file>
+        <path>${path.relative(this.context.cwd, fc)}</path>
+        <content><![CDATA[${fs.readFileSync(fc, 'utf-8')}]]></content>
+      </file>`,
+      )
+      .join('');
+    return `<files>This section contains the contents of the repository's files.\n${fileContents}\n</files>`;
+  }
+
+  async parsePrompt(prompt: string) {
+    const ats = prompt
+      .split(' ')
+      .filter((p) => p.startsWith('@'))
+      .map((p) => p.slice(1));
+    const uniqAts = [...new Set(ats)];
+    const ret: Record<string, string> = {};
+    const files: string[] = [];
+    // TODO: dirs
+    const dirs: string[] = [];
+
+    for (const at of uniqAts) {
+      switch (at) {
+        case 'codebase':
+          ret.codebase = await getCodebaseContext({
+            context: this.context,
+          });
+          break;
+        default:
+          const filePath = path.resolve(this.context.cwd, at);
+          if (fs.existsSync(filePath)) {
+            if (fs.statSync(filePath).isFile()) {
+              files.push(filePath);
+            } else if (fs.statSync(filePath).isDirectory()) {
+              dirs.push(filePath);
+            } else {
+              throw new Error(`${filePath} is not a file or directory`);
+            }
+          }
+          break;
+      }
+    }
+    if (files.length > 0) {
+      ret.files = this.renderFilesToXml(files);
+    }
+    // TODO: dirs
+    // if (dirs.length > 0) {
+    //   ret.dirs = dirs.map((d) => path.basename(d)).join(', ');
+    // }
+    return ret;
   }
 
   async getContextPromptData() {
@@ -51,11 +115,12 @@ export class PromptContext {
       gitStatus: (await getGitStatus({ context: this.context })) ?? '',
       codeStyle: (await getCodeStyle({ context: this.context })) ?? '',
       readme: (await getReadme({ context: this.context })) ?? '',
+      ...(await this.parsePrompt(this.prompts.join(' '))),
     };
   }
 
-  getContextPrompt() {
-    const promptContext = this.contextPromptData!;
+  async getContextPrompt() {
+    const promptContext = await this.getContextPromptData();
     const prompt = Object.entries(promptContext)
       .map(([key, value]) => `<context name="${key}">${value}</context>`)
       .join('\n');
@@ -66,13 +131,14 @@ ${prompt}
     `.trim();
   }
 
-  getEnvPrompt() {
+  async getEnvPrompt() {
+    const gitStatus = await getGitStatus({ context: this.context });
     return `
 # Environment
 Here is useful information about the environment you are running in.
 <env>
 Working directory: ${this.context.cwd}
-Is directory a git repo: ${this.contextPromptData!.gitStatus ? 'YES' : 'NO'}
+Is directory a git repo: ${gitStatus ? 'YES' : 'NO'}
 Platform: ${platform}
 Today's date: ${new Date().toLocaleDateString()}
 </env>
