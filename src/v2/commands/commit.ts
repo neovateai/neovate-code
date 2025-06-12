@@ -2,7 +2,6 @@ import { AgentInputItem, ModelProvider, Runner } from '@openai/agents';
 import * as p from '@umijs/clack-prompts';
 import { ExecSyncOptionsWithStringEncoding, execSync } from 'child_process';
 import clipboardy from 'clipboardy';
-import { homedir } from 'os';
 import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
