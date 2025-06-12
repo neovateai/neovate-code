@@ -126,6 +126,9 @@ export class ConfigManager {
     if (BOOLEAN_CONFIG_KEYS.includes(key)) {
       newValue = value === 'true';
     }
+    if (OBJECT_CONFIG_KEYS.includes(key)) {
+      newValue = JSON.parse(value);
+    }
     (config[key as keyof Config] as any) = newValue;
     saveConfig(configPath, config, DEFAULT_CONFIG);
   }

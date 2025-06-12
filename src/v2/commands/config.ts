@@ -6,7 +6,7 @@ function printHelp(p: string) {
   console.log(
     `
 Usage:
-  ${p} config <command>
+  ${p} config [options] [command]
 
 Manage configuration. (e.g. ${p} config set -g model gpt-4o)
 

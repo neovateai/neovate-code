@@ -20,6 +20,10 @@ export async function runCli(opts: RunCliOpts) {
       const { runCommit } = await import('./commands/commit');
       await runCommit(opts);
       break;
+    case 'mcp':
+      const { runMCP } = await import('./commands/mcp');
+      await runMCP(opts);
+      break;
     default:
       const { runDefault } = await import('./commands/default');
       await runDefault(opts);
