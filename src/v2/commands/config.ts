@@ -20,6 +20,16 @@ Commands:
   list|ls [options]                     List all config values
   add [options] <key> <value>           Add a config value
   help                                  Show help
+
+Examples:
+  ${p} config get model               Get current model setting
+  ${p} config set model gpt-4o        Set model for current project
+  ${p} config set -g model gpt-4o     Set model globally
+  ${p} config list                    Show all current config values
+  ${p} config ls -g                   Show all global config values
+  ${p} config add plugins "custom"    Add value to plugins array
+  ${p} config rm model                Remove model setting
+  ${p} config rm plugins "custom"     Remove specific value from plugins array
       `.trim(),
   );
 }
