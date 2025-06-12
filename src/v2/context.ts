@@ -65,6 +65,38 @@ export class PromptContext {
     return `<files>This section contains the contents of the repository's files.\n${fileContents}\n</files>`;
   }
 
+  getAllFilesInDirectory(dirPath: string): string[] {
+    const files: string[] = [];
+
+    const traverse = (currentPath: string) => {
+      try {
+        const items = fs.readdirSync(currentPath);
+        for (const item of items) {
+          const itemPath = path.join(currentPath, item);
+          const stat = fs.statSync(itemPath);
+
+          if (stat.isFile()) {
+            files.push(itemPath);
+          } else if (stat.isDirectory()) {
+            // Skip hidden directories and common ignore patterns
+            if (
+              !item.startsWith('.') &&
+              !['node_modules', 'dist', 'build'].includes(item)
+            ) {
+              traverse(itemPath);
+            }
+          }
+        }
+      } catch (error) {
+        // Skip directories that can't be read
+        console.warn(`Warning: Could not read directory ${currentPath}`);
+      }
+    };
+
+    traverse(dirPath);
+    return files;
+  }
+
   async parsePrompt(prompt: string) {
     const ats = prompt
       .split(' ')
@@ -73,8 +105,6 @@ export class PromptContext {
     const uniqAts = [...new Set(ats)];
     const ret: Record<string, string> = {};
     const files: string[] = [];
-    // TODO: dirs
-    const dirs: string[] = [];
 
     for (const at of uniqAts) {
       switch (at) {
@@ -89,7 +119,8 @@ export class PromptContext {
             if (fs.statSync(filePath).isFile()) {
               files.push(filePath);
             } else if (fs.statSync(filePath).isDirectory()) {
-              dirs.push(filePath);
+              const dirFiles = this.getAllFilesInDirectory(filePath);
+              files.push(...dirFiles);
             } else {
               throw new Error(`${filePath} is not a file or directory`);
             }
@@ -100,10 +131,6 @@ export class PromptContext {
     if (files.length > 0) {
       ret.files = this.renderFilesToXml(files);
     }
-    // TODO: dirs
-    // if (dirs.length > 0) {
-    //   ret.dirs = dirs.map((d) => path.basename(d)).join(', ');
-    // }
     return ret;
   }
 
