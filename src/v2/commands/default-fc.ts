@@ -6,6 +6,7 @@ import {
   Runner,
 } from '@openai/agents';
 import assert from 'assert';
+import readline from 'readline/promises';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
 import { createCodeAgent } from '../agents/code';
@@ -37,13 +38,13 @@ export async function run(opts: RunOpts) {
     modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
     modelSettings: {
       providerData: {
-        // providerMetadata: {
-        //   google: {
-        //     thinkingConfig: {
-        //       includeThoughts: true,
-        //     },
-        //   },
-        // },
+        providerMetadata: {
+          google: {
+            thinkingConfig: {
+              includeThoughts: true,
+            },
+          },
+        },
       },
     },
   });
@@ -65,7 +66,7 @@ export async function run(opts: RunOpts) {
     model: context.configManager.config.model,
     context,
     tools,
-    fc: false,
+    fc: true,
   });
   const promptContext = new PromptContext({
     prompts: [opts.prompt],
@@ -119,13 +120,30 @@ export async function run(opts: RunOpts) {
               }
               break;
             default:
+              // console.log('----', chunk.data.event);
               break;
           }
         }
       }
       history = [...result.history];
     } else {
-      const result = await runner.run(codeAgent, input);
+      let result = await runner.run(codeAgent, input);
+      let hasInterruptions = result.interruptions?.length > 0;
+      while (hasInterruptions) {
+        for (const interruption of result.interruptions) {
+          if (
+            await confirm(
+              `${interruption.agent.name} would like to ${JSON.stringify(interruption)}`,
+            )
+          ) {
+            await result.state.approve(interruption);
+          } else {
+            await result.state.reject(interruption);
+          }
+        }
+        result = await runner.run(codeAgent, result.state);
+        hasInterruptions = result.interruptions?.length > 0;
+      }
       const reasonItem = result.output.find(
         (item) => item.type === 'reasoning',
       );
@@ -139,40 +157,10 @@ export async function run(opts: RunOpts) {
       history = [...result.history];
     }
 
-    const parsed = parseMessage(text);
-    if (parsed[0]?.type === 'text') {
-      if (!opts.json && !context.configManager.config.stream) {
-        console.log(parsed[0].content);
-      }
-    }
-    const toolUse = parsed.find((item) => item.type === 'tool_use');
-    if (toolUse) {
-      const name = toolUse.name;
-      const args = JSON.stringify(toolUse.params);
-      const callId = crypto.randomUUID();
-      history.push({
-        type: 'function_call',
-        name,
-        arguments: args,
-        callId,
-      } as FunctionCallItem);
-      const result = await tools.invoke(name, args, context);
-      history.push({
-        type: 'function_call_result',
-        name,
-        output: {
-          type: 'text',
-          text: result,
-        },
-        status: 'completed',
-        callId,
-      } as FunctionCallResultItem);
-      input = history;
-    } else {
-      input = history;
-      finalOutput = text;
-      break;
-    }
+    // TODO: support interactive mode
+    input = history;
+    finalOutput = text;
+    break;
   }
   return {
     history: input,
@@ -207,4 +195,16 @@ export async function runDefault(opts: RunCliOpts) {
   if (argv.json) {
     console.log(JSON.stringify(result.history, null, 2));
   }
+}
+
+async function confirm(question: string) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  const answer = await rl.question(`${question} (y/n): `);
+  const normalizedAnswer = answer.toLowerCase();
+  rl.close();
+  return normalizedAnswer === 'y' || normalizedAnswer === 'yes';
 }

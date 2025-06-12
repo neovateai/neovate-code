@@ -624,8 +624,12 @@ export class AiSdkModel implements Model {
             break;
           }
           case 'finish': {
-            usagePromptTokens = part.usage.promptTokens;
-            usageCompletionTokens = part.usage.completionTokens;
+            usagePromptTokens = isNaN(part.usage.promptTokens)
+              ? 0
+              : part.usage.promptTokens;
+            usageCompletionTokens = isNaN(part.usage.completionTokens)
+              ? 0
+              : part.usage.completionTokens;
             break;
           }
           case 'error': {

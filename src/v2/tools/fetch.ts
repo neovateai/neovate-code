@@ -17,7 +17,7 @@ Remembers:
 - IMPORTANT: If an MCP-provided web fetch tool is available, prefer using that tool instead of this one, as it may have fewer restrictions. All MCP-provided tools start with "mcp__"
     `.trim(),
     parameters: z.object({
-      url: z.string().url().describe('The url to fetch content from'),
+      url: z.string().describe('The url to fetch content from'),
       prompt: z.string().describe('The prompt to run on the fetched content'),
     }),
     execute: async ({ url, prompt }) => {

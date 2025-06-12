@@ -25,8 +25,13 @@ export async function runCli(opts: RunCliOpts) {
       await runMCP(opts);
       break;
     default:
-      const { runDefault } = await import('./commands/default');
-      await runDefault(opts);
+      if (process.env.FC) {
+        const { runDefault } = await import('./commands/default-fc');
+        await runDefault(opts);
+      } else {
+        const { runDefault } = await import('./commands/default');
+        await runDefault(opts);
+      }
       break;
   }
 }

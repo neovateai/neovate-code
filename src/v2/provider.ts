@@ -15,7 +15,7 @@ const MODEL_ALIAS: Record<string, string> = {
   '4o': 'gpt-4o',
   '3': 'gpt-3.5-turbo',
   flash: 'gemini-2.5-flash-preview-05-20',
-  gemini: 'gemini-2.5-pro-preview-06-05',
+  gemini: 'gemini-2.5-pro-preview-05-06',
   grok: 'grok-3-fast-beta',
   sonnet: 'claude-sonnet-4-20250514',
   'sonnet-3.5': 'claude-3-5-sonnet-20241022',
@@ -41,7 +41,7 @@ const OPENAI_MODELS = [
 ];
 const GOOGLE_MODELS = [
   'gemini-2.5-flash-preview-05-20',
-  'gemini-2.5-pro-preview-06-05',
+  'gemini-2.5-pro-preview-05-06',
 ];
 const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'];
 const XAI_MODELS = [
@@ -97,6 +97,14 @@ export function getDefaultModelProvider(): ModelProvider {
             process.env.GOOGLE_GENERATIVE_AI_API_KEY,
         });
         return aisdk(google(modelName));
+        // return aisdk(
+        //   createOpenAI({
+        //     baseURL: process.env.GOOGLE_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/',
+        //     apiKey:
+        //       process.env.GOOGLE_API_KEY ||
+        //       process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+        //   })(modelName),
+        // );
       }
       // deepseek
       if (DEEPSEEK_MODELS.includes(modelName)) {
