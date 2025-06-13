@@ -177,11 +177,32 @@ const Chat: React.FC = () => {
                   icon: <UserOutlined />,
                   style: { background: '#fde3cf' },
                 },
-                messageRender: (content) => {
-                  if (typeof content === 'string') {
-                    return <ReactMarkdown>{content}</ReactMarkdown>;
+                messageRender: (message) => {
+                  if (typeof message === 'string') {
+                    return <ReactMarkdown>{message}</ReactMarkdown>;
                   }
-                  return content;
+                  if (typeof message === 'object') {
+                    switch (message.type) {
+                      case 'tool-call':
+                        const { toolName, args, result } = message.content;
+                        console.log('result ===>', result);
+                        return (
+                          <div>
+                            <div>工具: {toolName}</div>
+                            <div>参数: {JSON.stringify(args, null, 2)}</div>
+                            <div>
+                              <div>结果:</div>
+                              <pre>
+                                {typeof result === 'string'
+                                  ? result
+                                  : JSON.stringify(result, null, 2)}
+                              </pre>
+                            </div>
+                          </div>
+                        );
+                    }
+                  }
+                  return message;
                 },
                 footer: (
                   <div style={{ display: 'flex' }}>

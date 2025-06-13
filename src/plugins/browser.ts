@@ -6,8 +6,7 @@ export const browserPlugin: Plugin = {
 
   async streamTextUpdate(this: PluginContext, { chunk, queryId }) {
     this.eventManager.sendToStream({
-      type: 'text',
-      sessionId: this.sessionId,
+      type: 'text-delta',
       content: chunk,
       metadata: {
         queryId,

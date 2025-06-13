@@ -1,10 +1,9 @@
 import EventEmitter from 'node:events';
 
 interface PluginStreamData {
-  sessionId: string;
-  content: string;
+  content: string | Record<string, any>;
   metadata?: Record<string, any>;
-  type?: 'text' | 'tool_call' | 'error';
+  type: 'text-delta' | 'tool-call' | 'reasoning' | 'error';
 }
 
 export class EventManager extends EventEmitter {

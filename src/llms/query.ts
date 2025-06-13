@@ -205,6 +205,7 @@ export async function query(opts: QueryOptions) {
         //   }
         // }
       }
+
       think?.text('\n');
       tokenUsageForLog = await result.usage;
       // process.stdout.write('\n');
@@ -258,13 +259,17 @@ export async function query(opts: QueryOptions) {
       toolLogger.result(result);
 
       opts.context.pluginContext.eventManager.sendToStream({
-        type: 'tool_call',
-        sessionId: opts.context.sessionId,
-        content: result,
+        type: 'tool-call',
+        content: {
+          toolName: toolUse.toolName,
+          args: toolUse.arguments,
+          result,
+        },
         metadata: {
           queryId: id,
         },
       });
+
       await addMessage([{ role: 'user', content: result }]);
     } else {
       const end = Date.now();

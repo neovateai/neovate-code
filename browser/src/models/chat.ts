@@ -54,19 +54,28 @@ const useChat = () => {
 
       let text = '';
       for await (const chunk of result.textStream) {
-        text += chunk;
-        onUpdate({
-          content: text,
-          role: 'assistant',
-        });
+        // 判断 chunk 是一个普通字符串 还是 json 字符串对象
+        const message = JSON.parse(chunk);
+        if (message.type === 'text-delta') {
+          text += message.content;
+          onUpdate({
+            content: text,
+            role: 'assistant',
+          });
+        } else {
+          onUpdate({
+            content: message,
+            role: 'assistant',
+          });
+        }
       }
 
-      onSuccess([
-        {
-          content: text,
-          role: 'assistant',
-        },
-      ]);
+      // onSuccess([
+      //   {
+      //     content: text,
+      //     role: 'assistant',
+      //   },
+      // ]);
     },
   });
 
@@ -76,7 +85,7 @@ const useChat = () => {
     agent,
     requestPlaceholder: () => {
       return {
-        content: 'Please wait...',
+        content: '思考中...',
         role: 'assistant',
       };
     },
