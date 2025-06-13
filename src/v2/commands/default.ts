@@ -37,13 +37,13 @@ export async function run(opts: RunOpts) {
     modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
     modelSettings: {
       providerData: {
-        // providerMetadata: {
-        //   google: {
-        //     thinkingConfig: {
-        //       includeThoughts: true,
-        //     },
-        //   },
-        // },
+        providerMetadata: {
+          google: {
+            thinkingConfig: {
+              includeThoughts: process.env.THINKING ? true : false,
+            },
+          },
+        },
       },
     },
   });
