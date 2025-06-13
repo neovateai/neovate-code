@@ -221,7 +221,54 @@ export async function run(opts: RunOpts) {
   });
 }
 
+function printHelp(p: string) {
+  console.log(
+    `
+Usage:
+  ${p} [options] [command] <prompt>
+
+Run the code agent with a prompt, interactive by default, use -q/--quiet for non-interactive mode.
+
+Arguments:
+  prompt                        Prompt to run
+
+Options:
+  -h, --help                    Show help
+  -m, --model <model>           Specify model to use
+  --smallModel <model>          Specify a smaller model for some tasks
+  -q, --quiet                   Quiet mode, non interactive
+  --stream                      Stream output (default: true)
+  --json                        Output result as JSON
+
+Examples:
+  ${p} "Refactor this file to use hooks."
+  ${p} -m gpt-4o "Add tests for the following code."
+
+Commands:
+  config                        Manage configuration
+  commit                        Commit changes to the repository
+  mcp                           Manage MCP servers
+    `.trim(),
+  );
+}
+
 export async function runDefault(opts: RunCliOpts) {
+  const argv = yargsParser(process.argv.slice(2), {
+    alias: {
+      model: 'm',
+      help: 'h',
+    },
+    default: {
+      model: 'flash',
+      stream: true,
+    },
+    boolean: ['stream', 'json', 'help'],
+    string: ['model', 'smallModel'],
+  });
+  if (argv.help) {
+    printHelp(opts.productName.toLowerCase());
+    return;
+  }
   const uuid = randomUUID().slice(0, 4);
   const traceFile = path.join(
     homedir(),
@@ -231,17 +278,6 @@ export async function runDefault(opts: RunCliOpts) {
   );
   setupTracing(traceFile);
   console.log('Tracing to', traceFile);
-  const argv = yargsParser(process.argv.slice(2), {
-    alias: {
-      model: 'm',
-    },
-    default: {
-      model: 'flash',
-      stream: true,
-    },
-    boolean: ['stream', 'json'],
-    string: ['model', 'smallModel'],
-  });
   const cwd = process.cwd();
   const result = await run({
     argvConfig: {
