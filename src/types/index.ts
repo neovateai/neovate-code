@@ -4,6 +4,7 @@ import type { AskQueryOptions, EditQueryOptions } from '../llms/query';
 import { MCPClient } from '../mcp';
 import { PluginManager } from '../pluginManager/pluginManager';
 import type { Plugin } from '../pluginManager/types';
+import { EventManager } from '../server/eventManager/eventManager';
 import * as logger from '../utils/logger';
 
 type Paths = {
@@ -20,6 +21,7 @@ export interface PluginContext {
   argv: yargsParser.Arguments;
   paths: Paths;
   sessionId: string;
+  eventManager: EventManager;
   askQuery: (opts: Omit<AskQueryOptions, 'context'>) => Promise<string>;
   editQuery: (opts: Omit<EditQueryOptions, 'context'>) => Promise<string>;
 }

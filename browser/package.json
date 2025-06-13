@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
-    "@ant-design/x": "^1.0.0",
+    "@ant-design/x": "^1.4.0",
     "ahooks": "^3.7.0",
     "antd": "^5.15.0",
     "antd-style": "^3.7.1",
@@ -17,8 +17,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^9.0.0",
-    "react-syntax-highlighter": "^15.5.0",
-    "zustand": "^4.5.0"
+    "react-syntax-highlighter": "^15.5.0"
   },
   "devDependencies": {
     "@kmijs/preset-bundler": "^0.0.3",

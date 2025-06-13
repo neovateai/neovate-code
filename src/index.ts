@@ -20,6 +20,7 @@ import { browserPlugin } from './plugins/browser';
 import { keywordContextPlugin } from './plugins/keywordContext';
 import { sessionPlugin } from './plugins/session';
 import { xmlFormatPromptPlugin } from './plugins/xmlFormatPrompt';
+import { EventManager } from './server/eventManager/eventManager';
 import type { Context, PluginContext } from './types';
 import * as logger from './utils/logger';
 
@@ -70,7 +71,7 @@ async function buildContext(
     configPath,
     sessionPath,
   };
-  const pluginContext = {
+  const pluginContext: PluginContext = {
     argv,
     config,
     cwd,
@@ -78,6 +79,7 @@ async function buildContext(
     paths,
     sessionId,
     logger,
+    eventManager: EventManager.getInstance(sessionId),
     askQuery: (opts: Omit<AskQueryOptions, 'context'>) => {
       return askQuery({
         context,
@@ -158,8 +160,8 @@ async function buildContext(
     command,
     cwd,
     config: resolvedConfig,
-    pluginManager,
     pluginContext,
+    pluginManager,
     mcpClients,
     paths,
     sessionId,

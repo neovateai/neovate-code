@@ -1,6 +1,8 @@
-import { useXAgent, useXChat } from '@ant-design/x';
+import { XStream, useXAgent, useXChat } from '@ant-design/x';
+import { streamText } from 'ai';
 import { message } from 'antd';
 import { useRef, useState } from 'react';
+import { useModel } from '@/hooks/useModel';
 import type { BubbleDataType } from '@/types/chat';
 
 const DEFAULT_CONVERSATIONS_ITEMS = [
@@ -36,15 +38,48 @@ const useChat = () => {
     DEFAULT_CONVERSATIONS_ITEMS[0].key,
   );
 
-  const [agent] = useXAgent<BubbleDataType>({
-    baseURL: 'https://api.x.ant.design/api/llm_siliconflow_deepseekr1',
-    model: 'deepseek-ai/DeepSeek-R1',
-    dangerouslyApiKey: 'Bearer sk-xxxxxxxxxxxxxxxxxxxx',
+  const { model } = useModel();
+
+  const [agent] = useXAgent<
+    BubbleDataType,
+    { message: BubbleDataType; messages: BubbleDataType[] },
+    BubbleDataType
+  >({
+    async request({ message, messages }, { onUpdate, onSuccess, onError }) {
+      const result = await streamText({
+        model,
+        // @ts-expect-error
+        messages: [message],
+      });
+
+      let text = '';
+      for await (const chunk of result.textStream) {
+        text += chunk;
+        onUpdate({
+          content: text,
+          role: 'assistant',
+        });
+      }
+
+      onSuccess([
+        {
+          content: text,
+          role: 'assistant',
+        },
+      ]);
+    },
   });
+
   const loading = agent.isRequesting();
 
   const { onRequest, messages, setMessages } = useXChat({
     agent,
+    requestPlaceholder: () => {
+      return {
+        content: 'Please wait...',
+        role: 'assistant',
+      };
+    },
     requestFallback: (_, { error }) => {
       if (error.name === 'AbortError') {
         return {
@@ -54,38 +89,6 @@ const useChat = () => {
       }
       return {
         content: 'Request failed, please try again!',
-        role: 'assistant',
-      };
-    },
-    transformMessage: (info) => {
-      const { originMessage, chunk } = info || {};
-      let currentContent = '';
-      let currentThink = '';
-      try {
-        if (chunk?.data && !chunk?.data.includes('DONE')) {
-          const message = JSON.parse(chunk?.data);
-          currentThink = message?.choices?.[0]?.delta?.reasoning_content || '';
-          currentContent = message?.choices?.[0]?.delta?.content || '';
-        }
-      } catch (error) {
-        console.error(error);
-      }
-
-      let content = '';
-
-      if (!originMessage?.content && currentThink) {
-        content = `<think>${currentThink}`;
-      } else if (
-        originMessage?.content?.includes('<think>') &&
-        !originMessage?.content.includes('</think>') &&
-        currentContent
-      ) {
-        content = `${originMessage?.content}</think>${currentContent}`;
-      } else {
-        content = `${originMessage?.content || ''}${currentThink}${currentContent}`;
-      }
-      return {
-        content: content,
         role: 'assistant',
       };
     },

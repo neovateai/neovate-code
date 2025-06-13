@@ -3,7 +3,15 @@ import { PluginContext } from '../types';
 
 export const browserPlugin: Plugin = {
   name: 'browser',
-  async cliStart(this: PluginContext) {
-    console.log('browser cliStart');
+
+  async streamTextUpdate(this: PluginContext, { chunk, queryId }) {
+    this.eventManager.sendToStream({
+      type: 'text',
+      sessionId: this.sessionId,
+      content: chunk,
+      metadata: {
+        queryId,
+      },
+    });
   },
 };

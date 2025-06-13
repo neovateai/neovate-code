@@ -182,6 +182,12 @@ export async function query(opts: QueryOptions) {
         if (text.includes('<') || text.includes('<use_tool>')) {
         } else {
           think.text(chunk);
+          await opts.context.pluginManager.apply({
+            hook: 'streamTextUpdate',
+            args: [{ chunk, queryId: generationId }],
+            type: PluginHookType.Series,
+            pluginContext: opts.context.pluginContext,
+          });
           // process.stdout.write(chunk);
         }
         // if (chunk.includes('<') || tmpText.length) {
@@ -239,6 +245,7 @@ export async function query(opts: QueryOptions) {
     const { toolUse } = parseToolUse(text);
     if (toolUse) {
       await addMessage([{ role: 'assistant', content: text }]);
+
       // logTool(
       //   `Tool ${pc.bold(toolUse.toolName)} called with args: ${JSON.stringify(toolUse.arguments)}`,
       // );
@@ -249,6 +256,15 @@ export async function query(opts: QueryOptions) {
           ? toolResult
           : JSON.stringify(toolResult);
       toolLogger.result(result);
+
+      opts.context.pluginContext.eventManager.sendToStream({
+        type: 'tool_call',
+        sessionId: opts.context.sessionId,
+        content: result,
+        metadata: {
+          queryId: id,
+        },
+      });
       await addMessage([{ role: 'user', content: result }]);
     } else {
       const end = Date.now();

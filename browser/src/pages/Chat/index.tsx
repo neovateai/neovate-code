@@ -9,14 +9,15 @@ import {
   ReloadOutlined,
   ShareAltOutlined,
   SmileOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import { Bubble, Prompts, Welcome } from '@ant-design/x';
 import { useModel } from '@umijs/max';
 import { Button, Flex, Space, Spin } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import ChatSender from '@/components/ChatSender';
-import { useSocket } from '@/hooks/useSocket';
 
 const HOT_TOPICS = {
   key: '1',
@@ -130,7 +131,6 @@ const Chat: React.FC = () => {
   const { styles } = useStyle();
   const { messages, setMessageHistory, curConversation, onQuery } =
     useModel('chat');
-  const { socket } = useSocket();
 
   useEffect(() => {
     // history mock
@@ -142,29 +142,47 @@ const Chat: React.FC = () => {
     }
   }, [messages]);
 
+  const items = messages?.map((i) => {
+    return {
+      ...i.message,
+      classNames: {
+        content: i.status === 'loading' ? styles.loadingMessage : '',
+      },
+      loading: status === 'loading',
+    };
+  });
+
   return (
     <div className={styles.chat}>
       <div className={styles.chatList}>
         {messages?.length ? (
           /* 🌟 消息列表 */
           <Bubble.List
-            items={messages?.map((i) => ({
-              ...i.message,
-              classNames: {
-                content: i.status === 'loading' ? styles.loadingMessage : '',
-              },
-              typing:
-                i.status === 'loading'
-                  ? { step: 5, interval: 20, suffix: <>💗</> }
-                  : false,
-            }))}
+            items={items}
             style={{
               height: '100%',
               paddingInline: 'calc(calc(100% - 700px) /2)',
             }}
             roles={{
+              user: {
+                placement: 'end',
+                avatar: {
+                  icon: <UserOutlined />,
+                  style: { background: '#87d068' },
+                },
+              },
               assistant: {
                 placement: 'start',
+                avatar: {
+                  icon: <UserOutlined />,
+                  style: { background: '#fde3cf' },
+                },
+                messageRender: (content) => {
+                  if (typeof content === 'string') {
+                    return <ReactMarkdown>{content}</ReactMarkdown>;
+                  }
+                  return content;
+                },
                 footer: (
                   <div style={{ display: 'flex' }}>
                     <Button
@@ -183,7 +201,6 @@ const Chat: React.FC = () => {
                 ),
                 loadingRender: () => <Spin size="small" />,
               },
-              user: { placement: 'end' },
             }}
           />
         ) : (

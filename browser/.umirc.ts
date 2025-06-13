@@ -6,9 +6,8 @@ export default defineConfig({
 
   proxy: {
     '/api': {
-      target: 'http://localhost:3001',
+      target: 'http://localhost:1024',
       changeOrigin: true,
-      pathRewrite: { '^/api': '/api' },
     },
     '/ws-chat': {
       target: 'ws://localhost:1024',
@@ -45,7 +44,6 @@ export default defineConfig({
 
   presets: ['@kmijs/preset-bundler'],
   rspack: {},
-
-  // 路由配置
+  valtio: {},
   title: 'Takumi Browser - AI 编程助手',
 });

@@ -1,16 +1,10 @@
 import { createServer as createHttpServer } from 'node:http';
-import { Context } from '../types';
 import * as logger from '../utils/logger';
 import { gzipMiddleware } from './middlewares/gzipMiddleware';
 import { notFoundMiddleware } from './middlewares/notFoundMiddleware';
-import { SocketServer } from './socketServer';
-
-interface ServerOptions {
-  port: number;
-  host: string;
-  context: Context;
-  prompt: string;
-}
+import { streamApiMiddleware } from './middlewares/streamApiMiddleware';
+import { ServerOptions } from './types';
+import { WebSocketManager } from './webSocketManager/webSocketManager';
 
 export async function startBrowserServer(opts: ServerOptions) {
   await createServer(opts);
@@ -20,6 +14,7 @@ export async function createServer(opts: ServerOptions) {
   const { default: connect } = await import('connect');
   const { default: cors } = await import('cors');
   const { default: compression } = await import('compression');
+  const { default: bodyParser } = await import('body-parser');
 
   const app = connect();
 
@@ -39,21 +34,19 @@ export async function createServer(opts: ServerOptions) {
       ],
     }),
   );
+  app.use(bodyParser.json({ limit: '5mb', strict: false }));
 
   // @ts-expect-error
   app.use(compression());
+  app.use(streamApiMiddleware(opts));
   app.use(gzipMiddleware());
   app.use(notFoundMiddleware);
 
   const server = createHttpServer(app);
   const { port, host } = opts;
 
-  const socketServer = new SocketServer({
-    prompt: opts.prompt,
-    sessionId: opts.context.sessionId,
-  });
-
-  await socketServer.prepare();
+  const webSocketManager = new WebSocketManager(opts);
+  await webSocketManager.prepare();
 
   server.on('upgrade', (req, socket, head) => {
     if (
@@ -61,7 +54,7 @@ export async function createServer(opts: ServerOptions) {
       req.headers['sec-websocket-protocol'] === 'chat'
     ) {
       // @ts-expect-error
-      socketServer.upgrade(req, socket, head);
+      webSocketManager.socketServer.upgrade(req, socket, head);
     }
   });
 

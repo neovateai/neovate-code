@@ -6,9 +6,11 @@ import {
   ScheduleOutlined,
 } from '@ant-design/icons';
 import { Prompts, Sender } from '@ant-design/x';
-import { useModel } from '@umijs/max';
+import { useModel, useSnapshot } from '@umijs/max';
 import { Button, Flex, GetProp } from 'antd';
 import { createStyles } from 'antd-style';
+import { useState } from 'react';
+import { actions, state } from '@/state/sender';
 import SenderHeader from './SenderHeader';
 
 const SENDER_PROMPTS: GetProp<typeof Prompts, 'items'> = [
@@ -56,9 +58,15 @@ const useStyle = createStyles(({ token, css }) => {
 
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
+  const { attachmentsOpen } = useSnapshot(state);
   const { abortController, loading, onQuery } = useModel('chat');
-  const { inputValue, setInputValue, attachmentsOpen, setAttachmentsOpen } =
-    useModel('sender');
+  const [inputValue, setInputValue] = useState(state.prompt);
+
+  // 处理输入变化
+  const onChange = (value: string) => {
+    setInputValue(value);
+    actions.updatePrompt(value);
+  };
 
   return (
     <>
@@ -79,9 +87,10 @@ const ChatSender: React.FC = () => {
         header={<SenderHeader />}
         onSubmit={() => {
           onQuery(inputValue);
+          actions.updatePrompt('');
           setInputValue('');
         }}
-        onChange={setInputValue}
+        onChange={onChange}
         onCancel={() => {
           abortController.current?.abort();
         }}
@@ -89,7 +98,7 @@ const ChatSender: React.FC = () => {
           <Button
             type="text"
             icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
-            onClick={() => setAttachmentsOpen(!attachmentsOpen)}
+            onClick={() => actions.setAttachmentsOpen(!attachmentsOpen)}
           />
         }
         loading={loading}

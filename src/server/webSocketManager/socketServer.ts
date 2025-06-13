@@ -29,7 +29,7 @@ interface SocketServerOptions {
 }
 
 export class SocketServer {
-  private wsServer!: WsServer;
+  public wsServer!: WsServer;
 
   private readonly sockets: WebSocket[] = [];
 
@@ -108,15 +108,6 @@ export class SocketServer {
       this.checkSockets,
       CHECK_SOCKETS_INTERVAL,
     ).unref();
-
-    this.wsServer.on('connection', (socket, req) => {
-      const queryStr = req.url ? req.url.split('?')[1] : '';
-
-      this.onConnect(
-        socket,
-        queryStr ? Object.fromEntries(new URLSearchParams(queryStr)) : {},
-      );
-    });
   }
 
   // write message to each socket
@@ -129,7 +120,7 @@ export class SocketServer {
     }
   }
 
-  private singleWrite(
+  public singleWrite(
     socket: WebSocket,
     { type, data }: Omit<SocketMessage, 'sessionId'>,
   ) {
@@ -165,33 +156,6 @@ export class SocketServer {
           resolve();
         }
       });
-    });
-  }
-
-  private onConnect(socket: WebSocket, params: Record<string, string>) {
-    const connection = socket as ExtWebSocket;
-
-    connection.isAlive = true;
-
-    // heartbeat
-    connection.on('pong', () => {
-      connection.isAlive = true;
-    });
-
-    this.sockets.push(connection);
-
-    connection.on('close', () => {
-      const index = this.sockets.indexOf(connection);
-      if (index >= 0) {
-        this.sockets.splice(index, 1);
-      }
-    });
-
-    this.singleWrite(connection, {
-      type: 'chat',
-      data: {
-        message: this.options.prompt,
-      },
     });
   }
 

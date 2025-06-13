@@ -114,6 +114,12 @@ export const PluginSchema = z.object({
       z.void(),
     )
     .optional(),
+  streamTextUpdate: z
+    .function(
+      z.tuple([z.object({ chunk: z.string(), queryId: z.string() })]),
+      z.void(),
+    )
+    .optional(),
   message: z
     .function(
       z.tuple([
