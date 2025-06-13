@@ -18,6 +18,11 @@ import { createStyles } from 'antd-style';
 import React, { useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import ChatSender from '@/components/ChatSender';
+import type {
+  MixedMessage,
+  NonTextMessage,
+  ToolCallMessage,
+} from '@/types/chat';
 
 const HOT_TOPICS = {
   key: '1',
@@ -142,6 +147,156 @@ const Chat: React.FC = () => {
     }
   }, [messages]);
 
+  // 渲染工具调用消息
+  const renderToolCallMessage = (
+    message: ToolCallMessage,
+    debugKey?: string,
+  ) => {
+    const { toolName, args, result } = message.content || message;
+    return (
+      <div
+        style={{
+          background: '#f6f8fa',
+          border: '1px solid #e1e4e8',
+          borderRadius: 8,
+          padding: 12,
+          fontFamily: 'monospace',
+          fontSize: '13px',
+        }}
+      >
+        <div style={{ color: '#0366d6', fontWeight: 600, marginBottom: 8 }}>
+          🔧 工具调用: {toolName}
+          {debugKey && (
+            <span style={{ color: '#6a737d', fontSize: '11px', marginLeft: 8 }}>
+              ({debugKey})
+            </span>
+          )}
+        </div>
+        {args && (
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ color: '#6a737d', marginBottom: 4 }}>参数:</div>
+            <pre
+              style={{
+                background: '#fff',
+                padding: 8,
+                borderRadius: 4,
+                margin: 0,
+                overflow: 'auto',
+              }}
+            >
+              {JSON.stringify(args, null, 2)}
+            </pre>
+          </div>
+        )}
+        {result && (
+          <div>
+            <div style={{ color: '#6a737d', marginBottom: 4 }}>结果:</div>
+            <pre
+              style={{
+                background: '#fff',
+                padding: 8,
+                borderRadius: 4,
+                margin: 0,
+                overflow: 'auto',
+              }}
+            >
+              {typeof result === 'string'
+                ? result
+                : JSON.stringify(result, null, 2)}
+            </pre>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // 渲染非文本消息
+  const renderNonTextMessage = (message: NonTextMessage, index: number) => {
+    const debugKey = message._messageKey || `${message.type}_${index}`;
+
+    switch (message.type) {
+      case 'tool-call':
+        return renderToolCallMessage(message as ToolCallMessage, debugKey);
+      default:
+        return (
+          <div
+            key={debugKey}
+            style={{
+              background: '#fff3cd',
+              border: '1px solid #ffeaa7',
+              borderRadius: 8,
+              padding: 12,
+            }}
+          >
+            <div style={{ color: '#856404' }}>
+              未知消息类型: {message.type}
+              <span
+                style={{ color: '#6a737d', fontSize: '11px', marginLeft: 8 }}
+              >
+                ({debugKey})
+              </span>
+            </div>
+            <pre style={{ fontSize: '12px', margin: '8px 0 0 0' }}>
+              {JSON.stringify(message, null, 2)}
+            </pre>
+          </div>
+        );
+    }
+  };
+
+  // 消息渲染函数
+  const messageRender = (
+    message: string | MixedMessage | ToolCallMessage | NonTextMessage,
+  ) => {
+    if (typeof message === 'string') {
+      return <ReactMarkdown>{message}</ReactMarkdown>;
+    }
+
+    if (typeof message === 'object' && message !== null) {
+      // 处理混合消息格式
+      if (message.type === 'mixed') {
+        const mixedMsg = message as MixedMessage;
+        return (
+          <div>
+            {/* 渲染非文本消息 */}
+            {mixedMsg.nonTextMessages?.map(
+              (nonTextMsg: NonTextMessage, index: number) => {
+                const uniqueKey =
+                  nonTextMsg._messageKey ||
+                  `${nonTextMsg.type}_${index}_${nonTextMsg._timestamp || Date.now()}`;
+                return (
+                  <div key={uniqueKey} style={{ marginBottom: 12 }}>
+                    {renderNonTextMessage(nonTextMsg, index)}
+                  </div>
+                );
+              },
+            )}
+            {/* 渲染文本内容 */}
+            {mixedMsg.textContent && (
+              <div
+                style={{
+                  marginBottom: mixedMsg.nonTextMessages?.length > 0 ? 16 : 0,
+                }}
+              >
+                <ReactMarkdown>{mixedMsg.textContent}</ReactMarkdown>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      // 处理单一类型的消息
+      switch (message.type) {
+        case 'tool-call':
+          return renderToolCallMessage(message as ToolCallMessage);
+        default:
+          return renderNonTextMessage(message as NonTextMessage, 0);
+      }
+    }
+
+    return message;
+  };
+
   const items = messages?.map((i) => {
     return {
       ...i.message,
@@ -177,33 +332,7 @@ const Chat: React.FC = () => {
                   icon: <UserOutlined />,
                   style: { background: '#fde3cf' },
                 },
-                messageRender: (message) => {
-                  if (typeof message === 'string') {
-                    return <ReactMarkdown>{message}</ReactMarkdown>;
-                  }
-                  if (typeof message === 'object') {
-                    switch (message.type) {
-                      case 'tool-call':
-                        const { toolName, args, result } = message.content;
-                        console.log('result ===>', result);
-                        return (
-                          <div>
-                            <div>工具: {toolName}</div>
-                            <div>参数: {JSON.stringify(args, null, 2)}</div>
-                            <div>
-                              <div>结果:</div>
-                              <pre>
-                                {typeof result === 'string'
-                                  ? result
-                                  : JSON.stringify(result, null, 2)}
-                              </pre>
-                            </div>
-                          </div>
-                        );
-                    }
-                  }
-                  return message;
-                },
+                messageRender,
                 footer: (
                   <div style={{ display: 'flex' }}>
                     <Button
