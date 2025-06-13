@@ -59,6 +59,9 @@ importers:
       '@types/turndown':
         specifier: ^5.0.5
         version: 5.0.5
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       '@types/yargs-parser':
         specifier: ^21.0.3
         version: 21.0.3
@@ -149,6 +152,9 @@ importers:
       vitest:
         specifier: ^3.2.3
         version: 3.2.3(@types/node@24.0.1)(jiti@1.21.7)(less@4.3.0)(tsx@4.20.2)(yaml@2.8.0)
+      ws:
+        specifier: ^8.18.2
+        version: 8.18.2
       yargs-parser:
         specifier: ^22.0.0
         version: 22.0.0

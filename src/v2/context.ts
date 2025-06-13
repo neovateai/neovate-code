@@ -5,6 +5,7 @@ import { execFileNoThrow } from '../utils/execFileNoThrow';
 import { getCodebaseContext } from './codebase';
 import { Config, ConfigManager } from './config';
 import { PRODUCT_NAME } from './constants';
+import { IDE } from './ide';
 import { createLSTool } from './tools/ls';
 
 interface ContextOpts {
@@ -134,7 +135,31 @@ export class PromptContext {
     return ret;
   }
 
+  async getIDEPromptData() {
+    const ide = new IDE();
+    const port = ide.findPort();
+    if (!port) return {};
+
+    try {
+      await ide.connect();
+    } catch (e) {
+      console.error(`Failed to connect to IDE: ${e}`);
+      return {};
+    }
+    const workspaceFolders = await ide.getWorkspaceFolders();
+    const openEditors = await ide.getOpenEditors();
+    // const diagnostics = await ide.getDiagnostics();
+    const currentSelection = await ide.getCurrentSelection();
+    await ide.disconnect();
+    return {
+      IDEWorkspaceFolders: JSON.stringify(workspaceFolders),
+      IDEOpenEditors: JSON.stringify(openEditors),
+      IDECurrentSelection: JSON.stringify(currentSelection),
+    };
+  }
+
   async getContextPromptData() {
+    const ideData = await this.getIDEPromptData();
     return {
       directoryStructure: await getDirectoryStructure({
         context: this.context,
@@ -142,6 +167,7 @@ export class PromptContext {
       gitStatus: (await getGitStatus({ context: this.context })) ?? '',
       codeStyle: (await getCodeStyle({ context: this.context })) ?? '',
       readme: (await getReadme({ context: this.context })) ?? '',
+      ...ideData,
       ...(await this.parsePrompt(this.prompts.join(' '))),
     };
   }

@@ -57,6 +57,7 @@
     "@types/node": "^24.0.1",
     "@types/resolve": "^1.20.6",
     "@types/turndown": "^5.0.5",
+    "@types/ws": "^8.18.1",
     "@types/yargs-parser": "^21.0.3",
     "@umijs/clack-prompts": "^0.0.7",
     "@umijs/tools": "^0.1.36",
@@ -87,6 +88,7 @@
     "typescript": "^5.8.3",
     "upgear": "^0.0.3",
     "vitest": "^3.2.3",
+    "ws": "^8.18.2",
     "yargs-parser": "^22.0.0",
     "zod": "^3.25.63",
     "zod-to-json-schema": "^3.24.5"
