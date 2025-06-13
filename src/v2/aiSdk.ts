@@ -456,13 +456,18 @@ export class AiSdkModel implements Model {
           span.spanData.output = output;
         }
 
+        const promptTokens = isNaN(result.usage.promptTokens)
+          ? 0
+          : result.usage.promptTokens;
+        const completionTokens = isNaN(result.usage.completionTokens)
+          ? 0
+          : result.usage.completionTokens;
         return {
           responseId: result.response?.id ?? 'FAKE_ID',
           usage: new Usage({
-            inputTokens: result.usage.promptTokens,
-            outputTokens: result.usage.completionTokens,
-            totalTokens:
-              result.usage.promptTokens + result.usage.completionTokens,
+            inputTokens: promptTokens,
+            outputTokens: completionTokens,
+            totalTokens: promptTokens + completionTokens,
           }),
           output,
         };
@@ -624,8 +629,12 @@ export class AiSdkModel implements Model {
             break;
           }
           case 'finish': {
-            usagePromptTokens = part.usage.promptTokens;
-            usageCompletionTokens = part.usage.completionTokens;
+            usagePromptTokens = isNaN(part.usage.promptTokens)
+              ? 0
+              : part.usage.promptTokens;
+            usageCompletionTokens = isNaN(part.usage.completionTokens)
+              ? 0
+              : part.usage.completionTokens;
             break;
           }
           case 'error': {
