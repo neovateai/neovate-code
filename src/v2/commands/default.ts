@@ -10,10 +10,15 @@ import {
   withTrace,
 } from '@openai/agents';
 import assert from 'assert';
+import { randomUUID } from 'crypto';
+import { format } from 'date-fns';
+import { homedir } from 'os';
+import path from 'path';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
 import { createCodeAgent } from '../agents/code';
 import { Config } from '../config';
+import { PRODUCT_NAME } from '../constants';
 import { Context, PromptContext } from '../context';
 import { parseMessage } from '../parseMessage';
 import { getDefaultModelProvider } from '../provider';
@@ -26,6 +31,7 @@ import { createGrepTool } from '../tools/grep';
 import { createLSTool } from '../tools/ls';
 import { createReadTool } from '../tools/read';
 import { createWriteTool } from '../tools/write';
+import { setupTracing } from '../tracing';
 
 export interface RunOpts {
   prompt: string;
@@ -37,7 +43,8 @@ export interface RunOpts {
 }
 
 export async function run(opts: RunOpts) {
-  return await withTrace('run', async () => {
+  const traceName = `${opts.productName ?? PRODUCT_NAME}-default}`;
+  return await withTrace(traceName, async () => {
     const runner = new Runner({
       modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
       modelSettings: {
@@ -215,6 +222,15 @@ export async function run(opts: RunOpts) {
 }
 
 export async function runDefault(opts: RunCliOpts) {
+  const uuid = randomUUID().slice(0, 4);
+  const traceFile = path.join(
+    homedir(),
+    `.${opts.productName}`,
+    'sessions',
+    `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.json`,
+  );
+  setupTracing(traceFile);
+  console.log('Tracing to', traceFile);
   const argv = yargsParser(process.argv.slice(2), {
     alias: {
       model: 'm',

@@ -6,8 +6,6 @@ import { fileURLToPath } from 'url';
 import { _checkAndUpdate } from '.';
 import { logDebug } from './utils/logger';
 
-process.env.OPENAI_AGENTS_DISABLE_TRACING = '1';
-
 async function checkUpdate() {
   if (process.env.TAKUMI_SELF_UPDATE === 'none') {
     return;
