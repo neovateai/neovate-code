@@ -16,7 +16,9 @@ import { homedir } from 'os';
 import path from 'path';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
+import { confirm, getUserInput } from '../../utils/logger';
 import { createCodeAgent } from '../agents/code';
+import { createPlanAgent } from '../agents/plan';
 import { Config } from '../config';
 import { PRODUCT_NAME } from '../constants';
 import { Context, PromptContext } from '../context';
@@ -40,6 +42,7 @@ export interface RunOpts {
   json?: boolean;
   productName?: string;
   modelProvider?: ModelProvider;
+  plan?: boolean;
 }
 
 export async function run(opts: RunOpts) {
@@ -87,7 +90,20 @@ export async function run(opts: RunOpts) {
     await Promise.all(mcpServers.map((server) => server.connect()));
     try {
       const mcpTools = await getAllMcpTools(mcpServers);
-      const tools = new Tools([
+      const readonlyTools = new Tools([
+        createReadTool({ context }),
+        createLSTool({ context }),
+        createGlobTool({ context }),
+        createGrepTool({ context }),
+        createFetchTool({ context }),
+      ]);
+      const planAgent = createPlanAgent({
+        model: context.configManager.config.planModel,
+        context,
+        tools: readonlyTools,
+        fc: false,
+      });
+      const allTools = new Tools([
         createWriteTool({ context }),
         createReadTool({ context }),
         createLSTool({ context }),
@@ -101,7 +117,7 @@ export async function run(opts: RunOpts) {
       const codeAgent = createCodeAgent({
         model: context.configManager.config.model,
         context,
-        tools,
+        tools: allTools,
         fc: false,
       });
       const promptContext = new PromptContext({
@@ -118,6 +134,45 @@ export async function run(opts: RunOpts) {
           content: opts.prompt,
         },
       ];
+      if (opts.plan) {
+        while (true) {
+          const result = await runner.run(planAgent, input);
+          const plan = result.finalOutput;
+          assert(plan, `No plan found`);
+          console.log(`Here is ${context.productName}'s plan:`);
+          console.log(plan);
+          console.log();
+          const confirmed = await confirm({
+            message: 'Would you like to proceed?',
+            active: 'Yes',
+            inactive: 'No, I want to edit the plan',
+          });
+          if (confirmed) {
+            input = [
+              {
+                role: 'system',
+                content: await promptContext.getContext(),
+              },
+              {
+                role: 'user',
+                content: plan,
+              },
+            ];
+            break;
+          } else {
+            const editedPlan = await getUserInput({
+              message: 'Please edit the plan:',
+            });
+            input = [
+              ...result.history,
+              {
+                role: 'user',
+                content: editedPlan,
+              },
+            ];
+          }
+        }
+      }
       let finalOutput: string | null = null;
       while (true) {
         let history: AgentInputItem[] = [];
@@ -193,7 +248,7 @@ export async function run(opts: RunOpts) {
             arguments: args,
             callId,
           } as FunctionCallItem);
-          const result = await tools.invoke(name, args, context);
+          const result = await allTools.invoke(name, args, context);
           history.push({
             type: 'function_call_result',
             name,
@@ -239,6 +294,7 @@ Options:
   -q, --quiet                   Quiet mode, non interactive
   --stream                      Stream output (default: true)
   --json                        Output result as JSON
+  --plan                        Plan mode
 
 Examples:
   ${p} "Refactor this file to use hooks."
@@ -262,8 +318,8 @@ export async function runDefault(opts: RunCliOpts) {
       model: 'flash',
       stream: true,
     },
-    boolean: ['stream', 'json', 'help'],
-    string: ['model', 'smallModel'],
+    boolean: ['stream', 'json', 'help', 'plan'],
+    string: ['model', 'smallModel', 'planModel'],
   });
   if (argv.help) {
     printHelp(opts.productName.toLowerCase());
@@ -272,7 +328,7 @@ export async function runDefault(opts: RunCliOpts) {
   const uuid = randomUUID().slice(0, 4);
   const traceFile = path.join(
     homedir(),
-    `.${opts.productName}`,
+    `.${opts.productName.toLowerCase()}`,
     'sessions',
     `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.json`,
   );
@@ -284,11 +340,13 @@ export async function runDefault(opts: RunCliOpts) {
       model: argv.model,
       smallModel: argv.smallModel,
       stream: argv.stream,
+      planModel: argv.planModel,
     },
     productName: opts.productName,
     prompt: argv._[0]! as string,
     cwd,
     json: argv.json,
+    plan: argv.plan,
   });
   if (argv.json) {
     console.log(JSON.stringify(result.history, null, 2));

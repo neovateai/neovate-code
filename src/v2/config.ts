@@ -20,6 +20,7 @@ type ApprovalMode = 'suggest' | 'auto-edit' | 'full-auto';
 export type Config = {
   model: string;
   smallModel: string;
+  planModel: string;
   stream: boolean;
   language: string;
   quiet: boolean;
@@ -40,6 +41,7 @@ const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
   'model',
   'smallModel',
+  'planModel',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = ['mcpServers'];
@@ -77,6 +79,7 @@ export class ConfigManager {
       defu(this.projectConfig, defu(this.globalConfig, DEFAULT_CONFIG)),
     ) as Config;
     config.smallModel = config.smallModel || config.model;
+    config.planModel = config.planModel || config.model;
     return config;
   }
 
