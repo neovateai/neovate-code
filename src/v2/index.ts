@@ -12,6 +12,11 @@ export async function runCli(opts: RunCliOpts) {
   opts.version = opts.version || '0.0.0';
   const command = process.argv[2];
   switch (command) {
+    // just for test
+    case '__test':
+      const { runTest } = await import('./commands/__test');
+      await runTest();
+      break;
     case 'config':
       const { runConfig } = await import('./commands/config');
       await runConfig(opts);

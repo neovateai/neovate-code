@@ -1,15 +1,15 @@
-import { FunctionTool } from '@openai/agents';
+import { FunctionTool, Tool } from '@openai/agents';
 
 export class Tools {
-  tools: Record<string, FunctionTool>;
+  tools: Record<string, Tool<any>>;
 
-  constructor(tools: FunctionTool<any, any, any>[]) {
+  constructor(tools: Tool<any>[]) {
     this.tools = tools.reduce(
       (acc, tool) => {
         acc[tool.name] = tool;
         return acc;
       },
-      {} as Record<string, FunctionTool>,
+      {} as Record<string, Tool<any>>,
     );
   }
 
@@ -18,7 +18,11 @@ export class Tools {
     if (!tool) {
       throw new Error(`Tool ${toolName} not found`);
     }
-    return await tool.invoke(runContext, args);
+    if (tool.type === 'function') {
+      return await tool.invoke(runContext, args);
+    } else {
+      throw new Error(`Tool ${toolName} is not a function tool`);
+    }
   }
 
   getToolsPrompt() {
