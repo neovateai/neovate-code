@@ -4,7 +4,6 @@ import { gzipMiddleware } from './middlewares/gzipMiddleware';
 import { notFoundMiddleware } from './middlewares/notFoundMiddleware';
 import { streamApiMiddleware } from './middlewares/streamApiMiddleware';
 import { ServerOptions } from './types';
-import { WebSocketManager } from './webSocketManager/webSocketManager';
 
 export async function startBrowserServer(opts: ServerOptions) {
   await createServer(opts);
@@ -44,19 +43,6 @@ export async function createServer(opts: ServerOptions) {
 
   const server = createHttpServer(app);
   const { port, host } = opts;
-
-  const webSocketManager = new WebSocketManager(opts);
-  await webSocketManager.prepare();
-
-  server.on('upgrade', (req, socket, head) => {
-    if (
-      req.url?.startsWith('/ws-chat') &&
-      req.headers['sec-websocket-protocol'] === 'chat'
-    ) {
-      // @ts-expect-error
-      webSocketManager.socketServer.upgrade(req, socket, head);
-    }
-  });
 
   server.listen(
     {
