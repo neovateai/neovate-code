@@ -31,13 +31,14 @@ export class IDE {
     //     return parseInt(port);
     //   }
     // }
-
-    throw new Error('Could not find the IDE extension port');
   }
 
   // 连接到 extension
   async connect() {
     const port = await this.findPort();
+    if (!port) {
+      throw new Error('Could not find the IDE extension port');
+    }
 
     return new Promise<void>((resolve, reject) => {
       this.ws = new WebSocket(`ws://127.0.0.1:${port}`);

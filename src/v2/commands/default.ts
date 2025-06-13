@@ -330,7 +330,7 @@ export async function runDefault(opts: RunCliOpts) {
     homedir(),
     `.${opts.productName.toLowerCase()}`,
     'sessions',
-    `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.json`,
+    `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
   );
   setupTracing(traceFile);
   console.log('Tracing to', traceFile);
