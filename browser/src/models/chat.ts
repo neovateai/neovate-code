@@ -70,12 +70,12 @@ const useChat = () => {
         }
       }
 
-      // onSuccess([
-      //   {
-      //     content: text,
-      //     role: 'assistant',
-      //   },
-      // ]);
+      onSuccess([
+        {
+          content: text,
+          role: 'assistant',
+        },
+      ]);
     },
   });
 

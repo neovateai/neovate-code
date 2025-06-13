@@ -148,7 +148,7 @@ const Chat: React.FC = () => {
       classNames: {
         content: i.status === 'loading' ? styles.loadingMessage : '',
       },
-      loading: status === 'loading',
+      typing: i.status === 'loading' ? { step: 2, interval: 30 } : false,
     };
   });
 
