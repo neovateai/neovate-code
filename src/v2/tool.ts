@@ -29,11 +29,12 @@ export class Tools {
     const availableTools = `
   ${Object.entries(this.tools)
     .map(([key, tool]) => {
+      const tool2 = tool as FunctionTool;
       return `
 <tool>
 <name>${key}</name>
-<description>${tool.description}</description>
-<input_json_schema>${JSON.stringify(tool.parameters)}</input_json_schema>
+<description>${tool2.description}</description>
+<input_json_schema>${JSON.stringify(tool2.parameters)}</input_json_schema>
 </tool>
   `.trim();
     })
