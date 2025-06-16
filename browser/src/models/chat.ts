@@ -39,6 +39,7 @@ const ERROR_MESSAGES = {
 
 const MESSAGE_TYPES = {
   TEXT_DELTA: 'text-delta',
+  CONNECT: 'connect',
   MIXED: 'mixed',
 } as const;
 
@@ -145,7 +146,6 @@ class StreamMessageHandler {
     this.processor.reset();
 
     for await (const chunk of result.textStream) {
-      console.log('chunk', chunk);
       const combinedContent = await this.processChunk(chunk, onUpdate);
       if (combinedContent !== null) {
         onUpdate({
@@ -164,6 +164,12 @@ class StreamMessageHandler {
   ): Promise<any> {
     try {
       const parsedMessage = JSON.parse(chunk);
+
+      // 仅链接不做处理
+      if (parsedMessage.type === MESSAGE_TYPES.CONNECT) {
+        console.log('🔗 connect', parsedMessage.content);
+        return null;
+      }
 
       if (parsedMessage.type === MESSAGE_TYPES.TEXT_DELTA) {
         return this.processor.processTextDelta(parsedMessage.content);

@@ -78,13 +78,29 @@ async function streamApiPlugin(fastify: FastifyInstance, opts: ServerOptions) {
         const prompt = body.messages[body.messages.length - 1].content;
 
         if (isStream) {
-          reply.header('Content-Type', 'text/plain; charset=utf-8');
+          // reply.header('Content-Type', 'text/plain; charset=utf-8');
+          reply.header('Content-Type', 'text/event-stream; charset=utf-8');
           reply.header('Cache-Control', 'no-cache');
+          reply.header('Connection', 'keep-alive');
+
+          // 使用 flushHeaders 代替 flush
+          reply.raw.flushHeaders?.();
 
           const id = `uid_${new Date().getTime()}`;
           let streamEnded = false;
 
           const eventManager = opts.context.pluginContext.eventManager;
+
+          reply.raw.write(
+            createStreamChunk(
+              id,
+              {
+                type: 'connect',
+                content: '@start',
+              },
+              false,
+            ),
+          );
 
           try {
             // 设置事件监听器
