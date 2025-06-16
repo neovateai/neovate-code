@@ -7,6 +7,7 @@ import {
   ModelProvider,
   Runner,
   getAllMcpTools,
+  setTracingDisabled,
   withTrace,
 } from '@openai/agents';
 import assert from 'assert';
@@ -332,6 +333,7 @@ export async function runDefault(opts: RunCliOpts) {
     'sessions',
     `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
   );
+  setTracingDisabled(true);
   setupTracing(traceFile);
   console.log('Tracing to', traceFile);
   const cwd = process.cwd();
