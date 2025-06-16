@@ -336,7 +336,6 @@ export async function runDefault(opts: RunCliOpts) {
     `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
   );
   setupTracing(traceFile);
-  debug('Tracing to', traceFile);
   const cwd = process.cwd();
   const result = await run({
     argvConfig: {
