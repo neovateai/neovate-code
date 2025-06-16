@@ -134,7 +134,11 @@ export async function run(opts: RunOpts) {
         },
         {
           role: 'user',
-          content: opts.prompt,
+          content:
+            opts.prompt ||
+            (await getUserInput({
+              message: 'User:',
+            })),
         },
       ];
       if (opts.plan) {
@@ -266,7 +270,20 @@ export async function run(opts: RunOpts) {
         } else {
           input = history;
           finalOutput = text;
-          break;
+          if (context.configManager.config.quiet) {
+            break;
+          } else {
+            console.log();
+            input = [
+              ...input,
+              {
+                role: 'user',
+                content: await getUserInput({
+                  message: 'User:',
+                }),
+              },
+            ];
+          }
         }
       }
       return {
@@ -316,12 +333,13 @@ export async function runDefault(opts: RunCliOpts) {
     alias: {
       model: 'm',
       help: 'h',
+      quiet: 'q',
     },
     default: {
       model: 'flash',
       stream: true,
     },
-    boolean: ['stream', 'json', 'help', 'plan'],
+    boolean: ['stream', 'json', 'help', 'plan', 'quiet'],
     string: ['model', 'smallModel', 'planModel'],
   });
   if (argv.help) {
@@ -343,6 +361,7 @@ export async function runDefault(opts: RunCliOpts) {
       smallModel: argv.smallModel,
       stream: argv.stream,
       planModel: argv.planModel,
+      quiet: argv.quiet,
     },
     productName: opts.productName,
     prompt: argv._[0]! as string,

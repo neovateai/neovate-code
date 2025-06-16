@@ -1,6 +1,9 @@
 import { ModelProvider } from '@openai/agents';
+import createDebug from 'debug';
 import { PRODUCT_NAME } from './constants';
 import { clearTracing } from './tracing';
+
+const debug = createDebug('takumi:index');
 
 export interface RunCliOpts {
   productName: string;
@@ -9,10 +12,13 @@ export interface RunCliOpts {
 }
 
 export async function runCli(opts: RunCliOpts) {
+  clearTracing();
   opts.productName = opts.productName || PRODUCT_NAME;
   opts.version = opts.version || '0.0.0';
   const command = process.argv[2];
-  clearTracing();
+  debug('command', command);
+  debug('process.argv', process.argv);
+  debug('opts', opts);
   switch (command) {
     // just for test
     case '__test':
