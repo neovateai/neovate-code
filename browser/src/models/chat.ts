@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { useModel } from '@/hooks/useModel';
 import type { BubbleDataType } from '@/types/chat';
 
+// 常量定义
 const DEFAULT_CONVERSATIONS_ITEMS = [
   {
     key: 'default-0',
@@ -28,6 +29,155 @@ const DEFAULT_CONVERSATIONS_ITEMS = [
   },
 ];
 
+const ERROR_MESSAGES = {
+  REQUEST_IN_PROGRESS:
+    'Request is in progress, please wait for the request to complete.',
+  REQUEST_ABORTED: 'Request is aborted',
+  REQUEST_FAILED: 'Request failed, please try again!',
+  THINKING_PLACEHOLDER: '思考中...',
+} as const;
+
+const MESSAGE_TYPES = {
+  TEXT_DELTA: 'text-delta',
+  MIXED: 'mixed',
+} as const;
+
+// 消息处理类
+class MessageProcessor {
+  private textContent = '';
+  private nonTextMessagesMap = new Map<string, any>();
+  private messageSequence = 0;
+
+  reset() {
+    this.textContent = '';
+    this.nonTextMessagesMap.clear();
+    this.messageSequence = 0;
+  }
+
+  processTextDelta(content: string): any {
+    this.textContent += content;
+    return this.createCombinedContent();
+  }
+
+  processNonTextMessage(parsedMessage: any): any {
+    const messageKey = this.generateMessageKey(parsedMessage);
+    const existingMessage = this.nonTextMessagesMap.get(messageKey);
+
+    if (existingMessage) {
+      this.updateExistingMessage(messageKey, existingMessage, parsedMessage);
+    } else {
+      this.addNewMessage(messageKey, parsedMessage);
+    }
+
+    return this.createCombinedContent();
+  }
+
+  private generateMessageKey(message: any): string {
+    return (
+      message.id ||
+      message.toolCallId ||
+      `${message.type}_${this.messageSequence++}`
+    );
+  }
+
+  private updateExistingMessage(key: string, existing: any, update: any) {
+    const updatedMessage = {
+      ...existing,
+      ...update,
+      content: update.content
+        ? { ...existing.content, ...update.content }
+        : existing.content,
+    };
+    this.nonTextMessagesMap.set(key, updatedMessage);
+    console.log(`[Chat Debug] 更新消息: ${key}`, updatedMessage);
+  }
+
+  private addNewMessage(key: string, message: any) {
+    const newMessage = {
+      ...message,
+      _messageKey: key,
+      _timestamp: Date.now(),
+    };
+    this.nonTextMessagesMap.set(key, newMessage);
+    console.log(`[Chat Debug] 新增消息: ${key}`, newMessage);
+  }
+
+  private createCombinedContent(): any {
+    const nonTextMessagesArray = Array.from(this.nonTextMessagesMap.values());
+
+    if (this.textContent && nonTextMessagesArray.length > 0) {
+      return {
+        type: MESSAGE_TYPES.MIXED,
+        textContent: this.textContent,
+        nonTextMessages: nonTextMessagesArray,
+      };
+    }
+
+    if (this.textContent) {
+      return this.textContent;
+    }
+
+    if (nonTextMessagesArray.length === 1) {
+      return nonTextMessagesArray[0];
+    }
+
+    if (nonTextMessagesArray.length > 1) {
+      return {
+        type: MESSAGE_TYPES.MIXED,
+        textContent: '',
+        nonTextMessages: nonTextMessagesArray,
+      };
+    }
+
+    return null;
+  }
+
+  getFinalContent(): any {
+    return this.createCombinedContent() || this.textContent;
+  }
+}
+
+// 流式消息处理器
+class StreamMessageHandler {
+  private processor = new MessageProcessor();
+
+  async handleStream(result: any, onUpdate: (data: any) => void): Promise<any> {
+    this.processor.reset();
+
+    for await (const chunk of result.textStream) {
+      console.log('chunk', chunk);
+      const combinedContent = await this.processChunk(chunk, onUpdate);
+      if (combinedContent !== null) {
+        onUpdate({
+          content: combinedContent,
+          role: 'assistant',
+        });
+      }
+    }
+
+    return this.processor.getFinalContent();
+  }
+
+  private async processChunk(
+    chunk: string,
+    onUpdate: (data: any) => void,
+  ): Promise<any> {
+    try {
+      const parsedMessage = JSON.parse(chunk);
+
+      if (parsedMessage.type === MESSAGE_TYPES.TEXT_DELTA) {
+        return this.processor.processTextDelta(parsedMessage.content);
+      } else {
+        return this.processor.processNonTextMessage(parsedMessage);
+      }
+    } catch (error) {
+      console.error('解析流式消息失败:', error);
+      // 如果解析失败，当作普通文本处理
+      return this.processor.processTextDelta(chunk);
+    }
+  }
+}
+
 const useChat = () => {
   const abortController = useRef<AbortController>(null);
   const [messageHistory, setMessageHistory] = useState<Record<string, any>>({});
@@ -39,6 +189,7 @@ const useChat = () => {
   );
 
   const { model } = useModel();
+  const streamHandler = new StreamMessageHandler();
 
   const [agent] = useXAgent<
     BubbleDataType,
@@ -46,123 +197,25 @@ const useChat = () => {
     BubbleDataType
   >({
     async request({ message, messages }, { onUpdate, onSuccess, onError }) {
-      const result = await streamText({
-        model,
-        // @ts-expect-error
-        messages: [message],
-      });
+      try {
+        const result = await streamText({
+          model,
+          // @ts-expect-error
+          messages: [message],
+        });
 
-      // 维护混合内容的状态
-      let textContent = '';
-      const nonTextMessagesMap = new Map<string, any>(); // 使用 Map 来管理非文本消息
-      let messageSequence = 0; // 消息序列号
-      let combinedContent: any = null;
+        const finalContent = await streamHandler.handleStream(result, onUpdate);
 
-      for await (const chunk of result.textStream) {
-        try {
-          // 判断 chunk 是一个普通字符串 还是 json 字符串对象
-          const parsedMessage = JSON.parse(chunk);
-
-          if (parsedMessage.type === 'text-delta') {
-            // 累积文本内容
-            textContent += parsedMessage.content;
-
-            // 如果同时有文本和非文本消息，创建混合内容
-            if (nonTextMessagesMap.size > 0) {
-              combinedContent = {
-                type: 'mixed',
-                textContent,
-                nonTextMessages: Array.from(nonTextMessagesMap.values()),
-              };
-            } else {
-              combinedContent = textContent;
-            }
-          } else {
-            // 处理非文本消息（如 tool-call）
-            // 生成唯一键：优先使用消息自带的ID，否则使用类型+序列号
-            let messageKey = parsedMessage.id || parsedMessage.toolCallId;
-            if (!messageKey) {
-              // 如果没有唯一ID，则为该类型的消息分配序列号
-              messageKey = `${parsedMessage.type}_${messageSequence++}`;
-            }
-
-            // 检查是否为更新现有消息（例如工具调用的结果更新）
-            const existingMessage = nonTextMessagesMap.get(messageKey);
-            if (existingMessage) {
-              // 合并更新消息内容，而不是完全替换
-              const updatedMessage = {
-                ...existingMessage,
-                ...parsedMessage,
-                // 特殊处理：如果是工具调用结果，合并到content中
-                content: parsedMessage.content
-                  ? {
-                      ...existingMessage.content,
-                      ...parsedMessage.content,
-                    }
-                  : existingMessage.content,
-              };
-              nonTextMessagesMap.set(messageKey, updatedMessage);
-              console.log(
-                `[Chat Debug] 更新消息: ${messageKey}`,
-                updatedMessage,
-              );
-            } else {
-              // 添加新的非文本消息
-              const newMessage = {
-                ...parsedMessage,
-                _messageKey: messageKey, // 保存键值用于调试
-                _timestamp: Date.now(), // 添加时间戳
-              };
-              nonTextMessagesMap.set(messageKey, newMessage);
-              console.log(`[Chat Debug] 新增消息: ${messageKey}`, newMessage);
-            }
-
-            // 创建混合内容
-            const nonTextMessagesArray = Array.from(
-              nonTextMessagesMap.values(),
-            );
-            if (textContent) {
-              combinedContent = {
-                type: 'mixed',
-                textContent,
-                nonTextMessages: nonTextMessagesArray,
-              };
-            } else {
-              // 只有非文本消息时
-              combinedContent =
-                nonTextMessagesArray.length === 1
-                  ? nonTextMessagesArray[0]
-                  : {
-                      type: 'mixed',
-                      textContent: '',
-                      nonTextMessages: nonTextMessagesArray,
-                    };
-            }
-          }
-
-          // 更新消息内容
-          onUpdate({
-            content: combinedContent,
+        onSuccess([
+          {
+            content: finalContent,
             role: 'assistant',
-          });
-        } catch (error) {
-          console.error('解析流式消息失败:', error);
-          // 如果解析失败，当作普通文本处理
-          textContent += chunk;
-          onUpdate({
-            content: textContent,
-            role: 'assistant',
-          });
-        }
+          },
+        ]);
+      } catch (error) {
+        console.error('流式处理失败:', error);
+        onError(error instanceof Error ? error : new Error(String(error)));
       }
-
-      // 完成时返回最终内容
-      onSuccess([
-        {
-          content: combinedContent || textContent,
-          role: 'assistant',
-        },
-      ]);
     },
   });
 
@@ -170,24 +223,14 @@ const useChat = () => {
 
   const { onRequest, messages, setMessages } = useXChat({
     agent,
-    requestPlaceholder: () => {
-      return {
-        content: '思考中...',
-        role: 'assistant',
-      };
-    },
-    requestFallback: (_, { error }) => {
-      if (error.name === 'AbortError') {
-        return {
-          content: 'Request is aborted',
-          role: 'assistant',
-        };
-      }
-      return {
-        content: 'Request failed, please try again!',
-        role: 'assistant',
-      };
-    },
+    requestPlaceholder: () => ({
+      content: ERROR_MESSAGES.THINKING_PLACEHOLDER,
+      role: 'assistant',
+    }),
+    requestFallback: () => ({
+      content: ERROR_MESSAGES.REQUEST_FAILED,
+      role: 'assistant',
+    }),
     resolveAbortController: (controller) => {
       // @ts-expect-error
       abortController.current = controller;
@@ -195,12 +238,10 @@ const useChat = () => {
   });
 
   const onQuery = (val: string) => {
-    if (!val) return;
+    if (!val?.trim()) return;
 
     if (loading) {
-      message.error(
-        'Request is in progress, please wait for the request to complete.',
-      );
+      message.error(ERROR_MESSAGES.REQUEST_IN_PROGRESS);
       return;
     }
 
@@ -218,12 +259,10 @@ const useChat = () => {
     setCurConversation,
     messageHistory,
     setMessageHistory,
-
     loading,
     onRequest,
     messages,
     setMessages,
-
     onQuery,
   };
 };

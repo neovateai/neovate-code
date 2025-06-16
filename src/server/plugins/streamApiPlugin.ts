@@ -78,13 +78,8 @@ async function streamApiPlugin(fastify: FastifyInstance, opts: ServerOptions) {
         const prompt = body.messages[body.messages.length - 1].content;
 
         if (isStream) {
-          // 设置流式响应头
-          reply.header('Content-Type', 'text/event-stream');
+          reply.header('Content-Type', 'text/event-stream; charset=utf-8');
           reply.header('Cache-Control', 'no-cache');
-          reply.header('Connection', 'keep-alive');
-          reply.header('Access-Control-Allow-Origin', '*');
-          reply.header('Access-Control-Allow-Headers', 'Content-Type');
-          reply.header('X-Accel-Buffering', 'no');
 
           const id = `uid_${new Date().getTime()}`;
           let streamEnded = false;
@@ -135,14 +130,6 @@ async function streamApiPlugin(fastify: FastifyInstance, opts: ServerOptions) {
                     );
                     break;
                 }
-
-                // 立即刷新响应，确保数据实时发送
-                if (
-                  'flush' in reply.raw &&
-                  typeof reply.raw.flush === 'function'
-                ) {
-                  reply.raw.flush();
-                }
               } catch (error) {
                 console.error('Stream write error:', error);
               }
@@ -154,26 +141,13 @@ async function streamApiPlugin(fastify: FastifyInstance, opts: ServerOptions) {
               eventManager.removeStreamListener();
             };
 
-            // 设置清理监听器
-            reply.raw.on('close', cleanup);
-            reply.raw.on('finish', cleanup);
-
             // 开始处理查询
             await editQuery({
               prompt,
               context: opts.context,
             });
 
-            // 发送结束标记
-            if (!streamEnded) {
-              reply.raw.write('data: [DONE]\n\n');
-              if (
-                'flush' in reply.raw &&
-                typeof reply.raw.flush === 'function'
-              ) {
-                reply.raw.flush();
-              }
-            }
+            cleanup();
 
             // 结束响应
             reply.raw.end();
