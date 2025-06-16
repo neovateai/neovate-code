@@ -1,3 +1,4 @@
+import createDebug from 'debug';
 import fs from 'fs';
 import path from 'path';
 import { platform } from 'process';
@@ -7,6 +8,8 @@ import { Config, ConfigManager } from './config';
 import { PRODUCT_NAME } from './constants';
 import { IDE } from './ide';
 import { createLSTool } from './tools/ls';
+
+const debug = createDebug('takumi:context');
 
 interface ContextOpts {
   argvConfig?: Partial<Config>;
@@ -143,7 +146,7 @@ export class PromptContext {
     try {
       await ide.connect();
     } catch (e) {
-      console.error(`Failed to connect to IDE: ${e}`);
+      debug('Failed to connect to IDE: %s', e);
       return {};
     }
     const workspaceFolders = await ide.getWorkspaceFolders();
