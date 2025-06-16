@@ -1,4 +1,7 @@
+import createDebug from 'debug';
 import WebSocket from 'ws';
+
+const debug = createDebug('takumi:ide');
 
 export class IDE {
   private ws: WebSocket | null;
@@ -35,7 +38,9 @@ export class IDE {
 
   // 连接到 extension
   async connect() {
+    debug('Connecting to the IDE extension.');
     const port = await this.findPort();
+    debug('Found port: %s', port);
     if (!port) {
       throw new Error('Could not find the IDE extension port');
     }
@@ -49,6 +54,7 @@ export class IDE {
       });
 
       this.ws.on('message', (data) => {
+        debug('Received message from the IDE extension.', data.toString());
         const message = JSON.parse(data.toString());
         this.handleMessage(message);
       });
