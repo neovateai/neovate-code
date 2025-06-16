@@ -1,4 +1,4 @@
-import { ModelProvider } from '@openai/agents';
+import { ModelProvider, setTracingDisabled } from '@openai/agents';
 import { PRODUCT_NAME } from './constants';
 
 export interface RunCliOpts {
@@ -11,6 +11,7 @@ export async function runCli(opts: RunCliOpts) {
   opts.productName = opts.productName || PRODUCT_NAME;
   opts.version = opts.version || '0.0.0';
   const command = process.argv[2];
+  setTracingDisabled(true);
   switch (command) {
     // just for test
     case '__test':
