@@ -12,6 +12,7 @@ import {
 import assert from 'assert';
 import { randomUUID } from 'crypto';
 import { format } from 'date-fns';
+import createDebug from 'debug';
 import { homedir } from 'os';
 import path from 'path';
 import yargsParser from 'yargs-parser';
@@ -34,6 +35,8 @@ import { createLSTool } from '../tools/ls';
 import { createReadTool } from '../tools/read';
 import { createWriteTool } from '../tools/write';
 import { setupTracing } from '../tracing';
+
+const debug = createDebug('takumi:commands:default');
 
 export interface RunOpts {
   prompt: string;
@@ -333,7 +336,7 @@ export async function runDefault(opts: RunCliOpts) {
     `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
   );
   setupTracing(traceFile);
-  console.log('Tracing to', traceFile);
+  debug('Tracing to', traceFile);
   const cwd = process.cwd();
   const result = await run({
     argvConfig: {
