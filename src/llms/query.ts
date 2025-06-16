@@ -258,16 +258,18 @@ export async function query(opts: QueryOptions) {
           : JSON.stringify(toolResult);
       toolLogger.result(result);
 
-      opts.context.pluginContext.eventManager.sendToStream({
-        type: 'tool-call',
-        content: {
-          toolName: toolUse.toolName,
-          args: toolUse.arguments,
-          result,
-        },
-        metadata: {
-          queryId: id,
-        },
+      await opts.context.pluginManager.apply({
+        hook: 'toolCall',
+        args: [
+          {
+            toolName: toolUse.toolName,
+            args: toolUse.arguments,
+            result,
+            queryId: id,
+          },
+        ],
+        type: PluginHookType.Series,
+        pluginContext: opts.context.pluginContext,
       });
 
       await addMessage([{ role: 'user', content: result }]);

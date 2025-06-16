@@ -13,4 +13,18 @@ export const browserPlugin: Plugin = {
       },
     });
   },
+
+  async toolCall(this: PluginContext, { toolName, args, result, queryId }) {
+    this.eventManager.sendToStream({
+      type: 'tool-call',
+      content: {
+        toolName,
+        args,
+        result,
+      },
+      metadata: {
+        queryId,
+      },
+    });
+  },
 };
