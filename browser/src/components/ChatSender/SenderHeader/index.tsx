@@ -1,7 +1,7 @@
 import { Sender } from '@ant-design/x';
-import { useSnapshot } from '@umijs/max';
 import { Flex, Tag } from 'antd';
 import { useEffect } from 'react';
+import { useSnapshot } from 'valtio';
 import * as context from '@/state/context';
 import * as sender from '@/state/sender';
 

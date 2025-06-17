@@ -5,10 +5,10 @@ import {
   QuestionCircleOutlined,
 } from '@ant-design/icons';
 import { Conversations } from '@ant-design/x';
-import { useModel } from '@umijs/max';
 import { Avatar, Button } from 'antd';
 import { createStyles } from 'antd-style';
 import dayjs from 'dayjs';
+import { useChatState } from '@/context/chatProvider';
 import logoPng from './imgs/kmi-ai.png';
 
 const useStyle = createStyles(({ token, css }) => {
@@ -72,7 +72,7 @@ const Sider = () => {
     setMessages,
     abortController,
     messageHistory,
-  } = useModel('chat');
+  } = useChatState();
 
   return (
     <div className={styles.sider}>
