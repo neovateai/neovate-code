@@ -30,3 +30,15 @@ export interface NonTextMessage {
   _messageKey?: string;
   _timestamp?: number;
 }
+
+export interface AiContextNodeInfo {
+  displayText: string;
+  value: string;
+}
+
+export interface AiContextNodeConfig {
+  matchRegex: RegExp;
+  aiContextId: string;
+  pickInfo: (regExpExecArray: RegExpExecArray) => AiContextNodeInfo;
+  render: (info: AiContextNodeInfo) => JSX.Element;
+}

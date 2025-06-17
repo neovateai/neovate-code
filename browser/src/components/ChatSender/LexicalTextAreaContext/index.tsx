@@ -1,18 +1,8 @@
 import { createContext } from 'react';
+import { AiContextNodeConfig } from '@/types/chat';
 
-export interface AiContextNodeInfo {
-  displayText: string;
-  value: string;
-}
-
-export interface AiContextNodeConfig {
-  matchRegex: RegExp;
-  aiContextId: string;
-  pickInfo: (regExpExecArray: RegExpExecArray) => AiContextNodeInfo;
-  render: (info: AiContextNodeInfo) => JSX.Element;
-}
-
+/** Inject Editor Contexts into LexicalTextArea */
 export const LexicalTextAreaContext = createContext<{
-  onEnterPress: (e: KeyboardEvent) => void;
+  onEnterPress?: (e: KeyboardEvent) => void;
   aiContextNodeConfigs: AiContextNodeConfig[];
 }>({ onEnterPress: () => {}, aiContextNodeConfigs: [] });

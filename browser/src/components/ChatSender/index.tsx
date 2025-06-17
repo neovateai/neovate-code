@@ -9,15 +9,14 @@ import { Prompts, Sender, Suggestion } from '@ant-design/x';
 import { useModel } from '@umijs/max';
 import { Button, Flex, GetProp, Tag } from 'antd';
 import { createStyles } from 'antd-style';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
+import { AiContextNodeConfig } from '@/types/chat';
+import { isInputingAiContext } from '@/utils/chat';
 import LexicalTextArea from './LexicalTextArea';
-import {
-  AiContextNodeConfig,
-  LexicalTextAreaContext,
-} from './LexicalTextAreaContext';
+import { LexicalTextAreaContext } from './LexicalTextAreaContext';
 import SenderHeader from './SenderHeader';
 
 const SENDER_PROMPTS: GetProp<typeof Prompts, 'items'> = [
@@ -108,6 +107,7 @@ const ChatSender: React.FC = () => {
   const { styles } = useStyle();
   const { abortController, loading, onQuery } = useModel('chat');
   const [inputValue, setInputValue] = useState(state.prompt);
+  const prevInputValue = useRef<string>(state.prompt);
   const { suggestions } = useSuggestion();
 
   // 处理输入变化
@@ -155,11 +155,12 @@ const ChatSender: React.FC = () => {
                 header={<SenderHeader />}
                 onSubmit={handleSubmit}
                 onChange={(value) => {
-                  if (value === '@') {
+                  if (isInputingAiContext(prevInputValue.current, value)) {
                     onTrigger();
-                  } else if (!value) {
+                  } else {
                     onTrigger(false);
                   }
+                  prevInputValue.current = inputValue;
                   onChange(value);
                 }}
                 onKeyDown={onKeyDown}

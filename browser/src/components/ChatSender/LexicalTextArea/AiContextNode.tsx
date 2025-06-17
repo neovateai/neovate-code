@@ -1,4 +1,3 @@
-import { Tag } from 'antd';
 import {
   DecoratorNode,
   type EditorConfig,
@@ -7,10 +6,7 @@ import {
   type Spread,
 } from 'lexical';
 import React from 'react';
-import {
-  AiContextNodeConfig,
-  AiContextNodeInfo,
-} from '../LexicalTextAreaContext';
+import { AiContextNodeConfig, AiContextNodeInfo } from '@/types/chat';
 
 export type SerializedAiContextNode = Spread<
   {

@@ -26,7 +26,7 @@ interface AppendedLexicalNode {
 
 interface Props {
   value: string;
-  onGetNodes: (nodes: Node[]) => void;
+  onGetNodes?: (nodes: Node[]) => void;
 }
 
 const RenderValuePlugin = (props: Props) => {
@@ -226,7 +226,7 @@ const RenderValuePlugin = (props: Props) => {
             length: lexicalNode.getTextContentSize(),
           };
         });
-      onGetNodes(nodes);
+      onGetNodes?.(nodes);
     });
 
     oldValueRef.current = value;
