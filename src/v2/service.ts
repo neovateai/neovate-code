@@ -38,6 +38,7 @@ export interface ServiceOpts {
 
 export interface ServiceRunOpts {
   input: AgentInputItem[];
+  thinking?: boolean;
 }
 
 export interface ServiceRunResult {
@@ -146,13 +147,17 @@ export class Service {
         this.history.filter((item) => (item as any).role !== 'system') || [];
       return [promptContextMessage, ...prevInput, ...opts.input];
     })();
-    this.processStream(input, stream).catch((error) => {
+    this.processStream(input, stream, opts.thinking).catch((error) => {
       stream.emit('error', error);
     });
     return { stream };
   }
 
-  private async processStream(input: AgentInputItem[], stream: Readable) {
+  private async processStream(
+    input: AgentInputItem[],
+    stream: Readable,
+    thinking?: boolean,
+  ) {
     try {
       const runner = new Runner({
         modelProvider: this.opts.modelProvider || getDefaultModelProvider(),
@@ -161,7 +166,7 @@ export class Service {
             providerMetadata: {
               google: {
                 thinkingConfig: {
-                  includeThoughts: process.env.THINKING ? true : false,
+                  includeThoughts: thinking ?? false,
                 },
               },
             },

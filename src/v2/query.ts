@@ -4,13 +4,14 @@ import { Service } from './service';
 type QueryOpts = {
   input: string | AgentInputItem[];
   service: Service;
+  thinking?: boolean;
   onTextDelta?: (text: string) => void;
   onText?: (text: string) => void;
   onReasoning?: (text: string) => void;
 };
 
 export async function query(opts: QueryOpts) {
-  const { service } = opts;
+  const { service, thinking } = opts;
   await service.init();
   let input =
     typeof opts.input === 'string'
@@ -22,9 +23,13 @@ export async function query(opts: QueryOpts) {
         ]
       : opts.input;
   let finalText: string | null = null;
+  let isFirstRun = true;
   while (true) {
     const { stream } = await service.run({
       input,
+      thinking,
+      // disable thinking for non-first runs
+      ...(isFirstRun ? {} : { thinking: false }),
     });
     let hasToolUse = false;
     for await (const chunk of stream) {
@@ -52,6 +57,7 @@ export async function query(opts: QueryOpts) {
     }
     if (hasToolUse) {
       input = [];
+      isFirstRun = false;
     } else {
       break;
     }

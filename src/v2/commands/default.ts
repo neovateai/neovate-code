@@ -11,6 +11,7 @@ import { confirm, getUserInput } from '../../utils/logger';
 import { Config } from '../config';
 import { PRODUCT_NAME } from '../constants';
 import { Context } from '../context';
+import { isReasoningModel } from '../provider';
 import { query } from '../query';
 import { Service } from '../service';
 import { setupTracing } from '../tracing';
@@ -67,14 +68,25 @@ export async function run(opts: RunOpts) {
           debug('querying plan', input);
           console.log(`Here is ${service.context.productName}'s plan:`);
           console.log('-------------');
+          let isThinking = false;
           const { finalText: plan } = await query({
             input,
             service,
-            onTextDelta: (text) => {
+            thinking: isReasoningModel(
+              service.context.configManager.config.planModel,
+            ),
+            onTextDelta(text) {
               process.stdout.write(text);
             },
-            onText: () => {
+            onText() {
               process.stdout.write('\n');
+            },
+            onReasoning(text) {
+              if (!isThinking) {
+                isThinking = true;
+                process.stdout.write('\nThinking:\n');
+              }
+              process.stdout.write(text);
             },
           });
           debug('plan', plan);
@@ -120,17 +132,26 @@ export async function run(opts: RunOpts) {
       let finalResult: any;
       while (true) {
         debug('querying code', input);
+        let isThinking = false;
         const result = await query({
           input,
           service,
-          onTextDelta: (text) => {
+          thinking: isReasoningModel(
+            service.context.configManager.config.model,
+          ),
+          onTextDelta(text) {
             process.stdout.write(text);
           },
-          onText: (text) => {
+          onText(text) {
             process.stdout.write('\n');
             debug('onText', text);
           },
-          onReasoning: (text) => {
+          onReasoning(text) {
+            if (!isThinking) {
+              isThinking = true;
+              process.stdout.write('\nThinking:\n');
+            }
+            process.stdout.write(text);
             debug('onReasoning', text);
           },
         });

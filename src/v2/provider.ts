@@ -7,6 +7,14 @@ import { ModelProvider } from '@openai/agents';
 import { aisdk } from '@openai/agents-extensions';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
+const THINKING_MODELS = [
+  'o3',
+  'o3-mini',
+  'deepseek-reasoner',
+  'gemini-2.5-pro-preview-05-06',
+  'claude-3-7-sonnet-20250219-thinking',
+  'grok-3-fast-beta',
+];
 const MODEL_ALIAS: Record<string, string> = {
   deepseek: 'deepseek-chat',
   r1: 'deepseek-reasoner',
@@ -143,4 +151,9 @@ export function getDefaultModelProvider(): ModelProvider {
       throw new Error(`Model ${modelName} is not supported`);
     },
   };
+}
+
+export function isReasoningModel(modelName: string) {
+  modelName = MODEL_ALIAS[modelName] ?? modelName;
+  return THINKING_MODELS.includes(modelName);
 }
