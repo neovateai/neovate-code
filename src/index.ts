@@ -186,6 +186,7 @@ export async function runCli(opts: RunCliOpts) {
         i: 'interactive',
         a: 'approvalMode',
         e: 'edit-mode',
+        l: 'lanuage',
       },
       array: ['plugin', 'apiKey'],
       boolean: ['plan', 'stream', 'quiet', 'help', 'interactive'],
