@@ -422,22 +422,6 @@ export class AiSdkModel implements Model {
           });
         });
 
-        if (result.reasoning) {
-          let content: any[] | null = null;
-          if (typeof result.reasoning === 'string') {
-            content = [{ type: 'input_text', text: result.reasoning }];
-          } else {
-            content = result.reasoning.map((r) => ({
-              type: 'input_text',
-              text: r.type === 'text' ? r.text : r.data,
-            }));
-          }
-          output.push({
-            type: 'reasoning',
-            content,
-          });
-        }
-
         // Some of other platforms may return both tool calls and text.
         // Putting a text message here will let the agent loop to complete,
         // so adding this item only when the tool calls are empty.
@@ -456,20 +440,25 @@ export class AiSdkModel implements Model {
           span.spanData.output = output;
         }
 
-        const promptTokens = isNaN(result.usage.promptTokens)
-          ? 0
-          : result.usage.promptTokens;
-        const completionTokens = isNaN(result.usage.completionTokens)
-          ? 0
-          : result.usage.completionTokens;
         return {
           responseId: result.response?.id ?? 'FAKE_ID',
           usage: new Usage({
-            inputTokens: promptTokens,
-            outputTokens: completionTokens,
-            totalTokens: promptTokens + completionTokens,
+            inputTokens: Number.isNaN(result.usage?.promptTokens)
+              ? 0
+              : (result.usage?.promptTokens ?? 0),
+            outputTokens: Number.isNaN(result.usage?.completionTokens)
+              ? 0
+              : (result.usage?.completionTokens ?? 0),
+            totalTokens:
+              (Number.isNaN(result.usage?.promptTokens)
+                ? 0
+                : (result.usage?.promptTokens ?? 0)) +
+              (Number.isNaN(result.usage?.completionTokens)
+                ? 0
+                : (result.usage?.completionTokens ?? 0)),
           }),
           output,
+          providerData: result,
         };
       } catch (error) {
         if (error instanceof Error) {
@@ -546,6 +535,19 @@ export class AiSdkModel implements Model {
 
       request.handoffs.forEach((handoff) => {
         tools.push(handoffToLanguageV1Tool(this.#model, handoff));
+      });
+
+      // caching for anthropic
+      input.forEach((item) => {
+        if (item.role === 'system') {
+          item.providerMetadata = {
+            anthropic: {
+              cache_control: {
+                type: 'ephemeral',
+              },
+            },
+          };
+        }
       });
 
       if (span && request.tracing === true) {
@@ -629,12 +631,12 @@ export class AiSdkModel implements Model {
             break;
           }
           case 'finish': {
-            usagePromptTokens = isNaN(part.usage.promptTokens)
+            usagePromptTokens = Number.isNaN(part.usage?.promptTokens)
               ? 0
-              : part.usage.promptTokens;
-            usageCompletionTokens = isNaN(part.usage.completionTokens)
+              : (part.usage?.promptTokens ?? 0);
+            usageCompletionTokens = Number.isNaN(part.usage?.completionTokens)
               ? 0
-              : part.usage.completionTokens;
+              : (part.usage?.completionTokens ?? 0);
             break;
           }
           case 'error': {
