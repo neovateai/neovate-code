@@ -1,3 +1,4 @@
+import { Tag } from 'antd';
 import {
   DecoratorNode,
   type EditorConfig,
@@ -92,14 +93,15 @@ export class FileMentionNode extends DecoratorNode<JSX.Element> {
 
   decorate(): JSX.Element {
     return (
-      <span
+      <Tag
+        color="blue"
         className={this.__className || 'file-mention-node'}
         data-mention-id={this.__mentionId}
         contentEditable={false}
         style={{ userSelect: 'all' }}
       >
         {this.__displayText}
-      </span>
+      </Tag>
     );
   }
 

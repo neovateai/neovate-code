@@ -1,3 +1,4 @@
+import { Tag } from 'antd';
 import {
   DecoratorNode,
   type EditorConfig,
@@ -93,14 +94,15 @@ export class CodeMentionNode extends DecoratorNode<JSX.Element> {
   decorate(): JSX.Element {
     // 可自定义渲染
     return (
-      <span
+      <Tag
+        color="red"
         className={this.__className || 'code-mention-node'}
         data-mention-id={this.__mentionId}
         contentEditable={false}
         style={{ userSelect: 'all' }}
       >
         {this.__displayText}
-      </span>
+      </Tag>
     );
   }
 

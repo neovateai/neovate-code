@@ -5,13 +5,14 @@ import {
   ProductOutlined,
   ScheduleOutlined,
 } from '@ant-design/icons';
-import { Prompts, Sender } from '@ant-design/x';
+import { Prompts, Sender, Suggestion } from '@ant-design/x';
 import { useModel, useSnapshot } from '@umijs/max';
 import { Button, Flex, GetProp } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
 import { actions, state } from '@/state/sender';
 import LexicalTextArea from './LexicalTextArea';
+import { LexicalTextAreaContext } from './LexicalTextAreaContext';
 import SenderHeader from './SenderHeader';
 
 const SENDER_PROMPTS: GetProp<typeof Prompts, 'items'> = [
@@ -64,9 +65,15 @@ const ChatSender: React.FC = () => {
   const [inputValue, setInputValue] = useState(state.prompt);
 
   // 处理输入变化
-  const onChange = (value: string) => {
+  const handleChange = (value: string) => {
     setInputValue(value);
     actions.updatePrompt(value);
+  };
+
+  const handleSubmit = () => {
+    onQuery(inputValue);
+    actions.updatePrompt('');
+    setInputValue('');
   };
 
   return (
@@ -83,46 +90,50 @@ const ChatSender: React.FC = () => {
         className={styles.senderPrompt}
       />
       {/* 🌟 输入框 */}
-      <Sender
-        value={inputValue}
-        header={<SenderHeader />}
-        onSubmit={() => {
-          onQuery(inputValue);
-          actions.updatePrompt('');
-          setInputValue('');
-        }}
-        onChange={onChange}
-        onCancel={() => {
-          abortController.current?.abort();
-        }}
-        prefix={
-          <Button
-            type="text"
-            icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
-            onClick={() => actions.setAttachmentsOpen(!attachmentsOpen)}
-          />
-        }
-        loading={loading}
-        className={styles.sender}
-        allowSpeech
-        actions={(_, info) => {
-          const { SendButton, LoadingButton, SpeechButton } = info.components;
-          return (
-            <Flex gap={4}>
-              <SpeechButton className={styles.speechButton} />
-              {loading ? (
-                <LoadingButton type="default" />
-              ) : (
-                <SendButton type="primary" />
-              )}
-            </Flex>
-          );
-        }}
-        components={{
-          input: LexicalTextArea,
-        }}
-        placeholder="Ask or input / use skills"
-      />
+      <LexicalTextAreaContext.Provider value={{ onEnterPress: handleSubmit }}>
+        <Suggestion items={[]}>
+          {({ onKeyDown, onTrigger }) => (
+            <Sender
+              value={inputValue}
+              header={<SenderHeader />}
+              onKeyDown={onKeyDown}
+              onSubmit={handleSubmit}
+              onChange={handleChange}
+              onCancel={() => {
+                abortController.current?.abort();
+              }}
+              prefix={
+                <Button
+                  type="text"
+                  icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
+                  onClick={() => actions.setAttachmentsOpen(!attachmentsOpen)}
+                />
+              }
+              loading={loading}
+              className={styles.sender}
+              allowSpeech
+              actions={(_, info) => {
+                const { SendButton, LoadingButton, SpeechButton } =
+                  info.components;
+                return (
+                  <Flex gap={4}>
+                    <SpeechButton className={styles.speechButton} />
+                    {loading ? (
+                      <LoadingButton type="default" />
+                    ) : (
+                      <SendButton type="primary" />
+                    )}
+                  </Flex>
+                );
+              }}
+              components={{
+                input: LexicalTextArea,
+              }}
+              placeholder="Ask or input @ use skills"
+            />
+          )}
+        </Suggestion>
+      </LexicalTextAreaContext.Provider>
     </>
   );
 };
