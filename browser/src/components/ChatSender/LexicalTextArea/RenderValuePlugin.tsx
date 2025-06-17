@@ -7,12 +7,12 @@ import {
   ParagraphNode,
   TextNode,
 } from 'lexical';
-import { useEffect, useRef } from 'react';
-import { $createCodeMentionNode } from './CodeMentionNode';
-import { $createFileMentionNode } from './FileMentionNode';
+import { useContext, useEffect, useRef } from 'react';
+import { LexicalTextAreaContext } from '../LexicalTextAreaContext';
+import { $createAiContextNode } from './AiContextNode';
 
 interface Node {
-  type: 'code' | 'file';
+  type: string;
   originalText: string;
   displayText: string;
   lexicalNode: LexicalNode;
@@ -29,14 +29,22 @@ interface Props {
   onGetNodes: (nodes: Node[]) => void;
 }
 
-export const MentionRegex = /(@Code:\[([^\]]+)\])|(@File:\[([^\]]+)\])/g;
+// export const MentionRegex = /(@Code:\[([^\]]+)\])|(@File:\[([^\]]+)\])/g;
 
 const RenderValuePlugin = (props: Props) => {
   const { value, onGetNodes } = props;
   const [editor] = useLexicalComposerContext();
+  const { aiContextNodeConfigs } = useContext(LexicalTextAreaContext);
   const oldValueRef = useRef(value);
   const oldNodesRef = useRef<Node[]>([]);
   const oldLexicalNodesRef = useRef<AppendedLexicalNode[]>([]);
+
+  const SearchRegex = new RegExp(
+    aiContextNodeConfigs
+      .map((config, index) => `(?<group${index}>${config.matchRegex.source})`)
+      .join('|'),
+    'g',
+  );
 
   const isNodeEqual = (node1: Node, node2: Node) => {
     return (
@@ -58,16 +66,15 @@ const RenderValuePlugin = (props: Props) => {
     const nodes: Node[] = [];
     const paragraph = $createParagraphNode();
 
-    const Regex = new RegExp(MentionRegex);
+    const Regex = new RegExp(SearchRegex);
 
     let lastIndex = 0;
     let match: RegExpExecArray | null;
     let targetFunction: (() => void) | null = null;
 
-    // 用于临时存储所有节点的数组（包括文本节点和mention节点）
+    // 用于临时存储所有节点的数组（包括文本节点和AiContextNode节点）
     const allNodes: LexicalNode[] = [];
 
-    // eslint-disable-next-line no-cond-assign
     while ((match = Regex.exec(content)) !== null) {
       if (match.index > lastIndex) {
         const text = content.slice(lastIndex, match.index);
@@ -75,36 +82,23 @@ const RenderValuePlugin = (props: Props) => {
         paragraph.append(textNode);
         allNodes.push(textNode);
       }
-      if (match[1]) {
-        const mentionValue = match[1];
-        const displayText = match[2];
-        const mentionNode = $createCodeMentionNode(
-          'code',
-          mentionValue,
-          displayText,
-        );
+
+      const matchValue = match.groups?.value;
+      const originalConfigIndex =
+        match.findIndex((item) => item === matchValue) / 2 - 1;
+
+      const originalConfig = aiContextNodeConfigs[originalConfigIndex];
+
+      if (originalConfig) {
+        const info = originalConfig.pickInfo(match);
+
+        const mentionNode = $createAiContextNode(originalConfig, info);
         paragraph.append(mentionNode);
         allNodes.push(mentionNode);
         nodes.push({
-          type: 'code',
-          originalText: mentionValue,
-          displayText,
-          lexicalNode: mentionNode,
-        });
-      } else if (match[3]) {
-        const mentionValue = match[3];
-        const displayText = match[4];
-        const mentionNode = $createFileMentionNode(
-          'file',
-          mentionValue,
-          displayText,
-        );
-        paragraph.append(mentionNode);
-        allNodes.push(mentionNode);
-        nodes.push({
-          type: 'file',
-          originalText: mentionValue,
-          displayText,
+          type: originalConfig.aiContextId,
+          originalText: info.value,
+          displayText: info.displayText,
           lexicalNode: mentionNode,
         });
       }
@@ -174,7 +168,7 @@ const RenderValuePlugin = (props: Props) => {
             // 如果前后都是文本节点，记录前一个文本节点的长度
             const prevTextLength = prevNode.length;
 
-            console.log(prevNode, prevTextLength, 'prevTextLength');
+            // console.log(prevNode, prevTextLength, 'prevTextLength');
 
             // 获取合并后的文本节点（它将位于删除位置）
             const mergedTextNode = paragraph.getChildren()[targetIndex - 1];

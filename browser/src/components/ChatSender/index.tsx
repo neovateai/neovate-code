@@ -7,12 +7,17 @@ import {
 } from '@ant-design/icons';
 import { Prompts, Sender, Suggestion } from '@ant-design/x';
 import { useModel } from '@umijs/max';
-import { Button, Flex, GetProp } from 'antd';
+import { Button, Flex, GetProp, Tag } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
+import LexicalTextArea from './LexicalTextArea';
+import {
+  AiContextNodeConfig,
+  LexicalTextAreaContext,
+} from './LexicalTextAreaContext';
 import SenderHeader from './SenderHeader';
 
 const SENDER_PROMPTS: GetProp<typeof Prompts, 'items'> = [
@@ -35,6 +40,47 @@ const SENDER_PROMPTS: GetProp<typeof Prompts, 'items'> = [
     key: '4',
     description: 'Installation Introduction',
     icon: <AppstoreAddOutlined />,
+  },
+];
+
+const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
+  {
+    matchRegex: /@File:\[(?<value>[^\]]+)\]/,
+    aiContextId: 'file',
+    pickInfo: (regExpExecArray) => ({
+      value: regExpExecArray[0],
+      displayText: regExpExecArray.groups?.value || '',
+    }),
+    render: ({ value, displayText }) => (
+      <Tag
+        color="red"
+        className={'ai-context-node'}
+        data-ai-context-id="file"
+        contentEditable={false}
+        style={{ userSelect: 'all' }}
+      >
+        {displayText}
+      </Tag>
+    ),
+  },
+  {
+    matchRegex: /@Code:\[(?<value>[^\]]+)\]/,
+    aiContextId: 'code',
+    pickInfo: (regExpExecArray) => ({
+      value: regExpExecArray[0],
+      displayText: regExpExecArray.groups?.value || '',
+    }),
+    render: ({ value, displayText }) => (
+      <Tag
+        color="green"
+        className={'ai-context-node'}
+        data-ai-context-id="code"
+        contentEditable={false}
+        style={{ userSelect: 'all' }}
+      >
+        {displayText}
+      </Tag>
+    ),
   },
 ];
 
@@ -83,63 +129,73 @@ const ChatSender: React.FC = () => {
         }}
         className={styles.senderPrompt}
       />
-      {/* 🌟 输入框 */}
-      <Suggestion
-        items={suggestions}
-        onSelect={(itemVal) => {
-          context.actions.setFile(itemVal);
+      <LexicalTextAreaContext.Provider
+        value={{
+          onEnterPress: () => {},
+          aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
         }}
       >
-        {({ onTrigger, onKeyDown }) => {
-          return (
-            <Sender
-              value={inputValue}
-              header={<SenderHeader />}
-              onSubmit={() => {
-                onQuery(inputValue);
-                actions.updatePrompt('');
-                setInputValue('');
-              }}
-              onChange={(value) => {
-                if (value === '@') {
-                  onTrigger();
-                } else if (!value) {
-                  onTrigger(false);
+        {/* 🌟 输入框 */}
+        <Suggestion
+          items={suggestions}
+          onSelect={(itemVal) => {
+            context.actions.setFile(itemVal);
+          }}
+        >
+          {({ onTrigger, onKeyDown }) => {
+            return (
+              <Sender
+                value={inputValue}
+                header={<SenderHeader />}
+                onSubmit={() => {
+                  onQuery(inputValue);
+                  actions.updatePrompt('');
+                  setInputValue('');
+                }}
+                onChange={(value) => {
+                  if (value === '@') {
+                    onTrigger();
+                  } else if (!value) {
+                    onTrigger(false);
+                  }
+                  onChange(value);
+                }}
+                onKeyDown={onKeyDown}
+                onCancel={() => {
+                  abortController.current?.abort();
+                }}
+                prefix={
+                  <Button
+                    type="text"
+                    icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
+                  />
                 }
-                onChange(value);
-              }}
-              onKeyDown={onKeyDown}
-              onCancel={() => {
-                abortController.current?.abort();
-              }}
-              prefix={
-                <Button
-                  type="text"
-                  icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
-                />
-              }
-              loading={loading}
-              className={styles.sender}
-              allowSpeech
-              actions={(_, info) => {
-                const { SendButton, LoadingButton, SpeechButton } =
-                  info.components;
-                return (
-                  <Flex gap={4}>
-                    <SpeechButton className={styles.speechButton} />
-                    {loading ? (
-                      <LoadingButton type="default" />
-                    ) : (
-                      <SendButton type="primary" />
-                    )}
-                  </Flex>
-                );
-              }}
-              placeholder="Ask or input @ use skills"
-            />
-          );
-        }}
-      </Suggestion>
+                loading={loading}
+                className={styles.sender}
+                allowSpeech
+                actions={(_, info) => {
+                  const { SendButton, LoadingButton, SpeechButton } =
+                    info.components;
+                  return (
+                    <Flex gap={4}>
+                      <SpeechButton className={styles.speechButton} />
+                      {loading ? (
+                        <LoadingButton type="default" />
+                      ) : (
+                        <SendButton type="primary" />
+                      )}
+                    </Flex>
+                  );
+                }}
+                components={{
+                  input: LexicalTextArea,
+                }}
+                placeholder="Ask or input @ use skills"
+              />
+            );
+          }}
+        </Suggestion>
+      </LexicalTextAreaContext.Provider>
     </>
   );
 };

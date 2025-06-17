@@ -14,9 +14,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { CodeMentionNode } from './CodeMentionNode';
+import { AiContextNode } from './AiContextNode';
 import { DisabledPlugin } from './DisabledPlugin';
-import { FileMentionNode } from './FileMentionNode';
 import { PlaceholderPlugin } from './PlaceholderPlugin';
 import RenderValuePlugin from './RenderValuePlugin';
 import './index.less';
@@ -107,7 +106,7 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
       initialConfig={{
         namespace: 'LexicalTextArea',
         onError: (error) => console.error(error),
-        nodes: [FileMentionNode, CodeMentionNode],
+        nodes: [AiContextNode],
       }}
     >
       <RichTextPlugin
@@ -139,8 +138,10 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
             const nextInnerValue = $getRoot().getTextContent();
             setInnerValue(nextInnerValue);
             const selection = window.getSelection();
-            const range = selection?.getRangeAt(0);
-            const cursorPosition = range?.startOffset || 0;
+            const rangeCount = selection?.rangeCount || 0;
+
+            const cursorPosition =
+              rangeCount > 0 ? selection?.getRangeAt(0)?.startOffset || 0 : 0;
             const syntheticEvent = createSyntheticEvent(nextInnerValue);
             (syntheticEvent.target as any).selectionStart = cursorPosition;
             (syntheticEvent.target as any).selectionEnd = cursorPosition;
