@@ -13,6 +13,7 @@
     "ahooks": "^3.7.0",
     "antd": "^5.15.0",
     "antd-style": "^3.7.1",
+    "axios": "1.10.0",
     "dayjs": "^1.11.13",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -35,5 +36,9 @@
     "programming-assistant"
   ],
   "author": "Takumi Team",
-  "license": "MIT"
+  "license": "MIT",
+  "volta": {
+    "node": "22.11.0",
+    "pnpm": "10.8.0"
+  }
 }

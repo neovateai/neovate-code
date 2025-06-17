@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import * as logger from '../utils/logger';
+import { fileContextApiPlugin } from './plugins/fileContextApiPlugin';
 import { streamApiPlugin } from './plugins/streamApiPlugin';
 import { ServerOptions } from './types';
 
@@ -36,6 +37,7 @@ export async function createServer(opts: ServerOptions) {
 
     // 注册流式 API 插件
     await fastify.register(streamApiPlugin, opts);
+    await fastify.register(fileContextApiPlugin, opts);
 
     // 404 处理
     fastify.setNotFoundHandler(async (request, reply) => {

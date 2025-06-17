@@ -5,11 +5,13 @@ import {
   ProductOutlined,
   ScheduleOutlined,
 } from '@ant-design/icons';
-import { Prompts, Sender } from '@ant-design/x';
-import { useModel, useSnapshot } from '@umijs/max';
+import { Prompts, Sender, Suggestion } from '@ant-design/x';
+import { useModel } from '@umijs/max';
 import { Button, Flex, GetProp } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
+import { useSuggestion } from '@/hooks/useSuggestion';
+import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
 import SenderHeader from './SenderHeader';
 
@@ -58,9 +60,9 @@ const useStyle = createStyles(({ token, css }) => {
 
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
-  const { attachmentsOpen } = useSnapshot(state);
   const { abortController, loading, onQuery } = useModel('chat');
   const [inputValue, setInputValue] = useState(state.prompt);
+  const { suggestions } = useSuggestion();
 
   // 处理输入变化
   const onChange = (value: string) => {
@@ -82,43 +84,62 @@ const ChatSender: React.FC = () => {
         className={styles.senderPrompt}
       />
       {/* 🌟 输入框 */}
-      <Sender
-        value={inputValue}
-        header={<SenderHeader />}
-        onSubmit={() => {
-          onQuery(inputValue);
-          actions.updatePrompt('');
-          setInputValue('');
+      <Suggestion
+        items={suggestions}
+        onSelect={(itemVal) => {
+          context.actions.setFile(itemVal);
         }}
-        onChange={onChange}
-        onCancel={() => {
-          abortController.current?.abort();
-        }}
-        prefix={
-          <Button
-            type="text"
-            icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
-            onClick={() => actions.setAttachmentsOpen(!attachmentsOpen)}
-          />
-        }
-        loading={loading}
-        className={styles.sender}
-        allowSpeech
-        actions={(_, info) => {
-          const { SendButton, LoadingButton, SpeechButton } = info.components;
+      >
+        {({ onTrigger, onKeyDown }) => {
           return (
-            <Flex gap={4}>
-              <SpeechButton className={styles.speechButton} />
-              {loading ? (
-                <LoadingButton type="default" />
-              ) : (
-                <SendButton type="primary" />
-              )}
-            </Flex>
+            <Sender
+              value={inputValue}
+              header={<SenderHeader />}
+              onSubmit={() => {
+                onQuery(inputValue);
+                actions.updatePrompt('');
+                setInputValue('');
+              }}
+              onChange={(value) => {
+                if (value === '@') {
+                  onTrigger();
+                } else if (!value) {
+                  onTrigger(false);
+                }
+                onChange(value);
+              }}
+              onKeyDown={onKeyDown}
+              onCancel={() => {
+                abortController.current?.abort();
+              }}
+              prefix={
+                <Button
+                  type="text"
+                  icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
+                />
+              }
+              loading={loading}
+              className={styles.sender}
+              allowSpeech
+              actions={(_, info) => {
+                const { SendButton, LoadingButton, SpeechButton } =
+                  info.components;
+                return (
+                  <Flex gap={4}>
+                    <SpeechButton className={styles.speechButton} />
+                    {loading ? (
+                      <LoadingButton type="default" />
+                    ) : (
+                      <SendButton type="primary" />
+                    )}
+                  </Flex>
+                );
+              }}
+              placeholder="Ask or input @ use skills"
+            />
           );
         }}
-        placeholder="Ask or input / use skills"
-      />
+      </Suggestion>
     </>
   );
 };
