@@ -88,6 +88,18 @@ export async function run(opts: RunOpts) {
               }
               process.stdout.write(text);
             },
+            onToolUse(callId, name, params) {
+              console.log(
+                `Tool use: ${name} with params ${JSON.stringify(params)}`,
+              );
+            },
+            onToolUseResult(callId, name, result) {
+              console.log(
+                `Tool use result: ${name} with result ${JSON.stringify(
+                  result,
+                )}`,
+              );
+            },
           });
           debug('plan', plan);
           assert(plan, `No plan found`);
@@ -153,6 +165,14 @@ export async function run(opts: RunOpts) {
             }
             process.stdout.write(text);
             debug('onReasoning', text);
+          },
+          onToolUse(callId, name, params) {
+            debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
+          },
+          onToolUseResult(callId, name, result) {
+            debug(
+              `Tool use result: ${name} with result ${JSON.stringify(result)}`,
+            );
           },
         });
         debug('query result', result.finalText);

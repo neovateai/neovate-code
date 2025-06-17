@@ -8,6 +8,12 @@ type QueryOpts = {
   onTextDelta?: (text: string) => void;
   onText?: (text: string) => void;
   onReasoning?: (text: string) => void;
+  onToolUse?: (
+    callId: string,
+    name: string,
+    params: Record<string, any>,
+  ) => void;
+  onToolUseResult?: (callId: string, name: string, result: string) => void;
 };
 
 export async function query(opts: QueryOpts) {
@@ -47,7 +53,13 @@ export async function query(opts: QueryOpts) {
             opts.onReasoning?.(item.content);
             break;
           case 'tool_use':
-            await service.callTool(item.callId, item.name, item.params);
+            opts.onToolUse?.(item.callId, item.name, item.params);
+            const result = await service.callTool(
+              item.callId,
+              item.name,
+              item.params,
+            );
+            opts.onToolUseResult?.(item.callId, item.name, result);
             hasToolUse = true;
             break;
           default:
