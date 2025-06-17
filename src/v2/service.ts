@@ -219,7 +219,6 @@ export class Service {
         const callId = crypto.randomUUID();
         stream.push(
           JSON.stringify({
-            content: '',
             type: 'tool_use',
             name: toolUse.name,
             params: toolUse.params,
