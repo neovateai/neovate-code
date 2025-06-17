@@ -5,54 +5,7 @@ import type {
   NonTextMessage,
   ToolCallMessage,
 } from '@/types/chat';
-
-// 样式常量
-const MESSAGE_STYLES = {
-  toolCall: {
-    background: '#f6f8fa',
-    border: '1px solid #e1e4e8',
-    borderRadius: 8,
-    padding: 12,
-    fontFamily: 'monospace',
-    fontSize: '13px',
-  },
-  toolCallTitle: {
-    color: '#0366d6',
-    fontWeight: 600,
-    marginBottom: 8,
-  },
-  debugKey: {
-    color: '#6a737d',
-    fontSize: '11px',
-    marginLeft: 8,
-  },
-  paramLabel: {
-    color: '#6a737d',
-    marginBottom: 4,
-  },
-  codeBlock: {
-    background: '#fff',
-    padding: 8,
-    borderRadius: 4,
-    margin: 0,
-    overflow: 'auto',
-  },
-  unknownMessage: {
-    background: '#fff3cd',
-    border: '1px solid #ffeaa7',
-    borderRadius: 8,
-    padding: 12,
-  },
-  unknownMessageTitle: {
-    color: '#856404',
-  },
-  mixedMessageItem: {
-    marginBottom: 12,
-  },
-  mixedTextContent: {
-    marginBottom: 0,
-  },
-} as const;
+import styles from './index.module.css';
 
 interface MessageRendererProps {
   message: string | MixedMessage | ToolCallMessage | NonTextMessage;
@@ -66,16 +19,16 @@ const ToolCallMessageRenderer: React.FC<{
   const { toolName, args, result } = message.content || message;
 
   return (
-    <div style={MESSAGE_STYLES.toolCall}>
-      <div style={MESSAGE_STYLES.toolCallTitle}>
+    <div className={styles.toolCall}>
+      <div className={styles.toolCallTitle}>
         🔧 工具调用: {toolName}
-        {debugKey && <span style={MESSAGE_STYLES.debugKey}>({debugKey})</span>}
+        {debugKey && <span className={styles.debugKey}>({debugKey})</span>}
       </div>
 
       {args && (
         <div style={{ marginBottom: 8 }}>
-          <div style={MESSAGE_STYLES.paramLabel}>参数:</div>
-          <pre style={MESSAGE_STYLES.codeBlock}>
+          <div className={styles.paramLabel}>参数:</div>
+          <pre className={styles.codeBlock}>
             {JSON.stringify(args, null, 2)}
           </pre>
         </div>
@@ -83,8 +36,8 @@ const ToolCallMessageRenderer: React.FC<{
 
       {result && (
         <div>
-          <div style={MESSAGE_STYLES.paramLabel}>结果:</div>
-          <pre style={MESSAGE_STYLES.codeBlock}>
+          <div className={styles.paramLabel}>结果:</div>
+          <pre className={styles.codeBlock}>
             {typeof result === 'string'
               ? result
               : JSON.stringify(result, null, 2)}
@@ -112,10 +65,10 @@ const NonTextMessageRenderer: React.FC<{
       );
     default:
       return (
-        <div style={MESSAGE_STYLES.unknownMessage}>
-          <div style={MESSAGE_STYLES.unknownMessageTitle}>
+        <div className={styles.unknownMessage}>
+          <div className={styles.unknownMessageTitle}>
             未知消息类型: {message.type}
-            <span style={MESSAGE_STYLES.debugKey}>({debugKey})</span>
+            <span className={styles.debugKey}>({debugKey})</span>
           </div>
           <pre style={{ fontSize: '12px', margin: '8px 0 0 0' }}>
             {JSON.stringify(message, null, 2)}
@@ -129,29 +82,54 @@ const NonTextMessageRenderer: React.FC<{
 const MixedMessageRenderer: React.FC<{
   message: MixedMessage;
 }> = ({ message }) => {
+  const hasNonTextMessages =
+    message.nonTextMessages && message.nonTextMessages.length > 0;
+  const hasTextContent = message.textContent && message.textContent.trim();
+  const totalItems =
+    (hasNonTextMessages ? message.nonTextMessages!.length : 0) +
+    (hasTextContent ? 1 : 0);
+
   return (
-    <div>
-      {/* 渲染非文本消息 */}
-      {message.nonTextMessages?.map(
-        (nonTextMsg: NonTextMessage, index: number) => {
-          const uniqueKey =
-            nonTextMsg._messageKey ||
-            `${nonTextMsg.type}_${index}_${nonTextMsg._timestamp || Date.now()}`;
-          return (
-            <div key={uniqueKey} style={MESSAGE_STYLES.mixedMessageItem}>
-              <NonTextMessageRenderer message={nonTextMsg} index={index} />
-            </div>
-          );
-        },
+    <div className={styles.mixedMessageContainer}>
+      {/* 消息头部 */}
+      {hasNonTextMessages && (
+        <div className={styles.mixedMessageHeader}>
+          <span>🔀</span>
+          <span>混合消息 ({totalItems} 项内容)</span>
+        </div>
       )}
 
+      {/* 渲染非文本消息 */}
+      {hasNonTextMessages &&
+        message.nonTextMessages?.map(
+          (nonTextMsg: NonTextMessage, index: number) => {
+            const uniqueKey =
+              nonTextMsg._messageKey ||
+              `${nonTextMsg.type}_${index}_${nonTextMsg._timestamp || Date.now()}`;
+            const isLast =
+              index === message.nonTextMessages!.length - 1 && !hasTextContent;
+
+            return (
+              <div
+                key={uniqueKey}
+                className={
+                  isLast ? styles.mixedMessageItemLast : styles.mixedMessageItem
+                }
+              >
+                <NonTextMessageRenderer message={nonTextMsg} index={index} />
+              </div>
+            );
+          },
+        )}
+
       {/* 渲染文本内容 */}
-      {message.textContent && (
+      {hasTextContent && (
         <div
-          style={{
-            ...MESSAGE_STYLES.mixedTextContent,
-            marginBottom: message.nonTextMessages?.length > 0 ? 16 : 0,
-          }}
+          className={
+            hasNonTextMessages
+              ? styles.mixedTextContent
+              : styles.mixedTextContentOnly
+          }
         >
           <ReactMarkdown>{message.textContent}</ReactMarkdown>
         </div>
@@ -162,6 +140,7 @@ const MixedMessageRenderer: React.FC<{
 
 // 主消息渲染器
 const MessageRenderer: React.FC<MessageRendererProps> = ({ message }) => {
+  console.log('message', message);
   if (typeof message === 'string') {
     return <ReactMarkdown>{message}</ReactMarkdown>;
   }

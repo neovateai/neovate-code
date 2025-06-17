@@ -1,0 +1,97 @@
+/* 工具调用消息样式 */
+.toolCall {
+  background: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.toolCallTitle {
+  color: #0366d6;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.debugKey {
+  color: #6a737d;
+  font-size: 11px;
+  margin-left: 8px;
+}
+
+.paramLabel {
+  color: #6a737d;
+  margin-bottom: 4px;
+}
+
+.codeBlock {
+  background: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  margin: 0;
+  overflow: auto;
+}
+
+/* 未知消息样式 */
+.unknownMessage {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.unknownMessageTitle {
+  color: #856404;
+}
+
+/* 混合消息容器样式 */
+.mixedMessageContainer {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.mixedMessageHeader {
+  background: rgba(59, 130, 246, 0.08);
+  margin: -16px -16px 16px -16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #3b82f6;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mixedMessageItem {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.mixedMessageItemLast {
+  margin-bottom: 0;
+  position: relative;
+}
+
+.mixedTextContent {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.mixedTextContentOnly {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-top: 0;
+  box-shadow: none;
+}
