@@ -4,29 +4,16 @@ import {
   $createTextNode,
   $getRoot,
   LexicalNode,
-  ParagraphNode,
   TextNode,
 } from 'lexical';
 import { useContext, useEffect, useRef } from 'react';
+import { AiContextCacheNode, AppendedLexicalNode } from '@/types/chat';
 import { LexicalTextAreaContext } from '../LexicalTextAreaContext';
 import { $createAiContextNode } from './AiContextNode';
 
-interface Node {
-  type: string;
-  originalText: string;
-  displayText: string;
-  lexicalNode: LexicalNode;
-}
-
-interface AppendedLexicalNode {
-  lexicalNode: LexicalNode;
-  type: string;
-  length?: number;
-}
-
 interface Props {
   value: string;
-  onGetNodes?: (nodes: Node[]) => void;
+  onGetNodes?: (nodes: AiContextCacheNode[]) => void;
 }
 
 const RenderValuePlugin = (props: Props) => {
@@ -36,7 +23,7 @@ const RenderValuePlugin = (props: Props) => {
     LexicalTextAreaContext,
   );
   const oldValueRef = useRef('');
-  const oldNodesRef = useRef<Node[]>([]);
+  const oldNodesRef = useRef<AiContextCacheNode[]>([]);
   const oldLexicalNodesRef = useRef<AppendedLexicalNode[]>([]);
 
   const SearchRegex = new RegExp(
@@ -46,7 +33,10 @@ const RenderValuePlugin = (props: Props) => {
     'g',
   );
 
-  const isNodeEqual = (node1: Node, node2: Node) => {
+  const isNodeEqual = (
+    node1: AiContextCacheNode,
+    node2: AiContextCacheNode,
+  ) => {
     return (
       node1.type === node2.type &&
       node1.originalText === node2.originalText &&
@@ -54,7 +44,10 @@ const RenderValuePlugin = (props: Props) => {
     );
   };
 
-  const areNodesEqual = (nodes1: Node[], nodes2: Node[]) => {
+  const areNodesEqual = (
+    nodes1: AiContextCacheNode[],
+    nodes2: AiContextCacheNode[],
+  ) => {
     if (nodes1.length !== nodes2.length) return false;
     return nodes1.every((node1, index) => {
       const node2 = nodes2[index];
@@ -63,7 +56,7 @@ const RenderValuePlugin = (props: Props) => {
   };
 
   const parseContent = (content: string) => {
-    const nodes: Node[] = [];
+    const nodes: AiContextCacheNode[] = [];
     const paragraph = $createParagraphNode();
 
     const Regex = new RegExp(SearchRegex);

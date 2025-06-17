@@ -1,3 +1,5 @@
+import { LexicalNode } from 'lexical';
+
 export type BubbleDataType = {
   role: string;
   content: string | MixedMessage | ToolCallMessage | NonTextMessage;
@@ -41,4 +43,17 @@ export interface AiContextNodeConfig {
   aiContextId: string;
   pickInfo: (regExpExecArray: RegExpExecArray) => AiContextNodeInfo;
   render: (info: AiContextNodeInfo) => JSX.Element;
+}
+
+export interface AiContextCacheNode {
+  type: string;
+  originalText: string;
+  displayText: string;
+  lexicalNode: LexicalNode;
+}
+
+export interface AppendedLexicalNode {
+  lexicalNode: LexicalNode;
+  type: string;
+  length?: number;
 }

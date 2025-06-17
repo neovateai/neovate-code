@@ -26,7 +26,7 @@ export const useSuggestion = () => {
         value: 'files',
         icon: <FileSearchOutlined />,
         children: [
-          ...fileList.slice(0, 10).map((file) => ({
+          ...fileList.map((file) => ({
             label: file.path,
             value: file.path,
             icon: <FileOutlined />,

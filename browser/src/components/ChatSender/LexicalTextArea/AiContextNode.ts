@@ -5,7 +5,6 @@ import {
   type SerializedLexicalNode,
   type Spread,
 } from 'lexical';
-import React from 'react';
 import { AiContextNodeConfig, AiContextNodeInfo } from '@/types/chat';
 
 export type SerializedAiContextNode = Spread<

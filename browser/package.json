@@ -22,7 +22,8 @@
     "classnames": "^2.5.1",
     "lexical": "0.32.1",
     "@lexical/react": "0.32.1",
-    "@lexical/utils": "0.32.1"
+    "@lexical/utils": "0.32.1",
+    "rc-util": "^5.44.4"
   },
   "devDependencies": {
     "@kmijs/preset-bundler": "^0.0.3",

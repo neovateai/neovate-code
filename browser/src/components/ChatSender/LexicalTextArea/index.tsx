@@ -69,7 +69,7 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
   } = props;
   const [innerValue, setInnerValue] = useState<string>((value || '') as string);
   const editorRef = useRef<LexicalEditor | null>(null);
-  const contentEditableRef = useRef<HTMLDivElement>(null);
+  const contentEditableRef = useRef<HTMLDivElement | null>(null);
   const { onEnterPress, namespace } = useContext(LexicalTextAreaContext);
 
   useImperativeHandle(ref, () => ({

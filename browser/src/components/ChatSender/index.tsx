@@ -5,7 +5,7 @@ import {
   ProductOutlined,
   ScheduleOutlined,
 } from '@ant-design/icons';
-import { Prompts, Sender, Suggestion } from '@ant-design/x';
+import { Prompts, Sender } from '@ant-design/x';
 import { useModel } from '@umijs/max';
 import { Button, Flex, GetProp, Tag } from 'antd';
 import { createStyles } from 'antd-style';
@@ -15,6 +15,7 @@ import { AI_CONTEXT_NODE_CONFIGS } from '@/models/aiContextNodeConfig';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
 import { isInputingAiContext } from '@/utils/chat';
+import Suggestion from '../Suggestion';
 import LexicalTextArea from './LexicalTextArea';
 import { LexicalTextAreaContext } from './LexicalTextAreaContext';
 import SenderHeader from './SenderHeader';
@@ -97,6 +98,7 @@ const ChatSender: React.FC = () => {
       <LexicalTextAreaContext.Provider
         value={{
           onEnterPress: handleSubmit,
+          onGetNodes: (nodes) => {},
           aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
           namespace: 'SenderTextarea',
         }}
@@ -104,6 +106,13 @@ const ChatSender: React.FC = () => {
         {/* 🌟 输入框 */}
         <Suggestion
           items={suggestions}
+          showSearch={{
+            placeholder: '请输入关键词',
+            onSearch: (text) => {
+              console.log('search', text);
+              return [];
+            },
+          }}
           onSelect={(itemVal) => {
             context.actions.setFile(itemVal);
           }}
