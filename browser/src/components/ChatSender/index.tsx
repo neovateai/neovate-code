@@ -11,6 +11,7 @@ import { Button, Flex, GetProp } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
 import { actions, state } from '@/state/sender';
+import LexicalTextArea from './LexicalTextArea';
 import SenderHeader from './SenderHeader';
 
 const SENDER_PROMPTS: GetProp<typeof Prompts, 'items'> = [
@@ -116,6 +117,9 @@ const ChatSender: React.FC = () => {
               )}
             </Flex>
           );
+        }}
+        components={{
+          input: LexicalTextArea,
         }}
         placeholder="Ask or input / use skills"
       />
