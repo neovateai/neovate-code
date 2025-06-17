@@ -1,30 +1,49 @@
-import { AiContextNodeConfig } from '@/types/chat';
+/**
+ * 获取两个字符串之间的差异
+ * @param str1 原始字符串
+ * @param str2 新字符串
+ * @returns 返回一个字符串数组，每个元素代表一个差异
+ * 如果是添加的文本，会以'+'开头
+ * 如果是删除的文本，会以'-'开头
+ */
+function getTextDiff(str1: string, str2: string): string[] {
+  const diffs: string[] = [];
 
-function getTextDiff(prevContext: string, nextContent: string) {
-  const diff: string[] = [];
-  let i = 0,
-    j = 0;
-
-  while (i < prevContext.length || j < nextContent.length) {
-    if (
-      i < prevContext.length &&
-      j < nextContent.length &&
-      prevContext[i] === nextContent[j]
-    ) {
-      i++;
-      j++;
-    } else {
-      if (j < nextContent.length) {
-        diff.push(`+${nextContent[j]}`);
-        j++;
-      }
-      if (i < prevContext.length) {
-        diff.push(`-${prevContext[i]}`);
-        i++;
-      }
-    }
+  // 如果字符串完全相同，直接返回空数组
+  if (str1 === str2) {
+    return diffs;
   }
-  return diff;
+
+  // 找出较长和较短的字符串
+  const [shorter, longer] =
+    str1.length < str2.length ? [str1, str2] : [str2, str1];
+  const isAddition = str1.length < str2.length;
+
+  let i = 0;
+  let j = 0;
+  let currentDiff = '';
+
+  while (i < longer.length) {
+    if (j >= shorter.length || longer[i] !== shorter[j]) {
+      // 累积差异字符
+      currentDiff += longer[i];
+    } else {
+      // 如果有累积的差异，添加到结果中
+      if (currentDiff) {
+        diffs.push(isAddition ? `+${currentDiff}` : `-${currentDiff}`);
+        currentDiff = '';
+      }
+      j++;
+    }
+    i++;
+  }
+
+  // 处理最后可能剩余的差异
+  if (currentDiff) {
+    diffs.push(isAddition ? `+${currentDiff}` : `-${currentDiff}`);
+  }
+
+  return diffs;
 }
 
 export function isInputingAiContext(prevContext: string, nextContent: string) {

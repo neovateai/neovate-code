@@ -70,7 +70,7 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
   const [innerValue, setInnerValue] = useState<string>((value || '') as string);
   const editorRef = useRef<LexicalEditor | null>(null);
   const contentEditableRef = useRef<HTMLDivElement>(null);
-  const { onEnterPress } = useContext(LexicalTextAreaContext);
+  const { onEnterPress, namespace } = useContext(LexicalTextAreaContext);
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -108,7 +108,7 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
   return (
     <LexicalComposer
       initialConfig={{
-        namespace: 'LexicalTextArea',
+        namespace,
         onError: (error) => console.error(error),
         nodes: [AiContextNode],
       }}
@@ -135,28 +135,30 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
         ErrorBoundary={LexicalErrorBoundary}
       />
 
-      <OnChangePlugin
-        onChange={(_editorState, editor) => {
-          editorRef.current = editor;
-          editor.read(() => {
-            const nextInnerValue = $getRoot().getTextContent();
-            setInnerValue(nextInnerValue);
-            const selection = window.getSelection();
-            const rangeCount = selection?.rangeCount || 0;
+      {!disabled && (
+        <OnChangePlugin
+          onChange={(_editorState, editor) => {
+            editorRef.current = editor;
+            editor.read(() => {
+              const nextInnerValue = $getRoot().getTextContent();
+              setInnerValue(nextInnerValue);
+              const selection = window.getSelection();
+              const rangeCount = selection?.rangeCount || 0;
 
-            const cursorPosition =
-              rangeCount > 0 ? selection?.getRangeAt(0)?.startOffset || 0 : 0;
-            const syntheticEvent = createSyntheticEvent(nextInnerValue);
-            (syntheticEvent.target as any).selectionStart = cursorPosition;
-            (syntheticEvent.target as any).selectionEnd = cursorPosition;
-            onChange?.(syntheticEvent);
-          });
-        }}
-      />
-      <AutoFocusPlugin />
+              const cursorPosition =
+                rangeCount > 0 ? selection?.getRangeAt(0)?.startOffset || 0 : 0;
+              const syntheticEvent = createSyntheticEvent(nextInnerValue);
+              (syntheticEvent.target as any).selectionStart = cursorPosition;
+              (syntheticEvent.target as any).selectionEnd = cursorPosition;
+              onChange?.(syntheticEvent);
+            });
+          }}
+        />
+      )}
+      {!disabled && <AutoFocusPlugin />}
       <DisabledPlugin disabled={!!disabled} />
       <PlaceholderPlugin placeholder={placeholder} />
-      <EnterEventPlugin onEnterPress={onEnterPress} />
+      {!disabled && <EnterEventPlugin onEnterPress={onEnterPress} />}
       <RenderValuePlugin
         value={value as string}
         onGetNodes={(_nodes) => {

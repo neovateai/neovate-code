@@ -11,9 +11,9 @@ import { Button, Flex, GetProp, Tag } from 'antd';
 import { createStyles } from 'antd-style';
 import { useRef, useState } from 'react';
 import { useSuggestion } from '@/hooks/useSuggestion';
+import { AI_CONTEXT_NODE_CONFIGS } from '@/models/aiContextNodeConfig';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
-import { AiContextNodeConfig } from '@/types/chat';
 import { isInputingAiContext } from '@/utils/chat';
 import LexicalTextArea from './LexicalTextArea';
 import { LexicalTextAreaContext } from './LexicalTextAreaContext';
@@ -39,47 +39,6 @@ const SENDER_PROMPTS: GetProp<typeof Prompts, 'items'> = [
     key: '4',
     description: 'Installation Introduction',
     icon: <AppstoreAddOutlined />,
-  },
-];
-
-const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
-  {
-    matchRegex: /@File:\[(?<value>[^\]]+)\]/,
-    aiContextId: 'file',
-    pickInfo: (regExpExecArray) => ({
-      value: regExpExecArray[0],
-      displayText: regExpExecArray.groups?.value || '',
-    }),
-    render: ({ value, displayText }) => (
-      <Tag
-        color="red"
-        className={'ai-context-node'}
-        data-ai-context-id="file"
-        contentEditable={false}
-        style={{ userSelect: 'all' }}
-      >
-        {displayText}
-      </Tag>
-    ),
-  },
-  {
-    matchRegex: /@Code:\[(?<value>[^\]]+)\]/,
-    aiContextId: 'code',
-    pickInfo: (regExpExecArray) => ({
-      value: regExpExecArray[0],
-      displayText: regExpExecArray.groups?.value || '',
-    }),
-    render: ({ value, displayText }) => (
-      <Tag
-        color="green"
-        className={'ai-context-node'}
-        data-ai-context-id="code"
-        contentEditable={false}
-        style={{ userSelect: 'all' }}
-      >
-        {displayText}
-      </Tag>
-    ),
   },
 ];
 
@@ -139,6 +98,7 @@ const ChatSender: React.FC = () => {
         value={{
           onEnterPress: handleSubmit,
           aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
+          namespace: 'SenderTextarea',
         }}
       >
         {/* 🌟 输入框 */}
@@ -160,6 +120,7 @@ const ChatSender: React.FC = () => {
                   } else {
                     onTrigger(false);
                   }
+                  // TODO 插入AiContextNode后再多插入一个空格
                   prevInputValue.current = inputValue;
                   onChange(value);
                 }}

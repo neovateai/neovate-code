@@ -32,8 +32,10 @@ interface Props {
 const RenderValuePlugin = (props: Props) => {
   const { value, onGetNodes } = props;
   const [editor] = useLexicalComposerContext();
-  const { aiContextNodeConfigs } = useContext(LexicalTextAreaContext);
-  const oldValueRef = useRef(value);
+  const { aiContextNodeConfigs, namespace } = useContext(
+    LexicalTextAreaContext,
+  );
+  const oldValueRef = useRef('');
   const oldNodesRef = useRef<Node[]>([]);
   const oldLexicalNodesRef = useRef<AppendedLexicalNode[]>([]);
 

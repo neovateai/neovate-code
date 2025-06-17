@@ -5,4 +5,5 @@ import { AiContextNodeConfig } from '@/types/chat';
 export const LexicalTextAreaContext = createContext<{
   onEnterPress?: (e: KeyboardEvent) => void;
   aiContextNodeConfigs: AiContextNodeConfig[];
-}>({ onEnterPress: () => {}, aiContextNodeConfigs: [] });
+  namespace: string;
+}>({ onEnterPress: () => {}, aiContextNodeConfigs: [], namespace: '' });
