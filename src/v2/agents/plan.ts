@@ -6,11 +6,9 @@ export function createPlanAgent(options: {
   model: string;
   context: Context;
   tools: Tools;
-  fc: boolean;
 }) {
   return new Agent({
     name: 'plan',
-    ...(options.fc ? { tools: Object.values(options.tools.tools) } : {}),
     instructions: async (context, agent) => {
       return `
 You are an interactive CLI tool that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.
@@ -20,7 +18,7 @@ Plan mode is active. The user indicated that they do not want you to execute yet
 1. Answer the user's query
 2. When you're done researching, return your plan. Do NOT make any file changes or run any tools that modify the system state in any way until the user has confirmed the plan.
 
-${!options.fc ? options.tools.getToolsPrompt() : ''}
+${options.tools.getToolsPrompt()}
 `.trim();
     },
     model: options.model,

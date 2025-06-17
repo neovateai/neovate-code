@@ -82,7 +82,6 @@ export class Service {
     const createAgentOpts = {
       tools: this.tools,
       context: this.context,
-      fc: false,
     };
     this.agent =
       this.opts.agentType === 'code'

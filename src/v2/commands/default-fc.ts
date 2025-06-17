@@ -66,7 +66,6 @@ export async function run(opts: RunOpts) {
     model: context.configManager.config.model,
     context,
     tools,
-    fc: true,
   });
   const promptContext = new PromptContext({
     prompts: [opts.prompt],

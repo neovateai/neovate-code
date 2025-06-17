@@ -6,11 +6,11 @@ export function createCodeAgent(options: {
   model: string;
   context: Context;
   tools: Tools;
-  fc: boolean;
 }) {
+  const useFC = process.env.TAKUMI_FC;
   return new Agent({
     name: 'code',
-    ...(options.fc ? { tools: Object.values(options.tools.tools) } : {}),
+    ...(useFC ? { tools: Object.values(options.tools.tools) } : {}),
     instructions: async (context, agent) => {
       return `
 You are an interactive CLI tool that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.
@@ -58,7 +58,7 @@ When making changes to files, first understand the file's code conventions. Mimi
 # Code style
 - IMPORTANT: DO NOT ADD ***ANY*** COMMENTS unless asked
 
-${!options.fc ? options.tools.getToolsPrompt() : ''}
+${!useFC ? options.tools.getToolsPrompt() : ''}
 `.trim();
     },
     model: options.model,
