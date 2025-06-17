@@ -116,6 +116,12 @@ const ChatSender: React.FC = () => {
     actions.updatePrompt(value);
   };
 
+  const handleSubmit = () => {
+    onQuery(inputValue);
+    actions.updatePrompt('');
+    setInputValue('');
+  };
+
   return (
     <>
       {/* 🌟 提示词 */}
@@ -131,7 +137,7 @@ const ChatSender: React.FC = () => {
       />
       <LexicalTextAreaContext.Provider
         value={{
-          onEnterPress: () => {},
+          onEnterPress: handleSubmit,
           aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
         }}
       >
@@ -147,11 +153,7 @@ const ChatSender: React.FC = () => {
               <Sender
                 value={inputValue}
                 header={<SenderHeader />}
-                onSubmit={() => {
-                  onQuery(inputValue);
-                  actions.updatePrompt('');
-                  setInputValue('');
-                }}
+                onSubmit={handleSubmit}
                 onChange={(value) => {
                   if (value === '@') {
                     onTrigger();

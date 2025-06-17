@@ -29,8 +29,6 @@ interface Props {
   onGetNodes: (nodes: Node[]) => void;
 }
 
-// export const MentionRegex = /(@Code:\[([^\]]+)\])|(@File:\[([^\]]+)\])/g;
-
 const RenderValuePlugin = (props: Props) => {
   const { value, onGetNodes } = props;
   const [editor] = useLexicalComposerContext();

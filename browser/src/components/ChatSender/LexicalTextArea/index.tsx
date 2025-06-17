@@ -10,12 +10,15 @@ import { $getRoot, type LexicalEditor } from 'lexical';
 import React, {
   type KeyboardEvent,
   forwardRef,
+  useContext,
   useImperativeHandle,
   useRef,
   useState,
 } from 'react';
+import { LexicalTextAreaContext } from '../LexicalTextAreaContext';
 import { AiContextNode } from './AiContextNode';
 import { DisabledPlugin } from './DisabledPlugin';
+import EnterEventPlugin from './EnterEventPlugin';
 import { PlaceholderPlugin } from './PlaceholderPlugin';
 import RenderValuePlugin from './RenderValuePlugin';
 import './index.less';
@@ -67,6 +70,7 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
   const [innerValue, setInnerValue] = useState<string>((value || '') as string);
   const editorRef = useRef<LexicalEditor | null>(null);
   const contentEditableRef = useRef<HTMLDivElement>(null);
+  const { onEnterPress } = useContext(LexicalTextAreaContext);
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -152,6 +156,7 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
       <AutoFocusPlugin />
       <DisabledPlugin disabled={!!disabled} />
       <PlaceholderPlugin placeholder={placeholder} />
+      <EnterEventPlugin onEnterPress={onEnterPress} />
       <RenderValuePlugin
         value={value as string}
         onGetNodes={(_nodes) => {
