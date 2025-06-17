@@ -120,6 +120,19 @@ export const PluginSchema = z.object({
       z.void(),
     )
     .optional(),
+  toolCall: z
+    .function(
+      z.tuple([
+        z.object({
+          toolName: z.string(),
+          args: z.record(z.string(), z.string()),
+          result: z.string(),
+          queryId: z.string(),
+        }),
+      ]),
+      z.void(),
+    )
+    .optional(),
   message: z
     .function(
       z.tuple([

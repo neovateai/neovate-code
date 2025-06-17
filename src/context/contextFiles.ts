@@ -142,19 +142,99 @@ Thumbs.db
 `;
 
 /**
- * Loads and compiles ignore patterns into regular expressions
+ * Loads gitignore patterns from .gitignore file
+ * @param cwd Current working directory (project root)
+ * @returns Array of gitignore patterns as strings
+ */
+export function loadGitignorePatterns(cwd: string): string[] {
+  try {
+    const gitignorePath = path.join(cwd, '.gitignore');
+    if (!fsSync.existsSync(gitignorePath)) {
+      return [];
+    }
+
+    const content = fsSync.readFileSync(gitignorePath, 'utf-8');
+    const lines = content.split(/\r?\n/);
+
+    return lines
+      .map((line: string) => line.trim())
+      .filter((line: string) => {
+        // 过滤空行和注释行
+        return line && !line.startsWith('#');
+      });
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
+ * Converts gitignore patterns to regular expressions
+ * @param patterns Array of gitignore pattern strings
+ * @param basePath Base path for relative pattern matching
  * @returns Array of compiled RegExp patterns
  */
-export function loadIgnorePatterns(): Array<RegExp> {
+export function gitignorePatternsToRegex(
+  patterns: string[],
+  basePath: string,
+): Array<RegExp> {
+  return patterns.map((pattern: string) => {
+    let regexPattern = pattern;
+
+    // 处理以 / 开头的模式（绝对路径模式）
+    const isAbsolute = pattern.startsWith('/');
+    if (isAbsolute) {
+      regexPattern = pattern.slice(1); // 移除开头的 /
+    }
+
+    // 处理以 / 结尾的模式（目录模式）
+    const isDirectory = pattern.endsWith('/');
+    if (isDirectory) {
+      regexPattern = regexPattern.slice(0, -1); // 移除结尾的 /
+    }
+
+    // 转义特殊字符，但保留 gitignore 的通配符
+    const escaped = regexPattern
+      .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+      .replace(/\*\*/g, '.__DOUBLESTAR__.')
+      .replace(/\*/g, '[^/]*')
+      .replace(/\?/g, '[^/]')
+      .replace(/\.__DOUBLESTAR__\./g, '.*');
+
+    // 构建最终的正则表达式
+    let finalPattern: string;
+
+    if (isAbsolute) {
+      // 绝对路径模式：从项目根目录开始匹配
+      finalPattern = `^${path.resolve(basePath, escaped).replace(/\\/g, '\\\\')}`;
+    } else {
+      // 相对路径模式：可以在任何目录层级匹配
+      finalPattern = `(^|.*/)${escaped}`;
+    }
+
+    if (isDirectory) {
+      // 目录模式：匹配目录及其内容
+      finalPattern = `${finalPattern}(/.*)?$`;
+    } else {
+      finalPattern = `${finalPattern}$`;
+    }
+
+    return new RegExp(finalPattern, 'i');
+  });
+}
+
+/**
+ * Loads and compiles ignore patterns into regular expressions
+ * @param cwd Current working directory (optional, for gitignore support)
+ * @returns Array of compiled RegExp patterns
+ */
+export function loadIgnorePatterns(cwd?: string): Array<RegExp> {
   try {
-    const raw = DEFAULT_IGNORE_PATTERNS;
-    const lines = raw.split(/\r?\n/);
-    const cleaned = lines
+    // 加载默认忽略模式
+    const defaultLines = DEFAULT_IGNORE_PATTERNS.split(/\r?\n/)
       .map((l: string) => l.trim())
       .filter((l: string) => l && !l.startsWith('#'));
 
-    // Convert each pattern to a RegExp with a leading '*/'.
-    const regs = cleaned.map((pattern: string) => {
+    const defaultRegs = defaultLines.map((pattern: string) => {
       const escaped = pattern
         .replace(/[.+^${}()|[\]\\]/g, '\\$&')
         .replace(/\*/g, '.*')
@@ -162,7 +242,15 @@ export function loadIgnorePatterns(): Array<RegExp> {
       const finalRe = `^(?:(?:(?:.*/)?)(?:${escaped}))$`;
       return new RegExp(finalRe, 'i');
     });
-    return regs;
+
+    // 如果提供了 cwd，则加载 .gitignore 模式
+    if (cwd) {
+      const gitignorePatterns = loadGitignorePatterns(cwd);
+      const gitignoreRegs = gitignorePatternsToRegex(gitignorePatterns, cwd);
+      return [...defaultRegs, ...gitignoreRegs];
+    }
+
+    return defaultRegs;
   } catch {
     return [];
   }

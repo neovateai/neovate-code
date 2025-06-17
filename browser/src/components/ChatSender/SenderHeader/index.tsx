@@ -1,33 +1,32 @@
-import { CloudUploadOutlined } from '@ant-design/icons';
-import { Attachments, Sender } from '@ant-design/x';
-import { Attachment } from '@ant-design/x/es/attachments';
+import { Sender } from '@ant-design/x';
 import { useSnapshot } from '@umijs/max';
-import { actions, state } from '@/state/sender';
+import { Flex, Tag } from 'antd';
+import { useEffect } from 'react';
+import * as context from '@/state/context';
+import * as sender from '@/state/sender';
 
 const SenderHeader: React.FC = () => {
-  const { attachmentsOpen, attachedFiles } = useSnapshot(state);
+  const { contextOpen } = useSnapshot(sender.state);
+  const { isShowContext, files } = useSnapshot(context.state);
+
+  useEffect(() => {
+    sender.actions.setContextOpen(isShowContext);
+  }, [isShowContext]);
 
   return (
     <Sender.Header
-      title="Upload File"
-      open={attachmentsOpen}
-      onOpenChange={actions.setAttachmentsOpen}
+      title="Context"
+      open={contextOpen}
+      onOpenChange={sender.actions.setContextOpen}
       styles={{ content: { padding: 0 } }}
     >
-      <Attachments
-        beforeUpload={() => false}
-        items={attachedFiles as Attachment[]}
-        onChange={(info) => actions.setAttachedFiles(info.fileList)}
-        placeholder={(type) =>
-          type === 'drop'
-            ? { title: 'Drop file here' }
-            : {
-                icon: <CloudUploadOutlined />,
-                title: 'Upload files',
-                description: 'Click or drag files to this area to upload',
-              }
-        }
-      />
+      <Flex gap={8} wrap="wrap" style={{ padding: 8 }}>
+        {files.map((file) => (
+          <Tag style={{ userSelect: 'none' }} key={file}>
+            {file}
+          </Tag>
+        ))}
+      </Flex>
     </Sender.Header>
   );
 };

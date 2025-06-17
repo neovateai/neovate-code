@@ -6,13 +6,13 @@ import {
   ScheduleOutlined,
 } from '@ant-design/icons';
 import { Prompts, Sender, Suggestion } from '@ant-design/x';
-import { useModel, useSnapshot } from '@umijs/max';
+import { useModel } from '@umijs/max';
 import { Button, Flex, GetProp } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
+import { useSuggestion } from '@/hooks/useSuggestion';
+import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
-import LexicalTextArea from './LexicalTextArea';
-import { LexicalTextAreaContext } from './LexicalTextAreaContext';
 import SenderHeader from './SenderHeader';
 
 const SENDER_PROMPTS: GetProp<typeof Prompts, 'items'> = [
@@ -60,20 +60,14 @@ const useStyle = createStyles(({ token, css }) => {
 
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
-  const { attachmentsOpen } = useSnapshot(state);
   const { abortController, loading, onQuery } = useModel('chat');
   const [inputValue, setInputValue] = useState(state.prompt);
+  const { suggestions } = useSuggestion();
 
   // 处理输入变化
-  const handleChange = (value: string) => {
+  const onChange = (value: string) => {
     setInputValue(value);
     actions.updatePrompt(value);
-  };
-
-  const handleSubmit = () => {
-    onQuery(inputValue);
-    actions.updatePrompt('');
-    setInputValue('');
   };
 
   return (
@@ -90,15 +84,31 @@ const ChatSender: React.FC = () => {
         className={styles.senderPrompt}
       />
       {/* 🌟 输入框 */}
-      <LexicalTextAreaContext.Provider value={{ onEnterPress: handleSubmit }}>
-        <Suggestion items={[]}>
-          {({ onKeyDown, onTrigger }) => (
+      <Suggestion
+        items={suggestions}
+        onSelect={(itemVal) => {
+          context.actions.setFile(itemVal);
+        }}
+      >
+        {({ onTrigger, onKeyDown }) => {
+          return (
             <Sender
               value={inputValue}
               header={<SenderHeader />}
+              onSubmit={() => {
+                onQuery(inputValue);
+                actions.updatePrompt('');
+                setInputValue('');
+              }}
+              onChange={(value) => {
+                if (value === '@') {
+                  onTrigger();
+                } else if (!value) {
+                  onTrigger(false);
+                }
+                onChange(value);
+              }}
               onKeyDown={onKeyDown}
-              onSubmit={handleSubmit}
-              onChange={handleChange}
               onCancel={() => {
                 abortController.current?.abort();
               }}
@@ -106,7 +116,6 @@ const ChatSender: React.FC = () => {
                 <Button
                   type="text"
                   icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
-                  onClick={() => actions.setAttachmentsOpen(!attachmentsOpen)}
                 />
               }
               loading={loading}
@@ -126,14 +135,11 @@ const ChatSender: React.FC = () => {
                   </Flex>
                 );
               }}
-              components={{
-                input: LexicalTextArea,
-              }}
               placeholder="Ask or input @ use skills"
             />
-          )}
-        </Suggestion>
-      </LexicalTextAreaContext.Provider>
+          );
+        }}
+      </Suggestion>
     </>
   );
 };

@@ -3,13 +3,13 @@ import { proxy } from '@umijs/max';
 
 interface SenderState {
   prompt: string;
-  attachmentsOpen: boolean;
+  contextOpen: boolean;
   attachedFiles: Attachment[];
 }
 
 export const state = proxy<SenderState>({
   prompt: '',
-  attachmentsOpen: false,
+  contextOpen: false,
   attachedFiles: [],
 });
 
@@ -17,8 +17,8 @@ export const actions = {
   updatePrompt: (value: string) => {
     state.prompt = value;
   },
-  setAttachmentsOpen: (value: boolean) => {
-    state.attachmentsOpen = value;
+  setContextOpen: (value: boolean) => {
+    state.contextOpen = value;
   },
   setAttachedFiles: (value: Attachment[]) => {
     state.attachedFiles = value;
