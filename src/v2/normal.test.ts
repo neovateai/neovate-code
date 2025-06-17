@@ -80,7 +80,7 @@ description: A test fixture for takumi
     prompt: 'edit tmp/package.txt and update the version to next patch version',
   });
   const hasEditToolCall = result.history.some(
-    (h) => h.type === 'function_call' && h.name === 'edit',
+    (h: any) => h.type === 'function_call' && h.name === 'edit',
   );
   expect(hasEditToolCall).toBe(true);
   const packageTxt = path.join(cwd, 'tmp/package.txt');
@@ -94,7 +94,7 @@ test('tool(bash)', async () => {
   });
   const aDir = path.join(cwd, 'tmp/a');
   const hasBashToolCall = result.history.some(
-    (h) => h.type === 'function_call' && h.name === 'bash',
+    (h: any) => h.type === 'function_call' && h.name === 'bash',
   );
   expect(hasBashToolCall).toBe(true);
   expect(fs.existsSync(aDir)).toBe(true);

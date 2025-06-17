@@ -87,75 +87,44 @@ export async function run(opts: RunOpts) {
     let history: AgentInputItem[] = [];
     let text = '';
 
-    if (context.configManager.config.stream) {
-      const result = await runner.run(codeAgent, input, {
-        stream: true,
-      });
-      let printReasoning = false;
-      for await (const chunk of result.toStream()) {
-        if (
-          chunk.type === 'raw_model_stream_event' &&
-          chunk.data.type === 'model'
-        ) {
-          switch (chunk.data.event.type) {
-            case 'text-delta':
-              const textDelta = chunk.data.event.textDelta;
-              text += textDelta;
-              const parsed = parseMessage(text);
-              if (parsed[0]?.type === 'text' && parsed[0].partial) {
-                if (!opts.json) {
-                  process.stdout.write(textDelta);
-                }
-              }
-              break;
-            case 'reasoning':
-              if (!printReasoning) {
-                if (!opts.json) {
-                  process.stdout.write('Thought: ');
-                }
-                printReasoning = true;
-              }
+    const result = await runner.run(codeAgent, input, {
+      stream: true,
+    });
+    let printReasoning = false;
+    for await (const chunk of result.toStream()) {
+      if (
+        chunk.type === 'raw_model_stream_event' &&
+        chunk.data.type === 'model'
+      ) {
+        switch (chunk.data.event.type) {
+          case 'text-delta':
+            const textDelta = chunk.data.event.textDelta;
+            text += textDelta;
+            const parsed = parseMessage(text);
+            if (parsed[0]?.type === 'text' && parsed[0].partial) {
               if (!opts.json) {
-                process.stdout.write(chunk.data.event.textDelta);
+                process.stdout.write(textDelta);
               }
-              break;
-            default:
-              // console.log('----', chunk.data.event);
-              break;
-          }
+            }
+            break;
+          case 'reasoning':
+            if (!printReasoning) {
+              if (!opts.json) {
+                process.stdout.write('Thought: ');
+              }
+              printReasoning = true;
+            }
+            if (!opts.json) {
+              process.stdout.write(chunk.data.event.textDelta);
+            }
+            break;
+          default:
+            // console.log('----', chunk.data.event);
+            break;
         }
       }
-      history = [...result.history];
-    } else {
-      let result = await runner.run(codeAgent, input);
-      let hasInterruptions = result.interruptions?.length > 0;
-      while (hasInterruptions) {
-        for (const interruption of result.interruptions) {
-          if (
-            await confirm(
-              `${interruption.agent.name} would like to ${JSON.stringify(interruption)}`,
-            )
-          ) {
-            await result.state.approve(interruption);
-          } else {
-            await result.state.reject(interruption);
-          }
-        }
-        result = await runner.run(codeAgent, result.state);
-        hasInterruptions = result.interruptions?.length > 0;
-      }
-      const reasonItem = result.output.find(
-        (item) => item.type === 'reasoning',
-      );
-      if (reasonItem) {
-        if (!opts.json) {
-          console.log('Thought: ', reasonItem.content[0].text);
-        }
-      }
-      assert(result.finalOutput, 'No final output');
-      text = result.finalOutput;
-      history = [...result.history];
     }
+    history = [...result.history];
 
     // TODO: support interactive mode
     input = history;
@@ -185,7 +154,6 @@ export async function runDefault(opts: RunCliOpts) {
     argvConfig: {
       model: argv.model,
       smallModel: argv.smallModel,
-      stream: argv.stream,
     },
     productName: opts.productName,
     prompt: argv._[0]! as string,

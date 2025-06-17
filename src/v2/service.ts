@@ -46,7 +46,6 @@ export interface ServiceRunResult {
 
 export class Service {
   private opts: ServiceOpts;
-  private runner: Runner;
   private tools?: Tools;
   private agent?: Agent;
   private initialized: boolean = false;
@@ -57,20 +56,6 @@ export class Service {
   constructor(opts: ServiceOpts) {
     this.opts = opts;
     this.id = opts.id || randomUUID();
-    this.runner = new Runner({
-      modelProvider: opts.modelProvider || getDefaultModelProvider(),
-      modelSettings: {
-        providerData: {
-          providerMetadata: {
-            google: {
-              thinkingConfig: {
-                includeThoughts: process.env.THINKING ? true : false,
-              },
-            },
-          },
-        },
-      },
-    });
     this.context =
       opts.context ||
       new Context({
@@ -170,7 +155,21 @@ export class Service {
 
   private async processStream(input: AgentInputItem[], stream: Readable) {
     try {
-      const result = await this.runner.run(this.agent!, input, {
+      const runner = new Runner({
+        modelProvider: this.opts.modelProvider || getDefaultModelProvider(),
+        modelSettings: {
+          providerData: {
+            providerMetadata: {
+              google: {
+                thinkingConfig: {
+                  includeThoughts: process.env.THINKING ? true : false,
+                },
+              },
+            },
+          },
+        },
+      });
+      const result = await runner.run(this.agent!, input, {
         stream: true,
       });
       let text = '';
