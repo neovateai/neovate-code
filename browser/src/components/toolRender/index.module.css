@@ -1,0 +1,199 @@
+/* ThinkTool 样式 */
+.thinkToolContainer {
+  background: linear-gradient(135deg, #f8f9ff 0%, #eff1ff 100%);
+  border: 1px solid #e6e8ff;
+  border-radius: 12px;
+  padding: 0;
+  margin-top: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+}
+
+.thinkToolHeader {
+  background: rgba(99, 102, 241, 0.1);
+  padding: 10px 16px;
+  border-bottom: 1px solid #e6e8ff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.thinkToolIcon {
+  font-size: 16px;
+}
+
+.thinkToolLabel {
+  color: #4338ca;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.thinkToolContent {
+  padding: 16px;
+}
+
+.thinkToolThought {
+  color: #4338ca;
+  font-style: italic;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* FileReadTool Args 样式 */
+.fileReadArgsContainer {
+  background: #f8fffe;
+  border: 1px solid #e6fffa;
+  border-radius: 8px;
+  padding: 0;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.fileReadArgsHeader {
+  background: rgba(16, 185, 129, 0.1);
+  padding: 10px 16px;
+  border-bottom: 1px solid #e6fffa;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fileReadArgsLabel {
+  color: #047857;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* FileReadTool Result 样式 */
+.fileReadResultContainer {
+  background: #f8fffe;
+  border: 1px solid #e6fffa;
+  border-radius: 12px;
+  padding: 0;
+  margin-top: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.08);
+}
+
+.fileReadResultHeader {
+  background: rgba(16, 185, 129, 0.1);
+  padding: 12px 16px;
+  border-bottom: 1px solid #e6fffa;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fileIcon {
+  font-size: 16px;
+}
+
+.filePath {
+  color: #047857;
+  font-weight: 600;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.fileStats {
+  display: flex;
+  align-items: center;
+}
+
+.fileStatsText {
+  color: #6b7280;
+  font-size: 12px;
+  background: #f3f4f6;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.fileContentWrapper {
+  padding: 0;
+  background: #1e293b;
+}
+
+.fileContent {
+  background: #1e293b;
+  color: #f1f5f9;
+  padding: 20px;
+  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-x: auto;
+  max-height: 500px;
+  overflow-y: auto;
+  white-space: pre;
+  margin: 0;
+}
+
+.fileContent::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.fileContent::-webkit-scrollbar-track {
+  background: #334155;
+  border-radius: 4px;
+}
+
+.fileContent::-webkit-scrollbar-thumb {
+  background: #64748b;
+  border-radius: 4px;
+}
+
+.fileContent::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Generic Tool 样式 */
+.genericToolContainer {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.genericToolHeader {
+  background: rgba(107, 114, 128, 0.1);
+  padding: 10px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.genericToolIcon {
+  font-size: 16px;
+}
+
+.genericToolLabel {
+  color: #374151;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.genericCodeBlock {
+  background: #ffffff;
+  color: #1f2937;
+  padding: 16px;
+  margin: 0;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
