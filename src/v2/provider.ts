@@ -4,8 +4,8 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createXai } from '@ai-sdk/xai';
 import { ModelProvider } from '@openai/agents';
+import { aisdk } from '@openai/agents-extensions';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { aisdk } from './aiSdk';
 
 const MODEL_ALIAS: Record<string, string> = {
   deepseek: 'deepseek-chat',
