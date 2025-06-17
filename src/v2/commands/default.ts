@@ -1,14 +1,4 @@
-import {
-  AgentInputItem,
-  FunctionCallItem,
-  FunctionCallResultItem,
-  MCPServerStdio,
-  MCPServerStreamableHttp,
-  ModelProvider,
-  Runner,
-  getAllMcpTools,
-  withTrace,
-} from '@openai/agents';
+import { AgentInputItem, ModelProvider, withTrace } from '@openai/agents';
 import assert from 'assert';
 import { randomUUID } from 'crypto';
 import { format } from 'date-fns';
@@ -18,22 +8,11 @@ import path from 'path';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
 import { confirm, getUserInput } from '../../utils/logger';
-import { createCodeAgent } from '../agents/code';
-import { createPlanAgent } from '../agents/plan';
 import { Config } from '../config';
 import { PRODUCT_NAME } from '../constants';
-import { Context, PromptContext } from '../context';
-import { parseMessage } from '../parseMessage';
-import { getDefaultModelProvider } from '../provider';
-import { Tools } from '../tool';
-import { createBashTool } from '../tools/bash';
-import { createEditTool } from '../tools/edit';
-import { createFetchTool } from '../tools/fetch';
-import { createGlobTool } from '../tools/glob';
-import { createGrepTool } from '../tools/grep';
-import { createLSTool } from '../tools/ls';
-import { createReadTool } from '../tools/read';
-import { createWriteTool } from '../tools/write';
+import { Context } from '../context';
+import { query } from '../query';
+import { Service } from '../service';
 import { setupTracing } from '../tracing';
 
 const debug = createDebug('takumi:commands:default');
@@ -50,248 +29,132 @@ export interface RunOpts {
 
 export async function run(opts: RunOpts) {
   const traceName = `${opts.productName ?? PRODUCT_NAME}-default}`;
+  const services: Service[] = [];
   return await withTrace(traceName, async () => {
-    const runner = new Runner({
-      modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
-      modelSettings: {
-        providerData: {
-          providerMetadata: {
-            google: {
-              thinkingConfig: {
-                includeThoughts: process.env.THINKING ? true : false,
-              },
-            },
-          },
-        },
-      },
-    });
-    const context = new Context({
-      cwd: opts.cwd,
-      argvConfig: opts.argvConfig,
-    });
-    const mcpServers = Object.values(
-      context.configManager.config.mcpServers,
-    ).map((config) => {
-      if (config.type === 'stdio' || !config.type) {
-        const env = config.env;
-        if (env) {
-          env.PATH = process.env.PATH || '';
-        }
-        return new MCPServerStdio({
-          command: config.command,
-          args: config.args,
-          env,
-        });
-      } else if (config.type === 'sse') {
-        return new MCPServerStreamableHttp({
-          url: config.url,
-        });
-      } else {
-        throw new Error(`Unknown MCP server type: ${config.type}`);
-      }
-    });
-    await Promise.all(mcpServers.map((server) => server.connect()));
     try {
-      const mcpTools = await getAllMcpTools(mcpServers);
-      const readonlyTools = new Tools([
-        createReadTool({ context }),
-        createLSTool({ context }),
-        createGlobTool({ context }),
-        createGrepTool({ context }),
-        createFetchTool({ context }),
-      ]);
-      const planAgent = createPlanAgent({
-        model: context.configManager.config.planModel,
-        context,
-        tools: readonlyTools,
-        fc: false,
+      let prompt =
+        opts.prompt ||
+        (await getUserInput({
+          message: 'User:',
+        }));
+      debug('prompt', prompt);
+      const context = new Context({
+        productName: opts.productName,
+        cwd: opts.cwd,
+        argvConfig: opts.argvConfig,
       });
-      const allTools = new Tools([
-        createWriteTool({ context }),
-        createReadTool({ context }),
-        createLSTool({ context }),
-        createEditTool({ context }),
-        createBashTool({ context }),
-        createGlobTool({ context }),
-        createGrepTool({ context }),
-        createFetchTool({ context }),
-        ...mcpTools,
-      ]);
-      const codeAgent = createCodeAgent({
-        model: context.configManager.config.model,
+      const commonServiceOpts = {
+        cwd: opts.cwd,
         context,
-        tools: allTools,
-        fc: false,
-      });
-      const promptContext = new PromptContext({
-        prompts: [opts.prompt],
-        context,
-      });
-      let input: AgentInputItem[] = [
-        {
-          role: 'system',
-          content: await promptContext.getContext(),
-        },
-        {
-          role: 'user',
-          content:
-            opts.prompt ||
-            (await getUserInput({
-              message: 'User:',
-            })),
-        },
-      ];
+        modelProvider: opts.modelProvider,
+      };
+
+      // plan mode
       if (opts.plan) {
+        debug('plan mode');
+        const service = new Service({
+          agentType: 'plan',
+          ...commonServiceOpts,
+        });
+        services.push(service);
+        let input: AgentInputItem[] = [
+          {
+            role: 'user' as const,
+            content: prompt,
+          },
+        ];
         while (true) {
-          const result = await runner.run(planAgent, input);
-          const plan = result.finalOutput;
+          debug('querying plan', input);
+          console.log(`Here is ${service.context.productName}'s plan:`);
+          console.log('-------------');
+          const { finalText: plan } = await query({
+            input,
+            service,
+            onTextDelta: (text) => {
+              process.stdout.write(text);
+            },
+            onText: () => {
+              process.stdout.write('\n');
+            },
+          });
+          debug('plan', plan);
           assert(plan, `No plan found`);
-          console.log(`Here is ${context.productName}'s plan:`);
-          console.log(plan);
-          console.log();
+          console.log('-------------');
           const confirmed = await confirm({
             message: 'Would you like to proceed?',
             active: 'Yes',
             inactive: 'No, I want to edit the plan',
           });
           if (confirmed) {
-            input = [
-              {
-                role: 'system',
-                content: await promptContext.getContext(),
-              },
-              {
-                role: 'user',
-                content: plan,
-              },
-            ];
+            debug('user confirmed');
+            prompt = plan;
             break;
           } else {
             const editedPlan = await getUserInput({
               message: 'Please edit the plan:',
             });
+            debug('editedPlan', editedPlan);
             input = [
-              ...result.history,
               {
-                role: 'user',
+                role: 'user' as const,
                 content: editedPlan,
               },
             ];
           }
         }
       }
-      let finalOutput: string | null = null;
+
+      // code mode
+      debug('code mode');
+      const service = new Service({
+        agentType: 'code',
+        ...commonServiceOpts,
+      });
+      services.push(service);
+      let input: AgentInputItem[] = [
+        {
+          role: 'user' as const,
+          content: prompt,
+        },
+      ];
+      let finalResult: any;
       while (true) {
-        let history: AgentInputItem[] = [];
-        let text = '';
-
-        if (context.configManager.config.stream) {
-          const result = await runner.run(codeAgent, input, {
-            stream: true,
+        debug('querying code', input);
+        const result = await query({
+          input,
+          service,
+          onTextDelta: (text) => {
+            process.stdout.write(text);
+          },
+          onText: (text) => {
+            process.stdout.write('\n');
+            debug('onText', text);
+          },
+          onReasoning: (text) => {
+            debug('onReasoning', text);
+          },
+        });
+        debug('query result', result.finalText);
+        if (context.configManager.config.quiet) {
+          finalResult = result;
+          debug('quiet mode, break');
+          break;
+        } else {
+          const userInput = await getUserInput({
+            message: 'User:',
           });
-          let printReasoning = false;
-          for await (const chunk of result.toStream()) {
-            if (
-              chunk.type === 'raw_model_stream_event' &&
-              chunk.data.type === 'model'
-            ) {
-              switch (chunk.data.event.type) {
-                case 'text-delta':
-                  const textDelta = chunk.data.event.textDelta;
-                  text += textDelta;
-                  const parsed = parseMessage(text);
-                  if (parsed[0]?.type === 'text' && parsed[0].partial) {
-                    if (!opts.json) {
-                      process.stdout.write(textDelta);
-                    }
-                  }
-                  break;
-                case 'reasoning':
-                  if (!printReasoning) {
-                    if (!opts.json) {
-                      process.stdout.write('Thought: ');
-                    }
-                    printReasoning = true;
-                  }
-                  if (!opts.json) {
-                    process.stdout.write(chunk.data.event.textDelta);
-                  }
-                  break;
-                default:
-                  break;
-              }
-            }
-          }
-          history = [...result.history];
-        } else {
-          const result = await runner.run(codeAgent, input);
-          const reasonItem = result.output.find(
-            (item) => item.type === 'reasoning',
-          );
-          if (reasonItem) {
-            if (!opts.json) {
-              console.log('Thought: ', reasonItem.content[0].text);
-            }
-          }
-          assert(result.finalOutput, 'No final output');
-          text = result.finalOutput;
-          history = [...result.history];
-        }
-
-        const parsed = parseMessage(text);
-        if (parsed[0]?.type === 'text') {
-          if (!opts.json && !context.configManager.config.stream) {
-            console.log(parsed[0].content);
-          }
-        }
-        const toolUse = parsed.find((item) => item.type === 'tool_use');
-        if (toolUse) {
-          const name = toolUse.name;
-          const args = JSON.stringify(toolUse.params);
-          const callId = crypto.randomUUID();
-          history.push({
-            type: 'function_call',
-            name,
-            arguments: args,
-            callId,
-          } as FunctionCallItem);
-          const result = await allTools.invoke(name, args, context);
-          history.push({
-            type: 'function_call_result',
-            name,
-            output: {
-              type: 'text',
-              text: result,
+          input = [
+            {
+              role: 'user' as const,
+              content: userInput,
             },
-            status: 'completed',
-            callId,
-          } as FunctionCallResultItem);
-          input = history;
-        } else {
-          input = history;
-          finalOutput = text;
-          if (context.configManager.config.quiet) {
-            break;
-          } else {
-            console.log();
-            input = [
-              ...input,
-              {
-                role: 'user',
-                content: await getUserInput({
-                  message: 'User:',
-                }),
-              },
-            ];
-          }
+          ];
+          debug('new input', input);
         }
       }
-      return {
-        history: input,
-        finalOutput,
-      };
+      return finalResult;
     } finally {
-      await Promise.all(mcpServers.map((server) => server.close()));
+      await Promise.all(services.map((service) => service.destroy()));
     }
   });
 }
@@ -312,7 +175,6 @@ Options:
   -m, --model <model>           Specify model to use
   --smallModel <model>          Specify a smaller model for some tasks
   -q, --quiet                   Quiet mode, non interactive
-  --stream                      Stream output (default: true)
   --json                        Output result as JSON
   --plan                        Plan mode
 
@@ -337,9 +199,8 @@ export async function runDefault(opts: RunCliOpts) {
     },
     default: {
       model: 'flash',
-      stream: true,
     },
-    boolean: ['stream', 'json', 'help', 'plan', 'quiet'],
+    boolean: ['json', 'help', 'plan', 'quiet'],
     string: ['model', 'smallModel', 'planModel'],
   });
   if (argv.help) {
@@ -359,7 +220,6 @@ export async function runDefault(opts: RunCliOpts) {
     argvConfig: {
       model: argv.model,
       smallModel: argv.smallModel,
-      stream: argv.stream,
       planModel: argv.planModel,
       quiet: argv.quiet,
     },

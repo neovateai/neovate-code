@@ -21,7 +21,6 @@ export type Config = {
   model: string;
   smallModel: string;
   planModel: string;
-  stream: boolean;
   language: string;
   quiet: boolean;
   approvalMode: ApprovalMode;
@@ -30,7 +29,6 @@ export type Config = {
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
-  stream: true,
   language: 'English',
   quiet: false,
   approvalMode: 'suggest',
@@ -45,7 +43,7 @@ const VALID_CONFIG_KEYS = [
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = ['mcpServers'];
-const BOOLEAN_CONFIG_KEYS = ['stream', 'quiet'];
+const BOOLEAN_CONFIG_KEYS = ['quiet'];
 
 export class ConfigManager {
   globalConfig: Partial<Config>;

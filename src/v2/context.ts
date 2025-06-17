@@ -146,7 +146,7 @@ export class PromptContext {
     try {
       await ide.connect();
     } catch (e) {
-      debug('Failed to connect to IDE: %s', e);
+      debug('Failed to connect to IDE');
       return {};
     }
     const workspaceFolders = await ide.getWorkspaceFolders();
