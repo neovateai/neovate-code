@@ -88,6 +88,7 @@ const ChatSender: React.FC = () => {
         items={suggestions}
         onSelect={(itemVal) => {
           context.actions.setFile(itemVal);
+          setInputValue('');
         }}
       >
         {({ onTrigger, onKeyDown }) => {

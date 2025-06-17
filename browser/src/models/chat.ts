@@ -1,8 +1,9 @@
-import { XStream, useXAgent, useXChat } from '@ant-design/x';
+import { useXAgent, useXChat } from '@ant-design/x';
 import { streamText } from 'ai';
 import { message } from 'antd';
 import { useRef, useState } from 'react';
 import { useModel } from '@/hooks/useModel';
+import { state } from '@/state/context';
 import type { BubbleDataType } from '@/types/chat';
 
 // 常量定义
@@ -204,10 +205,17 @@ const useChat = () => {
   >({
     async request({ message, messages }, { onUpdate, onSuccess, onError }) {
       try {
+        console.log('🔍', state.fileList);
         const result = await streamText({
           model,
           // @ts-expect-error
           messages: [message],
+          contexts: {
+            files: state.fileList.map((file) => ({
+              path: file.path,
+              type: file.type,
+            })),
+          },
         });
 
         const finalContent = await streamHandler.handleStream(result, onUpdate);

@@ -7,7 +7,7 @@ import * as sender from '@/state/sender';
 
 const SenderHeader: React.FC = () => {
   const { contextOpen } = useSnapshot(sender.state);
-  const { isShowContext, files } = useSnapshot(context.state);
+  const { isShowContext, fileList } = useSnapshot(context.state);
 
   useEffect(() => {
     sender.actions.setContextOpen(isShowContext);
@@ -21,9 +21,9 @@ const SenderHeader: React.FC = () => {
       styles={{ content: { padding: 0 } }}
     >
       <Flex gap={8} wrap="wrap" style={{ padding: 8 }}>
-        {files.map((file) => (
-          <Tag style={{ userSelect: 'none' }} key={file}>
-            {file}
+        {fileList.map((file) => (
+          <Tag style={{ userSelect: 'none' }} key={file.path}>
+            {file.path}
           </Tag>
         ))}
       </Flex>
