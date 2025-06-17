@@ -1,4 +1,4 @@
-import { Outlet, createRootRoute } from '@tanstack/react-router';
+import { Outlet, createRootRoute, redirect } from '@tanstack/react-router';
 import { createStyles } from 'antd-style';
 import React from 'react';
 import Sider from '@/components/Sider';
@@ -29,4 +29,9 @@ const Layout: React.FC = () => {
 
 export const Route = createRootRoute({
   component: Layout,
+  beforeLoad() {
+    if (window.location.pathname === '/') {
+      throw redirect({ to: '/chat' });
+    }
+  },
 });

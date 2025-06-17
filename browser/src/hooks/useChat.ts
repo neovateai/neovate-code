@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useXAgent, useXChat } from '@ant-design/x';
 import { type StreamTextResult, type ToolSet, streamText } from 'ai';
 import { message } from 'antd';
@@ -118,9 +119,7 @@ class StreamMessageHandler {
 
 export const useChat = () => {
   const abortController = useRef<AbortController>(null);
-  const [messageHistory, setMessageHistory] = useState<
-    Record<string, ChatMessage>
-  >({});
+  const [messageHistory, setMessageHistory] = useState<Record<string, any>>({});
   const [conversations, setConversations] = useState(
     DEFAULT_CONVERSATIONS_ITEMS,
   );

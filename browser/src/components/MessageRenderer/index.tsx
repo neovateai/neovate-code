@@ -1,9 +1,10 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import type {
-  MixedMessage,
-  NonTextMessage,
-  ToolCallMessage,
+import {
+  type BubbleMessage,
+  MessageType,
+  type NonTextMessage,
+  type ToolCallMessage,
 } from '@/types/chat';
 
 // 样式常量
@@ -55,7 +56,7 @@ const MESSAGE_STYLES = {
 } as const;
 
 interface MessageRendererProps {
-  message: string | MixedMessage | ToolCallMessage | NonTextMessage;
+  message: BubbleMessage;
 }
 
 // 工具调用消息渲染器
@@ -99,23 +100,15 @@ const ToolCallMessageRenderer: React.FC<{
 const NonTextMessageRenderer: React.FC<{
   message: NonTextMessage;
   index: number;
-}> = ({ message, index }) => {
-  const debugKey = message._messageKey || `${message.type}_${index}`;
-
+}> = ({ message }) => {
   switch (message.type) {
     case 'tool-call':
-      return (
-        <ToolCallMessageRenderer
-          message={message as ToolCallMessage}
-          debugKey={debugKey}
-        />
-      );
+      return <ToolCallMessageRenderer message={message as ToolCallMessage} />;
     default:
       return (
         <div style={MESSAGE_STYLES.unknownMessage}>
           <div style={MESSAGE_STYLES.unknownMessageTitle}>
             未知消息类型: {message.type}
-            <span style={MESSAGE_STYLES.debugKey}>({debugKey})</span>
           </div>
           <pre style={{ fontSize: '12px', margin: '8px 0 0 0' }}>
             {JSON.stringify(message, null, 2)}
@@ -127,18 +120,15 @@ const NonTextMessageRenderer: React.FC<{
 
 // 混合消息渲染器
 const MixedMessageRenderer: React.FC<{
-  message: MixedMessage;
+  message: BubbleMessage;
 }> = ({ message }) => {
   return (
     <div>
       {/* 渲染非文本消息 */}
       {message.nonTextMessages?.map(
         (nonTextMsg: NonTextMessage, index: number) => {
-          const uniqueKey =
-            nonTextMsg._messageKey ||
-            `${nonTextMsg.type}_${index}_${nonTextMsg._timestamp || Date.now()}`;
           return (
-            <div key={uniqueKey} style={MESSAGE_STYLES.mixedMessageItem}>
+            <div key={index} style={MESSAGE_STYLES.mixedMessageItem}>
               <NonTextMessageRenderer message={nonTextMsg} index={index} />
             </div>
           );
@@ -146,14 +136,17 @@ const MixedMessageRenderer: React.FC<{
       )}
 
       {/* 渲染文本内容 */}
-      {message.textContent && (
+      {message.content && (
         <div
           style={{
             ...MESSAGE_STYLES.mixedTextContent,
-            marginBottom: message.nonTextMessages?.length > 0 ? 16 : 0,
+            marginBottom:
+              message.nonTextMessages && message.nonTextMessages.length > 0
+                ? 16
+                : 0,
           }}
         >
-          <ReactMarkdown>{message.textContent}</ReactMarkdown>
+          <ReactMarkdown>{message.content}</ReactMarkdown>
         </div>
       )}
     </div>
@@ -170,20 +163,11 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message }) => {
     return <>{message}</>;
   }
 
-  // 处理混合消息格式
-  if (message.type === 'mixed') {
-    return <MixedMessageRenderer message={message as MixedMessage} />;
+  if (message.type === MessageType.TEXT_DELTA) {
+    return <ReactMarkdown>{message.content}</ReactMarkdown>;
   }
 
-  // 处理单一类型的消息
-  switch (message.type) {
-    case 'tool-call':
-      return <ToolCallMessageRenderer message={message as ToolCallMessage} />;
-    default:
-      return (
-        <NonTextMessageRenderer message={message as NonTextMessage} index={0} />
-      );
-  }
+  return <MixedMessageRenderer message={message} />;
 };
 
 export default MessageRenderer;
