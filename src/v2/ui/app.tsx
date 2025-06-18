@@ -43,11 +43,43 @@ function AssistantTextMessage({ message }: { message: AssistantTextMessage }) {
 }
 
 function AssistantToolMessage({ message }: { message: AssistantToolMessage }) {
+  const name = message.content.toolName;
+  const args = message.content.args;
+  let description = '';
+  switch (name) {
+    case 'read':
+      description = args.file_path;
+      break;
+    case 'bash':
+      description = args.command;
+      break;
+    case 'edit':
+      description = args.file_path;
+      break;
+    case 'write':
+      description = args.file_path;
+      break;
+    case 'fetch':
+      description = args.url;
+      break;
+    case 'glob':
+      description = args.pattern;
+      break;
+    case 'grep':
+      description = args.pattern;
+      break;
+    case 'ls':
+      description = args.dir_path;
+      break;
+    default:
+      break;
+  }
   return (
-    <Box flexDirection="column">
+    <Box>
       <Text bold color="greenBright">
-        {`tool (${message.content.toolName})`}
+        {`${name}`}
       </Text>
+      {description && <Text color="green">{`(${description})`}</Text>}
     </Box>
   );
 }
