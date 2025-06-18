@@ -18,9 +18,6 @@ import { createStyles } from 'antd-style';
 import React, { useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import ChatSender from '@/components/ChatSender';
-import LexicalTextArea from '@/components/ChatSender/LexicalTextArea';
-import { LexicalTextAreaContext } from '@/components/ChatSender/LexicalTextAreaContext';
-import { AI_CONTEXT_NODE_CONFIGS } from '@/models/aiContextNodeConfig';
 import type {
   MixedMessage,
   NonTextMessage,
@@ -210,19 +207,6 @@ const Chat: React.FC = () => {
           </div>
         )}
       </div>
-    );
-  };
-
-  const renderRichTextMessage = (message: string) => {
-    return (
-      <LexicalTextAreaContext.Provider
-        value={{
-          aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
-          namespace: 'BubbleTextarea',
-        }}
-      >
-        <LexicalTextArea disabled value={message} />
-      </LexicalTextAreaContext.Provider>
     );
   };
 

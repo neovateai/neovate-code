@@ -10,9 +10,12 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Button, Spin } from 'antd';
 import { createStyles } from 'antd-style';
 import ChatSender from '@/components/ChatSender';
+import LexicalTextArea from '@/components/ChatSender/LexicalTextArea';
+import { LexicalTextAreaContext } from '@/components/ChatSender/LexicalTextAreaContext';
 import MessageRenderer from '@/components/MessageRenderer';
 import Welcome from '@/components/Welcome';
 import { useChatState } from '@/context/chatProvider';
+import { AI_CONTEXT_NODE_CONFIGS } from '@/models/aiContextNodeConfig';
 import type { BubbleMessage } from '@/types/chat';
 
 const useStyle = createStyles(({ token, css }) => {
@@ -81,6 +84,7 @@ const Chat: React.FC = () => {
                   icon: <UserOutlined />,
                   style: { background: '#87d068' },
                 },
+                messageRender: renderRichTextMessage,
               },
               assistant: {
                 placement: 'start',
@@ -115,6 +119,19 @@ const Chat: React.FC = () => {
       </div>
       <ChatSender />
     </div>
+  );
+};
+
+const renderRichTextMessage = (message: string) => {
+  return (
+    <LexicalTextAreaContext.Provider
+      value={{
+        aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
+        namespace: 'BubbleTextarea',
+      }}
+    >
+      <LexicalTextArea disabled value={message} />
+    </LexicalTextAreaContext.Provider>
   );
 };
 

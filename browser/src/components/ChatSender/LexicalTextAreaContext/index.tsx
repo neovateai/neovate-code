@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import { AiContextCacheNode, AiContextNodeConfig } from '@/types/chat';
+import type { AiContextCacheNode, AiContextNodeConfig } from '@/types/chat';
 
 /** Inject Editor Contexts into LexicalTextArea */
 export const LexicalTextAreaContext = createContext<{
