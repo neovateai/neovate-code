@@ -183,23 +183,19 @@ function ChatInput() {
   );
 }
 
-function PlanModal() {
+function PlanModalSelectInput() {
   const store = getStore();
   const snap = useSnapshot(store);
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="gray" padding={1}>
-      <Text>Here is the plan:</Text>
-      <Box flexDirection="column" borderStyle="round" borderColor="gray" padding={1}>
-        <Text>{snap.planModal!.text}</Text>
-      </Box>
-      <Text>Do you want to proceed?</Text>
-      <SelectInput items={[{
+    <SelectInput
+      items={[{
         label: 'Yes',
         value: true,
       }, {
         label: 'No, I want to edit the plan',
         value: false,
-      }]} onSelect={(item) => {
+      }]}
+      onSelect={(item) => {
         if (item.value) {
           store.stage = 'code';
           store.planModal = null;
@@ -208,7 +204,24 @@ function PlanModal() {
           store.stage = 'plan';
           store.planModal = null;
         }
-      }} />
+      }}
+    />
+  );
+}
+
+function PlanModal() {
+  const store = getStore();
+  const snap = useSnapshot(store);
+  return (
+    <Box flexDirection="column" borderStyle="round" borderColor="gray" padding={1}>
+      <Text bold>Here is the plan:</Text>
+      <Box flexDirection="column" borderStyle="round" borderColor="gray" padding={1}>
+        <Text>{snap.planModal!.text}</Text>
+      </Box>
+      <Box marginY={1}>
+        <Text bold>Do you want to proceed?</Text>
+      </Box>
+      <PlanModalSelectInput />
     </Box>
   );
 }
