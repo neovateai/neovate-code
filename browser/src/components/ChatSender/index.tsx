@@ -78,6 +78,7 @@ const ChatSender: React.FC = () => {
     useSuggestion(contextSearchInput);
 
   // TODO 发送给大模型用plainText，展示用inputValue
+  // TODO 上下文好像没有挂上
 
   // 处理输入变化
   const onChange = (value: string) => {
@@ -129,7 +130,6 @@ const ChatSender: React.FC = () => {
             },
           }}
           onSelect={(value) => {
-            // TODO Map record
             const type = getTypeByValue(value);
             const config = AI_CONTEXT_NODE_CONFIGS.find(
               (config) => config.type === type,

@@ -26,7 +26,7 @@ const SenderHeader: React.FC = () => {
       open={true}
       styles={{ content: { padding: 0 } }}
     >
-      <Flex gap={2} wrap="wrap" style={{ padding: 8, lineHeight: '22px' }}>
+      <Flex gap={6} wrap="wrap" style={{ padding: 8, lineHeight: '22px' }}>
         <AddContext />
         {selectContexts.map((contextItem) =>
           renderContextTag(contextItem, () => {

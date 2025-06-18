@@ -17,9 +17,10 @@ const useStyle = createStyles(({ css }) => {
       border-style: dashed;
       background-color: inherit;
       line-height: inherit;
+      margin-right: 0;
     `,
     input: css`
-      margin-right: 8px;
+      /* margin-right: 8px; */
     `,
   };
 });
