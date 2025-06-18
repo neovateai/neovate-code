@@ -6,10 +6,10 @@ import {
   ScheduleOutlined,
 } from '@ant-design/icons';
 import { Prompts, Sender } from '@ant-design/x';
-import { useModel } from '@umijs/max';
-import { Button, Flex, GetProp, Tag } from 'antd';
+import { Button, Flex, type GetProp } from 'antd';
 import { createStyles } from 'antd-style';
 import { useRef, useState } from 'react';
+import { useChatState } from '@/context/chatProvider';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/models/aiContextNodeConfig';
 import * as context from '@/state/context';
@@ -65,7 +65,7 @@ const useStyle = createStyles(({ token, css }) => {
 
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
-  const { abortController, loading, onQuery } = useModel('chat');
+  const { abortController, loading, onQuery } = useChatState();
   const [inputValue, setInputValue] = useState(state.prompt);
   const prevInputValue = useRef<string>(state.prompt);
   const { suggestions } = useSuggestion();

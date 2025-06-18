@@ -1,36 +1,55 @@
-import { LexicalNode } from 'lexical';
+import type { LexicalNode } from 'lexical';
 
-export type BubbleDataType = {
-  role: string;
-  content: string | MixedMessage | ToolCallMessage | NonTextMessage;
-};
+export enum MessageRole {
+  USER = 'user',
+  ASSISTANT = 'assistant',
+  SYSTEM = 'system',
+  DATA = 'data',
+  TOOL_CALL = 'tool-call',
+}
 
-// 混合消息类型
-export interface MixedMessage {
-  type: 'mixed';
-  textContent: string;
+export interface BaseMessage {
+  role: MessageRole;
+}
+
+export interface TextMessage extends BaseMessage {
+  content: string;
+}
+
+export interface ToolCallMessage extends BaseMessage {
+  type: MessageRole.TOOL_CALL;
+  content: ToolCallContent;
+}
+
+export interface ToolCallContent {
+  toolName: string;
+  args: string;
+  result: string;
+}
+
+export interface ChatMixedMessage extends BaseMessage {
+  content: string;
   nonTextMessages: NonTextMessage[];
 }
 
-// 工具调用消息类型
-export interface ToolCallMessage {
-  type: 'tool-call';
-  id?: string;
-  content: {
-    toolName: string;
-    args?: any;
-    result?: any;
-  };
+// 非文本消息 比如 ToolCallMessage
+export type NonTextMessage = ToolCallMessage;
+
+export interface BubbleMessage {
+  type: MessageType;
+  content: string;
+  nonTextMessages?: NonTextMessage[];
 }
 
-// 其他非文本消息类型
-export interface NonTextMessage {
-  type: string;
-  id?: string;
-  content?: any;
-  // 调试和管理相关的属性
-  _messageKey?: string;
-  _timestamp?: number;
+export interface ChatMessage {
+  role: MessageRole;
+  content: BubbleMessage;
+}
+
+export enum MessageType {
+  TEXT_DELTA = 'text-delta',
+  CONNECT = 'connect',
+  MIXED = 'mixed',
 }
 
 export interface AiContextNodeInfo {

@@ -1,5 +1,5 @@
 import type { Attachment } from '@ant-design/x/es/attachments';
-import { proxy } from '@umijs/max';
+import { proxy } from 'valtio';
 
 interface SenderState {
   prompt: string;

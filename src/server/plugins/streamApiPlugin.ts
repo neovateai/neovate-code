@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { editQuery } from '../../llms/query';
+import { PluginHookType } from '../../pluginManager/pluginManager';
 import * as logger from '../../utils/logger';
 import { ServerOptions } from '../types';
 
@@ -8,6 +9,12 @@ interface ChatCompletionRequest {
     role: string;
     content: string;
   }>;
+  contexts: {
+    files: Array<{
+      path: string;
+      type: string;
+    }>;
+  };
   stream?: boolean;
 }
 
@@ -76,6 +83,14 @@ async function streamApiPlugin(fastify: FastifyInstance, opts: ServerOptions) {
         const body = request.body;
         const isStream = body.stream === true;
         const prompt = body.messages[body.messages.length - 1].content;
+        const contexts = body.contexts;
+
+        await opts.context.pluginManager.apply({
+          hook: 'browserStart',
+          args: [{ body, contexts }],
+          type: PluginHookType.Series,
+          pluginContext: opts.context.pluginContext,
+        });
 
         if (isStream) {
           // reply.header('Content-Type', 'text/plain; charset=utf-8');

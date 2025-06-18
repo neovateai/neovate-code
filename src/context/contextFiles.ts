@@ -123,6 +123,7 @@ Cargo.lock
 
 # Node.js artifacts
 *.tsbuildinfo
+node_modules
 node_modules/*
 package-lock.json
 
@@ -139,6 +140,7 @@ Thumbs.db
 # Hidden files
 .*/*
 .*
+
 `;
 
 /**

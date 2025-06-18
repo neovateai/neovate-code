@@ -156,7 +156,7 @@ async function fileContextApiPlugin(
         if (a.type !== b.type) {
           return a.type === 'directory' ? -1 : 1;
         }
-        return a.name.localeCompare(b.name);
+        return a.path.localeCompare(b.path);
       });
 
       // 分离文件和文件夹以保持向后兼容性

@@ -160,6 +160,12 @@ export const PluginSchema = z.object({
     )
     .optional(),
   commands: z.function(z.tuple([]), z.array(CommandSchema)).optional(),
+  browserStart: z
+    .function(
+      z.tuple([z.object({ body: z.any(), contexts: z.any() })]),
+      z.void(),
+    )
+    .optional(),
 });
 
 type InferedPlugin = z.infer<typeof PluginSchema>;
