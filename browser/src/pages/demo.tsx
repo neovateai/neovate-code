@@ -1,5 +1,6 @@
 import { useChat } from '@ai-sdk/react';
 import { createFileRoute } from '@tanstack/react-router';
+import { useUnmount } from 'ahooks';
 
 const Demo = () => {
   const {
@@ -13,6 +14,26 @@ const Demo = () => {
     setData,
   } = useChat({
     api: '/api/chat/completions',
+    body: {
+      model: 'takumi',
+      plan: true,
+    },
+    onFinish(messages) {
+      console.log('Response data:', messages);
+    },
+    onError(error) {
+      console.error('Error:', error);
+    },
+    onResponse(res) {
+      console.log('Response:', res);
+    },
+    onToolCall({ toolCall }) {
+      console.log('Tool call:', toolCall);
+    },
+  });
+
+  useUnmount(() => {
+    stop();
   });
 
   return (
@@ -34,7 +55,15 @@ const Demo = () => {
       {messages.map((m) => (
         <div key={m.id} className="whitespace-pre-wrap">
           <strong>{m.role === 'user' ? 'User: ' : 'AI: '}</strong>
-          {m.content}
+          {m.parts.map((p) => (
+            <div>
+              <pre>
+                思考
+                {p.type === 'reasoning' && p.reasoning}
+              </pre>
+              {p.type === 'text' && p.text}
+            </div>
+          ))}
           <br />
           <br />
         </div>

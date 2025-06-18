@@ -56,7 +56,6 @@ export async function createServer(opts: CreateServerOpts) {
       host: config.host,
     });
 
-    app.log.info(`Server listening on ${config.host}:${config.port}`);
     logger.logInfo(`Server is running on http://${config.host}:${config.port}`);
   } catch (err) {
     app.log.error(err);

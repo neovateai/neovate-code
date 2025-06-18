@@ -9,7 +9,7 @@ import { Prompts, Sender, Suggestion } from '@ant-design/x';
 import { Button, Flex, type GetProp } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
-import { useChatState } from '@/context/chatProvider';
+import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
@@ -60,7 +60,7 @@ const useStyle = createStyles(({ token, css }) => {
 
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
-  const { abortController, loading, onQuery } = useChatState();
+  const { loading, stop, append, onQuery } = useChatState();
   const [inputValue, setInputValue] = useState(state.prompt);
   const { suggestions } = useSuggestion();
 
@@ -76,7 +76,10 @@ const ChatSender: React.FC = () => {
       <Prompts
         items={SENDER_PROMPTS}
         onItemClick={(info) => {
-          onQuery(info.data.description as string);
+          append({
+            role: 'user',
+            content: info.data.description as string,
+          });
         }}
         styles={{
           item: { padding: '6px 12px' },
@@ -111,7 +114,7 @@ const ChatSender: React.FC = () => {
               }}
               onKeyDown={onKeyDown}
               onCancel={() => {
-                abortController.current?.abort();
+                stop();
               }}
               prefix={
                 <Button

@@ -2,8 +2,7 @@ import { Outlet, createRootRoute, redirect } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { createStyles } from 'antd-style';
 import React from 'react';
-
-// import Sider from '@/components/Sider';
+import Sider from '@/components/Sider';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
@@ -23,9 +22,9 @@ const Layout: React.FC = () => {
 
   return (
     <div className={styles.layout}>
-      {/* <Sider /> */}
-      <TanStackRouterDevtools position="bottom-right" />
+      <Sider />
       <Outlet />
+      <TanStackRouterDevtools position="bottom-right" />
     </div>
   );
 };
@@ -33,8 +32,8 @@ const Layout: React.FC = () => {
 export const Route = createRootRoute({
   component: Layout,
   beforeLoad() {
-    // if (window.location.pathname === '/') {
-    //   throw redirect({ to: '/chat' });
-    // }
+    if (window.location.pathname === '/') {
+      throw redirect({ to: '/chat' });
+    }
   },
 });

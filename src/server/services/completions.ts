@@ -1,94 +1,76 @@
-import { AgentInputItem, withTrace } from '@openai/agents';
-import { DataStreamWriter, createDataStream, formatDataStreamPart } from 'ai';
+import { AgentConfiguration, AgentInputItem, withTrace } from '@openai/agents';
+import { DataStreamWriter, formatDataStreamPart } from 'ai';
 import assert from 'assert';
 import createDebug from 'debug';
 import { Context } from '../../v2/context';
 import { isReasoningModel } from '../../v2/provider';
 import { query } from '../../v2/query';
-import { Service } from '../../v2/service';
-import { CreateServerOpts } from '../types';
+import { Service, ServiceOpts } from '../../v2/service';
+import { PLAN_PROMPT_JSON } from '../prompts';
+import { CreateServerOpts } from '../types/server';
 
 const debug = createDebug('takumi:server:completions');
 
-export async function createCompletionResponse(opts: CreateServerOpts) {
-  createDataStream({
-    async execute(dataStream) {
-      await runCompletion({
-        ...opts,
-        dataStream,
-      });
-    },
-    onError(error) {
-      return error instanceof Error ? error.message : String(error);
-    },
-  });
+interface BrowserServiceOpts
+  extends ServiceOpts,
+    Omit<CreateServerOpts, 'argvConfig'> {}
+
+export class BrowserService extends Service {
+  constructor(opts: BrowserServiceOpts) {
+    const context = new Context({
+      productName: opts.productName,
+      cwd: opts.cwd,
+      argvConfig: opts.argvConfig,
+    });
+
+    super({
+      context,
+      ...opts,
+    });
+  }
+
+  modifyAgent(opts: Partial<AgentConfiguration>) {
+    this.agent = this.agent?.clone(opts);
+    debug('modify agent', opts);
+  }
 }
 
 interface RunCompletionOpts extends CreateServerOpts {
   dataStream: DataStreamWriter;
 }
 
-export async function runCompletion(opts: RunCompletionOpts) {
+export async function runPlan(opts: RunCompletionOpts) {
   const services: Service[] = [];
   const { dataStream } = opts;
 
   return await withTrace(opts.traceName, async () => {
-    let prompt = opts.prompt;
-    debug('prompt', prompt);
+    try {
+      const service = new BrowserService({
+        ...opts,
+        agentType: 'plan',
+      });
+      services.push(service);
 
-    const context = new Context({
-      productName: opts.productName,
-      cwd: opts.cwd,
-      argvConfig: opts.argvConfig,
-    });
-    const commonServiceOpts = {
-      cwd: opts.cwd,
-      context,
-      modelProvider: opts.modelProvider,
-    };
-
-    const service = new Service({
-      agentType: 'plan',
-      ...commonServiceOpts,
-    });
-    services.push(service);
-    let input: AgentInputItem[] = [
-      {
-        role: 'user' as const,
-        content: prompt,
-      },
-    ];
-
-    while (true) {
-      debug('querying plan', input);
-      console.log(`Here is ${service.context.productName}'s plan:`);
-      console.log('-------------');
-      let isThinking = false;
-      const { finalText: plan } = await query({
+      let input: AgentInputItem[] = [
+        {
+          role: 'user' as const,
+          content: opts.prompt,
+        },
+      ];
+      const result = await query({
         input,
         service,
-        thinking: isReasoningModel(
-          service.context.configManager.config.planModel,
-        ),
+        thinking: isReasoningModel(service.context.configManager.config.model),
         onTextDelta(text) {
+          debug(`Text delta: ${text}`);
           dataStream.write(formatDataStreamPart('text', text));
-          process.stdout.write(text);
-        },
-        onText() {
-          process.stdout.write('\n');
         },
         onReasoning(text) {
-          if (!isThinking) {
-            isThinking = true;
-            process.stdout.write('\nThinking:\n');
-          }
+          debug(`Reasoning: ${text}`);
           dataStream.write(formatDataStreamPart('reasoning', text));
-          process.stdout.write(text);
         },
         onToolUse(callId, name, params) {
-          console.log(
-            `Tool use: ${name} with params ${JSON.stringify(params)}`,
-          );
+          debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
           dataStream.write(
             formatDataStreamPart('tool_call', {
               toolCallId: callId,
@@ -98,35 +80,80 @@ export async function runCompletion(opts: RunCompletionOpts) {
           );
         },
         onToolUseResult(callId, name, result) {
-          console.log(
+          debug(
             `Tool use result: ${name} with result ${JSON.stringify(result)}`,
           );
-
           dataStream.write(
             formatDataStreamPart('tool_result', {
               toolCallId: callId,
-              result: result,
+              result: JSON.stringify(result),
             }),
           );
-          dataStream.writeData({
-            type: 'tool_result',
-            toolCallId: callId,
-            result: result,
-          });
         },
       });
-      debug('plan', plan);
-      assert(plan, `No plan found`);
-      dataStream.write(
-        formatDataStreamPart('finish_message', {
-          finishReason: 'stop',
-        }),
-      );
-      dataStream.writeData({
-        type: 'plan',
-        content: plan,
+      assert(result.finalText, 'No plan found');
+    } finally {
+      await Promise.all(services.map((service) => service.destroy()));
+    }
+  });
+}
+
+export async function runCode(opts: RunCompletionOpts) {
+  const services: Service[] = [];
+  const { dataStream } = opts;
+
+  return await withTrace(opts.traceName, async () => {
+    try {
+      const service = new BrowserService({
+        ...opts,
+        agentType: 'code',
       });
-      break;
+      services.push(service);
+
+      let input: AgentInputItem[] = [
+        {
+          role: 'user' as const,
+          content: opts.prompt,
+        },
+      ];
+
+      const result = await query({
+        input,
+        service,
+        thinking: isReasoningModel(service.context.configManager.config.model),
+        onTextDelta(text) {
+          debug(`Text delta: ${text}`);
+          dataStream.write(formatDataStreamPart('text', text));
+        },
+        onReasoning(text) {
+          debug(`Reasoning: ${text}`);
+          dataStream.write(formatDataStreamPart('reasoning', text));
+        },
+        onToolUse(callId, name, params) {
+          debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
+          dataStream.write(
+            formatDataStreamPart('tool_call', {
+              toolCallId: callId,
+              toolName: name,
+              args: params,
+            }),
+          );
+        },
+        onToolUseResult(callId, name, result) {
+          debug(
+            `Tool use result: ${name} with result ${JSON.stringify(result)}`,
+          );
+          dataStream.write(
+            formatDataStreamPart('tool_result', {
+              toolCallId: callId,
+              result: JSON.stringify(result),
+            }),
+          );
+        },
+      });
+      debug('result', result);
+    } finally {
+      await Promise.all(services.map((service) => service.destroy()));
     }
   });
 }

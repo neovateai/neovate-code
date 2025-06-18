@@ -96,7 +96,7 @@
     "upgear": "^0.0.3",
     "vitest": "^3.2.3",
     "ws": "^8.18.2",
-    "yargs-parser": "^22.0.0",
+    "yargs-parser": "18.1.3",
     "zod": "^3.25.67",
     "zod-to-json-schema": "^3.24.5"
   },

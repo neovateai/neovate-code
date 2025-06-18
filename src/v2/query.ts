@@ -5,6 +5,7 @@ type QueryOpts = {
   input: string | AgentInputItem[];
   service: Service;
   thinking?: boolean;
+  onQueryStart?: () => void;
   onTextDelta?: (text: string) => void;
   onText?: (text: string) => void;
   onReasoning?: (text: string) => void;
@@ -19,6 +20,7 @@ type QueryOpts = {
 export async function query(opts: QueryOpts) {
   const { service, thinking } = opts;
   await service.init();
+  await opts.onQueryStart?.();
   let input =
     typeof opts.input === 'string'
       ? [

@@ -8,6 +8,7 @@ interface CompletionContext {
 export interface CompletionRequest {
   messages: Array<Message>;
   contexts?: CompletionContext;
+  plan?: boolean;
 }
 
 export interface CompletionTextContent {

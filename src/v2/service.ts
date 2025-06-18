@@ -46,10 +46,10 @@ export interface ServiceRunResult {
 }
 
 export class Service {
-  private opts: ServiceOpts;
-  private tools?: Tools;
-  private agent?: Agent;
-  private initialized: boolean = false;
+  protected opts: ServiceOpts;
+  protected tools?: Tools;
+  protected agent?: Agent;
+  protected initialized: boolean = false;
   context: Context;
   history: AgentInputItem[] = [];
   id: string;
@@ -128,6 +128,10 @@ export class Service {
       createFetchTool({ context }),
       ...mcpTools,
     ];
+  }
+
+  getModelProvider() {
+    return this.opts.modelProvider || getDefaultModelProvider();
   }
 
   async run(opts: ServiceRunOpts): Promise<ServiceRunResult> {
