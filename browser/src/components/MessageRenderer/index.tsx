@@ -1,19 +1,19 @@
 import React from 'react';
-import type {
-  MixedMessage,
-  NonTextMessage,
-  ToolCallMessage,
+import {
+  type BubbleMessage,
+  type ChatMixedMessage,
+  MessageRole,
+  MessageType,
 } from '@/types/chat';
 import {
   DebugInfo,
   MixedMessageRenderer,
   NonTextMessageRenderer,
   StringMessageRenderer,
-  ToolCallMessageRenderer,
 } from './components';
 
 interface MessageRendererProps {
-  message: string | MixedMessage | ToolCallMessage | NonTextMessage;
+  message: BubbleMessage | string;
 }
 
 // 主消息渲染器
@@ -40,26 +40,34 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message }) => {
   }
 
   // 处理混合消息格式
-  if (message.type === 'mixed') {
+  if (message.type === MessageType.MIXED) {
+    const mixedMessage: ChatMixedMessage = {
+      role: MessageRole.ASSISTANT,
+      content: message.content,
+      nonTextMessages: message.nonTextMessages || [],
+    };
+    return renderWithDebug(<MixedMessageRenderer message={mixedMessage} />);
+  }
+
+  // 检查是否有非文本消息需要渲染
+  if (message.nonTextMessages && message.nonTextMessages.length > 0) {
+    // 如果有非文本消息，渲染每一个
     return renderWithDebug(
-      <MixedMessageRenderer message={message as MixedMessage} />,
+      <div>
+        {message.nonTextMessages.map((nonTextMsg, index) => (
+          <NonTextMessageRenderer
+            key={`nontext-${index}`}
+            message={nonTextMsg}
+            index={index}
+          />
+        ))}
+        {message.content && <StringMessageRenderer message={message.content} />}
+      </div>,
     );
   }
 
-  // 处理单一类型的消息
-  switch (message.type) {
-    case 'tool-call':
-      return renderWithDebug(
-        <ToolCallMessageRenderer message={message as ToolCallMessage} />,
-      );
-    default:
-      return renderWithDebug(
-        <NonTextMessageRenderer
-          message={message as NonTextMessage}
-          index={0}
-        />,
-      );
-  }
+  // 处理普通文本消息
+  return renderWithDebug(<StringMessageRenderer message={message.content} />);
 };
 
 export default MessageRenderer;

@@ -1,7 +1,7 @@
-import { Outlet } from '@umijs/max';
+import { Outlet, createRootRoute, redirect } from '@tanstack/react-router';
 import { createStyles } from 'antd-style';
 import React from 'react';
-import Sider from './Sider';
+import Sider from '@/components/Sider';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
@@ -27,4 +27,11 @@ const Layout: React.FC = () => {
   );
 };
 
-export default Layout;
+export const Route = createRootRoute({
+  component: Layout,
+  beforeLoad() {
+    if (window.location.pathname === '/') {
+      throw redirect({ to: '/chat' });
+    }
+  },
+});

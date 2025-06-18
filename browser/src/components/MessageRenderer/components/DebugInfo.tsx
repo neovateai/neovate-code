@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import type { BubbleMessage } from '@/types/chat';
+import { MessageType } from '@/types/chat';
 import styles from '../index.module.css';
 
 interface DebugInfoProps {
-  message: any;
+  message: BubbleMessage | string;
 }
 
 const DebugInfo: React.FC<DebugInfoProps> = ({ message }) => {
@@ -27,9 +29,9 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ message }) => {
   };
 
   // 格式化消息数据，移除敏感信息或过长的内容
-  const formatMessageForDebug = (msg: any) => {
+  const formatMessageForDebug = (msg: BubbleMessage | string) => {
     try {
-      const debugData: any = {
+      const debugData: Record<string, unknown> = {
         messageType: typeof msg,
       };
 
@@ -46,19 +48,10 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ message }) => {
           debugData.messageTypeProperty = msg.type;
         }
 
-        // 对于工具调用消息，显示更多有用信息
-        if (msg.type === 'tool-call' && msg.content) {
-          debugData.toolInfo = {
-            toolName: msg.content.toolName || msg.toolName,
-            hasArgs: !!msg.content.args || !!msg.args,
-            hasResult: !!msg.content.result || !!msg.result,
-          };
-        }
-
         // 对于混合消息，显示结构信息
-        if (msg.type === 'mixed') {
+        if (msg.type === MessageType.MIXED) {
           debugData.mixedInfo = {
-            hasTextContent: !!msg.textContent,
+            hasTextContent: !!msg.content,
             nonTextMessagesCount: msg.nonTextMessages
               ? msg.nonTextMessages.length
               : 0,

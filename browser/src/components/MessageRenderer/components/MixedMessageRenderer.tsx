@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import type { MixedMessage, NonTextMessage } from '@/types/chat';
+import type { ChatMixedMessage, NonTextMessage } from '@/types/chat';
 import styles from '../index.module.css';
 import NonTextMessageRenderer from './NonTextMessageRenderer';
 
 interface MixedMessageRendererProps {
-  message: MixedMessage;
+  message: ChatMixedMessage;
 }
 
 const MixedMessageRenderer: React.FC<MixedMessageRendererProps> = ({
@@ -13,7 +13,7 @@ const MixedMessageRenderer: React.FC<MixedMessageRendererProps> = ({
 }) => {
   const hasNonTextMessages =
     message.nonTextMessages && message.nonTextMessages.length > 0;
-  const hasTextContent = message.textContent && message.textContent.trim();
+  const hasTextContent = message.content && message.content.trim();
   const totalItems =
     (hasNonTextMessages ? message.nonTextMessages!.length : 0) +
     (hasTextContent ? 1 : 0);
@@ -32,9 +32,7 @@ const MixedMessageRenderer: React.FC<MixedMessageRendererProps> = ({
       {hasNonTextMessages &&
         message.nonTextMessages?.map(
           (nonTextMsg: NonTextMessage, index: number) => {
-            const uniqueKey =
-              nonTextMsg._messageKey ||
-              `${nonTextMsg.type}_${index}_${nonTextMsg._timestamp || Date.now()}`;
+            const uniqueKey = `${nonTextMsg.type}_${index}_${Date.now()}`;
             const isLast =
               index === message.nonTextMessages!.length - 1 && !hasTextContent;
 
@@ -60,7 +58,7 @@ const MixedMessageRenderer: React.FC<MixedMessageRendererProps> = ({
               : styles.mixedTextContentOnly
           }
         >
-          <ReactMarkdown>{message.textContent}</ReactMarkdown>
+          <ReactMarkdown>{message.content}</ReactMarkdown>
         </div>
       )}
     </div>

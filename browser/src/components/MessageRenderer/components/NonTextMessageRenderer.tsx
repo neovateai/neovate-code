@@ -1,5 +1,6 @@
 import React from 'react';
 import type { NonTextMessage, ToolCallMessage } from '@/types/chat';
+import { MessageRole } from '@/types/chat';
 import styles from '../index.module.css';
 import ToolCallMessageRenderer from './ToolCallMessageRenderer';
 
@@ -12,10 +13,10 @@ const NonTextMessageRenderer: React.FC<NonTextMessageRendererProps> = ({
   message,
   index,
 }) => {
-  const debugKey = message._messageKey || `${message.type}_${index}`;
+  const debugKey = `${message.type}_${index}`;
 
   switch (message.type) {
-    case 'tool-call':
+    case MessageRole.TOOL_CALL:
       return (
         <ToolCallMessageRenderer
           message={message as ToolCallMessage}

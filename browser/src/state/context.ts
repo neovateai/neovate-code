@@ -1,4 +1,4 @@
-import { proxy } from '@umijs/max';
+import { proxy } from 'valtio';
 import type { FileItem } from '@/api/model';
 import * as suggestion from '@/state/suggestion';
 

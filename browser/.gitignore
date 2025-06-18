@@ -51,3 +51,4 @@ coverage/
 
 # 其他
 .history/
+.tanstack
