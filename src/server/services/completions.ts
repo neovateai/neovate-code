@@ -1,5 +1,5 @@
 import { AgentInputItem, withTrace } from '@openai/agents';
-import { DataStreamWriter, TextPart, createDataStream } from 'ai';
+import { DataStreamWriter, createDataStream, formatDataStreamPart } from 'ai';
 import assert from 'assert';
 import createDebug from 'debug';
 import { Context } from '../../v2/context';
@@ -71,7 +71,7 @@ export async function runCompletion(opts: RunCompletionOpts) {
           service.context.configManager.config.planModel,
         ),
         onTextDelta(text) {
-          dataStream.writeMessageAnnotation({ content: text });
+          dataStream.write(formatDataStreamPart('text', text));
           process.stdout.write(text);
         },
         onText() {
@@ -81,36 +81,47 @@ export async function runCompletion(opts: RunCompletionOpts) {
           if (!isThinking) {
             isThinking = true;
             process.stdout.write('\nThinking:\n');
-            dataStream.writeMessageAnnotation({ content: 'thinking' });
           }
+          dataStream.write(formatDataStreamPart('reasoning', text));
           process.stdout.write(text);
-          dataStream.writeMessageAnnotation({ content: text });
         },
         onToolUse(callId, name, params) {
           console.log(
             `Tool use: ${name} with params ${JSON.stringify(params)}`,
           );
-          dataStream.writeData({
-            type: 'tool_use',
-            callId,
-            name,
-            params,
-          });
+          dataStream.write(
+            formatDataStreamPart('tool_call', {
+              toolCallId: callId,
+              toolName: name,
+              args: params,
+            }),
+          );
         },
         onToolUseResult(callId, name, result) {
           console.log(
             `Tool use result: ${name} with result ${JSON.stringify(result)}`,
           );
+
+          dataStream.write(
+            formatDataStreamPart('tool_result', {
+              toolCallId: callId,
+              result: result,
+            }),
+          );
           dataStream.writeData({
-            type: 'tool_use_result',
-            callId,
-            name,
-            result,
+            type: 'tool_result',
+            toolCallId: callId,
+            result: result,
           });
         },
       });
       debug('plan', plan);
       assert(plan, `No plan found`);
+      dataStream.write(
+        formatDataStreamPart('finish_message', {
+          finishReason: 'stop',
+        }),
+      );
       dataStream.writeData({
         type: 'plan',
         content: plan,
