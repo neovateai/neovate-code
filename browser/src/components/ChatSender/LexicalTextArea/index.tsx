@@ -23,7 +23,7 @@ import { PlaceholderPlugin } from './PlaceholderPlugin';
 import RenderValuePlugin from './RenderValuePlugin';
 import './index.less';
 
-interface Props extends GetProps<typeof Input.TextArea> {}
+type Props = GetProps<typeof Input.TextArea>;
 
 type Ref = GetRef<typeof Input.TextArea>;
 
@@ -148,8 +148,8 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
               const cursorPosition =
                 rangeCount > 0 ? selection?.getRangeAt(0)?.startOffset || 0 : 0;
               const syntheticEvent = createSyntheticEvent(nextInnerValue);
-              (syntheticEvent.target as any).selectionStart = cursorPosition;
-              (syntheticEvent.target as any).selectionEnd = cursorPosition;
+              syntheticEvent.target.selectionStart = cursorPosition;
+              syntheticEvent.target.selectionEnd = cursorPosition;
               onChange?.(syntheticEvent);
             });
           }}
@@ -159,13 +159,7 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
       <DisabledPlugin disabled={!!disabled} />
       <PlaceholderPlugin placeholder={placeholder} />
       {!disabled && <EnterEventPlugin onEnterPress={onEnterPress} />}
-      <RenderValuePlugin
-        value={value as string}
-        onGetNodes={(_nodes) => {
-          // 用于给外部统计，对接antd-x后可以发送到状态管理
-          // console.log(nodes, 'nodes');
-        }}
-      />
+      <RenderValuePlugin value={value as string} />
     </LexicalComposer>
   );
 });

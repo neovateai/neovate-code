@@ -3,23 +3,22 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  LexicalNode,
+  type LexicalNode,
   TextNode,
 } from 'lexical';
 import { useContext, useEffect, useRef } from 'react';
-import { AiContextCacheNode, AppendedLexicalNode } from '@/types/chat';
+import type { AiContextCacheNode, AppendedLexicalNode } from '@/types/chat';
 import { LexicalTextAreaContext } from '../LexicalTextAreaContext';
 import { $createAiContextNode } from './AiContextNode';
 
 interface Props {
   value: string;
-  onGetNodes?: (nodes: AiContextCacheNode[]) => void;
 }
 
 const RenderValuePlugin = (props: Props) => {
-  const { value, onGetNodes } = props;
+  const { value } = props;
   const [editor] = useLexicalComposerContext();
-  const { aiContextNodeConfigs, namespace } = useContext(
+  const { aiContextNodeConfigs, onGetNodes, onChangePlainText } = useContext(
     LexicalTextAreaContext,
   );
   const oldValueRef = useRef('');
@@ -62,6 +61,7 @@ const RenderValuePlugin = (props: Props) => {
     const Regex = new RegExp(SearchRegex);
 
     let lastIndex = 0;
+    let plainText = '';
     let match: RegExpExecArray | null;
     let targetFunction: (() => void) | null = null;
 
@@ -72,6 +72,7 @@ const RenderValuePlugin = (props: Props) => {
       if (match.index > lastIndex) {
         const text = content.slice(lastIndex, match.index);
         const textNode = $createTextNode(text);
+        plainText += text;
         paragraph.append(textNode);
         allNodes.push(textNode);
       }
@@ -89,17 +90,19 @@ const RenderValuePlugin = (props: Props) => {
         paragraph.append(mentionNode);
         allNodes.push(mentionNode);
         nodes.push({
-          type: originalConfig.aiContextId,
+          type: originalConfig.type,
           originalText: info.value,
           displayText: info.displayText,
           lexicalNode: mentionNode,
         });
+        plainText += info.displayText;
       }
       lastIndex = Regex.lastIndex;
     }
     if (lastIndex < content.length) {
       const text = content.slice(lastIndex);
       const textNode = $createTextNode(text);
+      plainText += text;
       paragraph.append(textNode);
       allNodes.push(textNode);
     }
@@ -188,7 +191,7 @@ const RenderValuePlugin = (props: Props) => {
       }
     };
 
-    return { nodes, paragraph, resetSelection: targetFunction };
+    return { nodes, paragraph, plainText, resetSelection: targetFunction };
   };
 
   useEffect(() => {
@@ -198,7 +201,8 @@ const RenderValuePlugin = (props: Props) => {
 
     editor.update(() => {
       const root = $getRoot();
-      const { nodes, paragraph, resetSelection } = parseContent(value);
+      const { nodes, paragraph, plainText, resetSelection } =
+        parseContent(value);
 
       const shouldRebuild =
         root.getTextContent() !== value ||
@@ -222,10 +226,11 @@ const RenderValuePlugin = (props: Props) => {
           };
         });
       onGetNodes?.(nodes);
+      onChangePlainText?.(plainText);
     });
 
     oldValueRef.current = value;
-  }, [value, editor, onGetNodes]);
+  }, [value, editor, onGetNodes, onChangePlainText]);
 
   return null;
 };

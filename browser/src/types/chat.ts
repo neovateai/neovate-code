@@ -1,4 +1,6 @@
 import type { LexicalNode } from 'lexical';
+import type { JSX } from 'react';
+import type { ContextType } from '@/constants/ContextType';
 
 export enum MessageRole {
   USER = 'user',
@@ -58,14 +60,16 @@ export interface AiContextNodeInfo {
 }
 
 export interface AiContextNodeConfig {
+  type: ContextType;
   matchRegex: RegExp;
   aiContextId: string;
+  displayTextToValue: (text: string) => string;
   pickInfo: (regExpExecArray: RegExpExecArray) => AiContextNodeInfo;
-  render: (info: AiContextNodeInfo) => JSX.Element;
+  render: (info: AiContextNodeInfo, onClose?: () => void) => JSX.Element;
 }
 
 export interface AiContextCacheNode {
-  type: string;
+  type: ContextType;
   originalText: string;
   displayText: string;
   lexicalNode: LexicalNode;

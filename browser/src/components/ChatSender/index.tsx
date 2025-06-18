@@ -8,13 +8,14 @@ import {
 import { Prompts, Sender } from '@ant-design/x';
 import { Button, Flex, type GetProp } from 'antd';
 import { createStyles } from 'antd-style';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSnapshot } from 'valtio';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
 import { useChatState } from '@/context/chatProvider';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
-import { isInputingAiContext } from '@/utils/chat';
+import { getInputInfo } from '@/utils/chat';
 import Suggestion from '../Suggestion';
 import LexicalTextArea from './LexicalTextArea';
 import { LexicalTextAreaContext } from './LexicalTextAreaContext';
@@ -66,21 +67,22 @@ const useStyle = createStyles(({ token, css }) => {
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
   const { abortController, loading, onQuery } = useChatState();
-  const [inputValue, setInputValue] = useState(state.prompt);
+  const [insertNodePosition, setInsertNodePosition] = useState(0);
   const [contextSearchInput, setContextSearchInput] = useState('');
   const prevInputValue = useRef<string>(state.prompt);
-  const { suggestions } = useSuggestion(contextSearchInput);
+  const { suggestions, getTypeByValue } = useSuggestion(contextSearchInput);
+  const { prompt } = useSnapshot(state);
+
+  // TODO 发送给大模型用plainText，展示用inputValue
 
   // 处理输入变化
   const onChange = (value: string) => {
-    setInputValue(value);
     actions.updatePrompt(value);
   };
 
   const handleSubmit = () => {
-    onQuery(inputValue);
+    onQuery(prompt);
     actions.updatePrompt('');
-    setInputValue('');
   };
 
   return (
@@ -99,7 +101,16 @@ const ChatSender: React.FC = () => {
       <LexicalTextAreaContext.Provider
         value={{
           onEnterPress: handleSubmit,
-          onGetNodes: (nodes) => {},
+          onGetNodes: (nodes) => {
+            context.actions.updateEditorContext(
+              nodes.map((node) => ({
+                type: node.type,
+                value: node.originalText,
+                displayText: node.displayText,
+              })),
+            );
+          },
+          onChangePlainText: (plainText) => actions.updatePlainText(plainText),
           aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
           namespace: 'SenderTextarea',
         }}
@@ -108,29 +119,45 @@ const ChatSender: React.FC = () => {
         <Suggestion
           items={suggestions}
           showSearch={{
-            placeholder: '请输入关键词',
+            placeholder: 'Please input to search...',
             onSearch: (text) => {
               setContextSearchInput(text);
             },
           }}
-          onSelect={(itemVal) => {
-            context.actions.setFile(itemVal);
+          onSelect={(value) => {
+            const type = getTypeByValue(value);
+            const config = AI_CONTEXT_NODE_CONFIGS.find(
+              (config) => config.type === type,
+            );
+            if (config) {
+              // TODO input node to editor
+              const insertText = config.displayTextToValue(value);
+              const nextInputValue =
+                prompt.slice(0, insertNodePosition) +
+                insertText +
+                prompt.slice(insertNodePosition + 1);
+              actions.updatePrompt(nextInputValue);
+            }
           }}
         >
           {({ onTrigger, onKeyDown }) => {
             return (
               <Sender
-                value={inputValue}
+                value={prompt}
                 header={<SenderHeader />}
                 onSubmit={handleSubmit}
                 onChange={(value) => {
-                  if (isInputingAiContext(prevInputValue.current, value)) {
+                  const { isInputingAiContext, position } = getInputInfo(
+                    prevInputValue.current,
+                    value,
+                  );
+                  if (isInputingAiContext) {
+                    setInsertNodePosition(position);
                     onTrigger();
                   } else {
                     onTrigger(false);
                   }
-                  // TODO 插入AiContextNode后再多插入一个空格
-                  prevInputValue.current = inputValue;
+                  prevInputValue.current = prompt;
                   onChange(value);
                 }}
                 onKeyDown={onKeyDown}

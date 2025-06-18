@@ -1,31 +1,46 @@
 import { Sender } from '@ant-design/x';
-import { Flex, Tag } from 'antd';
-import { useEffect } from 'react';
+import { Flex } from 'antd';
 import { useSnapshot } from 'valtio';
+import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
 import * as context from '@/state/context';
 import * as sender from '@/state/sender';
+import type { ContextItem } from '@/types/context';
+import AddContext from '../AddContext';
+
+function renderContextTag(contextItem: ContextItem, onClose?: () => void) {
+  const { type, displayText, value } = contextItem;
+  const config = AI_CONTEXT_NODE_CONFIGS.find((config) => config.type === type);
+
+  if (!config) {
+    return null;
+  }
+
+  return config.render({ displayText, value }, onClose);
+}
 
 const SenderHeader: React.FC = () => {
-  const { contextOpen } = useSnapshot(sender.state);
-  const { isShowContext, fileList } = useSnapshot(context.state);
-
-  useEffect(() => {
-    sender.actions.setContextOpen(isShowContext);
-  }, [isShowContext]);
+  const { editorContexts, selectContexts } = useSnapshot(context.state);
 
   return (
     <Sender.Header
-      title="Context"
-      open={contextOpen}
-      onOpenChange={sender.actions.setContextOpen}
+      closable={false}
+      open={true}
       styles={{ content: { padding: 0 } }}
     >
-      <Flex gap={8} wrap="wrap" style={{ padding: 8 }}>
-        {fileList.map((file) => (
-          <Tag style={{ userSelect: 'none' }} key={file.path}>
-            {file.path}
-          </Tag>
-        ))}
+      <Flex gap={2} wrap="wrap" style={{ padding: 8, lineHeight: '22px' }}>
+        <AddContext />
+        {selectContexts.map((contextItem) =>
+          renderContextTag(contextItem, () => {
+            context.actions.removeSelectContext(contextItem.value);
+          }),
+        )}
+        {editorContexts.map((contextItem) =>
+          renderContextTag(contextItem, () => {
+            sender.actions.updatePrompt(
+              sender.state.prompt.replace(contextItem.value, ''),
+            );
+          }),
+        )}
       </Flex>
     </Sender.Header>
   );

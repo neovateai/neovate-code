@@ -8,6 +8,7 @@ import { Suggestion } from '@ant-design/x';
 import { type GetProp } from 'antd';
 import { useEffect, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
+import { ContextType } from '@/constants/ContextType';
 import { actions, state } from '@/state/suggestion';
 
 type SuggestionItems = Exclude<GetProp<typeof Suggestion, 'items'>, () => void>;
@@ -23,7 +24,7 @@ export const useSuggestion = (searchText?: string) => {
     return [
       {
         label: 'Files & Folders',
-        value: 'files',
+        value: ContextType.FILE,
         icon: <FileSearchOutlined />,
         children: [
           ...fileList.map((file) => ({
@@ -33,10 +34,10 @@ export const useSuggestion = (searchText?: string) => {
           })),
         ],
       },
-      { label: 'Code', value: 'code', icon: <CodeOutlined /> },
+      { label: 'Code', value: ContextType.CODE, icon: <CodeOutlined /> },
       {
         label: 'Knowledge',
-        value: 'knowledge',
+        value: ContextType.KNOWLEDGE,
         extra: 'Check some knowledge',
         icon: <BookOutlined />,
       },
@@ -48,7 +49,7 @@ export const useSuggestion = (searchText?: string) => {
       return defaultSuggestions;
     }
 
-    // 暂时只支持文件和目录搜索
+    // TODO temporary support for file and folder search
     const searchResult = fileList
       .filter((item) => item.path.includes(searchText))
       .map((item) => ({
@@ -60,8 +61,17 @@ export const useSuggestion = (searchText?: string) => {
     return searchResult;
   }, [defaultSuggestions, fileList, searchText]);
 
+  const getTypeByValue = (value: string) => {
+    if (fileList.findIndex((file) => file.path === value) > -1) {
+      return ContextType.FILE;
+    }
+
+    return ContextType.UNKNOWN;
+  };
+
   return {
     suggestions,
     fileList,
+    getTypeByValue,
   };
 };

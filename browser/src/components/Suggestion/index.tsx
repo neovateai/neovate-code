@@ -5,6 +5,7 @@ import type { CascaderProps } from 'antd';
 import classnames from 'classnames';
 import { useEvent, useMergedState } from 'rc-util';
 import React, { useState } from 'react';
+import { searchSuggestionItem } from '@/utils/chat';
 import useStyle from './style';
 import useActive from './useActive';
 
@@ -44,7 +45,7 @@ export interface SuggestionProps<T = any> {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   items: SuggestionItem[] | ((info?: T) => SuggestionItem[]);
-  onSelect?: (value: string) => void;
+  onSelect?: (value: string, item: SuggestionItem) => void;
   block?: boolean;
   styles?: Partial<Record<string, React.CSSProperties>>;
   classNames?: Partial<Record<string, string>>;
@@ -153,7 +154,9 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
 
   const onInternalChange = (valuePath: string[]) => {
     if (onSelect) {
-      onSelect(valuePath[valuePath.length - 1]);
+      const value = valuePath[valuePath.length - 1];
+      const item = searchSuggestionItem(itemList, value);
+      onSelect(value, item as SuggestionItem);
     }
     triggerOpen(false);
   };
