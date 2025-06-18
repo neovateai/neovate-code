@@ -12,8 +12,22 @@ interface ToolCallMessageRendererProps {
   debugKey?: string;
 }
 
+interface IFileReadToolResult {
+  data: {
+    content: string;
+    filePath: string;
+    totalLines: number;
+  };
+}
+
+interface IThinkToolResult {
+  thought: string;
+}
+
 // 解析结果为 JSON
-const parseResult = (result: string): any => {
+const parseResult = (
+  result: string,
+): IFileReadToolResult | IThinkToolResult | null => {
   try {
     return JSON.parse(result);
   } catch {
@@ -28,7 +42,10 @@ const ToolCallMessageRenderer: React.FC<ToolCallMessageRendererProps> = ({
   const { toolName, args, result } = message.content || message;
 
   // 根据工具名称和字段类型渲染特定格式
-  const renderSpecificContent = (content: any, isArgs: boolean = false) => {
+  const renderSpecificContent = (
+    content: string | IFileReadToolResult | IThinkToolResult,
+    isArgs: boolean = false,
+  ) => {
     if (!content) return null;
 
     const parsedContent =
@@ -37,19 +54,35 @@ const ToolCallMessageRenderer: React.FC<ToolCallMessageRendererProps> = ({
 
     switch (toolName) {
       case 'ThinkTool':
-        if (parsedContent && typeof parsedContent.thought === 'string') {
-          return <ThinkToolRenderer data={parsedContent} type={type} />;
+        if (
+          parsedContent &&
+          typeof (parsedContent as IThinkToolResult).thought === 'string'
+        ) {
+          return (
+            <ThinkToolRenderer
+              data={parsedContent as IThinkToolResult}
+              type={type}
+            />
+          );
         }
         break;
 
       case 'FileReadTool':
         if (
-          parsedContent?.data &&
-          typeof parsedContent.data?.content === 'string' &&
-          typeof parsedContent.data?.filePath === 'string' &&
-          typeof parsedContent.data?.totalLines === 'number'
+          parsedContent &&
+          typeof (parsedContent as IFileReadToolResult).data.content ===
+            'string' &&
+          typeof (parsedContent as IFileReadToolResult).data.filePath ===
+            'string' &&
+          typeof (parsedContent as IFileReadToolResult).data.totalLines ===
+            'number'
         ) {
-          return <FileReadToolRenderer data={parsedContent.data} type={type} />;
+          return (
+            <FileReadToolRenderer
+              data={(parsedContent as IFileReadToolResult).data}
+              type={type}
+            />
+          );
         }
         break;
     }

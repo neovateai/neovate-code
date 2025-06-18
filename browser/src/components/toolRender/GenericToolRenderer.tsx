@@ -2,7 +2,7 @@ import React from 'react';
 import styles from './index.module.css';
 
 interface GenericToolRendererProps {
-  data: any;
+  data: unknown;
   type: 'args' | 'result';
   toolName: string;
 }

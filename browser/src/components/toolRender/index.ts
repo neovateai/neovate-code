@@ -5,7 +5,7 @@ export { default as GenericToolRenderer } from './GenericToolRenderer';
 
 // 类型定义导出
 export interface ToolRenderProps {
-  data: any;
+  data: unknown;
   type: 'args' | 'result';
   toolName: string;
 }
