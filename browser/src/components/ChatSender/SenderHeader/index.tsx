@@ -3,7 +3,6 @@ import { Flex } from 'antd';
 import { useSnapshot } from 'valtio';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
 import * as context from '@/state/context';
-import * as sender from '@/state/sender';
 import type { ContextItem } from '@/types/context';
 import AddContext from '../AddContext';
 
@@ -36,9 +35,7 @@ const SenderHeader: React.FC = () => {
         )}
         {editorContexts.map((contextItem) =>
           renderContextTag(contextItem, () => {
-            sender.actions.updatePrompt(
-              sender.state.prompt.replace(contextItem.value, ''),
-            );
+            context.actions.removeEditorContext(contextItem.value);
           }),
         )}
       </Flex>

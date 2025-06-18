@@ -8,8 +8,9 @@ import {
 import { Prompts, Sender } from '@ant-design/x';
 import { Button, Flex, type GetProp } from 'antd';
 import { createStyles } from 'antd-style';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
+import { ContextType } from '@/constants/ContextType';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
 import { useChatState } from '@/context/chatProvider';
 import { useSuggestion } from '@/hooks/useSuggestion';
@@ -71,12 +72,10 @@ const ChatSender: React.FC = () => {
   const [contextSearchInput, setContextSearchInput] = useState('');
   const prevInputValue = useRef<string>(state.prompt);
   const { prompt } = useSnapshot(state);
-  const { contextsSelectedValues } = useSnapshot(context.state);
 
-  const { suggestions, getTypeByValue } = useSuggestion(
-    contextSearchInput,
-    contextsSelectedValues,
-  );
+  // 编辑器中的Context不去重，实际挂载时再去重
+  const { suggestions, getTypeByValue, getFileByValue } =
+    useSuggestion(contextSearchInput);
 
   // TODO 发送给大模型用plainText，展示用inputValue
 
@@ -130,18 +129,38 @@ const ChatSender: React.FC = () => {
             },
           }}
           onSelect={(value) => {
+            // TODO Map record
             const type = getTypeByValue(value);
             const config = AI_CONTEXT_NODE_CONFIGS.find(
               (config) => config.type === type,
             );
             if (config) {
-              // TODO input node to editor
-              const insertText = config.displayTextToValue(value);
+              const contextValue = config.displayTextToValue(value);
               const nextInputValue =
                 prompt.slice(0, insertNodePosition) +
-                insertText +
+                contextValue +
                 prompt.slice(insertNodePosition + 1);
               actions.updatePrompt(nextInputValue);
+
+              switch (type) {
+                case ContextType.FILE: {
+                  const fileItem = getFileByValue(value);
+                  if (fileItem) {
+                    context.actions.addSelectContext(
+                      {
+                        type,
+                        value: contextValue,
+                        displayText: value,
+                      },
+                      fileItem,
+                    );
+                  }
+                  break;
+                }
+                // extend other type here
+                default:
+                // do nothing
+              }
             }
           }}
         >

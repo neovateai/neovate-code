@@ -66,8 +66,8 @@ function getTextDiff(str1: string, str2: string): TextDiff[] {
   return diffs;
 }
 
-export function getInputInfo(prevContext: string, nextContent: string) {
-  const diffs = getTextDiff(prevContext, nextContent);
+export function getInputInfo(prevContent: string, nextContent: string) {
+  const diffs = getTextDiff(prevContent, nextContent);
 
   // 本次输入只输入了一个@，代表唤起菜单
   return {

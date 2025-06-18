@@ -4,6 +4,7 @@ import { createStyles } from 'antd-style';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
 import Suggestion from '@/components/Suggestion';
+import { ContextType } from '@/constants/ContextType';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
@@ -48,7 +49,7 @@ const AddContext = () => {
     });
   }, []);
 
-  const { suggestions, getTypeByValue } = useSuggestion(
+  const { suggestions, getTypeByValue, getFileByValue } = useSuggestion(
     inputValue,
     contextsSelectedValues,
   );
@@ -65,13 +66,27 @@ const AddContext = () => {
         );
         if (config) {
           const contextValue = config.displayTextToValue(value);
-          context.actions.addSelectContext({
-            type,
-            value: contextValue,
-            displayText: value,
-          });
-          inputRef.current?.blur();
+          switch (type) {
+            case ContextType.FILE: {
+              const fileItem = getFileByValue(value);
+              if (fileItem) {
+                context.actions.addSelectContext(
+                  {
+                    type,
+                    value: contextValue,
+                    displayText: value,
+                  },
+                  fileItem,
+                );
+              }
+              break;
+            }
+            // extend other type here
+            default:
+            // do nothing
+          }
         }
+        inputRef.current?.blur();
       }}
     >
       {({ onKeyDown, onTrigger }) =>

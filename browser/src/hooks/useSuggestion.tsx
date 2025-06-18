@@ -65,6 +65,7 @@ export const useSuggestion = (
     return searchResult;
   }, [defaultSuggestions, fileList, searchText]);
 
+  /** 根据value获取ContextType */
   const getTypeByValue = (value: string) => {
     if (fileList.findIndex((file) => file.path === value) > -1) {
       return ContextType.FILE;
@@ -73,9 +74,15 @@ export const useSuggestion = (
     return ContextType.UNKNOWN;
   };
 
+  /** 根据value获取原始FileItem */
+  const getFileByValue = (value: string) => {
+    return fileList.find((file) => file.path === value);
+  };
+
   return {
     suggestions,
     fileList,
     getTypeByValue,
+    getFileByValue,
   };
 };
