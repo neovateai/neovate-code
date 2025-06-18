@@ -37,6 +37,10 @@ export async function runCli(opts: RunCliOpts) {
       const { runMCP } = await import('./commands/mcp');
       await runMCP(opts);
       break;
+    case 'run':
+      const { runRun } = await import('./commands/run');
+      await runRun(opts);
+      break;
     default:
       if (process.env.FC) {
         const { runDefault } = await import('./commands/default-fc');
