@@ -5,7 +5,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createXai } from '@ai-sdk/xai';
 import { ModelProvider } from '@openai/agents';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { aisdk } from './aiSdk';
+import { aisdk } from './ai-sdk';
 
 const THINKING_MODELS = [
   'o3',

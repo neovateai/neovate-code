@@ -12,7 +12,7 @@ import { RunCliOpts } from '..';
 import { createCodeAgent } from '../agents/code';
 import { Config } from '../config';
 import { Context, PromptContext } from '../context';
-import { parseMessage } from '../parseMessage';
+import { parseMessage } from '../parse-message';
 import { getDefaultModelProvider } from '../provider';
 import { Tools } from '../tool';
 import { createBashTool } from '../tools/bash';
