@@ -158,12 +158,12 @@ function ChatInput() {
     <Box flexDirection="column" marginTop={1}>
       <Box
         borderStyle="round"
-        borderColor="gray"
+        borderColor={isProcessing ? 'gray' : 'blueBright'}
         paddingX={1}
         flexDirection="row"
         gap={1}
       >
-        <Text color="white">&gt;</Text>
+        <Text color={isProcessing ? 'gray' : 'white'}>&gt;</Text>
         {isProcessing ? (
           <Text color="gray">Processing...</Text>
         ) : (
