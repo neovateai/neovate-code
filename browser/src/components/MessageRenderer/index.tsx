@@ -18,8 +18,6 @@ interface MessageRendererProps {
 
 // 主消息渲染器
 const MessageRenderer: React.FC<MessageRendererProps> = ({ message }) => {
-  console.log('message', message);
-
   // 渲染内容的包装器，包含调试信息
   const renderWithDebug = (content: React.ReactNode) => {
     return (
