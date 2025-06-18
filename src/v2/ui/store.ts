@@ -1,4 +1,3 @@
-import { AgentInputItem, RunResult } from '@openai/agents';
 import createDebug from 'debug';
 import { proxy } from 'valtio';
 import { isReasoningModel } from '../provider';
@@ -20,7 +19,8 @@ export interface CreateStoreOpts {
   productName: string;
   version: string;
   service: Service;
-  messages?: Message[];
+  planService: Service;
+  stage: 'plan' | 'code';
 }
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -30,17 +30,20 @@ export function createStore(opts: CreateStoreOpts) {
     throw new Error('Store already initialized');
   }
   store = proxy<Store>({
+    stage: opts.stage,
+    planModal: null,
     generalInfo: {
       productName: opts.productName,
       version: opts.version,
     },
     status: 'idle',
     error: null,
-    messages: opts.messages || [],
+    messages: [],
     currentMessage: null,
     actions: {
       query: async (input: string): Promise<any> => {
-        const service = opts.service;
+        const service =
+          store!.stage === 'plan' ? opts.planService : opts.service;
         let textDelta = '';
         let reasoningDelta = '';
         store!.status = 'processing';
@@ -133,6 +136,9 @@ export function createStore(opts: CreateStoreOpts) {
           },
         });
         store!.status = 'completed';
+        if (store!.stage === 'plan') {
+          store!.planModal = { text: result.finalText || '' };
+        }
         return result;
       },
     },
@@ -145,6 +151,8 @@ export interface Store {
     productName: string;
     version: string;
   };
+  stage: 'plan' | 'code';
+  planModal: { text: string } | null;
   status:
     | 'idle'
     | 'processing'

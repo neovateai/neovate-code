@@ -1,5 +1,4 @@
-import { AgentInputItem, ModelProvider, withTrace } from '@openai/agents';
-import assert from 'assert';
+import { ModelProvider, withTrace } from '@openai/agents';
 import { randomUUID } from 'crypto';
 import { format } from 'date-fns';
 import createDebug from 'debug';
@@ -9,11 +8,8 @@ import path from 'path';
 import React from 'react';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
-import { confirm, getUserInput } from '../../utils/logger';
 import { PRODUCT_NAME } from '../constants';
 import { Context } from '../context';
-import { isReasoningModel } from '../provider';
-import { query } from '../query';
 import { Service } from '../service';
 import { setupTracing } from '../tracing';
 import { App } from '../ui/app';
@@ -37,108 +33,29 @@ export async function run(opts: RunOpts) {
   const services: Service[] = [];
   return await withTrace(traceName, async () => {
     try {
-      let prompt =
-        opts.prompt ||
-        (await getUserInput({
-          message: 'User:',
-        }));
+      let prompt = opts.prompt;
       debug('prompt', prompt);
       const commonServiceOpts = {
         cwd: opts.cwd,
         context: opts.context,
         modelProvider: opts.modelProvider,
       };
-
-      // plan mode
-      if (opts.plan) {
-        debug('plan mode');
-        const service = new Service({
-          agentType: 'plan',
-          ...commonServiceOpts,
-        });
-        services.push(service);
-        let input: AgentInputItem[] = [
-          {
-            role: 'user' as const,
-            content: prompt,
-          },
-        ];
-        while (true) {
-          debug('querying plan', input);
-          console.log(`Here is ${service.context.productName}'s plan:`);
-          console.log('-------------');
-          let isThinking = false;
-          const { finalText: plan } = await query({
-            input,
-            service,
-            thinking: isReasoningModel(
-              service.context.configManager.config.planModel,
-            ),
-            onTextDelta(text) {
-              process.stdout.write(text);
-            },
-            onText() {
-              process.stdout.write('\n');
-            },
-            onReasoning(text) {
-              if (!isThinking) {
-                isThinking = true;
-                process.stdout.write('\nThinking:\n');
-              }
-              process.stdout.write(text);
-            },
-            onToolUse(callId, name, params) {
-              console.log(
-                `Tool use: ${name} with params ${JSON.stringify(params)}`,
-              );
-            },
-            onToolUseResult(callId, name, result) {
-              console.log(
-                `Tool use result: ${name} with result ${JSON.stringify(
-                  result,
-                )}`,
-              );
-            },
-          });
-          debug('plan', plan);
-          assert(plan, `No plan found`);
-          console.log('-------------');
-          const confirmed = await confirm({
-            message: 'Would you like to proceed?',
-            active: 'Yes',
-            inactive: 'No, I want to edit the plan',
-          });
-          if (confirmed) {
-            debug('user confirmed');
-            prompt = plan;
-            break;
-          } else {
-            const editedPlan = await getUserInput({
-              message: 'Please edit the plan:',
-            });
-            debug('editedPlan', editedPlan);
-            input = [
-              {
-                role: 'user' as const,
-                content: editedPlan,
-              },
-            ];
-          }
-        }
-      }
-
-      // code mode
-      debug('code mode');
       const service = new Service({
         agentType: 'code',
         ...commonServiceOpts,
       });
       services.push(service);
+      const planService = new Service({
+        agentType: 'plan',
+        ...commonServiceOpts,
+      });
+      services.push(planService);
       const store = createStore({
         productName: opts.productName ?? PRODUCT_NAME,
         version: opts.version ?? '0.0.0',
         service,
-        messages: [],
+        planService: planService,
+        stage: opts.plan ? 'plan' : 'code',
       });
       if (!opts.context.configManager.config.quiet) {
         render(<App />, {
@@ -146,7 +63,16 @@ export async function run(opts: RunOpts) {
           exitOnCtrlC: true,
         });
       }
-      return await store.actions.query(prompt);
+      if (prompt) {
+        const result = await store.actions.query(prompt);
+        if (!opts.plan) {
+          return result;
+        } else {
+          return null;
+        }
+      } else {
+        return null;
+      }
     } finally {
       await Promise.all(services.map((service) => service.destroy()));
     }

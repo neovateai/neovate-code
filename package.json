@@ -74,6 +74,7 @@
     "glob": "^11.0.3",
     "husky": "^9.1.7",
     "ink": "^6.0.0",
+    "ink-select-input": "^6.2.0",
     "ink-text-input": "^6.0.0",
     "inquirer": "^12.6.3",
     "jsonrepair": "^3.12.0",

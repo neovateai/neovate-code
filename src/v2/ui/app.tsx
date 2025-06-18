@@ -4,6 +4,7 @@ import React from 'react';
 import { useSnapshot } from 'valtio';
 import { Message, UserMessage, AssistantTextMessage, AssistantToolMessage, ToolMessage, ThinkingMessage, SystemMessage } from './store';
 import { getStore } from './store';
+import SelectInput from 'ink-select-input';
 
 function UserMessage({ message }: { message: UserMessage }) {
   return (
@@ -182,6 +183,36 @@ function ChatInput() {
   );
 }
 
+function PlanModal() {
+  const store = getStore();
+  const snap = useSnapshot(store);
+  return (
+    <Box flexDirection="column" borderStyle="round" borderColor="gray" padding={1}>
+      <Text>Here is the plan:</Text>
+      <Box flexDirection="column" borderStyle="round" borderColor="gray" padding={1}>
+        <Text>{snap.planModal!.text}</Text>
+      </Box>
+      <Text>Do you want to proceed?</Text>
+      <SelectInput items={[{
+        label: 'Yes',
+        value: true,
+      }, {
+        label: 'No, I want to edit the plan',
+        value: false,
+      }]} onSelect={(item) => {
+        if (item.value) {
+          store.stage = 'code';
+          store.planModal = null;
+          store.actions.query(snap.planModal!.text);
+        } else {
+          store.stage = 'plan';
+          store.planModal = null;
+        }
+      }} />
+    </Box>
+  );
+}
+
 export function App() {
   const snap = useSnapshot(getStore());
   return (
@@ -195,7 +226,7 @@ export function App() {
         }}
       </Static>
       {snap.currentMessage && <Message message={snap.currentMessage} />}
-      <ChatInput />
+      {snap.planModal ? <PlanModal /> : <ChatInput />}
     </Box>
   );
 }

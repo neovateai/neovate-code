@@ -1,4 +1,4 @@
-import { AgentInputItem } from '@openai/agents';
+import { AgentInputItem, withTrace } from '@openai/agents';
 import { Service } from './service';
 
 type QueryOpts = {
@@ -18,7 +18,9 @@ type QueryOpts = {
 
 export async function query(opts: QueryOpts) {
   const { service, thinking } = opts;
-  await service.init();
+  await withTrace('query', async () => {
+    await service.init();
+  });
   let input =
     typeof opts.input === 'string'
       ? [
