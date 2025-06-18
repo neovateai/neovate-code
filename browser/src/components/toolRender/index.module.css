@@ -90,10 +90,19 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  min-width: 0; /* 允许文本溢出处理 */
 }
 
 .fileIcon {
   font-size: 16px;
+  flex-shrink: 0;
+}
+
+.filePathContainer {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .filePath {
@@ -101,12 +110,48 @@
   font-weight: 600;
   font-family: 'Fira Code', 'Consolas', monospace;
   font-size: 14px;
-  word-break: break-all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.fileActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .fileStats {
   display: flex;
   align-items: center;
+}
+
+.expandButton {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #047857;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+}
+
+.expandButton:hover {
+  background: rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.expandButton:active {
+  transform: translateY(0);
 }
 
 .fileStatsText {
@@ -154,6 +199,64 @@
 
 .fileContent::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+.markdownContent {
+  background: #ffffff;
+  padding: 20px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #1f2937;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.markdownContent h1,
+.markdownContent h2,
+.markdownContent h3,
+.markdownContent h4,
+.markdownContent h5,
+.markdownContent h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  color: #047857;
+}
+
+.markdownContent h1 {
+  font-size: 28px;
+}
+.markdownContent h2 {
+  font-size: 24px;
+}
+.markdownContent h3 {
+  font-size: 20px;
+}
+
+.markdownContent p {
+  margin-bottom: 16px;
+}
+
+.markdownContent code {
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+}
+
+.markdownContent pre {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+
+.markdownContent pre code {
+  background: none;
+  padding: 0;
 }
 
 /* Generic Tool 样式 */
