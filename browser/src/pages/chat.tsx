@@ -14,8 +14,8 @@ import LexicalTextArea from '@/components/ChatSender/LexicalTextArea';
 import { LexicalTextAreaContext } from '@/components/ChatSender/LexicalTextAreaContext';
 import MessageRenderer from '@/components/MessageRenderer';
 import Welcome from '@/components/Welcome';
+import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
 import { useChatState } from '@/context/chatProvider';
-import { AI_CONTEXT_NODE_CONFIGS } from '@/models/aiContextNodeConfig';
 import type { BubbleMessage } from '@/types/chat';
 
 const useStyle = createStyles(({ token, css }) => {

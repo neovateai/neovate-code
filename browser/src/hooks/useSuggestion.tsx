@@ -12,14 +12,14 @@ import { actions, state } from '@/state/suggestion';
 
 type SuggestionItems = Exclude<GetProp<typeof Suggestion, 'items'>, () => void>;
 
-export const useSuggestion = () => {
+export const useSuggestion = (searchText?: string) => {
   const { fileList } = useSnapshot(state);
 
   useEffect(() => {
     actions.getFileList();
   }, []);
 
-  const suggestions = useMemo(() => {
+  const defaultSuggestions = useMemo(() => {
     return [
       {
         label: 'Files & Folders',
@@ -42,6 +42,23 @@ export const useSuggestion = () => {
       },
     ] as SuggestionItems;
   }, [fileList]);
+
+  const suggestions = useMemo(() => {
+    if (!searchText) {
+      return defaultSuggestions;
+    }
+
+    // 暂时只支持文件和目录搜索
+    const searchResult = fileList
+      .filter((item) => item.path.includes(searchText))
+      .map((item) => ({
+        label: item.path,
+        value: item.path,
+        icon: <FileOutlined />,
+      }));
+
+    return searchResult;
+  }, [defaultSuggestions, fileList, searchText]);
 
   return {
     suggestions,

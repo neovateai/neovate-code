@@ -9,9 +9,9 @@ import { Prompts, Sender } from '@ant-design/x';
 import { Button, Flex, type GetProp } from 'antd';
 import { createStyles } from 'antd-style';
 import { useRef, useState } from 'react';
+import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
 import { useChatState } from '@/context/chatProvider';
 import { useSuggestion } from '@/hooks/useSuggestion';
-import { AI_CONTEXT_NODE_CONFIGS } from '@/models/aiContextNodeConfig';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
 import { isInputingAiContext } from '@/utils/chat';
@@ -67,8 +67,9 @@ const ChatSender: React.FC = () => {
   const { styles } = useStyle();
   const { abortController, loading, onQuery } = useChatState();
   const [inputValue, setInputValue] = useState(state.prompt);
+  const [contextSearchInput, setContextSearchInput] = useState('');
   const prevInputValue = useRef<string>(state.prompt);
-  const { suggestions } = useSuggestion();
+  const { suggestions } = useSuggestion(contextSearchInput);
 
   // 处理输入变化
   const onChange = (value: string) => {
@@ -109,8 +110,7 @@ const ChatSender: React.FC = () => {
           showSearch={{
             placeholder: '请输入关键词',
             onSearch: (text) => {
-              console.log('search', text);
-              return [];
+              setContextSearchInput(text);
             },
           }}
           onSelect={(itemVal) => {

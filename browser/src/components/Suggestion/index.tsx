@@ -32,7 +32,7 @@ export interface RenderChildrenProps<T> {
 export interface ShowSearchConfigs {
   placeholder?: string;
   /** 优先级高于items */
-  onSearch: (text: string) => SuggestionItem[];
+  onSearch: (text: string) => void;
 }
 
 export interface SuggestionProps<T = any> {
@@ -113,14 +113,6 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
     [items, info],
   );
 
-  const [searchedItemList, setSearchedItemList] = useState<SuggestionItem[]>(
-    [],
-  );
-
-  const mergedItemList = React.useMemo(
-    () => (searchedItemList.length > 0 ? searchedItemList : itemList),
-    [searchedItemList, itemList],
-  );
   // =========================== Cascader ===========================
   const optionRender: CascaderProps<SuggestionItem>['optionRender'] = (
     node,
@@ -150,8 +142,7 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
             variant="underlined"
             placeholder={showSearch?.placeholder}
             onChange={(e) => {
-              const searchedItemList = showSearch.onSearch(e.target.value);
-              setSearchedItemList(searchedItemList);
+              showSearch.onSearch(e.target.value);
             }}
           />
         )}
@@ -169,7 +160,7 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
 
   // ============================= a11y =============================
   const [activePath, onKeyDown] = useActive(
-    mergedItemList,
+    itemList,
     mergedOpen,
     isRTL,
     onInternalChange,
@@ -200,7 +191,7 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
 
   return wrapCSSVar(
     <Cascader
-      options={mergedItemList}
+      options={itemList}
       open={mergedOpen}
       value={activePath}
       popupRender={popupRender}
