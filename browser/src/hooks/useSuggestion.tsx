@@ -13,7 +13,10 @@ import { actions, state } from '@/state/suggestion';
 
 type SuggestionItems = Exclude<GetProp<typeof Suggestion, 'items'>, () => void>;
 
-export const useSuggestion = (searchText?: string) => {
+export const useSuggestion = (
+  searchText: string,
+  selectedValues?: readonly string[],
+) => {
   const { fileList } = useSnapshot(state);
 
   useEffect(() => {
@@ -31,6 +34,7 @@ export const useSuggestion = (searchText?: string) => {
             label: file.path,
             value: file.path,
             icon: <FileOutlined />,
+            disabled: selectedValues?.includes(file.path),
           })),
         ],
       },
@@ -42,7 +46,7 @@ export const useSuggestion = (searchText?: string) => {
         icon: <BookOutlined />,
       },
     ] as SuggestionItems;
-  }, [fileList]);
+  }, [fileList, selectedValues]);
 
   const suggestions = useMemo(() => {
     if (!searchText) {

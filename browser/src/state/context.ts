@@ -13,6 +13,10 @@ interface ContextState {
   contexts: {
     files: Omit<FileItem, 'name'>[];
   };
+
+  contextItems: ContextItem[];
+
+  contextsSelectedValues: string[];
 }
 
 export const state = proxy<ContextState>({
@@ -21,19 +25,25 @@ export const state = proxy<ContextState>({
   editorContextMap: new Map(),
   selectContextMap: new Map(),
   fileList: [],
-  get contexts() {
-    // 根据value去重
-    const mergedContexts = [
-      ...this.editorContexts,
-      ...this.selectContexts,
-    ].reduce((acc, cur) => {
-      if (!acc.some((item) => item.value === cur.value)) {
-        acc.push(cur);
-      }
-      return acc;
-    }, [] as ContextItem[]);
 
-    const files = mergedContexts
+  get contextItems() {
+    // 根据value去重
+    return [...this.editorContexts, ...this.selectContexts].reduce(
+      (acc, cur) => {
+        if (!acc.some((item: ContextItem) => item.value === cur.value)) {
+          acc.push(cur);
+        }
+        return acc;
+      },
+      [] as ContextItem[],
+    );
+  },
+
+  get contextsSelectedValues() {
+    return this.contextItems.map((item: ContextItem) => item.displayText);
+  },
+  get contexts() {
+    const files = this.contextItems
       .filter((contextItem) => contextItem.type === ContextType.FILE)
       .map((contextItem) => ({}));
 
@@ -84,6 +94,6 @@ export const actions = {
   updateEditorContext: (contextItems: ContextItem[]) => {
     state.editorContexts = contextItems;
     state.editorContextMap.clear();
-    // TODO context
+    // TODO add context
   },
 };

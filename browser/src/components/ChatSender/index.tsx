@@ -70,8 +70,13 @@ const ChatSender: React.FC = () => {
   const [insertNodePosition, setInsertNodePosition] = useState(0);
   const [contextSearchInput, setContextSearchInput] = useState('');
   const prevInputValue = useRef<string>(state.prompt);
-  const { suggestions, getTypeByValue } = useSuggestion(contextSearchInput);
   const { prompt } = useSnapshot(state);
+  const { contextsSelectedValues } = useSnapshot(context.state);
+
+  const { suggestions, getTypeByValue } = useSuggestion(
+    contextSearchInput,
+    contextsSelectedValues,
+  );
 
   // TODO 发送给大模型用plainText，展示用inputValue
 

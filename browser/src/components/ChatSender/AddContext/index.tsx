@@ -1,12 +1,34 @@
 import { PlusOutlined } from '@ant-design/icons';
 import { Input, type InputRef, Tag } from 'antd';
+import { createStyles } from 'antd-style';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useSnapshot } from 'valtio';
+import Suggestion from '@/components/Suggestion';
+import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
+import { useSuggestion } from '@/hooks/useSuggestion';
+import * as context from '@/state/context';
+
+const useStyle = createStyles(({ css }) => {
+  return {
+    tag: css`
+      user-select: none;
+      cursor: pointer;
+      border-style: dashed;
+      background-color: inherit;
+      line-height: inherit;
+    `,
+    input: css`
+      margin-right: 8px;
+    `,
+  };
+});
 
 const AddContext = () => {
   const [inputVisible, setInputVisible] = useState(false);
   const [inputValue, setinputValue] = useState('');
   const inputRef = useRef<InputRef>(null);
   const tagRef = useRef<HTMLDivElement>(null);
+  const { selectContexts, contextsSelectedValues } = useSnapshot(context.state);
   const [tagSize, setTagSize] = useState<{ width: number; height: number }>({
     width: 0,
     height: 0,
@@ -26,32 +48,61 @@ const AddContext = () => {
     });
   }, []);
 
-  return inputVisible ? (
-    <Input
-      ref={inputRef}
-      style={{
-        ...tagSize,
-        marginRight: 8,
+  const { suggestions, getTypeByValue } = useSuggestion(
+    inputValue,
+    contextsSelectedValues,
+  );
+
+  const { styles } = useStyle();
+
+  return (
+    <Suggestion
+      items={suggestions}
+      onSelect={(value) => {
+        const type = getTypeByValue(value);
+        const config = AI_CONTEXT_NODE_CONFIGS.find(
+          (config) => config.type === type,
+        );
+        if (config) {
+          const contextValue = config.displayTextToValue(value);
+          context.actions.addSelectContext({
+            type,
+            value: contextValue,
+            displayText: value,
+          });
+          inputRef.current?.blur();
+        }
       }}
-      onBlur={() => {
-        setInputVisible(false);
-        setinputValue('');
-      }}
-    />
-  ) : (
-    <Tag
-      ref={tagRef}
-      style={{
-        userSelect: 'none',
-        borderStyle: 'dashed',
-        backgroundColor: 'inherit',
-        lineHeight: 'inherit',
-      }}
-      icon={<PlusOutlined />}
-      onClick={() => setInputVisible(true)}
     >
-      Add Context
-    </Tag>
+      {({ onKeyDown, onTrigger }) =>
+        inputVisible ? (
+          <Input
+            className={styles.input}
+            ref={inputRef}
+            style={{
+              ...tagSize,
+            }}
+            onChange={(e) => setinputValue(e.target.value)}
+            onKeyDown={onKeyDown}
+            onFocus={() => onTrigger()}
+            onBlur={() => {
+              setInputVisible(false);
+              setinputValue('');
+              onTrigger(false);
+            }}
+          />
+        ) : (
+          <Tag
+            ref={tagRef}
+            className={styles.tag}
+            icon={<PlusOutlined />}
+            onClick={() => setInputVisible(true)}
+          >
+            {selectContexts.length === 0 && <span>Add Context</span>}
+          </Tag>
+        )
+      }
+    </Suggestion>
   );
 };
 
