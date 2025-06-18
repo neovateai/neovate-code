@@ -31,7 +31,6 @@ const DebugInfo: React.FC<DebugInfoProps> = ({ message }) => {
     try {
       const debugData: any = {
         messageType: typeof msg,
-        timestamp: new Date().toISOString(),
       };
 
       if (typeof msg === 'string') {

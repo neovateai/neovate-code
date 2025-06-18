@@ -44,12 +44,12 @@ const ToolCallMessageRenderer: React.FC<ToolCallMessageRendererProps> = ({
 
       case 'FileReadTool':
         if (
-          parsedContent &&
-          typeof parsedContent.content === 'string' &&
-          typeof parsedContent.filePath === 'string' &&
-          typeof parsedContent.totalLines === 'number'
+          parsedContent?.data &&
+          typeof parsedContent.data?.content === 'string' &&
+          typeof parsedContent.data?.filePath === 'string' &&
+          typeof parsedContent.data?.totalLines === 'number'
         ) {
-          return <FileReadToolRenderer data={parsedContent} type={type} />;
+          return <FileReadToolRenderer data={parsedContent.data} type={type} />;
         }
         break;
     }
