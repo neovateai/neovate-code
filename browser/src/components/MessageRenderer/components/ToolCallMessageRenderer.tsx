@@ -39,7 +39,9 @@ const ToolCallMessageRenderer: React.FC<ToolCallMessageRendererProps> = ({
   message,
   debugKey,
 }) => {
+  console.log('tool call message', message);
   const { toolName, args, result } = message.content || message;
+  console.log('tool call message parsed', toolName, args, result);
 
   // 根据工具名称和字段类型渲染特定格式
   const renderSpecificContent = (
@@ -51,6 +53,7 @@ const ToolCallMessageRenderer: React.FC<ToolCallMessageRendererProps> = ({
     const parsedContent =
       typeof content === 'string' ? parseResult(content) : content;
     const type = isArgs ? 'args' : 'result';
+    console.log('parsedContent', parsedContent);
 
     switch (toolName) {
       case 'ThinkTool':
@@ -70,11 +73,11 @@ const ToolCallMessageRenderer: React.FC<ToolCallMessageRendererProps> = ({
       case 'FileReadTool':
         if (
           parsedContent &&
-          typeof (parsedContent as IFileReadToolResult).data.content ===
+          typeof (parsedContent as IFileReadToolResult).data?.content ===
             'string' &&
-          typeof (parsedContent as IFileReadToolResult).data.filePath ===
+          typeof (parsedContent as IFileReadToolResult).data?.filePath ===
             'string' &&
-          typeof (parsedContent as IFileReadToolResult).data.totalLines ===
+          typeof (parsedContent as IFileReadToolResult).data?.totalLines ===
             'number'
         ) {
           return (
