@@ -95,3 +95,78 @@
   margin-top: 0;
   box-shadow: none;
 }
+
+/* 调试信息样式 */
+.debugContainer {
+  margin-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 8px;
+}
+
+.debugToggle {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.debugToggle:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+.debugToggleIcon {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+}
+
+.debugToggleIconExpanded {
+  transform: rotate(90deg);
+}
+
+.debugContent {
+  margin-top: 8px;
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  padding: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.debugJson {
+  color: #f9fafb;
+  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.debugContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.debugContent::-webkit-scrollbar-track {
+  background: #374151;
+  border-radius: 3px;
+}
+
+.debugContent::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 3px;
+}
+
+.debugContent::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

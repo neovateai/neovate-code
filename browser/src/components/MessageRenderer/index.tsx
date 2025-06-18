@@ -5,6 +5,7 @@ import type {
   ToolCallMessage,
 } from '@/types/chat';
 import {
+  DebugInfo,
   MixedMessageRenderer,
   NonTextMessageRenderer,
   StringMessageRenderer,
@@ -19,27 +20,44 @@ interface MessageRendererProps {
 const MessageRenderer: React.FC<MessageRendererProps> = ({ message }) => {
   console.log('message', message);
 
+  // 渲染内容的包装器，包含调试信息
+  const renderWithDebug = (content: React.ReactNode) => {
+    return (
+      <div>
+        {content}
+        <DebugInfo message={message} />
+      </div>
+    );
+  };
+
   // 处理字符串消息
   if (typeof message === 'string') {
-    return <StringMessageRenderer message={message} />;
+    return renderWithDebug(<StringMessageRenderer message={message} />);
   }
 
   if (!message || typeof message !== 'object') {
-    return <>{message}</>;
+    return renderWithDebug(<>{message}</>);
   }
 
   // 处理混合消息格式
   if (message.type === 'mixed') {
-    return <MixedMessageRenderer message={message as MixedMessage} />;
+    return renderWithDebug(
+      <MixedMessageRenderer message={message as MixedMessage} />,
+    );
   }
 
   // 处理单一类型的消息
   switch (message.type) {
     case 'tool-call':
-      return <ToolCallMessageRenderer message={message as ToolCallMessage} />;
+      return renderWithDebug(
+        <ToolCallMessageRenderer message={message as ToolCallMessage} />,
+      );
     default:
-      return (
-        <NonTextMessageRenderer message={message as NonTextMessage} index={0} />
+      return renderWithDebug(
+        <NonTextMessageRenderer
+          message={message as NonTextMessage}
+          index={0}
+        />,
       );
   }
 };
