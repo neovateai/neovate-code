@@ -118,6 +118,7 @@ function ChatInput() {
   const isProcessing = store.status === 'processing';
   const [value, setValue] = React.useState('');
   const handleSubmit = () => {
+    if (value.trim() === '') return;
     setValue('');
     store.actions.query(value);
   };
