@@ -1,14 +1,19 @@
+const RPEFIX = '[.takumi/plugin.js]';
 
 export default {
-  commands: async () => {
+  config (config) {
+    console.log(RPEFIX, 'config', config, this);
     return {
-      name: 'foo',
-      description: 'foo',
-      fn: async () => {
-        console.log('foo');
-      },
+      // language: 'Chinese',
     };
   },
-  cliStart: async () => {
+  configResolved ({ resolvedConfig }) {
+    console.log(RPEFIX, 'resolvedConfig', resolvedConfig, this);
+  },
+  cliStart () {
+    console.log(RPEFIX, 'cliStart', this);
+  },
+  cliEnd () {
+    console.log(RPEFIX, 'cliEnd', this);
   },
 };

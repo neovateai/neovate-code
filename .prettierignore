@@ -6,3 +6,4 @@ compiled
 *.md
 *.yaml
 .tnf
+**/app.tsx

@@ -1,0 +1,137 @@
+import fs from 'fs';
+import { basename, join, relative, sep } from 'path';
+
+export const MAX_FILES = 1000;
+export const TRUNCATED_MESSAGE = `There are more than ${MAX_FILES} files in the repository. Use the LS tool (passing a specific path), Bash tool, and other tools to explore nested directories. The first ${MAX_FILES} files and directories are included below:\n\n`;
+
+export function listDirectory(initialPath: string, cwd: string) {
+  const results: string[] = [];
+  const queue = [initialPath];
+  while (queue.length > 0) {
+    if (results.length > MAX_FILES) {
+      return results;
+    }
+    const path = queue.shift()!;
+    if (skip(path)) {
+      continue;
+    }
+    if (path !== initialPath) {
+      results.push(relative(cwd, path) + sep);
+    }
+    let children;
+    try {
+      children = fs.readdirSync(path, { withFileTypes: true });
+    } catch (e) {
+      // eg. EPERM, EACCES, ENOENT, etc.
+      console.error(`[LsTool] Error listing directory: ${path}`, e);
+      continue;
+    }
+    for (const child of children) {
+      if (child.name === 'node_modules') {
+        continue;
+      }
+      if (child.isDirectory()) {
+        queue.push(join(path, child.name) + sep);
+      } else {
+        const childPath = join(path, child.name);
+        if (skip(childPath)) {
+          continue;
+        }
+        results.push(relative(cwd, childPath));
+        if (results.length > MAX_FILES) {
+          return results;
+        }
+      }
+    }
+  }
+  return results;
+}
+
+function skip(path: string) {
+  if (path !== '.' && basename(path).startsWith('.')) {
+    return true;
+  }
+  return false;
+}
+
+type TreeNode = {
+  name: string;
+  path: string;
+  type: 'file' | 'directory';
+  children?: TreeNode[];
+};
+
+export function createFileTree(sortedPaths: string[]): TreeNode[] {
+  const root: TreeNode[] = [];
+
+  for (const path of sortedPaths) {
+    const parts = path.split(sep);
+    let currentLevel = root;
+    let currentPath = '';
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i]!;
+      if (!part) {
+        // directories have trailing slashes
+        continue;
+      }
+      currentPath = currentPath ? `${currentPath}${sep}${part}` : part;
+      const isLastPart = i === parts.length - 1;
+
+      const existingNode = currentLevel.find((node) => node.name === part);
+
+      if (existingNode) {
+        currentLevel = existingNode.children || [];
+      } else {
+        const newNode: TreeNode = {
+          name: part,
+          path: currentPath,
+          type: isLastPart ? 'file' : 'directory',
+        };
+
+        if (!isLastPart) {
+          newNode.children = [];
+        }
+
+        currentLevel.push(newNode);
+        currentLevel = newNode.children || [];
+      }
+    }
+  }
+
+  return root;
+}
+
+/**
+ * eg.
+ * - src/
+ *   - index.ts
+ *   - utils/
+ *     - file.ts
+ */
+export function printTree(
+  cwd: string,
+  tree: TreeNode[],
+  level = 0,
+  prefix = '',
+): string {
+  let result = '';
+
+  // Add absolute path at root level
+  if (level === 0) {
+    result += `- ${cwd}${sep}\n`;
+    prefix = '  ';
+  }
+
+  for (const node of tree) {
+    // Add the current node to the result
+    result += `${prefix}${'-'} ${node.name}${node.type === 'directory' ? sep : ''}\n`;
+
+    // Recursively print children if they exist
+    if (node.children && node.children.length > 0) {
+      result += printTree(cwd, node.children, level + 1, `${prefix}  `);
+    }
+  }
+
+  return result;
+}
