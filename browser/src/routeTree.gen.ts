@@ -8,13 +8,7 @@
 import { Route as rootRouteImport } from './pages/__root';
 import { Route as ChatRouteImport } from './pages/chat';
 import { Route as DemoRouteImport } from './pages/demo';
-import { Route as TestRouteImport } from './pages/test';
 
-const TestRoute = TestRouteImport.update({
-  id: '/test',
-  path: '/test',
-  getParentRoute: () => rootRouteImport,
-} as any);
 const DemoRoute = DemoRouteImport.update({
   id: '/demo',
   path: '/demo',
@@ -29,42 +23,31 @@ const ChatRoute = ChatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/chat': typeof ChatRoute;
   '/demo': typeof DemoRoute;
-  '/test': typeof TestRoute;
 }
 export interface FileRoutesByTo {
   '/chat': typeof ChatRoute;
   '/demo': typeof DemoRoute;
-  '/test': typeof TestRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   '/chat': typeof ChatRoute;
   '/demo': typeof DemoRoute;
-  '/test': typeof TestRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: '/chat' | '/demo' | '/test';
+  fullPaths: '/chat' | '/demo';
   fileRoutesByTo: FileRoutesByTo;
-  to: '/chat' | '/demo' | '/test';
-  id: '__root__' | '/chat' | '/demo' | '/test';
+  to: '/chat' | '/demo';
+  id: '__root__' | '/chat' | '/demo';
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
   ChatRoute: typeof ChatRoute;
   DemoRoute: typeof DemoRoute;
-  TestRoute: typeof TestRoute;
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/test': {
-      id: '/test';
-      path: '/test';
-      fullPath: '/test';
-      preLoaderRoute: typeof TestRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
     '/demo': {
       id: '/demo';
       path: '/demo';
@@ -85,7 +68,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRoute,
   DemoRoute: DemoRoute,
-  TestRoute: TestRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
