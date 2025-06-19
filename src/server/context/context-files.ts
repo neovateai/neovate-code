@@ -450,7 +450,7 @@ export async function getFilesByPrompt(opts: {
           return stat.isFile() || stat.isDirectory() ? filePath : null;
         } catch (error: any) {
           logError({
-            error: `[file-context] File path does not exist: ${filePath}, error: ${error.message}`,
+            error: `[context-files] File path does not exist: ${filePath}, error: ${error.message}`,
           });
           return null;
         }
@@ -460,11 +460,13 @@ export async function getFilesByPrompt(opts: {
 
   // Record results and return
   if (promptFiles.length > 0) {
-    debug(`[file-context] Detected file references: ${promptFiles.join(', ')}`);
+    debug(
+      `[context-files] Detected file references: ${promptFiles.join(', ')}`,
+    );
     return promptFiles;
   }
 
-  debug(`[file-context] No valid file references detected`);
+  debug(`[context-files] No valid file references detected`);
   return [];
 }
 
@@ -481,7 +483,7 @@ export async function getFileContext(files: string[]): Promise<string> {
   });
   const xml = renderFilesToXml(fileContents);
   debug(
-    `[file-context] Generated file context with ${fileContents.length} files`,
+    `[context-files] Generated file context with ${fileContents.length} files`,
   );
   return xml;
 }

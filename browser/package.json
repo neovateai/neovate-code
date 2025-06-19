@@ -21,6 +21,7 @@
     "antd-style": "^3.7.1",
     "axios": "1.10.0",
     "dayjs": "^1.11.13",
+    "lodash-es": "^4.17.21",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^9.0.0",
