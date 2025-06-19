@@ -5,12 +5,10 @@ describe('Completions', () => {
   let server: Awaited<ReturnType<typeof createServer>>;
 
   beforeAll(async () => {
+    // @ts-expect-error
     server = await createServer({
       prompt: 'Hello, world!',
       traceName: 'test-completions',
-      argvConfig: {
-        model: 'deepseek',
-      },
     });
   });
 

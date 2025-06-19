@@ -26,7 +26,6 @@ export type Config = {
   approvalMode: ApprovalMode;
   plugins: string[];
   mcpServers: Record<string, McpServerConfig>;
-  editMode: 'search-replace' | 'whole-file';
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {

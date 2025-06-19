@@ -1,6 +1,6 @@
 import child_process from 'child_process';
 import fs from 'fs';
-import path from 'pathe';
+import path from 'path';
 import color from 'picocolors';
 import util from 'util';
 import { Context } from './context';

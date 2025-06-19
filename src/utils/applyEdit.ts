@@ -37,7 +37,7 @@ export function applyEdit(
   file_path: string,
   old_string: string,
   new_string: string,
-  mode: Config['editMode'] = 'search-replace',
+  mode: 'search-replace' | 'whole-file' = 'search-replace',
 ): { patch: Hunk[]; updatedFile: string } {
   const fullFilePath = isAbsolute(file_path)
     ? file_path

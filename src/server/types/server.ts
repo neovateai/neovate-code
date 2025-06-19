@@ -7,6 +7,7 @@ export interface RunBrowserServerOpts {
   modelProvider?: ModelProvider;
   plan?: boolean;
   context: Context;
+  logLevel?: string;
 }
 
 export interface CreateServerOpts extends RunBrowserServerOpts {
