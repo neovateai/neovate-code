@@ -1,10 +1,11 @@
 import { Box, Static, Text } from 'ink';
-import TextInput from 'ink-text-input';
+import TextInput from './ink-text-input';
 import React from 'react';
 import { useSnapshot } from 'valtio';
+import SelectInput from 'ink-select-input';
+import Markdown from './ink-markdown';
 import { Message, UserMessage, AssistantTextMessage, AssistantToolMessage, ToolMessage, ThinkingMessage, SystemMessage } from './store';
 import { getStore } from './store';
-import SelectInput from 'ink-select-input';
 
 function UserMessage({ message }: { message: UserMessage }) {
   return (
@@ -30,7 +31,7 @@ function ThinkingMessage({ message }: { message: ThinkingMessage }) {
   );
 }
 
-function AssistantTextMessage({ message }: { message: AssistantTextMessage }) {
+function AssistantTextMessage({ message, dynamic }: { message: AssistantTextMessage, dynamic?: boolean }) {
   const snap = getStore();
   const productName = snap.generalInfo.productName.toLowerCase();
   return (
@@ -38,7 +39,7 @@ function AssistantTextMessage({ message }: { message: AssistantTextMessage }) {
       <Text bold color="magentaBright">
         {productName}
       </Text>
-      <Text>{message.content.text}</Text>
+      {dynamic ? <Text>{message.content.text}</Text> : <Markdown>{message.content.text}</Markdown>}
     </Box>
   );
 }
@@ -104,14 +105,14 @@ function SystemMessage({ message }: { message: SystemMessage }) {
   );
 }
 
-function Message({ message }: { message: Message }) {
+function Message({ message, dynamic }: { message: Message, dynamic?: boolean }) {
   const messageComponent = (() => {
     switch (message.role) {
       case 'user':
         return <UserMessage message={message} />;
       case 'assistant':
         return message.content.type === 'text' ? (
-          <AssistantTextMessage message={message as AssistantTextMessage} />
+          <AssistantTextMessage message={message as AssistantTextMessage} dynamic={dynamic} />
         ) : message.content.type === 'thinking' ? (
           <ThinkingMessage message={message as ThinkingMessage} />
         ) : (
@@ -216,7 +217,7 @@ function PlanModal() {
     <Box flexDirection="column" borderStyle="round" borderColor="gray" padding={1}>
       <Text bold>Here is the plan:</Text>
       <Box flexDirection="column" borderStyle="round" borderColor="gray" padding={1}>
-        <Text>{snap.planModal!.text}</Text>
+        <Markdown>{snap.planModal!.text}</Markdown>
       </Box>
       <Box marginY={1}>
         <Text bold>Do you want to proceed?</Text>
@@ -238,7 +239,7 @@ export function App() {
           return <Message key={index} message={item} />;
         }}
       </Static>
-      {snap.currentMessage && <Message message={snap.currentMessage} />}
+      {snap.currentMessage && <Message message={snap.currentMessage} dynamic />}
       {snap.planModal ? <PlanModal /> : <ChatInput />}
     </Box>
   );
