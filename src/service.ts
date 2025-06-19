@@ -11,6 +11,7 @@ import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
 import { Context } from './context';
 import { MCPManager } from './mcp';
+import { PluginHookType } from './plugin';
 import { PromptContext } from './prompt-context';
 import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
@@ -45,6 +46,11 @@ export interface ServiceRunOpts {
 export interface ServiceRunResult {
   stream: Readable;
 }
+
+const PLUGIN_HOOK_BLACKLIST = {
+  edit: 'editFile',
+  write: 'writeFile',
+} as const;
 
 export class Service {
   private opts: ServiceOpts;
@@ -217,6 +223,21 @@ export class Service {
           JSON.stringify({ type: 'text', content: parsed[0].content }) + '\n',
         );
       }
+
+      // hook query
+      await this.context.apply({
+        hook: 'query',
+        args: [
+          {
+            text,
+            parsed,
+            input,
+            usage: result.state.toJSON().lastModelResponse?.usage,
+          },
+        ],
+        type: PluginHookType.Series,
+      });
+
       const history = result.history;
       const toolUse = parsed.find((item) => item.type === 'tool_use');
       if (toolUse) {
@@ -244,11 +265,53 @@ export class Service {
   }
 
   async callTool(callId: string, name: string, params: Record<string, any>) {
+    await this.context.apply({
+      hook: 'toolUse',
+      args: [
+        {
+          callId,
+          name,
+          params,
+        },
+      ],
+      type: PluginHookType.Series,
+    });
     const result = await this.tools!.invoke(
       name,
       JSON.stringify(params),
       this.context,
     );
+
+    this.context.apply({
+      hook: 'toolUseResult',
+      args: [
+        {
+          callId,
+          name,
+          params,
+          result,
+        },
+      ],
+      type: PluginHookType.Series,
+    });
+
+    // Additional handling for write/edit hooks, used for code statistics
+    if (name in PLUGIN_HOOK_BLACKLIST) {
+      const hookName =
+        PLUGIN_HOOK_BLACKLIST[name as keyof typeof PLUGIN_HOOK_BLACKLIST];
+      await this.context.apply({
+        hook: hookName,
+        args: [
+          {
+            callId,
+            params,
+            result,
+          },
+        ],
+        type: PluginHookType.Series,
+      });
+    }
+
     this.history.push({
       type: 'function_call_result',
       name,
