@@ -1,4 +1,4 @@
-import { AgentInputItem } from '@openai/agents';
+import { AgentInputItem, withTrace } from '@openai/agents';
 import { Service } from './service';
 
 type QueryOpts = {
@@ -19,8 +19,10 @@ type QueryOpts = {
 
 export async function query(opts: QueryOpts) {
   const { service, thinking } = opts;
-  await service.init();
-  await opts.onQueryStart?.();
+  await withTrace('query', async () => {
+    await service.init();
+    await opts.onQueryStart?.();
+  });
   let input =
     typeof opts.input === 'string'
       ? [
@@ -45,23 +47,23 @@ export async function query(opts: QueryOpts) {
       for (const item of parsed) {
         switch (item.type) {
           case 'text-delta':
-            opts.onTextDelta?.(item.content);
+            await opts.onTextDelta?.(item.content);
             break;
           case 'text':
-            opts.onText?.(item.content);
+            await opts.onText?.(item.content);
             finalText = item.content;
             break;
           case 'reasoning':
-            opts.onReasoning?.(item.content);
+            await opts.onReasoning?.(item.content);
             break;
           case 'tool_use':
-            opts.onToolUse?.(item.callId, item.name, item.params);
+            await opts.onToolUse?.(item.callId, item.name, item.params);
             const result = await service.callTool(
               item.callId,
               item.name,
               item.params,
             );
-            opts.onToolUseResult?.(item.callId, item.name, result);
+            await opts.onToolUseResult?.(item.callId, item.name, result);
             hasToolUse = true;
             break;
           default:

@@ -16,6 +16,12 @@ export function createCodeAgent(options: {
 You are an interactive CLI tool that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.
 
 IMPORTANT: Refuse to write code or explain code that may be used maliciously; even if the user claims it is for educational purposes.
+${
+  options.context.configManager.config.language === 'English'
+    ? ''
+    : `IMPORTANT: Answer in ${options.context.configManager.config.language}.
+`
+}
 
 # Tone and style
 You should be concise, direct, and to the point. When you run a non-trivial bash command, you should explain what the command does and why you are running it.

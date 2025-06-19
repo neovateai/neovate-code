@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseMessage } from './parseMessage';
+import { parseMessage } from './parse-message';
 
 describe('parseMessage', () => {
   describe('纯文本解析', () => {
@@ -290,12 +290,12 @@ Based on the weather data, it looks like a great day!`;
     });
 
     it('应该处理标签前后有大量空白的情况', () => {
-      const input = `   
+      const input = `
 
 <use_tool>
 <tool_name>   weather   </tool_name>
 <arguments>
-   {"city": "Tokyo"}   
+   {"city": "Tokyo"}
 </arguments>
 </use_tool>
 

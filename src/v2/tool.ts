@@ -16,12 +16,18 @@ export class Tools {
   async invoke(toolName: string, args: string, runContext: any) {
     const tool = this.tools[toolName];
     if (!tool) {
-      throw new Error(`Tool ${toolName} not found`);
+      return {
+        success: false,
+        error: `Tool ${toolName} not found`,
+      };
     }
     if (tool.type === 'function') {
       return await tool.invoke(runContext, args);
     } else {
-      throw new Error(`Tool ${toolName} is not a function tool`);
+      return {
+        success: false,
+        error: `Tool ${toolName} is not a function tool`,
+      };
     }
   }
 

@@ -25,13 +25,7 @@ async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
   const runner = new Runner({
     modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
   });
-  const input: AgentInputItem[] = [
-    {
-      role: 'user',
-      content: opts.prompt,
-    },
-  ];
-  const result = await runner.run(agent, input);
+  const result = await runner.run(agent, opts.prompt);
   const message = result.finalOutput;
   if (typeof message !== 'string') {
     throw new Error('Commit message is not a string');

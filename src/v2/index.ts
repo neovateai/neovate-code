@@ -40,6 +40,9 @@ export async function runCli(opts: RunCliOpts) {
     case 'browser':
       const { runBrowser } = await import('./commands/browser');
       await runBrowser(opts);
+    case 'run':
+      const { runRun } = await import('./commands/run');
+      await runRun(opts);
       break;
     default:
       if (process.env.FC) {

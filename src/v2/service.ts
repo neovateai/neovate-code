@@ -11,7 +11,7 @@ import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
 import { Context, PromptContext } from './context';
 import { MCPManager } from './mcp';
-import { parseMessage } from './parseMessage';
+import { parseMessage } from './parse-message';
 import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
 import { createBashTool } from './tools/bash';
@@ -257,7 +257,7 @@ export class Service {
       name,
       output: {
         type: 'text',
-        text: result,
+        text: typeof result === 'string' ? result : JSON.stringify(result),
       },
       status: 'completed',
       callId,

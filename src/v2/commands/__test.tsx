@@ -1,3 +1,3 @@
 export async function runTest() {
-  console.log('Test');
+  console.log('test');
 }
