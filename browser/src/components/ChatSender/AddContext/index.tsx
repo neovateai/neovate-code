@@ -4,8 +4,8 @@ import { createStyles } from 'antd-style';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
 import Suggestion from '@/components/Suggestion';
-import { ContextType } from '@/constants/ContextType';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
+import { ContextType } from '@/constants/context';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 

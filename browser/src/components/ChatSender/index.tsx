@@ -10,8 +10,8 @@ import { Button, Flex, type GetProp } from 'antd';
 import { createStyles } from 'antd-style';
 import { useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
-import { ContextType } from '@/constants/ContextType';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
+import { ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
@@ -52,6 +52,15 @@ const useStyle = createStyles(({ token, css }) => {
       max-width: 700px;
       margin: 0 auto;
     `,
+    senderRoot: css`
+      margin: 0;
+      max-width: none;
+    `,
+    suggestion: css`
+      max-width: 700px;
+      margin: auto;
+      width: 100%;
+    `,
     speechButton: css`
       font-size: 18px;
       color: ${token.colorText} !important;
@@ -78,7 +87,6 @@ const ChatSender: React.FC = () => {
     useSuggestion(contextSearchInput);
 
   // TODO 发送给大模型用plainText，展示用inputValue
-  // TODO 上下文好像没有挂上
 
   // 处理输入变化
   const onChange = (value: string) => {
@@ -125,6 +133,7 @@ const ChatSender: React.FC = () => {
       >
         {/* 🌟 输入框 */}
         <Suggestion
+          className={styles.suggestion}
           items={suggestions}
           showSearch={{
             placeholder: 'Please input to search...',
@@ -170,6 +179,7 @@ const ChatSender: React.FC = () => {
           {({ onTrigger, onKeyDown }) => {
             return (
               <Sender
+                rootClassName={styles.senderRoot}
                 value={prompt}
                 header={<SenderHeader />}
                 onSubmit={handleSubmit}

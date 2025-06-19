@@ -1,6 +1,6 @@
 import type { LexicalNode } from 'lexical';
 import type { JSX } from 'react';
-import type { ContextType } from '@/constants/ContextType';
+import type { ContextType } from '@/constants/context';
 
 export enum MessageRole {
   USER = 'user',

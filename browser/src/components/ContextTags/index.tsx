@@ -26,7 +26,7 @@ export const FileContextTag = ({
   return (
     <Tag
       key={key}
-      color="red"
+      color="blue"
       className={'ai-context-node'}
       data-ai-context-id="file"
       contentEditable={false}
@@ -98,7 +98,7 @@ export const KnowledgeContextTag = ({
   return (
     <Tag
       key={key}
-      color="blue"
+      color="red"
       className={'ai-context-node'}
       data-ai-context-id="knowledge"
       contentEditable={false}

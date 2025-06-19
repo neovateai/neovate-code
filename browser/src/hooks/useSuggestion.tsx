@@ -8,7 +8,7 @@ import { Suggestion } from '@ant-design/x';
 import { type GetProp } from 'antd';
 import { useEffect, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
-import { ContextType } from '@/constants/ContextType';
+import { ContextType } from '@/constants/context';
 import { actions, state } from '@/state/suggestion';
 
 type SuggestionItems = Exclude<GetProp<typeof Suggestion, 'items'>, () => void>;

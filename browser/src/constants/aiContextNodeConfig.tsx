@@ -4,7 +4,7 @@ import {
   KnowledgeContextTag,
 } from '@/components/ContextTags';
 import type { AiContextNodeConfig } from '@/types/chat';
-import { ContextType } from './ContextType';
+import { ContextType } from './context';
 
 export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
   {

@@ -1,6 +1,6 @@
 import { proxy } from 'valtio';
 import type { ContextStoreValue, FileItem } from '@/api/model';
-import { ContextType } from '@/constants/ContextType';
+import { ContextType } from '@/constants/context';
 import * as sender from '@/state/sender';
 import type { ContextItem } from '@/types/context';
 
