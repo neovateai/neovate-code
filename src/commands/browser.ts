@@ -24,17 +24,15 @@ Options:
   -h, --help                    Show help
   -m, --model <model>           Specify model to use
   --smallModel <model>          Specify a smaller model for some tasks
-  -q, --quiet                   Quiet mode, non interactive
   --plan                        Plan mode
+  --logLevel <level>            Specify log level
 
 Examples:
   ${p} "Refactor this file to use hooks."
   ${p} -m gpt-4o "Add tests for the following code."
 
 Commands:
-  config                        Manage configuration
-  commit                        Commit changes to the repository
-  mcp                           Manage MCP servers
+  browser                        Run the browser
     `.trim(),
   );
 }
@@ -44,13 +42,12 @@ export async function runBrowser(opts: RunCliOpts) {
     alias: {
       model: 'm',
       help: 'h',
-      quiet: 'q',
     },
     default: {
       model: 'flash',
     },
-    boolean: ['help', 'plan', 'quiet'],
-    string: ['model', 'smallModel', 'planModel'],
+    boolean: ['help', 'plan'],
+    string: ['model', 'smallModel', 'planModel', 'logLevel'],
   });
   if (argv.help) {
     printHelp(opts.productName.toLowerCase());
@@ -90,5 +87,6 @@ export async function runBrowser(opts: RunCliOpts) {
     prompt: argv._[0]! as string,
     cwd,
     plan: argv.plan,
+    logLevel: argv.logLevel,
   });
 }

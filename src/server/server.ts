@@ -25,13 +25,15 @@ const registerPlugins = async (app: FastifyInstance) => {
 };
 
 const registerRoutes = async (app: FastifyInstance, opts: CreateServerOpts) => {
+  const { logLevel: _, ...pluginOpts } = opts;
+
   await app.register(import('./routes/completions'), {
     prefix: '/api/chat',
-    ...opts,
+    ...pluginOpts,
   });
   await app.register(import('./routes/files'), {
     prefix: '/api',
-    ...opts,
+    ...pluginOpts,
   });
 };
 
@@ -45,7 +47,7 @@ export async function runBrowserServer(opts: RunBrowserServerOpts) {
 
 export async function createServer(opts: CreateServerOpts) {
   const app: FastifyInstance = fastify({
-    logger: true,
+    logger: opts.logLevel ? { level: opts.logLevel } : true,
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   try {
