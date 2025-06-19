@@ -63,9 +63,7 @@ export function createStore(opts: CreateStoreOpts) {
             },
           ],
           service,
-          thinking: isReasoningModel(
-            service.context.configManager.config.model,
-          ),
+          thinking: isReasoningModel(service.context.config.model),
           onTextDelta(text) {
             store = store!;
             if (reasoningDelta && store.currentMessage) {

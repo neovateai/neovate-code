@@ -5,6 +5,9 @@ import { clearTracing } from './tracing';
 
 const debug = createDebug('takumi:index');
 
+export { Agent, Runner } from '@openai/agents';
+export { checkAndUpdate as _checkAndUpdate } from 'upgear';
+
 export interface RunCliOpts {
   productName: string;
   version: string;
@@ -42,13 +45,8 @@ export async function runCli(opts: RunCliOpts) {
       await runRun(opts);
       break;
     default:
-      if (process.env.FC) {
-        const { runDefault } = await import('./commands/default-fc');
-        await runDefault(opts);
-      } else {
-        const { runDefault } = await import('./commands/default');
-        await runDefault(opts);
-      }
+      const { runDefault } = await import('./commands/default');
+      await runDefault(opts);
       break;
   }
 }

@@ -72,9 +72,7 @@ export async function run(opts: RunOpts) {
           const { finalText: plan } = await query({
             input,
             service,
-            thinking: isReasoningModel(
-              service.context.configManager.config.planModel,
-            ),
+            thinking: isReasoningModel(service.context.config.planModel),
             onTextDelta(text) {
               process.stdout.write(text);
             },
@@ -148,9 +146,7 @@ export async function run(opts: RunOpts) {
         const result = await query({
           input,
           service,
-          thinking: isReasoningModel(
-            service.context.configManager.config.model,
-          ),
+          thinking: isReasoningModel(service.context.config.model),
           onTextDelta(text) {
             process.stdout.write(text);
           },
@@ -176,7 +172,7 @@ export async function run(opts: RunOpts) {
           },
         });
         debug('query result', result.finalText);
-        if (context.configManager.config.quiet) {
+        if (context.config.quiet) {
           finalResult = result;
           debug('quiet mode, break');
           break;

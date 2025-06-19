@@ -58,11 +58,6 @@ async function main() {
   } catch (error) {
     logDebug(`Error checking update: ${error}`);
   }
-  // await runCli({
-  //   plugins: [],
-  //   productName: 'TAKUMI',
-  //   version: pkg.version,
-  // });
   const { runCli } = await import('./v2');
   await runCli({
     productName: 'TAKUMI',

@@ -18,7 +18,11 @@ Plan mode is active. The user indicated that they do not want you to execute yet
 1. Answer the user's query
 2. When you're done researching, return your plan. Do NOT make any file changes or run any tools that modify the system state in any way until the user has confirmed the plan.
 
-${options.context.configManager.config.language === 'English' ? '' : `IMPORTANT: Answer in ${options.context.configManager.config.language}.`}
+${
+  options.context.config.language === 'English'
+    ? ''
+    : `IMPORTANT: Answer in ${options.context.config.language}.`
+}
 ${options.tools.getToolsPrompt()}
 `.trim();
     },

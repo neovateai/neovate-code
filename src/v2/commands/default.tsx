@@ -8,8 +8,8 @@ import path from 'path';
 import React from 'react';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
-import { PRODUCT_NAME } from '../constants';
 import { Context } from '../context';
+import { PluginHookType } from '../plugin';
 import { Service } from '../service';
 import { setupTracing } from '../tracing';
 import { App } from '../ui/app';
@@ -21,15 +21,13 @@ const debug = createDebug('takumi:commands:default');
 export interface RunOpts {
   prompt: string;
   cwd?: string;
-  productName?: string;
-  version?: string;
   modelProvider?: ModelProvider;
   plan?: boolean;
   context: Context;
 }
 
 export async function run(opts: RunOpts) {
-  const traceName = `${opts.productName ?? PRODUCT_NAME}-default}`;
+  const traceName = `${opts.context.productName}-default}`;
   const services: Service[] = [];
   return await withTrace(traceName, async () => {
     try {
@@ -51,13 +49,14 @@ export async function run(opts: RunOpts) {
       });
       services.push(planService);
       const store = createStore({
-        productName: opts.productName ?? PRODUCT_NAME,
-        version: opts.version ?? '0.0.0',
+        productName: opts.context.productName,
+        version: opts.context.version,
         service,
         planService: planService,
         stage: opts.plan ? 'plan' : 'code',
       });
-      if (!opts.context.configManager.config.quiet) {
+      const quiet = opts.context.config.quiet;
+      if (!quiet) {
         render(<App />, {
           patchConsole: process.env.DEBUG ? false : true,
           exitOnCtrlC: true,
@@ -71,12 +70,73 @@ export async function run(opts: RunOpts) {
           return null;
         }
       } else {
+        if (quiet) {
+          throw new Error(
+            'Quiet mode, non interactive, you must provide a prompt to run.',
+          );
+        }
         return null;
       }
     } finally {
       await Promise.all(services.map((service) => service.destroy()));
     }
   });
+}
+
+export async function runDefault(opts: RunCliOpts) {
+  const argv = yargsParser(process.argv.slice(2), {
+    alias: {
+      model: 'm',
+      help: 'h',
+      quiet: 'q',
+    },
+    default: {
+      model: 'flash',
+    },
+    array: ['plugin'],
+    boolean: ['json', 'help', 'plan', 'quiet'],
+    string: ['model', 'smallModel', 'planModel'],
+  });
+  if (argv.help) {
+    printHelp(opts.productName.toLowerCase());
+    return;
+  }
+  const uuid = randomUUID().slice(0, 4);
+  const traceFile = path.join(
+    homedir(),
+    `.${opts.productName.toLowerCase()}`,
+    'sessions',
+    `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
+  );
+  setupTracing(traceFile);
+  const cwd = process.cwd();
+  const context = new Context({
+    productName: opts.productName,
+    version: opts.version,
+    cwd,
+    argvConfig: {
+      model: argv.model,
+      smallModel: argv.smallModel,
+      planModel: argv.planModel,
+      quiet: argv.quiet,
+      plugins: argv.plugin,
+    },
+  });
+  await context.init();
+  await context.apply({
+    hook: 'cliStart',
+    args: [],
+    type: PluginHookType.Series,
+  });
+  const result = await run({
+    context,
+    prompt: argv._[0]! as string,
+    cwd,
+    plan: argv.plan,
+  });
+  if (context.config.quiet) {
+    console.log(JSON.stringify(result, null, 2));
+  }
 }
 
 function printHelp(p: string) {
@@ -108,53 +168,4 @@ Commands:
   mcp                           Manage MCP servers
     `.trim(),
   );
-}
-
-export async function runDefault(opts: RunCliOpts) {
-  const argv = yargsParser(process.argv.slice(2), {
-    alias: {
-      model: 'm',
-      help: 'h',
-      quiet: 'q',
-    },
-    default: {
-      model: 'flash',
-    },
-    boolean: ['json', 'help', 'plan', 'quiet'],
-    string: ['model', 'smallModel', 'planModel'],
-  });
-  if (argv.help) {
-    printHelp(opts.productName.toLowerCase());
-    return;
-  }
-  const uuid = randomUUID().slice(0, 4);
-  const traceFile = path.join(
-    homedir(),
-    `.${opts.productName.toLowerCase()}`,
-    'sessions',
-    `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
-  );
-  setupTracing(traceFile);
-  const cwd = process.cwd();
-  const context = new Context({
-    productName: opts.productName,
-    cwd,
-    argvConfig: {
-      model: argv.model,
-      smallModel: argv.smallModel,
-      planModel: argv.planModel,
-      quiet: argv.quiet,
-    },
-  });
-  const result = await run({
-    context,
-    productName: opts.productName,
-    version: opts.version,
-    prompt: argv._[0]! as string,
-    cwd,
-    plan: argv.plan,
-  });
-  if (context.configManager.config.quiet) {
-    console.log(JSON.stringify(result, null, 2));
-  }
 }

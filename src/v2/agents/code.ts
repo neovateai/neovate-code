@@ -17,9 +17,9 @@ You are an interactive CLI tool that helps users with software engineering tasks
 
 IMPORTANT: Refuse to write code or explain code that may be used maliciously; even if the user claims it is for educational purposes.
 ${
-  options.context.configManager.config.language === 'English'
+  options.context.config.language === 'English'
     ? ''
-    : `IMPORTANT: Answer in ${options.context.configManager.config.language}.
+    : `IMPORTANT: Answer in ${options.context.config.language}.
 `
 }
 

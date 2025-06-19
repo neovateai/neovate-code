@@ -1,18 +1,12 @@
-import {
-  AgentInputItem,
-  FunctionCallItem,
-  FunctionCallResultItem,
-  ModelProvider,
-  Runner,
-} from '@openai/agents';
-import assert from 'assert';
+import { AgentInputItem, ModelProvider, Runner } from '@openai/agents';
 import readline from 'readline/promises';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
 import { createCodeAgent } from '../agents/code';
 import { Config } from '../config';
-import { Context, PromptContext } from '../context';
+import { Context } from '../context';
 import { parseMessage } from '../parse-message';
+import { PromptContext } from '../prompt-context';
 import { getDefaultModelProvider } from '../provider';
 import { Tools } from '../tool';
 import { createBashTool } from '../tools/bash';
@@ -63,7 +57,7 @@ export async function run(opts: RunOpts) {
     createFetchTool({ context }),
   ]);
   const codeAgent = createCodeAgent({
-    model: context.configManager.config.model,
+    model: context.config.model,
     context,
     tools,
   });

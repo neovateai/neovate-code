@@ -9,9 +9,10 @@ import { randomUUID } from 'crypto';
 import { Readable } from 'stream';
 import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
-import { Context, PromptContext } from './context';
+import { Context } from './context';
 import { MCPManager } from './mcp';
 import { parseMessage } from './parse-message';
+import { PromptContext } from './prompt-context';
 import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
 import { createBashTool } from './tools/bash';
@@ -72,7 +73,7 @@ export class Service {
     this.initialized = true;
     const context = this.context;
     if (!mcpManager) {
-      mcpManager = new MCPManager(context.configManager.config.mcpServers);
+      mcpManager = new MCPManager(context.config.mcpServers);
       await mcpManager.connect();
     }
     this.tools = new Tools(
@@ -87,11 +88,11 @@ export class Service {
     this.agent =
       this.opts.agentType === 'code'
         ? createCodeAgent({
-            model: this.context.configManager.config.model,
+            model: this.context.config.model,
             ...createAgentOpts,
           })
         : createPlanAgent({
-            model: this.context.configManager.config.planModel,
+            model: this.context.config.planModel,
             ...createAgentOpts,
           });
   }
