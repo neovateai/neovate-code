@@ -1,279 +1,124 @@
-import fs from 'fs';
-import inquirer from 'inquirer';
-import path from 'pathe';
-import {
-  ApiKeys,
-  Config,
-  getConfigPaths,
-  stringToMcpServerConfigs,
-} from '../config';
-import { MODEL_ALIAS, ModelType } from '../llms/model';
-import { Context } from '../types';
-import * as logger from '../v2/utils/logger';
+import yargsParser from 'yargs-parser';
+import { RunCliOpts } from '..';
+import { Config, ConfigManager } from '../config';
 
-export async function runConfig(opts: { context: Context }) {
-  const { context } = opts;
-  const { globalConfigPath, projectConfigPath } = getConfigPaths({
-    productName: context.config.productName,
-    cwd: context.cwd,
-  });
+function printHelp(p: string) {
+  console.log(
+    `
+Usage:
+  ${p} config [options] [command]
 
-  const { configType } = await inquirer.prompt([
-    {
-      type: 'list',
-      name: 'configType',
-      message: 'Which configuration would you like to set up?',
-      choices: [
-        {
-          name: 'Global configuration (applies to all projects)',
-          value: 'global',
-        },
-        {
-          name: 'Project configuration (applies only to this project)',
-          value: 'project',
-        },
-      ],
-      default: 'global',
-    },
-  ]);
+Manage configuration. (e.g. ${p} config set -g model gpt-4o)
 
-  const configPath =
-    configType === 'global' ? globalConfigPath : projectConfigPath;
-  const configDir = path.dirname(configPath);
-  const configExists = fs.existsSync(configPath);
+Options:
+  -h, --help                            Show help
 
-  if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir, { recursive: true });
-  }
+Commands:
+  get [options] <key>                   Get a config value
+  set [options] <key> <value>           Set a config value
+  remove|rm [options] <key> [values...] Remove a config value or items from a config array
+  list|ls [options]                     List all config values
+  add [options] <key> <value>           Add a config value
+  help                                  Show help
 
-  let currentConfig: Partial<Config> = {};
-  if (configExists) {
-    try {
-      const configContent = fs.readFileSync(configPath, 'utf-8');
-      currentConfig = JSON.parse(configContent);
-    } catch (error: any) {
-      logger.logWarn(`Unable to read existing config: ${error.message}`);
-    }
-  }
-
-  logger.logInfo(
-    `Welcome to Takumi configuration wizard! [${configType === 'global' ? 'Global' : 'Project'} config]`,
+Examples:
+  ${p} config get model               Get current model setting
+  ${p} config set model gpt-4o        Set model for current project
+  ${p} config set -g model gpt-4o     Set model globally
+  ${p} config list                    Show all current config values
+  ${p} config ls -g                   Show all global config values
+  ${p} config add plugins "custom"    Add value to plugins array
+  ${p} config rm model                Remove model setting
+  ${p} config rm plugins "custom"     Remove specific value from plugins array
+      `.trim(),
   );
-
-  const config = await promptForConfig(currentConfig);
-
-  try {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
-    logger.logInfo(`Configuration saved to ${configPath}`);
-  } catch (error: any) {
-    logger.logError({
-      error: `Failed to save configuration: ${error.message}`,
-    });
-    throw error;
-  }
 }
 
-async function promptForConfig(
-  currentConfig: Partial<Config>,
-): Promise<Partial<Config>> {
-  const modelChoices = Object.values(MODEL_ALIAS) as string[];
-
-  const modelAnswer = await inquirer.prompt([
-    {
-      type: 'list',
-      name: 'model',
-      message: 'Select default model:',
-      default: currentConfig.model || modelChoices[0],
-      choices: modelChoices,
+export async function runConfig(opts: RunCliOpts) {
+  const productName = opts.productName!;
+  const argv = yargsParser(process.argv.slice(3), {
+    alias: {
+      help: 'h',
+      global: 'g',
     },
-  ]);
+    boolean: ['help', 'global'],
+  });
+  const command = argv._[0];
 
-  const { needDifferentSmallModel } = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'needDifferentSmallModel',
-      message: `Do you want to use a different small model for quick queries? Otherwise same as model (Default: ${currentConfig.smallModel !== undefined && currentConfig.smallModel !== modelAnswer.model ? 'Yes' : 'No'})`,
-      default:
-        currentConfig.smallModel !== undefined &&
-        currentConfig.smallModel !== modelAnswer.model,
-    },
-  ]);
-
-  let smallModel = modelAnswer.model;
-  if (needDifferentSmallModel) {
-    const smallModelAnswer = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'smallModel',
-        message: 'Select default small model (for quick queries):',
-        default: currentConfig.smallModel || modelAnswer.model,
-        choices: modelChoices,
-      },
-    ]);
-    smallModel = smallModelAnswer.smallModel;
+  // help
+  if (!command || argv.help) {
+    printHelp(productName.toLowerCase());
+    return;
   }
 
-  const { configureApiKeys } = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'configureApiKeys',
-      message: 'Configure API keys for selected models? (Default: Yes)',
-      default: true,
-    },
-  ]);
+  const cwd = process.cwd();
+  const configManager = new ConfigManager(cwd, productName, {});
+  const configPath = argv.global
+    ? configManager.globalConfigPath
+    : configManager.projectConfigPath;
 
-  let apiKeys = currentConfig.apiKeys || {};
-  if (configureApiKeys) {
-    const neededProviders = getNeededProviders(modelAnswer.model, smallModel);
-    apiKeys = await promptForApiKeys(
-      currentConfig.apiKeys || {},
-      neededProviders,
-    );
-  }
-
-  const { stream } = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'stream',
-      message: `Enable streaming responses? (Default: ${currentConfig.stream !== undefined ? (currentConfig.stream ? 'Yes' : 'No') : 'Yes'})`,
-      default: currentConfig.stream !== undefined ? currentConfig.stream : true,
-    },
-  ]);
-
-  const { tasks } = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'tasks',
-      message: `Enable tasks feature? (Default: ${currentConfig.tasks !== undefined ? (currentConfig.tasks ? 'Yes' : 'No') : 'No'})`,
-      default: currentConfig.tasks !== undefined ? currentConfig.tasks : false,
-    },
-  ]);
-
-  const { language } = await inquirer.prompt([
-    {
-      type: 'list',
-      name: 'language',
-      message: 'Set default language:',
-      default: currentConfig.language || 'English',
-      choices: ['中文', 'English'],
-    },
-  ]);
-
-  const { configureMcp } = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'configureMcp',
-      message: `Configure MCP (Model Control Protocol) servers? (Default: ${currentConfig.mcpConfig?.mcpServers ? 'Yes' : 'No'})`,
-      default: currentConfig.mcpConfig?.mcpServers ? true : false,
-    },
-  ]);
-
-  let mcpConfig = currentConfig.mcpConfig || {};
-  if (configureMcp) {
-    const { mcpServers } = await inquirer.prompt([
-      {
-        type: 'input',
-        name: 'mcpServers',
-        message:
-          'Enter MCP servers (comma-separated, e.g. "http://localhost:3000,npx mcp-server"):',
-        default: (() => {
-          if (!currentConfig.mcpConfig?.mcpServers) return '';
-
-          try {
-            return Object.values(currentConfig.mcpConfig.mcpServers)
-              .map((server) => {
-                if (typeof server !== 'object' || server === null) return '';
-
-                if ('url' in server && server.url) {
-                  return server.url;
-                }
-
-                if ('command' in server && server.command) {
-                  const cmdArgs =
-                    'args' in server && Array.isArray(server.args)
-                      ? server.args.join(' ')
-                      : '';
-                  return `${server.command} ${cmdArgs}`.trim();
-                }
-
-                return '';
-              })
-              .filter(Boolean)
-              .join(',');
-          } catch (error) {
-            console.error('Error formatting MCP config:', error);
-            return '';
-          }
-        })(),
-      },
-    ]);
-
-    if (mcpServers) {
-      mcpConfig = {
-        mcpServers: stringToMcpServerConfigs(mcpServers),
-      };
+  // get
+  if (command === 'get') {
+    const key = argv._[1];
+    if (!key) {
+      console.error('Missing key');
+      return;
+    }
+    if (argv.global) {
+      console.log(configManager.globalConfig[key as keyof Config]);
+    } else {
+      console.log(configManager.projectConfig[key as keyof Config]);
     }
   }
 
-  return {
-    ...currentConfig,
-    model: modelAnswer.model as ModelType,
-    smallModel: smallModel as ModelType,
-    apiKeys,
-    stream,
-    tasks,
-    language,
-    mcpConfig,
-  };
-}
-
-function getNeededProviders(model: string, smallModel: string): string[] {
-  const providers = new Set<string>();
-
-  if (model in MODEL_ALIAS) {
-    model = MODEL_ALIAS[model as keyof typeof MODEL_ALIAS];
-  }
-  if (smallModel in MODEL_ALIAS) {
-    smallModel = MODEL_ALIAS[smallModel as keyof typeof MODEL_ALIAS];
-  }
-
-  addProviderForModel(model, providers);
-  if (model !== smallModel) {
-    addProviderForModel(smallModel, providers);
-  }
-
-  return Array.from(providers);
-}
-
-function addProviderForModel(model: string, providers: Set<string>): void {
-  if (model.includes('/')) {
-    const [provider] = model.split('/');
-    if (provider) {
-      providers.add(provider.toLowerCase());
+  // set
+  if (command === 'set') {
+    const key = argv._[1] as string | undefined;
+    const value = argv._[2] as string | undefined;
+    if (!key || !value) {
+      console.error('Missing key or value');
+      return;
     }
+    configManager.setConfig(argv.global, key, value);
+    console.log(`Set ${key} = ${value} to ${configPath}`);
   }
-}
 
-async function promptForApiKeys(
-  currentApiKeys: ApiKeys,
-  neededProviders: string[],
-): Promise<ApiKeys> {
-  const apiKeys: ApiKeys = { ...currentApiKeys };
-
-  for (const provider of neededProviders) {
-    const { apiKey } = await inquirer.prompt([
-      {
-        type: 'input',
-        name: 'apiKey',
-        message: `Enter ${provider.toUpperCase()} API key:`,
-        default: currentApiKeys[provider] || '',
-      },
-    ]);
-
-    if (apiKey) {
-      apiKeys[provider] = apiKey;
+  // remove
+  if (command === 'remove' || command === 'rm') {
+    const key = argv._[1] as string;
+    if (!key) {
+      console.error('Missing key');
+      return;
+    }
+    const values = argv._[2]
+      ? (argv._[2] as string).split(',').map((v) => v.trim())
+      : undefined;
+    configManager.removeConfig(argv.global, key, values);
+    if (values) {
+      console.log(`Removed ${values.join(', ')} from ${key} in ${configPath}`);
+    } else {
+      console.log(`Removed ${key} from ${configPath}`);
     }
   }
 
-  return apiKeys;
+  // add
+  if (command === 'add') {
+    const key = argv._[1] as string | undefined;
+    const value = argv._[2] as string | undefined;
+    if (!key || !value) {
+      console.error('Missing key or value');
+      return;
+    }
+    const splitted = value.split(',').map((v) => v.trim());
+    configManager.addConfig(argv.global, key, splitted);
+    console.log(`Added ${splitted.join(', ')} to ${key} in ${configPath}`);
+  }
+
+  // list
+  if (command === 'list' || command === 'ls') {
+    const config = argv.global
+      ? configManager.globalConfig
+      : configManager.projectConfig;
+    console.log(JSON.stringify(config, null, 2));
+  }
 }
