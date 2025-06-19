@@ -18,7 +18,7 @@
     "format:check": "prettier --check .",
     "build:type": "tsc --project tsconfig.json --emitDeclarationOnly --declarationDir dist-dts",
     "build:cli": "bun build src/cli.ts --external=react-devtools-core --minify --outfile dist/cli.mjs --target=node",
-    "build:index": "bun build src/index.ts --minify --outfile dist/index.mjs --target=node",
+    "build:index": "bun build src/index.ts --external=react-devtools-core --minify --outfile dist/index.mjs --target=node",
     "build:dts": "npm run build:type && api-extractor run --local --verbose",
     "build": "npm run build:cli && npm run build:index && npm run build:dts",
     "ci": "npm run typecheck && npm run format:check && npm run test",
