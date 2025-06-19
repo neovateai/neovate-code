@@ -1,12 +1,104 @@
+import { AgentInputItem, ModelProvider, Runner } from '@openai/agents';
 import * as p from '@umijs/clack-prompts';
 import { ExecSyncOptionsWithStringEncoding, execSync } from 'child_process';
 import clipboardy from 'clipboardy';
 import pc from 'picocolors';
-import { askQuery } from '../llms/query';
-import { Context } from '../types';
+import yargsParser from 'yargs-parser';
+import { RunCliOpts } from '..';
+import { createCommitAgent } from '../agents/commit';
+import { ConfigManager } from '../config';
+import { getDefaultModelProvider } from '../provider';
 import * as logger from '../utils/logger';
 
-export async function runCommit(opts: { context: Context }) {
+interface GenerateCommitMessageOpts {
+  prompt: string;
+  model: string;
+  language?: string;
+  modelProvider?: ModelProvider;
+}
+
+async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
+  const agent = createCommitAgent({
+    model: opts.model,
+    language: opts.language ?? 'english',
+  });
+  const runner = new Runner({
+    modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
+  });
+  const result = await runner.run(agent, opts.prompt);
+  const message = result.finalOutput;
+  if (typeof message !== 'string') {
+    throw new Error('Commit message is not a string');
+  }
+  return message;
+}
+
+function printHelp(p: string) {
+  console.log(
+    `
+Usage:
+  ${p} commit [options]
+
+Generate intelligent commit messages based on staged changes.
+
+Options:
+  -h, --help                    Show help
+  -s, --stage                   Stage all changes before committing
+  -c, --commit                  Commit changes automatically
+  -n, --no-verify               Skip pre-commit hooks
+  -i, --interactive             Interactive mode (default)
+  -m, --model <model>           Specify model to use
+  --language <language>         Set language for commit message
+  --copy                        Copy commit message to clipboard
+  --push                        Push changes after commit
+  --follow-style                Follow existing repository commit style
+
+Examples:
+  ${p} commit                 Interactive mode - generate and choose action
+  ${p} commit -s -c           Stage all changes and commit automatically
+  ${p} commit --copy          Generate message and copy to clipboard
+  ${p} commit -s -c --push    Stage, commit and push in one command
+  ${p} commit --follow-style  Generate message following repo style
+      `.trim(),
+  );
+}
+
+export async function runCommit(opts: RunCliOpts) {
+  const argv = yargsParser(process.argv.slice(2), {
+    alias: {
+      stage: 's',
+      commit: 'c',
+      noVerify: 'n',
+      interactive: 'i',
+      model: 'm',
+      help: 'h',
+    },
+    boolean: [
+      'stage',
+      'push',
+      'commit',
+      'noVerify',
+      'copy',
+      'interactive',
+      'followStyle',
+      'help',
+    ],
+    string: ['model', 'language'],
+  });
+
+  // help
+  if (argv.help) {
+    printHelp(opts.productName.toLowerCase());
+    return;
+  }
+
+  logger.logIntro({
+    productName: opts.productName,
+    version: opts.version,
+  });
+  if (!argv.interactive && !argv.commit && !argv.copy) {
+    argv.interactive = true;
+  }
   try {
     execSync('git --version', { stdio: 'ignore' });
     execSync('git config user.name', { stdio: 'ignore' });
@@ -24,7 +116,6 @@ export async function runCommit(opts: { context: Context }) {
       throw new Error('Git is not installed or not available in PATH');
     }
   }
-  const argv = opts.context.argv;
   const hasChanged =
     execSync('git status --porcelain').toString().trim().length > 0;
   if (!hasChanged) {
@@ -57,38 +148,35 @@ Please follow a similar style for this commit message while still adhering to th
     }
   }
 
+  const configManager = new ConfigManager(process.cwd(), opts.productName, {
+    model: argv.model,
+    language: argv.language,
+  });
+
   // Generate the commit message
   let message = '';
   let attempts = 0;
   const maxAttempts = 3;
-  const systemPrompt = [COMMIT_PROMPT];
-  if (argv.language) {
-    systemPrompt.push(`
-Use ${argv.language} to generate the commit message.
-`);
-  }
   while (attempts < maxAttempts) {
     try {
-      message = await askQuery({
-        systemPrompt,
+      const stop = logger.spinThink({ productName: opts.productName });
+      message = await generateCommitMessage({
         prompt: `
 # Diffs:
 ${diff}
 ${repoStyle}
         `,
-        context: opts.context,
+        model: configManager.config.model,
+        language: configManager.config.language,
+        modelProvider: opts.modelProvider,
       });
-      message = removeThoughts(message);
+      stop();
       checkCommitMessage(message);
       break;
     } catch (error: any) {
       attempts++;
       if (attempts >= maxAttempts) {
         throw error;
-      } else {
-        logger.logWarn(
-          `Attempt to generate commit message failed since ${error.message}. Retrying...`,
-        );
       }
     }
   }
@@ -97,7 +185,7 @@ ${repoStyle}
   const isNonInteractiveParam =
     argv.stage || argv.commit || argv.noVerify || argv.copy;
   if (argv.interactive && !isNonInteractiveParam) {
-    await handleInteractiveMode(message, opts.context);
+    await handleInteractiveMode(message);
   } else {
     // Non-interactive mode logic
     if (argv.commit) {
@@ -142,7 +230,7 @@ async function pushChanges() {
 }
 
 // Handle interactive mode
-async function handleInteractiveMode(message: string, context: Context) {
+async function handleInteractiveMode(message: string) {
   logger.logResult(`Generated commit message: ${pc.cyan(message)}`);
 
   // Ask user what to do next
@@ -204,7 +292,7 @@ async function handleInteractiveMode(message: string, context: Context) {
       }
 
       // Use the edited message again to show the operation options
-      await handleInteractiveMode(editedMessage, context);
+      await handleInteractiveMode(editedMessage);
       break;
     case 'cancel':
       logger.logAction({ message: 'Operation cancelled' });
@@ -236,32 +324,6 @@ function removeThoughts(message: string) {
   }
   return message;
 }
-
-const COMMIT_PROMPT = `
-You are an expert software engineer that generates concise, \
-one-line Git commit messages based on the provided diffs.
-Review the provided context and diffs which are about to be committed to a git repo.
-Review the diffs carefully.
-Generate a one-line commit message for those changes.
-The commit message should be structured as follows: <type>: <description>
-Use these for <type>: fix, feat, build, chore, ci, docs, style, refactor, perf, test
-
-Ensure the commit message:
-- Starts with the appropriate prefix.
-- Is in the imperative mood (e.g., \"add feature\" not \"added feature\" or \"adding feature\").
-- Does not exceed 72 characters.
-
-Reply only with the one-line commit message, without any additional text, explanations, \
-or line breaks.
-
-## Guidelines
-  - Use present tense, like "add feature" instead of "added feature"
-  - Do not capitalize the first letter
-  - Do not end with a period
-  - Keep it concise and direct, describing the change content
-  - Please do not overthink, directly generate commit text that follows the specification
-  - Must strictly adhere to the above standards, without adding any personal explanations or suggestions
-`;
 
 /**
  * Get the staged diff while handling large files

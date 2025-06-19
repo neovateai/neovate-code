@@ -1,259 +1,184 @@
 import defu from 'defu';
 import fs from 'fs';
-import { createRequire } from 'module';
+import { homedir } from 'os';
 import path from 'path';
-import resolve from 'resolve';
-import yargsParser from 'yargs-parser';
-import { MODEL_ALIAS, ModelType } from './llms/model';
-import type { Plugin } from './pluginManager/types';
-import { getSystemPrompt } from './prompts/prompts';
-import { type ApprovalMode, getApprovalMode } from './utils/approvalMode';
-import * as logger from './utils/logger';
 
-export type ApiKeys = Record<string, string>;
+type McpStdioServerConfig = {
+  type?: 'stdio';
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+};
+type McpSSEServerConfig = {
+  type: 'sse';
+  url: string;
+};
+type McpServerConfig = McpStdioServerConfig | McpSSEServerConfig;
 
-const require = createRequire(import.meta.url);
+type ApprovalMode = 'suggest' | 'auto-edit' | 'full-auto';
 
 export type Config = {
-  model: ModelType;
-  smallModel: ModelType;
-  stream: boolean;
-  mcpConfig: any;
-  systemPrompt: string[];
-  tasks: boolean;
-  plugins: Plugin[];
-  // TODO: why productName is in the config?
-  productName: string;
+  model: string;
+  smallModel: string;
+  planModel: string;
   language: string;
-  apiKeys: ApiKeys;
-  approvalMode: ApprovalMode;
-  editMode: 'search-replace' | 'whole-file';
-  printTokenUsage: boolean;
   quiet: boolean;
+  approvalMode: ApprovalMode;
+  plugins: string[];
+  mcpServers: Record<string, McpServerConfig>;
+  editMode: 'search-replace' | 'whole-file';
 };
 
-export function getConfigPaths(opts: { productName: string; cwd: string }): {
+const DEFAULT_CONFIG: Partial<Config> = {
+  language: 'English',
+  quiet: false,
+  approvalMode: 'suggest',
+  plugins: [],
+  mcpServers: {},
+};
+const VALID_CONFIG_KEYS = [
+  ...Object.keys(DEFAULT_CONFIG),
+  'model',
+  'smallModel',
+  'planModel',
+];
+const ARRAY_CONFIG_KEYS = ['plugins'];
+const OBJECT_CONFIG_KEYS = ['mcpServers'];
+const BOOLEAN_CONFIG_KEYS = ['quiet'];
+
+export class ConfigManager {
+  globalConfig: Partial<Config>;
+  projectConfig: Partial<Config>;
+  argvConfig: Partial<Config>;
   globalConfigPath: string;
   projectConfigPath: string;
-} {
-  const { productName, cwd } = opts;
-  const productNameLower = productName.toLowerCase();
 
-  const homeDir = process.env.HOME || process.env.USERPROFILE || '';
-  const globalConfigPath = path.join(
-    homeDir,
-    `.${productNameLower}`,
-    'config.json',
-  );
-
-  const projectConfigPath = path.join(
-    cwd,
-    `.${productNameLower}`,
-    'config.json',
-  );
-
-  return { globalConfigPath, projectConfigPath };
-}
-
-function readConfigFile(filePath: string): Partial<Config> {
-  if (fs.existsSync(filePath)) {
-    try {
-      const configContent = fs.readFileSync(filePath, 'utf-8');
-      const config = JSON.parse(configContent);
-      const mcpConfig = readMcpConfig(filePath);
-      if (mcpConfig) {
-        config.mcpConfig = mcpConfig;
-      }
-      return config;
-    } catch (error: any) {
-      logger.logWarn(
-        `Unable to read config file ${filePath}: ${error.message}`,
-      );
-    }
-  }
-  return {};
-}
-
-function readMcpConfig(filePath: string): Record<string, any> | undefined {
-  const mcpJson = path.join(path.dirname(filePath), 'mcp.json');
-  if (fs.existsSync(mcpJson)) {
-    try {
-      return JSON.parse(fs.readFileSync(mcpJson, 'utf-8'));
-    } catch (error: any) {
-      logger.logWarn(
-        `Unable to read mcp config file ${mcpJson}: ${error.message}`,
-      );
-    }
-  }
-}
-
-export async function getConfig(opts: {
-  argv: yargsParser.Arguments;
-  productName: string;
-  cwd: string;
-}): Promise<Config> {
-  const { argv, productName, cwd } = opts;
-
-  const { globalConfigPath, projectConfigPath } = getConfigPaths({
-    productName,
-    cwd,
-  });
-  const globalConfig = readConfigFile(globalConfigPath);
-  const projectConfig = readConfigFile(projectConfigPath);
-  const argvConfig = {
-    model: argv.model,
-    smallModel: argv.smallModel,
-    stream: argv.stream,
-    mcpConfig: {
-      mcpServers: (() => {
-        if (argv.mcp) {
-          const mcpValues = argv.mcp;
-          const mcpServers = stringToMcpServerConfigs(mcpValues);
-          logger.logDebug(`Using MCP servers from command line: ${mcpValues}`);
-          return mcpServers;
-        }
-        return [];
-      })(),
-    },
-    // systemPrompt: argv.systemPrompt,
-    tasks: argv.tasks,
-    plugins: argv.plugin,
-    language: argv.language,
-    approvalMode: argv.approvalMode,
-    editMode: argv['edit-mode'] || 'search-replace',
-    printTokenUsage: argv.printTokenUsage,
-    apiKeys: (() => {
-      const apiKeys: ApiKeys = {};
-      const keys = argv.apiKey || [];
-      for (const key of keys) {
-        const [provider, value] = key.split('=');
-        if (provider && value) {
-          const lowerProvider = provider.toLowerCase();
-          apiKeys[lowerProvider] = value;
-        } else {
-          logger.logError({
-            error: `Invalid --api-key format: ${key}. Use <provider>=<key>.`,
-          });
-        }
-      }
-    })(),
-  };
-  const defaultConfig: Partial<Config> = {
-    language: 'English',
-  };
-  // priority: argvConfig > projectConfig > globalConfig > defaultConfig
-  const config: Partial<Config> = defu(
-    argvConfig,
-    defu(projectConfig, defu(globalConfig, defaultConfig)),
-  );
-
-  const model = (() => {
-    if (config.model) {
-      const aliased = MODEL_ALIAS[config.model as keyof typeof MODEL_ALIAS];
-      return aliased || config.model;
-    }
-  })();
-  // Small model is the model to use for the small and fast queries
-  // It's the same as the main model if not specified
-  const smallModel =
-    (() => {
-      if (config.smallModel) {
-        const aliased =
-          MODEL_ALIAS[config.smallModel as keyof typeof MODEL_ALIAS];
-        return aliased || config.smallModel;
-      }
-    })() || model;
-  const stream = (() => {
-    if (config.stream !== undefined) {
-      return config.stream;
-    }
-    if (
-      model === 'Google/gemini-2.0-pro-exp-02-05' ||
-      model === 'Google/gemini-2.5-pro-preview-06-05'
-    ) {
-      return false;
-    }
-    return true;
-  })();
-  const systemPrompt = (() => {
-    if (process.env.CODE === 'none') {
-      return [];
-    }
-    return getSystemPrompt({
-      tasks: config.tasks,
+  constructor(cwd: string, productName: string, argvConfig: Partial<Config>) {
+    const lowerProductName = productName.toLowerCase();
+    const globalConfigPath = path.join(
+      homedir(),
+      `.${lowerProductName}`,
+      'config.json',
+    );
+    const projectConfigPath = path.join(
       cwd,
-      language: config.language!,
+      `.${lowerProductName}`,
+      'config.json',
+    );
+    this.globalConfigPath = globalConfigPath;
+    this.projectConfigPath = projectConfigPath;
+    this.globalConfig = loadConfig(globalConfigPath);
+    this.projectConfig = loadConfig(projectConfigPath);
+    this.argvConfig = argvConfig;
+  }
+
+  get config() {
+    const config = defu(
+      this.argvConfig,
+      defu(this.projectConfig, defu(this.globalConfig, DEFAULT_CONFIG)),
+    ) as Config;
+    config.smallModel = config.smallModel || config.model;
+    config.planModel = config.planModel || config.model;
+    return config;
+  }
+
+  removeConfig(global: boolean, key: string, values?: string[]) {
+    if (!VALID_CONFIG_KEYS.includes(key)) {
+      throw new Error(`Invalid config key: ${key}`);
+    }
+    const config = global ? this.globalConfig : this.projectConfig;
+    const configPath = global ? this.globalConfigPath : this.projectConfigPath;
+    if (values) {
+      (config[key as keyof Config] as any) = (
+        config[key as keyof Config] as string[]
+      ).filter((v) => !values.includes(v));
+    } else {
+      delete config[key as keyof Config];
+    }
+    saveConfig(configPath, config, DEFAULT_CONFIG);
+  }
+
+  addConfig(global: boolean, key: string, values: string[]) {
+    if (!VALID_CONFIG_KEYS.includes(key)) {
+      throw new Error(`Invalid config key: ${key}`);
+    }
+    const config = global ? this.globalConfig : this.projectConfig;
+    const configPath = global ? this.globalConfigPath : this.projectConfigPath;
+    if (ARRAY_CONFIG_KEYS.includes(key)) {
+      (config[key as keyof Config] as any) = [
+        ...(config[key as keyof Config] as string[]),
+        ...values,
+      ];
+    } else if (OBJECT_CONFIG_KEYS.includes(key)) {
+      (config[key as keyof Config] as any) = {
+        ...(config[key as keyof Config] as Record<string, McpServerConfig>),
+        ...values,
+      };
+    }
+    saveConfig(configPath, config, DEFAULT_CONFIG);
+  }
+
+  setConfig(global: boolean, key: string, value: string) {
+    if (!VALID_CONFIG_KEYS.includes(key)) {
+      throw new Error(`Invalid config key: ${key}`);
+    }
+    const config = global ? this.globalConfig : this.projectConfig;
+    const configPath = global ? this.globalConfigPath : this.projectConfigPath;
+    let newValue: any = value;
+    if (BOOLEAN_CONFIG_KEYS.includes(key)) {
+      newValue = value === 'true';
+    }
+    if (OBJECT_CONFIG_KEYS.includes(key)) {
+      newValue = JSON.parse(value);
+    }
+    (config[key as keyof Config] as any) = newValue;
+    saveConfig(configPath, config, DEFAULT_CONFIG);
+  }
+
+  updateConfig(global: boolean, newConfig: Partial<Config>) {
+    Object.keys(newConfig).forEach((key) => {
+      if (!VALID_CONFIG_KEYS.includes(key)) {
+        throw new Error(`Invalid config key: ${key}`);
+      }
     });
-  })().concat([`return one tool at most each time.`]);
-  return {
-    model: model as ModelType,
-    smallModel: smallModel as ModelType,
-    stream,
-    tasks: !!config.tasks,
-    mcpConfig: config.mcpConfig,
-    systemPrompt,
-    plugins: normalizePlugins(cwd, config.plugins || []),
-    productName,
-    language: config.language!,
-    apiKeys: config.apiKeys!,
-    approvalMode: getApprovalMode(config.approvalMode as ApprovalMode),
-    editMode: config.editMode!,
-    printTokenUsage: !!config.printTokenUsage,
-    quiet: !!config.quiet,
-  };
-}
-
-export function normalizePlugins(cwd: string, plugins: (string | Plugin)[]) {
-  return plugins.map((plugin) => {
-    if (typeof plugin === 'string') {
-      const pluginPath = resolve.sync(plugin, { basedir: cwd });
-      const pluginObject = require(pluginPath);
-      return pluginObject.default || pluginObject;
+    let config = global ? this.globalConfig : this.projectConfig;
+    const configPath = global ? this.globalConfigPath : this.projectConfigPath;
+    config = defu(newConfig, config);
+    if (global) {
+      this.globalConfig = config;
+    } else {
+      this.projectConfig = config;
     }
-    return plugin;
-  });
+    saveConfig(configPath, config, DEFAULT_CONFIG);
+  }
 }
 
-export function stringToMcpServerConfigs(mcpValues: string) {
-  const configs: Record<string, any> = {};
-  const values = mcpValues.split(',');
-  let i = 0;
-  for (const value of values) {
-    const config = stringToMcpServerConfig(value);
-    const name = `${config.name}-${i}`;
-    configs[name] = config;
-    i++;
+function loadConfig(file: string) {
+  if (!fs.existsSync(file)) {
+    return {};
   }
-  return configs;
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf-8'));
+  } catch (error) {
+    throw new Error(`Unable to read config file ${file}: ${error}`);
+  }
 }
 
-function stringToMcpServerConfig(mcpValue: string) {
-  const isSSE =
-    typeof mcpValue === 'string' && mcpValue.toLowerCase().startsWith('http');
-  if (isSSE) {
-    return {
-      name: 'sse-server',
-      type: 'sse',
-      url: mcpValue,
-    };
-  } else {
-    const parts = mcpValue.split(' ');
-    const command = parts[0];
-    let name = 'command-server';
-    const X_COMMANDS = ['npx', 'pnpx', 'tnpx', 'bunx', 'uvx'];
-    if (X_COMMANDS.includes(parts[0])) {
-      if (parts[1]) {
-        name = parts[1] === '-y' && parts[2] ? parts[2] : parts[1];
-      }
-    } else if (parts[0] === 'env' && X_COMMANDS.includes(parts[2])) {
-      if (parts[3]) {
-        name = parts[3] === '-y' && parts[4] ? parts[4] : parts[3];
-      }
-    }
-    return {
-      name,
-      command,
-      args: parts.slice(1),
-    };
+function saveConfig(
+  file: string,
+  config: Partial<Config>,
+  defaultConfig: Partial<Config>,
+) {
+  const filteredConfig = Object.fromEntries(
+    Object.entries(config).filter(
+      ([key, value]) =>
+        JSON.stringify(value) !==
+        JSON.stringify(defaultConfig[key as keyof Config]),
+    ),
+  );
+  const dir = path.dirname(file);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
+  fs.writeFileSync(file, JSON.stringify(filteredConfig, null, 2), 'utf-8');
 }

@@ -6,3 +6,5 @@ compiled
 *.md
 *.yaml
 .tnf
+**/app.tsx
+**/routeTree.gen.ts

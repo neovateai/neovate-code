@@ -7,16 +7,12 @@ import {
 } from '@ant-design/icons';
 import { Bubble } from '@ant-design/x';
 import { createFileRoute } from '@tanstack/react-router';
-import { Button, Spin } from 'antd';
+import { Button, type GetProp, Spin } from 'antd';
 import { createStyles } from 'antd-style';
 import ChatSender from '@/components/ChatSender';
-import LexicalTextArea from '@/components/ChatSender/LexicalTextArea';
-import { LexicalTextAreaContext } from '@/components/ChatSender/LexicalTextAreaContext';
-import MessageRenderer from '@/components/MessageRenderer';
+import Message from '@/components/Message';
 import Welcome from '@/components/Welcome';
-import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
-import { useChatState } from '@/context/chatProvider';
-import type { BubbleMessage } from '@/types/chat';
+import ChatProvider, { useChatState } from '@/hooks/provider';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
@@ -50,21 +46,50 @@ const useStyle = createStyles(({ token, css }) => {
 
 const Chat: React.FC = () => {
   const { styles } = useStyle();
-  const { messages } = useChatState();
-
-  const messageRender = (message: BubbleMessage) => {
-    return <MessageRenderer message={message} />;
-  };
+  const { messages, status } = useChatState();
 
   const items = messages?.map((i) => {
     return {
-      ...i.message,
-      classNames: {
-        content: i.status === 'loading' ? styles.loadingMessage : '',
-      },
-      typing: i.status === 'loading' ? { step: 2, interval: 30 } : false,
+      ...i,
+      content: i.role === 'assistant' ? i : i.content,
+      typing: status === 'submitted' ? { step: 20, interval: 150 } : false,
     };
   });
+  const roles: GetProp<typeof Bubble.List, 'roles'> = {
+    user: {
+      placement: 'end',
+      avatar: {
+        icon: <UserOutlined />,
+        style: { background: '#87d068' },
+      },
+    },
+    assistant: {
+      placement: 'start',
+      avatar: {
+        icon: <UserOutlined />,
+        style: { background: '#fde3cf' },
+      },
+      messageRender(message) {
+        return <Message message={message} />;
+      },
+      footer: (
+        <div style={{ display: 'flex' }}>
+          <Button type="text" size="small" icon={<ReloadOutlined />} />
+          <Button type="text" size="small" icon={<CopyOutlined />} />
+          <Button type="text" size="small" icon={<LikeOutlined />} />
+          <Button type="text" size="small" icon={<DislikeOutlined />} />
+        </div>
+      ),
+      loadingRender: () => (
+        <>
+          <Spin size="small" />
+          <div>
+            <p>Thinking...</p>
+          </div>
+        </>
+      ),
+    },
+  };
 
   return (
     <div className={styles.chat}>
@@ -77,41 +102,7 @@ const Chat: React.FC = () => {
               height: '100%',
               paddingInline: 'calc(calc(100% - 700px) /2)',
             }}
-            roles={{
-              user: {
-                placement: 'end',
-                avatar: {
-                  icon: <UserOutlined />,
-                  style: { background: '#87d068' },
-                },
-                messageRender: renderRichTextMessage,
-              },
-              assistant: {
-                placement: 'start',
-                avatar: {
-                  icon: <UserOutlined />,
-                  style: { background: '#fde3cf' },
-                },
-                messageRender,
-                footer: (
-                  <div style={{ display: 'flex' }}>
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<ReloadOutlined />}
-                    />
-                    <Button type="text" size="small" icon={<CopyOutlined />} />
-                    <Button type="text" size="small" icon={<LikeOutlined />} />
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<DislikeOutlined />}
-                    />
-                  </div>
-                ),
-                loadingRender: () => <Spin size="small" />,
-              },
-            }}
+            roles={roles}
           />
         ) : (
           <Welcome />
@@ -122,19 +113,14 @@ const Chat: React.FC = () => {
   );
 };
 
-const renderRichTextMessage = (message: string) => {
+const ChatWrapper: React.FC = () => {
   return (
-    <LexicalTextAreaContext.Provider
-      value={{
-        aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
-        namespace: 'BubbleTextarea',
-      }}
-    >
-      <LexicalTextArea disabled value={message} />
-    </LexicalTextAreaContext.Provider>
+    <ChatProvider>
+      <Chat />
+    </ChatProvider>
   );
 };
 
 export const Route = createFileRoute('/chat')({
-  component: Chat,
+  component: ChatWrapper,
 });

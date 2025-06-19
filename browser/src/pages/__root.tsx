@@ -1,4 +1,5 @@
 import { Outlet, createRootRoute, redirect } from '@tanstack/react-router';
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { createStyles } from 'antd-style';
 import React from 'react';
 import Sider from '@/components/Sider';
@@ -23,6 +24,7 @@ const Layout: React.FC = () => {
     <div className={styles.layout}>
       <Sider />
       <Outlet />
+      <TanStackRouterDevtools position="bottom-right" />
     </div>
   );
 };

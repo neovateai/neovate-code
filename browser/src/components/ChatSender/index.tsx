@@ -12,7 +12,7 @@ import { useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
 import { ContextType } from '@/constants/ContextType';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
-import { useChatState } from '@/context/chatProvider';
+import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
@@ -67,7 +67,7 @@ const useStyle = createStyles(({ token, css }) => {
 
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
-  const { abortController, loading, onQuery } = useChatState();
+  const { loading, stop, append, onQuery } = useChatState();
   const [insertNodePosition, setInsertNodePosition] = useState(0);
   const [contextSearchInput, setContextSearchInput] = useState('');
   const prevInputValue = useRef<string>(state.prompt);
@@ -96,7 +96,10 @@ const ChatSender: React.FC = () => {
       <Prompts
         items={SENDER_PROMPTS}
         onItemClick={(info) => {
-          onQuery(info.data.description as string);
+          append({
+            role: 'user',
+            content: info.data.description as string,
+          });
         }}
         styles={{
           item: { padding: '6px 12px' },
@@ -186,7 +189,7 @@ const ChatSender: React.FC = () => {
                 }}
                 onKeyDown={onKeyDown}
                 onCancel={() => {
-                  abortController.current?.abort();
+                  stop();
                 }}
                 prefix={
                   <Button

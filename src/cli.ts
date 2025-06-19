@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import pc from 'picocolors';
 import { fileURLToPath } from 'url';
-import { _checkAndUpdate, runCli } from '.';
+import { _checkAndUpdate } from '.';
 import { logDebug } from './utils/logger';
 
 async function checkUpdate() {
@@ -58,8 +58,8 @@ async function main() {
   } catch (error) {
     logDebug(`Error checking update: ${error}`);
   }
+  const { runCli } = await import('.');
   await runCli({
-    plugins: [],
     productName: 'TAKUMI',
     version: pkg.version,
   });

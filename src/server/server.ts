@@ -1,77 +1,62 @@
-import Fastify from 'fastify';
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import fastify, { FastifyInstance } from 'fastify';
+import { PRODUCT_NAME } from '../constants';
 import * as logger from '../utils/logger';
-import { fileContextApiPlugin } from './plugins/fileContextApiPlugin';
-import { streamApiPlugin } from './plugins/streamApiPlugin';
-import { ServerOptions } from './types';
+import config from './config';
+import { CreateServerOpts, RunBrowserServerOpts } from './types';
 
-export async function startBrowserServer(opts: ServerOptions) {
-  await createServer(opts);
+const registerPlugins = async (app: FastifyInstance) => {
+  await app.register(import('@fastify/cors'), {
+    origin: true,
+    methods: ['GET', 'HEAD', 'PUT', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+      'Sec-WebSocket-Protocol',
+    ],
+  });
+  await app.register(import('@fastify/compress'), {
+    global: true,
+  });
+};
+
+const registerRoutes = async (app: FastifyInstance, opts: CreateServerOpts) => {
+  await app.register(import('./routes/completions'), {
+    prefix: '/api/chat',
+    ...opts,
+  });
+};
+
+export async function runBrowserServer(opts: RunBrowserServerOpts) {
+  const traceName = `${opts.context.productName ?? PRODUCT_NAME}-browser`;
+  await createServer({
+    ...opts,
+    traceName,
+  });
 }
 
-export async function createServer(opts: ServerOptions) {
-  const fastify = Fastify({
-    logger: false, // 使用自定义日志
-    bodyLimit: 5 * 1024 * 1024, // 5MB limit
-  });
+export async function createServer(opts: CreateServerOpts) {
+  const app: FastifyInstance = fastify({
+    logger: true,
+  }).withTypeProvider<TypeBoxTypeProvider>();
 
   try {
-    // 注册 CORS 插件
-    await fastify.register(import('@fastify/cors'), {
-      origin: true,
-      methods: ['GET', 'HEAD', 'PUT', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-      credentials: true,
-      allowedHeaders: [
-        'Content-Type',
-        'Authorization',
-        'X-Requested-With',
-        'Accept',
-        'Origin',
-        'Sec-WebSocket-Protocol',
-      ],
+    await registerPlugins(app);
+    await registerRoutes(app, opts);
+
+    await app.listen({
+      port: config.port,
+      host: config.host,
     });
 
-    // 注册压缩插件
-    await fastify.register(import('@fastify/compress'), {
-      global: true,
-    });
-
-    // 注册流式 API 插件
-    await fastify.register(streamApiPlugin, opts);
-    await fastify.register(fileContextApiPlugin, opts);
-
-    // 404 处理
-    fastify.setNotFoundHandler(async (request, reply) => {
-      reply.code(404).send();
-    });
-
-    // 错误处理
-    fastify.setErrorHandler(async (error, request, reply) => {
-      logger.logError({ error: error.message });
-      reply.code(500).send({ error: 'Internal Server Error' });
-    });
-
-    const { port, host } = opts;
-
-    // 启动服务器
-    await fastify.listen({ port, host });
-    logger.logInfo(`Server is running on http://${host}:${port}`);
-
-    // 错误监听
-    process.on('uncaughtException', (err) => {
-      logger.logError({ error: err.message });
-      fastify.close(() => {
-        process.exit(1);
-      });
-    });
-
-    process.on('SIGINT', () => {
-      fastify.close(() => {
-        logger.logInfo('Server stopped');
-        process.exit(0);
-      });
-    });
+    logger.logInfo(`Server is running on http://${config.host}:${config.port}`);
   } catch (err) {
-    logger.logError({ error: `Server startup error: ${err}` });
+    app.log.error(err);
     process.exit(1);
   }
+  return app;
 }

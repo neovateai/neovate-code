@@ -9,7 +9,7 @@ import {
 import { Prompts, Welcome as WelcomeX } from '@ant-design/x';
 import { Button, Flex, Space } from 'antd';
 import { createStyles } from 'antd-style';
-import { useChatState } from '@/context/chatProvider';
+import { useChatState } from '@/hooks/provider';
 
 const HOT_TOPICS = {
   key: '1',
@@ -96,7 +96,7 @@ const useStyle = createStyles(({ css }) => {
 
 const Welcome = () => {
   const { styles } = useStyle();
-  const { onQuery } = useChatState();
+  const { append } = useChatState();
   return (
     <Space
       direction="vertical"
@@ -131,7 +131,10 @@ const Welcome = () => {
             subItem: { padding: 0, background: 'transparent' },
           }}
           onItemClick={(info) => {
-            onQuery(info.data.description as string);
+            append({
+              role: 'user',
+              content: info.data.description as string,
+            });
           }}
           className={styles.chatPrompt}
         />
@@ -149,7 +152,10 @@ const Welcome = () => {
             subItem: { background: '#ffffffa6' },
           }}
           onItemClick={(info) => {
-            onQuery(info.data.description as string);
+            append({
+              role: 'user',
+              content: info.data.description as string,
+            });
           }}
           className={styles.chatPrompt}
         />
