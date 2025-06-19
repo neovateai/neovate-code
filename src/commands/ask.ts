@@ -1,6 +1,6 @@
 import { askQuery } from '../llms/query';
 import { Context } from '../types';
-import * as logger from '../utils/logger';
+import * as logger from '../v2/utils/logger';
 
 export async function runAsk(opts: { context: Context; prompt: string }) {
   const { argv } = opts.context;

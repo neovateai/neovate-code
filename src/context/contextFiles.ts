@@ -2,7 +2,7 @@
 import * as fsSync from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
-import { logDebug, logError } from '../utils/logger';
+import { logDebug, logError } from '../v2/utils/logger';
 
 interface FileContent {
   path: string;

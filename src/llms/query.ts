@@ -14,8 +14,8 @@ import { getToolsPrompt } from '../prompts/prompts';
 import { callTool, getAllTools, parseToolUse } from '../tools/tools';
 import { getAskTools } from '../tools/tools';
 import { Context } from '../types';
-import * as logger from '../utils/logger';
-import { renderMarkdown } from '../utils/markdown';
+import * as logger from '../v2/utils/logger';
+import { renderMarkdown } from '../v2/utils/markdown';
 import { ModelType, getModel } from './model';
 
 interface GetQueryContextOptions {

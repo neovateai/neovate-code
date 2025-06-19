@@ -2,8 +2,8 @@ import { tool } from '@openai/agents';
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import { ripGrep } from '../../ripgrep';
 import { Context } from '../context';
+import { ripGrep } from '../utils/ripgrep';
 
 export function createGrepTool(opts: { context: Context }) {
   return tool({

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { PluginHookType } from '../pluginManager/pluginManager';
 import { Context } from '../types';
 import { requestWritePermission } from '../utils/approvalMode';
-import { logInfo } from '../utils/logger';
+import { logInfo } from '../v2/utils/logger';
 
 export function createFileWriteTool(opts: { context: Context }) {
   return tool({

@@ -3,7 +3,7 @@ import { memoize } from 'lodash-es';
 import path from 'path';
 import { createLSTool } from '../tools/LsTool';
 import { Context } from '../types';
-import { execFileNoThrow } from '../utils/execFileNoThrow';
+import { execFileNoThrow } from '../v2/utils/execFileNoThrow';
 import { getCodebaseContext } from './codebase';
 
 export async function getDirectoryStructure(opts: { context: Context }) {

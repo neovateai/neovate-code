@@ -5,7 +5,6 @@ import { RunCliOpts } from '..';
 import { createCodeAgent } from '../agents/code';
 import { Config } from '../config';
 import { Context } from '../context';
-import { parseMessage } from '../parse-message';
 import { PromptContext } from '../prompt-context';
 import { getDefaultModelProvider } from '../provider';
 import { Tools } from '../tool';
@@ -17,6 +16,7 @@ import { createGrepTool } from '../tools/grep';
 import { createLSTool } from '../tools/ls';
 import { createReadTool } from '../tools/read';
 import { createWriteTool } from '../tools/write';
+import { parseMessage } from '../utils/parse-message';
 
 export interface RunOpts {
   prompt: string;

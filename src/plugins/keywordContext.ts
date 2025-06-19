@@ -1,6 +1,6 @@
 import { Plugin } from '../pluginManager/types';
 import { PluginContext } from '../types';
-import * as logger from '../utils/logger';
+import * as logger from '../v2/utils/logger';
 
 export const keywordContextPlugin: Plugin = {
   name: 'keyword-context-plugin',

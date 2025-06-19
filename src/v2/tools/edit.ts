@@ -2,8 +2,8 @@ import { tool } from '@openai/agents';
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import { applyEdit } from '../../utils/applyEdit';
 import { Context } from '../context';
+import { applyEdit } from '../utils/applyEdit';
 
 export function createEditTool(opts: { context: Context }) {
   return tool({

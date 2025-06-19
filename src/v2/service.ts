@@ -11,7 +11,6 @@ import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
 import { Context } from './context';
 import { MCPManager } from './mcp';
-import { parseMessage } from './parse-message';
 import { PromptContext } from './prompt-context';
 import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
@@ -23,6 +22,7 @@ import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
 import { createWriteTool } from './tools/write';
+import { parseMessage } from './utils/parse-message';
 
 let mcpManager: MCPManager | null = null;
 

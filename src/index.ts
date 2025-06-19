@@ -20,7 +20,7 @@ import { keywordContextPlugin } from './plugins/keywordContext';
 import { sessionPlugin } from './plugins/session';
 import { xmlFormatPromptPlugin } from './plugins/xmlFormatPrompt';
 import type { Context, PluginContext } from './types';
-import * as logger from './utils/logger';
+import * as logger from './v2/utils/logger';
 
 // Private export may be deprecated in the future
 export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';

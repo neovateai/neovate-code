@@ -4,7 +4,7 @@ import clipboardy from 'clipboardy';
 import pc from 'picocolors';
 import { askQuery } from '../llms/query';
 import { Context } from '../types';
-import * as logger from '../utils/logger';
+import * as logger from '../v2/utils/logger';
 
 export async function runCommit(opts: { context: Context }) {
   try {

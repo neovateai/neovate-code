@@ -4,7 +4,7 @@ import type { AskQueryOptions, EditQueryOptions } from '../llms/query';
 import { MCPClient } from '../mcp';
 import { PluginManager } from '../pluginManager/pluginManager';
 import type { Plugin } from '../pluginManager/types';
-import * as logger from '../utils/logger';
+import * as logger from '../v2/utils/logger';
 
 type Paths = {
   configDir: string;

@@ -7,7 +7,6 @@ import { homedir } from 'os';
 import path from 'path';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
-import { confirm, getUserInput } from '../../utils/logger';
 import { Config } from '../config';
 import { PRODUCT_NAME } from '../constants';
 import { Context } from '../context';
@@ -15,6 +14,7 @@ import { isReasoningModel } from '../provider';
 import { query } from '../query';
 import { Service } from '../service';
 import { setupTracing } from '../tracing';
+import { confirm, getUserInput } from '../utils/logger';
 
 const debug = createDebug('takumi:commands:default');
 

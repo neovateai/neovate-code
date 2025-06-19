@@ -4,7 +4,7 @@ import path from 'pathe';
 import color from 'picocolors';
 import util from 'util';
 import { Context } from '../types';
-import * as logger from '../utils/logger';
+import * as logger from '../v2/utils/logger';
 
 const REPOMIX_COMMAND = 'repomix';
 const OUTPUT_FILENAME = 'repomix-output.txt';

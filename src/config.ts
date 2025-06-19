@@ -8,7 +8,7 @@ import { MODEL_ALIAS, ModelType } from './llms/model';
 import type { Plugin } from './pluginManager/types';
 import { getSystemPrompt } from './prompts/prompts';
 import { type ApprovalMode, getApprovalMode } from './utils/approvalMode';
-import * as logger from './utils/logger';
+import * as logger from './v2/utils/logger';
 
 export type ApiKeys = Record<string, string>;
 

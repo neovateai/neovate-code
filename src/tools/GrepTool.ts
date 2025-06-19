@@ -2,8 +2,8 @@ import { tool } from 'ai';
 import { stat } from 'fs/promises';
 import { isAbsolute, resolve } from 'path';
 import { z } from 'zod';
-import { ripGrep } from '../ripgrep';
 import { Context } from '../types';
+import { ripGrep } from '../v2/utils/ripgrep';
 
 export function createGrepTool(opts: { context: Context }) {
   return tool({

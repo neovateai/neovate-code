@@ -9,7 +9,7 @@ import {
 } from '../config';
 import { MODEL_ALIAS, ModelType } from '../llms/model';
 import { Context } from '../types';
-import * as logger from '../utils/logger';
+import * as logger from '../v2/utils/logger';
 
 export async function runConfig(opts: { context: Context }) {
   const { context } = opts;

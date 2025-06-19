@@ -5,10 +5,10 @@ import clipboardy from 'clipboardy';
 import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
-import * as logger from '../../utils/logger';
 import { createCommitAgent } from '../agents/commit';
 import { ConfigManager } from '../config';
 import { getDefaultModelProvider } from '../provider';
+import * as logger from '../utils/logger';
 
 interface GenerateCommitMessageOpts {
   prompt: string;

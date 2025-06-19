@@ -4,7 +4,7 @@ import open from 'open';
 import path from 'path';
 import { Context } from '../types';
 import { log2Html } from '../utils/log2Html';
-import * as logger from '../utils/logger';
+import * as logger from '../v2/utils/logger';
 
 export async function runLog(opts: { context: Context }) {
   const { argv, paths } = opts.context;

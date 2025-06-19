@@ -4,6 +4,7 @@ export default {
   config (config) {
     console.log(RPEFIX, 'config', config, this);
     return {
+      // language: 'Chinese',
     };
   },
   configResolved ({ resolvedConfig }) {

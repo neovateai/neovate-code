@@ -5,10 +5,10 @@ import { execSync } from 'child_process';
 import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
-import * as logger from '../../utils/logger';
 import { createShellAgent } from '../agents/shell';
 import { ConfigManager } from '../config';
 import { getDefaultModelProvider } from '../provider';
+import * as logger from '../utils/logger';
 
 async function executeShell(
   command: string,

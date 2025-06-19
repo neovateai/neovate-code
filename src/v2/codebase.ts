@@ -3,8 +3,8 @@ import fs from 'fs';
 import path from 'pathe';
 import color from 'picocolors';
 import util from 'util';
-import * as logger from '../utils/logger';
 import { Context } from './context';
+import * as logger from './utils/logger';
 
 const REPOMIX_COMMAND = 'repomix';
 const OUTPUT_FILENAME = 'repomix-output.txt';

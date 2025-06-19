@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import { MODEL_ALIAS } from '../llms/model';
 import { askQuery, editQuery } from '../llms/query';
 import { Context } from '../types';
-import * as logger from '../utils/logger';
+import * as logger from '../v2/utils/logger';
 
 const MAX_PLAN_ITERATIONS = 10;
 const PLAN_PROMPT = `

@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import { logWarn } from './logger';
+import { logWarn } from '../v2/utils/logger';
 
 export const ApprovalMode = {
   suggest: 'suggest',

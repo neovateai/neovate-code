@@ -3,7 +3,7 @@ import fs from 'fs';
 import inquirer from 'inquirer';
 import { askQuery } from '../llms/query';
 import { Context } from '../types';
-import * as logger from '../utils/logger';
+import * as logger from '../v2/utils/logger';
 
 const MAX_STEPS = 5;
 const PLAN_FILE = 'PLAN.md';

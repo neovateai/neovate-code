@@ -6,9 +6,9 @@ import { isAbsolute } from 'path';
 import { z } from 'zod';
 import { PluginHookType } from '../pluginManager/pluginManager';
 import { Context } from '../types';
-import { applyEdit } from '../utils/applyEdit';
 import { requestWritePermission } from '../utils/approvalMode';
-import { logInfo } from '../utils/logger';
+import { applyEdit } from '../v2/utils/applyEdit';
+import { logInfo } from '../v2/utils/logger';
 
 const description = `
 This is a tool for editing files. For moving or renaming files, you should generally use the Bash tool with the 'mv' command instead. For larger edits, use the Write tool to overwrite files.

@@ -4,7 +4,7 @@ import path from 'path';
 import pc from 'picocolors';
 import { fileURLToPath } from 'url';
 import { _checkAndUpdate } from '.';
-import { logDebug } from './utils/logger';
+import { logDebug } from './v2/utils/logger';
 
 async function checkUpdate() {
   if (process.env.TAKUMI_SELF_UPDATE === 'none') {

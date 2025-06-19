@@ -2,11 +2,11 @@ import createDebug from 'debug';
 import fs from 'fs';
 import path from 'path';
 import { platform } from 'process';
-import { execFileNoThrow } from '../utils/execFileNoThrow';
 import { getCodebaseContext } from './codebase';
 import { Context } from './context';
 import { IDE } from './ide';
 import { createLSTool } from './tools/ls';
+import { execFileNoThrow } from './utils/execFileNoThrow';
 
 const debug = createDebug('takumi:prompt-context');
 
