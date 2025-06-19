@@ -127,11 +127,11 @@ export const actions = {
 
     for (const nextContextItem of nextContextItems) {
       if (
-        // 如果直接选择的上下文已经包含，那么不再添加
+        // 如果通过直接选择的上下文已经包含，那么不再添加
         !state.selectContexts.some(
           (item) => item.value === nextContextItem.value,
         ) &&
-        // 对编辑器中原有的上下文进行去重
+        // 对下一批Context的上下文进行去重
         !nextEditorContext.some((item) => item.value === nextContextItem.value)
       ) {
         nextEditorContext.push(nextContextItem);
@@ -142,6 +142,7 @@ export const actions = {
 
     for (const prevContextItem of prevEditorContext) {
       if (
+        // 如果编辑器中原有的上下文被删除，那么删除对应的Map值
         !nextEditorContext.some((item) => item.value === prevContextItem.value)
       ) {
         state.editorContextMap.delete(prevContextItem.value);
@@ -149,5 +150,12 @@ export const actions = {
     }
 
     state.editorContexts = nextEditorContext;
+  },
+
+  // =======Other========
+  /** 管理发送prompt后的状态 */
+  afterSend: () => {
+    state.editorContextMap.clear();
+    state.editorContexts = [];
   },
 };

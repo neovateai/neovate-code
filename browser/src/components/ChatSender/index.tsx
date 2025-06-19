@@ -146,7 +146,7 @@ const ChatSender: React.FC = () => {
                 case ContextType.FILE: {
                   const fileItem = getFileByValue(value);
                   if (fileItem) {
-                    context.actions.addSelectContext(
+                    context.actions.addEditorContext(
                       {
                         type,
                         value: contextValue,
