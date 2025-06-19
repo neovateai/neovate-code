@@ -1,12 +1,9 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import createDebug from 'debug';
 import fastify, { FastifyInstance } from 'fastify';
+import { PRODUCT_NAME } from '../constants';
 import * as logger from '../utils/logger';
-import { PRODUCT_NAME } from '../v2/constants';
 import config from './config';
 import { CreateServerOpts, RunBrowserServerOpts } from './types';
-
-const debug = createDebug('takumi:commands:browser');
 
 const registerPlugins = async (app: FastifyInstance) => {
   await app.register(import('@fastify/cors'), {
@@ -35,7 +32,7 @@ const registerRoutes = async (app: FastifyInstance, opts: CreateServerOpts) => {
 };
 
 export async function runBrowserServer(opts: RunBrowserServerOpts) {
-  const traceName = `${opts.productName ?? PRODUCT_NAME}-browser`;
+  const traceName = `${opts.context.productName ?? PRODUCT_NAME}-browser`;
   await createServer({
     ...opts,
     traceName,

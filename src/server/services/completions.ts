@@ -2,28 +2,18 @@ import { AgentConfiguration, AgentInputItem, withTrace } from '@openai/agents';
 import { DataStreamWriter, formatDataStreamPart } from 'ai';
 import assert from 'assert';
 import createDebug from 'debug';
-import { Context } from '../../v2/context';
-import { isReasoningModel } from '../../v2/provider';
-import { query } from '../../v2/query';
-import { Service, ServiceOpts } from '../../v2/service';
+import { isReasoningModel } from '../../provider';
+import { query } from '../../query';
+import { Service, ServiceOpts } from '../../service';
 import { CreateServerOpts } from '../types/server';
 
 const debug = createDebug('takumi:server:completions');
 
-interface BrowserServiceOpts
-  extends ServiceOpts,
-    Omit<CreateServerOpts, 'argvConfig'> {}
+interface BrowserServiceOpts extends ServiceOpts {}
 
 export class BrowserService extends Service {
   constructor(opts: BrowserServiceOpts) {
-    const context = new Context({
-      productName: opts.productName,
-      cwd: opts.cwd,
-      argvConfig: opts.argvConfig,
-    });
-
     super({
-      context,
       ...opts,
     });
   }
@@ -61,7 +51,7 @@ export async function runPlan(opts: RunCompletionOpts) {
       const result = await query({
         input,
         service,
-        thinking: isReasoningModel(service.context.configManager.config.model),
+        thinking: isReasoningModel(service.context.config.model),
         onTextDelta(text) {
           debug(`Text delta: ${text}`);
           dataStream.write(formatDataStreamPart('text', text));
@@ -121,7 +111,7 @@ export async function runCode(opts: RunCompletionOpts) {
       const result = await query({
         input,
         service,
-        thinking: isReasoningModel(service.context.configManager.config.model),
+        thinking: isReasoningModel(service.context.config.model),
         onTextDelta(text) {
           debug(`Text delta: ${text}`);
           dataStream.write(formatDataStreamPart('text', text));

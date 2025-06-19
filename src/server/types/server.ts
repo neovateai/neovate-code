@@ -1,13 +1,12 @@
 import { ModelProvider } from '@openai/agents';
-import { Config } from '../../v2/config';
+import { Context } from '../../context';
 
 export interface RunBrowserServerOpts {
   prompt: string;
   cwd?: string;
-  argvConfig?: Partial<Config>;
-  productName?: string;
   modelProvider?: ModelProvider;
   plan?: boolean;
+  context: Context;
 }
 
 export interface CreateServerOpts extends RunBrowserServerOpts {

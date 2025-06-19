@@ -2155,8 +2155,8 @@ packages:
   '@types/lodash-es@4.17.12':
     resolution: {integrity: sha512-0NgftHUcV4v34VhXm8QBSftKVXtbkBG3ViCjs6+eJ5a6y6Mi/jiFGPc1sC7QK+9BFhWrURE3EOggmWaSxL9OzQ==}
 
-  '@types/lodash@4.17.17':
-    resolution: {integrity: sha512-RRVJ+J3J+WmyOTqnz3PiBLA501eKwXl2noseKOrNo/6+XEHjTAxO4xHvxQB6QuNm+s4WRbn6rSiap8+EA+ykFQ==}
+  '@types/lodash@4.17.18':
+    resolution: {integrity: sha512-KJ65INaxqxmU6EoCiJmRPZC9H9RVWCRd349tXM2M3O5NA7cY6YL7c0bHAHQ93NOfTObEQ004kd2QVHs/r0+m4g==}
 
   '@types/marked-terminal@6.1.1':
     resolution: {integrity: sha512-DfoUqkmFDCED7eBY9vFUhJ9fW8oZcMAK5EwRDQ9drjTbpQa+DnBTQQCwWhTFVf4WsZ6yYcJTI8D91wxTWXRZZQ==}
@@ -4259,8 +4259,8 @@ packages:
     resolution: {integrity: sha512-cxN6aIDPz6rm8hbebcP7vrQNhvRcveZoJU72Y7vskh4oIm+BZwBECnx5nTmrlres1Qapvx27Qo1Auukpf8PKXw==}
     engines: {node: '>=18'}
 
-  openai@5.5.0:
-    resolution: {integrity: sha512-j6y9a/VyEWTqm8mS2FT6Qboz6aTgwlRIpKlgP0cTmvkaKYEfnginPsiEAzqtk0O/fQBXTyNS3v0wRc2QmkGePw==}
+  openai@5.5.1:
+    resolution: {integrity: sha512-5i19097mGotHA1eFsM6Tjd/tJ8uo9sa5Ysv4Q6bKJ2vtN6rc0MzMrUefXnLXYAJcmMQrC1Efhj0AvfIkXrQamw==}
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
@@ -6888,7 +6888,7 @@ snapshots:
     dependencies:
       '@openai/zod': zod@3.25.67
       debug: 4.4.1
-      openai: 5.5.0(ws@8.18.2)(zod@3.25.67)
+      openai: 5.5.1(ws@8.18.2)(zod@3.25.67)
     optionalDependencies:
       '@modelcontextprotocol/sdk': 1.12.3
       zod: 3.25.67
@@ -6912,7 +6912,7 @@ snapshots:
       '@openai/agents-core': 0.0.8(ws@8.18.2)(zod@3.25.67)
       '@openai/zod': zod@3.25.67
       debug: 4.4.1
-      openai: 5.5.0(ws@8.18.2)(zod@3.25.67)
+      openai: 5.5.1(ws@8.18.2)(zod@3.25.67)
     transitivePeerDependencies:
       - supports-color
       - ws
@@ -6937,7 +6937,7 @@ snapshots:
       '@openai/agents-openai': 0.0.8(ws@8.18.2)(zod@3.25.67)
       '@openai/agents-realtime': 0.0.8(zod@3.25.67)
       debug: 4.4.1
-      openai: 5.5.0(ws@8.18.2)(zod@3.25.67)
+      openai: 5.5.1(ws@8.18.2)(zod@3.25.67)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -7825,9 +7825,9 @@ snapshots:
 
   '@types/lodash-es@4.17.12':
     dependencies:
-      '@types/lodash': 4.17.17
+      '@types/lodash': 4.17.18
 
-  '@types/lodash@4.17.17': {}
+  '@types/lodash@4.17.18': {}
 
   '@types/marked-terminal@6.1.1':
     dependencies:
@@ -10303,7 +10303,7 @@ snapshots:
       is-inside-container: 1.0.0
       is-wsl: 3.1.0
 
-  openai@5.5.0(ws@8.18.2)(zod@3.25.67):
+  openai@5.5.1(ws@8.18.2)(zod@3.25.67):
     optionalDependencies:
       ws: 8.18.2
       zod: 3.25.67
