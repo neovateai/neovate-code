@@ -6,7 +6,6 @@ import { Context } from '../../v2/context';
 import { isReasoningModel } from '../../v2/provider';
 import { query } from '../../v2/query';
 import { Service, ServiceOpts } from '../../v2/service';
-import { PLAN_PROMPT_JSON } from '../prompts';
 import { CreateServerOpts } from '../types/server';
 
 const debug = createDebug('takumi:server:completions');
@@ -38,6 +37,8 @@ export class BrowserService extends Service {
 interface RunCompletionOpts extends CreateServerOpts {
   dataStream: DataStreamWriter;
 }
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function runPlan(opts: RunCompletionOpts) {
   const services: Service[] = [];
@@ -124,6 +125,14 @@ export async function runCode(opts: RunCompletionOpts) {
         onTextDelta(text) {
           debug(`Text delta: ${text}`);
           dataStream.write(formatDataStreamPart('text', text));
+        },
+        async onText(text) {
+          await delay(10);
+          debug(`Text: ${text}`);
+          dataStream.writeMessageAnnotation({
+            type: 'text',
+            text,
+          });
         },
         onReasoning(text) {
           debug(`Reasoning: ${text}`);

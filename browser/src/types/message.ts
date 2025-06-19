@@ -21,3 +21,11 @@ export type SourceMessage = SourceUIPart;
 export type FileMessage = FileUIPart;
 
 export type StepStartMessage = StepStartUIPart;
+
+export type MessageAnnotation =
+  | TextMessage
+  | ReasoningMessage
+  | ToolInvocationMessage
+  | SourceMessage
+  | FileMessage
+  | StepStartMessage;

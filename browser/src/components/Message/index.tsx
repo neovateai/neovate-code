@@ -1,6 +1,6 @@
 import { getMessageParts } from '@ai-sdk/ui-utils';
-import ReactMarkdown from 'react-markdown';
-import type { UIMessage } from '@/types/message';
+import type { MessageAnnotation, UIMessage } from '@/types/message';
+import TextMessage from './AssistantTextMessage';
 import ThinkingMessage from './ThinkingMessage';
 import ToolMessage from './ToolMessage';
 
@@ -11,16 +11,43 @@ interface MessageProps {
 const Message: React.FC<MessageProps> = ({ message }) => {
   const parts = getMessageParts(message);
 
-  return parts.map((part, index) => {
+  const sortedParts = [...parts].sort((a, b) => {
+    const getTypeOrder = (type: string) => {
+      switch (type) {
+        case 'reasoning':
+          return 1;
+        case 'tool-invocation':
+          return 2;
+        case 'text':
+          return 3;
+        default:
+          return 4;
+      }
+    };
+
+    return getTypeOrder(a.type) - getTypeOrder(b.type);
+  });
+
+  return sortedParts.map((part, index) => {
     switch (part.type) {
       case 'reasoning':
-        return <ThinkingMessage key={index} message={part} />;
+        return <ThinkingMessage key={`${part.type}-${index}`} message={part} />;
       case 'tool-invocation':
-        return <ToolMessage key={index} message={part} />;
+        return <ToolMessage key={`${part.type}-${index}`} message={part} />;
       case 'text':
-        return <ReactMarkdown key={index}>{part.text}</ReactMarkdown>;
+        return (
+          <TextMessage
+            key={`${part.type}-${index}`}
+            message={part}
+            annotations={message.annotations as MessageAnnotation[]}
+          />
+        );
       default:
-        return <div key={index}>Unknown message type: {part.type}</div>;
+        return (
+          <div key={`${part.type}-${index}`}>
+            Unknown message type: {part.type}
+          </div>
+        );
     }
   });
 };

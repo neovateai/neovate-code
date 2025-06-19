@@ -52,10 +52,7 @@ const Chat: React.FC = () => {
     return {
       ...i,
       content: i.role === 'assistant' ? i : i.content,
-      classNames: {
-        content: status === 'submitted' ? styles.loadingMessage : '',
-      },
-      typing: status === 'submitted' ? { step: 2, interval: 30 } : false,
+      typing: status === 'submitted' ? { step: 20, interval: 150 } : false,
     };
   });
   const roles: GetProp<typeof Bubble.List, 'roles'> = {

@@ -10,161 +10,96 @@ const ToolMessage: React.FC<{ message: ToolInvocationMessage }> = ({
   // 控制结果展开/收起的状态，默认收起
   const [isResultExpanded, setIsResultExpanded] = useState(false);
 
-  // 根据状态返回不同的样式和图标
+  // 根据状态返回不同的图标和颜色
   const getStatusInfo = () => {
     switch (state) {
       case 'partial-call':
         return {
-          bgColor: 'bg-yellow-50 border-yellow-200',
-          iconColor: 'text-yellow-500',
           icon: '⏳',
-          statusText: '准备调用',
-          statusColor: 'text-yellow-600',
+          iconColor: 'text-yellow-500',
+          statusText: '准备中',
         };
       case 'call':
         return {
-          bgColor: 'bg-blue-50 border-blue-200',
-          iconColor: 'text-blue-500',
-          icon: '🔧',
-          statusText: '正在执行',
-          statusColor: 'text-blue-600',
+          icon: '🔄',
+          iconColor: 'text-blue-500 animate-spin',
+          statusText: '执行中',
         };
       case 'result':
         return {
-          bgColor: 'bg-green-50 border-green-200',
+          icon: '✓',
           iconColor: 'text-green-500',
-          icon: '✅',
-          statusText: '执行完成',
-          statusColor: 'text-green-600',
+          statusText: '完成',
         };
       default:
         return {
-          bgColor: 'bg-gray-50 border-gray-200',
+          icon: '?',
           iconColor: 'text-gray-500',
-          icon: '❓',
-          statusText: '未知状态',
-          statusColor: 'text-gray-600',
+          statusText: '未知',
         };
     }
   };
 
-  // 根据工具类型获取专门的图标和样式
-  const getToolInfo = () => {
+  // 根据工具类型获取图标
+  const getToolIcon = () => {
     switch (toolName) {
       case 'grep':
-        return { icon: '🔍', name: '搜索文件', color: 'text-purple-600' };
+        return '🔍';
       case 'read':
-        return { icon: '📖', name: '读取文件', color: 'text-blue-600' };
+        return '📖';
       case 'write':
-        return { icon: '✏️', name: '写入文件', color: 'text-green-600' };
+        return '✏️';
       case 'bash':
-        return { icon: '💻', name: '执行命令', color: 'text-orange-600' };
+        return '💻';
       case 'edit':
-        return { icon: '🔧', name: '编辑文件', color: 'text-cyan-600' };
+        return '🔧';
       case 'fetch':
-        return { icon: '🌐', name: '网络请求', color: 'text-indigo-600' };
+        return '🌐';
       case 'ls':
-        return { icon: '📁', name: '列出目录', color: 'text-yellow-600' };
+        return '📁';
       case 'glob':
-        return { icon: '🎯', name: '文件匹配', color: 'text-pink-600' };
+        return '🎯';
       default:
-        return { icon: '🔧', name: '工具', color: 'text-gray-600' };
+        return '🔧';
     }
   };
 
   const statusInfo = getStatusInfo();
-  const toolInfo = getToolInfo();
 
-  // 渲染参数的专门组件
+  // 渲染简化的参数
   const renderArgs = () => {
     if (!args || Object.keys(args).length === 0) return null;
 
-    const renderArgValue = (key: string, value: unknown): React.ReactNode => {
-      const valueStr = String(value || '');
-
-      // 对于特定工具的参数进行优化展示
-      if (toolName === 'bash' && key === 'command') {
-        return (
-          <div className="bg-gray-900 text-green-400 p-3 rounded font-mono text-sm">
-            $ {valueStr}
-          </div>
-        );
-      }
-
-      if (
-        (toolName === 'read' || toolName === 'write' || toolName === 'edit') &&
-        key === 'file_path'
-      ) {
-        return (
-          <div className="bg-blue-50 border border-blue-200 px-3 py-2 rounded font-mono text-sm">
-            📄 {valueStr}
-          </div>
-        );
-      }
-
-      if (toolName === 'fetch' && key === 'url' && typeof value === 'string') {
-        return (
-          <div className="bg-indigo-50 border border-indigo-200 px-3 py-2 rounded">
-            <a
-              href={value}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-indigo-600 hover:text-indigo-800 font-mono text-sm break-all"
-            >
-              🔗 {value}
-            </a>
-          </div>
-        );
-      }
-
-      if ((toolName === 'grep' || toolName === 'glob') && key === 'pattern') {
-        return (
-          <div className="bg-purple-50 border border-purple-200 px-3 py-2 rounded font-mono text-sm">
-            🎯 {valueStr}
-          </div>
-        );
-      }
-
-      // 默认渲染
-      if (typeof value === 'string' && value.length > 100) {
-        return (
-          <details className="bg-white border rounded">
-            <summary className="cursor-pointer p-2 hover:bg-gray-50 text-sm font-medium">
-              查看完整内容 ({value.length} 字符)
-            </summary>
-            <pre className="p-3 text-sm text-gray-600 whitespace-pre-wrap overflow-x-auto border-t">
-              {value}
-            </pre>
-          </details>
-        );
-      }
-
-      return (
-        <pre className="bg-white border rounded p-2 text-sm text-gray-600 whitespace-pre-wrap overflow-x-auto">
-          {typeof value === 'string' ? value : JSON.stringify(value, null, 2)}
-        </pre>
-      );
-    };
+    // 只显示最重要的参数
+    const mainArg = getMainArg();
+    if (!mainArg) return null;
 
     return (
-      <div className="mb-3">
-        <h4 className="text-sm font-medium text-gray-700 mb-2">参数:</h4>
-        <div className="space-y-2">
-          {Object.entries(args).map(([key, value]) => (
-            <div key={key}>
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                {key}
-              </label>
-              {renderArgValue(key, value)}
-            </div>
-          ))}
-        </div>
-      </div>
+      <span className="text-gray-600 ml-2 font-mono text-sm">{mainArg}</span>
     );
   };
 
-  // 渲染结果的专门组件
-  const renderResult = () => {
+  // 获取主要参数显示
+  const getMainArg = () => {
+    if (!args) return null;
+
+    if (args.file_path) return String(args.file_path);
+    if (args.command) return String(args.command);
+    if (args.url) return String(args.url);
+    if (args.pattern) return String(args.pattern);
+    if (args.path) return String(args.path);
+
+    // 如果有其他参数，显示第一个
+    const keys = Object.keys(args);
+    if (keys.length > 0) {
+      return String(args[keys[0]]);
+    }
+
+    return null;
+  };
+
+  // 渲染详细结果
+  const renderDetailedResult = () => {
     if (state !== 'result' || !('result' in toolInvocation)) return null;
 
     const result = toolInvocation.result;
@@ -190,27 +125,30 @@ const ToolMessage: React.FC<{ message: ToolInvocationMessage }> = ({
             Array.isArray(data.filenames)
           ) {
             return (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    找到 {data.filenames.length} 个文件
-                  </span>
+              <div className="mt-2">
+                <div className="text-xs text-gray-500 mb-1">
+                  找到 {data.filenames.length} 个文件
                   {'durationMs' in data &&
                     typeof data.durationMs === 'number' && (
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        耗时 {data.durationMs}ms
-                      </span>
+                      <span className="ml-2">({data.durationMs}ms)</span>
                     )}
                 </div>
-                <div className="bg-white border rounded max-h-64 overflow-y-auto">
-                  {data.filenames.map((filename: unknown, index: number) => (
-                    <div
-                      key={index}
-                      className="px-3 py-2 border-b last:border-b-0 hover:bg-gray-50 font-mono text-sm"
-                    >
-                      📄 {String(filename)}
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {data.filenames
+                    .slice(0, 10)
+                    .map((filename: unknown, index: number) => (
+                      <div
+                        key={index}
+                        className="text-sm text-gray-700 font-mono hover:bg-gray-50 px-1 py-0.5 rounded"
+                      >
+                        {String(filename)}
+                      </div>
+                    ))}
+                  {data.filenames.length > 10 && (
+                    <div className="text-xs text-gray-500 italic">
+                      ...还有 {data.filenames.length - 10} 个文件
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             );
@@ -224,20 +162,15 @@ const ToolMessage: React.FC<{ message: ToolInvocationMessage }> = ({
             'content' in data
           ) {
             return (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    📄 {'filePath' in data ? String(data.filePath) : '文件'}
-                  </span>
+              <div className="mt-2">
+                <div className="text-xs text-gray-500 mb-1">
                   {'totalLines' in data &&
                     typeof data.totalLines === 'number' && (
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {data.totalLines} 行
-                      </span>
+                      <span>{data.totalLines} 行</span>
                     )}
                 </div>
-                <div className="bg-gray-900 text-gray-100 rounded p-4 max-h-96 overflow-auto">
-                  <pre className="text-sm whitespace-pre-wrap">
+                <div className="bg-gray-50 border-l-2 border-gray-300 pl-4 py-2 max-h-64 overflow-auto">
+                  <pre className="text-sm text-gray-800 whitespace-pre-wrap">
                     {String(data.content)}
                   </pre>
                 </div>
@@ -253,37 +186,26 @@ const ToolMessage: React.FC<{ message: ToolInvocationMessage }> = ({
             'result' in data
           ) {
             return (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    🌐 {'url' in data ? String(data.url) : 'URL'}
-                  </span>
+              <div className="mt-2">
+                <div className="text-xs text-gray-500 mb-1 flex items-center gap-2">
                   {'code' in data && typeof data.code === 'number' && (
                     <span
-                      className={`text-xs px-2 py-1 rounded ${
+                      className={`px-1.5 py-0.5 rounded text-xs ${
                         data.code === 200
-                          ? 'bg-green-100 text-green-600'
-                          : 'bg-red-100 text-red-600'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
                       }`}
                     >
-                      {data.code}{' '}
-                      {'codeText' in data ? String(data.codeText) : ''}
+                      {data.code}
                     </span>
                   )}
                   {'durationMs' in data &&
                     typeof data.durationMs === 'number' && (
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {data.durationMs}ms
-                      </span>
+                      <span>{data.durationMs}ms</span>
                     )}
-                  {'cached' in data && data.cached && (
-                    <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                      缓存
-                    </span>
-                  )}
                 </div>
-                <div className="bg-white border rounded p-3">
-                  <div className="text-sm text-gray-600 whitespace-pre-wrap">
+                <div className="bg-gray-50 border-l-2 border-gray-300 pl-4 py-2">
+                  <div className="text-sm text-gray-800 whitespace-pre-wrap">
                     {String(data.result)}
                   </div>
                 </div>
@@ -294,10 +216,12 @@ const ToolMessage: React.FC<{ message: ToolInvocationMessage }> = ({
           // bash 工具的输出展示
           if (toolName === 'bash' && 'output' in result) {
             return (
-              <div className="bg-gray-900 text-gray-100 rounded p-4 max-h-96 overflow-auto">
-                <pre className="text-sm whitespace-pre-wrap font-mono">
-                  {String(result.output)}
-                </pre>
+              <div className="mt-2">
+                <div className="bg-gray-900 text-green-400 pl-4 py-2 max-h-64 overflow-auto border-l-2 border-gray-600">
+                  <pre className="text-sm whitespace-pre-wrap font-mono">
+                    {String(result.output)}
+                  </pre>
+                </div>
               </div>
             );
           }
@@ -306,14 +230,12 @@ const ToolMessage: React.FC<{ message: ToolInvocationMessage }> = ({
         // 处理错误结果
         if (!result.success && 'error' in result) {
           return (
-            <div className="bg-red-50 border border-red-200 rounded p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-red-600">❌</span>
-                <span className="text-sm font-medium text-red-700">
-                  执行失败
-                </span>
+            <div className="mt-2">
+              <div className="bg-red-50 border-l-2 border-red-300 pl-4 py-2">
+                <div className="text-sm text-red-700">
+                  {String(result.error)}
+                </div>
               </div>
-              <div className="text-sm text-red-600">{String(result.error)}</div>
             </div>
           );
         }
@@ -323,85 +245,47 @@ const ToolMessage: React.FC<{ message: ToolInvocationMessage }> = ({
       const resultStr =
         typeof result === 'string' ? result : JSON.stringify(result, null, 2);
       return (
-        <div className="bg-white rounded border p-3">
-          <pre className="text-sm text-gray-600 whitespace-pre-wrap overflow-x-auto">
-            {resultStr}
-          </pre>
+        <div className="mt-2">
+          <div className="bg-gray-50 border-l-2 border-gray-300 pl-4 py-2">
+            <pre className="text-sm text-gray-800 whitespace-pre-wrap overflow-x-auto">
+              {resultStr}
+            </pre>
+          </div>
         </div>
       );
     };
 
-    return (
-      <div>
-        <div
-          className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded"
-          onClick={() => setIsResultExpanded(!isResultExpanded)}
-        >
-          <h4 className="text-sm font-medium text-gray-700">执行结果:</h4>
-          <span className="text-sm text-gray-500 flex items-center gap-1">
-            {isResultExpanded ? (
-              <>
-                <span>收起</span>
-                <span>▲</span>
-              </>
-            ) : (
-              <>
-                <span>展开</span>
-                <span>▼</span>
-              </>
-            )}
-          </span>
-        </div>
-        {isResultExpanded && <div className="mt-2">{renderToolResult()}</div>}
-      </div>
-    );
+    return renderToolResult();
   };
 
   return (
-    <div className={`rounded-lg border-2 p-4 mb-4 ${statusInfo.bgColor}`}>
-      {/* 工具调用头部 */}
-      <div className="flex items-center gap-3 mb-3">
-        <span className="text-xl" role="img" aria-label="tool-icon">
-          {toolInfo.icon}
+    <div className="py-2 px-1">
+      {/* 工具调用主行 */}
+      <div className="flex items-center gap-2 group">
+        <span className="text-base flex-shrink-0">{getToolIcon()}</span>
+        <span className={`text-sm flex-shrink-0 ${statusInfo.iconColor}`}>
+          {statusInfo.icon}
         </span>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-gray-800">
-              <span className={toolInfo.color}>{toolInfo.name}</span>
-              <code className="bg-gray-100 px-2 py-1 rounded text-sm ml-2">
-                {toolName}
-              </code>
-            </h3>
-            {step && (
-              <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
-                Step {step}
-              </span>
-            )}
-          </div>
-          <p className={`text-sm ${statusInfo.statusColor} mt-1`}>
-            {statusInfo.statusText}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xl" role="img" aria-label="status-icon">
-            {statusInfo.icon}
-          </span>
-        </div>
+        <span className="text-sm text-gray-700 font-medium">{toolName}</span>
+        {step && <span className="text-xs text-gray-400">#{step}</span>}
+        {renderArgs()}
+        <span className="text-xs text-gray-400 ml-auto">
+          {statusInfo.statusText}
+        </span>
+
+        {/* 结果展开/收起按钮 */}
+        {state === 'result' && 'result' in toolInvocation && (
+          <button
+            onClick={() => setIsResultExpanded(!isResultExpanded)}
+            className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            {isResultExpanded ? '▲' : '▼'}
+          </button>
+        )}
       </div>
 
-      {/* 参数显示 */}
-      {renderArgs()}
-
-      {/* 结果显示 */}
-      {renderResult()}
-
-      {/* 加载动画 - 仅在 call 状态显示 */}
-      {state === 'call' && (
-        <div className="flex items-center gap-2 mt-3 text-sm text-blue-600">
-          <div className="animate-spin h-4 w-4 border-2 border-blue-300 border-t-blue-600 rounded-full"></div>
-          <span>工具正在执行中...</span>
-        </div>
-      )}
+      {/* 详细结果 */}
+      {isResultExpanded && renderDetailedResult()}
     </div>
   );
 };

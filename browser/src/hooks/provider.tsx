@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useChat } from '@ai-sdk/react';
 import { createContext, useContext } from 'react';
+import { useChat } from './useChat';
 
 type ChatState = ReturnType<typeof useChat> & {
   loading: boolean;
@@ -23,18 +23,6 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
     body: {
       model: 'takumi',
       // plan: true,
-    },
-    onFinish(messages) {
-      console.log('[useChat] Response data:', messages);
-    },
-    onError(error) {
-      console.error('[useChat] Error:', error);
-    },
-    onResponse(res) {
-      console.log('[useChat] Response:', res);
-    },
-    onToolCall({ toolCall }) {
-      console.log('[useChat] Tool call:', toolCall);
     },
   });
 
