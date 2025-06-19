@@ -29,6 +29,10 @@ const registerRoutes = async (app: FastifyInstance, opts: CreateServerOpts) => {
     prefix: '/api/chat',
     ...opts,
   });
+  await app.register(import('./routes/files'), {
+    prefix: '/api',
+    ...opts,
+  });
 };
 
 export async function runBrowserServer(opts: RunBrowserServerOpts) {
