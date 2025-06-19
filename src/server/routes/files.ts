@@ -1,7 +1,7 @@
 import { Type } from '@sinclair/typebox';
 import createDebug from 'debug';
 import { FastifyPluginAsync } from 'fastify';
-import * as pathe from 'pathe';
+import path from 'path';
 import { loadIgnorePatterns } from '../context/contextFiles';
 import { CreateServerOpts } from '../types';
 import { FileItem, FileListRequest } from '../types/files';
@@ -40,7 +40,7 @@ function normalizeRequestParams(query: FileListRequest, cwd: string) {
     pattern: pattern ? new RegExp(pattern, 'i') : undefined,
     maxDepth,
     includeMetadata: includeMetadata === 1,
-    targetDir: pathe.resolve(cwd, directory),
+    targetDir: path.resolve(cwd, directory),
   };
 }
 
@@ -122,8 +122,8 @@ async function walkDirectory(
 
     // 并行处理所有条目
     const processPromises = entries.map(async (entry) => {
-      const fullPath = pathe.join(dir, entry.name);
-      const relativePath = pathe.relative(context.cwd, fullPath);
+      const fullPath = path.join(dir, entry.name);
+      const relativePath = path.relative(context.cwd, fullPath);
 
       // 检查是否应该忽略
       if (shouldIgnorePath(fullPath, entry.name, context.ignorePatterns)) {
