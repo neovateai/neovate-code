@@ -24,6 +24,7 @@
     "react-markdown": "^9.0.0",
     "react-syntax-highlighter": "^15.5.0",
     "classnames": "^2.5.1",
+    "cheerio": "^1.1.0",
     "lexical": "0.32.1",
     "@lexical/react": "0.32.1",
     "@lexical/utils": "0.32.1",
