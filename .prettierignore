@@ -7,3 +7,4 @@ compiled
 *.yaml
 .tnf
 **/app.tsx
+**/routeTree.gen.ts
