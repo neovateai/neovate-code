@@ -1,10 +1,10 @@
 import useXComponentConfig from '@ant-design/x/es/_util/hooks/use-x-component-config';
 import { useXProviderContext } from '@ant-design/x/es/x-provider';
-import { Cascader, Flex, Input, version } from 'antd';
+import { Cascader, Flex, Input, type InputRef, version } from 'antd';
 import type { CascaderProps } from 'antd';
 import classnames from 'classnames';
 import { useEvent, useMergedState } from 'rc-util';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { searchSuggestionItem } from '@/utils/chat';
 import useStyle from './style';
 import useActive from './useActive';
@@ -88,6 +88,8 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
   });
   const [info, setInfo] = useState<T | undefined>();
 
+  const searchBoxRef = useRef<InputRef>(null);
+
   const triggerOpen = (nextOpen: boolean) => {
     setOpen(nextOpen);
     onOpenChange?.(nextOpen);
@@ -100,6 +102,9 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
       } else {
         setInfo(nextInfo);
         triggerOpen(true);
+        if (showSearch) {
+          searchBoxRef.current?.focus();
+        }
       }
     },
   );
@@ -136,6 +141,7 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
       >
         {showSearch && (
           <Input
+            ref={searchBoxRef}
             style={{
               margin: '4px 0',
             }}
