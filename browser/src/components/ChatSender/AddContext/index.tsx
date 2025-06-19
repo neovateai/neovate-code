@@ -1,7 +1,7 @@
-import { PlusOutlined } from '@ant-design/icons';
+import Icon from '@ant-design/icons';
 import { Input, type InputRef, Tag } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
 import Suggestion from '@/components/Suggestion';
 import { ContextType } from '@/constants/ContextType';
@@ -9,7 +9,7 @@ import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 
-const useStyle = createStyles(({ css }) => {
+const useStyle = createStyles(({ css, token }) => {
   return {
     tag: css`
       user-select: none;
@@ -18,9 +18,17 @@ const useStyle = createStyles(({ css }) => {
       background-color: inherit;
       line-height: inherit;
       margin-right: 0;
+
+      display: flex;
+      align-items: center;
     `,
     input: css`
       /* margin-right: 8px; */
+    `,
+    icon: css`
+      font-size: 14px;
+      height: 22px;
+      color: ${token.colorText} !important;
     `,
   };
 });
@@ -111,7 +119,9 @@ const AddContext = () => {
           <Tag
             ref={tagRef}
             className={styles.tag}
-            icon={<PlusOutlined />}
+            icon={
+              <Icon className={styles.icon} component={() => <div>@</div>} />
+            }
             onClick={() => setInputVisible(true)}
           >
             {selectContexts.length === 0 && <span>Add Context</span>}
