@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
+import { useChat } from '@ai-sdk/react';
 import { createContext, useContext } from 'react';
-import { useChat } from './useChat';
 
 type ChatState = ReturnType<typeof useChat> & {
   loading: boolean;

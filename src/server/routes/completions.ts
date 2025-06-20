@@ -16,7 +16,7 @@ const CompletionRequestSchema = Type.Object({
         Type.Literal('assistant'),
         Type.Literal('system'),
       ]),
-      content: Type.String({ minLength: 1 }),
+      content: Type.String(),
     }),
     { minItems: 1 },
   ),

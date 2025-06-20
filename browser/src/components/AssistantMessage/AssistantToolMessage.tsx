@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import type { ToolInvocationMessage } from '@/types/message';
+import type { ToolMessage } from '@/types/message';
 
-const ToolMessage: React.FC<{ message: ToolInvocationMessage }> = ({
+const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
   message,
 }) => {
-  const { toolInvocation } = message;
-  const { state, toolName, args, step } = toolInvocation;
+  const { state, toolName, args, step } = message;
 
   // 控制结果展开/收起的状态，默认收起
   const [isResultExpanded, setIsResultExpanded] = useState(false);
@@ -13,12 +12,6 @@ const ToolMessage: React.FC<{ message: ToolInvocationMessage }> = ({
   // 根据状态返回不同的图标和颜色
   const getStatusInfo = () => {
     switch (state) {
-      case 'partial-call':
-        return {
-          icon: '⏳',
-          iconColor: 'text-yellow-500',
-          statusText: '准备中',
-        };
       case 'call':
         return {
           icon: '🔄',
@@ -100,9 +93,9 @@ const ToolMessage: React.FC<{ message: ToolInvocationMessage }> = ({
 
   // 渲染详细结果
   const renderDetailedResult = () => {
-    if (state !== 'result' || !('result' in toolInvocation)) return null;
+    if (state !== 'result' || !('result' in message)) return null;
 
-    const result = toolInvocation.result;
+    const result = message.result;
 
     // 根据工具类型优化结果展示
     const renderToolResult = () => {
@@ -274,7 +267,7 @@ const ToolMessage: React.FC<{ message: ToolInvocationMessage }> = ({
         </span>
 
         {/* 结果展开/收起按钮 */}
-        {state === 'result' && 'result' in toolInvocation && (
+        {state === 'result' && 'result' in message && (
           <button
             onClick={() => setIsResultExpanded(!isResultExpanded)}
             className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -290,4 +283,4 @@ const ToolMessage: React.FC<{ message: ToolInvocationMessage }> = ({
   );
 };
 
-export default ToolMessage;
+export default AssistantToolMessage;

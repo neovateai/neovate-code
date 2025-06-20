@@ -1,10 +1,12 @@
 import { createStyles } from 'antd-style';
-import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import type { MessageAnnotation, TextMessage } from '@/types/message';
+
+interface MarkdownRendererProps {
+  content: string;
+}
 
 const useStyles = createStyles(({ token, css }) => ({
   markdownContainer: css`
@@ -32,19 +34,8 @@ const useStyles = createStyles(({ token, css }) => ({
   `,
 }));
 
-const AssistantTextMessage: React.FC<{
-  message: TextMessage;
-  annotations?: MessageAnnotation[];
-}> = ({ message, annotations = [] }) => {
+const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   const { styles } = useStyles();
-
-  const content = useMemo(() => {
-    if (annotations?.length > 0) {
-      const textAnnotation = annotations.find((item) => item.type === 'text');
-      return textAnnotation?.text || message.text;
-    }
-    return message.text;
-  }, [annotations, message.text]);
 
   const components: Components = {
     code({ className, children, ...props }) {
@@ -74,4 +65,4 @@ const AssistantTextMessage: React.FC<{
   );
 };
 
-export default AssistantTextMessage;
+export default MarkdownRenderer;
