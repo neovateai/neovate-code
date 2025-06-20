@@ -20,7 +20,6 @@ const debug = createDebug('takumi:commands:default');
 
 export interface RunOpts {
   prompt: string;
-  cwd?: string;
   modelProvider?: ModelProvider;
   plan?: boolean;
   context: Context;
@@ -34,7 +33,6 @@ export async function run(opts: RunOpts) {
       let prompt = opts.prompt;
       debug('prompt', prompt);
       const commonServiceOpts = {
-        cwd: opts.cwd,
         context: opts.context,
         modelProvider: opts.modelProvider,
       };
@@ -109,7 +107,8 @@ export async function runDefault(opts: RunCliOpts) {
     `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
   );
   setupTracing(traceFile);
-  const cwd = process.cwd();
+  const cwd = opts.cwd || process.cwd();
+  debug('cwd', cwd);
   const context = new Context({
     productName: opts.productName,
     version: opts.version,
@@ -131,7 +130,6 @@ export async function runDefault(opts: RunCliOpts) {
   const result = await run({
     context,
     prompt: argv._[0]! as string,
-    cwd,
     plan: argv.plan,
   });
   if (context.config.quiet) {

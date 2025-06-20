@@ -9,6 +9,7 @@ export { Agent, Runner } from '@openai/agents';
 export { checkAndUpdate as _checkAndUpdate } from 'upgear';
 
 export interface RunCliOpts {
+  cwd: string;
   productName: string;
   version: string;
   modelProvider?: ModelProvider;

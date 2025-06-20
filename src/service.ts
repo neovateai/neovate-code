@@ -30,12 +30,10 @@ let mcpManager: MCPManager | null = null;
 export type AgentType = 'code' | 'plan';
 
 export interface ServiceOpts {
+  context: Context;
   agentType: AgentType;
   id?: string;
-  cwd?: string;
-  argvConfig?: Record<string, any>;
   modelProvider?: ModelProvider;
-  context?: Context;
 }
 
 export interface ServiceRunOpts {
@@ -59,12 +57,7 @@ export class Service {
   constructor(opts: ServiceOpts) {
     this.opts = opts;
     this.id = opts.id || randomUUID();
-    this.context =
-      opts.context ||
-      new Context({
-        cwd: opts.cwd,
-        argvConfig: opts.argvConfig,
-      });
+    this.context = opts.context;
   }
 
   async init() {

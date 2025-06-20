@@ -8,11 +8,11 @@ const root = path.join(__dirname, '../..');
 const fixtures = path.join(root, 'fixtures');
 const cwd = path.join(fixtures, 'normal');
 const context = new Context({
+  cwd,
   argvConfig: {
     quiet: true,
     model: 'flash',
   },
-  cwd,
 });
 
 function cleanup() {
@@ -37,7 +37,6 @@ afterEach(() => {
 async function runWithContext(prompt: string) {
   return await run({
     context,
-    cwd,
     prompt,
   });
 }

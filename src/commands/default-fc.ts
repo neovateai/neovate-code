@@ -20,7 +20,7 @@ import { parseMessage } from '../utils/parse-message';
 
 export interface RunOpts {
   prompt: string;
-  cwd?: string;
+  cwd: string;
   argvConfig?: Partial<Config>;
   json?: boolean;
   productName?: string;

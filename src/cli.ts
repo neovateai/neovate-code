@@ -60,6 +60,7 @@ async function main() {
   }
   const { runCli } = await import('.');
   await runCli({
+    cwd: process.cwd(),
     productName: 'TAKUMI',
     version: pkg.version,
   });
