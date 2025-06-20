@@ -17,10 +17,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build:type": "tsc --project tsconfig.json --emitDeclarationOnly --declarationDir dist-dts",
-    "build:cli": "bun build src/cli.ts --external=react-devtools-core --external=ink --external=react --minify --outfile dist/cli.mjs --target=node",
-    "build:index": "bun build src/index.ts --external=react-devtools-core --external=ink --external=react --minify --outfile dist/index.mjs --target=node",
+    "build:cli": "bun build src/cli.ts --external=react-devtools-core --external=ink --external=react --external=@fastify/compress --minify --outfile dist/cli.mjs --target=node",
+    "build:index": "bun build src/index.ts --external=react-devtools-core --external=ink --external=react --external=@fastify/compress --minify --outfile dist/index.mjs --target=node",
     "build:dts": "npm run build:type && api-extractor run --local --verbose",
-    "build": "npm run build:cli && npm run build:index && npm run build:dts",
+    "build:browser": "pnpm --filter @takumi/browser build",
+    "build": "npm run build:cli && npm run build:index && npm run build:dts && npm run build:browser",
     "ci": "npm run typecheck && npm run format:check && npm run test",
     "release": "npm run ci && utools release --git-tag --github-release --changelog",
     "test": "vitest run",
@@ -46,8 +47,8 @@
     "@ai-sdk/openai": "^1.3.22",
     "@ai-sdk/provider": "^1.1.3",
     "@ai-sdk/xai": "^1.2.16",
-    "@fastify/compress": "8.0.3",
     "@fastify/cors": "11.0.1",
+    "@fastify/static": "^8.2.0",
     "@fastify/type-provider-typebox": "5.1.0",
     "@microsoft/api-extractor": "^7.52.8",
     "@modelcontextprotocol/inspector": "^0.14.3",
@@ -98,6 +99,7 @@
     "zod": "^3.25.67"
   },
   "dependencies": {
+    "@fastify/compress": "8.0.3",
     "ink": "^6.0.0",
     "react": "^19.1.0"
   },

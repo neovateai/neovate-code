@@ -1,9 +1,19 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import createDebug from 'debug';
 import fastify, { FastifyInstance } from 'fastify';
+import fs from 'fs';
+import path from 'path';
 import { PRODUCT_NAME } from '../constants';
 import * as logger from '../utils/logger';
 import config from './config';
 import { CreateServerOpts, RunBrowserServerOpts } from './types';
+
+const debug = createDebug('takumi:server:completions');
+
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const BROWSER_DIST_PATH = path.resolve(__dirname, '../../dist-browser');
+
+const BASE_API_PREFIX = '/api';
 
 const registerPlugins = async (app: FastifyInstance) => {
   await app.register(import('@fastify/cors'), {
@@ -22,17 +32,37 @@ const registerPlugins = async (app: FastifyInstance) => {
   await app.register(import('@fastify/compress'), {
     global: true,
   });
+
+  await app.register(import('@fastify/static'), {
+    root: BROWSER_DIST_PATH,
+    prefix: '/',
+    wildcard: false,
+  });
+
+  app.get('*', async (request, reply) => {
+    if (request.url.startsWith(BASE_API_PREFIX)) {
+      return reply.status(404).send('Not Found');
+    }
+
+    const htmlPath = path.join(BROWSER_DIST_PATH, 'index.html');
+    if (fs.existsSync(htmlPath)) {
+      return reply.sendFile('index.html');
+    } else {
+      debug('index.html not found');
+      return reply.status(404).send('Not Found');
+    }
+  });
 };
 
 const registerRoutes = async (app: FastifyInstance, opts: CreateServerOpts) => {
   const { logLevel: _, ...pluginOpts } = opts;
 
   await app.register(import('./routes/completions'), {
-    prefix: '/api/chat',
+    prefix: `${BASE_API_PREFIX}/chat`,
     ...pluginOpts,
   });
   await app.register(import('./routes/files'), {
-    prefix: '/api',
+    prefix: BASE_API_PREFIX,
     ...pluginOpts,
   });
 };

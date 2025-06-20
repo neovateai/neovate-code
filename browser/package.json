@@ -1,5 +1,5 @@
 {
-  "name": "@takumijs/browser",
+  "name": "@takumi/browser",
   "version": "1.0.0",
   "description": "Takumi Browser Mode - Web interface for AI programming assistant",
   "main": "dist/index.js",
