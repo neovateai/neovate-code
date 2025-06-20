@@ -13,7 +13,7 @@
     "takumi": "./dist/cli.mjs"
   },
   "scripts": {
-    "dev": "tsx ./src/cli.ts",
+    "dev": "BROWSER_DIST_PATH=../../dist-browser tsx ./src/cli.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build:type": "tsc --project tsconfig.json --emitDeclarationOnly --declarationDir dist-dts",

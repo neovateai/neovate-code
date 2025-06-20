@@ -12,7 +12,12 @@ import { CreateServerOpts, RunBrowserServerOpts } from './types';
 const debug = createDebug('takumi:server:completions');
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
-const BROWSER_DIST_PATH = path.resolve(__dirname, '../../dist-browser');
+const BROWSER_DIST_PATH = path.resolve(
+  __dirname,
+  process.env.BROWSER_DIST_PATH || '../dist-browser',
+);
+
+debug('BROWSER_DIST_PATH', BROWSER_DIST_PATH);
 
 const BASE_API_PREFIX = '/api';
 
