@@ -27,7 +27,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function createStore(opts: CreateStoreOpts) {
   if (store) {
-    throw new Error('Store already initialized');
+    return store;
   }
   store = proxy<Store>({
     stage: opts.stage,

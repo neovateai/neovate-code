@@ -26,7 +26,7 @@ export class Context {
   #config: Config;
   #pluginManager: PluginManager | null = null;
   #resolvedConfig: Config | null = null;
-  constructor(opts: ContextOpts) {
+  constructor(opts: ContextOpts = {}) {
     this.cwd = opts.cwd || process.cwd();
     const productName = opts.productName || PRODUCT_NAME;
     this.productName = productName;
