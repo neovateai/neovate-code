@@ -47,11 +47,6 @@ export interface ServiceRunResult {
   stream: Readable;
 }
 
-const PLUGIN_HOOK_BLACKLIST = {
-  edit: 'editFile',
-  write: 'writeFile',
-} as const;
-
 export class Service {
   private opts: ServiceOpts;
   private tools?: Tools;
@@ -294,23 +289,6 @@ export class Service {
       ],
       type: PluginHookType.Series,
     });
-
-    // Additional handling for write/edit hooks, used for code statistics
-    if (name in PLUGIN_HOOK_BLACKLIST) {
-      const hookName =
-        PLUGIN_HOOK_BLACKLIST[name as keyof typeof PLUGIN_HOOK_BLACKLIST];
-      await this.context.apply({
-        hook: hookName,
-        args: [
-          {
-            callId,
-            params,
-            result,
-          },
-        ],
-        type: PluginHookType.Series,
-      });
-    }
 
     this.history.push({
       type: 'function_call_result',

@@ -116,28 +116,6 @@ export const PluginSchema = z.object({
     )
     .optional(),
   // For analytics tracking
-  editFile: z
-    .function(
-      z.tuple([
-        z.object({
-          callId: z.string(),
-          params: z.any(),
-          result: z.any(),
-        }),
-      ]),
-      z.void(),
-    )
-    .optional(),
-  writeFile: z.function(
-    z.tuple([
-      z.object({
-        callId: z.string(),
-        params: z.any(),
-        result: z.any(),
-      }),
-    ]),
-    z.void(),
-  ),
   toolUse: z.function(
     z.tuple([
       z.object({
