@@ -17,8 +17,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build:type": "tsc --project tsconfig.json --emitDeclarationOnly --declarationDir dist-dts",
-    "build:cli": "bun build src/cli.ts --external=react-devtools-core --minify --outfile dist/cli.mjs --target=node",
-    "build:index": "bun build src/index.ts --minify --outfile dist/index.mjs --target=node",
+    "build:cli": "bun build src/cli.ts --external=react-devtools-core --external=ink --external=react --minify --outfile dist/cli.mjs --target=node",
+    "build:index": "bun build src/index.ts --external=react-devtools-core --external=ink --external=react --minify --outfile dist/index.mjs --target=node",
     "build:dts": "npm run build:type && api-extractor run --local --verbose",
     "build": "npm run build:cli && npm run build:index && npm run build:dts",
     "ci": "npm run typecheck && npm run format:check && npm run test",
@@ -73,14 +73,12 @@
     "dotenv": "^16.5.0",
     "glob": "^11.0.3",
     "husky": "^9.1.7",
-    "ink": "^6.0.0",
     "ink-select-input": "^6.2.0",
     "lint-staged": "^16.1.2",
     "marked": "^15.0.12",
     "marked-terminal": "^7.3.0",
     "picocolors": "^1.1.1",
     "prettier": "^3.5.3",
-    "react": "^19.1.0",
     "resolve": "^1.22.10",
     "spawn-rx": "^5.1.2",
     "tsx": "^4.20.3",
@@ -93,6 +91,10 @@
     "ws": "^8.18.2",
     "yargs-parser": "^22.0.0",
     "zod": "^3.25.67"
+  },
+  "dependencies": {
+    "ink": "^6.0.0",
+    "react": "^19.1.0"
   },
   "volta": {
     "node": "22.11.0",
