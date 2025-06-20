@@ -50,7 +50,7 @@ export interface ServiceRunResult {
 export class Service {
   private opts: ServiceOpts;
   private tools?: Tools;
-  private agent?: Agent;
+  protected agent?: Agent;
   private initialized: boolean = false;
   context: Context;
   history: AgentInputItem[] = [];

@@ -5,6 +5,7 @@ import { platform } from 'process';
 import { getCodebaseContext } from './codebase';
 import { Context } from './context';
 import { IDE } from './ide';
+import { PluginHookType } from './plugin';
 import { createLSTool } from './tools/ls';
 import { execFileNoThrow } from './utils/execFileNoThrow';
 
@@ -153,7 +154,18 @@ export class PromptContext {
   }
 
   async getContextPrompt() {
-    const promptContext = await this.getContextPromptData();
+    await this.context.apply({
+      hook: 'contextStart',
+      args: [{ prompt: this.prompts.join(' ') }],
+      type: PluginHookType.Series,
+    });
+    let promptContext = await this.getContextPromptData();
+    promptContext = await this.context.apply({
+      hook: 'context',
+      args: [{ prompt: this.prompts.join(' ') }],
+      memo: promptContext,
+      type: PluginHookType.SeriesMerge,
+    });
     const prompt = Object.entries(promptContext)
       .map(([key, value]) => `<context name="${key}">${value}</context>`)
       .join('\n');
