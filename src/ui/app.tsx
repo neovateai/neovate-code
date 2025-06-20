@@ -150,6 +150,7 @@ function Header() {
 function ChatInput() {
   const store = getStore();
   const isProcessing = store.status === 'processing';
+  const isPlan = store.stage === 'plan';
   const [value, setValue] = React.useState('');
   const handleSubmit = () => {
     if (value.trim() === '') return;
@@ -167,7 +168,7 @@ function ChatInput() {
       >
         <Text color={isProcessing ? 'gray' : 'white'}>&gt;</Text>
         {isProcessing ? (
-          <Text color="gray">Processing...</Text>
+          <Text color="gray">{isPlan ? 'Planning...' : 'Processing...'}</Text>
         ) : (
           <TextInput
             value={value}
