@@ -26,10 +26,11 @@ Options:
   --smallModel <model>          Specify a smaller model for some tasks
   --plan                        Plan mode
   --logLevel <level>            Specify log level
+  --port <port>                 Specify port to use
 
 Examples:
-  ${p} "Refactor this file to use hooks."
-  ${p} -m gpt-4o "Add tests for the following code."
+  ${p} browser "Refactor this file to use hooks."
+  ${p} browser -m gpt-4o "Add tests for the following code." --port 3000
 
 Commands:
   browser                        Run the browser
@@ -48,6 +49,7 @@ export async function runBrowser(opts: RunCliOpts) {
     },
     boolean: ['help', 'plan'],
     string: ['model', 'smallModel', 'planModel', 'logLevel'],
+    number: ['port'],
   });
   if (argv.help) {
     printHelp(opts.productName.toLowerCase());
@@ -88,5 +90,6 @@ export async function runBrowser(opts: RunCliOpts) {
     cwd,
     plan: argv.plan,
     logLevel: argv.logLevel,
+    port: argv.port,
   });
 }

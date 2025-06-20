@@ -3,6 +3,7 @@ import createDebug from 'debug';
 import fastify, { FastifyInstance } from 'fastify';
 import fs from 'fs';
 import path from 'path';
+import portfinder from 'portfinder';
 import { PRODUCT_NAME } from '../constants';
 import * as logger from '../utils/logger';
 import config from './config';
@@ -77,19 +78,25 @@ export async function runBrowserServer(opts: RunBrowserServerOpts) {
 
 export async function createServer(opts: CreateServerOpts) {
   const app: FastifyInstance = fastify({
-    logger: opts.logLevel ? { level: opts.logLevel } : true,
+    logger: opts.logLevel ? { level: opts.logLevel } : false,
   }).withTypeProvider<TypeBoxTypeProvider>();
+
+  const port = await portfinder.getPortPromise({
+    port: Number.parseInt(String(opts.port || config.port), 10),
+  });
+  const host = config.host;
 
   try {
     await registerPlugins(app);
     await registerRoutes(app, opts);
 
     await app.listen({
-      port: config.port,
-      host: config.host,
+      port,
+      host,
     });
 
-    logger.logInfo(`Server is running on http://${config.host}:${config.port}`);
+    const baseUrl = `http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`;
+    logger.logInfo(`Browser is running on ${baseUrl}`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);
