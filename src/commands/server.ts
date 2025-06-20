@@ -29,8 +29,8 @@ Options:
   --port <port>                 Specify port to use
 
 Examples:
-  ${p} browser "Refactor this file to use hooks."
-  ${p} browser -m gpt-4o "Add tests for the following code." --port 3000
+  ${p} server "Refactor this file to use hooks."
+  ${p} server -m gpt-4o "Add tests for the following code." --port 3000
     `.trim(),
   );
 }
