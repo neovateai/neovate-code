@@ -277,7 +277,7 @@ export class Service {
       this.context,
     );
 
-    this.context.apply({
+    await this.context.apply({
       hook: 'toolUseResult',
       args: [
         {

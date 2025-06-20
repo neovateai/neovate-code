@@ -115,7 +115,6 @@ export const PluginSchema = z.object({
       z.void(),
     )
     .optional(),
-  // For analytics tracking
   toolUse: z.function(
     z.tuple([
       z.object({
