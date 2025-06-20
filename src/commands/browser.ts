@@ -31,9 +31,6 @@ Options:
 Examples:
   ${p} browser "Refactor this file to use hooks."
   ${p} browser -m gpt-4o "Add tests for the following code." --port 3000
-
-Commands:
-  browser                        Run the browser
     `.trim(),
   );
 }
