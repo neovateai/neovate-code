@@ -11,7 +11,7 @@ const THINKING_MODELS = [
   'o3',
   'o3-mini',
   'deepseek-reasoner',
-  'gemini-2.5-pro-preview-05-06',
+  'gemini-2.5-pro',
   'claude-3-7-sonnet-20250219-thinking',
   'grok-3-fast-beta',
 ];
@@ -22,8 +22,9 @@ const MODEL_ALIAS: Record<string, string> = {
   '4': 'gpt-4',
   '4o': 'gpt-4o',
   '3': 'gpt-3.5-turbo',
-  flash: 'gemini-2.5-flash-preview-05-20',
-  gemini: 'gemini-2.5-pro-preview-05-06',
+  'flash-lite': 'gemini-2.5-flash-lite-preview-06-17',
+  flash: 'gemini-2.5-flash',
+  gemini: 'gemini-2.5-pro',
   grok: 'grok-3-fast-beta',
   sonnet: 'claude-sonnet-4-20250514',
   'sonnet-3.5': 'claude-3-5-sonnet-20241022',
@@ -48,8 +49,9 @@ const OPENAI_MODELS = [
   'o3-mini',
 ];
 const GOOGLE_MODELS = [
-  'gemini-2.5-flash-preview-05-20',
-  'gemini-2.5-pro-preview-05-06',
+  'gemini-2.5-flash-lite-preview-06-17',
+  'gemini-2.5-flash',
+  'gemini-2.5-pro',
 ];
 const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'];
 const XAI_MODELS = [

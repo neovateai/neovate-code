@@ -538,17 +538,19 @@ export class AiSdkModel implements Model {
       });
 
       // caching for anthropic
-      input.forEach((item) => {
-        if (item.role === 'system') {
-          item.providerMetadata = {
-            anthropic: {
-              cache_control: {
-                type: 'ephemeral',
+      if (this.#model.modelId.includes('-sonnet-')) {
+        input.forEach((item) => {
+          if (item.role === 'system') {
+            item.providerMetadata = {
+              anthropic: {
+                cache_control: {
+                  type: 'ephemeral',
+                },
               },
-            },
-          };
-        }
-      });
+            };
+          }
+        });
+      }
 
       if (span && request.tracing === true) {
         span.spanData.input = input;
