@@ -87,9 +87,25 @@ function AssistantToolMessage({ message }: { message: AssistantToolMessage }) {
 }
 
 function ToolMessage({ message }: { message: ToolMessage }) {
+  const result = (() => {
+    const result = message.content.result;
+    const toolName = message.content.toolName;
+    const success = result.success;
+    const data = result.data;
+    switch (toolName) {
+      case 'read':
+        if (success) {
+          const lines = data.totalLines;
+          return `Read ${lines} lines.`;
+        }
+      default:
+        break;
+    }
+    return JSON.stringify(message.content.result);
+  })();
   return (
     <Box flexDirection="column">
-      <Text color="gray">↳ {JSON.stringify(message.content.result)}</Text>
+      <Text color="gray">↳ {result}</Text>
     </Box>
   );
 }
