@@ -36,6 +36,7 @@ interface CreateContextOpts {
   argvConfig?: Partial<Config>;
   productName?: string;
   version?: string;
+  plugins?: Plugin[];
 }
 
 export class Context {
@@ -119,6 +120,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   const pluginsConfigs: (string | Plugin)[] = [
     ...buildinPlugins,
     ...(initialConfig.plugins || []),
+    ...(opts.plugins || []),
   ];
   const plugins = normalizePlugins(opts.cwd, pluginsConfigs);
   debug('plugins', plugins);
