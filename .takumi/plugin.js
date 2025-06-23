@@ -2,18 +2,18 @@ const RPEFIX = '[.takumi/plugin.js]';
 
 export default {
   config (config) {
-    console.log(RPEFIX, 'config', config, this);
+    // console.log(RPEFIX, 'config', config, this);
     return {
       // language: 'Chinese',
     };
   },
   configResolved ({ resolvedConfig }) {
-    console.log(RPEFIX, 'resolvedConfig', resolvedConfig, this);
+    // console.log(RPEFIX, 'resolvedConfig', resolvedConfig, this);
   },
   cliStart () {
-    console.log(RPEFIX, 'cliStart', this);
+    // console.log(RPEFIX, 'cliStart', this);
   },
   cliEnd () {
-    console.log(RPEFIX, 'cliEnd', this);
+    // console.log(RPEFIX, 'cliEnd', this);
   },
 };
