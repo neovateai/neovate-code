@@ -183,6 +183,29 @@ export const PluginSchema = z.object({
       z.promise(z.any()),
     )
     .optional(),
+  serverAppData: z
+    .function(
+      z.tuple([
+        z.object({
+          context: z.any(),
+          cwd: z.string(),
+        }),
+      ]),
+      z.promise(z.any()),
+    )
+    .optional(),
+  serverRoutes: z
+    .function(
+      z.tuple([
+        z.object({
+          app: z.any(),
+          prefix: z.string(),
+          opts: z.any(),
+        }),
+      ]),
+      z.void(),
+    )
+    .optional(),
 });
 
 type InferedPlugin = z.infer<typeof PluginSchema>;

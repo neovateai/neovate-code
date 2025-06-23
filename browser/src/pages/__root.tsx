@@ -1,8 +1,10 @@
 import { Outlet, createRootRoute, redirect } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { useMount } from 'ahooks';
 import { createStyles } from 'antd-style';
 import React from 'react';
 import Sider from '@/components/Sider';
+import { actions } from '@/state/appData';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
@@ -19,6 +21,9 @@ const useStyle = createStyles(({ token, css }) => {
 
 const Layout: React.FC = () => {
   const { styles } = useStyle();
+  useMount(() => {
+    actions.getAppData();
+  });
 
   return (
     <div className={styles.layout}>
