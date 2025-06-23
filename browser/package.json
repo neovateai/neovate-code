@@ -32,7 +32,8 @@
     "@lexical/utils": "0.32.1",
     "rc-util": "^5.44.4",
     "swr": "^2.3.3",
-    "valtio": "^2.1.5"
+    "valtio": "^2.1.5",
+    "devicons-react": "^1.4.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.10",

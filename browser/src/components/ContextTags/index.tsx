@@ -1,16 +1,19 @@
-import {
-  BookOutlined,
-  CloseOutlined,
-  CodeOutlined,
-  FileOutlined,
-} from '@ant-design/icons';
+import { BookOutlined, CloseOutlined, CodeOutlined } from '@ant-design/icons';
 import { Tag } from 'antd';
+import { createStyles } from 'antd-style';
 import type React from 'react';
 import { useState } from 'react';
+import DevFileIcon from '../DevFileIcon';
 
-const iconStyle = {
-  marginRight: 4,
-};
+const useStyle = createStyles(({ css }) => {
+  return {
+    icon: css`
+      margin-right: 4px;
+      width: 12px;
+      height: 12px;
+    `,
+  };
+});
 
 export const FileContextTag = ({
   displayText,
@@ -22,6 +25,8 @@ export const FileContextTag = ({
   onClose?: () => void;
 }) => {
   const [hover, setHover] = useState(false);
+
+  const { styles } = useStyle();
 
   return (
     <Tag
@@ -39,9 +44,13 @@ export const FileContextTag = ({
       onMouseLeave={() => setHover(false)}
     >
       {onClose && hover ? (
-        <CloseOutlined style={iconStyle} onClick={onClose} />
+        <CloseOutlined className={styles.icon} onClick={onClose} />
       ) : (
-        <FileOutlined style={iconStyle} />
+        // <FileOutlined style={iconStyle} />
+        <DevFileIcon
+          className={styles.icon}
+          fileExt={displayText.split('.').pop() ?? ''}
+        />
       )}
       {displayText}
     </Tag>
@@ -58,6 +67,7 @@ export const CodeContextTag = ({
   onClose?: () => void;
 }) => {
   const [hover, setHover] = useState(false);
+  const { styles } = useStyle();
 
   return (
     <Tag
@@ -75,9 +85,9 @@ export const CodeContextTag = ({
       onMouseLeave={() => setHover(false)}
     >
       {onClose && hover ? (
-        <CloseOutlined style={iconStyle} onClick={onClose} />
+        <CloseOutlined className={styles.icon} onClick={onClose} />
       ) : (
-        <CodeOutlined style={iconStyle} />
+        <CodeOutlined className={styles.icon} />
       )}
       {displayText}
     </Tag>
@@ -94,6 +104,7 @@ export const KnowledgeContextTag = ({
   onClose?: () => void;
 }) => {
   const [hover, setHover] = useState(false);
+  const { styles } = useStyle();
 
   return (
     <Tag
@@ -111,9 +122,9 @@ export const KnowledgeContextTag = ({
       onMouseLeave={() => setHover(false)}
     >
       {onClose && hover ? (
-        <CloseOutlined style={iconStyle} onClick={onClose} />
+        <CloseOutlined className={styles.icon} onClick={onClose} />
       ) : (
-        <BookOutlined style={iconStyle} />
+        <BookOutlined className={styles.icon} />
       )}
       {displayText}
     </Tag>
