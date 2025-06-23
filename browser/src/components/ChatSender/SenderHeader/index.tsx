@@ -1,5 +1,6 @@
 import { Sender } from '@ant-design/x';
 import { Flex } from 'antd';
+import React, { Fragment } from 'react';
 import { useSnapshot } from 'valtio';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
 import * as context from '@/state/context';
@@ -17,7 +18,11 @@ export function renderContextTag(
     return null;
   }
 
-  return config.render({ info: { displayText, value }, onClose, context });
+  return (
+    <Fragment key={value}>
+      {config.render({ info: { displayText, value }, onClose, context })}
+    </Fragment>
+  );
 }
 
 const SenderHeader: React.FC = () => {

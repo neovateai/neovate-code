@@ -1,9 +1,9 @@
 import type { LexicalNode } from 'lexical';
 import type { JSX } from 'react';
-import type { FileItem } from '@/api/model';
+import type { FileItem, ImageItem } from '@/api/model';
 import type { ContextType } from '@/constants/context';
 
-export type ContextStoreValue = FileItem;
+export type ContextStoreValue = FileItem | ImageItem;
 
 export interface ContextItem {
   type: ContextType;

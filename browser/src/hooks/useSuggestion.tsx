@@ -45,12 +45,6 @@ export const useSuggestion = (
         ],
       },
       { label: 'Code', value: ContextType.CODE, icon: <CodeOutlined /> },
-      {
-        label: 'Knowledge',
-        value: ContextType.KNOWLEDGE,
-        extra: 'Check some knowledge',
-        icon: <BookOutlined />,
-      },
     ] as SuggestionItems;
   }, [fileList, selectedValues]);
 

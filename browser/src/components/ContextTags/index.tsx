@@ -1,9 +1,12 @@
-import { BookOutlined, CloseOutlined, CodeOutlined } from '@ant-design/icons';
-import { Tag } from 'antd';
+import Icon, {
+  BookOutlined,
+  CloseOutlined,
+  CodeOutlined,
+} from '@ant-design/icons';
+import { Image, Popover, Tag } from 'antd';
 import { createStyles } from 'antd-style';
-import type React from 'react';
 import { useState } from 'react';
-import type { FileItem } from '@/api/model';
+import type { FileItem, ImageItem } from '@/api/model';
 import DevFileIcon from '../DevFileIcon';
 
 const useStyle = createStyles(({ css }) => {
@@ -23,12 +26,10 @@ const useStyle = createStyles(({ css }) => {
 
 export const FileContextTag = ({
   displayText,
-  key,
   onClose,
   context,
 }: {
   displayText: string;
-  key?: React.Key;
   onClose?: () => void;
   context?: FileItem;
 }) => {
@@ -38,7 +39,6 @@ export const FileContextTag = ({
 
   return (
     <Tag
-      key={key}
       color="blue"
       className={styles.tag}
       data-ai-context-id="file"
@@ -62,11 +62,9 @@ export const FileContextTag = ({
 
 export const CodeContextTag = ({
   displayText,
-  key,
   onClose,
 }: {
   displayText: string;
-  key?: React.Key;
   onClose?: () => void;
 }) => {
   const [hover, setHover] = useState(false);
@@ -74,7 +72,6 @@ export const CodeContextTag = ({
 
   return (
     <Tag
-      key={key}
       color="green"
       className={styles.tag}
       data-ai-context-id="code"
@@ -92,45 +89,66 @@ export const CodeContextTag = ({
   );
 };
 
-export const KnowledgeContextTag = ({
+export const ImageContextTag = ({
   displayText,
-  key,
   onClose,
+  context,
 }: {
   displayText: string;
-  key?: React.Key;
   onClose?: () => void;
+  context?: ImageItem;
 }) => {
   const [hover, setHover] = useState(false);
   const { styles } = useStyle();
 
   return (
-    <Tag
-      key={key}
-      color="red"
-      className={styles.tag}
-      data-ai-context-id="knowledge"
-      contentEditable={false}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+    <Popover
+      popupVisible={hover}
+      content={
+        <Image
+          style={{
+            maxHeight: 600,
+            maxWidth: 600,
+          }}
+          src={context?.src}
+          preview={false}
+        />
+      }
     >
-      {onClose && hover ? (
-        <CloseOutlined className={styles.icon} onClick={onClose} />
-      ) : (
-        <BookOutlined className={styles.icon} />
-      )}
-      {displayText}
-    </Tag>
+      <Tag
+        color="cyan"
+        className={styles.tag}
+        data-ai-context-id="image"
+        contentEditable={false}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
+        {onClose && hover ? (
+          <CloseOutlined className={styles.icon} onClick={onClose} />
+        ) : (
+          <Icon
+            className={styles.icon}
+            component={() => (
+              <Image
+                src={context?.src}
+                width={12}
+                height={12}
+                preview={false}
+              />
+            )}
+          />
+        )}
+        {displayText}
+      </Tag>
+    </Popover>
   );
 };
 
 export const UploadFileContextTag = ({
   displayText,
-  key,
   onClose,
 }: {
   displayText: string;
-  key?: React.Key;
   onClose?: () => void;
 }) => {
   const [hover, setHover] = useState(false);
@@ -138,10 +156,9 @@ export const UploadFileContextTag = ({
 
   return (
     <Tag
-      key={key}
       color="purple"
       className={styles.tag}
-      data-ai-context-id="knowledge"
+      data-ai-context-id="upload-file"
       contentEditable={false}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}

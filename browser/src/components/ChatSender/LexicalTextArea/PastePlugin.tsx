@@ -3,6 +3,27 @@ import { message } from 'antd';
 import * as cheerio from 'cheerio';
 import { PASTE_COMMAND } from 'lexical';
 import { useCallback, useEffect } from 'react';
+import { ContextType } from '@/constants/context';
+import * as context from '@/state/context';
+
+// 根据图片 src 猜测 mime 类型
+function guessImageMime(src: string): string {
+  if (src.startsWith('data:')) {
+    const match = src.match(/^data:(image\/[a-zA-Z0-9.+-]+)[;,]/);
+    if (match) return match[1];
+  } else if (src.endsWith('.jpg') || src.endsWith('.jpeg')) {
+    return 'image/jpeg';
+  } else if (src.endsWith('.png')) {
+    return 'image/png';
+  } else if (src.endsWith('.gif')) {
+    return 'image/gif';
+  } else if (src.endsWith('.webp')) {
+    return 'image/webp';
+  } else if (src.endsWith('.svg')) {
+    return 'image/svg+xml';
+  }
+  return 'image/png';
+}
 
 const PastePlugin = () => {
   const [editor] = useLexicalComposerContext();
@@ -15,10 +36,20 @@ const PastePlugin = () => {
       if (blob) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          const base64String = e.target?.result;
-          console.log('图片的 base64:', base64String);
-
-          // TODO Add picture to context
+          const base64String = e.target?.result?.toString();
+          if (!base64String) {
+            return;
+          }
+          const timeStampStr = Date.now().toString();
+          context.actions.addContext({
+            type: ContextType.IMAGE,
+            value: `@Image:[${timeStampStr}]`,
+            displayText: timeStampStr,
+            context: {
+              src: base64String,
+              mime: blob.type,
+            },
+          });
         };
         reader.readAsDataURL(blob);
       } else {
@@ -43,6 +74,17 @@ const PastePlugin = () => {
               if (src) {
                 console.log('图片的 src:', src);
                 // TODO Add picture to context
+                const mime = guessImageMime(src);
+                const timeStampStr = Date.now().toString();
+                context.actions.addContext({
+                  type: ContextType.IMAGE,
+                  value: `@Image:[${timeStampStr}]`,
+                  displayText: timeStampStr,
+                  context: {
+                    src,
+                    mime,
+                  },
+                });
               }
             });
           }

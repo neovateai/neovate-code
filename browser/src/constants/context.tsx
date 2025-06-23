@@ -1,14 +1,15 @@
+import type { FileItem, ImageItem } from '@/api/model';
 import {
   CodeContextTag,
   FileContextTag,
-  KnowledgeContextTag,
+  ImageContextTag,
 } from '@/components/ContextTags';
 import type { AiContextNodeConfig, ContextFileType } from '@/types/context';
 
 export enum ContextType {
   FILE = 'file',
   CODE = 'code',
-  KNOWLEDGE = 'knowledge',
+  IMAGE = 'image',
   UNKNOWN = 'unknown',
 }
 
@@ -27,7 +28,7 @@ export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
         key={info.value}
         displayText={info.displayText}
         onClose={onClose}
-        context={context}
+        context={context as FileItem}
       />
     ),
   },
@@ -49,19 +50,20 @@ export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
     ),
   },
   {
-    type: ContextType.KNOWLEDGE,
-    matchRegex: /@Knowledge:\[(?<value>[^\]]+)\]/,
-    aiContextId: 'knowledge',
-    displayTextToValue: (displayText) => `@Knowledge:[${displayText}]`,
+    type: ContextType.IMAGE,
+    matchRegex: /@Image:\[(?<value>[^\]]+)\]/,
+    aiContextId: 'image',
+    displayTextToValue: (displayText) => `@Image:[${displayText}]`,
     pickInfo: (regExpExecArray) => ({
       value: regExpExecArray[0],
       displayText: regExpExecArray.groups?.value || '',
     }),
-    render: ({ info, onClose }) => (
-      <KnowledgeContextTag
+    render: ({ info, onClose, context }) => (
+      <ImageContextTag
         key={info.value}
         displayText={info.displayText}
         onClose={onClose}
+        context={context as ImageItem}
       />
     ),
   },
