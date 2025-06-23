@@ -4,7 +4,7 @@ import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
 import { createCodeAgent } from '../agents/code';
 import { Config } from '../config';
-import { Context, createContext } from '../context';
+import { Context } from '../context';
 import { PromptContext } from '../prompt-context';
 import { getDefaultModelProvider } from '../provider';
 import { Tools } from '../tool';
@@ -42,7 +42,7 @@ export async function run(opts: RunOpts) {
       },
     },
   });
-  const context = await createContext({
+  const context = await Context.create({
     cwd: opts.cwd,
     argvConfig: opts.argvConfig,
   });

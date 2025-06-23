@@ -8,7 +8,7 @@ import path from 'path';
 import React from 'react';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
-import { Context, createContext } from '../context';
+import { Context } from '../context';
 import { PluginHookType } from '../plugin';
 import { Service } from '../service';
 import { setupTracing } from '../tracing';
@@ -106,7 +106,7 @@ export async function runDefault(opts: RunCliOpts) {
     setupTracing(traceFile);
     const cwd = opts.cwd || process.cwd();
     debug('cwd', cwd);
-    const context = await createContext({
+    const context = await Context.create({
       productName: opts.productName,
       version: opts.version,
       cwd,

@@ -4,7 +4,7 @@ import { homedir } from 'os';
 import path from 'path';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
-import { createContext } from '../context';
+import { Context } from '../context';
 import { PluginHookType } from '../plugin';
 import { runBrowserServer } from '../server/server';
 import { setupTracing } from '../tracing';
@@ -62,7 +62,7 @@ export async function runBrowser(opts: RunCliOpts) {
   setupTracing(traceFile);
   const cwd = process.cwd();
 
-  const context = await createContext({
+  const context = await Context.create({
     productName: opts.productName,
     version: opts.version,
     cwd,

@@ -46,6 +46,11 @@ export class Context {
     this.mcpTools = opts.mcpTools;
   }
 
+  static async create(opts: CreateContextOpts) {
+    const context = await createContext(opts);
+    return context;
+  }
+
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {
     return this.pluginManager.apply({
       ...applyOpts,
@@ -58,7 +63,7 @@ export class Context {
   }
 }
 
-export async function createContext(opts: CreateContextOpts): Promise<Context> {
+async function createContext(opts: CreateContextOpts): Promise<Context> {
   debug('createContext', opts);
   const configManager = new ConfigManager(
     opts.cwd,
@@ -101,10 +106,10 @@ export async function createContext(opts: CreateContextOpts): Promise<Context> {
     type: PluginHookType.Series,
   });
 
-  const mcpManager = new MCPManager(resolvedConfig.mcpServers);
-  await mcpManager.connect();
+  const mcpManager = await MCPManager.create(resolvedConfig.mcpServers);
   const mcpTools = await mcpManager.getAllTools();
-  debug('mcpManager connected');
+  debug('mcpManager created');
+  debug('mcpTools', mcpTools);
 
   return new Context({
     ...opts,

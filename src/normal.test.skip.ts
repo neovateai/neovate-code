@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { afterEach, beforeAll, beforeEach, expect, test } from 'vitest';
 import { run } from './commands/default';
-import { Context, createContext } from './context';
+import { Context } from './context';
 
 const root = path.join(__dirname, '../..');
 const fixtures = path.join(root, 'fixtures');
@@ -17,7 +17,7 @@ function cleanup() {
 }
 
 beforeAll(async () => {
-  context = await createContext({
+  context = await Context.create({
     cwd,
     argvConfig: {
       quiet: true,
