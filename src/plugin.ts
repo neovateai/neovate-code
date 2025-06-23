@@ -121,27 +121,31 @@ export const PluginSchema = z.object({
   context: z
     .function(z.tuple([z.object({ prompt: z.string() })]), z.void())
     .optional(),
-  toolUse: z.function(
-    z.tuple([
-      z.object({
-        callId: z.string(),
-        name: z.string(),
-        params: z.any(),
-      }),
-    ]),
-    z.void(),
-  ),
-  toolUseResult: z.function(
-    z.tuple([
-      z.object({
-        callId: z.string(),
-        name: z.string(),
-        params: z.any(),
-        result: z.any(),
-      }),
-    ]),
-    z.void(),
-  ),
+  toolUse: z
+    .function(
+      z.tuple([
+        z.object({
+          callId: z.string(),
+          name: z.string(),
+          params: z.any(),
+        }),
+      ]),
+      z.void(),
+    )
+    .optional(),
+  toolUseResult: z
+    .function(
+      z.tuple([
+        z.object({
+          callId: z.string(),
+          name: z.string(),
+          params: z.any(),
+          result: z.any(),
+        }),
+      ]),
+      z.void(),
+    )
+    .optional(),
   query: z
     .function(
       z.tuple([
@@ -163,6 +167,7 @@ export const PluginSchema = z.object({
           aisdk: z.any(),
           createOpenAI: z.any(),
           createDeepSeek: z.any(),
+          createAnthropic: z.any(),
         }),
       ]),
       z.promise(z.any()),

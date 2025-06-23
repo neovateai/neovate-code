@@ -73,6 +73,7 @@ export async function runBrowser(opts: RunCliOpts) {
       quiet: argv.quiet,
       plugins: argv.plugin,
     },
+    plugins: opts.plugins,
   });
   await context.apply({
     hook: 'cliStart',
