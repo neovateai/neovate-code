@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import type { ToolMessage } from '@/types/message';
-import BashRender from '../ToolRender/BashRender';
-import FetchRender from '../ToolRender/FetchRender';
-import GlobRender from '../ToolRender/GlobRender';
-import GrepRender from '../ToolRender/GrepRender';
-import LsRender from '../ToolRender/LsRender';
-import ReadRender from '../ToolRender/ReadRender';
+import {
+  BashRender,
+  FetchRender,
+  GlobRender,
+  GrepRender,
+  LsRender,
+  ReadRender,
+} from '../ToolRender';
 
 const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
   message,
 }) => {
   const { state, toolName, args, step } = message;
-
-  console.log('message', message);
 
   switch (toolName) {
     case 'grep':
