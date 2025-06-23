@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { ToolMessage } from '@/types/message';
-import GlobalRender from '../ToolRender/GlobalRender';
+import GlobRender from '../ToolRender/GlobRender';
 import GrepRender from '../ToolRender/GrepRender';
 import LsRender from '../ToolRender/LsRender';
 import ReadRender from '../ToolRender/ReadRender';
@@ -17,8 +17,8 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
       return <GrepRender />;
     case 'read':
       return <ReadRender />;
-    case 'global':
-      return <GlobalRender />;
+    case 'glob':
+      return <GlobRender />;
     case 'ls':
       return <LsRender />;
   }

@@ -93,16 +93,21 @@ export default function LsRender({ message }: { message?: ToolMessage }) {
           isExpanded && items.length > 0 ? 'max-h-40' : 'max-h-0'
         }`}
       >
-        {items.map((item, index) => (
-          <div key={index} className="flex items-center gap-2 py-0.5">
-            <span className="text-gray-500">
-              {item.isDirectory ? <FolderOutlined /> : <FileOutlined />}
-            </span>
-            <span className={item.isDirectory ? 'text-blue-600' : ''}>
-              {item.name}
-            </span>
-          </div>
-        ))}
+        <ul className="list-none m-0 p-0">
+          {items.map((item, index) => (
+            <li
+              key={index}
+              className="flex items-center gap-2 p-1 rounded cursor-pointer hover:bg-gray-100"
+            >
+              <span className="text-gray-500">
+                {item.isDirectory ? <FolderOutlined /> : <FileOutlined />}
+              </span>
+              <span className={item.isDirectory ? 'text-blue-600' : ''}>
+                {item.name}
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
