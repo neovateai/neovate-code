@@ -21,10 +21,6 @@ export const CONTEXT_AVAILABLE_FILE_TYPES: ContextFileType[] = [
     extName: '.json',
     mime: 'application/json',
   },
-  {
-    extName: '.fig',
-    mime: 'application/octet-stream',
-  },
   // Images
   {
     extName: '.png',
@@ -53,4 +49,4 @@ export const CONTEXT_AVAILABLE_FILE_TYPES: ContextFileType[] = [
 ];
 
 /** 10MB */
-export const CONTEXT_MAX_FILE_SIZE = 10 * 1024 * 1024;
+export const CONTEXT_MAX_FILE_SIZE = 1 * 1024 * 1024;

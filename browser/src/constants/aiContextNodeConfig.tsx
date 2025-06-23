@@ -6,6 +6,8 @@ import {
 import type { AiContextNodeConfig } from '@/types/chat';
 import { ContextType } from './context';
 
+// TODO 公共部分抽成函数
+
 export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
   {
     type: ContextType.FILE,
