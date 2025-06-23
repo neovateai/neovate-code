@@ -96,7 +96,7 @@ export async function runBrowserServer(opts: RunBrowserServerOpts) {
   const traceName = `${opts.context.productName ?? PRODUCT_NAME}-browser`;
 
   const appData = await opts.context.apply({
-    hook: 'browserAppData',
+    hook: 'serverAppData',
     args: [
       {
         context: opts.context,

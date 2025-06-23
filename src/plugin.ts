@@ -178,7 +178,7 @@ export const PluginSchema = z.object({
       z.promise(z.any()),
     )
     .optional(),
-  browserAppData: z
+  serverAppData: z
     .function(
       z.tuple([
         z.object({
