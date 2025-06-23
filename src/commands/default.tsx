@@ -79,6 +79,7 @@ export async function run(opts: RunOpts) {
 }
 
 export async function runDefault(opts: RunCliOpts) {
+  const startTime = Date.now();
   const argv = yargsParser(process.argv.slice(2), {
     alias: {
       model: 'm',
@@ -127,6 +128,17 @@ export async function runDefault(opts: RunCliOpts) {
     context,
     prompt: argv._[0]! as string,
     plan: argv.plan,
+  });
+  await context.apply({
+    hook: 'cliEnd',
+    args: [
+      {
+        startTime,
+        endTime: Date.now(),
+        error: null,
+      },
+    ],
+    type: PluginHookType.Series,
   });
   if (context.config.quiet) {
     console.log(JSON.stringify(result, null, 2));
