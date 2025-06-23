@@ -1,20 +1,19 @@
-// @ts-nocheck
 import fs from 'fs';
 import path from 'path';
-import { afterEach, beforeEach, expect, test } from 'vitest';
+import { afterEach, beforeAll, beforeEach, expect, test } from 'vitest';
 import { run } from './commands/default';
+import { Context } from './context';
 
 const root = path.join(__dirname, '../..');
 const fixtures = path.join(root, 'fixtures');
-const model = 'flash';
 const cwd = path.join(fixtures, 'normal');
-const runOpts = {
-  argvConfig: {
-    model,
-  },
+const context = new Context({
   cwd,
-  json: true,
-};
+  argvConfig: {
+    quiet: true,
+    model: 'flash',
+  },
+});
 
 function cleanup() {
   const tmpDir = path.join(cwd, 'tmp');
@@ -22,6 +21,10 @@ function cleanup() {
     fs.rmSync(tmpDir, { recursive: true });
   }
 }
+
+beforeAll(async () => {
+  await context.init();
+});
 
 beforeEach(() => {
   cleanup();
@@ -31,39 +34,39 @@ afterEach(() => {
   cleanup();
 });
 
-test('tool(write)', async () => {
-  await run({
-    ...runOpts,
-    prompt: 'Write tmp/a.txt with the text "hello world"',
+async function runWithContext(prompt: string) {
+  return await run({
+    context,
+    prompt,
   });
+}
+
+test('tool(write)', async () => {
+  await runWithContext('Write tmp/a.txt with the text "hello world"');
   const aTxt = path.join(cwd, 'tmp/a.txt');
   expect(fs.existsSync(aTxt)).toBe(true);
   expect(fs.readFileSync(aTxt, 'utf-8').includes('hello world')).toBe(true);
 });
 
 test('tool(read) not exists', async () => {
-  const result = await run({
-    ...runOpts,
-    prompt: 'Read tmp/not-exists-file.txt, print not exists or the content',
-  });
-  expect(result.finalOutput).toContain('not exists');
+  const result = await runWithContext(
+    'Read tmp/not-exists-file.txt, print not exists or the content',
+  );
+  expect(result.finalText).toContain('not exists');
 });
 
 test('tool(read)', async () => {
-  const result = await run({
-    ...runOpts,
-    prompt: 'Read package.json and tell me the name of the package',
-  });
-  expect(result.finalOutput).toContain('takumi-test-fixture-normal');
+  const result = await runWithContext(
+    'Read package.json and tell me the name of the package',
+  );
+  expect(result.finalText).toContain('takumi-test-fixture-normal');
 });
 
 test('tool(ls)', async () => {
-  const result = await run({
-    ...runOpts,
-    prompt:
-      'list the dir and tell me the number of ts files, notice number only (using ls tool)',
-  });
-  expect(result.finalOutput).toContain('2');
+  const result = await runWithContext(
+    'list the dir and tell me the number of ts files, notice number only (using ls tool)',
+  );
+  expect(result.finalText).toContain('2');
 });
 
 test('tool(edit)', async () => {
@@ -76,10 +79,9 @@ name: takumi-test-fixture-normal
 description: A test fixture for takumi
   `,
   );
-  const result = await run({
-    ...runOpts,
-    prompt: 'edit tmp/package.txt and update the version to next patch version',
-  });
+  const result = await runWithContext(
+    'edit tmp/package.txt and update the version to next patch version',
+  );
   const hasEditToolCall = result.history.some(
     (h: any) => h.type === 'function_call' && h.name === 'edit',
   );
@@ -89,10 +91,7 @@ description: A test fixture for takumi
 });
 
 test('tool(bash)', async () => {
-  const result = await run({
-    ...runOpts,
-    prompt: 'make directory tmp/a',
-  });
+  const result = await runWithContext('make directory tmp/a');
   const aDir = path.join(cwd, 'tmp/a');
   const hasBashToolCall = result.history.some(
     (h: any) => h.type === 'function_call' && h.name === 'bash',
@@ -102,9 +101,8 @@ test('tool(bash)', async () => {
 });
 
 test('tool(fetch)', async () => {
-  const result = await run({
-    ...runOpts,
-    prompt: 'fetch https://sorrycc.com/about and tell me how old is he',
-  });
-  expect(result.finalOutput).toContain('35');
+  const result = await runWithContext(
+    'fetch https://sorrycc.com/about and tell me how old is he',
+  );
+  expect(result.finalText).toContain('35');
 });

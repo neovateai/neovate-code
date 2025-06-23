@@ -115,6 +115,45 @@ export const PluginSchema = z.object({
       z.void(),
     )
     .optional(),
+  contextStart: z
+    .function(z.tuple([z.object({ prompt: z.string() })]), z.void())
+    .optional(),
+  context: z
+    .function(z.tuple([z.object({ prompt: z.string() })]), z.void())
+    .optional(),
+  toolUse: z.function(
+    z.tuple([
+      z.object({
+        callId: z.string(),
+        name: z.string(),
+        params: z.any(),
+      }),
+    ]),
+    z.void(),
+  ),
+  toolUseResult: z.function(
+    z.tuple([
+      z.object({
+        callId: z.string(),
+        name: z.string(),
+        params: z.any(),
+        result: z.any(),
+      }),
+    ]),
+    z.void(),
+  ),
+  query: z
+    .function(
+      z.tuple([
+        z.object({
+          text: z.string(),
+          parsed: z.any(),
+          input: z.any(),
+        }),
+      ]),
+      z.void(),
+    )
+    .optional(),
 });
 
 type InferedPlugin = z.infer<typeof PluginSchema>;

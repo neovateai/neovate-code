@@ -1,12 +1,11 @@
 {
-  "name": "@takumijs/browser",
+  "name": "@takumi/browser",
   "version": "1.0.0",
   "description": "Takumi Browser Mode - Web interface for AI programming assistant",
   "main": "dist/index.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -21,6 +20,7 @@
     "antd-style": "^3.7.1",
     "axios": "1.10.0",
     "dayjs": "^1.11.13",
+    "lodash-es": "^4.17.21",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^9.0.0",
@@ -35,20 +35,15 @@
     "valtio": "^2.1.5"
   },
   "devDependencies": {
-    "@eslint/js": "^9.25.0",
     "@tailwindcss/vite": "^4.1.10",
     "@tanstack/router-plugin": "^1.121.16",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vitejs/plugin-react": "^4.5.2",
-    "eslint": "^9.25.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "tailwindcss": "^4.1.10",
     "typescript": "~5.8.3",
-    "typescript-eslint": "^8.30.1",
     "vite": "^6.3.5"
   },
   "keywords": [

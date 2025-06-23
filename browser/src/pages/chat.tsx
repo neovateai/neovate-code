@@ -9,8 +9,8 @@ import { Bubble } from '@ant-design/x';
 import { createFileRoute } from '@tanstack/react-router';
 import { Button, type GetProp, Spin } from 'antd';
 import { createStyles } from 'antd-style';
+import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
-import Message from '@/components/Message';
 import Welcome from '@/components/Welcome';
 import ChatProvider, { useChatState } from '@/hooks/provider';
 
@@ -70,7 +70,7 @@ const Chat: React.FC = () => {
         style: { background: '#fde3cf' },
       },
       messageRender(message) {
-        return <Message message={message} />;
+        return <AssistantMessage message={message} />;
       },
       footer: (
         <div style={{ display: 'flex' }}>

@@ -49,7 +49,7 @@ export class IDE {
       this.ws = new WebSocket(`ws://127.0.0.1:${port}`);
 
       this.ws.on('open', () => {
-        console.log('Connected to the IDE extension.');
+        debug('Connected to the IDE extension.');
         resolve();
       });
 

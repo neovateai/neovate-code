@@ -9,6 +9,7 @@ export { Agent, Runner } from '@openai/agents';
 export { checkAndUpdate as _checkAndUpdate } from 'upgear';
 
 export interface RunCliOpts {
+  cwd: string;
   productName: string;
   version: string;
   modelProvider?: ModelProvider;
@@ -44,8 +45,8 @@ export async function runCli(opts: RunCliOpts) {
       const { runRun } = await import('./commands/run');
       await runRun(opts);
       break;
-    case 'browser':
-      const { runBrowser } = await import('./commands/browser');
+    case 'server':
+      const { runBrowser } = await import('./commands/server');
       await runBrowser(opts);
       break;
     default:

@@ -2,7 +2,7 @@ import { Type } from '@sinclair/typebox';
 import createDebug from 'debug';
 import { FastifyPluginAsync } from 'fastify';
 import path from 'path';
-import { loadIgnorePatterns } from '../context/contextFiles';
+import { loadIgnorePatterns } from '../context/context-files';
 import { CreateServerOpts } from '../types';
 import { FileItem, FileListRequest } from '../types/files';
 

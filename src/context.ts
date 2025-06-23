@@ -13,8 +13,8 @@ import {
 const debug = createDebug('takumi:context');
 
 interface ContextOpts {
+  cwd: string;
   argvConfig?: Partial<Config>;
-  cwd?: string;
   productName?: string;
   version?: string;
 }
@@ -27,7 +27,7 @@ export class Context {
   #pluginManager: PluginManager | null = null;
   #resolvedConfig: Config | null = null;
   constructor(opts: ContextOpts) {
-    this.cwd = opts.cwd || process.cwd();
+    this.cwd = opts.cwd;
     const productName = opts.productName || PRODUCT_NAME;
     this.productName = productName;
     this.version = opts.version || '0.0.0';

@@ -8,6 +8,7 @@ export interface RunBrowserServerOpts {
   plan?: boolean;
   context: Context;
   logLevel?: string;
+  port?: number;
 }
 
 export interface CreateServerOpts extends RunBrowserServerOpts {

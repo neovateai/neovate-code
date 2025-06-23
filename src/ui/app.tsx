@@ -87,9 +87,38 @@ function AssistantToolMessage({ message }: { message: AssistantToolMessage }) {
 }
 
 function ToolMessage({ message }: { message: ToolMessage }) {
+  const result = (() => {
+    const result = message.content.result;
+    const toolName = message.content.toolName;
+    const success = result.success;
+    switch (toolName) {
+      case 'read':
+        if (success) {
+          const lines = result.data.totalLines;
+          return `Read ${lines} lines.`;
+        }
+      case 'bash':
+        if (success) {
+          return result.output.trim();
+        }
+      case 'edit':
+        return result;
+      case 'write':
+        return result;
+      case 'ls':
+        return result;
+      case 'fetch':
+        if (success) {
+          return result.data.result;
+        }
+      default:
+        break;
+    }
+    return JSON.stringify(message.content.result);
+  })();
   return (
     <Box flexDirection="column">
-      <Text color="gray">↳ {JSON.stringify(message.content.result)}</Text>
+      <Text color="gray">↳ {result}</Text>
     </Box>
   );
 }
@@ -150,6 +179,7 @@ function Header() {
 function ChatInput() {
   const store = getStore();
   const isProcessing = store.status === 'processing';
+  const isPlan = store.stage === 'plan';
   const [value, setValue] = React.useState('');
   const handleSubmit = () => {
     if (value.trim() === '') return;
@@ -167,7 +197,7 @@ function ChatInput() {
       >
         <Text color={isProcessing ? 'gray' : 'white'}>&gt;</Text>
         {isProcessing ? (
-          <Text color="gray">Processing...</Text>
+          <Text color="gray">{isPlan ? 'Planning...' : 'Processing...'}</Text>
         ) : (
           <TextInput
             value={value}

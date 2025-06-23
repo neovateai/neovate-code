@@ -22,7 +22,8 @@ const MODEL_ALIAS: Record<string, string> = {
   '4': 'gpt-4',
   '4o': 'gpt-4o',
   '3': 'gpt-3.5-turbo',
-  flash: 'gemini-2.5-flash-preview-05-20',
+  'flash-lite': 'gemini-2.5-flash-lite-preview-06-17',
+  flash: 'gemini-2.5-flash',
   gemini: 'gemini-2.5-pro-preview-05-06',
   grok: 'grok-3-fast-beta',
   sonnet: 'claude-sonnet-4-20250514',
@@ -48,7 +49,8 @@ const OPENAI_MODELS = [
   'o3-mini',
 ];
 const GOOGLE_MODELS = [
-  'gemini-2.5-flash-preview-05-20',
+  'gemini-2.5-flash-lite-preview-06-17',
+  'gemini-2.5-flash',
   'gemini-2.5-pro-preview-05-06',
 ];
 const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'];

@@ -11,6 +11,7 @@ import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
 import { Context } from './context';
 import { MCPManager } from './mcp';
+import { PluginHookType } from './plugin';
 import { PromptContext } from './prompt-context';
 import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
@@ -29,12 +30,10 @@ let mcpManager: MCPManager | null = null;
 export type AgentType = 'code' | 'plan';
 
 export interface ServiceOpts {
+  context: Context;
   agentType: AgentType;
   id?: string;
-  cwd?: string;
-  argvConfig?: Record<string, any>;
   modelProvider?: ModelProvider;
-  context?: Context;
 }
 
 export interface ServiceRunOpts {
@@ -58,12 +57,7 @@ export class Service {
   constructor(opts: ServiceOpts) {
     this.opts = opts;
     this.id = opts.id || randomUUID();
-    this.context =
-      opts.context ||
-      new Context({
-        cwd: opts.cwd,
-        argvConfig: opts.argvConfig,
-      });
+    this.context = opts.context;
   }
 
   async init() {
@@ -217,6 +211,21 @@ export class Service {
           JSON.stringify({ type: 'text', content: parsed[0].content }) + '\n',
         );
       }
+
+      // hook query
+      await this.context.apply({
+        hook: 'query',
+        args: [
+          {
+            text,
+            parsed,
+            input,
+            usage: result.state.toJSON().lastModelResponse?.usage,
+          },
+        ],
+        type: PluginHookType.Series,
+      });
+
       const history = result.history;
       const toolUse = parsed.find((item) => item.type === 'tool_use');
       if (toolUse) {
@@ -244,11 +253,36 @@ export class Service {
   }
 
   async callTool(callId: string, name: string, params: Record<string, any>) {
+    await this.context.apply({
+      hook: 'toolUse',
+      args: [
+        {
+          callId,
+          name,
+          params,
+        },
+      ],
+      type: PluginHookType.Series,
+    });
     const result = await this.tools!.invoke(
       name,
       JSON.stringify(params),
       this.context,
     );
+
+    await this.context.apply({
+      hook: 'toolUseResult',
+      args: [
+        {
+          callId,
+          name,
+          params,
+          result,
+        },
+      ],
+      type: PluginHookType.Series,
+    });
+
     this.history.push({
       type: 'function_call_result',
       name,

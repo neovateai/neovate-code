@@ -13,14 +13,15 @@
     "takumi": "./dist/cli.mjs"
   },
   "scripts": {
-    "dev": "tsx ./src/cli.ts",
+    "dev": "BROWSER_DIST_PATH=../../dist-browser tsx ./src/cli.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build:type": "tsc --project tsconfig.json --emitDeclarationOnly --declarationDir dist-dts",
-    "build:cli": "bun build src/cli.ts --external=react-devtools-core --minify --outfile dist/cli.mjs --target=node",
-    "build:index": "bun build src/index.ts --external=react-devtools-core --minify --outfile dist/index.mjs --target=node",
+    "build:cli": "bun build src/cli.ts --external=react-devtools-core --external=ink --external=react --external=@fastify/compress --minify --outfile dist/cli.mjs --target=node",
+    "build:index": "bun build src/index.ts --external=react-devtools-core --external=ink --external=react --external=@fastify/compress --minify --outfile dist/index.mjs --target=node",
     "build:dts": "npm run build:type && api-extractor run --local --verbose",
-    "build": "npm run build:cli && npm run build:index && npm run build:dts",
+    "build:browser": "pnpm --filter @takumi/browser build",
+    "build": "npm run build:cli && npm run build:index && npm run build:dts && npm run build:browser",
     "ci": "npm run typecheck && npm run format:check && npm run test",
     "release": "npm run ci && utools release --git-tag --github-release --changelog",
     "test": "vitest run",
@@ -46,8 +47,8 @@
     "@ai-sdk/openai": "^1.3.22",
     "@ai-sdk/provider": "^1.1.3",
     "@ai-sdk/xai": "^1.2.16",
-    "@fastify/compress": "8.0.3",
     "@fastify/cors": "11.0.1",
+    "@fastify/static": "^8.2.0",
     "@fastify/type-provider-typebox": "5.1.0",
     "@microsoft/api-extractor": "^7.52.8",
     "@modelcontextprotocol/inspector": "^0.14.3",
@@ -71,25 +72,20 @@
     "chalk": "^5.4.1",
     "chokidar": "^4.0.3",
     "clipboardy": "^4.0.0",
-    "compression": "1.8.0",
-    "connect": "3.7.0",
-    "cors": "2.8.5",
     "date-fns": "^4.1.0",
     "debug": "^4.4.1",
     "defu": "^6.1.4",
     "dotenv": "^16.5.0",
     "fastify": "^5.4.0",
-    "lodash-es": "^4.17.21",
     "glob": "^11.0.3",
     "husky": "^9.1.7",
-    "ink": "^6.0.0",
     "ink-select-input": "^6.2.0",
     "lint-staged": "^16.1.2",
     "marked": "^15.0.12",
     "marked-terminal": "^7.3.0",
     "picocolors": "^1.1.1",
+    "portfinder": "^1.0.37",
     "prettier": "^3.5.3",
-    "react": "^19.1.0",
     "resolve": "^1.22.10",
     "spawn-rx": "^5.1.2",
     "tsx": "^4.20.3",
@@ -102,6 +98,11 @@
     "ws": "^8.18.2",
     "yargs-parser": "18.1.3",
     "zod": "^3.25.67"
+  },
+  "dependencies": {
+    "@fastify/compress": "8.0.3",
+    "ink": "^6.0.0",
+    "react": "^19.1.0"
   },
   "volta": {
     "node": "22.11.0",
@@ -116,15 +117,5 @@
     ],
     "needReinstall": false,
     "changelogUrl": "https://github.com/umijs/takumi/blob/master/CHANGELOG.md"
-  },
-  "dependencies": {
-    "@fastify/compress": "^8.0.3",
-    "@fastify/cors": "^11.0.1",
-    "fastify": "^5.3.3"
-  },
-  "pnpm": {
-    "overrides": {
-      "vite": "npm:rolldown-vite@latest"
-    }
   }
 }
