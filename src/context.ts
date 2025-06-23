@@ -72,12 +72,9 @@ export class Context {
         const model = await this.apply({
           hook: 'model',
           args: [{ modelName, aisdk, createOpenAI, createDeepSeek }],
-          type: PluginHookType.Series,
+          type: PluginHookType.First,
         });
-        if (model) {
-          return model;
-        }
-        return await getModel(modelName);
+        return model || (await getModel(modelName));
       },
     };
   }
