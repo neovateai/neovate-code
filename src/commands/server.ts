@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { format } from 'date-fns';
+import createDebug from 'debug';
 import { homedir } from 'os';
 import path from 'path';
 import yargsParser from 'yargs-parser';
@@ -8,6 +9,8 @@ import { Context } from '../context';
 import { PluginHookType } from '../plugin';
 import { runBrowserServer } from '../server/server';
 import { setupTracing } from '../tracing';
+
+const debug = createDebug('takumi:commands:server');
 
 function printHelp(p: string) {
   console.log(
@@ -36,6 +39,8 @@ Examples:
 }
 
 export async function runBrowser(opts: RunCliOpts) {
+  const startTime = Date.now();
+
   const argv = yargsParser(process.argv.slice(2), {
     alias: {
       model: 'm',
@@ -59,8 +64,13 @@ export async function runBrowser(opts: RunCliOpts) {
     'sessions',
     `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
   );
+
+  debug('traceFile', traceFile);
+
   setupTracing(traceFile);
-  const cwd = process.cwd();
+
+  const cwd = opts.cwd || process.cwd();
+  debug('cwd', cwd);
 
   const context = await Context.create({
     productName: opts.productName,
@@ -88,5 +98,17 @@ export async function runBrowser(opts: RunCliOpts) {
     plan: argv.plan,
     logLevel: argv.logLevel,
     port: argv.port,
+  });
+
+  await context.apply({
+    hook: 'cliEnd',
+    args: [
+      {
+        startTime,
+        endTime: Date.now(),
+        error: null,
+      },
+    ],
+    type: PluginHookType.Series,
   });
 }
