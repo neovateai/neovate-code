@@ -1,3 +1,4 @@
+import { createAnthropic } from '@ai-sdk/anthropic';
 import { createDeepSeek } from '@ai-sdk/deepseek';
 import { createOpenAI } from '@ai-sdk/openai';
 import { ModelProvider, Tool } from '@openai/agents';
@@ -35,6 +36,7 @@ interface CreateContextOpts {
   argvConfig?: Partial<Config>;
   productName?: string;
   version?: string;
+  plugins?: Plugin[];
 }
 
 export class Context {
@@ -71,7 +73,9 @@ export class Context {
       getModel: async (modelName?: string) => {
         const model = await this.apply({
           hook: 'model',
-          args: [{ modelName, aisdk, createOpenAI, createDeepSeek }],
+          args: [
+            { modelName, aisdk, createOpenAI, createDeepSeek, createAnthropic },
+          ],
           type: PluginHookType.First,
         });
         return model || (await getModel(modelName));
@@ -116,6 +120,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   const pluginsConfigs: (string | Plugin)[] = [
     ...buildinPlugins,
     ...(initialConfig.plugins || []),
+    ...(opts.plugins || []),
   ];
   const plugins = normalizePlugins(opts.cwd, pluginsConfigs);
   debug('plugins', plugins);
