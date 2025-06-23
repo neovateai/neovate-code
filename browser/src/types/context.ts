@@ -1,12 +1,15 @@
 import type { LexicalNode } from 'lexical';
 import type { JSX } from 'react';
+import type { FileItem } from '@/api/model';
 import type { ContextType } from '@/constants/context';
+
+export type ContextStoreValue = FileItem;
 
 export interface ContextItem {
   type: ContextType;
   value: string;
   displayText: string;
-  context?: any;
+  context?: ContextStoreValue;
   [key: string]: any;
 }
 
@@ -29,6 +32,7 @@ export interface AiContextNodeConfig {
   render: (args: {
     info: AiContextNodeInfo;
     onClose?: () => void;
+    context?: ContextStoreValue;
   }) => JSX.Element;
 }
 

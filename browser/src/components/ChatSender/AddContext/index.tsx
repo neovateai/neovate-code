@@ -38,7 +38,7 @@ const AddContext = () => {
   const [inputValue, setinputValue] = useState('');
   const inputRef = useRef<InputRef>(null);
   const tagRef = useRef<HTMLDivElement>(null);
-  const { selectContexts, contextsSelectedValues } = useSnapshot(context.state);
+  const { contextItems, contextsSelectedValues } = useSnapshot(context.state);
   const [tagSize, setTagSize] = useState<{ width: number; height: number }>({
     width: 0,
     height: 0,
@@ -79,14 +79,12 @@ const AddContext = () => {
             case ContextType.FILE: {
               const fileItem = getFileByValue(value);
               if (fileItem) {
-                context.actions.addSelectContext(
-                  {
-                    type,
-                    value: contextValue,
-                    displayText: value,
-                  },
-                  fileItem,
-                );
+                context.actions.addContext({
+                  type,
+                  value: contextValue,
+                  displayText: value,
+                  context: fileItem,
+                });
               }
               break;
             }
@@ -124,7 +122,7 @@ const AddContext = () => {
             }
             onClick={() => setInputVisible(true)}
           >
-            {selectContexts.length === 0 && <span>Add Context</span>}
+            {contextItems.length === 0 && <span>Add Context</span>}
           </Tag>
         )
       }

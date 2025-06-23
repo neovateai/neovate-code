@@ -22,11 +22,12 @@ export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
       value: regExpExecArray[0],
       displayText: regExpExecArray.groups?.value || '',
     }),
-    render: ({ info, onClose }) => (
+    render: ({ info, onClose, context }) => (
       <FileContextTag
         key={info.value}
         displayText={info.displayText}
         onClose={onClose}
+        context={context}
       />
     ),
   },

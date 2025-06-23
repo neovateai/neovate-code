@@ -10,18 +10,18 @@ export function renderContextTag(
   contextItem: ContextItem,
   onClose?: () => void,
 ) {
-  const { type, displayText, value } = contextItem;
+  const { type, displayText, value, context } = contextItem;
   const config = AI_CONTEXT_NODE_CONFIGS.find((config) => config.type === type);
 
   if (!config) {
     return null;
   }
 
-  return config.render({ info: { displayText, value }, onClose });
+  return config.render({ info: { displayText, value }, onClose, context });
 }
 
 const SenderHeader: React.FC = () => {
-  const { selectContexts, editorContexts } = useSnapshot(context.state);
+  const { contextItems } = useSnapshot(context.state);
 
   return (
     <Sender.Header
@@ -31,14 +31,9 @@ const SenderHeader: React.FC = () => {
     >
       <Flex gap={6} wrap="wrap" style={{ padding: 8, lineHeight: '22px' }}>
         <AddContext />
-        {selectContexts.map((contextItem) =>
+        {contextItems.map((contextItem) =>
           renderContextTag(contextItem, () => {
-            context.actions.removeSelectContext(contextItem.value);
-          }),
-        )}
-        {editorContexts.map((contextItem) =>
-          renderContextTag(contextItem, () => {
-            context.actions.removeEditorContext(contextItem.value);
+            context.actions.removeContext(contextItem.value);
           }),
         )}
       </Flex>

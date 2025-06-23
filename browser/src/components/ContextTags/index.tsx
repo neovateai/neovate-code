@@ -3,6 +3,7 @@ import { Tag } from 'antd';
 import { createStyles } from 'antd-style';
 import type React from 'react';
 import { useState } from 'react';
+import type { FileItem } from '@/api/model';
 import DevFileIcon from '../DevFileIcon';
 
 const useStyle = createStyles(({ css }) => {
@@ -24,10 +25,12 @@ export const FileContextTag = ({
   displayText,
   key,
   onClose,
+  context,
 }: {
   displayText: string;
   key?: React.Key;
   onClose?: () => void;
+  context?: FileItem;
 }) => {
   const [hover, setHover] = useState(false);
 
@@ -47,6 +50,7 @@ export const FileContextTag = ({
         <CloseOutlined className={styles.icon} onClick={onClose} />
       ) : (
         <DevFileIcon
+          isFolder={context?.type === 'directory'}
           className={styles.icon}
           fileExt={displayText.split('.').pop() ?? ''}
         />

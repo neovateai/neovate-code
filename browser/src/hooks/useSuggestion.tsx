@@ -3,12 +3,12 @@ import {
   CodeOutlined,
   FileOutlined,
   FileSearchOutlined,
-  FolderOutlined,
 } from '@ant-design/icons';
 import { Suggestion } from '@ant-design/x';
 import { type GetProp } from 'antd';
 import { useEffect, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
+import DevFileIcon from '@/components/DevFileIcon';
 import { ContextType } from '@/constants/context';
 import { actions, state } from '@/state/suggestion';
 
@@ -34,7 +34,12 @@ export const useSuggestion = (
           ...fileList.map((file) => ({
             label: file.path,
             value: file.path,
-            icon: file.type === 'file' ? <FileOutlined /> : <FolderOutlined />,
+            icon: (
+              <DevFileIcon
+                isFolder={file.type === 'directory'}
+                fileExt={file.path.split('.').pop() ?? ''}
+              />
+            ),
             disabled: selectedValues?.includes(file.path),
           })),
         ],

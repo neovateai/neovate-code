@@ -1,4 +1,8 @@
-import Icon, { FileImageOutlined, FileOutlined } from '@ant-design/icons';
+import Icon, {
+  FileImageOutlined,
+  FileOutlined,
+  FolderOutlined,
+} from '@ant-design/icons';
 import Css3Plain from 'devicons-react/icons/Css3Plain';
 import Html5Plain from 'devicons-react/icons/Html5Plain';
 import JavaScriptPlain from 'devicons-react/icons/JavascriptPlain';
@@ -47,17 +51,25 @@ function getPlainIcon(ext: string) {
 }
 
 const DevFileIcon = ({
+  isFolder,
   fileExt,
   style,
   className,
 }: {
+  isFolder?: boolean;
   fileExt: string;
   style?: React.CSSProperties;
   className?: string;
 }) => {
   return (
     <Icon
-      component={() => getPlainIcon(fileExt.toLowerCase())}
+      component={() => {
+        if (isFolder) {
+          return <FolderOutlined />;
+        } else {
+          return getPlainIcon(fileExt.toLowerCase());
+        }
+      }}
       style={style}
       className={className}
     />

@@ -7,6 +7,7 @@ import {
 import { Prompts, Sender } from '@ant-design/x';
 import { Flex, type GetProp } from 'antd';
 import { createStyles } from 'antd-style';
+import { differenceWith } from 'lodash-es';
 import { useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
@@ -81,7 +82,7 @@ const ChatSender: React.FC = () => {
   const [contextSearchInput, setContextSearchInput] = useState('');
   const prevInputValue = useRef<string>(state.prompt);
   const { prompt, plainText } = useSnapshot(state);
-  const { selectContexts, editorContexts } = context.state;
+  const { contextItems } = context.state;
 
   // 编辑器中的Context不去重，实际挂载时再去重
   const { suggestions, getTypeByValue, getFileByValue } =
@@ -93,9 +94,8 @@ const ChatSender: React.FC = () => {
   };
 
   const handleSubmit = () => {
-    onQuery(prompt, plainText, [...selectContexts, ...editorContexts]);
+    onQuery(prompt, plainText, contextItems);
     actions.updatePrompt('');
-    context.actions.afterSend();
   };
 
   return (
@@ -117,14 +117,13 @@ const ChatSender: React.FC = () => {
       <LexicalTextAreaContext.Provider
         value={{
           onEnterPress: handleSubmit,
-          onChangeNodes: (nodes) => {
-            context.actions.updateEditorContext(
-              nodes.map((node) => ({
-                type: node.type,
-                value: node.originalText,
-                displayText: node.displayText,
-              })),
-            );
+          onChangeNodes: (prevNodes, nextNodes) => {
+            // 只处理删除节点的情况，新增无需处理
+            differenceWith(prevNodes, nextNodes, (prev, next) => {
+              return prev.originalText === next.originalText;
+            }).forEach((node) => {
+              context.actions.removeContext(node.originalText);
+            });
           },
           onChangePlainText: (plainText) => actions.updatePlainText(plainText),
           aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
@@ -158,14 +157,12 @@ const ChatSender: React.FC = () => {
                 case ContextType.FILE: {
                   const fileItem = getFileByValue(value);
                   if (fileItem) {
-                    context.actions.addEditorContext(
-                      {
-                        type,
-                        value: contextValue,
-                        displayText: value,
-                      },
-                      fileItem,
-                    );
+                    context.actions.addContext({
+                      type,
+                      value: contextValue,
+                      displayText: value,
+                      context: fileItem,
+                    });
                   }
                   break;
                 }

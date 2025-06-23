@@ -6,7 +6,7 @@ import {
   type Spread,
 } from 'lexical';
 import type { JSX } from 'react';
-import type { AiContextNodeConfig, AiContextNodeInfo } from '@/types/chat';
+import type { AiContextNodeConfig, AiContextNodeInfo } from '@/types/context';
 
 export type SerializedAiContextNode = Spread<
   {
@@ -74,7 +74,7 @@ export class AiContextNode extends DecoratorNode<JSX.Element> {
   decorate(): JSX.Element {
     const { render } = this.__config;
 
-    const node = render(this.__info);
+    const node = render({ info: this.__info });
 
     return node;
   }

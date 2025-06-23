@@ -7,7 +7,7 @@ import {
   TextNode,
 } from 'lexical';
 import { useContext, useEffect, useRef } from 'react';
-import type { AiContextCacheNode, AppendedLexicalNode } from '@/types/chat';
+import type { AiContextCacheNode, AppendedLexicalNode } from '@/types/context';
 import { LexicalTextAreaContext } from '../LexicalTextAreaContext';
 import { $createAiContextNode } from './AiContextNode';
 
@@ -214,8 +214,8 @@ const RenderValuePlugin = (props: Props) => {
 
         resetSelection?.();
 
+        onChangeNodes?.(oldNodesRef.current, nodes);
         oldNodesRef.current = nodes;
-        onChangeNodes?.(nodes);
       }
 
       oldLexicalNodesRef.current = paragraph

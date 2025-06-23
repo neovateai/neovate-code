@@ -74,7 +74,6 @@ const useStyle = createStyles(({ css }) => {
 
       &:not(:focus):before {
         position: absolute;
-        line-height: 30px;
         opacity: 0.5;
         content: attr(placeholder);
       }
