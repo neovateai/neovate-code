@@ -2,18 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import { afterEach, beforeAll, beforeEach, expect, test } from 'vitest';
 import { run } from './commands/default';
-import { Context } from './context';
+import { Context, createContext } from './context';
 
 const root = path.join(__dirname, '../..');
 const fixtures = path.join(root, 'fixtures');
 const cwd = path.join(fixtures, 'normal');
-const context = new Context({
-  cwd,
-  argvConfig: {
-    quiet: true,
-    model: 'flash',
-  },
-});
+let context: Context;
 
 function cleanup() {
   const tmpDir = path.join(cwd, 'tmp');
@@ -23,7 +17,13 @@ function cleanup() {
 }
 
 beforeAll(async () => {
-  await context.init();
+  context = await createContext({
+    cwd,
+    argvConfig: {
+      quiet: true,
+      model: 'flash',
+    },
+  });
 });
 
 beforeEach(() => {

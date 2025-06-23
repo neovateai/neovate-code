@@ -12,7 +12,12 @@ import {
 
 const debug = createDebug('takumi:context');
 
-interface ContextOpts {
+type ContextOpts = CreateContextOpts & {
+  pluginManager: PluginManager;
+  config: Config;
+};
+
+interface CreateContextOpts {
   cwd: string;
   argvConfig?: Partial<Config>;
   productName?: string;
@@ -23,64 +28,72 @@ export class Context {
   cwd: string;
   productName: string;
   version: string;
-  #config: Config;
-  #pluginManager: PluginManager | null = null;
-  #resolvedConfig: Config | null = null;
+  config: Config;
+  pluginManager: PluginManager;
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
-    const productName = opts.productName || PRODUCT_NAME;
-    this.productName = productName;
+    this.productName = opts.productName || PRODUCT_NAME;
     this.version = opts.version || '0.0.0';
-    const configManager = new ConfigManager(
-      this.cwd,
-      productName,
-      opts.argvConfig || {},
-    );
-    this.#config = configManager.config;
-  }
-
-  get config() {
-    if (!this.#resolvedConfig) {
-      throw new Error('Config not resolved');
-    }
-    return this.#resolvedConfig;
+    this.config = opts.config;
+    this.pluginManager = opts.pluginManager;
   }
 
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {
-    if (!this.#pluginManager) {
-      throw new Error('Plugin manager not initialized');
-    }
-    return this.#pluginManager.apply({
+    return this.pluginManager.apply({
       ...applyOpts,
       pluginContext: this,
     });
   }
+}
 
-  async init() {
-    const buildinPlugins: Plugin[] = [];
-    const pluginsConfigs: (string | Plugin)[] = [
-      ...buildinPlugins,
-      ...(this.#config.plugins || []),
-    ];
-    const plugins = normalizePlugins(this.cwd, pluginsConfigs);
-    this.#pluginManager = new PluginManager(plugins);
+export async function createContext(opts: CreateContextOpts): Promise<Context> {
+  debug('createContext', opts);
+  const configManager = new ConfigManager(
+    opts.cwd,
+    opts.productName || PRODUCT_NAME,
+    opts.argvConfig || {},
+  );
+  const initialConfig = configManager.config;
+  debug('initialConfig', initialConfig);
 
-    const config = this.#config;
-    debug('config', config);
-    const resolvedConfig = await this.apply({
-      hook: 'config',
-      args: [],
-      memo: config,
-      type: PluginHookType.SeriesMerge,
-    });
-    await this.apply({
-      hook: 'configResolved',
-      args: [{ resolvedConfig }],
-      type: PluginHookType.Series,
-    });
-    debug('resolvedConfig', resolvedConfig);
-    this.#resolvedConfig = resolvedConfig;
-  }
+  const buildinPlugins: Plugin[] = [];
+  const pluginsConfigs: (string | Plugin)[] = [
+    ...buildinPlugins,
+    ...(initialConfig.plugins || []),
+  ];
+  const plugins = normalizePlugins(opts.cwd, pluginsConfigs);
+  debug('plugins', plugins);
+  const pluginManager = new PluginManager(plugins);
+
+  const apply = async (hookOpts: any) => {
+    return pluginManager.apply({ ...hookOpts, pluginContext: tempContext });
+  };
+  const tempContext = {
+    ...opts,
+    pluginManager,
+    config: initialConfig,
+    apply,
+  };
+
+  const resolvedConfig = await apply({
+    hook: 'config',
+    args: [],
+    memo: initialConfig,
+    type: PluginHookType.SeriesMerge,
+  });
+  debug('resolvedConfig', resolvedConfig);
+  tempContext.config = resolvedConfig;
+  await apply({
+    hook: 'configResolved',
+    args: [{ resolvedConfig }],
+    type: PluginHookType.Series,
+  });
+
+  return new Context({
+    ...opts,
+    config: resolvedConfig,
+    pluginManager,
+  });
 }
 
 function normalizePlugins(cwd: string, plugins: (string | Plugin)[]) {
