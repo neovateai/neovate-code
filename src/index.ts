@@ -19,7 +19,7 @@ export interface RunCliOpts {
   productName: string;
   version: string;
   modelProvider?: ModelProvider;
-  plugins: Plugin[];
+  plugins?: Plugin[];
 }
 
 export async function runCli(opts: RunCliOpts) {
