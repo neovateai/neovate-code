@@ -26,123 +26,123 @@ export interface RunOpts {
 }
 
 export async function run(opts: RunOpts) {
-  const traceName = `${opts.context.productName}-default}`;
-  return await withTrace(traceName, async () => {
-    try {
-      let prompt = opts.prompt;
-      debug('prompt', prompt);
-      const commonServiceOpts = {
-        context: opts.context,
-        modelProvider: opts.modelProvider,
-      };
-      const service = new Service({
-        agentType: 'code',
-        ...commonServiceOpts,
+  try {
+    let prompt = opts.prompt;
+    debug('prompt', prompt);
+    const commonServiceOpts = {
+      context: opts.context,
+      modelProvider: opts.modelProvider,
+    };
+    const service = new Service({
+      agentType: 'code',
+      ...commonServiceOpts,
+    });
+    const planService = new Service({
+      agentType: 'plan',
+      ...commonServiceOpts,
+    });
+    const store = createStore({
+      productName: opts.context.productName,
+      version: opts.context.version,
+      service,
+      planService: planService,
+      stage: opts.plan ? 'plan' : 'code',
+    });
+    const quiet = opts.context.config.quiet;
+    if (!quiet) {
+      render(<App />, {
+        patchConsole: process.env.DEBUG ? false : true,
+        exitOnCtrlC: true,
       });
-      const planService = new Service({
-        agentType: 'plan',
-        ...commonServiceOpts,
-      });
-      const store = createStore({
-        productName: opts.context.productName,
-        version: opts.context.version,
-        service,
-        planService: planService,
-        stage: opts.plan ? 'plan' : 'code',
-      });
-      const quiet = opts.context.config.quiet;
-      if (!quiet) {
-        render(<App />, {
-          patchConsole: process.env.DEBUG ? false : true,
-          exitOnCtrlC: true,
-        });
-      }
-      if (prompt) {
-        const result = await store.actions.query(prompt);
-        if (!opts.plan) {
-          return result;
-        } else {
-          return null;
-        }
+    }
+    if (prompt) {
+      const result = await store.actions.query(prompt);
+      if (!opts.plan) {
+        return result;
       } else {
-        if (quiet) {
-          throw new Error(
-            'Quiet mode, non interactive, you must provide a prompt to run.',
-          );
-        }
         return null;
       }
-    } finally {
-      await opts.context.destroy();
+    } else {
+      if (quiet) {
+        throw new Error(
+          'Quiet mode, non interactive, you must provide a prompt to run.',
+        );
+      }
+      return null;
     }
-  });
+  } finally {
+    await opts.context.destroy();
+  }
 }
 
 export async function runDefault(opts: RunCliOpts) {
-  const startTime = Date.now();
-  const argv = yargsParser(process.argv.slice(2), {
-    alias: {
-      model: 'm',
-      help: 'h',
-      quiet: 'q',
-    },
-    default: {
-      model: 'flash',
-    },
-    array: ['plugin'],
-    boolean: ['json', 'help', 'plan', 'quiet'],
-    string: ['model', 'smallModel', 'planModel'],
-  });
-  if (argv.help) {
-    printHelp(opts.productName.toLowerCase());
-    return;
-  }
-  const uuid = randomUUID().slice(0, 4);
-  const traceFile = path.join(
-    homedir(),
-    `.${opts.productName.toLowerCase()}`,
-    'sessions',
-    `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
-  );
-  setupTracing(traceFile);
-  const cwd = opts.cwd || process.cwd();
-  debug('cwd', cwd);
-  const context = await createContext({
-    productName: opts.productName,
-    version: opts.version,
-    cwd,
-    argvConfig: {
-      model: argv.model,
-      smallModel: argv.smallModel,
-      planModel: argv.planModel,
-      quiet: argv.quiet,
-      plugins: argv.plugin,
-    },
-  });
-  await context.apply({
-    hook: 'cliStart',
-    args: [],
-    type: PluginHookType.Series,
-  });
-  const result = await run({
-    context,
-    prompt: argv._[0]! as string,
-    plan: argv.plan,
-  });
-  await context.apply({
-    hook: 'cliEnd',
-    args: [
-      {
-        startTime,
-        endTime: Date.now(),
-        error: null,
+  const traceName = `${opts.productName}-default}`;
+  return await withTrace(traceName, async () => {
+    const startTime = Date.now();
+    const argv = yargsParser(process.argv.slice(2), {
+      alias: {
+        model: 'm',
+        help: 'h',
+        quiet: 'q',
       },
-    ],
-    type: PluginHookType.Series,
+      default: {
+        model: 'flash',
+      },
+      array: ['plugin'],
+      boolean: ['json', 'help', 'plan', 'quiet'],
+      string: ['model', 'smallModel', 'planModel'],
+    });
+    if (argv.help) {
+      printHelp(opts.productName.toLowerCase());
+      return;
+    }
+    const uuid = randomUUID().slice(0, 4);
+    const traceFile = path.join(
+      homedir(),
+      `.${opts.productName.toLowerCase()}`,
+      'sessions',
+      `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
+    );
+    setupTracing(traceFile);
+    const cwd = opts.cwd || process.cwd();
+    debug('cwd', cwd);
+    const context = await createContext({
+      productName: opts.productName,
+      version: opts.version,
+      cwd,
+      argvConfig: {
+        model: argv.model,
+        smallModel: argv.smallModel,
+        planModel: argv.planModel,
+        quiet: argv.quiet,
+        plugins: argv.plugin,
+      },
+    });
+    await context.apply({
+      hook: 'cliStart',
+      args: [],
+      type: PluginHookType.Series,
+    });
+    const result = await run({
+      context,
+      prompt: argv._[0]! as string,
+      plan: argv.plan,
+    });
+    await context.apply({
+      hook: 'cliEnd',
+      args: [
+        {
+          startTime,
+          endTime: Date.now(),
+          error: null,
+        },
+      ],
+      type: PluginHookType.Series,
+    });
+    if (context.config.quiet) {
+      console.log(JSON.stringify(result, null, 2));
+    }
   });
-  if (context.config.quiet) {
-    console.log(JSON.stringify(result, null, 2));
-  }
 }
 
 function printHelp(p: string) {

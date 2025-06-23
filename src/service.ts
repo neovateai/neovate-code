@@ -10,7 +10,6 @@ import { Readable } from 'stream';
 import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
 import { Context } from './context';
-import { MCPManager } from './mcp';
 import { PluginHookType } from './plugin';
 import { PromptContext } from './prompt-context';
 import { getDefaultModelProvider } from './provider';
@@ -47,7 +46,6 @@ export class Service {
   private opts: ServiceOpts;
   private tools?: Tools;
   protected agent?: Agent;
-  private initialized: boolean = false;
   context: Context;
   history: AgentInputItem[] = [];
   id: string;
@@ -56,17 +54,10 @@ export class Service {
     this.opts = opts;
     this.id = opts.id || randomUUID();
     this.context = opts.context;
-  }
-
-  async init() {
-    if (this.initialized) {
-      return;
-    }
-    this.initialized = true;
     this.tools = new Tools(
       this.opts.agentType === 'code'
-        ? await this.getCodeTools()
-        : await this.getPlanTools(),
+        ? this.#getCodeTools()
+        : this.#getPlanTools(),
     );
     const createAgentOpts = {
       tools: this.tools,
@@ -84,7 +75,7 @@ export class Service {
           });
   }
 
-  async getPlanTools() {
+  #getPlanTools() {
     const context = this.context;
     return [
       createReadTool({ context }),
@@ -95,9 +86,8 @@ export class Service {
     ];
   }
 
-  async getCodeTools() {
+  #getCodeTools() {
     const context = this.context;
-    const mcpTools = await context.mcpManager.getAllTools();
     return [
       createWriteTool({ context }),
       createReadTool({ context }),
@@ -107,7 +97,7 @@ export class Service {
       createGlobTool({ context }),
       createGrepTool({ context }),
       createFetchTool({ context }),
-      ...mcpTools,
+      ...context.mcpTools,
     ];
   }
 
@@ -128,13 +118,13 @@ export class Service {
         this.history.filter((item) => (item as any).role !== 'system') || [];
       return [promptContextMessage, ...prevInput, ...opts.input];
     })();
-    this.processStream(input, stream, opts.thinking).catch((error) => {
+    this.#processStream(input, stream, opts.thinking).catch((error) => {
       stream.emit('error', error);
     });
     return { stream };
   }
 
-  private async processStream(
+  async #processStream(
     input: AgentInputItem[],
     stream: Readable,
     thinking?: boolean,

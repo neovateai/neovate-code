@@ -1,3 +1,4 @@
+import { Tool } from '@openai/agents';
 import createDebug from 'debug';
 import { createRequire } from 'module';
 import resolve from 'resolve';
@@ -17,6 +18,7 @@ type ContextOpts = CreateContextOpts & {
   config: Config;
   pluginManager: PluginManager;
   mcpManager: MCPManager;
+  mcpTools: Tool[];
 };
 
 interface CreateContextOpts {
@@ -33,6 +35,7 @@ export class Context {
   config: Config;
   pluginManager: PluginManager;
   mcpManager: MCPManager;
+  mcpTools: Tool[];
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName || PRODUCT_NAME;
@@ -40,6 +43,7 @@ export class Context {
     this.config = opts.config;
     this.pluginManager = opts.pluginManager;
     this.mcpManager = opts.mcpManager;
+    this.mcpTools = opts.mcpTools;
   }
 
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {
@@ -99,6 +103,7 @@ export async function createContext(opts: CreateContextOpts): Promise<Context> {
 
   const mcpManager = new MCPManager(resolvedConfig.mcpServers);
   await mcpManager.connect();
+  const mcpTools = await mcpManager.getAllTools();
   debug('mcpManager connected');
 
   return new Context({
@@ -106,6 +111,7 @@ export async function createContext(opts: CreateContextOpts): Promise<Context> {
     config: resolvedConfig,
     pluginManager,
     mcpManager,
+    mcpTools,
   });
 }
 
