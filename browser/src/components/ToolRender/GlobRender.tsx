@@ -1,6 +1,7 @@
 import { CodeOutlined, DownOutlined, RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import type { ToolMessage, UIMessageType } from '@/types/message';
+import InnerList, { type ListItem } from './InnerList';
 
 const mockData: ToolMessage = {
   type: 'tool' as UIMessageType.Tool,
@@ -153,19 +154,15 @@ export default function GlobRender({ message }: { message?: ToolMessage }) {
         message?: string;
       };
 
+      const items: ListItem[] = filenames.map((filename) => ({
+        name: filename,
+        isDirectory: filename.endsWith('/'),
+      }));
+
       return (
         <div>
           {message && <p className="text-xs text-gray-500 mb-1">{message}</p>}
-          <ul className="list-none m-0 p-0">
-            {filenames.map((filename, index) => (
-              <li
-                key={index}
-                className="text-xs truncate p-1 rounded cursor-pointer hover:bg-gray-100"
-              >
-                {filename}
-              </li>
-            ))}
-          </ul>
+          <InnerList items={items} />
         </div>
       );
     }

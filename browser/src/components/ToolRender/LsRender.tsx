@@ -1,11 +1,7 @@
-import {
-  DownOutlined,
-  FileOutlined,
-  FolderOutlined,
-  RightOutlined,
-} from '@ant-design/icons';
+import { DownOutlined, FolderOutlined, RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import type { ToolMessage, UIMessageType } from '@/types/message';
+import InnerList, { type ListItem } from './InnerList';
 
 const mockData: ToolMessage = {
   type: 'tool' as UIMessageType.Tool,
@@ -21,12 +17,7 @@ const mockData: ToolMessage = {
   },
 };
 
-interface FileItem {
-  name: string;
-  isDirectory: boolean;
-}
-
-const parseLsResult = (result: unknown): FileItem[] => {
+const parseLsResult = (result: unknown): ListItem[] => {
   const output = (result as { output?: string })?.output;
   if (typeof output !== 'string' || !output) return [];
 
@@ -34,7 +25,7 @@ const parseLsResult = (result: unknown): FileItem[] => {
   lines.shift(); // Remove the root directory path line
 
   return lines
-    .map((line) => {
+    .map((line): ListItem | null => {
       const trimmedLine = line.trim();
       if (!trimmedLine.startsWith('- ')) return null;
 
@@ -45,7 +36,7 @@ const parseLsResult = (result: unknown): FileItem[] => {
         isDirectory,
       };
     })
-    .filter((item): item is FileItem => item !== null);
+    .filter((item): item is ListItem => item !== null);
 };
 
 export default function LsRender({ message }: { message?: ToolMessage }) {
@@ -54,22 +45,10 @@ export default function LsRender({ message }: { message?: ToolMessage }) {
   const items = parseLsResult(data.result);
 
   const [isExpanded, setIsExpanded] = useState(true);
-  const [isHovered, setIsHovered] = useState(false);
 
   const toggleExpand = () => {
     if (items.length > 0) {
       setIsExpanded(!isExpanded);
-    }
-  };
-
-  const renderIcon = () => {
-    if (items.length === 0) {
-      return <FolderOutlined />;
-    }
-    if (isExpanded) {
-      return <DownOutlined />;
-    } else {
-      return isHovered ? <RightOutlined /> : <FolderOutlined />;
     }
   };
 
@@ -78,36 +57,21 @@ export default function LsRender({ message }: { message?: ToolMessage }) {
       <div
         className="flex items-center gap-2 cursor-pointer"
         onClick={toggleExpand}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
       >
         <span className="transition-transform duration-300">
-          {renderIcon()}
+          {isExpanded ? <DownOutlined /> : <RightOutlined />}
         </span>
+        <FolderOutlined />
         <span>
           Listed {items.length} items in {dirPath.split('/').pop() || dirPath}
         </span>
       </div>
       <div
-        className={`pl-6 mt-1 overflow-y-auto transition-[max-height] duration-500 ease-in-out ${
+        className={`px-2 bg-gray-50 mt-1 overflow-y-auto transition-[max-height] duration-500 ease-in-out ${
           isExpanded && items.length > 0 ? 'max-h-40' : 'max-h-0'
         }`}
       >
-        <ul className="list-none m-0 p-0">
-          {items.map((item, index) => (
-            <li
-              key={index}
-              className="flex items-center gap-2 p-1 rounded cursor-pointer hover:bg-gray-100"
-            >
-              <span className="text-gray-500">
-                {item.isDirectory ? <FolderOutlined /> : <FileOutlined />}
-              </span>
-              <span className={item.isDirectory ? 'text-blue-600' : ''}>
-                {item.name}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <InnerList items={items} showPath={false} />
       </div>
     </div>
   );
