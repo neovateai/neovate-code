@@ -1,28 +1,13 @@
-import { AgentConfiguration, AgentInputItem, withTrace } from '@openai/agents';
+import { AgentInputItem, withTrace } from '@openai/agents';
 import { DataStreamWriter, formatDataStreamPart } from 'ai';
 import assert from 'assert';
 import createDebug from 'debug';
 import { isReasoningModel } from '../../provider';
 import { query } from '../../query';
-import { Service, ServiceOpts } from '../../service';
+import { Service } from '../../service';
 import { CreateServerOpts } from '../types/server';
 
 const debug = createDebug('takumi:server:completions');
-
-interface BrowserServiceOpts extends ServiceOpts {}
-
-export class BrowserService extends Service {
-  constructor(opts: BrowserServiceOpts) {
-    super({
-      ...opts,
-    });
-  }
-
-  modifyAgent(opts: Partial<AgentConfiguration>) {
-    this.agent = this.agent?.clone(opts);
-    debug('modify agent', opts);
-  }
-}
 
 interface RunCompletionOpts extends CreateServerOpts {
   dataStream: DataStreamWriter;
@@ -35,7 +20,7 @@ export async function runPlan(opts: RunCompletionOpts) {
 
   return await withTrace(opts.traceName, async () => {
     try {
-      const service = new BrowserService({
+      const service = await Service.create({
         ...opts,
         agentType: 'plan',
       });
@@ -92,7 +77,7 @@ export async function runCode(opts: RunCompletionOpts) {
 
   return await withTrace(opts.traceName, async () => {
     try {
-      const service = new BrowserService({
+      const service = await Service.create({
         ...opts,
         agentType: 'code',
       });
