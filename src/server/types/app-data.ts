@@ -28,7 +28,7 @@ export interface UISchema {
   contextMenu?: ContextMenuItem[];
 }
 
-export interface BrowserAppData {
+export interface ServerAppData {
   productName: string;
   version: string;
   cwd: string;
