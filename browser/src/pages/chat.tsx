@@ -62,13 +62,15 @@ const Chat: React.FC = () => {
         icon: <UserOutlined />,
         style: { background: '#87d068' },
       },
+      variant: 'outlined',
     },
     assistant: {
       placement: 'start',
       avatar: {
-        icon: <UserOutlined />,
-        style: { background: '#fde3cf' },
+        src: '/src/components/Sider/imgs/kmi-ai.png',
+        // style: { background: '#fde3cf' },
       },
+      variant: 'outlined',
       messageRender(message) {
         return <AssistantMessage message={message} />;
       },
