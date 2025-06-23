@@ -184,6 +184,7 @@ function ChatInput() {
   const handleSubmit = () => {
     if (value.trim() === '') return;
     setValue('');
+    store.actions.addUserPrompt(value);
     store.actions.query(value);
   };
   return (

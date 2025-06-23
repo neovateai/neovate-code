@@ -5,7 +5,6 @@ import { RunCliOpts } from '..';
 import { createCodeAgent } from '../agents/code';
 import { Config } from '../config';
 import { Context } from '../context';
-import { PromptContext } from '../prompt-context';
 import { getDefaultModelProvider } from '../provider';
 import { Tools } from '../tool';
 import { createBashTool } from '../tools/bash';
@@ -61,15 +60,13 @@ export async function run(opts: RunOpts) {
     context,
     tools,
   });
-  const promptContext = new PromptContext({
-    prompts: [opts.prompt],
-    context,
-  });
+  const systemPromptStrs = await context.buildSystemPrompts();
+  const systemPrompts = systemPromptStrs.map((str) => ({
+    role: 'system' as const,
+    content: str,
+  }));
   let input: AgentInputItem[] = [
-    {
-      role: 'system',
-      content: await promptContext.getContext(),
-    },
+    ...systemPrompts,
     {
       role: 'user',
       content: opts.prompt,

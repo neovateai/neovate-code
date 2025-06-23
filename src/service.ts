@@ -11,7 +11,6 @@ import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
 import { Context } from './context';
 import { PluginHookType } from './plugin';
-import { PromptContext } from './prompt-context';
 import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
 import { createBashTool } from './tools/bash';
@@ -106,17 +105,14 @@ export class Service {
       read() {},
     });
     const input = await (async () => {
-      const promptContext = new PromptContext({
-        context: this.context,
-        prompts: [],
-      });
-      const promptContextMessage = {
+      const systemPromptStrs = await this.context.buildSystemPrompts();
+      const systemPrompts = systemPromptStrs.map((str) => ({
         role: 'system' as const,
-        content: await promptContext.getContext(),
-      };
+        content: str,
+      }));
       const prevInput =
         this.history.filter((item) => (item as any).role !== 'system') || [];
-      return [promptContextMessage, ...prevInput, ...opts.input];
+      return [...systemPrompts, ...prevInput, ...opts.input];
     })();
     this.#processStream(input, stream, opts.thinking).catch((error) => {
       stream.emit('error', error);

@@ -4,6 +4,7 @@ import { createRequire } from 'module';
 import resolve from 'resolve';
 import { Config, ConfigManager } from './config';
 import { PRODUCT_NAME } from './constants';
+import { IDE } from './ide';
 import { MCPManager } from './mcp';
 import {
   Plugin,
@@ -11,6 +12,8 @@ import {
   PluginHookType,
   PluginManager,
 } from './plugin';
+import { SystemPromptBuilder } from './system-prompt-builder';
+import { getGitStatus } from './utils/git';
 
 const debug = createDebug('takumi:context');
 
@@ -19,6 +22,8 @@ type ContextOpts = CreateContextOpts & {
   pluginManager: PluginManager;
   mcpManager: MCPManager;
   mcpTools: Tool[];
+  git: string | null;
+  ide: IDE | null;
 };
 
 interface CreateContextOpts {
@@ -36,6 +41,9 @@ export class Context {
   pluginManager: PluginManager;
   mcpManager: MCPManager;
   mcpTools: Tool[];
+  git: string | null;
+  ide: IDE | null;
+  userPrompts: string[];
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName || PRODUCT_NAME;
@@ -44,11 +52,24 @@ export class Context {
     this.pluginManager = opts.pluginManager;
     this.mcpManager = opts.mcpManager;
     this.mcpTools = opts.mcpTools;
+    this.git = opts.git;
+    this.ide = opts.ide;
+    this.userPrompts = [];
   }
 
   static async create(opts: CreateContextOpts) {
     const context = await createContext(opts);
     return context;
+  }
+
+  addUserPrompt(prompt: string) {
+    this.userPrompts.push(prompt);
+  }
+
+  async buildSystemPrompts() {
+    // TODO: improve performance by caching
+    const systemPromptBuilder = new SystemPromptBuilder(this);
+    return await systemPromptBuilder.buildSystemPrompts();
   }
 
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {
@@ -60,6 +81,7 @@ export class Context {
 
   async destroy() {
     await this.mcpManager.destroy();
+    await this.ide?.disconnect();
   }
 }
 
@@ -111,12 +133,31 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   debug('mcpManager created');
   debug('mcpTools', mcpTools);
 
+  const gitStatus = await getGitStatus({ cwd: opts.cwd });
+  debug('git status', gitStatus);
+
+  let ide: IDE | null = null;
+  const ide2 = new IDE();
+  const idePort = await ide2.findPort();
+  debug('ide port', idePort);
+  if (idePort) {
+    try {
+      await ide2.connect();
+      ide = ide2;
+      debug('ide connected');
+    } catch (e) {
+      debug('Failed to connect to IDE');
+    }
+  }
+
   return new Context({
     ...opts,
     config: resolvedConfig,
     pluginManager,
     mcpManager,
     mcpTools,
+    git: gitStatus,
+    ide,
   });
 }
 

@@ -56,6 +56,7 @@ export async function run(opts: RunOpts) {
       });
     }
     if (prompt) {
+      opts.context.addUserPrompt(prompt);
       const result = await store.actions.query(prompt);
       if (!opts.plan) {
         return result;
