@@ -26,7 +26,10 @@ export interface AiContextNodeConfig {
   aiContextId: string;
   displayTextToValue: (text: string) => string;
   pickInfo: (regExpExecArray: RegExpExecArray) => AiContextNodeInfo;
-  render: (info: AiContextNodeInfo, onClose?: () => void) => JSX.Element;
+  render: (args: {
+    info: AiContextNodeInfo;
+    onClose?: () => void;
+  }) => JSX.Element;
 }
 
 export interface AiContextCacheNode {

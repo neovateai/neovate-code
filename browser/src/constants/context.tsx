@@ -22,8 +22,12 @@ export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
       value: regExpExecArray[0],
       displayText: regExpExecArray.groups?.value || '',
     }),
-    render: ({ displayText, value }, onClose) => (
-      <FileContextTag key={value} displayText={displayText} onClose={onClose} />
+    render: ({ info, onClose }) => (
+      <FileContextTag
+        key={info.value}
+        displayText={info.displayText}
+        onClose={onClose}
+      />
     ),
   },
   {
@@ -35,8 +39,12 @@ export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
       value: regExpExecArray[0],
       displayText: regExpExecArray.groups?.value || '',
     }),
-    render: ({ displayText, value }, onClose) => (
-      <CodeContextTag key={value} displayText={displayText} onClose={onClose} />
+    render: ({ info, onClose }) => (
+      <CodeContextTag
+        key={info.value}
+        displayText={info.displayText}
+        onClose={onClose}
+      />
     ),
   },
   {
@@ -48,10 +56,10 @@ export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
       value: regExpExecArray[0],
       displayText: regExpExecArray.groups?.value || '',
     }),
-    render: ({ displayText, value }, onClose) => (
+    render: ({ info, onClose }) => (
       <KnowledgeContextTag
-        key={value}
-        displayText={displayText}
+        key={info.value}
+        displayText={info.displayText}
         onClose={onClose}
       />
     ),

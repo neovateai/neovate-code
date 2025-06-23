@@ -17,7 +17,7 @@ export function renderContextTag(
     return null;
   }
 
-  return config.render({ displayText, value }, onClose);
+  return config.render({ info: { displayText, value }, onClose });
 }
 
 const SenderHeader: React.FC = () => {
