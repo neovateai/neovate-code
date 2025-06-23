@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
+import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
 import type { ContextItem } from '@/types/context';
 import LexicalTextArea from '../ChatSender/LexicalTextArea';
 import { LexicalTextAreaContext } from '../ChatSender/LexicalTextAreaContext';

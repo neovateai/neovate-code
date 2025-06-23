@@ -3,6 +3,7 @@ import {
   CodeOutlined,
   FileOutlined,
   FileSearchOutlined,
+  FolderOutlined,
 } from '@ant-design/icons';
 import { Suggestion } from '@ant-design/x';
 import { type GetProp } from 'antd';
@@ -33,7 +34,7 @@ export const useSuggestion = (
           ...fileList.map((file) => ({
             label: file.path,
             value: file.path,
-            icon: <FileOutlined />,
+            icon: file.type === 'file' ? <FileOutlined /> : <FolderOutlined />,
             disabled: selectedValues?.includes(file.path),
           })),
         ],

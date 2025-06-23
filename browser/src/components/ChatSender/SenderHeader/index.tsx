@@ -1,7 +1,7 @@
 import { Sender } from '@ant-design/x';
 import { Flex } from 'antd';
 import { useSnapshot } from 'valtio';
-import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
+import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
 import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';
 import AddContext from '../AddContext';

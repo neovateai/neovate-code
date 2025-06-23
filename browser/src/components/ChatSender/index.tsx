@@ -9,7 +9,7 @@ import { Flex, type GetProp } from 'antd';
 import { createStyles } from 'antd-style';
 import { useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
-import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/aiContextNodeConfig';
+import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
 import { ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
@@ -86,8 +86,6 @@ const ChatSender: React.FC = () => {
   // 编辑器中的Context不去重，实际挂载时再去重
   const { suggestions, getTypeByValue, getFileByValue } =
     useSuggestion(contextSearchInput);
-
-  // TODO 发送给大模型用plainText，展示用inputValue
 
   // 处理输入变化
   const onChange = (value: string) => {
