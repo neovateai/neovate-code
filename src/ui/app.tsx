@@ -91,12 +91,15 @@ function ToolMessage({ message }: { message: ToolMessage }) {
     const result = message.content.result;
     const toolName = message.content.toolName;
     const success = result.success;
-    const data = result.data;
     switch (toolName) {
       case 'read':
         if (success) {
-          const lines = data.totalLines;
+          const lines = result.data.totalLines;
           return `Read ${lines} lines.`;
+        }
+      case 'bash':
+        if (success) {
+          return result.output.trim();
         }
       default:
         break;
