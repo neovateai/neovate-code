@@ -1,17 +1,17 @@
 import { Config } from '../../config';
 
+export interface ModuleIframeView {
+  type: 'iframe';
+  src: string;
+}
+
+export type ModuleView = ModuleIframeView;
+
 export interface CustomTab {
-  // unique identifier
-  name: 'knowledge';
-  // title to display in the tab
-  title: 'Knowledge';
-  // any icon from Iconify, or a URL to an image
-  icon: 'carbon:book';
-  // iframe view
-  view: {
-    type: 'iframe';
-    src: '/knowledge';
-  };
+  name: string;
+  title: string;
+  icon: string;
+  view: ModuleView;
 }
 
 export interface ContextMenuItem {
