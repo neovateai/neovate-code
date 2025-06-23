@@ -155,6 +155,19 @@ export const PluginSchema = z.object({
     )
     .optional(),
   env: z.function(z.tuple([]), z.record(z.string(), z.string())).optional(),
+  model: z
+    .function(
+      z.tuple([
+        z.object({
+          modelName: z.string(),
+          aisdk: z.any(),
+          createOpenAI: z.any(),
+          createDeepSeek: z.any(),
+        }),
+      ]),
+      z.promise(z.any()),
+    )
+    .optional(),
 });
 
 type InferedPlugin = z.infer<typeof PluginSchema>;

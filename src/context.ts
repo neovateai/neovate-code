@@ -1,4 +1,6 @@
-import { Tool } from '@openai/agents';
+import { createDeepSeek } from '@ai-sdk/deepseek';
+import { createOpenAI } from '@ai-sdk/openai';
+import { ModelProvider, Tool } from '@openai/agents';
 import createDebug from 'debug';
 import { createRequire } from 'module';
 import resolve from 'resolve';
@@ -12,7 +14,9 @@ import {
   PluginHookType,
   PluginManager,
 } from './plugin';
+import { getModel } from './provider';
 import { SystemPromptBuilder } from './system-prompt-builder';
+import { aisdk } from './utils/ai-sdk';
 import { getGitStatus } from './utils/git';
 
 const debug = createDebug('takumi:context');
@@ -60,6 +64,22 @@ export class Context {
   static async create(opts: CreateContextOpts) {
     const context = await createContext(opts);
     return context;
+  }
+
+  getModelProvider(): ModelProvider {
+    return {
+      getModel: async (modelName?: string) => {
+        const model = await this.apply({
+          hook: 'model',
+          args: [{ modelName, aisdk, createOpenAI, createDeepSeek }],
+          type: PluginHookType.Series,
+        });
+        if (model) {
+          return model;
+        }
+        return await getModel(modelName);
+      },
+    };
   }
 
   addUserPrompt(prompt: string) {

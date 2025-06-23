@@ -5,7 +5,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createXai } from '@ai-sdk/xai';
 import { ModelProvider } from '@openai/agents';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { aisdk } from './utils/ai-sdk';
+import { AiSdkModel, aisdk } from './utils/ai-sdk';
 
 const THINKING_MODELS = [
   'o3',
@@ -85,74 +85,75 @@ const OPENROUTER_MODELS = [
 
 export function getDefaultModelProvider(): ModelProvider {
   return {
-    getModel: async (modelName?: string) => {
-      if (!modelName) {
-        throw new Error('Model name is required');
-      }
-      modelName = MODEL_ALIAS[modelName] ?? modelName;
-      // openai
-      if (OPENAI_MODELS.includes(modelName)) {
-        const openai = createOpenAI({
-          baseURL: process.env.OPENAI_BASE_URL,
-          apiKey: process.env.OPENAI_API_KEY,
-        });
-        return aisdk(openai(modelName));
-      }
-      // google
-      if (GOOGLE_MODELS.includes(modelName)) {
-        const google = createGoogleGenerativeAI({
-          baseURL: process.env.GOOGLE_BASE_URL,
-          apiKey:
-            process.env.GOOGLE_API_KEY ||
-            process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-        });
-        return aisdk(google(modelName));
-        // return aisdk(
-        //   createOpenAI({
-        //     baseURL: process.env.GOOGLE_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/',
-        //     apiKey:
-        //       process.env.GOOGLE_API_KEY ||
-        //       process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-        //   })(modelName),
-        // );
-      }
-      // deepseek
-      if (DEEPSEEK_MODELS.includes(modelName)) {
-        const deepseek = createDeepSeek({
-          baseURL: process.env.DEEPSEEK_BASE_URL,
-          apiKey: process.env.DEEPSEEK_API_KEY,
-        });
-        return aisdk(deepseek(modelName));
-      }
-      // xai
-      if (XAI_MODELS.includes(modelName)) {
-        const xai = createXai({
-          baseURL: process.env.XAI_BASE_URL,
-          apiKey: process.env.XAI_API_KEY || process.env.GROK_API_KEY,
-        });
-        return aisdk(xai(modelName));
-      }
-      if (ANTHROPIC_MODELS.includes(modelName)) {
-        const anthropic = createAnthropic({
-          baseURL: process.env.ANTHROPIC_BASE_URL,
-          apiKey: process.env.ANTHROPIC_API_KEY,
-        });
-        return aisdk(anthropic(modelName));
-      }
-      // openrouter
-      if (modelName.startsWith('openrouter/')) {
-        modelName = modelName.replace('openrouter/', '');
-        if (OPENROUTER_MODELS.includes(modelName)) {
-          const openrouter = createOpenRouter({
-            baseURL: process.env.OPEN_ROUTER_BASE_URL,
-            apiKey: process.env.OPEN_ROUTER_API_KEY,
-          });
-          return aisdk(openrouter(modelName));
-        }
-      }
-      throw new Error(`Model ${modelName} is not supported`);
-    },
+    getModel,
   };
+}
+
+export async function getModel(modelName?: string): Promise<AiSdkModel> {
+  if (!modelName) {
+    throw new Error('Model name is required');
+  }
+  modelName = MODEL_ALIAS[modelName] ?? modelName;
+  // openai
+  if (OPENAI_MODELS.includes(modelName)) {
+    const openai = createOpenAI({
+      baseURL: process.env.OPENAI_BASE_URL,
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+    return aisdk(openai(modelName));
+  }
+  // google
+  if (GOOGLE_MODELS.includes(modelName)) {
+    const google = createGoogleGenerativeAI({
+      baseURL: process.env.GOOGLE_BASE_URL,
+      apiKey:
+        process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    });
+    return aisdk(google(modelName));
+    // return aisdk(
+    //   createOpenAI({
+    //     baseURL: process.env.GOOGLE_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/',
+    //     apiKey:
+    //       process.env.GOOGLE_API_KEY ||
+    //       process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+    //   })(modelName),
+    // );
+  }
+  // deepseek
+  if (DEEPSEEK_MODELS.includes(modelName)) {
+    const deepseek = createDeepSeek({
+      baseURL: process.env.DEEPSEEK_BASE_URL,
+      apiKey: process.env.DEEPSEEK_API_KEY,
+    });
+    return aisdk(deepseek(modelName));
+  }
+  // xai
+  if (XAI_MODELS.includes(modelName)) {
+    const xai = createXai({
+      baseURL: process.env.XAI_BASE_URL,
+      apiKey: process.env.XAI_API_KEY || process.env.GROK_API_KEY,
+    });
+    return aisdk(xai(modelName));
+  }
+  if (ANTHROPIC_MODELS.includes(modelName)) {
+    const anthropic = createAnthropic({
+      baseURL: process.env.ANTHROPIC_BASE_URL,
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+    return aisdk(anthropic(modelName));
+  }
+  // openrouter
+  if (modelName.startsWith('openrouter/')) {
+    modelName = modelName.replace('openrouter/', '');
+    if (OPENROUTER_MODELS.includes(modelName)) {
+      const openrouter = createOpenRouter({
+        baseURL: process.env.OPEN_ROUTER_BASE_URL,
+        apiKey: process.env.OPEN_ROUTER_API_KEY,
+      });
+      return aisdk(openrouter(modelName));
+    }
+  }
+  throw new Error(`Model ${modelName} is not supported`);
 }
 
 export function isReasoningModel(modelName: string) {

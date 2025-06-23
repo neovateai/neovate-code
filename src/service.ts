@@ -2,7 +2,6 @@ import {
   Agent,
   AgentInputItem,
   FunctionCallItem,
-  ModelProvider,
   Runner,
 } from '@openai/agents';
 import { randomUUID } from 'crypto';
@@ -11,7 +10,6 @@ import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
 import { Context } from './context';
 import { PluginHookType } from './plugin';
-import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
 import { createBashTool } from './tools/bash';
 import { createEditTool } from './tools/edit';
@@ -29,7 +27,6 @@ export interface ServiceOpts {
   context: Context;
   agentType: AgentType;
   id?: string;
-  modelProvider?: ModelProvider;
 }
 
 export interface ServiceRunOpts {
@@ -127,7 +124,7 @@ export class Service {
   ) {
     try {
       const runner = new Runner({
-        modelProvider: this.opts.modelProvider || getDefaultModelProvider(),
+        modelProvider: this.opts.context.getModelProvider(),
         modelSettings: {
           providerData: {
             providerMetadata: {

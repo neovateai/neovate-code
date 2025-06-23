@@ -1,4 +1,4 @@
-import { ModelProvider, withTrace } from '@openai/agents';
+import { withTrace } from '@openai/agents';
 import { randomUUID } from 'crypto';
 import { format } from 'date-fns';
 import createDebug from 'debug';
@@ -20,7 +20,6 @@ const debug = createDebug('takumi:commands:default');
 
 export interface RunOpts {
   prompt: string;
-  modelProvider?: ModelProvider;
   plan?: boolean;
   context: Context;
 }
@@ -31,7 +30,6 @@ export async function run(opts: RunOpts) {
     debug('prompt', prompt);
     const commonServiceOpts = {
       context: opts.context,
-      modelProvider: opts.modelProvider,
     };
     const service = new Service({
       agentType: 'code',

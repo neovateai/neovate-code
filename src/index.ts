@@ -7,6 +7,8 @@ const debug = createDebug('takumi:index');
 
 export { Agent, Runner } from '@openai/agents';
 export { checkAndUpdate as _checkAndUpdate } from 'upgear';
+export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
+export { createDeepSeek as _createDeepSeek } from '@ai-sdk/deepseek';
 
 export interface RunCliOpts {
   cwd: string;
