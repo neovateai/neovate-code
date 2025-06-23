@@ -1,27 +1,12 @@
 import { DownOutlined, FolderOutlined, RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
-import type { ToolMessage, UIMessageType } from '@/types/message';
+import type { ToolMessage } from '@/types/message';
 import InnerList, { type ListItem } from './InnerList';
 
-const mockData: ToolMessage = {
-  type: 'tool' as UIMessageType.Tool,
-  toolCallId: '6128b73f-e6aa-48c8-8240-c0e1c86c54d2',
-  toolName: 'ls',
-  args: {
-    dir_path: '/Users/taohongyu/Desktop/takumi',
-  },
-  state: 'result',
-  step: 1,
-  result: {
-    output: `- /Users/taohongyu/Desktop/takumi/\n  - CHANGELOG.md\n  - CONTRIBUTING.md\n  - LICENSE\n  - README.md\n  - TAKUMI.md\n  - api-extractor.json\n  - browser/\n  - docs/\n  - fixtures/\n  - src/\n  - vendor/\n`,
-  },
-};
-
 const parseLsResult = (result: unknown): ListItem[] => {
-  const output = (result as { output?: string })?.output;
-  if (typeof output !== 'string' || !output) return [];
+  if (typeof result !== 'string' || !result) return [];
 
-  const lines = output.trim().split('\n');
+  const lines = result.trim().split('\n');
   lines.shift(); // Remove the root directory path line
 
   return lines
@@ -40,9 +25,10 @@ const parseLsResult = (result: unknown): ListItem[] => {
 };
 
 export default function LsRender({ message }: { message?: ToolMessage }) {
-  const data = message || mockData;
-  const dirPath = (data.args?.dir_path as string) || '';
-  const items = parseLsResult(data.result);
+  if (!message) return null;
+
+  const dirPath = (message.args?.dir_path as string) || '';
+  const items = parseLsResult(message.result);
 
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -58,8 +44,12 @@ export default function LsRender({ message }: { message?: ToolMessage }) {
         className="flex items-center gap-2 cursor-pointer"
         onClick={toggleExpand}
       >
-        <span className="transition-transform duration-300">
-          {isExpanded ? <DownOutlined /> : <RightOutlined />}
+        <span
+          className={`transition-transform duration-300 ease-in-out ${
+            isExpanded ? 'rotate-90' : ''
+          }`}
+        >
+          <RightOutlined />
         </span>
         <FolderOutlined />
         <span>

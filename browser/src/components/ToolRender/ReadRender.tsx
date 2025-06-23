@@ -1,3 +1,6 @@
+import { EyeOutlined } from '@ant-design/icons';
+import type { ToolMessage } from '@/types/message';
+
 const mockData = {
   type: 'tool',
   toolCallId: '34d6fe69-7540-4741-bb22-7a609a945faf',
@@ -18,6 +21,17 @@ const mockData = {
   },
 };
 
-export default function ReadRender() {
-  return <div>ReadRender</div>;
+export default function ReadRender({ message }: { message?: ToolMessage }) {
+  if (!message) return null;
+  const { args, result } = message;
+
+  return (
+    <div className="flex items-center gap-2 text-sm text-gray-500">
+      <EyeOutlined />
+      <div>read {args?.file_path as string}</div>
+      <div className="flex-1 text-right">
+        {(result?.data as { totalLines?: number })?.totalLines} lines
+      </div>
+    </div>
+  );
 }

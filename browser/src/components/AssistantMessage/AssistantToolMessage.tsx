@@ -14,13 +14,13 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
 
   switch (toolName) {
     case 'grep':
-      return <GrepRender />;
+      return <GrepRender message={message} />;
     case 'read':
-      return <ReadRender />;
+      return <ReadRender message={message} />;
     case 'glob':
-      return <GlobRender />;
+      return <GlobRender message={message} />;
     case 'ls':
-      return <LsRender />;
+      return <LsRender message={message} />;
   }
 
   // 控制结果展开/收起的状态，默认收起
