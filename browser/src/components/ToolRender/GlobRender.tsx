@@ -68,7 +68,7 @@ export default function GlobRender({ message }: { message?: ToolMessage }) {
         <span>{toolName}</span>
       </div>
       <div
-        className={`pl-6 mt-1 overflow-hidden transition-[max-height] duration-500 ease-in-out ${
+        className={`mt-1 overflow-hidden transition-[max-height] duration-500 ease-in-out ${
           isExpanded ? 'max-h-screen' : 'max-h-0'
         }`}
       >
