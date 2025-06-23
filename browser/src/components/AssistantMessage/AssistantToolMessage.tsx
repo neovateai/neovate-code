@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { ToolMessage } from '@/types/message';
 import BashRender from '../ToolRender/BashRender';
+import FetchRender from '../ToolRender/FetchRender';
 import GlobRender from '../ToolRender/GlobRender';
 import GrepRender from '../ToolRender/GrepRender';
 import LsRender from '../ToolRender/LsRender';
@@ -24,6 +25,8 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
       return <LsRender message={message} />;
     case 'bash':
       return <BashRender message={message} />;
+    case 'fetch':
+      return <FetchRender message={message} />;
   }
 
   // 控制结果展开/收起的状态，默认收起
