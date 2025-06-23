@@ -5,6 +5,7 @@ export interface ContextItem {
   value: string;
   displayText: string;
   context?: any;
+  [key: string]: any;
 }
 
 export interface ContextFileType {

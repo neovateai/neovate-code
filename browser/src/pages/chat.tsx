@@ -11,6 +11,7 @@ import { Button, type GetProp, Spin } from 'antd';
 import { createStyles } from 'antd-style';
 import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
+import { UserMessage, UserMessageFooter } from '@/components/UserMessage';
 import Welcome from '@/components/Welcome';
 import ChatProvider, { useChatState } from '@/hooks/provider';
 
@@ -51,7 +52,8 @@ const Chat: React.FC = () => {
   const items = messages?.map((i) => {
     return {
       ...i,
-      content: i.role === 'assistant' ? i : i.content,
+      // content: i.role === 'assistant' ? i : i.content,
+      content: i,
       typing: status === 'submitted' ? { step: 20, interval: 150 } : false,
     };
   });
@@ -61,6 +63,12 @@ const Chat: React.FC = () => {
       avatar: {
         icon: <UserOutlined />,
         style: { background: '#87d068' },
+      },
+      messageRender(message) {
+        return <UserMessage message={message} />;
+      },
+      footer(message) {
+        return <UserMessageFooter message={message} />;
       },
     },
     assistant: {

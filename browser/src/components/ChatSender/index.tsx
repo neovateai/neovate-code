@@ -80,7 +80,8 @@ const ChatSender: React.FC = () => {
   const [insertNodePosition, setInsertNodePosition] = useState(0);
   const [contextSearchInput, setContextSearchInput] = useState('');
   const prevInputValue = useRef<string>(state.prompt);
-  const { prompt } = useSnapshot(state);
+  const { prompt, plainText } = useSnapshot(state);
+  const { selectContexts, editorContexts } = context.state;
 
   // 编辑器中的Context不去重，实际挂载时再去重
   const { suggestions, getTypeByValue, getFileByValue } =
@@ -94,7 +95,7 @@ const ChatSender: React.FC = () => {
   };
 
   const handleSubmit = () => {
-    onQuery(prompt);
+    onQuery(prompt, plainText, [...selectContexts, ...editorContexts]);
     actions.updatePrompt('');
   };
 

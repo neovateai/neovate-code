@@ -1,10 +1,15 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useChat } from '@ai-sdk/react';
 import { createContext, useContext } from 'react';
+import type { ContextItem } from '@/types/context';
 
 type ChatState = ReturnType<typeof useChat> & {
   loading: boolean;
-  onQuery: (prompt: string) => void;
+  onQuery: (
+    content: string,
+    plainText: string,
+    contextItems: ContextItem[],
+  ) => void;
 };
 
 export const ChatContext = createContext<ChatState | null>(null);
@@ -28,10 +33,20 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
 
   const loading = chatState.status === 'submitted';
 
-  const onQuery = async (prompt: string) => {
+  const onQuery = async (
+    originalContent: string,
+    plainText: string,
+    contextItems: ContextItem[],
+  ) => {
     chatState.append({
       role: 'user',
-      content: prompt,
+      content: plainText,
+      annotations: [
+        {
+          originalContent,
+          contextItems,
+        },
+      ],
     });
   };
 

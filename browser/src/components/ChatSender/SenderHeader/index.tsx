@@ -6,7 +6,10 @@ import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';
 import AddContext from '../AddContext';
 
-function renderContextTag(contextItem: ContextItem, onClose?: () => void) {
+export function renderContextTag(
+  contextItem: ContextItem,
+  onClose?: () => void,
+) {
   const { type, displayText, value } = contextItem;
   const config = AI_CONTEXT_NODE_CONFIGS.find((config) => config.type === type);
 
@@ -18,7 +21,7 @@ function renderContextTag(contextItem: ContextItem, onClose?: () => void) {
 }
 
 const SenderHeader: React.FC = () => {
-  const { editorContexts, selectContexts } = useSnapshot(context.state);
+  const { selectContexts, editorContexts } = useSnapshot(context.state);
 
   return (
     <Sender.Header
