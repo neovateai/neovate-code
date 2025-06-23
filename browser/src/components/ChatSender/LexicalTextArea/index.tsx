@@ -5,6 +5,7 @@ import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import type { GetProps, GetRef, Input } from 'antd';
+import { createStyles } from 'antd-style';
 import classNames from 'classnames';
 import { $getRoot, type LexicalEditor } from 'lexical';
 import React, {
@@ -22,7 +23,6 @@ import EnterEventPlugin from './EnterEventPlugin';
 import PastePlugin from './PastePlugin';
 import { PlaceholderPlugin } from './PlaceholderPlugin';
 import RenderValuePlugin from './RenderValuePlugin';
-import './index.less';
 
 type Props = GetProps<typeof Input.TextArea>;
 
@@ -57,6 +57,30 @@ const createSyntheticEvent = (
   };
 };
 
+const useStyle = createStyles(({ css }) => {
+  return {
+    textAreaEditable: css`
+      flex: 1;
+
+      &:focus-visible {
+        outline: none;
+      }
+
+      p {
+        margin: 6px 0;
+        line-height: 22px;
+      }
+
+      &:not(:focus):before {
+        position: absolute;
+        line-height: 30px;
+        opacity: 0.5;
+        content: attr(placeholder);
+      }
+    `,
+  };
+});
+
 const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
   const {
     value,
@@ -72,6 +96,8 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
   const editorRef = useRef<LexicalEditor | null>(null);
   const contentEditableRef = useRef<HTMLDivElement | null>(null);
   const { onEnterPress, namespace } = useContext(LexicalTextAreaContext);
+
+  const { styles } = useStyle();
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -130,7 +156,7 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
             onMouseUp={(e) => {
               e.stopPropagation();
             }}
-            className={classNames(className, 'lexical-text-area-ediable')}
+            className={classNames(styles.textAreaEditable, className)}
           />
         }
         ErrorBoundary={LexicalErrorBoundary}
