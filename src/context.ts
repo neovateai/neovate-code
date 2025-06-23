@@ -3,6 +3,7 @@ import { createRequire } from 'module';
 import resolve from 'resolve';
 import { Config, ConfigManager } from './config';
 import { PRODUCT_NAME } from './constants';
+import { MCPManager } from './mcp';
 import {
   Plugin,
   PluginApplyOpts,
@@ -13,8 +14,9 @@ import {
 const debug = createDebug('takumi:context');
 
 type ContextOpts = CreateContextOpts & {
-  pluginManager: PluginManager;
   config: Config;
+  pluginManager: PluginManager;
+  mcpManager: MCPManager;
 };
 
 interface CreateContextOpts {
@@ -30,12 +32,14 @@ export class Context {
   version: string;
   config: Config;
   pluginManager: PluginManager;
+  mcpManager: MCPManager;
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName || PRODUCT_NAME;
     this.version = opts.version || '0.0.0';
     this.config = opts.config;
     this.pluginManager = opts.pluginManager;
+    this.mcpManager = opts.mcpManager;
   }
 
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {
@@ -43,6 +47,10 @@ export class Context {
       ...applyOpts,
       pluginContext: this,
     });
+  }
+
+  async destroy() {
+    await this.mcpManager.destroy();
   }
 }
 
@@ -89,10 +97,14 @@ export async function createContext(opts: CreateContextOpts): Promise<Context> {
     type: PluginHookType.Series,
   });
 
+  const mcpManager = new MCPManager(resolvedConfig.mcpServers);
+  await mcpManager.connect();
+
   return new Context({
     ...opts,
     config: resolvedConfig,
     pluginManager,
+    mcpManager,
   });
 }
 

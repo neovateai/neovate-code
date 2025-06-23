@@ -31,7 +31,6 @@ interface RunCompletionOpts extends CreateServerOpts {
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function runPlan(opts: RunCompletionOpts) {
-  const services: Service[] = [];
   const { dataStream } = opts;
 
   return await withTrace(opts.traceName, async () => {
@@ -40,7 +39,6 @@ export async function runPlan(opts: RunCompletionOpts) {
         ...opts,
         agentType: 'plan',
       });
-      services.push(service);
 
       let input: AgentInputItem[] = [
         {
@@ -84,13 +82,12 @@ export async function runPlan(opts: RunCompletionOpts) {
       });
       assert(result.finalText, 'No plan found');
     } finally {
-      await Promise.all(services.map((service) => service.destroy()));
+      await opts.context.destroy();
     }
   });
 }
 
 export async function runCode(opts: RunCompletionOpts) {
-  const services: Service[] = [];
   const { dataStream } = opts;
 
   return await withTrace(opts.traceName, async () => {
@@ -99,7 +96,6 @@ export async function runCode(opts: RunCompletionOpts) {
         ...opts,
         agentType: 'code',
       });
-      services.push(service);
 
       let input: AgentInputItem[] = [
         {
@@ -172,7 +168,7 @@ export async function runCode(opts: RunCompletionOpts) {
       });
       debug('result', result);
     } finally {
-      await Promise.all(services.map((service) => service.destroy()));
+      await opts.context.destroy();
     }
   });
 }

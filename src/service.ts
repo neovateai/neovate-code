@@ -25,8 +25,6 @@ import { createReadTool } from './tools/read';
 import { createWriteTool } from './tools/write';
 import { parseMessage } from './utils/parse-message';
 
-let mcpManager: MCPManager | null = null;
-
 export type AgentType = 'code' | 'plan';
 
 export interface ServiceOpts {
@@ -65,11 +63,6 @@ export class Service {
       return;
     }
     this.initialized = true;
-    const context = this.context;
-    if (!mcpManager) {
-      mcpManager = new MCPManager(context.config.mcpServers);
-      await mcpManager.connect();
-    }
     this.tools = new Tools(
       this.opts.agentType === 'code'
         ? await this.getCodeTools()
@@ -91,13 +84,6 @@ export class Service {
           });
   }
 
-  async destroy() {
-    if (mcpManager) {
-      await mcpManager.destroy();
-      mcpManager = null;
-    }
-  }
-
   async getPlanTools() {
     const context = this.context;
     return [
@@ -111,7 +97,7 @@ export class Service {
 
   async getCodeTools() {
     const context = this.context;
-    const mcpTools = await mcpManager!.getAllTools();
+    const mcpTools = await context.mcpManager.getAllTools();
     return [
       createWriteTool({ context }),
       createReadTool({ context }),

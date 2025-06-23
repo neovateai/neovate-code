@@ -27,7 +27,6 @@ export interface RunOpts {
 
 export async function run(opts: RunOpts) {
   const traceName = `${opts.context.productName}-default}`;
-  const services: Service[] = [];
   return await withTrace(traceName, async () => {
     try {
       let prompt = opts.prompt;
@@ -40,12 +39,10 @@ export async function run(opts: RunOpts) {
         agentType: 'code',
         ...commonServiceOpts,
       });
-      services.push(service);
       const planService = new Service({
         agentType: 'plan',
         ...commonServiceOpts,
       });
-      services.push(planService);
       const store = createStore({
         productName: opts.context.productName,
         version: opts.context.version,
@@ -76,7 +73,7 @@ export async function run(opts: RunOpts) {
         return null;
       }
     } finally {
-      await Promise.all(services.map((service) => service.destroy()));
+      await opts.context.destroy();
     }
   });
 }
