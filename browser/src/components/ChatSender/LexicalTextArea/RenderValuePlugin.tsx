@@ -164,8 +164,6 @@ const RenderValuePlugin = (props: Props) => {
             // 如果前后都是文本节点，记录前一个文本节点的长度
             const prevTextLength = prevNode.length;
 
-            // console.log(prevNode, prevTextLength, 'prevTextLength');
-
             // 获取合并后的文本节点（它将位于删除位置）
             const mergedTextNode = paragraph.getChildren()[targetIndex - 1];
             if (mergedTextNode && mergedTextNode.getType() === 'text') {

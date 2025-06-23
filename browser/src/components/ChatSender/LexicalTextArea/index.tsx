@@ -7,7 +7,7 @@ import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import type { GetProps, GetRef, Input } from 'antd';
 import { createStyles } from 'antd-style';
 import classNames from 'classnames';
-import { $getRoot, type LexicalEditor } from 'lexical';
+import { $createParagraphNode, $getRoot, type LexicalEditor } from 'lexical';
 import React, {
   type KeyboardEvent,
   forwardRef,
@@ -76,6 +76,8 @@ const useStyle = createStyles(({ css }) => {
         position: absolute;
         opacity: 0.5;
         content: attr(placeholder);
+        margin: 6px 0;
+        line-height: 22px;
       }
     `,
   };
@@ -140,6 +142,9 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
         nodes: [AiContextNode],
         editorState(editor) {
           editorRef.current = editor;
+          editor.update(() => {
+            $getRoot().append($createParagraphNode());
+          });
         },
       }}
     >

@@ -98,6 +98,12 @@ const ChatSender: React.FC = () => {
     actions.updatePrompt('');
   };
 
+  const handleEnterPress = () => {
+    if (prompt.trim()) {
+      handleSubmit();
+    }
+  };
+
   return (
     <>
       {/* 🌟 提示词 */}
@@ -116,7 +122,7 @@ const ChatSender: React.FC = () => {
       />
       <LexicalTextAreaContext.Provider
         value={{
-          onEnterPress: handleSubmit,
+          onEnterPress: handleEnterPress,
           onChangeNodes: (prevNodes, nextNodes) => {
             // 只处理删除节点的情况，新增无需处理
             differenceWith(prevNodes, nextNodes, (prev, next) => {
