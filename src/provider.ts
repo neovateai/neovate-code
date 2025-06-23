@@ -35,7 +35,15 @@ const MODEL_ALIAS: Record<string, string> = {
   'openrouter/sonnet': 'openrouter/anthropic/claude-sonnet-4',
   'openrouter/r1': 'openrouter/deepseek/deepseek-r1-0528',
   'openrouter/deepseek': 'openrouter/deepseek/deepseek-chat-v3-0324',
-  // 'groq/qwq': 'groq/qwen-qwq-32b',
+  'aihubmix/sonnet-3.5': 'aihubmix/claude-3-5-sonnet-20241022',
+  'aihubmix/sonnet-3.7': 'aihubmix/claude-3-7-sonnet-20250219',
+  'aihubmix/sonnet': 'aihubmix/claude-sonnet-4-20250514',
+  'aihubmix/opus': 'aihubmix/claude-opus-4-20250514',
+  'aihubmix/r1': 'aihubmix/DeepSeek-R1',
+  'aihubmix/deepseek': 'aihubmix/DeepSeek-V3',
+  'aihubmix/gemini': 'aihubmix/gemini-2.5-pro',
+  'aihubmix/flash': 'aihubmix/gemini-2.5-flash',
+  'aihubmix/flash-lite': 'aihubmix/gemini-2.5-flash-lite-preview-06-17',
 };
 const OPENAI_MODELS = [
   'gpt-4.1',
@@ -61,10 +69,32 @@ const XAI_MODELS = [
   'grok-3-mini-fast-beta',
 ];
 const ANTHROPIC_MODELS = [
-  'claude-3-5-sonnet-20241022',
+  'claude-opus-4-20250514',
+  'claude-sonnet-4-20250514',
   'claude-3-7-sonnet-20250219',
   'claude-3-7-sonnet-20250219-thinking',
+  'claude-3-5-sonnet-20241022',
+];
+const AIHUBMIX_MODELS = [
+  'gemini-2.5-pro',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite-preview-06-17',
+  'DeepSeek-R1',
+  'DeepSeek-V3',
+  'claude-opus-4-20250514',
   'claude-sonnet-4-20250514',
+  'claude-3-7-sonnet-20250219',
+  'claude-3-5-sonnet-20241022',
+  'gpt-4.1',
+  'gpt-4',
+  'gpt-4o',
+  'gpt-3.5-turbo',
+  'o1',
+  'o1-mini',
+  'o1-pro',
+  'o3',
+  'o3-pro',
+  'o3-mini',
 ];
 const OPENROUTER_MODELS = [
   'anthropic/claude-3.5-sonnet',
@@ -80,6 +110,7 @@ const OPENROUTER_MODELS = [
   'openai/o1-mini',
   'openai/o1-pro',
   'openai/o3',
+  'openai/o3-pro',
   'openai/o3-mini',
 ];
 
@@ -141,6 +172,17 @@ export async function getModel(modelName?: string): Promise<AiSdkModel> {
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
     return aisdk(anthropic(modelName));
+  }
+  // aihubmix
+  if (modelName.startsWith('aihubmix/')) {
+    modelName = modelName.replace('aihubmix/', '');
+    if (AIHUBMIX_MODELS.includes(modelName)) {
+      const aihubmix = createOpenAI({
+        baseURL: 'https://aihubmix.com/v1',
+        apiKey: process.env.AIHUBMIX_API_KEY,
+      });
+      return aisdk(aihubmix(modelName));
+    }
   }
   // openrouter
   if (modelName.startsWith('openrouter/')) {
