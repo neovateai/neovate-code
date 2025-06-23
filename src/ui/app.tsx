@@ -101,6 +101,16 @@ function ToolMessage({ message }: { message: ToolMessage }) {
         if (success) {
           return result.output.trim();
         }
+      case 'edit':
+        return result;
+      case 'write':
+        return result;
+      case 'ls':
+        return result;
+      case 'fetch':
+        if (success) {
+          return result.data.result;
+        }
       default:
         break;
     }
