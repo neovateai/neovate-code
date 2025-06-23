@@ -23,7 +23,11 @@ import { parseMessage } from './utils/parse-message';
 
 export type AgentType = 'code' | 'plan';
 
-export interface ServiceOpts {
+export type ServiceOpts = CreateServiceOpts & {
+  tools: Tools;
+};
+
+export interface CreateServiceOpts {
   context: Context;
   agentType: AgentType;
   id?: string;
@@ -40,7 +44,7 @@ export interface ServiceRunResult {
 
 export class Service {
   private opts: ServiceOpts;
-  private tools?: Tools;
+  private tools: Tools;
   protected agent?: Agent;
   context: Context;
   history: AgentInputItem[] = [];
@@ -50,51 +54,54 @@ export class Service {
     this.opts = opts;
     this.id = opts.id || randomUUID();
     this.context = opts.context;
-    this.tools = new Tools(
-      this.opts.agentType === 'code'
-        ? this.#getCodeTools()
-        : this.#getPlanTools(),
-    );
-    const createAgentOpts = {
-      tools: this.tools,
-      context: this.context,
-    };
+    this.tools = opts.tools;
     this.agent =
       this.opts.agentType === 'code'
         ? createCodeAgent({
             model: this.context.config.model,
-            ...createAgentOpts,
+            tools: this.tools,
+            context: this.context,
           })
         : createPlanAgent({
             model: this.context.config.planModel,
-            ...createAgentOpts,
+            tools: this.tools,
+            context: this.context,
           });
   }
 
-  #getPlanTools() {
-    const context = this.context;
-    return [
+  static async create(opts: CreateServiceOpts) {
+    const context = opts.context;
+    const readonlyTools = [
       createReadTool({ context }),
       createLSTool({ context }),
       createGlobTool({ context }),
       createGrepTool({ context }),
       createFetchTool({ context }),
     ];
-  }
-
-  #getCodeTools() {
-    const context = this.context;
-    return [
+    const writeTools = [
       createWriteTool({ context }),
-      createReadTool({ context }),
-      createLSTool({ context }),
       createEditTool({ context }),
       createBashTool({ context }),
-      createGlobTool({ context }),
-      createGrepTool({ context }),
-      createFetchTool({ context }),
-      ...context.mcpTools,
     ];
+    const mcpTools = context.mcpTools;
+    const planTools = [...readonlyTools];
+    const codeTools = [...readonlyTools, ...writeTools, ...mcpTools];
+    let tools = opts.agentType === 'code' ? codeTools : planTools;
+    tools = await context.apply({
+      hook: 'tool',
+      args: [
+        {
+          agentType: opts.agentType,
+        },
+      ],
+      memo: tools,
+      type: PluginHookType.SeriesMerge,
+    });
+
+    return new Service({
+      ...opts,
+      tools: new Tools(tools),
+    });
   }
 
   async run(opts: ServiceRunOpts): Promise<ServiceRunResult> {

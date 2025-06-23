@@ -28,16 +28,14 @@ export async function run(opts: RunOpts) {
   try {
     let prompt = opts.prompt;
     debug('prompt', prompt);
-    const commonServiceOpts = {
-      context: opts.context,
-    };
-    const service = new Service({
+    const context = opts.context;
+    const service = await Service.create({
       agentType: 'code',
-      ...commonServiceOpts,
+      context,
     });
-    const planService = new Service({
+    const planService = await Service.create({
       agentType: 'plan',
-      ...commonServiceOpts,
+      context,
     });
     const store = createStore({
       productName: opts.context.productName,

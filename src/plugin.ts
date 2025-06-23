@@ -168,6 +168,16 @@ export const PluginSchema = z.object({
       z.promise(z.any()),
     )
     .optional(),
+  tool: z
+    .function(
+      z.tuple([
+        z.object({
+          agentType: z.enum(['code', 'plan']),
+        }),
+      ]),
+      z.promise(z.any()),
+    )
+    .optional(),
 });
 
 type InferedPlugin = z.infer<typeof PluginSchema>;
