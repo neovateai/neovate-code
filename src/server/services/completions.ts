@@ -114,22 +114,36 @@ export async function runCode(opts: RunCompletionOpts) {
         thinking: isReasoningModel(service.context.config.model),
         onTextDelta(text) {
           debug(`Text delta: ${text}`);
-          dataStream.write(formatDataStreamPart('text', text));
+          dataStream.writeMessageAnnotation({
+            type: 'text_delta',
+            text,
+          });
         },
         async onText(text) {
-          await delay(10);
-          debug(`Text: ${text}`);
           dataStream.writeMessageAnnotation({
             type: 'text',
             text,
           });
+          await delay(10);
+          debug(`Text: ${text}`);
+          dataStream.write(formatDataStreamPart('text', text));
         },
         onReasoning(text) {
           debug(`Reasoning: ${text}`);
+          dataStream.writeMessageAnnotation({
+            type: 'reasoning',
+            reasoning: text,
+          });
           dataStream.write(formatDataStreamPart('reasoning', text));
         },
         onToolUse(callId, name, params) {
           debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
+          dataStream.writeMessageAnnotation({
+            type: 'tool_call',
+            toolCallId: callId,
+            toolName: name,
+            args: params,
+          });
           dataStream.write(
             formatDataStreamPart('tool_call', {
               toolCallId: callId,
@@ -142,6 +156,12 @@ export async function runCode(opts: RunCompletionOpts) {
           debug(
             `Tool use result: ${name} with result ${JSON.stringify(result)}`,
           );
+          dataStream.writeMessageAnnotation({
+            type: 'tool_result',
+            toolCallId: callId,
+            toolName: name,
+            result: result,
+          });
           dataStream.write(
             formatDataStreamPart('tool_result', {
               toolCallId: callId,

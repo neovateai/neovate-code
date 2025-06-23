@@ -60,7 +60,7 @@ const useStyle = createStyles(({ token, css }) => {
 
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
-  const { loading, stop, append, onQuery } = useChatState();
+  const { isLoading, stop, append, onQuery } = useChatState();
   const [inputValue, setInputValue] = useState(state.prompt);
   const { suggestions } = useSuggestion();
 
@@ -122,7 +122,7 @@ const ChatSender: React.FC = () => {
                   icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
                 />
               }
-              loading={loading}
+              loading={isLoading}
               className={styles.sender}
               allowSpeech
               actions={(_, info) => {
@@ -131,7 +131,7 @@ const ChatSender: React.FC = () => {
                 return (
                   <Flex gap={4}>
                     <SpeechButton className={styles.speechButton} />
-                    {loading ? (
+                    {isLoading ? (
                       <LoadingButton type="default" />
                     ) : (
                       <SendButton type="primary" />
