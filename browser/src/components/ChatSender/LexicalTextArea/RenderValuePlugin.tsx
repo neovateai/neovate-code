@@ -18,7 +18,7 @@ interface Props {
 const RenderValuePlugin = (props: Props) => {
   const { value } = props;
   const [editor] = useLexicalComposerContext();
-  const { aiContextNodeConfigs, onGetNodes, onChangePlainText } = useContext(
+  const { aiContextNodeConfigs, onChangeNodes, onChangePlainText } = useContext(
     LexicalTextAreaContext,
   );
   const oldValueRef = useRef('');
@@ -213,9 +213,11 @@ const RenderValuePlugin = (props: Props) => {
         root.append(paragraph);
 
         resetSelection?.();
+
+        oldNodesRef.current = nodes;
+        onChangeNodes?.(nodes);
       }
 
-      oldNodesRef.current = nodes;
       oldLexicalNodesRef.current = paragraph
         .getChildren()
         .map((lexicalNode) => {
@@ -225,12 +227,12 @@ const RenderValuePlugin = (props: Props) => {
             length: lexicalNode.getTextContentSize(),
           };
         });
-      onGetNodes?.(nodes);
+
       onChangePlainText?.(plainText);
     });
 
     oldValueRef.current = value;
-  }, [value, editor, onGetNodes, onChangePlainText]);
+  }, [value, editor, onChangeNodes, onChangePlainText]);
 
   return null;
 };

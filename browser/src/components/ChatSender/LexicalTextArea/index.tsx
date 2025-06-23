@@ -11,6 +11,7 @@ import { $getRoot, type LexicalEditor } from 'lexical';
 import React, {
   type KeyboardEvent,
   forwardRef,
+  memo,
   useContext,
   useImperativeHandle,
   useRef,
@@ -138,6 +139,9 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
         namespace,
         onError: (error) => console.error(error),
         nodes: [AiContextNode],
+        editorState(editor) {
+          editorRef.current = editor;
+        },
       }}
     >
       <RichTextPlugin
@@ -165,7 +169,6 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
       {!disabled && (
         <OnChangePlugin
           onChange={(_editorState, editor) => {
-            editorRef.current = editor;
             editor.read(() => {
               const nextInnerValue = $getRoot().getTextContent();
               setInnerValue(nextInnerValue);
@@ -192,4 +195,4 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
   );
 });
 
-export default LexicalTextArea;
+export default memo(LexicalTextArea);

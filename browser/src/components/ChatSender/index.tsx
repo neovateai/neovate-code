@@ -97,6 +97,7 @@ const ChatSender: React.FC = () => {
   const handleSubmit = () => {
     onQuery(prompt, plainText, [...selectContexts, ...editorContexts]);
     actions.updatePrompt('');
+    context.actions.afterSend();
   };
 
   return (
@@ -118,7 +119,7 @@ const ChatSender: React.FC = () => {
       <LexicalTextAreaContext.Provider
         value={{
           onEnterPress: handleSubmit,
-          onGetNodes: (nodes) => {
+          onChangeNodes: (nodes) => {
             context.actions.updateEditorContext(
               nodes.map((node) => ({
                 type: node.type,
