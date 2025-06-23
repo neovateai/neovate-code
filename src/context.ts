@@ -99,6 +99,7 @@ export async function createContext(opts: CreateContextOpts): Promise<Context> {
 
   const mcpManager = new MCPManager(resolvedConfig.mcpServers);
   await mcpManager.connect();
+  debug('mcpManager connected');
 
   return new Context({
     ...opts,
