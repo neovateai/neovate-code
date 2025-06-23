@@ -50,6 +50,15 @@ export async function run(opts: RunOpts) {
         patchConsole: process.env.DEBUG ? false : true,
         exitOnCtrlC: true,
       });
+      const exit = () => {
+        debug('exit');
+        opts.context.destroy().then(() => {
+          process.exit(0);
+        });
+      };
+      process.on('SIGINT', exit);
+      process.on('SIGQUIT', exit);
+      process.on('SIGTERM', exit);
     }
     if (prompt) {
       opts.context.addUserPrompt(prompt);
@@ -68,7 +77,10 @@ export async function run(opts: RunOpts) {
       return null;
     }
   } finally {
-    await opts.context.destroy();
+    const quiet = opts.context.config.quiet;
+    if (quiet) {
+      await opts.context.destroy();
+    }
   }
 }
 
