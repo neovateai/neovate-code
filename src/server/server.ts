@@ -4,7 +4,6 @@ import fastify, { FastifyInstance } from 'fastify';
 import fs from 'fs';
 import path from 'path';
 import portfinder from 'portfinder';
-import { PRODUCT_NAME } from '../constants';
 import { PluginHookType } from '../plugin';
 import * as logger from '../utils/logger';
 import config from './config';
@@ -93,8 +92,6 @@ const registerRoutes = async (app: FastifyInstance, opts: CreateServerOpts) => {
 };
 
 export async function runBrowserServer(opts: RunBrowserServerOpts) {
-  const traceName = `${opts.context.productName ?? PRODUCT_NAME}-browser`;
-
   const appData = await opts.context.apply({
     hook: 'serverAppData',
     args: [
@@ -125,7 +122,6 @@ export async function runBrowserServer(opts: RunBrowserServerOpts) {
 
   await createServer({
     ...opts,
-    traceName,
     appData,
   });
 }

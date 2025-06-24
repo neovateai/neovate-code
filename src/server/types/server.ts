@@ -13,6 +13,5 @@ export interface RunBrowserServerOpts {
 }
 
 export interface CreateServerOpts extends RunBrowserServerOpts {
-  traceName: string;
   appData: ServerAppData;
 }
