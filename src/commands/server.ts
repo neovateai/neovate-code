@@ -1,3 +1,4 @@
+import { withTrace } from '@openai/agents';
 import { randomUUID } from 'crypto';
 import { format } from 'date-fns';
 import createDebug from 'debug';
@@ -39,76 +40,78 @@ Examples:
 }
 
 export async function runBrowser(opts: RunCliOpts) {
-  const startTime = Date.now();
+  const traceName = `${opts.productName}-server`;
+  return await withTrace(traceName, async () => {
+    const startTime = Date.now();
 
-  const argv = yargsParser(process.argv.slice(2), {
-    alias: {
-      model: 'm',
-      help: 'h',
-    },
-    default: {
-      model: 'flash',
-    },
-    boolean: ['help', 'plan'],
-    string: ['model', 'smallModel', 'planModel', 'logLevel'],
-    number: ['port'],
-  });
-  if (argv.help) {
-    printHelp(opts.productName.toLowerCase());
-    return;
-  }
-  const uuid = randomUUID().slice(0, 4);
-  const traceFile = path.join(
-    homedir(),
-    `.${opts.productName.toLowerCase()}`,
-    'sessions',
-    `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
-  );
-
-  debug('traceFile', traceFile);
-
-  setupTracing(traceFile);
-
-  const cwd = opts.cwd || process.cwd();
-  debug('cwd', cwd);
-
-  const context = await Context.create({
-    productName: opts.productName,
-    version: opts.version,
-    cwd,
-    argvConfig: {
-      model: argv.model,
-      smallModel: argv.smallModel,
-      planModel: argv.planModel,
-      quiet: argv.quiet,
-      plugins: argv.plugin,
-    },
-    plugins: opts.plugins,
-  });
-  await context.apply({
-    hook: 'cliStart',
-    args: [],
-    type: PluginHookType.Series,
-  });
-
-  await runBrowserServer({
-    context,
-    prompt: argv._[0]! as string,
-    cwd,
-    plan: argv.plan,
-    logLevel: argv.logLevel,
-    port: argv.port,
-  });
-
-  await context.apply({
-    hook: 'cliEnd',
-    args: [
-      {
-        startTime,
-        endTime: Date.now(),
-        error: null,
+    const argv = yargsParser(process.argv.slice(2), {
+      alias: {
+        model: 'm',
+        help: 'h',
       },
-    ],
-    type: PluginHookType.Series,
+      default: {
+        model: 'flash',
+      },
+      boolean: ['help', 'plan'],
+      string: ['model', 'smallModel', 'planModel', 'logLevel'],
+      number: ['port'],
+    });
+    if (argv.help) {
+      printHelp(opts.productName.toLowerCase());
+      return;
+    }
+    const uuid = randomUUID().slice(0, 4);
+    const traceFile = path.join(
+      homedir(),
+      `.${opts.productName.toLowerCase()}`,
+      'sessions',
+      `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
+    );
+    setupTracing(traceFile);
+
+    debug('traceFile', traceFile);
+
+    const cwd = opts.cwd || process.cwd();
+    debug('cwd', cwd);
+
+    const context = await Context.create({
+      productName: opts.productName,
+      version: opts.version,
+      cwd,
+      argvConfig: {
+        model: argv.model,
+        smallModel: argv.smallModel,
+        planModel: argv.planModel,
+        quiet: argv.quiet,
+        plugins: argv.plugin,
+      },
+      plugins: opts.plugins,
+    });
+    await context.apply({
+      hook: 'cliStart',
+      args: [],
+      type: PluginHookType.Series,
+    });
+
+    await runBrowserServer({
+      context,
+      prompt: argv._[0]! as string,
+      cwd,
+      plan: argv.plan,
+      logLevel: argv.logLevel,
+      port: argv.port,
+    });
+
+    await context.apply({
+      hook: 'cliEnd',
+      args: [
+        {
+          startTime,
+          endTime: Date.now(),
+          error: null,
+        },
+      ],
+      type: PluginHookType.Series,
+    });
   });
 }

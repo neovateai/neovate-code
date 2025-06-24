@@ -1,4 +1,5 @@
 import type {
+  ReasoningMessage,
   TextMessage,
   ToolMessage,
   UIMessageAnnotation,
@@ -14,12 +15,17 @@ export function mergeMessages(
 
   const merged: UIMessageAnnotation[] = [];
   let textAccumulator = '';
+  let reasoningAccumulator = '';
 
   const isTextMessage = (msg: UIMessageAnnotation): msg is TextMessage =>
     msg.type === UIMessageType.Text;
 
   const isToolMessage = (msg: UIMessageAnnotation): msg is ToolMessage =>
     msg.type === UIMessageType.Tool;
+
+  const isReasoningMessage = (
+    msg: UIMessageAnnotation,
+  ): msg is ReasoningMessage => msg.type === UIMessageType.Reasoning;
 
   const findMatchingToolCall = (
     toolCallId: string,
@@ -50,6 +56,10 @@ export function mergeMessages(
     textAccumulator = '';
   };
 
+  const finalizeReasoningAccumulator = (): void => {
+    reasoningAccumulator = '';
+  };
+
   for (let i = 0; i < messages.length; i++) {
     const message = messages[i];
 
@@ -58,6 +68,10 @@ export function mergeMessages(
       message.type !== UIMessageType.Text
     ) {
       finalizeTextAccumulator();
+    }
+
+    if (message.type !== UIMessageType.Reasoning) {
+      finalizeReasoningAccumulator();
     }
 
     switch (message.type) {
@@ -101,9 +115,20 @@ export function mergeMessages(
         break;
       }
 
-      case UIMessageType.Reasoning:
-        merged.push(message);
+      case UIMessageType.Reasoning: {
+        reasoningAccumulator += message.reasoning;
+        const lastMessage = merged[merged.length - 1];
+
+        if (lastMessage && isReasoningMessage(lastMessage)) {
+          lastMessage.reasoning = reasoningAccumulator;
+        } else {
+          merged.push({
+            type: UIMessageType.Reasoning,
+            reasoning: reasoningAccumulator,
+          } as unknown as ReasoningMessage);
+        }
         break;
+      }
 
       case UIMessageType.ToolCall:
         merged.push({
@@ -147,6 +172,7 @@ export function mergeMessages(
   }
 
   finalizeTextAccumulator();
+  finalizeReasoningAccumulator();
 
   return merged;
 }

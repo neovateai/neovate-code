@@ -1,5 +1,6 @@
 import { ModelProvider } from '@openai/agents';
 import { Context } from '../../context';
+import { Service } from '../../service';
 import { ServerAppData } from './app-data';
 
 export interface RunBrowserServerOpts {
@@ -13,6 +14,9 @@ export interface RunBrowserServerOpts {
 }
 
 export interface CreateServerOpts extends RunBrowserServerOpts {
-  traceName: string;
   appData: ServerAppData;
+}
+
+export interface RouteCompletionsOpts extends CreateServerOpts {
+  service: Service;
 }

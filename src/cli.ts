@@ -4,6 +4,7 @@ import path from 'path';
 import pc from 'picocolors';
 import { fileURLToPath } from 'url';
 import { _checkAndUpdate } from '.';
+import { PRODUCT_NAME } from './constants';
 import { logDebug } from './utils/logger';
 
 async function checkUpdate() {
@@ -61,7 +62,7 @@ async function main() {
   const { runCli } = await import('.');
   await runCli({
     cwd: process.cwd(),
-    productName: 'TAKUMI',
+    productName: PRODUCT_NAME,
     version: pkg.version,
   });
 }

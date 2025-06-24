@@ -4,8 +4,8 @@ import fastify, { FastifyInstance } from 'fastify';
 import fs from 'fs';
 import path from 'path';
 import portfinder from 'portfinder';
-import { PRODUCT_NAME } from '../constants';
 import { PluginHookType } from '../plugin';
+import { Service } from '../service';
 import * as logger from '../utils/logger';
 import config from './config';
 import { CreateServerOpts, RunBrowserServerOpts } from './types';
@@ -61,12 +61,17 @@ const registerPlugins = async (app: FastifyInstance) => {
   });
 };
 
-const registerRoutes = async (app: FastifyInstance, opts: CreateServerOpts) => {
+const registerRoutes = async (
+  app: FastifyInstance,
+  opts: CreateServerOpts,
+  service: Service,
+) => {
   const { logLevel: _, ...pluginOpts } = opts;
 
   await app.register(import('./routes/completions'), {
     prefix: `${BASE_API_PREFIX}/chat`,
     ...pluginOpts,
+    service,
   });
   await app.register(import('./routes/files'), {
     prefix: BASE_API_PREFIX,
@@ -93,8 +98,6 @@ const registerRoutes = async (app: FastifyInstance, opts: CreateServerOpts) => {
 };
 
 export async function runBrowserServer(opts: RunBrowserServerOpts) {
-  const traceName = `${opts.context.productName ?? PRODUCT_NAME}-browser`;
-
   const appData = await opts.context.apply({
     hook: 'serverAppData',
     args: [
@@ -125,7 +128,6 @@ export async function runBrowserServer(opts: RunBrowserServerOpts) {
 
   await createServer({
     ...opts,
-    traceName,
     appData,
   });
 }
@@ -140,9 +142,14 @@ export async function createServer(opts: CreateServerOpts) {
   });
   const host = config.host;
 
+  const service = await Service.create({
+    context: opts.context,
+    agentType: 'code',
+  });
+
   try {
     await registerPlugins(app);
-    await registerRoutes(app, opts);
+    await registerRoutes(app, opts, service);
 
     await app.listen({
       port,

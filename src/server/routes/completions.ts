@@ -2,8 +2,8 @@ import { Type } from '@sinclair/typebox';
 import { pipeDataStreamToResponse } from 'ai';
 import createDebug from 'debug';
 import { FastifyPluginAsync } from 'fastify';
-import { runCode, runPlan } from '../services/completions';
-import { CreateServerOpts } from '../types';
+import { runCode } from '../services/completions';
+import { RouteCompletionsOpts } from '../types';
 import { CompletionRequest } from '../types/completions';
 
 const debug = createDebug('takumi:server:completions');
@@ -33,7 +33,7 @@ const CompletionRequestSchema = Type.Object({
   plan: Type.Optional(Type.Boolean()),
 });
 
-const completionsRoute: FastifyPluginAsync<CreateServerOpts> = async (
+const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
   app,
   opts,
 ) => {
@@ -48,7 +48,6 @@ const completionsRoute: FastifyPluginAsync<CreateServerOpts> = async (
       const messages = request.body.messages;
       const prompt = messages[messages.length - 1].content;
       debug('Received messages:', messages);
-      const plan = request.body.plan;
 
       // 设置响应头
       reply.header('Content-Type', 'text/plain; charset=utf-8');
@@ -58,7 +57,7 @@ const completionsRoute: FastifyPluginAsync<CreateServerOpts> = async (
       try {
         await pipeDataStreamToResponse(reply.raw, {
           async execute(dataStream) {
-            await (plan ? runPlan : runCode)({
+            await runCode({
               ...opts,
               prompt,
               dataStream,
