@@ -5,11 +5,11 @@ import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/model';
 import type { Model } from '@/types/model';
 
-// 定义类型
+// Define types
 type ProviderType = 'openai' | 'anthropic' | 'aliyun' | 'claude' | 'deepseek';
 type ModelOption = { label: string; value: string };
 
-// 预设的模型提供商
+// Preset model providers
 const PROVIDERS = [
   { label: 'OpenAI', value: 'openai' as ProviderType },
   { label: 'Anthropic', value: 'anthropic' as ProviderType },
@@ -18,7 +18,7 @@ const PROVIDERS = [
   { label: 'DeepSeek', value: 'deepseek' as ProviderType },
 ];
 
-// 各提供商对应的模型列表
+// Models for each provider
 const PROVIDER_MODELS: Record<ProviderType, ModelOption[]> = {
   openai: [
     { label: 'GPT-4o', value: 'gpt-4o' },
@@ -49,7 +49,7 @@ const PROVIDER_MODELS: Record<ProviderType, ModelOption[]> = {
   ],
 };
 
-// 提供商对应的图标
+// Icons for each provider
 const PROVIDER_ICONS: Record<ProviderType, string> = {
   openai:
     'https://h3.static.yximgs.com/udata/pkg/IS-DOCS/llm-model-avatar/gpt4.png',
@@ -63,13 +63,14 @@ const PROVIDER_ICONS: Record<ProviderType, string> = {
     'https://h3.static.yximgs.com/udata/pkg/IS-DOCS/llm-model-avatar/deepseek.png',
 };
 
-// API密钥提示信息
+// API key tooltips
 const API_KEY_TOOLTIPS: Record<ProviderType, string> = {
-  openai: '在OpenAI官网获取API密钥，格式为sk-开头',
-  anthropic: '在Anthropic控制台获取API密钥，格式为sk-ant-开头',
-  aliyun: '在阿里云控制台获取API密钥，包含AccessKey ID和Secret',
-  claude: '在Claude控制台获取API密钥，格式为sk-开头',
-  deepseek: '在DeepSeek开发者平台获取API密钥',
+  openai: 'Get API key from OpenAI website, starts with sk-',
+  anthropic: 'Get API key from Anthropic console, starts with sk-ant-',
+  aliyun:
+    'Get API key from Alibaba Cloud console, includes AccessKey ID and Secret',
+  claude: 'Get API key from Claude console, starts with sk-',
+  deepseek: 'Get API key from DeepSeek developer platform',
 };
 
 const AddModelModal: React.FC = () => {
@@ -81,13 +82,13 @@ const AddModelModal: React.FC = () => {
     PROVIDER_MODELS.openai,
   );
 
-  // 当提供商变化时，更新模型选项
+  // Update model options when provider changes
   useEffect(() => {
     const provider = form.getFieldValue('provider') as ProviderType;
     if (provider && PROVIDER_MODELS[provider]) {
       setModelOptions(PROVIDER_MODELS[provider]);
       setCurrentProvider(provider);
-      // 重置模型选择
+      // Reset model selection
       form.setFieldsValue({ model: undefined });
     }
   }, [form.getFieldValue('provider')]);
@@ -105,7 +106,7 @@ const AddModelModal: React.FC = () => {
 
       actions.addModel(newModel);
       actions.hideAddModelModal();
-      message.success('模型添加成功');
+      message.success('Model added successfully');
       form.resetFields();
     });
   };
@@ -117,16 +118,16 @@ const AddModelModal: React.FC = () => {
 
   return (
     <Modal
-      title="添加模型"
+      title="Add Model"
       open={snapshot.isAddModelModalVisible}
       onOk={handleOk}
       onCancel={handleCancel}
       footer={[
         <Button key="back" onClick={handleCancel}>
-          取消
+          Cancel
         </Button>,
         <Button key="submit" type="primary" onClick={handleOk}>
-          添加
+          Add
         </Button>,
       ]}
     >
@@ -137,8 +138,8 @@ const AddModelModal: React.FC = () => {
       >
         <Form.Item
           name="provider"
-          label="服务商"
-          rules={[{ required: true, message: '请选择服务商' }]}
+          label="Provider"
+          rules={[{ required: true, message: 'Please select a provider' }]}
         >
           <Select
             options={PROVIDERS}
@@ -152,25 +153,25 @@ const AddModelModal: React.FC = () => {
 
         <Form.Item
           name="model"
-          label="模型"
-          rules={[{ required: true, message: '请选择模型' }]}
+          label="Model"
+          rules={[{ required: true, message: 'Please select a model' }]}
         >
-          <Select options={modelOptions} placeholder="请选择模型" />
+          <Select options={modelOptions} placeholder="Please select a model" />
         </Form.Item>
 
         <Form.Item
           name="apiKey"
           label={
             <span>
-              API密钥
+              API Key
               <Tooltip title={API_KEY_TOOLTIPS[currentProvider]}>
                 <QuestionCircleOutlined style={{ marginLeft: 4 }} />
               </Tooltip>
             </span>
           }
-          rules={[{ required: true, message: '请输入API密钥' }]}
+          rules={[{ required: true, message: 'Please enter your API key' }]}
         >
-          <Input.Password placeholder="请输入API密钥" />
+          <Input.Password placeholder="Please enter your API key" />
         </Form.Item>
       </Form>
     </Modal>

@@ -109,7 +109,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ className }) => {
   const currentModel = snapshot.currentModel;
   const models = snapshot.models;
 
-  // 使用本地状态控制Popover的显示
+  // Use local state to control Popover visibility
   const [visible, setVisible] = useState(false);
 
   const handleSelectModel = (model: Model) => {
@@ -143,7 +143,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ className }) => {
         ))}
       </div>
       <div className={styles.addModelButton} onClick={handleAddModel}>
-        <PlusOutlined style={{ marginRight: 4 }} /> 添加模型
+        <PlusOutlined style={{ marginRight: 4 }} /> Add Model
       </div>
     </div>
   );
