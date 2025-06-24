@@ -162,16 +162,43 @@ function Message({ message, dynamic }: { message: Message, dynamic?: boolean }) 
   );
 }
 
+interface GeneralInfo {
+  model: string;
+  workspace: string;
+  log: string;
+}
+
+function TerminalHeader({ generalInfo }: { generalInfo: GeneralInfo }) {
+  return (
+    <Box
+      borderStyle="round"
+      borderColor="gray"
+      paddingX={1}
+      width={80}
+      flexDirection="column"
+    >
+      {Object.entries(generalInfo).map(([key, value], index) => (
+        <Text key={index} dimColor>
+          <Text color="blueBright">↳ </Text>
+          {key}: <Text bold>{value}</Text>
+        </Text>
+      ))}
+    </Box>
+  );
+}
+
 function Header() {
   const snap = useSnapshot(getStore());
+  const { productName, version, ...generalInfo } = snap.generalInfo;
   return (
     <Box flexDirection="column" marginTop={1}>
       <Box flexDirection="row" gap={1}>
         <Text bold color="white">
-          {snap.generalInfo.productName}
+          {productName}
         </Text>
-        <Text color="gray">v{snap.generalInfo.version}</Text>
+        <Text color="gray">v{version}</Text>
       </Box>
+      <TerminalHeader generalInfo={generalInfo} />
     </Box>
   );
 }

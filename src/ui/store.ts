@@ -1,4 +1,5 @@
 import createDebug from 'debug';
+import os from 'os';
 import { proxy } from 'valtio';
 import { isReasoningModel } from '../provider';
 import { query } from '../query';
@@ -21,9 +22,12 @@ export interface CreateStoreOpts {
   service: Service;
   planService: Service;
   stage: 'plan' | 'code';
+  traceFile: string;
 }
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const homeDir = os.homedir();
 
 export function createStore(opts: CreateStoreOpts) {
   if (store) {
@@ -35,6 +39,9 @@ export function createStore(opts: CreateStoreOpts) {
     generalInfo: {
       productName: opts.productName,
       version: opts.version,
+      log: opts.traceFile.replace(homeDir, '~'),
+      workspace: opts.service.context.cwd.replace(homeDir, '~'),
+      model: opts.service.context.config.model,
     },
     status: 'idle',
     error: null,
@@ -151,6 +158,9 @@ export interface Store {
   generalInfo: {
     productName: string;
     version: string;
+    model: string;
+    workspace: string;
+    log: string;
   };
   stage: 'plan' | 'code';
   planModal: { text: string } | null;

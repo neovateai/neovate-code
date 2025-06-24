@@ -22,6 +22,7 @@ export interface RunOpts {
   prompt: string;
   plan?: boolean;
   context: Context;
+  traceFile: string;
 }
 
 export async function run(opts: RunOpts) {
@@ -43,6 +44,7 @@ export async function run(opts: RunOpts) {
       service,
       planService: planService,
       stage: opts.plan ? 'plan' : 'code',
+      traceFile: opts.traceFile,
     });
     const quiet = opts.context.config.quiet;
     if (!quiet) {
@@ -85,7 +87,7 @@ export async function run(opts: RunOpts) {
 }
 
 export async function runDefault(opts: RunCliOpts) {
-  const traceName = `${opts.productName}-default}`;
+  const traceName = `${opts.productName}-default`;
   return await withTrace(traceName, async () => {
     const startTime = Date.now();
     const argv = yargsParser(process.argv.slice(2), {
@@ -137,6 +139,7 @@ export async function runDefault(opts: RunCliOpts) {
       context,
       prompt: argv._[0]! as string,
       plan: argv.plan,
+      traceFile,
     });
     await context.apply({
       hook: 'cliEnd',
