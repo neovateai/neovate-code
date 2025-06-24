@@ -4,11 +4,12 @@ import { VscSearch } from 'react-icons/vsc';
 import type { ToolMessage } from '@/types/message';
 import type { IGrepToolResult } from '@/types/tool';
 import InnerList, { type ListItem } from './InnerList';
+import { ToolStatus } from './ToolStatus';
 
 export default function GrepRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
 
-  const { result, args } = message;
+  const { result, args, state } = message;
   const [isExpanded, setIsExpanded] = useState(true);
   const { filenames, durationMs } = (result?.data || {}) as IGrepToolResult;
 
@@ -47,7 +48,10 @@ export default function GrepRender({ message }: { message?: ToolMessage }) {
             </code>
             &nbsp; in {filenames?.length || 0} files
           </span>
-          {durationMs && <p className="text-gray-500">{durationMs}ms</p>}
+          <div className="flex items-center gap-2">
+            {durationMs && <p className="text-gray-500">{durationMs}ms</p>}
+            <ToolStatus state={state} />
+          </div>
         </div>
       </div>
       <div

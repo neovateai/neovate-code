@@ -1,12 +1,14 @@
+import { RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import { BsTerminal } from 'react-icons/bs';
 import type { ToolMessage } from '@/types/message';
 import type { IBashToolResult } from '@/types/tool';
+import { ToolStatus } from './ToolStatus';
 
 export default function BashRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
-  const { args, result } = message;
-  const [isExpanded, setIsExpanded] = useState(true);
+  const { args, result, state } = message;
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -43,13 +45,20 @@ export default function BashRender({ message }: { message?: ToolMessage }) {
         className="flex items-center gap-2 p-2 bg-gray-700 cursor-pointer"
         onClick={toggleExpand}
       >
+        <span
+          className={`transition-transform duration-300 ease-in-out ${
+            isExpanded ? 'rotate-90' : ''
+          }`}
+        >
+          <RightOutlined className="text-white" />
+        </span>
         <BsTerminal className="text-white" />
         <code className="flex-1 text-xs truncate font-mono text-gray-300">
           {command}
         </code>
-        <span className="text-xs text-gray-400 bg-gray-600 px-2 py-0.5 rounded">
-          Output
-        </span>
+        <div className="text-xs text-gray-400 flex justify-between items-center gap-2">
+          <ToolStatus state={state} />
+        </div>
       </div>
       <div
         className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${

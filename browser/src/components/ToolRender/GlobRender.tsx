@@ -3,11 +3,12 @@ import { useState } from 'react';
 import type { ToolMessage } from '@/types/message';
 import type { IGlobToolResult } from '@/types/tool';
 import InnerList, { type ListItem } from './InnerList';
+import { ToolStatus } from './ToolStatus';
 
 export default function GlobRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
 
-  const { toolName, result } = message;
+  const { toolName, result, state } = message;
   const [isExpanded, setIsExpanded] = useState(true);
 
   const toggleExpand = () => {
@@ -55,7 +56,8 @@ export default function GlobRender({ message }: { message?: ToolMessage }) {
           <RightOutlined />
         </span>
         <CodeOutlined />
-        <span>{toolName}</span>
+        <span className="flex-1">{toolName}</span>
+        <ToolStatus state={state} />
       </div>
       <div
         className={`mt-1 overflow-hidden transition-[max-height] duration-500 ease-in-out ${

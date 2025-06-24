@@ -1,10 +1,11 @@
 import { EyeOutlined } from '@ant-design/icons';
 import type { ToolMessage } from '@/types/message';
 import type { IReadToolResult } from '@/types/tool';
+import { ToolStatus } from './ToolStatus';
 
 export default function ReadRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
-  const { args, result } = message;
+  const { args, result, state } = message;
 
   return (
     <div className="flex items-center gap-2 text-sm text-gray-500 flex-nowrap">
@@ -15,6 +16,7 @@ export default function ReadRender({ message }: { message?: ToolMessage }) {
       <div className="flex-1 text-right whitespace-nowrap text-ellipsis">
         {(result?.data as IReadToolResult)?.totalLines} lines
       </div>
+      <ToolStatus state={state} />
     </div>
   );
 }

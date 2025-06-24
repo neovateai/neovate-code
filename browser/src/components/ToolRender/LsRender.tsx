@@ -2,6 +2,7 @@ import { FolderOutlined, RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import type { ToolMessage } from '@/types/message';
 import InnerList, { type ListItem } from './InnerList';
+import { ToolStatus } from './ToolStatus';
 
 const parseLsResult = (result: unknown): ListItem[] => {
   if (typeof result !== 'string' || !result) return [];
@@ -62,6 +63,7 @@ const parseLsResult = (result: unknown): ListItem[] => {
 export default function LsRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
 
+  const { result, state } = message;
   const items = parseLsResult(message.result);
   const dirPath = (message.args?.dir_path as string) || '';
 
@@ -95,10 +97,11 @@ export default function LsRender({ message }: { message?: ToolMessage }) {
           <RightOutlined />
         </span>
         <FolderOutlined />
-        <span>
+        <span className="flex-1">
           Listed {itemsCount} items in{' '}
           {displayPath.split('/').pop() || displayPath}
         </span>
+        <ToolStatus state={state} />
       </div>
       <div
         className={`px-2 bg-gray-50 mt-1 overflow-y-auto transition-[max-height] duration-500 ease-in-out ${

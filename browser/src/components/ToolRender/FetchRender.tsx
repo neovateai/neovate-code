@@ -2,12 +2,13 @@ import { LinkOutlined, RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import type { ToolMessage } from '@/types/message';
 import type { IFetchToolResult } from '@/types/tool';
+import { ToolStatus } from './ToolStatus';
 
 export default function FetchRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
 
-  const { args, result } = message;
-  const [isExpanded, setIsExpanded] = useState(true);
+  const { args, result, state } = message;
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -28,7 +29,7 @@ export default function FetchRender({ message }: { message?: ToolMessage }) {
   return (
     <div className="text-sm rounded-md overflow-hidden mb-2">
       <div
-        className="flex items-center gap-2 p-2 cursor-pointer"
+        className="flex items-center gap-2 cursor-pointer"
         onClick={toggleExpand}
       >
         <span
@@ -40,8 +41,9 @@ export default function FetchRender({ message }: { message?: ToolMessage }) {
         </span>
         <LinkOutlined />
         <div className="flex-1 truncate text-xs text-gray-400">{url}</div>
-        <div className="text-xs text-gray-400 flex justify-between">
+        <div className="text-xs text-gray-400 flex justify-between items-center gap-2">
           <span className="flex-1">{durationMs}ms</span>
+          <ToolStatus state={state} />
         </div>
       </div>
       <div
