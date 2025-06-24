@@ -2,10 +2,15 @@
 import { useChat } from '@ai-sdk/react';
 import type { UIMessage } from '@ai-sdk/ui-utils';
 import { createContext, useContext, useMemo } from 'react';
+import type { ContextItem } from '@/types/context';
 
 type ChatState = ReturnType<typeof useChat> & {
   loading: boolean;
-  onQuery: (prompt: string) => void;
+  onQuery: (
+    content: string,
+    plainText: string,
+    contextItems: ContextItem[],
+  ) => void;
   messagesWithPlaceholder: UIMessage[];
   originalMessages: UIMessage[];
 };
@@ -58,10 +63,20 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
     return chatState.messages;
   }, [chatState.messages, loading]);
 
-  const onQuery = async (prompt: string) => {
+  const onQuery = async (
+    originalContent: string,
+    plainText: string,
+    contextItems: ContextItem[],
+  ) => {
     chatState.append({
       role: 'user',
-      content: prompt,
+      content: plainText,
+      annotations: [
+        {
+          originalContent,
+          contextItems,
+        },
+      ],
     });
   };
 
