@@ -102,8 +102,7 @@
   "dependencies": {
     "@fastify/compress": "8.0.3",
     "ink": "^6.0.0",
-    "react": "^19.1.0",
-    "react-icons": "^5.5.0"
+    "react": "^19.1.0"
   },
   "volta": {
     "node": "22.11.0",

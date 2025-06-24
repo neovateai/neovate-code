@@ -17,9 +17,6 @@ importers:
       react:
         specifier: ^19.1.0
         version: 19.1.0
-      react-icons:
-        specifier: ^5.5.0
-        version: 5.5.0(react@19.1.0)
     devDependencies:
       '@ai-sdk/anthropic':
         specifier: ^1.2.12
