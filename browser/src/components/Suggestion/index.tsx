@@ -5,7 +5,6 @@ import type { CascaderProps } from 'antd';
 import classnames from 'classnames';
 import { useEvent, useMergedState } from 'rc-util';
 import React, { useRef, useState } from 'react';
-import { searchSuggestionItem } from '@/utils/chat';
 import useStyle from './style';
 import useActive from './useActive';
 
@@ -45,13 +44,15 @@ export interface SuggestionProps<T = any> {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   items: SuggestionItem[] | ((info?: T) => SuggestionItem[]);
-  onSelect?: (value: string, item: SuggestionItem) => void;
+  onSelect?: (value: string) => void;
   block?: boolean;
   styles?: Partial<Record<string, React.CSSProperties>>;
   classNames?: Partial<Record<string, string>>;
 
+  outsideOpen?: boolean;
+
   // ============================= Search =============================
-  showSearch?: ShowSearchConfigs;
+  showSearch?: ShowSearchConfigs | false;
 }
 
 function Suggestion<T = any>(props: SuggestionProps<T>) {
@@ -67,6 +68,7 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
     onSelect,
     block,
     showSearch,
+    outsideOpen,
   } = props;
 
   // ============================= MISC =============================
@@ -139,6 +141,7 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
           padding: 4,
         }}
       >
+        {/* TODO back button */}
         {showSearch && (
           <Input
             ref={searchBoxRef}
@@ -161,8 +164,8 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
   const onInternalChange = (valuePath: string[]) => {
     if (onSelect) {
       const value = valuePath[valuePath.length - 1];
-      const item = searchSuggestionItem(itemList, value);
-      onSelect(value, item as SuggestionItem);
+
+      onSelect(value);
     }
     triggerOpen(false);
   };
@@ -201,7 +204,7 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
   return wrapCSSVar(
     <Cascader
       options={itemList}
-      open={mergedOpen}
+      open={mergedOpen || outsideOpen}
       value={activePath}
       popupRender={popupRender}
       placement={isRTL ? 'topRight' : 'topLeft'}

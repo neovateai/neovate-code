@@ -7,10 +7,10 @@ import {
 import type { AiContextNodeConfig, ContextFileType } from '@/types/context';
 
 export enum ContextType {
-  FILE = 'file',
-  ATTACHMENT = 'attachment',
-  IMAGE = 'image',
-  UNKNOWN = 'unknown',
+  FILE = '__file',
+  ATTACHMENT = '__attachment',
+  IMAGE = '__image',
+  UNKNOWN = '__unknown',
 }
 
 export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
@@ -18,7 +18,7 @@ export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
     type: ContextType.FILE,
     matchRegex: /@File:\[(?<value>[^\]]+)\]/,
     aiContextId: 'file',
-    displayTextToValue: (displayText) => `@File:[${displayText}]`,
+    valueFormatter: (value) => `@File:[${value}]`,
     pickInfo: (regExpExecArray) => ({
       value: regExpExecArray[0],
       displayText: regExpExecArray.groups?.value || '',
@@ -101,4 +101,4 @@ export const CONTEXT_AVAILABLE_FILE_TYPES: ContextFileType[] = [
 ];
 
 /** 10MB */
-export const CONTEXT_MAX_FILE_SIZE = 1 * 1024 * 1024;
+export const CONTEXT_MAX_FILE_SIZE = 10 * 1024 * 1024;

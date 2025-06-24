@@ -36,8 +36,7 @@ export interface AiContextNodeConfig {
   /** if don't used in context popup menu, it's not required */
   matchRegex: RegExp;
   aiContextId: string;
-  /** if don't used in context popup menu, it's not required */
-  displayTextToValue?: (text: string) => string;
+  valueFormatter?: (value: string) => string;
   /** if don't used in context popup menu, it's not required */
   pickInfo?: (regExpExecArray: RegExpExecArray) => AiContextNodeInfo;
   /** render function */

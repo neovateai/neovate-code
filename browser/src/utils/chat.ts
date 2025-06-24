@@ -1,5 +1,3 @@
-import type { SuggestionItem } from '@/components/Suggestion';
-
 interface TextDiff {
   content: string;
   type: '+' | '-';
@@ -75,27 +73,4 @@ export function getInputInfo(prevContent: string, nextContent: string) {
       diffs.length === 1 && diffs[0].content === '@' && diffs[0].type === '+',
     position: diffs[0]?.index,
   };
-}
-
-export function searchSuggestionItem(
-  suggestionItems: SuggestionItem[],
-  value: string,
-) {
-  // dfs
-  function dfs(items: SuggestionItem[], value: string): SuggestionItem | null {
-    for (const item of items) {
-      if (item.value === value) {
-        return item;
-      }
-      if (item.children) {
-        const result = dfs(item.children, value);
-        if (result) {
-          return result;
-        }
-      }
-    }
-    return null;
-  }
-
-  return dfs(suggestionItems, value);
 }

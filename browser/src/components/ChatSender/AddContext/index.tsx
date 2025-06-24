@@ -1,11 +1,9 @@
 import Icon from '@ant-design/icons';
-import { Input, type InputRef, Tag } from 'antd';
+import { Tag } from 'antd';
 import { createStyles } from 'antd-style';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
 import Suggestion from '@/components/Suggestion';
-import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
-import { ContextType } from '@/constants/context';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 
@@ -34,32 +32,13 @@ const useStyle = createStyles(({ css, token }) => {
 });
 
 const AddContext = () => {
-  const [inputVisible, setInputVisible] = useState(false);
-  const [inputValue, setinputValue] = useState('');
-  const inputRef = useRef<InputRef>(null);
   const tagRef = useRef<HTMLDivElement>(null);
   const { contextItems, contextsSelectedValues } = useSnapshot(context.state);
-  const [tagSize, setTagSize] = useState<{ width: number; height: number }>({
-    width: 0,
-    height: 0,
-  });
+  const [searchText, setSearchText] = useState('');
+  const [keepMenuOpen, setKeepMenuOpen] = useState(false);
 
-  useEffect(() => {
-    if (inputVisible) {
-      inputRef.current?.focus();
-    }
-  }, [inputVisible]);
-
-  useLayoutEffect(() => {
-    const rect = tagRef.current?.getBoundingClientRect();
-    setTagSize({
-      width: rect?.width || 0,
-      height: rect?.height || 0,
-    });
-  }, []);
-
-  const { suggestions, getTypeByValue, getFileByValue } = useSuggestion(
-    inputValue,
+  const { suggestions, showSearch, handleValue } = useSuggestion(
+    searchText,
     contextsSelectedValues,
   );
 
@@ -67,65 +46,38 @@ const AddContext = () => {
 
   return (
     <Suggestion
-      items={suggestions}
-      onSelect={(value) => {
-        const type = getTypeByValue(value);
-        const config = AI_CONTEXT_NODE_CONFIGS.find(
-          (config) => config.type === type,
-        );
-        if (config) {
-          const contextValue = config.displayTextToValue?.(value) || value;
-          switch (type) {
-            case ContextType.FILE: {
-              const fileItem = getFileByValue(value);
-              if (fileItem) {
-                context.actions.addContext({
-                  type,
-                  value: contextValue,
-                  displayText: value,
-                  context: fileItem,
-                });
-              }
-              break;
-            }
-            // extend other type here
-            default:
-            // do nothing
-          }
+      showSearch={
+        showSearch && {
+          placeholder: 'Please input to search...',
+          onSearch: (text) => {
+            setSearchText(text);
+          },
         }
-        inputRef.current?.blur();
+      }
+      items={suggestions}
+      outsideOpen={keepMenuOpen}
+      onSelect={(value) => {
+        setKeepMenuOpen(true);
+        const contextItem = handleValue(value);
+        if (contextItem) {
+          setKeepMenuOpen(false);
+          context.actions.addContext(contextItem);
+        }
       }}
     >
-      {({ onKeyDown, onTrigger }) =>
-        inputVisible ? (
-          <Input
-            className={styles.input}
-            ref={inputRef}
-            style={{
-              ...tagSize,
-            }}
-            onChange={(e) => setinputValue(e.target.value)}
-            onKeyDown={onKeyDown}
-            onFocus={() => onTrigger()}
-            onBlur={() => {
-              setInputVisible(false);
-              setinputValue('');
-              onTrigger(false);
-            }}
-          />
-        ) : (
-          <Tag
-            ref={tagRef}
-            className={styles.tag}
-            icon={
-              <Icon className={styles.icon} component={() => <div>@</div>} />
-            }
-            onClick={() => setInputVisible(true)}
-          >
-            {contextItems.length === 0 && <span>Add Context</span>}
-          </Tag>
-        )
-      }
+      {({ onKeyDown, onTrigger }) => (
+        <Tag
+          ref={tagRef}
+          className={styles.tag}
+          icon={<Icon className={styles.icon} component={() => <div>@</div>} />}
+          onKeyDown={onKeyDown}
+          onClick={() => {
+            onTrigger();
+          }}
+        >
+          {contextItems.length === 0 && <span>Add Context</span>}
+        </Tag>
+      )}
     </Suggestion>
   );
 };

@@ -11,7 +11,6 @@ import { differenceWith } from 'lodash-es';
 import { useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
-import { ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
@@ -80,12 +79,13 @@ const ChatSender: React.FC = () => {
   const { loading, stop, append, onQuery } = useChatState();
   const [insertNodePosition, setInsertNodePosition] = useState(0);
   const [contextSearchInput, setContextSearchInput] = useState('');
+  const [keepMenuOpen, setKeepMenuOpen] = useState(false);
   const prevInputValue = useRef<string>(state.prompt);
   const { prompt, plainText } = useSnapshot(state);
   const { contextItems } = context.state;
 
   // 编辑器中的Context不去重，实际挂载时再去重
-  const { suggestions, getTypeByValue, getFileByValue } =
+  const { suggestions, showSearch, handleValue } =
     useSuggestion(contextSearchInput);
 
   // 处理输入变化
@@ -140,42 +140,27 @@ const ChatSender: React.FC = () => {
         <Suggestion
           className={styles.suggestion}
           items={suggestions}
-          showSearch={{
-            placeholder: 'Please input to search...',
-            onSearch: (text) => {
-              setContextSearchInput(text);
-            },
-          }}
+          showSearch={
+            showSearch && {
+              placeholder: 'Please input to search...',
+              onSearch: (text) => {
+                setContextSearchInput(text);
+              },
+            }
+          }
+          outsideOpen={keepMenuOpen}
           onSelect={(value) => {
-            const type = getTypeByValue(value);
-            const config = AI_CONTEXT_NODE_CONFIGS.find(
-              (config) => config.type === type,
-            );
-            if (config) {
-              const contextValue = config.displayTextToValue?.(value) || value;
+            setKeepMenuOpen(true);
+            const contextItem = handleValue(value);
+            if (contextItem) {
+              setKeepMenuOpen(false);
               const nextInputValue =
                 prompt.slice(0, insertNodePosition) +
-                contextValue +
+                contextItem.value +
                 prompt.slice(insertNodePosition + 1);
               actions.updatePrompt(nextInputValue);
 
-              switch (type) {
-                case ContextType.FILE: {
-                  const fileItem = getFileByValue(value);
-                  if (fileItem) {
-                    context.actions.addContext({
-                      type,
-                      value: contextValue,
-                      displayText: value,
-                      context: fileItem,
-                    });
-                  }
-                  break;
-                }
-                // extend other type here
-                default:
-                // do nothing
-              }
+              context.actions.addContext(contextItem);
             }
           }}
         >
