@@ -9,6 +9,7 @@ import { Bubble } from '@ant-design/x';
 import { createFileRoute } from '@tanstack/react-router';
 import { Button, type GetProp, Spin } from 'antd';
 import { createStyles } from 'antd-style';
+import { useMemo } from 'react';
 import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
 import Welcome from '@/components/Welcome';
@@ -46,15 +47,26 @@ const useStyle = createStyles(({ token, css }) => {
 
 const Chat: React.FC = () => {
   const { styles } = useStyle();
-  const { messages, status } = useChatState();
+  const { messages, loading } = useChatState();
 
-  const items = messages?.map((i) => {
-    return {
-      ...i,
-      content: i.role === 'assistant' ? i : i.content,
-      typing: status === 'submitted' ? { step: 20, interval: 150 } : false,
-    };
-  });
+  const items = useMemo(() => {
+    const msgs = messages?.map((i) => {
+      return {
+        ...i,
+        content: i.role === 'assistant' ? i : i.content,
+      };
+    });
+
+    if (loading) {
+      msgs.push({
+        id: 'loading',
+        role: 'assistant',
+        content: 'thinking',
+      } as any);
+    }
+    return msgs;
+  }, [messages, loading]);
+
   const roles: GetProp<typeof Bubble.List, 'roles'> = {
     user: {
       placement: 'end',
@@ -72,6 +84,14 @@ const Chat: React.FC = () => {
       },
       variant: 'outlined',
       messageRender(message) {
+        if (message === 'thinking') {
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Spin size="small" />
+              <span>Thinking...</span>
+            </div>
+          );
+        }
         return <AssistantMessage message={message} />;
       },
       footer: (
@@ -96,7 +116,7 @@ const Chat: React.FC = () => {
   return (
     <div className={styles.chat}>
       <div className={styles.chatList}>
-        {messages?.length ? (
+        {items?.length ? (
           /* 🌟 消息列表 */
           <Bubble.List
             items={items}
