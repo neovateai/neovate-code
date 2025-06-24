@@ -63,7 +63,7 @@ const parseLsResult = (result: unknown): ListItem[] => {
 export default function LsRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
 
-  const { result, state } = message;
+  const { state } = message;
   const items = parseLsResult(message.result);
   const dirPath = (message.args?.dir_path as string) || '';
 
