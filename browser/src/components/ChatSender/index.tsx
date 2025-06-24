@@ -10,7 +10,7 @@ import { createStyles } from 'antd-style';
 import { differenceWith } from 'lodash-es';
 import { useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
-import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
+import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
@@ -85,8 +85,13 @@ const ChatSender: React.FC = () => {
   const { contextItems } = context.state;
 
   // 编辑器中的Context不去重，实际挂载时再去重
-  const { suggestions, showSearch, handleValue } =
-    useSuggestion(contextSearchInput);
+  const {
+    suggestions,
+    showSearch,
+    handleValue,
+    currentContextType,
+    setCurrentContextType,
+  } = useSuggestion(contextSearchInput);
 
   // 处理输入变化
   const onChange = (value: string) => {
@@ -148,6 +153,11 @@ const ChatSender: React.FC = () => {
               },
             }
           }
+          showBackButton={currentContextType !== ContextType.UNKNOWN}
+          onBack={() => {
+            setContextSearchInput('');
+            setCurrentContextType(ContextType.UNKNOWN);
+          }}
           outsideOpen={keepMenuOpen}
           onSelect={(value) => {
             setKeepMenuOpen(true);

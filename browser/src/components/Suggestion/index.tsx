@@ -1,6 +1,7 @@
+import { LeftOutlined } from '@ant-design/icons';
 import useXComponentConfig from '@ant-design/x/es/_util/hooks/use-x-component-config';
 import { useXProviderContext } from '@ant-design/x/es/x-provider';
-import { Cascader, Flex, Input, type InputRef, version } from 'antd';
+import { Button, Cascader, Flex, Input, type InputRef, version } from 'antd';
 import type { CascaderProps } from 'antd';
 import classnames from 'classnames';
 import { useEvent, useMergedState } from 'rc-util';
@@ -50,6 +51,8 @@ export interface SuggestionProps<T = any> {
   classNames?: Partial<Record<string, string>>;
 
   outsideOpen?: boolean;
+  showBackButton?: boolean;
+  onBack?: () => void;
 
   // ============================= Search =============================
   showSearch?: ShowSearchConfigs | false;
@@ -69,6 +72,8 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
     block,
     showSearch,
     outsideOpen,
+    showBackButton,
+    onBack,
   } = props;
 
   // ============================= MISC =============================
@@ -141,21 +146,31 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
           padding: 4,
         }}
       >
-        {/* TODO back button */}
-        {showSearch && (
-          <Input
-            ref={searchBoxRef}
-            style={{
-              margin: '4px 0',
-            }}
-            size="small"
-            variant="underlined"
-            placeholder={showSearch?.placeholder}
-            onChange={(e) => {
-              showSearch.onSearch(e.target.value);
-            }}
-          />
-        )}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          {showBackButton && (
+            <Button icon={<LeftOutlined />} onClick={onBack} type="text" />
+          )}
+          {showSearch && (
+            <Input
+              ref={searchBoxRef}
+              style={{
+                margin: '4px 0',
+              }}
+              size="small"
+              variant="underlined"
+              placeholder={showSearch?.placeholder}
+              onChange={(e) => {
+                showSearch.onSearch(e.target.value);
+              }}
+            />
+          )}
+        </div>
+
         {menus}
       </div>
     );

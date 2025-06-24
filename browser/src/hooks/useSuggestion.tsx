@@ -88,9 +88,19 @@ export const useSuggestion = (
     };
   }, []);
 
-  const suggestions = suggentionMap[currentContextType] ?? [];
+  const showSearch = useMemo(
+    () => currentContextType === ContextType.FILE,
+    [currentContextType],
+  );
 
-  const showSearch = currentContextType === ContextType.FILE;
+  const suggestions = useMemo(() => {
+    const originalArray = suggentionMap[currentContextType] ?? [];
+    if (showSearch && searchText) {
+      return originalArray.filter((item) => item.value.includes(searchText));
+    }
+
+    return originalArray;
+  }, [suggentionMap, currentContextType, searchText, showSearch]);
 
   const handleValue = (value: string) => {
     if (Object.values(ContextType).includes(value as ContextType)) {
@@ -121,8 +131,9 @@ export const useSuggestion = (
 
   return {
     suggestions,
-    fileList,
     showSearch,
     handleValue,
+    setCurrentContextType,
+    currentContextType,
   };
 };

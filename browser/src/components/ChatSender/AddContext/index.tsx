@@ -4,6 +4,7 @@ import { createStyles } from 'antd-style';
 import { useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
 import Suggestion from '@/components/Suggestion';
+import { ContextType } from '@/constants/context';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 
@@ -37,10 +38,13 @@ const AddContext = () => {
   const [searchText, setSearchText] = useState('');
   const [keepMenuOpen, setKeepMenuOpen] = useState(false);
 
-  const { suggestions, showSearch, handleValue } = useSuggestion(
-    searchText,
-    contextsSelectedValues,
-  );
+  const {
+    suggestions,
+    showSearch,
+    handleValue,
+    currentContextType,
+    setCurrentContextType,
+  } = useSuggestion(searchText, contextsSelectedValues);
 
   const { styles } = useStyle();
 
@@ -55,6 +59,11 @@ const AddContext = () => {
         }
       }
       items={suggestions}
+      showBackButton={currentContextType !== ContextType.UNKNOWN}
+      onBack={() => {
+        setSearchText('');
+        setCurrentContextType(ContextType.UNKNOWN);
+      }}
       outsideOpen={keepMenuOpen}
       onSelect={(value) => {
         setKeepMenuOpen(true);
