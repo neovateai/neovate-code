@@ -5,10 +5,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createXai } from '@ai-sdk/xai';
 import { ModelProvider } from '@openai/agents';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import dotenv from 'dotenv';
 import { AiSdkModel, aisdk } from './utils/ai-sdk';
-
-dotenv.config();
 
 const THINKING_MODELS = [
   'o3',
