@@ -53,7 +53,12 @@ export const useSuggestion = (
       .map((item) => ({
         label: item.path,
         value: item.path,
-        icon: <FileOutlined />,
+        icon: (
+          <DevFileIcon
+            isFolder={item.type === 'directory'}
+            fileExt={item.path.split('.').pop() ?? ''}
+          />
+        ),
       }));
 
     return searchResult;
