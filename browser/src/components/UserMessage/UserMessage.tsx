@@ -23,8 +23,6 @@ const UserMessage = (props: UserMessageProps) => {
 
   const { annotations, content = '' } = message;
 
-  console.log(message);
-
   return (
     <LexicalTextAreaContext
       value={{
