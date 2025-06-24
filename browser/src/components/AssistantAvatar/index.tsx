@@ -5,7 +5,6 @@ const useStyles = createStyles(({ css }) => {
   return {
     logo: css`
       width: 32px;
-      height: 32px;
       display: block;
       margin: 0 auto;
     `,

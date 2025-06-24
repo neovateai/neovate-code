@@ -9,7 +9,7 @@ import { Bubble } from '@ant-design/x';
 import { createFileRoute } from '@tanstack/react-router';
 import { Button, type GetProp, Spin } from 'antd';
 import { createStyles } from 'antd-style';
-import { useMemo } from 'react';
+import Logo from '@/components/AssistantAvatar';
 import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
 import Welcome from '@/components/Welcome';
@@ -35,25 +35,16 @@ const useStyle = createStyles(({ token, css }) => {
 
 const Chat: React.FC = () => {
   const { styles } = useStyle();
-  const { messages, loading } = useChatState();
+  const { messages } = useChatState();
 
-  const items = useMemo(() => {
-    const msgs = messages?.map((i) => {
-      return {
-        ...i,
-        content: i.role === 'assistant' ? i : i.content,
-      };
-    });
-
-    if (loading) {
-      msgs.push({
-        id: 'loading',
-        role: 'assistant',
-        content: 'thinking',
-      } as any);
-    }
-    return msgs;
-  }, [messages, loading]);
+  const items = messages?.map((i, index) => {
+    return {
+      ...i,
+      content: i.role === 'assistant' ? i : i.content,
+      typing: status === 'submitted' ? { step: 20, interval: 150 } : false,
+      loading: status === 'submitted' && index === messages.length - 1,
+    };
+  });
 
   const roles: GetProp<typeof Bubble.List, 'roles'> = {
     user: {
@@ -66,19 +57,9 @@ const Chat: React.FC = () => {
     },
     assistant: {
       placement: 'start',
-      avatar: {
-        src: '/src/components/Sider/imgs/kmi-ai.png',
-      },
+      avatar: <Logo />,
       variant: 'outlined',
       messageRender(message) {
-        if (message === 'thinking') {
-          return (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Spin size="small" />
-              <span>Thinking...</span>
-            </div>
-          );
-        }
         return <AssistantMessage message={message} />;
       },
       footer: (
