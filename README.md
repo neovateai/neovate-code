@@ -1,75 +1,72 @@
-# Takumi
+# Takumi - AI-Powered Development Assistant
 
-[![](https://badgen.net/npm/v/takumi)](https://www.npmjs.com/package/takumi)
-[![](https://badgen.net/npm/dm/takumi)](https://www.npmjs.com/package/takumi)
-[![](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml)
-[![](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
+[![npm version](https://badgen.net/npm/v/takumi)](https://www.npmjs.com/package/takumi)
+[![npm downloads](https://badgen.net/npm/dm/takumi)](https://www.npmjs.com/package/takumi)
+[![CI Status](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml)
+[![License](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
 
-Pronounced `/tɑːˈkuːmi/`, a coding agent CLI to enhance your development workflow.
+Pronounced `/tɑːˈkuːmi/`, Takumi is an intelligent CLI tool that enhances developer productivity through AI-assisted coding.
 
-> Please consider following this project's author, [sorrycc](https://github.com/sorrycc), and consider starring the project to show your ❤️ and support.
+## Core Features
 
-## Key Features
+### AI Integration
+- **Multi-LLM Support**: OpenAI, Google, Groq, DeepSeek and more
+- **Model Management**: Aliases and configuration for different LLMs
+- **Context Awareness**: Maintains project context for better suggestions
 
-- **LLMs Providers** to use various LLMs from providers.
-- **File Operations** to read, write, and edit files directly through AI commands.
-- **Codebase Navigation & Search** to explore and search your project.
-- **Command Execution** to run shell commands safely.
-- **Plan Mode** to break down complex tasks into manageable steps, and execute the plan step by step.
-- **Automated Commit Messages** to generate concise and conventional commit messages.
-- **Project Initialization** to generate a `TAKUMI.md` guidelines file for the AI to follow later.
-- **File Watching** to monitor files for specific AI instructions in comments.
-- **Model Aliases** to use aliases for models.
-- **MCP Support** to integrate external tools and services.
-- **Extensible Plugins** to extend the functionality of Takumi.
+### Code Operations
+- **File Management**: Read/write/edit files with AI commands
+- **Code Navigation**: Intelligent search and exploration
+- **Safe Execution**: Sandboxed command execution
+
+### Workflow Automation
+- **Task Planning**: Break down complex tasks into steps
+- **Auto Commit**: Generate conventional commit messages
+- **File Watching**: React to code changes with AI instructions
+
+### Extensibility
+- **Plugin System**: Extend functionality with custom plugins
+- **MCP Integration**: Connect with external tools and services
+- **Customizable**: Configure through TAKUMI.md guidelines
 
 ## Installation
 
-```bash
-$ npm install -g takumi
-# or
-$ pnpm add -g takumi
-# or
-$ bun add -g takumi
-# or
-$ yarn global add takumi
-```
-
-## Usage
-
-It's recommended to set API keys for the LLMs providers first. GOOGLE、OPENAI、GROQ、DEEPSEEK、OPENROUTER and others are supported, checkout [llms.md](./docs/llms.md) for more details.
+Install with your preferred package manager:
 
 ```bash
-$ export OPENAI_API_KEY="sk-..."
+npm install -g takumi  # npm
+pnpm add -g takumi    # pnpm
+bun add -g takumi     # bun
+yarn global add takumi # yarn
 ```
 
-Generate a `TAKUMI.md` file to guide the AI to follow later.
+## Getting Started
 
+1. **Set API Keys** (required for LLM providers):
 ```bash
-$ takumi init -m <model>
-# or use ta for short
-$ ta init -m <model>
+export OPENAI_API_KEY="your-api-key"  # or other provider keys
 ```
 
-Let the AI to act on the codebase.
-
+2. **Initialize Project** (creates TAKUMI.md guidelines):
 ```bash
-$ takumi "<your_request>" -m <model> -q
+takumi init -m <model>  # or use alias: ta init
 ```
 
-Let the AI to plan the steps before act to the codebase.
-
+3. **Basic Commands**:
+- Execute AI commands:
 ```bash
-$ takumi "<your_request>" -m <model> --plan -q
+takumi "<your_request>" -m <model>
 ```
-
-After the modification, use `takumi commit` to generate the commit message.
-
+- Plan and execute tasks:
 ```bash
-$ takumi commit -m <model> --stage --commit
+takumi "<your_request>" -m <model> --plan
+```
+- Generate commit messages:
+```bash
+takumi commit -m <model> --stage --commit
 ```
 
-Checkout [commands.md](./docs/commands.md) for more details.
+For advanced usage, see [commands.md](./docs/commands.md) and [llms.md](./docs/llms.md).
 
 ## Contributing
 
