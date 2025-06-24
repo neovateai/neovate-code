@@ -36,7 +36,9 @@ const ThinkingMessage: React.FC<{ message: ReasoningMessage }> = ({
         }`}
       >
         <div className="font-mono border-l-2 border-l-gray-400 ml-1 text-gray-400 text-xs pl-2">
-          {reasoning || `Thinking for next move...`}
+          {reasoning || reasoning === 'undefined'
+            ? `Thinking for next move...`
+            : reasoning}
         </div>
       </div>
     </div>
