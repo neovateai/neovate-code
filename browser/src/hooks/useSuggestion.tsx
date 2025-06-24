@@ -44,7 +44,6 @@ export const useSuggestion = (
           })),
         ],
       },
-      { label: 'Code', value: ContextType.CODE, icon: <CodeOutlined /> },
     ] as SuggestionItems;
   }, [fileList, selectedValues]);
 

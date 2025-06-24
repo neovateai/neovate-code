@@ -1,8 +1,4 @@
-import Icon, {
-  BookOutlined,
-  CloseOutlined,
-  CodeOutlined,
-} from '@ant-design/icons';
+import Icon, { CloseOutlined, FileUnknownOutlined } from '@ant-design/icons';
 import { Image, Popover, Tag } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
@@ -60,7 +56,7 @@ export const FileContextTag = ({
   );
 };
 
-export const CodeContextTag = ({
+export const AttachmentContextTag = ({
   displayText,
   onClose,
 }: {
@@ -72,9 +68,9 @@ export const CodeContextTag = ({
 
   return (
     <Tag
-      color="green"
+      color="purple"
       className={styles.tag}
-      data-ai-context-id="code"
+      data-ai-context-id="attachment"
       contentEditable={false}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -82,7 +78,7 @@ export const CodeContextTag = ({
       {onClose && hover ? (
         <CloseOutlined className={styles.icon} onClick={onClose} />
       ) : (
-        <CodeOutlined className={styles.icon} />
+        <FileUnknownOutlined className={styles.icon} />
       )}
       {displayText}
     </Tag>
@@ -141,34 +137,5 @@ export const ImageContextTag = ({
         {displayText}
       </Tag>
     </Popover>
-  );
-};
-
-export const UploadFileContextTag = ({
-  displayText,
-  onClose,
-}: {
-  displayText: string;
-  onClose?: () => void;
-}) => {
-  const [hover, setHover] = useState(false);
-  const { styles } = useStyle();
-
-  return (
-    <Tag
-      color="purple"
-      className={styles.tag}
-      data-ai-context-id="upload-file"
-      contentEditable={false}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
-      {onClose && hover ? (
-        <CloseOutlined className={styles.icon} onClick={onClose} />
-      ) : (
-        <BookOutlined className={styles.icon} />
-      )}
-      {displayText}
-    </Tag>
   );
 };

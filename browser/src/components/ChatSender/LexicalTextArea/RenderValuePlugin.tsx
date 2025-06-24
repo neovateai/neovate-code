@@ -84,7 +84,14 @@ const RenderValuePlugin = (props: Props) => {
       const originalConfig = aiContextNodeConfigs[originalConfigIndex];
 
       if (originalConfig) {
-        const info = originalConfig.pickInfo(match);
+        const info = originalConfig.pickInfo?.(match);
+
+        if (!info) {
+          console.warn(
+            `[LexicalTextArea] 无法从match中提取信息，请检查matchRegex和pickInfo是否正确。`,
+          );
+          continue;
+        }
 
         const mentionNode = $createAiContextNode(originalConfig, info);
         paragraph.append(mentionNode);

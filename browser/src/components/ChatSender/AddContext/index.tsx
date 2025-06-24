@@ -74,7 +74,7 @@ const AddContext = () => {
           (config) => config.type === type,
         );
         if (config) {
-          const contextValue = config.displayTextToValue(value);
+          const contextValue = config.displayTextToValue?.(value) || value;
           switch (type) {
             case ContextType.FILE: {
               const fileItem = getFileByValue(value);

@@ -152,7 +152,7 @@ const ChatSender: React.FC = () => {
               (config) => config.type === type,
             );
             if (config) {
-              const contextValue = config.displayTextToValue(value);
+              const contextValue = config.displayTextToValue?.(value) || value;
               const nextInputValue =
                 prompt.slice(0, insertNodePosition) +
                 contextValue +

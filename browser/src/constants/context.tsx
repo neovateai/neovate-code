@@ -1,6 +1,6 @@
 import type { FileItem, ImageItem } from '@/api/model';
 import {
-  CodeContextTag,
+  AttachmentContextTag,
   FileContextTag,
   ImageContextTag,
 } from '@/components/ContextTags';
@@ -8,7 +8,7 @@ import type { AiContextNodeConfig, ContextFileType } from '@/types/context';
 
 export enum ContextType {
   FILE = 'file',
-  CODE = 'code',
+  ATTACHMENT = 'attachment',
   IMAGE = 'image',
   UNKNOWN = 'unknown',
 }
@@ -33,16 +33,11 @@ export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
     ),
   },
   {
-    type: ContextType.CODE,
-    matchRegex: /@Code:\[(?<value>[^\]]+)\]/,
-    aiContextId: 'code',
-    displayTextToValue: (displayText) => `@Code:[${displayText}]`,
-    pickInfo: (regExpExecArray) => ({
-      value: regExpExecArray[0],
-      displayText: regExpExecArray.groups?.value || '',
-    }),
+    type: ContextType.ATTACHMENT,
+    matchRegex: /@Attachment:\[(?<value>[^\]]+)\]/,
+    aiContextId: 'attachment',
     render: ({ info, onClose }) => (
-      <CodeContextTag
+      <AttachmentContextTag
         key={info.value}
         displayText={info.displayText}
         onClose={onClose}
@@ -53,11 +48,6 @@ export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
     type: ContextType.IMAGE,
     matchRegex: /@Image:\[(?<value>[^\]]+)\]/,
     aiContextId: 'image',
-    displayTextToValue: (displayText) => `@Image:[${displayText}]`,
-    pickInfo: (regExpExecArray) => ({
-      value: regExpExecArray[0],
-      displayText: regExpExecArray.groups?.value || '',
-    }),
     render: ({ info, onClose, context }) => (
       <ImageContextTag
         key={info.value}

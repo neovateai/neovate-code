@@ -1,15 +1,21 @@
 import { CloudUploadOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { Attachments } from '@ant-design/x';
 import { Button, message } from 'antd';
+import { useSnapshot } from 'valtio';
 import {
   CONTEXT_AVAILABLE_FILE_TYPES,
   CONTEXT_MAX_FILE_SIZE,
+  ContextType,
 } from '@/constants/context';
+import { actions, state } from '@/state/context';
 
 const SenderAttachments = () => {
+  // const { attachments } = useSnapshot(state);
+
   return (
     <Attachments
       // action="/api/upload"
+
       accept={CONTEXT_AVAILABLE_FILE_TYPES.map((type) => type.extName).join(
         ',',
       )}
@@ -24,8 +30,16 @@ const SenderAttachments = () => {
         // TODO Check
         return false;
       }}
-      onChange={(file) => {
-        console.log(file);
+      onChange={({ file }) => {
+        // TODO server is not ready, so the file status won't be [done]
+        if (file.status === 'done') {
+          actions.addContext({
+            value: file.uid,
+            displayText: file.name,
+            type: ContextType.ATTACHMENT,
+            context: file,
+          });
+        }
       }}
       getDropContainer={() => document.body}
       placeholder={{

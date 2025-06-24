@@ -40,11 +40,10 @@ const PastePlugin = () => {
           if (!base64String) {
             return;
           }
-          const timeStampStr = Date.now().toString();
           context.actions.addContext({
             type: ContextType.IMAGE,
-            value: `@Image:[${timeStampStr}]`,
-            displayText: timeStampStr,
+            value: `@Image:[${Date.now()}]`,
+            displayText: blob.name,
             context: {
               src: base64String,
               mime: blob.type,
@@ -73,13 +72,11 @@ const PastePlugin = () => {
               const src = $(img).attr('src');
               if (src) {
                 console.log('图片的 src:', src);
-                // TODO Add picture to context
                 const mime = guessImageMime(src);
-                const timeStampStr = Date.now().toString();
                 context.actions.addContext({
                   type: ContextType.IMAGE,
-                  value: `@Image:[${timeStampStr}]`,
-                  displayText: timeStampStr,
+                  value: `@Image:[${Date.now()}]`,
+                  displayText: 'Image',
                   context: {
                     src,
                     mime,
