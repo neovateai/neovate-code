@@ -1,6 +1,7 @@
 import { CodeOutlined, RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import type { ToolMessage } from '@/types/message';
+import type { IGlobToolResult } from '@/types/tool';
 import InnerList, { type ListItem } from './InnerList';
 
 export default function GlobRender({ message }: { message?: ToolMessage }) {
@@ -19,10 +20,7 @@ export default function GlobRender({ message }: { message?: ToolMessage }) {
     }
 
     if (result?.data) {
-      const { filenames, message } = result.data as {
-        filenames: string[];
-        message?: string;
-      };
+      const { filenames, message } = result.data as IGlobToolResult;
 
       const items: ListItem[] = filenames.map((filename) => ({
         name: filename,

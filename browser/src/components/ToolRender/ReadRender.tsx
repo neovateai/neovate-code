@@ -1,5 +1,6 @@
 import { EyeOutlined } from '@ant-design/icons';
 import type { ToolMessage } from '@/types/message';
+import type { IReadToolResult } from '@/types/tool';
 
 export default function ReadRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
@@ -12,7 +13,7 @@ export default function ReadRender({ message }: { message?: ToolMessage }) {
         read {args?.file_path as string}
       </div>
       <div className="flex-1 text-right whitespace-nowrap text-ellipsis">
-        {(result?.data as { totalLines?: number })?.totalLines} lines
+        {(result?.data as IReadToolResult)?.totalLines} lines
       </div>
     </div>
   );

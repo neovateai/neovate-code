@@ -1,6 +1,7 @@
 import { LinkOutlined, RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import type { ToolMessage } from '@/types/message';
+import type { IFetchToolResult } from '@/types/tool';
 
 export default function FetchRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
@@ -13,13 +14,8 @@ export default function FetchRender({ message }: { message?: ToolMessage }) {
   };
 
   const url = (args?.url as string) || '';
-  const { result: fetchResult, durationMs } = (result?.data || {}) as {
-    result?: string;
-    code?: number;
-    codeText?: string;
-    contentType?: string;
-    durationMs?: number;
-  };
+  const { result: fetchResult, durationMs } = (result?.data ||
+    {}) as IFetchToolResult;
 
   const renderContent = () => {
     return (

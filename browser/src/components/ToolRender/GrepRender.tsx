@@ -2,6 +2,7 @@ import { RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import { VscSearch } from 'react-icons/vsc';
 import type { ToolMessage } from '@/types/message';
+import type { IGrepToolResult } from '@/types/tool';
 import InnerList, { type ListItem } from './InnerList';
 
 export default function GrepRender({ message }: { message?: ToolMessage }) {
@@ -9,10 +10,7 @@ export default function GrepRender({ message }: { message?: ToolMessage }) {
 
   const { result, args } = message;
   const [isExpanded, setIsExpanded] = useState(true);
-  const { filenames, durationMs } = (result?.data || {}) as {
-    filenames?: string[];
-    durationMs?: number;
-  };
+  const { filenames, durationMs } = (result?.data || {}) as IGrepToolResult;
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BsTerminal } from 'react-icons/bs';
 import type { ToolMessage } from '@/types/message';
+import type { IBashToolResult } from '@/types/tool';
 
 const mockData = {
   type: 'tool',
@@ -28,10 +29,7 @@ export default function BashRender({ message }: { message?: ToolMessage }) {
   };
 
   const command = (args?.command as string) || '';
-  const { stdout, stderr } = (result?.data || {}) as {
-    stdout?: string;
-    stderr?: string;
-  };
+  const { stdout, stderr } = (result?.data || {}) as IBashToolResult;
   const output = (result as { output?: string })?.output;
 
   const renderContent = () => {
