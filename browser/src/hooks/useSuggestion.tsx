@@ -39,7 +39,7 @@ export const useSuggestion = (
       const label = file.type === 'file' ? file.name : file.path;
       const extra =
         file.type === 'file'
-          ? file.path.split('/').slice(0, -1).join('/') || '/'
+          ? file.path.split('/').slice(0, -1).join('/')
           : null;
 
       return {
@@ -81,13 +81,11 @@ export const useSuggestion = (
     };
   }, [files, defaultSuggestions]);
 
-  const originalContextGetterMap = useMemo<{
+  const originalContextGetterMap: {
     [key in ContextType]?: (value: string) => ContextStoreValue | undefined;
-  }>(() => {
-    return {
-      [ContextType.FILE]: getOriginalFile,
-    };
-  }, []);
+  } = {
+    [ContextType.FILE]: getOriginalFile,
+  };
 
   const showSearch = useMemo(
     () => currentContextType === ContextType.FILE,
@@ -113,6 +111,7 @@ export const useSuggestion = (
       const config = AI_CONTEXT_NODE_CONFIGS.find(
         (config) => config.type === type,
       );
+
       const getOriginalContext = originalContextGetterMap[currentContextType];
       const originalContext = getOriginalContext?.(value);
       const contextItemValue = config?.valueFormatter?.(value) || value;
