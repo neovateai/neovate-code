@@ -19,14 +19,14 @@ const ThinkingMessage: React.FC<{ message: ReasoningMessage }> = ({
         onClick={toggleExpand}
       >
         <span
-          className={`transition-transform duration-300 ease-in-out animate-pulse ${
+          className={`transition-transform duration-300 ease-in-out ${
             isExpanded ? 'rotate-90' : ''
           }`}
         >
           <RightOutlined />
         </span>
-        <RadarChartOutlined className="animate-pulse" />
-        <div className="flex-1 text-xs truncate font-mono text-gray-400 animate-pulse">
+        <RadarChartOutlined />
+        <div className="flex-1 text-xs truncate font-mono text-gray-400">
           Thinking...
         </div>
       </div>
