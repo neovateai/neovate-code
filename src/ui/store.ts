@@ -41,6 +41,9 @@ export function createStore(opts: CreateStoreOpts) {
     messages: [],
     currentMessage: null,
     actions: {
+      addUserPrompt: (input: string) => {
+        opts.service.context.addUserPrompt(input);
+      },
       query: async (input: string): Promise<any> => {
         const service =
           store!.stage === 'plan' ? opts.planService : opts.service;
@@ -162,6 +165,7 @@ export interface Store {
   messages: Message[];
   currentMessage: Message | null;
   actions: {
+    addUserPrompt: (input: string) => void;
     query: (input: string) => Promise<any>;
   };
 }

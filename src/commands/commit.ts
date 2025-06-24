@@ -1,4 +1,4 @@
-import { AgentInputItem, ModelProvider, Runner } from '@openai/agents';
+import { ModelProvider, Runner } from '@openai/agents';
 import * as p from '@umijs/clack-prompts';
 import { ExecSyncOptionsWithStringEncoding, execSync } from 'child_process';
 import clipboardy from 'clipboardy';
@@ -311,18 +311,6 @@ function checkCommitMessage(message: string) {
   if (message.length === 0) {
     throw new Error('Commit message is empty');
   }
-}
-
-function removeThoughts(message: string) {
-  // e.g. gemini-2.5-pro-exp-03-25 contains <thought>...</thought>
-  message = message.replace(/<thought>[\s\S]*?<\/thought>/gm, '');
-
-  // eg claude-3.7-sonnet thought ... \n\n ...
-  if (message.indexOf('\n') != -1) {
-    // get the last line from newline-separated lines
-    return message.split('\n').pop() || message;
-  }
-  return message;
 }
 
 /**

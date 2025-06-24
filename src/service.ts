@@ -2,7 +2,6 @@ import {
   Agent,
   AgentInputItem,
   FunctionCallItem,
-  ModelProvider,
   Runner,
 } from '@openai/agents';
 import { randomUUID } from 'crypto';
@@ -10,10 +9,7 @@ import { Readable } from 'stream';
 import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
 import { Context } from './context';
-import { MCPManager } from './mcp';
 import { PluginHookType } from './plugin';
-import { PromptContext } from './prompt-context';
-import { getDefaultModelProvider } from './provider';
 import { Tools } from './tool';
 import { createBashTool } from './tools/bash';
 import { createEditTool } from './tools/edit';
@@ -25,15 +21,16 @@ import { createReadTool } from './tools/read';
 import { createWriteTool } from './tools/write';
 import { parseMessage } from './utils/parse-message';
 
-let mcpManager: MCPManager | null = null;
-
 export type AgentType = 'code' | 'plan';
 
-export interface ServiceOpts {
+export type ServiceOpts = CreateServiceOpts & {
+  tools: Tools;
+};
+
+export interface CreateServiceOpts {
   context: Context;
   agentType: AgentType;
   id?: string;
-  modelProvider?: ModelProvider;
 }
 
 export interface ServiceRunOpts {
@@ -47,9 +44,8 @@ export interface ServiceRunResult {
 
 export class Service {
   private opts: ServiceOpts;
-  private tools?: Tools;
+  private tools: Tools;
   protected agent?: Agent;
-  private initialized: boolean = false;
   context: Context;
   history: AgentInputItem[] = [];
   id: string;
@@ -58,71 +54,54 @@ export class Service {
     this.opts = opts;
     this.id = opts.id || randomUUID();
     this.context = opts.context;
-  }
-
-  async init() {
-    if (this.initialized) {
-      return;
-    }
-    this.initialized = true;
-    const context = this.context;
-    if (!mcpManager) {
-      mcpManager = new MCPManager(context.config.mcpServers);
-      await mcpManager.connect();
-    }
-    this.tools = new Tools(
-      this.opts.agentType === 'code'
-        ? await this.getCodeTools()
-        : await this.getPlanTools(),
-    );
-    const createAgentOpts = {
-      tools: this.tools,
-      context: this.context,
-    };
+    this.tools = opts.tools;
     this.agent =
       this.opts.agentType === 'code'
         ? createCodeAgent({
             model: this.context.config.model,
-            ...createAgentOpts,
+            tools: this.tools,
+            context: this.context,
           })
         : createPlanAgent({
             model: this.context.config.planModel,
-            ...createAgentOpts,
+            tools: this.tools,
+            context: this.context,
           });
   }
 
-  async destroy() {
-    if (mcpManager) {
-      await mcpManager.destroy();
-      mcpManager = null;
-    }
-  }
-
-  async getPlanTools() {
-    const context = this.context;
-    return [
+  static async create(opts: CreateServiceOpts) {
+    const context = opts.context;
+    const readonlyTools = [
       createReadTool({ context }),
       createLSTool({ context }),
       createGlobTool({ context }),
       createGrepTool({ context }),
       createFetchTool({ context }),
     ];
-  }
-
-  async getCodeTools() {
-    const context = this.context;
-    const mcpTools = await mcpManager!.getAllTools();
-    return [
+    const writeTools = [
       createWriteTool({ context }),
-      createReadTool({ context }),
-      createLSTool({ context }),
       createEditTool({ context }),
       createBashTool({ context }),
-      createGlobTool({ context }),
-      createGrepTool({ context }),
-      createFetchTool({ context }),
-      ...mcpTools,
     ];
+    const mcpTools = context.mcpTools;
+    const planTools = [...readonlyTools];
+    const codeTools = [...readonlyTools, ...writeTools, ...mcpTools];
+    let tools = opts.agentType === 'code' ? codeTools : planTools;
+    tools = await context.apply({
+      hook: 'tool',
+      args: [
+        {
+          agentType: opts.agentType,
+        },
+      ],
+      memo: tools,
+      type: PluginHookType.SeriesMerge,
+    });
+
+    return new Service({
+      ...opts,
+      tools: new Tools(tools),
+    });
   }
 
   async run(opts: ServiceRunOpts): Promise<ServiceRunResult> {
@@ -130,32 +109,29 @@ export class Service {
       read() {},
     });
     const input = await (async () => {
-      const promptContext = new PromptContext({
-        context: this.context,
-        prompts: [],
-      });
-      const promptContextMessage = {
+      const systemPromptStrs = await this.context.buildSystemPrompts();
+      const systemPrompts = systemPromptStrs.map((str) => ({
         role: 'system' as const,
-        content: await promptContext.getContext(),
-      };
+        content: str,
+      }));
       const prevInput =
         this.history.filter((item) => (item as any).role !== 'system') || [];
-      return [promptContextMessage, ...prevInput, ...opts.input];
+      return [...systemPrompts, ...prevInput, ...opts.input];
     })();
-    this.processStream(input, stream, opts.thinking).catch((error) => {
+    this.#processStream(input, stream, opts.thinking).catch((error) => {
       stream.emit('error', error);
     });
     return { stream };
   }
 
-  private async processStream(
+  async #processStream(
     input: AgentInputItem[],
     stream: Readable,
     thinking?: boolean,
   ) {
     try {
       const runner = new Runner({
-        modelProvider: this.opts.modelProvider || getDefaultModelProvider(),
+        modelProvider: this.opts.context.getModelProvider(),
         modelSettings: {
           providerData: {
             providerMetadata: {

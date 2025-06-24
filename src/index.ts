@@ -1,18 +1,25 @@
 import { ModelProvider } from '@openai/agents';
 import createDebug from 'debug';
 import { PRODUCT_NAME } from './constants';
+import type { Plugin } from './plugin';
 import { clearTracing } from './tracing';
 
 const debug = createDebug('takumi:index');
 
 export { Agent, Runner } from '@openai/agents';
 export { checkAndUpdate as _checkAndUpdate } from 'upgear';
+export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
+export { createDeepSeek as _createDeepSeek } from '@ai-sdk/deepseek';
+export { createAnthropic as _createAnthropic } from '@ai-sdk/anthropic';
+
+export type { Plugin };
 
 export interface RunCliOpts {
   cwd: string;
   productName: string;
   version: string;
   modelProvider?: ModelProvider;
+  plugins?: Plugin[];
 }
 
 export async function runCli(opts: RunCliOpts) {

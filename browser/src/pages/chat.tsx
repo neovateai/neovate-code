@@ -17,7 +17,6 @@ import ChatProvider, { useChatState } from '@/hooks/provider';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
-    // chat list 样式
     chat: css`
       height: 100%;
       width: 100%;
@@ -30,17 +29,6 @@ const useStyle = createStyles(({ token, css }) => {
     chatList: css`
       flex: 1;
       overflow: auto;
-    `,
-    loadingMessage: css`
-      background-image: linear-gradient(
-        90deg,
-        #ff6b23 0%,
-        #af3cb8 31%,
-        #53b6ff 89%
-      );
-      background-size: 100% 2px;
-      background-repeat: no-repeat;
-      background-position: bottom;
     `,
   };
 });
@@ -102,14 +90,14 @@ const Chat: React.FC = () => {
           <Button type="text" size="small" icon={<DislikeOutlined />} />
         </div>
       ),
-      loadingRender: () => (
-        <>
-          <Spin size="small" />
-          <div>
-            <p>Thinking...</p>
+      loadingRender() {
+        return (
+          <div className="flex items-center space-x-3">
+            <Spin size="small" />
+            <span className="text-sm text-gray-500 pl-2">Thinking...</span>
           </div>
-        </>
-      ),
+        );
+      },
     },
   };
 
@@ -117,7 +105,6 @@ const Chat: React.FC = () => {
     <div className={styles.chat}>
       <div className={styles.chatList}>
         {items?.length ? (
-          /* 🌟 消息列表 */
           <Bubble.List
             items={items}
             style={{
