@@ -7,7 +7,7 @@ import {
 } from '@ant-design/icons';
 import { Bubble } from '@ant-design/x';
 import { createFileRoute } from '@tanstack/react-router';
-import { Button, type GetProp, Spin } from 'antd';
+import { Button, type GetProp } from 'antd';
 import { createStyles } from 'antd-style';
 import Logo from '@/components/AssistantAvatar';
 import AssistantMessage from '@/components/AssistantMessage';
