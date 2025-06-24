@@ -42,7 +42,7 @@ export const state = proxy<ContextState>({
 });
 
 export const actions = {
-  /** 从上下文选择器添加新的上下文 */
+  /** 添加新的上下文 */
   addContext: (contextItem: ContextItem) => {
     // 去重，合并后的上下文中，已经存在的不添加
     if (state.contextItems.some((item) => item.value === contextItem.value)) {
@@ -52,7 +52,7 @@ export const actions = {
     state.contextItems.push(contextItem);
   },
 
-  /** 删除来自上下文选择器的上下文 */
+  /** 删除上下文 */
   removeContext: (value: string) => {
     state.contextItems = state.contextItems.filter(
       (item) => item.value !== value,
