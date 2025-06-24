@@ -1,18 +1,26 @@
 import {
   AppstoreAddOutlined,
   FileSearchOutlined,
-  PaperClipOutlined,
   ProductOutlined,
   ScheduleOutlined,
 } from '@ant-design/icons';
-import { Prompts, Sender, Suggestion } from '@ant-design/x';
-import { Button, Flex, type GetProp } from 'antd';
+import { Prompts, Sender } from '@ant-design/x';
+import { Flex, type GetProp } from 'antd';
 import { createStyles } from 'antd-style';
-import { useState } from 'react';
+import { differenceWith } from 'lodash-es';
+import { useRef, useState } from 'react';
+import { useSnapshot } from 'valtio';
+import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
+import { ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
+import { getInputInfo } from '@/utils/chat';
+import Suggestion from '../Suggestion';
+import LexicalTextArea from './LexicalTextArea';
+import { LexicalTextAreaContext } from './LexicalTextAreaContext';
+import SenderAttachments from './SenderAttachments';
 import SenderHeader from './SenderHeader';
 
 const SENDER_PROMPTS: GetProp<typeof Prompts, 'items'> = [
@@ -45,6 +53,15 @@ const useStyle = createStyles(({ token, css }) => {
       max-width: 700px;
       margin: 0 auto;
     `,
+    senderRoot: css`
+      margin: 0;
+      max-width: none;
+    `,
+    suggestion: css`
+      max-width: 700px;
+      margin: auto;
+      width: 100%;
+    `,
     speechButton: css`
       font-size: 18px;
       color: ${token.colorText} !important;
@@ -60,14 +77,31 @@ const useStyle = createStyles(({ token, css }) => {
 
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
-  const { isLoading, stop, append, onQuery } = useChatState();
-  const [inputValue, setInputValue] = useState(state.prompt);
-  const { suggestions } = useSuggestion();
+  const { loading, stop, append, onQuery } = useChatState();
+  const [insertNodePosition, setInsertNodePosition] = useState(0);
+  const [contextSearchInput, setContextSearchInput] = useState('');
+  const prevInputValue = useRef<string>(state.prompt);
+  const { prompt, plainText } = useSnapshot(state);
+  const { contextItems } = context.state;
+
+  // 编辑器中的Context不去重，实际挂载时再去重
+  const { suggestions, getTypeByValue, getFileByValue } =
+    useSuggestion(contextSearchInput);
 
   // 处理输入变化
   const onChange = (value: string) => {
-    setInputValue(value);
     actions.updatePrompt(value);
+  };
+
+  const handleSubmit = () => {
+    onQuery(prompt, plainText, contextItems);
+    actions.updatePrompt('');
+  };
+
+  const handleEnterPress = () => {
+    if (prompt.trim()) {
+      handleSubmit();
+    }
   };
 
   return (
@@ -86,64 +120,117 @@ const ChatSender: React.FC = () => {
         }}
         className={styles.senderPrompt}
       />
-      {/* 🌟 输入框 */}
-      <Suggestion
-        items={suggestions}
-        onSelect={(itemVal) => {
-          context.actions.setFile(itemVal);
-          setInputValue('');
+      <LexicalTextAreaContext.Provider
+        value={{
+          onEnterPress: handleEnterPress,
+          onChangeNodes: (prevNodes, nextNodes) => {
+            // 只处理删除节点的情况，新增无需处理
+            differenceWith(prevNodes, nextNodes, (prev, next) => {
+              return prev.originalText === next.originalText;
+            }).forEach((node) => {
+              context.actions.removeContext(node.originalText);
+            });
+          },
+          onChangePlainText: (plainText) => actions.updatePlainText(plainText),
+          aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
+          namespace: 'SenderTextarea',
         }}
       >
-        {({ onTrigger, onKeyDown }) => {
-          return (
-            <Sender
-              value={inputValue}
-              header={<SenderHeader />}
-              onSubmit={() => {
-                onQuery(inputValue);
-                actions.updatePrompt('');
-                setInputValue('');
-              }}
-              onChange={(value) => {
-                if (value === '@') {
-                  onTrigger();
-                } else if (!value) {
-                  onTrigger(false);
+        {/* 🌟 输入框 */}
+        <Suggestion
+          className={styles.suggestion}
+          items={suggestions}
+          showSearch={{
+            placeholder: 'Please input to search...',
+            onSearch: (text) => {
+              setContextSearchInput(text);
+            },
+          }}
+          onSelect={(value) => {
+            const type = getTypeByValue(value);
+            const config = AI_CONTEXT_NODE_CONFIGS.find(
+              (config) => config.type === type,
+            );
+            if (config) {
+              const contextValue = config.displayTextToValue?.(value) || value;
+              const nextInputValue =
+                prompt.slice(0, insertNodePosition) +
+                contextValue +
+                prompt.slice(insertNodePosition + 1);
+              actions.updatePrompt(nextInputValue);
+
+              switch (type) {
+                case ContextType.FILE: {
+                  const fileItem = getFileByValue(value);
+                  if (fileItem) {
+                    context.actions.addContext({
+                      type,
+                      value: contextValue,
+                      displayText: value,
+                      context: fileItem,
+                    });
+                  }
+                  break;
                 }
-                onChange(value);
-              }}
-              onKeyDown={onKeyDown}
-              onCancel={() => {
-                stop();
-              }}
-              prefix={
-                <Button
-                  type="text"
-                  icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
-                />
+                // extend other type here
+                default:
+                // do nothing
               }
-              loading={isLoading}
-              className={styles.sender}
-              allowSpeech
-              actions={(_, info) => {
-                const { SendButton, LoadingButton, SpeechButton } =
-                  info.components;
-                return (
-                  <Flex gap={4}>
-                    <SpeechButton className={styles.speechButton} />
-                    {isLoading ? (
-                      <LoadingButton type="default" />
-                    ) : (
-                      <SendButton type="primary" />
-                    )}
-                  </Flex>
-                );
-              }}
-              placeholder="Ask or input @ use skills"
-            />
-          );
-        }}
-      </Suggestion>
+            }
+          }}
+        >
+          {({ onTrigger, onKeyDown }) => {
+            return (
+              <Sender
+                className={styles.sender}
+                rootClassName={styles.senderRoot}
+                value={prompt}
+                header={<SenderHeader />}
+                onSubmit={handleSubmit}
+                onChange={(value) => {
+                  const { isInputingAiContext, position } = getInputInfo(
+                    prevInputValue.current,
+                    value,
+                  );
+                  if (isInputingAiContext) {
+                    setInsertNodePosition(position);
+                    onTrigger();
+                  } else {
+                    onTrigger(false);
+                  }
+                  prevInputValue.current = prompt;
+                  onChange(value);
+                }}
+                onKeyDown={onKeyDown}
+                onCancel={() => {
+                  stop();
+                }}
+                prefix={<SenderAttachments />}
+                loading={loading}
+                allowSpeech
+                actions={(_, info) => {
+                  const { SendButton, LoadingButton, SpeechButton } =
+                    info.components;
+                  return (
+                    <Flex gap={4}>
+                      <SpeechButton className={styles.speechButton} />
+                      {loading ? (
+                        <LoadingButton type="default" />
+                      ) : (
+                        <SendButton type="primary" />
+                      )}
+                    </Flex>
+                  );
+                }}
+                components={{
+                  input: LexicalTextArea,
+                }}
+                placeholder="Ask or input @ use skills"
+              />
+            );
+          }}
+        </Suggestion>
+      </LexicalTextAreaContext.Provider>
     </>
   );
 };

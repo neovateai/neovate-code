@@ -25,8 +25,15 @@
     "react-dom": "^19.1.0",
     "react-markdown": "^9.0.0",
     "react-syntax-highlighter": "^15.5.0",
+    "classnames": "^2.5.1",
+    "cheerio": "^1.1.0",
+    "lexical": "0.32.1",
+    "@lexical/react": "0.32.1",
+    "@lexical/utils": "0.32.1",
+    "rc-util": "^5.44.4",
     "swr": "^2.3.3",
-    "valtio": "^2.1.5"
+    "valtio": "^2.1.5",
+    "devicons-react": "^1.4.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.10",
