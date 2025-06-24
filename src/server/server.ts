@@ -7,6 +7,7 @@ import portfinder from 'portfinder';
 import { PRODUCT_NAME } from '../constants';
 import * as logger from '../utils/logger';
 import config from './config';
+import mcpRoute from './routes/mcp';
 import { CreateServerOpts, RunBrowserServerOpts } from './types';
 
 const debug = createDebug('takumi:server:completions');
@@ -44,6 +45,8 @@ const registerPlugins = async (app: FastifyInstance) => {
     prefix: '/',
     wildcard: false,
   });
+
+  app.register(mcpRoute, { prefix: BASE_API_PREFIX });
 
   app.get('*', async (request, reply) => {
     if (request.url.startsWith(BASE_API_PREFIX)) {
