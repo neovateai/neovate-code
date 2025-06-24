@@ -198,7 +198,9 @@ function Header() {
         </Text>
         <Text color="gray">v{version}</Text>
       </Box>
-      <GeneralInfoPanel generalInfo={generalInfo} />
+      <Box marginTop={1}>
+        <GeneralInfoPanel generalInfo={generalInfo} />
+      </Box>
     </Box>
   );
 }
