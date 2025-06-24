@@ -1,4 +1,4 @@
-import { DownOutlined, FolderOutlined, RightOutlined } from '@ant-design/icons';
+import { FolderOutlined, RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import type { ToolMessage } from '@/types/message';
 import InnerList, { type ListItem } from './InnerList';
