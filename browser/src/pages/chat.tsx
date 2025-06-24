@@ -12,6 +12,7 @@ import { createStyles } from 'antd-style';
 import AssistantAvatar from '@/components/AssistantAvatar';
 import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
+import { UserMessage, UserMessageFooter } from '@/components/UserMessage';
 import Welcome from '@/components/Welcome';
 import ChatProvider, { useChatState } from '@/hooks/provider';
 
@@ -40,7 +41,8 @@ const Chat: React.FC = () => {
   const items = messages?.map((i, index) => {
     return {
       ...i,
-      content: i.role === 'assistant' ? i : i.content,
+      // content: i.role === 'assistant' ? i : i.content,
+      content: i,
       typing: status === 'submitted' ? { step: 20, interval: 150 } : false,
       loading: status === 'submitted' && index === messages.length - 1,
     };
@@ -51,6 +53,12 @@ const Chat: React.FC = () => {
       avatar: {
         icon: <UserOutlined />,
         style: { background: '#87d068' },
+      },
+      messageRender(message) {
+        return <UserMessage message={message} />;
+      },
+      footer(message) {
+        return <UserMessageFooter message={message} />;
       },
     },
     assistant: {
