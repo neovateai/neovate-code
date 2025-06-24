@@ -2,7 +2,6 @@ import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './global.css';
-// import { ChatProvider } from '@/context/chatProvider';
 import { routeTree } from './routeTree.gen';
 
 const router = createRouter({ routeTree });
@@ -16,8 +15,6 @@ declare module '@tanstack/react-router' {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {/* <ChatProvider> */}
     <RouterProvider router={router} />
-    {/* </ChatProvider> */}
   </StrictMode>,
 );

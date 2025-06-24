@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 
 export * from './server';
+export * from './app-data';
 
 export interface TypedRequest<Body = unknown, Query = unknown, Params = unknown>
   extends FastifyRequest {

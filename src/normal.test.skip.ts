@@ -7,13 +7,7 @@ import { Context } from './context';
 const root = path.join(__dirname, '../..');
 const fixtures = path.join(root, 'fixtures');
 const cwd = path.join(fixtures, 'normal');
-const context = new Context({
-  cwd,
-  argvConfig: {
-    quiet: true,
-    model: 'flash',
-  },
-});
+let context: Context;
 
 function cleanup() {
   const tmpDir = path.join(cwd, 'tmp');
@@ -23,7 +17,13 @@ function cleanup() {
 }
 
 beforeAll(async () => {
-  await context.init();
+  context = await Context.create({
+    cwd,
+    argvConfig: {
+      quiet: true,
+      model: 'flash',
+    },
+  });
 });
 
 beforeEach(() => {

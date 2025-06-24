@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useChat } from '@ai-sdk/react';
-import { createContext, useContext } from 'react';
+import type { UIMessage } from '@ai-sdk/ui-utils';
+import { createContext, useContext, useMemo } from 'react';
 import type { ContextItem } from '@/types/context';
 
 type ChatState = ReturnType<typeof useChat> & {
@@ -10,6 +11,8 @@ type ChatState = ReturnType<typeof useChat> & {
     plainText: string,
     contextItems: ContextItem[],
   ) => void;
+  messagesWithPlaceholder: UIMessage[];
+  originalMessages: UIMessage[];
 };
 
 export const ChatContext = createContext<ChatState | null>(null);
@@ -29,9 +32,36 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
       model: 'takumi',
       // plan: true,
     },
+    onError(error) {
+      console.error('Error:', error);
+    },
   });
 
   const loading = chatState.status === 'submitted';
+
+  const messagesWithPlaceholder = useMemo(() => {
+    if (loading && chatState.messages.length > 0) {
+      const placeholderMessage: UIMessage = {
+        id: `thinking-${Date.now()}`,
+        role: 'assistant',
+        content: '',
+        parts: [
+          {
+            type: 'text',
+            text: 'Thinking...',
+          },
+        ],
+        annotations: [
+          {
+            type: 'text',
+            text: 'Thinking...',
+          },
+        ],
+      };
+      return [...chatState.messages, placeholderMessage];
+    }
+    return chatState.messages;
+  }, [chatState.messages, loading]);
 
   const onQuery = async (
     originalContent: string,
@@ -51,7 +81,16 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   };
 
   return (
-    <ChatContext.Provider value={{ ...chatState, loading, onQuery }}>
+    <ChatContext.Provider
+      value={{
+        ...chatState,
+        originalMessages: chatState.messages,
+        messages: messagesWithPlaceholder,
+        loading,
+        onQuery,
+        messagesWithPlaceholder,
+      }}
+    >
       {children}
     </ChatContext.Provider>
   );

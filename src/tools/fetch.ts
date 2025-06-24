@@ -2,7 +2,6 @@ import { Agent, Runner, tool } from '@openai/agents';
 import TurndownService from 'turndown';
 import { z } from 'zod';
 import { Context } from '../context';
-import { getDefaultModelProvider } from '../provider';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5min
 const urlCache = new Map();
@@ -68,7 +67,7 @@ Remembers:
           model: opts.context.config.smallModel,
         });
         const runner = new Runner({
-          modelProvider: getDefaultModelProvider(),
+          modelProvider: opts.context.getModelProvider(),
         });
         const input = `
 Web page content:
