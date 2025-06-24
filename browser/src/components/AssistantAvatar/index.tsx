@@ -8,11 +8,22 @@ const useStyles = createStyles(({ css }) => {
       display: block;
       margin: 0 auto;
     `,
+    logContainer: css`
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `,
   };
 });
 
 const Logo = () => {
   const { styles } = useStyles();
-  return <img src={kmiPng} alt="Logo" className={styles.logo} />;
+  return (
+    <div className={styles.logContainer}>
+      <img src={kmiPng} alt="Logo" className={styles.logo} />
+    </div>
+  );
 };
 export default Logo;
