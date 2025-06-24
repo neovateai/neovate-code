@@ -13,6 +13,7 @@ import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
+import ModelSelector from '../ModelSelector';
 import SenderHeader from './SenderHeader';
 
 const SENDER_PROMPTS: GetProp<typeof Prompts, 'items'> = [
@@ -55,6 +56,22 @@ const useStyle = createStyles(({ token, css }) => {
       margin: 0 auto;
       color: ${token.colorText};
     `,
+    senderFooter: css`
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-top: 1px solid ${token.colorBorderSecondary};
+    `,
+    senderFooterLeft: css`
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    `,
+    senderFooterRight: css`
+      display: flex;
+      align-items: center;
+    `,
   };
 });
 
@@ -68,6 +85,22 @@ const ChatSender: React.FC = () => {
   const onChange = (value: string) => {
     setInputValue(value);
     actions.updatePrompt(value);
+  };
+
+  // 自定义底部，包含模型选择器
+  const renderFooter = () => {
+    return (
+      <div className={styles.senderFooter}>
+        <div className={styles.senderFooterLeft}>
+          <ModelSelector />
+          <Button
+            type="text"
+            icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
+          />
+        </div>
+        <div className={styles.senderFooterRight}></div>
+      </div>
+    );
   };
 
   return (
@@ -99,6 +132,7 @@ const ChatSender: React.FC = () => {
             <Sender
               value={inputValue}
               header={<SenderHeader />}
+              footer={renderFooter()}
               onSubmit={() => {
                 onQuery(inputValue);
                 actions.updatePrompt('');
@@ -116,12 +150,6 @@ const ChatSender: React.FC = () => {
               onCancel={() => {
                 stop();
               }}
-              prefix={
-                <Button
-                  type="text"
-                  icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
-                />
-              }
               loading={isLoading}
               className={styles.sender}
               allowSpeech

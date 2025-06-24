@@ -4,31 +4,41 @@ import { useMount } from 'ahooks';
 import { createStyles } from 'antd-style';
 import React from 'react';
 import Sider from '@/components/Sider';
+import { useModels } from '@/hooks/useModels';
 import { actions } from '@/state/appData';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
-    layout: css`
-      width: 100%;
-      min-width: 1000px;
+    root: css`
       height: 100vh;
+      width: 100vw;
       display: flex;
-      background: ${token.colorBgContainer};
-      font-family: AlibabaPuHuiTi, ${token.fontFamily}, sans-serif;
+      flex-direction: row;
+      overflow: hidden;
+    `,
+    content: css`
+      flex: 1;
+      overflow: hidden;
+      background-color: ${token.colorBgLayout};
     `,
   };
 });
 
 const Layout: React.FC = () => {
   const { styles } = useStyle();
+
+  useModels();
+
   useMount(() => {
     actions.getAppData();
   });
 
   return (
-    <div className={styles.layout}>
+    <div className={styles.root}>
       <Sider />
-      <Outlet />
+      <div className={styles.content}>
+        <Outlet />
+      </div>
       <TanStackRouterDevtools position="bottom-right" />
     </div>
   );
