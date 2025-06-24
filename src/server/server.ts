@@ -112,6 +112,17 @@ export async function runBrowserServer(opts: RunBrowserServerOpts) {
     type: PluginHookType.SeriesMerge,
   });
 
+  const exit = () => {
+    debug('exit');
+    opts.context.destroy().then(() => {
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGINT', exit);
+  process.on('SIGQUIT', exit);
+  process.on('SIGTERM', exit);
+
   await createServer({
     ...opts,
     traceName,
