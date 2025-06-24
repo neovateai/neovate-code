@@ -168,13 +168,13 @@ interface GeneralInfo {
   log: string;
 }
 
-function TerminalHeader({ generalInfo }: { generalInfo: GeneralInfo }) {
+function GeneralInfoPanel({ generalInfo }: { generalInfo: GeneralInfo }) {
   return (
     <Box
       borderStyle="round"
       borderColor="gray"
       paddingX={1}
-      width={80}
+      minWidth={64}
       flexDirection="column"
     >
       {Object.entries(generalInfo).map(([key, value], index) => (
@@ -198,7 +198,7 @@ function Header() {
         </Text>
         <Text color="gray">v{version}</Text>
       </Box>
-      <TerminalHeader generalInfo={generalInfo} />
+      <GeneralInfoPanel generalInfo={generalInfo} />
     </Box>
   );
 }
