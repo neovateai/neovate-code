@@ -68,7 +68,6 @@ const Chat: React.FC = () => {
       placement: 'start',
       avatar: {
         src: '/src/components/Sider/imgs/kmi-ai.png',
-        // style: { background: '#fde3cf' },
       },
       variant: 'outlined',
       messageRender(message) {
@@ -90,14 +89,6 @@ const Chat: React.FC = () => {
           <Button type="text" size="small" icon={<DislikeOutlined />} />
         </div>
       ),
-      loadingRender() {
-        return (
-          <div className="flex items-center space-x-3">
-            <Spin size="small" />
-            <span className="text-sm text-gray-500 pl-2">Thinking...</span>
-          </div>
-        );
-      },
     },
   };
 
