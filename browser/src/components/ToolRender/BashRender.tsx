@@ -3,25 +3,9 @@ import { BsTerminal } from 'react-icons/bs';
 import type { ToolMessage } from '@/types/message';
 import type { IBashToolResult } from '@/types/tool';
 
-const mockData = {
-  type: 'tool',
-  toolCallId: '0c8c7e13-a4ac-4860-9755-e3f56463ae1b',
-  toolName: 'bash',
-  args: {
-    command: 'node -v',
-    timeout: 5000,
-  },
-  state: 'result',
-  step: 1,
-  result: {
-    success: true,
-    output: 'v22.16.0\n',
-  },
-};
-
 export default function BashRender({ message }: { message?: ToolMessage }) {
-  const data = message || (mockData as ToolMessage);
-  const { args, result } = data;
+  if (!message) return null;
+  const { args, result } = message;
   const [isExpanded, setIsExpanded] = useState(true);
 
   const toggleExpand = () => {
