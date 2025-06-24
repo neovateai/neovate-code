@@ -7,8 +7,10 @@ const parseLsResult = (result: unknown): ListItem[] => {
   if (typeof result !== 'string' || !result) return [];
 
   const lines = result.trim().split('\n');
+  const rootItems: ListItem[] = [];
+  const parentStack: ListItem[] = [];
 
-  // 如果只有一行，且不是以'- '开头，则认为它是一个目录路径
+  // Edge case for single line path from original code.
   if (lines.length === 1 && !lines[0].trim().startsWith('- ')) {
     const name = lines[0].trim();
     return [
@@ -18,34 +20,50 @@ const parseLsResult = (result: unknown): ListItem[] => {
       },
     ];
   }
-  // 如果是ls -F的结果
-  if (lines[0].trim().endsWith(':')) {
-    lines.shift();
-  }
 
-  return lines
-    .map((line): ListItem | null => {
-      const trimmedLine = line.trim();
-      if (!trimmedLine) return null;
+  lines.forEach((line) => {
+    const match = line.match(/^(\s*)- (.*)/);
+    if (!match) return;
 
-      // 兼容- /path/to/file格式
-      const match = trimmedLine.match(/^- (.*)/);
-      const name = match ? match[1] : trimmedLine;
+    const indentation = match[1].length;
+    const level = Math.floor(indentation / 2);
 
-      const isDirectory = name.endsWith('/');
-      return {
-        name: isDirectory ? name.slice(0, -1) : name,
-        isDirectory,
-      };
-    })
-    .filter((item): item is ListItem => item !== null);
+    let name = match[2];
+    const isDirectory = name.endsWith('/');
+    if (isDirectory) {
+      name = name.slice(0, -1);
+    }
+
+    const newItem: ListItem = {
+      name,
+      isDirectory,
+      children: isDirectory ? [] : undefined,
+    };
+
+    while (parentStack.length > level) {
+      parentStack.pop();
+    }
+
+    if (parentStack.length === 0) {
+      rootItems.push(newItem);
+    } else {
+      const parent = parentStack[parentStack.length - 1];
+      parent.children?.push(newItem);
+    }
+
+    if (newItem.isDirectory) {
+      parentStack.push(newItem);
+    }
+  });
+
+  return rootItems;
 };
 
 export default function LsRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
 
-  const dirPath = (message.args?.dir_path as string) || '';
   const items = parseLsResult(message.result);
+  const dirPath = (message.args?.dir_path as string) || '';
 
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -54,6 +72,14 @@ export default function LsRender({ message }: { message?: ToolMessage }) {
       setIsExpanded(!isExpanded);
     }
   };
+
+  let displayPath = dirPath;
+  let itemsCount = items.length;
+
+  if (items.length === 1 && items[0].isDirectory) {
+    displayPath = items[0].name;
+    itemsCount = items[0].children?.length || 0;
+  }
 
   return (
     <div className="text-sm">
@@ -70,7 +96,8 @@ export default function LsRender({ message }: { message?: ToolMessage }) {
         </span>
         <FolderOutlined />
         <span>
-          Listed {items.length} items in {dirPath.split('/').pop() || dirPath}
+          Listed {itemsCount} items in{' '}
+          {displayPath.split('/').pop() || displayPath}
         </span>
       </div>
       <div

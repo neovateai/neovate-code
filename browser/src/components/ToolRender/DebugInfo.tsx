@@ -33,7 +33,7 @@ export default function DebugInfo({ message }: { message?: ToolMessage }) {
           isExpanded ? 'max-h-screen' : 'max-h-0'
         }`}
       >
-        <pre className="bg-gray-100 p-2 rounded overflow-x-auto">
+        <pre className="bg-gray-100 p-2 rounded whitespace-pre-wrap break-all">
           {JSON.stringify(message, null, 2)}
         </pre>
       </div>

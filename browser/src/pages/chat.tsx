@@ -57,7 +57,11 @@ const Chat: React.FC = () => {
     },
     assistant: {
       placement: 'start',
-      avatar: <Logo />,
+      avatar: (
+        <div className="w-8 h-8">
+          <Logo />
+        </div>
+      ),
       variant: 'outlined',
       messageRender(message) {
         return <AssistantMessage message={message} />;

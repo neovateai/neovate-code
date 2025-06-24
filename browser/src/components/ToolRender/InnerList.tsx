@@ -11,7 +11,9 @@ import {
   FileZipOutlined,
   FolderOutlined,
   LockOutlined,
+  RightOutlined,
 } from '@ant-design/icons';
+import { useState } from 'react';
 import { FaJava } from 'react-icons/fa';
 import {
   SiCss3,
@@ -33,6 +35,8 @@ import {
 export interface ListItem {
   name: string;
   isDirectory?: boolean;
+  children?: ListItem[];
+  level?: number;
 }
 
 interface InnerListProps {
@@ -107,21 +111,66 @@ const getIconForFile = (filename: string) => {
   }
 };
 
+const RenderItem = ({
+  item,
+  showPath,
+}: {
+  item: ListItem;
+  showPath: boolean;
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const hasChildren = item.children && item.children.length > 0;
+
+  const toggleExpand = () => {
+    if (hasChildren) {
+      setIsExpanded(!isExpanded);
+    }
+  };
+
+  return (
+    <>
+      <li
+        className="flex text-xs truncate items-center gpa-1 p-1 rounded cursor-pointer hover:bg-gray-100"
+        onClick={toggleExpand}
+      >
+        <span
+          className="text-gray-500 w-4 h-4 flex items-center justify-center"
+          style={{
+            transform:
+              hasChildren && isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s ease-in-out',
+          }}
+        >
+          {hasChildren ? (
+            <RightOutlined />
+          ) : (
+            <span className="inline-block w-4" />
+          )}
+        </span>
+        <span className="text-gray-500 w-4 h-4 flex items-center justify-center">
+          {item.isDirectory ? <FolderOutlined /> : getIconForFile(item.name)}
+        </span>
+        <span className={item.isDirectory ? 'text-blue-600' : ''}>
+          {showPath ? item.name : item.name.split('/').pop()}
+        </span>
+      </li>
+      {hasChildren && isExpanded && (
+        <ul className="list-none m-0 p-0 pl-4">
+          {item.children?.map((child, index) => (
+            <RenderItem key={index} item={child} showPath={showPath} />
+          ))}
+        </ul>
+      )}
+    </>
+  );
+};
+
 export default function InnerList({ items, showPath = true }: InnerListProps) {
   return (
     <ul className="list-none m-0 p-0">
       {items.map((item, index) => (
-        <li
-          key={index}
-          className="flex text-xs truncate items-center gap-2 p-1 rounded cursor-pointer hover:bg-gray-100"
-        >
-          <span className="text-gray-500 w-4 h-4 flex items-center justify-center">
-            {item.isDirectory ? <FolderOutlined /> : getIconForFile(item.name)}
-          </span>
-          <span className={item.isDirectory ? 'text-blue-600' : ''}>
-            {showPath ? item.name : item.name.split('/').pop()}
-          </span>
-        </li>
+        <RenderItem key={index} item={item} showPath={showPath} />
       ))}
     </ul>
   );
