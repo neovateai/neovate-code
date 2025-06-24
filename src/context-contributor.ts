@@ -28,7 +28,9 @@ export class GitStatusContributor implements ContextContributor {
 export class IDEContributor implements ContextContributor {
   name = 'ide';
   async getContent(opts: GetContentOpts) {
-    if (opts.context.ide) {
+    // disable ide for now
+    // enable after clone a new vscode plugin
+    if (opts.context.ide && process.env.IDE) {
       const workspaceFolders = await opts.context.ide.getWorkspaceFolders();
       const openEditors = await opts.context.ide.getOpenEditors();
       const currentSelection = await opts.context.ide.getCurrentSelection();

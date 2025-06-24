@@ -4,7 +4,7 @@ import fastify, { FastifyInstance } from 'fastify';
 import fs from 'fs';
 import path from 'path';
 import portfinder from 'portfinder';
-import { PRODUCT_NAME } from '../constants';
+import { PluginHookType } from '../plugin';
 import * as logger from '../utils/logger';
 import config from './config';
 import mcpRoute from './routes/mcp';
@@ -74,13 +74,58 @@ const registerRoutes = async (app: FastifyInstance, opts: CreateServerOpts) => {
     prefix: BASE_API_PREFIX,
     ...pluginOpts,
   });
+  await app.register(import('./routes/app-data'), {
+    prefix: BASE_API_PREFIX,
+    ...pluginOpts,
+  });
+
+  await opts.context.apply({
+    hook: 'serverRoutes',
+    args: [
+      {
+        opts: {
+          app,
+          prefix: BASE_API_PREFIX,
+          opts,
+        },
+      },
+    ],
+    type: PluginHookType.Series,
+  });
 };
 
 export async function runBrowserServer(opts: RunBrowserServerOpts) {
-  const traceName = `${opts.context.productName ?? PRODUCT_NAME}-browser`;
+  const appData = await opts.context.apply({
+    hook: 'serverAppData',
+    args: [
+      {
+        context: opts.context,
+        cwd: opts.cwd,
+      },
+    ],
+    memo: {
+      productName: opts.context.productName,
+      version: opts.context.version,
+      cwd: opts.cwd,
+      config: opts.context.config,
+    },
+    type: PluginHookType.SeriesMerge,
+  });
+
+  const exit = () => {
+    debug('exit');
+    opts.context.destroy().then(() => {
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGINT', exit);
+  process.on('SIGQUIT', exit);
+  process.on('SIGTERM', exit);
+
   await createServer({
     ...opts,
-    traceName,
+    appData,
   });
 }
 

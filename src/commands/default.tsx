@@ -28,16 +28,14 @@ export async function run(opts: RunOpts) {
   try {
     let prompt = opts.prompt;
     debug('prompt', prompt);
-    const commonServiceOpts = {
-      context: opts.context,
-    };
-    const service = new Service({
+    const context = opts.context;
+    const service = await Service.create({
       agentType: 'code',
-      ...commonServiceOpts,
+      context,
     });
-    const planService = new Service({
+    const planService = await Service.create({
       agentType: 'plan',
-      ...commonServiceOpts,
+      context,
     });
     const store = createStore({
       productName: opts.context.productName,
@@ -52,6 +50,15 @@ export async function run(opts: RunOpts) {
         patchConsole: process.env.DEBUG ? false : true,
         exitOnCtrlC: true,
       });
+      const exit = () => {
+        debug('exit');
+        opts.context.destroy().then(() => {
+          process.exit(0);
+        });
+      };
+      process.on('SIGINT', exit);
+      process.on('SIGQUIT', exit);
+      process.on('SIGTERM', exit);
     }
     if (prompt) {
       opts.context.addUserPrompt(prompt);
@@ -70,7 +77,10 @@ export async function run(opts: RunOpts) {
       return null;
     }
   } finally {
-    await opts.context.destroy();
+    const quiet = opts.context.config.quiet;
+    if (quiet) {
+      await opts.context.destroy();
+    }
   }
 }
 
@@ -116,6 +126,7 @@ export async function runDefault(opts: RunCliOpts) {
         quiet: argv.quiet,
         plugins: argv.plugin,
       },
+      plugins: opts.plugins,
     });
     await context.apply({
       hook: 'cliStart',

@@ -121,27 +121,31 @@ export const PluginSchema = z.object({
   context: z
     .function(z.tuple([z.object({ prompt: z.string() })]), z.void())
     .optional(),
-  toolUse: z.function(
-    z.tuple([
-      z.object({
-        callId: z.string(),
-        name: z.string(),
-        params: z.any(),
-      }),
-    ]),
-    z.void(),
-  ),
-  toolUseResult: z.function(
-    z.tuple([
-      z.object({
-        callId: z.string(),
-        name: z.string(),
-        params: z.any(),
-        result: z.any(),
-      }),
-    ]),
-    z.void(),
-  ),
+  toolUse: z
+    .function(
+      z.tuple([
+        z.object({
+          callId: z.string(),
+          name: z.string(),
+          params: z.any(),
+        }),
+      ]),
+      z.void(),
+    )
+    .optional(),
+  toolUseResult: z
+    .function(
+      z.tuple([
+        z.object({
+          callId: z.string(),
+          name: z.string(),
+          params: z.any(),
+          result: z.any(),
+        }),
+      ]),
+      z.void(),
+    )
+    .optional(),
   query: z
     .function(
       z.tuple([
@@ -163,9 +167,43 @@ export const PluginSchema = z.object({
           aisdk: z.any(),
           createOpenAI: z.any(),
           createDeepSeek: z.any(),
+          createAnthropic: z.any(),
         }),
       ]),
       z.promise(z.any()),
+    )
+    .optional(),
+  tool: z
+    .function(
+      z.tuple([
+        z.object({
+          agentType: z.enum(['code', 'plan']),
+        }),
+      ]),
+      z.promise(z.any()),
+    )
+    .optional(),
+  serverAppData: z
+    .function(
+      z.tuple([
+        z.object({
+          context: z.any(),
+          cwd: z.string(),
+        }),
+      ]),
+      z.promise(z.any()),
+    )
+    .optional(),
+  serverRoutes: z
+    .function(
+      z.tuple([
+        z.object({
+          app: z.any(),
+          prefix: z.string(),
+          opts: z.any(),
+        }),
+      ]),
+      z.void(),
     )
     .optional(),
 });
