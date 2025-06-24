@@ -22,7 +22,7 @@ export interface RunOpts {
   prompt: string;
   plan?: boolean;
   context: Context;
-  traceFile: string;
+  traceFile?: string;
 }
 
 export async function run(opts: RunOpts) {

@@ -22,7 +22,7 @@ export interface CreateStoreOpts {
   service: Service;
   planService: Service;
   stage: 'plan' | 'code';
-  traceFile: string;
+  traceFile?: string;
 }
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -39,7 +39,7 @@ export function createStore(opts: CreateStoreOpts) {
     generalInfo: {
       productName: opts.productName,
       version: opts.version,
-      log: opts.traceFile.replace(homeDir, '~'),
+      log: opts.traceFile?.replace(homeDir, '~'),
       workspace: opts.service.context.cwd.replace(homeDir, '~'),
       model: opts.service.context.config.model,
     },
@@ -160,7 +160,7 @@ export interface Store {
     version: string;
     model: string;
     workspace: string;
-    log: string;
+    log?: string;
   };
   stage: 'plan' | 'code';
   planModal: { text: string } | null;

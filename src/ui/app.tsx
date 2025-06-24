@@ -165,7 +165,7 @@ function Message({ message, dynamic }: { message: Message, dynamic?: boolean }) 
 interface GeneralInfo {
   model: string;
   workspace: string;
-  log: string;
+  log?: string;
 }
 
 function GeneralInfoPanel({ generalInfo }: { generalInfo: GeneralInfo }) {
