@@ -53,7 +53,7 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
         ],
         annotations: [
           {
-            type: 'reasoning',
+            type: 'text',
             text: 'Thinking...',
           },
         ],
