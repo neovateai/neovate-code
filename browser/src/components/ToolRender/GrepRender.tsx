@@ -41,11 +41,11 @@ export default function GrepRender({ message }: { message?: ToolMessage }) {
         <VscSearch />
         <div className="flex-1 flex justify-between items-center text-xs">
           <span>
-            grep{' '}
+            grep&nbsp;
             <code className="bg-gray-200 text-gray-800 px-1 rounded-sm font-mono">
               {(args?.pattern as string) || ''}
-            </code>{' '}
-            in {filenames?.length || 0} files
+            </code>
+            &nbsp; in {filenames?.length || 0} files
           </span>
           {durationMs && <p className="text-gray-500">{durationMs}ms</p>}
         </div>
