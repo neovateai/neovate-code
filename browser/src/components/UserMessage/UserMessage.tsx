@@ -30,7 +30,10 @@ const UserMessage = (props: UserMessageProps) => {
         aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
       }}
     >
-      <LexicalTextArea value={annotations[0]?.originalContent || ''} disabled />
+      <LexicalTextArea
+        value={annotations?.[0]?.originalContent || ''}
+        disabled
+      />
     </LexicalTextAreaContext>
   );
 };

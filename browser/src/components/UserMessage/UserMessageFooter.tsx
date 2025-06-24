@@ -41,7 +41,7 @@ const UserMessageFooter = (props: UserMessageFooterProps) => {
 
   const { annotations } = message;
 
-  const { contextItems = [] } = annotations?.[0];
+  const { contextItems = [] } = annotations?.[0] || {};
 
   if (contextItems.length === 0) {
     return null;
