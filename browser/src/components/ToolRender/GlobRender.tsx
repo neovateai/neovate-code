@@ -18,15 +18,7 @@ export default function GlobRender({ message }: { message?: ToolMessage }) {
       return <pre className="text-xs">{result}</pre>;
     }
 
-    if (
-      result &&
-      typeof result === 'object' &&
-      'data' in result &&
-      result.data &&
-      typeof result.data === 'object' &&
-      'filenames' in result.data &&
-      Array.isArray((result.data as any).filenames)
-    ) {
+    if (result?.data) {
       const { filenames, message } = result.data as {
         filenames: string[];
         message?: string;
