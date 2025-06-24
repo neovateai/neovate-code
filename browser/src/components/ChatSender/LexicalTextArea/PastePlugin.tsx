@@ -1,6 +1,5 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { message } from 'antd';
-import * as cheerio from 'cheerio';
 import { PASTE_COMMAND } from 'lexical';
 import { useCallback, useEffect } from 'react';
 import { ContextType } from '@/constants/context';
@@ -65,17 +64,19 @@ const PastePlugin = () => {
         if (!html) {
           messageInstance.error('Load html failed');
         } else {
-          const $ = cheerio.load(html);
-          const imgTags = $('img');
-          if (imgTags.length > 0) {
-            imgTags.each((_index, img) => {
-              const src = $(img).attr('src');
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const imgs = doc.querySelectorAll('img');
+
+          if (imgs.length > 0) {
+            imgs.forEach((img) => {
+              const src = img.getAttribute('src');
               if (src) {
                 const mime = guessImageMime(src);
                 context.actions.addContext({
                   type: ContextType.IMAGE,
                   value: `@Image:[${Date.now()}]`,
-                  displayText: 'Image',
+                  displayText: src.split('/').pop() || src,
                   context: {
                     src,
                     mime,

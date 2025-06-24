@@ -1,4 +1,4 @@
-import { FileOutlined, FileSearchOutlined } from '@ant-design/icons';
+import { FileSearchOutlined } from '@ant-design/icons';
 import { Suggestion } from '@ant-design/x';
 import { type GetProp } from 'antd';
 import { useEffect, useMemo } from 'react';
