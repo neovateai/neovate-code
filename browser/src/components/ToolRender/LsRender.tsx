@@ -7,14 +7,31 @@ const parseLsResult = (result: unknown): ListItem[] => {
   if (typeof result !== 'string' || !result) return [];
 
   const lines = result.trim().split('\n');
-  lines.shift(); // Remove the root directory path line
+
+  // 如果只有一行，且不是以'- '开头，则认为它是一个目录路径
+  if (lines.length === 1 && !lines[0].trim().startsWith('- ')) {
+    const name = lines[0].trim();
+    return [
+      {
+        name: name.endsWith('/') ? name.slice(0, -1) : name,
+        isDirectory: name.endsWith('/'),
+      },
+    ];
+  }
+  // 如果是ls -F的结果
+  if (lines[0].trim().endsWith(':')) {
+    lines.shift();
+  }
 
   return lines
     .map((line): ListItem | null => {
       const trimmedLine = line.trim();
-      if (!trimmedLine.startsWith('- ')) return null;
+      if (!trimmedLine) return null;
 
-      const name = trimmedLine.substring(2);
+      // 兼容- /path/to/file格式
+      const match = trimmedLine.match(/^- (.*)/);
+      const name = match ? match[1] : trimmedLine;
+
       const isDirectory = name.endsWith('/');
       return {
         name: isDirectory ? name.slice(0, -1) : name,
