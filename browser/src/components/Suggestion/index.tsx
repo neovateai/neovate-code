@@ -5,7 +5,7 @@ import { Button, Cascader, Flex, Input, type InputRef, version } from 'antd';
 import type { CascaderProps } from 'antd';
 import classnames from 'classnames';
 import { useEvent, useMergedState } from 'rc-util';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import useStyle from './style';
 import useActive from './useActive';
 
@@ -53,6 +53,7 @@ export interface SuggestionProps<T = any> {
   outsideOpen?: boolean;
   showBackButton?: boolean;
   onBack?: () => void;
+  onBlur?: () => void;
 
   // ============================= Search =============================
   showSearch?: ShowSearchConfigs | false;
@@ -74,6 +75,7 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
     outsideOpen,
     showBackButton,
     onBack,
+    onBlur,
   } = props;
 
   // ============================= MISC =============================
@@ -96,6 +98,7 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
   const [info, setInfo] = useState<T | undefined>();
 
   const searchBoxRef = useRef<InputRef>(null);
+  const [mouseInPopup, setMouseInPopup] = useState(false);
 
   const triggerOpen = (nextOpen: boolean) => {
     setOpen(nextOpen);
@@ -126,6 +129,10 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
     [items, info],
   );
 
+  useEffect(() => {
+    setMouseInPopup(false);
+  }, [items]);
+
   // =========================== Cascader ===========================
   const optionRender: CascaderProps<SuggestionItem>['optionRender'] = (
     node,
@@ -145,6 +152,8 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
         style={{
           padding: 4,
         }}
+        onMouseEnter={() => setMouseInPopup(true)}
+        onMouseLeave={() => setMouseInPopup(false)}
       >
         <div
           style={{
@@ -200,6 +209,9 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
   // ============================ Render ============================
   const onInternalOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
+      if (!mouseInPopup) {
+        onBlur?.();
+      }
       onClose();
     }
   };

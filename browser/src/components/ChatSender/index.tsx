@@ -159,6 +159,7 @@ const ChatSender: React.FC = () => {
             setCurrentContextType(ContextType.UNKNOWN);
           }}
           outsideOpen={keepMenuOpen}
+          onBlur={() => setKeepMenuOpen(false)}
           onSelect={(value) => {
             setKeepMenuOpen(true);
             const contextItem = handleValue(value);

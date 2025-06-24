@@ -64,6 +64,9 @@ const AddContext = () => {
         setSearchText('');
         setCurrentContextType(ContextType.UNKNOWN);
       }}
+      onBlur={() => {
+        setKeepMenuOpen(false);
+      }}
       outsideOpen={keepMenuOpen}
       onSelect={(value) => {
         setKeepMenuOpen(true);

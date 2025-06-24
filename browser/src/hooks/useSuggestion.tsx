@@ -1,4 +1,4 @@
-import { FileSearchOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { Suggestion } from '@ant-design/x';
 import { type GetProp } from 'antd';
 import { createStyles } from 'antd-style';
@@ -67,6 +67,7 @@ export const useSuggestion = (
         label: 'Files & Folders',
         value: ContextType.FILE,
         icon: <FileSearchOutlined />,
+        extra: <ArrowRightOutlined />,
       },
     ] as SuggestionItems;
   }, []);
