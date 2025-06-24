@@ -21,7 +21,9 @@ interface UserMessageProps {
 const UserMessage = (props: UserMessageProps) => {
   const { message } = props;
 
-  const { annotations } = message;
+  const { annotations, content = '' } = message;
+
+  console.log(message);
 
   return (
     <LexicalTextAreaContext
@@ -31,7 +33,7 @@ const UserMessage = (props: UserMessageProps) => {
       }}
     >
       <LexicalTextArea
-        value={annotations?.[0]?.originalContent || ''}
+        value={annotations?.[0]?.originalContent || content}
         disabled
       />
     </LexicalTextAreaContext>
