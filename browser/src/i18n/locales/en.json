@@ -1,0 +1,60 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "rename": "Rename",
+    "search": "Search",
+    "placeholder": "Please input to search..."
+  },
+  "sidebar": {
+    "newConversation": "New Conversation",
+    "conversations": "Conversations",
+    "settings": "Settings",
+    "help": "Help"
+  },
+  "chat": {
+    "welcomeTitle": "Hello, I'm Takumi",
+    "welcomeDescription": "I'm your AI programming assistant, focused on improving development workflows. I can help you write code, optimize performance, generate tests, analyze architecture, and perform various development tasks~",
+    "quickStart": "Quick Start",
+    "capabilities": "Takumi Capabilities",
+    "greeting": "Hello, I'm Takumi, your AI programming assistant! How can I help you?",
+    "analyzeProject": "Help me analyze the code structure and architecture of this project",
+    "optimizeCode": "Optimize code performance and refactor this function",
+    "generateTests": "Generate unit test cases and test documentation",
+    "fixBugs": "Fix bugs and provide solutions",
+    "llmSupport": "LLM Support",
+    "llmSupportDesc": "Support for multiple LLM providers including OpenAI, Claude, Gemini, etc.",
+    "fileOperations": "File Operations",
+    "fileOperationsDesc": "Intelligently read, write and edit files, supporting multiple programming languages",
+    "codebaseNavigation": "Codebase Navigation",
+    "codebaseNavigationDesc": "Explore and search project code, quickly locate and analyze code structure",
+    "planMode": "Plan Mode",
+    "planModeDesc": "Break down complex tasks into manageable steps and execute plans step by step",
+    "sendMessage": "Send Message",
+    "thinking": "Thinking...",
+    "stopGenerating": "Stop Generating"
+  },
+  "prompts": {
+    "upgrades": "Upgrades",
+    "components": "Components",
+    "richGuide": "RICH Guide",
+    "installationIntro": "Installation Introduction"
+  },
+  "context": {
+    "addContext": "Add Context",
+    "files": "Files",
+    "selection": "Selection",
+    "terminal": "Terminal",
+    "git": "Git"
+  },
+  "menu": {
+    "rename": "Rename",
+    "delete": "Delete"
+  }
+}
