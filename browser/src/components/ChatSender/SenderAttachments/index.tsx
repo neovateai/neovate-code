@@ -1,13 +1,12 @@
 import { CloudUploadOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { Attachments } from '@ant-design/x';
 import { Button, message } from 'antd';
-import { useSnapshot } from 'valtio';
 import {
   CONTEXT_AVAILABLE_FILE_TYPES,
   CONTEXT_MAX_FILE_SIZE,
   ContextType,
 } from '@/constants/context';
-import { actions, state } from '@/state/context';
+import { actions } from '@/state/context';
 
 const SenderAttachments = () => {
   // const { attachments } = useSnapshot(state);
