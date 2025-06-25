@@ -189,9 +189,9 @@ function normalizePlugins(cwd: string, plugins: (string | Plugin)[]) {
     plugins.map(async (plugin) => {
       if (typeof plugin === 'string') {
         const pluginPath = resolve.sync(plugin, { basedir: cwd });
-        return await jiti.import(pluginPath, {
+        return (await jiti.import(pluginPath, {
           default: true,
-        });
+        })) as Plugin;
       }
       return plugin;
     }),
