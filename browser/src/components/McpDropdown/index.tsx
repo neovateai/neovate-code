@@ -365,16 +365,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     {
       key: 'services-header',
       label: (
-        <div
-          style={{
-            fontWeight: 'bold',
-            color: '#666',
-            fontSize: '12px',
-            padding: '4px 0',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          }}
-        >
+        <div className="font-bold text-gray-600 text-xs py-1 uppercase tracking-wider">
           {t('mcp.mcpServicesTitle')}
         </div>
       ),
@@ -386,15 +377,8 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       .map((server) => ({
         key: server.key,
         label: (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex justify-between items-center w-full">
+            <div className="flex items-center gap-2">
               <Checkbox
                 checked={server.installed}
                 onChange={(e) => {
@@ -412,22 +396,13 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
                 }}
               />
               <div>
-                <span
-                  style={{
-                    color: 'inherit',
-                    fontWeight: 500,
-                  }}
-                >
-                  {server.name}
-                </span>
+                <span className="text-inherit font-medium">{server.name}</span>
                 <div
-                  style={{
-                    fontSize: '11px',
-                    color: server.scope === 'global' ? '#1890ff' : '#52c41a',
-                    lineHeight: 1.2,
-                    marginTop: '1px',
-                    fontWeight: 500,
-                  }}
+                  className={`text-xs leading-tight mt-px font-medium ${
+                    server.scope === 'global'
+                      ? 'text-blue-500'
+                      : 'text-green-500'
+                  }`}
                 >
                   {server.scope === 'global'
                     ? t('mcp.globalScope')
@@ -435,7 +410,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div className="flex items-center gap-1">
               {server.config.args?.some((arg: string) =>
                 arg.includes('--figma-api-key'),
               ) && (
@@ -447,7 +422,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
                     e.stopPropagation();
                     handleEditApiKey(server);
                   }}
-                  style={{ padding: '0 4px' }}
+                  className="px-1"
                 />
               )}
             </div>
@@ -465,15 +440,8 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       .map((server) => ({
         key: server.key,
         label: (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex justify-between items-center w-full">
+            <div className="flex items-center gap-2">
               <Checkbox
                 checked={false}
                 onChange={(e) => {
@@ -493,23 +461,10 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
                 }}
               />
               <div>
-                <span
-                  style={{
-                    color: '#999',
-                    opacity: 0.7,
-                    fontWeight: 'normal',
-                  }}
-                >
+                <span className="text-gray-400 opacity-70 font-normal">
                   {server.name}
                 </span>
-                <div
-                  style={{
-                    fontSize: '11px',
-                    color: '#999',
-                    lineHeight: 1.2,
-                    marginTop: '1px',
-                  }}
-                >
+                <div className="text-xs text-gray-400 leading-tight mt-px">
                   {t('mcp.disabledStatus')} (
                   {server.scope === 'global'
                     ? t('mcp.globalScope')
@@ -534,15 +489,8 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       .map((service) => ({
         key: `preset-${service.key}`,
         label: (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex justify-between items-center w-full">
+            <div className="flex items-center gap-2">
               <Checkbox
                 checked={false}
                 onChange={(e) => {
@@ -557,27 +505,12 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
                   e.stopPropagation();
                 }}
               />
-              <div
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
+              <div className="flex items-center gap-1.5">
                 <div>
-                  <span
-                    style={{
-                      color: '#999',
-                      opacity: 0.7,
-                      fontWeight: 'normal',
-                    }}
-                  >
+                  <span className="text-gray-400 opacity-70 font-normal">
                     {service.name}
                   </span>
-                  <div
-                    style={{
-                      fontSize: '11px',
-                      color: '#999',
-                      lineHeight: 1.2,
-                      marginTop: '1px',
-                    }}
-                  >
+                  <div className="text-xs text-gray-400 leading-tight mt-px">
                     {t('mcp.available')}
                   </div>
                 </div>
@@ -595,9 +528,12 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       ? [
           {
             key: 'no-services',
-            label: t('mcp.noServicesAvailable'),
+            label: (
+              <span className="text-gray-400 italic">
+                {t('mcp.noServicesAvailable')}
+              </span>
+            ),
             disabled: true,
-            style: { color: '#999', fontStyle: 'italic' },
           },
         ]
       : []),
@@ -649,17 +585,14 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         }}
         destroyPopupOnHide={false}
         dropdownRender={(menu) => (
-          <div style={{ width: '320px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="w-80" onClick={(e) => e.stopPropagation()}>
             {menu}
           </div>
         )}
       >
         <Button
           type="text"
-          style={{
-            fontSize: 18,
-            color: 'inherit',
-          }}
+          className="text-lg text-inherit"
           icon={<ApiOutlined />}
           title={t('mcp.mcpManagementTitle')}
           loading={loading || mcpLoading}
@@ -691,17 +624,17 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         keyboard={false}
         destroyOnClose={true}
       >
-        <div style={{ marginTop: '16px' }} {...containerEventHandlers}>
+        <div className="mt-4" {...containerEventHandlers}>
           <Input
             placeholder={t('mcp.apiKeyPlaceholder')}
             value={editApiKey}
             onChange={(e) => setEditApiKey(e.target.value)}
             onPressEnter={handleSaveApiKey}
             autoFocus
-            style={{ marginBottom: '8px' }}
+            className="mb-2"
             {...modalEventHandlers}
           />
-          <div style={{ fontSize: '12px', color: '#666' }}>
+          <div className="text-xs text-gray-600 mt-3">
             {t('mcp.apiKeyDescription', { name: editingService?.name })}
           </div>
         </div>

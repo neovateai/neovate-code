@@ -365,9 +365,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             e.stopPropagation();
             handleToggleService(record.name, e.target.checked, record.scope);
           }}
-          style={{
-            opacity: record.installed ? 1 : 0.6,
-          }}
+          className={record.installed ? 'opacity-100' : 'opacity-60'}
         />
       ),
     },
@@ -379,10 +377,9 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       render: (name: string, record: any) => (
         <Text
           strong
-          style={{
-            color: record.installed ? '#1890ff' : '#999',
-            opacity: record.installed ? 1 : 0.7,
-          }}
+          className={`${
+            record.installed ? 'text-blue-500' : 'text-gray-400 opacity-70'
+          }`}
         >
           {name}
         </Text>
@@ -398,11 +395,9 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
         return (
           <Tag
             color={isGlobal ? 'blue' : 'green'}
-            style={{
-              margin: 0,
-              opacity: record.installed ? 1 : 0.5,
-              fontWeight: 500,
-            }}
+            className={`m-0 font-medium ${
+              record.installed ? 'opacity-100' : 'opacity-50'
+            }`}
           >
             {isGlobal ? t('mcp.globalScope') : t('mcp.projectScope')}
           </Tag>
@@ -417,10 +412,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       render: (type: string, record: any) => (
         <Tag
           color={type === 'sse' ? 'purple' : 'blue'}
-          style={{
-            margin: 0,
-            opacity: record.installed ? 1 : 0.5,
-          }}
+          className={`m-0 ${record.installed ? 'opacity-100' : 'opacity-50'}`}
         >
           {type?.toUpperCase() || 'STDIO'}
         </Tag>
@@ -432,13 +424,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       render: (record: any) => {
         if (!record.installed) {
           return (
-            <Text
-              type="secondary"
-              style={{
-                fontSize: '12px',
-                fontStyle: 'italic',
-              }}
-            >
+            <Text type="secondary" className="text-xs italic">
               {t('mcp.disabledStatus')}
             </Text>
           );
@@ -446,15 +432,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
 
         if (record.type === 'sse') {
           return (
-            <Text
-              code
-              style={{
-                fontSize: '12px',
-                background: '#f0f2f5',
-                padding: '2px 6px',
-                borderRadius: '4px',
-              }}
-            >
+            <Text code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">
               {record.url}
             </Text>
           );
@@ -462,15 +440,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
         const commandText =
           `${record.command || ''} ${(record.args || []).join(' ')}`.trim();
         return (
-          <Text
-            code
-            style={{
-              fontSize: '12px',
-              background: '#f0f2f5',
-              padding: '2px 6px',
-              borderRadius: '4px',
-            }}
-          >
+          <Text code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">
             {commandText || '-'}
           </Text>
         );
@@ -594,7 +564,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             size="small"
             icon={<PlusOutlined />}
             onClick={() => setShowAddForm(true)}
-            style={{ borderRadius: '6px', marginLeft: '12px' }}
+            className="rounded-md ml-3"
           >
             {t('mcp.addServer')}
           </Button>
@@ -604,23 +574,15 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       onCancel={onClose}
       width={900}
       footer={null}
-      styles={{
-        body: { padding: '16px 24px' },
-      }}
+      className="[&_.ant-modal-body]:px-6 [&_.ant-modal-body]:py-4"
     >
       <Space
         direction="vertical"
-        style={{ width: '100%' }}
+        className="w-full"
         size="middle"
         {...containerEventHandlers}
       >
-        <div
-          style={{
-            background: '#fff',
-            borderRadius: '8px',
-            overflow: 'hidden',
-          }}
-        >
+        <div className="bg-white rounded-lg overflow-hidden">
           <Table
             columns={columns}
             dataSource={servers}
@@ -629,10 +591,10 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             pagination={false}
             locale={{
               emptyText: (
-                <div style={{ padding: '20px', color: '#999' }}>
+                <div className="p-5 text-gray-400">
                   <Text type="secondary">{t('mcp.noConfiguration')}</Text>
                   <br />
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                  <Text type="secondary" className="text-xs">
                     {t('mcp.clickToStart')}
                   </Text>
                 </div>
@@ -658,9 +620,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           okText={t('mcp.addServer')}
           cancelText={t('common.cancel')}
           width={700}
-          styles={{
-            body: { padding: '20px 24px' },
-          }}
+          className="[&_.ant-modal-body]:px-6 [&_.ant-modal-body]:py-5"
         >
           <Form
             form={form}
@@ -668,22 +628,22 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             layout="vertical"
             {...containerEventHandlers}
           >
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-              <div style={{ flex: 1 }}>
-                <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+            <div className="flex gap-4 mb-4">
+              <div className="flex-1">
+                <Text strong className="block mb-2">
                   {t('mcp.scope')}
                 </Text>
                 <Radio.Group
                   value={addScope}
                   onChange={(e) => setAddScope(e.target.value)}
-                  style={{ width: '100%' }}
+                  className="w-full"
                 >
                   <Radio value="project">{t('mcp.project')}</Radio>
                   <Radio value="global">{t('mcp.global')}</Radio>
                 </Radio.Group>
               </div>
-              <div style={{ flex: 1 }}>
-                <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+              <div className="flex-1">
+                <Text strong className="block mb-2">
                   {t('mcp.inputMode')}
                 </Text>
                 <Radio.Group
@@ -691,7 +651,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                   onChange={(e) =>
                     setInputMode(e.target.value as 'json' | 'form')
                   }
-                  style={{ width: '100%' }}
+                  className="w-full"
                 >
                   <Radio value="json">{t('mcp.json')}</Radio>
                   <Radio value="form">{t('mcp.form')}</Radio>
@@ -699,7 +659,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
               </div>
             </div>
 
-            <Divider style={{ margin: '16px 0' }} />
+            <Divider className="my-4" />
 
             {inputMode === 'json' ? (
               <Form.Item
@@ -773,103 +733,47 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                   <Input.TextArea
                     rows={10}
                     placeholder={getJsonExample()}
-                    style={{
-                      fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                      fontSize: '13px',
-                      lineHeight: '1.4',
-                    }}
+                    className="font-mono text-sm leading-relaxed"
                     {...modalEventHandlers}
                   />
-                  <div style={{ marginTop: '12px' }}>
+                  <div className="mt-3">
                     <details>
-                      <summary
-                        style={{
-                          cursor: 'pointer',
-                          color: '#1890ff',
-                          fontSize: '13px',
-                          marginBottom: '8px',
-                        }}
-                      >
+                      <summary className="cursor-pointer text-blue-500 text-sm mb-2">
                         {t('mcp.viewFormats')}
                       </summary>
-                      <div
-                        style={{
-                          marginTop: '8px',
-                          maxHeight: '260px',
-                          overflowY: 'auto',
-                          border: '1px solid #f0f0f0',
-                          borderRadius: '6px',
-                          padding: '12px',
-                        }}
-                      >
-                        <div style={{ marginBottom: '16px' }}>
-                          <Text strong style={{ fontSize: '12px' }}>
+                      <div className="mt-2 max-h-64 overflow-y-auto border border-gray-200 rounded-md p-3">
+                        <div className="mb-4">
+                          <Text strong className="text-xs">
                             {t('mcp.formatComplete')}
                           </Text>
-                          <pre
-                            style={{
-                              background: '#f8f9fa',
-                              padding: '12px',
-                              fontSize: '11px',
-                              borderRadius: '6px',
-                              margin: '4px 0',
-                              border: '1px solid #e9ecef',
-                            }}
-                          >
+                          <pre className="bg-gray-50 p-3 text-xs rounded-md my-1 border border-gray-200">
                             {getJsonExample()}
                           </pre>
                         </div>
 
-                        <div style={{ marginBottom: '16px' }}>
-                          <Text strong style={{ fontSize: '12px' }}>
+                        <div className="mb-4">
+                          <Text strong className="text-xs">
                             {t('mcp.formatDirect')}
                           </Text>
-                          <pre
-                            style={{
-                              background: '#f8f9fa',
-                              padding: '12px',
-                              fontSize: '11px',
-                              borderRadius: '6px',
-                              margin: '4px 0',
-                              border: '1px solid #e9ecef',
-                            }}
-                          >
+                          <pre className="bg-gray-50 p-3 text-xs rounded-md my-1 border border-gray-200">
                             {getSimpleJsonExample()}
                           </pre>
                         </div>
 
-                        <div style={{ marginBottom: '16px' }}>
-                          <Text strong style={{ fontSize: '12px' }}>
+                        <div className="mb-4">
+                          <Text strong className="text-xs">
                             {t('mcp.formatSingle')}
                           </Text>
-                          <pre
-                            style={{
-                              background: '#f8f9fa',
-                              padding: '12px',
-                              fontSize: '11px',
-                              borderRadius: '6px',
-                              margin: '4px 0',
-                              border: '1px solid #e9ecef',
-                            }}
-                          >
+                          <pre className="bg-gray-50 p-3 text-xs rounded-md my-1 border border-gray-200">
                             {getSingleServerExample()}
                           </pre>
                         </div>
 
                         <div>
-                          <Text strong style={{ fontSize: '12px' }}>
+                          <Text strong className="text-xs">
                             {t('mcp.formatSSE')}
                           </Text>
-                          <pre
-                            style={{
-                              background: '#f8f9fa',
-                              padding: '12px',
-                              fontSize: '11px',
-                              borderRadius: '6px',
-                              margin: '4px 0',
-                              border: '1px solid #e9ecef',
-                            }}
-                          >
+                          <pre className="bg-gray-50 p-3 text-xs rounded-md my-1 border border-gray-200">
                             {getSseJsonExample()}
                           </pre>
                         </div>
