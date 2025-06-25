@@ -1,7 +1,7 @@
 import { Editor } from '@monaco-editor/react';
 import { createStyles } from 'antd-style';
 import type { editor } from 'monaco-editor';
-import { useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import type {
   CodeNormalViewerMetaInfo,
   CodeNormalViewerTabItem,
@@ -10,6 +10,10 @@ import NormalToolbar from '../NormalToolbar';
 
 interface Props {
   item: CodeNormalViewerTabItem;
+}
+
+export interface CodeNormalViewRef {
+  jumpToLine: (lineCount: number) => void;
 }
 
 const useStyle = createStyles(({ css }) => {
@@ -26,7 +30,7 @@ const useStyle = createStyles(({ css }) => {
   };
 });
 
-const CodeNormalView = (props: Props) => {
+const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
   const { item } = props;
 
   const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
@@ -36,6 +40,14 @@ const CodeNormalView = (props: Props) => {
     size: 0,
   });
   const { styles } = useStyle();
+
+  useImperativeHandle(ref, () => {
+    return {
+      jumpToLine(lineCount) {
+        editorRef.current?.revealLineInCenter(lineCount);
+      },
+    };
+  });
 
   return (
     <div className={styles.container}>
@@ -70,6 +82,6 @@ const CodeNormalView = (props: Props) => {
       />
     </div>
   );
-};
+});
 
 export default CodeNormalView;

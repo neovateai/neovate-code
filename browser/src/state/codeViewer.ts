@@ -11,6 +11,7 @@ interface CodeViewerState {
   visible: boolean;
   activeId: string | undefined;
   codeViewerTabItems: CodeViewerTabItem[];
+  jumpFunctionMap: { [path: string]: ((_: number) => void) | undefined };
 }
 
 interface DisplayNormalViewerConfigs {
@@ -33,6 +34,7 @@ export const state = proxy<CodeViewerState>({
   visible: false,
   activeId: undefined,
   codeViewerTabItems: [],
+  jumpFunctionMap: {},
 });
 
 export const actions = {
@@ -127,5 +129,33 @@ export const actions = {
     }
 
     state.visible = true;
+  },
+
+  /**
+   * 跳转特定的行，如果是DiffView，则跳转ModifiedModel对应的行
+   * @param path 文件路径
+   * @returns 跳转是否成功
+   */
+  jumpToLine: (path: string, lineCount: number) => {
+    const remainingItem = state.codeViewerTabItems.find(
+      (item) => item.id === path,
+    );
+
+    const jumpFunction = state.jumpFunctionMap[path];
+
+    if (remainingItem && jumpFunction) {
+      state.activeId = remainingItem.id;
+      state.visible = true;
+
+      jumpFunction(lineCount);
+
+      return true;
+    } else {
+      return false;
+    }
+  },
+
+  registerJumpFunction: (path: string, fn: (_: number) => void) => {
+    state.jumpFunctionMap[path] = fn;
   },
 };

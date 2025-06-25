@@ -1,12 +1,16 @@
 import { VerticalLeftOutlined } from '@ant-design/icons';
 import { Tabs, type TabsProps } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/codeViewer';
+import type {
+  CodeDiffViewerTabItem,
+  CodeNormalViewerTabItem,
+} from '@/types/codeViewer';
 import DevFileIcon from '../DevFileIcon';
-import CodeDiffView from './CodeDiffView';
-import CodeNormalView from './CodeNormalView';
+import CodeDiffView, { type CodeDiffViewRef } from './CodeDiffView';
+import CodeNormalView, { type CodeNormalViewRef } from './CodeNormalView';
 
 const useStyle = createStyles(({ css }) => {
   return {
@@ -47,20 +51,44 @@ function renderIcon(path?: string) {
 const CodeViewer = () => {
   const { codeViewerTabItems, activeId } = useSnapshot(state);
   const { styles } = useStyle();
+  const codeViewRefs = useRef<{
+    [key: string]: CodeNormalViewRef | CodeDiffViewRef | null;
+  }>({});
 
   const items = useMemo<TabsProps['items']>(() => {
-    return codeViewerTabItems.map((item) => ({
-      key: item.id.toString(),
+    const comp = codeViewerTabItems.map((item) => ({
+      key: item.id,
       label: item.title,
       closeable: true,
       icon: renderIcon(item.path),
       children:
         item.viewType === 'normal' ? (
-          <CodeNormalView item={item} />
+          <CodeNormalView
+            item={item as CodeNormalViewerTabItem}
+            ref={(r) => {
+              codeViewRefs.current[item.id] = r;
+            }}
+          />
         ) : (
-          <CodeDiffView item={item} />
+          <CodeDiffView
+            item={item as CodeDiffViewerTabItem}
+            ref={(r) => {
+              codeViewRefs.current[item.id] = r;
+            }}
+          />
         ),
     }));
+
+    for (const path in codeViewRefs.current) {
+      const ref = codeViewRefs.current[path];
+      if (ref && 'jumpToLine' in ref) {
+        actions.registerJumpFunction(path, (lineCount) =>
+          ref.jumpToLine(lineCount),
+        );
+      }
+    }
+
+    return comp;
   }, [codeViewerTabItems]);
 
   const handleEdit = (

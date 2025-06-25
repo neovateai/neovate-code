@@ -1,12 +1,16 @@
 import { DiffEditor } from '@monaco-editor/react';
 import { createStyles } from 'antd-style';
 import * as monaco from 'monaco-editor';
-import { useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffToolbar from '../DiffToolbar';
 
 interface Props {
   item: CodeDiffViewerTabItem;
+}
+
+export interface CodeDiffViewRef {
+  jumpToLine: (lineCount: number) => void;
 }
 
 const useStyle = createStyles(({ css }) => {
@@ -23,10 +27,18 @@ const useStyle = createStyles(({ css }) => {
   };
 });
 
-const CodeDiffView = (props: Props) => {
+const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
   const { item } = props;
   const { styles } = useStyle();
   const editorRef = useRef<monaco.editor.IStandaloneDiffEditor>(null);
+
+  useImperativeHandle(ref, () => {
+    return {
+      jumpToLine(lineCount) {
+        editorRef.current?.getModifiedEditor().revealLineInCenter(lineCount);
+      },
+    };
+  });
 
   return (
     <div className={styles.container}>
@@ -71,6 +83,6 @@ const CodeDiffView = (props: Props) => {
       />
     </div>
   );
-};
+});
 
 export default CodeDiffView;
