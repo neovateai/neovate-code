@@ -3,10 +3,9 @@ import TextInput from './ink-text-input';
 import { useSnapshot } from 'valtio';
 import SelectInput from 'ink-select-input';
 import Markdown from './ink-markdown';
-import React, { createContext, useContext } from 'react';
-import { Message, UserMessage, AssistantTextMessage, AssistantToolMessage, ToolMessage, ThinkingMessage, SystemMessage, Store } from './store';
+import React from 'react';
+import { Message, UserMessage, AssistantTextMessage, AssistantToolMessage, ToolMessage, ThinkingMessage, SystemMessage } from './store';
 import { useStore } from './hooks/use-store';
-
 
 function UserMessage({ message }: { message: UserMessage }) {
   return (
