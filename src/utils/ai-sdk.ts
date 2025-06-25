@@ -26,7 +26,7 @@ import {
   withGenerationSpan,
 } from '@openai/agents';
 import { isZodObject } from '@openai/agents/utils';
-import { mergeConsecutiveSystemMessages } from './mergeConsecutiveSystemMessages';
+import { mergeConsecutiveSystemMessages } from './merge-consecutive-system-messages';
 
 /**
  * @internal

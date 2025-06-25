@@ -26,11 +26,20 @@ export function mergeConsecutiveSystemMessages(
   modelProvider: string,
   modelId?: string,
 ): LanguageModelV1Message[] {
+  // Early returns for performance
+  if (
+    process.env.TAKUMI_MERGE_SYSTEM_MESSAGES !== '1' ||
+    messages.length === 0 ||
+    !modelId
+  ) {
+    return messages;
+  }
+
   // Determine if system message merging is required based on model provider and ID
   // Currently applies to: Gemini models via OpenAI provider, and Claude models
   const needsMerging =
-    (modelProvider === 'openai.chat' && modelId?.includes('gemini')) ||
-    modelId?.includes('claude');
+    (modelProvider === 'openai.chat' && modelId.includes('gemini')) ||
+    modelId.includes('claude');
 
   debug(
     'mergeConsecutiveSystemMessages',
