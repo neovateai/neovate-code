@@ -149,42 +149,42 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           (s) => s.name === serviceName && s.scope === 'project',
         );
 
-        if (!hasGlobal && !hasProject) {
-          // Try to restore configuration from cache
-          const globalCachedConfig = serviceConfigs.get(
-            `${MCP_KEY_PREFIXES.GLOBAL}-${serviceName}`,
-          );
-          const projectCachedConfig = serviceConfigs.get(
-            `${MCP_KEY_PREFIXES.PROJECT}-${serviceName}`,
-          );
+        // Try to restore configuration from cache for each scope separately
+        const globalCachedConfig = serviceConfigs.get(
+          `${MCP_KEY_PREFIXES.GLOBAL}-${serviceName}`,
+        );
+        const projectCachedConfig = serviceConfigs.get(
+          `${MCP_KEY_PREFIXES.PROJECT}-${serviceName}`,
+        );
 
-          if (globalCachedConfig) {
-            allServices.push({
-              key: `${MCP_KEY_PREFIXES.DISABLED_GLOBAL}-${serviceName}`,
-              name: serviceName,
-              scope: 'global',
-              command: globalCachedConfig.command || '',
-              args: globalCachedConfig.args || [],
-              url: globalCachedConfig.url || '',
-              type: globalCachedConfig.type || 'stdio',
-              env: globalCachedConfig.env || {},
-              installed: false,
-            });
-          }
+        // Add global cached config if not currently installed but has cache
+        if (!hasGlobal && globalCachedConfig) {
+          allServices.push({
+            key: `${MCP_KEY_PREFIXES.DISABLED_GLOBAL}-${serviceName}`,
+            name: serviceName,
+            scope: 'global',
+            command: globalCachedConfig.command || '',
+            args: globalCachedConfig.args || [],
+            url: globalCachedConfig.url || '',
+            type: globalCachedConfig.type || 'stdio',
+            env: globalCachedConfig.env || {},
+            installed: false,
+          });
+        }
 
-          if (projectCachedConfig) {
-            allServices.push({
-              key: `${MCP_KEY_PREFIXES.DISABLED_PROJECT}-${serviceName}`,
-              name: serviceName,
-              scope: 'project',
-              command: projectCachedConfig.command || '',
-              args: projectCachedConfig.args || [],
-              url: projectCachedConfig.url || '',
-              type: projectCachedConfig.type || 'stdio',
-              env: projectCachedConfig.env || {},
-              installed: false,
-            });
-          }
+        // Add project cached config if not currently installed but has cache
+        if (!hasProject && projectCachedConfig) {
+          allServices.push({
+            key: `${MCP_KEY_PREFIXES.DISABLED_PROJECT}-${serviceName}`,
+            name: serviceName,
+            scope: 'project',
+            command: projectCachedConfig.command || '',
+            args: projectCachedConfig.args || [],
+            url: projectCachedConfig.url || '',
+            type: projectCachedConfig.type || 'stdio',
+            env: projectCachedConfig.env || {},
+            installed: false,
+          });
         }
       });
 
@@ -423,7 +423,9 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     try {
       if (enabled) {
         // Enable service - need to re-add to configuration
-        const server = servers.find((s) => s.name === serverName);
+        const server = servers.find(
+          (s) => s.name === serverName && s.scope === scope,
+        );
         if (server) {
           // If service is already installed, no need to add again
           if (server.installed) {
@@ -448,7 +450,9 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
         }
       } else {
         // Disable service - remove from configuration but keep in list
-        const serverToDisable = servers.find((s) => s.name === serverName);
+        const serverToDisable = servers.find(
+          (s) => s.name === serverName && s.scope === scope,
+        );
 
         // Save configuration to cache before deletion
         if (serverToDisable) {
@@ -470,7 +474,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
         // Update service status to uninstalled but keep in list and save configuration info
         setServers((prev) =>
           prev.map((server) =>
-            server.name === serverName
+            server.name === serverName && server.scope === scope
               ? {
                   ...server,
                   installed: false,
