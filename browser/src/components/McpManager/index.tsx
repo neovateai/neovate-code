@@ -19,12 +19,12 @@ import { useTranslation } from 'react-i18next';
 import {
   MCP_DEFAULTS,
   MCP_KEY_PREFIXES,
-  MCP_STORAGE_KEYS,
   getJsonExample,
   getSimpleJsonExample,
   getSingleServerExample,
   getSseJsonExample,
 } from '@/constants/mcp';
+import { useMcpServices } from '@/hooks/useMcpServices';
 import type {
   FormValues,
   JsonConfigFormat,
@@ -33,11 +33,7 @@ import type {
   McpServerConfig,
 } from '@/types/mcp';
 import { containerEventHandlers, modalEventHandlers } from '@/utils/eventUtils';
-import {
-  addMCPServer,
-  getMCPServers,
-  removeMCPServer,
-} from '../../api/mcpService';
+import { addMCPServer, removeMCPServer } from '../../api/mcpService';
 
 const { Text } = Typography;
 
@@ -53,31 +49,14 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     MCP_DEFAULTS.SCOPE,
   ); // Scope selection for adding services
   const [form] = Form.useForm();
-  const [allKnownServices, setAllKnownServices] = useState<Set<string>>(() => {
-    // Restore known services list from localStorage
-    try {
-      const stored = localStorage.getItem(MCP_STORAGE_KEYS.KNOWN_SERVICES);
-      return stored ? new Set(JSON.parse(stored)) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
 
-  // Add service configuration cache
-  const [serviceConfigs, setServiceConfigs] = useState<
-    Map<string, McpServerConfig>
-  >(() => {
-    try {
-      const stored = localStorage.getItem(MCP_STORAGE_KEYS.SERVICE_CONFIGS);
-      if (stored) {
-        const configArray = JSON.parse(stored);
-        return new Map(configArray);
-      }
-    } catch {
-      // ignore
-    }
-    return new Map();
-  });
+  const {
+    allKnownServices,
+    serviceConfigs,
+    updateKnownServices,
+    updateServiceConfigs,
+    loadMcpData,
+  } = useMcpServices();
 
   useEffect(() => {
     if (visible) {
@@ -89,13 +68,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     setLoading(true);
     try {
       // Load global and project configurations simultaneously
-      const [globalResponse, projectResponse] = await Promise.all([
-        getMCPServers(true),
-        getMCPServers(false),
-      ]);
-
-      const globalServers = globalResponse.servers || {};
-      const projectServers = projectResponse.servers || {};
+      const { globalServers, projectServers } = await loadMcpData();
 
       // Merge service lists and mark scopes
       const allInstalledServers: McpManagerServer[] = [];
@@ -507,32 +480,6 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     } catch (error) {
       message.error(t('mcp.updateFailed', { name: serverName }));
       console.error('Toggle service error:', error);
-    }
-  };
-
-  // Update known services and save to localStorage
-  const updateKnownServices = (newServices: Set<string>) => {
-    setAllKnownServices(newServices);
-    try {
-      localStorage.setItem(
-        MCP_STORAGE_KEYS.KNOWN_SERVICES,
-        JSON.stringify([...newServices]),
-      );
-    } catch (error) {
-      console.warn('Failed to save known services to localStorage:', error);
-    }
-  };
-
-  // Update service configuration cache
-  const updateServiceConfigs = (newConfigs: Map<string, McpServerConfig>) => {
-    setServiceConfigs(newConfigs);
-    try {
-      localStorage.setItem(
-        MCP_STORAGE_KEYS.SERVICE_CONFIGS,
-        JSON.stringify([...newConfigs]),
-      );
-    } catch (error) {
-      console.warn('Failed to save service configs to localStorage:', error);
     }
   };
 
