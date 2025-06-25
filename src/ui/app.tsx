@@ -87,38 +87,51 @@ function AssistantToolMessage({ message }: { message: AssistantToolMessage }) {
 }
 
 function ToolMessage({ message }: { message: ToolMessage }) {
-  const result = (() => {
-    const result = message.content.result;
-    const toolName = message.content.toolName;
-    const success = result.success;
-    switch (toolName) {
-      case 'read':
-        if (success) {
-          const lines = result.data.totalLines;
-          return `Read ${lines} lines.`;
-        }
-      case 'bash':
-        if (success) {
-          return result.output.trim();
-        }
-      case 'edit':
-        return result;
-      case 'write':
-        return result;
-      case 'ls':
-        return result;
-      case 'fetch':
-        if (success) {
-          return result.data.result;
-        }
-      default:
-        break;
-    }
-    return JSON.stringify(message.content.result);
-  })();
+  let text = '';
+  const result = message.content.result;
+  const toolName = message.content.toolName;
+  const success = result.success;
+  const error = result.error;
+  if (!success && error) {
+    return (
+      <Box flexDirection="column">
+        <Text color="red">{error}</Text>
+      </Box>
+    );
+  }
+  switch (toolName) {
+    case 'read':
+      if (success) {
+        const lines = result.data.totalLines;
+        text = `Read ${lines} lines.`;
+      }
+      break;
+    case 'bash':
+      if (success) {
+        text = result.output.trim();
+      }
+      break;
+    case 'edit':
+      text = result;
+      break;
+    case 'write':
+      text = result;
+      break;
+    case 'ls':
+      text = result;
+      break;
+    case 'fetch':
+      if (success) {
+        text = result.data.result;
+      }
+      break;
+    default:
+      break;
+  }
+  text = JSON.stringify(result);
   return (
     <Box flexDirection="column">
-      <Text color="gray">↳ {result}</Text>
+      <Text color="gray">↳ {text}</Text>
     </Box>
   );
 }
