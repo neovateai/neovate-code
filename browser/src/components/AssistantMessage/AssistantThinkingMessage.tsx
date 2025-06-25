@@ -1,103 +1,66 @@
-import { CheckCircleFilled, DownOutlined, UpOutlined } from '@ant-design/icons';
-import { createStyles } from 'antd-style';
-import { useState } from 'react';
+import { RadarChartOutlined, RightOutlined } from '@ant-design/icons';
+import { useCallback, useState } from 'react';
 import type { ReasoningMessage } from '@/types/message';
 
-const useStyles = createStyles(({ token, css }) => ({
-  thinkingContainer: css`
-    margin: ${token.marginSM}px 0;
-  `,
+interface ThinkingMessageProps {
+  message: ReasoningMessage;
+  defaultExpanded?: boolean;
+}
 
-  thinkingHeader: css`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: ${token.paddingXS}px 0;
-    cursor: pointer;
-    user-select: none;
-
-    &:hover .expand-icon {
-      color: ${token.colorText};
-    }
-  `,
-
-  headerLeft: css`
-    display: flex;
-    align-items: center;
-    gap: ${token.marginXS}px;
-  `,
-
-  statusIcon: css`
-    color: #52c41a;
-    font-size: ${token.fontSize}px;
-  `,
-
-  thinkingLabel: css`
-    color: ${token.colorTextSecondary};
-    font-size: ${token.fontSizeSM}px;
-    font-weight: 500;
-  `,
-
-  expandIcon: css`
-    color: ${token.colorTextTertiary};
-    font-size: ${token.fontSizeSM}px;
-    transition: color ${token.motionDurationMid};
-  `,
-
-  thinkingContent: css`
-    overflow: hidden;
-    transition: max-height ${token.motionDurationMid} ease;
-    padding-left: ${token.marginLG}px;
-  `,
-
-  reasoningText: css`
-    color: ${token.colorTextTertiary};
-    line-height: ${token.lineHeight};
-    font-size: ${token.fontSizeSM}px;
-    word-break: break-word;
-    white-space: pre-wrap;
-    margin: ${token.marginXS}px 0 0 0;
-    border-left: 2px solid ${token.colorBorderSecondary};
-    padding-left: ${token.paddingSM}px;
-  `,
-
-  collapsedContent: css`
-    max-height: 0;
-    overflow: hidden;
-  `,
-
-  expandedContent: css`
-    max-height: 800px;
-  `,
-}));
-
-const ThinkingMessage: React.FC<{ message: ReasoningMessage }> = ({
+const ThinkingMessage: React.FC<ThinkingMessageProps> = ({
   message,
+  defaultExpanded = true,
 }) => {
-  const { styles } = useStyles();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
-  };
+  const toggleExpand = useCallback(() => {
+    setIsExpanded((prev) => !prev);
+  }, []);
+
+  if (!message.reasoning?.trim()) {
+    return null;
+  }
 
   return (
-    <div className={styles.thinkingContainer}>
-      <div className={styles.thinkingHeader} onClick={toggleExpanded}>
-        <div className={styles.headerLeft}>
-          <CheckCircleFilled className={styles.statusIcon} />
-          <span className={styles.thinkingLabel}>Thinking</span>
+    <div className="text-sm rounded-md overflow-hidden bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700/50">
+      <div
+        className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700/30 transition-colors duration-200"
+        onClick={toggleExpand}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleExpand();
+          }
+        }}
+      >
+        <span
+          className={`transition-transform duration-200 ease-in-out text-gray-500 ${
+            isExpanded ? 'rotate-90' : ''
+          }`}
+        >
+          <RightOutlined />
+        </span>
+        <RadarChartOutlined className="text-blue-500 dark:text-blue-400" />
+        <div className="flex-1 text-xs font-mono text-gray-600 dark:text-gray-400">
+          Thinking...
         </div>
-
-        <div className={`${styles.expandIcon} expand-icon`}>
-          {isExpanded ? <UpOutlined /> : <DownOutlined />}
+        <div className="text-xs text-gray-400 dark:text-gray-500">
+          {message.reasoning.split('\n').length} lines
         </div>
       </div>
 
       <div
-        className={`${styles.thinkingContent} ${isExpanded ? styles.expandedContent : styles.collapsedContent}`}
+        className={`overflow-y-auto transition-all duration-300 ease-in-out ${
+          isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        }`}
       >
-        <div className={styles.reasoningText}>{message.reasoning}</div>
+        <div className="border-l-2 border-blue-400 dark:border-blue-500 ml-3 px-3 py-2 bg-gray-50 dark:bg-gray-800/50">
+          <pre className="font-mono text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap break-words leading-relaxed">
+            {message.reasoning}
+          </pre>
+        </div>
       </div>
     </div>
   );

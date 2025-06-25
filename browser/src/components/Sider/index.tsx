@@ -7,6 +7,8 @@ import {
 import { Conversations } from '@ant-design/x';
 import { Avatar, Button } from 'antd';
 import { createStyles } from 'antd-style';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '../LanguageSwitcher';
 import logoPng from './imgs/kmi-ai.png';
 
 const useStyle = createStyles(({ token, css }) => {
@@ -62,6 +64,7 @@ const useStyle = createStyles(({ token, css }) => {
 
 const Sider = () => {
   const { styles } = useStyle();
+  const { t } = useTranslation();
 
   return (
     <div className={styles.sider}>
@@ -86,7 +89,7 @@ const Sider = () => {
         className={styles.addBtn}
         icon={<PlusOutlined />}
       >
-        New Conversation
+        {t('sidebar.newConversation')}
       </Button>
 
       {/* 🌟 会话管理 */}
@@ -102,12 +105,12 @@ const Sider = () => {
         menu={(conversation) => ({
           items: [
             {
-              label: 'Rename',
+              label: t('menu.rename'),
               key: 'rename',
               icon: <EditOutlined />,
             },
             {
-              label: 'Delete',
+              label: t('menu.delete'),
               key: 'delete',
               icon: <DeleteOutlined />,
               danger: true,
@@ -121,6 +124,7 @@ const Sider = () => {
 
       <div className={styles.siderFooter}>
         <Avatar size={24} />
+        <LanguageSwitcher />
         <Button type="text" icon={<QuestionCircleOutlined />} />
       </div>
     </div>

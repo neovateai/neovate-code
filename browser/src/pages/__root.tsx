@@ -3,6 +3,7 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { useMount } from 'ahooks';
 import { createStyles } from 'antd-style';
 import React from 'react';
+import I18nProvider from '@/components/I18nProvider';
 import Sider from '@/components/Sider';
 import { actions } from '@/state/appData';
 
@@ -26,11 +27,13 @@ const Layout: React.FC = () => {
   });
 
   return (
-    <div className={styles.layout}>
-      <Sider />
-      <Outlet />
-      <TanStackRouterDevtools position="bottom-right" />
-    </div>
+    <I18nProvider>
+      <div className={styles.layout}>
+        <Sider />
+        <Outlet />
+        <TanStackRouterDevtools position="bottom-right" />
+      </div>
+    </I18nProvider>
   );
 };
 

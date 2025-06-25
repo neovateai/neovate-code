@@ -1,0 +1,60 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "cancel": "取消",
+    "confirm": "确认",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "rename": "重命名",
+    "search": "搜索",
+    "placeholder": "请输入搜索内容..."
+  },
+  "sidebar": {
+    "newConversation": "新建对话",
+    "conversations": "对话列表",
+    "settings": "设置",
+    "help": "帮助"
+  },
+  "chat": {
+    "welcomeTitle": "你好，我是 Takumi",
+    "welcomeDescription": "我是您的 AI 编程助手，专注于提升开发工作流程。我能帮助您编写代码、优化性能、生成测试、分析架构，以及执行各种开发任务～",
+    "quickStart": "快速开始",
+    "capabilities": "Takumi 能力",
+    "greeting": "你好，我是 Takumi，你的 AI 编程助手！有什么可以帮助您的？",
+    "analyzeProject": "帮我分析这个项目的代码结构和架构",
+    "optimizeCode": "优化代码性能并重构这个函数",
+    "generateTests": "生成单元测试用例和测试文档",
+    "fixBugs": "修复 Bug 并提供解决方案",
+    "llmSupport": "LLM 支持",
+    "llmSupportDesc": "支持多种 LLM 提供商，包括 OpenAI、Claude、Gemini 等",
+    "fileOperations": "文件操作",
+    "fileOperationsDesc": "智能读取、编写和编辑文件，支持多种编程语言",
+    "codebaseNavigation": "代码库导航",
+    "codebaseNavigationDesc": "探索和搜索项目代码，快速定位和分析代码结构",
+    "planMode": "计划模式",
+    "planModeDesc": "将复杂任务分解为可管理的步骤，逐步执行计划",
+    "sendMessage": "发送消息",
+    "thinking": "思考中...",
+    "stopGenerating": "停止生成"
+  },
+  "prompts": {
+    "upgrades": "升级",
+    "components": "组件",
+    "richGuide": "详细指南",
+    "installationIntro": "安装介绍"
+  },
+  "context": {
+    "addContext": "添加上下文",
+    "files": "文件",
+    "selection": "选择",
+    "terminal": "终端",
+    "git": "Git"
+  },
+  "menu": {
+    "rename": "重命名",
+    "delete": "删除"
+  }
+}

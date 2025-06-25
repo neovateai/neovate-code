@@ -1,43 +1,54 @@
 import {
   AppstoreAddOutlined,
   FileSearchOutlined,
-  PaperClipOutlined,
   ProductOutlined,
   ScheduleOutlined,
 } from '@ant-design/icons';
-import { Prompts, Sender, Suggestion } from '@ant-design/x';
-import { Button, Divider, Flex, type GetProp, theme } from 'antd';
+import { Prompts, Sender } from '@ant-design/x';
+import { Flex } from 'antd';
 import { createStyles } from 'antd-style';
-import { useState } from 'react';
+import { differenceWith } from 'lodash-es';
+import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useSnapshot } from 'valtio';
 import McpDropdown from '@/components/McpDropdown';
+import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
+import { getInputInfo } from '@/utils/chat';
+import Suggestion from '../Suggestion';
+import LexicalTextArea from './LexicalTextArea';
+import { LexicalTextAreaContext } from './LexicalTextAreaContext';
+import SenderAttachments from './SenderAttachments';
 import SenderHeader from './SenderHeader';
 
-const SENDER_PROMPTS: GetProp<typeof Prompts, 'items'> = [
-  {
-    key: '1',
-    description: 'Upgrades',
-    icon: <ScheduleOutlined />,
-  },
-  {
-    key: '2',
-    description: 'Components',
-    icon: <ProductOutlined />,
-  },
-  {
-    key: '3',
-    description: 'RICH Guide',
-    icon: <FileSearchOutlined />,
-  },
-  {
-    key: '4',
-    description: 'Installation Introduction',
-    icon: <AppstoreAddOutlined />,
-  },
-];
+const useSenderPrompts = () => {
+  const { t } = useTranslation();
+  return [
+    {
+      key: '1',
+      description: t('prompts.upgrades'),
+      icon: <ScheduleOutlined />,
+    },
+    {
+      key: '2',
+      description: t('prompts.components'),
+      icon: <ProductOutlined />,
+    },
+    {
+      key: '3',
+      description: t('prompts.richGuide'),
+      icon: <FileSearchOutlined />,
+    },
+    {
+      key: '4',
+      description: t('prompts.installationIntro'),
+      icon: <AppstoreAddOutlined />,
+    },
+  ];
+};
 
 const useStyle = createStyles(({ token, css }) => {
   return {
@@ -45,6 +56,15 @@ const useStyle = createStyles(({ token, css }) => {
       width: 100%;
       max-width: 700px;
       margin: 0 auto;
+    `,
+    senderRoot: css`
+      margin: 0;
+      max-width: none;
+    `,
+    suggestion: css`
+      max-width: 700px;
+      margin: auto;
+      width: 100%;
     `,
     speechButton: css`
       font-size: 18px;
@@ -61,19 +81,38 @@ const useStyle = createStyles(({ token, css }) => {
 
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
-  const { token } = theme.useToken();
-  const { isLoading, stop, append, onQuery } = useChatState();
-  const [inputValue, setInputValue] = useState(state.prompt);
-  const { suggestions } = useSuggestion();
+  const { loading, stop, append, onQuery } = useChatState();
+  const { t } = useTranslation();
+  const SENDER_PROMPTS = useSenderPrompts();
+  const [insertNodePosition, setInsertNodePosition] = useState(0);
+  const [contextSearchInput, setContextSearchInput] = useState('');
+  const [keepMenuOpen, setKeepMenuOpen] = useState(false);
+  const prevInputValue = useRef<string>(state.prompt);
+  const { prompt, plainText } = useSnapshot(state);
+  const { contextItems } = context.state;
 
-  const iconStyle = {
-    fontSize: 18,
-    color: token.colorText,
-  };
+  // 编辑器中的Context不去重，实际挂载时再去重
+  const {
+    suggestions,
+    showSearch,
+    handleValue,
+    currentContextType,
+    setCurrentContextType,
+  } = useSuggestion(contextSearchInput);
 
   const onChange = (value: string) => {
-    setInputValue(value);
     actions.updatePrompt(value);
+  };
+
+  const handleSubmit = () => {
+    onQuery(prompt, plainText, contextItems);
+    actions.updatePrompt('');
+  };
+
+  const handleEnterPress = () => {
+    if (prompt.trim()) {
+      handleSubmit();
+    }
   };
 
   return (
@@ -91,66 +130,109 @@ const ChatSender: React.FC = () => {
         }}
         className={styles.senderPrompt}
       />
-      <Suggestion
-        items={suggestions}
-        onSelect={(itemVal) => {
-          context.actions.setFile(itemVal);
-          setInputValue('');
+      <LexicalTextAreaContext.Provider
+        value={{
+          onEnterPress: handleEnterPress,
+          onChangeNodes: (prevNodes, nextNodes) => {
+            // 只处理删除节点的情况，新增无需处理
+            differenceWith(prevNodes, nextNodes, (prev, next) => {
+              return prev.originalText === next.originalText;
+            }).forEach((node) => {
+              context.actions.removeContext(node.originalText);
+            });
+          },
+          onChangePlainText: (plainText) => actions.updatePlainText(plainText),
+          aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
+          namespace: 'SenderTextarea',
         }}
       >
-        {({ onTrigger, onKeyDown }) => {
-          return (
-            <Sender
-              value={inputValue}
-              header={<SenderHeader />}
-              onSubmit={() => {
-                onQuery(inputValue);
-                actions.updatePrompt('');
-                setInputValue('');
-              }}
-              onChange={(value) => {
-                if (value === '@') {
-                  onTrigger();
-                } else if (!value) {
-                  onTrigger(false);
-                }
-                onChange(value);
-              }}
-              onKeyDown={onKeyDown}
-              onCancel={() => {
-                stop();
-              }}
-              prefix={
-                <Button
-                  type="text"
-                  icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
-                />
-              }
-              loading={isLoading}
-              className={styles.sender}
-              allowSpeech
-              footer={({ components }) => {
-                const { SendButton, LoadingButton, SpeechButton } = components;
-                return (
-                  <Flex justify="end" align="center">
-                    <McpDropdown loading={isLoading} />
-                    <Divider type="vertical" />
-                    <SpeechButton style={iconStyle} />
-                    <Divider type="vertical" />
-                    {isLoading ? (
-                      <LoadingButton type="default" />
-                    ) : (
-                      <SendButton type="primary" />
-                    )}
-                  </Flex>
-                );
-              }}
-              actions={false}
-              placeholder="Ask or input @ use skills"
-            />
-          );
-        }}
-      </Suggestion>
+        {/* 🌟 输入框 */}
+        <Suggestion
+          className={styles.suggestion}
+          items={suggestions}
+          showSearch={
+            showSearch && {
+              placeholder: t('common.placeholder'),
+              onSearch: (text) => {
+                setContextSearchInput(text);
+              },
+            }
+          }
+          showBackButton={currentContextType !== ContextType.UNKNOWN}
+          onBack={() => {
+            setContextSearchInput('');
+            setCurrentContextType(ContextType.UNKNOWN);
+          }}
+          outsideOpen={keepMenuOpen}
+          onBlur={() => setKeepMenuOpen(false)}
+          onSelect={(value) => {
+            setKeepMenuOpen(true);
+            const contextItem = handleValue(value);
+            if (contextItem) {
+              setKeepMenuOpen(false);
+              const nextInputValue =
+                prompt.slice(0, insertNodePosition) +
+                contextItem.value +
+                prompt.slice(insertNodePosition + 1);
+              actions.updatePrompt(nextInputValue);
+
+              context.actions.addContext(contextItem);
+            }
+          }}
+        >
+          {({ onTrigger, onKeyDown }) => {
+            return (
+              <Sender
+                className={styles.sender}
+                rootClassName={styles.senderRoot}
+                value={prompt}
+                header={<SenderHeader />}
+                onSubmit={handleSubmit}
+                onChange={(value) => {
+                  const { isInputingAiContext, position } = getInputInfo(
+                    prevInputValue.current,
+                    value,
+                  );
+                  if (isInputingAiContext) {
+                    setInsertNodePosition(position);
+                    onTrigger();
+                  } else {
+                    onTrigger(false);
+                  }
+                  prevInputValue.current = prompt;
+                  onChange(value);
+                }}
+                onKeyDown={onKeyDown}
+                onCancel={() => {
+                  stop();
+                }}
+                prefix={<SenderAttachments />}
+                loading={loading}
+                allowSpeech
+                actions={(_, info) => {
+                  const { SendButton, LoadingButton, SpeechButton } =
+                    info.components;
+                  return (
+                    <Flex gap={4}>
+                      <McpDropdown loading={loading} />
+                      <SpeechButton className={styles.speechButton} />
+                      {loading ? (
+                        <LoadingButton type="default" />
+                      ) : (
+                        <SendButton type="primary" />
+                      )}
+                    </Flex>
+                  );
+                }}
+                components={{
+                  input: LexicalTextArea,
+                }}
+                placeholder="Ask or input @ use skills"
+              />
+            );
+          }}
+        </Suggestion>
+      </LexicalTextAreaContext.Provider>
     </>
   );
 };

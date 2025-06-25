@@ -1,41 +1,65 @@
 import { proxy } from 'valtio';
 import type { FileItem } from '@/api/model';
-import * as suggestion from '@/state/suggestion';
+import { ContextType } from '@/constants/context';
+import * as sender from '@/state/sender';
+import type { ContextItem } from '@/types/context';
 
 interface ContextState {
-  fileList: FileItem[];
-  isShowContext: boolean;
   contexts: {
     files: Omit<FileItem, 'name'>[];
   };
+
+  contextItems: ContextItem[];
+
+  contextsSelectedValues: string[];
 }
 
 export const state = proxy<ContextState>({
-  fileList: [],
-  get isShowContext() {
-    return this.fileList.length > 0;
+  contextItems: [],
+
+  get contextsSelectedValues() {
+    return this.contextItems.map((item: ContextItem) => item.displayText);
   },
+
   get contexts() {
+    const files = this.contextItems
+      .filter(
+        (contextItem: ContextItem) => contextItem.type === ContextType.FILE,
+      )
+      .map((contextItem: ContextItem) => {
+        const file = contextItem.context as FileItem;
+
+        return {
+          path: file.path,
+          type: file.type,
+        };
+      });
+
     return {
-      files: this.fileList.map((file: FileItem) => ({
-        path: file.path,
-        type: file.type,
-      })),
+      files,
     };
   },
 });
 
 export const actions = {
-  setFiles: (files: FileItem[]) => {
-    state.fileList = files;
-  },
-  setFile: (path: string) => {
-    const file = suggestion.actions.getFileByPath(path);
-    if (file) {
-      // 增加去重
-      if (!state.fileList.some((f) => f.path === file.path)) {
-        state.fileList.push(file);
-      }
+  /** 添加新的上下文 */
+  addContext: (contextItem: ContextItem) => {
+    // 去重，合并后的上下文中，已经存在的不添加
+    if (state.contextItems.some((item) => item.value === contextItem.value)) {
+      return;
     }
+
+    state.contextItems.push(contextItem);
+  },
+
+  /** 删除上下文 */
+  removeContext: (value: string) => {
+    state.contextItems = state.contextItems.filter(
+      (item) => item.value !== value,
+    );
+    // change prompt and editorContexts will auto update
+    // although the contextItem is created by editor
+    const nextPrompt = sender.state.prompt.replaceAll(value, '');
+    sender.actions.updatePrompt(nextPrompt);
   },
 };

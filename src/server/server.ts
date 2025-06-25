@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import portfinder from 'portfinder';
 import { PluginHookType } from '../plugin';
+import { Service } from '../service';
 import * as logger from '../utils/logger';
 import config from './config';
 import mcpRoute from './routes/mcp';
@@ -63,12 +64,17 @@ const registerPlugins = async (app: FastifyInstance) => {
   });
 };
 
-const registerRoutes = async (app: FastifyInstance, opts: CreateServerOpts) => {
+const registerRoutes = async (
+  app: FastifyInstance,
+  opts: CreateServerOpts,
+  service: Service,
+) => {
   const { logLevel: _, ...pluginOpts } = opts;
 
   await app.register(import('./routes/completions'), {
     prefix: `${BASE_API_PREFIX}/chat`,
     ...pluginOpts,
+    service,
   });
   await app.register(import('./routes/files'), {
     prefix: BASE_API_PREFIX,
@@ -139,9 +145,14 @@ export async function createServer(opts: CreateServerOpts) {
   });
   const host = config.host;
 
+  const service = await Service.create({
+    context: opts.context,
+    agentType: 'code',
+  });
+
   try {
     await registerPlugins(app);
-    await registerRoutes(app, opts);
+    await registerRoutes(app, opts, service);
 
     await app.listen({
       port,

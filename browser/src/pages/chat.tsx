@@ -12,6 +12,7 @@ import { createStyles } from 'antd-style';
 import AssistantAvatar from '@/components/AssistantAvatar';
 import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
+import { UserMessage, UserMessageFooter } from '@/components/UserMessage';
 import Welcome from '@/components/Welcome';
 import ChatProvider, { useChatState } from '@/hooks/provider';
 
@@ -40,11 +41,13 @@ const Chat: React.FC = () => {
   const items = messages?.map((i, index) => {
     return {
       ...i,
-      content: i.role === 'assistant' ? i : i.content,
+      // content: i.role === 'assistant' ? i : i.content,
+      content: i,
       typing: status === 'submitted' ? { step: 20, interval: 150 } : false,
       loading: status === 'submitted' && index === messages.length - 1,
     };
   });
+
   const roles: GetProp<typeof Bubble.List, 'roles'> = {
     user: {
       placement: 'end',
@@ -52,13 +55,17 @@ const Chat: React.FC = () => {
         icon: <UserOutlined />,
         style: { background: '#87d068' },
       },
+      messageRender(message) {
+        return <UserMessage message={message} />;
+      },
+      footer(message) {
+        return <UserMessageFooter message={message} />;
+      },
     },
     assistant: {
       placement: 'start',
-      avatar: {
-        icon: <AssistantAvatar />,
-        style: { background: '#fff' },
-      },
+      avatar: <AssistantAvatar />,
+      variant: 'outlined',
       messageRender(message) {
         return <AssistantMessage message={message} />;
       },
@@ -84,7 +91,7 @@ const Chat: React.FC = () => {
   return (
     <div className={styles.chat}>
       <div className={styles.chatList}>
-        {messages?.length ? (
+        {items?.length ? (
           <Bubble.List
             items={items}
             style={{

@@ -1,10 +1,33 @@
 import React, { useState } from 'react';
 import type { ToolMessage } from '@/types/message';
+import {
+  BashRender,
+  FetchRender,
+  GlobRender,
+  GrepRender,
+  LsRender,
+  ReadRender,
+} from '../ToolRender';
 
 const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
   message,
 }) => {
   const { state, toolName, args, step } = message;
+
+  switch (toolName) {
+    case 'grep':
+      return <GrepRender message={message} />;
+    case 'read':
+      return <ReadRender message={message} />;
+    case 'glob':
+      return <GlobRender message={message} />;
+    case 'ls':
+      return <LsRender message={message} />;
+    case 'bash':
+      return <BashRender message={message} />;
+    case 'fetch':
+      return <FetchRender message={message} />;
+  }
 
   // 控制结果展开/收起的状态，默认收起
   const [isResultExpanded, setIsResultExpanded] = useState(false);

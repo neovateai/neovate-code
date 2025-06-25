@@ -1,31 +1,46 @@
 import { Sender } from '@ant-design/x';
-import { Flex, Tag } from 'antd';
-import { useEffect } from 'react';
+import { Flex } from 'antd';
+import React, { Fragment } from 'react';
 import { useSnapshot } from 'valtio';
+import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
 import * as context from '@/state/context';
-import * as sender from '@/state/sender';
+import type { ContextItem } from '@/types/context';
+import AddContext from '../AddContext';
+
+export function renderContextTag(
+  contextItem: ContextItem,
+  onClose?: () => void,
+) {
+  const { type, displayText, value, context } = contextItem;
+  const config = AI_CONTEXT_NODE_CONFIGS.find((config) => config.type === type);
+
+  if (!config) {
+    return null;
+  }
+
+  return (
+    <Fragment key={value}>
+      {config.render({ info: { displayText, value }, onClose, context })}
+    </Fragment>
+  );
+}
 
 const SenderHeader: React.FC = () => {
-  const { contextOpen } = useSnapshot(sender.state);
-  const { isShowContext, fileList } = useSnapshot(context.state);
-
-  useEffect(() => {
-    sender.actions.setContextOpen(isShowContext);
-  }, [isShowContext]);
+  const { contextItems } = useSnapshot(context.state);
 
   return (
     <Sender.Header
-      title="Context"
-      open={contextOpen}
-      onOpenChange={sender.actions.setContextOpen}
+      closable={false}
+      open={true}
       styles={{ content: { padding: 0 } }}
     >
-      <Flex gap={8} wrap="wrap" style={{ padding: 8 }}>
-        {fileList.map((file) => (
-          <Tag style={{ userSelect: 'none' }} key={file.path}>
-            {file.path}
-          </Tag>
-        ))}
+      <Flex gap={6} wrap="wrap" style={{ padding: 8, lineHeight: '22px' }}>
+        <AddContext />
+        {contextItems.map((contextItem) =>
+          renderContextTag(contextItem, () => {
+            context.actions.removeContext(contextItem.value);
+          }),
+        )}
       </Flex>
     </Sender.Header>
   );
