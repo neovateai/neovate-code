@@ -5,6 +5,7 @@ import { Context } from '../context';
 import { isReasoningModel } from '../provider';
 import { query } from '../query';
 import { Service } from '../service';
+import { delay } from '../utils/delay';
 
 const debug = createDebug('takumi:ui:store');
 
@@ -23,8 +24,6 @@ export interface CreateStoreOpts {
   planService: Service;
   stage: 'plan' | 'code';
 }
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // for debugging
 function appendLogToFile(log: string) {
@@ -170,7 +169,7 @@ export function createStore(opts: CreateStoreOpts) {
   return store;
 }
 
-export interface Store {
+interface Store {
   productName: string;
   version: string;
   generalInfo: Record<string, string>;
