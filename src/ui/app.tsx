@@ -87,7 +87,6 @@ function AssistantToolMessage({ message }: { message: AssistantToolMessage }) {
 }
 
 function ToolMessage({ message }: { message: ToolMessage }) {
-  let text = '';
   const result = message.content.result;
   const toolName = message.content.toolName;
   const success = result.success;
@@ -99,6 +98,7 @@ function ToolMessage({ message }: { message: ToolMessage }) {
       </Box>
     );
   }
+  let text = '';
   switch (toolName) {
     case 'read':
       if (success) {
@@ -128,7 +128,7 @@ function ToolMessage({ message }: { message: ToolMessage }) {
     default:
       break;
   }
-  text = JSON.stringify(result);
+  text = text || JSON.stringify(result);
   return (
     <Box flexDirection="column">
       <Text color="gray">↳ {text}</Text>
@@ -153,13 +153,13 @@ function Message({ message, dynamic }: { message: Message, dynamic?: boolean }) 
       case 'user':
         return <UserMessage message={message} />;
       case 'assistant':
-        return message.content.type === 'text' ? (
-          <AssistantTextMessage message={message as AssistantTextMessage} dynamic={dynamic} />
-        ) : message.content.type === 'thinking' ? (
-          <ThinkingMessage message={message as ThinkingMessage} />
-        ) : (
-          <AssistantToolMessage message={message as AssistantToolMessage} />
-        );
+        if (message.content.type === 'thinking') {
+          return <ThinkingMessage message={message as ThinkingMessage} />;
+        }
+        if (message.content.type === 'text') {
+          return <AssistantTextMessage message={message as AssistantTextMessage} dynamic={dynamic} />;
+        }
+        return <AssistantToolMessage message={message as AssistantToolMessage} />;
       case 'system':
         return <SystemMessage message={message} />;
       case 'tool':

@@ -1,4 +1,5 @@
 import createDebug from 'debug';
+import fs from 'fs';
 import os from 'os';
 import { proxy } from 'valtio';
 import { isReasoningModel } from '../provider';
@@ -28,6 +29,15 @@ export interface CreateStoreOpts {
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const homeDir = os.homedir();
+
+// for debugging
+function appendLogToFile(log: string) {
+  if (!process.env.TAKUMI_TRACE_FILE) {
+    return;
+  }
+  const datetime = new Date().toLocaleString();
+  fs.appendFileSync(process.env.TAKUMI_TRACE_FILE, `[${datetime}] ${log}\n`);
+}
 
 export function createStore(opts: CreateStoreOpts) {
   if (store) {
@@ -74,12 +84,16 @@ export function createStore(opts: CreateStoreOpts) {
           ],
           service,
           thinking: isReasoningModel(service.context.config.model),
-          onTextDelta(text) {
+          async onTextDelta(text) {
+            appendLogToFile(`onTextDelta: ${text}`);
+            await delay(100);
             store = store!;
             if (reasoningDelta && store.currentMessage) {
+              reasoningDelta = '';
               store.messages.push(store.currentMessage);
               store.currentMessage = null;
             }
+            await delay(100);
             textDelta += text;
             store.currentMessage = {
               role: 'assistant',
@@ -90,9 +104,12 @@ export function createStore(opts: CreateStoreOpts) {
             };
           },
           async onText(text) {
+            appendLogToFile(`onText: ${text}`);
             await delay(100);
             store = store!;
             store.currentMessage = null;
+            await delay(100);
+            textDelta = '';
             store.messages.push({
               role: 'assistant',
               content: {
@@ -102,7 +119,9 @@ export function createStore(opts: CreateStoreOpts) {
             });
             debug('onText', text);
           },
-          onReasoning(text) {
+          async onReasoning(text) {
+            appendLogToFile(`onReasoning: ${text}`);
+            await delay(100);
             store = store!;
             reasoningDelta += text;
             store.currentMessage = {
@@ -114,7 +133,11 @@ export function createStore(opts: CreateStoreOpts) {
             };
             debug('onReasoning', text);
           },
-          onToolUse(callId, name, params) {
+          async onToolUse(callId, name, params) {
+            appendLogToFile(
+              `onToolUse: ${callId} ${name} ${JSON.stringify(params)}`,
+            );
+            await delay(100);
             store = store!;
             debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
             store.messages.push({
@@ -128,6 +151,9 @@ export function createStore(opts: CreateStoreOpts) {
             });
           },
           onToolUseResult(callId, name, result) {
+            appendLogToFile(
+              `onToolUseResult: ${callId} ${name} ${JSON.stringify(result)}`,
+            );
             debug(
               `Tool use result: ${name} with result ${JSON.stringify(result)}`,
             );

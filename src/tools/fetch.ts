@@ -22,7 +22,8 @@ Remembers:
     execute: async ({ url, prompt }) => {
       try {
         const startTime = Date.now();
-        const cached = urlCache.get(url);
+        const key = `${url}-${prompt}`;
+        const cached = urlCache.get(key);
         if (cached && cached.durationMs < CACHE_TTL_MS) {
           return {
             success: true,
@@ -99,7 +100,7 @@ Provide a concise response based only on the content above. In your response:
           contentType,
           durationMs: Date.now() - startTime,
         };
-        urlCache.set(url, data);
+        urlCache.set(key, data);
         return {
           success: true,
           data,
