@@ -86,3 +86,42 @@ export type McpServerScope = 'global' | 'project';
 
 // MCP transport type
 export type McpTransportType = 'sse' | 'stdio';
+
+// API Response types
+export interface McpServersResponse {
+  success: true;
+  servers: Record<string, McpServerConfig>;
+  scope: 'global' | 'project';
+}
+
+export interface McpServerResponse {
+  success: true;
+  server: McpServerConfig;
+  name: string;
+}
+
+export interface McpOperationResponse {
+  success: true;
+  message: string;
+  server?: McpServerConfig;
+}
+
+// API Request types
+export interface AddMcpServerRequest {
+  name: string;
+  command?: string;
+  args?: string[];
+  url?: string;
+  transport?: string;
+  env?: string;
+  global?: boolean;
+}
+
+export interface UpdateMcpServerRequest {
+  command?: string;
+  args?: string[];
+  url?: string;
+  transport?: string;
+  env?: string;
+  global?: boolean;
+}

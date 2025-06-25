@@ -2,7 +2,12 @@ import { ApiOutlined, EditOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Dropdown, Input, Modal, Space, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { mcpService } from '@/api/mcpService';
+import {
+  addMCPServer,
+  getMCPServers,
+  removeMCPServer,
+  updateMCPServer,
+} from '@/api/mcpService';
 import McpManager from '@/components/McpManager';
 import {
   FIGMA_CONFIG,
@@ -59,8 +64,8 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       setMcpLoading(true);
       // Load both global and project-level MCP services simultaneously
       const [globalResponse, projectResponse] = await Promise.all([
-        mcpService.getServers(true),
-        mcpService.getServers(false),
+        getMCPServers(true),
+        getMCPServers(false),
       ]);
 
       const globalServers = globalResponse.servers || {};
@@ -191,7 +196,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
             global: scope === 'global',
           };
 
-          await mcpService.addServer(configToAdd);
+          await addMCPServer(configToAdd);
           message.success(
             t('mcp.enabled', {
               name: serverName,
@@ -229,7 +234,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         }
 
         // Remove from corresponding scope configuration
-        await mcpService.removeServer(serverName, scope === 'global');
+        await removeMCPServer(serverName, scope === 'global');
         message.success(
           t('mcp.disabled', {
             name: serverName,
@@ -282,7 +287,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
             : arg,
       );
 
-      await mcpService.updateServer(editingService.name, {
+      await updateMCPServer(editingService.name, {
         args: updatedArgs,
         global: editingService.scope === 'global',
       });
@@ -305,7 +310,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         global: false, // Force project level
       };
 
-      await mcpService.addServer(configToAdd);
+      await addMCPServer(configToAdd);
       message.success(t('mcp.added', { name: service.name }));
 
       // Reload services list

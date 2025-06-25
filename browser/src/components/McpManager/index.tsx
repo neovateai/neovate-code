@@ -33,7 +33,11 @@ import type {
   McpServerConfig,
 } from '@/types/mcp';
 import { containerEventHandlers, modalEventHandlers } from '@/utils/eventUtils';
-import { mcpService } from '../../api/mcpService';
+import {
+  addMCPServer,
+  getMCPServers,
+  removeMCPServer,
+} from '../../api/mcpService';
 
 const { Text } = Typography;
 
@@ -86,8 +90,8 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     try {
       // Load global and project configurations simultaneously
       const [globalResponse, projectResponse] = await Promise.all([
-        mcpService.getServers(true),
-        mcpService.getServers(false),
+        getMCPServers(true),
+        getMCPServers(false),
       ]);
 
       const globalServers = globalResponse.servers || {};
@@ -232,7 +236,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           // Add all servers
           for (const [name, config] of Object.entries(servers)) {
             const serverConfig = config as McpServerConfig;
-            await mcpService.addServer({
+            await addMCPServer({
               name,
               command: serverConfig.command,
               args: serverConfig.args,
@@ -259,7 +263,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           ) {
             // Direct configuration object (contains name field)
             if (jsonConfig.name) {
-              await mcpService.addServer({
+              await addMCPServer({
                 name: jsonConfig.name,
                 command: jsonConfig.command,
                 args: jsonConfig.args,
@@ -285,7 +289,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             // Add all servers
             for (const [name, config] of Object.entries(jsonConfig)) {
               const serverConfig = config as McpServerConfig;
-              await mcpService.addServer({
+              await addMCPServer({
                 name,
                 command: serverConfig.command,
                 args: serverConfig.args,
@@ -305,7 +309,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
         }
       } else {
         if (values.name) {
-          await mcpService.addServer({
+          await addMCPServer({
             name: values.name,
             command: values.command,
             url: values.url,
@@ -444,7 +448,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           }
 
           // For uninstalled services, need to re-add
-          await mcpService.addServer({
+          await addMCPServer({
             name: server.name,
             command: server.command,
             args: server.args,
@@ -476,7 +480,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           updateServiceConfigs(newConfigs);
         }
 
-        await mcpService.removeServer(serverName, scope === 'global');
+        await removeMCPServer(serverName, scope === 'global');
         message.success(t('mcp.disabled', { name: serverName }));
 
         // Update service status to uninstalled but keep in list and save configuration info
