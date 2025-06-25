@@ -4,6 +4,7 @@
   "type": "module",
   "files": [
     "dist",
+    "dist-browser",
     "vendor"
   ],
   "main": "./dist/index.mjs",
@@ -115,7 +116,8 @@
   },
   "upgear": {
     "files": [
-      "vendor"
+      "vendor",
+      "dist-browser"
     ],
     "needReinstall": false,
     "changelogUrl": "https://github.com/umijs/takumi/blob/master/CHANGELOG.md"
