@@ -1,24 +1,14 @@
-const API_BASE = '/api';
+import { mcpRequest } from '@/utils/request';
 
 export const mcpService = {
   // Get server list
   async getServers(global = false) {
-    const response = await fetch(`${API_BASE}/mcp/servers?global=${global}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch servers');
-    }
-    return response.json();
+    return await mcpRequest.get(`/mcp/servers?global=${global}`);
   },
 
   // Get single server
   async getServer(name: string, global = false) {
-    const response = await fetch(
-      `${API_BASE}/mcp/servers/${name}?global=${global}`,
-    );
-    if (!response.ok) {
-      throw new Error('Failed to fetch server');
-    }
-    return response.json();
+    return await mcpRequest.get(`/mcp/servers/${name}?global=${global}`);
   },
 
   // Add server
@@ -31,15 +21,7 @@ export const mcpService = {
     env?: string;
     global?: boolean;
   }) {
-    const response = await fetch(`${API_BASE}/mcp/servers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(config),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to add server');
-    }
-    return response.json();
+    return await mcpRequest.post(`/mcp/servers`, config);
   },
 
   // Update server
@@ -54,28 +36,11 @@ export const mcpService = {
       global?: boolean;
     },
   ) {
-    const response = await fetch(`${API_BASE}/mcp/servers/${name}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(config),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to update server');
-    }
-    return response.json();
+    return await mcpRequest.patch(`/mcp/servers/${name}`, config);
   },
 
   // Remove server
   async removeServer(name: string, global = false) {
-    const response = await fetch(
-      `${API_BASE}/mcp/servers/${name}?global=${global}`,
-      {
-        method: 'DELETE',
-      },
-    );
-    if (!response.ok) {
-      throw new Error('Failed to remove server');
-    }
-    return response.json();
+    return await mcpRequest.delete(`/mcp/servers/${name}?global=${global}`);
   },
 };

@@ -8,7 +8,6 @@ import { PluginHookType } from '../plugin';
 import { Service } from '../service';
 import * as logger from '../utils/logger';
 import config from './config';
-import mcpRoute from './routes/mcp';
 import { CreateServerOpts, RunBrowserServerOpts } from './types';
 
 const debug = createDebug('takumi:server:completions');
@@ -47,8 +46,6 @@ const registerPlugins = async (app: FastifyInstance) => {
     wildcard: false,
   });
 
-  app.register(mcpRoute, { prefix: BASE_API_PREFIX });
-
   app.get('*', async (request, reply) => {
     if (request.url.startsWith(BASE_API_PREFIX)) {
       return reply.status(404).send('Not Found');
@@ -81,6 +78,10 @@ const registerRoutes = async (
     ...pluginOpts,
   });
   await app.register(import('./routes/app-data'), {
+    prefix: BASE_API_PREFIX,
+    ...pluginOpts,
+  });
+  await app.register(import('./routes/mcp'), {
     prefix: BASE_API_PREFIX,
     ...pluginOpts,
   });
