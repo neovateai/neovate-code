@@ -785,7 +785,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                       <div
                         style={{
                           marginTop: '8px',
-                          maxHeight: '300px',
+                          maxHeight: '260px',
                           overflowY: 'auto',
                           border: '1px solid #f0f0f0',
                           borderRadius: '6px',
