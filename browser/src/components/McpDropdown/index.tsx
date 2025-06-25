@@ -397,12 +397,17 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
               <Checkbox
                 checked={server.installed}
                 onChange={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   handleToggleEnabled(
                     server.name,
                     e.target.checked,
                     server.scope,
                   );
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                 }}
               />
               <div>
@@ -471,6 +476,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
               <Checkbox
                 checked={false}
                 onChange={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   if (e.target.checked) {
                     handleToggleEnabled(
@@ -479,6 +485,10 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
                       server.scope,
                     );
                   }
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                 }}
               />
               <div>
@@ -535,10 +545,15 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
               <Checkbox
                 checked={false}
                 onChange={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   if (e.target.checked) {
                     handleQuickAdd(service);
                   }
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                 }}
               />
               <div
@@ -669,13 +684,28 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         }}
         okText={t('common.save')}
         cancelText={t('common.cancel')}
+        getContainer={() => document.body}
+        mask={true}
+        maskClosable={false}
+        keyboard={false}
+        destroyOnClose={true}
       >
-        <div style={{ marginTop: '16px' }}>
+        <div
+          style={{ marginTop: '16px' }}
+          onKeyDown={(e) => e.stopPropagation()}
+          onKeyUp={(e) => e.stopPropagation()}
+          onKeyPress={(e) => e.stopPropagation()}
+        >
           <Input
             placeholder={t('mcp.apiKeyPlaceholder')}
             value={editApiKey}
             onChange={(e) => setEditApiKey(e.target.value)}
             onPressEnter={handleSaveApiKey}
+            onKeyDown={(e) => e.stopPropagation()}
+            onKeyUp={(e) => e.stopPropagation()}
+            onKeyPress={(e) => e.stopPropagation()}
+            onInput={(e) => e.stopPropagation()}
+            autoFocus
             style={{ marginBottom: '8px' }}
           />
           <div style={{ fontSize: '12px', color: '#666' }}>
