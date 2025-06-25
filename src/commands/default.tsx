@@ -13,6 +13,7 @@ import { PluginHookType } from '../plugin';
 import { Service } from '../service';
 import { setupTracing } from '../tracing';
 import { App } from '../ui/app';
+import { StoreProvider } from '../ui/hooks/use-store';
 import { createStore } from '../ui/store';
 
 React;
@@ -45,10 +46,15 @@ export async function run(opts: RunOpts) {
     });
     const quiet = opts.context.config.quiet;
     if (!quiet) {
-      render(<App />, {
-        patchConsole: process.env.DEBUG ? false : true,
-        exitOnCtrlC: true,
-      });
+      render(
+        <StoreProvider store={store}>
+          <App />
+        </StoreProvider>,
+        {
+          patchConsole: process.env.DEBUG ? false : true,
+          exitOnCtrlC: true,
+        },
+      );
       const exit = () => {
         debug('exit');
         opts.context.destroy().then(() => {

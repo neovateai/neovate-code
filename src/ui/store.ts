@@ -9,15 +9,6 @@ import { delay } from '../utils/delay';
 
 const debug = createDebug('takumi:ui:store');
 
-let store: Store | null = null;
-
-export function getStore() {
-  if (!store) {
-    throw new Error('Store not initialized');
-  }
-  return store;
-}
-
 export interface CreateStoreOpts {
   context: Context;
   service: Service;
@@ -35,10 +26,7 @@ function appendLogToFile(log: string) {
 }
 
 export function createStore(opts: CreateStoreOpts) {
-  if (store) {
-    return store;
-  }
-  store = proxy<Store>({
+  const createdStore = proxy<Store>({
     stage: opts.stage,
     planModal: null,
     productName: opts.context.productName,
@@ -55,12 +43,12 @@ export function createStore(opts: CreateStoreOpts) {
       query: async (input: string): Promise<any> => {
         await delay(100);
         const service =
-          store!.stage === 'plan' ? opts.planService : opts.service;
+          createdStore.stage === 'plan' ? opts.planService : opts.service;
         let textDelta = '';
         let reasoningDelta = '';
-        store!.status = 'processing';
-        store!.error = null;
-        store!.messages.push({
+        createdStore.status = 'processing';
+        createdStore.error = null;
+        createdStore.messages.push({
           role: 'user',
           content: {
             type: 'text',
@@ -80,14 +68,13 @@ export function createStore(opts: CreateStoreOpts) {
             async onTextDelta(text) {
               appendLogToFile(`onTextDelta: ${text}`);
               await delay(100);
-              store = store!;
-              if (reasoningDelta && store.currentMessage) {
+              if (reasoningDelta && createdStore.currentMessage) {
                 reasoningDelta = '';
-                store.messages.push(store.currentMessage);
-                store.currentMessage = null;
+                createdStore.messages.push(createdStore.currentMessage);
+                createdStore.currentMessage = null;
               }
               textDelta += text;
-              store.currentMessage = {
+              createdStore.currentMessage = {
                 role: 'assistant',
                 content: {
                   type: 'text',
@@ -98,10 +85,9 @@ export function createStore(opts: CreateStoreOpts) {
             async onText(text) {
               appendLogToFile(`onText: ${text}`);
               await delay(100);
-              store = store!;
-              store.currentMessage = null;
+              createdStore.currentMessage = null;
               textDelta = '';
-              store.messages.push({
+              createdStore.messages.push({
                 role: 'assistant',
                 content: {
                   type: 'text',
@@ -113,9 +99,8 @@ export function createStore(opts: CreateStoreOpts) {
             async onReasoning(text) {
               appendLogToFile(`onReasoning: ${text}`);
               await delay(100);
-              store = store!;
               reasoningDelta += text;
-              store.currentMessage = {
+              createdStore.currentMessage = {
                 role: 'assistant',
                 content: {
                   type: 'thinking',
@@ -129,9 +114,8 @@ export function createStore(opts: CreateStoreOpts) {
                 `onToolUse: ${callId} ${name} ${JSON.stringify(params)}`,
               );
               await delay(100);
-              store = store!;
               debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
-              store.messages.push({
+              createdStore.messages.push({
                 role: 'assistant',
                 content: {
                   type: 'tool-call',
@@ -148,8 +132,7 @@ export function createStore(opts: CreateStoreOpts) {
               debug(
                 `Tool use result: ${name} with result ${JSON.stringify(result)}`,
               );
-              store = store!;
-              store.messages.push({
+              createdStore.messages.push({
                 role: 'tool',
                 content: {
                   type: 'tool-result',
@@ -160,24 +143,24 @@ export function createStore(opts: CreateStoreOpts) {
               });
             },
           });
-          store!.status = 'completed';
-          if (store!.stage === 'plan') {
-            store!.planModal = { text: result.finalText || '' };
+          createdStore.status = 'completed';
+          if (createdStore.stage === 'plan') {
+            createdStore.planModal = { text: result.finalText || '' };
           }
           return result;
         } catch (e: any) {
-          store!.status = 'failed';
-          store!.error = e.message || String(e);
-          store!.currentMessage = null;
+          createdStore.status = 'failed';
+          createdStore.error = e.message || String(e);
+          createdStore.currentMessage = null;
           throw e;
         }
       },
     },
   });
-  return store;
+  return createdStore;
 }
 
-interface Store {
+export interface Store {
   productName: string;
   version: string;
   generalInfo: Record<string, string>;

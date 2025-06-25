@@ -1,11 +1,12 @@
 import { Box, Static, Text } from 'ink';
 import TextInput from './ink-text-input';
-import React from 'react';
 import { useSnapshot } from 'valtio';
 import SelectInput from 'ink-select-input';
 import Markdown from './ink-markdown';
-import { Message, UserMessage, AssistantTextMessage, AssistantToolMessage, ToolMessage, ThinkingMessage, SystemMessage } from './store';
-import { getStore } from './store';
+import React, { createContext, useContext } from 'react';
+import { Message, UserMessage, AssistantTextMessage, AssistantToolMessage, ToolMessage, ThinkingMessage, SystemMessage, Store } from './store';
+import { useStore } from './hooks/use-store';
+
 
 function UserMessage({ message }: { message: UserMessage }) {
   return (
@@ -32,7 +33,8 @@ function ThinkingMessage({ message }: { message: ThinkingMessage }) {
 }
 
 function AssistantTextMessage({ message, dynamic }: { message: AssistantTextMessage, dynamic?: boolean }) {
-  const snap = getStore();
+  const store = useStore();
+  const snap = useSnapshot(store);
   const productName = snap.productName.toLowerCase();
   return (
     <Box flexDirection="column">
@@ -195,7 +197,8 @@ function GeneralInfoPanel({ generalInfo }: { generalInfo: Record<string, string>
 }
 
 function Header() {
-  const snap = useSnapshot(getStore());
+  const store = useStore();
+  const snap = useSnapshot(store);
   const { productName, version, generalInfo } = snap;
   return (
     <Box flexDirection="column" marginTop={1}>
@@ -213,7 +216,7 @@ function Header() {
 }
 
 function ChatInput() {
-  const store = getStore();
+  const store = useStore();
   const snap = useSnapshot(store);
   const isProcessing = snap.status === 'processing';
   const isFailed = snap.status === 'failed';
@@ -273,7 +276,7 @@ function ChatInput() {
 }
 
 function PlanModalSelectInput() {
-  const store = getStore();
+  const store = useStore();
   const snap = useSnapshot(store);
   return (
     <SelectInput
@@ -299,7 +302,7 @@ function PlanModalSelectInput() {
 }
 
 function PlanModal() {
-  const store = getStore();
+  const store = useStore();
   const snap = useSnapshot(store);
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="gray" padding={1}>
@@ -316,7 +319,8 @@ function PlanModal() {
 }
 
 export function App() {
-  const snap = useSnapshot(getStore());
+  const store = useStore();
+  const snap = useSnapshot(store);
   return (
     <Box flexDirection="column">
       <Static items={['header', ...snap.messages] as any[]}>
