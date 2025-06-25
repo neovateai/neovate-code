@@ -175,13 +175,7 @@ function Message({ message, dynamic }: { message: Message, dynamic?: boolean }) 
   );
 }
 
-interface GeneralInfo {
-  model: string;
-  workspace: string;
-  log?: string;
-}
-
-function GeneralInfoPanel({ generalInfo }: { generalInfo: GeneralInfo }) {
+function GeneralInfoPanel({ generalInfo }: { generalInfo: Record<string, string> }) {
   return (
     <Box
       borderStyle="round"
@@ -202,7 +196,7 @@ function GeneralInfoPanel({ generalInfo }: { generalInfo: GeneralInfo }) {
 
 function Header() {
   const snap = useSnapshot(getStore());
-  const { productName, version, ...generalInfo } = snap.generalInfo;
+  const { productName, version, generalInfo } = snap;
   return (
     <Box flexDirection="column" marginTop={1}>
       <Box flexDirection="row" gap={1}>

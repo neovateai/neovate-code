@@ -1,6 +1,5 @@
 import createDebug from 'debug';
 import fs from 'fs';
-import os from 'os';
 import { proxy } from 'valtio';
 import { isReasoningModel } from '../provider';
 import { query } from '../query';
@@ -28,8 +27,6 @@ export interface CreateStoreOpts {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const homeDir = os.homedir();
-
 // for debugging
 function appendLogToFile(log: string) {
   if (!process.env.TAKUMI_TRACE_FILE) {
@@ -46,13 +43,9 @@ export function createStore(opts: CreateStoreOpts) {
   store = proxy<Store>({
     stage: opts.stage,
     planModal: null,
-    generalInfo: {
-      productName: opts.productName,
-      version: opts.version,
-      log: opts.traceFile?.replace(homeDir, '~'),
-      workspace: opts.service.context.cwd.replace(homeDir, '~'),
-      model: opts.service.context.config.model,
-    },
+    productName: opts.productName,
+    version: opts.version,
+    generalInfo: opts.service.context.generalInfo,
     status: 'idle',
     error: null,
     messages: [],
@@ -179,13 +172,9 @@ export function createStore(opts: CreateStoreOpts) {
 }
 
 export interface Store {
-  generalInfo: {
-    productName: string;
-    version: string;
-    model: string;
-    workspace: string;
-    log?: string;
-  };
+  productName: string;
+  version: string;
+  generalInfo: Record<string, string>;
   stage: 'plan' | 'code';
   planModal: { text: string } | null;
   status:

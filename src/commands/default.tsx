@@ -127,6 +127,7 @@ export async function runDefault(opts: RunCliOpts) {
         plugins: argv.plugin,
       },
       plugins: opts.plugins,
+      traceFile,
     });
     await context.apply({
       hook: 'cliStart',
