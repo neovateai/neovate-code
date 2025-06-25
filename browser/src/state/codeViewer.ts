@@ -1,7 +1,7 @@
 import { proxy } from 'valtio';
 import i18n from '@/i18n';
 import type { CodeViewerLanguage, CodeViewerTabItem } from '@/types/codeViewer';
-import { inferFileType } from '@/utils/codeViewer';
+import { diff, inferFileType } from '@/utils/codeViewer';
 
 interface CodeViewerState {
   visible: boolean;
@@ -14,6 +14,13 @@ interface DisplayNormalViewerConfigs {
   language?: CodeViewerLanguage;
   code: string;
   /** 文件路径，默认作为key使用 */
+  path?: string;
+}
+
+interface DisplayDiffViewerConfigs {
+  language?: CodeViewerLanguage;
+  originalCode: string;
+  modifiedCode: string;
   path?: string;
 }
 
@@ -75,6 +82,38 @@ export const actions = {
         code,
         id,
         viewType: 'normal',
+        path,
+      });
+
+      state.activeId = id;
+    }
+
+    state.visible = true;
+  },
+
+  displayDiffViewer: (config: DisplayDiffViewerConfigs) => {
+    const { path, modifiedCode, originalCode, language } = config;
+
+    const id = path || Date.now().toString();
+
+    const remainingItem = state.codeViewerTabItems.find(
+      (item) => item.id === path,
+    );
+
+    if (remainingItem) {
+      state.activeId = remainingItem.id;
+    } else {
+      const title = path || i18n.t('codeViewer.tempFile');
+
+      const targetLanguage = language || inferFileType(path);
+
+      state.codeViewerTabItems.push({
+        title,
+        language: targetLanguage,
+        originalCode,
+        modifiedCode,
+        id,
+        viewType: 'diff',
         path,
       });
 

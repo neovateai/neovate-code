@@ -52,6 +52,20 @@ const CodeNormalView = (props: Props) => {
             size: new Blob([item.code]).size,
           });
         }}
+        beforeMount={(monaco) => {
+          monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+            jsx: monaco.languages.typescript.JsxEmit.React,
+            target: monaco.languages.typescript.ScriptTarget.ESNext,
+            jsxFactory: 'React.createElement',
+            reactNamespace: 'React',
+            allowNonTsExtensions: true,
+            allowJs: true,
+          });
+        }}
+        options={{
+          fontSize: 14,
+          minimap: { enabled: false },
+        }}
       />
     </div>
   );

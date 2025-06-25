@@ -13,10 +13,24 @@ export interface CodeNormalViewerTabItem extends CodeViewerBaseTabItem {
 export interface CodeDiffViewerTabItem extends CodeViewerBaseTabItem {
   originalCode: string;
   modifiedCode: string;
+  diffStat?: DiffStat;
   viewType: 'diff';
 }
 
 export type CodeViewerTabItem = CodeNormalViewerTabItem | CodeDiffViewerTabItem;
+
+interface DiffBlockStat {
+  originalStartLineNumber: number;
+  originalEndLineNumber: number;
+  modifiedStartLineNumber: number;
+  modifiedEndLineNumber: number;
+}
+
+export interface DiffStat {
+  addLines: number;
+  removeLines: number;
+  diffBlockStats: DiffBlockStat[];
+}
 
 export interface CodeNormalViewerMetaInfo {
   size: number;

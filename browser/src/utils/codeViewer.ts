@@ -1,4 +1,82 @@
-import type { CodeViewerLanguage } from '@/types/codeViewer';
+import * as monaco from 'monaco-editor';
+import type { CodeViewerLanguage, DiffStat } from '@/types/codeViewer';
+
+class InvisibleDiffEditor {
+  private constructor() {}
+
+  static editor: monaco.editor.IStandaloneDiffEditor;
+
+  static getInstance() {
+    if (!this.editor) {
+      this.editor = monaco.editor.createDiffEditor(
+        document.createElement('div'),
+      );
+    }
+    return this.editor;
+  }
+
+  static async computeDiff(original: string, modified: string) {
+    const originalModel = monaco.editor.createModel(original);
+    const modifiedModel = monaco.editor.createModel(modified);
+    const editor = InvisibleDiffEditor.getInstance();
+
+    editor.setModel({
+      original: originalModel,
+      modified: modifiedModel,
+    });
+
+    const diffReady = new Promise<monaco.editor.ILineChange[]>((resolve) => {
+      const disposable = editor.onDidUpdateDiff(() => {
+        disposable.dispose(); // 确保只触发一次
+        const changes = editor.getLineChanges() || [];
+        resolve(changes);
+      });
+    });
+
+    return diffReady;
+  }
+}
+
+export async function diff(
+  original: string,
+  modified: string,
+): Promise<DiffStat> {
+  const rawDiff = await InvisibleDiffEditor.computeDiff(original, modified);
+
+  const diffResult: DiffStat = {
+    addLines: 0,
+    removeLines: 0,
+    diffBlockStats: [],
+  };
+
+  for (const rawDiffItem of rawDiff) {
+    const {
+      modifiedEndLineNumber,
+      modifiedStartLineNumber,
+      originalEndLineNumber,
+      originalStartLineNumber,
+    } = rawDiffItem;
+
+    diffResult.addLines +=
+      modifiedEndLineNumber > 0
+        ? modifiedEndLineNumber - modifiedStartLineNumber
+        : 0;
+
+    diffResult.removeLines +=
+      originalEndLineNumber > 0
+        ? originalEndLineNumber - originalStartLineNumber
+        : 0;
+
+    diffResult.diffBlockStats.push({
+      modifiedEndLineNumber,
+      modifiedStartLineNumber,
+      originalEndLineNumber,
+      originalStartLineNumber,
+    });
+  }
+
+  return diffResult;
+}
 
 const extToLanguage: Record<string, CodeViewerLanguage> = {
   abap: 'abap',

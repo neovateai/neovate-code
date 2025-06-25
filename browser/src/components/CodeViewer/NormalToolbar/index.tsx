@@ -13,7 +13,7 @@ interface Props {
   normalMetaInfo: CodeNormalViewerMetaInfo;
 }
 
-const useStyle = createStyles(({ css }) => {
+export const useToolbarStyle = createStyles(({ css }) => {
   return {
     toolbar: css`
       height: 48px;
@@ -42,7 +42,7 @@ const NormalToolbar = (props: Props) => {
 
   const [messageApi, contextHolder] = message.useMessage();
 
-  const { styles } = useStyle();
+  const { styles } = useToolbarStyle();
 
   const { t } = useTranslation();
 
@@ -50,19 +50,18 @@ const NormalToolbar = (props: Props) => {
     <>
       {contextHolder}
       <div className={styles.toolbar}>
-        {normalMetaInfo && (
-          <div className={styles.metaInfo}>
-            <div>{filesize(normalMetaInfo.size)}</div>
-            <Divider type="vertical" dashed />
-            <div>
-              {normalMetaInfo.lineCount} {t('codeViewer.lineCount')}
-            </div>
-            <Divider type="vertical" dashed />
-            <div>
-              {normalMetaInfo.charCount} {t('codeViewer.charCount')}
-            </div>
+        <div className={styles.metaInfo}>
+          <div>{filesize(normalMetaInfo.size)}</div>
+          <Divider type="vertical" dashed />
+          <div>
+            {normalMetaInfo.lineCount} {t('codeViewer.lineCount')}
           </div>
-        )}
+          <Divider type="vertical" dashed />
+          <div>
+            {normalMetaInfo.charCount} {t('codeViewer.charCount')}
+          </div>
+        </div>
+
         <div>
           <Button
             type="text"
