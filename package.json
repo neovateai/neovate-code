@@ -15,7 +15,7 @@
     "takumi": "./dist/cli.mjs"
   },
   "scripts": {
-    "dev": "BROWSER_DIST_PATH=../../dist-browser tsx ./src/cli.ts",
+    "dev": "tsx ./src/cli.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build:type": "tsc --project tsconfig.json --emitDeclarationOnly --declarationDir dist-dts",
@@ -35,13 +35,15 @@
     "cli",
     "takumi",
     "takumi-cli",
-    "ai"
+    "ai",
+    "coding-agent",
+    "agent"
   ],
   "authors": [
     "chencheng <sorrycc@gmail.com> (https://github.com/sorrycc)"
   ],
   "license": "MIT",
-  "description": "AI pair programming CLI.",
+  "description": "A coding agent CLI to enhance your development workflow.",
   "devDependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
     "@ai-sdk/deepseek": "^0.2.14",
