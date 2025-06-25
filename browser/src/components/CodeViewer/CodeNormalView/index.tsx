@@ -6,7 +6,7 @@ import type {
   CodeNormalViewerMetaInfo,
   CodeNormalViewerTabItem,
 } from '@/types/codeViewer';
-import Toolbar from '../Toolbar';
+import NormalToolbar from '../NormalToolbar';
 
 interface Props {
   item: CodeNormalViewerTabItem;
@@ -39,7 +39,7 @@ const CodeNormalView = (props: Props) => {
 
   return (
     <div className={styles.container}>
-      <Toolbar normalMetaInfo={metaInfo} />
+      <NormalToolbar normalMetaInfo={metaInfo} item={item} />
       <Editor
         className={styles.editor}
         language={item.language}

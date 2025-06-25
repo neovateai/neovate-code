@@ -60,6 +60,7 @@
   "codeViewer": {
     "lineCount": "line(s)",
     "charCount": "char(s)",
-    "tempFile": "Temporary File"
+    "tempFile": "Temporary File",
+    "copySuccess": "Copy content successfully"
   }
 }

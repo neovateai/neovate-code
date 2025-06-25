@@ -60,6 +60,7 @@
   "codeViewer": {
     "lineCount": "行",
     "charCount": "个字符",
-    "tempFile": "临时文件"
+    "tempFile": "临时文件",
+    "copySuccess": "复制成功"
   }
 }

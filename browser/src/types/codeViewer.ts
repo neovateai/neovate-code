@@ -29,8 +29,6 @@ export interface CodeDiffViewerMetaInfo {
   removeLineCount: number;
 }
 
-export type CodeViewerTool = 'copy';
-
 export type CodeViewerLanguage =
   | 'abap'
   | 'apex'
