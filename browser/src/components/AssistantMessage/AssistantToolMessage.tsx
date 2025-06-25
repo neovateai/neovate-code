@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import type { ToolMessage } from '@/types/message';
 import {
   BashRender,
-  EditRender,
   FetchRender,
   GlobRender,
   GrepRender,
   LsRender,
   ReadRender,
-  WriteRender,
 } from '../ToolRender';
 
 const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
@@ -29,10 +27,6 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
       return <BashRender message={message} />;
     case 'fetch':
       return <FetchRender message={message} />;
-    case 'write':
-      return <WriteRender message={message} />;
-    case 'edit':
-      return <EditRender message={message} />;
   }
 
   // 控制结果展开/收起的状态，默认收起
