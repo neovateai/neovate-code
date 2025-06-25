@@ -20,7 +20,7 @@ const useStyle = createStyles(({ token, css }) => {
 });
 
 export default function SenderFooter() {
-  const { styles, cx } = useStyle();
+  const { styles } = useStyle();
   const { mode } = useSnapshot(state);
 
   const handleClick = () => {
