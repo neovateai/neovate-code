@@ -108,7 +108,6 @@ export function createStore(opts: CreateStoreOpts) {
             await delay(100);
             store = store!;
             store.currentMessage = null;
-            await delay(100);
             textDelta = '';
             store.messages.push({
               role: 'assistant',

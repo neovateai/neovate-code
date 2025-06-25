@@ -81,6 +81,7 @@
     "glob": "^11.0.3",
     "husky": "^9.1.7",
     "ink-select-input": "^6.2.0",
+    "jiti": "^2.4.2",
     "lint-staged": "^16.1.2",
     "marked": "^15.0.12",
     "marked-terminal": "^7.3.0",

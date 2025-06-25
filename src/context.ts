@@ -3,7 +3,7 @@ import { createDeepSeek } from '@ai-sdk/deepseek';
 import { createOpenAI } from '@ai-sdk/openai';
 import { ModelProvider, Tool } from '@openai/agents';
 import createDebug from 'debug';
-import { createRequire } from 'module';
+import { createJiti } from 'jiti';
 import resolve from 'resolve';
 import { Config, ConfigManager } from './config';
 import { PRODUCT_NAME } from './constants';
@@ -122,7 +122,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     ...(initialConfig.plugins || []),
     ...(opts.plugins || []),
   ];
-  const plugins = normalizePlugins(opts.cwd, pluginsConfigs);
+  const plugins = await normalizePlugins(opts.cwd, pluginsConfigs);
   debug('plugins', plugins);
   const pluginManager = new PluginManager(plugins);
 
@@ -184,13 +184,16 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
 }
 
 function normalizePlugins(cwd: string, plugins: (string | Plugin)[]) {
-  const require = createRequire(import.meta.url);
-  return plugins.map((plugin) => {
-    if (typeof plugin === 'string') {
-      const pluginPath = resolve.sync(plugin, { basedir: cwd });
-      const pluginObject = require(pluginPath);
-      return pluginObject.default || pluginObject;
-    }
-    return plugin;
-  });
+  const jiti = createJiti(import.meta.url);
+  return Promise.all(
+    plugins.map(async (plugin) => {
+      if (typeof plugin === 'string') {
+        const pluginPath = resolve.sync(plugin, { basedir: cwd });
+        return await jiti.import(pluginPath, {
+          default: true,
+        });
+      }
+      return plugin;
+    }),
+  );
 }
