@@ -15,7 +15,7 @@ import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
-import { state } from '@/state/sender';
+import { actions, state } from '@/state/sender';
 import { getInputInfo } from '@/utils/chat';
 import Suggestion from '../Suggestion';
 import LexicalTextArea from './LexicalTextArea';
@@ -103,12 +103,12 @@ const ChatSender: React.FC = () => {
 
   // 处理输入变化
   const onChange = (value: string) => {
-    state.prompt = value;
+    actions.updatePrompt(value);
   };
 
   const handleSubmit = () => {
     onQuery(prompt, plainText, contextItems);
-    state.prompt = '';
+    actions.updatePrompt('');
   };
 
   const handleEnterPress = () => {
@@ -144,7 +144,7 @@ const ChatSender: React.FC = () => {
               context.actions.removeContext(node.originalText);
             });
           },
-          onChangePlainText: (plainText) => (state.plainText = plainText),
+          onChangePlainText: (plainText) => actions.updatePlainText(plainText),
           aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
           namespace: 'SenderTextarea',
         }}
@@ -177,7 +177,7 @@ const ChatSender: React.FC = () => {
                 prompt.slice(0, insertNodePosition) +
                 contextItem.value +
                 prompt.slice(insertNodePosition + 1);
-              state.prompt = nextInputValue;
+              actions.updatePrompt(nextInputValue);
 
               context.actions.addContext(contextItem);
             }
