@@ -2,7 +2,7 @@ import { LanguageModelV1Message } from '@ai-sdk/provider';
 import { UserError } from '@openai/agents';
 import createDebug from 'debug';
 
-const debug = createDebug('takumi:ai-sdk');
+const debug = createDebug('takumi:utils:merge-consecutive-system-messages');
 
 /**
  * @internal
