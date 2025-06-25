@@ -59,6 +59,7 @@
   },
   "codeViewer": {
     "lineCount": "line(s)",
-    "charCount": "char(s)"
+    "charCount": "char(s)",
+    "tempFile": "Temporary File"
   }
 }

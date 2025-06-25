@@ -1,7 +1,7 @@
 export interface CodeNormalViewerTabItem {
   id: string;
   title: string;
-  language: string;
+  language?: CodeViewerLanguage;
   code: string;
   viewType: 'normal';
 }
@@ -9,7 +9,7 @@ export interface CodeNormalViewerTabItem {
 export interface CodeDiffViewerTabItem {
   id: string;
   title: string;
-  language: string;
+  language?: CodeViewerLanguage;
   originalCode: string;
   modifiedCode: string;
   viewType: 'diff';
@@ -29,3 +29,85 @@ export interface CodeDiffViewerMetaInfo {
 export type CodeViewerTabItem = CodeNormalViewerTabItem | CodeDiffViewerTabItem;
 
 export type CodeViewerTool = 'copy';
+
+export type CodeViewerLanguage =
+  | 'abap'
+  | 'apex'
+  | 'azcli'
+  | 'bat'
+  | 'bicep'
+  | 'c'
+  | 'cameligo'
+  | 'clojure'
+  | 'coffeescript'
+  | 'cpp'
+  | 'csharp'
+  | 'csp'
+  | 'css'
+  | 'dart'
+  | 'dockerfile'
+  | 'ecl'
+  | 'elixir'
+  | 'flow9'
+  | 'freemarker2'
+  | 'fsharp'
+  | 'go'
+  | 'graphql'
+  | 'handlebars'
+  | 'hcl'
+  | 'html'
+  | 'ini'
+  | 'java'
+  | 'javascript'
+  | 'json'
+  | 'julia'
+  | 'kotlin'
+  | 'less'
+  | 'lexon'
+  | 'liquid'
+  | 'lua'
+  | 'm3'
+  | 'markdown'
+  | 'mips'
+  | 'msdax'
+  | 'mysql'
+  | 'objective-c'
+  | 'pascal'
+  | 'pascaligo'
+  | 'perl'
+  | 'pgsql'
+  | 'php'
+  | 'pla'
+  | 'postiats'
+  | 'powerquery'
+  | 'powershell'
+  | 'proto'
+  | 'pug'
+  | 'python'
+  | 'qsharp'
+  | 'r'
+  | 'razor'
+  | 'redis'
+  | 'redshift'
+  | 'restructuredtext'
+  | 'ruby'
+  | 'rust'
+  | 'sb'
+  | 'scala'
+  | 'scheme'
+  | 'scss'
+  | 'shell'
+  | 'sol'
+  | 'aes'
+  | 'sparql'
+  | 'sql'
+  | 'st'
+  | 'swift'
+  | 'systemverilog'
+  | 'tcl'
+  | 'twig'
+  | 'typescript'
+  | 'vb'
+  | 'verilog'
+  | 'xml'
+  | 'yaml';

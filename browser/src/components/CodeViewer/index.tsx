@@ -37,7 +37,6 @@ const CodeViewer = () => {
       key: item.id.toString(),
       label: item.title,
       closeable: true,
-
       children:
         item.viewType === 'normal' ? (
           <CodeNormalView item={item} />

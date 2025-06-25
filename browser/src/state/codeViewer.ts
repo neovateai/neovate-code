@@ -1,5 +1,6 @@
 import { proxy } from 'valtio';
-import type { CodeViewerTabItem } from '@/types/codeViewer';
+import i18n from '@/i18n';
+import type { CodeViewerLanguage, CodeViewerTabItem } from '@/types/codeViewer';
 
 interface CodeViewerState {
   visible: boolean;
@@ -8,24 +9,9 @@ interface CodeViewerState {
 }
 
 export const state = proxy<CodeViewerState>({
-  visible: true,
+  visible: false,
   activeId: undefined,
-  codeViewerTabItems: [
-    {
-      viewType: 'normal',
-      id: '1',
-      title: 'Code Normal View',
-      language: 'typescript',
-      code: 'console.log("Hello, world!");',
-    },
-    {
-      viewType: 'normal',
-      id: '2',
-      title: '666',
-      language: 'markdown',
-      code: '**Header**',
-    },
-  ],
+  codeViewerTabItems: [],
 });
 
 export const actions = {
@@ -40,5 +26,41 @@ export const actions = {
     }
 
     state.codeViewerTabItems = nextItems;
+  },
+
+  displayNormalViewer: ({
+    language,
+    code,
+    path,
+  }: {
+    language?: CodeViewerLanguage;
+    code: string;
+    /** 文件路径，默认作为key使用 */
+    path?: string;
+  }) => {
+    if (path) {
+      const remainingItem = state.codeViewerTabItems.find(
+        (item) => item.id === path,
+      );
+
+      if (remainingItem) {
+        state.activeId = remainingItem.id;
+        return;
+      }
+    }
+
+    const id = path || Date.now().toString();
+    const title = path || i18n.t('codeViewer.tempFile');
+
+    state.codeViewerTabItems.push({
+      title,
+      language,
+      code,
+      id,
+      viewType: 'normal',
+    });
+
+    state.activeId = id;
+    state.visible = true;
   },
 };

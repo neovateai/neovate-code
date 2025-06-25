@@ -59,6 +59,7 @@
   },
   "codeViewer": {
     "lineCount": "行",
-    "charCount": "个字符"
+    "charCount": "个字符",
+    "tempFile": "临时文件"
   }
 }

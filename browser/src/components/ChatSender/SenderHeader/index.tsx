@@ -3,6 +3,7 @@ import { Flex } from 'antd';
 import React, { Fragment } from 'react';
 import { useSnapshot } from 'valtio';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
+import * as codeViewer from '@/state/codeViewer';
 import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';
 import AddContext from '../AddContext';
