@@ -57,7 +57,6 @@ const useStyle = createStyles(({ token, css }) => {
       width: 100%;
       max-width: 700px;
       margin: 0 auto;
-      border-radius: 12px 12px 0 0;
     `,
     senderRoot: css`
       margin: 0;

@@ -1,41 +1,30 @@
-import { CheckCircleFilled, PlusOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined } from '@ant-design/icons';
 import { Flex } from 'antd';
 import { createStyles } from 'antd-style';
 import { useSnapshot } from 'valtio';
 import { modes } from '@/constants/chat';
 import { state } from '@/state/sender';
 
-const customAgent = {
-  icon: <PlusOutlined />,
-  key: 'custom',
-  label: '自定义智能体',
-  description: '自定义专属的 CodeAgent、灵活定义工具和任务逻辑',
-};
-
-const useStyle = createStyles(({ token, css, cx }) => {
+const useStyle = createStyles(({ token, css }) => {
   const card = css`
     position: relative;
-    width: calc(33.33% - 8px);
+    width: calc(25% - 8px);
     margin: 4px;
-    padding: 12px;
-    border: 1px solid ${token.colorBorder};
-    border-radius: ${token.borderRadius}px;
+    padding: 16px;
+    background: ${token.colorFillQuaternary};
+    border-radius: ${token.borderRadiusLG}px;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
+    border: 1px solid ${token.colorBorderSecondary};
 
     &:hover {
-      border-color: ${token.colorPrimary};
+      background: ${token.colorFillSecondary};
     }
-  `;
-
-  const active = css`
-    border-color: ${token.colorPrimary};
-    background-color: ${token.colorPrimaryBg};
   `;
 
   return {
     senderFooterBoard: css`
-      border-radius: 12px 12px 0 0;
+      border-radius: 12px;
       position: relative;
       width: 100%;
       box-sizing: border-box;
@@ -48,14 +37,13 @@ const useStyle = createStyles(({ token, css, cx }) => {
         opacity 0.3s ease-in-out,
         padding 0.3s ease-in-out,
         border-width 0.3s ease-in-out;
-      border-radius: 0 0 12px 12px;
       border-color: #d9d9d9;
-      border-top: 0 !important;
       border-style: solid;
       padding: 12px;
       overflow: hidden;
       max-height: 500px;
       border-width: 1px;
+      margin-top: 12px;
     `,
     hidden: css`
       max-height: 0;
@@ -65,32 +53,26 @@ const useStyle = createStyles(({ token, css, cx }) => {
       opacity: 0;
     `,
     card,
-    active,
-    customCard: cx(
-      card,
-      css`
-        border-style: dashed;
-      `,
-    ),
     title: css`
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
     `,
     desc: css`
       font-size: 12px;
       color: ${token.colorTextSecondary};
+      line-height: 1.5;
     `,
     icon: css`
-      font-size: 18px;
+      font-size: 16px;
       margin-right: 8px;
     `,
     check: css`
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      font-size: 18px;
-      color: ${token.colorPrimary};
+      font-size: 14px;
+      color: ${token.colorTextSecondary};
+      margin-right: 8px;
+      position: relative;
+      top: 4px;
     `,
   };
 });
@@ -106,30 +88,25 @@ export default function SenderFooterBoard() {
 
   return (
     <div className={cx(styles.senderFooterBoard, !openFooter && styles.hidden)}>
-      <Flex wrap="wrap" justify="flex-start">
+      <Flex wrap="wrap" justify="start">
         {modes.map((item) => (
           <div
             key={item.key}
-            className={cx(styles.card, mode === item.key && styles.active)}
+            className={cx(styles.card)}
             onClick={() => handleModeClick(item.key)}
           >
-            {mode === item.key && (
-              <CheckCircleFilled className={styles.check} />
-            )}
-            <Flex align="center" className={styles.title}>
-              <div className={styles.icon}>{item.icon}</div>
-              <div>{item.label}</div>
-            </Flex>
+            <div className="flex items-start justify-between w-full">
+              <Flex align="center" className={styles.title}>
+                <div className={styles.icon}>{item.icon}</div>
+                <div>{item.label}</div>
+              </Flex>
+              {mode === item.key && (
+                <CheckCircleOutlined className={styles.check} />
+              )}
+            </div>
             <div className={styles.desc}>{item.description}</div>
           </div>
         ))}
-        <div className={styles.customCard}>
-          <Flex align="center" className={styles.title}>
-            <div className={styles.icon}>{customAgent.icon}</div>
-            <div>{customAgent.label}</div>
-          </Flex>
-          <div className={styles.desc}>{customAgent.description}</div>
-        </div>
       </Flex>
     </div>
   );
