@@ -62,12 +62,12 @@ export function createStore(opts: CreateStoreOpts) {
         opts.service.context.addUserPrompt(input);
       },
       query: async (input: string): Promise<any> => {
+        await delay(100);
         const service =
           store!.stage === 'plan' ? opts.planService : opts.service;
         let textDelta = '';
         let reasoningDelta = '';
         store!.status = 'processing';
-        await delay(100);
         store!.messages.push({
           role: 'user',
           content: {
@@ -93,7 +93,6 @@ export function createStore(opts: CreateStoreOpts) {
               store.messages.push(store.currentMessage);
               store.currentMessage = null;
             }
-            await delay(100);
             textDelta += text;
             store.currentMessage = {
               role: 'assistant',
