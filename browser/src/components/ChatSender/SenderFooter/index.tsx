@@ -1,6 +1,7 @@
 import { DownOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
 import { createStyles } from 'antd-style';
+import { useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import { MODES_MAP } from '@/constants/chat';
 import { actions, state } from '@/state/sender';
@@ -27,15 +28,19 @@ export default function SenderFooter() {
     actions.updateOpenFooter(!state.openFooter);
   };
 
+  const modeDetail = useMemo(() => {
+    return MODES_MAP[mode];
+  }, [mode]);
+
   return (
     <div className="flex flex-col items-start">
       <Button
-        icon={MODES_MAP[mode]?.icon}
+        icon={modeDetail?.icon}
         type="text"
         onClick={onOpenFooter}
         className={styles.senderFooterButton}
       >
-        {MODES_MAP[mode]?.label} <DownOutlined />
+        {modeDetail?.label} <DownOutlined />
       </Button>
     </div>
   );
