@@ -3,6 +3,7 @@ import { Image, Popover, Tag } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
 import type { FileItem, ImageItem } from '@/api/model';
+import * as codeViewer from '@/state/codeViewer';
 import DevFileIcon from '../DevFileIcon';
 
 const useStyle = createStyles(({ css }) => {
@@ -33,20 +34,31 @@ export const FileContextTag = ({
 
   const { styles } = useStyle();
 
+  const isFile = context?.type === 'file';
+
   return (
     <Tag
       color="blue"
       className={styles.tag}
+      style={{ cursor: isFile ? 'pointer' : undefined }}
       data-ai-context-id="file"
       contentEditable={false}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onClick={() => {
+        if (isFile) {
+          codeViewer.actions.displayNormalViewer({
+            path: displayText,
+            code: '// TODO',
+          });
+        }
+      }}
     >
       {onClose && hover ? (
         <CloseOutlined className={styles.icon} onClick={onClose} />
       ) : (
         <DevFileIcon
-          isFolder={context?.type === 'directory'}
+          isFolder={!isFile}
           className={styles.icon}
           fileExt={displayText.split('.').pop() ?? ''}
         />

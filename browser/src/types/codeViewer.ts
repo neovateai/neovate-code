@@ -1,19 +1,22 @@
-export interface CodeNormalViewerTabItem {
+interface CodeViewerBaseTabItem {
   id: string;
   title: string;
   language?: CodeViewerLanguage;
+  path?: string;
+}
+
+export interface CodeNormalViewerTabItem extends CodeViewerBaseTabItem {
   code: string;
   viewType: 'normal';
 }
 
-export interface CodeDiffViewerTabItem {
-  id: string;
-  title: string;
-  language?: CodeViewerLanguage;
+export interface CodeDiffViewerTabItem extends CodeViewerBaseTabItem {
   originalCode: string;
   modifiedCode: string;
   viewType: 'diff';
 }
+
+export type CodeViewerTabItem = CodeNormalViewerTabItem | CodeDiffViewerTabItem;
 
 export interface CodeNormalViewerMetaInfo {
   size: number;
@@ -25,8 +28,6 @@ export interface CodeDiffViewerMetaInfo {
   addLineCount: number;
   removeLineCount: number;
 }
-
-export type CodeViewerTabItem = CodeNormalViewerTabItem | CodeDiffViewerTabItem;
 
 export type CodeViewerTool = 'copy';
 
