@@ -20,12 +20,13 @@ const useStyle = createStyles(({ token, css }) => {
   return {
     chat: css`
       height: 100%;
-      width: 100%;
+      /* width: 100%; */
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
       padding-block: ${token.paddingLG}px;
       gap: 16px;
+      flex: 1;
     `,
     chatList: css`
       flex: 1;

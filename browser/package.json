@@ -33,7 +33,9 @@
     "rc-util": "^5.44.4",
     "swr": "^2.3.3",
     "valtio": "^2.1.5",
-    "react-icons": "^5.5.0"
+    "@monaco-editor/react": "^4.7.0",
+    "monaco-editor": "^0.52.2",
+    "filesize": "^10.1.6"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.10",
