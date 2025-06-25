@@ -48,6 +48,26 @@ const CodeDiffView = (props: Props) => {
         onMount={(editor) => {
           editorRef.current = editor;
         }}
+        beforeMount={(monaco) => {
+          monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+            jsx: monaco.languages.typescript.JsxEmit.React,
+            target: monaco.languages.typescript.ScriptTarget.ESNext,
+            jsxFactory: 'React.createElement',
+            reactNamespace: 'React',
+            allowNonTsExtensions: true,
+            allowJs: true,
+          });
+        }}
+        options={{
+          contextmenu: false,
+          readOnly: true,
+          fontSize: 14,
+          renderSideBySide: true,
+          hideUnchangedRegions: { enabled: true },
+          minimap: { enabled: false },
+          diffAlgorithm: 'advanced',
+          renderWhitespace: 'boundary',
+        }}
       />
     </div>
   );

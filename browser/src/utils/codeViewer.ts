@@ -25,9 +25,10 @@ async function computeDiff(original: string, modified: string) {
         original: originalModel.getLineCount(),
         modified: modifiedModel.getLineCount(),
       };
+
+      editor.dispose();
       originalModel.dispose();
       modifiedModel.dispose();
-      editor.dispose();
       resolve({ changes, lines });
     });
   });

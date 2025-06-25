@@ -47,7 +47,7 @@ const CodeNormalView = (props: Props) => {
         onMount={(editor) => {
           editorRef.current = editor;
           setMetaInfo({
-            lineCount: editorRef.current?.getModel()?.getLineCount() || 0,
+            lineCount: editor.getModel()?.getLineCount() || 0,
             charCount: item.code.length,
             size: new Blob([item.code]).size,
           });
@@ -63,6 +63,7 @@ const CodeNormalView = (props: Props) => {
           });
         }}
         options={{
+          readOnly: true,
           fontSize: 14,
           minimap: { enabled: false },
         }}
