@@ -122,7 +122,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     ...(initialConfig.plugins || []),
     ...(opts.plugins || []),
   ];
-  const plugins = normalizePlugins(opts.cwd, pluginsConfigs);
+  const plugins = await normalizePlugins(opts.cwd, pluginsConfigs);
   debug('plugins', plugins);
   const pluginManager = new PluginManager(plugins);
 
@@ -183,14 +183,16 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   });
 }
 
-function normalizePlugins(cwd: string, plugins: (string | Plugin)[]) {
-  const require = createRequire(import.meta.url);
-  return plugins.map((plugin) => {
-    if (typeof plugin === 'string') {
-      const pluginPath = resolve.sync(plugin, { basedir: cwd });
-      const pluginObject = require(pluginPath);
-      return pluginObject.default || pluginObject;
-    }
-    return plugin;
-  });
+async function normalizePlugins(cwd: string, plugins: (string | Plugin)[]) {
+  const normalizedPlugins = await Promise.all(
+    plugins.map(async (plugin) => {
+      if (typeof plugin === 'string') {
+        const pluginPath = resolve.sync(plugin, { basedir: cwd });
+        const pluginObject = await import(pluginPath);
+        return pluginObject.default || pluginObject;
+      }
+      return plugin;
+    }),
+  );
+  return normalizedPlugins;
 }
