@@ -15,6 +15,7 @@ import {
   message,
 } from 'antd';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { mcpService } from '../../api/mcpService';
 
 const { Text } = Typography;
@@ -25,6 +26,7 @@ interface McpManagerProps {
 }
 
 const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
+  const { t } = useTranslation();
   const [servers, setServers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -185,7 +187,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       setServers(allServices);
     } catch (error) {
       console.error('Failed to load servers:', error);
-      message.error('Failed to load MCP servers');
+      message.error(t('mcp.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -206,7 +208,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           const serverNames = Object.keys(servers);
 
           if (serverNames.length === 0) {
-            throw new Error('No servers found in mcpServers object');
+            throw new Error(t('mcp.noServersFound'));
           }
 
           // Add all servers
@@ -218,7 +220,9 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             });
           }
 
-          message.success(`Added ${serverNames.length} server(s) successfully`);
+          message.success(
+            t('mcp.addedMultiple', { count: serverNames.length }),
+          );
         } else {
           // Format 2: Direct service configuration or service name mapping
           const keys = Object.keys(jsonConfig);
@@ -233,13 +237,13 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
               ...jsonConfig,
               global: addScope === 'global',
             });
-            message.success('Added successfully');
+            message.success(t('mcp.addedSingle'));
           } else {
             // Service name mapping format { "name": { config } }
             const serverNames = Object.keys(jsonConfig);
 
             if (serverNames.length === 0) {
-              throw new Error('No servers found in configuration');
+              throw new Error(t('mcp.noServersFound'));
             }
 
             // Add all servers
@@ -252,7 +256,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             }
 
             message.success(
-              `Added ${serverNames.length} server(s) successfully`,
+              t('mcp.addedMultiple', { count: serverNames.length }),
             );
           }
         }
@@ -262,7 +266,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           global: addScope === 'global',
           args: values.args ? values.args.split(' ').filter(Boolean) : [],
         });
-        message.success('Added successfully');
+        message.success(t('mcp.addedSingle'));
       }
 
       setShowAddForm(false);
@@ -271,9 +275,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       loadServers();
     } catch (error) {
       message.error(
-        inputMode === 'json'
-          ? 'JSON format error or failed to add'
-          : 'Failed to add',
+        inputMode === 'json' ? t('mcp.jsonFormatError') : t('mcp.addFailed'),
       );
       console.error('Add server error:', error);
     }
@@ -352,7 +354,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
 
   const columns = [
     {
-      title: 'Status',
+      title: t('mcp.status'),
       key: 'status',
       width: 80,
       render: (record: any) => (
@@ -369,7 +371,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       ),
     },
     {
-      title: 'Name',
+      title: t('mcp.name'),
       dataIndex: 'name',
       key: 'name',
       width: 180,
@@ -386,7 +388,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       ),
     },
     {
-      title: 'Scope',
+      title: t('mcp.scope'),
       dataIndex: 'scope',
       key: 'scope',
       width: 100,
@@ -401,13 +403,13 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
               fontWeight: 500,
             }}
           >
-            {isGlobal ? 'Global' : 'Project'}
+            {isGlobal ? t('mcp.globalScope') : t('mcp.projectScope')}
           </Tag>
         );
       },
     },
     {
-      title: 'Type',
+      title: t('mcp.type'),
       dataIndex: 'type',
       key: 'type',
       width: 80,
@@ -424,7 +426,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       ),
     },
     {
-      title: 'Config',
+      title: t('mcp.config'),
       key: 'command',
       render: (record: any) => {
         if (!record.installed) {
@@ -436,7 +438,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                 fontStyle: 'italic',
               }}
             >
-              Disabled
+              {t('mcp.disabledStatus')}
             </Text>
           );
         }
@@ -487,7 +489,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
         if (server) {
           // If service is already installed, no need to add again
           if (server.installed) {
-            message.info(`${serverName} is already enabled`);
+            message.info(t('mcp.alreadyEnabled', { name: serverName }));
             return;
           }
 
@@ -501,10 +503,10 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             env: server.env ? JSON.stringify(server.env) : undefined,
             global: scope === 'global',
           });
-          message.success(`${serverName} enabled`);
+          message.success(t('mcp.enabled', { name: serverName }));
           await loadServers();
         } else {
-          message.error(`Configuration for ${serverName} not found`);
+          message.error(t('mcp.configNotFound', { name: serverName }));
         }
       } else {
         // Disable service - remove from configuration but keep in list
@@ -525,7 +527,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
         }
 
         await mcpService.removeServer(serverName, scope === 'global');
-        message.success(`${serverName} disabled`);
+        message.success(t('mcp.disabled', { name: serverName }));
 
         // Update service status to uninstalled but keep in list and save configuration info
         setServers((prev) =>
@@ -549,7 +551,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
         updateKnownServices(new Set([...allKnownServices, serverName]));
       }
     } catch (error) {
-      message.error(`Failed to update ${serverName}`);
+      message.error(t('mcp.updateFailed', { name: serverName }));
       console.error('Toggle service error:', error);
     }
   };
@@ -585,7 +587,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       title={
         <Space>
           <ApiOutlined />
-          MCP Management
+          {t('mcp.mcpManagementTitle')}
           <Button
             type="primary"
             size="small"
@@ -593,7 +595,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             onClick={() => setShowAddForm(true)}
             style={{ borderRadius: '6px', marginLeft: '12px' }}
           >
-            Add Server
+            {t('mcp.addServer')}
           </Button>
         </Space>
       }
@@ -622,10 +624,10 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             locale={{
               emptyText: (
                 <div style={{ padding: '20px', color: '#999' }}>
-                  <Text type="secondary">No MCP configuration</Text>
+                  <Text type="secondary">{t('mcp.noConfiguration')}</Text>
                   <br />
                   <Text type="secondary" style={{ fontSize: '12px' }}>
-                    Click "Add Server" to start configuring
+                    {t('mcp.clickToStart')}
                   </Text>
                 </div>
               ),
@@ -637,7 +639,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           title={
             <Space>
               <PlusOutlined />
-              Add MCP Server
+              {t('mcp.addServer')}
             </Space>
           }
           open={showAddForm}
@@ -647,8 +649,8 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             setInputMode('json');
           }}
           onOk={form.submit}
-          okText="Add"
-          cancelText="Cancel"
+          okText={t('mcp.addServer')}
+          cancelText={t('common.cancel')}
           width={700}
           styles={{
             body: { padding: '20px 24px' },
@@ -658,20 +660,20 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
               <div style={{ flex: 1 }}>
                 <Text strong style={{ display: 'block', marginBottom: '8px' }}>
-                  Scope
+                  {t('mcp.scope')}
                 </Text>
                 <Radio.Group
                   value={addScope}
                   onChange={(e) => setAddScope(e.target.value)}
                   style={{ width: '100%' }}
                 >
-                  <Radio value="project">Project</Radio>
-                  <Radio value="global">Global</Radio>
+                  <Radio value="project">{t('mcp.project')}</Radio>
+                  <Radio value="global">{t('mcp.global')}</Radio>
                 </Radio.Group>
               </div>
               <div style={{ flex: 1 }}>
                 <Text strong style={{ display: 'block', marginBottom: '8px' }}>
-                  Input Mode
+                  {t('mcp.inputMode')}
                 </Text>
                 <Radio.Group
                   value={inputMode}
@@ -680,8 +682,8 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                   }
                   style={{ width: '100%' }}
                 >
-                  <Radio value="json">JSON</Radio>
-                  <Radio value="form">Form</Radio>
+                  <Radio value="json">{t('mcp.json')}</Radio>
+                  <Radio value="form">{t('mcp.form')}</Radio>
                 </Radio.Group>
               </div>
             </div>
@@ -691,11 +693,11 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             {inputMode === 'json' ? (
               <Form.Item
                 name="jsonConfig"
-                label={<Text strong>Configuration JSON</Text>}
+                label={<Text strong>{t('mcp.configuration')}</Text>}
                 rules={[
                   {
                     required: true,
-                    message: 'Please enter configuration JSON',
+                    message: t('mcp.configurationPlaceholder'),
                   },
                   {
                     validator: async (_, value) => {
@@ -710,22 +712,18 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                               typeof parsed.mcpServers !== 'object' ||
                               Object.keys(parsed.mcpServers).length === 0
                             ) {
-                              throw new Error(
-                                'mcpServers must be a non-empty object',
-                              );
+                              throw new Error(t('mcp.mcpServersEmpty'));
                             }
                           } else {
                             const keys = Object.keys(parsed);
                             if (keys.length === 0) {
-                              throw new Error('Configuration cannot be empty');
+                              throw new Error(t('mcp.configurationEmpty'));
                             }
 
                             // 检查是否是单个服务配置（包含name字段）
                             if (keys.includes('name')) {
                               if (!parsed.command && !parsed.url) {
-                                throw new Error(
-                                  'Single server config must have command or url field',
-                                );
+                                throw new Error(t('mcp.commandOrUrlRequired'));
                               }
                             } else {
                               // 检查是否是服务映射格式
@@ -734,7 +732,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                               )) {
                                 if (typeof config !== 'object') {
                                   throw new Error(
-                                    `Server "${name}" configuration must be an object`,
+                                    t('mcp.serverConfigObject', { name }),
                                   );
                                 }
                                 const serverConfig = config as any;
@@ -743,7 +741,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                                   !serverConfig.url
                                 ) {
                                   throw new Error(
-                                    `Server "${name}" must have command or url field`,
+                                    t('mcp.serverCommandOrUrl', { name }),
                                   );
                                 }
                               }
@@ -751,7 +749,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                           }
                         } catch (error) {
                           if (error instanceof SyntaxError) {
-                            throw new Error('Invalid JSON format');
+                            throw new Error(t('mcp.invalidJson'));
                           }
                           throw error;
                         }
@@ -780,7 +778,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                           marginBottom: '8px',
                         }}
                       >
-                        💡 View supported JSON formats
+                        {t('mcp.viewFormats')}
                       </summary>
                       <div
                         style={{
@@ -794,8 +792,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                       >
                         <div style={{ marginBottom: '16px' }}>
                           <Text strong style={{ fontSize: '12px' }}>
-                            Format 1: Complete mcpServers wrapper (supports
-                            multiple servers)
+                            {t('mcp.formatComplete')}
                           </Text>
                           <pre
                             style={{
@@ -813,8 +810,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
 
                         <div style={{ marginBottom: '16px' }}>
                           <Text strong style={{ fontSize: '12px' }}>
-                            Format 2: Direct server mapping (supports multiple
-                            servers)
+                            {t('mcp.formatDirect')}
                           </Text>
                           <pre
                             style={{
@@ -832,7 +828,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
 
                         <div style={{ marginBottom: '16px' }}>
                           <Text strong style={{ fontSize: '12px' }}>
-                            Format 3: Single server configuration
+                            {t('mcp.formatSingle')}
                           </Text>
                           <pre
                             style={{
@@ -850,7 +846,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
 
                         <div>
                           <Text strong style={{ fontSize: '12px' }}>
-                            Format 4: SSE Transport
+                            {t('mcp.formatSSE')}
                           </Text>
                           <pre
                             style={{
@@ -874,17 +870,20 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
               <>
                 <Form.Item
                   name="name"
-                  label={<Text strong>Server Name</Text>}
+                  label={<Text strong>{t('mcp.serverName')}</Text>}
                   rules={[
-                    { required: true, message: 'Please enter server name' },
+                    {
+                      required: true,
+                      message: t('mcp.configurationPlaceholder'),
+                    },
                   ]}
                 >
-                  <Input placeholder="my-mcp-server" />
+                  <Input placeholder={t('mcp.serverNamePlaceholder')} />
                 </Form.Item>
 
                 <Form.Item
                   name="transport"
-                  label={<Text strong>Transport Type</Text>}
+                  label={<Text strong>{t('mcp.transportType')}</Text>}
                   initialValue="stdio"
                 >
                   <Select>
@@ -903,38 +902,46 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                     return getFieldValue('transport') === 'sse' ? (
                       <Form.Item
                         name="url"
-                        label={<Text strong>URL</Text>}
+                        label={<Text strong>{t('mcp.url')}</Text>}
                         rules={[
-                          { required: true, message: 'Please enter URL' },
+                          {
+                            required: true,
+                            message: t('mcp.configurationPlaceholder'),
+                          },
                         ]}
                       >
-                        <Input placeholder="http://localhost:3000" />
+                        <Input placeholder={t('mcp.urlPlaceholder')} />
                       </Form.Item>
                     ) : (
                       <>
                         <Form.Item
                           name="command"
-                          label={<Text strong>Command</Text>}
+                          label={<Text strong>{t('mcp.command')}</Text>}
                           rules={[
-                            { required: true, message: 'Please enter command' },
+                            {
+                              required: true,
+                              message: t('mcp.configurationPlaceholder'),
+                            },
                           ]}
                         >
-                          <Input placeholder="npx @example/mcp-server" />
+                          <Input placeholder={t('mcp.commandPlaceholder')} />
                         </Form.Item>
                         <Form.Item
                           name="args"
-                          label={<Text strong>Arguments</Text>}
+                          label={<Text strong>{t('mcp.arguments')}</Text>}
                         >
-                          <Input placeholder="--param1 value1 --param2 value2" />
+                          <Input placeholder={t('mcp.argumentsPlaceholder')} />
                         </Form.Item>
                         <Form.Item
                           name="env"
                           label={
-                            <Text strong>Environment Variables (JSON)</Text>
+                            <Text strong>{t('mcp.environmentVariables')}</Text>
                           }
                         >
                           <Input.TextArea
-                            placeholder='{"API_KEY": "your-key", "DEBUG": "true"}'
+                            placeholder={t(
+                              'mcp.environmentVariablesPlaceholder',
+                            )}
                             rows={3}
                           />
                         </Form.Item>

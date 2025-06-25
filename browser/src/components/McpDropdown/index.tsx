@@ -1,6 +1,7 @@
 import { ApiOutlined, EditOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Dropdown, Input, Modal, Space, message } from 'antd';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { mcpService } from '@/api/mcpService';
 import McpManager from '@/components/McpManager';
 
@@ -9,6 +10,7 @@ interface McpDropdownProps {
 }
 
 const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
+  const { t } = useTranslation();
   const [mcpManagerOpen, setMcpManagerOpen] = useState(false);
   const [mcpServers, setMcpServers] = useState<any[]>([]);
   const [mcpLoading, setMcpLoading] = useState(false);
@@ -42,7 +44,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     {
       key: 'playwright',
       name: '@playwright mcp',
-      description: 'Browser automation and testing',
+      description: t('mcp.playwrightDescription'),
       config: {
         name: '@playwright mcp',
         command: 'npx',
@@ -52,10 +54,10 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     {
       key: 'figma',
       name: 'Framelink Figma MCP',
-      description: 'Figma design integration',
+      description: t('mcp.figmaDescription'),
       requiresApiKey: true,
-      apiKeyLabel: 'Figma API Key',
-      apiKeyPlaceholder: 'Enter your Figma API key',
+      apiKeyLabel: t('mcp.figmaApiKeyLabel'),
+      apiKeyPlaceholder: t('mcp.apiKeyPlaceholder'),
       config: {
         name: 'Framelink Figma MCP',
         command: 'npx',
@@ -170,7 +172,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       updateServiceConfigs(configs);
     } catch (error) {
       console.error('Failed to load MCP servers:', error);
-      message.error('Failed to load MCP servers');
+      message.error(t('mcp.loadFailed'));
     } finally {
       setMcpLoading(false);
     }
@@ -202,12 +204,13 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
 
           await mcpService.addServer(configToAdd);
           message.success(
-            `Enabled ${serverName} (${scope === 'global' ? 'Global' : 'Project'})`,
+            t('mcp.enabled', {
+              name: serverName,
+              scope: scope === 'global' ? t('mcp.global') : t('mcp.project'),
+            }),
           );
         } else {
-          message.error(
-            `No cached configuration found for ${serverName} (${scope})`,
-          );
+          message.error(t('mcp.noCachedConfig', { name: serverName, scope }));
           return;
         }
       } else {
@@ -239,7 +242,10 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         // Remove from corresponding scope configuration
         await mcpService.removeServer(serverName, scope === 'global');
         message.success(
-          `Disabled ${serverName} (${scope === 'global' ? 'Global' : 'Project'})`,
+          t('mcp.disabled', {
+            name: serverName,
+            scope: scope === 'global' ? t('mcp.global') : t('mcp.project'),
+          }),
         );
       }
 
@@ -248,7 +254,10 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     } catch (error) {
       console.error('Failed to toggle MCP server:', error);
       message.error(
-        `Failed to ${enabled ? 'enable' : 'disable'} ${serverName}`,
+        t('mcp.toggleFailed', {
+          action: enabled ? t('common.enable') : t('common.disable'),
+          name: serverName,
+        }),
       );
     }
   };
@@ -265,7 +274,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
 
   const handleSaveApiKey = async () => {
     if (!editApiKey.trim()) {
-      message.error('API key is required');
+      message.error(t('mcp.apiKeyRequired'));
       return;
     }
 
@@ -281,13 +290,13 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         global: editingService.scope === 'global',
       });
 
-      message.success('API key updated successfully');
+      message.success(t('mcp.apiKeyUpdated'));
       loadMcpServers();
       setEditApiKeyModalOpen(false);
       setEditingService(null);
       setEditApiKey('');
     } catch (error) {
-      message.error('Failed to update API key');
+      message.error(t('mcp.updateFailed'));
     }
   };
 
@@ -300,13 +309,13 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       };
 
       await mcpService.addServer(configToAdd);
-      message.success(`Added ${service.name} to project`);
+      message.success(t('mcp.added', { name: service.name }));
 
       // Reload services list
       await loadMcpServers();
     } catch (error) {
       console.error('Failed to add preset service:', error);
-      message.error(`Failed to add ${service.name}`);
+      message.error(t('mcp.addFailed', { name: service.name }));
     }
   };
 
@@ -346,7 +355,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       label: (
         <Space>
           <ApiOutlined />
-          MCP Management
+          {t('mcp.mcpManagementTitle')}
         </Space>
       ),
       onClick: () => setMcpManagerOpen(true),
@@ -365,7 +374,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
             letterSpacing: '0.5px',
           }}
         >
-          MCP Services
+          {t('mcp.mcpServicesTitle')}
         </div>
       ),
       disabled: true,
@@ -414,7 +423,9 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
                     fontWeight: 500,
                   }}
                 >
-                  {server.scope === 'global' ? 'Global' : 'Project'}
+                  {server.scope === 'global'
+                    ? t('mcp.globalScope')
+                    : t('mcp.projectScope')}
                 </div>
               </div>
             </div>
@@ -488,7 +499,11 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
                     marginTop: '1px',
                   }}
                 >
-                  Disabled ({server.scope === 'global' ? 'Global' : 'Project'})
+                  {t('mcp.disabledStatus')} (
+                  {server.scope === 'global'
+                    ? t('mcp.globalScope')
+                    : t('mcp.projectScope')}
+                  )
                 </div>
               </div>
             </div>
@@ -547,7 +562,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
                       marginTop: '1px',
                     }}
                   >
-                    Available
+                    {t('mcp.available')}
                   </div>
                 </div>
               </div>
@@ -564,7 +579,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       ? [
           {
             key: 'no-services',
-            label: 'No services available',
+            label: t('mcp.noServicesAvailable'),
             disabled: true,
             style: { color: '#999', fontStyle: 'italic' },
           },
@@ -630,7 +645,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
             color: 'inherit',
           }}
           icon={<ApiOutlined />}
-          title="MCP Management"
+          title={t('mcp.mcpManagementTitle')}
           loading={loading || mcpLoading}
         />
       </Dropdown>
@@ -644,7 +659,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       />
 
       <Modal
-        title={`Edit API Key for ${editingService?.name}`}
+        title={t('mcp.editApiKey', { name: editingService?.name })}
         open={editApiKeyModalOpen}
         onOk={handleSaveApiKey}
         onCancel={() => {
@@ -652,20 +667,19 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
           setEditingService(null);
           setEditApiKey('');
         }}
-        okText="Save"
-        cancelText="Cancel"
+        okText={t('common.save')}
+        cancelText={t('common.cancel')}
       >
         <div style={{ marginTop: '16px' }}>
           <Input
-            placeholder="Enter your API key"
+            placeholder={t('mcp.apiKeyPlaceholder')}
             value={editApiKey}
             onChange={(e) => setEditApiKey(e.target.value)}
             onPressEnter={handleSaveApiKey}
             style={{ marginBottom: '8px' }}
           />
           <div style={{ fontSize: '12px', color: '#666' }}>
-            This API key will be used to configure the {editingService?.name}{' '}
-            service.
+            {t('mcp.apiKeyDescription', { name: editingService?.name })}
           </div>
         </div>
       </Modal>
