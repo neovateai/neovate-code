@@ -4,13 +4,15 @@ import { createStyles } from 'antd-style';
 import { filesize } from 'filesize';
 import { useTranslation } from 'react-i18next';
 import type {
+  CodeDiffViewerMetaInfo,
   CodeNormalViewerMetaInfo,
   CodeViewerTool,
 } from '@/types/codeViewer';
 
 interface Props {
   tools?: CodeViewerTool[];
-  metaInfo: CodeNormalViewerMetaInfo;
+  normalMetaInfo?: CodeNormalViewerMetaInfo;
+  diffMetaInfo?: CodeDiffViewerMetaInfo;
 }
 
 const useStyle = createStyles(({ css }) => {
@@ -24,7 +26,7 @@ const useStyle = createStyles(({ css }) => {
       justify-content: space-between;
       column-gap: 12px;
 
-      background-color: #eeeeee;
+      background-color: #f2f2f2;
       border-radius: 8px;
     `,
     metaInfo: css`
@@ -38,29 +40,29 @@ const useStyle = createStyles(({ css }) => {
 });
 
 const Toolbar = (props: Props) => {
-  const { tools, metaInfo } = props;
+  const { tools, normalMetaInfo, diffMetaInfo } = props;
 
   const { styles } = useStyle();
 
   const { t } = useTranslation();
 
-  const { size, lineCount, charCount } = metaInfo;
-
   const CopyTool = () => <Button type="text" icon={<CopyOutlined />} />;
 
   return (
     <div className={styles.toolbar}>
-      <div className={styles.metaInfo}>
-        <div>{filesize(size)}</div>
-        <Divider type="vertical" />
-        <div>
-          {lineCount} {t('codeViewer.lineCount')}
+      {normalMetaInfo && (
+        <div className={styles.metaInfo}>
+          <div>{filesize(normalMetaInfo.size)}</div>
+          <Divider type="vertical" dashed />
+          <div>
+            {normalMetaInfo.lineCount} {t('codeViewer.lineCount')}
+          </div>
+          <Divider type="vertical" dashed />
+          <div>
+            {normalMetaInfo.charCount} {t('codeViewer.charCount')}
+          </div>
         </div>
-        <Divider type="vertical" />
-        <div>
-          {charCount} {t('codeViewer.charCount')}
-        </div>
-      </div>
+      )}
       <CopyTool />
     </div>
   );

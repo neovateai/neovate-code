@@ -39,7 +39,7 @@ const CodeNormalView = (props: Props) => {
 
   return (
     <div className={styles.container}>
-      <Toolbar metaInfo={metaInfo} />
+      <Toolbar normalMetaInfo={metaInfo} />
       <Editor
         className={styles.editor}
         language={item.language}

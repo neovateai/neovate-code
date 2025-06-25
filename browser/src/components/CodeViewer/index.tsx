@@ -2,7 +2,7 @@ import { Tabs, type TabsProps } from 'antd';
 import { createStyles } from 'antd-style';
 import { useMemo } from 'react';
 import { useSnapshot } from 'valtio';
-import { state } from '@/state/codeViewer';
+import { actions, state } from '@/state/codeViewer';
 import CodeDiffView from './CodeDiffView';
 import CodeNormalView from './CodeNormalView';
 
@@ -29,7 +29,7 @@ const useStyle = createStyles(({ css }) => {
 });
 
 const CodeViewer = () => {
-  const { codeViewerTabItems } = useSnapshot(state);
+  const { codeViewerTabItems, activeId } = useSnapshot(state);
   const { styles } = useStyle();
 
   const items = useMemo<TabsProps['items']>(() => {
@@ -47,9 +47,26 @@ const CodeViewer = () => {
     }));
   }, [codeViewerTabItems]);
 
+  const handleEdit = (
+    targetKey: React.MouseEvent | React.KeyboardEvent | string,
+    action: 'add' | 'remove',
+  ) => {
+    if (action === 'remove') {
+      actions.removeItem(targetKey as string);
+    }
+  };
+
   return (
     <div className={styles.layout}>
-      <Tabs className={styles.tabs} items={items} type="editable-card" />
+      <Tabs
+        hideAdd
+        activeKey={activeId}
+        className={styles.tabs}
+        items={items}
+        type="editable-card"
+        onChange={(activeKey) => actions.setActiveId(activeKey)}
+        onEdit={handleEdit}
+      />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 export interface CodeNormalViewerTabItem {
-  id: number;
+  id: string;
   title: string;
   language: string;
   code: string;
@@ -7,7 +7,7 @@ export interface CodeNormalViewerTabItem {
 }
 
 export interface CodeDiffViewerTabItem {
-  id: number;
+  id: string;
   title: string;
   language: string;
   originalCode: string;
@@ -19,6 +19,11 @@ export interface CodeNormalViewerMetaInfo {
   size: number;
   lineCount: number;
   charCount: number;
+}
+
+export interface CodeDiffViewerMetaInfo {
+  addLineCount: number;
+  removeLineCount: number;
 }
 
 export type CodeViewerTabItem = CodeNormalViewerTabItem | CodeDiffViewerTabItem;
