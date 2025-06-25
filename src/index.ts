@@ -12,6 +12,7 @@ export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
 export { createDeepSeek as _createDeepSeek } from '@ai-sdk/deepseek';
 export { createAnthropic as _createAnthropic } from '@ai-sdk/anthropic';
 export { aisdk as _aisdk } from './utils/ai-sdk';
+export { default as picocolors } from 'picocolors';
 
 export type { Plugin };
 
