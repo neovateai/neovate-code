@@ -96,9 +96,7 @@ export async function runDefault(opts: RunCliOpts) {
         help: 'h',
         quiet: 'q',
       },
-      default: {
-        model: 'flash',
-      },
+      default: {},
       array: ['plugin'],
       boolean: ['json', 'help', 'plan', 'quiet'],
       string: ['model', 'smallModel', 'planModel'],
