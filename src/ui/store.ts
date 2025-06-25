@@ -1,6 +1,7 @@
 import createDebug from 'debug';
 import fs from 'fs';
 import { proxy } from 'valtio';
+import { Context } from '../context';
 import { isReasoningModel } from '../provider';
 import { query } from '../query';
 import { Service } from '../service';
@@ -17,12 +18,10 @@ export function getStore() {
 }
 
 export interface CreateStoreOpts {
-  productName: string;
-  version: string;
+  context: Context;
   service: Service;
   planService: Service;
   stage: 'plan' | 'code';
-  traceFile?: string;
 }
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -43,16 +42,16 @@ export function createStore(opts: CreateStoreOpts) {
   store = proxy<Store>({
     stage: opts.stage,
     planModal: null,
-    productName: opts.productName,
-    version: opts.version,
-    generalInfo: opts.service.context.generalInfo,
+    productName: opts.context.productName,
+    version: opts.context.version,
+    generalInfo: opts.context.generalInfo,
     status: 'idle',
     error: null,
     messages: [],
     currentMessage: null,
     actions: {
       addUserPrompt: (input: string) => {
-        opts.service.context.addUserPrompt(input);
+        opts.context.addUserPrompt(input);
       },
       query: async (input: string): Promise<any> => {
         await delay(100);

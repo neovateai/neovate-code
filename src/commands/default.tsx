@@ -22,7 +22,6 @@ export interface RunOpts {
   prompt: string;
   plan?: boolean;
   context: Context;
-  traceFile?: string;
 }
 
 export async function run(opts: RunOpts) {
@@ -39,12 +38,10 @@ export async function run(opts: RunOpts) {
       context,
     });
     const store = createStore({
-      productName: opts.context.productName,
-      version: opts.context.version,
+      context,
       service,
       planService: planService,
       stage: opts.plan ? 'plan' : 'code',
-      traceFile: opts.traceFile,
     });
     const quiet = opts.context.config.quiet;
     if (!quiet) {
@@ -138,7 +135,6 @@ export async function runDefault(opts: RunCliOpts) {
       context,
       prompt: argv._[0]! as string,
       plan: argv.plan,
-      traceFile,
     });
     await context.apply({
       hook: 'cliEnd',

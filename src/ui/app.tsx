@@ -33,7 +33,7 @@ function ThinkingMessage({ message }: { message: ThinkingMessage }) {
 
 function AssistantTextMessage({ message, dynamic }: { message: AssistantTextMessage, dynamic?: boolean }) {
   const snap = getStore();
-  const productName = snap.generalInfo.productName.toLowerCase();
+  const productName = snap.productName.toLowerCase();
   return (
     <Box flexDirection="column">
       <Text bold color="magentaBright">
