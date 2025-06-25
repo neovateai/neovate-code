@@ -247,20 +247,13 @@ function ChatInput() {
         <Text color={isProcessing || isFailed ? 'gray' : 'white'}>&gt;</Text>
         {isProcessing ? (
           <Text color="gray">{isPlan ? 'Planning...' : 'Processing...'}</Text>
-        ) : isFailed ? (
-          <TextInput
-            value={value}
-            onChange={setValue}
-            onSubmit={handleSubmit}
-            placeholderTextColor="redBright"
-          />
-        ) : (
+        ) :
           <TextInput
             value={value}
             onChange={setValue}
             onSubmit={handleSubmit}
           />
-        )}
+        }
       </Box>
       {isFailed && snap.error && (
         <Box paddingX={2}>
