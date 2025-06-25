@@ -17,8 +17,8 @@ export const useToolbarStyles = createStyles(({ css }) => {
   return {
     toolbar: css`
       height: 48px;
-      padding: 4px 8px;
-      margin: 0 0 6px 0;
+      padding: 4px 12px;
+      margin: -8px 0 6px 0;
       display: flex;
       align-items: center;
       justify-content: space-between;

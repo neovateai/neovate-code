@@ -27,6 +27,8 @@ interface DiffBlockStat {
 }
 
 export interface DiffStat {
+  originalLines: number;
+  modifiedLines: number;
   addLines: number;
   removeLines: number;
   diffBlockStats: DiffBlockStat[];

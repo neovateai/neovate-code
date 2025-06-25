@@ -34,6 +34,7 @@ const CodeDiffView = (props: Props) => {
         onGotoDiff={(target) => {
           editorRef?.current?.goToDiff(target);
         }}
+        // TODO impl
         onAcceptAll={() => {}}
         onRejectAll={() => {}}
         item={item}

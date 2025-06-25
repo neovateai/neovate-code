@@ -14,12 +14,21 @@ async function computeDiff(original: string, modified: string) {
     modified: modifiedModel,
   });
 
-  const diffReady = new Promise<monaco.editor.ILineChange[]>((resolve) => {
+  const diffReady = new Promise<{
+    changes: monaco.editor.ILineChange[];
+    lines: { original: number; modified: number };
+  }>((resolve) => {
     const disposable = editor.onDidUpdateDiff(() => {
       disposable.dispose(); // 确保只触发一次
       const changes = editor.getLineChanges() || [];
+      const lines = {
+        original: originalModel.getLineCount(),
+        modified: modifiedModel.getLineCount(),
+      };
+      originalModel.dispose();
+      modifiedModel.dispose();
       editor.dispose();
-      resolve(changes);
+      resolve({ changes, lines });
     });
   });
 
@@ -36,9 +45,11 @@ export async function diff(
     addLines: 0,
     removeLines: 0,
     diffBlockStats: [],
+    originalLines: rawDiff.lines.original,
+    modifiedLines: rawDiff.lines.modified,
   };
 
-  for (const rawDiffItem of rawDiff) {
+  for (const rawDiffItem of rawDiff.changes) {
     const {
       modifiedEndLineNumber,
       modifiedStartLineNumber,
@@ -48,12 +59,12 @@ export async function diff(
 
     diffResult.addLines +=
       modifiedEndLineNumber > 0
-        ? modifiedEndLineNumber - modifiedStartLineNumber
+        ? modifiedEndLineNumber - modifiedStartLineNumber + 1
         : 0;
 
     diffResult.removeLines +=
       originalEndLineNumber > 0
-        ? originalEndLineNumber - originalStartLineNumber
+        ? originalEndLineNumber - originalStartLineNumber + 1
         : 0;
 
     diffResult.diffBlockStats.push({
