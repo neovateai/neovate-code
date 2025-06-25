@@ -28,6 +28,7 @@ const mcpRoute: FastifyPluginAsync = async (app) => {
         : configManager.projectConfig.mcpServers || {};
 
       return {
+        success: true,
         servers: mcpServers,
         scope: global ? 'global' : 'project',
       };
@@ -64,7 +65,7 @@ const mcpRoute: FastifyPluginAsync = async (app) => {
         });
       }
 
-      return { server, name };
+      return { success: true, server, name };
     },
   );
 
