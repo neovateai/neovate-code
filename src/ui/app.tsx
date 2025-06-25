@@ -214,27 +214,43 @@ function Header() {
 
 function ChatInput() {
   const store = getStore();
-  const isProcessing = store.status === 'processing';
-  const isPlan = store.stage === 'plan';
+  const snap = useSnapshot(store);
+  const isProcessing = snap.status === 'processing';
+  const isFailed = snap.status === 'failed';
+  const isPlan = snap.stage === 'plan';
   const [value, setValue] = React.useState('');
   const handleSubmit = () => {
     if (value.trim() === '') return;
     setValue('');
     store.actions.addUserPrompt(value);
-    store.actions.query(value);
+    store.actions.query(value).catch(() => {});
   };
+  let borderColor = 'blueBright';
+  if (isProcessing) {
+    borderColor = 'gray';
+  }
+  if (isFailed) {
+    borderColor = 'redBright';
+  }
   return (
     <Box flexDirection="column" marginTop={1}>
       <Box
         borderStyle="round"
-        borderColor={isProcessing ? 'gray' : 'blueBright'}
+        borderColor={borderColor as any}
         paddingX={1}
         flexDirection="row"
         gap={1}
       >
-        <Text color={isProcessing ? 'gray' : 'white'}>&gt;</Text>
+        <Text color={isProcessing || isFailed ? 'gray' : 'white'}>&gt;</Text>
         {isProcessing ? (
           <Text color="gray">{isPlan ? 'Planning...' : 'Processing...'}</Text>
+        ) : isFailed ? (
+          <TextInput
+            value={value}
+            onChange={setValue}
+            onSubmit={handleSubmit}
+            placeholderTextColor="redBright"
+          />
         ) : (
           <TextInput
             value={value}
@@ -243,6 +259,11 @@ function ChatInput() {
           />
         )}
       </Box>
+      {isFailed && snap.error && (
+        <Box paddingX={2}>
+          <Text color="redBright">{snap.error}</Text>
+        </Box>
+      )}
       <Box flexDirection="row" paddingX={2} gap={1}>
         <Text color="gray">ctrl+c to exit | enter to send</Text>
         <Box flexGrow={1} />

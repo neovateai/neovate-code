@@ -75,6 +75,7 @@ export async function run(opts: RunOpts) {
       }
       return null;
     }
+  } catch {
   } finally {
     const quiet = opts.context.config.quiet;
     if (quiet) {

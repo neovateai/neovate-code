@@ -59,6 +59,7 @@ export function createStore(opts: CreateStoreOpts) {
         let textDelta = '';
         let reasoningDelta = '';
         store!.status = 'processing';
+        store!.error = null;
         store!.messages.push({
           role: 'user',
           content: {
@@ -66,103 +67,110 @@ export function createStore(opts: CreateStoreOpts) {
             text: input,
           },
         });
-        const result = await query({
-          input: [
-            {
-              role: 'user',
-              content: input,
+        try {
+          const result = await query({
+            input: [
+              {
+                role: 'user',
+                content: input,
+              },
+            ],
+            service,
+            thinking: isReasoningModel(service.context.config.model),
+            async onTextDelta(text) {
+              appendLogToFile(`onTextDelta: ${text}`);
+              await delay(100);
+              store = store!;
+              if (reasoningDelta && store.currentMessage) {
+                reasoningDelta = '';
+                store.messages.push(store.currentMessage);
+                store.currentMessage = null;
+              }
+              textDelta += text;
+              store.currentMessage = {
+                role: 'assistant',
+                content: {
+                  type: 'text',
+                  text: textDelta,
+                },
+              };
             },
-          ],
-          service,
-          thinking: isReasoningModel(service.context.config.model),
-          async onTextDelta(text) {
-            appendLogToFile(`onTextDelta: ${text}`);
-            await delay(100);
-            store = store!;
-            if (reasoningDelta && store.currentMessage) {
-              reasoningDelta = '';
-              store.messages.push(store.currentMessage);
+            async onText(text) {
+              appendLogToFile(`onText: ${text}`);
+              await delay(100);
+              store = store!;
               store.currentMessage = null;
-            }
-            textDelta += text;
-            store.currentMessage = {
-              role: 'assistant',
-              content: {
-                type: 'text',
-                text: textDelta,
-              },
-            };
-          },
-          async onText(text) {
-            appendLogToFile(`onText: ${text}`);
-            await delay(100);
-            store = store!;
-            store.currentMessage = null;
-            textDelta = '';
-            store.messages.push({
-              role: 'assistant',
-              content: {
-                type: 'text',
-                text,
-              },
-            });
-            debug('onText', text);
-          },
-          async onReasoning(text) {
-            appendLogToFile(`onReasoning: ${text}`);
-            await delay(100);
-            store = store!;
-            reasoningDelta += text;
-            store.currentMessage = {
-              role: 'assistant',
-              content: {
-                type: 'thinking',
-                text: reasoningDelta,
-              },
-            };
-            debug('onReasoning', text);
-          },
-          async onToolUse(callId, name, params) {
-            appendLogToFile(
-              `onToolUse: ${callId} ${name} ${JSON.stringify(params)}`,
-            );
-            await delay(100);
-            store = store!;
-            debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
-            store.messages.push({
-              role: 'assistant',
-              content: {
-                type: 'tool-call',
-                toolCallId: callId,
-                toolName: name,
-                args: params,
-              },
-            });
-          },
-          onToolUseResult(callId, name, result) {
-            appendLogToFile(
-              `onToolUseResult: ${callId} ${name} ${JSON.stringify(result)}`,
-            );
-            debug(
-              `Tool use result: ${name} with result ${JSON.stringify(result)}`,
-            );
-            store = store!;
-            store.messages.push({
-              role: 'tool',
-              content: {
-                type: 'tool-result',
-                toolCallId: callId,
-                toolName: name,
-                result,
-              },
-            });
-          },
-        });
-        store!.status = 'completed';
-        if (store!.stage === 'plan') {
-          store!.planModal = { text: result.finalText || '' };
+              textDelta = '';
+              store.messages.push({
+                role: 'assistant',
+                content: {
+                  type: 'text',
+                  text,
+                },
+              });
+              debug('onText', text);
+            },
+            async onReasoning(text) {
+              appendLogToFile(`onReasoning: ${text}`);
+              await delay(100);
+              store = store!;
+              reasoningDelta += text;
+              store.currentMessage = {
+                role: 'assistant',
+                content: {
+                  type: 'thinking',
+                  text: reasoningDelta,
+                },
+              };
+              debug('onReasoning', text);
+            },
+            async onToolUse(callId, name, params) {
+              appendLogToFile(
+                `onToolUse: ${callId} ${name} ${JSON.stringify(params)}`,
+              );
+              await delay(100);
+              store = store!;
+              debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
+              store.messages.push({
+                role: 'assistant',
+                content: {
+                  type: 'tool-call',
+                  toolCallId: callId,
+                  toolName: name,
+                  args: params,
+                },
+              });
+            },
+            onToolUseResult(callId, name, result) {
+              appendLogToFile(
+                `onToolUseResult: ${callId} ${name} ${JSON.stringify(result)}`,
+              );
+              debug(
+                `Tool use result: ${name} with result ${JSON.stringify(result)}`,
+              );
+              store = store!;
+              store.messages.push({
+                role: 'tool',
+                content: {
+                  type: 'tool-result',
+                  toolCallId: callId,
+                  toolName: name,
+                  result,
+                },
+              });
+            },
+          });
+          store!.status = 'completed';
+          if (store!.stage === 'plan') {
+            store!.planModal = { text: result.finalText || '' };
+          }
+          return result;
+        } catch (e: any) {
+          store!.status = 'failed';
+          store!.error = e.message || String(e);
+          store!.currentMessage = null;
+          throw e;
         }
-        return result;
       },
     },
   });
