@@ -3,11 +3,15 @@ import { proxy } from 'valtio';
 interface SenderState {
   prompt: string;
   plainText: string;
+  mode: string;
+  openFooter: boolean;
 }
 
 export const state = proxy<SenderState>({
   prompt: '',
   plainText: '',
+  mode: 'agent',
+  openFooter: true,
 });
 
 export const actions = {
@@ -17,5 +21,14 @@ export const actions = {
 
   updatePlainText: (plainText: string) => {
     state.plainText = plainText;
+  },
+
+  updateOpenFooter: (openFooter: boolean) => {
+    state.openFooter = openFooter;
+  },
+
+  updateModeAndFooterVisible: (mode: string, openFooter: boolean) => {
+    state.mode = mode;
+    state.openFooter = openFooter;
   },
 };
