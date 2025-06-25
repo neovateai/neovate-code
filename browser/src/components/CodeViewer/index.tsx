@@ -1,4 +1,4 @@
-import { CloseOutlined } from '@ant-design/icons';
+import { VerticalLeftOutlined } from '@ant-design/icons';
 import { Tabs, type TabsProps } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useMemo } from 'react';
@@ -29,7 +29,7 @@ const useStyle = createStyles(({ css }) => {
       }
     `,
     extra: css`
-      margin: 8px;
+      margin: 0 12px;
       cursor: pointer;
     `,
   };
@@ -83,14 +83,16 @@ const CodeViewer = () => {
         type="editable-card"
         onChange={(activeKey) => actions.setActiveId(activeKey)}
         onEdit={handleEdit}
-        tabBarExtraContent={
-          <div
-            className={styles.extra}
-            onClick={() => actions.setVisible(false)}
-          >
-            <CloseOutlined />
-          </div>
-        }
+        tabBarExtraContent={{
+          left: (
+            <div
+              className={styles.extra}
+              onClick={() => actions.setVisible(false)}
+            >
+              <VerticalLeftOutlined />
+            </div>
+          ),
+        }}
       />
     </div>
   );
