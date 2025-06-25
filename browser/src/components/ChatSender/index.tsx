@@ -5,10 +5,11 @@ import {
   ScheduleOutlined,
 } from '@ant-design/icons';
 import { Prompts, Sender } from '@ant-design/x';
-import { Flex, type GetProp } from 'antd';
+import { Flex } from 'antd';
 import { createStyles } from 'antd-style';
 import { differenceWith } from 'lodash-es';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
@@ -22,28 +23,31 @@ import { LexicalTextAreaContext } from './LexicalTextAreaContext';
 import SenderAttachments from './SenderAttachments';
 import SenderHeader from './SenderHeader';
 
-const SENDER_PROMPTS: GetProp<typeof Prompts, 'items'> = [
-  {
-    key: '1',
-    description: 'Upgrades',
-    icon: <ScheduleOutlined />,
-  },
-  {
-    key: '2',
-    description: 'Components',
-    icon: <ProductOutlined />,
-  },
-  {
-    key: '3',
-    description: 'RICH Guide',
-    icon: <FileSearchOutlined />,
-  },
-  {
-    key: '4',
-    description: 'Installation Introduction',
-    icon: <AppstoreAddOutlined />,
-  },
-];
+const useSenderPrompts = () => {
+  const { t } = useTranslation();
+  return [
+    {
+      key: '1',
+      description: t('prompts.upgrades'),
+      icon: <ScheduleOutlined />,
+    },
+    {
+      key: '2',
+      description: t('prompts.components'),
+      icon: <ProductOutlined />,
+    },
+    {
+      key: '3',
+      description: t('prompts.richGuide'),
+      icon: <FileSearchOutlined />,
+    },
+    {
+      key: '4',
+      description: t('prompts.installationIntro'),
+      icon: <AppstoreAddOutlined />,
+    },
+  ];
+};
 
 const useStyle = createStyles(({ token, css }) => {
   return {
@@ -77,6 +81,8 @@ const useStyle = createStyles(({ token, css }) => {
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
   const { loading, stop, append, onQuery } = useChatState();
+  const { t } = useTranslation();
+  const SENDER_PROMPTS = useSenderPrompts();
   const [insertNodePosition, setInsertNodePosition] = useState(0);
   const [contextSearchInput, setContextSearchInput] = useState('');
   const [keepMenuOpen, setKeepMenuOpen] = useState(false);
@@ -147,7 +153,7 @@ const ChatSender: React.FC = () => {
           items={suggestions}
           showSearch={
             showSearch && {
-              placeholder: 'Please input to search...',
+              placeholder: t('common.placeholder'),
               onSearch: (text) => {
                 setContextSearchInput(text);
               },

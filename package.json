@@ -8,6 +8,7 @@
   ],
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "source": "./src/index.ts",
   "bin": {
     "ta": "dist/cli.mjs",
     "takumi": "./dist/cli.mjs"
