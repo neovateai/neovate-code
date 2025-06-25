@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { mcpService } from '@/api/mcpService';
 import McpManager from '@/components/McpManager';
+import { containerEventHandlers, modalEventHandlers } from '@/utils/eventUtils';
 
 interface McpDropdownProps {
   loading?: boolean;
@@ -690,23 +691,15 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         keyboard={false}
         destroyOnClose={true}
       >
-        <div
-          style={{ marginTop: '16px' }}
-          onKeyDown={(e) => e.stopPropagation()}
-          onKeyUp={(e) => e.stopPropagation()}
-          onKeyPress={(e) => e.stopPropagation()}
-        >
+        <div style={{ marginTop: '16px' }} {...containerEventHandlers}>
           <Input
             placeholder={t('mcp.apiKeyPlaceholder')}
             value={editApiKey}
             onChange={(e) => setEditApiKey(e.target.value)}
             onPressEnter={handleSaveApiKey}
-            onKeyDown={(e) => e.stopPropagation()}
-            onKeyUp={(e) => e.stopPropagation()}
-            onKeyPress={(e) => e.stopPropagation()}
-            onInput={(e) => e.stopPropagation()}
             autoFocus
             style={{ marginBottom: '8px' }}
+            {...modalEventHandlers}
           />
           <div style={{ fontSize: '12px', color: '#666' }}>
             {t('mcp.apiKeyDescription', { name: editingService?.name })}

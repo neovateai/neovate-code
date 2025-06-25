@@ -16,6 +16,7 @@ import {
 } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { containerEventHandlers, modalEventHandlers } from '@/utils/eventUtils';
 import { mcpService } from '../../api/mcpService';
 
 const { Text } = Typography;
@@ -607,7 +608,12 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
         body: { padding: '16px 24px' },
       }}
     >
-      <Space direction="vertical" style={{ width: '100%' }} size="middle">
+      <Space
+        direction="vertical"
+        style={{ width: '100%' }}
+        size="middle"
+        {...containerEventHandlers}
+      >
         <div
           style={{
             background: '#fff',
@@ -656,7 +662,12 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             body: { padding: '20px 24px' },
           }}
         >
-          <Form form={form} onFinish={handleAdd} layout="vertical">
+          <Form
+            form={form}
+            onFinish={handleAdd}
+            layout="vertical"
+            {...containerEventHandlers}
+          >
             <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
               <div style={{ flex: 1 }}>
                 <Text strong style={{ display: 'block', marginBottom: '8px' }}>
@@ -767,6 +778,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                       fontSize: '13px',
                       lineHeight: '1.4',
                     }}
+                    {...modalEventHandlers}
                   />
                   <div style={{ marginTop: '12px' }}>
                     <details>
@@ -878,7 +890,10 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                     },
                   ]}
                 >
-                  <Input placeholder={t('mcp.serverNamePlaceholder')} />
+                  <Input
+                    placeholder={t('mcp.serverNamePlaceholder')}
+                    {...modalEventHandlers}
+                  />
                 </Form.Item>
 
                 <Form.Item
@@ -910,7 +925,10 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                           },
                         ]}
                       >
-                        <Input placeholder={t('mcp.urlPlaceholder')} />
+                        <Input
+                          placeholder={t('mcp.urlPlaceholder')}
+                          {...modalEventHandlers}
+                        />
                       </Form.Item>
                     ) : (
                       <>
@@ -924,13 +942,19 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                             },
                           ]}
                         >
-                          <Input placeholder={t('mcp.commandPlaceholder')} />
+                          <Input
+                            placeholder={t('mcp.commandPlaceholder')}
+                            {...modalEventHandlers}
+                          />
                         </Form.Item>
                         <Form.Item
                           name="args"
                           label={<Text strong>{t('mcp.arguments')}</Text>}
                         >
-                          <Input placeholder={t('mcp.argumentsPlaceholder')} />
+                          <Input
+                            placeholder={t('mcp.argumentsPlaceholder')}
+                            {...modalEventHandlers}
+                          />
                         </Form.Item>
                         <Form.Item
                           name="env"
@@ -943,6 +967,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                               'mcp.environmentVariablesPlaceholder',
                             )}
                             rows={3}
+                            {...modalEventHandlers}
                           />
                         </Form.Item>
                       </>
