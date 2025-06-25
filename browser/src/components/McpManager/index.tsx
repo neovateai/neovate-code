@@ -16,28 +16,43 @@ import {
 } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  MCP_DEFAULTS,
+  MCP_KEY_PREFIXES,
+  MCP_STORAGE_KEYS,
+  getJsonExample,
+  getSimpleJsonExample,
+  getSingleServerExample,
+  getSseJsonExample,
+} from '@/constants/mcp';
+import type {
+  FormValues,
+  JsonConfigFormat,
+  McpManagerProps,
+  McpManagerServer,
+  McpServerConfig,
+} from '@/types/mcp';
 import { containerEventHandlers, modalEventHandlers } from '@/utils/eventUtils';
 import { mcpService } from '../../api/mcpService';
 
 const { Text } = Typography;
 
-interface McpManagerProps {
-  visible: boolean;
-  onClose: () => void;
-}
-
 const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
   const { t } = useTranslation();
-  const [servers, setServers] = useState<any[]>([]);
+  const [servers, setServers] = useState<McpManagerServer[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [inputMode, setInputMode] = useState<'json' | 'form'>('json');
-  const [addScope, setAddScope] = useState<'global' | 'project'>('project'); // Scope selection for adding services
+  const [inputMode, setInputMode] = useState<'json' | 'form'>(
+    MCP_DEFAULTS.INPUT_MODE,
+  );
+  const [addScope, setAddScope] = useState<'global' | 'project'>(
+    MCP_DEFAULTS.SCOPE,
+  ); // Scope selection for adding services
   const [form] = Form.useForm();
   const [allKnownServices, setAllKnownServices] = useState<Set<string>>(() => {
     // Restore known services list from localStorage
     try {
-      const stored = localStorage.getItem('takumi-known-mcp-services');
+      const stored = localStorage.getItem(MCP_STORAGE_KEYS.KNOWN_SERVICES);
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
@@ -45,9 +60,11 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
   });
 
   // Add service configuration cache
-  const [serviceConfigs, setServiceConfigs] = useState<Map<string, any>>(() => {
+  const [serviceConfigs, setServiceConfigs] = useState<
+    Map<string, McpServerConfig>
+  >(() => {
     try {
-      const stored = localStorage.getItem('takumi-mcp-service-configs');
+      const stored = localStorage.getItem(MCP_STORAGE_KEYS.SERVICE_CONFIGS);
       if (stored) {
         const configArray = JSON.parse(stored);
         return new Map(configArray);
@@ -77,39 +94,39 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       const projectServers = projectResponse.servers || {};
 
       // Merge service lists and mark scopes
-      const allInstalledServers: any[] = [];
+      const allInstalledServers: McpManagerServer[] = [];
 
       // Add global services
-      Object.entries(globalServers).forEach(([name, config]: [string, any]) => {
+      Object.entries(globalServers).forEach(([name, config]) => {
+        const serverConfig = config as McpServerConfig;
         allInstalledServers.push({
-          key: `global-${name}`,
+          key: `${MCP_KEY_PREFIXES.GLOBAL}-${name}`,
           name,
           scope: 'global',
-          command: config.command,
-          args: config.args || [],
-          url: config.url,
-          type: config.type || (config.url ? 'sse' : 'stdio'),
-          env: config.env,
+          command: serverConfig.command,
+          args: serverConfig.args || [],
+          url: serverConfig.url,
+          type: serverConfig.type || (serverConfig.url ? 'sse' : 'stdio'),
+          env: serverConfig.env,
           installed: true,
         });
       });
 
       // Add project services
-      Object.entries(projectServers).forEach(
-        ([name, config]: [string, any]) => {
-          allInstalledServers.push({
-            key: `project-${name}`,
-            name,
-            scope: 'project',
-            command: config.command,
-            args: config.args || [],
-            url: config.url,
-            type: config.type || (config.url ? 'sse' : 'stdio'),
-            env: config.env,
-            installed: true,
-          });
-        },
-      );
+      Object.entries(projectServers).forEach(([name, config]) => {
+        const serverConfig = config as McpServerConfig;
+        allInstalledServers.push({
+          key: `${MCP_KEY_PREFIXES.PROJECT}-${name}`,
+          name,
+          scope: 'project',
+          command: serverConfig.command,
+          args: serverConfig.args || [],
+          url: serverConfig.url,
+          type: serverConfig.type || (serverConfig.url ? 'sse' : 'stdio'),
+          env: serverConfig.env,
+          installed: true,
+        });
+      });
 
       // Update known services set
       const currentInstalledNames = new Set(
@@ -149,15 +166,15 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
         if (!hasGlobal && !hasProject) {
           // Try to restore configuration from cache
           const globalCachedConfig = serviceConfigs.get(
-            `global-${serviceName}`,
+            `${MCP_KEY_PREFIXES.GLOBAL}-${serviceName}`,
           );
           const projectCachedConfig = serviceConfigs.get(
-            `project-${serviceName}`,
+            `${MCP_KEY_PREFIXES.PROJECT}-${serviceName}`,
           );
 
           if (globalCachedConfig) {
             allServices.push({
-              key: `disabled-global-${serviceName}`,
+              key: `${MCP_KEY_PREFIXES.DISABLED_GLOBAL}-${serviceName}`,
               name: serviceName,
               scope: 'global',
               command: globalCachedConfig.command || '',
@@ -171,7 +188,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
 
           if (projectCachedConfig) {
             allServices.push({
-              key: `disabled-project-${serviceName}`,
+              key: `${MCP_KEY_PREFIXES.DISABLED_PROJECT}-${serviceName}`,
               name: serviceName,
               scope: 'project',
               command: projectCachedConfig.command || '',
@@ -194,10 +211,10 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     }
   };
 
-  const handleAdd = async (values: any) => {
+  const handleAdd = async (values: FormValues) => {
     try {
       if (inputMode === 'json') {
-        const jsonConfig = JSON.parse(values.jsonConfig);
+        const jsonConfig = JSON.parse(values.jsonConfig!) as JsonConfigFormat;
 
         // Support two formats:
         // 1. { "mcpServers": { "name": { config } } }
@@ -214,9 +231,16 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
 
           // Add all servers
           for (const [name, config] of Object.entries(servers)) {
+            const serverConfig = config as McpServerConfig;
             await mcpService.addServer({
               name,
-              ...(config as any),
+              command: serverConfig.command,
+              args: serverConfig.args,
+              url: serverConfig.url,
+              transport: serverConfig.type,
+              env: serverConfig.env
+                ? JSON.stringify(serverConfig.env)
+                : undefined,
               global: addScope === 'global',
             });
           }
@@ -234,11 +258,22 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             keys.includes('url')
           ) {
             // Direct configuration object (contains name field)
-            await mcpService.addServer({
-              ...jsonConfig,
-              global: addScope === 'global',
-            });
-            message.success(t('mcp.addedSingle'));
+            if (jsonConfig.name) {
+              await mcpService.addServer({
+                name: jsonConfig.name,
+                command: jsonConfig.command,
+                args: jsonConfig.args,
+                url: jsonConfig.url,
+                transport: jsonConfig.transport,
+                env: jsonConfig.env
+                  ? JSON.stringify(jsonConfig.env)
+                  : undefined,
+                global: addScope === 'global',
+              });
+              message.success(t('mcp.addedSingle'));
+            } else {
+              throw new Error('Name is required');
+            }
           } else {
             // Service name mapping format { "name": { config } }
             const serverNames = Object.keys(jsonConfig);
@@ -249,9 +284,16 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
 
             // Add all servers
             for (const [name, config] of Object.entries(jsonConfig)) {
+              const serverConfig = config as McpServerConfig;
               await mcpService.addServer({
                 name,
-                ...(config as any),
+                command: serverConfig.command,
+                args: serverConfig.args,
+                url: serverConfig.url,
+                transport: serverConfig.type,
+                env: serverConfig.env
+                  ? JSON.stringify(serverConfig.env)
+                  : undefined,
                 global: addScope === 'global',
               });
             }
@@ -262,17 +304,25 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           }
         }
       } else {
-        await mcpService.addServer({
-          ...values,
-          global: addScope === 'global',
-          args: values.args ? values.args.split(' ').filter(Boolean) : [],
-        });
-        message.success(t('mcp.addedSingle'));
+        if (values.name) {
+          await mcpService.addServer({
+            name: values.name,
+            command: values.command,
+            url: values.url,
+            transport: values.transport,
+            env: values.env,
+            global: addScope === 'global',
+            args: values.args ? values.args.split(' ').filter(Boolean) : [],
+          });
+          message.success(t('mcp.addedSingle'));
+        } else {
+          throw new Error('Name is required');
+        }
       }
 
       setShowAddForm(false);
       form.resetFields();
-      setInputMode('json');
+      setInputMode(MCP_DEFAULTS.INPUT_MODE);
       loadServers();
     } catch (error) {
       message.error(
@@ -282,83 +332,12 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     }
   };
 
-  const getJsonExample = () => {
-    return JSON.stringify(
-      {
-        mcpServers: {
-          playwright: {
-            command: 'npx',
-            args: ['@playwright/mcp@latest'],
-          },
-          'figma-mcp': {
-            command: 'npx',
-            args: [
-              '-y',
-              'figma-developer-mcp',
-              '--figma-api-key=YOUR-KEY',
-              '--stdio',
-            ],
-          },
-        },
-      },
-      null,
-      2,
-    );
-  };
-
-  const getSimpleJsonExample = () => {
-    return JSON.stringify(
-      {
-        playwright: {
-          command: 'npx',
-          args: ['@playwright/mcp@latest'],
-        },
-        'figma-mcp': {
-          command: 'npx',
-          args: [
-            '-y',
-            'figma-developer-mcp',
-            '--figma-api-key=YOUR-KEY',
-            '--stdio',
-          ],
-        },
-      },
-      null,
-      2,
-    );
-  };
-
-  const getSingleServerExample = () => {
-    return JSON.stringify(
-      {
-        name: 'my-server',
-        command: 'npx',
-        args: ['-y', '@example/mcp-server'],
-        env: { API_KEY: 'your-key' },
-      },
-      null,
-      2,
-    );
-  };
-
-  const getSseJsonExample = () => {
-    return JSON.stringify(
-      {
-        name: 'my-sse-server',
-        transport: 'sse',
-        url: 'http://localhost:3000',
-      },
-      null,
-      2,
-    );
-  };
-
   const columns = [
     {
       title: t('mcp.status'),
       key: 'status',
       width: 80,
-      render: (record: any) => (
+      render: (record: McpManagerServer) => (
         <Checkbox
           checked={record.installed}
           onChange={(e) => {
@@ -374,7 +353,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       dataIndex: 'name',
       key: 'name',
       width: 180,
-      render: (name: string, record: any) => (
+      render: (name: string, record: McpManagerServer) => (
         <Text
           strong
           className={`${
@@ -390,7 +369,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       dataIndex: 'scope',
       key: 'scope',
       width: 100,
-      render: (scope: string, record: any) => {
+      render: (scope: string, record: McpManagerServer) => {
         const isGlobal = scope === 'global';
         return (
           <Tag
@@ -409,7 +388,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       dataIndex: 'type',
       key: 'type',
       width: 80,
-      render: (type: string, record: any) => (
+      render: (type: string, record: McpManagerServer) => (
         <Tag
           color={type === 'sse' ? 'purple' : 'blue'}
           className={`m-0 ${record.installed ? 'opacity-100' : 'opacity-50'}`}
@@ -421,7 +400,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     {
       title: t('mcp.config'),
       key: 'command',
-      render: (record: any) => {
+      render: (record: McpManagerServer) => {
         if (!record.installed) {
           return (
             <Text type="secondary" className="text-xs italic">
@@ -492,7 +471,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             url: serverToDisable.url,
             type: serverToDisable.type,
             env: serverToDisable.env,
-            scope: scope,
+            scope: scope as 'global' | 'project',
           });
           updateServiceConfigs(newConfigs);
         }
@@ -532,7 +511,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     setAllKnownServices(newServices);
     try {
       localStorage.setItem(
-        'takumi-known-mcp-services',
+        MCP_STORAGE_KEYS.KNOWN_SERVICES,
         JSON.stringify([...newServices]),
       );
     } catch (error) {
@@ -541,11 +520,11 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
   };
 
   // Update service configuration cache
-  const updateServiceConfigs = (newConfigs: Map<string, any>) => {
+  const updateServiceConfigs = (newConfigs: Map<string, McpServerConfig>) => {
     setServiceConfigs(newConfigs);
     try {
       localStorage.setItem(
-        'takumi-mcp-service-configs',
+        MCP_STORAGE_KEYS.SERVICE_CONFIGS,
         JSON.stringify([...newConfigs]),
       );
     } catch (error) {
@@ -614,7 +593,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           onCancel={() => {
             setShowAddForm(false);
             form.resetFields();
-            setInputMode('json');
+            setInputMode(MCP_DEFAULTS.INPUT_MODE);
           }}
           onOk={form.submit}
           okText={t('mcp.addServer')}
@@ -706,7 +685,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                                     t('mcp.serverConfigObject', { name }),
                                   );
                                 }
-                                const serverConfig = config as any;
+                                const serverConfig = config as McpServerConfig;
                                 if (
                                   !serverConfig.command &&
                                   !serverConfig.url
@@ -803,7 +782,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                 <Form.Item
                   name="transport"
                   label={<Text strong>{t('mcp.transportType')}</Text>}
-                  initialValue="stdio"
+                  initialValue={MCP_DEFAULTS.TRANSPORT_TYPE}
                 >
                   <Select>
                     <Select.Option value="stdio">STDIO</Select.Option>

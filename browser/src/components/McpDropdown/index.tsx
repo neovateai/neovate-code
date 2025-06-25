@@ -4,33 +4,44 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { mcpService } from '@/api/mcpService';
 import McpManager from '@/components/McpManager';
+import {
+  FIGMA_CONFIG,
+  MCP_KEY_PREFIXES,
+  MCP_MENU_KEYS,
+  MCP_STORAGE_KEYS,
+  getPresetMcpServicesWithTranslations,
+} from '@/constants/mcp';
+import type {
+  McpDropdownProps,
+  McpServer,
+  McpServerConfig,
+  PresetMcpService,
+} from '@/types/mcp';
 import { containerEventHandlers, modalEventHandlers } from '@/utils/eventUtils';
-
-interface McpDropdownProps {
-  loading?: boolean;
-}
 
 const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
   const { t } = useTranslation();
   const [mcpManagerOpen, setMcpManagerOpen] = useState(false);
-  const [mcpServers, setMcpServers] = useState<any[]>([]);
+  const [mcpServers, setMcpServers] = useState<McpServer[]>([]);
   const [mcpLoading, setMcpLoading] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [editingService, setEditingService] = useState<any>(null);
+  const [editingService, setEditingService] = useState<McpServer | null>(null);
   const [editApiKeyModalOpen, setEditApiKeyModalOpen] = useState(false);
   const [editApiKey, setEditApiKey] = useState('');
   const [allKnownServices, setAllKnownServices] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem('takumi-known-mcp-services');
+      const stored = localStorage.getItem(MCP_STORAGE_KEYS.KNOWN_SERVICES);
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
     }
   });
 
-  const [serviceConfigs, setServiceConfigs] = useState<Map<string, any>>(() => {
+  const [serviceConfigs, setServiceConfigs] = useState<
+    Map<string, McpServerConfig>
+  >(() => {
     try {
-      const stored = localStorage.getItem('takumi-mcp-service-configs');
+      const stored = localStorage.getItem(MCP_STORAGE_KEYS.SERVICE_CONFIGS);
       if (stored) {
         const configArray = JSON.parse(stored);
         return new Map(configArray);
@@ -41,36 +52,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     return new Map();
   });
 
-  const presetMcpServices = [
-    {
-      key: 'playwright',
-      name: '@playwright mcp',
-      description: t('mcp.playwrightDescription'),
-      config: {
-        name: '@playwright mcp',
-        command: 'npx',
-        args: ['@playwright/mcp@latest'],
-      },
-    },
-    {
-      key: 'figma',
-      name: 'Framelink Figma MCP',
-      description: t('mcp.figmaDescription'),
-      requiresApiKey: true,
-      apiKeyLabel: t('mcp.figmaApiKeyLabel'),
-      apiKeyPlaceholder: t('mcp.apiKeyPlaceholder'),
-      config: {
-        name: 'Framelink Figma MCP',
-        command: 'npx',
-        args: [
-          '-y',
-          'figma-developer-mcp',
-          '--figma-api-key=YOUR-KEY',
-          '--stdio',
-        ],
-      },
-    },
-  ];
+  const presetMcpServices = getPresetMcpServicesWithTranslations(t);
 
   const loadMcpServers = async () => {
     try {
@@ -86,11 +68,11 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
 
       // Restore known services and configurations from localStorage (ensure using latest data)
       let knownServices: Set<string>;
-      let configs: Map<string, any>;
+      let configs: Map<string, McpServerConfig>;
 
       try {
         const storedKnownServices = localStorage.getItem(
-          'takumi-known-mcp-services',
+          MCP_STORAGE_KEYS.KNOWN_SERVICES,
         );
         knownServices = storedKnownServices
           ? new Set(JSON.parse(storedKnownServices))
@@ -101,7 +83,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
 
       try {
         const storedConfigs = localStorage.getItem(
-          'takumi-mcp-service-configs',
+          MCP_STORAGE_KEYS.SERVICE_CONFIGS,
         );
         configs = storedConfigs
           ? new Map(JSON.parse(storedConfigs))
@@ -110,15 +92,16 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         configs = new Map();
       }
 
-      const mcpList: any[] = [];
+      const mcpList: McpServer[] = [];
 
       // Add global services
       Object.entries(globalServers).forEach(([name, config]) => {
         knownServices.add(name);
-        const configWithScope = { ...(config as any), scope: 'global' };
-        configs.set(`global-${name}`, configWithScope);
+        const serverConfig = config as McpServerConfig;
+        const configWithScope = { ...serverConfig, scope: 'global' as const };
+        configs.set(`${MCP_KEY_PREFIXES.GLOBAL}-${name}`, configWithScope);
         mcpList.push({
-          key: `global-${name}`,
+          key: `${MCP_KEY_PREFIXES.GLOBAL}-${name}`,
           name,
           config: configWithScope,
           installed: true,
@@ -129,10 +112,11 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       // Add project services
       Object.entries(projectServers).forEach(([name, config]) => {
         knownServices.add(name);
-        const configWithScope = { ...(config as any), scope: 'project' };
-        configs.set(`project-${name}`, configWithScope);
+        const serverConfig = config as McpServerConfig;
+        const configWithScope = { ...serverConfig, scope: 'project' as const };
+        configs.set(`${MCP_KEY_PREFIXES.PROJECT}-${name}`, configWithScope);
         mcpList.push({
-          key: `project-${name}`,
+          key: `${MCP_KEY_PREFIXES.PROJECT}-${name}`,
           name,
           config: configWithScope,
           installed: true,
@@ -142,13 +126,17 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
 
       // Add known but uninstalled services
       knownServices.forEach((serviceName) => {
-        const globalConfig = configs.get(`global-${serviceName}`);
-        const projectConfig = configs.get(`project-${serviceName}`);
+        const globalConfig = configs.get(
+          `${MCP_KEY_PREFIXES.GLOBAL}-${serviceName}`,
+        );
+        const projectConfig = configs.get(
+          `${MCP_KEY_PREFIXES.PROJECT}-${serviceName}`,
+        );
 
         // If global configuration exists but not installed
         if (globalConfig && !globalServers[serviceName]) {
           mcpList.push({
-            key: `disabled-global-${serviceName}`,
+            key: `${MCP_KEY_PREFIXES.DISABLED_GLOBAL}-${serviceName}`,
             name: serviceName,
             config: globalConfig,
             installed: false,
@@ -159,7 +147,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         // If project configuration exists but not installed
         if (projectConfig && !projectServers[serviceName]) {
           mcpList.push({
-            key: `disabled-project-${serviceName}`,
+            key: `${MCP_KEY_PREFIXES.DISABLED_PROJECT}-${serviceName}`,
             name: serviceName,
             config: projectConfig,
             installed: false,
@@ -223,14 +211,14 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         if (serverToDisable && serverToDisable.config) {
           // Save configuration to cache
           const newConfigs = new Map(serviceConfigs);
-          const config = serverToDisable.config as any;
+          const config = serverToDisable.config;
           const configToCache = {
             command: config.command,
             args: config.args || [],
             url: config.url,
             type: config.type || (config.url ? 'sse' : 'stdio'),
             env: config.env,
-            scope: scope,
+            scope: scope as 'global' | 'project',
           };
           newConfigs.set(`${scope}-${serverName}`, configToCache);
           updateServiceConfigs(newConfigs);
@@ -263,13 +251,15 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     }
   };
 
-  const handleEditApiKey = (server: any) => {
+  const handleEditApiKey = (server: McpServer) => {
     setEditingService(server);
     const currentKey =
       server.config.args
-        ?.find((arg: string) => arg.includes('--figma-api-key'))
+        ?.find((arg: string) => arg.includes(FIGMA_CONFIG.API_KEY_ARG))
         ?.split('=')[1] || '';
-    setEditApiKey(currentKey === 'YOUR-KEY' ? '' : currentKey);
+    setEditApiKey(
+      currentKey === FIGMA_CONFIG.DEFAULT_API_KEY ? '' : currentKey,
+    );
     setEditApiKeyModalOpen(true);
   };
 
@@ -279,11 +269,17 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       return;
     }
 
+    if (!editingService) {
+      message.error('No service selected');
+      return;
+    }
+
     try {
-      const updatedArgs = editingService.config.args.map((arg: string) =>
-        arg.includes('--figma-api-key')
-          ? `--figma-api-key=${editApiKey.trim()}`
-          : arg,
+      const updatedArgs = (editingService.config.args || []).map(
+        (arg: string) =>
+          arg.includes(FIGMA_CONFIG.API_KEY_ARG)
+            ? `${FIGMA_CONFIG.API_KEY_ARG}=${editApiKey.trim()}`
+            : arg,
       );
 
       await mcpService.updateServer(editingService.name, {
@@ -301,7 +297,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     }
   };
 
-  const handleQuickAdd = async (service: any) => {
+  const handleQuickAdd = async (service: PresetMcpService) => {
     try {
       // Add to project-level configuration
       const configToAdd = {
@@ -334,8 +330,8 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     const handleStorageChange = (e: StorageEvent) => {
       // Reload service state when localStorage changes
       if (
-        e.key === 'takumi-known-mcp-services' ||
-        e.key === 'takumi-mcp-service-configs'
+        e.key === MCP_STORAGE_KEYS.KNOWN_SERVICES ||
+        e.key === MCP_STORAGE_KEYS.SERVICE_CONFIGS
       ) {
         loadMcpServers();
       }
@@ -352,7 +348,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
 
   const dropdownItems = [
     {
-      key: 'manage',
+      key: MCP_MENU_KEYS.MANAGE,
       label: (
         <Space>
           <ApiOutlined />
@@ -363,7 +359,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     },
     { type: 'divider' as const },
     {
-      key: 'services-header',
+      key: MCP_MENU_KEYS.SERVICES_HEADER,
       label: (
         <div className="font-bold text-gray-600 text-xs py-1 uppercase tracking-wider">
           {t('mcp.mcpServicesTitle')}
@@ -412,7 +408,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
             </div>
             <div className="flex items-center gap-1">
               {server.config.args?.some((arg: string) =>
-                arg.includes('--figma-api-key'),
+                arg.includes(FIGMA_CONFIG.API_KEY_ARG),
               ) && (
                 <Button
                   type="text"
@@ -428,11 +424,6 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
             </div>
           </div>
         ),
-        onClick: ({ domEvent }: any) => {
-          // Prevent menu item's default click behavior to prevent dropdown from closing
-          domEvent?.preventDefault();
-          domEvent?.stopPropagation();
-        },
       })),
     // Disabled services
     ...mcpServers
@@ -475,11 +466,6 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
             </div>
           </div>
         ),
-        onClick: ({ domEvent }: any) => {
-          // Prevent menu item's default click behavior to prevent dropdown from closing
-          domEvent?.preventDefault();
-          domEvent?.stopPropagation();
-        },
       })),
     ...presetMcpServices
       .filter(
@@ -487,7 +473,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
           !mcpServers.some((server) => server.name === service.config.name),
       )
       .map((service) => ({
-        key: `preset-${service.key}`,
+        key: `${MCP_KEY_PREFIXES.PRESET}-${service.key}`,
         label: (
           <div className="flex justify-between items-center w-full">
             <div className="flex items-center gap-2">
@@ -518,16 +504,11 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
             </div>
           </div>
         ),
-        onClick: ({ domEvent }: any) => {
-          // Prevent menu item's default click behavior to prevent dropdown from closing
-          domEvent?.preventDefault();
-          domEvent?.stopPropagation();
-        },
       })),
     ...(mcpServers.length === 0 && presetMcpServices.length === 0
       ? [
           {
-            key: 'no-services',
+            key: MCP_MENU_KEYS.NO_SERVICES,
             label: (
               <span className="text-gray-400 italic">
                 {t('mcp.noServicesAvailable')}
@@ -543,7 +524,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     setAllKnownServices(newServices);
     try {
       localStorage.setItem(
-        'takumi-known-mcp-services',
+        MCP_STORAGE_KEYS.KNOWN_SERVICES,
         JSON.stringify([...newServices]),
       );
     } catch (error) {
@@ -551,11 +532,11 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     }
   };
 
-  const updateServiceConfigs = (newConfigs: Map<string, any>) => {
+  const updateServiceConfigs = (newConfigs: Map<string, McpServerConfig>) => {
     setServiceConfigs(newConfigs);
     try {
       localStorage.setItem(
-        'takumi-mcp-service-configs',
+        MCP_STORAGE_KEYS.SERVICE_CONFIGS,
         JSON.stringify([...newConfigs]),
       );
     } catch (error) {
