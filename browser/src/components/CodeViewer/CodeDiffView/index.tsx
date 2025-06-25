@@ -28,19 +28,15 @@ const CodeDiffView = (props: Props) => {
   const { styles } = useStyle();
   const editorRef = useRef<monaco.editor.IStandaloneDiffEditor>(null);
 
-  console.log(editorRef.current?.getLineChanges());
-
   return (
     <div className={styles.container}>
       <DiffToolbar
-        // TODO goto diff
-        // accept all
-        // reject all
-        item={item}
-        metaInfo={{
-          addLineCount: 0,
-          removeLineCount: 0,
+        onGotoDiff={(target) => {
+          editorRef?.current?.goToDiff(target);
         }}
+        onAcceptAll={() => {}}
+        onRejectAll={() => {}}
+        item={item}
       />
       <DiffEditor
         className={styles.editor}

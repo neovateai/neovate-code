@@ -1,7 +1,11 @@
 import { proxy } from 'valtio';
 import i18n from '@/i18n';
-import type { CodeViewerLanguage, CodeViewerTabItem } from '@/types/codeViewer';
-import { diff, inferFileType } from '@/utils/codeViewer';
+import type {
+  CodeViewerLanguage,
+  CodeViewerTabItem,
+  DiffStat,
+} from '@/types/codeViewer';
+import { inferFileType } from '@/utils/codeViewer';
 
 interface CodeViewerState {
   visible: boolean;
@@ -21,6 +25,7 @@ interface DisplayDiffViewerConfigs {
   language?: CodeViewerLanguage;
   originalCode: string;
   modifiedCode: string;
+  diffStat?: DiffStat;
   path?: string;
 }
 
@@ -92,7 +97,7 @@ export const actions = {
   },
 
   displayDiffViewer: (config: DisplayDiffViewerConfigs) => {
-    const { path, modifiedCode, originalCode, language } = config;
+    const { path, modifiedCode, originalCode, language, diffStat } = config;
 
     const id = path || Date.now().toString();
 
@@ -115,6 +120,7 @@ export const actions = {
         id,
         viewType: 'diff',
         path,
+        diffStat,
       });
 
       state.activeId = id;

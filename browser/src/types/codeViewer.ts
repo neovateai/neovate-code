@@ -38,11 +38,6 @@ export interface CodeNormalViewerMetaInfo {
   charCount: number;
 }
 
-export interface CodeDiffViewerMetaInfo {
-  addLineCount: number;
-  removeLineCount: number;
-}
-
 export type CodeViewerLanguage =
   | 'abap'
   | 'apex'

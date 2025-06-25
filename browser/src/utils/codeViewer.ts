@@ -1,47 +1,36 @@
 import * as monaco from 'monaco-editor';
 import type { CodeViewerLanguage, DiffStat } from '@/types/codeViewer';
 
-class InvisibleDiffEditor {
-  private constructor() {}
+async function computeDiff(original: string, modified: string) {
+  const element = document.createElement('div');
 
-  static editor: monaco.editor.IStandaloneDiffEditor;
+  const editor = monaco.editor.createDiffEditor(element);
 
-  static getInstance() {
-    if (!this.editor) {
-      this.editor = monaco.editor.createDiffEditor(
-        document.createElement('div'),
-      );
-    }
-    return this.editor;
-  }
+  const originalModel = monaco.editor.createModel(original);
+  const modifiedModel = monaco.editor.createModel(modified);
 
-  static async computeDiff(original: string, modified: string) {
-    const originalModel = monaco.editor.createModel(original);
-    const modifiedModel = monaco.editor.createModel(modified);
-    const editor = InvisibleDiffEditor.getInstance();
+  editor.setModel({
+    original: originalModel,
+    modified: modifiedModel,
+  });
 
-    editor.setModel({
-      original: originalModel,
-      modified: modifiedModel,
+  const diffReady = new Promise<monaco.editor.ILineChange[]>((resolve) => {
+    const disposable = editor.onDidUpdateDiff(() => {
+      disposable.dispose(); // 确保只触发一次
+      const changes = editor.getLineChanges() || [];
+      editor.dispose();
+      resolve(changes);
     });
+  });
 
-    const diffReady = new Promise<monaco.editor.ILineChange[]>((resolve) => {
-      const disposable = editor.onDidUpdateDiff(() => {
-        disposable.dispose(); // 确保只触发一次
-        const changes = editor.getLineChanges() || [];
-        resolve(changes);
-      });
-    });
-
-    return diffReady;
-  }
+  return diffReady;
 }
 
 export async function diff(
   original: string,
   modified: string,
 ): Promise<DiffStat> {
-  const rawDiff = await InvisibleDiffEditor.computeDiff(original, modified);
+  const rawDiff = await computeDiff(original, modified);
 
   const diffResult: DiffStat = {
     addLines: 0,

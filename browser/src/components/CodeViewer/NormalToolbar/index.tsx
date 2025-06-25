@@ -13,7 +13,7 @@ interface Props {
   normalMetaInfo: CodeNormalViewerMetaInfo;
 }
 
-export const useToolbarStyle = createStyles(({ css }) => {
+export const useToolbarStyles = createStyles(({ css }) => {
   return {
     toolbar: css`
       height: 48px;
@@ -42,7 +42,7 @@ const NormalToolbar = (props: Props) => {
 
   const [messageApi, contextHolder] = message.useMessage();
 
-  const { styles } = useToolbarStyle();
+  const { styles } = useToolbarStyles();
 
   const { t } = useTranslation();
 
