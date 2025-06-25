@@ -56,5 +56,9 @@
   "menu": {
     "rename": "Rename",
     "delete": "Delete"
+  },
+  "codeViewer": {
+    "lineCount": "line(s)",
+    "charCount": "char(s)"
   }
 }

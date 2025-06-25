@@ -1,7 +1,8 @@
 import { CopyOutlined } from '@ant-design/icons';
-import { Button } from 'antd';
+import { Button, Divider } from 'antd';
 import { createStyles } from 'antd-style';
 import { filesize } from 'filesize';
+import { useTranslation } from 'react-i18next';
 import type {
   CodeNormalViewerMetaInfo,
   CodeViewerTool,
@@ -41,6 +42,8 @@ const Toolbar = (props: Props) => {
 
   const { styles } = useStyle();
 
+  const { t } = useTranslation();
+
   const { size, lineCount, charCount } = metaInfo;
 
   const CopyTool = () => <Button type="text" icon={<CopyOutlined />} />;
@@ -49,10 +52,14 @@ const Toolbar = (props: Props) => {
     <div className={styles.toolbar}>
       <div className={styles.metaInfo}>
         <div>{filesize(size)}</div>
-
-        <div>{lineCount} line(s)</div>
-
-        <div>{charCount} char(s)</div>
+        <Divider type="vertical" />
+        <div>
+          {lineCount} {t('codeViewer.lineCount')}
+        </div>
+        <Divider type="vertical" />
+        <div>
+          {charCount} {t('codeViewer.charCount')}
+        </div>
       </div>
       <CopyTool />
     </div>
