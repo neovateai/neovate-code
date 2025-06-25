@@ -23,15 +23,12 @@ export const actions = {
     state.plainText = plainText;
   },
 
-  updateMode: (mode: SenderState['mode']) => {
-    state.mode = mode;
-  },
-
   updateOpenFooter: (openFooter: boolean) => {
     state.openFooter = openFooter;
   },
 
-  updateSender: (sender: Partial<SenderState>) => {
-    Object.assign(state, sender);
+  updateModeAndFooterVisible: (mode: string, openFooter: boolean) => {
+    state.mode = mode;
+    state.openFooter = openFooter;
   },
 };

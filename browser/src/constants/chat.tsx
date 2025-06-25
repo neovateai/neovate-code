@@ -1,6 +1,7 @@
 import { ApiOutlined, MessageOutlined } from '@ant-design/icons';
+import { keyBy } from 'lodash-es';
 
-export const modes = [
+export const MODES = [
   {
     icon: <ApiOutlined />,
     key: 'agent',
@@ -15,10 +16,4 @@ export const modes = [
   },
 ];
 
-/**
- * 根据 mode 获取 modes的详情
- * @returns modes 的详情
- */
-export const getModeDetail = (mode: string) => {
-  return modes.find((m) => m.key === mode);
-};
+export const MODES_MAP = keyBy(MODES, 'key');

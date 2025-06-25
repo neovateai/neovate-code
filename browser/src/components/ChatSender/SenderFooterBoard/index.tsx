@@ -2,7 +2,7 @@ import { CheckCircleOutlined } from '@ant-design/icons';
 import { Flex } from 'antd';
 import { createStyles } from 'antd-style';
 import { useSnapshot } from 'valtio';
-import { modes } from '@/constants/chat';
+import { MODES } from '@/constants/chat';
 import { actions, state } from '@/state/sender';
 
 const useStyle = createStyles(({ token, css }) => {
@@ -82,16 +82,13 @@ export default function SenderFooterBoard() {
   const { openFooter, mode } = useSnapshot(state);
 
   const onModeClick = (key: string) => {
-    actions.updateSender({
-      mode: key,
-      openFooter: false,
-    });
+    actions.updateModeAndFooterVisible(key, false);
   };
 
   return (
     <div className={cx(styles.senderFooterBoard, !openFooter && styles.hidden)}>
       <Flex wrap="wrap" justify="start">
-        {modes.map((item) => (
+        {MODES.map((item) => (
           <div
             key={item.key}
             className={cx(styles.card)}
