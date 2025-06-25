@@ -16,9 +16,14 @@ export const state = proxy<CodeViewerState>({
 });
 
 export const actions = {
+  setVisible: (visible: boolean) => {
+    state.visible = visible;
+  },
+
   setActiveId: (activeId: string) => {
     state.activeId = activeId;
   },
+
   removeItem: (id: string) => {
     const nextItems = state.codeViewerTabItems.filter((item) => item.id !== id);
 
