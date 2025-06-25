@@ -1,6 +1,7 @@
-import { ApiOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { ApiOutlined, PlusOutlined } from '@ant-design/icons';
 import {
   Button,
+  Checkbox,
   Divider,
   Form,
   Input,
@@ -8,7 +9,6 @@ import {
   Radio,
   Select,
   Space,
-  Switch,
   Table,
   Tag,
   Typography,
@@ -27,31 +27,165 @@ interface McpManagerProps {
 const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
   const [servers, setServers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isGlobal, setIsGlobal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [inputMode, setInputMode] = useState<'form' | 'json'>('json');
+  const [inputMode, setInputMode] = useState<'json' | 'form'>('json');
+  const [addScope, setAddScope] = useState<'global' | 'project'>('project'); // Scope selection for adding services
   const [form] = Form.useForm();
+  const [allKnownServices, setAllKnownServices] = useState<Set<string>>(() => {
+    // Restore known services list from localStorage
+    try {
+      const stored = localStorage.getItem('takumi-known-mcp-services');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  // Add service configuration cache
+  const [serviceConfigs, setServiceConfigs] = useState<Map<string, any>>(() => {
+    try {
+      const stored = localStorage.getItem('takumi-mcp-service-configs');
+      if (stored) {
+        const configArray = JSON.parse(stored);
+        return new Map(configArray);
+      }
+    } catch {
+      // ignore
+    }
+    return new Map();
+  });
 
   useEffect(() => {
     if (visible) {
       loadServers();
     }
-  }, [visible, isGlobal]);
+  }, [visible]);
 
   const loadServers = async () => {
     setLoading(true);
     try {
-      const data = await mcpService.getServers(isGlobal);
-      const serverList = Object.entries(data.servers || {}).map(
-        ([name, config]) => ({
-          key: name,
+      // Load global and project configurations simultaneously
+      const [globalResponse, projectResponse] = await Promise.all([
+        mcpService.getServers(true),
+        mcpService.getServers(false),
+      ]);
+
+      const globalServers = globalResponse.servers || {};
+      const projectServers = projectResponse.servers || {};
+
+      // Merge service lists and mark scopes
+      const allInstalledServers: any[] = [];
+
+      // Add global services
+      Object.entries(globalServers).forEach(([name, config]: [string, any]) => {
+        allInstalledServers.push({
+          key: `global-${name}`,
           name,
-          ...(config as any),
-        }),
+          scope: 'global',
+          command: config.command,
+          args: config.args || [],
+          url: config.url,
+          type: config.type || (config.url ? 'sse' : 'stdio'),
+          env: config.env,
+          installed: true,
+        });
+      });
+
+      // Add project services
+      Object.entries(projectServers).forEach(
+        ([name, config]: [string, any]) => {
+          allInstalledServers.push({
+            key: `project-${name}`,
+            name,
+            scope: 'project',
+            command: config.command,
+            args: config.args || [],
+            url: config.url,
+            type: config.type || (config.url ? 'sse' : 'stdio'),
+            env: config.env,
+            installed: true,
+          });
+        },
       );
-      setServers(serverList);
+
+      // Update known services set
+      const currentInstalledNames = new Set(
+        allInstalledServers.map((s) => s.name),
+      );
+      updateKnownServices(
+        new Set([...allKnownServices, ...currentInstalledNames]),
+      );
+
+      // Cache configurations of currently installed services
+      const newConfigs = new Map(serviceConfigs);
+      allInstalledServers.forEach((server) => {
+        newConfigs.set(`${server.scope}-${server.name}`, {
+          command: server.command,
+          args: server.args,
+          url: server.url,
+          type: server.type,
+          env: server.env,
+          scope: server.scope,
+        });
+      });
+      updateServiceConfigs(newConfigs);
+
+      // Create complete service list (including disabled services)
+      const allServices = [...allInstalledServers];
+
+      // Add known but uninstalled services using cached configurations
+      allKnownServices.forEach((serviceName) => {
+        // Check if already installed in global or project
+        const hasGlobal = allInstalledServers.some(
+          (s) => s.name === serviceName && s.scope === 'global',
+        );
+        const hasProject = allInstalledServers.some(
+          (s) => s.name === serviceName && s.scope === 'project',
+        );
+
+        if (!hasGlobal && !hasProject) {
+          // Try to restore configuration from cache
+          const globalCachedConfig = serviceConfigs.get(
+            `global-${serviceName}`,
+          );
+          const projectCachedConfig = serviceConfigs.get(
+            `project-${serviceName}`,
+          );
+
+          if (globalCachedConfig) {
+            allServices.push({
+              key: `disabled-global-${serviceName}`,
+              name: serviceName,
+              scope: 'global',
+              command: globalCachedConfig.command || '',
+              args: globalCachedConfig.args || [],
+              url: globalCachedConfig.url || '',
+              type: globalCachedConfig.type || 'stdio',
+              env: globalCachedConfig.env || {},
+              installed: false,
+            });
+          }
+
+          if (projectCachedConfig) {
+            allServices.push({
+              key: `disabled-project-${serviceName}`,
+              name: serviceName,
+              scope: 'project',
+              command: projectCachedConfig.command || '',
+              args: projectCachedConfig.args || [],
+              url: projectCachedConfig.url || '',
+              type: projectCachedConfig.type || 'stdio',
+              env: projectCachedConfig.env || {},
+              installed: false,
+            });
+          }
+        }
+      });
+
+      setServers(allServices);
     } catch (error) {
-      message.error('Failed to load');
+      console.error('Failed to load servers:', error);
+      message.error('Failed to load MCP servers');
     } finally {
       setLoading(false);
     }
@@ -61,18 +195,76 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     try {
       if (inputMode === 'json') {
         const jsonConfig = JSON.parse(values.jsonConfig);
-        await mcpService.addServer({
-          ...jsonConfig,
-          global: isGlobal,
-        });
+
+        // Support two formats:
+        // 1. { "mcpServers": { "name": { config } } }
+        // 2. { "name": { config } } or direct configuration object
+
+        if (jsonConfig.mcpServers) {
+          // Format 1: Complete mcpServers wrapper
+          const servers = jsonConfig.mcpServers;
+          const serverNames = Object.keys(servers);
+
+          if (serverNames.length === 0) {
+            throw new Error('No servers found in mcpServers object');
+          }
+
+          // Add all servers
+          for (const [name, config] of Object.entries(servers)) {
+            await mcpService.addServer({
+              name,
+              ...(config as any),
+              global: addScope === 'global',
+            });
+          }
+
+          message.success(`Added ${serverNames.length} server(s) successfully`);
+        } else {
+          // Format 2: Direct service configuration or service name mapping
+          const keys = Object.keys(jsonConfig);
+
+          if (
+            keys.includes('name') ||
+            keys.includes('command') ||
+            keys.includes('url')
+          ) {
+            // Direct configuration object (contains name field)
+            await mcpService.addServer({
+              ...jsonConfig,
+              global: addScope === 'global',
+            });
+            message.success('Added successfully');
+          } else {
+            // Service name mapping format { "name": { config } }
+            const serverNames = Object.keys(jsonConfig);
+
+            if (serverNames.length === 0) {
+              throw new Error('No servers found in configuration');
+            }
+
+            // Add all servers
+            for (const [name, config] of Object.entries(jsonConfig)) {
+              await mcpService.addServer({
+                name,
+                ...(config as any),
+                global: addScope === 'global',
+              });
+            }
+
+            message.success(
+              `Added ${serverNames.length} server(s) successfully`,
+            );
+          }
+        }
       } else {
         await mcpService.addServer({
           ...values,
-          global: isGlobal,
+          global: addScope === 'global',
           args: values.args ? values.args.split(' ').filter(Boolean) : [],
         });
+        message.success('Added successfully');
       }
-      message.success('Added successfully');
+
       setShowAddForm(false);
       form.resetFields();
       setInputMode('json');
@@ -87,24 +279,59 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     }
   };
 
-  const handleDelete = async (name: string) => {
-    try {
-      await mcpService.removeServer(name, isGlobal);
-      message.success(`${name} deleted successfully`);
-      await loadServers();
-    } catch (error) {
-      message.error(`Failed to delete ${name}`);
-      console.error('Delete server error:', error);
-    }
+  const getJsonExample = () => {
+    return JSON.stringify(
+      {
+        mcpServers: {
+          playwright: {
+            command: 'npx',
+            args: ['@playwright/mcp@latest'],
+          },
+          'figma-mcp': {
+            command: 'npx',
+            args: [
+              '-y',
+              'figma-developer-mcp',
+              '--figma-api-key=YOUR-KEY',
+              '--stdio',
+            ],
+          },
+        },
+      },
+      null,
+      2,
+    );
   };
 
-  const getJsonExample = () => {
+  const getSimpleJsonExample = () => {
+    return JSON.stringify(
+      {
+        playwright: {
+          command: 'npx',
+          args: ['@playwright/mcp@latest'],
+        },
+        'figma-mcp': {
+          command: 'npx',
+          args: [
+            '-y',
+            'figma-developer-mcp',
+            '--figma-api-key=YOUR-KEY',
+            '--stdio',
+          ],
+        },
+      },
+      null,
+      2,
+    );
+  };
+
+  const getSingleServerExample = () => {
     return JSON.stringify(
       {
         name: 'my-server',
         command: 'npx',
         args: ['-y', '@example/mcp-server'],
-        env: JSON.stringify({ API_KEY: 'your-key' }),
+        env: { API_KEY: 'your-key' },
       },
       null,
       2,
@@ -125,23 +352,73 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
 
   const columns = [
     {
+      title: 'Status',
+      key: 'status',
+      width: 80,
+      render: (record: any) => (
+        <Checkbox
+          checked={record.installed}
+          onChange={(e) => {
+            e.stopPropagation();
+            handleToggleService(record.name, e.target.checked, record.scope);
+          }}
+          style={{
+            opacity: record.installed ? 1 : 0.6,
+          }}
+        />
+      ),
+    },
+    {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
-      width: 140,
-      render: (name: string) => (
-        <Text strong style={{ color: '#1890ff' }}>
+      width: 180,
+      render: (name: string, record: any) => (
+        <Text
+          strong
+          style={{
+            color: record.installed ? '#1890ff' : '#999',
+            opacity: record.installed ? 1 : 0.7,
+          }}
+        >
           {name}
         </Text>
       ),
+    },
+    {
+      title: 'Scope',
+      dataIndex: 'scope',
+      key: 'scope',
+      width: 100,
+      render: (scope: string, record: any) => {
+        const isGlobal = scope === 'global';
+        return (
+          <Tag
+            color={isGlobal ? 'blue' : 'green'}
+            style={{
+              margin: 0,
+              opacity: record.installed ? 1 : 0.5,
+              fontWeight: 500,
+            }}
+          >
+            {isGlobal ? 'Global' : 'Project'}
+          </Tag>
+        );
+      },
     },
     {
       title: 'Type',
       dataIndex: 'type',
       key: 'type',
       width: 80,
-      render: (type: string) => (
-        <Tag color={type === 'sse' ? 'purple' : 'blue'} style={{ margin: 0 }}>
+      render: (type: string, record: any) => (
+        <Tag
+          color={type === 'sse' ? 'purple' : 'blue'}
+          style={{
+            margin: 0,
+            opacity: record.installed ? 1 : 0.5,
+          }}
+        >
           {type?.toUpperCase() || 'STDIO'}
         </Tag>
       ),
@@ -150,6 +427,20 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       title: 'Config',
       key: 'command',
       render: (record: any) => {
+        if (!record.installed) {
+          return (
+            <Text
+              type="secondary"
+              style={{
+                fontSize: '12px',
+                fontStyle: 'italic',
+              }}
+            >
+              Disabled
+            </Text>
+          );
+        }
+
         if (record.type === 'sse') {
           return (
             <Text
@@ -182,36 +473,112 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
         );
       },
     },
-    {
-      title: 'Action',
-      key: 'action',
-      width: 80,
-      render: (record: any) => (
-        <Button
-          type="text"
-          danger
-          size="small"
-          icon={<DeleteOutlined />}
-          onClick={() => {
-            Modal.confirm({
-              title: 'Confirm Delete',
-              content: (
-                <div>
-                  <p>Are you sure you want to delete this MCP server?</p>
-                  <Text code>{record.name}</Text>
-                </div>
-              ),
-              okText: 'Delete',
-              okType: 'danger',
-              cancelText: 'Cancel',
-              onOk: () => handleDelete(record.name),
-            });
-          }}
-          style={{ color: '#ff4d4f' }}
-        />
-      ),
-    },
   ];
+
+  const handleToggleService = async (
+    serverName: string,
+    enabled: boolean,
+    scope: string,
+  ) => {
+    try {
+      if (enabled) {
+        // Enable service - need to re-add to configuration
+        const server = servers.find((s) => s.name === serverName);
+        if (server) {
+          // If service is already installed, no need to add again
+          if (server.installed) {
+            message.info(`${serverName} is already enabled`);
+            return;
+          }
+
+          // For uninstalled services, need to re-add
+          await mcpService.addServer({
+            name: server.name,
+            command: server.command,
+            args: server.args,
+            url: server.url,
+            transport: server.type,
+            env: server.env ? JSON.stringify(server.env) : undefined,
+            global: scope === 'global',
+          });
+          message.success(`${serverName} enabled`);
+          await loadServers();
+        } else {
+          message.error(`Configuration for ${serverName} not found`);
+        }
+      } else {
+        // Disable service - remove from configuration but keep in list
+        const serverToDisable = servers.find((s) => s.name === serverName);
+
+        // Save configuration to cache before deletion
+        if (serverToDisable) {
+          const newConfigs = new Map(serviceConfigs);
+          newConfigs.set(`${scope}-${serverName}`, {
+            command: serverToDisable.command,
+            args: serverToDisable.args,
+            url: serverToDisable.url,
+            type: serverToDisable.type,
+            env: serverToDisable.env,
+            scope: scope,
+          });
+          updateServiceConfigs(newConfigs);
+        }
+
+        await mcpService.removeServer(serverName, scope === 'global');
+        message.success(`${serverName} disabled`);
+
+        // Update service status to uninstalled but keep in list and save configuration info
+        setServers((prev) =>
+          prev.map((server) =>
+            server.name === serverName
+              ? {
+                  ...server,
+                  installed: false,
+                  // Ensure configuration info is retained for re-enabling
+                  command: serverToDisable?.command || server.command,
+                  args: serverToDisable?.args || server.args,
+                  url: serverToDisable?.url || server.url,
+                  type: serverToDisable?.type || server.type,
+                  env: serverToDisable?.env || server.env,
+                }
+              : server,
+          ),
+        );
+
+        // Ensure service name is recorded in known services
+        updateKnownServices(new Set([...allKnownServices, serverName]));
+      }
+    } catch (error) {
+      message.error(`Failed to update ${serverName}`);
+      console.error('Toggle service error:', error);
+    }
+  };
+
+  // Update known services and save to localStorage
+  const updateKnownServices = (newServices: Set<string>) => {
+    setAllKnownServices(newServices);
+    try {
+      localStorage.setItem(
+        'takumi-known-mcp-services',
+        JSON.stringify([...newServices]),
+      );
+    } catch (error) {
+      console.warn('Failed to save known services to localStorage:', error);
+    }
+  };
+
+  // Update service configuration cache
+  const updateServiceConfigs = (newConfigs: Map<string, any>) => {
+    setServiceConfigs(newConfigs);
+    try {
+      localStorage.setItem(
+        'takumi-mcp-service-configs',
+        JSON.stringify([...newConfigs]),
+      );
+    } catch (error) {
+      console.warn('Failed to save service configs to localStorage:', error);
+    }
+  };
 
   return (
     <Modal
@@ -219,6 +586,15 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
         <Space>
           <ApiOutlined />
           MCP Management
+          <Button
+            type="primary"
+            size="small"
+            icon={<PlusOutlined />}
+            onClick={() => setShowAddForm(true)}
+            style={{ borderRadius: '6px', marginLeft: '12px' }}
+          >
+            Add Server
+          </Button>
         </Space>
       }
       open={visible}
@@ -232,38 +608,6 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       <Space direction="vertical" style={{ width: '100%' }} size="middle">
         <div
           style={{
-            background: '#fafafa',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            border: '1px solid #f0f0f0',
-          }}
-        >
-          <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-            <Space>
-              <Text>Config Scope:</Text>
-              <Switch
-                checkedChildren="Global"
-                unCheckedChildren="Project"
-                checked={isGlobal}
-                onChange={setIsGlobal}
-              />
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                {isGlobal ? 'Affects all projects' : 'Current project only'}
-              </Text>
-            </Space>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setShowAddForm(true)}
-              style={{ borderRadius: '6px' }}
-            >
-              Add Server
-            </Button>
-          </Space>
-        </div>
-
-        <div
-          style={{
             background: '#fff',
             borderRadius: '8px',
             overflow: 'hidden',
@@ -275,14 +619,13 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             loading={loading}
             size="middle"
             pagination={false}
-            scroll={{ y: 320 }}
             locale={{
               emptyText: (
                 <div style={{ padding: '20px', color: '#999' }}>
                   <Text type="secondary">No MCP configuration</Text>
                   <br />
                   <Text type="secondary" style={{ fontSize: '12px' }}>
-                    Click "Add" to start configuring
+                    Click "Add Server" to start configuring
                   </Text>
                 </div>
               ),
@@ -312,32 +655,36 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           }}
         >
           <Form form={form} onFinish={handleAdd} layout="vertical">
-            <Form.Item label={<Text strong>Input Mode</Text>}>
-              <Radio.Group
-                value={inputMode}
-                onChange={(e) => setInputMode(e.target.value)}
-                style={{ width: '100%' }}
-              >
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <Radio value="json" style={{ flex: 1 }}>
-                    <Space direction="vertical" size={0}>
-                      <Text>JSON Mode</Text>
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        Paste complete config (Recommended)
-                      </Text>
-                    </Space>
-                  </Radio>
-                  <Radio value="form" style={{ flex: 1 }}>
-                    <Space direction="vertical" size={0}>
-                      <Text>Form Mode</Text>
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        Fill in step by step
-                      </Text>
-                    </Space>
-                  </Radio>
-                </div>
-              </Radio.Group>
-            </Form.Item>
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+              <div style={{ flex: 1 }}>
+                <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+                  Scope
+                </Text>
+                <Radio.Group
+                  value={addScope}
+                  onChange={(e) => setAddScope(e.target.value)}
+                  style={{ width: '100%' }}
+                >
+                  <Radio value="project">Project</Radio>
+                  <Radio value="global">Global</Radio>
+                </Radio.Group>
+              </div>
+              <div style={{ flex: 1 }}>
+                <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+                  Input Mode
+                </Text>
+                <Radio.Group
+                  value={inputMode}
+                  onChange={(e) =>
+                    setInputMode(e.target.value as 'json' | 'form')
+                  }
+                  style={{ width: '100%' }}
+                >
+                  <Radio value="json">JSON</Radio>
+                  <Radio value="form">Form</Radio>
+                </Radio.Group>
+              </div>
+            </div>
 
             <Divider style={{ margin: '16px 0' }} />
 
@@ -355,11 +702,58 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                       if (value) {
                         try {
                           const parsed = JSON.parse(value);
-                          if (!parsed.name) {
-                            throw new Error('name field is required');
+
+                          // 验证支持的格式
+                          if (parsed.mcpServers) {
+                            // Format 1: { "mcpServers": { ... } }
+                            if (
+                              typeof parsed.mcpServers !== 'object' ||
+                              Object.keys(parsed.mcpServers).length === 0
+                            ) {
+                              throw new Error(
+                                'mcpServers must be a non-empty object',
+                              );
+                            }
+                          } else {
+                            const keys = Object.keys(parsed);
+                            if (keys.length === 0) {
+                              throw new Error('Configuration cannot be empty');
+                            }
+
+                            // 检查是否是单个服务配置（包含name字段）
+                            if (keys.includes('name')) {
+                              if (!parsed.command && !parsed.url) {
+                                throw new Error(
+                                  'Single server config must have command or url field',
+                                );
+                              }
+                            } else {
+                              // 检查是否是服务映射格式
+                              for (const [name, config] of Object.entries(
+                                parsed,
+                              )) {
+                                if (typeof config !== 'object') {
+                                  throw new Error(
+                                    `Server "${name}" configuration must be an object`,
+                                  );
+                                }
+                                const serverConfig = config as any;
+                                if (
+                                  !serverConfig.command &&
+                                  !serverConfig.url
+                                ) {
+                                  throw new Error(
+                                    `Server "${name}" must have command or url field`,
+                                  );
+                                }
+                              }
+                            }
                           }
                         } catch (error) {
-                          throw new Error('Invalid JSON format');
+                          if (error instanceof SyntaxError) {
+                            throw new Error('Invalid JSON format');
+                          }
+                          throw error;
                         }
                       }
                     },
@@ -386,18 +780,22 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                           marginBottom: '8px',
                         }}
                       >
-                        💡 View configuration examples
+                        💡 View supported JSON formats
                       </summary>
                       <div
                         style={{
-                          display: 'flex',
-                          gap: '16px',
                           marginTop: '8px',
+                          maxHeight: '300px',
+                          overflowY: 'auto',
+                          border: '1px solid #f0f0f0',
+                          borderRadius: '6px',
+                          padding: '12px',
                         }}
                       >
-                        <div style={{ flex: 1 }}>
+                        <div style={{ marginBottom: '16px' }}>
                           <Text strong style={{ fontSize: '12px' }}>
-                            STDIO Type:
+                            Format 1: Complete mcpServers wrapper (supports
+                            multiple servers)
                           </Text>
                           <pre
                             style={{
@@ -412,9 +810,47 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                             {getJsonExample()}
                           </pre>
                         </div>
-                        <div style={{ flex: 1 }}>
+
+                        <div style={{ marginBottom: '16px' }}>
                           <Text strong style={{ fontSize: '12px' }}>
-                            SSE Type:
+                            Format 2: Direct server mapping (supports multiple
+                            servers)
+                          </Text>
+                          <pre
+                            style={{
+                              background: '#f8f9fa',
+                              padding: '12px',
+                              fontSize: '11px',
+                              borderRadius: '6px',
+                              margin: '4px 0',
+                              border: '1px solid #e9ecef',
+                            }}
+                          >
+                            {getSimpleJsonExample()}
+                          </pre>
+                        </div>
+
+                        <div style={{ marginBottom: '16px' }}>
+                          <Text strong style={{ fontSize: '12px' }}>
+                            Format 3: Single server configuration
+                          </Text>
+                          <pre
+                            style={{
+                              background: '#f8f9fa',
+                              padding: '12px',
+                              fontSize: '11px',
+                              borderRadius: '6px',
+                              margin: '4px 0',
+                              border: '1px solid #e9ecef',
+                            }}
+                          >
+                            {getSingleServerExample()}
+                          </pre>
+                        </div>
+
+                        <div>
+                          <Text strong style={{ fontSize: '12px' }}>
+                            Format 4: SSE Transport
                           </Text>
                           <pre
                             style={{

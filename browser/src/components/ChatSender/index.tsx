@@ -1,16 +1,16 @@
 import {
   ApiOutlined,
   AppstoreAddOutlined,
-  CheckOutlined,
+  EditOutlined,
   FileSearchOutlined,
   PaperClipOutlined,
-  PlusOutlined,
   ProductOutlined,
   ScheduleOutlined,
 } from '@ant-design/icons';
 import { Prompts, Sender, Suggestion } from '@ant-design/x';
 import {
   Button,
+  Checkbox,
   Divider,
   Dropdown,
   Flex,
@@ -83,12 +83,31 @@ const ChatSender: React.FC = () => {
   const [mcpServers, setMcpServers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<any>(null);
-  const [apiKeyInputs, setApiKeyInputs] = useState<{ [key: string]: string }>(
-    {},
-  );
+  const [editingService, setEditingService] = useState<any>(null);
+  const [editApiKeyModalOpen, setEditApiKeyModalOpen] = useState(false);
+  const [editApiKey, setEditApiKey] = useState('');
   const { suggestions } = useSuggestion();
+  const [allKnownServices, setAllKnownServices] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('takumi-known-mcp-services');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const [serviceConfigs, setServiceConfigs] = useState<Map<string, any>>(() => {
+    try {
+      const stored = localStorage.getItem('takumi-mcp-service-configs');
+      if (stored) {
+        const configArray = JSON.parse(stored);
+        return new Map(configArray);
+      }
+    } catch {
+      // ignore
+    }
+    return new Map();
+  });
 
   const iconStyle = {
     fontSize: 18,
@@ -98,10 +117,10 @@ const ChatSender: React.FC = () => {
   const presetMcpServices = [
     {
       key: 'playwright',
-      name: '@playwright/mcp',
+      name: '@playwright mcp',
       description: 'Browser automation and testing',
       config: {
-        name: 'playwright',
+        name: '@playwright mcp',
         command: 'npx',
         args: ['@playwright/mcp@latest'],
       },
@@ -127,98 +146,275 @@ const ChatSender: React.FC = () => {
   ];
 
   const loadMcpServers = async () => {
-    setLoading(true);
     try {
-      const [projectData, globalData] = await Promise.all([
-        mcpService.getServers(false),
+      setLoading(true);
+      // Load both global and project-level MCP services simultaneously
+      const [globalResponse, projectResponse] = await Promise.all([
         mcpService.getServers(true),
+        mcpService.getServers(false),
       ]);
 
-      const projectServers = Object.entries(projectData.servers || {}).map(
-        ([name, config]) => ({
-          key: `project-${name}`,
-          name,
-          scope: 'project',
-          config,
-          installed: true,
-        }),
-      );
+      const globalServers = globalResponse.servers || {};
+      const projectServers = projectResponse.servers || {};
 
-      const globalServers = Object.entries(globalData.servers || {}).map(
-        ([name, config]) => ({
+      // Restore known services and configurations from localStorage (ensure using latest data)
+      let knownServices: Set<string>;
+      let configs: Map<string, any>;
+
+      try {
+        const storedKnownServices = localStorage.getItem(
+          'takumi-known-mcp-services',
+        );
+        knownServices = storedKnownServices
+          ? new Set(JSON.parse(storedKnownServices))
+          : new Set();
+      } catch {
+        knownServices = new Set();
+      }
+
+      try {
+        const storedConfigs = localStorage.getItem(
+          'takumi-mcp-service-configs',
+        );
+        configs = storedConfigs
+          ? new Map(JSON.parse(storedConfigs))
+          : new Map();
+      } catch {
+        configs = new Map();
+      }
+
+      const mcpList: any[] = [];
+
+      // Add global services
+      Object.entries(globalServers).forEach(([name, config]) => {
+        knownServices.add(name);
+        const configWithScope = { ...(config as any), scope: 'global' };
+        configs.set(`global-${name}`, configWithScope);
+        mcpList.push({
           key: `global-${name}`,
           name,
-          scope: 'global',
-          config,
+          config: configWithScope,
           installed: true,
-        }),
-      );
+          scope: 'global',
+        });
+      });
 
-      setMcpServers([...projectServers, ...globalServers]);
+      // Add project services
+      Object.entries(projectServers).forEach(([name, config]) => {
+        knownServices.add(name);
+        const configWithScope = { ...(config as any), scope: 'project' };
+        configs.set(`project-${name}`, configWithScope);
+        mcpList.push({
+          key: `project-${name}`,
+          name,
+          config: configWithScope,
+          installed: true,
+          scope: 'project',
+        });
+      });
+
+      // Add known but uninstalled services
+      knownServices.forEach((serviceName) => {
+        const globalConfig = configs.get(`global-${serviceName}`);
+        const projectConfig = configs.get(`project-${serviceName}`);
+
+        // If global configuration exists but not installed
+        if (globalConfig && !globalServers[serviceName]) {
+          mcpList.push({
+            key: `disabled-global-${serviceName}`,
+            name: serviceName,
+            config: globalConfig,
+            installed: false,
+            scope: 'global',
+          });
+        }
+
+        // If project configuration exists but not installed
+        if (projectConfig && !projectServers[serviceName]) {
+          mcpList.push({
+            key: `disabled-project-${serviceName}`,
+            name: serviceName,
+            config: projectConfig,
+            installed: false,
+            scope: 'project',
+          });
+        }
+      });
+
+      setMcpServers(mcpList);
+      updateKnownServices(knownServices);
+      updateServiceConfigs(configs);
     } catch (error) {
       console.error('Failed to load MCP servers:', error);
+      message.error('Failed to load MCP servers');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleQuickAdd = async (service: any, event?: React.MouseEvent) => {
-    // Prevent dropdown from closing
-    if (event) {
-      event.stopPropagation();
-    }
+  const handleToggleEnabled = async (
+    serverName: string,
+    enabled: boolean,
+    scope: string,
+  ) => {
+    try {
+      if (enabled) {
+        // Enable service - use the service's original scope
+        const cachedConfig = serviceConfigs.get(`${scope}-${serverName}`);
+        if (cachedConfig) {
+          // Restore configuration from cache
+          const configToAdd = {
+            name: serverName,
+            command: cachedConfig.command,
+            args: cachedConfig.args,
+            url: cachedConfig.url,
+            transport:
+              cachedConfig.type || (cachedConfig.url ? 'sse' : 'stdio'),
+            env: cachedConfig.env
+              ? JSON.stringify(cachedConfig.env)
+              : undefined,
+            global: scope === 'global',
+          };
 
-    if (service.requiresApiKey) {
-      // Open API key modal instead of using confirm
-      setSelectedService(service);
-      setApiKeyInputs((prev) => ({ ...prev, [service.key]: '' }));
-      setApiKeyModalOpen(true);
-    } else {
-      // Direct add for services that don't require API key
-      try {
-        await mcpService.addServer({
-          ...service.config,
-          global: false,
-        });
-        message.success(`${service.name} added successfully`);
-        loadMcpServers();
-      } catch (error) {
-        message.error(`Failed to add ${service.name}`);
+          await mcpService.addServer(configToAdd);
+          message.success(
+            `Enabled ${serverName} (${scope === 'global' ? 'Global' : 'Project'})`,
+          );
+        } else {
+          message.error(
+            `No cached configuration found for ${serverName} (${scope})`,
+          );
+          return;
+        }
+      } else {
+        // Disable service - first save configuration to cache, then remove from corresponding scope configuration
+        const serverToDisable = mcpServers.find(
+          (s) => s.name === serverName && s.scope === scope,
+        );
+
+        if (serverToDisable && serverToDisable.config) {
+          // Save configuration to cache
+          const newConfigs = new Map(serviceConfigs);
+          const config = serverToDisable.config as any;
+          const configToCache = {
+            command: config.command,
+            args: config.args || [],
+            url: config.url,
+            type: config.type || (config.url ? 'sse' : 'stdio'),
+            env: config.env,
+            scope: scope,
+          };
+          newConfigs.set(`${scope}-${serverName}`, configToCache);
+          updateServiceConfigs(newConfigs);
+
+          // Update known services list
+          const newKnownServices = new Set([...allKnownServices, serverName]);
+          updateKnownServices(newKnownServices);
+        }
+
+        // Remove from corresponding scope configuration
+        await mcpService.removeServer(serverName, scope === 'global');
+        message.success(
+          `Disabled ${serverName} (${scope === 'global' ? 'Global' : 'Project'})`,
+        );
       }
+
+      // Reload services list
+      await loadMcpServers();
+    } catch (error) {
+      console.error('Failed to toggle MCP server:', error);
+      message.error(
+        `Failed to ${enabled ? 'enable' : 'disable'} ${serverName}`,
+      );
     }
   };
 
-  const handleApiKeySubmit = async () => {
-    const currentApiKey = apiKeyInputs[selectedService?.key] || '';
-    if (!currentApiKey.trim()) {
+  const handleEditApiKey = (server: any) => {
+    setEditingService(server);
+    const currentKey =
+      server.config.args
+        ?.find((arg: string) => arg.includes('--figma-api-key'))
+        ?.split('=')[1] || '';
+    setEditApiKey(currentKey === 'YOUR-KEY' ? '' : currentKey);
+    setEditApiKeyModalOpen(true);
+  };
+
+  const handleSaveApiKey = async () => {
+    if (!editApiKey.trim()) {
       message.error('API key is required');
       return;
     }
 
     try {
-      const configWithKey = { ...selectedService.config };
-      // Replace placeholder with actual API key
-      configWithKey.args = configWithKey.args.map((arg: string) =>
-        arg.replace('YOUR-KEY', currentApiKey.trim()),
+      const updatedArgs = editingService.config.args.map((arg: string) =>
+        arg.includes('--figma-api-key')
+          ? `--figma-api-key=${editApiKey.trim()}`
+          : arg,
       );
 
-      await mcpService.addServer({
-        ...configWithKey,
-        global: false,
+      await mcpService.updateServer(editingService.name, {
+        args: updatedArgs,
+        global: editingService.scope === 'global',
       });
-      message.success(`${selectedService.name} added successfully`);
+
+      message.success('API key updated successfully');
       loadMcpServers();
-      setApiKeyModalOpen(false);
-      setSelectedService(null);
-      setApiKeyInputs((prev) => ({ ...prev, [selectedService.key]: '' }));
+      setEditApiKeyModalOpen(false);
+      setEditingService(null);
+      setEditApiKey('');
     } catch (error) {
-      message.error(`Failed to add ${selectedService.name}`);
+      message.error('Failed to update API key');
+    }
+  };
+
+  const handleQuickAdd = async (service: any) => {
+    try {
+      // Add to project-level configuration
+      const configToAdd = {
+        ...service.config,
+        global: false, // Force project level
+      };
+
+      await mcpService.addServer(configToAdd);
+      message.success(`Added ${service.name} to project`);
+
+      // Reload services list
+      await loadMcpServers();
+    } catch (error) {
+      console.error('Failed to add preset service:', error);
+      message.error(`Failed to add ${service.name}`);
     }
   };
 
   useEffect(() => {
     loadMcpServers();
   }, []);
+
+  // Add window focus event listener to ensure state synchronization
+  useEffect(() => {
+    const handleFocus = () => {
+      // Reload service state when window regains focus
+      loadMcpServers();
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      // Reload service state when localStorage changes
+      if (
+        e.key === 'takumi-known-mcp-services' ||
+        e.key === 'takumi-mcp-service-configs'
+      ) {
+        loadMcpServers();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [allKnownServices, serviceConfigs]);
 
   const dropdownItems = [
     {
@@ -233,109 +429,256 @@ const ChatSender: React.FC = () => {
     },
     { type: 'divider' as const },
     {
-      key: 'installed-header',
-      label: 'Installed MCP',
-      disabled: true,
-      style: { fontWeight: 'bold', color: '#666' },
-    },
-    ...mcpServers.map((server) => ({
-      key: server.key,
+      key: 'services-header',
       label: (
-        <Space style={{ justifyContent: 'space-between', width: '100%' }}>
-          <span>
-            {server.name}
-            <span style={{ color: '#999', fontSize: '12px' }}>
-              ({server.scope})
-            </span>
-          </span>
-          <CheckOutlined style={{ color: '#52c41a' }} />
-        </Space>
+        <div
+          style={{
+            fontWeight: 'bold',
+            color: '#666',
+            fontSize: '12px',
+            padding: '4px 0',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+          }}
+        >
+          MCP Services
+        </div>
       ),
       disabled: true,
-    })),
-    ...(mcpServers.length === 0
+    },
+    // Installed services
+    ...mcpServers
+      .filter((server) => server.installed)
+      .map((server) => ({
+        key: server.key,
+        label: (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Checkbox
+                checked={server.installed}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  handleToggleEnabled(
+                    server.name,
+                    e.target.checked,
+                    server.scope,
+                  );
+                }}
+              />
+              <div>
+                <span
+                  style={{
+                    color: 'inherit',
+                    fontWeight: 500,
+                  }}
+                >
+                  {server.name}
+                </span>
+                <div
+                  style={{
+                    fontSize: '11px',
+                    color: server.scope === 'global' ? '#1890ff' : '#52c41a',
+                    lineHeight: 1.2,
+                    marginTop: '1px',
+                    fontWeight: 500,
+                  }}
+                >
+                  {server.scope === 'global' ? 'Global' : 'Project'}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              {server.config.args?.some((arg: string) =>
+                arg.includes('--figma-api-key'),
+              ) && (
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<EditOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditApiKey(server);
+                  }}
+                  style={{ padding: '0 4px' }}
+                />
+              )}
+            </div>
+          </div>
+        ),
+        onClick: ({ domEvent }: any) => {
+          // Prevent menu item's default click behavior to prevent dropdown from closing
+          domEvent?.preventDefault();
+          domEvent?.stopPropagation();
+        },
+      })),
+    // Disabled services
+    ...mcpServers
+      .filter((server) => !server.installed)
+      .map((server) => ({
+        key: server.key,
+        label: (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Checkbox
+                checked={false}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  if (e.target.checked) {
+                    handleToggleEnabled(
+                      server.name,
+                      e.target.checked,
+                      server.scope,
+                    );
+                  }
+                }}
+              />
+              <div>
+                <span
+                  style={{
+                    color: '#999',
+                    opacity: 0.7,
+                    fontWeight: 'normal',
+                  }}
+                >
+                  {server.name}
+                </span>
+                <div
+                  style={{
+                    fontSize: '11px',
+                    color: '#999',
+                    lineHeight: 1.2,
+                    marginTop: '1px',
+                  }}
+                >
+                  Disabled ({server.scope === 'global' ? 'Global' : 'Project'})
+                </div>
+              </div>
+            </div>
+          </div>
+        ),
+        onClick: ({ domEvent }: any) => {
+          // Prevent menu item's default click behavior to prevent dropdown from closing
+          domEvent?.preventDefault();
+          domEvent?.stopPropagation();
+        },
+      })),
+    ...presetMcpServices
+      .filter(
+        (service) =>
+          !mcpServers.some((server) => server.name === service.config.name),
+      )
+      .map((service) => ({
+        key: `preset-${service.key}`,
+        label: (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Checkbox
+                checked={false}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  if (e.target.checked) {
+                    handleQuickAdd(service);
+                  }
+                }}
+              />
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <div>
+                  <span
+                    style={{
+                      color: '#999',
+                      opacity: 0.7,
+                      fontWeight: 'normal',
+                    }}
+                  >
+                    {service.name}
+                  </span>
+                  <div
+                    style={{
+                      fontSize: '11px',
+                      color: '#999',
+                      lineHeight: 1.2,
+                      marginTop: '1px',
+                    }}
+                  >
+                    Available
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ),
+        onClick: ({ domEvent }: any) => {
+          // Prevent menu item's default click behavior to prevent dropdown from closing
+          domEvent?.preventDefault();
+          domEvent?.stopPropagation();
+        },
+      })),
+    ...(mcpServers.length === 0 && presetMcpServices.length === 0
       ? [
           {
-            key: 'no-servers',
-            label: 'No installed services',
+            key: 'no-services',
+            label: 'No services available',
             disabled: true,
             style: { color: '#999', fontStyle: 'italic' },
           },
         ]
       : []),
-    { type: 'divider' as const },
-    {
-      key: 'preset-header',
-      label: 'Common MCP (Click to add)',
-      disabled: true,
-      style: { fontWeight: 'bold', color: '#666' },
-    },
-    ...presetMcpServices.map((service) => ({
-      key: service.key,
-      label: service.requiresApiKey ? (
-        <div style={{ width: '100%' }} onClick={(e) => e.stopPropagation()}>
-          <div style={{ marginBottom: '8px' }}>
-            <div>{service.name}</div>
-            <div style={{ color: '#999', fontSize: '12px' }}>
-              {service.description}
-            </div>
-          </div>
-          <Space style={{ width: '100%' }}>
-            <Input
-              size="small"
-              placeholder={service.apiKeyPlaceholder}
-              value={apiKeyInputs[service.key] || ''}
-              onChange={(e) =>
-                setApiKeyInputs((prev) => ({
-                  ...prev,
-                  [service.key]: e.target.value,
-                }))
-              }
-              onPressEnter={(e) => {
-                e.stopPropagation();
-                handleQuickAdd(service);
-              }}
-              style={{ flex: 1 }}
-            />
-            <Button
-              size="small"
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleQuickAdd(service, e);
-              }}
-            >
-              Add
-            </Button>
-          </Space>
-        </div>
-      ) : (
-        <Space style={{ justifyContent: 'space-between', width: '100%' }}>
-          <div>
-            <div>{service.name}</div>
-            <div style={{ color: '#999', fontSize: '12px' }}>
-              {service.description}
-            </div>
-          </div>
-          <PlusOutlined style={{ color: '#1890ff' }} />
-        </Space>
-      ),
-      onClick: service.requiresApiKey
-        ? undefined
-        : () => handleQuickAdd(service),
-    })),
   ];
 
-  // 处理输入变化
   const onChange = (value: string) => {
     setInputValue(value);
     actions.updatePrompt(value);
   };
 
+  const updateKnownServices = (newServices: Set<string>) => {
+    setAllKnownServices(newServices);
+    try {
+      localStorage.setItem(
+        'takumi-known-mcp-services',
+        JSON.stringify([...newServices]),
+      );
+    } catch (error) {
+      console.warn('Failed to save known services to localStorage:', error);
+    }
+  };
+
+  const updateServiceConfigs = (newConfigs: Map<string, any>) => {
+    setServiceConfigs(newConfigs);
+    try {
+      localStorage.setItem(
+        'takumi-mcp-service-configs',
+        JSON.stringify([...newConfigs]),
+      );
+    } catch (error) {
+      console.warn('Failed to save service configs to localStorage:', error);
+    }
+  };
+
   return (
     <>
-      {/* 🌟 提示词 */}
       <Prompts
         items={SENDER_PROMPTS}
         onItemClick={(info) => {
@@ -349,7 +692,6 @@ const ChatSender: React.FC = () => {
         }}
         className={styles.senderPrompt}
       />
-      {/* 🌟 输入框 */}
       <Suggestion
         items={suggestions}
         onSelect={(itemVal) => {
@@ -393,7 +735,14 @@ const ChatSender: React.FC = () => {
                 return (
                   <Flex justify="end" align="center">
                     <Dropdown
-                      menu={{ items: dropdownItems }}
+                      menu={{
+                        items: dropdownItems,
+                        selectable: false,
+                        onClick: ({ domEvent }) => {
+                          // Prevent dropdown from closing when menu is clicked
+                          domEvent.stopPropagation();
+                        },
+                      }}
                       placement="topCenter"
                       trigger={['click']}
                       open={dropdownOpen}
@@ -403,6 +752,15 @@ const ChatSender: React.FC = () => {
                           loadMcpServers();
                         }
                       }}
+                      destroyPopupOnHide={false}
+                      dropdownRender={(menu) => (
+                        <div
+                          style={{ width: '320px' }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {menu}
+                        </div>
+                      )}
                     >
                       <Button
                         type="text"
@@ -430,7 +788,6 @@ const ChatSender: React.FC = () => {
         }}
       </Suggestion>
 
-      {/* MCP Management Modal */}
       <McpManager
         visible={mcpManagerOpen}
         onClose={() => {
@@ -439,37 +796,28 @@ const ChatSender: React.FC = () => {
         }}
       />
 
-      {/* API Key Input Modal */}
       <Modal
-        title={`Enter ${selectedService?.apiKeyLabel}`}
-        open={apiKeyModalOpen}
-        onOk={handleApiKeySubmit}
+        title={`Edit API Key for ${editingService?.name}`}
+        open={editApiKeyModalOpen}
+        onOk={handleSaveApiKey}
         onCancel={() => {
-          setApiKeyModalOpen(false);
-          setSelectedService(null);
-          setApiKeyInputs((prev) => ({
-            ...prev,
-            [selectedService?.key || '']: '',
-          }));
+          setEditApiKeyModalOpen(false);
+          setEditingService(null);
+          setEditApiKey('');
         }}
-        okText="Add Service"
+        okText="Save"
         cancelText="Cancel"
       >
         <div style={{ marginTop: '16px' }}>
           <Input
-            placeholder={selectedService?.apiKeyPlaceholder}
-            value={apiKeyInputs[selectedService?.key || ''] || ''}
-            onChange={(e) =>
-              setApiKeyInputs((prev) => ({
-                ...prev,
-                [selectedService?.key || '']: e.target.value,
-              }))
-            }
-            onPressEnter={handleApiKeySubmit}
+            placeholder="Enter your API key"
+            value={editApiKey}
+            onChange={(e) => setEditApiKey(e.target.value)}
+            onPressEnter={handleSaveApiKey}
             style={{ marginBottom: '8px' }}
           />
           <div style={{ fontSize: '12px', color: '#666' }}>
-            This API key will be used to configure the {selectedService?.name}{' '}
+            This API key will be used to configure the {editingService?.name}{' '}
             service.
           </div>
         </div>

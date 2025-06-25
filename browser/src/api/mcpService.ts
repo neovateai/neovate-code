@@ -42,6 +42,29 @@ export const mcpService = {
     return response.json();
   },
 
+  // Update server
+  async updateServer(
+    name: string,
+    config: {
+      command?: string;
+      args?: string[];
+      url?: string;
+      transport?: string;
+      env?: string;
+      global?: boolean;
+    },
+  ) {
+    const response = await fetch(`${API_BASE}/mcp/servers/${name}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to update server');
+    }
+    return response.json();
+  },
+
   // Remove server
   async removeServer(name: string, global = false) {
     const response = await fetch(

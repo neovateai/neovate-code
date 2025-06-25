@@ -144,6 +144,89 @@ const mcpRoute: FastifyPluginAsync = async (app) => {
     },
   );
 
+  // Update MCP server
+  app.patch(
+    '/mcp/servers/:name',
+    {
+      schema: {
+        params: Type.Object({
+          name: Type.String(),
+        }),
+        body: Type.Object({
+          command: Type.Optional(Type.String()),
+          args: Type.Optional(Type.Array(Type.String())),
+          url: Type.Optional(Type.String()),
+          transport: Type.Optional(Type.String()),
+          env: Type.Optional(Type.String()), // JSON string
+          global: Type.Optional(Type.Boolean()),
+        }),
+      },
+    },
+    async (request) => {
+      const { name } = request.params as { name: string };
+      const {
+        command,
+        args,
+        url,
+        transport,
+        env,
+        global = false,
+      } = request.body as {
+        command?: string;
+        args?: string[];
+        url?: string;
+        transport?: string;
+        env?: string;
+        global?: boolean;
+      };
+
+      const configManager = createConfigManager();
+
+      // Get existing servers
+      const mcpServers = global
+        ? configManager.globalConfig.mcpServers || {}
+        : configManager.projectConfig.mcpServers || {};
+
+      if (!mcpServers[name]) {
+        throw new Error(`MCP server ${name} not found`);
+      }
+
+      // Update existing server config
+      const existingServer = mcpServers[name];
+
+      if (transport === 'sse' || existingServer.type === 'sse') {
+        const sseServer =
+          existingServer.type === 'sse' ? existingServer : { url: '' };
+        mcpServers[name] = {
+          type: 'sse',
+          url: url || sseServer.url,
+        };
+      } else {
+        const stdioServer =
+          !existingServer.type || existingServer.type === 'stdio'
+            ? (existingServer as any)
+            : { command: '', args: [], env: undefined };
+        mcpServers[name] = {
+          command: command || stdioServer.command,
+          args: args || stdioServer.args,
+          env: env ? JSON.parse(env) : stdioServer.env,
+        };
+      }
+
+      configManager.setConfig(global, 'mcpServers', JSON.stringify(mcpServers));
+
+      const configPath = global
+        ? configManager.globalConfigPath
+        : configManager.projectConfigPath;
+
+      return {
+        success: true,
+        message: `Updated ${name} in ${configPath}`,
+        server: mcpServers[name],
+      };
+    },
+  );
+
   // Remove MCP server (corresponds to CLI: takumi mcp rm)
   app.delete(
     '/mcp/servers/:name',
@@ -164,15 +247,24 @@ const mcpRoute: FastifyPluginAsync = async (app) => {
 
       // Reuse CLI remove logic
       const mcpServers = global
-        ? configManager.globalConfig.mcpServers || {}
-        : configManager.projectConfig.mcpServers || {};
+        ? { ...(configManager.globalConfig.mcpServers || {}) }
+        : { ...(configManager.projectConfig.mcpServers || {}) };
 
       if (!mcpServers[name]) {
         throw new Error(`MCP server ${name} not found`);
       }
 
       delete mcpServers[name];
+
+      // Update the config and also update the in-memory config
       configManager.setConfig(global, 'mcpServers', JSON.stringify(mcpServers));
+
+      // Ensure the in-memory config is updated
+      if (global) {
+        configManager.globalConfig.mcpServers = mcpServers;
+      } else {
+        configManager.projectConfig.mcpServers = mcpServers;
+      }
 
       const configPath = global
         ? configManager.globalConfigPath
