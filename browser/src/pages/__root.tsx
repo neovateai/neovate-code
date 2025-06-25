@@ -5,6 +5,7 @@ import { createStyles } from 'antd-style';
 import React from 'react';
 import { useSnapshot } from 'valtio';
 import CodeViewer from '@/components/CodeViewer';
+import I18nProvider from '@/components/I18nProvider';
 import Sider from '@/components/Sider';
 import { actions } from '@/state/appData';
 import * as codeViewer from '@/state/codeViewer';
@@ -30,12 +31,14 @@ const Layout: React.FC = () => {
   });
 
   return (
-    <div className={styles.layout}>
-      <Sider />
-      <Outlet />
-      {codeViewerVisible && <CodeViewer />}
-      <TanStackRouterDevtools position="bottom-right" />
-    </div>
+    <I18nProvider>
+      <div className={styles.layout}>
+        <Sider />
+        <Outlet />
+        {codeViewerVisible && <CodeViewer />}
+        <TanStackRouterDevtools position="bottom-right" />
+      </div>
+    </I18nProvider>
   );
 };
 

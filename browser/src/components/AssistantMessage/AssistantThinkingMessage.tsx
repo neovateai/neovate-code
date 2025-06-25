@@ -1,44 +1,65 @@
 import { RadarChartOutlined, RightOutlined } from '@ant-design/icons';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { ReasoningMessage } from '@/types/message';
 
-const ThinkingMessage: React.FC<{ message: ReasoningMessage }> = ({
-  message,
-}) => {
-  const { reasoning } = message;
-  const [isExpanded, setIsExpanded] = useState(true);
+interface ThinkingMessageProps {
+  message: ReasoningMessage;
+  defaultExpanded?: boolean;
+}
 
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
+const ThinkingMessage: React.FC<ThinkingMessageProps> = ({
+  message,
+  defaultExpanded = true,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  const toggleExpand = useCallback(() => {
+    setIsExpanded((prev) => !prev);
+  }, []);
+
+  if (!message.reasoning?.trim()) {
+    return null;
+  }
 
   return (
-    <div className="text-sm rounded-md overflow-hidden">
+    <div className="text-sm rounded-md overflow-hidden bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700/50">
       <div
-        className="flex items-center gap-2 cursor-pointer"
+        className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700/30 transition-colors duration-200"
         onClick={toggleExpand}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleExpand();
+          }
+        }}
       >
         <span
-          className={`transition-transform duration-300 ease-in-out ${
+          className={`transition-transform duration-200 ease-in-out text-gray-500 ${
             isExpanded ? 'rotate-90' : ''
           }`}
         >
           <RightOutlined />
         </span>
-        <RadarChartOutlined />
-        <div className="flex-1 text-xs truncate font-mono text-gray-400">
+        <RadarChartOutlined className="text-blue-500 dark:text-blue-400" />
+        <div className="flex-1 text-xs font-mono text-gray-600 dark:text-gray-400">
           Thinking...
         </div>
+        <div className="text-xs text-gray-400 dark:text-gray-500">
+          {message.reasoning.split('\n').length} lines
+        </div>
       </div>
+
       <div
-        className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${
-          isExpanded ? 'max-h-screen' : 'max-h-0'
+        className={`overflow-y-auto transition-all duration-300 ease-in-out ${
+          isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="font-mono border-l-2 border-l-gray-400 ml-1 text-gray-400 text-xs pl-2">
-          {reasoning || reasoning === 'undefined'
-            ? `Thinking for next move...`
-            : reasoning}
+        <div className="border-l-2 border-blue-400 dark:border-blue-500 ml-3 px-3 py-2 bg-gray-50 dark:bg-gray-800/50">
+          <pre className="font-mono text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap break-words leading-relaxed">
+            {message.reasoning}
+          </pre>
         </div>
       </div>
     </div>

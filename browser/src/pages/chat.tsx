@@ -7,9 +7,9 @@ import {
 } from '@ant-design/icons';
 import { Bubble } from '@ant-design/x';
 import { createFileRoute } from '@tanstack/react-router';
-import { Button, type GetProp } from 'antd';
+import { Button, type GetProp, Spin } from 'antd';
 import { createStyles } from 'antd-style';
-import Logo from '@/components/AssistantAvatar';
+import AssistantAvatar from '@/components/AssistantAvatar';
 import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
 import { UserMessage, UserMessageFooter } from '@/components/UserMessage';
@@ -37,7 +37,7 @@ const useStyle = createStyles(({ token, css }) => {
 
 const Chat: React.FC = () => {
   const { styles } = useStyle();
-  const { messages } = useChatState();
+  const { messages, status } = useChatState();
 
   const items = messages?.map((i, index) => {
     return {
@@ -65,7 +65,7 @@ const Chat: React.FC = () => {
     },
     assistant: {
       placement: 'start',
-      avatar: <Logo />,
+      avatar: <AssistantAvatar />,
       variant: 'outlined',
       messageRender(message) {
         return <AssistantMessage message={message} />;
@@ -78,6 +78,14 @@ const Chat: React.FC = () => {
           <Button type="text" size="small" icon={<DislikeOutlined />} />
         </div>
       ),
+      loadingRender() {
+        return (
+          <div className="flex items-center space-x-3">
+            <Spin size="small" />
+            <span className="text-sm text-gray-500 pl-2">Thinking...</span>
+          </div>
+        );
+      },
     },
   };
 
