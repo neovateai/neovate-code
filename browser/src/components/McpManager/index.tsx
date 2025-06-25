@@ -1,4 +1,5 @@
 import { ApiOutlined, PlusOutlined } from '@ant-design/icons';
+import { useBoolean, useSetState, useToggle } from 'ahooks';
 import {
   Button,
   Checkbox,
@@ -39,15 +40,23 @@ const { Text } = Typography;
 
 const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
   const { t } = useTranslation();
+
+  // Simplified boolean states with ahooks
+  const [loading, { setTrue: setLoadingTrue, setFalse: setLoadingFalse }] =
+    useBoolean(false);
+  const [showAddForm, { toggle: toggleAddForm }] = useToggle(false);
+
+  // Combined form states
+  const [formState, setFormState] = useSetState<{
+    inputMode: 'json' | 'form';
+    addScope: 'global' | 'project';
+  }>({
+    inputMode: MCP_DEFAULTS.INPUT_MODE,
+    addScope: MCP_DEFAULTS.SCOPE,
+  });
+
+  // Keep complex state as is since it's not a simple boolean
   const [servers, setServers] = useState<McpManagerServer[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [inputMode, setInputMode] = useState<'json' | 'form'>(
-    MCP_DEFAULTS.INPUT_MODE,
-  );
-  const [addScope, setAddScope] = useState<'global' | 'project'>(
-    MCP_DEFAULTS.SCOPE,
-  ); // Scope selection for adding services
   const [form] = Form.useForm();
 
   const {
@@ -65,7 +74,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
   }, [visible]);
 
   const loadServers = async () => {
-    setLoading(true);
+    setLoadingTrue();
     try {
       // Load global and project configurations simultaneously
       const { globalServers, projectServers } = await loadMcpData();
@@ -184,13 +193,13 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       console.error('Failed to load servers:', error);
       message.error(t('mcp.loadFailed'));
     } finally {
-      setLoading(false);
+      setLoadingFalse();
     }
   };
 
   const handleAdd = async (values: FormValues) => {
     try {
-      if (inputMode === 'json') {
+      if (formState.inputMode === 'json') {
         const jsonConfig = JSON.parse(values.jsonConfig!) as JsonConfigFormat;
 
         // Support two formats:
@@ -218,7 +227,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
               env: serverConfig.env
                 ? JSON.stringify(serverConfig.env)
                 : undefined,
-              global: addScope === 'global',
+              global: formState.addScope === 'global',
             });
           }
 
@@ -245,14 +254,14 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                 env: jsonConfig.env
                   ? JSON.stringify(jsonConfig.env)
                   : undefined,
-                global: addScope === 'global',
+                global: formState.addScope === 'global',
               });
-              message.success(t('mcp.addedSingle'));
+              message.success(t('mcp.added', { name: jsonConfig.name }));
             } else {
               throw new Error('Name is required');
             }
           } else {
-            // Service name mapping format { "name": { config } }
+            // Format 2: Service name mapping { "name": { config } }
             const serverNames = Object.keys(jsonConfig);
 
             if (serverNames.length === 0) {
@@ -271,7 +280,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                 env: serverConfig.env
                   ? JSON.stringify(serverConfig.env)
                   : undefined,
-                global: addScope === 'global',
+                global: formState.addScope === 'global',
               });
             }
 
@@ -288,7 +297,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             url: values.url,
             transport: values.transport,
             env: values.env,
-            global: addScope === 'global',
+            global: formState.addScope === 'global',
             args: values.args ? values.args.split(' ').filter(Boolean) : [],
           });
           message.success(t('mcp.addedSingle'));
@@ -297,13 +306,15 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
         }
       }
 
-      setShowAddForm(false);
+      toggleAddForm();
       form.resetFields();
-      setInputMode(MCP_DEFAULTS.INPUT_MODE);
+      setFormState({ inputMode: MCP_DEFAULTS.INPUT_MODE });
       loadServers();
     } catch (error) {
       message.error(
-        inputMode === 'json' ? t('mcp.jsonFormatError') : t('mcp.addFailed'),
+        formState.inputMode === 'json'
+          ? t('mcp.jsonFormatError')
+          : t('mcp.addFailed'),
       );
       console.error('Add server error:', error);
     }
@@ -483,6 +494,12 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     }
   };
 
+  const handleCancel = () => {
+    toggleAddForm();
+    form.resetFields();
+    setFormState({ inputMode: MCP_DEFAULTS.INPUT_MODE });
+  };
+
   return (
     <Modal
       title={
@@ -493,7 +510,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             type="primary"
             size="small"
             icon={<PlusOutlined />}
-            onClick={() => setShowAddForm(true)}
+            onClick={() => toggleAddForm()}
             className="rounded-md ml-3"
           >
             {t('mcp.addServer')}
@@ -541,11 +558,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
             </Space>
           }
           open={showAddForm}
-          onCancel={() => {
-            setShowAddForm(false);
-            form.resetFields();
-            setInputMode(MCP_DEFAULTS.INPUT_MODE);
-          }}
+          onCancel={handleCancel}
           onOk={form.submit}
           okText={t('mcp.addServer')}
           cancelText={t('common.cancel')}
@@ -564,8 +577,12 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                   {t('mcp.scope')}
                 </Text>
                 <Radio.Group
-                  value={addScope}
-                  onChange={(e) => setAddScope(e.target.value)}
+                  value={formState.addScope}
+                  onChange={(e) =>
+                    setFormState({
+                      addScope: e.target.value as 'global' | 'project',
+                    })
+                  }
                   className="w-full"
                 >
                   <Radio value="project">{t('mcp.project')}</Radio>
@@ -577,9 +594,11 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
                   {t('mcp.inputMode')}
                 </Text>
                 <Radio.Group
-                  value={inputMode}
+                  value={formState.inputMode}
                   onChange={(e) =>
-                    setInputMode(e.target.value as 'json' | 'form')
+                    setFormState({
+                      inputMode: e.target.value as 'json' | 'form',
+                    })
                   }
                   className="w-full"
                 >
@@ -591,7 +610,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
 
             <Divider className="my-4" />
 
-            {inputMode === 'json' ? (
+            {formState.inputMode === 'json' ? (
               <Form.Item
                 name="jsonConfig"
                 label={<Text strong>{t('mcp.configuration')}</Text>}

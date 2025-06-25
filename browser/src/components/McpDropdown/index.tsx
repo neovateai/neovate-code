@@ -1,4 +1,5 @@
 import { ApiOutlined, EditOutlined } from '@ant-design/icons';
+import { useBoolean, useSetState, useToggle } from 'ahooks';
 import { Button, Checkbox, Dropdown, Input, Modal, Space, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,13 +27,37 @@ import { containerEventHandlers, modalEventHandlers } from '@/utils/eventUtils';
 
 const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
   const { t } = useTranslation();
-  const [mcpManagerOpen, setMcpManagerOpen] = useState(false);
+
+  // Simplified boolean states with ahooks
+  const [mcpManagerOpen, { toggle: toggleMcpManager }] = useToggle(false);
+  const [
+    mcpLoading,
+    { setTrue: setMcpLoadingTrue, setFalse: setMcpLoadingFalse },
+  ] = useBoolean(false);
+  const [
+    dropdownOpen,
+    {
+      toggle: toggleDropdown,
+      setTrue: setDropdownTrue,
+      setFalse: setDropdownFalse,
+    },
+  ] = useBoolean(false);
+  const [
+    editApiKeyModalOpen,
+    { setTrue: openEditApiKeyModal, setFalse: closeEditApiKeyModal },
+  ] = useBoolean(false);
+
+  // Combined modal states
+  const [modalState, setModalState] = useSetState<{
+    editingService: McpServer | null;
+    editApiKey: string;
+  }>({
+    editingService: null,
+    editApiKey: '',
+  });
+
+  // Keep complex state as is since it's not a simple boolean
   const [mcpServers, setMcpServers] = useState<McpServer[]>([]);
-  const [mcpLoading, setMcpLoading] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [editingService, setEditingService] = useState<McpServer | null>(null);
-  const [editApiKeyModalOpen, setEditApiKeyModalOpen] = useState(false);
-  const [editApiKey, setEditApiKey] = useState('');
 
   const {
     allKnownServices,
@@ -47,7 +72,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
 
   const loadMcpServers = async () => {
     try {
-      setMcpLoading(true);
+      setMcpLoadingTrue();
       // Load both global and project-level MCP services simultaneously
       const { globalServers, projectServers } = await loadMcpData();
 
@@ -125,7 +150,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       console.error('Failed to load MCP servers:', error);
       message.error(t('mcp.loadFailed'));
     } finally {
-      setMcpLoading(false);
+      setMcpLoadingFalse();
     }
   };
 
@@ -214,46 +239,49 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
   };
 
   const handleEditApiKey = (server: McpServer) => {
-    setEditingService(server);
     const currentKey =
       server.config.args
         ?.find((arg: string) => arg.includes(FIGMA_CONFIG.API_KEY_ARG))
         ?.split('=')[1] || '';
-    setEditApiKey(
-      currentKey === FIGMA_CONFIG.DEFAULT_API_KEY ? '' : currentKey,
-    );
-    setEditApiKeyModalOpen(true);
+
+    setModalState({
+      editingService: server,
+      editApiKey: currentKey === FIGMA_CONFIG.DEFAULT_API_KEY ? '' : currentKey,
+    });
+    openEditApiKeyModal();
   };
 
   const handleSaveApiKey = async () => {
-    if (!editApiKey.trim()) {
+    if (!modalState.editApiKey.trim()) {
       message.error(t('mcp.apiKeyRequired'));
       return;
     }
 
-    if (!editingService) {
+    if (!modalState.editingService) {
       message.error('No service selected');
       return;
     }
 
     try {
-      const updatedArgs = (editingService.config.args || []).map(
+      const updatedArgs = (modalState.editingService.config.args || []).map(
         (arg: string) =>
           arg.includes(FIGMA_CONFIG.API_KEY_ARG)
-            ? `${FIGMA_CONFIG.API_KEY_ARG}=${editApiKey.trim()}`
+            ? `${FIGMA_CONFIG.API_KEY_ARG}=${modalState.editApiKey.trim()}`
             : arg,
       );
 
-      await updateMCPServer(editingService.name, {
+      await updateMCPServer(modalState.editingService.name, {
         args: updatedArgs,
-        global: editingService.scope === 'global',
+        global: modalState.editingService.scope === 'global',
       });
 
       message.success(t('mcp.apiKeyUpdated'));
       loadMcpServers();
-      setEditApiKeyModalOpen(false);
-      setEditingService(null);
-      setEditApiKey('');
+      closeEditApiKeyModal();
+      setModalState({
+        editingService: null,
+        editApiKey: '',
+      });
     } catch (error) {
       message.error(t('mcp.updateFailed'));
     }
@@ -317,18 +345,9 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
           {t('mcp.mcpManagementTitle')}
         </Space>
       ),
-      onClick: () => setMcpManagerOpen(true),
+      onClick: () => toggleMcpManager(),
     },
     { type: 'divider' as const },
-    {
-      key: MCP_MENU_KEYS.SERVICES_HEADER,
-      label: (
-        <div className="font-bold text-gray-600 text-xs py-1 uppercase tracking-wider">
-          {t('mcp.mcpServicesTitle')}
-        </div>
-      ),
-      disabled: true,
-    },
     // Installed services
     ...mcpServers
       .filter((server) => server.installed)
@@ -497,9 +516,11 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         trigger={['click']}
         open={dropdownOpen}
         onOpenChange={(open) => {
-          setDropdownOpen(open);
           if (open) {
+            setDropdownTrue();
             loadMcpServers();
+          } else {
+            setDropdownFalse();
           }
         }}
         destroyPopupOnHide={false}
@@ -521,19 +542,21 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       <McpManager
         visible={mcpManagerOpen}
         onClose={() => {
-          setMcpManagerOpen(false);
+          toggleMcpManager();
           loadMcpServers();
         }}
       />
 
       <Modal
-        title={t('mcp.editApiKey', { name: editingService?.name })}
+        title={t('mcp.editApiKey', { name: modalState.editingService?.name })}
         open={editApiKeyModalOpen}
         onOk={handleSaveApiKey}
         onCancel={() => {
-          setEditApiKeyModalOpen(false);
-          setEditingService(null);
-          setEditApiKey('');
+          closeEditApiKeyModal();
+          setModalState({
+            editingService: null,
+            editApiKey: '',
+          });
         }}
         okText={t('common.save')}
         cancelText={t('common.cancel')}
@@ -546,15 +569,17 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         <div className="mt-4" {...containerEventHandlers}>
           <Input
             placeholder={t('mcp.apiKeyPlaceholder')}
-            value={editApiKey}
-            onChange={(e) => setEditApiKey(e.target.value)}
+            value={modalState.editApiKey}
+            onChange={(e) => setModalState({ editApiKey: e.target.value })}
             onPressEnter={handleSaveApiKey}
             autoFocus
             className="mb-2"
             {...modalEventHandlers}
           />
           <div className="text-xs text-gray-600 mt-3">
-            {t('mcp.apiKeyDescription', { name: editingService?.name })}
+            {t('mcp.apiKeyDescription', {
+              name: modalState.editingService?.name,
+            })}
           </div>
         </div>
       </Modal>
