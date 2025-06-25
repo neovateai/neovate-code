@@ -9,8 +9,12 @@ import {
 import { Prompts, Welcome as WelcomeX } from '@ant-design/x';
 import { Button, Flex, Space } from 'antd';
 import { createStyles } from 'antd-style';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useChatState } from '@/hooks/provider';
+import { type DiffStat } from '@/types/codeViewer';
+import { diff } from '@/utils/codeViewer';
+import CodeDiffOutline from '../CodeViewer/CodeDiffOutline';
 
 const useWelcomeData = () => {
   const { t } = useTranslation();
@@ -107,6 +111,12 @@ const Welcome = () => {
   const { t } = useTranslation();
   const { HOT_TOPICS, DESIGN_GUIDE } = useWelcomeData();
 
+  const [diffStat, setDiffStat] = useState<DiffStat>();
+
+  useEffect(() => {
+    diff('console.log(111)', '').then((a) => setDiffStat(a));
+  }, []);
+
   return (
     <Space
       direction="vertical"
@@ -170,6 +180,15 @@ const Welcome = () => {
           className={styles.chatPrompt}
         />
       </Flex>
+
+      {diffStat && (
+        <CodeDiffOutline
+          path="/aaa/bbb.json"
+          diffStat={diffStat}
+          originalCode="console.log(111)"
+          modifiedCode=""
+        />
+      )}
     </Space>
   );
 };

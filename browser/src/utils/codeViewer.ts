@@ -69,10 +69,24 @@ export async function diff(
         : 0;
 
     diffResult.diffBlockStats.push({
-      modifiedEndLineNumber,
+      modifiedEndLineNumber:
+        modifiedEndLineNumber > 0
+          ? modifiedEndLineNumber
+          : modifiedStartLineNumber,
       modifiedStartLineNumber,
-      originalEndLineNumber,
+      originalEndLineNumber:
+        originalEndLineNumber > 0
+          ? originalEndLineNumber
+          : originalStartLineNumber,
       originalStartLineNumber,
+      addLines:
+        modifiedEndLineNumber > 0
+          ? modifiedEndLineNumber - modifiedStartLineNumber + 1
+          : 0,
+      removeLines:
+        originalEndLineNumber > 0
+          ? originalEndLineNumber - originalStartLineNumber + 1
+          : 0,
     });
   }
 

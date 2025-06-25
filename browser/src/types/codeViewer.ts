@@ -24,6 +24,8 @@ interface DiffBlockStat {
   originalEndLineNumber: number;
   modifiedStartLineNumber: number;
   modifiedEndLineNumber: number;
+  addLines: number;
+  removeLines: number;
 }
 
 export interface DiffStat {
