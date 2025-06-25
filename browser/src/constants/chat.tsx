@@ -15,18 +15,10 @@ export const modes = [
   },
 ];
 
-export const keyMap: Record<
-  string,
-  { icon: React.ReactNode; label: string; description: string }
-> = {
-  agent: {
-    icon: <ApiOutlined />,
-    label: 'Agent 模式',
-    description: '用于涉及代码生成、文件修改、运行命令或任何其他主动开发任务',
-  },
-  ask: {
-    icon: <MessageOutlined />,
-    label: 'Ask 模式',
-    description: '允许你直接在终端中向 AI 提问并获取帮助，无需修改文件',
-  },
+/**
+ * 根据 mode 获取 modes的详情
+ * @returns modes 的详情
+ */
+export const getModeDetail = (mode: string) => {
+  return modes.find((m) => m.key === mode);
 };

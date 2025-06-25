@@ -3,15 +3,7 @@ import { proxy } from 'valtio';
 interface SenderState {
   prompt: string;
   plainText: string;
-  mode:
-    | 'chat'
-    | 'code'
-    | 'shell'
-    | 'agent'
-    | 'plan'
-    | 'ask'
-    | 'refactor'
-    | 'ai-code';
+  mode: string;
   openFooter: boolean;
 }
 
@@ -37,5 +29,9 @@ export const actions = {
 
   updateOpenFooter: (openFooter: boolean) => {
     state.openFooter = openFooter;
+  },
+
+  updateSender: (sender: Partial<SenderState>) => {
+    Object.assign(state, sender);
   },
 };

@@ -3,7 +3,7 @@ import { Flex } from 'antd';
 import { createStyles } from 'antd-style';
 import { useSnapshot } from 'valtio';
 import { modes } from '@/constants/chat';
-import { state } from '@/state/sender';
+import { actions, state } from '@/state/sender';
 
 const useStyle = createStyles(({ token, css }) => {
   const card = css`
@@ -81,9 +81,11 @@ export default function SenderFooterBoard() {
   const { styles, cx } = useStyle();
   const { openFooter, mode } = useSnapshot(state);
 
-  const handleModeClick = (key: any) => {
-    state.mode = key;
-    state.openFooter = false;
+  const onModeClick = (key: string) => {
+    actions.updateSender({
+      mode: key,
+      openFooter: false,
+    });
   };
 
   return (
@@ -93,7 +95,7 @@ export default function SenderFooterBoard() {
           <div
             key={item.key}
             className={cx(styles.card)}
-            onClick={() => handleModeClick(item.key)}
+            onClick={() => onModeClick(item.key)}
           >
             <div className="flex items-start justify-between w-full">
               <Flex align="center" className={styles.title}>

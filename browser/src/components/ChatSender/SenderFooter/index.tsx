@@ -2,8 +2,8 @@ import { DownOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
 import { createStyles } from 'antd-style';
 import { useSnapshot } from 'valtio';
-import { keyMap } from '@/constants/chat';
-import { state } from '@/state/sender';
+import { getModeDetail } from '@/constants/chat';
+import { actions, state } from '@/state/sender';
 
 const useStyle = createStyles(({ token, css }) => {
   const senderFooterButton = css`
@@ -23,19 +23,19 @@ export default function SenderFooter() {
   const { styles } = useStyle();
   const { mode } = useSnapshot(state);
 
-  const handleClick = () => {
-    state.openFooter = !state.openFooter;
+  const onOpenFooter = () => {
+    actions.updateOpenFooter(!state.openFooter);
   };
 
   return (
     <div className="flex flex-col items-start">
       <Button
-        icon={keyMap[mode].icon}
+        icon={getModeDetail(mode)?.icon}
         type="text"
-        onClick={handleClick}
+        onClick={onOpenFooter}
         className={styles.senderFooterButton}
       >
-        {keyMap[mode].label} <DownOutlined />
+        {getModeDetail(mode)?.label} <DownOutlined />
       </Button>
     </div>
   );
