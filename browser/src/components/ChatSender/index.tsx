@@ -15,12 +15,14 @@ import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
-import { actions, state } from '@/state/sender';
+import { state } from '@/state/sender';
 import { getInputInfo } from '@/utils/chat';
 import Suggestion from '../Suggestion';
 import LexicalTextArea from './LexicalTextArea';
 import { LexicalTextAreaContext } from './LexicalTextAreaContext';
 import SenderAttachments from './SenderAttachments';
+import SenderFooter from './SenderFooter';
+import SenderFooterBoard from './SenderFooterBoard';
 import SenderHeader from './SenderHeader';
 
 const useSenderPrompts = () => {
@@ -55,6 +57,7 @@ const useStyle = createStyles(({ token, css }) => {
       width: 100%;
       max-width: 700px;
       margin: 0 auto;
+      border-radius: 12px 12px 0 0;
     `,
     senderRoot: css`
       margin: 0;
@@ -101,12 +104,12 @@ const ChatSender: React.FC = () => {
 
   // 处理输入变化
   const onChange = (value: string) => {
-    actions.updatePrompt(value);
+    state.prompt = value;
   };
 
   const handleSubmit = () => {
     onQuery(prompt, plainText, contextItems);
-    actions.updatePrompt('');
+    state.prompt = '';
   };
 
   const handleEnterPress = () => {
@@ -142,7 +145,7 @@ const ChatSender: React.FC = () => {
               context.actions.removeContext(node.originalText);
             });
           },
-          onChangePlainText: (plainText) => actions.updatePlainText(plainText),
+          onChangePlainText: (plainText) => (state.plainText = plainText),
           aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
           namespace: 'SenderTextarea',
         }}
@@ -175,7 +178,7 @@ const ChatSender: React.FC = () => {
                 prompt.slice(0, insertNodePosition) +
                 contextItem.value +
                 prompt.slice(insertNodePosition + 1);
-              actions.updatePrompt(nextInputValue);
+              state.prompt = nextInputValue;
 
               context.actions.addContext(contextItem);
             }
@@ -183,52 +186,56 @@ const ChatSender: React.FC = () => {
         >
           {({ onTrigger, onKeyDown }) => {
             return (
-              <Sender
-                className={styles.sender}
-                rootClassName={styles.senderRoot}
-                value={prompt}
-                header={<SenderHeader />}
-                onSubmit={handleSubmit}
-                onChange={(value) => {
-                  const { isInputingAiContext, position } = getInputInfo(
-                    prevInputValue.current,
-                    value,
-                  );
-                  if (isInputingAiContext) {
-                    setInsertNodePosition(position);
-                    onTrigger();
-                  } else {
-                    onTrigger(false);
-                  }
-                  prevInputValue.current = prompt;
-                  onChange(value);
-                }}
-                onKeyDown={onKeyDown}
-                onCancel={() => {
-                  stop();
-                }}
-                prefix={<SenderAttachments />}
-                loading={loading}
-                allowSpeech
-                actions={(_, info) => {
-                  const { SendButton, LoadingButton, SpeechButton } =
-                    info.components;
-                  return (
-                    <Flex gap={4}>
-                      <SpeechButton className={styles.speechButton} />
-                      {loading ? (
-                        <LoadingButton type="default" />
-                      ) : (
-                        <SendButton type="primary" />
-                      )}
-                    </Flex>
-                  );
-                }}
-                components={{
-                  input: LexicalTextArea,
-                }}
-                placeholder="Ask or input @ use skills"
-              />
+              <>
+                <Sender
+                  className={styles.sender}
+                  rootClassName={styles.senderRoot}
+                  value={prompt}
+                  header={<SenderHeader />}
+                  footer={<SenderFooter />}
+                  onSubmit={handleSubmit}
+                  onChange={(value) => {
+                    const { isInputingAiContext, position } = getInputInfo(
+                      prevInputValue.current,
+                      value,
+                    );
+                    if (isInputingAiContext) {
+                      setInsertNodePosition(position);
+                      onTrigger();
+                    } else {
+                      onTrigger(false);
+                    }
+                    prevInputValue.current = prompt;
+                    onChange(value);
+                  }}
+                  onKeyDown={onKeyDown}
+                  onCancel={() => {
+                    stop();
+                  }}
+                  prefix={<SenderAttachments />}
+                  loading={loading}
+                  allowSpeech
+                  actions={(_, info) => {
+                    const { SendButton, LoadingButton, SpeechButton } =
+                      info.components;
+                    return (
+                      <Flex gap={4}>
+                        <SpeechButton className={styles.speechButton} />
+                        {loading ? (
+                          <LoadingButton type="default" />
+                        ) : (
+                          <SendButton type="primary" />
+                        )}
+                      </Flex>
+                    );
+                  }}
+                  components={{
+                    input: LexicalTextArea,
+                  }}
+                  placeholder="Ask or input @ use skills"
+                />
+                <SenderFooterBoard />
+              </>
             );
           }}
         </Suggestion>
