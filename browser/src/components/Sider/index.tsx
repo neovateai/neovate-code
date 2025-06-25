@@ -3,8 +3,10 @@ import {
   EditOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { Conversations } from '@ant-design/x';
+import { useNavigate } from '@tanstack/react-router';
 import { Avatar, Button } from 'antd';
 import { createStyles } from 'antd-style';
 import { useTranslation } from 'react-i18next';
@@ -65,6 +67,7 @@ const useStyle = createStyles(({ token, css }) => {
 const Sider = () => {
   const { styles } = useStyle();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   return (
     <div className={styles.sider}>
@@ -125,6 +128,11 @@ const Sider = () => {
       <div className={styles.siderFooter}>
         <Avatar size={24} />
         <LanguageSwitcher />
+        <Button
+          type="text"
+          icon={<SettingOutlined />}
+          onClick={() => navigate({ to: '/settings' })}
+        />
         <Button type="text" icon={<QuestionCircleOutlined />} />
       </div>
     </div>
