@@ -2,6 +2,7 @@ import Icon, { CloseOutlined, FileUnknownOutlined } from '@ant-design/icons';
 import { Image, Popover, Tag } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
+import { readFile } from '@/api/files';
 import type { FileItem, ImageItem } from '@/api/model';
 import * as codeViewer from '@/state/codeViewer';
 import DevFileIcon from '../DevFileIcon';
@@ -47,9 +48,10 @@ export const FileContextTag = ({
       onMouseLeave={() => setHover(false)}
       onClick={async () => {
         if (isFile) {
+          const fileContent = (await readFile(displayText)).data.content;
           codeViewer.actions.displayNormalViewer({
             path: displayText,
-            code: '// TODO',
+            code: fileContent,
           });
         }
       }}
