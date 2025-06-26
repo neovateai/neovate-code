@@ -7,6 +7,8 @@
 
 Pronounced `/tɑːˈkuːmi/`, a coding agent to enhance your development workflow.
 
+![](https://cdn.jsdelivr.net/gh/sorrycc-bot/image-2025-04@main/uPic/takumi-20250618-1.gif)
+
 ## Getting Started
 
 > Make sure you have Node.js version 18 or higher installed.
