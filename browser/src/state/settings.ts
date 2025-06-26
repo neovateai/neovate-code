@@ -1,5 +1,12 @@
 import { proxy } from 'valtio';
-import { settingsAPI } from '@/api/settings';
+import {
+  getAvailableModels,
+  getAvailablePlugins,
+  getEffectiveSettings,
+  getSettings,
+  removeSetting,
+  setSetting,
+} from '@/api/settings';
 import type { AppSettings, SettingsState } from '../types/settings';
 
 export const state = proxy<{ settings: SettingsState }>({
@@ -40,11 +47,11 @@ export const actions = {
         modelsResponse,
         pluginsResponse,
       ] = await Promise.all([
-        settingsAPI.getSettings('global'),
-        settingsAPI.getSettings('project'),
-        settingsAPI.getEffectiveSettings(),
-        settingsAPI.getAvailableModels(),
-        settingsAPI.getAvailablePlugins(),
+        getSettings('global'),
+        getSettings('project'),
+        getEffectiveSettings(),
+        getAvailableModels(),
+        getAvailablePlugins(),
       ]);
 
       state.settings.globalSettings = globalResponse.data || {};
@@ -95,14 +102,14 @@ export const actions = {
     try {
       if (value === null || value === undefined) {
         // Remove setting item
-        await settingsAPI.removeSetting(currentScope, key);
+        await removeSetting(currentScope, key);
       } else {
         // Use single setting update instead of batch update
-        await settingsAPI.setSetting(currentScope, key, value);
+        await setSetting(currentScope, key, value);
       }
 
       // Reload effective settings
-      const effectiveResponse = await settingsAPI.getEffectiveSettings();
+      const effectiveResponse = await getEffectiveSettings();
       state.settings.effectiveSettings =
         effectiveResponse.data || state.settings.effectiveSettings;
     } catch (error) {
@@ -137,10 +144,10 @@ export const actions = {
 
       // Save plugin configuration directly
       try {
-        await settingsAPI.setSetting(currentScope, 'plugins', newPlugins);
+        await setSetting(currentScope, 'plugins', newPlugins);
 
         // Reload effective settings
-        const effectiveResponse = await settingsAPI.getEffectiveSettings();
+        const effectiveResponse = await getEffectiveSettings();
         state.settings.effectiveSettings =
           effectiveResponse.data || state.settings.effectiveSettings;
       } catch (error) {
@@ -186,13 +193,13 @@ export const actions = {
     // Save plugin configuration directly
     try {
       if (newPlugins.length === 0) {
-        await settingsAPI.removeSetting(currentScope, 'plugins');
+        await removeSetting(currentScope, 'plugins');
       } else {
-        await settingsAPI.setSetting(currentScope, 'plugins', newPlugins);
+        await setSetting(currentScope, 'plugins', newPlugins);
       }
 
       // Reload effective settings
-      const effectiveResponse = await settingsAPI.getEffectiveSettings();
+      const effectiveResponse = await getEffectiveSettings();
       state.settings.effectiveSettings =
         effectiveResponse.data || state.settings.effectiveSettings;
     } catch (error) {
