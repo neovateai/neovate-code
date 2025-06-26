@@ -1,9 +1,3 @@
-import {
-  AppstoreAddOutlined,
-  FileSearchOutlined,
-  ProductOutlined,
-  ScheduleOutlined,
-} from '@ant-design/icons';
 import { Sender } from '@ant-design/x';
 import { createStyles } from 'antd-style';
 import { differenceWith } from 'lodash-es';
