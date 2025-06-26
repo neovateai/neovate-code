@@ -97,13 +97,8 @@ export const actions = {
         // 删除配置项
         await settingsAPI.removeSetting(currentScope, key);
       } else {
-        // 更新配置
-        const settings =
-          currentScope === 'global'
-            ? state.settings.globalSettings
-            : state.settings.projectSettings;
-
-        await settingsAPI.updateSettings(currentScope, settings);
+        // 使用单个配置项更新，而不是批量更新
+        await settingsAPI.setSetting(currentScope, key, value);
       }
 
       // 重新加载有效配置
@@ -162,7 +157,32 @@ export const actions = {
 
     if (!currentPlugins.includes(plugin)) {
       const newPlugins = [...currentPlugins, plugin];
-      await actions.updateSettingValue('plugins', newPlugins);
+
+      // 更新本地状态
+      if (currentScope === 'global') {
+        state.settings.globalSettings = {
+          ...state.settings.globalSettings,
+          plugins: newPlugins,
+        };
+      } else {
+        state.settings.projectSettings = {
+          ...state.settings.projectSettings,
+          plugins: newPlugins,
+        };
+      }
+
+      // 直接保存插件配置
+      try {
+        await settingsAPI.setSetting(currentScope, 'plugins', newPlugins);
+
+        // 重新加载有效配置
+        const effectiveResponse = await settingsAPI.getEffectiveSettings();
+        state.settings.effectiveSettings =
+          effectiveResponse.data || state.settings.effectiveSettings;
+      } catch (error) {
+        console.error('Failed to add plugin:', error);
+        throw error;
+      }
     }
   },
 
@@ -175,6 +195,45 @@ export const actions = {
         : state.settings.projectSettings.plugins || [];
 
     const newPlugins = currentPlugins.filter((p) => p !== plugin);
-    await actions.updateSettingValue('plugins', newPlugins);
+
+    // 更新本地状态
+    if (currentScope === 'global') {
+      if (newPlugins.length === 0) {
+        const { plugins: removed, ...rest } = state.settings.globalSettings;
+        state.settings.globalSettings = rest;
+      } else {
+        state.settings.globalSettings = {
+          ...state.settings.globalSettings,
+          plugins: newPlugins,
+        };
+      }
+    } else {
+      if (newPlugins.length === 0) {
+        const { plugins: removed, ...rest } = state.settings.projectSettings;
+        state.settings.projectSettings = rest;
+      } else {
+        state.settings.projectSettings = {
+          ...state.settings.projectSettings,
+          plugins: newPlugins,
+        };
+      }
+    }
+
+    // 直接保存插件配置
+    try {
+      if (newPlugins.length === 0) {
+        await settingsAPI.removeSetting(currentScope, 'plugins');
+      } else {
+        await settingsAPI.setSetting(currentScope, 'plugins', newPlugins);
+      }
+
+      // 重新加载有效配置
+      const effectiveResponse = await settingsAPI.getEffectiveSettings();
+      state.settings.effectiveSettings =
+        effectiveResponse.data || state.settings.effectiveSettings;
+    } catch (error) {
+      console.error('Failed to remove plugin:', error);
+      throw error;
+    }
   },
 };
