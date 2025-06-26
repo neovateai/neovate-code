@@ -1,13 +1,15 @@
 import { ExpandAltOutlined } from '@ant-design/icons';
 import { createStyles } from 'antd-style';
+import { useEffect, useState } from 'react';
 import * as codeViewer from '@/state/codeViewer';
-import type { DiffStat } from '@/types/codeViewer';
+import type { CodeViewerLanguage, DiffStat } from '@/types/codeViewer';
+import { diff } from '@/utils/codeViewer';
 
 interface Props {
-  diffStat: DiffStat;
   path: string;
   originalCode: string;
   modifiedCode: string;
+  language?: CodeViewerLanguage;
 }
 
 const useStyles = createStyles(({ css }) => {
@@ -54,13 +56,22 @@ const useStyles = createStyles(({ css }) => {
     remove: css`
       color: red;
     `,
+    expandIcon: css`
+      margin: 0 8px;
+    `,
   };
 });
 
 const CodeDiffOutline = (props: Props) => {
-  const { diffStat, path, originalCode, modifiedCode } = props;
+  const { path, originalCode, modifiedCode, language } = props;
 
   const { styles } = useStyles();
+
+  const [diffStat, setDiffStat] = useState<DiffStat>();
+
+  useEffect(() => {
+    diff(originalCode, modifiedCode).then((d) => setDiffStat(d));
+  }, []);
 
   return (
     <div className={styles.container}>
@@ -68,23 +79,25 @@ const CodeDiffOutline = (props: Props) => {
         <div>{path}</div>
         <div>
           <div>
-            {diffStat.addLines && (
+            {diffStat?.addLines && (
               <span className={styles.add}>
                 +{diffStat.addLines.toLocaleString()}
               </span>
             )}
-            {diffStat.removeLines && (
+            {diffStat?.removeLines && (
               <span className={styles.remove}>
                 -{diffStat.removeLines.toLocaleString()}
               </span>
             )}
             <ExpandAltOutlined
+              className={styles.expandIcon}
               onClick={() => {
                 codeViewer.actions.displayDiffViewer({
                   path,
                   diffStat,
                   originalCode,
                   modifiedCode,
+                  language,
                 });
               }}
             />
@@ -92,7 +105,7 @@ const CodeDiffOutline = (props: Props) => {
         </div>
       </div>
       <div className={styles.innerContainer}>
-        {diffStat.diffBlockStats.map((stat) => {
+        {diffStat?.diffBlockStats.map((stat) => {
           return (
             <div
               className={styles.item}
@@ -102,6 +115,7 @@ const CodeDiffOutline = (props: Props) => {
                   diffStat,
                   originalCode,
                   modifiedCode,
+                  language,
                 });
                 codeViewer.actions.jumpToLine(
                   path,

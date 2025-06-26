@@ -98,6 +98,7 @@ export const actions = {
     state.visible = true;
   },
 
+  /** 代码有更新后，也需要重新调用一次这个函数刷新展示 */
   displayDiffViewer: (config: DisplayDiffViewerConfigs) => {
     const { path, modifiedCode, originalCode, language, diffStat } = config;
 
@@ -132,7 +133,7 @@ export const actions = {
   },
 
   /**
-   * 跳转特定的行，如果是DiffView，则跳转ModifiedModel对应的行
+   * 展示编辑器、打开特定的文件并跳转特定的行，如果是DiffView，则跳转ModifiedModel对应的行
    * @param path 文件路径
    * @returns 跳转是否成功
    */

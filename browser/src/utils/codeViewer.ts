@@ -195,8 +195,21 @@ const extToLanguage: Record<string, CodeViewerLanguage> = {
 };
 
 export function inferFileType(path?: string): CodeViewerLanguage | undefined {
-  if (!path) return;
+  if (!path) {
+    return;
+  }
   const suffix = path.split('.').pop()?.toLowerCase();
-  if (!suffix) return;
+  if (!suffix) {
+    return;
+  }
+  // special
+  if (['cjs', 'mjs'].includes(suffix)) {
+    return 'javascript';
+  }
+
+  if (['cts', 'mts'].includes(suffix)) {
+    return 'typescript';
+  }
+
   return extToLanguage[suffix];
 }

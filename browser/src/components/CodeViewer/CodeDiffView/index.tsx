@@ -59,6 +59,7 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
         onRejectAll={() => {}}
         item={item}
       />
+      {/* TODO LineDecoration API在行间插入block级别的accept和reject */}
       <DiffEditor
         className={styles.editor}
         originalLanguage={item.language}

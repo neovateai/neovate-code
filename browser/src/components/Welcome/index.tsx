@@ -9,11 +9,8 @@ import {
 import { Prompts, Welcome as WelcomeX } from '@ant-design/x';
 import { Button, Flex, Space } from 'antd';
 import { createStyles } from 'antd-style';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useChatState } from '@/hooks/provider';
-import { type DiffStat } from '@/types/codeViewer';
-import { diff } from '@/utils/codeViewer';
 import CodeDiffOutline from '../CodeViewer/CodeDiffOutline';
 
 const useWelcomeData = () => {
@@ -111,8 +108,6 @@ const Welcome = () => {
   const { t } = useTranslation();
   const { HOT_TOPICS, DESIGN_GUIDE } = useWelcomeData();
 
-  const [diffStat, setDiffStat] = useState<DiffStat>();
-
   const code = {
     original: `
       console.log(111)
@@ -125,10 +120,6 @@ const Welcome = () => {
       export default {}
     `,
   };
-
-  useEffect(() => {
-    diff(code.original, code.modified).then((r) => setDiffStat(r));
-  }, []);
 
   return (
     <Space
@@ -194,14 +185,11 @@ const Welcome = () => {
         />
       </Flex>
 
-      {diffStat && (
-        <CodeDiffOutline
-          path="/aaa/bbb.json"
-          diffStat={diffStat}
-          originalCode={code.original}
-          modifiedCode={code.modified}
-        />
-      )}
+      <CodeDiffOutline
+        path="/aaa/bbb.json"
+        originalCode={code.original}
+        modifiedCode={code.modified}
+      />
     </Space>
   );
 };
