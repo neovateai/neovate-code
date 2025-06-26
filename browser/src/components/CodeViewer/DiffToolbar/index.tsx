@@ -4,10 +4,9 @@ import {
   CheckOutlined,
   CloseOutlined,
 } from '@ant-design/icons';
-import { Button, Tooltip } from 'antd';
+import { Button, Switch, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
 import { useTranslation } from 'react-i18next';
-import * as codeViewer from '@/state/codeViewer';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffStatBlocks from '../DiffStatBlocks';
 import { useToolbarStyles } from '../NormalToolbar';
@@ -17,6 +16,7 @@ interface Props {
   onGotoDiff: (target: 'next' | 'previous') => void;
   onAcceptAll: () => void;
   onRejectAll: () => void;
+  onChangeShowBlockActions: (show: boolean) => void;
 }
 
 const useStyles = createStyles(({ css, token }) => {
@@ -39,11 +39,22 @@ const useStyles = createStyles(({ css, token }) => {
       align-items: center;
       column-gap: 12px;
     `,
+    switch: css`
+      display: flex;
+      align-items: center;
+      column-gap: 8px;
+    `,
   };
 });
 
 const DiffToolbar = (props: Props) => {
-  const { item, onGotoDiff } = props;
+  const {
+    item,
+    onGotoDiff,
+    onChangeShowBlockActions,
+    onAcceptAll,
+    onRejectAll,
+  } = props;
   const { styles: toolbarStyles } = useToolbarStyles();
   const { styles } = useStyles();
 
@@ -69,6 +80,14 @@ const DiffToolbar = (props: Props) => {
       </div>
       {hasDiff && (
         <div className={styles.tools}>
+          <div className={styles.switch}>
+            <Switch
+              onChange={(checked) => {
+                onChangeShowBlockActions(checked);
+              }}
+            />
+            {t('codeViewer.toolButton.showBlockActions')}
+          </div>
           <Tooltip
             title={t('codeViewer.toolButton.prevDiff')}
             placement="topRight"
@@ -97,11 +116,7 @@ const DiffToolbar = (props: Props) => {
               type="primary"
               danger
               icon={<CloseOutlined />}
-              onClick={() => {
-                if (item.path) {
-                  codeViewer.actions.doEdit(item.path, 'reject');
-                }
-              }}
+              onClick={() => onRejectAll()}
             />
           </Tooltip>
           <Tooltip
@@ -111,11 +126,7 @@ const DiffToolbar = (props: Props) => {
             <Button
               type="primary"
               icon={<CheckOutlined />}
-              onClick={() => {
-                if (item.path) {
-                  codeViewer.actions.doEdit(item.path, 'accept');
-                }
-              }}
+              onClick={() => onAcceptAll()}
             />
           </Tooltip>
         </div>

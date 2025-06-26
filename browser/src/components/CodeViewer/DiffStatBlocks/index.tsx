@@ -37,8 +37,6 @@ const DiffStatBlocks = (props: Props) => {
   const { styles } = useStyles();
 
   const diffStatArray = useMemo(() => {
-    console.log(diffStat);
-
     if (!diffStat || diffStat.diffBlockStats.length === 0) {
       return Array.from({ length: 5 }).fill('normal');
     }

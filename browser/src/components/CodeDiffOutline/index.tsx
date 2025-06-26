@@ -4,10 +4,9 @@ import {
   ExpandAltOutlined,
   RollbackOutlined,
 } from '@ant-design/icons';
-import { Button, ConfigProvider, Divider, Tooltip } from 'antd';
+import { Button, Divider, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
 import { useEffect, useState } from 'react';
-import type { FC } from 'react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import DevFileIcon from '@/components/DevFileIcon';
@@ -19,6 +18,7 @@ import type {
 } from '@/types/codeViewer';
 import { diff } from '@/utils/codeViewer';
 import DiffStatBlocks from '../CodeViewer/DiffStatBlocks';
+import { withConfigProvider } from '../CodeViewer/WithConfigProvider';
 
 interface Props {
   readonly path: string;
@@ -412,20 +412,5 @@ const CodeDiffOutline = (props: Props) => {
     </div>
   );
 };
-
-// HOC: withConfigProvider
-function withConfigProvider<T extends object>(Component: FC<T>): FC<T> {
-  return (props: T) => (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: '#00b96b',
-        },
-      }}
-    >
-      <Component {...props} />
-    </ConfigProvider>
-  );
-}
 
 export default withConfigProvider(CodeDiffOutline);
