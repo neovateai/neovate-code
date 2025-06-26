@@ -1,157 +1,169 @@
 import createDebug from 'debug';
+import fs from 'fs';
 import { proxy } from 'valtio';
+import { Context } from '../context';
 import { isReasoningModel } from '../provider';
 import { query } from '../query';
 import { Service } from '../service';
+import { delay } from '../utils/delay';
 
 const debug = createDebug('takumi:ui:store');
 
-let store: Store | null = null;
-
-export function getStore() {
-  if (!store) {
-    throw new Error('Store not initialized');
-  }
-  return store;
-}
-
 export interface CreateStoreOpts {
-  productName: string;
-  version: string;
+  context: Context;
   service: Service;
   planService: Service;
   stage: 'plan' | 'code';
 }
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+// for debugging
+function appendLogToFile(log: string) {
+  if (!process.env.TAKUMI_TRACE_FILE) {
+    return;
+  }
+  const datetime = new Date().toLocaleString();
+  fs.appendFileSync(process.env.TAKUMI_TRACE_FILE, `[${datetime}] ${log}\n`);
+}
 
 export function createStore(opts: CreateStoreOpts) {
-  if (store) {
-    return store;
-  }
-  store = proxy<Store>({
+  const createdStore = proxy<Store>({
     stage: opts.stage,
     planModal: null,
-    generalInfo: {
-      productName: opts.productName,
-      version: opts.version,
-    },
+    productName: opts.context.productName,
+    version: opts.context.version,
+    generalInfo: opts.context.generalInfo,
     status: 'idle',
     error: null,
     messages: [],
     currentMessage: null,
     actions: {
       addUserPrompt: (input: string) => {
-        opts.service.context.addUserPrompt(input);
+        opts.context.addUserPrompt(input);
       },
       query: async (input: string): Promise<any> => {
+        await delay(100);
         const service =
-          store!.stage === 'plan' ? opts.planService : opts.service;
+          createdStore.stage === 'plan' ? opts.planService : opts.service;
         let textDelta = '';
         let reasoningDelta = '';
-        store!.status = 'processing';
-        await delay(100);
-        store!.messages.push({
+        createdStore.status = 'processing';
+        createdStore.error = null;
+        createdStore.messages.push({
           role: 'user',
           content: {
             type: 'text',
             text: input,
           },
         });
-        const result = await query({
-          input: [
-            {
-              role: 'user',
-              content: input,
+        try {
+          const result = await query({
+            input: [
+              {
+                role: 'user',
+                content: input,
+              },
+            ],
+            service,
+            thinking: isReasoningModel(service.context.config.model),
+            async onTextDelta(text) {
+              appendLogToFile(`onTextDelta: ${text}`);
+              await delay(100);
+              if (reasoningDelta && createdStore.currentMessage) {
+                reasoningDelta = '';
+                createdStore.messages.push(createdStore.currentMessage);
+                createdStore.currentMessage = null;
+              }
+              textDelta += text;
+              createdStore.currentMessage = {
+                role: 'assistant',
+                content: {
+                  type: 'text',
+                  text: textDelta,
+                },
+              };
             },
-          ],
-          service,
-          thinking: isReasoningModel(service.context.config.model),
-          onTextDelta(text) {
-            store = store!;
-            if (reasoningDelta && store.currentMessage) {
-              store.messages.push(store.currentMessage);
-              store.currentMessage = null;
-            }
-            textDelta += text;
-            store.currentMessage = {
-              role: 'assistant',
-              content: {
-                type: 'text',
-                text: textDelta,
-              },
-            };
-          },
-          async onText(text) {
-            await delay(100);
-            store = store!;
-            store.currentMessage = null;
-            store.messages.push({
-              role: 'assistant',
-              content: {
-                type: 'text',
-                text,
-              },
-            });
-            debug('onText', text);
-          },
-          onReasoning(text) {
-            store = store!;
-            reasoningDelta += text;
-            store.currentMessage = {
-              role: 'assistant',
-              content: {
-                type: 'thinking',
-                text: reasoningDelta,
-              },
-            };
-            debug('onReasoning', text);
-          },
-          onToolUse(callId, name, params) {
-            store = store!;
-            debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
-            store.messages.push({
-              role: 'assistant',
-              content: {
-                type: 'tool-call',
-                toolCallId: callId,
-                toolName: name,
-                args: params,
-              },
-            });
-          },
-          onToolUseResult(callId, name, result) {
-            debug(
-              `Tool use result: ${name} with result ${JSON.stringify(result)}`,
-            );
-            store = store!;
-            store.messages.push({
-              role: 'tool',
-              content: {
-                type: 'tool-result',
-                toolCallId: callId,
-                toolName: name,
-                result,
-              },
-            });
-          },
-        });
-        store!.status = 'completed';
-        if (store!.stage === 'plan') {
-          store!.planModal = { text: result.finalText || '' };
+            async onText(text) {
+              appendLogToFile(`onText: ${text}`);
+              await delay(100);
+              createdStore.currentMessage = null;
+              textDelta = '';
+              createdStore.messages.push({
+                role: 'assistant',
+                content: {
+                  type: 'text',
+                  text,
+                },
+              });
+              debug('onText', text);
+            },
+            async onReasoning(text) {
+              appendLogToFile(`onReasoning: ${text}`);
+              await delay(100);
+              reasoningDelta += text;
+              createdStore.currentMessage = {
+                role: 'assistant',
+                content: {
+                  type: 'thinking',
+                  text: reasoningDelta,
+                },
+              };
+              debug('onReasoning', text);
+            },
+            async onToolUse(callId, name, params) {
+              appendLogToFile(
+                `onToolUse: ${callId} ${name} ${JSON.stringify(params)}`,
+              );
+              await delay(100);
+              debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
+              createdStore.messages.push({
+                role: 'assistant',
+                content: {
+                  type: 'tool-call',
+                  toolCallId: callId,
+                  toolName: name,
+                  args: params,
+                },
+              });
+            },
+            onToolUseResult(callId, name, result) {
+              appendLogToFile(
+                `onToolUseResult: ${callId} ${name} ${JSON.stringify(result)}`,
+              );
+              debug(
+                `Tool use result: ${name} with result ${JSON.stringify(result)}`,
+              );
+              createdStore.messages.push({
+                role: 'tool',
+                content: {
+                  type: 'tool-result',
+                  toolCallId: callId,
+                  toolName: name,
+                  result,
+                },
+              });
+            },
+          });
+          createdStore.status = 'completed';
+          if (createdStore.stage === 'plan') {
+            createdStore.planModal = { text: result.finalText || '' };
+          }
+          return result;
+        } catch (e: any) {
+          createdStore.status = 'failed';
+          createdStore.error = e.message || String(e);
+          createdStore.currentMessage = null;
+          throw e;
         }
-        return result;
       },
     },
   });
-  return store;
+  return createdStore;
 }
 
 export interface Store {
-  generalInfo: {
-    productName: string;
-    version: string;
-  };
+  productName: string;
+  version: string;
+  generalInfo: Record<string, string>;
   stage: 'plan' | 'code';
   planModal: { text: string } | null;
   status:

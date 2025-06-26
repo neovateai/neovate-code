@@ -3,7 +3,7 @@ import { createDeepSeek } from '@ai-sdk/deepseek';
 import { createOpenAI } from '@ai-sdk/openai';
 import { ModelProvider, Tool } from '@openai/agents';
 import createDebug from 'debug';
-import { createRequire } from 'module';
+import { createJiti } from 'jiti';
 import resolve from 'resolve';
 import { Config, ConfigManager } from './config';
 import { PRODUCT_NAME } from './constants';
@@ -19,6 +19,7 @@ import { getModel } from './provider';
 import { SystemPromptBuilder } from './system-prompt-builder';
 import { aisdk } from './utils/ai-sdk';
 import { getGitStatus } from './utils/git';
+import { relativeToHome } from './utils/path';
 
 const debug = createDebug('takumi:context');
 
@@ -29,6 +30,7 @@ type ContextOpts = CreateContextOpts & {
   mcpTools: Tool[];
   git: string | null;
   ide: IDE | null;
+  generalInfo: Record<string, string>;
 };
 
 interface CreateContextOpts {
@@ -37,6 +39,7 @@ interface CreateContextOpts {
   productName?: string;
   version?: string;
   plugins?: Plugin[];
+  traceFile?: string;
 }
 
 export class Context {
@@ -50,6 +53,7 @@ export class Context {
   git: string | null;
   ide: IDE | null;
   userPrompts: string[];
+  generalInfo: Record<string, string>;
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName || PRODUCT_NAME;
@@ -60,6 +64,7 @@ export class Context {
     this.mcpTools = opts.mcpTools;
     this.git = opts.git;
     this.ide = opts.ide;
+    this.generalInfo = opts.generalInfo;
     this.userPrompts = [];
   }
 
@@ -122,7 +127,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     ...(initialConfig.plugins || []),
     ...(opts.plugins || []),
   ];
-  const plugins = normalizePlugins(opts.cwd, pluginsConfigs);
+  const plugins = await normalizePlugins(opts.cwd, pluginsConfigs);
   debug('plugins', plugins);
   const pluginManager = new PluginManager(plugins);
 
@@ -149,6 +154,24 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     args: [{ resolvedConfig }],
     type: PluginHookType.Series,
   });
+
+  const generalInfo = await apply({
+    hook: 'generalInfo',
+    args: [],
+    memo: {
+      ...(opts.traceFile && { 'Log File': relativeToHome(opts.traceFile) }),
+      Workspace: relativeToHome(opts.cwd),
+      Model: resolvedConfig.model,
+      ...(resolvedConfig.smallModel !== resolvedConfig.model && {
+        'Small Model': resolvedConfig.smallModel,
+      }),
+      ...(resolvedConfig.planModel !== resolvedConfig.model && {
+        'Plan Model': resolvedConfig.planModel,
+      }),
+    },
+    type: PluginHookType.SeriesMerge,
+  });
+  debug('generalInfo', generalInfo);
 
   const mcpManager = await MCPManager.create(resolvedConfig.mcpServers);
   const mcpTools = await mcpManager.getAllTools();
@@ -180,17 +203,21 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     mcpTools,
     git: gitStatus,
     ide,
+    generalInfo,
   });
 }
 
 function normalizePlugins(cwd: string, plugins: (string | Plugin)[]) {
-  const require = createRequire(import.meta.url);
-  return plugins.map((plugin) => {
-    if (typeof plugin === 'string') {
-      const pluginPath = resolve.sync(plugin, { basedir: cwd });
-      const pluginObject = require(pluginPath);
-      return pluginObject.default || pluginObject;
-    }
-    return plugin;
-  });
+  const jiti = createJiti(import.meta.url);
+  return Promise.all(
+    plugins.map(async (plugin) => {
+      if (typeof plugin === 'string') {
+        const pluginPath = resolve.sync(plugin, { basedir: cwd });
+        return (await jiti.import(pluginPath, {
+          default: true,
+        })) as Plugin;
+      }
+      return plugin;
+    }),
+  );
 }

@@ -22,6 +22,8 @@ import Suggestion from '../Suggestion';
 import LexicalTextArea from './LexicalTextArea';
 import { LexicalTextAreaContext } from './LexicalTextAreaContext';
 import SenderAttachments from './SenderAttachments';
+import SenderFooter from './SenderFooter';
+import SenderFooterBoard from './SenderFooterBoard';
 import SenderHeader from './SenderHeader';
 
 const useSenderPrompts = () => {
@@ -182,53 +184,57 @@ const ChatSender: React.FC = () => {
         >
           {({ onTrigger, onKeyDown }) => {
             return (
-              <Sender
-                className={styles.sender}
-                rootClassName={styles.senderRoot}
-                value={prompt}
-                header={<SenderHeader />}
-                onSubmit={handleSubmit}
-                onChange={(value) => {
-                  const { isInputingAiContext, position } = getInputInfo(
-                    prevInputValue.current,
-                    value,
-                  );
-                  if (isInputingAiContext) {
-                    setInsertNodePosition(position);
-                    onTrigger();
-                  } else {
-                    onTrigger(false);
-                  }
-                  prevInputValue.current = prompt;
-                  onChange(value);
-                }}
-                onKeyDown={onKeyDown}
-                onCancel={() => {
-                  stop();
-                }}
-                prefix={<SenderAttachments />}
-                loading={loading}
-                allowSpeech
-                actions={(_, info) => {
-                  const { SendButton, LoadingButton, SpeechButton } =
-                    info.components;
-                  return (
-                    <Flex gap={4}>
-                      <McpDropdown loading={loading} />
-                      <SpeechButton className={styles.speechButton} />
-                      {loading ? (
-                        <LoadingButton type="default" />
-                      ) : (
-                        <SendButton type="primary" />
-                      )}
-                    </Flex>
-                  );
-                }}
-                components={{
-                  input: LexicalTextArea,
-                }}
-                placeholder="Ask or input @ use skills"
-              />
+              <>
+                <Sender
+                  className={styles.sender}
+                  rootClassName={styles.senderRoot}
+                  value={prompt}
+                  header={<SenderHeader />}
+                  footer={<SenderFooter />}
+                  onSubmit={handleSubmit}
+                  onChange={(value) => {
+                    const { isInputingAiContext, position } = getInputInfo(
+                      prevInputValue.current,
+                      value,
+                    );
+                    if (isInputingAiContext) {
+                      setInsertNodePosition(position);
+                      onTrigger();
+                    } else {
+                      onTrigger(false);
+                    }
+                    prevInputValue.current = prompt;
+                    onChange(value);
+                  }}
+                  onKeyDown={onKeyDown}
+                  onCancel={() => {
+                    stop();
+                  }}
+                  prefix={<SenderAttachments />}
+                  loading={loading}
+                  allowSpeech
+                  actions={(_, info) => {
+                    const { SendButton, LoadingButton, SpeechButton } =
+                      info.components;
+                    return (
+                      <Flex gap={4}>
+                        <McpDropdown loading={loading} />
+                        <SpeechButton className={styles.speechButton} />
+                        {loading ? (
+                          <LoadingButton type="default" />
+                        ) : (
+                          <SendButton type="primary" />
+                        )}
+                      </Flex>
+                    );
+                  }}
+                  components={{
+                    input: LexicalTextArea,
+                  }}
+                  placeholder="Ask or input @ use skills"
+                />
+                <SenderFooterBoard />
+              </>
             );
           }}
         </Suggestion>
