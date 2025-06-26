@@ -164,6 +164,7 @@ export async function createServer(opts: CreateServerOpts) {
     logger.logInfo(`Browser is running on ${baseUrl}`);
   } catch (err) {
     app.log.error(err);
+    logger.logError({ error: err });
     process.exit(1);
   }
   return app;

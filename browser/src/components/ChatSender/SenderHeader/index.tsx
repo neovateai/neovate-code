@@ -26,7 +26,7 @@ export function renderContextTag(
 }
 
 const SenderHeader: React.FC = () => {
-  const { contextItems } = useSnapshot(context.state);
+  const { attachedContexts } = useSnapshot(context.state);
 
   return (
     <Sender.Header
@@ -36,7 +36,7 @@ const SenderHeader: React.FC = () => {
     >
       <Flex gap={6} wrap="wrap" style={{ padding: 8, lineHeight: '22px' }}>
         <AddContext />
-        {contextItems.map((contextItem) =>
+        {attachedContexts.map((contextItem) =>
           renderContextTag(contextItem, () => {
             context.actions.removeContext(contextItem.value);
           }),

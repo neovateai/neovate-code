@@ -34,7 +34,9 @@ const useStyle = createStyles(({ css, token }) => {
 
 const AddContext = () => {
   const tagRef = useRef<HTMLDivElement>(null);
-  const { contextItems, contextsSelectedValues } = useSnapshot(context.state);
+  const { attachedContexts, contextsSelectedValues } = useSnapshot(
+    context.state,
+  );
   const [searchText, setSearchText] = useState('');
   const [keepMenuOpen, setKeepMenuOpen] = useState(false);
 
@@ -87,7 +89,7 @@ const AddContext = () => {
             onTrigger();
           }}
         >
-          {contextItems.length === 0 && <span>Add Context</span>}
+          {attachedContexts.length === 0 && <span>Add Context</span>}
         </Tag>
       )}
     </Suggestion>
