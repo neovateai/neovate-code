@@ -26,7 +26,12 @@ interface Props {
   readonly modifiedCode: string;
   /** 如果不传，默认使用path中的文件后缀推断 */
   language?: CodeViewerLanguage;
-  /** 修改代码，可能会在 accept / rollback 时触发 */
+  /**
+   * 修改代码，可能会在 accept / reject / rollback 时触发
+   *
+   * @param newCode 操作后，应当写入文件的代码
+   *
+   */
   onChangeCode?: (newCode: string) => void;
 }
 
@@ -211,6 +216,7 @@ const CodeDiffOutline = (props: Props) => {
     const nextModifiedCode = nextModifiedArray.join('\n');
     const nextCodes = { ...currentCodes, modifiedCode: nextModifiedCode };
     setCurrentCodes(nextCodes);
+    onChangeCode?.(currentCodes.originalCode);
     showDiff(nextCodes);
   };
 
@@ -232,6 +238,7 @@ const CodeDiffOutline = (props: Props) => {
       modifiedCode: currentCodes.originalCode,
     };
     setCurrentCodes(nextCodes);
+    onChangeCode?.(currentCodes.originalCode);
     showDiff(nextCodes);
   };
 
