@@ -22,7 +22,7 @@
   },
   "chat": {
     "welcomeTitle": "Hello, I'm Takumi",
-    "welcomeDescription": "I'm your AI programming assistant, focused on improving development workflows. I can help you write code, optimize performance, generate tests, analyze architecture, and perform various development tasks~",
+    "welcomeDescription": "I'm your AI programming assistant that helps improve development workflows. I can write code, optimize performance, generate tests, analyze architecture and assist with development tasks.",
     "quickStart": "Quick Start",
     "capabilities": "Takumi Capabilities",
     "greeting": "Hello, I'm Takumi, your AI programming assistant! How can I help you?",
