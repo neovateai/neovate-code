@@ -68,7 +68,9 @@
       "rejectAll": "全部拒绝",
       "acceptAll": "全部接受",
       "accept": "接受",
-      "reject": "拒绝"
+      "reject": "拒绝",
+      "copy": "复制",
+      "showBlockActions": "展示Diff块操作"
     }
   }
 }
