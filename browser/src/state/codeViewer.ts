@@ -84,7 +84,7 @@ export const actions = {
     const targetLanguage = language || inferFileType(path);
 
     let reuseTab = false;
-    state.codeViewerTabItems.map((item) => {
+    state.codeViewerTabItems = state.codeViewerTabItems.map((item) => {
       if (item.id === id) {
         reuseTab = true;
         return {
@@ -128,7 +128,7 @@ export const actions = {
 
     let reuseTab = false;
     // 更新所有满足要求的item
-    state.codeViewerTabItems.map((item) => {
+    state.codeViewerTabItems = state.codeViewerTabItems.map((item) => {
       if (item.id === id) {
         reuseTab = true;
         return {
