@@ -69,15 +69,9 @@ export async function diff(
         : 0;
 
     diffResult.diffBlockStats.push({
-      modifiedEndLineNumber:
-        modifiedEndLineNumber > 0
-          ? modifiedEndLineNumber
-          : modifiedStartLineNumber,
+      modifiedEndLineNumber,
       modifiedStartLineNumber,
-      originalEndLineNumber:
-        originalEndLineNumber > 0
-          ? originalEndLineNumber
-          : originalStartLineNumber,
+      originalEndLineNumber,
       originalStartLineNumber,
       addLines:
         modifiedEndLineNumber > 0

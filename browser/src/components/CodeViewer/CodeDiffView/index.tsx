@@ -3,6 +3,7 @@ import { ConfigProvider } from 'antd';
 import { createStyles } from 'antd-style';
 import * as monaco from 'monaco-editor';
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import * as codeViewer from '@/state/codeViewer';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffToolbar from '../DiffToolbar';
 
@@ -36,7 +37,13 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
   useImperativeHandle(ref, () => {
     return {
       jumpToLine(lineCount) {
-        editorRef.current?.getModifiedEditor().revealLineInCenter(lineCount);
+        const modifiedEditor = editorRef.current?.getModifiedEditor();
+
+        modifiedEditor?.revealLineInCenter(lineCount);
+        modifiedEditor?.setPosition({
+          lineNumber: lineCount,
+          column: 1,
+        });
       },
     };
   });
@@ -63,8 +70,16 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
             editorRef?.current?.goToDiff(target);
           }}
           // TODO impl
-          onAcceptAll={() => {}}
-          onRejectAll={() => {}}
+          onAcceptAll={() => {
+            if (item.path) {
+              codeViewer.actions.doEdit(item.path, 'accept');
+            }
+          }}
+          onRejectAll={() => {
+            if (item.path) {
+              codeViewer.actions.doEdit(item.path, 'reject');
+            }
+          }}
           item={item}
         />
         {/* TODO LineDecoration API在行间插入block级别的accept和reject */}

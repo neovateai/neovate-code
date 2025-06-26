@@ -19,7 +19,7 @@ export interface CodeDiffViewerTabItem extends CodeViewerBaseTabItem {
 
 export type CodeViewerTabItem = CodeNormalViewerTabItem | CodeDiffViewerTabItem;
 
-interface DiffBlockStat {
+export interface DiffBlockStat {
   originalStartLineNumber: number;
   originalEndLineNumber: number;
   modifiedStartLineNumber: number;

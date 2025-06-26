@@ -3,15 +3,21 @@ import i18n from '@/i18n';
 import type {
   CodeViewerLanguage,
   CodeViewerTabItem,
+  DiffBlockStat,
   DiffStat,
 } from '@/types/codeViewer';
 import { inferFileType } from '@/utils/codeViewer';
+
+type EditType = 'accept' | 'reject';
+
+type EditFunction = (type: EditType, diffBlockStat?: DiffBlockStat) => void;
 
 interface CodeViewerState {
   visible: boolean;
   activeId: string | undefined;
   codeViewerTabItems: CodeViewerTabItem[];
   jumpFunctionMap: { [path: string]: ((_: number) => void) | undefined };
+  editFunctionMap: { [path: string]: EditFunction | undefined };
 }
 
 interface DisplayNormalViewerConfigs {
@@ -35,6 +41,7 @@ export const state = proxy<CodeViewerState>({
   activeId: undefined,
   codeViewerTabItems: [],
   jumpFunctionMap: {},
+  editFunctionMap: {},
 });
 
 export const actions = {
@@ -135,7 +142,6 @@ export const actions = {
   /**
    * 展示编辑器、打开特定的文件并跳转特定的行，如果是DiffView，则跳转ModifiedModel对应的行
    * @param path 文件路径
-   * @returns 跳转是否成功
    */
   jumpToLine: (path: string, lineCount: number) => {
     const remainingItem = state.codeViewerTabItems.find(
@@ -149,15 +155,30 @@ export const actions = {
       state.visible = true;
 
       jumpFunction(lineCount);
-
-      return true;
-    } else {
-      return false;
     }
   },
 
   /** 注册跳转函数 */
   registerJumpFunction: (path: string, fn: (_: number) => void) => {
     state.jumpFunctionMap[path] = fn;
+  },
+
+  /** 修改源代码 */
+  doEdit: (path: string, type: EditType, diffBlockStat?: DiffBlockStat) => {
+    const remainingItem = state.codeViewerTabItems.find(
+      (item) => item.path === path,
+    );
+    const editFunction = state.editFunctionMap[path];
+    if (remainingItem && editFunction) {
+      state.activeId = remainingItem.id;
+      state.visible = true;
+
+      editFunction(type, diffBlockStat);
+    }
+  },
+
+  /** 注册修改函数 */
+  registerEditFunction: (path: string, fn: EditFunction) => {
+    state.editFunctionMap[path] = fn;
   },
 };
