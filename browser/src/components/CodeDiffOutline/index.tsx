@@ -30,9 +30,9 @@ interface Props {
    * 修改代码，可能会在 accept / reject / rollback 时触发
    *
    * @param newCode 操作后，应当写入文件的代码
-   *
+   * @param oldCode 本次操作前的原始代码
    */
-  onChangeCode?: (newCode: string) => void;
+  onChangeCode?: (newCode: string, oldCode: string) => void;
 }
 
 const useStyles = createStyles(({ css, token }) => {
@@ -179,8 +179,8 @@ const CodeDiffOutline = (props: Props) => {
 
     const nextOriginalCode = nextOriginalArray.join('\n');
     const nextCodes = { ...currentCodes, originalCode: nextOriginalCode };
+    onChangeCode?.(nextOriginalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-    onChangeCode?.(nextOriginalCode);
     showDiff(nextCodes);
   };
 
@@ -215,8 +215,8 @@ const CodeDiffOutline = (props: Props) => {
 
     const nextModifiedCode = nextModifiedArray.join('\n');
     const nextCodes = { ...currentCodes, modifiedCode: nextModifiedCode };
+    onChangeCode?.(currentCodes.originalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-    onChangeCode?.(currentCodes.originalCode);
     showDiff(nextCodes);
   };
 
@@ -226,8 +226,8 @@ const CodeDiffOutline = (props: Props) => {
       ...currentCodes,
       originalCode: currentCodes.modifiedCode,
     };
+    onChangeCode?.(currentCodes.modifiedCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-    onChangeCode?.(currentCodes.modifiedCode);
     showDiff(nextCodes);
   };
 
@@ -237,15 +237,17 @@ const CodeDiffOutline = (props: Props) => {
       ...currentCodes,
       modifiedCode: currentCodes.originalCode,
     };
+    onChangeCode?.(currentCodes.originalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-    onChangeCode?.(currentCodes.originalCode);
+
     showDiff(nextCodes);
   };
 
   const handleRollback = () => {
     setChanged(false);
+    onChangeCode?.(initailCodes.originalCode, currentCodes.originalCode);
     setCurrentCodes(initailCodes);
-    onChangeCode?.(initailCodes.originalCode);
+
     showDiff(initailCodes);
   };
 
