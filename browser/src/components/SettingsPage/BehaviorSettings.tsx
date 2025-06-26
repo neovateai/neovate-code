@@ -8,7 +8,7 @@ import { actions, state } from '@/state/settings';
 const { Text } = Typography;
 
 const BehaviorSettings: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { settings } = useSnapshot(state);
 
   const currentSettings =
@@ -21,6 +21,19 @@ const BehaviorSettings: React.FC = () => {
       await actions.updateSettingValue(key as any, value);
     } catch (error) {
       console.error('Failed to update behavior setting:', error);
+    }
+  };
+
+  const handleLanguageChange = async (value: string) => {
+    try {
+      // 立即切换界面语言
+      const languageCode = value === 'Chinese' ? 'zh' : 'en';
+      await i18n.changeLanguage(languageCode);
+
+      // 保存到配置文件
+      await actions.updateSettingValue('language', value);
+    } catch (error) {
+      console.error('Failed to update language setting:', error);
     }
   };
 
@@ -51,10 +64,10 @@ const BehaviorSettings: React.FC = () => {
       >
         <Select
           value={currentSettings.language}
-          onChange={(value) => handleSettingChange('language', value)}
+          onChange={handleLanguageChange}
           options={[
             { value: 'English', label: 'English' },
-            { value: 'Chinese', label: '中文' },
+            { value: 'Chinese', label: '简体中文' },
           ]}
           placeholder={
             settings.effectiveSettings.language

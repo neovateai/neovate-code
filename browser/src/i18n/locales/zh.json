@@ -155,7 +155,7 @@
     },
     "behavior": {
       "title": "行为配置",
-      "language": "界面语言",
+      "language": "语言",
       "languageTooltip": "AI 回复和界面显示的语言",
       "languagePlaceholder": "选择界面语言",
       "approvalMode": "执行模式",

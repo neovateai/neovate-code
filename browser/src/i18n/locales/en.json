@@ -155,7 +155,7 @@
     },
     "behavior": {
       "title": "Behavior Configuration",
-      "language": "Interface Language",
+      "language": "Language",
       "languageTooltip": "Language for AI responses and interface display",
       "languagePlaceholder": "Select interface language",
       "approvalMode": "Execution Mode",

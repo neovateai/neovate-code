@@ -10,7 +10,6 @@ import { useNavigate } from '@tanstack/react-router';
 import { Avatar, Button } from 'antd';
 import { createStyles } from 'antd-style';
 import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from '../LanguageSwitcher';
 import logoPng from './imgs/kmi-ai.png';
 
 const useStyle = createStyles(({ token, css }) => {
@@ -127,7 +126,6 @@ const Sider = () => {
 
       <div className={styles.siderFooter}>
         <Avatar size={24} />
-        <LanguageSwitcher />
         <Button
           type="text"
           icon={<SettingOutlined />}
