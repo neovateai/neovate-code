@@ -206,6 +206,22 @@ export const PluginSchema = z.object({
       z.void(),
     )
     .optional(),
+  serverRouteCompletions: z
+    .function(
+      z.tuple([
+        z.object({
+          message: z.object({
+            role: z.literal('user'),
+            content: z.string(),
+            attachedContexts: z.array(z.any()),
+            contextContent: z.string(),
+          }),
+          attachedContexts: z.array(z.any()),
+        }),
+      ]),
+      z.void(),
+    )
+    .optional(),
 });
 
 type InferedPlugin = z.infer<typeof PluginSchema>;

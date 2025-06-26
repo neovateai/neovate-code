@@ -2,6 +2,8 @@ import { Type } from '@sinclair/typebox';
 import { pipeDataStreamToResponse } from 'ai';
 import createDebug from 'debug';
 import { FastifyPluginAsync } from 'fastify';
+import { last } from 'lodash-es';
+import { PluginHookType } from '../../plugin';
 import { runCode } from '../services/completions';
 import { RouteCompletionsOpts } from '../types';
 import { CompletionRequest } from '../types/completions';
@@ -20,16 +22,6 @@ const CompletionRequestSchema = Type.Object({
     }),
     { minItems: 1 },
   ),
-  contexts: Type.Optional(
-    Type.Object({
-      files: Type.Array(
-        Type.Object({
-          path: Type.String(),
-          type: Type.String(),
-        }),
-      ),
-    }),
-  ),
   plan: Type.Optional(Type.Boolean()),
 });
 
@@ -46,10 +38,28 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
     },
     async (request, reply) => {
       const messages = request.body.messages;
-      const prompt = messages[messages.length - 1].content;
+      const lastMessage = last(messages);
       debug('Received messages:', messages);
 
-      // 设置响应头
+      if (!lastMessage) {
+        throw new Error('No messages provided');
+      }
+
+      await opts.context.apply({
+        hook: 'serverRouteCompletions',
+        args: [
+          {
+            message: lastMessage,
+            attachedContexts: lastMessage.attachedContexts,
+          },
+        ],
+        type: PluginHookType.Series,
+      });
+
+      const prompt = lastMessage.content;
+
+      opts.context.addHistory(prompt);
+
       reply.header('Content-Type', 'text/plain; charset=utf-8');
       reply.header('Cache-Control', 'no-cache');
       reply.header('Connection', 'keep-alive');

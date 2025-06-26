@@ -6,6 +6,7 @@ import type {
   StepStartUIPart,
   ToolInvocationUIPart,
 } from '@ai-sdk/ui-utils';
+import type { ContextItem } from './context';
 
 export enum UIMessageType {
   Text = 'text',
@@ -22,6 +23,15 @@ export type UIMessage = Omit<BaseUIMessage, 'annotations'> & {
   annotations: UIMessageAnnotation[];
 };
 
+export type UserMessage = Omit<UIMessage, 'role'> & {
+  role: 'user';
+  attachedContexts: ContextItem[];
+  /**
+   * Original content input by the user, including context markers
+   */
+  contextContent: string;
+};
+
 export type UIMessageAnnotation =
   | TextDeltaMessage
   | TextMessage
@@ -34,9 +44,9 @@ export interface ToolMessage {
   type: UIMessageType.Tool;
   toolCallId: string;
   toolName: string;
-  // call 对应 tool_result result 对应 tool_result
+  // call corresponds to tool_call, result corresponds to tool_result
   state: 'call' | 'result';
-  // 0 是 call 1 是 result
+  // 0 is call, 1 is result
   step: number;
   args: Record<string, unknown>;
   result?: Record<string, unknown>;

@@ -1,18 +1,8 @@
 import { memo } from 'react';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
-import type { ContextItem } from '@/types/context';
+import type { UserMessage } from '@/types/message';
 import LexicalTextArea from '../ChatSender/LexicalTextArea';
 import { LexicalTextAreaContext } from '../ChatSender/LexicalTextAreaContext';
-
-export interface UserMessage {
-  content: string;
-  annotations: [
-    {
-      originalContent: string;
-      contextItems: ContextItem[];
-    },
-  ];
-}
 
 interface UserMessageProps {
   message: UserMessage;
@@ -21,7 +11,7 @@ interface UserMessageProps {
 const UserMessage = (props: UserMessageProps) => {
   const { message } = props;
 
-  const { annotations } = message;
+  const { content, contextContent } = message;
 
   return (
     <LexicalTextAreaContext
@@ -30,10 +20,7 @@ const UserMessage = (props: UserMessageProps) => {
         aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
       }}
     >
-      <LexicalTextArea
-        value={annotations?.[0]?.originalContent || ''}
-        disabled
-      />
+      <LexicalTextArea value={contextContent ?? content} disabled />
     </LexicalTextAreaContext>
   );
 };

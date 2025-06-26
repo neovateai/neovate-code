@@ -1,16 +1,17 @@
-/* eslint-disable react-refresh/only-export-components */
 import { useChat } from '@ai-sdk/react';
 import type { UIMessage } from '@ai-sdk/ui-utils';
+import { findLast } from 'lodash-es';
 import { createContext, useContext, useMemo } from 'react';
 import type { ContextItem } from '@/types/context';
+import { UIMessageType } from '@/types/message';
 
 type ChatState = ReturnType<typeof useChat> & {
   loading: boolean;
-  onQuery: (
-    content: string,
-    plainText: string,
-    contextItems: ContextItem[],
-  ) => void;
+  onQuery: (opts: {
+    prompt: string;
+    readonly attachedContexts: ContextItem[];
+    readonly originalContent: string;
+  }) => void;
   messagesWithPlaceholder: UIMessage[];
   originalMessages: UIMessage[];
 };
@@ -28,9 +29,19 @@ export const useChatState = () => {
 const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const chatState = useChat({
     api: '/api/chat/completions',
+    sendExtraMessageFields: true,
+    experimental_prepareRequestBody(body) {
+      const lastMessage = findLast(
+        body.messages,
+        (message) => message.role === 'user',
+      );
+      if (lastMessage) {
+        body.messages = [lastMessage];
+      }
+      return body;
+    },
     body: {
       model: 'takumi',
-      // plan: true,
     },
     onError(error) {
       console.error('Error:', error);
@@ -53,7 +64,7 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
         ],
         annotations: [
           {
-            type: 'text',
+            type: UIMessageType.Text,
             text: 'Thinking...',
           },
         ],
@@ -63,21 +74,18 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
     return chatState.messages;
   }, [chatState.messages, loading]);
 
-  const onQuery = async (
-    originalContent: string,
-    plainText: string,
-    contextItems: ContextItem[],
-  ) => {
+  const onQuery = async (opts: {
+    prompt: string;
+    readonly attachedContexts: ContextItem[];
+    readonly originalContent: string;
+  }) => {
+    const { prompt, attachedContexts, originalContent } = opts;
     chatState.append({
       role: 'user',
-      content: plainText,
-      annotations: [
-        {
-          originalContent,
-          contextItems,
-        },
-      ],
-    });
+      content: originalContent,
+      attachedContexts,
+      contextContent: prompt,
+    } as unknown as UIMessage);
   };
 
   return (

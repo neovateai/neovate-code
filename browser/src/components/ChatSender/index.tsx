@@ -55,8 +55,7 @@ const ChatSender: React.FC = () => {
   const [contextSearchInput, setContextSearchInput] = useState('');
   const [keepMenuOpen, setKeepMenuOpen] = useState(false);
   const prevInputValue = useRef<string>(state.prompt);
-  const { prompt, plainText } = useSnapshot(state);
-  const { contextItems } = context.state;
+  const { prompt } = useSnapshot(state);
 
   const {
     suggestions,
@@ -71,7 +70,11 @@ const ChatSender: React.FC = () => {
   };
 
   const handleSubmit = () => {
-    onQuery(prompt, plainText, contextItems);
+    onQuery({
+      prompt,
+      attachedContexts: context.state.attachedContexts,
+      originalContent: state.plainText,
+    });
     actions.updatePrompt('');
   };
 
@@ -87,7 +90,6 @@ const ChatSender: React.FC = () => {
         value={{
           onEnterPress: handleEnterPress,
           onChangeNodes: (prevNodes, nextNodes) => {
-            // 只处理删除节点的情况，新增无需处理
             differenceWith(prevNodes, nextNodes, (prev, next) => {
               return prev.originalText === next.originalText;
             }).forEach((node) => {
@@ -99,7 +101,6 @@ const ChatSender: React.FC = () => {
           namespace: 'SenderTextarea',
         }}
       >
-        {/* 🌟 输入框 */}
         <Suggestion
           className={styles.suggestion}
           items={suggestions}
