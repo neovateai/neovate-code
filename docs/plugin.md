@@ -125,6 +125,13 @@ Provide additional data for the server application. This hook is called in serve
 
 Register additional server routes. This hook allows you to add custom API endpoints to the Takumi server.
 
+### `serverRouteCompletions`
+
+- **Type:** `(opts: { message: { role: 'user'; content: string; attachedContexts: any[]; contextContent: string; }; attachedContexts: any[]; }) => void`
+- **Arguments:** `[{ message, attachedContexts }]`
+
+Handle completions for server routes. This hook allows you to modify or react to completions for server routes.
+
 ## Plugin Execution Order
 
 Plugins can influence their execution order using the `enforce` property:
