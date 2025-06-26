@@ -30,6 +30,9 @@
     "optimizeCode": "优化代码性能并重构这个函数",
     "generateTests": "生成单元测试用例和测试文档",
     "fixBugs": "修复 Bug 并提供解决方案",
+    "askQuestions": "提问、编辑文件或运行命令",
+    "beSpecific": "具体描述需求以获得最佳结果",
+    "createTakumiMd": "创建 TAKUMI.md 文件来自定义与 Takumi 的交互",
     "llmSupport": "LLM 支持",
     "llmSupportDesc": "支持多种 LLM 提供商，包括 OpenAI、Claude、Gemini 等",
     "fileOperations": "文件操作",
@@ -40,7 +43,8 @@
     "planModeDesc": "将复杂任务分解为可管理的步骤，逐步执行计划",
     "sendMessage": "发送消息",
     "thinking": "思考中...",
-    "stopGenerating": "停止生成"
+    "stopGenerating": "停止生成",
+    "inputPlaceholder": "询问或输入 @ 使用技能"
   },
   "prompts": {
     "upgrades": "升级",
@@ -58,6 +62,22 @@
   "menu": {
     "rename": "重命名",
     "delete": "删除"
+  },
+  "modes": {
+    "agent": "Agent 模式",
+    "agentDescription": "用于代码生成、文件修改、命令和其他开发任务",
+    "ask": "Ask 模式",
+    "askDescription": "直接在终端中向 AI 提问，无需修改文件"
+  },
+  "tool": {
+    "status": {
+      "executing": "执行中",
+      "completed": "完成",
+      "unknown": "未知"
+    },
+    "filesFound": "找到 {{count}} 个文件",
+    "moreFiles": "...还有 {{count}} 个文件",
+    "lines": "{{count}} 行"
   },
   "mcp": {
     "management": "MCP 管理",

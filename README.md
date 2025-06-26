@@ -5,71 +5,38 @@
 [![](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml)
 [![](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
 
-Pronounced `/tɑːˈkuːmi/`, a coding agent CLI to enhance your development workflow.
+Pronounced `/tɑːˈkuːmi/`, a coding agent to enhance your development workflow.
 
-> Please consider following this project's author, [sorrycc](https://github.com/sorrycc), and consider starring the project to show your ❤️ and support.
+![](https://cdn.jsdelivr.net/gh/sorrycc-bot/image-2025-04@main/uPic/takumi-20250618-1.gif)
 
-## Key Features
+## Getting Started
 
-- **LLMs Providers** to use various LLMs from providers.
-- **File Operations** to read, write, and edit files directly through AI commands.
-- **Codebase Navigation & Search** to explore and search your project.
-- **Command Execution** to run shell commands safely.
-- **Plan Mode** to break down complex tasks into manageable steps, and execute the plan step by step.
-- **Automated Commit Messages** to generate concise and conventional commit messages.
-- **Project Initialization** to generate a `TAKUMI.md` guidelines file for the AI to follow later.
-- **File Watching** to monitor files for specific AI instructions in comments.
-- **Model Aliases** to use aliases for models.
-- **MCP Support** to integrate external tools and services.
-- **Extensible Plugins** to extend the functionality of Takumi.
+> Make sure you have Node.js version 18 or higher installed.
 
-## Installation
+1. **Install the CLI globally.** Use npm or other package managers.
 
 ```bash
 $ npm install -g takumi
-# or
-$ pnpm add -g takumi
-# or
-$ bun add -g takumi
-# or
-$ yarn global add takumi
 ```
 
-## Usage
-
-It's recommended to set API keys for the LLMs providers first. GOOGLE、OPENAI、GROQ、DEEPSEEK、OPENROUTER and others are supported, checkout [llms.md](./docs/llms.md) for more details.
+2. **Set up the API keys.** Configure one or more API keys for the LLMs providers.
 
 ```bash
 $ export OPENAI_API_KEY="sk-..."
+$ export GOOGLE_API_KEY="sk-..."
+$ export ANTHROPIC_API_KEY="sk-..."
+$ export DEEPSEEK_API_KEY="sk-..."
+$ export XAI_API_KEY="sk-..."
+$ export AIHUBMIX_API_KEY="sk-..."
+$ export OPENROUTER_API_KEY="sk-..."
 ```
 
-Generate a `TAKUMI.md` file to guide the AI to follow later.
+You are now ready to use Takumi.
 
 ```bash
-$ takumi init -m <model>
-# or use ta for short
-$ ta init -m <model>
+$ takumi
+> explain this codebase to me
 ```
-
-Let the AI to act on the codebase.
-
-```bash
-$ takumi "<your_request>" -m <model> -q
-```
-
-Let the AI to plan the steps before act to the codebase.
-
-```bash
-$ takumi "<your_request>" -m <model> --plan -q
-```
-
-After the modification, use `takumi commit` to generate the commit message.
-
-```bash
-$ takumi commit -m <model> --stage --commit
-```
-
-Checkout [commands.md](./docs/commands.md) for more details.
 
 ## Contributing
 

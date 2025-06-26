@@ -1,6 +1,7 @@
 import { ModelProvider } from '@openai/agents';
 import createDebug from 'debug';
 import { PRODUCT_NAME } from './constants';
+import type { Context } from './context';
 import type { Plugin } from './plugin';
 import { clearTracing } from './tracing';
 
@@ -14,7 +15,7 @@ export { createAnthropic as _createAnthropic } from '@ai-sdk/anthropic';
 export { aisdk as _aisdk } from './utils/ai-sdk';
 export { default as _picocolors } from 'picocolors';
 
-export type { Plugin };
+export type { Plugin, Context };
 
 export interface RunCliOpts {
   cwd: string;

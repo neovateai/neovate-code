@@ -2,8 +2,8 @@ import { DownOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
+import type { UserMessage } from '@/types/message';
 import { renderContextTag } from '../ChatSender/SenderHeader';
-import type { UserMessage } from './UserMessage';
 
 interface UserMessageFooterProps {
   message: UserMessage;
@@ -39,11 +39,9 @@ const UserMessageFooter = (props: UserMessageFooterProps) => {
 
   const { styles } = useStyle();
 
-  const { annotations } = message;
+  const { attachedContexts } = message;
 
-  const { contextItems = [] } = annotations?.[0] || {};
-
-  if (contextItems.length === 0) {
+  if (attachedContexts.length === 0) {
     return null;
   }
 
@@ -63,11 +61,11 @@ const UserMessageFooter = (props: UserMessageFooterProps) => {
         }
         onClick={() => setShowDetails(!showDetails)}
       >
-        已使用 {contextItems.length} 个引用
+        已使用 {attachedContexts.length} 个引用
       </Button>
       {showDetails && (
         <div className={styles.itemsContainer}>
-          {contextItems.map((contextItem) => renderContextTag(contextItem))}
+          {attachedContexts.map((contextItem) => renderContextTag(contextItem))}
         </div>
       )}
     </div>

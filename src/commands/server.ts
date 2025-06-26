@@ -8,6 +8,7 @@ import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
 import { Context } from '../context';
 import { PluginHookType } from '../plugin';
+import { contextPlugin } from '../server/plugins/context';
 import { runBrowserServer } from '../server/server';
 import { setupTracing } from '../tracing';
 import * as logger from '../utils/logger';
@@ -86,7 +87,7 @@ export async function runBrowser(opts: RunCliOpts) {
         quiet: argv.quiet,
         plugins: argv.plugin,
       },
-      plugins: opts.plugins,
+      plugins: [contextPlugin, ...(opts.plugins || [])],
     });
 
     logger.logIntro({

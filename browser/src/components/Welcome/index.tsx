@@ -21,17 +21,17 @@ const useWelcomeData = () => {
     children: [
       {
         key: '1-1',
-        description: t('chat.greeting'),
+        description: t('chat.askQuestions'),
         icon: <span style={{ color: '#1890ff', fontWeight: 700 }}>🤖</span>,
       },
       {
         key: '1-2',
-        description: t('chat.analyzeProject'),
+        description: t('chat.beSpecific'),
         icon: <span style={{ color: '#52c41a', fontWeight: 700 }}>📁</span>,
       },
       {
         key: '1-3',
-        description: t('chat.optimizeCode'),
+        description: t('chat.createTakumiMd'),
         icon: <span style={{ color: '#faad14', fontWeight: 700 }}>⚡</span>,
       },
       {
@@ -161,11 +161,11 @@ const Welcome = () => {
             },
             subItem: { background: '#ffffffa6' },
           }}
-          onItemClick={(info) => {
-            append({
-              role: 'user',
-              content: info.data.description as string,
-            });
+          onItemClick={() => {
+            // append({
+            //   role: 'user',
+            //   content: info.data.description as string,
+            // });
           }}
           className={styles.chatPrompt}
         />

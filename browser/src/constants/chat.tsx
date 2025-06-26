@@ -1,20 +1,29 @@
-import { ApiOutlined, MessageOutlined } from '@ant-design/icons';
-import type { TFunction } from 'i18next';
+import { MessageOutlined } from '@ant-design/icons';
 import { keyBy } from 'lodash-es';
+import i18n from '@/i18n';
+import AgentIcon from '@/icons/agent.svg?react';
 
-export const getModes = (t: TFunction) => [
+export const MODES = [
   {
-    icon: <ApiOutlined />,
+    icon: <AgentIcon />,
     key: 'agent',
-    label: t('senderFooterBoard.agentMode.label'),
-    description: t('senderFooterBoard.agentMode.description'),
+    get label() {
+      return i18n.t('modes.agent');
+    },
+    get description() {
+      return i18n.t('modes.agentDescription');
+    },
   },
   {
     icon: <MessageOutlined />,
     key: 'ask',
-    label: t('senderFooterBoard.askMode.label'),
-    description: t('senderFooterBoard.askMode.description'),
+    get label() {
+      return i18n.t('modes.ask');
+    },
+    get description() {
+      return i18n.t('modes.askDescription');
+    },
   },
 ];
 
-export const getModesMap = (t: TFunction) => keyBy(getModes(t), 'key');
+export const MODES_MAP = keyBy(MODES, 'key');

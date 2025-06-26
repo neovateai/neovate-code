@@ -7,11 +7,14 @@ import { ModelProvider } from '@openai/agents';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { AiSdkModel, aisdk } from './utils/ai-sdk';
 
+const GEMINI_FLASH_LITE_MODEL = 'gemini-2.5-flash-lite-preview-06-17';
+const GEMINI_PRO_MODEL = 'gemini-2.5-pro-preview-05-06';
+
 const THINKING_MODELS = [
   'o3',
   'o3-mini',
   'deepseek-reasoner',
-  'gemini-2.5-pro-preview-05-06',
+  GEMINI_PRO_MODEL,
   'claude-3-7-sonnet-20250219-thinking',
   'grok-3-fast-beta',
 ];
@@ -21,10 +24,9 @@ const MODEL_ALIAS: Record<string, string> = {
   '41': 'gpt-4.1',
   '4': 'gpt-4',
   '4o': 'gpt-4o',
-  '3': 'gpt-3.5-turbo',
-  'flash-lite': 'gemini-2.5-flash-lite-preview-06-17',
+  'flash-lite': GEMINI_FLASH_LITE_MODEL,
   flash: 'gemini-2.5-flash',
-  gemini: 'gemini-2.5-pro-preview-05-06',
+  gemini: GEMINI_PRO_MODEL,
   grok: 'grok-3-fast-beta',
   sonnet: 'claude-sonnet-4-20250514',
   'sonnet-3.5': 'claude-3-5-sonnet-20241022',
@@ -43,23 +45,20 @@ const MODEL_ALIAS: Record<string, string> = {
   'aihubmix/deepseek': 'aihubmix/DeepSeek-V3',
   'aihubmix/gemini': 'aihubmix/gemini-2.5-pro',
   'aihubmix/flash': 'aihubmix/gemini-2.5-flash',
-  'aihubmix/flash-lite': 'aihubmix/gemini-2.5-flash-lite-preview-06-17',
+  'aihubmix/flash-lite': `aihubmix/${GEMINI_FLASH_LITE_MODEL}`,
 };
 const OPENAI_MODELS = [
   'gpt-4.1',
   'gpt-4',
   'gpt-4o',
-  'gpt-3.5-turbo',
-  'o1',
-  'o1-mini',
-  'o1-pro',
   'o3',
   'o3-mini',
+  'o4-mini',
 ];
 const GOOGLE_MODELS = [
-  'gemini-2.5-flash-lite-preview-06-17',
+  GEMINI_FLASH_LITE_MODEL,
   'gemini-2.5-flash',
-  'gemini-2.5-pro-preview-05-06',
+  GEMINI_PRO_MODEL,
 ];
 const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'];
 const XAI_MODELS = [
@@ -88,13 +87,10 @@ const AIHUBMIX_MODELS = [
   'gpt-4.1',
   'gpt-4',
   'gpt-4o',
-  'gpt-3.5-turbo',
-  'o1',
-  'o1-mini',
-  'o1-pro',
   'o3',
   'o3-pro',
   'o3-mini',
+  'o4-mini',
 ];
 const OPENROUTER_MODELS = [
   'anthropic/claude-3.5-sonnet',
@@ -105,13 +101,10 @@ const OPENROUTER_MODELS = [
   'openai/gpt-4.1',
   'openai/gpt-4',
   'openai/gpt-4o',
-  'openai/gpt-3.5-turbo',
-  'openai/o1',
-  'openai/o1-mini',
-  'openai/o1-pro',
   'openai/o3',
   'openai/o3-pro',
   'openai/o3-mini',
+  'openai/o4-mini',
 ];
 
 export function getDefaultModelProvider(): ModelProvider {

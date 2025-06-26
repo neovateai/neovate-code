@@ -11,7 +11,6 @@
   "types": "./dist/index.d.ts",
   "source": "./src/index.ts",
   "bin": {
-    "ta": "dist/cli.mjs",
     "takumi": "./dist/cli.mjs"
   },
   "scripts": {
@@ -86,6 +85,7 @@
     "ink-select-input": "^6.2.0",
     "jiti": "^2.4.2",
     "lint-staged": "^16.1.2",
+    "lodash-es": "^4.17.21",
     "marked": "^15.0.12",
     "marked-terminal": "^7.3.0",
     "picocolors": "^1.1.1",
