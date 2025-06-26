@@ -141,6 +141,13 @@ const CodeDiffOutline = (props: Props) => {
     diff(currentCodes.originalCode, currentCodes.modifiedCode).then((d) =>
       setDiffStat(d),
     );
+    codeViewer.actions.registerEditFunction(path, (type, diffBlockStat) => {
+      if (type === 'accept') {
+        diffBlockStat ? handleAccept(diffBlockStat) : handleAcceptAll();
+      } else {
+        diffBlockStat ? handleReject(diffBlockStat) : handleRejectAll();
+      }
+    });
   }, [currentCodes]);
 
   const hasDiff =
@@ -176,10 +183,14 @@ const CodeDiffOutline = (props: Props) => {
       originalEndLineNumber > 0
         ? originalStartLineNumber - 1
         : originalStartLineNumber;
+
+    console.log(insertPosition, removedCount, ...needAddLines);
+
     nextOriginalArray.splice(insertPosition, removedCount, ...needAddLines);
 
     const nextOriginalCode = nextOriginalArray.join('\n');
     const nextCodes = { ...currentCodes, originalCode: nextOriginalCode };
+    console.log(nextCodes);
     onChangeCode?.(nextOriginalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
     showDiff(nextCodes);
@@ -256,14 +267,6 @@ const CodeDiffOutline = (props: Props) => {
     originalCode: string;
     modifiedCode: string;
   }) => {
-    codeViewer.actions.registerEditFunction(path, (type, diffBlockStat) => {
-      if (type === 'accept') {
-        diffBlockStat ? handleAccept(diffBlockStat) : handleAcceptAll();
-      } else {
-        diffBlockStat ? handleReject(diffBlockStat) : handleRejectAll();
-      }
-    });
-
     diff(currentCodes.originalCode, currentCodes.modifiedCode).then(
       (diffStat) => {
         codeViewer.actions.displayDiffViewer({
