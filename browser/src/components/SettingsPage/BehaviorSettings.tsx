@@ -26,11 +26,11 @@ const BehaviorSettings: React.FC = () => {
 
   const handleLanguageChange = async (value: string) => {
     try {
-      // 立即切换界面语言
+      // Switch interface language immediately
       const languageCode = value === 'Chinese' ? 'zh' : 'en';
       await i18n.changeLanguage(languageCode);
 
-      // 保存到配置文件
+      // Save to configuration file
       await actions.updateSettingValue('language', value);
     } catch (error) {
       console.error('Failed to update language setting:', error);

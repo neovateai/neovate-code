@@ -20,21 +20,21 @@ export interface ModelOption {
 }
 
 export interface SettingsState {
-  // 当前配置作用域
+  // Current configuration scope
   currentScope: 'global' | 'project';
-  // 配置数据
+  // Configuration data
   globalSettings: Partial<AppSettings>;
   projectSettings: Partial<AppSettings>;
-  // 合并后的有效配置
+  // Merged effective configuration
   effectiveSettings: AppSettings;
-  // 可用模型列表
+  // Available models list
   availableModels: ModelOption[];
-  // 可用插件列表
+  // Available plugins list
   availablePlugins: string[];
-  // 加载状态
+  // Loading state
   loading: boolean;
   loaded: boolean;
-  // 是否有未保存的更改
+  // Whether there are unsaved changes
   hasUnsavedChanges: boolean;
 }
 
