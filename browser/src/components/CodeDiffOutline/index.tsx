@@ -184,13 +184,11 @@ const CodeDiffOutline = (props: Props) => {
         ? originalStartLineNumber - 1
         : originalStartLineNumber;
 
-    console.log(insertPosition, removedCount, ...needAddLines);
-
     nextOriginalArray.splice(insertPosition, removedCount, ...needAddLines);
 
     const nextOriginalCode = nextOriginalArray.join('\n');
     const nextCodes = { ...currentCodes, originalCode: nextOriginalCode };
-    console.log(nextCodes);
+
     onChangeCode?.(nextOriginalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
     showDiff(nextCodes);
