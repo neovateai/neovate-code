@@ -2,6 +2,7 @@ import { MessageOutlined } from '@ant-design/icons';
 import { keyBy } from 'lodash-es';
 import i18n from '@/i18n';
 import AgentIcon from '@/icons/agent.svg?react';
+import PlanIcon from '@/icons/plan.svg?react';
 
 export const MODES = [
   {
@@ -22,6 +23,16 @@ export const MODES = [
     },
     get description() {
       return i18n.t('modes.askDescription');
+    },
+  },
+  {
+    icon: <PlanIcon />,
+    key: 'plan',
+    get label() {
+      return i18n.t('modes.plan');
+    },
+    get description() {
+      return i18n.t('modes.planDescription');
     },
   },
 ];

@@ -67,7 +67,9 @@
     "agent": "Agent Mode",
     "agentDescription": "For code generation, file changes, commands and other development tasks",
     "ask": "Ask Mode",
-    "askDescription": "Ask AI questions directly in terminal without file modifications"
+    "askDescription": "Ask AI questions directly in terminal without file modifications",
+    "plan": "Plan Mode",
+    "planDescription": "Break down complex tasks into executable steps, plan first and then execute"
   },
   "tool": {
     "status": {

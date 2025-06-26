@@ -46,6 +46,10 @@ export interface UserMessage extends Message {
 
 export interface CompletionRequest {
   messages: Array<UserMessage>;
+  /**
+   * The mode of the completion, can be 'agent', 'ask', 'plan'
+   */
+  mode: string;
 }
 
 export interface CompletionTextContent {
@@ -56,5 +60,3 @@ export interface CompletionTextContent {
    */
   finishReason?: 'stop' | 'length' | 'content_filter';
 }
-
-export interface AssistantContent {}

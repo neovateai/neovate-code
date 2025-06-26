@@ -2,6 +2,8 @@ import { useChat } from '@ai-sdk/react';
 import type { UIMessage } from '@ai-sdk/ui-utils';
 import { findLast } from 'lodash-es';
 import { createContext, useContext, useMemo } from 'react';
+import { useSnapshot } from 'valtio';
+import { state } from '@/state/sender';
 import type { ContextItem } from '@/types/context';
 import { UIMessageType } from '@/types/message';
 
@@ -27,6 +29,7 @@ export const useChatState = () => {
 };
 
 const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+  const { mode } = useSnapshot(state);
   const chatState = useChat({
     api: '/api/chat/completions',
     sendExtraMessageFields: true,
@@ -38,10 +41,10 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
       if (lastMessage) {
         body.messages = [lastMessage];
       }
-      return body;
-    },
-    body: {
-      model: 'takumi',
+      return {
+        ...body,
+        mode,
+      };
     },
     onError(error) {
       console.error('Error:', error);

@@ -22,7 +22,7 @@ const CompletionRequestSchema = Type.Object({
     }),
     { minItems: 1 },
   ),
-  plan: Type.Optional(Type.Boolean()),
+  mode: Type.String(),
 });
 
 const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
@@ -38,6 +38,7 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
     },
     async (request, reply) => {
       const messages = request.body.messages;
+      const mode = request.body.mode;
       const lastMessage = last(messages);
       debug('Received messages:', messages);
 
@@ -71,6 +72,7 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
               ...opts,
               prompt,
               dataStream,
+              mode,
             });
           },
           onError(error) {

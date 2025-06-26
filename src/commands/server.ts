@@ -30,7 +30,6 @@ Options:
   -h, --help                    Show help
   -m, --model <model>           Specify model to use
   --smallModel <model>          Specify a smaller model for some tasks
-  --plan                        Plan mode
   --logLevel <level>            Specify log level
   --port <port>                 Specify port to use
 
@@ -113,7 +112,6 @@ export async function runBrowser(opts: RunCliOpts) {
       context,
       prompt: argv._[0]! as string,
       cwd,
-      plan: argv.plan,
       logLevel: argv.logLevel,
       port: argv.port,
     });

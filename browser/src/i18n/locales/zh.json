@@ -67,7 +67,9 @@
     "agent": "Agent 模式",
     "agentDescription": "用于代码生成、文件修改、命令和其他开发任务",
     "ask": "Ask 模式",
-    "askDescription": "直接在终端中向 AI 提问，无需修改文件"
+    "askDescription": "直接在终端中向 AI 提问，无需修改文件",
+    "plan": "Plan 模式",
+    "planDescription": "将复杂任务分解为可执行步骤，先规划后实施"
   },
   "tool": {
     "status": {
