@@ -18,7 +18,6 @@ interface MessagePartProps {
 }
 
 const MessagePart: React.FC<MessagePartProps> = memo(({ part, index }) => {
-  console.log('part', part);
   switch (part.type) {
     case UIMessageType.Text:
       return <AssistantTextMessage key={index} message={part} />;
