@@ -30,6 +30,9 @@
     "optimizeCode": "Optimize code performance and refactor this function",
     "generateTests": "Generate unit test cases and test documentation",
     "fixBugs": "Fix bugs and provide solutions",
+    "askQuestions": "Ask questions, edit files, or run commands",
+    "beSpecific": "Be specific for the best results",
+    "createTakumiMd": "Create TAKUMI.md files to customize your interactions with Takumi",
     "llmSupport": "LLM Support",
     "llmSupportDesc": "Support for multiple LLM providers including OpenAI, Claude, Gemini, etc.",
     "fileOperations": "File Operations",
@@ -40,7 +43,8 @@
     "planModeDesc": "Break down complex tasks into manageable steps and execute plans step by step",
     "sendMessage": "Send Message",
     "thinking": "Thinking...",
-    "stopGenerating": "Stop Generating"
+    "stopGenerating": "Stop Generating",
+    "inputPlaceholder": "Ask or input @ use skills"
   },
   "prompts": {
     "upgrades": "Upgrades",
@@ -58,6 +62,22 @@
   "menu": {
     "rename": "Rename",
     "delete": "Delete"
+  },
+  "modes": {
+    "agent": "Agent Mode",
+    "agentDescription": "For code generation, file changes, commands and other development tasks",
+    "ask": "Ask Mode",
+    "askDescription": "Ask AI questions directly in terminal without file modifications"
+  },
+  "tool": {
+    "status": {
+      "executing": "Executing",
+      "completed": "Completed",
+      "unknown": "Unknown"
+    },
+    "filesFound": "Found {{count}} files",
+    "moreFiles": "...{{count}} more files",
+    "lines": "{{count}} lines"
   },
   "mcp": {
     "management": "MCP Management",

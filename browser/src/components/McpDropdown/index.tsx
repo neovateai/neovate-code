@@ -519,17 +519,12 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
             setDropdownFalse();
           }
         }}
-        destroyPopupOnHide={false}
-        dropdownRender={(menu) => (
-          <div className="w-80" onClick={(e) => e.stopPropagation()}>
-            {menu}
-          </div>
-        )}
+        overlayClassName="w-80"
       >
         <Button
           type="text"
-          className="text-lg text-inherit"
-          icon={<ApiOutlined />}
+          className="text-lg"
+          icon={<ApiOutlined size={20} />}
           title={t('mcp.mcpManagementTitle')}
           loading={loading || mcpLoading}
         />

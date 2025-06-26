@@ -4,14 +4,12 @@ import {
   ProductOutlined,
   ScheduleOutlined,
 } from '@ant-design/icons';
-import { Prompts, Sender } from '@ant-design/x';
-import { Flex } from 'antd';
+import { Sender } from '@ant-design/x';
 import { createStyles } from 'antd-style';
 import { differenceWith } from 'lodash-es';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
-import McpDropdown from '@/components/McpDropdown';
 import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
@@ -21,42 +19,16 @@ import { getInputInfo } from '@/utils/chat';
 import Suggestion from '../Suggestion';
 import LexicalTextArea from './LexicalTextArea';
 import { LexicalTextAreaContext } from './LexicalTextAreaContext';
-import SenderAttachments from './SenderAttachments';
 import SenderFooter from './SenderFooter';
 import SenderFooterBoard from './SenderFooterBoard';
 import SenderHeader from './SenderHeader';
 
-const useSenderPrompts = () => {
-  const { t } = useTranslation();
-  return [
-    {
-      key: '1',
-      description: t('prompts.upgrades'),
-      icon: <ScheduleOutlined />,
-    },
-    {
-      key: '2',
-      description: t('prompts.components'),
-      icon: <ProductOutlined />,
-    },
-    {
-      key: '3',
-      description: t('prompts.richGuide'),
-      icon: <FileSearchOutlined />,
-    },
-    {
-      key: '4',
-      description: t('prompts.installationIntro'),
-      icon: <AppstoreAddOutlined />,
-    },
-  ];
-};
-
 const useStyle = createStyles(({ token, css }) => {
+  const maxWidth = 800;
   return {
     sender: css`
       width: 100%;
-      max-width: 700px;
+      max-width: ${maxWidth}px;
       margin: 0 auto;
     `,
     senderRoot: css`
@@ -64,7 +36,7 @@ const useStyle = createStyles(({ token, css }) => {
       max-width: none;
     `,
     suggestion: css`
-      max-width: 700px;
+      max-width: ${maxWidth}px;
       margin: auto;
       width: 100%;
     `,
@@ -74,7 +46,7 @@ const useStyle = createStyles(({ token, css }) => {
     `,
     senderPrompt: css`
       width: 100%;
-      max-width: 700px;
+      max-width: ${maxWidth}px;
       margin: 0 auto;
       color: ${token.colorText};
     `,
@@ -83,9 +55,8 @@ const useStyle = createStyles(({ token, css }) => {
 
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
-  const { loading, stop, append, onQuery } = useChatState();
+  const { loading, stop, onQuery } = useChatState();
   const { t } = useTranslation();
-  const SENDER_PROMPTS = useSenderPrompts();
   const [insertNodePosition, setInsertNodePosition] = useState(0);
   const [contextSearchInput, setContextSearchInput] = useState('');
   const [keepMenuOpen, setKeepMenuOpen] = useState(false);
@@ -93,7 +64,6 @@ const ChatSender: React.FC = () => {
   const { prompt, plainText } = useSnapshot(state);
   const { contextItems } = context.state;
 
-  // 编辑器中的Context不去重，实际挂载时再去重
   const {
     suggestions,
     showSearch,
@@ -119,19 +89,6 @@ const ChatSender: React.FC = () => {
 
   return (
     <>
-      <Prompts
-        items={SENDER_PROMPTS}
-        onItemClick={(info) => {
-          append({
-            role: 'user',
-            content: info.data.description as string,
-          });
-        }}
-        styles={{
-          item: { padding: '6px 12px' },
-        }}
-        className={styles.senderPrompt}
-      />
       <LexicalTextAreaContext.Provider
         value={{
           onEnterPress: handleEnterPress,
@@ -190,7 +147,9 @@ const ChatSender: React.FC = () => {
                   rootClassName={styles.senderRoot}
                   value={prompt}
                   header={<SenderHeader />}
-                  footer={<SenderFooter />}
+                  footer={({ components }) => {
+                    return <SenderFooter components={components} />;
+                  }}
                   onSubmit={handleSubmit}
                   onChange={(value) => {
                     const { isInputingAiContext, position } = getInputInfo(
@@ -210,28 +169,13 @@ const ChatSender: React.FC = () => {
                   onCancel={() => {
                     stop();
                   }}
-                  prefix={<SenderAttachments />}
                   loading={loading}
                   allowSpeech
-                  actions={(_, info) => {
-                    const { SendButton, LoadingButton, SpeechButton } =
-                      info.components;
-                    return (
-                      <Flex gap={4}>
-                        <McpDropdown loading={loading} />
-                        <SpeechButton className={styles.speechButton} />
-                        {loading ? (
-                          <LoadingButton type="default" />
-                        ) : (
-                          <SendButton type="primary" />
-                        )}
-                      </Flex>
-                    );
-                  }}
+                  actions={false}
                   components={{
                     input: LexicalTextArea,
                   }}
-                  placeholder="Ask or input @ use skills"
+                  placeholder={t('chat.inputPlaceholder')}
                 />
                 <SenderFooterBoard />
               </>
