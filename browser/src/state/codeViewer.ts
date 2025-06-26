@@ -79,20 +79,37 @@ export const actions = {
 
     const id = path || Date.now().toString();
 
-    state.codeViewerTabItems.filter((item) => item.id !== id);
-
     const title = path || i18n.t('codeViewer.tempFile');
 
     const targetLanguage = language || inferFileType(path);
 
-    state.codeViewerTabItems.push({
-      title,
-      language: targetLanguage,
-      code,
-      id,
-      viewType: 'normal',
-      path,
+    let reuseTab = false;
+    state.codeViewerTabItems.map((item) => {
+      if (item.id === id) {
+        reuseTab = true;
+        return {
+          title,
+          language: targetLanguage,
+          code,
+          id,
+          viewType: 'normal',
+          path,
+        };
+      } else {
+        return item;
+      }
     });
+
+    if (!reuseTab) {
+      state.codeViewerTabItems.push({
+        title,
+        language: targetLanguage,
+        code,
+        id,
+        viewType: 'normal',
+        path,
+      });
+    }
 
     state.activeId = id;
 
@@ -105,23 +122,42 @@ export const actions = {
 
     const id = path || Date.now().toString();
 
-    // 删除已有的
-    state.codeViewerTabItems.filter((item) => item.id !== id);
-
     const title = path || i18n.t('codeViewer.tempFile');
 
     const targetLanguage = language || inferFileType(path);
 
-    state.codeViewerTabItems.push({
-      title,
-      language: targetLanguage,
-      originalCode,
-      modifiedCode,
-      id,
-      viewType: 'diff',
-      path,
-      diffStat,
+    let reuseTab = false;
+    // 更新所有满足要求的item
+    state.codeViewerTabItems.map((item) => {
+      if (item.id === id) {
+        reuseTab = true;
+        return {
+          title,
+          language: targetLanguage,
+          originalCode,
+          modifiedCode,
+          id,
+          viewType: 'diff',
+          path,
+          diffStat,
+        };
+      } else {
+        return item;
+      }
     });
+
+    if (!reuseTab) {
+      state.codeViewerTabItems.push({
+        title,
+        language: targetLanguage,
+        originalCode,
+        modifiedCode,
+        id,
+        viewType: 'diff',
+        path,
+        diffStat,
+      });
+    }
 
     state.activeId = id;
 
