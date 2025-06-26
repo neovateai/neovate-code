@@ -10,7 +10,6 @@ import {
   List,
   Modal,
   Space,
-  Tag,
   Tooltip,
   Typography,
 } from 'antd';
@@ -30,10 +29,14 @@ const PluginSettings: React.FC = () => {
       : settings.projectSettings;
   const currentPlugins = currentSettings.plugins || [];
 
-  const handleAddPlugin = () => {
+  const handleAddPlugin = async () => {
     if (newPlugin.trim()) {
-      actions.addPlugin(newPlugin.trim());
-      setNewPlugin('');
+      try {
+        await actions.addPlugin(newPlugin.trim());
+        setNewPlugin('');
+      } catch (error) {
+        console.error('Failed to add plugin:', error);
+      }
     }
   };
 
@@ -41,7 +44,13 @@ const PluginSettings: React.FC = () => {
     Modal.confirm({
       title: '删除插件',
       content: `确定要删除插件 "${plugin}" 吗？`,
-      onOk: () => actions.removePlugin(plugin),
+      onOk: async () => {
+        try {
+          await actions.removePlugin(plugin);
+        } catch (error) {
+          console.error('Failed to remove plugin:', error);
+        }
+      },
     });
   };
 
@@ -77,7 +86,7 @@ const PluginSettings: React.FC = () => {
           {currentPlugins.length > 0 ? (
             <List
               size="small"
-              dataSource={currentPlugins}
+              dataSource={[...currentPlugins]}
               renderItem={(plugin) => (
                 <List.Item
                   actions={[

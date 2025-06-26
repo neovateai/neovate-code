@@ -14,8 +14,12 @@ const ModelSettings: React.FC = () => {
       ? settings.globalSettings
       : settings.projectSettings;
 
-  const handleModelChange = (key: string, value: string) => {
-    actions.updateSettingValue(key as any, value);
+  const handleModelChange = async (key: string, value: string) => {
+    try {
+      await actions.updateSettingValue(key as any, value);
+    } catch (error) {
+      console.error('Failed to update model setting:', error);
+    }
   };
 
   const getModelOptions = () => {
@@ -56,6 +60,7 @@ const ModelSettings: React.FC = () => {
           onChange={(value) => handleModelChange('model', value)}
           options={getModelOptions()}
           placeholder="选择主模型"
+          allowClear
           showSearch
           filterOption={filterOption}
         />

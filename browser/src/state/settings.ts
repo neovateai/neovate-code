@@ -25,7 +25,6 @@ export const actions = {
   // 切换作用域
   switchScope: (scope: 'global' | 'project') => {
     state.settings.currentScope = scope;
-    state.settings.hasUnsavedChanges = false;
   },
 
   // 加载设置
@@ -63,32 +62,49 @@ export const actions = {
     }
   },
 
-  // 更新设置值
-  updateSettingValue: (key: keyof AppSettings, value: any) => {
+  // 更新设置值（直接保存）
+  updateSettingValue: async (key: keyof AppSettings, value: any) => {
     const { currentScope } = state.settings;
+
+    // 更新本地状态
     if (currentScope === 'global') {
-      state.settings.globalSettings = {
-        ...state.settings.globalSettings,
-        [key]: value,
-      };
+      if (value === null || value === undefined) {
+        // 如果值为空，删除该字段
+        const { [key]: removed, ...rest } = state.settings.globalSettings;
+        state.settings.globalSettings = rest;
+      } else {
+        state.settings.globalSettings = {
+          ...state.settings.globalSettings,
+          [key]: value,
+        };
+      }
     } else {
-      state.settings.projectSettings = {
-        ...state.settings.projectSettings,
-        [key]: value,
-      };
+      if (value === null || value === undefined) {
+        // 如果值为空，删除该字段
+        const { [key]: removed, ...rest } = state.settings.projectSettings;
+        state.settings.projectSettings = rest;
+      } else {
+        state.settings.projectSettings = {
+          ...state.settings.projectSettings,
+          [key]: value,
+        };
+      }
     }
-    state.settings.hasUnsavedChanges = true;
-  },
 
-  // 保存设置
-  saveSettings: async () => {
-    const { currentScope, globalSettings, projectSettings } = state.settings;
-    const settings =
-      currentScope === 'global' ? globalSettings : projectSettings;
-
+    // 直接保存到服务器
     try {
-      await settingsAPI.updateSettings(currentScope, settings);
-      state.settings.hasUnsavedChanges = false;
+      if (value === null || value === undefined) {
+        // 删除配置项
+        await settingsAPI.removeSetting(currentScope, key);
+      } else {
+        // 更新配置
+        const settings =
+          currentScope === 'global'
+            ? state.settings.globalSettings
+            : state.settings.projectSettings;
+
+        await settingsAPI.updateSettings(currentScope, settings);
+      }
 
       // 重新加载有效配置
       const effectiveResponse = await settingsAPI.getEffectiveSettings();
@@ -96,7 +112,7 @@ export const actions = {
         effectiveResponse.data || state.settings.effectiveSettings;
     } catch (error) {
       console.error('Failed to save settings:', error);
-      throw error;
+      // 如果保存失败，可以考虑回滚本地状态
     }
   },
 
@@ -137,7 +153,7 @@ export const actions = {
   },
 
   // 添加插件
-  addPlugin: (plugin: string) => {
+  addPlugin: async (plugin: string) => {
     const { currentScope } = state.settings;
     const currentPlugins =
       currentScope === 'global'
@@ -146,12 +162,12 @@ export const actions = {
 
     if (!currentPlugins.includes(plugin)) {
       const newPlugins = [...currentPlugins, plugin];
-      actions.updateSettingValue('plugins', newPlugins);
+      await actions.updateSettingValue('plugins', newPlugins);
     }
   },
 
   // 删除插件
-  removePlugin: (plugin: string) => {
+  removePlugin: async (plugin: string) => {
     const { currentScope } = state.settings;
     const currentPlugins =
       currentScope === 'global'
@@ -159,6 +175,6 @@ export const actions = {
         : state.settings.projectSettings.plugins || [];
 
     const newPlugins = currentPlugins.filter((p) => p !== plugin);
-    actions.updateSettingValue('plugins', newPlugins);
+    await actions.updateSettingValue('plugins', newPlugins);
   },
 };

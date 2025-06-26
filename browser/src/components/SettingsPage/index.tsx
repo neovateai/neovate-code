@@ -2,23 +2,10 @@ import {
   ApiOutlined,
   CloseOutlined,
   ControlOutlined,
-  ReloadOutlined,
   RobotOutlined,
-  SaveOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
-import {
-  Badge,
-  Button,
-  Card,
-  Col,
-  Modal,
-  Row,
-  Space,
-  Spin,
-  Typography,
-  message,
-} from 'antd';
+import { Badge, Button, Card, Col, Row, Spin, Typography } from 'antd';
 import React, { useEffect } from 'react';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';
@@ -38,30 +25,6 @@ const SettingsPage: React.FC = () => {
       actions.loadSettings();
     }
   }, [settings.loaded, settings.loading]);
-
-  const handleSave = async () => {
-    try {
-      await actions.saveSettings();
-      message.success('设置已保存');
-    } catch (error) {
-      message.error('保存失败');
-    }
-  };
-
-  const handleReset = () => {
-    Modal.confirm({
-      title: '重置设置',
-      content: '确定要重置当前设置吗？此操作不可恢复。',
-      onOk: async () => {
-        try {
-          await actions.resetSettings();
-          message.success('设置已重置');
-        } catch (error) {
-          message.error('重置失败');
-        }
-      },
-    });
-  };
 
   const handleClose = () => {
     navigate({ to: '/chat' });
@@ -221,37 +184,6 @@ const SettingsPage: React.FC = () => {
               </Card>
             </Col>
           </Row>
-        </div>
-
-        {/* 底部操作按钮 */}
-        <div
-          style={{
-            padding: '16px',
-            borderTop: '1px solid #f0f0f0',
-            background: '#fafafa',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <div>
-            {settings.hasUnsavedChanges && (
-              <Badge count="有更改" style={{ backgroundColor: '#ff4d4f' }} />
-            )}
-          </div>
-          <Space>
-            <Button icon={<ReloadOutlined />} onClick={handleReset} danger>
-              重置
-            </Button>
-            <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              onClick={handleSave}
-              disabled={!settings.hasUnsavedChanges}
-            >
-              保存设置
-            </Button>
-          </Space>
         </div>
       </div>
     </div>

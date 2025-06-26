@@ -14,6 +14,14 @@ const BehaviorSettings: React.FC = () => {
       ? settings.globalSettings
       : settings.projectSettings;
 
+  const handleSettingChange = async (key: string, value: any) => {
+    try {
+      await actions.updateSettingValue(key as any, value);
+    } catch (error) {
+      console.error('Failed to update behavior setting:', error);
+    }
+  };
+
   return (
     <Form layout="vertical">
       <Form.Item
@@ -28,7 +36,7 @@ const BehaviorSettings: React.FC = () => {
       >
         <Select
           value={currentSettings.language}
-          onChange={(value) => actions.updateSettingValue('language', value)}
+          onChange={(value) => handleSettingChange('language', value)}
           options={[
             { value: 'English', label: 'English' },
             { value: 'Chinese', label: '中文' },
@@ -37,6 +45,7 @@ const BehaviorSettings: React.FC = () => {
             { value: 'Deutsch', label: 'Deutsch' },
             { value: 'Español', label: 'Español' },
           ]}
+          allowClear
         />
         {settings.effectiveSettings.language !== currentSettings.language && (
           <Text
@@ -60,9 +69,7 @@ const BehaviorSettings: React.FC = () => {
       >
         <Select
           value={currentSettings.approvalMode}
-          onChange={(value) =>
-            actions.updateSettingValue('approvalMode', value)
-          }
+          onChange={(value) => handleSettingChange('approvalMode', value)}
           options={[
             {
               value: 'suggest',
@@ -77,6 +84,7 @@ const BehaviorSettings: React.FC = () => {
               label: '完全自动 - 所有操作都自动执行',
             },
           ]}
+          allowClear
         />
         {settings.effectiveSettings.approvalMode !==
           currentSettings.approvalMode && (
@@ -102,7 +110,7 @@ const BehaviorSettings: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Switch
             checked={currentSettings.quiet}
-            onChange={(checked) => actions.updateSettingValue('quiet', checked)}
+            onChange={(checked) => handleSettingChange('quiet', checked)}
           />
           <Text>{currentSettings.quiet ? '启用' : '禁用'}</Text>
         </div>
