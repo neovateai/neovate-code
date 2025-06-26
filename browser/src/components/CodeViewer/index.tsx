@@ -1,7 +1,7 @@
 import { VerticalLeftOutlined } from '@ant-design/icons';
 import { Tabs, type TabsProps } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/codeViewer';
 import type {
@@ -9,8 +9,8 @@ import type {
   CodeNormalViewerTabItem,
 } from '@/types/codeViewer';
 import DevFileIcon from '../DevFileIcon';
-import CodeDiffView, { type CodeDiffViewRef } from './CodeDiffView';
-import CodeNormalView, { type CodeNormalViewRef } from './CodeNormalView';
+import CodeDiffView from './CodeDiffView';
+import CodeNormalView from './CodeNormalView';
 
 const useStyle = createStyles(({ css }) => {
   return {
@@ -51,12 +51,9 @@ function renderIcon(path?: string) {
 const CodeViewer = () => {
   const { codeViewerTabItems, activeId } = useSnapshot(state);
   const { styles } = useStyle();
-  const codeViewRefs = useRef<{
-    [key: string]: CodeNormalViewRef | CodeDiffViewRef | null;
-  }>({});
 
   const items = useMemo<TabsProps['items']>(() => {
-    const comp = codeViewerTabItems.map((item) => ({
+    return codeViewerTabItems.map((item) => ({
       key: item.id,
       label: item.title,
       closeable: true,
@@ -65,30 +62,27 @@ const CodeViewer = () => {
         item.viewType === 'normal' ? (
           <CodeNormalView
             item={item as CodeNormalViewerTabItem}
-            ref={(r) => {
-              codeViewRefs.current[item.id] = r;
+            ref={(ref) => {
+              if (ref && 'jumpToLine' in ref) {
+                actions.registerJumpFunction(item.id, (lineCount) =>
+                  ref.jumpToLine(lineCount),
+                );
+              }
             }}
           />
         ) : (
           <CodeDiffView
             item={item as CodeDiffViewerTabItem}
-            ref={(r) => {
-              codeViewRefs.current[item.id] = r;
+            ref={(ref) => {
+              if (ref && 'jumpToLine' in ref) {
+                actions.registerJumpFunction(item.id, (lineCount) =>
+                  ref.jumpToLine(lineCount),
+                );
+              }
             }}
           />
         ),
     }));
-
-    for (const path in codeViewRefs.current) {
-      const ref = codeViewRefs.current[path];
-      if (ref && 'jumpToLine' in ref) {
-        actions.registerJumpFunction(path, (lineCount) =>
-          ref.jumpToLine(lineCount),
-        );
-      }
-    }
-
-    return comp;
   }, [codeViewerTabItems]);
 
   const handleEdit = (

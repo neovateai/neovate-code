@@ -113,8 +113,21 @@ const Welcome = () => {
 
   const [diffStat, setDiffStat] = useState<DiffStat>();
 
+  const code = {
+    original: `
+      console.log(111)
+    
+      export {}
+      `,
+    modified: `
+      console.log(2222);
+
+      export default {}
+    `,
+  };
+
   useEffect(() => {
-    diff('console.log(111)', '').then((a) => setDiffStat(a));
+    diff(code.original, code.modified).then((r) => setDiffStat(r));
   }, []);
 
   return (
@@ -185,8 +198,8 @@ const Welcome = () => {
         <CodeDiffOutline
           path="/aaa/bbb.json"
           diffStat={diffStat}
-          originalCode="console.log(111)"
-          modifiedCode=""
+          originalCode={code.original}
+          modifiedCode={code.modified}
         />
       )}
     </Space>

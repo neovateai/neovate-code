@@ -9,7 +9,6 @@ interface Props {
   originalCode: string;
   modifiedCode: string;
 }
-// 先jump，失败则先打开
 
 const useStyles = createStyles(({ css }) => {
   return {
@@ -43,6 +42,11 @@ const useStyles = createStyles(({ css }) => {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-radius: 4px;
+
+      &:hover {
+        background-color: #eee;
+      }
     `,
     add: css`
       color: green;
