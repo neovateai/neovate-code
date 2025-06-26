@@ -1,5 +1,5 @@
 import defu from 'defu';
-import { z } from 'zod';
+import { Context } from './context';
 
 export enum PluginHookType {
   First = 'first',
@@ -93,142 +93,68 @@ export class PluginManager {
   }
 }
 
-export const PluginSchema = z.object({
-  enforce: z.enum(['pre', 'post']).optional(),
-  name: z.string().optional(),
-  config: z
-    .function(z.tuple([]), z.union([z.any(), z.promise(z.any()), z.null()]))
-    .optional(),
-  configResolved: z
-    .function(z.tuple([z.object({ resolvedConfig: z.any() })]), z.void())
-    .optional(),
-  cliStart: z.function(z.tuple([]), z.void()).optional(),
-  cliEnd: z
-    .function(
-      z.tuple([
-        z.object({
-          startTime: z.number(),
-          endTime: z.number(),
-          error: z.any().optional(),
-        }),
-      ]),
-      z.void(),
-    )
-    .optional(),
-  contextStart: z
-    .function(z.tuple([z.object({ prompt: z.string() })]), z.void())
-    .optional(),
-  context: z
-    .function(z.tuple([z.object({ prompt: z.string() })]), z.void())
-    .optional(),
-  toolUse: z
-    .function(
-      z.tuple([
-        z.object({
-          callId: z.string(),
-          name: z.string(),
-          params: z.any(),
-        }),
-      ]),
-      z.void(),
-    )
-    .optional(),
-  toolUseResult: z
-    .function(
-      z.tuple([
-        z.object({
-          callId: z.string(),
-          name: z.string(),
-          params: z.any(),
-          result: z.any(),
-        }),
-      ]),
-      z.void(),
-    )
-    .optional(),
-  query: z
-    .function(
-      z.tuple([
-        z.object({
-          text: z.string(),
-          parsed: z.any(),
-          input: z.any(),
-        }),
-      ]),
-      z.void(),
-    )
-    .optional(),
-  env: z.function(z.tuple([]), z.record(z.string(), z.string())).optional(),
-  model: z
-    .function(
-      z.tuple([
-        z.object({
-          modelName: z.string(),
-          aisdk: z.any(),
-          createOpenAI: z.any(),
-          createDeepSeek: z.any(),
-          createAnthropic: z.any(),
-        }),
-      ]),
-      z.promise(z.any()),
-    )
-    .optional(),
-  tool: z
-    .function(
-      z.tuple([
-        z.object({
-          agentType: z.enum(['code', 'plan']),
-        }),
-      ]),
-      z.promise(z.any()),
-    )
-    .optional(),
-  serverAppData: z
-    .function(
-      z.tuple([
-        z.object({
-          context: z.any(),
-          cwd: z.string(),
-        }),
-      ]),
-      z.promise(z.any()),
-    )
-    .optional(),
-  serverRoutes: z
-    .function(
-      z.tuple([
-        z.object({
-          app: z.any(),
-          prefix: z.string(),
-          opts: z.any(),
-        }),
-      ]),
-      z.void(),
-    )
-    .optional(),
-  serverRouteCompletions: z
-    .function(
-      z.tuple([
-        z.object({
-          message: z.object({
-            role: z.literal('user'),
-            content: z.string(),
-            attachedContexts: z.array(z.any()),
-            contextContent: z.string(),
-          }),
-          attachedContexts: z.array(z.any()),
-        }),
-      ]),
-      z.void(),
-    )
-    .optional(),
-});
+type PluginContext = Omit<
+  Context,
+  'destroy' | 'getModelProvider' | 'buildSystemPrompts' | 'addHistory'
+>;
 
-type InferedPlugin = z.infer<typeof PluginSchema>;
-type AddThisToMethods<T, ThisType> = {
-  [K in keyof T]: T[K] extends (...args: infer Args) => infer Return
-    ? (this: ThisType, ...args: Args) => Return
-    : T[K];
+type AgentType = 'code' | 'plan';
+type Enforce = 'pre' | 'post';
+
+export type Plugin = {
+  enforce?: Enforce;
+  name?: string;
+  config?: (this: PluginContext) => any | Promise<any> | null;
+  configResolved?: (this: PluginContext, opts: { resolvedConfig: any }) => void;
+  cliStart?: (this: PluginContext) => void;
+  cliEnd?: (
+    this: PluginContext,
+    opts: { startTime: number; endTime: number; error?: any },
+  ) => void;
+  contextStart?: (this: PluginContext, opts: { prompt: string }) => void;
+  context?: (this: PluginContext, opts: { prompt: string }) => void;
+  toolUse?: (
+    this: PluginContext,
+    opts: { callId: string; name: string; params: any },
+  ) => void;
+  toolUseResult?: (
+    this: PluginContext,
+    opts: { callId: string; name: string; params: any; result: any },
+  ) => void;
+  query?: (
+    this: PluginContext,
+    opts: { text: string; parsed: any; input: any },
+  ) => void;
+  env?: (this: PluginContext) => Record<string, string>;
+  model?: (
+    this: PluginContext,
+    opts: {
+      modelName: string;
+      aisdk: any;
+      createOpenAI: any;
+      createDeepSeek: any;
+      createAnthropic: any;
+    },
+  ) => Promise<any>;
+  tool?: (this: PluginContext, opts: { agentType: AgentType }) => Promise<any>;
+  serverAppData?: (
+    this: PluginContext,
+    opts: { context: any; cwd: string },
+  ) => Promise<any>;
+  serverRoutes?: (
+    this: PluginContext,
+    opts: { app: any; prefix: string; opts: any },
+  ) => void;
+  serverRouteCompletions?: (
+    this: PluginContext,
+    opts: {
+      message: {
+        role: 'user';
+        content: string;
+        attachedContexts: any[];
+        contextContent: string;
+      };
+      attachedContexts: any[];
+    },
+  ) => void;
 };
-export type Plugin = AddThisToMethods<InferedPlugin, any>;
-// export type Plugin = InferedPlugin;
