@@ -119,7 +119,13 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
       const validScope = scope as 'global' | 'project';
       const configManager = new ConfigManager(getCwd(), 'takumi', {});
 
-      configManager.setConfig(validScope === 'global', key, value);
+      // 对于 boolean 值，需要转换为字符串，因为 ConfigManager.setConfig 期望字符串参数
+      let configValue = value;
+      if (typeof value === 'boolean') {
+        configValue = value.toString();
+      }
+
+      configManager.setConfig(validScope === 'global', key, configValue);
 
       return {
         success: true,
