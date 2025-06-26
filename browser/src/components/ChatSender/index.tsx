@@ -11,6 +11,7 @@ import { differenceWith } from 'lodash-es';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
+import McpDropdown from '@/components/McpDropdown';
 import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
@@ -101,7 +102,6 @@ const ChatSender: React.FC = () => {
     setCurrentContextType,
   } = useSuggestion(contextSearchInput);
 
-  // 处理输入变化
   const onChange = (value: string) => {
     actions.updatePrompt(value);
   };
@@ -119,7 +119,6 @@ const ChatSender: React.FC = () => {
 
   return (
     <>
-      {/* 🌟 提示词 */}
       <Prompts
         items={SENDER_PROMPTS}
         onItemClick={(info) => {
@@ -219,6 +218,7 @@ const ChatSender: React.FC = () => {
                       info.components;
                     return (
                       <Flex gap={4}>
+                        <McpDropdown loading={loading} />
                         <SpeechButton className={styles.speechButton} />
                         {loading ? (
                           <LoadingButton type="default" />

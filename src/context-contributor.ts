@@ -96,7 +96,7 @@ export class ReadmeContributor implements ContextContributor {
 export class CodebaseContributor implements ContextContributor {
   name = 'codebase';
   async getContent(opts: GetContentOpts) {
-    const ats = opts.context.userPrompts
+    const ats = opts.context.history
       .join(' ')
       .split(' ')
       .filter((p) => p.startsWith('@'))
@@ -116,7 +116,7 @@ export class CodebaseContributor implements ContextContributor {
 export class FilesContributor implements ContextContributor {
   name = 'files';
   async getContent(opts: GetContentOpts) {
-    const ats = opts.context.userPrompts
+    const ats = opts.context.history
       .join(' ')
       .split(' ')
       .filter((p) => {

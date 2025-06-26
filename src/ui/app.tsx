@@ -1,4 +1,4 @@
-import { Box, Static, Text } from 'ink';
+import { Box, Static, Text, useInput } from 'ink';
 import TextInput from './ink-text-input';
 import { useSnapshot } from 'valtio';
 import SelectInput from 'ink-select-input';
@@ -221,10 +221,19 @@ function ChatInput() {
   const isFailed = snap.status === 'failed';
   const isPlan = snap.stage === 'plan';
   const [value, setValue] = React.useState('');
+  useInput((input, key) => {
+    if (key.upArrow) {
+      const history = store.actions.chatInputUp(value);
+      setValue(history);
+    }
+    if (key.downArrow) {
+      const history = store.actions.chatInputDown(value);
+      setValue(history);
+    }
+  });
   const handleSubmit = () => {
     if (value.trim() === '') return;
     setValue('');
-    store.actions.addUserPrompt(value);
     store.actions.query(value).catch(() => {});
   };
   let borderColor = 'blueBright';
@@ -249,7 +258,10 @@ function ChatInput() {
         ) :
           <TextInput
             value={value}
-            onChange={setValue}
+            onChange={(input) => {
+              store.actions.chatInputChange(input);
+              setValue(input);
+            }}
             onSubmit={handleSubmit}
           />
         }

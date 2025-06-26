@@ -66,7 +66,6 @@ export async function run(opts: RunOpts) {
       process.on('SIGTERM', exit);
     }
     if (prompt) {
-      opts.context.addUserPrompt(prompt);
       const result = await store.actions.query(prompt);
       if (!opts.plan) {
         return result;
