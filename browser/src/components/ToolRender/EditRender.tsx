@@ -1,51 +1,54 @@
-import { useEffect, useState } from 'react';
-import { editFile, readFile } from '@/api/files';
+import { useEffect } from 'react';
+import { useSnapshot } from 'valtio/react';
+import { fileChangesActions, fileChangesState } from '@/state/fileChanges';
 import type { ToolMessage } from '@/types/message';
 import CodeDiffOutline from '../CodeDiffOutline';
 
 export default function EditRender({ message }: { message?: ToolMessage }) {
-  const [loading, setLoading] = useState(true);
-  const [originalCode, setOriginalCode] = useState('');
-  const [modifiedCode, setModifiedCode] = useState('');
-
   if (!message) {
     return null;
   }
-  const { args } = message;
+  const { toolCallId, args } = message;
   const { file_path, old_string, new_string } = args as {
     file_path: string;
     old_string: string;
     new_string: string;
   };
 
+  // Register this specific edit with the global state manager.
   useEffect(() => {
-    setLoading(true);
-    readFile(file_path)
-      .then((res) => {
-        if (res.success) {
-          const modified = res.data.content;
-          setModifiedCode(modified);
-          setOriginalCode(modified.replace(new_string, old_string));
-        }
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [file_path, old_string, new_string]);
+    fileChangesActions.registerEdit(file_path, {
+      toolCallId,
+      old_string,
+      new_string,
+    });
+  }, [file_path, toolCallId, old_string, new_string]);
+
+  const snap = useSnapshot(fileChangesState);
+  const fileState = snap.files[file_path];
 
   const handleChangeCode = async (newCode: string) => {
-    await editFile(file_path, newCode);
+    await fileChangesActions.updateFileContent(file_path, newCode);
   };
 
-  if (loading) {
+  if (fileState?.isLoading) {
     return <div>Loading file content...</div>;
+  }
+
+  if (fileState?.error) {
+    return <div>Error: {fileState.error}</div>;
+  }
+
+  // Ensure we have both original and final content to display the diff.
+  if (!fileState || !fileState.originalContent || !fileState.finalContent) {
+    return <div>Preparing diff...</div>;
   }
 
   return (
     <CodeDiffOutline
       path={file_path}
-      originalCode={originalCode}
-      modifiedCode={modifiedCode}
+      originalCode={fileState.originalContent}
+      modifiedCode={fileState.finalContent}
       onChangeCode={handleChangeCode}
     />
   );
