@@ -9,20 +9,20 @@ interface ContextState {
     files: Omit<FileItem, 'name'>[];
   };
 
-  contextItems: ContextItem[];
+  attachedContexts: ContextItem[];
 
   contextsSelectedValues: string[];
 }
 
 export const state = proxy<ContextState>({
-  contextItems: [],
+  attachedContexts: [],
 
   get contextsSelectedValues() {
-    return this.contextItems.map((item: ContextItem) => item.displayText);
+    return this.attachedContexts.map((item: ContextItem) => item.displayText);
   },
 
   get contexts() {
-    const files = this.contextItems
+    const files = this.attachedContexts
       .filter(
         (contextItem: ContextItem) => contextItem.type === ContextType.FILE,
       )
@@ -45,16 +45,18 @@ export const actions = {
   /** 添加新的上下文 */
   addContext: (contextItem: ContextItem) => {
     // 去重，合并后的上下文中，已经存在的不添加
-    if (state.contextItems.some((item) => item.value === contextItem.value)) {
+    if (
+      state.attachedContexts.some((item) => item.value === contextItem.value)
+    ) {
       return;
     }
 
-    state.contextItems.push(contextItem);
+    state.attachedContexts.push(contextItem);
   },
 
   /** 删除上下文 */
   removeContext: (value: string) => {
-    state.contextItems = state.contextItems.filter(
+    state.attachedContexts = state.attachedContexts.filter(
       (item) => item.value !== value,
     );
     // change prompt and editorContexts will auto update

@@ -59,6 +59,11 @@ const useStyle = createStyles(({ token, css }) => {
       align-items: center;
       justify-content: space-between;
     `,
+    siderFooterRight: css`
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    `,
   };
 });
 
@@ -124,8 +129,10 @@ const Sider = () => {
 
       <div className={styles.siderFooter}>
         <Avatar size={24} />
-        <LanguageSwitcher />
-        <Button type="text" icon={<QuestionCircleOutlined />} />
+        <div className={styles.siderFooterRight}>
+          <LanguageSwitcher />
+          <Button type="text" icon={<QuestionCircleOutlined />} />
+        </div>
       </div>
     </div>
   );

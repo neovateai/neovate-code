@@ -42,17 +42,18 @@
     "filesize": "^10.1.6"
   },
   "devDependencies": {
-    "@types/react-i18next": "^8.1.0",
     "@tailwindcss/vite": "^4.1.10",
     "@tanstack/router-plugin": "^1.121.16",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
+    "@types/react-i18next": "^8.1.0",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vitejs/plugin-react": "^4.5.2",
     "globals": "^16.0.0",
     "tailwindcss": "^4.1.10",
     "typescript": "~5.8.3",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vite-plugin-svgr": "^4.3.0"
   },
   "keywords": [
     "takumi",

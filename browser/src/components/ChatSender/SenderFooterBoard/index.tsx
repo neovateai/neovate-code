@@ -1,9 +1,8 @@
 import { CheckCircleOutlined } from '@ant-design/icons';
 import { Flex } from 'antd';
 import { createStyles } from 'antd-style';
-import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
-import { getModes } from '@/constants/chat';
+import { MODES } from '@/constants/chat';
 import { actions, state } from '@/state/sender';
 
 const useStyle = createStyles(({ token, css }) => {
@@ -81,8 +80,6 @@ const useStyle = createStyles(({ token, css }) => {
 export default function SenderFooterBoard() {
   const { styles, cx } = useStyle();
   const { openFooter, mode } = useSnapshot(state);
-  const { t } = useTranslation();
-  const MODES = getModes(t);
 
   const onModeClick = (key: string) => {
     actions.updateModeAndFooterVisible(key, false);

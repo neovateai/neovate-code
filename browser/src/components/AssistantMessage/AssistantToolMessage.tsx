@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ToolMessage } from '@/types/message';
 import {
   BashRender,
@@ -13,6 +14,7 @@ import {
 const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
   message,
 }) => {
+  const { t } = useTranslation();
   const { state, toolName, args, step } = message;
 
   switch (toolName) {
@@ -42,19 +44,19 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
         return {
           icon: '🔄',
           iconColor: 'text-blue-500 animate-spin',
-          statusText: '执行中',
+          statusText: t('tool.status.executing'),
         };
       case 'result':
         return {
           icon: '✓',
           iconColor: 'text-green-500',
-          statusText: '完成',
+          statusText: t('tool.status.completed'),
         };
       default:
         return {
           icon: '?',
           iconColor: 'text-gray-500',
-          statusText: '未知',
+          statusText: t('tool.status.unknown'),
         };
     }
   };
@@ -146,7 +148,7 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
             return (
               <div className="mt-2">
                 <div className="text-xs text-gray-500 mb-1">
-                  找到 {data.filenames.length} 个文件
+                  {t('tool.filesFound', { count: data.filenames.length })}
                   {'durationMs' in data &&
                     typeof data.durationMs === 'number' && (
                       <span className="ml-2">({data.durationMs}ms)</span>
@@ -165,7 +167,9 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
                     ))}
                   {data.filenames.length > 10 && (
                     <div className="text-xs text-gray-500 italic">
-                      ...还有 {data.filenames.length - 10} 个文件
+                      {t('tool.moreFiles', {
+                        count: data.filenames.length - 10,
+                      })}
                     </div>
                   )}
                 </div>
@@ -185,7 +189,7 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
                 <div className="text-xs text-gray-500 mb-1">
                   {'totalLines' in data &&
                     typeof data.totalLines === 'number' && (
-                      <span>{data.totalLines} 行</span>
+                      <span>{t('tool.lines', { count: data.totalLines })}</span>
                     )}
                 </div>
                 <div className="bg-gray-50 border-l-2 border-gray-300 pl-4 py-2 max-h-64 overflow-auto">
