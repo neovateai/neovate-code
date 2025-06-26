@@ -52,7 +52,7 @@ export class Context {
   mcpTools: Tool[];
   git: string | null;
   ide: IDE | null;
-  userPrompts: string[];
+  history: string[];
   generalInfo: Record<string, string>;
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
@@ -65,7 +65,7 @@ export class Context {
     this.git = opts.git;
     this.ide = opts.ide;
     this.generalInfo = opts.generalInfo;
-    this.userPrompts = [];
+    this.history = [];
   }
 
   static async create(opts: CreateContextOpts) {
@@ -88,8 +88,8 @@ export class Context {
     };
   }
 
-  addUserPrompt(prompt: string) {
-    this.userPrompts.push(prompt);
+  addHistory(prompt: string) {
+    this.history.push(prompt);
   }
 
   async buildSystemPrompts() {

@@ -26,7 +26,7 @@ function appendLogToFile(log: string) {
 }
 
 export function createStore(opts: CreateStoreOpts) {
-  const createdStore = proxy<Store>({
+  const store: any = proxy<Store>({
     stage: opts.stage,
     planModal: null,
     productName: opts.context.productName,
@@ -36,19 +36,51 @@ export function createStore(opts: CreateStoreOpts) {
     error: null,
     messages: [],
     currentMessage: null,
+    history: opts.context.history,
+    historyIndex: null,
+    draftInput: null,
     actions: {
-      addUserPrompt: (input: string) => {
-        opts.context.addUserPrompt(input);
+      addHistory: (input: string) => {
+        opts.context.addHistory(input);
+        store.history.push(input);
+      },
+      chatInputUp: (input: string) => {
+        if (store.history.length === 0) {
+          return input;
+        }
+        if (store.historyIndex === null) {
+          store.draftInput = input;
+          store.historyIndex = store.history.length - 1;
+        } else if (store.historyIndex > 0) {
+          store.historyIndex--;
+        }
+        return store.history[store.historyIndex];
+      },
+      chatInputDown: (input: string) => {
+        if (store.historyIndex === null) {
+          return input;
+        }
+        if (store.historyIndex === store.history.length - 1) {
+          store.historyIndex = null;
+          return store.draftInput || '';
+        }
+        store.historyIndex++;
+        return store.history[store.historyIndex];
+      },
+      chatInputChange: (input: string) => {
+        store.historyIndex = null;
       },
       query: async (input: string): Promise<any> => {
         await delay(100);
+        store.historyIndex = null;
+        opts.context.addHistory(input);
         const service =
-          createdStore.stage === 'plan' ? opts.planService : opts.service;
+          store.stage === 'plan' ? opts.planService : opts.service;
         let textDelta = '';
         let reasoningDelta = '';
-        createdStore.status = 'processing';
-        createdStore.error = null;
-        createdStore.messages.push({
+        store.status = 'processing';
+        store.error = null;
+        store.messages.push({
           role: 'user',
           content: {
             type: 'text',
@@ -68,13 +100,13 @@ export function createStore(opts: CreateStoreOpts) {
             async onTextDelta(text) {
               appendLogToFile(`onTextDelta: ${text}`);
               await delay(100);
-              if (reasoningDelta && createdStore.currentMessage) {
+              if (reasoningDelta && store.currentMessage) {
                 reasoningDelta = '';
-                createdStore.messages.push(createdStore.currentMessage);
-                createdStore.currentMessage = null;
+                store.messages.push(store.currentMessage);
+                store.currentMessage = null;
               }
               textDelta += text;
-              createdStore.currentMessage = {
+              store.currentMessage = {
                 role: 'assistant',
                 content: {
                   type: 'text',
@@ -85,9 +117,9 @@ export function createStore(opts: CreateStoreOpts) {
             async onText(text) {
               appendLogToFile(`onText: ${text}`);
               await delay(100);
-              createdStore.currentMessage = null;
+              store.currentMessage = null;
               textDelta = '';
-              createdStore.messages.push({
+              store.messages.push({
                 role: 'assistant',
                 content: {
                   type: 'text',
@@ -100,7 +132,7 @@ export function createStore(opts: CreateStoreOpts) {
               appendLogToFile(`onReasoning: ${text}`);
               await delay(100);
               reasoningDelta += text;
-              createdStore.currentMessage = {
+              store.currentMessage = {
                 role: 'assistant',
                 content: {
                   type: 'thinking',
@@ -115,7 +147,7 @@ export function createStore(opts: CreateStoreOpts) {
               );
               await delay(100);
               debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
-              createdStore.messages.push({
+              store.messages.push({
                 role: 'assistant',
                 content: {
                   type: 'tool-call',
@@ -132,7 +164,7 @@ export function createStore(opts: CreateStoreOpts) {
               debug(
                 `Tool use result: ${name} with result ${JSON.stringify(result)}`,
               );
-              createdStore.messages.push({
+              store.messages.push({
                 role: 'tool',
                 content: {
                   type: 'tool-result',
@@ -143,21 +175,21 @@ export function createStore(opts: CreateStoreOpts) {
               });
             },
           });
-          createdStore.status = 'completed';
-          if (createdStore.stage === 'plan') {
-            createdStore.planModal = { text: result.finalText || '' };
+          store.status = 'completed';
+          if (store.stage === 'plan') {
+            store.planModal = { text: result.finalText || '' };
           }
           return result;
         } catch (e: any) {
-          createdStore.status = 'failed';
-          createdStore.error = e.message || String(e);
-          createdStore.currentMessage = null;
+          store.status = 'failed';
+          store.error = e.message || String(e);
+          store.currentMessage = null;
           throw e;
         }
       },
     },
   });
-  return createdStore;
+  return store;
 }
 
 export interface Store {
@@ -176,8 +208,14 @@ export interface Store {
   error: string | null;
   messages: Message[];
   currentMessage: Message | null;
+  history: string[];
+  historyIndex: number | null;
+  draftInput: string | null;
   actions: {
-    addUserPrompt: (input: string) => void;
+    addHistory: (input: string) => void;
+    chatInputUp: (input: string) => string;
+    chatInputDown: (input: string) => string;
+    chatInputChange: (input: string) => void;
     query: (input: string) => Promise<any>;
   };
 }

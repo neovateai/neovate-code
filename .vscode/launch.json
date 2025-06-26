@@ -6,7 +6,7 @@
       "request": "launch",
       "name": "Debug cli",
       "program": "${workspaceFolder}/src/cli.ts",
-      "args": ["create a.txt with some romantic text"],
+      "args": [],
       // "args": ["check the git status"],
       "runtimeExecutable": "tsx",
       "runtimeArgs": [],
