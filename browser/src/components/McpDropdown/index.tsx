@@ -36,11 +36,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
   ] = useBoolean(false);
   const [
     dropdownOpen,
-    {
-      toggle: toggleDropdown,
-      setTrue: setDropdownTrue,
-      setFalse: setDropdownFalse,
-    },
+    { setTrue: setDropdownTrue, setFalse: setDropdownFalse },
   ] = useBoolean(false);
   const [
     editApiKeyModalOpen,
