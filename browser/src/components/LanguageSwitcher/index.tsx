@@ -19,16 +19,11 @@ const LanguageSwitcher: React.FC = () => {
     },
   ];
 
-  const getCurrentLanguageLabel = () => {
-    return i18n.language === 'zh' ? '简体中文' : 'English';
-  };
-
   return (
     <Dropdown menu={{ items }} placement="topLeft">
       <Button type="text" size="small">
         <Space>
           <GlobalOutlined />
-          {getCurrentLanguageLabel()}
         </Space>
       </Button>
     </Dropdown>

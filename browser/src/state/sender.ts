@@ -11,7 +11,7 @@ export const state = proxy<SenderState>({
   prompt: '',
   plainText: '',
   mode: 'agent',
-  openFooter: true,
+  openFooter: false,
 });
 
 export const actions = {
