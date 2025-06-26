@@ -34,6 +34,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   approvalMode: 'suggest',
   plugins: [],
   mcpServers: {},
+  model: 'flash',
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),

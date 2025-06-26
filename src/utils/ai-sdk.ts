@@ -26,6 +26,7 @@ import {
   withGenerationSpan,
 } from '@openai/agents';
 import { isZodObject } from '@openai/agents/utils';
+import { mergeConsecutiveSystemMessages } from './merge-consecutive-system-messages';
 
 /**
  * @internal
@@ -370,6 +371,13 @@ export class AiSdkModel implements Model {
           ];
         }
 
+        // Merge consecutive system messages for Anthropic and Gemini models
+        input = mergeConsecutiveSystemMessages(
+          input,
+          this.#model.provider,
+          this.#model.modelId,
+        );
+
         const tools = request.tools.map((tool) =>
           toolToLanguageV1Tool(this.#model, tool),
         );
@@ -528,6 +536,13 @@ export class AiSdkModel implements Model {
           ...input,
         ];
       }
+
+      // Merge consecutive system messages for Anthropic and Gemini models
+      input = mergeConsecutiveSystemMessages(
+        input,
+        this.#model.provider,
+        this.#model.modelId,
+      );
 
       const tools = request.tools.map((tool) =>
         toolToLanguageV1Tool(this.#model, tool),

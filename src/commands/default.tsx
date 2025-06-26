@@ -13,6 +13,7 @@ import { PluginHookType } from '../plugin';
 import { Service } from '../service';
 import { setupTracing } from '../tracing';
 import { App } from '../ui/app';
+import { StoreProvider } from '../ui/hooks/use-store';
 import { createStore } from '../ui/store';
 
 React;
@@ -38,18 +39,22 @@ export async function run(opts: RunOpts) {
       context,
     });
     const store = createStore({
-      productName: opts.context.productName,
-      version: opts.context.version,
+      context,
       service,
       planService: planService,
       stage: opts.plan ? 'plan' : 'code',
     });
     const quiet = opts.context.config.quiet;
     if (!quiet) {
-      render(<App />, {
-        patchConsole: process.env.DEBUG ? false : true,
-        exitOnCtrlC: true,
-      });
+      render(
+        <StoreProvider store={store}>
+          <App />
+        </StoreProvider>,
+        {
+          patchConsole: process.env.DEBUG ? false : true,
+          exitOnCtrlC: true,
+        },
+      );
       const exit = () => {
         debug('exit');
         opts.context.destroy().then(() => {
@@ -76,6 +81,7 @@ export async function run(opts: RunOpts) {
       }
       return null;
     }
+  } catch {
   } finally {
     const quiet = opts.context.config.quiet;
     if (quiet) {
@@ -85,7 +91,7 @@ export async function run(opts: RunOpts) {
 }
 
 export async function runDefault(opts: RunCliOpts) {
-  const traceName = `${opts.productName}-default}`;
+  const traceName = `${opts.productName}-default`;
   return await withTrace(traceName, async () => {
     const startTime = Date.now();
     const argv = yargsParser(process.argv.slice(2), {
@@ -94,9 +100,7 @@ export async function runDefault(opts: RunCliOpts) {
         help: 'h',
         quiet: 'q',
       },
-      default: {
-        model: 'flash',
-      },
+      default: {},
       array: ['plugin'],
       boolean: ['json', 'help', 'plan', 'quiet'],
       string: ['model', 'smallModel', 'planModel'],
@@ -127,6 +131,7 @@ export async function runDefault(opts: RunCliOpts) {
         plugins: argv.plugin,
       },
       plugins: opts.plugins,
+      traceFile,
     });
     await context.apply({
       hook: 'cliStart',
