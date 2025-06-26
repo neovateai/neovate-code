@@ -22,6 +22,19 @@ const BehaviorSettings: React.FC = () => {
     }
   };
 
+  const getApprovalModeLabel = (mode: string) => {
+    switch (mode) {
+      case 'suggest':
+        return '建议模式';
+      case 'auto-edit':
+        return '自动编辑';
+      case 'full-auto':
+        return '完全自动';
+      default:
+        return mode;
+    }
+  };
+
   return (
     <Form layout="vertical">
       <Form.Item
@@ -40,21 +53,14 @@ const BehaviorSettings: React.FC = () => {
           options={[
             { value: 'English', label: 'English' },
             { value: 'Chinese', label: '中文' },
-            { value: '日本語', label: '日本語' },
-            { value: 'Français', label: 'Français' },
-            { value: 'Deutsch', label: 'Deutsch' },
-            { value: 'Español', label: 'Español' },
           ]}
+          placeholder={
+            settings.effectiveSettings.language
+              ? `默认: ${settings.effectiveSettings.language}`
+              : '选择界面语言'
+          }
           allowClear
         />
-        {settings.effectiveSettings.language !== currentSettings.language && (
-          <Text
-            type="secondary"
-            style={{ fontSize: '12px', marginTop: '4px', display: 'block' }}
-          >
-            当前有效值: {settings.effectiveSettings.language}
-          </Text>
-        )}
       </Form.Item>
 
       <Form.Item
@@ -84,17 +90,13 @@ const BehaviorSettings: React.FC = () => {
               label: '完全自动 - 所有操作都自动执行',
             },
           ]}
+          placeholder={
+            settings.effectiveSettings.approvalMode
+              ? `默认: ${getApprovalModeLabel(settings.effectiveSettings.approvalMode)}`
+              : '选择执行模式'
+          }
           allowClear
         />
-        {settings.effectiveSettings.approvalMode !==
-          currentSettings.approvalMode && (
-          <Text
-            type="secondary"
-            style={{ fontSize: '12px', marginTop: '4px', display: 'block' }}
-          >
-            当前有效值: {settings.effectiveSettings.approvalMode}
-          </Text>
-        )}
       </Form.Item>
 
       <Form.Item
@@ -112,16 +114,14 @@ const BehaviorSettings: React.FC = () => {
             checked={currentSettings.quiet}
             onChange={(checked) => handleSettingChange('quiet', checked)}
           />
-          <Text>{currentSettings.quiet ? '启用' : '禁用'}</Text>
-        </div>
-        {settings.effectiveSettings.quiet !== currentSettings.quiet && (
-          <Text
-            type="secondary"
-            style={{ fontSize: '12px', marginTop: '4px', display: 'block' }}
-          >
-            当前有效值: {settings.effectiveSettings.quiet ? '启用' : '禁用'}
+          <Text>
+            {currentSettings.quiet !== undefined
+              ? currentSettings.quiet
+                ? '启用'
+                : '禁用'
+              : `默认: ${settings.effectiveSettings.quiet ? '启用' : '禁用'}`}
           </Text>
-        )}
+        </div>
       </Form.Item>
     </Form>
   );

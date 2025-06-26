@@ -59,20 +59,15 @@ const ModelSettings: React.FC = () => {
           value={currentSettings.model}
           onChange={(value) => handleModelChange('model', value)}
           options={getModelOptions()}
-          placeholder="选择主模型"
+          placeholder={
+            settings.effectiveSettings.model
+              ? `默认: ${settings.effectiveSettings.model}`
+              : '选择主模型'
+          }
           allowClear
           showSearch
           filterOption={filterOption}
         />
-        {settings.effectiveSettings.model &&
-          settings.effectiveSettings.model !== currentSettings.model && (
-            <Text
-              type="secondary"
-              style={{ fontSize: '12px', marginTop: '4px', display: 'block' }}
-            >
-              当前有效值: {settings.effectiveSettings.model}
-            </Text>
-          )}
       </Form.Item>
 
       <Form.Item
@@ -89,21 +84,15 @@ const ModelSettings: React.FC = () => {
           value={currentSettings.smallModel}
           onChange={(value) => handleModelChange('smallModel', value)}
           options={getModelOptions()}
-          placeholder="选择小模型（可选）"
+          placeholder={
+            settings.effectiveSettings.smallModel
+              ? `默认: ${settings.effectiveSettings.smallModel}`
+              : '选择小模型（可选）'
+          }
           allowClear
           showSearch
           filterOption={filterOption}
         />
-        {settings.effectiveSettings.smallModel &&
-          settings.effectiveSettings.smallModel !==
-            currentSettings.smallModel && (
-            <Text
-              type="secondary"
-              style={{ fontSize: '12px', marginTop: '4px', display: 'block' }}
-            >
-              当前有效值: {settings.effectiveSettings.smallModel}
-            </Text>
-          )}
       </Form.Item>
 
       <Form.Item
@@ -120,21 +109,15 @@ const ModelSettings: React.FC = () => {
           value={currentSettings.planModel}
           onChange={(value) => handleModelChange('planModel', value)}
           options={getModelOptions()}
-          placeholder="选择规划模型（可选）"
+          placeholder={
+            settings.effectiveSettings.planModel
+              ? `默认: ${settings.effectiveSettings.planModel}`
+              : '选择规划模型（可选）'
+          }
           allowClear
           showSearch
           filterOption={filterOption}
         />
-        {settings.effectiveSettings.planModel &&
-          settings.effectiveSettings.planModel !==
-            currentSettings.planModel && (
-            <Text
-              type="secondary"
-              style={{ fontSize: '12px', marginTop: '4px', display: 'block' }}
-            >
-              当前有效值: {settings.effectiveSettings.planModel}
-            </Text>
-          )}
       </Form.Item>
     </Form>
   );
