@@ -1,3 +1,4 @@
+import { editFile } from '@/api/files';
 import type { ToolMessage } from '@/types/message';
 import CodeDiffOutline from '../CodeDiffOutline';
 
@@ -12,9 +13,9 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
     new_string: string;
   };
 
-  const handleChangeCode = (newCode: string) => {
+  const handleChangeCode = async (newCode: string) => {
     console.log('newCode', newCode);
-    // TODO: 更新代码
+    await editFile(file_path, newCode);
   };
 
   return (

@@ -15,6 +15,16 @@ const FileListRequestSchema = Type.Object({
   includeMetadata: Type.Optional(Type.Number()),
 });
 
+const FileEditRequestSchema = Type.Object({
+  filePath: Type.String(),
+  content: Type.String(),
+});
+
+interface FileEditRequest {
+  filePath: string;
+  content: string;
+}
+
 const DEFAULT_DIRECTORY = '.';
 const DEFAULT_MAX_DEPTH = 3;
 const DEFAULT_INCLUDE_METADATA = 0;
@@ -262,6 +272,49 @@ const filesRoute: FastifyPluginAsync<CreateServerOpts> = async (app, opts) => {
             error instanceof Error
               ? error.message
               : 'Unknown error occurred while getting file list',
+        });
+      }
+    },
+  );
+
+  app.post<{ Body: FileEditRequest }>(
+    '/files/edit',
+    {
+      schema: {
+        body: FileEditRequestSchema,
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { filePath, content } = request.body;
+        const cwd = opts.context.cwd;
+        const absolutePath = path.resolve(cwd, filePath);
+
+        if (!absolutePath.startsWith(cwd)) {
+          return reply.code(400).send({
+            success: false,
+            error: 'File path is outside of the project directory.',
+          });
+        }
+
+        const fs = await import('fs/promises');
+        await fs.writeFile(absolutePath, content, 'utf-8');
+
+        return reply.send({
+          success: true,
+          data: {
+            message: 'File updated successfully.',
+            filePath,
+          },
+        });
+      } catch (error) {
+        debug(`File edit API error:`, error);
+        return reply.code(500).send({
+          success: false,
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Unknown error occurred while editing file.',
         });
       }
     },
