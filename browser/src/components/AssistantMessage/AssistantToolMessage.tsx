@@ -8,7 +8,6 @@ import {
   GrepRender,
   LsRender,
   ReadRender,
-  WriteRender,
 } from '../ToolRender';
 
 const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
@@ -29,8 +28,6 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
       return <BashRender message={message} />;
     case 'fetch':
       return <FetchRender message={message} />;
-    case 'write':
-      return <WriteRender message={message} />;
     case 'edit':
       return <EditRender message={message} />;
   }
