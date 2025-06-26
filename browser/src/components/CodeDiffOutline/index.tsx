@@ -18,6 +18,7 @@ import type {
   DiffStat,
 } from '@/types/codeViewer';
 import { diff } from '@/utils/codeViewer';
+import DiffStatBlocks from '../CodeViewer/DiffStatBlocks';
 
 interface Props {
   readonly path: string;
@@ -25,7 +26,12 @@ interface Props {
   readonly modifiedCode: string;
   /** 如果不传，默认使用path中的文件后缀推断 */
   language?: CodeViewerLanguage;
-  /** 修改代码，可能会在 accept / rollback 时触发 */
+  /**
+   * 修改代码，可能会在 accept / reject / rollback 时触发
+   *
+   * @param newCode 操作后，应当写入文件的代码
+   *
+   */
   onChangeCode?: (newCode: string) => void;
 }
 
@@ -33,9 +39,10 @@ const useStyles = createStyles(({ css, token }) => {
   return {
     container: css`
       min-width: 200px;
-
       border-radius: 8px;
       padding: 8px;
+
+      user-select: none;
 
       background-color: #eee;
 
@@ -83,6 +90,10 @@ const useStyles = createStyles(({ css, token }) => {
       display: flex;
       align-items: center;
       column-gap: 8px;
+    `,
+    itemLeftDiffStat: css`
+      display: flex;
+      align-items: center;
     `,
     itemRight: css`
       display: flex;
@@ -205,6 +216,7 @@ const CodeDiffOutline = (props: Props) => {
     const nextModifiedCode = nextModifiedArray.join('\n');
     const nextCodes = { ...currentCodes, modifiedCode: nextModifiedCode };
     setCurrentCodes(nextCodes);
+    onChangeCode?.(currentCodes.originalCode);
     showDiff(nextCodes);
   };
 
@@ -226,6 +238,7 @@ const CodeDiffOutline = (props: Props) => {
       modifiedCode: currentCodes.originalCode,
     };
     setCurrentCodes(nextCodes);
+    onChangeCode?.(currentCodes.originalCode);
     showDiff(nextCodes);
   };
 
@@ -268,7 +281,7 @@ const CodeDiffOutline = (props: Props) => {
           <DevFileIcon size={16} fileExt={path.split('.').pop() || ''} />
           <div className={styles.plainText}>{path}</div>
           {hasDiff && (
-            <div>
+            <div className={styles.itemLeftDiffStat}>
               {diffStat?.addLines && diffStat.addLines > 0 && (
                 <span className={styles.add}>
                   +{diffStat.addLines.toLocaleString()}
@@ -279,6 +292,7 @@ const CodeDiffOutline = (props: Props) => {
                   -{diffStat.removeLines.toLocaleString()}
                 </span>
               )}
+              <DiffStatBlocks diffStat={diffStat} />
             </div>
           )}
         </div>
