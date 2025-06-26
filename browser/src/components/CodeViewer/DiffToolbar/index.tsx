@@ -34,11 +34,6 @@ const useStyles = createStyles(({ css, token }) => {
       display: flex;
       align-items: center;
     `,
-    diffStatBlocks: css`
-      display: flex;
-      align-items: center;
-      margin-left: 8px;
-    `,
     tools: css`
       display: flex;
       align-items: center;
@@ -68,9 +63,7 @@ const DiffToolbar = (props: Props) => {
             <div className={styles.remove}>
               -{item.diffStat.removeLines.toLocaleString()}
             </div>
-            <div className={styles.diffStatBlocks}>
-              <DiffStatBlocks diffStat={item.diffStat} />
-            </div>
+            <DiffStatBlocks diffStat={item.diffStat} />
           </div>
         )}
       </div>

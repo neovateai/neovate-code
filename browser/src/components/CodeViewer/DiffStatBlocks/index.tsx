@@ -23,6 +23,11 @@ const useStyles = createStyles(({ css, token }) => {
       height: 8px;
       margin: 0 1px;
     `,
+    diffStatBlocks: css`
+      display: flex;
+      align-items: center;
+      margin-left: 8px;
+    `,
   };
 });
 
@@ -65,29 +70,34 @@ const DiffStatBlocks = (props: Props) => {
     );
   }, [diffStat]);
 
-  return diffStatArray.map((statType, index) => {
-    if (statType === 'add') {
-      return (
-        <div
-          key={index}
-          className={classNames(styles.addBlock, styles.block)}
-        />
-      );
-    } else if (statType === 'remove') {
-      return (
-        <div
-          key={index}
-          className={classNames(styles.removeBlock, styles.block)}
-        />
-      );
-    } else {
-      return (
-        <div
-          key={index}
-          className={classNames(styles.normalBlock, styles.block)}
-        />
-      );
-    }
-  });
+  return (
+    <div className={styles.diffStatBlocks}>
+      {diffStatArray.map((statType, index) => {
+        if (statType === 'add') {
+          return (
+            <div
+              key={index}
+              className={classNames(styles.addBlock, styles.block)}
+            />
+          );
+        } else if (statType === 'remove') {
+          return (
+            <div
+              key={index}
+              className={classNames(styles.removeBlock, styles.block)}
+            />
+          );
+        } else {
+          return (
+            <div
+              key={index}
+              className={classNames(styles.normalBlock, styles.block)}
+            />
+          );
+        }
+      })}
+    </div>
+  );
 };
+
 export default DiffStatBlocks;
