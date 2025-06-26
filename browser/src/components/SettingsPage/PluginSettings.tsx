@@ -22,7 +22,7 @@ const PluginSettings: React.FC = () => {
       : settings.projectSettings;
   const currentPlugins = currentSettings.plugins || [];
 
-  const handleAddPlugin = async () => {
+  const onAddPlugin = async () => {
     if (newPlugin.trim()) {
       try {
         await actions.addPlugin(newPlugin.trim());
@@ -33,7 +33,7 @@ const PluginSettings: React.FC = () => {
     }
   };
 
-  const handleRemovePlugin = (plugin: string) => {
+  const onRemovePlugin = (plugin: string) => {
     try {
       actions.removePlugin(plugin);
     } catch (error) {
@@ -59,12 +59,12 @@ const PluginSettings: React.FC = () => {
               value={newPlugin}
               onChange={(e) => setNewPlugin(e.target.value)}
               placeholder={t('settings.plugins.placeholder')}
-              onPressEnter={handleAddPlugin}
+              onPressEnter={onAddPlugin}
             />
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={handleAddPlugin}
+              onClick={onAddPlugin}
             >
               {t('settings.plugins.add')}
             </Button>
@@ -82,7 +82,7 @@ const PluginSettings: React.FC = () => {
                       type="text"
                       size="small"
                       icon={<DeleteOutlined />}
-                      onClick={() => handleRemovePlugin(plugin)}
+                      onClick={() => onRemovePlugin(plugin)}
                       danger
                     />,
                   ]}

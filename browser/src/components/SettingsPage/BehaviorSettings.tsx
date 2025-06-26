@@ -17,7 +17,7 @@ const BehaviorSettings: React.FC = () => {
       ? settings.globalSettings
       : settings.projectSettings;
 
-  const handleSettingChange = async (
+  const onSettingChange = async (
     key: keyof AppSettings,
     value: string | boolean,
   ) => {
@@ -28,7 +28,7 @@ const BehaviorSettings: React.FC = () => {
     }
   };
 
-  const handleLanguageChange = async (value: string) => {
+  const onLanguageChange = async (value: string) => {
     try {
       // Switch interface language immediately
       const languageCode = value === 'Chinese' ? 'zh' : 'en';
@@ -68,7 +68,7 @@ const BehaviorSettings: React.FC = () => {
       >
         <Select
           value={currentSettings.language}
-          onChange={handleLanguageChange}
+          onChange={onLanguageChange}
           options={[
             { value: 'English', label: 'English' },
             { value: 'Chinese', label: '简体中文' },
@@ -94,7 +94,7 @@ const BehaviorSettings: React.FC = () => {
       >
         <Select
           value={currentSettings.approvalMode}
-          onChange={(value) => handleSettingChange('approvalMode', value)}
+          onChange={(value) => onSettingChange('approvalMode', value)}
           options={[
             {
               value: 'suggest',
@@ -131,7 +131,7 @@ const BehaviorSettings: React.FC = () => {
         <div className="flex items-center gap-2">
           <Switch
             checked={currentSettings.quiet}
-            onChange={(checked) => handleSettingChange('quiet', checked)}
+            onChange={(checked) => onSettingChange('quiet', checked)}
           />
           <Text>
             {currentSettings.quiet !== undefined

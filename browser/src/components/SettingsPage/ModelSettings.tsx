@@ -15,7 +15,7 @@ const ModelSettings: React.FC = () => {
       ? settings.globalSettings
       : settings.projectSettings;
 
-  const handleModelChange = async (key: keyof AppSettings, value: string) => {
+  const onModelChange = async (key: keyof AppSettings, value: string) => {
     try {
       await actions.updateSettingValue(key, value);
     } catch (error) {
@@ -72,7 +72,7 @@ const ModelSettings: React.FC = () => {
       >
         <Select
           value={currentSettings.model}
-          onChange={(value) => handleModelChange('model', value)}
+          onChange={(value) => onModelChange('model', value)}
           options={getModelOptions()}
           placeholder={
             settings.effectiveSettings.model
@@ -97,7 +97,7 @@ const ModelSettings: React.FC = () => {
       >
         <Select
           value={currentSettings.smallModel}
-          onChange={(value) => handleModelChange('smallModel', value)}
+          onChange={(value) => onModelChange('smallModel', value)}
           options={getModelOptions()}
           placeholder={
             settings.effectiveSettings.smallModel
@@ -122,7 +122,7 @@ const ModelSettings: React.FC = () => {
       >
         <Select
           value={currentSettings.planModel}
-          onChange={(value) => handleModelChange('planModel', value)}
+          onChange={(value) => onModelChange('planModel', value)}
           options={getModelOptions()}
           placeholder={
             settings.effectiveSettings.planModel
