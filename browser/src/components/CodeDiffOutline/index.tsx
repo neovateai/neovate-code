@@ -4,10 +4,9 @@ import {
   ExpandAltOutlined,
   RollbackOutlined,
 } from '@ant-design/icons';
-import { Button, Divider, Tooltip } from 'antd';
+import { Button } from 'antd';
 import { createStyles } from 'antd-style';
 import { useEffect, useState } from 'react';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import DevFileIcon from '@/components/DevFileIcon';
 import * as codeViewer from '@/state/codeViewer';
@@ -17,6 +16,7 @@ import type {
   DiffStat,
 } from '@/types/codeViewer';
 import { diff } from '@/utils/codeViewer';
+import CodeDiffView from '../CodeViewer/CodeDiffView';
 import DiffStatBlocks from '../CodeViewer/DiffStatBlocks';
 import { withConfigProvider } from '../CodeViewer/WithConfigProvider';
 
@@ -67,6 +67,7 @@ const useStyles = createStyles(({ css, token }) => {
       display: flex;
       justify-content: center;
       column-gap: 8px;
+      margin-left: 8px;
     `,
     headerRight: css`
       display: flex;
@@ -311,14 +312,6 @@ const CodeDiffOutline = (props: Props) => {
           {hasDiff && (
             <>
               <Button
-                type="text"
-                shape="circle"
-                onClick={() => {
-                  showDiff(currentCodes);
-                }}
-                icon={<ExpandAltOutlined />}
-              />
-              <Button
                 type="primary"
                 icon={<CloseOutlined />}
                 danger
@@ -339,76 +332,33 @@ const CodeDiffOutline = (props: Props) => {
               >
                 {t('codeViewer.toolButton.acceptAll')}
               </Button>
+              <Button
+                type="text"
+                shape="circle"
+                onClick={() => {
+                  showDiff(currentCodes);
+                }}
+                icon={<ExpandAltOutlined />}
+              />
             </>
           )}
         </div>
       </div>
-      {hasDiff && (
-        <div className={styles.innerContainer}>
-          {diffStat?.diffBlockStats.map((blockStat, index) => {
-            return (
-              <React.Fragment key={index}>
-                {index > 0 && <Divider className={styles.itemDivider} />}
-                <div
-                  className={styles.item}
-                  onClick={() => {
-                    showDiff(currentCodes);
-                    codeViewer.actions.jumpToLine(
-                      path,
-                      blockStat.modifiedStartLineNumber,
-                    );
-                  }}
-                >
-                  <div className={styles.itemLeft}>
-                    <div className={styles.plainText}>
-                      L{blockStat.modifiedStartLineNumber}-
-                      {blockStat.modifiedEndLineNumber ||
-                        blockStat.modifiedStartLineNumber}
-                    </div>
-                    <div>
-                      {blockStat.addLines > 0 && (
-                        <span className={styles.add}>
-                          +{blockStat.addLines}
-                        </span>
-                      )}
-                      {blockStat.removeLines > 0 && (
-                        <span className={styles.remove}>
-                          -{blockStat.removeLines}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className={styles.itemRight}>
-                    <Tooltip title={t('codeViewer.toolButton.reject')}>
-                      <Button
-                        size="small"
-                        type="primary"
-                        icon={<CloseOutlined />}
-                        danger
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleReject(blockStat);
-                        }}
-                      />
-                    </Tooltip>
-                    <Tooltip title={t('codeViewer.toolButton.accept')}>
-                      <Button
-                        size="small"
-                        type="primary"
-                        icon={<CheckOutlined />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAccept(blockStat);
-                        }}
-                      />
-                    </Tooltip>
-                  </div>
-                </div>
-              </React.Fragment>
-            );
-          })}
-        </div>
-      )}
+
+      <div className={styles.innerContainer}>
+        <CodeDiffView
+          hideToolBar
+          height={300}
+          item={{
+            path,
+            originalCode: currentCodes.originalCode,
+            modifiedCode: currentCodes.modifiedCode,
+            viewType: 'diff',
+            title: path,
+            id: path,
+          }}
+        />
+      </div>
     </div>
   );
 };

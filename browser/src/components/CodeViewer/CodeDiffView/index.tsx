@@ -18,6 +18,8 @@ import { withConfigProvider } from '../WithConfigProvider';
 
 interface Props {
   item: CodeDiffViewerTabItem;
+  height?: number;
+  hideToolBar?: boolean;
 }
 
 export interface CodeDiffViewRef {
@@ -39,7 +41,7 @@ const useStyle = createStyles(({ css }) => {
 });
 
 const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
-  const { item } = props;
+  const { item, height, hideToolBar } = props;
   const { styles } = useStyle();
   const editorRef = useRef<monaco.editor.IStandaloneDiffEditor>(null);
   const widgetRef = useRef<{ id: string; dispose: () => void } | null>(null);
@@ -126,26 +128,29 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
 
   return (
     <div className={styles.container}>
-      <DiffToolbar
-        onGotoDiff={(target) => {
-          editorRef?.current?.goToDiff(target);
-        }}
-        onAcceptAll={() => {
-          if (item.path) {
-            codeViewer.actions.doEdit(item.path, 'accept');
-          }
-        }}
-        onRejectAll={() => {
-          if (item.path) {
-            codeViewer.actions.doEdit(item.path, 'reject');
-          }
-        }}
-        onChangeShowBlockActions={(show) => {
-          setShowBlockActions(show);
-        }}
-        item={item}
-      />
+      {!hideToolBar && (
+        <DiffToolbar
+          onGotoDiff={(target) => {
+            editorRef?.current?.goToDiff(target);
+          }}
+          onAcceptAll={() => {
+            if (item.path) {
+              codeViewer.actions.doEdit(item.path, 'accept');
+            }
+          }}
+          onRejectAll={() => {
+            if (item.path) {
+              codeViewer.actions.doEdit(item.path, 'reject');
+            }
+          }}
+          onChangeShowBlockActions={(show) => {
+            setShowBlockActions(show);
+          }}
+          item={item}
+        />
+      )}
       <DiffEditor
+        height={height}
         className={styles.editor}
         originalLanguage={item.language}
         modifiedLanguage={item.language}
@@ -153,6 +158,10 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
         modified={item.modifiedCode}
         onMount={(editor) => {
           editorRef.current = editor;
+          // hide original editor line numbers
+          editor.getOriginalEditor().updateOptions({
+            lineNumbers: 'off',
+          });
         }}
         beforeMount={(monaco) => {
           monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
@@ -168,7 +177,6 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
           contextmenu: false,
           readOnly: true,
           fontSize: 14,
-          renderSideBySide: true,
           hideUnchangedRegions: { enabled: true },
           minimap: { enabled: false },
           diffAlgorithm: 'advanced',
