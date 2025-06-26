@@ -29,9 +29,13 @@ export interface DiffBlockStat {
 }
 
 export interface DiffStat {
+  /** 修改前行数 */
   originalLines: number;
+  /** 修改后行数 */
   modifiedLines: number;
+  /** 新增的行数 */
   addLines: number;
+  /** 减少的行数 */
   removeLines: number;
   diffBlockStats: DiffBlockStat[];
 }

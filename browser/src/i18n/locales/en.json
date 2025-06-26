@@ -186,8 +186,10 @@
       "prevDiff": "Previous Diff",
       "rejectAll": "Reject All",
       "acceptAll": "Accept All",
-      "accept": "accept",
-      "reject": "reject"
+      "accept": "Accept",
+      "reject": "Reject",
+      "copyModifiedCode": "Copy Modified Code",
+      "showBlockActions": "Show diff block actions"
     }
   }
 }
