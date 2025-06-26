@@ -10,7 +10,7 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
 ) => {
   const getCwd = () => opts.cwd || process.cwd();
 
-  // 获取设置
+  // Get settings
   app.get('/settings', async (request, reply) => {
     try {
       const { scope } = request.query as { scope?: string };
@@ -43,7 +43,7 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
     }
   });
 
-  // 获取有效设置
+  // Get effective settings
   app.get('/settings/effective', async (request, reply) => {
     try {
       const configManager = new ConfigManager(getCwd(), 'takumi', {});
@@ -60,7 +60,7 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
     }
   });
 
-  // 获取可用模型
+  // Get available models
   app.get('/settings/models', async (request, reply) => {
     try {
       const models = Object.entries(MODEL_ALIAS).map(([key, value]) => ({
@@ -81,10 +81,10 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
     }
   });
 
-  // 获取可用插件
+  // Get available plugins
   app.get('/settings/plugins', async (request, reply) => {
     try {
-      // 这里返回一些模拟的插件数据
+      // Return mock plugin data for now
       const plugins = ['example-plugin', 'another-plugin'];
 
       return {
@@ -100,7 +100,7 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
     }
   });
 
-  // 设置配置
+  // Set configuration
   app.post('/settings', async (request, reply) => {
     try {
       const { scope, key, value } = request.body as {
@@ -119,7 +119,7 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
       const validScope = scope as 'global' | 'project';
       const configManager = new ConfigManager(getCwd(), 'takumi', {});
 
-      // 对于 boolean 值，需要转换为字符串，因为 ConfigManager.setConfig 期望字符串参数
+      // Convert boolean values to string as ConfigManager.setConfig expects string parameters
       let configValue = value;
       if (typeof value === 'boolean') {
         configValue = value.toString();
@@ -140,7 +140,7 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
     }
   });
 
-  // 批量更新设置
+  // Batch update settings
   app.post('/settings/batch', async (request, reply) => {
     try {
       const { scope, settings } = request.body as {
@@ -173,7 +173,7 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
     }
   });
 
-  // 重置设置
+  // Reset settings
   app.post('/settings/reset', async (request, reply) => {
     try {
       const { scope } = request.body as { scope?: string };
@@ -188,7 +188,7 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
       const validScope = scope as 'global' | 'project';
       const configManager = new ConfigManager(getCwd(), 'takumi', {});
 
-      // 清空对应作用域的所有配置
+      // Clear all configurations for the specified scope
       const config =
         validScope === 'global'
           ? configManager.globalConfig
@@ -210,7 +210,7 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
     }
   });
 
-  // 导出设置
+  // Export settings
   app.get('/settings/export', async (request, reply) => {
     try {
       const { scope } = request.query as { scope?: string };
@@ -243,7 +243,7 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
     }
   });
 
-  // 导入设置
+  // Import settings
   app.post('/settings/import', async (request, reply) => {
     try {
       const { scope, settings } = request.body as {
@@ -278,7 +278,7 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
     }
   });
 
-  // 删除配置项
+  // Delete configuration item
   app.delete('/settings', async (request, reply) => {
     try {
       const { scope, key } = request.query as { scope?: string; key?: string };
