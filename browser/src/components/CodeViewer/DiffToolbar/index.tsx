@@ -8,6 +8,7 @@ import { Button, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
+import * as codeViewer from '@/state/codeViewer';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import { useToolbarStyles } from '../NormalToolbar';
 
@@ -72,6 +73,8 @@ const DiffToolbar = (props: Props) => {
     if (!diffStat) {
       return null;
     }
+
+    // TODO react key
 
     const AddBlock = (
       <div className={classNames(styles.addBlock, styles.block)} />
@@ -153,13 +156,30 @@ const DiffToolbar = (props: Props) => {
           title={t('codeViewer.toolButton.rejectAll')}
           placement="topRight"
         >
-          <Button type="primary" danger icon={<CloseOutlined />} />
+          <Button
+            type="primary"
+            danger
+            icon={<CloseOutlined />}
+            onClick={() => {
+              if (item.path) {
+                codeViewer.actions.doEdit(item.path, 'reject');
+              }
+            }}
+          />
         </Tooltip>
         <Tooltip
           title={t('codeViewer.toolButton.acceptAll')}
           placement="topRight"
         >
-          <Button type="primary" icon={<CheckOutlined />} />
+          <Button
+            type="primary"
+            icon={<CheckOutlined />}
+            onChange={() => {
+              if (item.path) {
+                codeViewer.actions.doEdit(item.path, 'accept');
+              }
+            }}
+          />
         </Tooltip>
       </div>
     </div>
