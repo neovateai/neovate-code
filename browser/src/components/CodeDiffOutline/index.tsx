@@ -131,6 +131,9 @@ const CodeDiffOutline = (props: Props) => {
     );
   }, [currentCodes]);
 
+  const hasDiff =
+    diffStat?.diffBlockStats && diffStat.diffBlockStats.length > 0;
+
   const { styles } = useStyles();
 
   const { t } = useTranslation();
@@ -256,18 +259,20 @@ const CodeDiffOutline = (props: Props) => {
         <div className={styles.headerLeft}>
           <DevFileIcon size={16} fileExt={path.split('.').pop() || ''} />
           <div className={styles.plainText}>{path}</div>
-          <div>
-            {diffStat?.addLines && diffStat.addLines > 0 && (
-              <span className={styles.add}>
-                +{diffStat.addLines.toLocaleString()}
-              </span>
-            )}
-            {diffStat?.removeLines && diffStat.removeLines > 0 && (
-              <span className={styles.remove}>
-                -{diffStat.removeLines.toLocaleString()}
-              </span>
-            )}
-          </div>
+          {hasDiff && (
+            <div>
+              {diffStat?.addLines && diffStat.addLines > 0 && (
+                <span className={styles.add}>
+                  +{diffStat.addLines.toLocaleString()}
+                </span>
+              )}
+              {diffStat?.removeLines && diffStat.removeLines > 0 && (
+                <span className={styles.remove}>
+                  -{diffStat.removeLines.toLocaleString()}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div className={styles.headerRight}>
           {changed && (
@@ -278,99 +283,107 @@ const CodeDiffOutline = (props: Props) => {
               }}
             />
           )}
-          <Button
-            type="text"
-            shape="circle"
-            onClick={() => {
-              showDiff(currentCodes);
-            }}
-            icon={<ExpandAltOutlined />}
-          />
-          <Button
-            type="primary"
-            icon={<CloseOutlined />}
-            danger
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRejectAll();
-            }}
-          >
-            {t('codeViewer.toolButton.rejectAll')}
-          </Button>
-          <Button
-            type="primary"
-            icon={<CheckOutlined />}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAcceptAll();
-            }}
-          >
-            {t('codeViewer.toolButton.acceptAll')}
-          </Button>
-        </div>
-      </div>
-      <div className={styles.innerContainer}>
-        {diffStat?.diffBlockStats.map((blockStat, index) => {
-          return (
-            <React.Fragment key={index}>
-              {index > 0 && <Divider className={styles.itemDivider} />}
-              <div
-                className={styles.item}
+          {hasDiff && (
+            <>
+              <Button
+                type="text"
+                shape="circle"
                 onClick={() => {
                   showDiff(currentCodes);
-                  codeViewer.actions.jumpToLine(
-                    path,
-                    blockStat.modifiedStartLineNumber,
-                  );
+                }}
+                icon={<ExpandAltOutlined />}
+              />
+              <Button
+                type="primary"
+                icon={<CloseOutlined />}
+                danger
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRejectAll();
                 }}
               >
-                <div className={styles.itemLeft}>
-                  <div className={styles.plainText}>
-                    L{blockStat.modifiedStartLineNumber}-
-                    {blockStat.modifiedEndLineNumber ||
-                      blockStat.modifiedStartLineNumber}
-                  </div>
-                  <div>
-                    {blockStat.addLines > 0 && (
-                      <span className={styles.add}>+{blockStat.addLines}</span>
-                    )}
-                    {blockStat.removeLines > 0 && (
-                      <span className={styles.remove}>
-                        -{blockStat.removeLines}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className={styles.itemRight}>
-                  <Tooltip title={t('codeViewer.toolButton.reject')}>
-                    <Button
-                      size="small"
-                      type="primary"
-                      icon={<CloseOutlined />}
-                      danger
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleReject(blockStat);
-                      }}
-                    />
-                  </Tooltip>
-                  <Tooltip title={t('codeViewer.toolButton.accept')}>
-                    <Button
-                      size="small"
-                      type="primary"
-                      icon={<CheckOutlined />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAccept(blockStat);
-                      }}
-                    />
-                  </Tooltip>
-                </div>
-              </div>
-            </React.Fragment>
-          );
-        })}
+                {t('codeViewer.toolButton.rejectAll')}
+              </Button>
+              <Button
+                type="primary"
+                icon={<CheckOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAcceptAll();
+                }}
+              >
+                {t('codeViewer.toolButton.acceptAll')}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
+      {hasDiff && (
+        <div className={styles.innerContainer}>
+          {diffStat?.diffBlockStats.map((blockStat, index) => {
+            return (
+              <React.Fragment key={index}>
+                {index > 0 && <Divider className={styles.itemDivider} />}
+                <div
+                  className={styles.item}
+                  onClick={() => {
+                    showDiff(currentCodes);
+                    codeViewer.actions.jumpToLine(
+                      path,
+                      blockStat.modifiedStartLineNumber,
+                    );
+                  }}
+                >
+                  <div className={styles.itemLeft}>
+                    <div className={styles.plainText}>
+                      L{blockStat.modifiedStartLineNumber}-
+                      {blockStat.modifiedEndLineNumber ||
+                        blockStat.modifiedStartLineNumber}
+                    </div>
+                    <div>
+                      {blockStat.addLines > 0 && (
+                        <span className={styles.add}>
+                          +{blockStat.addLines}
+                        </span>
+                      )}
+                      {blockStat.removeLines > 0 && (
+                        <span className={styles.remove}>
+                          -{blockStat.removeLines}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className={styles.itemRight}>
+                    <Tooltip title={t('codeViewer.toolButton.reject')}>
+                      <Button
+                        size="small"
+                        type="primary"
+                        icon={<CloseOutlined />}
+                        danger
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReject(blockStat);
+                        }}
+                      />
+                    </Tooltip>
+                    <Tooltip title={t('codeViewer.toolButton.accept')}>
+                      <Button
+                        size="small"
+                        type="primary"
+                        icon={<CheckOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAccept(blockStat);
+                        }}
+                      />
+                    </Tooltip>
+                  </div>
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
