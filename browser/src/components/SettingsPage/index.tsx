@@ -5,7 +5,7 @@ import {
   RobotOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
-import { Badge, Button, Card, Col, Row, Spin, Typography } from 'antd';
+import { Button, Card, Col, Row, Spin, Typography } from 'antd';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
@@ -42,79 +42,81 @@ const SettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col py-6 overflow-hidden">
-      {/* 设置面板 */}
-      <div className="w-[800px] h-[calc(100vh-48px)] bg-white border border-gray-200 rounded-lg flex flex-col">
-        {/* 顶部标题栏 */}
-        <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
-          <div className="text-base font-medium">{t('settings.title')}</div>
-          <Button
-            type="text"
-            icon={<CloseOutlined />}
-            onClick={handleClose}
-            size="small"
-          />
-        </div>
-
-        {/* 设置内容区域 */}
-        <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto min-h-0">
-          <div className="w-full">
-            {/* 作用域切换 */}
-            <div className="mb-4">
-              <SettingsScopeSwitch />
+    <div className="h-full w-full box-border flex flex-col py-6 gap-4">
+      <div className="flex-1 overflow-auto">
+        <div
+          className="h-full"
+          style={{
+            paddingInline: 'calc(calc(100% - 700px) / 2)',
+          }}
+        >
+          {/* Settings Panel */}
+          <div className="bg-white border border-gray-200 rounded-lg flex flex-col h-full">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
+              <div className="text-base font-medium">{t('settings.title')}</div>
+              <Button
+                type="text"
+                icon={<CloseOutlined />}
+                onClick={handleClose}
+                size="small"
+              />
             </div>
 
-            {/* 设置内容 */}
-            <Row gutter={[16, 16]}>
-              <Col xs={24} lg={12}>
-                <Card
-                  title={
-                    <div className="flex items-center gap-2">
-                      <RobotOutlined />
-                      <span>{t('settings.model.title')}</span>
-                    </div>
-                  }
-                  className="h-fit border border-gray-200"
-                  bodyStyle={{ padding: '16px' }}
-                >
-                  <ModelSettings />
-                </Card>
-              </Col>
+            {/* Settings Content */}
+            <div className="flex-1 p-4 overflow-x-hidden overflow-y-auto min-h-0">
+              <div className="w-full">
+                {/* Scope Switch */}
+                <div className="mb-4">
+                  <SettingsScopeSwitch />
+                </div>
 
-              <Col xs={24} lg={12}>
-                <Card
-                  title={
-                    <div className="flex items-center gap-2">
-                      <ControlOutlined />
-                      <span>{t('settings.behavior.title')}</span>
-                    </div>
-                  }
-                  className="h-fit border border-gray-200"
-                  bodyStyle={{ padding: '16px' }}
-                >
-                  <BehaviorSettings />
-                </Card>
-              </Col>
+                {/* Settings Content */}
+                <Row gutter={[16, 16]}>
+                  <Col xs={24} lg={12}>
+                    <Card
+                      title={
+                        <div className="flex items-center gap-2">
+                          <RobotOutlined />
+                          <span>{t('settings.model.title')}</span>
+                        </div>
+                      }
+                      className="h-fit border border-gray-200 [&_.ant-card-body]:p-4"
+                    >
+                      <ModelSettings />
+                    </Card>
+                  </Col>
 
-              <Col xs={24}>
-                <Card
-                  title={
-                    <div className="flex items-center gap-2">
-                      <ApiOutlined />
-                      <span>{t('settings.plugins.title')}</span>
-                      <Badge
-                        count={settings.effectiveSettings.plugins?.length || 0}
-                        style={{ backgroundColor: '#3b82f6' }}
-                      />
-                    </div>
-                  }
-                  className="border border-gray-200"
-                  bodyStyle={{ padding: '16px' }}
-                >
-                  <PluginSettings />
-                </Card>
-              </Col>
-            </Row>
+                  <Col xs={24} lg={12}>
+                    <Card
+                      title={
+                        <div className="flex items-center gap-2">
+                          <ControlOutlined />
+                          <span>{t('settings.behavior.title')}</span>
+                        </div>
+                      }
+                      className="h-fit border border-gray-200 [&_.ant-card-body]:p-4"
+                    >
+                      <BehaviorSettings />
+                    </Card>
+                  </Col>
+
+                  <Col xs={24}>
+                    <Card
+                      title={
+                        <div className="flex items-center gap-2">
+                          <ApiOutlined />
+                          <span>{t('settings.plugins.title')}</span>
+                        </div>
+                      }
+                      className="border border-gray-200 [&_.ant-card-body]:p-4"
+                    >
+                      <PluginSettings />
+                    </Card>
+                  </Col>
+                </Row>
+              </div>
+            </div>
           </div>
         </div>
       </div>

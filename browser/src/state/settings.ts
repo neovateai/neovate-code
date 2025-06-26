@@ -22,12 +22,12 @@ export const state = proxy<{ settings: SettingsState }>({
 });
 
 export const actions = {
-  // 切换作用域
+  // Switch scope
   switchScope: (scope: 'global' | 'project') => {
     state.settings.currentScope = scope;
   },
 
-  // 加载设置
+  // Load settings
   loadSettings: async () => {
     if (state.settings.loading) return;
 
@@ -62,14 +62,14 @@ export const actions = {
     }
   },
 
-  // 更新设置值（直接保存）
+  // Update setting value (save directly)
   updateSettingValue: async (key: keyof AppSettings, value: any) => {
     const { currentScope } = state.settings;
 
-    // 更新本地状态
+    // Update local state
     if (currentScope === 'global') {
       if (value === null || value === undefined) {
-        // 如果值为空，删除该字段
+        // If value is empty, remove the field
         const { [key]: removed, ...rest } = state.settings.globalSettings;
         state.settings.globalSettings = rest;
       } else {
@@ -80,7 +80,7 @@ export const actions = {
       }
     } else {
       if (value === null || value === undefined) {
-        // 如果值为空，删除该字段
+        // If value is empty, remove the field
         const { [key]: removed, ...rest } = state.settings.projectSettings;
         state.settings.projectSettings = rest;
       } else {
@@ -91,63 +91,27 @@ export const actions = {
       }
     }
 
-    // 直接保存到服务器
+    // Save directly to server
     try {
       if (value === null || value === undefined) {
-        // 删除配置项
+        // Remove setting item
         await settingsAPI.removeSetting(currentScope, key);
       } else {
-        // 使用单个配置项更新，而不是批量更新
+        // Use single setting update instead of batch update
         await settingsAPI.setSetting(currentScope, key, value);
       }
 
-      // 重新加载有效配置
+      // Reload effective settings
       const effectiveResponse = await settingsAPI.getEffectiveSettings();
       state.settings.effectiveSettings =
         effectiveResponse.data || state.settings.effectiveSettings;
     } catch (error) {
       console.error('Failed to save settings:', error);
-      // 如果保存失败，可以考虑回滚本地状态
+      // If save fails, consider rolling back local state
     }
   },
 
-  // 重置设置
-  resetSettings: async () => {
-    const { currentScope } = state.settings;
-    try {
-      await settingsAPI.resetSettings(currentScope);
-      await actions.loadSettings();
-    } catch (error) {
-      console.error('Failed to reset settings:', error);
-      throw error;
-    }
-  },
-
-  // 导出设置
-  exportSettings: async (): Promise<string> => {
-    const { currentScope } = state.settings;
-    try {
-      const response = await settingsAPI.exportSettings(currentScope);
-      return response.data || '';
-    } catch (error) {
-      console.error('Failed to export settings:', error);
-      throw error;
-    }
-  },
-
-  // 导入设置
-  importSettings: async (settingsJson: string) => {
-    const { currentScope } = state.settings;
-    try {
-      await settingsAPI.importSettings(currentScope, settingsJson);
-      await actions.loadSettings();
-    } catch (error) {
-      console.error('Failed to import settings:', error);
-      throw error;
-    }
-  },
-
-  // 添加插件
+  // Add plugin
   addPlugin: async (plugin: string) => {
     const { currentScope } = state.settings;
     const currentPlugins =
@@ -158,7 +122,7 @@ export const actions = {
     if (!currentPlugins.includes(plugin)) {
       const newPlugins = [...currentPlugins, plugin];
 
-      // 更新本地状态
+      // Update local state
       if (currentScope === 'global') {
         state.settings.globalSettings = {
           ...state.settings.globalSettings,
@@ -171,11 +135,11 @@ export const actions = {
         };
       }
 
-      // 直接保存插件配置
+      // Save plugin configuration directly
       try {
         await settingsAPI.setSetting(currentScope, 'plugins', newPlugins);
 
-        // 重新加载有效配置
+        // Reload effective settings
         const effectiveResponse = await settingsAPI.getEffectiveSettings();
         state.settings.effectiveSettings =
           effectiveResponse.data || state.settings.effectiveSettings;
@@ -186,7 +150,7 @@ export const actions = {
     }
   },
 
-  // 删除插件
+  // Remove plugin
   removePlugin: async (plugin: string) => {
     const { currentScope } = state.settings;
     const currentPlugins =
@@ -196,7 +160,7 @@ export const actions = {
 
     const newPlugins = currentPlugins.filter((p) => p !== plugin);
 
-    // 更新本地状态
+    // Update local state
     if (currentScope === 'global') {
       if (newPlugins.length === 0) {
         const { plugins: removed, ...rest } = state.settings.globalSettings;
@@ -219,7 +183,7 @@ export const actions = {
       }
     }
 
-    // 直接保存插件配置
+    // Save plugin configuration directly
     try {
       if (newPlugins.length === 0) {
         await settingsAPI.removeSetting(currentScope, 'plugins');
@@ -227,7 +191,7 @@ export const actions = {
         await settingsAPI.setSetting(currentScope, 'plugins', newPlugins);
       }
 
-      // 重新加载有效配置
+      // Reload effective settings
       const effectiveResponse = await settingsAPI.getEffectiveSettings();
       state.settings.effectiveSettings =
         effectiveResponse.data || state.settings.effectiveSettings;
