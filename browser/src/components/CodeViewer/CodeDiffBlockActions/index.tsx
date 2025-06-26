@@ -2,11 +2,13 @@ import { CheckOutlined, CloseOutlined, CopyOutlined } from '@ant-design/icons';
 import { Button, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
 import { useTranslation } from 'react-i18next';
-import type { DiffBlockStat } from '@/types/codeViewer';
+import * as codeViewer from '@/state/codeViewer';
+import type { CodeDiffViewerTabItem, DiffBlockStat } from '@/types/codeViewer';
 import { withConfigProvider } from '../WithConfigProvider';
 
 interface Props {
   diffBlockStat: DiffBlockStat;
+  item: CodeDiffViewerTabItem;
 }
 
 const useStyles = createStyles(({ css }) => {
@@ -23,7 +25,7 @@ const useStyles = createStyles(({ css }) => {
 });
 
 const CodeDiffBlockActions = (props: Props) => {
-  const { diffBlockStat } = props;
+  const { diffBlockStat, item } = props;
 
   const { styles } = useStyles();
 
@@ -31,18 +33,33 @@ const CodeDiffBlockActions = (props: Props) => {
 
   // 该组件下所有子组件都必须确保className是string，否则click事件中monaco编辑器会报错
 
+  const hasModifiedCode = diffBlockStat.modifiedEndLineNumber > 0;
+
   return (
     <div className={styles.container || ''}>
-      <Tooltip title={t('codeViewer.toolButton.copy')} className="">
-        <Button
+      {hasModifiedCode && (
+        <Tooltip
+          title={t('codeViewer.toolButton.copyModifiedCode')}
           className=""
-          icon={<CopyOutlined />}
-          size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        />
-      </Tooltip>
+        >
+          <Button
+            className=""
+            icon={<CopyOutlined />}
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              const copiedCode = item.modifiedCode
+                .split('\n')
+                .slice(
+                  diffBlockStat.modifiedStartLineNumber,
+                  diffBlockStat.modifiedEndLineNumber,
+                )
+                .join('\n');
+              navigator.clipboard.writeText(copiedCode);
+            }}
+          />
+        </Tooltip>
+      )}
       <Tooltip title={t('codeViewer.toolButton.reject')} className="">
         <Button
           className=""
@@ -52,6 +69,9 @@ const CodeDiffBlockActions = (props: Props) => {
           size="small"
           onClick={(e) => {
             e.stopPropagation();
+            if (item.path) {
+              codeViewer.actions.doEdit(item.path, 'reject', diffBlockStat);
+            }
           }}
         />
       </Tooltip>
@@ -63,7 +83,9 @@ const CodeDiffBlockActions = (props: Props) => {
           size="small"
           onClick={(e) => {
             e.stopPropagation();
-            console.log(diffBlockStat);
+            if (item.path) {
+              codeViewer.actions.doEdit(item.path, 'accept', diffBlockStat);
+            }
           }}
         />
       </Tooltip>

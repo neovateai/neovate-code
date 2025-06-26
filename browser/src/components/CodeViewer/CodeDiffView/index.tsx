@@ -1,7 +1,13 @@
 import { DiffEditor } from '@monaco-editor/react';
 import { createStyles } from 'antd-style';
 import * as monaco from 'monaco-editor';
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import * as codeViewer from '@/state/codeViewer';
@@ -40,6 +46,7 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
   const viewZonesRef = useRef<
     { id: string; domNode: HTMLDivElement; root: Root }[]
   >([]);
+  const [showBlockActions, setShowBlockActions] = useState(false);
 
   useImperativeHandle(ref, () => {
     return {
@@ -82,6 +89,13 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
     };
   }, []);
 
+  useEffect(() => {
+    clearAllViewZones();
+    if (showBlockActions && item.diffStat) {
+      injectDiffBlockActionsIntoEditor(editorRef.current, item.diffStat);
+    }
+  }, [item, showBlockActions]);
+
   const injectDiffBlockActionsIntoEditor = (
     editor: monaco.editor.IStandaloneDiffEditor | null,
     diffStat: DiffStat,
@@ -104,7 +118,7 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
           domNode,
         });
         const root = createRoot(domNode);
-        root.render(<CodeDiffBlockActions diffBlockStat={block} />);
+        root.render(<CodeDiffBlockActions diffBlockStat={block} item={item} />);
         viewZonesRef.current.push({ id, domNode, root });
       });
     });
@@ -127,11 +141,7 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
           }
         }}
         onChangeShowBlockActions={(show) => {
-          if (show && item.diffStat) {
-            injectDiffBlockActionsIntoEditor(editorRef.current, item.diffStat);
-          } else {
-            clearAllViewZones();
-          }
+          setShowBlockActions(show);
         }}
         item={item}
       />

@@ -69,7 +69,7 @@
       "acceptAll": "Accept All",
       "accept": "Accept",
       "reject": "Reject",
-      "copy": "Copy",
+      "copyModifiedCode": "Copy Modified Code",
       "showBlockActions": "Show diff block actions"
     }
   }
