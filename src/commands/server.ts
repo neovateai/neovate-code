@@ -10,6 +10,7 @@ import { Context } from '../context';
 import { PluginHookType } from '../plugin';
 import { runBrowserServer } from '../server/server';
 import { setupTracing } from '../tracing';
+import * as logger from '../utils/logger';
 
 const debug = createDebug('takumi:commands:server');
 
@@ -87,6 +88,20 @@ export async function runBrowser(opts: RunCliOpts) {
       },
       plugins: opts.plugins,
     });
+
+    logger.logIntro({
+      productName: opts.productName,
+      version: opts.version,
+    });
+
+    logger.logGeneralInfo({
+      infos: {
+        log: traceFile.replace(homedir(), '~'),
+        workspace: cwd.replace(homedir(), '~'),
+        model: argv.model,
+      },
+    });
+
     await context.apply({
       hook: 'cliStart',
       args: [],

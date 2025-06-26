@@ -4,6 +4,7 @@ import createDebug from 'debug';
 import { isReasoningModel } from '../../provider';
 import { query } from '../../query';
 import { Service } from '../../service';
+import { delay } from '../../utils/delay';
 import { CreateServerOpts } from '../types/server';
 
 const debug = createDebug('takumi:server:completions');
@@ -12,8 +13,6 @@ interface RunCompletionOpts extends CreateServerOpts {
   dataStream: DataStreamWriter;
   service: Service;
 }
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function runCode(opts: RunCompletionOpts) {
   const { dataStream, service } = opts;
