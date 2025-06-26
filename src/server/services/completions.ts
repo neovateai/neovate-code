@@ -45,6 +45,7 @@ export async function runCode(opts: RunCompletionOpts) {
         dataStream.writeMessageAnnotation({
           type: 'text',
           text,
+          mode,
         });
         await delay(10);
         debug(`Text: ${text}`);

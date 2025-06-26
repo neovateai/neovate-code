@@ -71,6 +71,14 @@
     "plan": "Plan Mode",
     "planDescription": "Break down complex tasks into executable steps, plan first and then execute"
   },
+  "plan": {
+    "approveTitle": "Approve Plan Execution",
+    "approveDescription": "Confirming this plan execution will switch to Agent mode",
+    "approve": "Approve Plan",
+    "reject": "Reject Plan",
+    "confirmApprove": "Are you sure you want to approve and execute this plan?",
+    "confirmReject": "Are you sure you want to reject this plan?"
+  },
   "tool": {
     "status": {
       "executing": "Executing",

@@ -9,7 +9,7 @@ let files: string[] = [];
 
 export const contextPlugin: Plugin = {
   name: 'browser-context-plugin',
-  serverRouteCompletions({ attachedContexts }) {
+  serverRouteCompletions({ attachedContexts = [] }) {
     debug('serverRouteCompletions', attachedContexts);
     files = attachedContexts
       .filter((c) => c.type === ContextType.FILE)

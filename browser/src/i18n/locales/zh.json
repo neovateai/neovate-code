@@ -71,6 +71,14 @@
     "plan": "Plan 模式",
     "planDescription": "将复杂任务分解为可执行步骤，先规划后实施"
   },
+  "plan": {
+    "approveTitle": "批准执行计划",
+    "approveDescription": "确认执行此计划将切换到 Agent 模式",
+    "approve": "批准计划",
+    "reject": "拒绝计划",
+    "confirmApprove": "确认要批准并执行此计划吗？",
+    "confirmReject": "确认要拒绝此计划吗？"
+  },
   "tool": {
     "status": {
       "executing": "执行中",

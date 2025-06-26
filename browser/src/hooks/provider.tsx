@@ -1,4 +1,3 @@
-import { useChat } from '@ai-sdk/react';
 import type { UIMessage } from '@ai-sdk/ui-utils';
 import { findLast } from 'lodash-es';
 import { createContext, useContext, useMemo } from 'react';
@@ -6,6 +5,7 @@ import { useSnapshot } from 'valtio';
 import { state } from '@/state/sender';
 import type { ContextItem } from '@/types/context';
 import { UIMessageType } from '@/types/message';
+import { useChat } from './useChat';
 
 type ChatState = ReturnType<typeof useChat> & {
   loading: boolean;
@@ -38,12 +38,15 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
         body.messages,
         (message) => message.role === 'user',
       );
+
       if (lastMessage) {
         body.messages = [lastMessage];
       }
+
       return {
-        ...body,
+        messages: body.messages,
         mode,
+        ...(body.requestBody || {}),
       };
     },
     onError(error) {

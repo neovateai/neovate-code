@@ -23,6 +23,7 @@ const CompletionRequestSchema = Type.Object({
     { minItems: 1 },
   ),
   mode: Type.String(),
+  planMessage: Type.Optional(Type.Any()),
 });
 
 const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
@@ -39,7 +40,8 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
     async (request, reply) => {
       const messages = request.body.messages;
       const mode = request.body.mode;
-      const lastMessage = last(messages);
+      const planMessage = request.body.planMessage;
+      const lastMessage = planMessage ? planMessage : last(messages);
       debug('Received messages:', messages);
 
       if (!lastMessage) {
@@ -82,6 +84,7 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
         });
       } catch (error) {
         debug('Unhandled error:', error);
+        console.log('error', error);
         if (!reply.sent) {
           reply.status(500).send({ error: 'Internal server error' });
         }

@@ -50,6 +50,7 @@ export interface CompletionRequest {
    * The mode of the completion, can be 'agent', 'ask', 'plan'
    */
   mode: string;
+  planMessage?: UserMessage;
 }
 
 export interface CompletionTextContent {
