@@ -25,3 +25,14 @@ export const editFile = (
 ): Promise<ApiResponse<FileEditResponse>> => {
   return request.post('/files/edit', { filePath, content });
 };
+
+interface FileReadResponse {
+  content: string;
+  filePath: string;
+}
+
+export const readFile = (
+  filePath: string,
+): Promise<ApiResponse<FileReadResponse>> => {
+  return request.get('/files/read', { params: { filePath } });
+};

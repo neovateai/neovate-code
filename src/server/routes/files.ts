@@ -20,6 +20,10 @@ const FileEditRequestSchema = Type.Object({
   content: Type.String(),
 });
 
+const FileReadRequestSchema = Type.Object({
+  filePath: Type.String(),
+});
+
 interface FileEditRequest {
   filePath: string;
   content: string;
@@ -272,6 +276,55 @@ const filesRoute: FastifyPluginAsync<CreateServerOpts> = async (app, opts) => {
             error instanceof Error
               ? error.message
               : 'Unknown error occurred while getting file list',
+        });
+      }
+    },
+  );
+
+  app.get<{ Querystring: { filePath: string } }>(
+    '/files/read',
+    {
+      schema: {
+        querystring: FileReadRequestSchema,
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { filePath } = request.query;
+        const cwd = opts.context.cwd;
+        const absolutePath = path.resolve(cwd, filePath);
+
+        if (!absolutePath.startsWith(cwd)) {
+          return reply.code(400).send({
+            success: false,
+            error: 'File path is outside of the project directory.',
+          });
+        }
+
+        const fs = await import('fs/promises');
+        const content = await fs.readFile(absolutePath, 'utf-8');
+
+        return reply.send({
+          success: true,
+          data: {
+            content,
+            filePath,
+          },
+        });
+      } catch (error: any) {
+        debug(`File read API error:`, error);
+        if (error.code === 'ENOENT') {
+          return reply.code(404).send({
+            success: false,
+            message: 'File not found.',
+          });
+        }
+        return reply.code(500).send({
+          success: false,
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Unknown error occurred while reading file.',
         });
       }
     },
