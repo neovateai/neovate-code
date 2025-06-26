@@ -7,7 +7,7 @@
 
 Pronounced `/tɑːˈkuːmi/`, a coding agent to enhance your development workflow.
 
-## Get Started
+## Getting Started
 
 > Make sure you have Node.js version 18 or higher installed.
 
