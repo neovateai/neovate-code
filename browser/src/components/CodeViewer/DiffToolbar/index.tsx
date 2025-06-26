@@ -129,24 +129,36 @@ const DiffToolbar = (props: Props) => {
         )}
       </div>
       <div className={styles.tools}>
-        <Tooltip title={t('codeViewer.toolButton.prevDiff')}>
+        <Tooltip
+          title={t('codeViewer.toolButton.prevDiff')}
+          placement="topRight"
+        >
           <Button
             type="text"
             icon={<ArrowUpOutlined />}
             onClick={() => onGotoDiff('previous')}
           />
         </Tooltip>
-        <Tooltip title={t('codeViewer.toolButton.nextDiff')}>
+        <Tooltip
+          title={t('codeViewer.toolButton.nextDiff')}
+          placement="topRight"
+        >
           <Button
             type="text"
             icon={<ArrowDownOutlined />}
             onClick={() => onGotoDiff('next')}
           />
         </Tooltip>
-        <Tooltip title={t('codeViewer.toolButton.rejectAll')}>
+        <Tooltip
+          title={t('codeViewer.toolButton.rejectAll')}
+          placement="topRight"
+        >
           <Button type="primary" danger icon={<CloseOutlined />} />
         </Tooltip>
-        <Tooltip title={t('codeViewer.toolButton.acceptAll')}>
+        <Tooltip
+          title={t('codeViewer.toolButton.acceptAll')}
+          placement="topRight"
+        >
           <Button type="primary" icon={<CheckOutlined />} />
         </Tooltip>
       </div>

@@ -8,6 +8,7 @@ import { Button, ConfigProvider, Divider, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
 import { useEffect, useState } from 'react';
 import type { FC } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import DevFileIcon from '@/components/DevFileIcon';
 import * as codeViewer from '@/state/codeViewer';
@@ -291,6 +292,7 @@ const CodeDiffOutline = (props: Props) => {
             danger
             onClick={(e) => {
               e.stopPropagation();
+              handleRejectAll();
             }}
           >
             {t('codeViewer.toolButton.rejectAll')}
@@ -300,6 +302,7 @@ const CodeDiffOutline = (props: Props) => {
             icon={<CheckOutlined />}
             onClick={(e) => {
               e.stopPropagation();
+              handleAcceptAll();
             }}
           >
             {t('codeViewer.toolButton.acceptAll')}
@@ -309,7 +312,7 @@ const CodeDiffOutline = (props: Props) => {
       <div className={styles.innerContainer}>
         {diffStat?.diffBlockStats.map((blockStat, index) => {
           return (
-            <>
+            <React.Fragment key={index}>
               {index > 0 && <Divider className={styles.itemDivider} />}
               <div
                 className={styles.item}
@@ -364,7 +367,7 @@ const CodeDiffOutline = (props: Props) => {
                   </Tooltip>
                 </div>
               </div>
-            </>
+            </React.Fragment>
           );
         })}
       </div>
