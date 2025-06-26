@@ -7,6 +7,7 @@ import {
 import { useNavigate } from '@tanstack/react-router';
 import { Badge, Button, Card, Col, Row, Spin, Typography } from 'antd';
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';
 import BehaviorSettings from './BehaviorSettings';
@@ -17,6 +18,7 @@ import SettingsScopeSwitch from './SettingsScopeSwitch';
 const { Text } = Typography;
 
 const SettingsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { settings } = useSnapshot(state);
   const navigate = useNavigate();
 
@@ -34,7 +36,7 @@ const SettingsPage: React.FC = () => {
     return (
       <div className="flex justify-center items-center h-[50vh] flex-col gap-4">
         <Spin size="large" />
-        <Text type="secondary">正在加载设置...</Text>
+        <Text type="secondary">{t('settings.loading')}</Text>
       </div>
     );
   }
@@ -48,7 +50,7 @@ const SettingsPage: React.FC = () => {
       <div className="w-[900px] h-[calc(100vh-48px)] bg-white border border-gray-200 rounded-lg flex flex-col overflow-hidden">
         {/* 顶部标题栏 */}
         <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-          <div className="text-base font-medium">设置</div>
+          <div className="text-base font-medium">{t('settings.title')}</div>
           <Button
             type="text"
             icon={<CloseOutlined />}
@@ -74,7 +76,7 @@ const SettingsPage: React.FC = () => {
                 title={
                   <div className="flex items-center gap-2">
                     <RobotOutlined />
-                    <span>模型配置</span>
+                    <span>{t('settings.model.title')}</span>
                   </div>
                 }
                 className="h-fit border border-gray-200"
@@ -89,7 +91,7 @@ const SettingsPage: React.FC = () => {
                 title={
                   <div className="flex items-center gap-2">
                     <ControlOutlined />
-                    <span>行为配置</span>
+                    <span>{t('settings.behavior.title')}</span>
                   </div>
                 }
                 className="h-fit border border-gray-200"
@@ -104,7 +106,7 @@ const SettingsPage: React.FC = () => {
                 title={
                   <div className="flex items-center gap-2">
                     <ApiOutlined />
-                    <span>插件配置</span>
+                    <span>{t('settings.plugins.title')}</span>
                     <Badge
                       count={settings.effectiveSettings.plugins?.length || 0}
                       style={{ backgroundColor: '#3b82f6' }}

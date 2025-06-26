@@ -1,24 +1,26 @@
 import { FolderOutlined, GlobalOutlined } from '@ant-design/icons';
 import { Card, Segmented, Typography } from 'antd';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';
 
 const { Text } = Typography;
 
 const SettingsScopeSwitch: React.FC = () => {
+  const { t } = useTranslation();
   const { settings } = useSnapshot(state);
 
   return (
     <Card className="border border-gray-200">
       <div className="flex justify-between items-center">
         <div>
-          <Text strong>配置作用域</Text>
+          <Text strong>{t('settings.scope.title')}</Text>
           <div className="mt-1">
             <Text type="secondary" className="text-xs">
               {settings.currentScope === 'global'
-                ? '全局设置 (~/.takumi/config.json)'
-                : '项目设置 (./.takumi/config.json)'}
+                ? t('settings.scope.globalDesc')
+                : t('settings.scope.projectDesc')}
             </Text>
           </div>
         </div>
@@ -33,7 +35,7 @@ const SettingsScopeSwitch: React.FC = () => {
               label: (
                 <div className="flex items-center gap-1.5">
                   <GlobalOutlined />
-                  全局
+                  {t('settings.scope.global')}
                 </div>
               ),
               value: 'global',
@@ -42,7 +44,7 @@ const SettingsScopeSwitch: React.FC = () => {
               label: (
                 <div className="flex items-center gap-1.5">
                   <FolderOutlined />
-                  项目
+                  {t('settings.scope.project')}
                 </div>
               ),
               value: 'project',

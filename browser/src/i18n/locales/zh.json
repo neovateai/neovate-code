@@ -56,5 +56,63 @@
   "menu": {
     "rename": "重命名",
     "delete": "删除"
+  },
+  "settings": {
+    "title": "设置",
+    "loading": "正在加载设置...",
+    "scope": {
+      "title": "配置作用域",
+      "global": "全局",
+      "project": "项目",
+      "globalDesc": "全局设置 (~/.takumi/config.json)",
+      "projectDesc": "项目设置 (./.takumi/config.json)"
+    },
+    "model": {
+      "title": "模型配置",
+      "main": "主模型",
+      "mainTooltip": "用于主要的代码生成和复杂推理任务",
+      "mainPlaceholder": "选择主模型",
+      "small": "小模型",
+      "smallTooltip": "用于简单任务，如生成commit消息等",
+      "smallPlaceholder": "选择小模型（可选）",
+      "plan": "规划模型",
+      "planTooltip": "用于生成执行计划",
+      "planPlaceholder": "选择规划模型（可选）",
+      "defaultPrefix": "默认"
+    },
+    "behavior": {
+      "title": "行为配置",
+      "language": "界面语言",
+      "languageTooltip": "AI 回复和界面显示的语言",
+      "languagePlaceholder": "选择界面语言",
+      "approvalMode": "执行模式",
+      "approvalModeTooltip": "控制 AI 执行工具时的确认行为",
+      "approvalModePlaceholder": "选择执行模式",
+      "approvalModes": {
+        "suggest": "建议模式",
+        "autoEdit": "自动编辑",
+        "fullAuto": "完全自动"
+      },
+      "approvalModeLabels": {
+        "suggest": "建议模式 - 所有操作都需要确认",
+        "autoEdit": "自动编辑 - 自动编辑文件，命令需要确认",
+        "fullAuto": "完全自动 - 所有操作都自动执行"
+      },
+      "quiet": "安静模式",
+      "quietTooltip": "启用后将使用非交互式模式",
+      "enabled": "启用",
+      "disabled": "禁用"
+    },
+    "plugins": {
+      "title": "插件配置",
+      "tooltip": "配置项目使用的插件",
+      "placeholder": "输入插件名称或路径",
+      "add": "添加",
+      "delete": "删除插件",
+      "deleteConfirm": "确定要删除插件 \"{{plugin}}\" 吗？",
+      "empty": "暂未配置任何插件",
+      "effective": "当前有效插件",
+      "none": "无"
+    }
   }
 }

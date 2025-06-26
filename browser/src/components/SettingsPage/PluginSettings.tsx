@@ -14,12 +14,14 @@ import {
   Typography,
 } from 'antd';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';
 
 const { Text } = Typography;
 
 const PluginSettings: React.FC = () => {
+  const { t } = useTranslation();
   const { settings } = useSnapshot(state);
   const [newPlugin, setNewPlugin] = useState('');
 
@@ -42,8 +44,8 @@ const PluginSettings: React.FC = () => {
 
   const handleRemovePlugin = (plugin: string) => {
     Modal.confirm({
-      title: '删除插件',
-      content: `确定要删除插件 "${plugin}" 吗？`,
+      title: t('settings.plugins.delete'),
+      content: t('settings.plugins.deleteConfirm', { plugin }),
       onOk: async () => {
         try {
           await actions.removePlugin(plugin);
@@ -59,8 +61,8 @@ const PluginSettings: React.FC = () => {
       <Form.Item
         label={
           <div className="flex items-center gap-2">
-            插件列表
-            <Tooltip title="配置项目使用的插件">
+            {t('settings.plugins.title')}
+            <Tooltip title={t('settings.plugins.tooltip')}>
               <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
@@ -71,7 +73,7 @@ const PluginSettings: React.FC = () => {
             <Input
               value={newPlugin}
               onChange={(e) => setNewPlugin(e.target.value)}
-              placeholder="输入插件名称或路径"
+              placeholder={t('settings.plugins.placeholder')}
               onPressEnter={handleAddPlugin}
             />
             <Button
@@ -79,7 +81,7 @@ const PluginSettings: React.FC = () => {
               icon={<PlusOutlined />}
               onClick={handleAddPlugin}
             >
-              添加
+              {t('settings.plugins.add')}
             </Button>
           </Space.Compact>
 
@@ -105,16 +107,16 @@ const PluginSettings: React.FC = () => {
               )}
             />
           ) : (
-            <Text type="secondary">暂未配置任何插件</Text>
+            <Text type="secondary">{t('settings.plugins.empty')}</Text>
           )}
 
           {settings.effectiveSettings.plugins &&
             JSON.stringify(settings.effectiveSettings.plugins) !==
               JSON.stringify(currentPlugins) && (
               <Text type="secondary" className="text-xs">
-                当前有效插件:{' '}
+                {t('settings.plugins.effective')}:{' '}
                 {[...(settings.effectiveSettings.plugins || [])].join(', ') ||
-                  '无'}
+                  t('settings.plugins.none')}
               </Text>
             )}
         </Space>

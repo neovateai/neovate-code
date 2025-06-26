@@ -1,12 +1,14 @@
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { Form, Select, Switch, Tooltip, Typography } from 'antd';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';
 
 const { Text } = Typography;
 
 const BehaviorSettings: React.FC = () => {
+  const { t } = useTranslation();
   const { settings } = useSnapshot(state);
 
   const currentSettings =
@@ -25,11 +27,11 @@ const BehaviorSettings: React.FC = () => {
   const getApprovalModeLabel = (mode: string) => {
     switch (mode) {
       case 'suggest':
-        return '建议模式';
+        return t('settings.behavior.approvalModes.suggest');
       case 'auto-edit':
-        return '自动编辑';
+        return t('settings.behavior.approvalModes.autoEdit');
       case 'full-auto':
-        return '完全自动';
+        return t('settings.behavior.approvalModes.fullAuto');
       default:
         return mode;
     }
@@ -40,8 +42,8 @@ const BehaviorSettings: React.FC = () => {
       <Form.Item
         label={
           <div className="flex items-center gap-2">
-            界面语言
-            <Tooltip title="AI 回复和界面显示的语言">
+            {t('settings.behavior.language')}
+            <Tooltip title={t('settings.behavior.languageTooltip')}>
               <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
@@ -56,8 +58,8 @@ const BehaviorSettings: React.FC = () => {
           ]}
           placeholder={
             settings.effectiveSettings.language
-              ? `默认: ${settings.effectiveSettings.language}`
-              : '选择界面语言'
+              ? `${t('settings.model.defaultPrefix')}: ${settings.effectiveSettings.language}`
+              : t('settings.behavior.languagePlaceholder')
           }
           allowClear
         />
@@ -66,8 +68,8 @@ const BehaviorSettings: React.FC = () => {
       <Form.Item
         label={
           <div className="flex items-center gap-2">
-            执行模式
-            <Tooltip title="控制 AI 执行工具时的确认行为">
+            {t('settings.behavior.approvalMode')}
+            <Tooltip title={t('settings.behavior.approvalModeTooltip')}>
               <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
@@ -79,21 +81,21 @@ const BehaviorSettings: React.FC = () => {
           options={[
             {
               value: 'suggest',
-              label: '建议模式 - 所有操作都需要确认',
+              label: t('settings.behavior.approvalModeLabels.suggest'),
             },
             {
               value: 'auto-edit',
-              label: '自动编辑 - 自动编辑文件，命令需要确认',
+              label: t('settings.behavior.approvalModeLabels.autoEdit'),
             },
             {
               value: 'full-auto',
-              label: '完全自动 - 所有操作都自动执行',
+              label: t('settings.behavior.approvalModeLabels.fullAuto'),
             },
           ]}
           placeholder={
             settings.effectiveSettings.approvalMode
-              ? `默认: ${getApprovalModeLabel(settings.effectiveSettings.approvalMode)}`
-              : '选择执行模式'
+              ? `${t('settings.model.defaultPrefix')}: ${getApprovalModeLabel(settings.effectiveSettings.approvalMode)}`
+              : t('settings.behavior.approvalModePlaceholder')
           }
           allowClear
         />
@@ -102,8 +104,8 @@ const BehaviorSettings: React.FC = () => {
       <Form.Item
         label={
           <div className="flex items-center gap-2">
-            安静模式
-            <Tooltip title="启用后将使用非交互式模式">
+            {t('settings.behavior.quiet')}
+            <Tooltip title={t('settings.behavior.quietTooltip')}>
               <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
@@ -117,9 +119,9 @@ const BehaviorSettings: React.FC = () => {
           <Text>
             {currentSettings.quiet !== undefined
               ? currentSettings.quiet
-                ? '启用'
-                : '禁用'
-              : `默认: ${settings.effectiveSettings.quiet ? '启用' : '禁用'}`}
+                ? t('settings.behavior.enabled')
+                : t('settings.behavior.disabled')
+              : `${t('settings.model.defaultPrefix')}: ${settings.effectiveSettings.quiet ? t('settings.behavior.enabled') : t('settings.behavior.disabled')}`}
           </Text>
         </div>
       </Form.Item>

@@ -1,12 +1,14 @@
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { Form, Select, Tooltip, Typography } from 'antd';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';
 
 const { Text } = Typography;
 
 const ModelSettings: React.FC = () => {
+  const { t } = useTranslation();
   const { settings } = useSnapshot(state);
 
   const currentSettings =
@@ -48,8 +50,8 @@ const ModelSettings: React.FC = () => {
       <Form.Item
         label={
           <div className="flex items-center gap-2">
-            主模型
-            <Tooltip title="用于主要的代码生成和复杂推理任务">
+            {t('settings.model.main')}
+            <Tooltip title={t('settings.model.mainTooltip')}>
               <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
@@ -61,8 +63,8 @@ const ModelSettings: React.FC = () => {
           options={getModelOptions()}
           placeholder={
             settings.effectiveSettings.model
-              ? `默认: ${settings.effectiveSettings.model}`
-              : '选择主模型'
+              ? `${t('settings.model.defaultPrefix')}: ${settings.effectiveSettings.model}`
+              : t('settings.model.mainPlaceholder')
           }
           allowClear
           showSearch
@@ -73,8 +75,8 @@ const ModelSettings: React.FC = () => {
       <Form.Item
         label={
           <div className="flex items-center gap-2">
-            小模型
-            <Tooltip title="用于简单任务，如生成commit消息等">
+            {t('settings.model.small')}
+            <Tooltip title={t('settings.model.smallTooltip')}>
               <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
@@ -86,8 +88,8 @@ const ModelSettings: React.FC = () => {
           options={getModelOptions()}
           placeholder={
             settings.effectiveSettings.smallModel
-              ? `默认: ${settings.effectiveSettings.smallModel}`
-              : '选择小模型（可选）'
+              ? `${t('settings.model.defaultPrefix')}: ${settings.effectiveSettings.smallModel}`
+              : t('settings.model.smallPlaceholder')
           }
           allowClear
           showSearch
@@ -98,8 +100,8 @@ const ModelSettings: React.FC = () => {
       <Form.Item
         label={
           <div className="flex items-center gap-2">
-            规划模型
-            <Tooltip title="用于生成执行计划">
+            {t('settings.model.plan')}
+            <Tooltip title={t('settings.model.planTooltip')}>
               <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
@@ -111,8 +113,8 @@ const ModelSettings: React.FC = () => {
           options={getModelOptions()}
           placeholder={
             settings.effectiveSettings.planModel
-              ? `默认: ${settings.effectiveSettings.planModel}`
-              : '选择规划模型（可选）'
+              ? `${t('settings.model.defaultPrefix')}: ${settings.effectiveSettings.planModel}`
+              : t('settings.model.planPlaceholder')
           }
           allowClear
           showSearch
