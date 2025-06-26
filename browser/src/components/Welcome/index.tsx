@@ -11,6 +11,7 @@ import { Button, Flex, Space } from 'antd';
 import { createStyles } from 'antd-style';
 import { useTranslation } from 'react-i18next';
 import { useChatState } from '@/hooks/provider';
+import CodeDiffOutline from '../CodeViewer/CodeDiffOutline';
 
 const useWelcomeData = () => {
   const { t } = useTranslation();
@@ -107,6 +108,19 @@ const Welcome = () => {
   const { t } = useTranslation();
   const { HOT_TOPICS, DESIGN_GUIDE } = useWelcomeData();
 
+  const code = {
+    original: `
+      console.log(111)
+    
+      export {}
+      `,
+    modified: `
+      console.log(2222);
+
+      export default {}
+    `,
+  };
+
   return (
     <Space
       direction="vertical"
@@ -170,6 +184,12 @@ const Welcome = () => {
           className={styles.chatPrompt}
         />
       </Flex>
+
+      <CodeDiffOutline
+        path="/aaa/bbb.json"
+        originalCode={code.original}
+        modifiedCode={code.modified}
+      />
     </Space>
   );
 };

@@ -56,5 +56,17 @@
   "menu": {
     "rename": "重命名",
     "delete": "删除"
+  },
+  "codeViewer": {
+    "lineCount": "行",
+    "charCount": "个字符",
+    "tempFile": "临时文件",
+    "copySuccess": "复制成功",
+    "toolButton": {
+      "nextDiff": "查看下一个Diff",
+      "prevDiff": "查看上一个Diff",
+      "rejectAll": "全部拒绝",
+      "acceptAll": "全部接受"
+    }
   }
 }

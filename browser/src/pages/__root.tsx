@@ -3,9 +3,12 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { useMount } from 'ahooks';
 import { createStyles } from 'antd-style';
 import React from 'react';
+import { useSnapshot } from 'valtio';
+import CodeViewer from '@/components/CodeViewer';
 import I18nProvider from '@/components/I18nProvider';
 import Sider from '@/components/Sider';
 import { actions } from '@/state/appData';
+import * as codeViewer from '@/state/codeViewer';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
@@ -22,6 +25,7 @@ const useStyle = createStyles(({ token, css }) => {
 
 const Layout: React.FC = () => {
   const { styles } = useStyle();
+  const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
   useMount(() => {
     actions.getAppData();
   });
@@ -31,6 +35,7 @@ const Layout: React.FC = () => {
       <div className={styles.layout}>
         <Sider />
         <Outlet />
+        {codeViewerVisible && <CodeViewer />}
         <TanStackRouterDevtools position="bottom-right" />
       </div>
     </I18nProvider>

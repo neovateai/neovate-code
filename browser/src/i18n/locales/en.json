@@ -56,5 +56,17 @@
   "menu": {
     "rename": "Rename",
     "delete": "Delete"
+  },
+  "codeViewer": {
+    "lineCount": "line(s)",
+    "charCount": "char(s)",
+    "tempFile": "Temporary File",
+    "copySuccess": "Copy content successfully",
+    "toolButton": {
+      "nextDiff": "Next Diff",
+      "prevDiff": "Previous Diff",
+      "rejectAll": "Reject All",
+      "acceptAll": "Accept All"
+    }
   }
 }
