@@ -32,16 +32,7 @@ const SettingsPage: React.FC = () => {
 
   if (settings.loading) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '50vh',
-          flexDirection: 'column',
-          gap: '16px',
-        }}
-      >
+      <div className="flex justify-center items-center h-[50vh] flex-col gap-4">
         <Spin size="large" />
         <Text type="secondary">正在加载设置...</Text>
       </div>
@@ -50,39 +41,14 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div
-      style={{
-        height: '100vh',
-        background: '#f5f5f5',
-        display: 'flex',
-        flexDirection: 'column',
-        paddingInline: 'calc(calc(100% - 900px) / 2)',
-        paddingBlock: '24px',
-      }}
+      className="h-screen bg-gray-100 flex flex-col py-6"
+      style={{ paddingInline: 'calc(calc(100% - 900px) / 2)' }}
     >
       {/* 设置面板 */}
-      <div
-        style={{
-          width: '900px',
-          height: 'calc(100vh - 48px)',
-          background: '#ffffff',
-          border: '1px solid #e8e8e8',
-          borderRadius: '8px',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
-      >
+      <div className="w-[900px] h-[calc(100vh-48px)] bg-white border border-gray-200 rounded-lg flex flex-col overflow-hidden">
         {/* 顶部标题栏 */}
-        <div
-          style={{
-            padding: '12px 16px',
-            borderBottom: '1px solid #f0f0f0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <div style={{ fontSize: '16px', fontWeight: 500 }}>设置</div>
+        <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+          <div className="text-base font-medium">设置</div>
           <Button
             type="text"
             icon={<CloseOutlined />}
@@ -93,17 +59,11 @@ const SettingsPage: React.FC = () => {
 
         {/* 设置内容区域 */}
         <div
-          style={{
-            flex: 1,
-            padding: '16px',
-            overflow: 'hidden auto',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-          }}
-          className="hide-scrollbar"
+          className="flex-1 p-4 overflow-hidden overflow-y-auto hide-scrollbar"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {/* 作用域切换 */}
-          <div style={{ marginBottom: '16px' }}>
+          <div className="mb-4">
             <SettingsScopeSwitch />
           </div>
 
@@ -112,21 +72,12 @@ const SettingsPage: React.FC = () => {
             <Col xs={24} lg={12}>
               <Card
                 title={
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}
-                  >
+                  <div className="flex items-center gap-2">
                     <RobotOutlined />
                     <span>模型配置</span>
                   </div>
                 }
-                style={{
-                  height: 'fit-content',
-                  border: '1px solid #e8e8e8',
-                }}
+                className="h-fit border border-gray-200"
                 bodyStyle={{ padding: '16px' }}
               >
                 <ModelSettings />
@@ -136,21 +87,12 @@ const SettingsPage: React.FC = () => {
             <Col xs={24} lg={12}>
               <Card
                 title={
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}
-                  >
+                  <div className="flex items-center gap-2">
                     <ControlOutlined />
                     <span>行为配置</span>
                   </div>
                 }
-                style={{
-                  height: 'fit-content',
-                  border: '1px solid #e8e8e8',
-                }}
+                className="h-fit border border-gray-200"
                 bodyStyle={{ padding: '16px' }}
               >
                 <BehaviorSettings />
@@ -160,24 +102,16 @@ const SettingsPage: React.FC = () => {
             <Col xs={24}>
               <Card
                 title={
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}
-                  >
+                  <div className="flex items-center gap-2">
                     <ApiOutlined />
                     <span>插件配置</span>
                     <Badge
                       count={settings.effectiveSettings.plugins?.length || 0}
-                      style={{ backgroundColor: '#1890ff' }}
+                      style={{ backgroundColor: '#3b82f6' }}
                     />
                   </div>
                 }
-                style={{
-                  border: '1px solid #e8e8e8',
-                }}
+                className="border border-gray-200"
                 bodyStyle={{ padding: '16px' }}
               >
                 <PluginSettings />

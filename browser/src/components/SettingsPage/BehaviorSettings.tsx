@@ -39,10 +39,10 @@ const BehaviorSettings: React.FC = () => {
     <Form layout="vertical">
       <Form.Item
         label={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex items-center gap-2">
             界面语言
             <Tooltip title="AI 回复和界面显示的语言">
-              <InfoCircleOutlined style={{ color: '#8c8c8c' }} />
+              <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
         }
@@ -65,10 +65,10 @@ const BehaviorSettings: React.FC = () => {
 
       <Form.Item
         label={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex items-center gap-2">
             执行模式
             <Tooltip title="控制 AI 执行工具时的确认行为">
-              <InfoCircleOutlined style={{ color: '#8c8c8c' }} />
+              <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
         }
@@ -101,15 +101,15 @@ const BehaviorSettings: React.FC = () => {
 
       <Form.Item
         label={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex items-center gap-2">
             安静模式
             <Tooltip title="启用后将使用非交互式模式">
-              <InfoCircleOutlined style={{ color: '#8c8c8c' }} />
+              <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
         }
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="flex items-center gap-2">
           <Switch
             checked={currentSettings.quiet}
             onChange={(checked) => handleSettingChange('quiet', checked)}

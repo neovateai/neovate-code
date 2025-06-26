@@ -58,16 +58,16 @@ const PluginSettings: React.FC = () => {
     <Form layout="vertical">
       <Form.Item
         label={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex items-center gap-2">
             插件列表
             <Tooltip title="配置项目使用的插件">
-              <InfoCircleOutlined style={{ color: '#8c8c8c' }} />
+              <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
         }
       >
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
-          <Space.Compact style={{ width: '100%' }}>
+        <Space direction="vertical" className="w-full" size="middle">
+          <Space.Compact className="w-full">
             <Input
               value={newPlugin}
               onChange={(e) => setNewPlugin(e.target.value)}
@@ -111,7 +111,7 @@ const PluginSettings: React.FC = () => {
           {settings.effectiveSettings.plugins &&
             JSON.stringify(settings.effectiveSettings.plugins) !==
               JSON.stringify(currentPlugins) && (
-              <Text type="secondary" style={{ fontSize: '12px' }}>
+              <Text type="secondary" className="text-xs">
                 当前有效插件:{' '}
                 {[...(settings.effectiveSettings.plugins || [])].join(', ') ||
                   '无'}

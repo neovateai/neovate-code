@@ -28,7 +28,7 @@ const ModelSettings: React.FC = () => {
       label: (
         <div>
           <div>{model.label}</div>
-          <Text type="secondary" style={{ fontSize: '12px' }}>
+          <Text type="secondary" className="text-xs">
             {model.provider} {model.description && `- ${model.description}`}
           </Text>
         </div>
@@ -47,10 +47,10 @@ const ModelSettings: React.FC = () => {
     <Form layout="vertical">
       <Form.Item
         label={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex items-center gap-2">
             主模型
             <Tooltip title="用于主要的代码生成和复杂推理任务">
-              <InfoCircleOutlined style={{ color: '#8c8c8c' }} />
+              <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
         }
@@ -72,10 +72,10 @@ const ModelSettings: React.FC = () => {
 
       <Form.Item
         label={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex items-center gap-2">
             小模型
             <Tooltip title="用于简单任务，如生成commit消息等">
-              <InfoCircleOutlined style={{ color: '#8c8c8c' }} />
+              <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
         }
@@ -97,10 +97,10 @@ const ModelSettings: React.FC = () => {
 
       <Form.Item
         label={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex items-center gap-2">
             规划模型
             <Tooltip title="用于生成执行计划">
-              <InfoCircleOutlined style={{ color: '#8c8c8c' }} />
+              <InfoCircleOutlined className="text-gray-500" />
             </Tooltip>
           </div>
         }

@@ -10,22 +10,12 @@ const SettingsScopeSwitch: React.FC = () => {
   const { settings } = useSnapshot(state);
 
   return (
-    <Card
-      style={{
-        border: '1px solid #e8e8e8',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
+    <Card className="border border-gray-200">
+      <div className="flex justify-between items-center">
         <div>
           <Text strong>配置作用域</Text>
-          <div style={{ marginTop: '4px' }}>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
+          <div className="mt-1">
+            <Text type="secondary" className="text-xs">
               {settings.currentScope === 'global'
                 ? '全局设置 (~/.takumi/config.json)'
                 : '项目设置 (./.takumi/config.json)'}
@@ -41,9 +31,7 @@ const SettingsScopeSwitch: React.FC = () => {
           options={[
             {
               label: (
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
+                <div className="flex items-center gap-1.5">
                   <GlobalOutlined />
                   全局
                 </div>
@@ -52,9 +40,7 @@ const SettingsScopeSwitch: React.FC = () => {
             },
             {
               label: (
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
+                <div className="flex items-center gap-1.5">
                   <FolderOutlined />
                   项目
                 </div>
