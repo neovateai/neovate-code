@@ -3,16 +3,7 @@ import {
   InfoCircleOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
-import {
-  Button,
-  Form,
-  Input,
-  List,
-  Modal,
-  Space,
-  Tooltip,
-  Typography,
-} from 'antd';
+import { Button, Form, Input, List, Space, Tooltip, Typography } from 'antd';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
@@ -43,17 +34,11 @@ const PluginSettings: React.FC = () => {
   };
 
   const handleRemovePlugin = (plugin: string) => {
-    Modal.confirm({
-      title: t('settings.plugins.delete'),
-      content: t('settings.plugins.deleteConfirm', { plugin }),
-      onOk: async () => {
-        try {
-          await actions.removePlugin(plugin);
-        } catch (error) {
-          console.error('Failed to remove plugin:', error);
-        }
-      },
-    });
+    try {
+      actions.removePlugin(plugin);
+    } catch (error) {
+      console.error('Failed to remove plugin:', error);
+    }
   };
 
   return (
