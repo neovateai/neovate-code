@@ -1,5 +1,6 @@
 import { FolderOutlined, RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ToolMessage } from '@/types/message';
 import InnerList, { type ListItem } from './InnerList';
 import { ToolStatus } from './ToolStatus';
@@ -66,6 +67,7 @@ export default function LsRender({ message }: { message?: ToolMessage }) {
   const { state } = message;
   const items = parseLsResult(message.result);
   const dirPath = (message.args?.dir_path as string) || '';
+  const { t } = useTranslation();
 
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -98,8 +100,10 @@ export default function LsRender({ message }: { message?: ToolMessage }) {
         </span>
         <FolderOutlined />
         <span className="flex-1">
-          Listed {itemsCount} items in{' '}
-          {displayPath.split('/').pop() || displayPath}
+          {t('toolRenders.ls.listedItems', {
+            count: itemsCount,
+            path: displayPath.split('/').pop() || displayPath,
+          })}
         </span>
         <ToolStatus state={state} />
       </div>

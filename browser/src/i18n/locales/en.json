@@ -129,5 +129,31 @@
     "serverConfigObject": "Server \"{{name}}\" configuration must be an object",
     "serverCommandOrUrl": "Server \"{{name}}\" must have command or url field",
     "noServersFound": "No servers found in mcpServers object"
+  },
+  "toolRenders": {
+    "read": {
+      "read": "read",
+      "lines": "lines"
+    },
+    "ls": {
+      "listedItems": "Listed {{count}} items in {{path}}"
+    },
+    "grep": {
+      "grep": "grep",
+      "inFiles": "in {{count}} files"
+    },
+    "bash": {
+      "noOutput": "No output."
+    }
+  },
+  "senderFooterBoard": {
+    "agentMode": {
+      "label": "Agent Mode",
+      "description": "For tasks involving code generation, file modification, running commands, or any other active development tasks"
+    },
+    "askMode": {
+      "label": "Ask Mode",
+      "description": "Allows you to ask the AI questions and get help directly in the terminal, without modifying files"
+    }
   }
 }

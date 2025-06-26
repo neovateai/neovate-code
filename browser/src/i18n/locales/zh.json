@@ -129,5 +129,31 @@
     "serverConfigObject": "服务器\"{{name}}\"配置必须是对象",
     "serverCommandOrUrl": "服务器\"{{name}}\"必须有 command 或 url 字段",
     "noServersFound": "在 mcpServers 对象中未找到服务器"
+  },
+  "toolRenders": {
+    "read": {
+      "read": "读取",
+      "lines": "行"
+    },
+    "ls": {
+      "listedItems": "列出 {{path}} 中的 {{count}} 个项目"
+    },
+    "grep": {
+      "grep": "搜索",
+      "inFiles": "在 {{count}} 个文件中"
+    },
+    "bash": {
+      "noOutput": "无输出。"
+    }
+  },
+  "senderFooterBoard": {
+    "agentMode": {
+      "label": "Agent 模式",
+      "description": "用于涉及代码生成、文件修改、运行命令或任何其他主动开发任务"
+    },
+    "askMode": {
+      "label": "Ask 模式",
+      "description": "允许你直接在终端中向 AI 提问并获取帮助，无需修改文件"
+    }
   }
 }

@@ -2,8 +2,9 @@ import { DownOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
 import { createStyles } from 'antd-style';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
-import { MODES_MAP } from '@/constants/chat';
+import { getModesMap } from '@/constants/chat';
 import { actions, state } from '@/state/sender';
 
 const useStyle = createStyles(({ token, css }) => {
@@ -23,13 +24,13 @@ const useStyle = createStyles(({ token, css }) => {
 export default function SenderFooter() {
   const { styles } = useStyle();
   const { mode } = useSnapshot(state);
-
+  const { t } = useTranslation();
   const onOpenFooter = () => {
     actions.updateOpenFooter(!state.openFooter);
   };
 
   const modeDetail = useMemo(() => {
-    return MODES_MAP[mode];
+    return getModesMap(t)[mode];
   }, [mode]);
 
   return (

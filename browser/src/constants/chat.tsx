@@ -1,19 +1,20 @@
 import { ApiOutlined, MessageOutlined } from '@ant-design/icons';
+import type { TFunction } from 'i18next';
 import { keyBy } from 'lodash-es';
 
-export const MODES = [
+export const getModes = (t: TFunction) => [
   {
     icon: <ApiOutlined />,
     key: 'agent',
-    label: 'Agent 模式',
-    description: '用于涉及代码生成、文件修改、运行命令或任何其他主动开发任务',
+    label: t('senderFooterBoard.agentMode.label'),
+    description: t('senderFooterBoard.agentMode.description'),
   },
   {
     icon: <MessageOutlined />,
     key: 'ask',
-    label: 'Ask 模式',
-    description: '允许你直接在终端中向 AI 提问并获取帮助，无需修改文件',
+    label: t('senderFooterBoard.askMode.label'),
+    description: t('senderFooterBoard.askMode.description'),
   },
 ];
 
-export const MODES_MAP = keyBy(MODES, 'key');
+export const getModesMap = (t: TFunction) => keyBy(getModes(t), 'key');
