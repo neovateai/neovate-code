@@ -23,21 +23,34 @@ const ModelSettings: React.FC = () => {
   };
 
   const getModelOptions = () => {
-    return settings.availableModels.map((model) => ({
-      value: model.value,
-      label: (
-        <div>
-          <div>{model.label}</div>
-        </div>
-      ),
-    }));
+    return settings.availableModels.map((model) => {
+      const displayText = `${model.key}(${model.value})`;
+      return {
+        value: model.key,
+        label: (
+          <Tooltip title={displayText} placement="right">
+            <div
+              style={{
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%',
+              }}
+            >
+              {displayText}
+            </div>
+          </Tooltip>
+        ),
+      };
+    });
   };
 
   const filterOption = (input: string, option: any) => {
-    const labelStr = option?.label?.toString?.();
-    return labelStr
-      ? labelStr.toLowerCase().includes(input.toLowerCase())
-      : false;
+    const model = settings.availableModels.find((m) => m.key === option.value);
+    if (!model) return false;
+
+    const searchText = `${model.key}(${model.value})`.toLowerCase();
+    return searchText.includes(input.toLowerCase());
   };
 
   return (

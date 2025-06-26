@@ -15,10 +15,8 @@ export interface SettingsScope {
 }
 
 export interface ModelOption {
+  key: string;
   value: string;
-  label: string;
-  provider: string;
-  description?: string;
 }
 
 export interface SettingsState {
