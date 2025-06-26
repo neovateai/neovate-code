@@ -167,8 +167,10 @@ const CodeDiffOutline = (props: Props) => {
     nextOriginalArray.splice(insertPosition, removedCount, ...needAddLines);
 
     const nextOriginalCode = nextOriginalArray.join('\n');
-    setCurrentCodes({ ...currentCodes, originalCode: nextOriginalCode });
+    const nextCodes = { ...currentCodes, originalCode: nextOriginalCode };
+    setCurrentCodes(nextCodes);
     onChangeCode?.(nextOriginalCode);
+    showDiff(nextCodes);
   };
 
   const handleReject = (diffBlockStat: DiffBlockStat) => {
@@ -201,7 +203,9 @@ const CodeDiffOutline = (props: Props) => {
     nextModifiedArray.splice(insertPosition, removedCount, ...needAddLines);
 
     const nextModifiedCode = nextModifiedArray.join('\n');
-    setCurrentCodes({ ...currentCodes, modifiedCode: nextModifiedCode });
+    const nextCodes = { ...currentCodes, modifiedCode: nextModifiedCode };
+    setCurrentCodes(nextCodes);
+    showDiff(nextCodes);
   };
 
   const handleAcceptAll = () => {
@@ -232,7 +236,7 @@ const CodeDiffOutline = (props: Props) => {
     showDiff(initailCodes);
   };
 
-  const showDiff = (currentCodes: {
+  const showDiff = async (currentCodes: {
     originalCode: string;
     modifiedCode: string;
   }) => {
@@ -244,13 +248,17 @@ const CodeDiffOutline = (props: Props) => {
       }
     });
 
-    codeViewer.actions.displayDiffViewer({
-      path,
-      diffStat,
-      originalCode: currentCodes.originalCode,
-      modifiedCode: currentCodes.modifiedCode,
-      language,
-    });
+    diff(currentCodes.originalCode, currentCodes.modifiedCode).then(
+      (diffStat) => {
+        codeViewer.actions.displayDiffViewer({
+          path,
+          diffStat,
+          originalCode: currentCodes.originalCode,
+          modifiedCode: currentCodes.modifiedCode,
+          language,
+        });
+      },
+    );
   };
 
   return (
@@ -278,7 +286,8 @@ const CodeDiffOutline = (props: Props) => {
           {changed && (
             <Button
               icon={<RollbackOutlined />}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 handleRollback();
               }}
             />
