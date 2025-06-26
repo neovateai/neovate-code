@@ -1,11 +1,9 @@
 import { InfoCircleOutlined } from '@ant-design/icons';
-import { Form, Select, Tooltip, Typography } from 'antd';
+import { Form, Select, Tooltip } from 'antd';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';
-
-const { Text } = Typography;
 
 const ModelSettings: React.FC = () => {
   const { t } = useTranslation();
@@ -30,9 +28,6 @@ const ModelSettings: React.FC = () => {
       label: (
         <div>
           <div>{model.label}</div>
-          <Text type="secondary" className="text-xs">
-            {model.provider} {model.description && `- ${model.description}`}
-          </Text>
         </div>
       ),
     }));
