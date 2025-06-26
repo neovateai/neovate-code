@@ -70,7 +70,10 @@ export const actions = {
   },
 
   // Update setting value (save directly)
-  updateSettingValue: async (key: keyof AppSettings, value: any) => {
+  updateSettingValue: async (
+    key: keyof AppSettings,
+    value: AppSettings[keyof AppSettings],
+  ) => {
     const { currentScope } = state.settings;
 
     // Update local state

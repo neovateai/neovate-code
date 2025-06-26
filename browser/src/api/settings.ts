@@ -1,9 +1,9 @@
-import { request } from '@/utils/request';
 import type {
   AppSettings,
   ModelOption,
   SettingsResponse,
-} from '../types/settings';
+} from '@/types/settings';
+import { request } from '@/utils/request';
 import type { ApiResponse } from './model';
 
 // Get settings
@@ -17,7 +17,7 @@ export const getSettings = (
 export const setSetting = (
   scope: 'global' | 'project',
   key: string,
-  value: any,
+  value: string | boolean | string[],
 ): Promise<ApiResponse<SettingsResponse>> => {
   return request.post('/settings', { scope, key, value });
 };

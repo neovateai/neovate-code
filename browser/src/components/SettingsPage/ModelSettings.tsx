@@ -4,6 +4,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';
+import type { AppSettings } from '@/types/settings';
 
 const ModelSettings: React.FC = () => {
   const { t } = useTranslation();
@@ -14,9 +15,9 @@ const ModelSettings: React.FC = () => {
       ? settings.globalSettings
       : settings.projectSettings;
 
-  const handleModelChange = async (key: string, value: string) => {
+  const handleModelChange = async (key: keyof AppSettings, value: string) => {
     try {
-      await actions.updateSettingValue(key as any, value);
+      await actions.updateSettingValue(key, value);
     } catch (error) {
       console.error('Failed to update model setting:', error);
     }
@@ -45,7 +46,11 @@ const ModelSettings: React.FC = () => {
     });
   };
 
-  const filterOption = (input: string, option: any) => {
+  const filterOption = (
+    input: string,
+    option?: { value: string; label: React.ReactElement },
+  ) => {
+    if (!option) return false;
     const model = settings.availableModels.find((m) => m.key === option.value);
     if (!model) return false;
 

@@ -2,7 +2,7 @@ import { FastifyPluginAsync } from 'fastify';
 import { ConfigManager } from '../../config';
 import { MODEL_ALIAS } from '../../provider';
 import { CreateServerOpts } from '../types';
-import { ApiResponse } from '../types';
+import { BatchUpdateRequest, SetSettingRequest } from '../types/settings';
 
 const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
   app,
@@ -103,11 +103,7 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
   // Set configuration
   app.post('/settings', async (request, reply) => {
     try {
-      const { scope, key, value } = request.body as {
-        scope?: string;
-        key?: string;
-        value?: any;
-      };
+      const { scope, key, value } = request.body as SetSettingRequest;
       if (!scope || (scope !== 'global' && scope !== 'project') || !key) {
         return reply.status(400).send({
           success: false,
@@ -120,9 +116,17 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
       const configManager = new ConfigManager(getCwd(), 'takumi', {});
 
       // Convert boolean values to string as ConfigManager.setConfig expects string parameters
-      let configValue = value;
+      let configValue: string = '';
       if (typeof value === 'boolean') {
         configValue = value.toString();
+      } else if (typeof value === 'string') {
+        configValue = value;
+      } else if (typeof value === 'number') {
+        configValue = value.toString();
+      } else if (Array.isArray(value)) {
+        configValue = JSON.stringify(value);
+      } else if (value !== undefined) {
+        configValue = String(value);
       }
 
       configManager.setConfig(validScope === 'global', key, configValue);
@@ -143,10 +147,7 @@ const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
   // Batch update settings
   app.post('/settings/batch', async (request, reply) => {
     try {
-      const { scope, settings } = request.body as {
-        scope?: string;
-        settings?: any;
-      };
+      const { scope, settings } = request.body as BatchUpdateRequest;
       if (!scope || (scope !== 'global' && scope !== 'project') || !settings) {
         return reply.status(400).send({
           success: false,

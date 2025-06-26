@@ -4,6 +4,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';
+import type { AppSettings } from '@/types/settings';
 
 const { Text } = Typography;
 
@@ -16,9 +17,12 @@ const BehaviorSettings: React.FC = () => {
       ? settings.globalSettings
       : settings.projectSettings;
 
-  const handleSettingChange = async (key: string, value: any) => {
+  const handleSettingChange = async (
+    key: keyof AppSettings,
+    value: string | boolean,
+  ) => {
     try {
-      await actions.updateSettingValue(key as any, value);
+      await actions.updateSettingValue(key, value);
     } catch (error) {
       console.error('Failed to update behavior setting:', error);
     }

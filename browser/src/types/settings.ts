@@ -40,6 +40,6 @@ export interface SettingsState {
 
 export interface SettingsResponse {
   success: boolean;
-  data?: any;
+  data?: { success: boolean } | AppSettings | string;
   error?: string;
 }
