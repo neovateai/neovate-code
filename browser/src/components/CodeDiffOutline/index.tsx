@@ -2,6 +2,7 @@ import {
   CheckOutlined,
   CloseOutlined,
   ExpandAltOutlined,
+  RollbackOutlined,
 } from '@ant-design/icons';
 import { Button, ConfigProvider, Divider, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
@@ -26,8 +27,6 @@ interface Props {
   /** 修改代码，可能会在 accept / rollback 时触发 */
   onChangeCode?: (newCode: string) => void;
 }
-
-// TODO 调用onChangeCode后再次调用actions.displayDiffViewer刷新视图
 
 const useStyles = createStyles(({ css, token }) => {
   return {
@@ -203,28 +202,36 @@ const CodeDiffOutline = (props: Props) => {
 
   const handleAcceptAll = () => {
     setChanged(true);
-    setCurrentCodes({
+    const nextCodes = {
       ...currentCodes,
       originalCode: currentCodes.modifiedCode,
-    });
+    };
+    setCurrentCodes(nextCodes);
     onChangeCode?.(currentCodes.modifiedCode);
+    showDiff(nextCodes);
   };
 
   const handleRejectAll = () => {
     setChanged(true);
-    setCurrentCodes({
+    const nextCodes = {
       ...currentCodes,
       modifiedCode: currentCodes.originalCode,
-    });
+    };
+    setCurrentCodes(nextCodes);
+    showDiff(nextCodes);
   };
 
   const handleRollback = () => {
     setChanged(false);
     setCurrentCodes(initailCodes);
     onChangeCode?.(initailCodes.originalCode);
+    showDiff(initailCodes);
   };
 
-  const showDiff = () => {
+  const showDiff = (currentCodes: {
+    originalCode: string;
+    modifiedCode: string;
+  }) => {
     codeViewer.actions.registerEditFunction(path, (type, diffBlockStat) => {
       if (type === 'accept') {
         diffBlockStat ? handleAccept(diffBlockStat) : handleAcceptAll();
@@ -262,11 +269,19 @@ const CodeDiffOutline = (props: Props) => {
           </div>
         </div>
         <div className={styles.headerRight}>
+          {changed && (
+            <Button
+              icon={<RollbackOutlined />}
+              onClick={() => {
+                handleRollback();
+              }}
+            />
+          )}
           <Button
             type="text"
             shape="circle"
             onClick={() => {
-              showDiff();
+              showDiff(currentCodes);
             }}
             icon={<ExpandAltOutlined />}
           />
@@ -299,7 +314,7 @@ const CodeDiffOutline = (props: Props) => {
               <div
                 className={styles.item}
                 onClick={() => {
-                  showDiff();
+                  showDiff(currentCodes);
                   codeViewer.actions.jumpToLine(
                     path,
                     blockStat.modifiedStartLineNumber,

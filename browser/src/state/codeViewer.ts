@@ -79,28 +79,22 @@ export const actions = {
 
     const id = path || Date.now().toString();
 
-    const remainingItem = state.codeViewerTabItems.find(
-      (item) => item.id === path,
-    );
+    state.codeViewerTabItems.filter((item) => item.id !== id);
 
-    if (remainingItem) {
-      state.activeId = remainingItem.id;
-    } else {
-      const title = path || i18n.t('codeViewer.tempFile');
+    const title = path || i18n.t('codeViewer.tempFile');
 
-      const targetLanguage = language || inferFileType(path);
+    const targetLanguage = language || inferFileType(path);
 
-      state.codeViewerTabItems.push({
-        title,
-        language: targetLanguage,
-        code,
-        id,
-        viewType: 'normal',
-        path,
-      });
+    state.codeViewerTabItems.push({
+      title,
+      language: targetLanguage,
+      code,
+      id,
+      viewType: 'normal',
+      path,
+    });
 
-      state.activeId = id;
-    }
+    state.activeId = id;
 
     state.visible = true;
   },
@@ -111,30 +105,25 @@ export const actions = {
 
     const id = path || Date.now().toString();
 
-    const remainingItem = state.codeViewerTabItems.find(
-      (item) => item.id === path,
-    );
+    // 删除已有的
+    state.codeViewerTabItems.filter((item) => item.id !== id);
 
-    if (remainingItem) {
-      state.activeId = remainingItem.id;
-    } else {
-      const title = path || i18n.t('codeViewer.tempFile');
+    const title = path || i18n.t('codeViewer.tempFile');
 
-      const targetLanguage = language || inferFileType(path);
+    const targetLanguage = language || inferFileType(path);
 
-      state.codeViewerTabItems.push({
-        title,
-        language: targetLanguage,
-        originalCode,
-        modifiedCode,
-        id,
-        viewType: 'diff',
-        path,
-        diffStat,
-      });
+    state.codeViewerTabItems.push({
+      title,
+      language: targetLanguage,
+      originalCode,
+      modifiedCode,
+      id,
+      viewType: 'diff',
+      path,
+      diffStat,
+    });
 
-      state.activeId = id;
-    }
+    state.activeId = id;
 
     state.visible = true;
   },
