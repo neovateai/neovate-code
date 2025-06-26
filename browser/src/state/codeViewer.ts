@@ -156,6 +156,7 @@ export const actions = {
     }
   },
 
+  /** 注册跳转函数 */
   registerJumpFunction: (path: string, fn: (_: number) => void) => {
     state.jumpFunctionMap[path] = fn;
   },

@@ -18,13 +18,13 @@ interface Props {
   onRejectAll: () => void;
 }
 
-const useStyles = createStyles(({ css }) => {
+const useStyles = createStyles(({ css, token }) => {
   return {
     add: css`
-      color: green;
+      color: ${token.colorPrimary};
     `,
     addBlock: css`
-      background-color: green;
+      background-color: ${token.colorPrimary};
     `,
     remove: css`
       color: red;

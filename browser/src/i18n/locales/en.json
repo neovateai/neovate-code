@@ -155,5 +155,19 @@
       "label": "Ask Mode",
       "description": "Allows you to ask the AI questions and get help directly in the terminal, without modifying files"
     }
+  },
+  "codeViewer": {
+    "lineCount": "line(s)",
+    "charCount": "char(s)",
+    "tempFile": "Temporary File",
+    "copySuccess": "Copy content successfully",
+    "toolButton": {
+      "nextDiff": "Next Diff",
+      "prevDiff": "Previous Diff",
+      "rejectAll": "Reject All",
+      "acceptAll": "Accept All",
+      "accept": "accept",
+      "reject": "reject"
+    }
   }
 }
