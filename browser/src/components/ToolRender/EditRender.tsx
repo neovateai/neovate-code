@@ -1,4 +1,5 @@
 import type { ToolMessage } from '@/types/message';
+import CodeDiffOutline from '../CodeViewer/CodeDiffOutline';
 
 const mockData = {
   type: 'tool',
@@ -17,5 +18,17 @@ const mockData = {
 };
 
 export default function EditRender({ message }: { message: ToolMessage }) {
-  return <div>EditRender</div>;
+  const { args } = mockData || message;
+  const { file_path, old_string, new_string } = args as {
+    file_path: string;
+    old_string: string;
+    new_string: string;
+  };
+  return (
+    <CodeDiffOutline
+      path={file_path}
+      originalCode={old_string}
+      modifiedCode={new_string}
+    />
+  );
 }

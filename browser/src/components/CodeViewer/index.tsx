@@ -15,7 +15,7 @@ import CodeNormalView from './CodeNormalView';
 const useStyle = createStyles(({ css }) => {
   return {
     layout: css`
-      width: 40vw;
+      width: 100%;
       display: flex;
       height: 100%;
     `,
@@ -23,7 +23,7 @@ const useStyle = createStyles(({ css }) => {
       flex: 1;
       padding: 8px;
       height: 100%;
-      width: 40vw;
+      width: 100%;
 
       /* 让 CodeViewer 的 Tabs 内容区和 tabpane 100% 高 */
       .ant-tabs-content,
