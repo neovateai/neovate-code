@@ -166,7 +166,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
         'Small Model': resolvedConfig.smallModel,
       }),
       ...(resolvedConfig.planModel !== resolvedConfig.model && {
-        'Plan Model': resolvedConfig.planModel,
+        'Planning Model': resolvedConfig.planModel,
       }),
     },
     type: PluginHookType.SeriesMerge,
