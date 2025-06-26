@@ -17,7 +17,7 @@ Pronounced `/tɑːˈkuːmi/`, a coding agent to enhance your development workflo
 $ npm install -g takumi
 ```
 
-1. **Set up the API keys.** Configure one or more API keys for the LLMs providers.
+2. **Set up the API keys.** Configure one or more API keys for the LLMs providers.
 
 ```bash
 $ export OPENAI_API_KEY="sk-..."
