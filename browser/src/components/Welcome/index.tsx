@@ -11,7 +11,7 @@ import { Button, Flex, Space } from 'antd';
 import { createStyles } from 'antd-style';
 import { useTranslation } from 'react-i18next';
 import { useChatState } from '@/hooks/provider';
-import CodeDiffOutline from '../CodeViewer/CodeDiffOutline';
+import CodeDiffOutline from '../CodeDiffOutline';
 
 const useWelcomeData = () => {
   const { t } = useTranslation();
@@ -116,7 +116,7 @@ const Welcome = () => {
       `,
     modified: `
       console.log(2222);
-
+      
       export default {}
     `,
   };

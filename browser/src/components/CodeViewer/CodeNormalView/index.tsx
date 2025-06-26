@@ -45,6 +45,10 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
     return {
       jumpToLine(lineCount) {
         editorRef.current?.revealLineInCenter(lineCount);
+        editorRef.current?.setPosition({
+          lineNumber: lineCount,
+          column: 1,
+        });
       },
     };
   });

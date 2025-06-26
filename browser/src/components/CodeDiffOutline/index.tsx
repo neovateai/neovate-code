@@ -8,8 +8,13 @@ import { createStyles } from 'antd-style';
 import { useEffect, useState } from 'react';
 import type { FC } from 'react';
 import { useTranslation } from 'react-i18next';
+import DevFileIcon from '@/components/DevFileIcon';
 import * as codeViewer from '@/state/codeViewer';
-import type { CodeViewerLanguage, DiffStat } from '@/types/codeViewer';
+import type {
+  CodeViewerLanguage,
+  DiffBlockStat,
+  DiffStat,
+} from '@/types/codeViewer';
 import { diff } from '@/utils/codeViewer';
 
 interface Props {
@@ -78,7 +83,6 @@ const useStyles = createStyles(({ css, token }) => {
       display: flex;
       align-items: center;
       column-gap: 8px;
-      color: #555;
     `,
     itemRight: css`
       display: flex;
@@ -96,11 +100,16 @@ const useStyles = createStyles(({ css, token }) => {
       color: red;
       margin: 0 2px;
     `,
+    plainText: css`
+      color: #333;
+    `,
   };
 });
 
 const CodeDiffOutline = (props: Props) => {
-  const { path, originalCode, modifiedCode, language } = props;
+  const { path, originalCode, modifiedCode, language, onChangeCode } = props;
+
+  const [changed, setChanged] = useState(false);
 
   // 最初的代码状态，用于回滚
   const [initailCodes] = useState({
@@ -126,18 +135,126 @@ const CodeDiffOutline = (props: Props) => {
 
   const { t } = useTranslation();
 
+  const handleAccept = (diffBlockStat: DiffBlockStat) => {
+    setChanged(true);
+
+    const {
+      originalEndLineNumber,
+      originalStartLineNumber,
+      modifiedEndLineNumber,
+      modifiedStartLineNumber,
+    } = diffBlockStat;
+
+    const needAddLines =
+      modifiedEndLineNumber > 0
+        ? currentCodes.modifiedCode
+            .split('\n')
+            .slice(modifiedStartLineNumber - 1, modifiedEndLineNumber)
+        : [];
+
+    const nextOriginalArray = currentCodes.originalCode.split('\n');
+    const removedCount =
+      originalEndLineNumber > 0
+        ? originalEndLineNumber - originalStartLineNumber + 1
+        : 0;
+    const insertPosition =
+      originalEndLineNumber > 0
+        ? originalStartLineNumber - 1
+        : originalStartLineNumber;
+    nextOriginalArray.splice(insertPosition, removedCount, ...needAddLines);
+
+    const nextOriginalCode = nextOriginalArray.join('\n');
+    setCurrentCodes({ ...currentCodes, originalCode: nextOriginalCode });
+    onChangeCode?.(nextOriginalCode);
+  };
+
+  const handleReject = (diffBlockStat: DiffBlockStat) => {
+    setChanged(true);
+
+    const {
+      originalEndLineNumber,
+      originalStartLineNumber,
+      modifiedEndLineNumber,
+      modifiedStartLineNumber,
+    } = diffBlockStat;
+
+    const needAddLines =
+      originalEndLineNumber > 0
+        ? currentCodes.originalCode
+            .split('\n')
+            .slice(originalStartLineNumber - 1, originalEndLineNumber)
+        : [];
+    const nextModifiedArray = currentCodes.modifiedCode.split('\n');
+    const removedCount =
+      modifiedEndLineNumber > 0
+        ? modifiedEndLineNumber - modifiedStartLineNumber + 1
+        : 0;
+
+    const insertPosition =
+      modifiedEndLineNumber > 0
+        ? modifiedStartLineNumber - 1
+        : modifiedStartLineNumber;
+
+    nextModifiedArray.splice(insertPosition, removedCount, ...needAddLines);
+
+    const nextModifiedCode = nextModifiedArray.join('\n');
+    setCurrentCodes({ ...currentCodes, modifiedCode: nextModifiedCode });
+  };
+
+  const handleAcceptAll = () => {
+    setChanged(true);
+    setCurrentCodes({
+      ...currentCodes,
+      originalCode: currentCodes.modifiedCode,
+    });
+    onChangeCode?.(currentCodes.modifiedCode);
+  };
+
+  const handleRejectAll = () => {
+    setChanged(true);
+    setCurrentCodes({
+      ...currentCodes,
+      modifiedCode: currentCodes.originalCode,
+    });
+  };
+
+  const handleRollback = () => {
+    setChanged(false);
+    setCurrentCodes(initailCodes);
+    onChangeCode?.(initailCodes.originalCode);
+  };
+
+  const showDiff = () => {
+    codeViewer.actions.registerEditFunction(path, (type, diffBlockStat) => {
+      if (type === 'accept') {
+        diffBlockStat ? handleAccept(diffBlockStat) : handleAcceptAll();
+      } else {
+        diffBlockStat ? handleReject(diffBlockStat) : handleRejectAll();
+      }
+    });
+
+    codeViewer.actions.displayDiffViewer({
+      path,
+      diffStat,
+      originalCode: currentCodes.originalCode,
+      modifiedCode: currentCodes.modifiedCode,
+      language,
+    });
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div>{path}</div>
+          <DevFileIcon size={16} fileExt={path.split('.').pop() || ''} />
+          <div className={styles.plainText}>{path}</div>
           <div>
-            {diffStat?.addLines && (
+            {diffStat?.addLines && diffStat.addLines > 0 && (
               <span className={styles.add}>
                 +{diffStat.addLines.toLocaleString()}
               </span>
             )}
-            {diffStat?.removeLines && (
+            {diffStat?.removeLines && diffStat.removeLines > 0 && (
               <span className={styles.remove}>
                 -{diffStat.removeLines.toLocaleString()}
               </span>
@@ -149,55 +266,60 @@ const CodeDiffOutline = (props: Props) => {
             type="text"
             shape="circle"
             onClick={() => {
-              codeViewer.actions.displayDiffViewer({
-                path,
-                diffStat,
-                originalCode: currentCodes.originalCode,
-                modifiedCode: currentCodes.modifiedCode,
-                language,
-              });
+              showDiff();
             }}
             icon={<ExpandAltOutlined />}
           />
-          <Button type="primary" icon={<CloseOutlined />} danger>
+          <Button
+            type="primary"
+            icon={<CloseOutlined />}
+            danger
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
             {t('codeViewer.toolButton.rejectAll')}
           </Button>
-          <Button type="primary" icon={<CheckOutlined />}>
+          <Button
+            type="primary"
+            icon={<CheckOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
             {t('codeViewer.toolButton.acceptAll')}
           </Button>
         </div>
       </div>
       <div className={styles.innerContainer}>
-        {diffStat?.diffBlockStats.map((stat, index) => {
+        {diffStat?.diffBlockStats.map((blockStat, index) => {
           return (
             <>
               {index > 0 && <Divider className={styles.itemDivider} />}
               <div
                 className={styles.item}
                 onClick={() => {
-                  codeViewer.actions.displayDiffViewer({
-                    path,
-                    diffStat,
-                    originalCode: currentCodes.originalCode,
-                    modifiedCode: currentCodes.modifiedCode,
-                    language,
-                  });
+                  showDiff();
                   codeViewer.actions.jumpToLine(
                     path,
-                    stat.modifiedStartLineNumber,
+                    blockStat.modifiedStartLineNumber,
                   );
                 }}
               >
                 <div className={styles.itemLeft}>
-                  <div>
-                    L{stat.modifiedStartLineNumber}-{stat.modifiedEndLineNumber}
+                  <div className={styles.plainText}>
+                    L{blockStat.modifiedStartLineNumber}-
+                    {blockStat.modifiedEndLineNumber ||
+                      blockStat.modifiedStartLineNumber}
                   </div>
                   <div>
-                    {stat.addLines && (
-                      <span className={styles.add}>+{stat.addLines}</span>
+                    {blockStat.addLines > 0 && (
+                      <span className={styles.add}>+{blockStat.addLines}</span>
                     )}
-                    {stat.removeLines && (
-                      <span className={styles.remove}>-{stat.removeLines}</span>
+                    {blockStat.removeLines > 0 && (
+                      <span className={styles.remove}>
+                        -{blockStat.removeLines}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -208,6 +330,10 @@ const CodeDiffOutline = (props: Props) => {
                       type="primary"
                       icon={<CloseOutlined />}
                       danger
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReject(blockStat);
+                      }}
                     />
                   </Tooltip>
                   <Tooltip title={t('codeViewer.toolButton.accept')}>
@@ -215,6 +341,10 @@ const CodeDiffOutline = (props: Props) => {
                       size="small"
                       type="primary"
                       icon={<CheckOutlined />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAccept(blockStat);
+                      }}
                     />
                   </Tooltip>
                 </div>
