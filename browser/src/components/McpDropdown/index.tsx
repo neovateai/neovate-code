@@ -303,16 +303,6 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
   };
 
   useEffect(() => {
-    loadMcpServers();
-  }, []);
-
-  // Add window focus event listener to ensure state synchronization
-  useEffect(() => {
-    const handleFocus = () => {
-      // Reload service state when window regains focus
-      loadMcpServers();
-    };
-
     const handleStorageChange = (e: StorageEvent) => {
       // Reload service state when localStorage changes
       if (
@@ -322,12 +312,8 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         loadMcpServers();
       }
     };
-
-    window.addEventListener('focus', handleFocus);
     window.addEventListener('storage', handleStorageChange);
-
     return () => {
-      window.removeEventListener('focus', handleFocus);
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [allKnownServices, serviceConfigs]);
