@@ -25,6 +25,8 @@
     "build": "npm run build:cli && npm run build:index && npm run build:dts && npm run build:browser",
     "ci": "npm run typecheck && npm run format:check && npm run test",
     "release": "npm run ci && utools release --git-tag --github-release --changelog",
+    "release:minor": "npm run ci && utools release --git-tag --github-release --changelog --bump minor",
+    "release:major": "npm run ci && utools release --git-tag --github-release --changelog --bump major",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
@@ -121,7 +123,7 @@
       "vendor",
       "dist-browser"
     ],
-    "needReinstall": false,
+    "needReinstall": true,
     "changelogUrl": "https://github.com/umijs/takumi/blob/master/CHANGELOG.md"
   }
 }

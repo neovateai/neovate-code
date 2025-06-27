@@ -49,4 +49,6 @@ Choose one of the following methods to debug the CLI:
 
 ```bash
 $ pnpm release
+$ pnpm release:minor
+$ pnpm release:major
 ```
