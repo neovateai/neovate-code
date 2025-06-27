@@ -41,7 +41,7 @@ type Paths = {
   projectConfigDir: string;
 };
 
-interface CreateContextOpts {
+export interface CreateContextOpts {
   cwd: string;
   argvConfig?: Partial<Config>;
   productName?: string;
@@ -55,6 +55,7 @@ export class Context {
   productName: string;
   version: string;
   config: Config;
+  argvConfig: Partial<Config>;
   pluginManager: PluginManager;
   mcpManager: MCPManager;
   mcpTools: Tool[];
@@ -68,6 +69,7 @@ export class Context {
     this.productName = opts.productName || PRODUCT_NAME;
     this.version = opts.version || '0.0.0';
     this.config = opts.config;
+    this.argvConfig = opts.argvConfig || {};
     this.pluginManager = opts.pluginManager;
     this.mcpManager = opts.mcpManager;
     this.mcpTools = opts.mcpTools;
