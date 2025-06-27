@@ -1,3 +1,11 @@
+## 0.1.4
+
+`2025-06-27`
+
+- build: consolidate browser output and refine build steps by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename runBrowser to runServer and update model handling by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.1.3
 
 `2025-06-27`
