@@ -6,7 +6,7 @@ import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
 import { createShellAgent } from '../agents/shell';
-import { ConfigManager } from '../config';
+import { Context } from '../context';
 import { getDefaultModelProvider } from '../provider';
 import * as logger from '../utils/logger';
 
@@ -86,11 +86,19 @@ export async function runRun(opts: RunCliOpts) {
     message: `AI is converting natural language to shell command...`,
   });
 
-  const configManager = new ConfigManager(process.cwd(), opts.productName, {
-    model: argv.model,
+  const context = await Context.create({
+    productName: opts.productName,
+    version: opts.version,
+    cwd: process.cwd(),
+    argvConfig: {
+      model: argv.model,
+      plugins: argv.plugin,
+    },
+    plugins: opts.plugins,
   });
+
   const agent = createShellAgent({
-    model: configManager.config.model,
+    model: context.config.model,
   });
   const runner = new Runner({
     modelProvider: opts.modelProvider ?? getDefaultModelProvider(),

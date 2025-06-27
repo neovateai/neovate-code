@@ -6,7 +6,7 @@ import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
 import { createCommitAgent } from '../agents/commit';
-import { ConfigManager } from '../config';
+import { Context } from '../context';
 import { getDefaultModelProvider } from '../provider';
 import * as logger from '../utils/logger';
 
@@ -148,12 +148,20 @@ Please follow a similar style for this commit message while still adhering to th
     }
   }
 
-  const configManager = new ConfigManager(process.cwd(), opts.productName, {
-    model: argv.model,
-    language: argv.language,
+  const context = await Context.create({
+    productName: opts.productName,
+    version: opts.version,
+    cwd: process.cwd(),
+    argvConfig: {
+      model: argv.model,
+      plugins: argv.plugin,
+    },
+    plugins: opts.plugins,
   });
 
   // Generate the commit message
+  const model = context.config.model;
+  logger.logInfo(`Using model: ${model}`);
   let message = '';
   let attempts = 0;
   const maxAttempts = 3;
@@ -166,8 +174,8 @@ Please follow a similar style for this commit message while still adhering to th
 ${diff}
 ${repoStyle}
         `,
-        model: configManager.config.model,
-        language: configManager.config.language,
+        model,
+        language: context.config.language,
         modelProvider: opts.modelProvider,
       });
       stop();
