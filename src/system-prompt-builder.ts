@@ -1,7 +1,6 @@
 import { platform } from 'process';
 import { Context } from './context';
 import {
-  CodeStyleContributor,
   CodebaseContributor,
   ContextContributor,
   DirectoryStructureContributor,
@@ -9,6 +8,7 @@ import {
   GitStatusContributor,
   IDEContributor,
   ReadmeContributor,
+  RulesContributor,
 } from './context-contributor';
 import { PluginHookType } from './plugin';
 
@@ -30,7 +30,7 @@ export class SystemPromptBuilder {
       new GitStatusContributor(),
       new IDEContributor(),
       new DirectoryStructureContributor(),
-      new CodeStyleContributor(),
+      new RulesContributor(),
       new ReadmeContributor(),
       new CodebaseContributor(),
       new FilesContributor(),

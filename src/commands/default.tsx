@@ -15,6 +15,7 @@ import { setupTracing } from '../tracing';
 import { App } from '../ui/app';
 import { StoreProvider } from '../ui/hooks/use-store';
 import { createStore } from '../ui/store';
+import { readStdin } from '../utils/readStdin';
 
 React;
 const debug = createDebug('takumi:commands:default');
@@ -26,6 +27,7 @@ export interface RunOpts {
 }
 
 export async function run(opts: RunOpts) {
+  const quiet = opts.context.config.quiet || !process.stdin.isTTY;
   try {
     let prompt = opts.prompt;
     debug('prompt', prompt);
@@ -44,7 +46,6 @@ export async function run(opts: RunOpts) {
       planService: planService,
       stage: opts.plan ? 'plan' : 'code',
     });
-    const quiet = opts.context.config.quiet;
     if (!quiet) {
       render(
         <StoreProvider store={store}>
@@ -65,6 +66,12 @@ export async function run(opts: RunOpts) {
       process.on('SIGQUIT', exit);
       process.on('SIGTERM', exit);
     }
+    if (!process.stdin.isTTY && !prompt) {
+      const stdin = (await readStdin()).trim();
+      if (stdin) {
+        prompt = stdin;
+      }
+    }
     if (prompt) {
       const result = await store.actions.query(prompt);
       if (!opts.plan) {
@@ -82,7 +89,6 @@ export async function run(opts: RunOpts) {
     }
   } catch {
   } finally {
-    const quiet = opts.context.config.quiet;
     if (quiet) {
       await opts.context.destroy();
     }
@@ -153,7 +159,8 @@ export async function runDefault(opts: RunCliOpts) {
       ],
       type: PluginHookType.Series,
     });
-    if (context.config.quiet) {
+    const quiet = context.config.quiet || !process.stdin.isTTY;
+    if (quiet) {
       console.log(JSON.stringify(result, null, 2));
     }
   });
