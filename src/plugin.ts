@@ -1,7 +1,6 @@
 import defu from 'defu';
-import { CreateContextOptions } from 'vm';
 import { Config } from './config';
-import { Context } from './context';
+import { Context, CreateContextOpts } from './context';
 
 export enum PluginHookType {
   First = 'first',
@@ -100,7 +99,7 @@ type PluginContext = Omit<
   'destroy' | 'getModelProvider' | 'buildSystemPrompts' | 'addHistory'
 >;
 
-type TempPluginContext = CreateContextOptions & {
+type TempPluginContext = CreateContextOpts & {
   pluginManager: PluginManager;
   config: Config;
   apply: (opts: PluginApplyOpts) => Promise<any> | any;
