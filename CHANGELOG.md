@@ -1,3 +1,10 @@
+## 0.1.1
+
+`2025-06-27`
+
+- feat: allow async plugin hooks and store argv config by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.1.0
 
 `2025-06-27`
