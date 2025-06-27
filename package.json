@@ -123,7 +123,7 @@
       "vendor",
       "dist-browser"
     ],
-    "needReinstall": true,
+    "needReinstall": false,
     "changelogUrl": "https://github.com/umijs/takumi/blob/master/CHANGELOG.md"
   }
 }
