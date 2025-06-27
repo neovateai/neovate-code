@@ -55,29 +55,40 @@ export class DirectoryStructureContributor implements ContextContributor {
   }
 }
 
-export class CodeStyleContributor implements ContextContributor {
-  name = 'codeStyle';
+export class RulesContributor implements ContextContributor {
+  name = 'rules';
   async getContent(opts: GetContentOpts) {
-    const styles: string[] = [];
+    const rules: string[] = [];
     let currentDir = opts.context.cwd;
+    const productName = opts.context.productName;
 
     while (currentDir !== path.parse(currentDir).root) {
-      const stylePath = path.join(currentDir, `${opts.context.productName}.md`);
+      const stylePath = path.join(currentDir, `${productName}.md`);
       debug('stylePath', stylePath);
       if (fs.existsSync(stylePath)) {
-        styles.push(
+        rules.push(
           `Contents of ${stylePath}:\n${fs.readFileSync(stylePath, 'utf-8')}`,
         );
       }
       currentDir = path.dirname(currentDir);
     }
-    if (styles.length === 0) {
+
+    // global style
+    const globalStylePath = path.join(
+      opts.context.paths.globalConfigDir,
+      `${productName}.md`,
+    );
+    if (fs.existsSync(globalStylePath)) {
+      rules.push(fs.readFileSync(globalStylePath, 'utf-8'));
+    }
+
+    if (rules.length === 0) {
       return null;
     }
     return `
   The codebase follows strict style guidelines shown below. All code changes must strictly adhere to these guidelines to maintain consistency and quality.
 
-  ${styles.reverse().join('\n\n')}`;
+  ${rules.reverse().join('\n\n')}`;
   }
 }
 
