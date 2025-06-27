@@ -8,6 +8,7 @@ import { Button } from 'antd';
 import { createStyles } from 'antd-style';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSnapshot } from 'valtio';
 import DevFileIcon from '@/components/DevFileIcon';
 import * as codeViewer from '@/state/codeViewer';
 import type {
@@ -65,9 +66,12 @@ const useStyles = createStyles(({ css, token }) => {
     `,
     headerLeft: css`
       display: flex;
-      justify-content: center;
+      align-items: center;
       column-gap: 8px;
       margin-left: 8px;
+      white-space: nowrap;
+      min-width: 0;
+      flex: 1 1 0%;
     `,
     headerRight: css`
       display: flex;
@@ -114,6 +118,11 @@ const useStyles = createStyles(({ css, token }) => {
     `,
     plainText: css`
       color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 320px;
+      display: block;
     `,
   };
 });
@@ -122,6 +131,8 @@ const CodeDiffOutline = (props: Props) => {
   const { path, originalCode, modifiedCode, language, onChangeCode } = props;
 
   const [changed, setChanged] = useState(false);
+
+  const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
 
   // 最初的代码状态，用于回滚
   const [initailCodes] = useState({
@@ -238,7 +249,10 @@ const CodeDiffOutline = (props: Props) => {
     };
     onChangeCode?.(currentCodes.modifiedCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-    showDiff(nextCodes);
+    if (codeViewerVisible) {
+      // refresh code viewer
+      showDiff(nextCodes);
+    }
   };
 
   const handleRejectAll = () => {
@@ -249,16 +263,20 @@ const CodeDiffOutline = (props: Props) => {
     };
     onChangeCode?.(currentCodes.originalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-
-    showDiff(nextCodes);
+    if (codeViewerVisible) {
+      // refresh code viewer
+      showDiff(nextCodes);
+    }
   };
 
   const handleRollback = () => {
     setChanged(false);
     onChangeCode?.(initailCodes.originalCode, currentCodes.originalCode);
     setCurrentCodes(initailCodes);
-
-    showDiff(initailCodes);
+    if (codeViewerVisible) {
+      // refresh code viewer
+      showDiff(initailCodes);
+    }
   };
 
   const showDiff = async (currentCodes: {
