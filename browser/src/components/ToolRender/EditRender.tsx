@@ -45,11 +45,13 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
   }
 
   return (
-    <CodeDiffOutline
-      path={file_path}
-      originalCode={old_string}
-      modifiedCode={new_string}
-      onChangeCode={handleChangeCode}
-    />
+    <>
+      <CodeDiffOutline
+        path={file_path}
+        originalCode={fileState.originalContent}
+        modifiedCode={fileState.finalContent}
+        onChangeCode={handleChangeCode}
+      />
+    </>
   );
 }
