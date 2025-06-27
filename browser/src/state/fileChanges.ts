@@ -59,11 +59,8 @@ export const fileChangesActions = {
       }
     }
 
-    // If a fetch is already in progress for this path, or if content is already loaded, do nothing.
-    if (fetchPromises[path] || fileState.finalContent) {
-      return;
-    }
-
+    // Always fetch the latest content to ensure the diff is accurate.
+    // This avoids race conditions where the file is read before the backend edit completes.
     fileState.isLoading = true;
 
     const fetchPromise = (async () => {
@@ -102,15 +99,16 @@ export const fileChangesActions = {
       return;
     }
 
-    // When the user manually edits and saves, the previous "original" and "final"
-    // distinction for the automated tools becomes the new baseline.
-    fileState.originalContent = fileState.finalContent;
+    // Persist the user's changes to the backend first.
+    await editFile(path, newContent);
+
+    // After successful persistence, update the state.
+    // The user's manually saved content becomes the new "final" state.
     fileState.finalContent = newContent;
 
     // The granular tool edits are now void, as the user has taken over.
+    // The "original" content for any future diffs should be based on this new state.
+    fileState.originalContent = newContent;
     fileState.edits = [];
-
-    // Persist the user's changes to the backend.
-    await editFile(path, newContent);
   },
 };

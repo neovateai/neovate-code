@@ -95,7 +95,9 @@ export const useSuggestion = (
   const suggestions = useMemo(() => {
     const originalArray = suggentionMap[currentContextType] ?? [];
     if (showSearch && searchText) {
-      return originalArray.filter((item) => item.value.includes(searchText));
+      return originalArray.filter((item) =>
+        item.value.toLocaleLowerCase().includes(searchText.toLocaleLowerCase()),
+      );
     }
 
     return originalArray;
