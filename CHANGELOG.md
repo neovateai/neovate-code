@@ -1,3 +1,10 @@
+## 0.1.0
+
+`2025-06-27`
+
+- feat: add minor and major release scripts by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.35
 
 `2025-06-27`
