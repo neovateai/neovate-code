@@ -1,3 +1,10 @@
+## 0.1.5
+
+`2025-06-27`
+
+- refactor: replace ConfigManager with Context for configuration management by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.1.4
 
 `2025-06-27`
