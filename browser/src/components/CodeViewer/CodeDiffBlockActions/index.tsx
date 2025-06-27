@@ -32,18 +32,15 @@ const CodeDiffBlockActions = (props: Props) => {
   const { t } = useTranslation();
 
   // 该组件下所有子组件都必须确保className是string，否则click事件中monaco编辑器会报错
+  // 是主题切换的功能，不影响正常使用
 
   const hasModifiedCode = diffBlockStat.modifiedEndLineNumber > 0;
 
   return (
     <div className={styles.container || ''}>
       {hasModifiedCode && (
-        <Tooltip
-          title={t('codeViewer.toolButton.copyModifiedCode')}
-          className=""
-        >
+        <Tooltip title={t('codeViewer.toolButton.copyModifiedCode')}>
           <Button
-            className=""
             icon={<CopyOutlined />}
             size="small"
             onClick={(e) => {
@@ -51,7 +48,7 @@ const CodeDiffBlockActions = (props: Props) => {
               const copiedCode = item.modifiedCode
                 .split('\n')
                 .slice(
-                  diffBlockStat.modifiedStartLineNumber,
+                  diffBlockStat.modifiedStartLineNumber - 1,
                   diffBlockStat.modifiedEndLineNumber,
                 )
                 .join('\n');
@@ -60,9 +57,8 @@ const CodeDiffBlockActions = (props: Props) => {
           />
         </Tooltip>
       )}
-      <Tooltip title={t('codeViewer.toolButton.reject')} className="">
+      <Tooltip title={t('codeViewer.toolButton.reject')}>
         <Button
-          className=""
           icon={<CloseOutlined />}
           type="primary"
           danger
@@ -75,9 +71,8 @@ const CodeDiffBlockActions = (props: Props) => {
           }}
         />
       </Tooltip>
-      <Tooltip title={t('codeViewer.toolButton.accept')} className="">
+      <Tooltip title={t('codeViewer.toolButton.accept')}>
         <Button
-          className=""
           icon={<CheckOutlined />}
           type="primary"
           size="small"
