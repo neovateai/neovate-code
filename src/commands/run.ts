@@ -1,4 +1,4 @@
-import { Runner } from '@openai/agents';
+import { Runner, setTraceProcessors, withTrace } from '@openai/agents';
 import * as p from '@umijs/clack-prompts';
 import assert from 'assert';
 import { execSync } from 'child_process';
@@ -54,131 +54,138 @@ Examples:
 }
 
 export async function runRun(opts: RunCliOpts) {
-  const argv = yargsParser(process.argv.slice(2), {
-    alias: {
-      model: 'm',
-      help: 'h',
-      yes: 'y',
-    },
-    boolean: ['help', 'yes'],
-    string: ['model'],
-  });
+  setTraceProcessors([]);
+  const traceName = `${opts.productName}-run`;
+  return await withTrace(traceName, async () => {
+    const argv = yargsParser(process.argv.slice(2), {
+      alias: {
+        model: 'm',
+        help: 'h',
+        yes: 'y',
+      },
+      boolean: ['help', 'yes'],
+      string: ['model'],
+    });
 
-  if (argv.help) {
-    printHelp(opts.productName.toLowerCase());
-    return;
-  }
+    if (argv.help) {
+      printHelp(opts.productName.toLowerCase());
+      return;
+    }
 
-  logger.logIntro({
-    productName: opts.productName,
-    version: opts.version,
-  });
+    logger.logIntro({
+      productName: opts.productName,
+      version: opts.version,
+    });
 
-  let prompt = argv._[1] as string;
-  if (!prompt || prompt.trim() === '') {
-    prompt = await logger.getUserInput();
-  } else {
-    logger.logUserInput({ input: prompt });
-  }
+    let prompt = argv._[1] as string;
+    if (!prompt || prompt.trim() === '') {
+      prompt = await logger.getUserInput();
+    } else {
+      logger.logUserInput({ input: prompt });
+    }
 
-  // Use AI to convert natural language to shell command
-  logger.logAction({
-    message: `AI is converting natural language to shell command...`,
-  });
+    // Use AI to convert natural language to shell command
+    logger.logAction({
+      message: `AI is converting natural language to shell command...`,
+    });
 
-  const context = await Context.create({
-    productName: opts.productName,
-    version: opts.version,
-    cwd: process.cwd(),
-    argvConfig: {
-      model: argv.model,
-      plugins: argv.plugin,
-    },
-    plugins: opts.plugins,
-  });
+    const context = await Context.create({
+      productName: opts.productName,
+      version: opts.version,
+      cwd: process.cwd(),
+      argvConfig: {
+        model: argv.model,
+        plugins: argv.plugin,
+      },
+      plugins: opts.plugins,
+    });
+    await context.destroy();
 
-  const agent = createShellAgent({
-    model: context.config.model,
-  });
-  const runner = new Runner({
-    modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
-  });
-  const result = await runner.run(agent, prompt);
-  let command = result.finalOutput;
-  assert(command, 'Command is not a string');
+    const agent = createShellAgent({
+      model: context.config.model,
+    });
+    const runner = new Runner({
+      modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
+    });
+    const result = await runner.run(agent, prompt);
+    let command = result.finalOutput;
+    assert(command, 'Command is not a string');
 
-  // Display the generated command and request confirmation
-  logger.logInfo(
-    `
+    // Display the generated command and request confirmation
+    logger.logInfo(
+      `
 ${pc.bold(pc.blueBright('AI generated shell command:'))}
 ${command}
   `.trim(),
-  );
+    );
 
-  // If --yes mode is enabled, execute the command without confirmation
-  if (argv.yes) {
-    logger.logAction({ message: `Executing command: ${command}` });
-    const result = await executeShell(command, process.cwd());
+    // If --yes mode is enabled, execute the command without confirmation
+    if (argv.yes) {
+      logger.logAction({ message: `Executing command: ${command}` });
+      const result = await executeShell(command, process.cwd());
 
-    if (result.success) {
-      console.log(result.output);
-    } else {
-      logger.logError({ error: `Command execution failed: ${result.output}` });
-    }
-    return;
-  }
-
-  // Default behavior: request confirmation
-  const execution = await p.select({
-    message: 'Confirm execution',
-    options: [
-      { value: 'execute', label: 'Execute' },
-      { value: 'edit', label: 'Edit' },
-      { value: 'cancel', label: 'Cancel' },
-    ],
-  });
-
-  if (logger.isCancel(execution)) {
-    logger.logInfo('Command execution cancelled');
-    return;
-  }
-
-  if (execution === 'edit') {
-    const editedCommand = await logger.getUserInput({
-      message: 'Edit command',
-      defaultValue: command,
-    });
-
-    if (editedCommand) {
-      command = editedCommand;
+      if (result.success) {
+        console.log(result.output);
+      } else {
+        logger.logError({
+          error: `Command execution failed: ${result.output}`,
+        });
+      }
+      return;
     }
 
-    const confirmExecution = await logger.confirm({
-      message: `Execute command: ${pc.reset(pc.gray(command))}`,
-      active: pc.green('Execute'),
-      inactive: pc.red('Cancel'),
+    // Default behavior: request confirmation
+    const execution = await p.select({
+      message: 'Confirm execution',
+      options: [
+        { value: 'execute', label: 'Execute' },
+        { value: 'edit', label: 'Edit' },
+        { value: 'cancel', label: 'Cancel' },
+      ],
     });
 
-    if (!confirmExecution || logger.isCancel(confirmExecution)) {
+    if (logger.isCancel(execution)) {
       logger.logInfo('Command execution cancelled');
       return;
     }
-  }
 
-  if (execution === 'cancel') {
-    logger.logInfo('Command execution cancelled');
-    return;
-  }
+    if (execution === 'edit') {
+      const editedCommand = await logger.getUserInput({
+        message: 'Edit command',
+        defaultValue: command,
+      });
 
-  logger.logAction({ message: `Executing command: ${command}` });
-  const executeResult = await executeShell(command, process.cwd());
+      if (editedCommand) {
+        command = editedCommand;
+      }
 
-  if (executeResult.success) {
-    logger.logInfo(executeResult.output);
-    logger.logOutro();
-  } else {
-    logger.logError({
-      error: `Command execution failed: ${executeResult.output}`,
-    });
-  }
+      const confirmExecution = await logger.confirm({
+        message: `Execute command: ${pc.reset(pc.gray(command))}`,
+        active: pc.green('Execute'),
+        inactive: pc.red('Cancel'),
+      });
+
+      if (!confirmExecution || logger.isCancel(confirmExecution)) {
+        logger.logInfo('Command execution cancelled');
+        return;
+      }
+    }
+
+    if (execution === 'cancel') {
+      logger.logInfo('Command execution cancelled');
+      return;
+    }
+
+    logger.logAction({ message: `Executing command: ${command}` });
+    const executeResult = await executeShell(command, process.cwd());
+
+    if (executeResult.success) {
+      logger.logInfo(executeResult.output);
+      logger.logOutro();
+    } else {
+      logger.logError({
+        error: `Command execution failed: ${executeResult.output}`,
+      });
+    }
+  });
 }
