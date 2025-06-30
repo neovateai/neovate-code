@@ -1,3 +1,10 @@
+## 0.1.6
+
+`2025-06-30`
+
+- feat: add tracing to commit and run commands by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.1.5
 
 `2025-06-27`
