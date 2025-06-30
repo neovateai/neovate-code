@@ -1,22 +1,21 @@
 # Plugin
 
-Takumi's functionality can be extended and customized through plugins. Plugins allow you to hook into various stages of the CLI lifecycle and LLM interaction process, enabling you to modify behavior, add logging, integrate external services, or alter the context provided to the AI.
+Takumi can be extended and customized through plugins. Plugins allow you to hook into various stages of the CLI lifecycle and LLM interaction process, enabling you to modify behavior, add logging, integrate external services, or alter the context provided to the AI.
 
 ## Writing a Plugin
 
 A Takumi plugin is essentially a JavaScript or TypeScript object that conforms to the `Plugin` interface.
 
-```typescript
-import type { Plugin, PluginContext } from 'takumi';
+```ts
+import type { Plugin } from 'takumi';
 
 export const myPlugin: Plugin = {
   // Optional: 'pre' or 'post' to influence execution order
   enforce: 'pre',
   // Optional: A name for identification (e.g., in logs)
   name: 'my-custom-plugin',
-  // Hook implementations (see below)
-  cliStart(this: PluginContext) {
-    this.logger.logInfo(`[${this.name}] CLI starting!`);
+  cliStart() {
+    console.log('cliStart');
   },
   // ... other hooks
 };
@@ -24,120 +23,155 @@ export const myPlugin: Plugin = {
 
 ## Plugin Hooks
 
-> Note: Inside each hook function, `this` refers to the `PluginContext` object, providing access to configuration, arguments, logger, paths, and session ID.
+> Note: Inside each hook function, `this` refers to the `Context` object.
 
 Plugins interact with Takumi by implementing specific hook functions. Here's a breakdown of the available hooks, when they are called, and their purpose.
 
-### `cliEnd`
-
--   **Type:** `(opts: { startTime: number, endTime: number, error?: any }) => void`
--   **Arguments:** `[{ startTime, endTime, error }]`
-
-Perform cleanup tasks, log final statistics, or handle errors globally at the very end of the CLI execution. Runs even if errors occurred.
-
-### `cliStart`
-
--   **Type:** `() => void`
--   **Arguments:** `[]`
-
-Perform initial setup tasks when the CLI starts, right after the intro log.
-
-### `commands`
-
--   **Type:** `() => Promise<{ name: string, description: string, fn: () => Promise<void> }[]> | { name: string, description: string, fn: () => Promise<void> }[]`
--   **Arguments:** `[]`
-
-Add or modify commands that can be executed by the user.
-
 ### `config`
 
--   **Type:** `() => Promise<Partial<Config> | null> | Partial<Config> | null`
--   **Arguments:** `[]`
+- **Type:** `() => any | Promise<any> | null`
+- **Arguments:** None
 
-Modify the initial configuration object before it's fully resolved. Called early during CLI initialization. Results from multiple plugins are merged.
+Provide additional configuration for the plugin. This hook is called during the configuration phase and allows you to return configuration values that will be merged with the overall configuration.
 
 ### `configResolved`
 
--   **Type:** `(opts: { resolvedConfig: Config }) => void`
--   **Arguments:** `[{ resolvedConfig }]`
+- **Type:** `(opts: { resolvedConfig: any }) => void`
+- **Arguments:** `[{ resolvedConfig }]`
 
-Perform actions based on the final, resolved configuration. Called after all `config` hooks have run.
+Called after the configuration has been resolved. This allows your plugin to react to the final configuration values and perform any setup based on the resolved configuration.
 
-### `context`
+### `cliStart`
 
--   **Type:** `(opts: { prompt: string }) => Promise<Record<string, any>> | Record<string, any>`
--   **Arguments:** `[{ prompt }]`
+- **Type:** `() => void`
+- **Arguments:** None
 
-Add additional key-value pairs to the context object that will be sent to the LLM. Called after default context is gathered. Results are merged.
+Called when the CLI starts execution. Use this hook to perform initialization tasks, set up logging, or prepare resources that your plugin will need throughout the CLI session.
+
+### `cliEnd`
+
+- **Type:** `(opts: { startTime: number, endTime: number, error?: any }) => void`
+- **Arguments:** `[{ startTime, endTime, error }]`
+
+Perform cleanup tasks, log final statistics, or handle errors globally at the very end of the CLI execution. Runs even if errors occurred.
 
 ### `contextStart`
 
--   **Type:** `(opts: { prompt: string }) => void`
--   **Arguments:** `[{ prompt }]`
+- **Type:** `(opts: { prompt: string }) => void`
+- **Arguments:** `[{ prompt }]`
 
-Called before Takumi starts gathering context (like file structure, git status) for an LLM query.
+Called when context processing begins with the initial prompt. This hook allows you to log or react to the start of context processing.
 
-### `editFile`
+### `context`
 
--   **Type:** `(opts: { filePath: string, oldContent: string, newContent: string, mode?: 'search-replace' | 'whole-file' }) => void`
--   **Arguments:** `[{ filePath, oldContent, newContent, mode }]`
+- **Type:** `(opts: { prompt: string }) => void`
+- **Arguments:** `[{ prompt }]`
 
-Called when a file is edited. The `mode` parameter indicates the editing mode being used:
-- `search-replace`: Traditional mode for targeted changes within a file
-- `whole-file`: Complete file replacement mode
+Called during context processing. This hook allows you to modify or react to the context being built for the AI interaction.
 
-### `createFile`
+### `toolUse`
 
--   **Type:** `(opts: { filePath: string, content: string }) => void`
--   **Arguments:** `[{ filePath, content }]`
+- **Type:** `(opts: { callId: string; name: string; params: any }) => void`
+- **Arguments:** `[{ callId, name, params }]`
 
-Called when a file is created.
+Called when a tool is about to be used. This hook allows you to log tool usage, modify parameters, or perform side effects before tools are executed.
 
-### `generalInfo`
+### `toolUseResult`
 
--   **Type:** `() => Promise<Record<string, string>> | Record<string, string>`
--   **Arguments:** `[]`
+- **Type:** `(opts: { callId: string; name: string; params: any; result: any }) => void`
+- **Arguments:** `[{ callId, name, params, result }]`
 
-Add or modify key-value pairs displayed in the initial "General Info" log section. Called after configuration is resolved. Results are merged.
-
-### `message`
-
--   **Type:** `(opts: { messages: CoreMessage[], queryId: string }) => void`
--   **Arguments:** `[{ messages, queryId }]`
-
-Called whenever messages (user, assistant, or tool results formatted as user messages) are added to the conversation history during a query cycle.
+Called after a tool has been executed and produced a result. This hook allows you to log results, perform post-processing, or trigger additional actions based on tool outcomes.
 
 ### `query`
 
--   **Type:** `(opts: { prompt: string, text: string, id: string }) => void`
--   **Arguments:** `[{ prompt, text, id }]`
+- **Type:** `(opts: { text: string; parsed: any; input: any }) => void`
+- **Arguments:** `[{ text, parsed, input }]`
 
-Called after receiving a text response from the LLM within a query cycle, *before* checking if the response contains a tool call.
+Called when processing user queries. This hook allows you to log queries, modify query processing, or perform analytics on user input.
 
-### `queryEnd`
+### `env`
 
--   **Type:** `(opts: { prompt: string, systemPrompt: string[], queryContext: Record<string, any>, tools: Record<string, any>, messages: CoreMessage[], startTime: number, endTime: number, id: string, text: string }) => void`
--   **Arguments:** `[{ prompt, systemPrompt, queryContext, tools, messages, startTime, endTime, id, text }]`
+- **Type:** `() => Record<string, string>`
+- **Arguments:** None
 
-Called after the entire query cycle (including any tool calls) is complete and a final text response is ready.
+Provide additional environment variables that should be available during execution. Return an object with key-value pairs representing environment variables.
 
-### `queryStart`
+### `model`
 
--   **Type:** `(opts: { prompt: string, id: string, system: string[] }) => void`
--   **Arguments:** `[{ prompt, id, system }]`
+- **Type:** `(opts: { modelName: string; aisdk: any; createOpenAI: any; createDeepSeek: any; createAnthropic: any }) => Promise<any>`
+- **Arguments:** `[{ modelName, aisdk, createOpenAI, createDeepSeek, createAnthropic }]`
 
-Called just before the main loop for an LLM query begins (which might involve multiple LLM calls if tools are used).
+Customize or provide alternative model configurations. This hook allows you to modify how AI models are initialized and configured.
 
-### `toolEnd`
+### `tool`
 
--   **Type:** `(opts: { toolUse: ToolUse, startTime: number, endTime: number, queryId: string }) => void`
--   **Arguments:** `[{ toolUse, startTime, endTime, queryId }]`
+- **Type:** `(opts: { agentType: AgentType }) => Promise<any>`
+- **Arguments:** `[{ agentType }]`
 
-Called immediately after a tool finishes execution.
+Provide additional tools for the specified agent type (`'code'` or `'plan'`). Return tool definitions that will be available to the AI agent.
 
-### `toolStart`
+### `serverAppData`
 
--   **Type:** `(opts: { toolUse: ToolUse, queryId: string }) => void`
--   **Arguments:** `[{ toolUse, queryId }]`
+- **Type:** `(opts: { context: any; cwd: string }) => Promise<any>`
+- **Arguments:** `[{ context, cwd }]`
 
-Called just before a specific tool is executed during an LLM query cycle.
+Provide additional data for the server application. This hook is called in server mode to supply extra application data or context.
+
+### `serverRoutes`
+
+- **Type:** `(opts: { app: any; prefix: string; opts: any }) => void`
+- **Arguments:** `[{ app, prefix, opts }]`
+
+Register additional server routes. This hook allows you to add custom API endpoints to the Takumi server.
+
+### `serverRouteCompletions`
+
+- **Type:** `(opts: { message: { role: 'user'; content: string; attachedContexts: any[]; contextContent: string; }; attachedContexts: any[]; }) => void`
+- **Arguments:** `[{ message, attachedContexts }]`
+
+Handle completions for server routes. This hook allows you to modify or react to completions for server routes.
+
+## Plugin Execution Order
+
+Plugins can influence their execution order using the `enforce` property:
+
+- `enforce: 'pre'` - Plugin runs before others
+- `enforce: 'post'` - Plugin runs after others  
+- No `enforce` - Plugin runs in the middle
+
+Within each group, plugins execute in the order they were registered.
+
+## Example Plugin
+
+Here's a complete example of a logging plugin:
+
+```ts
+import type { Plugin } from 'takumi';
+
+export const loggingPlugin: Plugin = {
+  name: 'logging-plugin',
+  enforce: 'pre',
+  
+  cliStart() {
+    console.log('🚀 Takumi CLI started');
+  },
+  
+  cliEnd({ startTime, endTime, error }) {
+    const duration = endTime - startTime;
+    if (error) {
+      console.log(`❌ CLI failed after ${duration}ms:`, error.message);
+    } else {
+      console.log(`✅ CLI completed successfully in ${duration}ms`);
+    }
+  },
+  
+  toolUse({ name, params }) {
+    console.log(`🔧 Using tool: ${name}`, params);
+  },
+  
+  toolUseResult({ name, result }) {
+    console.log(`📝 Tool ${name} result:`, result);
+  }
+};
+```

@@ -40,7 +40,7 @@ Examples:
   );
 }
 
-export async function runBrowser(opts: RunCliOpts) {
+export async function runServer(opts: RunCliOpts) {
   const traceName = `${opts.productName}-server`;
   return await withTrace(traceName, async () => {
     const startTime = Date.now();
@@ -50,9 +50,7 @@ export async function runBrowser(opts: RunCliOpts) {
         model: 'm',
         help: 'h',
       },
-      default: {
-        model: 'flash',
-      },
+      default: {},
       boolean: ['help', 'plan'],
       string: ['model', 'smallModel', 'planModel', 'logLevel'],
       number: ['port'],

@@ -4,6 +4,8 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { ModelProvider, Tool } from '@openai/agents';
 import createDebug from 'debug';
 import { createJiti } from 'jiti';
+import { homedir } from 'os';
+import path from 'path';
 import resolve from 'resolve';
 import { Config, ConfigManager } from './config';
 import { PRODUCT_NAME } from './constants';
@@ -31,9 +33,15 @@ type ContextOpts = CreateContextOpts & {
   git: string | null;
   ide: IDE | null;
   generalInfo: Record<string, string>;
+  paths: Paths;
 };
 
-interface CreateContextOpts {
+type Paths = {
+  globalConfigDir: string;
+  projectConfigDir: string;
+};
+
+export interface CreateContextOpts {
   cwd: string;
   argvConfig?: Partial<Config>;
   productName?: string;
@@ -47,6 +55,7 @@ export class Context {
   productName: string;
   version: string;
   config: Config;
+  argvConfig: Partial<Config>;
   pluginManager: PluginManager;
   mcpManager: MCPManager;
   mcpTools: Tool[];
@@ -54,11 +63,13 @@ export class Context {
   ide: IDE | null;
   history: string[];
   generalInfo: Record<string, string>;
+  paths: Paths;
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName || PRODUCT_NAME;
     this.version = opts.version || '0.0.0';
     this.config = opts.config;
+    this.argvConfig = opts.argvConfig || {};
     this.pluginManager = opts.pluginManager;
     this.mcpManager = opts.mcpManager;
     this.mcpTools = opts.mcpTools;
@@ -66,6 +77,7 @@ export class Context {
     this.ide = opts.ide;
     this.generalInfo = opts.generalInfo;
     this.history = [];
+    this.paths = opts.paths;
   }
 
   static async create(opts: CreateContextOpts) {
@@ -112,10 +124,17 @@ export class Context {
 }
 
 async function createContext(opts: CreateContextOpts): Promise<Context> {
+  const productName = opts.productName || PRODUCT_NAME;
+  const lowerProductName = productName.toLowerCase();
+  const paths = {
+    globalConfigDir: path.join(homedir(), `.${lowerProductName}`),
+    projectConfigDir: path.join(opts.cwd, `.${lowerProductName}`),
+  };
+
   debug('createContext', opts);
   const configManager = new ConfigManager(
     opts.cwd,
-    opts.productName || PRODUCT_NAME,
+    productName,
     opts.argvConfig || {},
   );
   const initialConfig = configManager.config;
@@ -204,6 +223,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     git: gitStatus,
     ide,
     generalInfo,
+    paths,
   });
 }
 
