@@ -192,5 +192,10 @@
       "copyModifiedCode": "复制修改后的代码",
       "showBlockActions": "展示Diff块操作"
     }
+  },
+  "editRender": {
+    "loading": "加载中...",
+    "error": "错误",
+    "preparingDiff": "准备Diff..."
   }
 }

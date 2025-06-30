@@ -9,6 +9,7 @@ import {
   GrepRender,
   LsRender,
   ReadRender,
+  WriteRender,
 } from '../ToolRender';
 
 const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
@@ -32,6 +33,8 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
       return <FetchRender message={message} />;
     case 'edit':
       return <EditRender message={message} />;
+    case 'write':
+      return <WriteRender message={message} />;
   }
 
   // 控制结果展开/收起的状态，默认收起
