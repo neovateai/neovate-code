@@ -83,6 +83,10 @@ const registerRoutes = async (
     prefix: BASE_API_PREFIX,
     ...pluginOpts,
   });
+  await app.register(import('./routes/settings'), {
+    prefix: BASE_API_PREFIX,
+    ...pluginOpts,
+  });
   await app.register(import('./routes/mcp'), {
     prefix: BASE_API_PREFIX,
     ...pluginOpts,

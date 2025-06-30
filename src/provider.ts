@@ -18,7 +18,7 @@ const THINKING_MODELS = [
   'claude-3-7-sonnet-20250219-thinking',
   'grok-3-fast-beta',
 ];
-const MODEL_ALIAS: Record<string, string> = {
+export const MODEL_ALIAS: Record<string, string> = {
   deepseek: 'deepseek-chat',
   r1: 'deepseek-reasoner',
   '41': 'gpt-4.1',

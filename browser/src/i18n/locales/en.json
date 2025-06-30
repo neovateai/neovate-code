@@ -160,5 +160,63 @@
     "serverConfigObject": "Server \"{{name}}\" configuration must be an object",
     "serverCommandOrUrl": "Server \"{{name}}\" must have command or url field",
     "noServersFound": "No servers found in mcpServers object"
+  },
+  "settings": {
+    "title": "Settings",
+    "loading": "Loading settings...",
+    "scope": {
+      "title": "Configuration Scope",
+      "global": "Global",
+      "project": "Project",
+      "globalDesc": "Global settings (~/.takumi/config.json)",
+      "projectDesc": "Project settings (./.takumi/config.json)"
+    },
+    "model": {
+      "title": "Model Configuration",
+      "main": "Main Model",
+      "mainTooltip": "Used for main code generation and complex reasoning tasks",
+      "mainPlaceholder": "Select main model",
+      "small": "Small Model",
+      "smallTooltip": "Used for simple tasks like generating commit messages",
+      "smallPlaceholder": "Select small model (optional)",
+      "plan": "Plan Model",
+      "planTooltip": "Used for generating execution plans",
+      "planPlaceholder": "Select plan model (optional)",
+      "defaultPrefix": "Default"
+    },
+    "behavior": {
+      "title": "Behavior Configuration",
+      "language": "Language",
+      "languageTooltip": "Language for AI responses and interface display",
+      "languagePlaceholder": "Select interface language",
+      "approvalMode": "Execution Mode",
+      "approvalModeTooltip": "Controls confirmation behavior when AI executes tools",
+      "approvalModePlaceholder": "Select execution mode",
+      "approvalModes": {
+        "suggest": "Suggest Mode",
+        "autoEdit": "Auto Edit",
+        "fullAuto": "Full Auto"
+      },
+      "approvalModeLabels": {
+        "suggest": "Suggest Mode - All operations require confirmation",
+        "autoEdit": "Auto Edit - Auto edit files, commands require confirmation",
+        "fullAuto": "Full Auto - All operations execute automatically"
+      },
+      "quiet": "Quiet Mode",
+      "quietTooltip": "Enable non-interactive mode when activated",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "plugins": {
+      "title": "Plugin Configuration",
+      "tooltip": "Configure plugins used by the project",
+      "placeholder": "Enter plugin name or path",
+      "add": "Add",
+      "delete": "Delete Plugin",
+      "deleteConfirm": "Are you sure you want to delete plugin \"{{plugin}}\"?",
+      "empty": "No plugins configured",
+      "effective": "Current effective plugins",
+      "none": "None"
+    }
   }
 }
