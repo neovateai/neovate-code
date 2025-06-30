@@ -14,7 +14,6 @@ import React, {
   useContext,
   useImperativeHandle,
   useRef,
-  useState,
 } from 'react';
 import { LexicalTextAreaContext } from '../LexicalTextAreaContext';
 import { AiContextNode } from './AiContextNode';
