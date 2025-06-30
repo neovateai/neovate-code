@@ -93,7 +93,7 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
 
   useEffect(() => {
     clearAllViewZones();
-    if (showBlockActions && item.diffStat) {
+    if (showBlockActions && item.diffStat && !item.hideDiffActions) {
       injectDiffBlockActionsIntoEditor(editorRef.current, item.diffStat);
     }
   }, [item, showBlockActions]);

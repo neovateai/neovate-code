@@ -66,6 +66,7 @@ const DiffToolbar = (props: Props) => {
       item.diffStat?.diffBlockStats && item.diffStat?.diffBlockStats.length > 0,
     [item.diffStat],
   );
+
   return (
     <div className={toolbarStyles.toolbar}>
       <div className={toolbarStyles.metaInfo}>
@@ -83,14 +84,16 @@ const DiffToolbar = (props: Props) => {
       </div>
       {hasDiff && (
         <div className={styles.tools}>
-          <div className={styles.switch}>
-            <Switch
-              onChange={(checked) => {
-                onChangeShowBlockActions(checked);
-              }}
-            />
-            {t('codeViewer.toolButton.showBlockActions')}
-          </div>
+          {!item.hideDiffActions && (
+            <div className={styles.switch}>
+              <Switch
+                onChange={(checked) => {
+                  onChangeShowBlockActions(checked);
+                }}
+              />
+              {t('codeViewer.toolButton.showBlockActions')}
+            </div>
+          )}
           <Tooltip
             title={t('codeViewer.toolButton.prevDiff')}
             placement="topRight"
@@ -111,27 +114,31 @@ const DiffToolbar = (props: Props) => {
               onClick={() => onGotoDiff('next')}
             />
           </Tooltip>
-          <Tooltip
-            title={t('codeViewer.toolButton.rejectAll')}
-            placement="topRight"
-          >
-            <Button
-              type="primary"
-              danger
-              icon={<CloseOutlined />}
-              onClick={() => onRejectAll()}
-            />
-          </Tooltip>
-          <Tooltip
-            title={t('codeViewer.toolButton.acceptAll')}
-            placement="topRight"
-          >
-            <Button
-              type="primary"
-              icon={<CheckOutlined />}
-              onClick={() => onAcceptAll()}
-            />
-          </Tooltip>
+          {!item.hideDiffActions && (
+            <>
+              <Tooltip
+                title={t('codeViewer.toolButton.rejectAll')}
+                placement="topRight"
+              >
+                <Button
+                  type="primary"
+                  danger
+                  icon={<CloseOutlined />}
+                  onClick={() => onRejectAll()}
+                />
+              </Tooltip>
+              <Tooltip
+                title={t('codeViewer.toolButton.acceptAll')}
+                placement="topRight"
+              >
+                <Button
+                  type="primary"
+                  icon={<CheckOutlined />}
+                  onClick={() => onAcceptAll()}
+                />
+              </Tooltip>
+            </>
+          )}
         </div>
       )}
     </div>

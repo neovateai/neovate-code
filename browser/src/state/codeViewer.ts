@@ -36,6 +36,7 @@ interface DisplayDiffViewerConfigs {
   modifiedCode: string;
   diffStat?: DiffStat;
   path?: string;
+  hideDiffActions?: boolean;
 }
 
 export const state = proxy<CodeViewerState>({
@@ -122,7 +123,14 @@ export const actions = {
 
   /** 代码有更新后，也需要重新调用一次这个函数刷新展示 */
   displayDiffViewer: (config: DisplayDiffViewerConfigs) => {
-    const { path, modifiedCode, originalCode, language, diffStat } = config;
+    const {
+      path,
+      modifiedCode,
+      originalCode,
+      language,
+      diffStat,
+      hideDiffActions,
+    } = config;
 
     const id = path || Date.now().toString();
 
@@ -144,6 +152,7 @@ export const actions = {
           viewType: 'diff',
           path,
           diffStat,
+          hideDiffActions,
         };
       } else {
         return item;
@@ -160,6 +169,7 @@ export const actions = {
         viewType: 'diff',
         path,
         diffStat,
+        hideDiffActions,
       });
     }
 

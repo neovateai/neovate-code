@@ -18,6 +18,7 @@ export interface CodeDiffViewerTabItem extends CodeViewerBaseTabItem {
   modifiedCode: string;
   diffStat?: DiffStat;
   viewType: 'diff';
+  hideDiffActions?: boolean;
 }
 
 export type CodeViewerTabItem = CodeNormalViewerTabItem | CodeDiffViewerTabItem;

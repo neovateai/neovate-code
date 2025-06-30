@@ -176,7 +176,7 @@ const CodeDiffOutline = (props: Props) => {
 
     onChangeCode?.(nextOriginalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-    showCodeViewer(nextCodes);
+    showCodeViewer(nextCodes, rollbacked);
   };
 
   const handleReject = (diffBlockStat: DiffBlockStat) => {
@@ -212,7 +212,7 @@ const CodeDiffOutline = (props: Props) => {
     const nextCodes = { ...currentCodes, modifiedCode: nextModifiedCode };
     onChangeCode?.(currentCodes.originalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-    showCodeViewer(nextCodes);
+    showCodeViewer(nextCodes, rollbacked);
   };
 
   const handleAcceptAll = () => {
@@ -225,7 +225,7 @@ const CodeDiffOutline = (props: Props) => {
     setCurrentCodes(nextCodes);
     if (codeViewerVisible) {
       // refresh code viewer
-      showCodeViewer(nextCodes);
+      showCodeViewer(nextCodes, rollbacked);
     }
   };
 
@@ -239,7 +239,7 @@ const CodeDiffOutline = (props: Props) => {
     setCurrentCodes(nextCodes);
     if (codeViewerVisible) {
       // refresh code viewer
-      showCodeViewer(nextCodes);
+      showCodeViewer(nextCodes, rollbacked);
     }
   };
 
@@ -250,14 +250,17 @@ const CodeDiffOutline = (props: Props) => {
     setCurrentCodes(initailCodes);
     if (codeViewerVisible) {
       // refresh code viewer
-      showCodeViewer(initailCodes);
+      showCodeViewer(initailCodes, true);
     }
   };
 
-  const showCodeViewer = async (currentCodes: {
-    originalCode: string;
-    modifiedCode: string;
-  }) => {
+  const showCodeViewer = async (
+    currentCodes: {
+      originalCode: string;
+      modifiedCode: string;
+    },
+    hideDiffActions: boolean,
+  ) => {
     if (isNormalView) {
       codeViewer.actions.displayNormalViewer({
         path,
@@ -274,6 +277,7 @@ const CodeDiffOutline = (props: Props) => {
             originalCode: currentCodes.originalCode,
             modifiedCode: currentCodes.modifiedCode,
             language,
+            hideDiffActions,
           });
         },
       );
@@ -294,7 +298,7 @@ const CodeDiffOutline = (props: Props) => {
         onAcceptAll={handleAcceptAll}
         onRejectAll={handleRejectAll}
         onRollback={handleRollback}
-        onExpand={() => showCodeViewer(currentCodes)}
+        onExpand={() => showCodeViewer(currentCodes, rollbacked)}
       />
 
       <div className={styles.innerContainer}>
