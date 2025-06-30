@@ -1,6 +1,7 @@
 import { Type } from '@sinclair/typebox';
 import createDebug from 'debug';
 import { FastifyPluginAsync } from 'fastify';
+import * as fs from 'fs/promises';
 import path from 'path';
 import { loadIgnorePatterns } from '../context/context-files';
 import { CreateServerOpts } from '../types';
@@ -301,7 +302,6 @@ const filesRoute: FastifyPluginAsync<CreateServerOpts> = async (app, opts) => {
           });
         }
 
-        const fs = await import('fs/promises');
         const content = await fs.readFile(absolutePath, 'utf-8');
 
         return reply.send({
@@ -350,7 +350,6 @@ const filesRoute: FastifyPluginAsync<CreateServerOpts> = async (app, opts) => {
           });
         }
 
-        const fs = await import('fs/promises');
         await fs.writeFile(absolutePath, content, 'utf-8');
 
         return reply.send({

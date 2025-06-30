@@ -40,6 +40,7 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
   const { loading } = useChatState();
 
   const { SendButton, LoadingButton } = components;
+
   const onOpenFooter = () => {
     actions.updateOpenFooter(!state.openFooter);
   };
