@@ -51,12 +51,14 @@ export function createGrepTool(opts: { context: Context }) {
             return timeComparison;
           })
           .map((_) => _[0]);
+        const durationMs = Date.now() - start;
         return {
           success: true,
           data: {
             filenames: matches,
-            durationMs: Date.now() - start,
+            durationMs,
             numFiles: matches.length,
+            message: `Found ${matches.length} files in ${durationMs}ms.`,
           },
         };
       } catch (e) {

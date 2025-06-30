@@ -126,6 +126,12 @@ function ToolMessage({ message }: { message: ToolMessage }) {
         text = result.data.result;
       }
       break;
+    case 'glob':
+      text = result.message;
+      break;
+    case 'grep':
+      text = result;
+      break;
     default:
       break;
   }
