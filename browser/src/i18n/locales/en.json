@@ -181,6 +181,7 @@
     "charCount": "char(s)",
     "tempFile": "Temporary File",
     "copySuccess": "Copy content successfully",
+    "copyFail": "Copy content failed",
     "toolButton": {
       "nextDiff": "Next Diff",
       "prevDiff": "Previous Diff",

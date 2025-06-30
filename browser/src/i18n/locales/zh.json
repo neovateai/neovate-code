@@ -181,6 +181,7 @@
     "charCount": "个字符",
     "tempFile": "临时文件",
     "copySuccess": "复制成功",
+    "copyFail": "复制失败",
     "toolButton": {
       "nextDiff": "查看下一个Diff",
       "prevDiff": "查看上一个Diff",

@@ -3,6 +3,7 @@ import { Button, Divider, message } from 'antd';
 import { createStyles } from 'antd-style';
 import { filesize } from 'filesize';
 import { useTranslation } from 'react-i18next';
+import { useClipboard } from '@/hooks/useClipboard';
 import type {
   CodeNormalViewerMetaInfo,
   CodeNormalViewerTabItem,
@@ -46,6 +47,8 @@ const NormalToolbar = (props: Props) => {
 
   const { t } = useTranslation();
 
+  const { writeText } = useClipboard();
+
   return (
     <>
       {contextHolder}
@@ -66,11 +69,15 @@ const NormalToolbar = (props: Props) => {
           <Button
             type="text"
             icon={<CopyOutlined />}
-            onClick={() =>
-              navigator.clipboard.writeText(item.code).then(() => {
+            onClick={async () => {
+              try {
+                await writeText(item.code);
                 messageApi.success(t('codeViewer.copySuccess'));
-              })
-            }
+              } catch (e) {
+                console.error(e);
+                messageApi.error(t('codeViewer.copyFail'));
+              }
+            }}
           />
         </div>
       </div>
