@@ -1,6 +1,7 @@
 import type { ToolMessage } from '@/types/message';
 import CodeDiffOutline from '../CodeDiffOutline';
 
+// write tool认为都是新增的
 export default function WriteRender({ message }: { message?: ToolMessage }) {
   if (!message) {
     return null;
@@ -14,7 +15,7 @@ export default function WriteRender({ message }: { message?: ToolMessage }) {
   return (
     <CodeDiffOutline
       path={file_path}
-      originalCode={content}
+      originalCode={undefined}
       modifiedCode={content}
       onChangeCode={() => {}}
     />
