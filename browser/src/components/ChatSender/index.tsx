@@ -65,10 +65,6 @@ const ChatSender: React.FC = () => {
     setCurrentContextType,
   } = useSuggestion(contextSearchInput);
 
-  const onChange = (value: string) => {
-    actions.updatePrompt(value);
-  };
-
   const handleSubmit = () => {
     onQuery({
       prompt,
@@ -86,98 +82,96 @@ const ChatSender: React.FC = () => {
 
   return (
     <>
-      <LexicalTextAreaContext.Provider
-        value={{
-          onEnterPress: handleEnterPress,
-          onChangeNodes: (prevNodes, nextNodes) => {
-            differenceWith(prevNodes, nextNodes, (prev, next) => {
-              return prev.originalText === next.originalText;
-            }).forEach((node) => {
-              context.actions.removeContext(node.originalText);
-            });
-          },
-          onChangePlainText: (plainText) => actions.updatePlainText(plainText),
-          aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
-          namespace: 'SenderTextarea',
+      <Suggestion
+        className={styles.suggestion}
+        items={suggestions}
+        showSearch={
+          showSearch && {
+            placeholder: t('common.placeholder'),
+            onSearch: (text) => {
+              setContextSearchInput(text);
+            },
+          }
+        }
+        showBackButton={currentContextType !== ContextType.UNKNOWN}
+        onBack={() => {
+          setContextSearchInput('');
+          setCurrentContextType(ContextType.UNKNOWN);
+        }}
+        outsideOpen={keepMenuOpen}
+        onBlur={() => setKeepMenuOpen(false)}
+        onSelect={(value) => {
+          setKeepMenuOpen(true);
+          const contextItem = handleValue(value);
+          if (contextItem) {
+            setKeepMenuOpen(false);
+            const nextInputValue =
+              prompt.slice(0, insertNodePosition) +
+              contextItem.value +
+              prompt.slice(insertNodePosition + 1);
+            actions.updatePrompt(nextInputValue);
+
+            context.actions.addContext(contextItem);
+          }
         }}
       >
-        <Suggestion
-          className={styles.suggestion}
-          items={suggestions}
-          showSearch={
-            showSearch && {
-              placeholder: t('common.placeholder'),
-              onSearch: (text) => {
-                setContextSearchInput(text);
-              },
-            }
-          }
-          showBackButton={currentContextType !== ContextType.UNKNOWN}
-          onBack={() => {
-            setContextSearchInput('');
-            setCurrentContextType(ContextType.UNKNOWN);
-          }}
-          outsideOpen={keepMenuOpen}
-          onBlur={() => setKeepMenuOpen(false)}
-          onSelect={(value) => {
-            setKeepMenuOpen(true);
-            const contextItem = handleValue(value);
-            if (contextItem) {
-              setKeepMenuOpen(false);
-              const nextInputValue =
-                prompt.slice(0, insertNodePosition) +
-                contextItem.value +
-                prompt.slice(insertNodePosition + 1);
-              actions.updatePrompt(nextInputValue);
-
-              context.actions.addContext(contextItem);
-            }
-          }}
-        >
-          {({ onTrigger, onKeyDown }) => {
-            return (
-              <>
-                <Sender
-                  className={styles.sender}
-                  rootClassName={styles.senderRoot}
-                  value={prompt}
-                  header={<SenderHeader />}
-                  footer={({ components }) => {
-                    return <SenderFooter components={components} />;
-                  }}
-                  onSubmit={handleSubmit}
-                  onChange={(value) => {
-                    const { isInputingAiContext, position } = getInputInfo(
-                      prevInputValue.current,
-                      value,
-                    );
-                    if (isInputingAiContext) {
-                      setInsertNodePosition(position);
-                      onTrigger();
-                    } else {
-                      onTrigger(false);
-                    }
-                    prevInputValue.current = prompt;
-                    onChange(value);
-                  }}
-                  onKeyDown={onKeyDown}
-                  onCancel={() => {
-                    stop();
-                  }}
-                  loading={loading}
-                  allowSpeech
-                  actions={false}
-                  components={{
-                    input: LexicalTextArea,
-                  }}
-                  placeholder={t('chat.inputPlaceholder')}
-                />
-                <SenderFooterBoard />
-              </>
-            );
-          }}
-        </Suggestion>
-      </LexicalTextAreaContext.Provider>
+        {({ onTrigger, onKeyDown }) => {
+          return (
+            <LexicalTextAreaContext.Provider
+              value={{
+                onEnterPress: handleEnterPress,
+                onChangeNodes: (prevNodes, nextNodes) => {
+                  differenceWith(prevNodes, nextNodes, (prev, next) => {
+                    return prev.originalText === next.originalText;
+                  }).forEach((node) => {
+                    context.actions.removeContext(node.originalText);
+                  });
+                },
+                value: prompt,
+                onChange: (markedText, plainText) => {
+                  const { isInputingAiContext, position } = getInputInfo(
+                    prevInputValue.current,
+                    markedText,
+                  );
+                  if (isInputingAiContext) {
+                    setInsertNodePosition(position);
+                    onTrigger();
+                  } else {
+                    onTrigger(false);
+                  }
+                  prevInputValue.current = markedText;
+                  actions.updatePrompt(markedText);
+                  actions.updatePlainText(plainText);
+                },
+                aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
+                namespace: 'SenderTextarea',
+              }}
+            >
+              <Sender
+                className={styles.sender}
+                rootClassName={styles.senderRoot}
+                header={<SenderHeader />}
+                footer={({ components }) => {
+                  return <SenderFooter components={components} />;
+                }}
+                onSubmit={handleSubmit}
+                onKeyDown={onKeyDown}
+                onCancel={() => {
+                  stop();
+                }}
+                loading={loading}
+                allowSpeech
+                actions={false}
+                components={{
+                  input: LexicalTextArea,
+                }}
+                placeholder={t('chat.inputPlaceholder')}
+              />
+              <SenderFooterBoard />
+            </LexicalTextAreaContext.Provider>
+          );
+        }}
+      </Suggestion>
     </>
   );
 };

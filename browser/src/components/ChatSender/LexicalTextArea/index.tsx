@@ -2,7 +2,6 @@ import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
-import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import type { GetProps, GetRef, Input } from 'antd';
 import { createStyles } from 'antd-style';
@@ -56,21 +55,25 @@ const useStyle = createStyles(({ css }) => {
 
 const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
   const {
-    value,
     placeholder = '',
-
     onKeyDown,
     onSelect,
     disabled,
     className,
     style,
   } = props;
-  const [innerValue, setInnerValue] = useState<string>((value || '') as string);
+
+  const {
+    onEnterPress,
+    namespace,
+    value,
+    onChange,
+    onChangeNodes,
+    aiContextNodeConfigs,
+  } = useContext(LexicalTextAreaContext);
+
   const editorRef = useRef<LexicalEditor | null>(null);
   const contentEditableRef = useRef<HTMLDivElement | null>(null);
-  const { onEnterPress, namespace, onChangeMarkedText } = useContext(
-    LexicalTextAreaContext,
-  );
 
   const { styles } = useStyle();
 
@@ -85,12 +88,6 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
     },
     get input() {
       return contentEditableRef.current;
-    },
-    get value() {
-      return innerValue;
-    },
-    set value(val: string) {
-      setInnerValue(val);
     },
   }));
 
@@ -143,23 +140,19 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
         ErrorBoundary={LexicalErrorBoundary}
       />
 
-      {!disabled && (
-        <OnChangePlugin
-          onChange={(_editorState, editor) => {
-            editor.read(() => {
-              const nextInnerValue = $getRoot().getTextContent();
-              setInnerValue(nextInnerValue);
-              onChangeMarkedText?.(nextInnerValue);
-            });
-          }}
-        />
-      )}
       {!disabled && <AutoFocusPlugin />}
       <DisabledPlugin disabled={!!disabled} />
       <PlaceholderPlugin placeholder={placeholder} />
       {!disabled && <EnterEventPlugin onEnterPress={onEnterPress} />}
       {!disabled && <PastePlugin />}
-      <RenderValuePlugin value={value as string} />
+      <RenderValuePlugin
+        value={value}
+        onChange={(markedText, plainText) => {
+          onChange?.(markedText, plainText);
+        }}
+        onChangeNodes={onChangeNodes}
+        aiContextNodeConfigs={aiContextNodeConfigs}
+      />
     </LexicalComposer>
   );
 });
