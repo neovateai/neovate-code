@@ -6,6 +6,7 @@ import {
 } from '@ant-design/icons';
 import { Button, Switch, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffStatBlocks from '../DiffStatBlocks';
@@ -60,9 +61,11 @@ const DiffToolbar = (props: Props) => {
 
   const { t } = useTranslation();
 
-  const hasDiff =
-    item.diffStat?.diffBlockStats && item.diffStat?.diffBlockStats.length > 0;
-
+  const hasDiff = useMemo(
+    () =>
+      item.diffStat?.diffBlockStats && item.diffStat?.diffBlockStats.length > 0,
+    [item.diffStat],
+  );
   return (
     <div className={toolbarStyles.toolbar}>
       <div className={toolbarStyles.metaInfo}>
