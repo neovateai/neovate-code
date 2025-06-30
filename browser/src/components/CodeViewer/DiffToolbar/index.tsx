@@ -10,7 +10,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffStatBlocks from '../DiffStatBlocks';
-import { useToolbarStyles } from '../NormalToolbar';
+import { useToolbarStyles } from '../useToolbarStyles';
 
 interface Props {
   item: CodeDiffViewerTabItem;
