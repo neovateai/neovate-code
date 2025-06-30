@@ -5,9 +5,12 @@ interface CodeViewerBaseTabItem {
   path?: string;
 }
 
+export type CodeNormalViewerMode = 'new' | 'deleted';
+
 export interface CodeNormalViewerTabItem extends CodeViewerBaseTabItem {
   code: string;
   viewType: 'normal';
+  mode?: CodeNormalViewerMode;
 }
 
 export interface CodeDiffViewerTabItem extends CodeViewerBaseTabItem {

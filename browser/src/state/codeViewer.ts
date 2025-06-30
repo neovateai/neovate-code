@@ -1,6 +1,7 @@
 import { proxy } from 'valtio';
 import i18n from '@/i18n';
 import type {
+  CodeNormalViewerMode,
   CodeViewerLanguage,
   CodeViewerTabItem,
   DiffBlockStat,
@@ -26,6 +27,7 @@ interface DisplayNormalViewerConfigs {
   code: string;
   /** 文件路径，默认作为key使用 */
   path?: string;
+  mode?: CodeNormalViewerMode;
 }
 
 interface DisplayDiffViewerConfigs {
@@ -75,7 +77,7 @@ export const actions = {
     const targetConfigs =
       typeof configs === 'function' ? await configs() : configs;
 
-    const { language, code, path } = targetConfigs;
+    const { language, code, path, mode } = targetConfigs;
 
     const id = path || Date.now().toString();
 
@@ -94,6 +96,7 @@ export const actions = {
           id,
           viewType: 'normal',
           path,
+          mode,
         };
       } else {
         return item;
@@ -108,6 +111,7 @@ export const actions = {
         id,
         viewType: 'normal',
         path,
+        mode,
       });
     }
 

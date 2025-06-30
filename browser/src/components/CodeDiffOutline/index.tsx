@@ -1,15 +1,6 @@
-import {
-  CheckOutlined,
-  CloseOutlined,
-  ExpandAltOutlined,
-  RollbackOutlined,
-} from '@ant-design/icons';
-import { Button } from 'antd';
 import { createStyles } from 'antd-style';
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useEffect, useMemo, useState } from 'react';
 import { useSnapshot } from 'valtio';
-import DevFileIcon from '@/components/DevFileIcon';
 import * as codeViewer from '@/state/codeViewer';
 import type {
   CodeViewerLanguage,
@@ -18,13 +9,14 @@ import type {
 } from '@/types/codeViewer';
 import { diff } from '@/utils/codeViewer';
 import CodeDiffView from '../CodeViewer/CodeDiffView';
-import DiffStatBlocks from '../CodeViewer/DiffStatBlocks';
+import CodeNormalView from '../CodeViewer/CodeNormalView';
 import { withConfigProvider } from '../CodeViewer/WithConfigProvider';
+import CodeDiffOutlineHeader from './CodeDiffOutlineHeader';
 
 interface Props {
   readonly path: string;
-  readonly originalCode: string;
-  readonly modifiedCode: string;
+  readonly originalCode?: string;
+  readonly modifiedCode?: string;
   /** 如果不传，默认使用path中的文件后缀推断 */
   language?: CodeViewerLanguage;
   /**
@@ -36,7 +28,7 @@ interface Props {
   onChangeCode?: (newCode: string, oldCode: string) => void;
 }
 
-const useStyles = createStyles(({ css, token }) => {
+const useStyles = createStyles(({ css }) => {
   return {
     container: css`
       min-width: 200px;
@@ -57,28 +49,7 @@ const useStyles = createStyles(({ css, token }) => {
       padding: 4px;
       background-color: #f9f9f9;
     `,
-    header: css`
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
 
-      padding: 8px 2px;
-    `,
-    headerLeft: css`
-      display: flex;
-      align-items: center;
-      column-gap: 8px;
-      margin-left: 8px;
-      white-space: nowrap;
-      min-width: 0;
-      flex: 1 1 0%;
-    `,
-    headerRight: css`
-      display: flex;
-      justify-content: center;
-      column-gap: 12px;
-      margin: 0 8px;
-    `,
     item: css`
       padding: 8px 4px;
       margin: 4px 0;
@@ -96,10 +67,7 @@ const useStyles = createStyles(({ css, token }) => {
       align-items: center;
       column-gap: 8px;
     `,
-    itemLeftDiffStat: css`
-      display: flex;
-      align-items: center;
-    `,
+
     itemRight: css`
       display: flex;
       align-items: center;
@@ -108,27 +76,17 @@ const useStyles = createStyles(({ css, token }) => {
     itemDivider: css`
       margin: 0;
     `,
-    add: css`
-      color: ${token.colorPrimary};
-      margin: 0 2px;
-    `,
-    remove: css`
-      color: red;
-      margin: 0 2px;
-    `,
-    plainText: css`
-      color: #333;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 320px;
-      display: block;
-    `,
   };
 });
 
 const CodeDiffOutline = (props: Props) => {
-  const { path, originalCode, modifiedCode, language, onChangeCode } = props;
+  const {
+    path,
+    originalCode = '',
+    modifiedCode = '',
+    language,
+    onChangeCode,
+  } = props;
 
   const [changed, setChanged] = useState(false);
 
@@ -148,6 +106,21 @@ const CodeDiffOutline = (props: Props) => {
 
   const [diffStat, setDiffStat] = useState<DiffStat>();
 
+  const isNewFile = useMemo(
+    () => !originalCode && !!modifiedCode,
+    [originalCode, modifiedCode],
+  );
+
+  const isDeletedFile = useMemo(
+    () => !modifiedCode && !!originalCode,
+    [originalCode, modifiedCode],
+  );
+
+  const isNormalView = useMemo(
+    () => isNewFile || isDeletedFile,
+    [isNewFile, isDeletedFile],
+  );
+
   useEffect(() => {
     diff(currentCodes.originalCode, currentCodes.modifiedCode).then((d) =>
       setDiffStat(d),
@@ -161,12 +134,12 @@ const CodeDiffOutline = (props: Props) => {
     });
   }, [currentCodes]);
 
-  const hasDiff =
-    diffStat?.diffBlockStats && diffStat.diffBlockStats.length > 0;
+  const hasDiff = useMemo(
+    () => diffStat?.diffBlockStats && diffStat.diffBlockStats.length > 0,
+    [diffStat],
+  );
 
   const { styles } = useStyles();
-
-  const { t } = useTranslation();
 
   const handleAccept = (diffBlockStat: DiffBlockStat) => {
     setChanged(true);
@@ -202,7 +175,7 @@ const CodeDiffOutline = (props: Props) => {
 
     onChangeCode?.(nextOriginalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-    showDiff(nextCodes);
+    showCodeViewer(nextCodes);
   };
 
   const handleReject = (diffBlockStat: DiffBlockStat) => {
@@ -238,7 +211,7 @@ const CodeDiffOutline = (props: Props) => {
     const nextCodes = { ...currentCodes, modifiedCode: nextModifiedCode };
     onChangeCode?.(currentCodes.originalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-    showDiff(nextCodes);
+    showCodeViewer(nextCodes);
   };
 
   const handleAcceptAll = () => {
@@ -251,7 +224,7 @@ const CodeDiffOutline = (props: Props) => {
     setCurrentCodes(nextCodes);
     if (codeViewerVisible) {
       // refresh code viewer
-      showDiff(nextCodes);
+      showCodeViewer(nextCodes);
     }
   };
 
@@ -265,7 +238,7 @@ const CodeDiffOutline = (props: Props) => {
     setCurrentCodes(nextCodes);
     if (codeViewerVisible) {
       // refresh code viewer
-      showDiff(nextCodes);
+      showCodeViewer(nextCodes);
     }
   };
 
@@ -275,108 +248,78 @@ const CodeDiffOutline = (props: Props) => {
     setCurrentCodes(initailCodes);
     if (codeViewerVisible) {
       // refresh code viewer
-      showDiff(initailCodes);
+      showCodeViewer(initailCodes);
     }
   };
 
-  const showDiff = async (currentCodes: {
+  const showCodeViewer = async (currentCodes: {
     originalCode: string;
     modifiedCode: string;
   }) => {
-    diff(currentCodes.originalCode, currentCodes.modifiedCode).then(
-      (diffStat) => {
-        codeViewer.actions.displayDiffViewer({
-          path,
-          diffStat,
-          originalCode: currentCodes.originalCode,
-          modifiedCode: currentCodes.modifiedCode,
-          language,
-        });
-      },
-    );
+    if (isNormalView) {
+      codeViewer.actions.displayNormalViewer({
+        path,
+        code: isNewFile ? currentCodes.modifiedCode : currentCodes.originalCode,
+        language,
+        mode: isNewFile ? 'new' : isDeletedFile ? 'deleted' : undefined,
+      });
+    } else {
+      diff(currentCodes.originalCode, currentCodes.modifiedCode).then(
+        (diffStat) => {
+          codeViewer.actions.displayDiffViewer({
+            path,
+            diffStat,
+            originalCode: currentCodes.originalCode,
+            modifiedCode: currentCodes.modifiedCode,
+            language,
+          });
+        },
+      );
+    }
   };
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <DevFileIcon size={16} fileExt={path.split('.').pop() || ''} />
-          <div className={styles.plainText}>{path}</div>
-          {hasDiff && (
-            <div className={styles.itemLeftDiffStat}>
-              {diffStat?.addLines && diffStat.addLines > 0 && (
-                <span className={styles.add}>
-                  +{diffStat.addLines.toLocaleString()}
-                </span>
-              )}
-              {diffStat?.removeLines && diffStat.removeLines > 0 && (
-                <span className={styles.remove}>
-                  -{diffStat.removeLines.toLocaleString()}
-                </span>
-              )}
-              <DiffStatBlocks diffStat={diffStat} />
-            </div>
-          )}
-        </div>
-        <div className={styles.headerRight}>
-          {changed && (
-            <Button
-              icon={<RollbackOutlined />}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleRollback();
-              }}
-            />
-          )}
-          {hasDiff && (
-            <>
-              <Button
-                type="primary"
-                icon={<CloseOutlined />}
-                danger
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRejectAll();
-                }}
-              >
-                {t('codeViewer.toolButton.rejectAll')}
-              </Button>
-              <Button
-                type="primary"
-                icon={<CheckOutlined />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAcceptAll();
-                }}
-              >
-                {t('codeViewer.toolButton.acceptAll')}
-              </Button>
-              <Button
-                type="text"
-                shape="circle"
-                onClick={() => {
-                  showDiff(currentCodes);
-                }}
-                icon={<ExpandAltOutlined />}
-              />
-            </>
-          )}
-        </div>
-      </div>
+      <CodeDiffOutlineHeader
+        diffStat={diffStat}
+        hasDiff={hasDiff}
+        changed={changed}
+        path={path}
+        onAcceptAll={handleAcceptAll}
+        onRejectAll={handleRejectAll}
+        onRollback={handleRollback}
+        onExpand={() => showCodeViewer(currentCodes)}
+      />
 
       <div className={styles.innerContainer}>
-        <CodeDiffView
-          hideToolBar
-          height={300}
-          item={{
-            path,
-            originalCode: currentCodes.originalCode,
-            modifiedCode: currentCodes.modifiedCode,
-            viewType: 'diff',
-            title: path,
-            id: path,
-          }}
-        />
+        {isNormalView ? (
+          <CodeNormalView
+            height={300}
+            item={{
+              path,
+              code: isNewFile
+                ? currentCodes.modifiedCode
+                : currentCodes.originalCode,
+              viewType: 'normal',
+              title: path,
+              id: path,
+              mode: isNewFile ? 'new' : isDeletedFile ? 'deleted' : undefined,
+            }}
+          />
+        ) : (
+          <CodeDiffView
+            hideToolBar
+            height={300}
+            item={{
+              path,
+              originalCode: currentCodes.originalCode,
+              modifiedCode: currentCodes.modifiedCode,
+              viewType: 'diff',
+              title: path,
+              id: path,
+            }}
+          />
+        )}
       </div>
     </div>
   );

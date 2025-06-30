@@ -11,6 +11,7 @@ import { Button, Flex, Space } from 'antd';
 import { createStyles } from 'antd-style';
 import { useTranslation } from 'react-i18next';
 import { useChatState } from '@/hooks/provider';
+import CodeDiffOutline from '../CodeDiffOutline';
 
 const useWelcomeData = () => {
   const { t } = useTranslation();
@@ -170,6 +171,11 @@ const Welcome = () => {
           className={styles.chatPrompt}
         />
       </Flex>
+      <CodeDiffOutline
+        path="/index.tsx"
+        modifiedCode={`asd
+        sdsdd`}
+      />
     </Space>
   );
 };
