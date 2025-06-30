@@ -27,6 +27,10 @@ export const actions = {
     state.openFooter = openFooter;
   },
 
+  updateMode: (mode: string) => {
+    state.mode = mode;
+  },
+
   updateModeAndFooterVisible: (mode: string, openFooter: boolean) => {
     state.mode = mode;
     state.openFooter = openFooter;

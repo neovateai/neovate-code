@@ -76,6 +76,7 @@ export type TextMessage = {
   type: UIMessageType.Text;
   text: string;
   state?: UIMessageType.TextDelta | UIMessageType.Text;
+  mode?: string;
 };
 
 export type ReasoningMessage = ReasoningUIPart & {

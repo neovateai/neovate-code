@@ -12,10 +12,12 @@ const debug = createDebug('takumi:server:completions');
 interface RunCompletionOpts extends CreateServerOpts {
   dataStream: DataStreamWriter;
   service: Service;
+  planService: Service;
+  mode: string;
 }
 
 export async function runCode(opts: RunCompletionOpts) {
-  const { dataStream, service } = opts;
+  const { dataStream, mode } = opts;
   try {
     let input: AgentInputItem[] = [
       {
@@ -23,6 +25,10 @@ export async function runCode(opts: RunCompletionOpts) {
         content: opts.prompt,
       },
     ];
+
+    const service = mode === 'plan' ? opts.planService : opts.service;
+
+    debug('mode', mode);
 
     const result = await query({
       input,
@@ -39,6 +45,7 @@ export async function runCode(opts: RunCompletionOpts) {
         dataStream.writeMessageAnnotation({
           type: 'text',
           text,
+          mode,
         });
         await delay(10);
         debug(`Text: ${text}`);
