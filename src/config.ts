@@ -8,10 +8,12 @@ type McpStdioServerConfig = {
   command: string;
   args: string[];
   env?: Record<string, string>;
+  disable?: boolean;
 };
 type McpSSEServerConfig = {
   type: 'sse';
   url: string;
+  disable?: boolean;
 };
 type McpServerConfig = McpStdioServerConfig | McpSSEServerConfig;
 

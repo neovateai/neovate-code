@@ -11,6 +11,7 @@ export interface MCPConfig {
   args?: string[];
   env?: Record<string, string>;
   url?: string;
+  disable?: boolean;
 }
 
 const debug = createDebug('takumi:mcp');
@@ -29,6 +30,10 @@ export class MCPManager {
     debug('create MCPManager', mcpServers);
     const servers = new Map<string, MCPServerStdio | MCPServerStreamableHttp>();
     for (const [key, config] of Object.entries(mcpServers)) {
+      if (config.disable) {
+        debug(`Skipping disabled MCP server: ${key}`);
+        continue;
+      }
       let server: MCPServerStdio | MCPServerStreamableHttp;
       if (config.type === 'stdio' || !config.type) {
         const env = config.env;
