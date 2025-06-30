@@ -15,8 +15,8 @@ const debug = createDebug('takumi:server:completions');
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const isLocal = __dirname.endsWith('takumi/src/server');
 const BROWSER_DIST_PATH = isLocal
-  ? path.resolve(__dirname, '../../dist-browser')
-  : path.resolve(__dirname, '../dist-browser');
+  ? path.resolve(__dirname, '../../dist/browser')
+  : path.resolve(__dirname, '../dist/browser');
 
 debug('BROWSER_DIST_PATH', BROWSER_DIST_PATH);
 
@@ -65,6 +65,7 @@ const registerRoutes = async (
   app: FastifyInstance,
   opts: CreateServerOpts,
   service: Service,
+  planService: Service,
 ) => {
   const { logLevel: _, ...pluginOpts } = opts;
 
@@ -72,6 +73,7 @@ const registerRoutes = async (
     prefix: `${BASE_API_PREFIX}/chat`,
     ...pluginOpts,
     service,
+    planService,
   });
   await app.register(import('./routes/files'), {
     prefix: BASE_API_PREFIX,
@@ -151,9 +153,14 @@ export async function createServer(opts: CreateServerOpts) {
     agentType: 'code',
   });
 
+  const planService = await Service.create({
+    context: opts.context,
+    agentType: 'plan',
+  });
+
   try {
     await registerPlugins(app);
-    await registerRoutes(app, opts, service);
+    await registerRoutes(app, opts, service, planService);
 
     await app.listen({
       port,

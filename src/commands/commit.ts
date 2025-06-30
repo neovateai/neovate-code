@@ -1,4 +1,9 @@
-import { ModelProvider, Runner } from '@openai/agents';
+import {
+  ModelProvider,
+  Runner,
+  setTraceProcessors,
+  withTrace,
+} from '@openai/agents';
 import * as p from '@umijs/clack-prompts';
 import { ExecSyncOptionsWithStringEncoding, execSync } from 'child_process';
 import clipboardy from 'clipboardy';
@@ -6,7 +11,7 @@ import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
 import { createCommitAgent } from '../agents/commit';
-import { ConfigManager } from '../config';
+import { Context } from '../context';
 import { getDefaultModelProvider } from '../provider';
 import * as logger from '../utils/logger';
 
@@ -64,140 +69,153 @@ Examples:
 }
 
 export async function runCommit(opts: RunCliOpts) {
-  const argv = yargsParser(process.argv.slice(2), {
-    alias: {
-      stage: 's',
-      commit: 'c',
-      noVerify: 'n',
-      interactive: 'i',
-      model: 'm',
-      help: 'h',
-    },
-    boolean: [
-      'stage',
-      'push',
-      'commit',
-      'noVerify',
-      'copy',
-      'interactive',
-      'followStyle',
-      'help',
-    ],
-    string: ['model', 'language'],
-  });
+  setTraceProcessors([]);
+  const traceName = `${opts.productName}-commit`;
+  return await withTrace(traceName, async () => {
+    const argv = yargsParser(process.argv.slice(2), {
+      alias: {
+        stage: 's',
+        commit: 'c',
+        noVerify: 'n',
+        interactive: 'i',
+        model: 'm',
+        help: 'h',
+      },
+      boolean: [
+        'stage',
+        'push',
+        'commit',
+        'noVerify',
+        'copy',
+        'interactive',
+        'followStyle',
+        'help',
+      ],
+      string: ['model', 'language'],
+    });
 
-  // help
-  if (argv.help) {
-    printHelp(opts.productName.toLowerCase());
-    return;
-  }
-
-  logger.logIntro({
-    productName: opts.productName,
-    version: opts.version,
-  });
-  if (!argv.interactive && !argv.commit && !argv.copy) {
-    argv.interactive = true;
-  }
-  try {
-    execSync('git --version', { stdio: 'ignore' });
-    execSync('git config user.name', { stdio: 'ignore' });
-    execSync('git config user.email', { stdio: 'ignore' });
-  } catch (error: any) {
-    if (error.message.includes('user.name')) {
-      throw new Error(
-        'Git user name is not configured. Please run: git config --global user.name "Your Name"',
-      );
-    } else if (error.message.includes('user.email')) {
-      throw new Error(
-        'Git user email is not configured. Please run: git config --global user.email "your.email@example.com"',
-      );
-    } else {
-      throw new Error('Git is not installed or not available in PATH');
+    // help
+    if (argv.help) {
+      printHelp(opts.productName.toLowerCase());
+      return;
     }
-  }
-  const hasChanged =
-    execSync('git status --porcelain').toString().trim().length > 0;
-  if (!hasChanged) {
-    throw new Error('No changes to commit');
-  }
-  if (argv.stage) {
-    execSync('git add .');
-  }
-  const diff = await getStagedDiff();
-  if (diff.length === 0) {
-    throw new Error('No changes to commit');
-  }
 
-  let repoStyle = '';
-  if (argv.followStyle) {
+    logger.logIntro({
+      productName: opts.productName,
+      version: opts.version,
+    });
+    if (!argv.interactive && !argv.commit && !argv.copy) {
+      argv.interactive = true;
+    }
     try {
-      const recentCommits = execSync(
-        'git log -n 10 --pretty=format:"%s"',
-      ).toString();
-      repoStyle = `
+      execSync('git --version', { stdio: 'ignore' });
+      execSync('git config user.name', { stdio: 'ignore' });
+      execSync('git config user.email', { stdio: 'ignore' });
+    } catch (error: any) {
+      if (error.message.includes('user.name')) {
+        throw new Error(
+          'Git user name is not configured. Please run: git config --global user.name "Your Name"',
+        );
+      } else if (error.message.includes('user.email')) {
+        throw new Error(
+          'Git user email is not configured. Please run: git config --global user.email "your.email@example.com"',
+        );
+      } else {
+        throw new Error('Git is not installed or not available in PATH');
+      }
+    }
+    const hasChanged =
+      execSync('git status --porcelain').toString().trim().length > 0;
+    if (!hasChanged) {
+      throw new Error('No changes to commit');
+    }
+    if (argv.stage) {
+      execSync('git add .');
+    }
+    const diff = await getStagedDiff();
+    if (diff.length === 0) {
+      throw new Error('No changes to commit');
+    }
+
+    let repoStyle = '';
+    if (argv.followStyle) {
+      try {
+        const recentCommits = execSync(
+          'git log -n 10 --pretty=format:"%s"',
+        ).toString();
+        repoStyle = `
 # Recent commits in this repository:
 ${recentCommits}
 Please follow a similar style for this commit message while still adhering to the structure guidelines.
 `;
-    } catch (error) {
-      logger.logError({
-        error:
-          'Could not analyze repository commit style. Using default style.',
-      });
+      } catch (error) {
+        logger.logError({
+          error:
+            'Could not analyze repository commit style. Using default style.',
+        });
+      }
     }
-  }
 
-  const configManager = new ConfigManager(process.cwd(), opts.productName, {
-    model: argv.model,
-    language: argv.language,
-  });
+    const context = await Context.create({
+      productName: opts.productName,
+      version: opts.version,
+      cwd: process.cwd(),
+      argvConfig: {
+        model: argv.model,
+        plugins: argv.plugin,
+      },
+      plugins: opts.plugins,
+    });
+    await context.destroy();
 
-  // Generate the commit message
-  let message = '';
-  let attempts = 0;
-  const maxAttempts = 3;
-  while (attempts < maxAttempts) {
-    try {
-      const stop = logger.spinThink({ productName: opts.productName });
-      message = await generateCommitMessage({
-        prompt: `
+    // Generate the commit message
+    const model = context.config.model;
+    logger.logInfo(`Using model: ${model}`);
+    let message = '';
+    let attempts = 0;
+    const maxAttempts = 3;
+    while (attempts < maxAttempts) {
+      try {
+        const stop = logger.spinThink({ productName: opts.productName });
+        message = await generateCommitMessage({
+          prompt: `
 # Diffs:
 ${diff}
 ${repoStyle}
         `,
-        model: configManager.config.model,
-        language: configManager.config.language,
-        modelProvider: opts.modelProvider,
-      });
-      stop();
-      checkCommitMessage(message);
-      break;
-    } catch (error: any) {
-      attempts++;
-      if (attempts >= maxAttempts) {
-        throw error;
+          model,
+          language: context.config.language,
+          modelProvider: opts.modelProvider,
+        });
+        stop();
+        checkCommitMessage(message);
+        break;
+      } catch (error: any) {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw error;
+        }
       }
     }
-  }
 
-  // Check if interactive mode is needed
-  const isNonInteractiveParam =
-    argv.stage || argv.commit || argv.noVerify || argv.copy;
-  if (argv.interactive && !isNonInteractiveParam) {
-    await handleInteractiveMode(message);
-  } else {
-    // Non-interactive mode logic
-    if (argv.commit) {
-      await commitChanges(message, argv.noVerify);
-      if (argv.push) {
-        await pushChanges();
+    // Check if interactive mode is needed
+    const isNonInteractiveParam =
+      argv.stage || argv.commit || argv.noVerify || argv.copy;
+    if (argv.interactive && !isNonInteractiveParam) {
+      await handleInteractiveMode(message);
+    } else {
+      // Non-interactive mode logic
+      if (argv.commit) {
+        await commitChanges(message, argv.noVerify);
+        if (argv.push) {
+          await pushChanges();
+        }
+      }
+      if (argv.copy) {
+        copyToClipboard(message);
       }
     }
-    if (argv.copy) {
-      copyToClipboard(message);
-    }
-  }
+  });
 }
 
 function copyToClipboard(message: string) {

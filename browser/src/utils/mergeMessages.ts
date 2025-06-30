@@ -105,6 +105,7 @@ export function mergeMessages(
         ) {
           lastMessage.text = message.text;
           lastMessage.state = UIMessageType.Text;
+          lastMessage.mode = message.mode;
         } else {
           merged.push({
             ...message,

@@ -1,17 +1,12 @@
-import {
-  CopyOutlined,
-  DislikeOutlined,
-  LikeOutlined,
-  ReloadOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
+import { UserOutlined } from '@ant-design/icons';
 import { Bubble } from '@ant-design/x';
 import { createFileRoute } from '@tanstack/react-router';
-import { Button, type GetProp, Spin } from 'antd';
+import { type GetProp, Spin } from 'antd';
 import { createStyles } from 'antd-style';
 import cx from 'classnames';
 import { useSnapshot } from 'valtio';
 import AssistantAvatar from '@/components/AssistantAvatar';
+import AssistantFooter from '@/components/AssistantFooter';
 import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
 import CodeViewer from '@/components/CodeViewer';
@@ -19,6 +14,7 @@ import { UserMessage, UserMessageFooter } from '@/components/UserMessage';
 import Welcome from '@/components/Welcome';
 import ChatProvider, { useChatState } from '@/hooks/provider';
 import * as codeViewer from '@/state/codeViewer';
+import type { UIMessage } from '@/types/message';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
@@ -35,6 +31,10 @@ const useStyle = createStyles(({ token, css }) => {
     chatList: css`
       flex: 1;
       overflow: auto;
+
+      .ant-bubble-footer {
+        width: 100%;
+      }
     `,
     codeViewerContainer: css`
       height: 100vh;
@@ -53,13 +53,17 @@ const Chat: React.FC = () => {
   const { messages, status } = useChatState();
   const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
 
-  const items = messages?.map((i, index) => {
+  const items = messages?.map((message, index) => {
+    const isLastMessage = index === messages.length - 1;
     return {
-      ...i,
-      // content: i.role === 'assistant' ? i : i.content,
-      content: i,
+      ...message,
+      content: message,
       typing: status === 'submitted' ? { step: 20, interval: 150 } : false,
-      loading: status === 'submitted' && index === messages.length - 1,
+      loading: status === 'submitted' && isLastMessage,
+      footer:
+        status === 'ready' && isLastMessage
+          ? () => <AssistantFooter message={message as UIMessage} />
+          : false,
     };
   });
 
@@ -85,14 +89,6 @@ const Chat: React.FC = () => {
       messageRender(message) {
         return <AssistantMessage message={message} />;
       },
-      footer: (
-        <div style={{ display: 'flex' }}>
-          <Button type="text" size="small" icon={<ReloadOutlined />} />
-          <Button type="text" size="small" icon={<CopyOutlined />} />
-          <Button type="text" size="small" icon={<LikeOutlined />} />
-          <Button type="text" size="small" icon={<DislikeOutlined />} />
-        </div>
-      ),
       loadingRender() {
         return (
           <div className="flex items-center space-x-3">

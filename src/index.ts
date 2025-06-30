@@ -56,8 +56,8 @@ export async function runCli(opts: RunCliOpts) {
       await runRun(opts);
       break;
     case 'server':
-      const { runBrowser } = await import('./commands/server');
-      await runBrowser(opts);
+      const { runServer } = await import('./commands/server');
+      await runServer(opts);
       break;
     default:
       const { runDefault } = await import('./commands/default');

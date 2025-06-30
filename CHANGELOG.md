@@ -1,3 +1,51 @@
+## 0.1.6
+
+`2025-06-30`
+
+- feat: add tracing to commit and run commands by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.1.5
+
+`2025-06-27`
+
+- refactor: replace ConfigManager with Context for configuration management by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.1.4
+
+`2025-06-27`
+
+- build: consolidate browser output and refine build steps by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename runBrowser to runServer and update model handling by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.1.3
+
+`2025-06-27`
+
+- refactor: rename CreateContextOptions to CreateContextOpts by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.1.2
+
+`2025-06-27`
+
+
+## 0.1.1
+
+`2025-06-27`
+
+- feat: allow async plugin hooks and store argv config by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.1.0
+
+`2025-06-27`
+
+- feat: add minor and major release scripts by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.0.35
 
 `2025-06-27`

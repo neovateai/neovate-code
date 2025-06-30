@@ -31,7 +31,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../dist-browser',
+    outDir: '../dist/browser',
   },
   server: {
     port: 8000,

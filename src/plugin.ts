@@ -1,5 +1,6 @@
 import defu from 'defu';
-import { Context } from './context';
+import { Config } from './config';
+import { Context, CreateContextOpts } from './context';
 
 export enum PluginHookType {
   First = 'first',
@@ -98,33 +99,49 @@ type PluginContext = Omit<
   'destroy' | 'getModelProvider' | 'buildSystemPrompts' | 'addHistory'
 >;
 
+type TempPluginContext = CreateContextOpts & {
+  pluginManager: PluginManager;
+  config: Config;
+  apply: (opts: PluginApplyOpts) => Promise<any> | any;
+};
+
 type AgentType = 'code' | 'plan';
 type Enforce = 'pre' | 'post';
 
 export type Plugin = {
   enforce?: Enforce;
   name?: string;
-  config?: (this: PluginContext) => any | Promise<any> | null;
-  configResolved?: (this: PluginContext, opts: { resolvedConfig: any }) => void;
-  cliStart?: (this: PluginContext) => void;
+  config?: (this: TempPluginContext) => any | Promise<any>;
+  configResolved?: (
+    this: TempPluginContext,
+    opts: { resolvedConfig: any },
+  ) => Promise<any> | any;
+  generalInfo?: (this: TempPluginContext) => any | Promise<any>;
+  cliStart?: (this: PluginContext) => Promise<any> | any;
   cliEnd?: (
     this: PluginContext,
     opts: { startTime: number; endTime: number; error?: any },
-  ) => void;
-  contextStart?: (this: PluginContext, opts: { prompt: string }) => void;
-  context?: (this: PluginContext, opts: { prompt: string }) => void;
+  ) => Promise<any> | any;
+  contextStart?: (
+    this: PluginContext,
+    opts: { prompt: string },
+  ) => Promise<any> | any;
+  context?: (
+    this: PluginContext,
+    opts: { prompt: string },
+  ) => Promise<any> | any;
   toolUse?: (
     this: PluginContext,
     opts: { callId: string; name: string; params: any },
-  ) => void;
+  ) => Promise<any> | any;
   toolUseResult?: (
     this: PluginContext,
     opts: { callId: string; name: string; params: any; result: any },
-  ) => void;
+  ) => Promise<any> | any;
   query?: (
     this: PluginContext,
     opts: { text: string; parsed: any; input: any },
-  ) => void;
+  ) => Promise<any> | any;
   env?: (this: PluginContext) => Record<string, string>;
   model?: (
     this: PluginContext,
@@ -135,16 +152,16 @@ export type Plugin = {
       createDeepSeek: any;
       createAnthropic: any;
     },
-  ) => Promise<any>;
+  ) => Promise<any> | any;
   tool?: (this: PluginContext, opts: { agentType: AgentType }) => Promise<any>;
   serverAppData?: (
     this: PluginContext,
     opts: { context: any; cwd: string },
-  ) => Promise<any>;
+  ) => Promise<any> | any;
   serverRoutes?: (
     this: PluginContext,
     opts: { app: any; prefix: string; opts: any },
-  ) => void;
+  ) => Promise<any> | any;
   serverRouteCompletions?: (
     this: PluginContext,
     opts: {
@@ -156,5 +173,5 @@ export type Plugin = {
       };
       attachedContexts: any[];
     },
-  ) => void;
+  ) => Promise<any> | any;
 };

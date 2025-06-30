@@ -30,7 +30,6 @@ Options:
   -h, --help                    Show help
   -m, --model <model>           Specify model to use
   --smallModel <model>          Specify a smaller model for some tasks
-  --plan                        Plan mode
   --logLevel <level>            Specify log level
   --port <port>                 Specify port to use
 
@@ -41,7 +40,7 @@ Examples:
   );
 }
 
-export async function runBrowser(opts: RunCliOpts) {
+export async function runServer(opts: RunCliOpts) {
   const traceName = `${opts.productName}-server`;
   return await withTrace(traceName, async () => {
     const startTime = Date.now();
@@ -51,9 +50,7 @@ export async function runBrowser(opts: RunCliOpts) {
         model: 'm',
         help: 'h',
       },
-      default: {
-        model: 'flash',
-      },
+      default: {},
       boolean: ['help', 'plan'],
       string: ['model', 'smallModel', 'planModel', 'logLevel'],
       number: ['port'],
@@ -97,9 +94,8 @@ export async function runBrowser(opts: RunCliOpts) {
 
     logger.logGeneralInfo({
       infos: {
-        log: traceFile.replace(homedir(), '~'),
-        workspace: cwd.replace(homedir(), '~'),
-        model: argv.model,
+        'Log File': traceFile.replace(homedir(), '~'),
+        ...context.generalInfo,
       },
     });
 
@@ -113,7 +109,6 @@ export async function runBrowser(opts: RunCliOpts) {
       context,
       prompt: argv._[0]! as string,
       cwd,
-      plan: argv.plan,
       logLevel: argv.logLevel,
       port: argv.port,
     });

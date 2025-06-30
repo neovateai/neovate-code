@@ -1,9 +1,15 @@
-import { useChat } from '@ai-sdk/react';
 import type { UIMessage } from '@ai-sdk/ui-utils';
 import { findLast } from 'lodash-es';
 import { createContext, useContext, useMemo } from 'react';
+import { useSnapshot } from 'valtio';
+import { state } from '@/state/sender';
 import type { ContextItem } from '@/types/context';
 import { UIMessageType } from '@/types/message';
+import { useChat } from './useChat';
+
+interface UIMessageWithPlan extends UIMessage {
+  planContent?: string;
+}
 
 type ChatState = ReturnType<typeof useChat> & {
   loading: boolean;
@@ -27,6 +33,7 @@ export const useChatState = () => {
 };
 
 const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+  const { mode } = useSnapshot(state);
   const chatState = useChat({
     api: '/api/chat/completions',
     sendExtraMessageFields: true,
@@ -34,14 +41,17 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
       const lastMessage = findLast(
         body.messages,
         (message) => message.role === 'user',
-      );
+      ) as UIMessageWithPlan;
+
       if (lastMessage) {
         body.messages = [lastMessage];
       }
-      return body;
-    },
-    body: {
-      model: 'takumi',
+
+      return {
+        messages: body.messages,
+        mode,
+        ...(body.requestBody || {}),
+      };
     },
     onError(error) {
       console.error('Error:', error);
