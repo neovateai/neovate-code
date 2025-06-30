@@ -191,5 +191,10 @@
       "copyModifiedCode": "Copy Modified Code",
       "showBlockActions": "Show diff block actions"
     }
+  },
+  "editRender": {
+    "loading": "Loading...",
+    "error": "Error",
+    "preparingDiff": "Preparing diff..."
   }
 }

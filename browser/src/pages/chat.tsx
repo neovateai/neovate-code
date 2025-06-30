@@ -56,6 +56,7 @@ const Chat: React.FC = () => {
         icon: <UserOutlined />,
         style: { background: '#87d068' },
       },
+      variant: 'outlined',
       messageRender(message) {
         return <UserMessage message={message} />;
       },

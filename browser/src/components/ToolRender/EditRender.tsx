@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio/react';
 import { fileChangesActions, fileChangesState } from '@/state/fileChanges';
 import type { ToolMessage } from '@/types/message';
 import CodeDiffOutline from '../CodeDiffOutline';
 
 export default function EditRender({ message }: { message?: ToolMessage }) {
+  const { t } = useTranslation();
   if (!message) {
     return null;
   }
@@ -15,7 +17,6 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
     new_string: string;
   };
 
-  // Register this specific edit with the global state manager.
   useEffect(() => {
     fileChangesActions.registerEdit(file_path, {
       toolCallId,
@@ -32,16 +33,19 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
   };
 
   if (fileState?.isLoading) {
-    return <div>Loading file content...</div>;
+    return <div>{t('editRender.loading')}</div>;
   }
 
   if (fileState?.error) {
-    return <div>Error: {fileState.error}</div>;
+    return (
+      <div>
+        {t('editRender.error')}: {fileState.error}
+      </div>
+    );
   }
 
-  // Ensure we have both original and final content to display the diff.
   if (!fileState || !fileState.originalContent || !fileState.finalContent) {
-    return <div>Preparing diff...</div>;
+    return <div>{t('editRender.preparingDiff')}</div>;
   }
 
   return (
