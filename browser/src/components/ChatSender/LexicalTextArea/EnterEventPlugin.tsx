@@ -4,7 +4,7 @@ import {
   INSERT_PARAGRAPH_COMMAND,
   KEY_ENTER_COMMAND,
 } from 'lexical';
-import { useEffect } from 'react';
+import { memo, useEffect } from 'react';
 
 interface Props {
   onEnterPress?: (e: KeyboardEvent) => void;
@@ -50,4 +50,4 @@ const EnterEventPlugin = (props: Props) => {
   return null;
 };
 
-export default EnterEventPlugin;
+export default memo(EnterEventPlugin);

@@ -6,7 +6,7 @@ import {
   type LexicalNode,
   TextNode,
 } from 'lexical';
-import { useContext, useEffect, useRef } from 'react';
+import { memo, useContext, useEffect, useRef } from 'react';
 import type { AiContextCacheNode, AppendedLexicalNode } from '@/types/context';
 import { LexicalTextAreaContext } from '../LexicalTextAreaContext';
 import { $createAiContextNode } from './AiContextNode';
@@ -242,4 +242,4 @@ const RenderValuePlugin = (props: Props) => {
   return null;
 };
 
-export default RenderValuePlugin;
+export default memo(RenderValuePlugin);
