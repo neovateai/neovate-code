@@ -1,3 +1,12 @@
+## 0.1.7
+
+`2025-06-30`
+
+- refactor: history items to structured message format; update Gemini Pro model by [@sorrycc](https://github.com/sorrycc)
+- feat(browser): takumi settings page by [@YK菌](https://github.com/YK菌) in [#75](https://github.com/umijs/takumi/pull/75)
+- feat(browser): add plan mode to enhance task management functionality by [@阿平](https://github.com/阿平) in [#77](https://github.com/umijs/takumi/pull/77)
+
+
 ## 0.1.6
 
 `2025-06-30`
