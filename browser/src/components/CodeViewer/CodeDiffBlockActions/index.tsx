@@ -37,7 +37,7 @@ const CodeDiffBlockActions = (props: Props) => {
   const hasModifiedCode = diffBlockStat.modifiedEndLineNumber > 0;
 
   return (
-    <div className={styles.container || ''}>
+    <div className={styles.container}>
       {hasModifiedCode && (
         <Tooltip title={t('codeViewer.toolButton.copyModifiedCode')}>
           <Button
