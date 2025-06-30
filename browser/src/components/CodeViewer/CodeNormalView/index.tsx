@@ -18,6 +18,7 @@ import NormalToolbar from '../NormalToolbar';
 interface Props {
   item: CodeNormalViewerTabItem;
   height?: number;
+  hideToolbar?: boolean;
 }
 
 export interface CodeNormalViewRef {
@@ -49,7 +50,7 @@ const useStyle = createStyles(
 );
 
 const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
-  const { item, height } = props;
+  const { item, height, hideToolbar } = props;
 
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>(null);
   const decorationsCollection =
@@ -109,7 +110,7 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
 
   return (
     <div className={styles.container}>
-      <NormalToolbar normalMetaInfo={metaInfo} item={item} />
+      {!hideToolbar && <NormalToolbar normalMetaInfo={metaInfo} item={item} />}
       <Editor
         className={styles.editor}
         language={item.language}

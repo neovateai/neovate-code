@@ -9,13 +9,15 @@ import { createStyles } from 'antd-style';
 import { useTranslation } from 'react-i18next';
 import DiffStatBlocks from '@/components/CodeViewer/DiffStatBlocks';
 import DevFileIcon from '@/components/DevFileIcon';
-import type { DiffStat } from '@/types/codeViewer';
+import type { CodeNormalViewerMode, DiffStat } from '@/types/codeViewer';
 
 interface Props {
   hasDiff?: boolean;
   diffStat?: DiffStat;
   path: string;
   changed?: boolean;
+  rollbacked?: boolean;
+  normalViewMode?: CodeNormalViewerMode;
   onAcceptAll?: () => void;
   onRejectAll?: () => void;
   onRollback?: () => void;
@@ -65,6 +67,7 @@ const useStyles = createStyles(({ css, token }) => {
     itemLeftDiffStat: css`
       display: flex;
       align-items: center;
+      column-gap: 8px;
     `,
   };
 });
@@ -75,6 +78,8 @@ const CodeDiffOutlineHeader = (props: Props) => {
     diffStat,
     path,
     changed,
+    rollbacked,
+    normalViewMode,
     onAcceptAll,
     onExpand,
     onRejectAll,
@@ -85,25 +90,58 @@ const CodeDiffOutlineHeader = (props: Props) => {
 
   const { t } = useTranslation();
 
+  function renderAddLines(diffStat?: DiffStat) {
+    return (
+      diffStat?.addLines &&
+      diffStat.addLines > 0 && (
+        <span className={styles.add}>
+          +{diffStat.addLines.toLocaleString()}
+        </span>
+      )
+    );
+  }
+
+  function renderRemoveLines(diffStat?: DiffStat) {
+    return (
+      diffStat?.removeLines &&
+      diffStat.removeLines > 0 && (
+        <span className={styles.remove}>
+          -{diffStat.removeLines.toLocaleString()}
+        </span>
+      )
+    );
+  }
+
   return (
     <div className={styles.header}>
       <div className={styles.headerLeft}>
         <DevFileIcon size={16} fileExt={path.split('.').pop() || ''} />
         <div className={styles.plainText}>{path}</div>
         {hasDiff && (
-          <div className={styles.itemLeftDiffStat}>
-            {diffStat?.addLines && diffStat.addLines > 0 && (
-              <span className={styles.add}>
-                +{diffStat.addLines.toLocaleString()}
-              </span>
+          <>
+            {normalViewMode ? (
+              <div className={styles.itemLeftDiffStat}>
+                {normalViewMode === 'new' && (
+                  <>
+                    <span className={styles.add}>(new)</span>
+                    {renderAddLines(diffStat)}
+                  </>
+                )}
+                {normalViewMode === 'deleted' && (
+                  <>
+                    <span className={styles.remove}>(deleted)</span>
+                    {renderRemoveLines(diffStat)}
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className={styles.itemLeftDiffStat}>
+                {renderAddLines(diffStat)}
+                {renderRemoveLines(diffStat)}
+                <DiffStatBlocks diffStat={diffStat} />
+              </div>
             )}
-            {diffStat?.removeLines && diffStat.removeLines > 0 && (
-              <span className={styles.remove}>
-                -{diffStat.removeLines.toLocaleString()}
-              </span>
-            )}
-            <DiffStatBlocks diffStat={diffStat} />
-          </div>
+          </>
         )}
       </div>
       <div className={styles.headerRight}>
@@ -118,27 +156,31 @@ const CodeDiffOutlineHeader = (props: Props) => {
         )}
         {hasDiff && (
           <>
-            <Button
-              type="primary"
-              icon={<CloseOutlined />}
-              danger
-              onClick={(e) => {
-                e.stopPropagation();
-                onRejectAll?.();
-              }}
-            >
-              {t('codeViewer.toolButton.rejectAll')}
-            </Button>
-            <Button
-              type="primary"
-              icon={<CheckOutlined />}
-              onClick={(e) => {
-                e.stopPropagation();
-                onAcceptAll?.();
-              }}
-            >
-              {t('codeViewer.toolButton.acceptAll')}
-            </Button>
+            {!rollbacked && (
+              <>
+                <Button
+                  type="primary"
+                  icon={<CloseOutlined />}
+                  danger
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRejectAll?.();
+                  }}
+                >
+                  {t('codeViewer.toolButton.rejectAll')}
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<CheckOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAcceptAll?.();
+                  }}
+                >
+                  {t('codeViewer.toolButton.acceptAll')}
+                </Button>
+              </>
+            )}
             <Button
               type="text"
               shape="circle"

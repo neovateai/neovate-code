@@ -171,11 +171,6 @@ const Welcome = () => {
           className={styles.chatPrompt}
         />
       </Flex>
-      <CodeDiffOutline
-        path="/index.tsx"
-        modifiedCode={`asd
-        sdsdd`}
-      />
     </Space>
   );
 };

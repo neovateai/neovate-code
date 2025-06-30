@@ -89,6 +89,7 @@ const CodeDiffOutline = (props: Props) => {
   } = props;
 
   const [changed, setChanged] = useState(false);
+  const [rollbacked, setRollbacked] = useState(false);
 
   const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
 
@@ -244,6 +245,7 @@ const CodeDiffOutline = (props: Props) => {
 
   const handleRollback = () => {
     setChanged(false);
+    setRollbacked(true);
     onChangeCode?.(initailCodes.originalCode, currentCodes.originalCode);
     setCurrentCodes(initailCodes);
     if (codeViewerVisible) {
@@ -285,6 +287,10 @@ const CodeDiffOutline = (props: Props) => {
         hasDiff={hasDiff}
         changed={changed}
         path={path}
+        rollbacked={rollbacked}
+        normalViewMode={
+          isNewFile ? 'new' : isDeletedFile ? 'deleted' : undefined
+        }
         onAcceptAll={handleAcceptAll}
         onRejectAll={handleRejectAll}
         onRollback={handleRollback}
@@ -294,6 +300,7 @@ const CodeDiffOutline = (props: Props) => {
       <div className={styles.innerContainer}>
         {isNormalView ? (
           <CodeNormalView
+            hideToolbar
             height={300}
             item={{
               path,
