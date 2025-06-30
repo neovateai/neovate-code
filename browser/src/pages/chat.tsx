@@ -26,6 +26,10 @@ const useStyle = createStyles(({ token, css }) => {
     chatList: css`
       flex: 1;
       overflow: auto;
+
+      .ant-bubble-footer {
+        width: 100%;
+      }
     `,
   };
 });

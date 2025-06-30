@@ -77,7 +77,8 @@
     "approve": "批准计划",
     "reject": "拒绝计划",
     "confirmApprove": "确认要批准并执行此计划吗？",
-    "confirmReject": "确认要拒绝此计划吗？"
+    "confirmReject": "确认要拒绝此计划吗？",
+    "confirmMessage": "我已确认以上计划，请继续执行"
   },
   "tool": {
     "status": {

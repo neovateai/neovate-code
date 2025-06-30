@@ -77,7 +77,8 @@
     "approve": "Approve Plan",
     "reject": "Reject Plan",
     "confirmApprove": "Are you sure you want to approve and execute this plan?",
-    "confirmReject": "Are you sure you want to reject this plan?"
+    "confirmReject": "Are you sure you want to reject this plan?",
+    "confirmMessage": "I have confirmed the above plan, please proceed with execution"
   },
   "tool": {
     "status": {

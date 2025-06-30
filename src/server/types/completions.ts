@@ -42,6 +42,7 @@ export interface UserMessage extends Message {
    * Original content input by the user, including context markers
    */
   contextContent: string;
+  planContent?: string;
 }
 
 export interface CompletionRequest {
@@ -50,7 +51,6 @@ export interface CompletionRequest {
    * The mode of the completion, can be 'agent', 'ask', 'plan'
    */
   mode: string;
-  planMessage?: UserMessage;
 }
 
 export interface CompletionTextContent {

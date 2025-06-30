@@ -7,6 +7,10 @@ import type { ContextItem } from '@/types/context';
 import { UIMessageType } from '@/types/message';
 import { useChat } from './useChat';
 
+interface UIMessageWithPlan extends UIMessage {
+  planContent?: string;
+}
+
 type ChatState = ReturnType<typeof useChat> & {
   loading: boolean;
   onQuery: (opts: {
@@ -37,7 +41,7 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
       const lastMessage = findLast(
         body.messages,
         (message) => message.role === 'user',
-      );
+      ) as UIMessageWithPlan;
 
       if (lastMessage) {
         body.messages = [lastMessage];

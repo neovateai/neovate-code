@@ -20,6 +20,7 @@ import {
 } from '@ai-sdk/ui-utils';
 import { throttle } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
 import { useStableValue } from './useStableValue';
 
@@ -114,9 +115,7 @@ export type UseChatHelpers = {
   /** The id of the chat */
   id: string;
 
-  approvePlan: (
-    planMessage: Message | CreateMessage,
-  ) => Promise<string | null | undefined>;
+  approvePlan: (planMessage: UIMessage) => Promise<string | null | undefined>;
 };
 
 export function useChat({
@@ -182,6 +181,8 @@ By default, it's set to 1, which means that only a single LLM call is made.
     result: any;
   }) => void;
 } {
+  const { t } = useTranslation();
+
   // Generate ID once, store in state for stability across re-renders
   const [hookId] = useState(generateId);
 
@@ -592,11 +593,22 @@ By default, it's set to 1, which means that only a single LLM call is made.
   );
 
   const approvePlan = useCallback(
-    async (planMessage: Message | CreateMessage) => {
+    async (planMessage: UIMessage) => {
+      // \n I have confirmed the above plan, please proceed with execution
       const messages = messagesRef.current;
-      return triggerRequest({ messages, body: { mode: 'agent', planMessage } });
+      const confirmMessage = t('plan.confirmMessage');
+
+      messages.push({
+        id: generateId(),
+        createdAt: new Date(),
+        role: 'user',
+        content: `🎉 ${confirmMessage}`,
+        planContent: `${planMessage.content}\n I have confirmed the above plan, please proceed with execution`,
+        parts: [{ type: 'text', text: planMessage.content }],
+      } as unknown as UIMessage);
+      return triggerRequest({ messages, body: { mode: 'agent' } });
     },
-    [triggerRequest],
+    [triggerRequest, t],
   );
 
   return {

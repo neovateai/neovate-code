@@ -33,36 +33,34 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({ message }) => {
       lastMessage.mode === 'plan'
     ) {
       return (
-        <div className="flex justify-between items-center py-3 px-1 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100 shadow-sm">
-          <div className="flex-1 mr-4">
+        <div className="w-full p-2 border-t border-gray-100 bg-gray-50/50">
+          <Flex justify="space-between" align="center" className="w-full">
             <Text
               type="secondary"
-              className="text-xs leading-relaxed text-gray-600"
+              className="text-sm text-gray-600 flex-1 mr-4"
             >
               {t('plan.approveDescription')}
             </Text>
-          </div>
-          <div className="flex-shrink-0">
             <Button
               type="primary"
-              size="small"
+              size="middle"
               icon={<CheckOutlined />}
+              className="shrink-0"
               onClick={async () => {
                 actions.updateMode('agent');
                 approvePlan(message as any);
               }}
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 border-0 shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
             >
               {t('plan.approve')}
             </Button>
-          </div>
+          </Flex>
         </div>
       );
     }
   }
 
   return (
-    <Flex>
+    <Flex className="p-2">
       <Button type="text" size="small" icon={<ReloadOutlined />} />
       <Button type="text" size="small" icon={<CopyOutlined />} />
       <Button type="text" size="small" icon={<LikeOutlined />} />

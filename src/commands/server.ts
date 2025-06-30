@@ -96,9 +96,8 @@ export async function runBrowser(opts: RunCliOpts) {
 
     logger.logGeneralInfo({
       infos: {
-        log: traceFile.replace(homedir(), '~'),
-        workspace: cwd.replace(homedir(), '~'),
-        model: argv.model,
+        'Log File': traceFile.replace(homedir(), '~'),
+        ...context.generalInfo,
       },
     });
 
