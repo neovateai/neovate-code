@@ -131,12 +131,14 @@ const Sider = () => {
 
       <div className={styles.siderFooter}>
         <Avatar size={24} />
-        <Button
-          type="text"
-          icon={<SettingOutlined />}
-          onClick={() => navigate({ to: '/settings' })}
-        />
-        <Button type="text" icon={<QuestionCircleOutlined />} />
+        <div className={styles.siderFooterRight}>
+          <Button
+            type="text"
+            icon={<SettingOutlined />}
+            onClick={() => navigate({ to: '/settings' })}
+          />
+          <Button type="text" icon={<QuestionCircleOutlined />} />
+        </div>
       </div>
     </div>
   );
