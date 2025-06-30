@@ -143,10 +143,12 @@ const CodeDiffOutlineHeader = (props: Props) => {
             )}
           </>
         )}
+        {rollbacked && <CloseOutlined className={styles.remove} />}
       </div>
       <div className={styles.headerRight}>
         {changed && (
           <Button
+            type="text"
             icon={<RollbackOutlined />}
             onClick={(e) => {
               e.stopPropagation();
@@ -154,41 +156,37 @@ const CodeDiffOutlineHeader = (props: Props) => {
             }}
           />
         )}
-        {hasDiff && (
+        {hasDiff && !rollbacked && (
           <>
-            {!rollbacked && (
-              <>
-                <Button
-                  type="primary"
-                  icon={<CloseOutlined />}
-                  danger
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRejectAll?.();
-                  }}
-                >
-                  {t('codeViewer.toolButton.rejectAll')}
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<CheckOutlined />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAcceptAll?.();
-                  }}
-                >
-                  {t('codeViewer.toolButton.acceptAll')}
-                </Button>
-              </>
-            )}
             <Button
-              type="text"
-              shape="circle"
-              onClick={onExpand}
-              icon={<ExpandAltOutlined />}
-            />
+              type="primary"
+              icon={<CloseOutlined />}
+              danger
+              onClick={(e) => {
+                e.stopPropagation();
+                onRejectAll?.();
+              }}
+            >
+              {t('codeViewer.toolButton.rejectAll')}
+            </Button>
+            <Button
+              type="primary"
+              icon={<CheckOutlined />}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAcceptAll?.();
+              }}
+            >
+              {t('codeViewer.toolButton.acceptAll')}
+            </Button>
           </>
         )}
+        <Button
+          type="text"
+          shape="circle"
+          onClick={onExpand}
+          icon={<ExpandAltOutlined />}
+        />
       </div>
     </div>
   );
