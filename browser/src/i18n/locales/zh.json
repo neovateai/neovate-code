@@ -57,7 +57,8 @@
     "files": "文件",
     "selection": "选择",
     "terminal": "终端",
-    "git": "Git"
+    "git": "Git",
+    "usedReferences": "已使用 {{count}} 个引用"
   },
   "menu": {
     "rename": "重命名",

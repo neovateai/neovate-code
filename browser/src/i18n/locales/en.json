@@ -57,7 +57,8 @@
     "files": "Files",
     "selection": "Selection",
     "terminal": "Terminal",
-    "git": "Git"
+    "git": "Git",
+    "usedReferences": "Used {{count}} references"
   },
   "menu": {
     "rename": "Rename",

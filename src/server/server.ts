@@ -145,6 +145,7 @@ export async function runBrowserServer(opts: RunBrowserServerOpts) {
 export async function createServer(opts: CreateServerOpts) {
   const app: FastifyInstance = fastify({
     logger: opts.logLevel ? { level: opts.logLevel } : false,
+    bodyLimit: 100 * 1024 * 1024, // 100MB limit for handling large images and files
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   const port = await portfinder.getPortPromise({
