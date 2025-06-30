@@ -1,7 +1,6 @@
 import { CopyOutlined } from '@ant-design/icons';
 import { Button, Divider, message } from 'antd';
 import { createStyles } from 'antd-style';
-import { filesize } from 'filesize';
 import { useTranslation } from 'react-i18next';
 import { useClipboard } from '@/hooks/useClipboard';
 import type {
@@ -54,8 +53,6 @@ const NormalToolbar = (props: Props) => {
       {contextHolder}
       <div className={styles.toolbar}>
         <div className={styles.metaInfo}>
-          <div>{filesize(normalMetaInfo.size)}</div>
-          <Divider type="vertical" dashed />
           <div>
             {normalMetaInfo.lineCount} {t('codeViewer.lineCount')}
           </div>

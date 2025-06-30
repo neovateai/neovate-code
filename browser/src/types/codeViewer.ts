@@ -41,7 +41,6 @@ export interface DiffStat {
 }
 
 export interface CodeNormalViewerMetaInfo {
-  size: number;
   lineCount: number;
   charCount: number;
 }

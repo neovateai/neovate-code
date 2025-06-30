@@ -37,7 +37,6 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
   const [metaInfo, setMetaInfo] = useState<CodeNormalViewerMetaInfo>({
     lineCount: 0,
     charCount: 0,
-    size: 0,
   });
   const { styles } = useStyle();
 
@@ -65,7 +64,6 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
           setMetaInfo({
             lineCount: editor.getModel()?.getLineCount() || 0,
             charCount: item.code.length,
-            size: new Blob([item.code]).size,
           });
         }}
         beforeMount={(monaco) => {

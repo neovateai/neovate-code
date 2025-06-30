@@ -38,8 +38,7 @@
     "swr": "^2.3.3",
     "valtio": "^2.1.5",
     "@monaco-editor/react": "^4.7.0",
-    "monaco-editor": "^0.52.2",
-    "filesize": "^10.1.6"
+    "monaco-editor": "^0.52.2"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.10",
