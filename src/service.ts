@@ -202,7 +202,7 @@ export class Service {
         type: PluginHookType.Series,
       });
 
-      const history = result.history;
+      const history: AgentInputItem[] = result.history;
       const toolUse = parsed.find((item) => item.type === 'tool_use');
       if (toolUse) {
         const callId = crypto.randomUUID();
@@ -215,11 +215,21 @@ export class Service {
           }) + '\n',
         );
         history.push({
-          type: 'function_call',
-          name: toolUse.name,
-          arguments: JSON.stringify(toolUse.params),
-          callId,
-        } as FunctionCallItem);
+          role: 'assistant',
+          type: 'message',
+          content: [
+            {
+              type: 'output_text',
+              text: JSON.stringify({
+                type: 'function_call',
+                name: toolUse.name,
+                arguments: JSON.stringify(toolUse.params),
+                callId,
+              }),
+            },
+          ],
+          status: 'in_progress',
+        });
       }
       stream.push(null);
       this.history = history;
@@ -260,14 +270,21 @@ export class Service {
     });
 
     this.history.push({
-      type: 'function_call_result',
-      name,
-      output: {
-        type: 'text',
-        text: typeof result === 'string' ? result : JSON.stringify(result),
-      },
+      role: 'assistant',
+      type: 'message',
+      content: [
+        {
+          type: 'output_text',
+          text: JSON.stringify({
+            type: 'function_call_result',
+            name,
+            result:
+              typeof result === 'string' ? result : JSON.stringify(params),
+            callId,
+          }),
+        },
+      ],
       status: 'completed',
-      callId,
     });
     return result;
   }
