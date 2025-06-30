@@ -9,12 +9,16 @@ import { Bubble } from '@ant-design/x';
 import { createFileRoute } from '@tanstack/react-router';
 import { Button, type GetProp, Spin } from 'antd';
 import { createStyles } from 'antd-style';
+import cx from 'classnames';
+import { useSnapshot } from 'valtio';
 import AssistantAvatar from '@/components/AssistantAvatar';
 import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
+import CodeViewer from '@/components/CodeViewer';
 import { UserMessage, UserMessageFooter } from '@/components/UserMessage';
 import Welcome from '@/components/Welcome';
 import ChatProvider, { useChatState } from '@/hooks/provider';
+import * as codeViewer from '@/state/codeViewer';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
@@ -32,12 +36,22 @@ const useStyle = createStyles(({ token, css }) => {
       flex: 1;
       overflow: auto;
     `,
+    codeViewerContainer: css`
+      height: 100vh;
+      width: 0;
+      overflow: hidden;
+      transition: width 0.3s ease-in-out;
+    `,
+    codeViewerContainerVisible: css`
+      width: 40vw;
+    `,
   };
 });
 
 const Chat: React.FC = () => {
   const { styles } = useStyle();
   const { messages, status } = useChatState();
+  const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
 
   const items = messages?.map((i, index) => {
     return {
@@ -91,23 +105,33 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <div className={styles.chat}>
-      <div className={styles.chatList}>
-        {items?.length ? (
-          <Bubble.List
-            items={items}
-            style={{
-              height: '100%',
-              paddingInline: 'calc(calc(100% - 700px) /2)',
-            }}
-            roles={roles}
-          />
-        ) : (
-          <Welcome />
-        )}
+    <>
+      <div className={styles.chat}>
+        <div className={styles.chatList}>
+          {items?.length ? (
+            <Bubble.List
+              items={items}
+              style={{
+                height: '100%',
+                paddingInline: 'calc(calc(100% - 700px) /2)',
+              }}
+              roles={roles}
+            />
+          ) : (
+            <Welcome />
+          )}
+        </div>
+        <ChatSender />
       </div>
-      <ChatSender />
-    </div>
+      <div
+        className={cx(
+          styles.codeViewerContainer,
+          codeViewerVisible && styles.codeViewerContainerVisible,
+        )}
+      >
+        <CodeViewer />
+      </div>
+    </>
   );
 };
 
