@@ -1,45 +1,36 @@
-# Takumi - Your AI Coding Assistant
+# Takumi - AI 编程助手
 
-[![npm version](https://badgen.net/npm/v/takumi)](https://www.npmjs.com/package/takumi)
-[![npm downloads](https://badgen.net/npm/dm/takumi)](https://www.npmjs.com/package/takumi)
-[![CI Status](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml)
-[![MIT License](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
+[![npm 版本](https://badgen.net/npm/v/takumi)](https://www.npmjs.com/package/takumi)
+[![npm 下载量](https://badgen.net/npm/dm/takumi)](https://www.npmjs.com/package/takumi)
+[![CI 状态](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml)
+[![MIT 许可证](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
 
-Pronounced `/tɑːˈkuːmi/`, Takumi is an AI-powered coding assistant that enhances your development workflow by automating repetitive tasks and providing intelligent code suggestions.
+发音为 `/tɑːˈkuːmi/`，Takumi 是一个能自动化开发任务并提供智能建议的 AI 编程助手。
 
-![Takumi Demo](https://cdn.jsdelivr.net/gh/sorrycc-bot/image-2025-04@main/uPic/takumi-20250618-1.gif)
+![Takumi 演示](https://cdn.jsdelivr.net/gh/sorrycc-bot/image-2025-04@main/uPic/takumi-20250618-1.gif)
 
-## Features
+## 功能特性
 
-- AI-powered code generation and optimization
-- Context-aware suggestions
-- Support for multiple LLM providers
-- Seamless integration with your development workflow
+- 代码生成与优化
+- 上下文感知建议
+- 支持多 LLM 提供商
+- 集成 IDE 工作流
 
-## Quick Start
+## 快速开始
 
-Prerequisites: Node.js 18+
+环境要求: Node.js 18+
 
-1. Install globally:
 ```bash
 npm install -g takumi
-```
-
-2. Configure API key (choose one):
-```bash
-export OPENAI_API_KEY="your-key"  # or other supported providers
-```
-
-3. Start using:
-```bash
+export OPENAI_API_KEY="您的密钥"  # 或其他提供商
 takumi
-> help  # explore available commands
+> help  # 查看命令
 ```
 
-## Advanced Configuration
+## 高级配置
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup and advanced usage.
+详见 [CONTRIBUTING.md](./CONTRIBUTING.md) 中的设置说明。
 
-## License
+## 许可证
 
 MIT
