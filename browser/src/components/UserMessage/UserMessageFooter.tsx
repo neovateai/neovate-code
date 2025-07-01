@@ -41,24 +41,21 @@ const UserMessageFooter = memo<UserMessageFooterProps>((props) => {
   const { styles } = useStyle();
   const { t } = useTranslation();
 
-  const { attachedContexts } = message;
+  const { attachedContexts = [] } = message;
 
   const handleToggleDetails = useCallback(() => {
     setShowDetails((prev) => !prev);
   }, []);
 
   const contextTags = useMemo(() => {
-    return (
-      attachedContexts?.map((contextItem) => renderContextTag(contextItem)) ||
-      null
-    );
+    return attachedContexts.map((contextItem) => renderContextTag(contextItem));
   }, [attachedContexts]);
 
   const buttonText = useMemo(() => {
     return t('context.usedReferences', { count: attachedContexts.length });
-  }, [attachedContexts?.length, t]);
+  }, [attachedContexts.length, t]);
 
-  if (attachedContexts?.length === 0) {
+  if (attachedContexts.length === 0) {
     return null;
   }
 
