@@ -29,56 +29,54 @@ interface Props {
   onChangeCode?: (newCode: string, oldCode: string) => void;
 }
 
-const useStyles = createStyles(({ css }) => {
-  return {
-    container: css`
-      min-width: 200px;
-      border-radius: 8px;
-      padding: 8px;
+const useStyles = createStyles(
+  ({ css }, { isExpanded }: { isExpanded?: boolean }) => {
+    return {
+      root: css`
+        background-color: #f3f4f6; /* bg-gray-100 */
+        border-radius: 8px; /* rounded-md */
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
+        margin: 8px 0; /* my-2 */
+      `,
+      collapseWrapper: css`
+        overflow: hidden;
+        transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        max-height: ${isExpanded ? '500px' : '0'};
+      `,
+      innerContainer: css`
+        width: 100%;
+        border-radius: 8px;
+        padding: 4px;
+        background-color: #f9f9f9;
+      `,
+      item: css`
+        padding: 8px 4px;
+        margin: 4px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 4px;
 
-      user-select: none;
-
-      background-color: #eee;
-
-      display: flex;
-      flex-direction: column;
-    `,
-    innerContainer: css`
-      width: 100%;
-
-      border-radius: 8px;
-      padding: 4px;
-      background-color: #f9f9f9;
-    `,
-
-    item: css`
-      padding: 8px 4px;
-      margin: 4px 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-radius: 4px;
-
-      &:hover {
-        background-color: #eee;
-      }
-    `,
-    itemLeft: css`
-      display: flex;
-      align-items: center;
-      column-gap: 8px;
-    `,
-
-    itemRight: css`
-      display: flex;
-      align-items: center;
-      column-gap: 8px;
-    `,
-    itemDivider: css`
-      margin: 0;
-    `,
-  };
-});
+        &:hover {
+          background-color: #eee;
+        }
+      `,
+      itemLeft: css`
+        display: flex;
+        align-items: center;
+        column-gap: 8px;
+      `,
+      itemRight: css`
+        display: flex;
+        align-items: center;
+        column-gap: 8px;
+      `,
+      itemDivider: css`
+        margin: 0;
+      `,
+    };
+  },
+);
 
 const CodeDiffOutline = (props: Props) => {
   const {
@@ -142,7 +140,7 @@ const CodeDiffOutline = (props: Props) => {
     [diffStat],
   );
 
-  const { styles } = useStyles();
+  const { styles } = useStyles({ isExpanded });
 
   const handleAccept = (diffBlockStat: DiffBlockStat) => {
     setChanged('accept');
@@ -287,7 +285,7 @@ const CodeDiffOutline = (props: Props) => {
   };
 
   return (
-    <div className="bg-gray-100 rounded-md shadow-sm my-2">
+    <div className={styles.root}>
       <CodeDiffOutlineHeader
         diffStat={diffStat}
         hasDiff={hasDiff}
@@ -305,11 +303,7 @@ const CodeDiffOutline = (props: Props) => {
         onToggleExpand={() => setIsExpanded(!isExpanded)}
       />
 
-      <div
-        className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${
-          isExpanded ? 'max-h-[500px]' : 'max-h-0'
-        }`}
-      >
+      <div className={styles.collapseWrapper}>
         <div className={styles.innerContainer}>
           {isNormalView ? (
             <CodeNormalView
