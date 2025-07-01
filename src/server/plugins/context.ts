@@ -11,9 +11,11 @@ export const contextPlugin: Plugin = {
   name: 'browser-context-plugin',
   serverRouteCompletions({ attachedContexts = [] }) {
     debug('serverRouteCompletions', attachedContexts);
-    files = attachedContexts
-      .filter((c) => c.type === ContextType.FILE)
-      .map((c) => c.context.path);
+    if (attachedContexts.length > 0) {
+      files = attachedContexts
+        .filter((c) => c.type === ContextType.FILE)
+        .map((c) => c.context.path);
+    }
   },
 
   async context() {

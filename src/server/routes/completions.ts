@@ -51,7 +51,7 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
         args: [
           {
             message: lastMessage,
-            attachedContexts: lastMessage.attachedContexts,
+            attachedContexts: lastMessage.attachedContexts || [],
           },
         ],
         type: PluginHookType.Series,
@@ -74,7 +74,7 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
               dataStream,
               mode,
               // files are processed through context in plugins, only handling other types here
-              attachedContexts: lastMessage.attachedContexts.filter(
+              attachedContexts: (lastMessage.attachedContexts || []).filter(
                 (context) => context.type !== ContextType.FILE,
               ),
             });

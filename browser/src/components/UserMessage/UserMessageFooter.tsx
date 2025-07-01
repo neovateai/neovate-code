@@ -41,7 +41,7 @@ const UserMessageFooter = memo<UserMessageFooterProps>((props) => {
   const { styles } = useStyle();
   const { t } = useTranslation();
 
-  const { attachedContexts } = message;
+  const { attachedContexts = [] } = message;
 
   const handleToggleDetails = useCallback(() => {
     setShowDetails((prev) => !prev);
