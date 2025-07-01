@@ -18,7 +18,11 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
   };
 
   useEffect(() => {
-    fileChangesActions.registerEdit(file_path, {
+    // 创建或获取文件状态单例
+    fileChangesActions.createOrGetFile(file_path);
+
+    // 计算finalContent
+    fileChangesActions.addEdit(file_path, {
       toolCallId,
       old_string,
       new_string,
@@ -29,6 +33,7 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
   const fileState = snap.files[file_path];
 
   const handleChangeCode = async (newCode: string) => {
+    // 使用新的 actions 来更新文件内容
     await fileChangesActions.updateFileContent(file_path, newCode);
   };
 
@@ -44,15 +49,12 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
     );
   }
 
-  if (!fileState || !fileState.originalContent || !fileState.finalContent) {
-    return <div>{t('editRender.preparingDiff')}</div>;
-  }
-
+  // 直接传递 old_string, new_string 和 file_path 给 CodeDiffOutline
   return (
     <CodeDiffOutline
       path={file_path}
-      originalCode={fileState.originalContent}
-      modifiedCode={fileState.finalContent}
+      originalCode={old_string}
+      modifiedCode={new_string}
       onChangeCode={handleChangeCode}
     />
   );
