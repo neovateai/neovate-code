@@ -61,8 +61,21 @@ export const fileChangesActions = {
     fileChangesState.files[path] = nextFileState;
 
     const originalCode = nextFileState.content;
-    const modifiedCode = (await readFile(path)).data.content;
+    const modifiedCode = fileChangesActions.getFinalContent(path) || '';
+    fileChangesActions.updateCodeViewerState(
+      path,
+      originalCode,
+      modifiedCode,
+      mode,
+    );
+  },
 
+  updateCodeViewerState: async (
+    path: string,
+    originalCode: string,
+    modifiedCode: string,
+    mode?: CodeNormalViewerMode,
+  ) => {
     if (mode) {
       codeViewer.actions.updateNormalViewerConfig({
         code: mode === 'new' ? modifiedCode : originalCode,

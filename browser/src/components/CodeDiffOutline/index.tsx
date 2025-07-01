@@ -89,13 +89,16 @@ const CodeDiffOutline = (props: Props) => {
       return;
     }
     const oldContent = file.content;
-    const newContent = oldString
-      ? oldContent.replace(oldString, newString || '')
-      : oldContent;
+    const newContent =
+      editStatus === 'reject'
+        ? oldContent
+        : oldString
+          ? oldContent.replace(oldString, newString || '')
+          : oldContent;
 
     setCode({ oldContent, newContent });
     diff(oldContent, newContent).then((d) => setDiffStat(d));
-  }, [file]);
+  }, [file, edit]);
 
   const isNormalView = !!normalViewerMode;
   const isNewFile = normalViewerMode === 'new';
@@ -127,24 +130,42 @@ const CodeDiffOutline = (props: Props) => {
       },
       normalViewerMode,
     );
+    fileChanges.fileChangesActions.writeFileContent(path, code.newContent);
   };
 
   const handleReject = () => {
-    fileChanges.fileChangesActions.updateFileState(path, (prevState) => {
-      const nextEdit: fileChanges.FileEdit = {
-        ...edit,
-        editStatus: 'reject',
-      };
-      return {
-        ...prevState,
-        content: code.oldContent,
-        edits: prevState.edits.map((edit) =>
-          edit.toolCallId === nextEdit.toolCallId ? nextEdit : edit,
-        ),
-      };
-    }),
-      normalViewerMode;
+    fileChanges.fileChangesActions.updateFileState(
+      path,
+      (prevState) => {
+        const nextEdit: fileChanges.FileEdit = {
+          ...edit,
+          editStatus: 'reject',
+        };
+        return {
+          ...prevState,
+          content: code.oldContent,
+          edits: prevState.edits.map((edit) =>
+            edit.toolCallId === nextEdit.toolCallId ? nextEdit : edit,
+          ),
+        };
+      },
+      normalViewerMode,
+    );
+    fileChanges.fileChangesActions.writeFileContent(path, code.oldContent);
   };
+
+  useEffect(() => {
+    const originalCode = file.content;
+    const modifiedCode =
+      fileChanges.fileChangesActions.getFinalContent(path) || '';
+
+    fileChanges.fileChangesActions.updateCodeViewerState(
+      path,
+      originalCode,
+      modifiedCode,
+      normalViewerMode,
+    );
+  }, []);
 
   return (
     <div className={styles.root}>
