@@ -45,3 +45,7 @@ Tools are categorized for approval logic:
 - **Write tools** (write, edit): Medium risk, require approval in default mode  
 - **Command tools** (bash): High risk, require approval in default and autoEdit modes
 - **Network tools** (fetch): Medium risk, configurable approval
+
+## IMPORTANT
+
+Ignore `browser` directory unless user ask you to include it.
