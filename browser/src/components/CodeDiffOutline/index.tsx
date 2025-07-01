@@ -96,6 +96,16 @@ const CodeDiffOutline = (props: Props) => {
           ? oldContent.replace(oldString, newString || '')
           : oldContent;
 
+    const newGlobalContent =
+      fileChanges.fileChangesActions.getFinalContent(path) || '';
+
+    fileChanges.fileChangesActions.updateCodeViewerState(
+      path,
+      oldContent,
+      newGlobalContent,
+      normalViewerMode,
+    );
+
     setCode({ oldContent, newContent });
     diff(oldContent, newContent).then((d) => setDiffStat(d));
   }, [file, edit]);
@@ -153,19 +163,6 @@ const CodeDiffOutline = (props: Props) => {
     );
     fileChanges.fileChangesActions.writeFileContent(path, code.oldContent);
   };
-
-  useEffect(() => {
-    const originalCode = file.content;
-    const modifiedCode =
-      fileChanges.fileChangesActions.getFinalContent(path) || '';
-
-    fileChanges.fileChangesActions.updateCodeViewerState(
-      path,
-      originalCode,
-      modifiedCode,
-      normalViewerMode,
-    );
-  }, []);
 
   return (
     <div className={styles.root}>
