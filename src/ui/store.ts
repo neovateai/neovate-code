@@ -39,6 +39,18 @@ export function createStore(opts: CreateStoreOpts) {
     history: opts.context.history,
     historyIndex: null,
     draftInput: null,
+    approval: {
+      pending: false,
+      callId: null,
+      toolName: null,
+      params: null,
+      resolve: null,
+    },
+    approvalMemory: {
+      proceedOnce: new Set(),
+      proceedAlways: new Set(),
+      proceedAlwaysTool: new Set(),
+    },
     actions: {
       addHistory: (input: string) => {
         opts.context.addHistory(input);
@@ -69,6 +81,22 @@ export function createStore(opts: CreateStoreOpts) {
       },
       chatInputChange: (input: string) => {
         store.historyIndex = null;
+      },
+      approveToolUse: (approved: boolean) => {
+        if (store.approval.resolve) {
+          store.approval.resolve(approved);
+          store.approval.pending = false;
+          store.approval.callId = null;
+          store.approval.toolName = null;
+          store.approval.params = null;
+          store.approval.resolve = null;
+          store.status = 'processing';
+        }
+      },
+      clearApprovalMemory: () => {
+        store.approvalMemory.proceedOnce.clear();
+        store.approvalMemory.proceedAlways.clear();
+        store.approvalMemory.proceedAlwaysTool.clear();
       },
       query: async (input: string): Promise<any> => {
         await delay(100);
@@ -174,6 +202,38 @@ export function createStore(opts: CreateStoreOpts) {
                 },
               });
             },
+            async onToolApprove(callId, name, params) {
+              appendLogToFile(
+                `onToolApprove: ${callId} ${name} ${JSON.stringify(params)}`,
+              );
+
+              // Check approval memory first
+              const toolKey = `${name}:${JSON.stringify(params)}`;
+              const toolOnlyKey = name;
+
+              if (
+                store.approvalMemory.proceedAlways.has(toolKey) ||
+                store.approvalMemory.proceedAlwaysTool.has(toolOnlyKey)
+              ) {
+                return true;
+              }
+
+              if (store.approvalMemory.proceedOnce.has(toolKey)) {
+                store.approvalMemory.proceedOnce.delete(toolKey);
+                return true;
+              }
+
+              // Show approval prompt
+              store.status = 'awaiting_user_input';
+              store.approval.pending = true;
+              store.approval.callId = callId;
+              store.approval.toolName = name;
+              store.approval.params = params;
+
+              return new Promise<boolean>((resolve) => {
+                store.approval.resolve = resolve;
+              });
+            },
           });
           store.status = 'completed';
           if (store.stage === 'plan') {
@@ -211,12 +271,26 @@ export interface Store {
   history: string[];
   historyIndex: number | null;
   draftInput: string | null;
+  approval: {
+    pending: boolean;
+    callId: string | null;
+    toolName: string | null;
+    params: Record<string, any> | null;
+    resolve: ((approved: boolean) => void) | null;
+  };
+  approvalMemory: {
+    proceedOnce: Set<string>;
+    proceedAlways: Set<string>;
+    proceedAlwaysTool: Set<string>;
+  };
   actions: {
     addHistory: (input: string) => void;
     chatInputUp: (input: string) => string;
     chatInputDown: (input: string) => string;
     chatInputChange: (input: string) => void;
     query: (input: string) => Promise<any>;
+    approveToolUse: (approved: boolean) => void;
+    clearApprovalMemory: () => void;
   };
 }
 

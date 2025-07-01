@@ -17,7 +17,7 @@ type McpSSEServerConfig = {
 };
 type McpServerConfig = McpStdioServerConfig | McpSSEServerConfig;
 
-type ApprovalMode = 'suggest' | 'auto-edit' | 'full-auto';
+export type ApprovalMode = 'default' | 'autoEdit' | 'yolo';
 
 export type Config = {
   model: string;
@@ -33,7 +33,7 @@ export type Config = {
 const DEFAULT_CONFIG: Partial<Config> = {
   language: 'English',
   quiet: false,
-  approvalMode: 'suggest',
+  approvalMode: 'default',
   plugins: [],
   mcpServers: {},
   model: 'flash',
