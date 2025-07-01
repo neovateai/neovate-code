@@ -174,6 +174,7 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
           });
         }}
         options={{
+          renderSideBySide: false,
           contextmenu: false,
           readOnly: true,
           fontSize: 14,

@@ -9,13 +9,17 @@ import { createStyles } from 'antd-style';
 import { useTranslation } from 'react-i18next';
 import DiffStatBlocks from '@/components/CodeViewer/DiffStatBlocks';
 import DevFileIcon from '@/components/DevFileIcon';
-import type { CodeNormalViewerMode, DiffStat } from '@/types/codeViewer';
+import type {
+  CodeDiffOutlineChangeType,
+  CodeNormalViewerMode,
+  DiffStat,
+} from '@/types/codeViewer';
 
 interface Props {
   hasDiff?: boolean;
   diffStat?: DiffStat;
   path: string;
-  changed?: boolean;
+  changed?: CodeDiffOutlineChangeType;
   rollbacked?: boolean;
   normalViewMode?: CodeNormalViewerMode;
   onAcceptAll?: () => void;
@@ -143,7 +147,8 @@ const CodeDiffOutlineHeader = (props: Props) => {
             )}
           </>
         )}
-        {rollbacked && <CloseOutlined className={styles.remove} />}
+        {changed === 'accept' && <CheckOutlined className={styles.add} />}
+        {changed === 'reject' && <CloseOutlined className={styles.remove} />}
       </div>
       <div className={styles.headerRight}>
         {changed && (

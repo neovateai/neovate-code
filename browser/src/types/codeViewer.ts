@@ -7,6 +7,8 @@ interface CodeViewerBaseTabItem {
 
 export type CodeNormalViewerMode = 'new' | 'deleted';
 
+export type CodeDiffOutlineChangeType = 'accept' | 'reject';
+
 export interface CodeNormalViewerTabItem extends CodeViewerBaseTabItem {
   code: string;
   viewType: 'normal';

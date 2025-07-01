@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSnapshot } from 'valtio';
 import * as codeViewer from '@/state/codeViewer';
 import type {
+  CodeDiffOutlineChangeType,
   CodeViewerLanguage,
   DiffBlockStat,
   DiffStat,
@@ -88,7 +89,7 @@ const CodeDiffOutline = (props: Props) => {
     onChangeCode,
   } = props;
 
-  const [changed, setChanged] = useState(false);
+  const [changed, setChanged] = useState<CodeDiffOutlineChangeType>();
   const [rollbacked, setRollbacked] = useState(false);
 
   const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
@@ -143,7 +144,7 @@ const CodeDiffOutline = (props: Props) => {
   const { styles } = useStyles();
 
   const handleAccept = (diffBlockStat: DiffBlockStat) => {
-    setChanged(true);
+    setChanged('accept');
 
     const {
       originalEndLineNumber,
@@ -180,7 +181,7 @@ const CodeDiffOutline = (props: Props) => {
   };
 
   const handleReject = (diffBlockStat: DiffBlockStat) => {
-    setChanged(true);
+    setChanged('reject');
 
     const {
       originalEndLineNumber,
@@ -216,7 +217,7 @@ const CodeDiffOutline = (props: Props) => {
   };
 
   const handleAcceptAll = () => {
-    setChanged(true);
+    setChanged('accept');
     const nextCodes = {
       ...currentCodes,
       originalCode: currentCodes.modifiedCode,
@@ -230,7 +231,7 @@ const CodeDiffOutline = (props: Props) => {
   };
 
   const handleRejectAll = () => {
-    setChanged(true);
+    setChanged('reject');
     const nextCodes = {
       ...currentCodes,
       modifiedCode: currentCodes.originalCode,
@@ -244,7 +245,7 @@ const CodeDiffOutline = (props: Props) => {
   };
 
   const handleRollback = () => {
-    setChanged(false);
+    setChanged(undefined);
     setRollbacked(true);
     onChangeCode?.(initailCodes.originalCode, currentCodes.originalCode);
     setCurrentCodes(initailCodes);
