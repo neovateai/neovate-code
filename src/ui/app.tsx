@@ -126,6 +126,12 @@ function ToolMessage({ message }: { message: ToolMessage }) {
         text = result.data.result;
       }
       break;
+    case 'glob':
+      text = result.message;
+      break;
+    case 'grep':
+      text = result;
+      break;
     default:
       break;
   }
@@ -322,9 +328,118 @@ function PlanModal() {
   );
 }
 
+function ApprovalModalSelectInput() {
+  const store = useStore();
+  const snap = useSnapshot(store);
+  const toolKey = `${snap.approval.toolName}:${JSON.stringify(snap.approval.params)}`;
+  const toolOnlyKey = snap.approval.toolName;
+  
+  return (
+    <SelectInput
+      items={[
+        {
+          label: 'Yes (once)',
+          value: 'approve_once',
+        },
+        {
+          label: 'Yes (always for this command)',
+          value: 'approve_always',
+        },
+        {
+          label: `Yes (always for ${snap.approval.toolName})`,
+          value: 'approve_always_tool',
+        },
+        {
+          label: 'No',
+          value: 'deny',
+        },
+      ]}
+      onSelect={(item) => {
+        const approved = item.value !== 'deny';
+        
+        if (item.value === 'approve_always') {
+          store.approvalMemory.proceedAlways.add(toolKey);
+        } else if (item.value === 'approve_always_tool') {
+          store.approvalMemory.proceedAlwaysTool.add(toolOnlyKey!);
+        }
+        
+        store.actions.approveToolUse(approved);
+      }}
+    />
+  );
+}
+
+function ApprovalModal() {
+  const store = useStore();
+  const snap = useSnapshot(store);
+  
+  if (!snap.approval.pending) return null;
+  
+  const toolName = snap.approval.toolName;
+  const params = snap.approval.params;
+  
+  let description = '';
+  if (params) {
+    switch (toolName) {
+      case 'read':
+        description = params.file_path;
+        break;
+      case 'bash':
+        description = params.command;
+        break;
+      case 'edit':
+        description = params.file_path;
+        break;
+      case 'write':
+        description = params.file_path;
+        break;
+      case 'fetch':
+        description = params.url;
+        break;
+      case 'glob':
+        description = params.pattern;
+        break;
+      case 'grep':
+        description = params.pattern;
+        break;
+      case 'ls':
+        description = params.dir_path;
+        break;
+      default:
+        description = JSON.stringify(params);
+        break;
+    }
+  }
+  
+  return (
+    <Box flexDirection="column" borderStyle="round" borderColor="yellow" padding={1}>
+      <Text bold color="yellow">Tool Approval Required</Text>
+      <Box marginY={1}>
+        <Text>
+          <Text bold color="greenBright">{toolName}</Text>
+          {description && <Text color="green"> ({description})</Text>}
+        </Text>
+      </Box>
+      <Box flexDirection="column" borderStyle="round" borderColor="gray" padding={1} marginY={1}>
+        <Text bold>Parameters:</Text>
+        <Text color="gray">{JSON.stringify(params, null, 2)}</Text>
+      </Box>
+      <Box marginY={1}>
+        <Text bold>Do you want to allow this tool execution?</Text>
+      </Box>
+      <ApprovalModalSelectInput />
+    </Box>
+  );
+}
+
 export function App() {
   const store = useStore();
   const snap = useSnapshot(store);
+  
+  const showModal = snap.planModal || snap.approval.pending;
+  const modalContent = snap.planModal ? <PlanModal /> : 
+                      snap.approval.pending ? <ApprovalModal /> : null;
+  
   return (
     <Box flexDirection="column">
       <Static items={['header', ...snap.messages] as any[]}>
@@ -336,7 +451,7 @@ export function App() {
         }}
       </Static>
       {snap.currentMessage && <Message message={snap.currentMessage} dynamic />}
-      {snap.planModal ? <PlanModal /> : <ChatInput />}
+      {showModal ? modalContent : <ChatInput />}
     </Box>
   );
 }

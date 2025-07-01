@@ -8,7 +8,7 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { AiSdkModel, aisdk } from './utils/ai-sdk';
 
 const GEMINI_FLASH_LITE_MODEL = 'gemini-2.5-flash-lite-preview-06-17';
-const GEMINI_PRO_MODEL = 'gemini-2.5-pro-preview-05-06';
+const GEMINI_PRO_MODEL = 'gemini-2.5-pro';
 
 const THINKING_MODELS = [
   'o3',
@@ -18,7 +18,7 @@ const THINKING_MODELS = [
   'claude-3-7-sonnet-20250219-thinking',
   'grok-3-fast-beta',
 ];
-const MODEL_ALIAS: Record<string, string> = {
+export const MODEL_ALIAS: Record<string, string> = {
   deepseek: 'deepseek-chat',
   r1: 'deepseek-reasoner',
   '41': 'gpt-4.1',

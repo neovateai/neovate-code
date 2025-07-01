@@ -5,6 +5,12 @@ import { isReasoningModel } from '../../provider';
 import { query } from '../../query';
 import { Service } from '../../service';
 import { delay } from '../../utils/delay';
+import {
+  AttachmentItem,
+  ContextItem,
+  ContextType,
+  ImageItem,
+} from '../types/completions';
 import { CreateServerOpts } from '../types/server';
 
 const debug = createDebug('takumi:server:completions');
@@ -14,17 +20,108 @@ interface RunCompletionOpts extends CreateServerOpts {
   service: Service;
   planService: Service;
   mode: string;
+  attachedContexts: ContextItem[];
+}
+
+function isImageContext(context: ContextItem): context is ContextItem & {
+  context: ImageItem;
+} {
+  return context.type === ContextType.IMAGE && !!context.context;
+}
+
+function isAttachmentContext(context: ContextItem): context is ContextItem & {
+  context: AttachmentItem;
+} {
+  return (
+    context.type === ContextType.ATTACHMENT &&
+    !!context.context &&
+    !!(context.context as AttachmentItem).url
+  );
+}
+
+type ContextConverter = (
+  context: ContextItem,
+) =>
+  | { type: 'input_image'; image: string; providerData: { mime_type: string } }
+  | { type: 'input_file'; file: string; providerData: { name: string } }
+  | null;
+
+const contextConverters: Record<ContextType, ContextConverter> = {
+  [ContextType.IMAGE]: (context: ContextItem) => {
+    if (!isImageContext(context)) return null;
+
+    const { src, mime } = context.context;
+    return {
+      type: 'input_image' as const,
+      image: src,
+      providerData: { mime_type: mime },
+    };
+  },
+
+  [ContextType.ATTACHMENT]: (context: ContextItem) => {
+    if (!isAttachmentContext(context)) return null;
+
+    const { url, name } = context.context;
+    if (!url) return null;
+
+    return {
+      type: 'input_file' as const,
+      file: url,
+      providerData: { name },
+    };
+  },
+
+  [ContextType.FILE]: () => null,
+  [ContextType.UNKNOWN]: () => null,
+};
+
+function convertUserPromptToAgentInput(
+  prompt: string,
+  attachedContexts: ContextItem[],
+): AgentInputItem[] {
+  if (attachedContexts.length === 0) {
+    return [
+      {
+        role: 'user' as const,
+        content: prompt,
+      },
+    ];
+  }
+
+  const contextMessages = attachedContexts
+    .map((context) => {
+      const converter = contextConverters[context.type];
+      if (!converter) {
+        debug(`Unknown context type: ${context.type}`);
+        return null;
+      }
+      return converter(context);
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
+  return [
+    {
+      role: 'user' as const,
+      content: [
+        {
+          type: 'input_text',
+          text: prompt,
+        },
+        ...contextMessages,
+      ],
+    },
+  ];
 }
 
 export async function runCode(opts: RunCompletionOpts) {
-  const { dataStream, mode } = opts;
+  const { dataStream, mode, attachedContexts } = opts;
   try {
-    let input: AgentInputItem[] = [
-      {
-        role: 'user' as const,
-        content: opts.prompt,
-      },
-    ];
+    const input: AgentInputItem[] = convertUserPromptToAgentInput(
+      opts.prompt,
+      attachedContexts,
+    );
+
+    debug('input', JSON.stringify(input, null, 2));
 
     const service = mode === 'plan' ? opts.planService : opts.service;
 

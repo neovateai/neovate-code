@@ -1,15 +1,42 @@
 import { FunctionTool, Tool } from '@openai/agents';
 
-export class Tools {
-  tools: Record<string, Tool<any>>;
+export type ApprovalContext = {
+  toolName: string;
+  params: Record<string, any>;
+  approvalMode: string;
+  context: any;
+};
 
-  constructor(tools: Tool<any>[]) {
+export type ToolApprovalInfo = {
+  needsApproval?: (context: ApprovalContext) => Promise<boolean> | boolean;
+  category?: 'read' | 'write' | 'command' | 'network';
+  riskLevel?: 'low' | 'medium' | 'high';
+};
+
+export type EnhancedTool = Tool<any> & {
+  approval?: ToolApprovalInfo;
+};
+
+export function enhanceTool(
+  tool: Tool<any>,
+  approval?: ToolApprovalInfo,
+): EnhancedTool {
+  return {
+    ...tool,
+    approval,
+  };
+}
+
+export class Tools {
+  tools: Record<string, EnhancedTool>;
+
+  constructor(tools: EnhancedTool[]) {
     this.tools = tools.reduce(
       (acc, tool) => {
         acc[tool.name] = tool;
         return acc;
       },
-      {} as Record<string, Tool<any>>,
+      {} as Record<string, EnhancedTool>,
     );
   }
 
@@ -29,6 +56,67 @@ export class Tools {
         error: `Tool ${toolName} is not a function tool`,
       };
     }
+  }
+
+  async shouldApprove(
+    toolName: string,
+    params: Record<string, any>,
+    context: any,
+  ): Promise<boolean> {
+    const tool = this.tools[toolName];
+    if (!tool?.approval?.needsApproval) {
+      return this.getDefaultApproval(toolName, params, context);
+    }
+
+    const approvalContext: ApprovalContext = {
+      toolName,
+      params,
+      approvalMode: context.config.approvalMode,
+      context,
+    };
+
+    const customApproval = await tool.approval.needsApproval(approvalContext);
+    return customApproval;
+  }
+
+  private getDefaultApproval(
+    toolName: string,
+    params: Record<string, any>,
+    context: any,
+  ): boolean {
+    const approvalMode = context.config.approvalMode;
+    const tool = this.tools[toolName];
+
+    // Get tool category for default approval logic
+    const category =
+      tool?.approval?.category || this.inferToolCategory(toolName);
+
+    switch (approvalMode) {
+      case 'yolo':
+        return false; // Never require approval
+      case 'autoEdit':
+        return category === 'command'; // Only require approval for commands
+      case 'default':
+        return category !== 'read'; // Require approval for non-read operations
+      default:
+        return true; // Default to requiring approval
+    }
+  }
+
+  private inferToolCategory(
+    toolName: string,
+  ): 'read' | 'write' | 'command' | 'network' {
+    const readTools = ['read', 'ls', 'glob', 'grep'];
+    const writeTools = ['write', 'edit'];
+    const commandTools = ['bash'];
+    const networkTools = ['fetch'];
+
+    if (readTools.includes(toolName)) return 'read';
+    if (writeTools.includes(toolName)) return 'write';
+    if (commandTools.includes(toolName)) return 'command';
+    if (networkTools.includes(toolName)) return 'network';
+
+    return 'write'; // Default to write for safety
   }
 
   getToolsPrompt() {

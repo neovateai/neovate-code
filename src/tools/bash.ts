@@ -2,6 +2,7 @@ import { tool } from '@openai/agents';
 import { execSync } from 'child_process';
 import { z } from 'zod';
 import { Context } from '../context';
+import { ApprovalContext, EnhancedTool } from '../tool';
 
 const BANNED_COMMANDS = [
   'alias',
@@ -30,8 +31,24 @@ const BANNED_COMMANDS = [
   'zsh',
 ];
 
-export function createBashTool(opts: { context: Context }) {
-  return tool({
+function isHighRiskCommand(command: string): boolean {
+  const highRiskPatterns = [
+    /rm\s+.*(-rf|--recursive)/i, // rm -rf commands
+    /sudo/i, // sudo commands
+    /curl.*\|.*sh/i, // curl | sh patterns
+    /wget.*\|.*sh/i, // wget | sh patterns
+    /dd\s+if=/i, // dd commands
+    /mkfs/i, // filesystem creation
+    /fdisk/i, // disk partitioning
+    /format/i, // format commands
+    /del\s+.*\/[qs]/i, // Windows delete commands
+  ];
+
+  return highRiskPatterns.some((pattern) => pattern.test(command));
+}
+
+export function createBashTool(opts: { context: Context }): EnhancedTool {
+  const baseTool = tool({
     name: 'bash',
     description: `
 Run shell commands in the terminal, ensuring proper handling and security measures.
@@ -79,4 +96,30 @@ cd /foo/bar && pytest tests
       }
     },
   });
+
+  return {
+    ...baseTool,
+    approval: {
+      category: 'command' as const,
+      riskLevel: 'high' as const,
+      needsApproval: async (context: ApprovalContext) => {
+        const { params, approvalMode } = context;
+        const command = params.command as string;
+
+        // Always require approval for high-risk commands
+        if (isHighRiskCommand(command)) {
+          return true;
+        }
+
+        // Check if command is banned (these should never be approved)
+        const commandStart = command.trim().split(' ')[0];
+        if (BANNED_COMMANDS.includes(commandStart)) {
+          return true; // This will be denied by approval system
+        }
+
+        // For other commands, defer to approval mode settings
+        return approvalMode !== 'yolo';
+      },
+    },
+  };
 }

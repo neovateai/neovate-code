@@ -23,7 +23,7 @@ export type UIMessage = Omit<BaseUIMessage, 'annotations'> & {
   annotations: UIMessageAnnotation[];
 };
 
-export type UserMessage = Omit<UIMessage, 'role'> & {
+export type UIUserMessage = Omit<UIMessage, 'role'> & {
   role: 'user';
   attachedContexts: ContextItem[];
   /**

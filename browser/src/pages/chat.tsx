@@ -14,7 +14,7 @@ import { UserMessage, UserMessageFooter } from '@/components/UserMessage';
 import Welcome from '@/components/Welcome';
 import ChatProvider, { useChatState } from '@/hooks/provider';
 import * as codeViewer from '@/state/codeViewer';
-import type { UIMessage } from '@/types/message';
+import type { UIMessage, UIUserMessage } from '@/types/message';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
@@ -61,9 +61,11 @@ const Chat: React.FC = () => {
       typing: status === 'submitted' ? { step: 20, interval: 150 } : false,
       loading: status === 'submitted' && isLastMessage,
       footer:
-        status === 'ready' && isLastMessage
-          ? () => <AssistantFooter message={message as UIMessage} />
-          : false,
+        isLastMessage && message.role === 'assistant'
+          ? () => (
+              <AssistantFooter message={message as UIMessage} status={status} />
+            )
+          : () => <UserMessageFooter message={message as UIUserMessage} />,
     };
   });
 

@@ -1,6 +1,6 @@
 {
   "name": "takumi",
-  "version": "0.1.6",
+  "version": "0.1.8",
   "type": "module",
   "files": [
     "dist",
@@ -27,6 +27,7 @@
     "release": "npm run ci && utools release --git-tag --github-release --changelog",
     "release:minor": "npm run ci && utools release --git-tag --github-release --changelog --bump minor",
     "release:major": "npm run ci && utools release --git-tag --github-release --changelog --bump major",
+    "repomix": "repomix --include \"src,package.json,README.md\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

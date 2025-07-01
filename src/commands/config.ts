@@ -21,6 +21,16 @@ Commands:
   add [options] <key> <value>           Add a config value
   help                                  Show help
 
+Available Configuration Keys:
+  model                                 Primary model for AI interactions (default: flash)
+  smallModel                            Smaller model for lightweight operations
+  planModel                             Model for planning operations
+  language                              Language for AI responses (default: English)
+  quiet                                 Suppress verbose output (boolean, default: false)
+  approvalMode                          Approval mode for operations (default|autoEdit|yolo, default: default)
+  plugins                               Array of plugin names to load
+  mcpServers                            MCP (Message Control Protocol) server configurations (object)
+
 Examples:
   ${p} config get model               Get current model setting
   ${p} config set model gpt-4o        Set model for current project

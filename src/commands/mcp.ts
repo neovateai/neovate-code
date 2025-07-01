@@ -21,6 +21,8 @@ Commands:
   add [options] <name> <command> [args...] Add an MCP server
   remove|rm [options] <name>            Remove an MCP server
   list|ls [options]                     List all MCP servers
+  enable [options] <name>               Enable an MCP server
+  disable [options] <name>              Disable an MCP server
   help                                  Show help
 
 Examples:
@@ -33,6 +35,8 @@ Examples:
   ${p} mcp ls -g                      Show all global MCP servers
   ${p} mcp rm my-server               Remove my-server from project config
   ${p} mcp rm -g my-server            Remove my-server from global config
+  ${p} mcp enable my-server           Enable my-server in project config
+  ${p} mcp disable -g my-server       Disable my-server in global config
       `.trim(),
   );
 }
@@ -141,5 +145,55 @@ export async function runMCP(opts: RunCliOpts) {
         ? configManager.globalConfig.mcpServers
         : configManager.projectConfig.mcpServers) || {};
     console.log(JSON.stringify(mcpServers, null, 2));
+  }
+
+  // enable
+  if (command === 'enable') {
+    const key = argv._[1] as string;
+    if (!key) {
+      console.error('Missing server name');
+      return;
+    }
+    const mcpServers =
+      (argv.global
+        ? configManager.globalConfig.mcpServers
+        : configManager.projectConfig.mcpServers) || {};
+    const server = mcpServers[key];
+    if (!server) {
+      console.error(`Error: MCP server ${key} not found`);
+      return;
+    }
+    delete server.disable;
+    configManager.setConfig(
+      argv.global,
+      'mcpServers',
+      JSON.stringify(mcpServers),
+    );
+    console.log(`Enabled ${key} in ${configPath}`);
+  }
+
+  // disable
+  if (command === 'disable') {
+    const key = argv._[1] as string;
+    if (!key) {
+      console.error('Missing server name');
+      return;
+    }
+    const mcpServers =
+      (argv.global
+        ? configManager.globalConfig.mcpServers
+        : configManager.projectConfig.mcpServers) || {};
+    const server = mcpServers[key];
+    if (!server) {
+      console.error(`Error: MCP server ${key} not found`);
+      return;
+    }
+    server.disable = true;
+    configManager.setConfig(
+      argv.global,
+      'mcpServers',
+      JSON.stringify(mcpServers),
+    );
+    console.log(`Disabled ${key} in ${configPath}`);
   }
 }

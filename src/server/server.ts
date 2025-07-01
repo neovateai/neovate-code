@@ -83,6 +83,10 @@ const registerRoutes = async (
     prefix: BASE_API_PREFIX,
     ...pluginOpts,
   });
+  await app.register(import('./routes/settings'), {
+    prefix: BASE_API_PREFIX,
+    ...pluginOpts,
+  });
   await app.register(import('./routes/mcp'), {
     prefix: BASE_API_PREFIX,
     ...pluginOpts,
@@ -141,6 +145,7 @@ export async function runBrowserServer(opts: RunBrowserServerOpts) {
 export async function createServer(opts: CreateServerOpts) {
   const app: FastifyInstance = fastify({
     logger: opts.logLevel ? { level: opts.logLevel } : false,
+    bodyLimit: 100 * 1024 * 1024, // 100MB limit for handling large images and files
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   const port = await portfinder.getPortPromise({

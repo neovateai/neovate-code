@@ -18,14 +18,18 @@ const { Text } = Typography;
 
 interface AssistantFooterProps {
   message: UIMessage;
+  status: 'submitted' | 'streaming' | 'ready' | 'error';
 }
 
-const AssistantFooter: React.FC<AssistantFooterProps> = ({ message }) => {
+const AssistantFooter: React.FC<AssistantFooterProps> = ({
+  message,
+  status,
+}) => {
   const { mode } = useSnapshot(state);
   const { t } = useTranslation();
   const { approvePlan } = useChatState();
 
-  if (mode === 'plan') {
+  if (mode === 'plan' && status === 'ready') {
     const mergedMessage = mergeMessages(message.annotations || []);
     const lastMessage = last(mergedMessage);
     if (

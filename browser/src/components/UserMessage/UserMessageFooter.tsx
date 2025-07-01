@@ -1,12 +1,13 @@
 import { DownOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
 import { createStyles } from 'antd-style';
-import { useState } from 'react';
-import type { UserMessage } from '@/types/message';
+import { memo, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { UIUserMessage } from '@/types/message';
 import { renderContextTag } from '../ChatSender/SenderHeader';
 
 interface UserMessageFooterProps {
-  message: UserMessage;
+  message: UIUserMessage;
 }
 
 const useStyle = createStyles(({ css }) => {
@@ -32,14 +33,27 @@ const useStyle = createStyles(({ css }) => {
   };
 });
 
-const UserMessageFooter = (props: UserMessageFooterProps) => {
+const UserMessageFooter = memo<UserMessageFooterProps>((props) => {
   const { message } = props;
 
   const [showDetails, setShowDetails] = useState(false);
 
   const { styles } = useStyle();
+  const { t } = useTranslation();
 
   const { attachedContexts } = message;
+
+  const handleToggleDetails = useCallback(() => {
+    setShowDetails((prev) => !prev);
+  }, []);
+
+  const contextTags = useMemo(() => {
+    return attachedContexts.map((contextItem) => renderContextTag(contextItem));
+  }, [attachedContexts]);
+
+  const buttonText = useMemo(() => {
+    return t('context.usedReferences', { count: attachedContexts.length });
+  }, [attachedContexts.length, t]);
 
   if (attachedContexts.length === 0) {
     return null;
@@ -59,17 +73,17 @@ const UserMessageFooter = (props: UserMessageFooterProps) => {
             }}
           />
         }
-        onClick={() => setShowDetails(!showDetails)}
+        onClick={handleToggleDetails}
       >
-        已使用 {attachedContexts.length} 个引用
+        {buttonText}
       </Button>
       {showDetails && (
-        <div className={styles.itemsContainer}>
-          {attachedContexts.map((contextItem) => renderContextTag(contextItem))}
-        </div>
+        <div className={styles.itemsContainer}>{contextTags}</div>
       )}
     </div>
   );
-};
+});
+
+UserMessageFooter.displayName = 'UserMessageFooter';
 
 export default UserMessageFooter;
