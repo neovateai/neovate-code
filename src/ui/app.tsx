@@ -1,4 +1,5 @@
 import { Box, Static, Text, useInput } from 'ink';
+import Spinner from 'ink-spinner';
 import TextInput from './ink-text-input';
 import { useSnapshot } from 'valtio';
 import SelectInput from 'ink-select-input';
@@ -260,7 +261,10 @@ function ChatInput() {
       >
         <Text color={isProcessing || isFailed ? 'gray' : 'white'}>&gt;</Text>
         {isProcessing ? (
-          <Text color="gray">{isPlan ? 'Planning...' : 'Processing...'}</Text>
+          <Box flexDirection="row" gap={1}>
+            <Spinner type="dots" />
+            <Text color="gray">{isPlan ? 'Planning...' : 'Processing...'}</Text>
+          </Box>
         ) :
           <TextInput
             value={value}
