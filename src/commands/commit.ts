@@ -57,6 +57,7 @@ Options:
   --copy                        Copy commit message to clipboard
   --push                        Push changes after commit
   --follow-style                Follow existing repository commit style
+  --ai                          Add [AI] suffix to commit message
 
 Examples:
   ${p} commit                 Interactive mode - generate and choose action
@@ -64,6 +65,7 @@ Examples:
   ${p} commit --copy          Generate message and copy to clipboard
   ${p} commit -s -c --push    Stage, commit and push in one command
   ${p} commit --follow-style  Generate message following repo style
+  ${p} commit --ai            Generate message with [AI] suffix
       `.trim(),
   );
 }
@@ -90,6 +92,7 @@ export async function runCommit(opts: RunCliOpts) {
         'interactive',
         'followStyle',
         'help',
+        'ai',
       ],
       string: ['model', 'language'],
     });
@@ -225,7 +228,7 @@ ${repoStyle}
           modelProvider: opts.modelProvider,
         });
         stop();
-        checkCommitMessage(message);
+        checkCommitMessage(message, argv.ai);
         break;
       } catch (error: any) {
         attempts++;
@@ -235,23 +238,26 @@ ${repoStyle}
       }
     }
 
-    logger.logResult(`Generated commit message: ${pc.cyan(message)}`);
+    // Add [AI] suffix if --ai flag is used
+    const finalMessage = argv.ai ? `${message} [AI]` : message;
+
+    logger.logResult(`Generated commit message: ${pc.cyan(finalMessage)}`);
 
     // Check if interactive mode is needed
     const isNonInteractiveParam =
       argv.stage || argv.commit || argv.noVerify || argv.copy;
     if (argv.interactive && !isNonInteractiveParam) {
-      await handleInteractiveMode(message);
+      await handleInteractiveMode(finalMessage);
     } else {
       // Non-interactive mode logic
       if (argv.commit) {
-        await commitChanges(message, argv.noVerify);
+        await commitChanges(finalMessage, argv.noVerify);
         if (argv.push) {
           await pushChanges();
         }
       }
       if (argv.copy) {
-        copyToClipboard(message);
+        copyToClipboard(finalMessage);
       }
     }
   });
@@ -484,12 +490,14 @@ async function handleInteractiveMode(message: string) {
   }
 }
 
-function checkCommitMessage(message: string) {
+function checkCommitMessage(message: string, hasAiSuffix = false) {
   // make length check a litter more lenient
   // since sometimes it needs a little more informations
   // e.g.
   // - `build: add dev dependencies for basement, axios, git-repo-info, urllib, and zx`
-  if (message.length > 90) {
+  // Account for [AI] suffix length (5 characters) when checking limit
+  const maxLength = hasAiSuffix ? 85 : 90;
+  if (message.length > maxLength) {
     throw new Error(`Commit message is too long: ${message}`);
   }
   if (message.length === 0) {
