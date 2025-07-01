@@ -11,7 +11,6 @@ import type {
 import { diff } from '@/utils/codeViewer';
 import CodeDiffView from '../CodeViewer/CodeDiffView';
 import CodeNormalView from '../CodeViewer/CodeNormalView';
-import { withConfigProvider } from '../CodeViewer/WithConfigProvider';
 import CodeDiffOutlineHeader from './CodeDiffOutlineHeader';
 
 interface Props {
@@ -340,4 +339,4 @@ const CodeDiffOutline = (props: Props) => {
   );
 };
 
-export default withConfigProvider(CodeDiffOutline);
+export default CodeDiffOutline;

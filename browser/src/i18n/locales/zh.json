@@ -259,8 +259,7 @@
       "acceptAll": "全部接受",
       "accept": "接受",
       "reject": "拒绝",
-      "copyModifiedCode": "复制修改后的代码",
-      "showBlockActions": "展示Diff块操作"
+      "copyModifiedCode": "复制修改后的代码"
     }
   },
   "editRender": {

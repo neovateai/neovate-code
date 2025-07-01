@@ -4,7 +4,7 @@ import {
   CheckOutlined,
   CloseOutlined,
 } from '@ant-design/icons';
-import { Button, Switch, Tooltip } from 'antd';
+import { Button, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,13 +17,12 @@ interface Props {
   onGotoDiff: (target: 'next' | 'previous') => void;
   onAcceptAll: () => void;
   onRejectAll: () => void;
-  onChangeShowBlockActions: (show: boolean) => void;
 }
 
-const useStyles = createStyles(({ css, token }) => {
+const useStyles = createStyles(({ css }) => {
   return {
     add: css`
-      color: ${token.colorPrimary};
+      color: #00b96b;
     `,
     remove: css`
       color: red;
@@ -49,13 +48,7 @@ const useStyles = createStyles(({ css, token }) => {
 });
 
 const DiffToolbar = (props: Props) => {
-  const {
-    item,
-    onGotoDiff,
-    onChangeShowBlockActions,
-    onAcceptAll,
-    onRejectAll,
-  } = props;
+  const { item, onGotoDiff, onAcceptAll, onRejectAll } = props;
   const { styles: toolbarStyles } = useToolbarStyles();
   const { styles } = useStyles();
 
@@ -84,16 +77,6 @@ const DiffToolbar = (props: Props) => {
       </div>
       {hasDiff && (
         <div className={styles.tools}>
-          {!item.hideDiffActions && (
-            <div className={styles.switch}>
-              <Switch
-                onChange={(checked) => {
-                  onChangeShowBlockActions(checked);
-                }}
-              />
-              {t('codeViewer.toolButton.showBlockActions')}
-            </div>
-          )}
           <Tooltip
             title={t('codeViewer.toolButton.prevDiff')}
             placement="topRight"
@@ -116,27 +99,21 @@ const DiffToolbar = (props: Props) => {
           </Tooltip>
           {!item.hideDiffActions && (
             <>
-              <Tooltip
-                title={t('codeViewer.toolButton.rejectAll')}
-                placement="topRight"
+              <Button
+                type="text"
+                icon={<CloseOutlined />}
+                onClick={() => onRejectAll()}
               >
-                <Button
-                  type="primary"
-                  danger
-                  icon={<CloseOutlined />}
-                  onClick={() => onRejectAll()}
-                />
-              </Tooltip>
-              <Tooltip
-                title={t('codeViewer.toolButton.acceptAll')}
-                placement="topRight"
+                {t('codeViewer.toolButton.rejectAll')}
+              </Button>
+
+              <Button
+                type="text"
+                icon={<CheckOutlined />}
+                onClick={() => onAcceptAll()}
               >
-                <Button
-                  type="primary"
-                  icon={<CheckOutlined />}
-                  onClick={() => onAcceptAll()}
-                />
-              </Tooltip>
+                {t('codeViewer.toolButton.acceptAll')}
+              </Button>
             </>
           )}
         </div>

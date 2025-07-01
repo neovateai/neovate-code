@@ -1,20 +1,10 @@
 import { DiffEditor } from '@monaco-editor/react';
 import { createStyles } from 'antd-style';
 import * as monaco from 'monaco-editor';
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
-import { createRoot } from 'react-dom/client';
-import type { Root } from 'react-dom/client';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import * as codeViewer from '@/state/codeViewer';
-import type { CodeDiffViewerTabItem, DiffStat } from '@/types/codeViewer';
-import CodeDiffBlockActions from '../CodeDiffBlockActions';
+import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffToolbar from '../DiffToolbar';
-import { withConfigProvider } from '../WithConfigProvider';
 
 interface Props {
   item: CodeDiffViewerTabItem;
@@ -44,11 +34,6 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
   const { item, height, hideToolBar } = props;
   const { styles } = useStyle();
   const editorRef = useRef<monaco.editor.IStandaloneDiffEditor>(null);
-  const widgetRef = useRef<{ id: string; dispose: () => void } | null>(null);
-  const viewZonesRef = useRef<
-    { id: string; domNode: HTMLDivElement; root: Root }[]
-  >([]);
-  const [showBlockActions, setShowBlockActions] = useState(false);
 
   useImperativeHandle(ref, () => {
     return {
@@ -64,67 +49,13 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
     };
   });
 
-  // 清理所有view zones
-  const clearAllViewZones = () => {
-    const modifiedEditor = editorRef.current?.getModifiedEditor();
-    if (modifiedEditor && viewZonesRef.current.length > 0) {
-      modifiedEditor.changeViewZones((accessor) => {
-        viewZonesRef.current.forEach((z) => accessor.removeZone(z.id));
-      });
-      viewZonesRef.current.forEach((z) => {
-        z.root.unmount();
-      });
-      viewZonesRef.current = [];
-    }
-  };
-
   useEffect(() => {
     return () => {
-      clearAllViewZones();
-      if (widgetRef.current) {
-        widgetRef.current.dispose();
-        widgetRef.current = null;
-      }
       editorRef.current?.dispose();
       editorRef.current?.getModifiedEditor().dispose();
       editorRef.current?.getOriginalEditor().dispose();
     };
   }, []);
-
-  useEffect(() => {
-    clearAllViewZones();
-    if (showBlockActions && item.diffStat && !item.hideDiffActions) {
-      injectDiffBlockActionsIntoEditor(editorRef.current, item.diffStat);
-    }
-  }, [item, showBlockActions]);
-
-  const injectDiffBlockActionsIntoEditor = (
-    editor: monaco.editor.IStandaloneDiffEditor | null,
-    diffStat: DiffStat,
-  ) => {
-    const modifiedEditor = editor?.getModifiedEditor();
-    if (!modifiedEditor) {
-      return;
-    }
-    clearAllViewZones();
-    if (!diffStat?.diffBlockStats?.length) return;
-    modifiedEditor.changeViewZones((accessor) => {
-      diffStat.diffBlockStats.forEach((block) => {
-        const domNode = document.createElement('div');
-        domNode.style.position = 'relative';
-        domNode.style.zIndex = '1000';
-        domNode.style.pointerEvents = 'auto';
-        const id = accessor.addZone({
-          afterLineNumber: block.modifiedStartLineNumber - 1,
-          heightInPx: 48,
-          domNode,
-        });
-        const root = createRoot(domNode);
-        root.render(<CodeDiffBlockActions diffBlockStat={block} item={item} />);
-        viewZonesRef.current.push({ id, domNode, root });
-      });
-    });
-  };
 
   return (
     <div className={styles.container}>
@@ -142,9 +73,6 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
             if (item.path) {
               codeViewer.actions.doEdit(item.path, 'reject');
             }
-          }}
-          onChangeShowBlockActions={(show) => {
-            setShowBlockActions(show);
           }}
           item={item}
         />
@@ -188,4 +116,4 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
   );
 });
 
-export default withConfigProvider(CodeDiffView);
+export default CodeDiffView;

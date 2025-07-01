@@ -7,10 +7,10 @@ interface Props {
   diffStat?: DiffStat;
 }
 
-const useStyles = createStyles(({ css, token }) => {
+const useStyles = createStyles(({ css }) => {
   return {
     addBlock: css`
-      background-color: ${token.colorPrimary};
+      background-color: #00b96b;
     `,
     removeBlock: css`
       background-color: red;

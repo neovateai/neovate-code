@@ -31,54 +31,75 @@ interface Props {
   onToggleExpand?: () => void;
 }
 
-const useStyles = createStyles(({ css, token }) => {
-  return {
-    header: css`
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 2px;
-    `,
-    headerLeft: css`
-      display: flex;
-      align-items: center;
-      column-gap: 8px;
-      margin-left: 8px;
-      white-space: nowrap;
-      min-width: 0;
-      flex: 1 1 0%;
-      cursor: pointer;
-    `,
-    headerRight: css`
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      column-gap: 12px;
-      margin: 0 8px;
-    `,
-    add: css`
-      color: ${token.colorPrimary};
-      margin: 0 2px;
-    `,
-    remove: css`
-      color: red;
-      margin: 0 2px;
-    `,
-    plainText: css`
-      color: #333;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 320px;
-      display: block;
-    `,
-    itemLeftDiffStat: css`
-      display: flex;
-      align-items: center;
-      column-gap: 8px;
-    `,
-  };
-});
+const useStyles = createStyles(
+  (
+    { css },
+    {
+      isExpanded,
+    }: {
+      isExpanded?: boolean;
+    },
+  ) => {
+    return {
+      header: css`
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 2px;
+      `,
+      headerLeft: css`
+        display: flex;
+        align-items: center;
+        column-gap: 8px;
+        margin-left: 8px;
+        white-space: nowrap;
+        min-width: 0;
+        flex: 1 1 0%;
+        cursor: pointer;
+      `,
+      headerRight: css`
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        column-gap: 12px;
+        margin: 0 8px;
+      `,
+      add: css`
+        color: #00b96b;
+        margin: 0 2px;
+      `,
+      remove: css`
+        color: red;
+        margin: 0 2px;
+      `,
+      plainText: css`
+        color: #333;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 320px;
+        display: block;
+      `,
+      itemLeftDiffStat: css`
+        display: flex;
+        align-items: center;
+        column-gap: 8px;
+      `,
+      rotateIcon: css`
+        display: inline-block;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: rotate(${isExpanded ? 90 : 0}deg);
+      `,
+      grayButton: css`
+        color: #6b7280; /* text-gray-500 */
+        cursor: pointer;
+        &:hover {
+          color: #00b96b;
+        }
+      `,
+    };
+  },
+);
 
 const CodeDiffOutlineHeader = (props: Props) => {
   const {
@@ -96,7 +117,7 @@ const CodeDiffOutlineHeader = (props: Props) => {
     onToggleExpand,
   } = props;
 
-  const { styles } = useStyles();
+  const { styles } = useStyles({ isExpanded });
 
   const { t } = useTranslation();
 
@@ -125,11 +146,7 @@ const CodeDiffOutlineHeader = (props: Props) => {
   return (
     <div className={styles.header}>
       <div className={styles.headerLeft} onClick={onToggleExpand}>
-        <span
-          className={`transition-transform duration-300 ease-in-out ${
-            isExpanded ? 'rotate-90' : ''
-          }`}
-        >
+        <span className={styles.rotateIcon}>
           <RightOutlined />
         </span>
         <DevFileIcon size={16} fileExt={path.split('.').pop() || ''} />
@@ -177,18 +194,12 @@ const CodeDiffOutlineHeader = (props: Props) => {
         {hasDiff && !rollbacked && (
           <>
             <Tooltip title={t('codeViewer.toolButton.rejectAll')}>
-              <div
-                className="text-gray-500 cursor-pointer"
-                onClick={onRejectAll}
-              >
+              <div className={styles.grayButton} onClick={onRejectAll}>
                 <CloseOutlined style={{ fontSize: 14 }} />
               </div>
             </Tooltip>
             <Tooltip title={t('codeViewer.toolButton.acceptAll')}>
-              <div
-                className="text-gray-500 cursor-pointer"
-                onClick={onAcceptAll}
-              >
+              <div className={styles.grayButton} onClick={onAcceptAll}>
                 <CheckOutlined style={{ fontSize: 14 }} />
               </div>
             </Tooltip>

@@ -259,8 +259,7 @@
       "acceptAll": "Accept All",
       "accept": "Accept",
       "reject": "Reject",
-      "copyModifiedCode": "Copy Modified Code",
-      "showBlockActions": "Show diff block actions"
+      "copyModifiedCode": "Copy Modified Code"
     }
   },
   "editRender": {
