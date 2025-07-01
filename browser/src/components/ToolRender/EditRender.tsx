@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { fileChangesActions } from '@/state/fileChanges';
+import { fileChangesActions, fileChangesState } from '@/state/fileChanges';
 import type { ToolMessage } from '@/types/message';
 import CodeDiffOutline from '../CodeDiffOutline';
 

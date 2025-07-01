@@ -17,6 +17,14 @@ interface FileChangesStore {
   files: Record<string, FileState | undefined>;
 }
 
+// 因为edit tool会直接修改本地文件，所以需要根据edits计算出原始内容
+const calculateOriginalContent = (finalContent: string, edits: FileEdit[]) => {
+  return edits.reduceRight(
+    (content, edit) => content.replace(edit.new_string, edit.old_string),
+    finalContent,
+  );
+};
+
 export const fileChangesState = proxy<FileChangesStore>({
   files: {},
 });
@@ -42,9 +50,13 @@ export const fileChangesActions = {
     if (!fileState) {
       const fileContent = await readFile(path);
       if (fileContent.success) {
+        const originalContent = calculateOriginalContent(
+          fileContent.data.content,
+          edits,
+        );
         fileChangesState.files[path] = proxy<FileState>({
           path,
-          content: fileContent.data.content,
+          content: originalContent,
           edits,
         });
       }
