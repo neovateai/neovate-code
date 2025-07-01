@@ -38,13 +38,59 @@ const calculateOriginalContent = (finalContent: string, edits: FileEdit[]) => {
 const fetchPromises: Record<string, Promise<void>> = {};
 
 export const fileChangesActions = {
-  registerEdit: (path: string, edit: FileEdit) => {
-    let fileState = fileChangesState.files[path];
+  // 基础增删改查操作
 
-    if (!fileState) {
-      fileState = proxy<FileState>({ path, isLoading: false, edits: [] });
-      fileChangesState.files[path] = fileState;
+  /**
+   * 创建或获取文件状态单例
+   */
+  createOrGetFile: (path: string): FileState => {
+    if (!fileChangesState.files[path]) {
+      fileChangesState.files[path] = proxy<FileState>({
+        path,
+        isLoading: false,
+        edits: [],
+      });
     }
+    return fileChangesState.files[path]!;
+  },
+
+  /**
+   * 获取文件状态
+   */
+  getFile: (path: string): FileState | undefined => {
+    return fileChangesState.files[path];
+  },
+
+  /**
+   * 获取所有文件状态
+   */
+  getAllFiles: (): Record<string, FileState | undefined> => {
+    return fileChangesState.files;
+  },
+
+  /**
+   * 删除文件状态
+   */
+  deleteFile: (path: string): void => {
+    delete fileChangesState.files[path];
+    delete fetchPromises[path];
+  },
+
+  /**
+   * 清空所有文件状态
+   */
+  clearAllFiles: (): void => {
+    fileChangesState.files = {};
+    Object.keys(fetchPromises).forEach((key) => {
+      delete fetchPromises[key];
+    });
+  },
+
+  /**
+   * 添加编辑操作到文件
+   */
+  addEdit: (path: string, edit: FileEdit): void => {
+    const fileState = fileChangesActions.createOrGetFile(path);
 
     // 如果此文件尚未注册此编辑，则添加新编辑。
     if (!fileState.edits.some((e) => e.toolCallId === edit.toolCallId)) {
@@ -58,6 +104,79 @@ export const fileChangesActions = {
         );
       }
     }
+  },
+
+  /**
+   * 删除特定编辑操作
+   */
+  removeEdit: (path: string, toolCallId: string): void => {
+    const fileState = fileChangesState.files[path];
+    if (fileState) {
+      fileState.edits = fileState.edits.filter(
+        (edit) => edit.toolCallId !== toolCallId,
+      );
+      // 重新计算原始内容
+      if (fileState.finalContent) {
+        fileState.originalContent = calculateOriginalContent(
+          fileState.finalContent,
+          fileState.edits,
+        );
+      }
+    }
+  },
+
+  /**
+   * 清空文件的所有编辑操作
+   */
+  clearEdits: (path: string): void => {
+    const fileState = fileChangesState.files[path];
+    if (fileState) {
+      fileState.edits = [];
+      if (fileState.finalContent) {
+        fileState.originalContent = fileState.finalContent;
+      }
+    }
+  },
+
+  /**
+   * 设置文件内容
+   */
+  setFileContent: (
+    path: string,
+    originalContent: string,
+    finalContent: string,
+  ): void => {
+    const fileState = fileChangesActions.createOrGetFile(path);
+    fileState.originalContent = originalContent;
+    fileState.finalContent = finalContent;
+  },
+
+  /**
+   * 设置文件加载状态
+   */
+  setFileLoading: (path: string, isLoading: boolean): void => {
+    const fileState = fileChangesActions.createOrGetFile(path);
+    fileState.isLoading = isLoading;
+  },
+
+  /**
+   * 设置文件错误状态
+   */
+  setFileError: (path: string, error?: string): void => {
+    const fileState = fileChangesActions.createOrGetFile(path);
+    fileState.error = error;
+  },
+
+  // 原有的复合操作，保持向后兼容
+
+  /**
+   * 注册编辑操作（原有接口，保持兼容）
+   */
+  registerEdit: (path: string, edit: FileEdit) => {
+    const fileState = fileChangesActions.createOrGetFile(path);
+
+    // 添加编辑
+    fileChangesActions.addEdit(path, edit);
 
     // 始终获取最新内容以确保差异的准确性。
     // 这可以避免在后端编辑完成之前读取文件而导致的竞态条件。
@@ -92,6 +211,9 @@ export const fileChangesActions = {
     fetchPromises[path] = fetchPromise;
   },
 
+  /**
+   * 更新文件内容（原有接口，保持兼容）
+   */
   updateFileContent: async (path: string, newContent: string) => {
     const fileState = fileChangesState.files[path];
     if (!fileState) {
