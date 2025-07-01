@@ -109,32 +109,69 @@ export async function runCommit(opts: RunCliOpts) {
     }
     try {
       execSync('git --version', { stdio: 'ignore' });
+    } catch (error: any) {
+      throw new Error(
+        'Git is not installed or not available in PATH. Please install Git and try again.',
+      );
+    }
+
+    try {
+      execSync('git rev-parse --git-dir', { stdio: 'ignore' });
+    } catch (error: any) {
+      throw new Error(
+        'Not a Git repository. Please run this command from inside a Git repository.',
+      );
+    }
+
+    try {
       execSync('git config user.name', { stdio: 'ignore' });
+    } catch (error: any) {
+      throw new Error(
+        'Git user name is not configured. Please run: git config --global user.name "Your Name"',
+      );
+    }
+
+    try {
       execSync('git config user.email', { stdio: 'ignore' });
     } catch (error: any) {
-      if (error.message.includes('user.name')) {
-        throw new Error(
-          'Git user name is not configured. Please run: git config --global user.name "Your Name"',
-        );
-      } else if (error.message.includes('user.email')) {
-        throw new Error(
-          'Git user email is not configured. Please run: git config --global user.email "your.email@example.com"',
-        );
-      } else {
-        throw new Error('Git is not installed or not available in PATH');
-      }
+      throw new Error(
+        'Git user email is not configured. Please run: git config --global user.email "your.email@example.com"',
+      );
     }
-    const hasChanged =
-      execSync('git status --porcelain').toString().trim().length > 0;
+    let hasChanged = false;
+    try {
+      hasChanged =
+        execSync('git status --porcelain').toString().trim().length > 0;
+    } catch (error: any) {
+      throw new Error(
+        'Failed to check repository status. Please ensure the repository is not corrupted.',
+      );
+    }
+
     if (!hasChanged) {
       throw new Error('No changes to commit');
     }
+
     if (argv.stage) {
-      execSync('git add .');
+      try {
+        execSync('git add .', { stdio: 'pipe' });
+      } catch (error: any) {
+        const errorMessage =
+          error.stderr?.toString() || error.message || 'Unknown error';
+        if (errorMessage.includes('fatal: pathspec')) {
+          throw new Error(
+            'Failed to stage files: Invalid file path or pattern',
+          );
+        }
+        throw new Error(`Failed to stage files: ${errorMessage}`);
+      }
     }
+
     const diff = await getStagedDiff();
     if (diff.length === 0) {
-      throw new Error('No changes to commit');
+      throw new Error(
+        'No staged changes to commit. Use -s flag to stage all changes or manually stage files with git add.',
+      );
     }
 
     let repoStyle = '';
@@ -228,24 +265,153 @@ function copyToClipboard(message: string) {
 async function commitChanges(message: string, skipHooks = false) {
   const noVerify = skipHooks ? '--no-verify' : '';
   logger.logAction({ message: 'Commit the changes.' });
-  execSync(`git commit -m "${message}" ${noVerify}`);
-  logger.logResult('Commit message committed');
+
+  try {
+    execSync(`git commit -m "${message}" ${noVerify}`, { stdio: 'pipe' });
+    logger.logResult('Commit message committed');
+  } catch (error: any) {
+    const errorMessage =
+      error.stderr?.toString() || error.message || 'Unknown error';
+
+    if (errorMessage.includes('nothing to commit')) {
+      logger.logWarn('No changes to commit');
+      return;
+    }
+
+    if (
+      errorMessage.includes('pre-commit hook failed') ||
+      errorMessage.includes('hook failed')
+    ) {
+      logger.logError({
+        error:
+          'Pre-commit hook failed. Use --no-verify to skip hooks or fix the issues.',
+      });
+      throw new Error('Commit failed: Pre-commit hook failed');
+    }
+
+    if (errorMessage.includes('Aborting commit due to empty commit message')) {
+      logger.logError({ error: 'Commit message is empty' });
+      throw new Error('Commit failed: Empty commit message');
+    }
+
+    if (errorMessage.includes('Please tell me who you are')) {
+      logger.logError({
+        error:
+          'Git user configuration missing. Please run: git config --global user.name "Your Name" && git config --global user.email "your.email@example.com"',
+      });
+      throw new Error('Commit failed: Git user configuration missing');
+    }
+
+    if (
+      errorMessage.includes('divergent branches') ||
+      errorMessage.includes('merge conflict')
+    ) {
+      logger.logError({
+        error: 'Repository has conflicts. Please resolve them first.',
+      });
+      throw new Error('Commit failed: Repository has conflicts');
+    }
+
+    logger.logError({ error: `Commit failed: ${errorMessage}` });
+    throw new Error(`Commit failed: ${errorMessage}`);
+  }
 }
 
 async function pushChanges() {
   const hasRemote = execSync('git remote').toString().trim().length > 0;
-  if (hasRemote) {
+  if (!hasRemote) {
+    logger.logWarn('No remote repository configured, cannot push');
+    return;
+  }
+
+  const maxRetries = 3;
+  let attempt = 0;
+
+  while (attempt < maxRetries) {
     try {
       logger.logAction({
-        message: 'Push changes to remote repository.',
+        message:
+          attempt > 0
+            ? `Push changes to remote repository (attempt ${attempt + 1}/${maxRetries}).`
+            : 'Push changes to remote repository.',
       });
-      execSync('git push');
+
+      execSync('git push', { stdio: 'pipe' });
       logger.logResult('Changes pushed to remote repository');
-    } catch (error) {
-      console.error('Push changes failed:', error);
+      return;
+    } catch (error: any) {
+      attempt++;
+      const errorMessage =
+        error.stderr?.toString() || error.message || 'Unknown error';
+
+      if (
+        errorMessage.includes('Authentication failed') ||
+        errorMessage.includes('fatal: Authentication')
+      ) {
+        logger.logError({
+          error:
+            'Authentication failed. Please check your credentials or setup SSH keys.',
+        });
+        throw new Error('Push failed: Authentication error');
+      }
+
+      if (
+        errorMessage.includes('rejected') &&
+        errorMessage.includes('non-fast-forward')
+      ) {
+        logger.logError({
+          error: 'Push rejected: Remote has newer commits. Please pull first.',
+        });
+        throw new Error('Push failed: Remote repository has newer commits');
+      }
+
+      if (
+        errorMessage.includes('Permission denied') ||
+        errorMessage.includes('access denied')
+      ) {
+        logger.logError({
+          error: 'Permission denied. Check repository access permissions.',
+        });
+        throw new Error('Push failed: Permission denied');
+      }
+
+      if (
+        errorMessage.includes('Network is unreachable') ||
+        errorMessage.includes('Connection timed out')
+      ) {
+        if (attempt < maxRetries) {
+          logger.logWarn(
+            `Network error, retrying in 2 seconds... (${attempt}/${maxRetries})`,
+          );
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          continue;
+        }
+        logger.logError({
+          error: 'Network error: Unable to reach remote repository.',
+        });
+        throw new Error('Push failed: Network connectivity issue');
+      }
+
+      if (
+        errorMessage.includes('repository not found') ||
+        errorMessage.includes('does not exist')
+      ) {
+        logger.logError({
+          error: 'Repository not found. Check the remote URL.',
+        });
+        throw new Error('Push failed: Repository not found');
+      }
+
+      if (attempt >= maxRetries) {
+        logger.logError({
+          error: `Push failed after ${maxRetries} attempts: ${errorMessage}`,
+        });
+        throw new Error(`Push failed: ${errorMessage}`);
+      }
+
+      logger.logWarn(`Push attempt ${attempt} failed, retrying...`);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-  } else {
-    logger.logWarn('No remote repository configured, cannot push');
   }
 }
 
@@ -368,20 +534,49 @@ async function getStagedDiff() {
     encoding: 'utf-8',
   };
 
-  const diff = execSync(`git diff --cached -- ${excludePatterns}`, execOptions);
-
-  // Limit diff size - 100KB is a reasonable limit for most LLM contexts
-  const MAX_DIFF_SIZE = 100 * 1024; // 100KB
-
-  if (diff.length > MAX_DIFF_SIZE) {
-    // If diff is too large, truncate and add a note
-    const truncatedDiff = diff.substring(0, MAX_DIFF_SIZE);
-    return (
-      truncatedDiff +
-      '\n\n[Diff truncated due to size. Total diff size: ' +
-      (diff.length / 1024).toFixed(2) +
-      'KB]'
+  try {
+    const diff = execSync(
+      `git diff --cached -- ${excludePatterns}`,
+      execOptions,
     );
+
+    // Limit diff size - 100KB is a reasonable limit for most LLM contexts
+    const MAX_DIFF_SIZE = 100 * 1024; // 100KB
+
+    if (diff.length > MAX_DIFF_SIZE) {
+      // If diff is too large, truncate and add a note
+      const truncatedDiff = diff.substring(0, MAX_DIFF_SIZE);
+      return (
+        truncatedDiff +
+        '\n\n[Diff truncated due to size. Total diff size: ' +
+        (diff.length / 1024).toFixed(2) +
+        'KB]'
+      );
+    }
+    return diff;
+  } catch (error: any) {
+    const errorMessage =
+      error.stderr?.toString() || error.message || 'Unknown error';
+
+    if (errorMessage.includes('bad revision')) {
+      throw new Error(
+        'Failed to get staged diff: Invalid Git revision or corrupt repository',
+      );
+    }
+
+    if (errorMessage.includes('fatal: not a git repository')) {
+      throw new Error('Not a Git repository');
+    }
+
+    if (
+      error.code === 'ENOBUFS' ||
+      errorMessage.includes('maxBuffer exceeded')
+    ) {
+      throw new Error(
+        'Staged changes are too large to process. Please commit smaller changes.',
+      );
+    }
+
+    throw new Error(`Failed to get staged diff: ${errorMessage}`);
   }
-  return diff;
 }
