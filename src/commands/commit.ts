@@ -198,6 +198,8 @@ ${repoStyle}
       }
     }
 
+    logger.logResult(`Generated commit message: ${pc.cyan(message)}`);
+
     // Check if interactive mode is needed
     const isNonInteractiveParam =
       argv.stage || argv.commit || argv.noVerify || argv.copy;
@@ -249,8 +251,6 @@ async function pushChanges() {
 
 // Handle interactive mode
 async function handleInteractiveMode(message: string) {
-  logger.logResult(`Generated commit message: ${pc.cyan(message)}`);
-
   // Ask user what to do next
   const action = await p.select({
     message: pc.bold(
