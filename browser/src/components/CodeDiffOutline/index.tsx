@@ -71,6 +71,7 @@ const CodeDiffOutline = (props: Props) => {
   const { editStatus, old_string: oldString, new_string: newString } = edit;
 
   const { files } = useSnapshot(fileChanges.fileChangesState);
+  const [earlyFileContent, setEarlyFileContent] = useState<string>();
 
   const file = useMemo(() => files[path], [files, path]);
 
@@ -93,9 +94,9 @@ const CodeDiffOutline = (props: Props) => {
       ? file.content.replace(oldString, newString || '')
       : file.content;
 
-    const oldContent = editStatus === 'accept' ? replacedContent : file.content;
+    const oldContent = earlyFileContent || file.content;
 
-    const newContent = editStatus === 'reject' ? file.content : replacedContent;
+    const newContent = replacedContent;
 
     const newGlobalContent =
       fileChanges.fileChangesActions.getFinalContent(path) || '';
@@ -124,6 +125,7 @@ const CodeDiffOutline = (props: Props) => {
   }
 
   const handleAccept = () => {
+    setEarlyFileContent(file.content);
     fileChanges.fileChangesActions.updateFileState(
       path,
       (prevState) => {
@@ -170,7 +172,7 @@ const CodeDiffOutline = (props: Props) => {
       <CodeDiffOutlineHeader
         loading={loading}
         diffStat={diffStat}
-        hasDiff={hasDiff}
+        showDiffActionsAndInfo={hasDiff && !editStatus}
         editStatus={editStatus}
         path={path}
         normalViewMode={normalViewerMode}

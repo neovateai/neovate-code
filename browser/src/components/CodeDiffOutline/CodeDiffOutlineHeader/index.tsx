@@ -17,7 +17,7 @@ import type {
 } from '@/types/codeViewer';
 
 interface Props {
-  hasDiff?: boolean;
+  showDiffActionsAndInfo?: boolean;
   diffStat?: DiffStat;
   path: string;
   editStatus?: CodeViewerEditStatus;
@@ -98,7 +98,7 @@ const useStyles = createStyles(
 
 const CodeDiffOutlineHeader = (props: Props) => {
   const {
-    hasDiff,
+    showDiffActionsAndInfo,
     diffStat,
     path,
     editStatus,
@@ -145,7 +145,7 @@ const CodeDiffOutlineHeader = (props: Props) => {
         </span>
         <DevFileIcon size={16} fileExt={path.split('.').pop() || ''} />
         <div className={styles.plainText}>{path}</div>
-        {hasDiff && (
+        {showDiffActionsAndInfo && (
           <>
             {normalViewMode ? (
               <div className={styles.itemLeftDiffStat}>
@@ -175,7 +175,7 @@ const CodeDiffOutlineHeader = (props: Props) => {
         {editStatus === 'reject' && <CloseOutlined className={styles.remove} />}
       </div>
       <div className={styles.headerRight}>
-        {hasDiff && (
+        {showDiffActionsAndInfo && (
           <>
             <Tooltip title={t('codeViewer.toolButton.reject')}>
               <Button
