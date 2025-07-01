@@ -39,10 +39,15 @@ const useStyles = createStyles(({ css }) => {
       align-items: center;
       column-gap: 12px;
     `,
-    switch: css`
-      display: flex;
-      align-items: center;
-      column-gap: 8px;
+    normalButton: css`
+      color: #6b7280;
+    `,
+    acceptButton: css`
+      background-color: #00b96b;
+      &:hover,
+      &:active {
+        background-color: #00b96b !important;
+      }
     `,
   };
 });
@@ -82,6 +87,7 @@ const DiffToolbar = (props: Props) => {
             placement="topRight"
           >
             <Button
+              className={styles.normalButton}
               type="text"
               icon={<ArrowUpOutlined />}
               onClick={() => onGotoDiff('previous')}
@@ -92,6 +98,7 @@ const DiffToolbar = (props: Props) => {
             placement="topRight"
           >
             <Button
+              className={styles.normalButton}
               type="text"
               icon={<ArrowDownOutlined />}
               onClick={() => onGotoDiff('next')}
@@ -100,7 +107,8 @@ const DiffToolbar = (props: Props) => {
           {!item.hideDiffActions && (
             <>
               <Button
-                type="text"
+                danger
+                type="primary"
                 icon={<CloseOutlined />}
                 onClick={() => onRejectAll()}
               >
@@ -108,7 +116,8 @@ const DiffToolbar = (props: Props) => {
               </Button>
 
               <Button
-                type="text"
+                className={styles.acceptButton}
+                type="primary"
                 icon={<CheckOutlined />}
                 onClick={() => onAcceptAll()}
               >

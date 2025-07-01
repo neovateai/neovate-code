@@ -90,12 +90,8 @@ const useStyles = createStyles(
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         transform: rotate(${isExpanded ? 90 : 0}deg);
       `,
-      grayButton: css`
-        color: #6b7280; /* text-gray-500 */
-        cursor: pointer;
-        &:hover {
-          color: #00b96b;
-        }
+      normalButton: css`
+        color: #6b7280;
       `,
     };
   },
@@ -194,18 +190,27 @@ const CodeDiffOutlineHeader = (props: Props) => {
         {hasDiff && !rollbacked && (
           <>
             <Tooltip title={t('codeViewer.toolButton.rejectAll')}>
-              <div className={styles.grayButton} onClick={onRejectAll}>
-                <CloseOutlined style={{ fontSize: 14 }} />
-              </div>
+              <Button
+                className={styles.normalButton}
+                type="text"
+                shape="circle"
+                icon={<CloseOutlined />}
+                onClick={onRejectAll}
+              />
             </Tooltip>
             <Tooltip title={t('codeViewer.toolButton.acceptAll')}>
-              <div className={styles.grayButton} onClick={onAcceptAll}>
-                <CheckOutlined style={{ fontSize: 14 }} />
-              </div>
+              <Button
+                className={styles.normalButton}
+                type="text"
+                shape="circle"
+                icon={<CheckOutlined />}
+                onClick={onAcceptAll}
+              />
             </Tooltip>
           </>
         )}
         <Button
+          className={styles.normalButton}
           type="text"
           shape="circle"
           onClick={onExpand}
