@@ -6,7 +6,8 @@ import {
   setTraceProcessors,
 } from '@openai/agents';
 import createDebug from 'debug';
-import fs from 'fs/promises';
+import fs from 'fs';
+import path from 'path';
 
 const debug = createDebug('takumi:tracing');
 
@@ -20,7 +21,10 @@ class FileExporter implements TracingExporter {
     const serializedItems = items.map((item) => item.toJSON()).filter(Boolean);
     if (serializedItems.length > 0) {
       const data = JSON.stringify(serializedItems, null, 2) + '\n';
-      await fs.appendFile(this.filePath, data);
+      if (!fs.existsSync(this.filePath)) {
+        fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
+      }
+      fs.appendFileSync(this.filePath, data);
     }
   }
 }
