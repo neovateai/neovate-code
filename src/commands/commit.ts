@@ -10,6 +10,7 @@ import clipboardy from 'clipboardy';
 import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
+import { createBranchAgent } from '../agents/branch';
 import { createCommitAgent } from '../agents/commit';
 import { Context } from '../context';
 import { getDefaultModelProvider } from '../provider';
@@ -17,6 +18,13 @@ import * as logger from '../utils/logger';
 
 interface GenerateCommitMessageOpts {
   prompt: string;
+  model: string;
+  language?: string;
+  modelProvider?: ModelProvider;
+}
+
+interface GenerateBranchNameOpts {
+  commitMessage: string;
   model: string;
   language?: string;
   modelProvider?: ModelProvider;
@@ -36,6 +44,22 @@ async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
     throw new Error('Commit message is not a string');
   }
   return message;
+}
+
+async function generateBranchName(opts: GenerateBranchNameOpts) {
+  const agent = createBranchAgent({
+    model: opts.model,
+    language: opts.language ?? 'english',
+  });
+  const runner = new Runner({
+    modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
+  });
+  const result = await runner.run(agent, opts.commitMessage);
+  const branchName = result.finalOutput;
+  if (typeof branchName !== 'string') {
+    throw new Error('Branch name is not a string');
+  }
+  return branchName.trim();
 }
 
 function printHelp(p: string) {
@@ -58,6 +82,7 @@ Options:
   --push                        Push changes after commit
   --follow-style                Follow existing repository commit style
   --ai                          Add [AI] suffix to commit message
+  --checkout                    Create and checkout new branch based on commit message
 
 Examples:
   ${p} commit                 Interactive mode - generate and choose action
@@ -66,6 +91,7 @@ Examples:
   ${p} commit -s -c --push    Stage, commit and push in one command
   ${p} commit --follow-style  Generate message following repo style
   ${p} commit --ai            Generate message with [AI] suffix
+  ${p} commit --checkout      Create branch and commit changes
       `.trim(),
   );
 }
@@ -93,6 +119,7 @@ export async function runCommit(opts: RunCliOpts) {
         'followStyle',
         'help',
         'ai',
+        'checkout',
       ],
       string: ['model', 'language'],
     });
@@ -243,14 +270,32 @@ ${repoStyle}
 
     logger.logResult(`Generated commit message: ${pc.cyan(finalMessage)}`);
 
+    // Handle checkout before commit operations
+    if (argv.checkout) {
+      const stop = logger.spinThink({ productName: opts.productName });
+      const branchName = await generateBranchName({
+        commitMessage: finalMessage,
+        model,
+        language: context.config.language,
+        modelProvider: opts.modelProvider,
+      });
+      stop();
+      await checkoutNewBranch(branchName);
+    }
+
     // Check if interactive mode is needed
     const isNonInteractiveParam =
-      argv.stage || argv.commit || argv.noVerify || argv.copy;
+      argv.stage || argv.commit || argv.noVerify || argv.copy || argv.checkout;
     if (argv.interactive && !isNonInteractiveParam) {
-      await handleInteractiveMode(finalMessage);
+      await handleInteractiveMode(finalMessage, {
+        model,
+        language: context.config.language,
+        modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
+        productName: opts.productName,
+      });
     } else {
       // Non-interactive mode logic
-      if (argv.commit) {
+      if (argv.commit || argv.checkout) {
         await commitChanges(finalMessage, argv.noVerify);
         if (argv.push) {
           await pushChanges();
@@ -266,6 +311,57 @@ ${repoStyle}
 function copyToClipboard(message: string) {
   clipboardy.writeSync(message);
   logger.logResult('Commit message copied to clipboard');
+}
+
+async function checkoutNewBranch(branchName: string): Promise<void> {
+  try {
+    // Check if branch already exists
+    try {
+      execSync(`git rev-parse --verify ${branchName}`, { stdio: 'ignore' });
+      // Branch exists, add timestamp to make it unique
+      const timestamp = new Date()
+        .toISOString()
+        .slice(0, 16)
+        .replace(/[-:]/g, '');
+      branchName = `${branchName}-${timestamp}`;
+      logger.logWarn(`Branch name already exists, using: ${branchName}`);
+    } catch {
+      // Branch doesn't exist, continue with original name
+    }
+
+    logger.logAction({
+      message: `Creating and checking out new branch: ${branchName}`,
+    });
+
+    // Create and checkout new branch
+    execSync(`git checkout -b ${branchName}`, { stdio: 'pipe' });
+    logger.logResult(
+      `Successfully created and checked out branch: ${branchName}`,
+    );
+  } catch (error: any) {
+    const errorMessage =
+      error.stderr?.toString() || error.message || 'Unknown error';
+
+    if (errorMessage.includes('already exists')) {
+      throw new Error(
+        `Branch ${branchName} already exists. Please choose a different name.`,
+      );
+    }
+
+    if (errorMessage.includes('not a valid branch name')) {
+      throw new Error(
+        `Invalid branch name: ${branchName}. Please use a valid Git branch name.`,
+      );
+    }
+
+    if (errorMessage.includes('uncommitted changes')) {
+      throw new Error(
+        'Cannot create branch with uncommitted changes. Please commit or stash your changes first.',
+      );
+    }
+
+    throw new Error(`Failed to create branch: ${errorMessage}`);
+  }
 }
 
 async function commitChanges(message: string, skipHooks = false) {
@@ -422,7 +518,15 @@ async function pushChanges() {
 }
 
 // Handle interactive mode
-async function handleInteractiveMode(message: string) {
+async function handleInteractiveMode(
+  message: string,
+  config?: {
+    model: string;
+    language: string;
+    modelProvider: ModelProvider;
+    productName: string;
+  },
+) {
   // Ask user what to do next
   const action = await p.select({
     message: pc.bold(
@@ -432,6 +536,7 @@ async function handleInteractiveMode(message: string) {
       { label: 'Copy to clipboard', value: 'copy' },
       { label: 'Commit changes', value: 'commit' },
       { label: 'Commit and push changes', value: 'push' },
+      { label: 'Create branch and commit', value: 'checkout' },
       { label: 'Edit commit message', value: 'edit' },
       { label: 'Cancel', value: 'cancel' },
     ],
@@ -469,6 +574,35 @@ async function handleInteractiveMode(message: string) {
       await commitChanges(message, skipHooksResult);
       await pushChanges();
       break;
+    case 'checkout':
+      // Generate branch name and let user preview/edit it
+      let suggestedBranchName = 'feature-branch';
+      if (config) {
+        const stop = logger.spinThink({ productName: config.productName });
+        suggestedBranchName = await generateBranchName({
+          commitMessage: message,
+          model: config.model,
+          language: config.language,
+          modelProvider: config.modelProvider,
+        });
+        stop();
+      }
+
+      const branchName = await p.text({
+        message: pc.bold(pc.blueBright('Branch name:')),
+        initialValue: suggestedBranchName,
+        placeholder: 'Enter branch name',
+      });
+
+      if (p.isCancel(branchName)) {
+        logger.logAction({ message: 'Operation cancelled' });
+        return;
+      }
+
+      // Create branch and commit
+      await checkoutNewBranch(branchName);
+      await commitChanges(message);
+      break;
     case 'edit':
       // Ask user to edit the commit message
       const editedMessage = await p.text({
@@ -482,7 +616,7 @@ async function handleInteractiveMode(message: string) {
       }
 
       // Use the edited message again to show the operation options
-      await handleInteractiveMode(editedMessage);
+      await handleInteractiveMode(editedMessage, config);
       break;
     case 'cancel':
       logger.logAction({ message: 'Operation cancelled' });
