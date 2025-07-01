@@ -101,4 +101,15 @@ export const fileChangesActions = {
       fileState.edits.push(...edits);
     }
   },
+
+  // 读取对应path文件中的所有edits，并应用这些edits，得到最终内容
+  getFinalContent: (path: string) => {
+    const fileState = fileChangesState.files[path];
+    if (!fileState) {
+      return '';
+    }
+    return fileChangesState.files[path]?.edits.reduce((content, edit) => {
+      return content.replace(edit.old_string, edit.new_string);
+    }, fileState.content);
+  },
 };
