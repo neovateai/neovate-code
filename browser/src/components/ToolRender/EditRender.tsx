@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { fileChangesActions, fileChangesState } from '@/state/fileChanges';
+import { fileChangesActions } from '@/state/fileChanges';
 import type { ToolMessage } from '@/types/message';
 import CodeDiffOutline from '../CodeDiffOutline';
 
@@ -14,10 +14,6 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
     new_string: string;
   };
 
-  const handleChangeCode = async (newCode: string) => {
-    await fileChangesActions.writeFileContent(file_path, newCode);
-  };
-
   useEffect(() => {
     fileChangesActions.initFileState(file_path, [
       { toolCallId, old_string, new_string },
@@ -27,9 +23,11 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
   return (
     <CodeDiffOutline
       path={file_path}
-      oldString={old_string}
-      newString={new_string}
-      onChangeCode={handleChangeCode}
+      edit={{
+        toolCallId,
+        old_string,
+        new_string,
+      }}
     />
   );
 }
