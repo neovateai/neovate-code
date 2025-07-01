@@ -2,9 +2,10 @@ import {
   CheckOutlined,
   CloseOutlined,
   ExpandAltOutlined,
+  RightOutlined,
   RollbackOutlined,
 } from '@ant-design/icons';
-import { Button } from 'antd';
+import { Button, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
 import { useTranslation } from 'react-i18next';
 import DiffStatBlocks from '@/components/CodeViewer/DiffStatBlocks';
@@ -26,6 +27,8 @@ interface Props {
   onRejectAll?: () => void;
   onRollback?: () => void;
   onExpand?: () => void;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 const useStyles = createStyles(({ css, token }) => {
@@ -34,7 +37,6 @@ const useStyles = createStyles(({ css, token }) => {
       display: flex;
       align-items: center;
       justify-content: space-between;
-
       padding: 8px 2px;
     `,
     headerLeft: css`
@@ -45,10 +47,12 @@ const useStyles = createStyles(({ css, token }) => {
       white-space: nowrap;
       min-width: 0;
       flex: 1 1 0%;
+      cursor: pointer;
     `,
     headerRight: css`
       display: flex;
       justify-content: center;
+      align-items: center;
       column-gap: 12px;
       margin: 0 8px;
     `,
@@ -88,6 +92,8 @@ const CodeDiffOutlineHeader = (props: Props) => {
     onExpand,
     onRejectAll,
     onRollback,
+    isExpanded,
+    onToggleExpand,
   } = props;
 
   const { styles } = useStyles();
@@ -118,7 +124,14 @@ const CodeDiffOutlineHeader = (props: Props) => {
 
   return (
     <div className={styles.header}>
-      <div className={styles.headerLeft}>
+      <div className={styles.headerLeft} onClick={onToggleExpand}>
+        <span
+          className={`transition-transform duration-300 ease-in-out ${
+            isExpanded ? 'rotate-90' : ''
+          }`}
+        >
+          <RightOutlined />
+        </span>
         <DevFileIcon size={16} fileExt={path.split('.').pop() || ''} />
         <div className={styles.plainText}>{path}</div>
         {hasDiff && (
@@ -163,27 +176,22 @@ const CodeDiffOutlineHeader = (props: Props) => {
         )}
         {hasDiff && !rollbacked && (
           <>
-            <Button
-              type="primary"
-              icon={<CloseOutlined />}
-              danger
-              onClick={(e) => {
-                e.stopPropagation();
-                onRejectAll?.();
-              }}
-            >
-              {t('codeViewer.toolButton.rejectAll')}
-            </Button>
-            <Button
-              type="primary"
-              icon={<CheckOutlined />}
-              onClick={(e) => {
-                e.stopPropagation();
-                onAcceptAll?.();
-              }}
-            >
-              {t('codeViewer.toolButton.acceptAll')}
-            </Button>
+            <Tooltip title={t('codeViewer.toolButton.rejectAll')}>
+              <div
+                className="text-gray-500 cursor-pointer"
+                onClick={onRejectAll}
+              >
+                <CloseOutlined style={{ fontSize: 14 }} />
+              </div>
+            </Tooltip>
+            <Tooltip title={t('codeViewer.toolButton.acceptAll')}>
+              <div
+                className="text-gray-500 cursor-pointer"
+                onClick={onAcceptAll}
+              >
+                <CheckOutlined style={{ fontSize: 14 }} />
+              </div>
+            </Tooltip>
           </>
         )}
         <Button

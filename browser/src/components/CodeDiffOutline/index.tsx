@@ -89,6 +89,7 @@ const CodeDiffOutline = (props: Props) => {
     onChangeCode,
   } = props;
 
+  const [isExpanded, setIsExpanded] = useState(true);
   const [changed, setChanged] = useState<CodeDiffOutlineChangeType>();
   const [rollbacked, setRollbacked] = useState(false);
 
@@ -286,7 +287,7 @@ const CodeDiffOutline = (props: Props) => {
   };
 
   return (
-    <div className={styles.container}>
+    <div className="bg-gray-100 rounded-md shadow-sm my-2">
       <CodeDiffOutlineHeader
         diffStat={diffStat}
         hasDiff={hasDiff}
@@ -300,38 +301,46 @@ const CodeDiffOutline = (props: Props) => {
         onRejectAll={handleRejectAll}
         onRollback={handleRollback}
         onExpand={() => showCodeViewer(currentCodes, rollbacked)}
+        isExpanded={isExpanded}
+        onToggleExpand={() => setIsExpanded(!isExpanded)}
       />
 
-      <div className={styles.innerContainer}>
-        {isNormalView ? (
-          <CodeNormalView
-            hideToolbar
-            height={300}
-            item={{
-              path,
-              code: isNewFile
-                ? currentCodes.modifiedCode
-                : currentCodes.originalCode,
-              viewType: 'normal',
-              title: path,
-              id: path,
-              mode: isNewFile ? 'new' : isDeletedFile ? 'deleted' : undefined,
-            }}
-          />
-        ) : (
-          <CodeDiffView
-            hideToolBar
-            height={300}
-            item={{
-              path,
-              originalCode: currentCodes.originalCode,
-              modifiedCode: currentCodes.modifiedCode,
-              viewType: 'diff',
-              title: path,
-              id: path,
-            }}
-          />
-        )}
+      <div
+        className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${
+          isExpanded ? 'max-h-[500px]' : 'max-h-0'
+        }`}
+      >
+        <div className={styles.innerContainer}>
+          {isNormalView ? (
+            <CodeNormalView
+              hideToolbar
+              height={300}
+              item={{
+                path,
+                code: isNewFile
+                  ? currentCodes.modifiedCode
+                  : currentCodes.originalCode,
+                viewType: 'normal',
+                title: path,
+                id: path,
+                mode: isNewFile ? 'new' : isDeletedFile ? 'deleted' : undefined,
+              }}
+            />
+          ) : (
+            <CodeDiffView
+              hideToolBar
+              height={300}
+              item={{
+                path,
+                originalCode: currentCodes.originalCode,
+                modifiedCode: currentCodes.modifiedCode,
+                viewType: 'diff',
+                title: path,
+                id: path,
+              }}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
