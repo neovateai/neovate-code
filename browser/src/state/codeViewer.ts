@@ -70,7 +70,7 @@ export const actions = {
     state.codeViewerTabItems = nextItems;
   },
 
-  displayNormalViewer: async (
+  updateNormalViewerConfig: async (
     configs:
       | DisplayNormalViewerConfigs
       | (() => Promise<DisplayNormalViewerConfigs>),
@@ -117,12 +117,10 @@ export const actions = {
     }
 
     state.activeId = id;
-
-    state.visible = true;
   },
 
   /** 代码有更新后，也需要重新调用一次这个函数刷新展示 */
-  displayDiffViewer: (config: DisplayDiffViewerConfigs) => {
+  updateDiffViewerConfig: (config: DisplayDiffViewerConfigs) => {
     const {
       path,
       modifiedCode,
@@ -174,8 +172,6 @@ export const actions = {
     }
 
     state.activeId = id;
-
-    state.visible = true;
   },
 
   /**
@@ -210,7 +206,6 @@ export const actions = {
     const editFunction = state.editFunctionMap[path];
     if (remainingItem && editFunction) {
       state.activeId = remainingItem.id;
-      state.visible = true;
 
       editFunction(type, diffBlockStat);
     }

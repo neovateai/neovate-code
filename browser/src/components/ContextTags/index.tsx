@@ -49,7 +49,7 @@ export const FileContextTag = ({
       onClick={async () => {
         if (isFile) {
           const fileContent = (await readFile(displayText)).data.content;
-          codeViewer.actions.displayNormalViewer({
+          codeViewer.actions.updateNormalViewerConfig({
             path: displayText,
             code: fileContent,
           });

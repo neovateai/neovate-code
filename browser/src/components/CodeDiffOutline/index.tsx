@@ -26,6 +26,8 @@ interface Props {
    * @param oldCode 本次操作前的原始代码
    */
   onChangeCode?: (newCode: string, oldCode: string) => void;
+
+  readonly loading?: boolean;
 }
 
 const useStyles = createStyles(
@@ -132,6 +134,10 @@ const CodeDiffOutline = (props: Props) => {
     [diffStat],
   );
 
+  useEffect(() => {
+    // TODO 每次加载都更新一次侧边栏的代码
+  }, []);
+
   const { styles } = useStyles({ isExpanded });
 
   const handleAccept = (diffBlockStat: DiffBlockStat) => {
@@ -168,7 +174,7 @@ const CodeDiffOutline = (props: Props) => {
 
     onChangeCode?.(nextOriginalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-    showCodeViewer(nextCodes, true);
+    updateCodeViewerConfig(nextCodes, true);
   };
 
   const handleReject = (diffBlockStat: DiffBlockStat) => {
@@ -204,7 +210,7 @@ const CodeDiffOutline = (props: Props) => {
     const nextCodes = { ...currentCodes, modifiedCode: nextModifiedCode };
     onChangeCode?.(currentCodes.originalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-    showCodeViewer(nextCodes, true);
+    updateCodeViewerConfig(nextCodes, true);
   };
 
   const handleAcceptAll = () => {
@@ -217,7 +223,7 @@ const CodeDiffOutline = (props: Props) => {
     setCurrentCodes(nextCodes);
     if (codeViewerVisible) {
       // refresh code viewer
-      showCodeViewer(nextCodes, true);
+      updateCodeViewerConfig(nextCodes, true);
     }
   };
 
@@ -231,11 +237,11 @@ const CodeDiffOutline = (props: Props) => {
     setCurrentCodes(nextCodes);
     if (codeViewerVisible) {
       // refresh code viewer
-      showCodeViewer(nextCodes, true);
+      updateCodeViewerConfig(nextCodes, true);
     }
   };
 
-  const showCodeViewer = async (
+  const updateCodeViewerConfig = async (
     currentCodes: {
       originalCode: string;
       modifiedCode: string;
@@ -243,7 +249,7 @@ const CodeDiffOutline = (props: Props) => {
     hideDiffActions: boolean,
   ) => {
     if (isNormalView) {
-      codeViewer.actions.displayNormalViewer({
+      codeViewer.actions.updateNormalViewerConfig({
         path,
         code: isNewFile ? currentCodes.modifiedCode : currentCodes.originalCode,
         language,
@@ -252,7 +258,7 @@ const CodeDiffOutline = (props: Props) => {
     } else {
       diff(currentCodes.originalCode, currentCodes.modifiedCode).then(
         (diffStat) => {
-          codeViewer.actions.displayDiffViewer({
+          codeViewer.actions.updateDiffViewerConfig({
             path,
             diffStat,
             originalCode: currentCodes.originalCode,
@@ -277,7 +283,10 @@ const CodeDiffOutline = (props: Props) => {
         }
         onAcceptAll={handleAcceptAll}
         onRejectAll={handleRejectAll}
-        onShowCodeViewer={() => showCodeViewer(currentCodes, !!changed)}
+        onShowCodeViewer={() => {
+          updateCodeViewerConfig(currentCodes, !!changed);
+          codeViewer.actions.setVisible(true);
+        }}
         isExpanded={isExpanded}
         onToggleExpand={() => setIsExpanded(!isExpanded)}
       />
