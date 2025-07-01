@@ -3,7 +3,6 @@ import {
   CloseOutlined,
   ExpandAltOutlined,
   RightOutlined,
-  RollbackOutlined,
 } from '@ant-design/icons';
 import { Button, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
@@ -21,12 +20,10 @@ interface Props {
   diffStat?: DiffStat;
   path: string;
   changed?: CodeDiffOutlineChangeType;
-  rollbacked?: boolean;
   normalViewMode?: CodeNormalViewerMode;
   onAcceptAll?: () => void;
   onRejectAll?: () => void;
-  onRollback?: () => void;
-  onExpand?: () => void;
+  onShowCodeViewer?: () => void;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
 }
@@ -103,12 +100,10 @@ const CodeDiffOutlineHeader = (props: Props) => {
     diffStat,
     path,
     changed,
-    rollbacked,
     normalViewMode,
     onAcceptAll,
-    onExpand,
+    onShowCodeViewer: onExpand,
     onRejectAll,
-    onRollback,
     isExpanded,
     onToggleExpand,
   } = props;
@@ -177,19 +172,9 @@ const CodeDiffOutlineHeader = (props: Props) => {
         {changed === 'reject' && <CloseOutlined className={styles.remove} />}
       </div>
       <div className={styles.headerRight}>
-        {changed && (
-          <Button
-            type="text"
-            icon={<RollbackOutlined />}
-            onClick={(e) => {
-              e.stopPropagation();
-              onRollback?.();
-            }}
-          />
-        )}
-        {hasDiff && !rollbacked && (
+        {hasDiff && (
           <>
-            <Tooltip title={t('codeViewer.toolButton.rejectAll')}>
+            <Tooltip title={t('codeViewer.toolButton.reject')}>
               <Button
                 className={styles.normalButton}
                 type="text"
@@ -198,7 +183,7 @@ const CodeDiffOutlineHeader = (props: Props) => {
                 onClick={onRejectAll}
               />
             </Tooltip>
-            <Tooltip title={t('codeViewer.toolButton.acceptAll')}>
+            <Tooltip title={t('codeViewer.toolButton.accept')}>
               <Button
                 className={styles.normalButton}
                 type="text"

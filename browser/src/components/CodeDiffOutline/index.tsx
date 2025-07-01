@@ -8,7 +8,7 @@ import type {
   DiffBlockStat,
   DiffStat,
 } from '@/types/codeViewer';
-import { diff } from '@/utils/codeViewer';
+import { diff, inferFileType } from '@/utils/codeViewer';
 import CodeDiffView from '../CodeViewer/CodeDiffView';
 import CodeNormalView from '../CodeViewer/CodeNormalView';
 import CodeDiffOutlineHeader from './CodeDiffOutlineHeader';
@@ -88,15 +88,8 @@ const CodeDiffOutline = (props: Props) => {
 
   const [isExpanded, setIsExpanded] = useState(true);
   const [changed, setChanged] = useState<CodeDiffOutlineChangeType>();
-  const [rollbacked, setRollbacked] = useState(false);
 
   const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
-
-  // 最初的代码状态，用于回滚
-  const [initailCodes] = useState({
-    originalCode,
-    modifiedCode,
-  });
 
   // 当前的代码状态，用于维护diff视图
   const [currentCodes, setCurrentCodes] = useState({
@@ -175,7 +168,7 @@ const CodeDiffOutline = (props: Props) => {
 
     onChangeCode?.(nextOriginalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-    showCodeViewer(nextCodes, rollbacked);
+    showCodeViewer(nextCodes, true);
   };
 
   const handleReject = (diffBlockStat: DiffBlockStat) => {
@@ -211,7 +204,7 @@ const CodeDiffOutline = (props: Props) => {
     const nextCodes = { ...currentCodes, modifiedCode: nextModifiedCode };
     onChangeCode?.(currentCodes.originalCode, currentCodes.originalCode);
     setCurrentCodes(nextCodes);
-    showCodeViewer(nextCodes, rollbacked);
+    showCodeViewer(nextCodes, true);
   };
 
   const handleAcceptAll = () => {
@@ -224,7 +217,7 @@ const CodeDiffOutline = (props: Props) => {
     setCurrentCodes(nextCodes);
     if (codeViewerVisible) {
       // refresh code viewer
-      showCodeViewer(nextCodes, rollbacked);
+      showCodeViewer(nextCodes, true);
     }
   };
 
@@ -238,18 +231,7 @@ const CodeDiffOutline = (props: Props) => {
     setCurrentCodes(nextCodes);
     if (codeViewerVisible) {
       // refresh code viewer
-      showCodeViewer(nextCodes, rollbacked);
-    }
-  };
-
-  const handleRollback = () => {
-    setChanged(undefined);
-    setRollbacked(true);
-    onChangeCode?.(initailCodes.originalCode, currentCodes.originalCode);
-    setCurrentCodes(initailCodes);
-    if (codeViewerVisible) {
-      // refresh code viewer
-      showCodeViewer(initailCodes, true);
+      showCodeViewer(nextCodes, true);
     }
   };
 
@@ -290,14 +272,12 @@ const CodeDiffOutline = (props: Props) => {
         hasDiff={hasDiff}
         changed={changed}
         path={path}
-        rollbacked={rollbacked}
         normalViewMode={
           isNewFile ? 'new' : isDeletedFile ? 'deleted' : undefined
         }
         onAcceptAll={handleAcceptAll}
         onRejectAll={handleRejectAll}
-        onRollback={handleRollback}
-        onExpand={() => showCodeViewer(currentCodes, rollbacked)}
+        onShowCodeViewer={() => showCodeViewer(currentCodes, !!changed)}
         isExpanded={isExpanded}
         onToggleExpand={() => setIsExpanded(!isExpanded)}
       />
@@ -309,6 +289,7 @@ const CodeDiffOutline = (props: Props) => {
               hideToolbar
               height={300}
               item={{
+                language: language || inferFileType(path),
                 path,
                 code: isNewFile
                   ? currentCodes.modifiedCode
@@ -324,6 +305,7 @@ const CodeDiffOutline = (props: Props) => {
               hideToolBar
               height={300}
               item={{
+                language: language || inferFileType(path),
                 path,
                 originalCode: currentCodes.originalCode,
                 modifiedCode: currentCodes.modifiedCode,
