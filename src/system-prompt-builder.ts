@@ -11,6 +11,7 @@ import {
   RulesContributor,
 } from './context-contributor';
 import { PluginHookType } from './plugin';
+import { isProjectDirectory } from './utils/project';
 
 export class SystemPromptBuilder {
   private context: Context;
@@ -29,7 +30,9 @@ export class SystemPromptBuilder {
     const contributors: ContextContributor[] = [
       new GitStatusContributor(),
       new IDEContributor(),
-      new DirectoryStructureContributor(),
+      ...(isProjectDirectory(appContext.cwd)
+        ? [new DirectoryStructureContributor()]
+        : []),
       new RulesContributor(),
       new ReadmeContributor(),
       new CodebaseContributor(),
