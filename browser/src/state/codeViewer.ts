@@ -114,14 +114,7 @@ export const actions = {
 
   /** 代码有更新后，也需要重新调用一次这个函数刷新展示 */
   updateDiffViewerConfig: (config: DisplayDiffViewerConfigs) => {
-    const {
-      path,
-      modifiedCode,
-      originalCode,
-      language,
-      diffStat,
-      hideDiffActions,
-    } = config;
+    const { path, modifiedCode, originalCode, language, diffStat } = config;
 
     const id = path || Date.now().toString();
 
@@ -143,7 +136,7 @@ export const actions = {
           viewType: 'diff',
           path,
           diffStat,
-          hideDiffActions,
+          hideDiffActions: !diffStat?.diffBlockStats.length,
         };
       } else {
         return item;
@@ -160,7 +153,7 @@ export const actions = {
         viewType: 'diff',
         path,
         diffStat,
-        hideDiffActions,
+        hideDiffActions: !diffStat?.diffBlockStats.length,
       });
     }
 

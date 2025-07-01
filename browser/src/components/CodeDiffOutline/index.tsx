@@ -88,13 +88,14 @@ const CodeDiffOutline = (props: Props) => {
     if (!file) {
       return;
     }
-    const oldContent = file.content;
-    const newContent =
-      editStatus === 'reject'
-        ? oldContent
-        : oldString
-          ? oldContent.replace(oldString, newString || '')
-          : oldContent;
+
+    const replacedContent = oldString
+      ? file.content.replace(oldString, newString || '')
+      : file.content;
+
+    const oldContent = editStatus === 'accept' ? replacedContent : file.content;
+
+    const newContent = editStatus === 'reject' ? file.content : replacedContent;
 
     const newGlobalContent =
       fileChanges.fileChangesActions.getFinalContent(path) || '';
