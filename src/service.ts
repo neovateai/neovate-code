@@ -298,8 +298,7 @@ export class Service {
           text: JSON.stringify({
             type: 'function_call_result',
             name,
-            result:
-              typeof result === 'string' ? result : JSON.stringify(params),
+            result,
             callId,
           }),
         },
