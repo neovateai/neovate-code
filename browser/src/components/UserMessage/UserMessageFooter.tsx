@@ -56,9 +56,9 @@ const UserMessageFooter = memo<UserMessageFooterProps>((props) => {
 
   const buttonText = useMemo(() => {
     return t('context.usedReferences', { count: attachedContexts.length });
-  }, [attachedContexts.length, t]);
+  }, [attachedContexts?.length, t]);
 
-  if (attachedContexts.length === 0) {
+  if (attachedContexts?.length === 0) {
     return null;
   }
 

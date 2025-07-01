@@ -53,6 +53,7 @@ export const FileContextTag = ({
             path: displayText,
             code: fileContent,
           });
+          codeViewer.actions.setVisible(true);
         }
       }}
     >
