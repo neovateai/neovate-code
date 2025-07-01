@@ -1,3 +1,10 @@
+## 0.1.9
+
+`2025-07-01`
+
+- fix: create tracing output directory if missing by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.1.8
 
 `2025-07-01`
