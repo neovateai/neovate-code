@@ -2,7 +2,7 @@ import { DiffEditor } from '@monaco-editor/react';
 import { createStyles } from 'antd-style';
 import * as monaco from 'monaco-editor';
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import * as codeViewer from '@/state/codeViewer';
+import useEditAll from '@/hooks/useEditAll';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffToolbar from '../DiffToolbar';
 
@@ -34,6 +34,7 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
   const { item, height, hideToolBar } = props;
   const { styles } = useStyle();
   const editorRef = useRef<monaco.editor.IStandaloneDiffEditor>(null);
+  const { acceptAll, rejectAll } = useEditAll(item.path);
 
   useImperativeHandle(ref, () => {
     return {
@@ -65,14 +66,10 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
             editorRef?.current?.goToDiff(target);
           }}
           onAcceptAll={() => {
-            if (item.path) {
-              codeViewer.actions.doEdit(item.path, 'accept');
-            }
+            acceptAll(item.modifiedCode);
           }}
           onRejectAll={() => {
-            if (item.path) {
-              codeViewer.actions.doEdit(item.path, 'reject');
-            }
+            rejectAll(item.originalCode);
           }}
           item={item}
         />

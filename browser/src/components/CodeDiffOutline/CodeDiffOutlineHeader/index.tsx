@@ -2,6 +2,7 @@ import {
   CheckOutlined,
   CloseOutlined,
   ExpandAltOutlined,
+  LoadingOutlined,
   RightOutlined,
 } from '@ant-design/icons';
 import { Button, Tooltip } from 'antd';
@@ -10,8 +11,8 @@ import { useTranslation } from 'react-i18next';
 import DiffStatBlocks from '@/components/CodeViewer/DiffStatBlocks';
 import DevFileIcon from '@/components/DevFileIcon';
 import type {
-  CodeDiffOutlineChangeType,
   CodeNormalViewerMode,
+  CodeViewerEditStatus,
   DiffStat,
 } from '@/types/codeViewer';
 
@@ -19,13 +20,14 @@ interface Props {
   hasDiff?: boolean;
   diffStat?: DiffStat;
   path: string;
-  changed?: CodeDiffOutlineChangeType;
+  editStatus?: CodeViewerEditStatus;
   normalViewMode?: CodeNormalViewerMode;
-  onAcceptAll?: () => void;
-  onRejectAll?: () => void;
+  onAccept?: () => void;
+  onReject?: () => void;
   onShowCodeViewer?: () => void;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  loading?: boolean;
 }
 
 const useStyles = createStyles(
@@ -99,13 +101,14 @@ const CodeDiffOutlineHeader = (props: Props) => {
     hasDiff,
     diffStat,
     path,
-    changed,
+    editStatus,
     normalViewMode,
-    onAcceptAll,
-    onShowCodeViewer: onExpand,
-    onRejectAll,
+    onAccept,
+    onShowCodeViewer,
+    onReject,
     isExpanded,
     onToggleExpand,
+    loading,
   } = props;
 
   const { styles } = useStyles({ isExpanded });
@@ -138,7 +141,7 @@ const CodeDiffOutlineHeader = (props: Props) => {
     <div className={styles.header}>
       <div className={styles.headerLeft} onClick={onToggleExpand}>
         <span className={styles.rotateIcon}>
-          <RightOutlined />
+          {loading ? <LoadingOutlined /> : <RightOutlined />}
         </span>
         <DevFileIcon size={16} fileExt={path.split('.').pop() || ''} />
         <div className={styles.plainText}>{path}</div>
@@ -168,8 +171,8 @@ const CodeDiffOutlineHeader = (props: Props) => {
             )}
           </>
         )}
-        {changed === 'accept' && <CheckOutlined className={styles.add} />}
-        {changed === 'reject' && <CloseOutlined className={styles.remove} />}
+        {editStatus === 'accept' && <CheckOutlined className={styles.add} />}
+        {editStatus === 'reject' && <CloseOutlined className={styles.remove} />}
       </div>
       <div className={styles.headerRight}>
         {hasDiff && (
@@ -180,7 +183,7 @@ const CodeDiffOutlineHeader = (props: Props) => {
                 type="text"
                 shape="circle"
                 icon={<CloseOutlined />}
-                onClick={onRejectAll}
+                onClick={onReject}
               />
             </Tooltip>
             <Tooltip title={t('codeViewer.toolButton.accept')}>
@@ -189,7 +192,7 @@ const CodeDiffOutlineHeader = (props: Props) => {
                 type="text"
                 shape="circle"
                 icon={<CheckOutlined />}
-                onClick={onAcceptAll}
+                onClick={onAccept}
               />
             </Tooltip>
           </>
@@ -198,7 +201,7 @@ const CodeDiffOutlineHeader = (props: Props) => {
           className={styles.normalButton}
           type="text"
           shape="circle"
-          onClick={onExpand}
+          onClick={onShowCodeViewer}
           icon={<ExpandAltOutlined />}
         />
       </div>

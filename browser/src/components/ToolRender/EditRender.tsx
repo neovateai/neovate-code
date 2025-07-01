@@ -27,8 +27,8 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
   return (
     <CodeDiffOutline
       path={file_path}
-      originalCode={old_string}
-      modifiedCode={new_string}
+      oldString={old_string}
+      newString={new_string}
       onChangeCode={handleChangeCode}
     />
   );

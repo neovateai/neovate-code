@@ -7,8 +7,6 @@ interface CodeViewerBaseTabItem {
 
 export type CodeNormalViewerMode = 'new' | 'deleted';
 
-export type CodeDiffOutlineChangeType = 'accept' | 'reject';
-
 export interface CodeNormalViewerTabItem extends CodeViewerBaseTabItem {
   code: string;
   viewType: 'normal';
@@ -24,6 +22,8 @@ export interface CodeDiffViewerTabItem extends CodeViewerBaseTabItem {
 }
 
 export type CodeViewerTabItem = CodeNormalViewerTabItem | CodeDiffViewerTabItem;
+
+export type CodeViewerEditStatus = 'accept' | 'reject';
 
 export interface DiffBlockStat {
   originalStartLineNumber: number;

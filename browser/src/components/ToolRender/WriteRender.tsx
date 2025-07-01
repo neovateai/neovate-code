@@ -15,8 +15,8 @@ export default function WriteRender({ message }: { message?: ToolMessage }) {
   return (
     <CodeDiffOutline
       path={file_path}
-      originalCode={undefined}
-      modifiedCode={content}
+      oldString={undefined}
+      newString={content}
       onChangeCode={() => {}}
     />
   );

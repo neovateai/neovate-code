@@ -1,10 +1,18 @@
 import { proxy } from 'valtio';
 import { editFile, readFile } from '@/api/files';
+import * as codeViewer from '@/state/codeViewer';
+import type {
+  CodeNormalViewerMode,
+  CodeViewerEditStatus,
+} from '@/types/codeViewer';
+import { diff } from '@/utils/codeViewer';
 
 export interface FileEdit {
   toolCallId: string;
   old_string: string;
   new_string: string;
+  /** 表示该edit的状态，undefined时表示未修改 */
+  editStatus?: CodeViewerEditStatus;
 }
 
 interface FileState {
@@ -40,8 +48,36 @@ export const fileChangesActions = {
   },
 
   // 更新fileState
-  updateFileState: (path: string, fileState: FileState) => {
-    fileChangesState.files[path] = fileState;
+  updateFileState: async (
+    path: string,
+    fileStateFn: (prevFileState: FileState) => FileState,
+    mode?: CodeNormalViewerMode,
+  ) => {
+    const prevFileState = fileChangesState.files[path];
+    if (!prevFileState) {
+      return;
+    }
+    const nextFileState = fileStateFn(prevFileState);
+    fileChangesState.files[path] = nextFileState;
+
+    const originalCode = nextFileState.content;
+    const modifiedCode = (await readFile(path)).data.content;
+
+    if (mode) {
+      codeViewer.actions.updateNormalViewerConfig({
+        code: mode === 'new' ? modifiedCode : originalCode,
+        path,
+        mode,
+      });
+    } else {
+      const diffStat = await diff(originalCode, modifiedCode);
+      codeViewer.actions.updateDiffViewerConfig({
+        path,
+        originalCode,
+        modifiedCode,
+        diffStat,
+      });
+    }
   },
 
   // 初始化fileState, push edits

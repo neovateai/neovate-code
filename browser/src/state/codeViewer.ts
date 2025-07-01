@@ -4,21 +4,15 @@ import type {
   CodeNormalViewerMode,
   CodeViewerLanguage,
   CodeViewerTabItem,
-  DiffBlockStat,
   DiffStat,
 } from '@/types/codeViewer';
 import { inferFileType } from '@/utils/codeViewer';
-
-type EditType = 'accept' | 'reject';
-
-type EditFunction = (type: EditType, diffBlockStat?: DiffBlockStat) => void;
 
 interface CodeViewerState {
   visible: boolean;
   activeId: string | undefined;
   codeViewerTabItems: CodeViewerTabItem[];
   jumpFunctionMap: { [path: string]: ((_: number) => void) | undefined };
-  editFunctionMap: { [path: string]: EditFunction | undefined };
 }
 
 interface DisplayNormalViewerConfigs {
@@ -44,7 +38,6 @@ export const state = proxy<CodeViewerState>({
   activeId: undefined,
   codeViewerTabItems: [],
   jumpFunctionMap: {},
-  editFunctionMap: {},
 });
 
 export const actions = {
@@ -196,23 +189,5 @@ export const actions = {
   /** 注册跳转函数 */
   registerJumpFunction: (path: string, fn: (_: number) => void) => {
     state.jumpFunctionMap[path] = fn;
-  },
-
-  /** 修改源代码 */
-  doEdit: (path: string, type: EditType, diffBlockStat?: DiffBlockStat) => {
-    const remainingItem = state.codeViewerTabItems.find(
-      (item) => item.path === path,
-    );
-    const editFunction = state.editFunctionMap[path];
-    if (remainingItem && editFunction) {
-      state.activeId = remainingItem.id;
-
-      editFunction(type, diffBlockStat);
-    }
-  },
-
-  /** 注册修改函数 */
-  registerEditFunction: (path: string, fn: EditFunction) => {
-    state.editFunctionMap[path] = fn;
   },
 };
