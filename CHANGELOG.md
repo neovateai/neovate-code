@@ -1,3 +1,18 @@
+## 0.1.8
+
+`2025-07-01`
+
+- feat: add branch generation and checkout functionality [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add --ai option to append [AI] suffix to commit [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: improve Git command error handling and robustness by [@sorrycc](https://github.com/sorrycc)
+- refactor: show generated commit message earlier by [@sorrycc](https://github.com/sorrycc)
+- fix: simplify result assignment in service class by [@阿平](https://github.com/阿平) in [#80](https://github.com/umijs/takumi/pull/80)
+- feat: introduce granular tool approval with UI and modes [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance user message handling and context management in chat UI by [@阿平](https://github.com/阿平) in [#79](https://github.com/umijs/takumi/pull/79)
+- feat: add enable and disable commands for MCP servers by [@sorrycc](https://github.com/sorrycc)
+- feat: add and display tool messages for grep and glob by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.1.7
 
 `2025-06-30`
