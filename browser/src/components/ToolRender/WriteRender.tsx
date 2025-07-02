@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import { fileChangesActions, fileChangesState } from '@/state/fileChanges';
 import type { ToolMessage } from '@/types/message';
@@ -14,6 +14,10 @@ export default function WriteRender({ message }: { message?: ToolMessage }) {
     file_path: string;
     content: string;
   };
+
+  useEffect(() => {
+    fileChangesActions.initNewFileState(file_path, content);
+  }, [file_path, content]);
 
   const { files } = useSnapshot(fileChangesState);
 
