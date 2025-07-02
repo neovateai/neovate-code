@@ -3,7 +3,6 @@ import { Bubble } from '@ant-design/x';
 import { createFileRoute } from '@tanstack/react-router';
 import { type GetProp, Spin } from 'antd';
 import { createStyles } from 'antd-style';
-import cx from 'classnames';
 import { useSnapshot } from 'valtio';
 import AssistantAvatar from '@/components/AssistantAvatar';
 import AssistantFooter from '@/components/AssistantFooter';
@@ -16,42 +15,48 @@ import ChatProvider, { useChatState } from '@/hooks/provider';
 import * as codeViewer from '@/state/codeViewer';
 import type { UIMessage, UIUserMessage } from '@/types/message';
 
-const useStyle = createStyles(({ token, css }) => {
-  return {
-    chat: css`
-      height: 100%;
-      /* width: 100%; */
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      padding-block: ${token.paddingLG}px;
-      gap: 16px;
-      flex: 1;
-    `,
-    chatList: css`
-      flex: 1;
-      overflow: auto;
+const useStyle = createStyles(
+  ({ token, css }, { codeViewerVisible }: { codeViewerVisible?: boolean }) => {
+    return {
+      chat: css`
+        height: 100%;
+        /* width: 100%; */
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        padding-block: ${token.paddingLG}px;
+        gap: 16px;
+        flex: 1;
+      `,
+      chatList: css`
+        flex: 1;
+        overflow: auto;
 
-      .ant-bubble-footer {
-        width: 100%;
-      }
-    `,
-    codeViewerContainer: css`
-      height: 100vh;
-      width: 0;
-      overflow: hidden;
-      transition: width 0.3s ease-in-out;
-    `,
-    codeViewerContainerVisible: css`
-      width: 40vw;
-    `,
-  };
-});
+        .ant-bubble-footer {
+          width: 100%;
+        }
+      `,
+      codeViewerContainer: css`
+        height: 100vh;
+        width: 0;
+        background-color: #fff;
+        padding: 8px 0 8px 8px;
+        overflow: hidden;
+        transition: width 0.3s ease-in-out;
+        ${codeViewerVisible
+          ? css`
+              width: 40vw;
+            `
+          : ''}
+      `,
+    };
+  },
+);
 
 const Chat: React.FC = () => {
-  const { styles } = useStyle();
   const { messages, status } = useChatState();
   const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
+  const { styles } = useStyle({ codeViewerVisible });
 
   const items = messages?.map((message, index) => {
     const isLastMessage = index === messages.length - 1;
@@ -120,12 +125,7 @@ const Chat: React.FC = () => {
         </div>
         <ChatSender />
       </div>
-      <div
-        className={cx(
-          styles.codeViewerContainer,
-          codeViewerVisible && styles.codeViewerContainerVisible,
-        )}
-      >
+      <div className={styles.codeViewerContainer}>
         <CodeViewer />
       </div>
     </>

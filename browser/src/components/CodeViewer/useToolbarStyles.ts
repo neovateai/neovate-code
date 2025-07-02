@@ -12,7 +12,7 @@ export const useToolbarStyles = createStyles(({ css }) => {
       column-gap: 12px;
 
       background-color: #f2f2f2;
-      border-radius: 8px;
+      border-radius: 4px;
     `,
     metaInfo: css`
       display: flex;
