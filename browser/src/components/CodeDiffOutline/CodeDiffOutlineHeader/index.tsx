@@ -117,8 +117,7 @@ const CodeDiffOutlineHeader = (props: Props) => {
 
   function renderAddLines(diffStat?: DiffStat) {
     return (
-      diffStat?.addLines &&
-      diffStat.addLines > 0 && (
+      !!(diffStat?.addLines && diffStat.addLines > 0) && (
         <span className={styles.add}>
           +{diffStat.addLines.toLocaleString()}
         </span>
@@ -128,8 +127,7 @@ const CodeDiffOutlineHeader = (props: Props) => {
 
   function renderRemoveLines(diffStat?: DiffStat) {
     return (
-      diffStat?.removeLines &&
-      diffStat.removeLines > 0 && (
+      !!(diffStat?.removeLines && diffStat.removeLines > 0) && (
         <span className={styles.remove}>
           -{diffStat.removeLines.toLocaleString()}
         </span>
