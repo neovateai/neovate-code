@@ -1,4 +1,4 @@
-# Takumi - AI 编程助手
+# Takumi
 
 [![npm 版本](https://badgen.net/npm/v/takumi)](https://www.npmjs.com/package/takumi)
 [![npm 下载量](https://badgen.net/npm/dm/takumi)](https://www.npmjs.com/package/takumi)
