@@ -77,12 +77,14 @@ export async function run(opts: RunOpts) {
       context,
     });
     if (!quiet) {
+      const stage = opts.plan ? APP_STAGE.PLAN : APP_STAGE.CODE;
+
       render(
         <AppProvider
           context={context}
           service={service}
           planService={planService}
-          stage={opts.plan ? APP_STAGE.PLAN : APP_STAGE.CODE}
+          stage={stage}
           initialPrompt={prompt}
         >
           <App />
