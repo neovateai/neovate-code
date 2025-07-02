@@ -70,12 +70,16 @@ const DiffToolbar = (props: Props) => {
       <div className={toolbarStyles.metaInfo}>
         {item.diffStat && (
           <div className={styles.diffStat}>
-            <div className={styles.add}>
-              +{item.diffStat.addLines.toLocaleString()}
-            </div>
-            <div className={styles.remove}>
-              -{item.diffStat.removeLines.toLocaleString()}
-            </div>
+            {!!(item.diffStat.addLines && item.diffStat.addLines > 0) && (
+              <div className={styles.add}>
+                +{item.diffStat.addLines.toLocaleString()}
+              </div>
+            )}
+            {!!(item.diffStat.removeLines && item.diffStat.removeLines > 0) && (
+              <div className={styles.remove}>
+                -{item.diffStat.removeLines.toLocaleString()}
+              </div>
+            )}
             <DiffStatBlocks diffStat={item.diffStat} />
           </div>
         )}

@@ -38,7 +38,8 @@ const DiffStatBlocks = (props: Props) => {
 
   const diffStatArray = useMemo(() => {
     if (!diffStat || diffStat.diffBlockStats.length === 0) {
-      return Array.from({ length: 5 }).fill('normal');
+      // return Array.from({ length: 5 }).fill('normal');
+      return null;
     }
 
     if (diffStat.originalLines === 0) {
@@ -67,6 +68,10 @@ const DiffStatBlocks = (props: Props) => {
       'normal',
     );
   }, [diffStat]);
+
+  if (!diffStatArray) {
+    return null;
+  }
 
   return (
     <div className={styles.diffStatBlocks}>
