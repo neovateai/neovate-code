@@ -4,6 +4,9 @@ import type { UIMessage, UIMessageAnnotation } from '@/types/message';
 import { UIMessageType } from '@/types/message';
 import { mergeMessages } from '@/utils/mergeMessages';
 import MarkdownRenderer from '../MarkdownRenderer';
+import ToolApprovalConfirmation from '../ToolApprovalConfirmation';
+import ToolApprovalError from '../ToolApprovalError';
+import ToolApprovalResult from '../ToolApprovalResult';
 import AssistantTextMessage from './AssistantTextMessage';
 import AssistantThinkingMessage from './AssistantThinkingMessage';
 import AssistantToolMessage from './AssistantToolMessage';
@@ -25,6 +28,12 @@ const MessagePart: React.FC<MessagePartProps> = memo(({ part, index }) => {
       return <AssistantThinkingMessage key={index} message={part} />;
     case UIMessageType.Tool:
       return <AssistantToolMessage key={index} message={part} />;
+    case UIMessageType.ToolApprovalRequest:
+      return <ToolApprovalConfirmation key={index} message={part} />;
+    case UIMessageType.ToolApprovalResult:
+      return <ToolApprovalResult key={index} message={part} />;
+    case UIMessageType.ToolApprovalError:
+      return <ToolApprovalError key={index} message={part} />;
     default:
       return (
         <div key={index}>
