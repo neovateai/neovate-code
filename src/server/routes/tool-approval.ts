@@ -6,7 +6,6 @@ import type { RouteCompletionsOpts } from '../types';
 
 const debug = createDebug('takumi:server:routes:tool-approval');
 
-// 定义请求和响应的类型
 const SubmitToolApprovalSchema = Type.Object({
   callId: Type.String(),
   approved: Type.Boolean(),
@@ -19,13 +18,11 @@ const SubmitToolApprovalSchema = Type.Object({
   ),
 });
 
-// 错误响应类型
 const ErrorResponseSchema = Type.Object({
   error: Type.String(),
   code: Type.String(),
 });
 
-// 成功响应类型
 const SuccessResponseSchema = Type.Object({
   success: Type.Boolean(),
 });
@@ -34,10 +31,8 @@ const toolApprovalRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
   app,
   opts,
 ) => {
-  // 获取工具审批服务实例
   const getService = () => getToolApprovalService(opts.context);
 
-  // 统一错误处理函数
   const handleError = (error: unknown, reply: any) => {
     debug('Error:', error);
     const errorMessage =
@@ -56,7 +51,6 @@ const toolApprovalRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
     });
   };
 
-  // 提交审批结果
   app.post<{
     Body: {
       callId: string;

@@ -43,11 +43,9 @@ export class ToolApprovalService {
       ...config,
     };
 
-    // 启动定期清理过期请求
     this.setupPeriodicCleanup();
   }
 
-  // 检查工具是否需要审批
   async shouldApprove(
     toolName: string,
     params: Record<string, any>,
@@ -56,21 +54,19 @@ export class ToolApprovalService {
 
     const approvalMode = this.context.config.approvalMode || 'default';
 
-    // 获取工具类别
     const toolCategory = this.getToolCategory(toolName);
 
     switch (approvalMode) {
       case 'yolo':
-        return false; // 全自动模式，不需要审批
+        return false;
       case 'autoEdit':
-        return toolCategory === 'command'; // 自动编辑模式，只有命令需要审批
+        return toolCategory === 'command';
       case 'default':
       default:
-        return toolCategory !== 'read'; // 默认模式，读取操作不需要审批
+        return toolCategory !== 'read';
     }
   }
 
-  // 请求工具审批
   async requestApproval(
     callId: string,
     toolName: string,
@@ -85,7 +81,6 @@ export class ToolApprovalService {
       throw new Error(`Approval request with callId ${callId} already exists`);
     }
 
-    // 检查队列限制
     if (this.pendingApprovals.size >= this.config.maxPendingApprovals!) {
       debug(
         `Pending approvals queue is full (${this.config.maxPendingApprovals})`,
@@ -93,7 +88,6 @@ export class ToolApprovalService {
       throw new Error('Too many pending approval requests');
     }
 
-    // 检查审批记忆
     const toolKey = this.createStableToolKey(toolName, params);
     const toolOnlyKey = toolName;
 
@@ -111,14 +105,12 @@ export class ToolApprovalService {
       return true;
     }
 
-    // 检查是否需要审批
     const needsApproval = await this.shouldApprove(toolName, params);
     if (!needsApproval) {
       debug(`Tool ${toolName} does not need approval`);
       return true;
     }
 
-    // 创建待审批项
     return new Promise<boolean>((resolve) => {
       const pendingApproval: PendingApproval = {
         callId,
@@ -152,12 +144,10 @@ export class ToolApprovalService {
     const { toolName, params, resolve } = pendingApproval;
     const toolKey = this.createStableToolKey(toolName, params);
 
-    // 更新审批记忆
     if (approved) {
       this.updateApprovalMemory(toolKey, toolName, option);
     }
 
-    // 清理并解析
     this.pendingApprovals.delete(callId);
     resolve(approved);
 
@@ -177,7 +167,6 @@ export class ToolApprovalService {
       return false;
     }
 
-    // 拒绝并清理
     this.pendingApprovals.delete(callId);
 
     // 安全地解析 Promise（防止异常）
@@ -225,7 +214,6 @@ export class ToolApprovalService {
       }
     }
 
-    // 拒绝过期的审批请求
     for (const callId of staleCallIds) {
       this.cancelApproval(callId);
     }
@@ -252,13 +240,11 @@ export class ToolApprovalService {
 
     debug('Destroying ToolApprovalService');
 
-    // 停止定期清理
     if (this.cleanupTimer) {
       clearInterval(this.cleanupTimer);
       this.cleanupTimer = undefined;
     }
 
-    // 清理所有待审批请求
     this.clearAllPendingApprovals();
     this.isDestroyed = true;
   }
@@ -333,14 +319,12 @@ export class ToolApprovalService {
     }
   }
 
-  // 检查服务是否已销毁
   private checkDestroyed(): void {
     if (this.isDestroyed) {
       throw new Error('ToolApprovalService has been destroyed');
     }
   }
 
-  // 获取工具类别
   private getToolCategory(
     toolName: string,
   ): 'read' | 'write' | 'command' | 'network' {
@@ -354,7 +338,7 @@ export class ToolApprovalService {
     if (commandTools.includes(toolName)) return 'command';
     if (networkTools.includes(toolName)) return 'network';
 
-    return 'command'; // 默认为命令类型
+    return 'command';
   }
 }
 

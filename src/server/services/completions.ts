@@ -193,7 +193,6 @@ export async function runCode(opts: RunCompletionOpts) {
         debug(`Tool approval request: ${name} with callId ${callId}`);
 
         try {
-          // 通知前端需要工具审批
           dataStream.writeMessageAnnotation({
             type: 'tool_approval_request',
             toolCallId: callId,
@@ -201,14 +200,12 @@ export async function runCode(opts: RunCompletionOpts) {
             args: params,
           });
 
-          // 请求审批并等待结果
           const approved = await toolApprovalService.requestApproval(
             callId,
             name,
             params,
           );
 
-          // 通知前端审批结果
           dataStream.writeMessageAnnotation({
             type: 'tool_approval_result',
             toolCallId: callId,
@@ -223,7 +220,6 @@ export async function runCode(opts: RunCompletionOpts) {
         } catch (error) {
           debug(`Tool approval error: ${name} with callId ${callId}`, error);
 
-          // 通知前端审批失败
           dataStream.writeMessageAnnotation({
             type: 'tool_approval_error',
             toolCallId: callId,
@@ -231,7 +227,6 @@ export async function runCode(opts: RunCompletionOpts) {
             error: error instanceof Error ? error.message : 'Unknown error',
           });
 
-          // 审批失败默认拒绝
           return false;
         }
       },
