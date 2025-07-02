@@ -2,6 +2,7 @@ import React from 'react';
 import { isReasoningModel } from '../../provider';
 import { query } from '../../query';
 import { isSlashCommand, parseSlashCommand } from '../../slash-commands';
+import { createStableToolKey } from '../../utils/formatToolUse';
 import { useAppContext } from '../AppContext';
 import {
   APP_STATUS,
@@ -328,7 +329,7 @@ export function useChatActions() {
         },
         async onToolApprove(callId, name, params) {
           // Check approval memory first
-          const toolKey = `${name}:${JSON.stringify(params)}`;
+          const toolKey = createStableToolKey(name, params);
           const toolOnlyKey = name;
 
           if (
