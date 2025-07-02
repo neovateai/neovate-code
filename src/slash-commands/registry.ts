@@ -24,9 +24,14 @@ export class SlashCommandRegistryImpl implements SlashCommandRegistry {
   }
 
   getMatchingCommands(prefix: string): SlashCommand[] {
-    return Array.from(this.commands.values()).filter((command) =>
-      command.name.startsWith(prefix),
-    );
+    const lowerPrefix = prefix.toLowerCase();
+    return Array.from(this.commands.values()).filter((command) => {
+      const nameMatch = command.name.toLowerCase().startsWith(lowerPrefix);
+      const descriptionMatch = command.description
+        .toLowerCase()
+        .includes(lowerPrefix);
+      return nameMatch || descriptionMatch;
+    });
   }
 }
 

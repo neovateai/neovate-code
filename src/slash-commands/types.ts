@@ -35,6 +35,7 @@ export interface SlashCommandRegistry {
   get(name: string): SlashCommand | undefined;
   getAll(): SlashCommand[];
   hasCommand(name: string): boolean;
+  getMatchingCommands(prefix: string): SlashCommand[];
 }
 
 export interface SlashCommandResult {
