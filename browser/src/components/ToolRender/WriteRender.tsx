@@ -1,3 +1,6 @@
+import { useMemo } from 'react';
+import { useSnapshot } from 'valtio';
+import { fileChangesActions, fileChangesState } from '@/state/fileChanges';
 import type { ToolMessage } from '@/types/message';
 import CodeDiffOutline from '../CodeDiffOutline';
 
@@ -6,11 +9,19 @@ export default function WriteRender({ message }: { message?: ToolMessage }) {
   if (!message) {
     return null;
   }
-  const { args } = message;
+  const { args, toolCallId } = message;
   const { file_path, content } = args as {
     file_path: string;
     content: string;
   };
+
+  const { files } = useSnapshot(fileChangesState);
+
+  const editStatus = useMemo(() => {
+    return files[file_path]?.edits.find(
+      (edit) => edit.toolCallId === toolCallId,
+    )?.editStatus;
+  }, [files, file_path, toolCallId]);
 
   return (
     <CodeDiffOutline
@@ -19,6 +30,7 @@ export default function WriteRender({ message }: { message?: ToolMessage }) {
         toolCallId: message.toolCallId,
         old_string: '',
         new_string: content,
+        editStatus,
       }}
     />
   );

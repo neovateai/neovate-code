@@ -1,8 +1,7 @@
 import { MenuOutlined } from '@ant-design/icons';
-import { Button, Tooltip } from 'antd';
+import { Button } from 'antd';
 import { createStyles } from 'antd-style';
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import * as codeViewer from '@/state/codeViewer';
 import SiderMain from './SiderMain';
@@ -59,7 +58,6 @@ const Sider = () => {
   const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
   const [active, setActive] = useState(false);
   const { styles } = useStyles();
-  const { t } = useTranslation();
 
   const MenuButton = (
     <Button
