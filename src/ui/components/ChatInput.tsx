@@ -43,6 +43,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       } else {
         const history = chatInputUp(value);
         setValue(history);
+        setCursorPosition(history.length);
       }
     }
     if (key.downArrow) {
@@ -51,6 +52,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       } else {
         const history = chatInputDown(value);
         setValue(history);
+        setCursorPosition(history.length);
       }
     }
     if (key.return && isVisible) {
