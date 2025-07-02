@@ -227,7 +227,7 @@ const CodeDiffOutline = (props: Props) => {
             {isNormalView ? (
               <CodeNormalView
                 hideToolbar
-                height={300}
+                maxHeight={300}
                 item={{
                   language,
                   path,
@@ -241,7 +241,8 @@ const CodeDiffOutline = (props: Props) => {
             ) : (
               <CodeDiffView
                 hideToolBar
-                height={300}
+                maxHeight={300}
+                heightFollow="content"
                 item={{
                   language,
                   path,
@@ -250,6 +251,7 @@ const CodeDiffOutline = (props: Props) => {
                   viewType: 'diff',
                   title: path,
                   id: path,
+                  diffStat,
                 }}
               />
             )}

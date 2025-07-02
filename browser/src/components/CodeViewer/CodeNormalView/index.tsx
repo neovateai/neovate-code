@@ -17,7 +17,7 @@ import NormalToolbar from '../NormalToolbar';
 
 interface Props {
   item: CodeNormalViewerTabItem;
-  height?: number;
+  maxHeight?: number;
   hideToolbar?: boolean;
 }
 
@@ -26,12 +26,20 @@ export interface CodeNormalViewRef {
 }
 
 const useStyle = createStyles(
-  ({ css }, { mode }: { mode?: CodeNormalViewerMode }) => {
+  (
+    { css },
+    { mode, maxHeight }: { mode?: CodeNormalViewerMode; maxHeight?: number },
+  ) => {
     return {
       container: css`
         height: 100%;
         display: flex;
         flex-direction: column;
+        ${maxHeight
+          ? css`
+              max-height: ${maxHeight}px;
+            `
+          : ''}
       `,
       editor: css`
         height: 100%;
@@ -50,7 +58,7 @@ const useStyle = createStyles(
 );
 
 const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
-  const { item, height, hideToolbar } = props;
+  const { item, hideToolbar, maxHeight } = props;
 
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>(null);
   const decorationsCollection =
@@ -59,7 +67,7 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
     lineCount: 0,
     charCount: 0,
   });
-  const { styles } = useStyle({ mode: item.mode });
+  const { styles } = useStyle({ mode: item.mode, maxHeight });
 
   useImperativeHandle(ref, () => {
     return {
@@ -114,7 +122,6 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
       <Editor
         className={styles.editor}
         language={item.language}
-        height={height}
         value={item.code}
         onMount={(editor) => {
           editorRef.current = editor;

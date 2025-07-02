@@ -1,39 +1,54 @@
 import { DiffEditor } from '@monaco-editor/react';
 import { createStyles } from 'antd-style';
 import * as monaco from 'monaco-editor';
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import useEditAll from '@/hooks/useEditAll';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffToolbar from '../DiffToolbar';
 
 interface Props {
   item: CodeDiffViewerTabItem;
-  height?: number;
+  maxHeight?: number;
   hideToolBar?: boolean;
+  heightFollow?: 'content' | 'container';
 }
 
 export interface CodeDiffViewRef {
   jumpToLine: (lineCount: number) => void;
 }
 
-const useStyle = createStyles(({ css }) => {
-  return {
-    container: css`
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    `,
-    editor: css`
-      height: 100%;
-      flex: 1;
-    `,
-  };
-});
+const useStyle = createStyles(
+  ({ css }, { maxHeight }: { maxHeight?: number }) => {
+    return {
+      container: css`
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        ${maxHeight
+          ? css`
+              max-height: ${maxHeight};
+            `
+          : ''}
+      `,
+      editor: css`
+        height: 100%;
+        flex: 1;
+      `,
+    };
+  },
+);
 
 const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
-  const { item, height, hideToolBar } = props;
-  const { styles } = useStyle();
+  const { item, maxHeight, hideToolBar, heightFollow = 'container' } = props;
+  const { styles } = useStyle({ maxHeight });
   const editorRef = useRef<monaco.editor.IStandaloneDiffEditor>(null);
+  const [height, setHeight] = useState<number>();
   const { acceptAll, rejectAll } = useEditAll(item.path);
 
   useImperativeHandle(ref, () => {
@@ -57,6 +72,29 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
       editorRef.current?.getOriginalEditor().dispose();
     };
   }, []);
+
+  useEffect(() => {
+    handleCalcHeight();
+  }, [heightFollow, item]);
+
+  const handleCalcHeight = () => {
+    if (heightFollow === 'content') {
+      const modifiedEditor = editorRef.current?.getModifiedEditor();
+
+      if (!item.diffStat?.diffBlockStats.length || !modifiedEditor) {
+        return;
+      }
+
+      const lastViewLine =
+        item.diffStat.diffBlockStats[item.diffStat.diffBlockStats.length - 1]
+          .modifiedEndLineNumber + 3;
+
+      const height = modifiedEditor.getBottomForLineNumber(lastViewLine);
+      setHeight(height);
+    } else {
+      setHeight(undefined);
+    }
+  };
 
   return (
     <div className={styles.container}>
@@ -83,7 +121,7 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
         modified={item.modifiedCode}
         onMount={(editor) => {
           editorRef.current = editor;
-          // hide original editor line numbers
+          handleCalcHeight();
           editor.getOriginalEditor().updateOptions({
             lineNumbers: 'off',
           });
