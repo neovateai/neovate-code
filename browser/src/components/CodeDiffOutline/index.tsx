@@ -228,6 +228,7 @@ const CodeDiffOutline = (props: Props) => {
               <CodeNormalView
                 hideToolbar
                 maxHeight={300}
+                heightFollow="content"
                 item={{
                   language,
                   path,

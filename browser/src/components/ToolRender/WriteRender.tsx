@@ -30,6 +30,7 @@ export default function WriteRender({ message }: { message?: ToolMessage }) {
   return (
     <CodeDiffOutline
       path={file_path}
+      normalViewerMode="new"
       edit={{
         toolCallId: message.toolCallId,
         old_string: '',

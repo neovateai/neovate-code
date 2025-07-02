@@ -19,6 +19,7 @@ interface Props {
   item: CodeNormalViewerTabItem;
   maxHeight?: number;
   hideToolbar?: boolean;
+  heightFollow?: 'container' | 'content';
 }
 
 export interface CodeNormalViewRef {
@@ -58,7 +59,7 @@ const useStyle = createStyles(
 );
 
 const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
-  const { item, hideToolbar, maxHeight } = props;
+  const { item, hideToolbar, maxHeight, heightFollow = 'container' } = props;
 
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>(null);
   const decorationsCollection =
@@ -68,6 +69,7 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
     charCount: 0,
   });
   const { styles } = useStyle({ mode: item.mode, maxHeight });
+  const [height, setHeight] = useState<number>();
 
   useImperativeHandle(ref, () => {
     return {
@@ -80,6 +82,20 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
       },
     };
   });
+
+  const handleCalcHeight = () => {
+    if (heightFollow === 'content') {
+      const editor = editorRef.current;
+      const model = editor?.getModel();
+      if (editor && model) {
+        const lineCount = model.getLineCount();
+        const height = editor.getBottomForLineNumber(lineCount);
+        setHeight(height);
+      }
+    } else {
+      setHeight(undefined);
+    }
+  };
 
   const handleDecorateLine = () => {
     if (editorRef.current && item.mode) {
@@ -116,15 +132,21 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
     };
   }, [item]);
 
+  useEffect(() => {
+    handleCalcHeight();
+  }, [item, heightFollow]);
+
   return (
     <div className={styles.container}>
       {!hideToolbar && <NormalToolbar normalMetaInfo={metaInfo} item={item} />}
       <Editor
+        height={height}
         className={styles.editor}
         language={item.language}
         value={item.code}
         onMount={(editor) => {
           editorRef.current = editor;
+          handleCalcHeight();
           handleDecorateLine();
           setMetaInfo({
             lineCount: editor.getModel()?.getLineCount() || 0,
