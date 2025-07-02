@@ -269,6 +269,13 @@ export function AppProvider({
   const contextValue: AppContextType = {
     state,
     dispatch,
+    // dispatch: (...args) => {
+    //   fs.appendFileSync(
+    //     '/Users/chencheng/Documents/Code/github.com/sorrycc/takumi/dispatch.log',
+    //     JSON.stringify(args) + '\n',
+    //   );
+    //   dispatch(...args);
+    // },
     services: {
       service,
       planService,

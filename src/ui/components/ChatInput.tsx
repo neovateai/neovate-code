@@ -1,4 +1,5 @@
 import { Box, Text, useInput } from 'ink';
+import Spinner from 'ink-spinner';
 import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
 import { APP_STATUS, BORDER_COLORS } from '../constants';
@@ -62,7 +63,9 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       >
         <Text color={getTextColor()}>&gt;</Text>
         {isWaitingForInput ? (
-          <Text color="gray">{getCurrentStatusMessage()}</Text>
+          <Text color="gray">
+            <Spinner type="dots" /> {getCurrentStatusMessage()}
+          </Text>
         ) : (
           <TextInput
             value={value}
