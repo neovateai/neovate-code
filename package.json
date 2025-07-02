@@ -111,9 +111,9 @@
     "zod": "^3.25.67"
   },
   "volta": {
-    "node": "22.11.0",
-    "pnpm": "10.8.0"
+    "node": "22.11.0"
   },
+  "packageManager": "pnpm@10.12.0",
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write"
   },
