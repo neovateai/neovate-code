@@ -234,33 +234,6 @@ export class ToolApprovalService {
     return staleCallIds.length;
   }
 
-  // 获取待审批的工具调用
-  getPendingApproval(callId: string): PendingApproval | undefined {
-    this.checkDestroyed();
-    return this.pendingApprovals.get(callId);
-  }
-
-  // 获取所有待审批的工具调用
-  getAllPendingApprovals(): PendingApproval[] {
-    this.checkDestroyed();
-    return Array.from(this.pendingApprovals.values());
-  }
-
-  // 获取服务状态
-  getStatus() {
-    this.checkDestroyed();
-    return {
-      pendingCount: this.pendingApprovals.size,
-      memorySize: {
-        proceedOnce: this.approvalMemory.proceedOnce.size,
-        proceedAlways: this.approvalMemory.proceedAlways.size,
-        proceedAlwaysTool: this.approvalMemory.proceedAlwaysTool.size,
-      },
-      config: this.config,
-      isDestroyed: this.isDestroyed,
-    };
-  }
-
   // 清除审批记忆
   clearApprovalMemory(): void {
     this.checkDestroyed();
