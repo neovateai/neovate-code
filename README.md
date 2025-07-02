@@ -1,36 +1,47 @@
 # Takumi
 
-[![npm 版本](https://badgen.net/npm/v/takumi)](https://www.npmjs.com/package/takumi)
-[![npm 下载量](https://badgen.net/npm/dm/takumi)](https://www.npmjs.com/package/takumi)
-[![CI 状态](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml)
-[![MIT 许可证](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
+[![](https://badgen.net/npm/v/takumi)](https://www.npmjs.com/package/takumi)
+[![](https://badgen.net/npm/dm/takumi)](https://www.npmjs.com/package/takumi)
+[![](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml)
+[![](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
 
-发音为 `/tɑːˈkuːmi/`，Takumi 是一个能自动化开发任务并提供智能建议的 AI 编程助手。
+Pronounced `/tɑːˈkuːmi/`, a coding agent to enhance your development workflow.
 
-![Takumi 演示](https://cdn.jsdelivr.net/gh/sorrycc-bot/image-2025-04@main/uPic/takumi-20250618-1.gif)
+![](https://cdn.jsdelivr.net/gh/sorrycc-bot/image-2025-04@main/uPic/takumi-20250618-1.gif)
 
-## 功能特性
+## Getting Started
 
-- 代码生成与优化
-- 上下文感知建议
-- 支持多 LLM 提供商
-- 集成 IDE 工作流
+> Make sure you have Node.js version 18 or higher installed.
 
-## 快速开始
-
-环境要求: Node.js 18+
+1. **Install the CLI globally.** Use npm or other package managers.
 
 ```bash
-npm install -g takumi
-export OPENAI_API_KEY="您的密钥"  # 或其他提供商
-takumi
-> help  # 查看命令
+$ npm install -g takumi
 ```
 
-## 高级配置
+2. **Set up the API keys.** Configure one or more API keys for the LLMs providers.
 
-详见 [CONTRIBUTING.md](./CONTRIBUTING.md) 中的设置说明。
+```bash
+$ export OPENAI_API_KEY="sk-..."
+$ export GOOGLE_API_KEY="sk-..."
+$ export ANTHROPIC_API_KEY="sk-..."
+$ export DEEPSEEK_API_KEY="sk-..."
+$ export XAI_API_KEY="sk-..."
+$ export AIHUBMIX_API_KEY="sk-..."
+$ export OPENROUTER_API_KEY="sk-..."
+```
 
-## 许可证
+You are now ready to use Takumi.
 
-MIT
+```bash
+$ takumi
+> explain this codebase to me
+```
+
+## Contributing
+
+Contributions are welcome! Please read the [CONTRIBUTING.md](./CONTRIBUTING.md) file for guidelines on setting up the development environment, running tests, and submitting pull requests.
+
+## License
+
+[MIT](./LICENSE)
