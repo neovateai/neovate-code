@@ -16,7 +16,13 @@ export default function WriteRender({ message }: { message?: ToolMessage }) {
   };
 
   useEffect(() => {
-    fileChangesActions.initNewFileState(file_path, content);
+    fileChangesActions.initNewFileState(file_path, content, [
+      {
+        toolCallId,
+        old_string: '',
+        new_string: content,
+      },
+    ]);
   }, [file_path, content]);
 
   const { files } = useSnapshot(fileChangesState);
