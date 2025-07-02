@@ -1,5 +1,5 @@
 import { CheckOutlined, CloseOutlined, EyeOutlined } from '@ant-design/icons';
-import { Button, Flex, Space, Tag, Typography } from 'antd';
+import { Button, Flex, Tag, Typography } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

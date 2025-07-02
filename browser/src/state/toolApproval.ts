@@ -45,7 +45,7 @@ export const toolApprovalActions = {
   },
 
   // 处理审批结果
-  handleApprovalResult: (message: ToolApprovalResultMessage) => {
+  handleApprovalResult: (_message: ToolApprovalResultMessage) => {
     toolApprovalState.pending = false;
     toolApprovalState.callId = null;
     toolApprovalState.toolName = null;
