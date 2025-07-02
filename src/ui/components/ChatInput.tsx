@@ -28,6 +28,8 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
     navigateNext,
     navigatePrevious,
     getCompletedCommand,
+    setVisible,
+    resetVisible,
   } = useAutoSuggestion(value);
 
   const isProcessing = state.status === APP_STATUS.PROCESSING;
@@ -36,11 +38,12 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const isFailed = state.status === APP_STATUS.FAILED;
   const isWaitingForInput = isProcessing || isToolApproved || isToolExecuting;
 
-  useInput((input, key) => {
+  useInput((_, key) => {
     if (key.upArrow) {
       if (isVisible) {
         navigatePrevious(); // 切换suggestion
       } else {
+        setVisible(false);
         const history = chatInputUp(value);
         setValue(history);
         setCursorPosition(history.length);
@@ -50,6 +53,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       if (isVisible) {
         navigateNext(); // 切换suggestion
       } else {
+        setVisible(false);
         const history = chatInputDown(value);
         setValue(history);
         setCursorPosition(history.length);
@@ -72,6 +76,8 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       setValue(completedCommand);
       // 设置光标到末尾
       setCursorPosition(completedCommand.length);
+      // 隐藏建议面板
+      setVisible(false);
     }
   };
 
@@ -123,8 +129,9 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
               chatInputChange(input);
               setValue(input);
               setCursorPosition(undefined); // 清除强制光标位置
+              resetVisible(); // 重置建议面板显示状态
             }}
-            onSubmit={handleSubmit}
+            onSubmit={isVisible ? () => {} : handleSubmit}
             onTabPress={handleTabPress}
             cursorPosition={cursorPosition}
           />

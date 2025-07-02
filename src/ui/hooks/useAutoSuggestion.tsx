@@ -16,6 +16,7 @@ export interface AutoSuggestionState {
 export function useAutoSuggestion(input: string) {
   const { services } = useAppContext();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [forceHidden, setForceHidden] = useState(false);
 
   const suggestions = useMemo(() => {
     if (!input.startsWith('/')) {
@@ -42,7 +43,8 @@ export function useAutoSuggestion(input: string) {
     }));
   }, [input, services.context.slashCommands]);
 
-  const isVisible = suggestions.length > 0 && input.startsWith('/');
+  const isVisible =
+    suggestions.length > 0 && input.startsWith('/') && !forceHidden;
 
   useEffect(() => {
     setSelectedIndex(0);
@@ -79,6 +81,14 @@ export function useAutoSuggestion(input: string) {
     return `/${selected.name} ${args}`.trim() + ' ';
   };
 
+  const setVisible = (visible: boolean) => {
+    setForceHidden(!visible);
+  };
+
+  const resetVisible = () => {
+    setForceHidden(false);
+  };
+
   return {
     suggestions,
     selectedIndex,
@@ -87,5 +97,7 @@ export function useAutoSuggestion(input: string) {
     navigatePrevious,
     getSelectedSuggestion,
     getCompletedCommand,
+    setVisible,
+    resetVisible,
   };
 }

@@ -14,7 +14,6 @@ export function useChatActions() {
   const { state, dispatch, services } = useAppContext();
 
   const addHistory = (input: string) => {
-    services.context.addHistory(input);
     dispatch({ type: 'ADD_HISTORY', payload: input });
   };
 
@@ -23,17 +22,15 @@ export function useChatActions() {
       return input;
     }
 
+    let historyIndex = null;
     if (state.historyIndex === null) {
       dispatch({ type: 'SET_DRAFT_INPUT', payload: input });
-      dispatch({
-        type: 'SET_HISTORY_INDEX',
-        payload: state.history.length - 1,
-      });
-    } else if (state.historyIndex > 0) {
-      dispatch({ type: 'SET_HISTORY_INDEX', payload: state.historyIndex - 1 });
+      historyIndex = state.history.length - 1;
+    } else {
+      historyIndex = Math.max(state.historyIndex - 1, 0);
     }
-
-    return state.history[state.historyIndex || state.history.length - 1];
+    dispatch({ type: 'SET_HISTORY_INDEX', payload: historyIndex });
+    return state.history[historyIndex!];
   };
 
   const chatInputDown = (input: string): string => {
@@ -59,7 +56,8 @@ export function useChatActions() {
     setSlashCommandJSX?: (jsx: React.ReactNode) => void,
   ): Promise<any> => {
     dispatch({ type: 'SET_HISTORY_INDEX', payload: null });
-    services.context.addHistory(input);
+    // services.context.addHistory(input);
+    addHistory(input);
 
     // Check if input is a slash command
     if (isSlashCommand(input)) {
@@ -194,8 +192,8 @@ export function useChatActions() {
     let queryInput;
     if (typeof input === 'string') {
       // Add to history only if it's a string (user input)
-      dispatch({ type: 'SET_HISTORY_INDEX', payload: null });
-      services.context.addHistory(input);
+      // dispatch({ type: 'SET_HISTORY_INDEX', payload: null });
+      // services.context.addHistory(input);
       queryInput = [
         {
           role: 'user',
