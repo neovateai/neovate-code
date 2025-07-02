@@ -26,7 +26,12 @@ export function createWriteTool(opts: { context: Context }) {
         const dir = path.dirname(fullFilePath);
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(fullFilePath, format(content));
-        return `File successfully written to ${file_path}`;
+        return {
+          success: true,
+          data: {
+            message: `File successfully written to ${file_path}`,
+          },
+        };
       } catch (e) {
         return {
           success: false,

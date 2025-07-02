@@ -40,7 +40,12 @@ Remembers:
         const dir = path.dirname(fullFilePath);
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(fullFilePath, updatedFile, 'utf-8');
-        return `File ${file_path} successfully edited.`;
+        return {
+          success: true,
+          data: {
+            message: `File ${file_path} successfully edited.`,
+          },
+        };
       } catch (e) {
         return {
           success: false,
