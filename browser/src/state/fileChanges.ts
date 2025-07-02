@@ -93,6 +93,15 @@ export const fileChangesActions = {
     }
   },
 
+  // 初始化新文件的state，content为文件内容；不需要read因为本地没有这个文件
+  initNewFileState: async (path: string, content: string) => {
+    fileChangesState.files[path] = proxy<FileState>({
+      path,
+      content,
+      edits: [],
+    });
+  },
+
   // 初始化fileState, push edits
   initFileState: async (path: string, edits: FileEdit[]) => {
     const fileState = fileChangesState.files[path];
