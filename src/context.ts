@@ -18,6 +18,10 @@ import {
   PluginManager,
 } from './plugin';
 import { getModel } from './provider';
+import {
+  SlashCommandRegistry,
+  createSlashCommandRegistry,
+} from './slash-commands';
 import { SystemPromptBuilder } from './system-prompt-builder';
 import { aisdk } from './utils/ai-sdk';
 import { getGitStatus } from './utils/git';
@@ -34,6 +38,7 @@ type ContextOpts = CreateContextOpts & {
   ide: IDE | null;
   generalInfo: Record<string, string>;
   paths: Paths;
+  slashCommands: SlashCommandRegistry;
 };
 
 type Paths = {
@@ -64,6 +69,7 @@ export class Context {
   history: string[];
   generalInfo: Record<string, string>;
   paths: Paths;
+  slashCommands: SlashCommandRegistry;
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName || PRODUCT_NAME;
@@ -78,6 +84,7 @@ export class Context {
     this.generalInfo = opts.generalInfo;
     this.history = [];
     this.paths = opts.paths;
+    this.slashCommands = opts.slashCommands;
   }
 
   static async create(opts: CreateContextOpts) {
@@ -214,6 +221,27 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     }
   }
 
+  // Create a temporary context for slash command registry initialization
+  const tempContextForSlash = {
+    ...opts,
+    config: resolvedConfig,
+    pluginManager,
+    mcpManager,
+    mcpTools,
+    git: gitStatus,
+    ide,
+    generalInfo,
+    paths,
+    apply: async (hookOpts: any) => {
+      return pluginManager.apply({
+        ...hookOpts,
+        pluginContext: tempContextForSlash,
+      });
+    },
+  } as any;
+
+  const slashCommands = await createSlashCommandRegistry(tempContextForSlash);
+
   return new Context({
     ...opts,
     config: resolvedConfig,
@@ -224,6 +252,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     ide,
     generalInfo,
     paths,
+    slashCommands,
   });
 }
 

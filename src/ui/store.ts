@@ -5,6 +5,7 @@ import { Context } from '../context';
 import { isReasoningModel } from '../provider';
 import { query } from '../query';
 import { Service } from '../service';
+import { isSlashCommand, parseSlashCommand } from '../slash-commands';
 import { delay } from '../utils/delay';
 
 const debug = createDebug('takumi:ui:store');
@@ -39,6 +40,7 @@ export function createStore(opts: CreateStoreOpts) {
     history: opts.context.history,
     historyIndex: null,
     draftInput: null,
+    currentExecutingTool: null,
     approval: {
       pending: false,
       callId: null,
@@ -51,6 +53,7 @@ export function createStore(opts: CreateStoreOpts) {
       proceedAlways: new Set(),
       proceedAlwaysTool: new Set(),
     },
+    slashCommandJSX: null,
     actions: {
       addHistory: (input: string) => {
         opts.context.addHistory(input);
@@ -90,7 +93,7 @@ export function createStore(opts: CreateStoreOpts) {
           store.approval.toolName = null;
           store.approval.params = null;
           store.approval.resolve = null;
-          store.status = 'processing';
+          store.status = approved ? 'tool_approved' : 'processing';
         }
       },
       clearApprovalMemory: () => {
@@ -98,14 +101,54 @@ export function createStore(opts: CreateStoreOpts) {
         store.approvalMemory.proceedAlways.clear();
         store.approvalMemory.proceedAlwaysTool.clear();
       },
-      query: async (input: string): Promise<any> => {
+      processUserInput: async (
+        input: string,
+        setSlashCommandJSX: (jsx: React.ReactNode) => void,
+      ): Promise<any> => {
         await delay(100);
         store.historyIndex = null;
         opts.context.addHistory(input);
-        const service =
-          store.stage === 'plan' ? opts.planService : opts.service;
-        let textDelta = '';
-        let reasoningDelta = '';
+
+        // Check if input is a slash command
+        if (isSlashCommand(input)) {
+          return store.actions.handleSlashCommand(input, setSlashCommandJSX);
+        }
+
+        // Regular query processing
+        return store.actions.query(input);
+      },
+      handleSlashCommand: async (
+        input: string,
+        setSlashCommandJSX: (jsx: React.ReactNode) => void,
+      ): Promise<any> => {
+        const parsed = parseSlashCommand(input);
+        if (!parsed) {
+          return store.actions.query(input);
+        }
+
+        const command = opts.context.slashCommands.get(parsed.command);
+        if (!command) {
+          // Command not found
+          store.status = 'processing';
+          store.error = null;
+          store.messages.push({
+            role: 'user',
+            content: {
+              type: 'text',
+              text: input,
+            },
+          });
+          store.messages.push({
+            role: 'assistant',
+            content: {
+              type: 'text',
+              text: `Unknown command: /${parsed.command}. Type /help to see available commands.`,
+            },
+          });
+          store.status = 'completed';
+          return { finalText: `Unknown command: /${parsed.command}` };
+        }
+
         store.status = 'processing';
         store.error = null;
         store.messages.push({
@@ -115,14 +158,95 @@ export function createStore(opts: CreateStoreOpts) {
             text: input,
           },
         });
+
+        try {
+          if (command.type === 'local') {
+            const result = await command.call(parsed.args, opts.context);
+            if (result) {
+              store.messages.push({
+                role: 'assistant',
+                content: {
+                  type: 'text',
+                  text: result,
+                },
+              });
+            }
+            store.status = 'completed';
+            return { finalText: result };
+          } else if (command.type === 'local-jsx') {
+            const jsx = await command.call((result: string) => {
+              setSlashCommandJSX(null);
+              if (result) {
+                store.messages.push({
+                  role: 'assistant',
+                  content: {
+                    type: 'text',
+                    text: result,
+                  },
+                });
+              }
+              store.status = 'completed';
+            }, opts.context);
+            setSlashCommandJSX(jsx);
+            store.status = 'awaiting_user_input';
+            return { finalText: '' };
+          } else if (command.type === 'prompt') {
+            const messages = await command.getPromptForCommand(parsed.args);
+            // Convert to the format expected by query function
+            const queryInput = messages.map((msg) => ({
+              role: msg.role as 'user',
+              content: msg.content,
+            }));
+
+            // Continue with regular AI processing using internal query
+            return store.actions.query(queryInput);
+          }
+        } catch (e: any) {
+          store.status = 'failed';
+          store.error = e.message || String(e);
+          store.currentMessage = null;
+          throw e;
+        }
+      },
+      query: async (input: string | any[]): Promise<any> => {
+        // Prepare input for query function
+        let queryInput;
+        if (typeof input === 'string') {
+          // Add to history only if it's a string (user input)
+          // Array input is for prompt commands and shouldn't be added to history
+          store.historyIndex = null;
+          opts.context.addHistory(input);
+          queryInput = [
+            {
+              role: 'user',
+              content: input,
+            },
+          ];
+        } else {
+          queryInput = input;
+        }
+
+        const service =
+          store.stage === 'plan' ? opts.planService : opts.service;
+        let textDelta = '';
+        let reasoningDelta = '';
+        store.status = 'processing';
+        store.error = null;
+
+        // Add user message only for string input
+        if (typeof input === 'string') {
+          store.messages.push({
+            role: 'user',
+            content: {
+              type: 'text',
+              text: input,
+            },
+          });
+        }
+
         try {
           const result = await query({
-            input: [
-              {
-                role: 'user',
-                content: input,
-              },
-            ],
+            input: queryInput,
             service,
             thinking: isReasoningModel(service.context.config.model),
             async onTextDelta(text) {
@@ -175,6 +299,45 @@ export function createStore(opts: CreateStoreOpts) {
               );
               await delay(100);
               debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
+
+              // Set executing tool info and status
+              let description = '';
+              switch (name) {
+                case 'read':
+                  description = params.file_path;
+                  break;
+                case 'bash':
+                  description = params.command;
+                  break;
+                case 'edit':
+                  description = params.file_path;
+                  break;
+                case 'write':
+                  description = params.file_path;
+                  break;
+                case 'fetch':
+                  description = params.url;
+                  break;
+                case 'glob':
+                  description = params.pattern;
+                  break;
+                case 'grep':
+                  description = params.pattern;
+                  break;
+                case 'ls':
+                  description = params.dir_path;
+                  break;
+                default:
+                  description = JSON.stringify(params);
+                  break;
+              }
+
+              store.currentExecutingTool = {
+                name,
+                description,
+              };
+              store.status = 'tool_executing';
+
               store.messages.push({
                 role: 'assistant',
                 content: {
@@ -192,6 +355,11 @@ export function createStore(opts: CreateStoreOpts) {
               debug(
                 `Tool use result: ${name} with result ${JSON.stringify(result)}`,
               );
+
+              // Clear executing tool info and return to processing
+              store.currentExecutingTool = null;
+              store.status = 'processing';
+
               store.messages.push({
                 role: 'tool',
                 content: {
@@ -262,6 +430,8 @@ export interface Store {
     | 'idle'
     | 'processing'
     | 'awaiting_user_input'
+    | 'tool_approved'
+    | 'tool_executing'
     | 'completed'
     | 'failed'
     | 'cancelled';
@@ -271,6 +441,10 @@ export interface Store {
   history: string[];
   historyIndex: number | null;
   draftInput: string | null;
+  currentExecutingTool: {
+    name: string;
+    description: string;
+  } | null;
   approval: {
     pending: boolean;
     callId: string | null;
@@ -283,12 +457,21 @@ export interface Store {
     proceedAlways: Set<string>;
     proceedAlwaysTool: Set<string>;
   };
+  slashCommandJSX: React.ReactNode | null;
   actions: {
     addHistory: (input: string) => void;
     chatInputUp: (input: string) => string;
     chatInputDown: (input: string) => string;
     chatInputChange: (input: string) => void;
-    query: (input: string) => Promise<any>;
+    processUserInput: (
+      input: string,
+      setSlashCommandJSX: (jsx: React.ReactNode) => void,
+    ) => Promise<any>;
+    handleSlashCommand: (
+      input: string,
+      setSlashCommandJSX: (jsx: React.ReactNode) => void,
+    ) => Promise<any>;
+    query: (input: string | any[]) => Promise<any>;
     approveToolUse: (approved: boolean) => void;
     clearApprovalMemory: () => void;
   };
