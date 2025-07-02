@@ -200,7 +200,7 @@ Commands:
   commit                        Commit changes to the repository
   mcp                           Manage MCP servers
   run                           Run a command
-  server                        Start a server, run in browser mode
+  server (experimental)         Start a server, run in browser mode
     `.trim(),
   );
 }
