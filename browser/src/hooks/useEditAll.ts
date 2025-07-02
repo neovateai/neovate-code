@@ -1,8 +1,11 @@
+import * as codeViewer from '@/state/codeViewer';
 import * as fileChanges from '@/state/fileChanges';
 
 const useEditAll = (path?: string) => {
   const acceptAll = (modifiedCode: string) => {
     if (path) {
+      codeViewer.actions.hideDiffActions(path);
+
       fileChanges.fileChangesActions.updateFileState(path, (prevFileState) => {
         return {
           ...prevFileState,
@@ -19,6 +22,8 @@ const useEditAll = (path?: string) => {
 
   const rejectAll = (originalCode: string) => {
     if (path) {
+      codeViewer.actions.hideDiffActions(path);
+
       fileChanges.fileChangesActions.updateFileState(path, (prevFileState) => {
         return {
           ...prevFileState,
