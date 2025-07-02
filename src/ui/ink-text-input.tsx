@@ -44,6 +44,16 @@ export type TextInputProps = {
    * Function to call when `Enter` is pressed, where first argument is a value of the input.
    */
   readonly onSubmit?: (value: string) => void;
+
+  /**
+   * Function to call when `Tab` is pressed for auto-suggestion navigation.
+   */
+  readonly onTabPress?: (isShiftTab: boolean) => void;
+
+  /**
+   * Force cursor position to a specific offset.
+   */
+  readonly cursorPosition?: number;
 };
 
 function findPrevWordJump(prompt: string, cursorOffset: number) {
@@ -90,6 +100,8 @@ function TextInput({
   showCursor = true,
   onChange,
   onSubmit,
+  onTabPress,
+  cursorPosition,
 }: TextInputProps) {
   const [state, setState] = useState({
     cursorOffset: (originalValue || '').length,
@@ -116,6 +128,16 @@ function TextInput({
       return previousState;
     });
   }, [originalValue, focus, showCursor]);
+
+  // Handle cursor position changes
+  useEffect(() => {
+    if (cursorPosition !== undefined && focus && showCursor) {
+      setState({
+        cursorOffset: Math.min(cursorPosition, (originalValue || '').length),
+        cursorWidth: 0,
+      });
+    }
+  }, [cursorPosition, originalValue, focus, showCursor]);
 
   const cursorActualWidth = highlightPastedText ? cursorWidth : 0;
 
@@ -150,14 +172,17 @@ function TextInput({
 
   useInput(
     (input, key) => {
-      if (
-        key.upArrow ||
-        key.downArrow ||
-        (key.ctrl && input === 'c') ||
-        key.tab ||
-        (key.shift && key.tab)
-      ) {
+      if (key.upArrow || key.downArrow || (key.ctrl && input === 'c')) {
         return;
+      }
+
+      if (key.tab || (key.shift && key.tab)) {
+        if (onTabPress) {
+          onTabPress(key.shift && key.tab);
+          return;
+        } else {
+          return;
+        }
       }
 
       let nextCursorOffset = cursorOffset;
