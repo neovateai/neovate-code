@@ -71,36 +71,74 @@ const CodeDiffOutline = (props: Props) => {
   const { editStatus, old_string: oldString, new_string: newString } = edit;
 
   const { files } = useSnapshot(fileChanges.fileChangesState);
-  const [earlyFileContent, setEarlyFileContent] = useState<string>();
 
+  // 修改文件使用
   const file = useMemo(() => files[path], [files, path]);
 
-  const language = useMemo(() => inferFileType(path), [path]);
-  const [code, setCode] = useState({
-    oldContent: '',
-    newContent: '',
-  });
-  const [diffStat, setDiffStat] = useState<DiffStat>();
-  const [isExpanded, setIsExpanded] = useState(true);
-
-  const { styles } = useStyles({ isExpanded });
-
-  useEffect(() => {
+  const code = useMemo(() => {
     if (!file) {
-      return;
+      return {
+        oldContent: '',
+        newContent: '',
+      };
     }
 
     const replacedContent = oldString
       ? file.content.replace(oldString, newString || '')
       : file.content;
 
-    const oldContent = earlyFileContent || file.content;
+    const oldContent = file.content;
 
     const newContent = replacedContent;
 
-    setCode({ oldContent, newContent });
-    diff(oldContent, newContent).then((d) => setDiffStat(d));
-  }, [file, edit]);
+    return {
+      oldContent,
+      newContent,
+    };
+  }, [file, oldString, newString]);
+
+  // 展示使用
+  const [earlyFile, setEarlyFile] = useState<typeof file>();
+
+  useEffect(() => {
+    if (!earlyFile && file) {
+      // 记录file的最初状态
+      setEarlyFile(file);
+    }
+  }, [file]);
+
+  const earlyCode = useMemo(() => {
+    if (!earlyFile) {
+      return {
+        oldContent: '',
+        newContent: '',
+      };
+    }
+
+    const replacedContent = oldString
+      ? earlyFile.content.replace(oldString, newString || '')
+      : earlyFile.content;
+
+    const oldContent = earlyFile.content;
+
+    const newContent = replacedContent;
+
+    return {
+      oldContent,
+      newContent,
+    };
+  }, [earlyFile, oldString, newString]);
+
+  const language = useMemo(() => inferFileType(path), [path]);
+
+  const [diffStat, setDiffStat] = useState<DiffStat>();
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const { styles } = useStyles({ isExpanded });
+
+  useEffect(() => {
+    diff(code.oldContent, code.newContent).then((d) => setDiffStat(d));
+  }, [code]);
 
   const isNormalView = !!normalViewerMode;
   const isNewFile = normalViewerMode === 'new';
@@ -115,7 +153,6 @@ const CodeDiffOutline = (props: Props) => {
   }
 
   const handleAccept = () => {
-    setEarlyFileContent(file.content);
     fileChanges.fileChangesActions.updateFileState(
       path,
       (prevState) => {
@@ -194,7 +231,7 @@ const CodeDiffOutline = (props: Props) => {
                 item={{
                   language,
                   path,
-                  code: isNewFile ? code.newContent : code.oldContent,
+                  code: isNewFile ? earlyCode.newContent : earlyCode.oldContent,
                   viewType: 'normal',
                   title: path,
                   id: path,
@@ -208,8 +245,8 @@ const CodeDiffOutline = (props: Props) => {
                 item={{
                   language,
                   path,
-                  originalCode: code.oldContent,
-                  modifiedCode: code.newContent,
+                  originalCode: earlyCode.oldContent,
+                  modifiedCode: earlyCode.newContent,
                   viewType: 'diff',
                   title: path,
                   id: path,
