@@ -89,7 +89,9 @@
     },
     "filesFound": "Found {{count}} files",
     "moreFiles": "...{{count}} more files",
-    "lines": "{{count}} lines"
+    "lines": "{{count}} lines",
+    "callFailed": "Failed to call {{toolName}} tool",
+    "detailInfo": "Detail Info"
   },
   "mcp": {
     "management": "MCP Management",

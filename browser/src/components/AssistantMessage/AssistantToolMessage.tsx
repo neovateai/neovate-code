@@ -4,6 +4,7 @@ import type { ToolMessage } from '@/types/message';
 import {
   BashRender,
   EditRender,
+  FailRender,
   FetchRender,
   GlobRender,
   GrepRender,
@@ -16,7 +17,11 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
   message,
 }) => {
   const { t } = useTranslation();
-  const { state, toolName, args, step } = message;
+  const { state, toolName, args, step, result } = message;
+
+  if (result?.success === false) {
+    return <FailRender message={message} />;
+  }
 
   switch (toolName) {
     case 'grep':

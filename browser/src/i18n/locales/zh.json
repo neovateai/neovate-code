@@ -89,7 +89,9 @@
     },
     "filesFound": "找到 {{count}} 个文件",
     "moreFiles": "...还有 {{count}} 个文件",
-    "lines": "{{count}} 行"
+    "lines": "{{count}} 行",
+    "callFailed": "调用{{toolName}}工具失败",
+    "detailInfo": "详细信息"
   },
   "mcp": {
     "management": "MCP 管理",
