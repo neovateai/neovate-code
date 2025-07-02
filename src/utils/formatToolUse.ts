@@ -1,8 +1,5 @@
 import { AgentInputItem } from '@openai/agents';
 
-const USE_SIMPLIFIED_TOOL_FORMAT =
-  process.env.USE_SIMPLIFIED_TOOL_FORMAT !== 'none';
-
 interface ToolUse {
   name: string;
   params: Record<string, any>;
@@ -12,31 +9,31 @@ interface ToolUse {
 
 export function formatToolUse(toolUse: ToolUse): AgentInputItem {
   const { name, params, result, callId } = toolUse;
-  // Default to using simplified format. If you need to use the original format, set environment variable USE_SIMPLIFIED_TOOL_FORMAT=none
-  if (USE_SIMPLIFIED_TOOL_FORMAT) {
+  // Default to using original format. Set environment variable USE_ASSISTANT_TOOL_FORMAT=1 to enable simplified format
+  if (process.env.USE_ASSISTANT_TOOL_FORMAT === '1') {
     return {
-      role: 'user',
+      role: 'assistant',
       type: 'message',
-      content: `[${name} for ${JSON.stringify(params)}] result: <function_results>\n${JSON.stringify(
-        result,
-      )}\n</function_results>`,
+      content: [
+        {
+          type: 'output_text',
+          text: JSON.stringify({
+            type: 'function_call_result',
+            name,
+            result,
+            callId,
+          }),
+        },
+      ],
+      status: 'completed',
     };
   }
 
   return {
-    role: 'assistant',
+    role: 'user',
     type: 'message',
-    content: [
-      {
-        type: 'output_text',
-        text: JSON.stringify({
-          type: 'function_call_result',
-          name,
-          result,
-          callId,
-        }),
-      },
-    ],
-    status: 'completed',
+    content: `[${name} for ${JSON.stringify(params)}] result: <function_results>\n${JSON.stringify(
+      result,
+    )}\n</function_results>`,
   };
 }
