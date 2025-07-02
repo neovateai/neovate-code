@@ -19,6 +19,7 @@ import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
 import { createWriteTool } from './tools/write';
+import { formatToolUse } from './utils/formatToolUse';
 import { parseMessage } from './utils/parse-message';
 
 export type AgentType = 'code' | 'plan';
@@ -234,22 +235,23 @@ export class Service {
             callId,
           }) + '\n',
         );
-        history.push({
-          role: 'assistant',
-          type: 'message',
-          content: [
-            {
-              type: 'output_text',
-              text: JSON.stringify({
-                type: 'function_call',
-                name: toolUse.name,
-                arguments: JSON.stringify(toolUse.params),
-                callId,
-              }),
-            },
-          ],
-          status: 'in_progress',
-        });
+        // TODO: use formatToolUse instead of the following code
+        // history.push({
+        //   role: 'assistant',
+        //   type: 'message',
+        //   content: [
+        //     {
+        //       type: 'output_text',
+        //       text: JSON.stringify({
+        //         type: 'function_call',
+        //         name: toolUse.name,
+        //         arguments: JSON.stringify(toolUse.params),
+        //         callId,
+        //       }),
+        //     },
+        //   ],
+        //   status: 'in_progress',
+        // });
       }
       stream.push(null);
       this.history = history;
@@ -289,22 +291,7 @@ export class Service {
       type: PluginHookType.Series,
     });
 
-    this.history.push({
-      role: 'assistant',
-      type: 'message',
-      content: [
-        {
-          type: 'output_text',
-          text: JSON.stringify({
-            type: 'function_call_result',
-            name,
-            result,
-            callId,
-          }),
-        },
-      ],
-      status: 'completed',
-    });
+    this.history.push(formatToolUse({ name, params, result, callId }));
     return result;
   }
 

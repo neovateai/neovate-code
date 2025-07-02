@@ -1,11 +1,31 @@
 import { Box, Static, Text, useInput } from 'ink';
+import Spinner from 'ink-spinner';
 import TextInput from './ink-text-input';
 import { useSnapshot } from 'valtio';
 import SelectInput from 'ink-select-input';
+import Spinner from 'ink-spinner';
 import Markdown from './ink-markdown';
 import React from 'react';
 import { Message, UserMessage, AssistantTextMessage, AssistantToolMessage, ToolMessage, ThinkingMessage, SystemMessage } from './store';
 import { useStore } from './hooks/use-store';
+import { isSlashCommand, parseSlashCommand } from '../slash-commands';
+
+function getStatusMessage(status: string, isPlan: boolean, currentExecutingTool: any) {
+  switch (status) {
+    case 'tool_approved':
+      return 'Tool approved, starting execution...';
+    case 'tool_executing':
+      if (currentExecutingTool) {
+        return `Executing ${currentExecutingTool.name}${currentExecutingTool.description ? ` (${currentExecutingTool.description})` : ''}...`;
+      }
+      return 'Executing tool...';
+    case 'processing':
+      return isPlan ? 'Planning...' : 'Processing...';
+    default:
+      return isPlan ? 'Planning...' : 'Processing...';
+  }
+}
+
 
 function UserMessage({ message }: { message: UserMessage }) {
   return (
@@ -220,10 +240,12 @@ function Header() {
   );
 }
 
-function ChatInput() {
+function ChatInput({ setSlashCommandJSX }: { setSlashCommandJSX: (jsx: React.ReactNode) => void }) {
   const store = useStore();
   const snap = useSnapshot(store);
   const isProcessing = snap.status === 'processing';
+  const isToolApproved = snap.status === 'tool_approved';
+  const isToolExecuting = snap.status === 'tool_executing';
   const isFailed = snap.status === 'failed';
   const isPlan = snap.stage === 'plan';
   const [value, setValue] = React.useState('');
@@ -240,10 +262,10 @@ function ChatInput() {
   const handleSubmit = () => {
     if (value.trim() === '') return;
     setValue('');
-    store.actions.query(value).catch(() => {});
+    store.actions.processUserInput(value, setSlashCommandJSX).catch(() => {});
   };
   let borderColor = 'blueBright';
-  if (isProcessing) {
+  if (isProcessing || isToolApproved || isToolExecuting) {
     borderColor = 'gray';
   }
   if (isFailed) {
@@ -258,9 +280,14 @@ function ChatInput() {
         flexDirection="row"
         gap={1}
       >
-        <Text color={isProcessing || isFailed ? 'gray' : 'white'}>&gt;</Text>
-        {isProcessing ? (
-          <Text color="gray">{isPlan ? 'Planning...' : 'Processing...'}</Text>
+        <Text color={isProcessing || isToolApproved || isToolExecuting || isFailed ? 'gray' : 'white'}>&gt;</Text>
+        {isProcessing || isToolApproved || isToolExecuting ? (
+          <Box flexDirection="row" gap={1}>
+            <Text color="gray">
+              <Spinner type="dots" />
+            </Text>
+            <Text color="gray">{getStatusMessage(snap.status, isPlan, snap.currentExecutingTool)}</Text>
+          </Box>
         ) :
           <TextInput
             value={value}
@@ -333,7 +360,7 @@ function ApprovalModalSelectInput() {
   const snap = useSnapshot(store);
   const toolKey = `${snap.approval.toolName}:${JSON.stringify(snap.approval.params)}`;
   const toolOnlyKey = snap.approval.toolName;
-  
+
   return (
     <SelectInput
       items={[
@@ -356,13 +383,13 @@ function ApprovalModalSelectInput() {
       ]}
       onSelect={(item) => {
         const approved = item.value !== 'deny';
-        
+
         if (item.value === 'approve_always') {
           store.approvalMemory.proceedAlways.add(toolKey);
         } else if (item.value === 'approve_always_tool') {
           store.approvalMemory.proceedAlwaysTool.add(toolOnlyKey!);
         }
-        
+
         store.actions.approveToolUse(approved);
       }}
     />
@@ -372,12 +399,12 @@ function ApprovalModalSelectInput() {
 function ApprovalModal() {
   const store = useStore();
   const snap = useSnapshot(store);
-  
+
   if (!snap.approval.pending) return null;
-  
+
   const toolName = snap.approval.toolName;
   const params = snap.approval.params;
-  
+
   let description = '';
   if (params) {
     switch (toolName) {
@@ -410,7 +437,7 @@ function ApprovalModal() {
         break;
     }
   }
-  
+
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="yellow" padding={1}>
       <Text bold color="yellow">Tool Approval Required</Text>
@@ -433,13 +460,14 @@ function ApprovalModal() {
 }
 
 export function App() {
+  const [slashCommandJSX, setSlashCommandJSX] = React.useState<React.ReactNode | null>(null);
   const store = useStore();
   const snap = useSnapshot(store);
-  
+
   const showModal = snap.planModal || snap.approval.pending;
-  const modalContent = snap.planModal ? <PlanModal /> : 
+  const modalContent = snap.planModal ? <PlanModal /> :
                       snap.approval.pending ? <ApprovalModal /> : null;
-  
+
   return (
     <Box flexDirection="column">
       <Static items={['header', ...snap.messages] as any[]}>
@@ -451,7 +479,12 @@ export function App() {
         }}
       </Static>
       {snap.currentMessage && <Message message={snap.currentMessage} dynamic />}
-      {showModal ? modalContent : <ChatInput />}
+      {slashCommandJSX && (
+        <Box marginTop={1}>
+          {slashCommandJSX as React.ReactNode}
+        </Box>
+      )}
+      {showModal ? modalContent : <ChatInput setSlashCommandJSX={setSlashCommandJSX} />}
     </Box>
   );
 }

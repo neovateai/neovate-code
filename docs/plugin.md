@@ -132,6 +132,50 @@ Register additional server routes. This hook allows you to add custom API endpoi
 
 Handle completions for server routes. This hook allows you to modify or react to completions for server routes.
 
+### `command`
+
+- **Type:** `() => SlashCommand[] | Promise<SlashCommand[]>`
+- **Arguments:** None
+
+Register custom slash commands that users can execute directly from the chat interface. Slash commands provide a way to execute predefined actions by typing commands that start with `/`.
+
+**Returns:** An array of slash command objects. Each command must have:
+- `type`: Command type (`'local'`, `'local-jsx'`, or `'prompt'`)
+- `name`: Command name (used as `/name`)
+- `description`: Help text for the command
+- `call` or `getPromptForCommand`: Command implementation
+
+**Example:**
+```ts
+command() {
+  return [
+    {
+      type: 'local',
+      name: 'hello',
+      description: 'Say hello with optional name',
+      async call(args, context) {
+        const name = args.trim() || 'World';
+        return `Hello, ${name}!`;
+      }
+    },
+    {
+      type: 'prompt',
+      name: 'explain',
+      description: 'Explain a concept using AI',
+      progressMessage: 'Generating explanation...',
+      async getPromptForCommand(args) {
+        return [
+          {
+            role: 'user',
+            content: `Please explain: ${args}`
+          }
+        ];
+      }
+    }
+  ];
+}
+```
+
 ## Plugin Execution Order
 
 Plugins can influence their execution order using the `enforce` property:
@@ -175,3 +219,31 @@ export const loggingPlugin: Plugin = {
   }
 };
 ```
+
+## Slash Commands
+
+Slash commands allow users to execute specific actions directly from the chat interface by typing commands that start with `/`. Plugins can register custom slash commands using the `command` hook.
+
+For detailed documentation on creating and using slash commands, see the dedicated [Slash Commands Guide](./slash-commands.md).
+
+### Quick Example
+
+```ts
+command() {
+  return [
+    {
+      type: 'local',
+      name: 'hello',
+      description: 'Say hello',
+      async call(args, context) {
+        return `Hello, ${args || 'World'}!`;
+      }
+    }
+  ];
+}
+```
+
+### Built-in Commands
+
+- `/help` - Show all available commands
+- `/clear` - Clear chat history

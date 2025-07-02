@@ -73,7 +73,7 @@ export async function run(opts: RunOpts) {
       }
     }
     if (prompt) {
-      const result = await store.actions.query(prompt);
+      const result = await store.actions.processUserInput(prompt);
       if (!opts.plan) {
         return result;
       } else {
