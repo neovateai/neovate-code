@@ -45,6 +45,14 @@ export const actions = {
     state.visible = visible;
   },
 
+  hideDiffActions: (path: string) => {
+    const nextItems = state.codeViewerTabItems.map((item) =>
+      item.path === path ? { ...item, hideDiffActions: true } : item,
+    );
+
+    state.codeViewerTabItems = nextItems;
+  },
+
   setActiveId: (activeId: string) => {
     state.activeId = activeId;
   },

@@ -98,16 +98,6 @@ const CodeDiffOutline = (props: Props) => {
 
     const newContent = replacedContent;
 
-    const newGlobalContent =
-      fileChanges.fileChangesActions.getFinalContent(path) || '';
-
-    fileChanges.fileChangesActions.updateCodeViewerState(
-      path,
-      oldContent,
-      newGlobalContent,
-      normalViewerMode,
-    );
-
     setCode({ oldContent, newContent });
     diff(oldContent, newContent).then((d) => setDiffStat(d));
   }, [file, edit]);
@@ -179,6 +169,15 @@ const CodeDiffOutline = (props: Props) => {
         onAccept={handleAccept}
         onReject={handleReject}
         onShowCodeViewer={() => {
+          const newGlobalContent =
+            fileChanges.fileChangesActions.getFinalContent(path) || '';
+
+          fileChanges.fileChangesActions.updateCodeViewerState(
+            path,
+            file.content,
+            newGlobalContent,
+            normalViewerMode,
+          );
           codeViewer.actions.setVisible(true);
         }}
         isExpanded={isExpanded}
