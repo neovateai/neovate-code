@@ -122,7 +122,11 @@ export const fileChangesActions = {
       return '';
     }
     return fileChangesState.files[path]?.edits.reduce((content, edit) => {
-      return content.replace(edit.old_string, edit.new_string);
+      // 如果没有accept或reject过，则认为edit是有效的，需要应用
+      if (!edit.editStatus) {
+        return content.replace(edit.old_string, edit.new_string);
+      }
+      return content;
     }, fileState.content);
   },
 };
