@@ -12,12 +12,10 @@ import { Context } from '../context';
 import { PluginHookType } from '../plugin';
 import { Service } from '../service';
 import { setupTracing } from '../tracing';
+import { APP_STAGE, AppProvider } from '../ui/AppContext';
 import { App } from '../ui/app';
-import { StoreProvider } from '../ui/hooks/use-store';
-import { createStore } from '../ui/store';
 import { readStdin } from '../utils/readStdin';
 
-React;
 const debug = createDebug('takumi:commands:default');
 
 export interface RunOpts {
@@ -26,8 +24,46 @@ export interface RunOpts {
   context: Context;
 }
 
+async function runInQuiet(opts: RunOpts) {
+  try {
+    let prompt = opts.prompt;
+    if (!prompt) {
+      const stdin = (await readStdin()).trim();
+      if (stdin) {
+        prompt = stdin;
+      }
+    }
+    if (!prompt) {
+      throw new Error(
+        'Quiet mode, non interactive, you must provide a prompt to run.',
+      );
+    }
+    debug('prompt', prompt);
+    const context = opts.context;
+    const service = await Service.create({
+      agentType: 'code',
+      context,
+    });
+    const { query } = await import('../query');
+    const { isReasoningModel } = await import('../provider');
+    const result = await query({
+      input: [{ role: 'user', content: prompt }],
+      service,
+      thinking: isReasoningModel(service.context.config.model),
+    });
+    console.log(JSON.stringify(result, null, 2));
+  } catch (e) {
+  } finally {
+    await opts.context.destroy();
+  }
+}
+
 export async function run(opts: RunOpts) {
   const quiet = opts.context.config.quiet || !process.stdin.isTTY;
+  if (quiet) {
+    await runInQuiet(opts);
+    return;
+  }
   try {
     let prompt = opts.prompt;
     debug('prompt', prompt);
@@ -40,17 +76,17 @@ export async function run(opts: RunOpts) {
       agentType: 'plan',
       context,
     });
-    const store = createStore({
-      context,
-      service,
-      planService: planService,
-      stage: opts.plan ? 'plan' : 'code',
-    });
     if (!quiet) {
       render(
-        <StoreProvider store={store}>
+        <AppProvider
+          context={context}
+          service={service}
+          planService={planService}
+          stage={opts.plan ? APP_STAGE.PLAN : APP_STAGE.CODE}
+          initialPrompt={prompt}
+        >
           <App />
-        </StoreProvider>,
+        </AppProvider>,
         {
           patchConsole: process.env.DEBUG ? false : true,
           exitOnCtrlC: true,
@@ -66,33 +102,7 @@ export async function run(opts: RunOpts) {
       process.on('SIGQUIT', exit);
       process.on('SIGTERM', exit);
     }
-    if (!process.stdin.isTTY && !prompt) {
-      const stdin = (await readStdin()).trim();
-      if (stdin) {
-        prompt = stdin;
-      }
-    }
-    if (prompt) {
-      const result = await store.actions.processUserInput(prompt);
-      if (!opts.plan) {
-        return result;
-      } else {
-        return null;
-      }
-    } else {
-      if (quiet) {
-        throw new Error(
-          'Quiet mode, non interactive, you must provide a prompt to run.',
-        );
-      }
-      return null;
-    }
-  } catch {
-  } finally {
-    if (quiet) {
-      await opts.context.destroy();
-    }
-  }
+  } catch (e) {}
 }
 
 export async function runDefault(opts: RunCliOpts) {
@@ -143,7 +153,7 @@ export async function runDefault(opts: RunCliOpts) {
       args: [],
       type: PluginHookType.Series,
     });
-    const result = await run({
+    await run({
       context,
       prompt: argv._[0]! as string,
       plan: argv.plan,
@@ -159,10 +169,6 @@ export async function runDefault(opts: RunCliOpts) {
       ],
       type: PluginHookType.Series,
     });
-    const quiet = context.config.quiet || !process.stdin.isTTY;
-    if (quiet) {
-      console.log(JSON.stringify(result, null, 2));
-    }
   });
 }
 
