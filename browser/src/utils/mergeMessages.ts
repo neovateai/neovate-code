@@ -1,6 +1,9 @@
 import type {
   ReasoningMessage,
   TextMessage,
+  ToolApprovalErrorMessage,
+  ToolApprovalRequestMessage,
+  ToolApprovalResultMessage,
   ToolMessage,
   UIMessageAnnotation,
 } from '@/types/message';
@@ -164,6 +167,18 @@ export function mergeMessages(
         }
         break;
       }
+
+      case UIMessageType.ToolApprovalRequest:
+        merged.push(message as ToolApprovalRequestMessage);
+        break;
+
+      case UIMessageType.ToolApprovalResult:
+        merged.push(message as ToolApprovalResultMessage);
+        break;
+
+      case UIMessageType.ToolApprovalError:
+        merged.push(message as ToolApprovalErrorMessage);
+        break;
 
       default:
         merged.push(message);

@@ -75,6 +75,12 @@ const registerRoutes = async (
     service,
     planService,
   });
+  await app.register(import('./routes/tool-approval'), {
+    prefix: BASE_API_PREFIX,
+    ...pluginOpts,
+    service,
+    planService,
+  });
   await app.register(import('./routes/files'), {
     prefix: BASE_API_PREFIX,
     ...pluginOpts,
