@@ -9,7 +9,7 @@ export default function WriteRender({ message }: { message?: ToolMessage }) {
   if (!message) {
     return null;
   }
-  const { args, toolCallId } = message;
+  const { args, toolCallId, state } = message;
   const { file_path, content } = args as {
     file_path: string;
     content: string;
@@ -43,6 +43,7 @@ export default function WriteRender({ message }: { message?: ToolMessage }) {
         new_string: content,
         editStatus,
       }}
+      state={state}
     />
   );
 }

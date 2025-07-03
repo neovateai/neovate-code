@@ -15,6 +15,7 @@ interface Props {
   readonly edit: fileChanges.FileEdit;
   readonly normalViewerMode?: CodeNormalViewerMode;
   readonly loading?: boolean;
+  readonly state: 'call' | 'result';
 }
 
 const useStyles = createStyles(
@@ -67,7 +68,7 @@ const useStyles = createStyles(
 );
 
 const CodeDiffOutline = (props: Props) => {
-  const { path, loading, normalViewerMode, edit } = props;
+  const { path, loading, normalViewerMode, edit, state } = props;
 
   const { editStatus, old_string: oldString, new_string: newString } = edit;
 
@@ -107,6 +108,12 @@ const CodeDiffOutline = (props: Props) => {
       setEarlyFile(file);
     }
   }, [file]);
+
+  useEffect(() => {
+    if (state === 'result') {
+      setIsExpanded(false);
+    }
+  }, [state]);
 
   const earlyCode = useMemo(() => {
     if (!earlyFile) {
