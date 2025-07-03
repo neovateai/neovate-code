@@ -43,7 +43,7 @@ const AddContext = () => {
   const {
     suggestions,
     showSearch,
-    handleValue,
+    handleSelectValue,
     currentContextType,
     setCurrentContextType,
   } = useSuggestion(searchText, contextsSelectedValues);
@@ -72,7 +72,7 @@ const AddContext = () => {
       outsideOpen={keepMenuOpen}
       onSelect={(value) => {
         setKeepMenuOpen(true);
-        const contextItem = handleValue(value);
+        const contextItem = handleSelectValue(value);
         if (contextItem) {
           setKeepMenuOpen(false);
           context.actions.addContext(contextItem);

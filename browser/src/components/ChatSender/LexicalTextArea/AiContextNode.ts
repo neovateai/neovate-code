@@ -6,11 +6,12 @@ import {
   type Spread,
 } from 'lexical';
 import type { JSX } from 'react';
+import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
 import type { AiContextNodeConfig, AiContextNodeInfo } from '@/types/context';
 
 export type SerializedAiContextNode = Spread<
   {
-    config: AiContextNodeConfig;
+    config: { type: AiContextNodeConfig['type'] };
     info: AiContextNodeInfo;
   },
   SerializedLexicalNode
@@ -41,14 +42,22 @@ export class AiContextNode extends DecoratorNode<JSX.Element> {
 
   static importJSON(serializedNode: SerializedAiContextNode): AiContextNode {
     const { config, info } = serializedNode;
-    return new AiContextNode(config, info);
+    const foundConfig = AI_CONTEXT_NODE_CONFIGS.find(
+      (c) => c.type === config.type,
+    );
+    if (!foundConfig) {
+      throw new Error(
+        `[AiContextNode] Can't find the config which type is ${config.type}，please check AI_CONTEXT_NODE_CONFIGS`,
+      );
+    }
+    return new AiContextNode(foundConfig, info);
   }
 
   exportJSON(): SerializedAiContextNode {
     return {
       type: 'ai-context',
       version: 1,
-      config: this.__config,
+      config: { type: this.__config.type },
       info: this.__info,
     };
   }

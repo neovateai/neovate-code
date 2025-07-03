@@ -2,7 +2,6 @@ import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
-import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import type { GetProps, GetRef, Input } from 'antd';
 import { createStyles } from 'antd-style';
@@ -15,48 +14,18 @@ import React, {
   useContext,
   useImperativeHandle,
   useRef,
-  useState,
 } from 'react';
 import { LexicalTextAreaContext } from '../LexicalTextAreaContext';
 import { AiContextNode } from './AiContextNode';
-import { DisabledPlugin } from './DisabledPlugin';
+import DisabledPlugin from './DisabledPlugin';
 import EnterEventPlugin from './EnterEventPlugin';
 import PastePlugin from './PastePlugin';
-import { PlaceholderPlugin } from './PlaceholderPlugin';
+import PlaceholderPlugin from './PlaceholderPlugin';
 import RenderValuePlugin from './RenderValuePlugin';
 
 type Props = GetProps<typeof Input.TextArea>;
 
 type Ref = GetRef<typeof Input.TextArea>;
-
-const createSyntheticEvent = (
-  value: string,
-): React.ChangeEvent<HTMLTextAreaElement> => {
-  const target = {
-    value,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => true,
-  } as unknown as HTMLTextAreaElement;
-
-  return {
-    target,
-    currentTarget: target,
-    preventDefault: () => {},
-    stopPropagation: () => {},
-    bubbles: true,
-    cancelable: true,
-    defaultPrevented: false,
-    eventPhase: 0,
-    isTrusted: true,
-    nativeEvent: new Event('change'),
-    isDefaultPrevented: () => false,
-    isPropagationStopped: () => false,
-    persist: () => {},
-    timeStamp: Date.now(),
-    type: 'change',
-  };
-};
 
 const useStyle = createStyles(({ css }) => {
   return {
@@ -85,19 +54,25 @@ const useStyle = createStyles(({ css }) => {
 
 const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
   const {
-    value,
     placeholder = '',
-    onChange,
     onKeyDown,
     onSelect,
     disabled,
     className,
     style,
   } = props;
-  const [innerValue, setInnerValue] = useState<string>((value || '') as string);
+
+  const {
+    onEnterPress,
+    namespace,
+    value,
+    onChange,
+    onChangeNodes,
+    aiContextNodeConfigs,
+  } = useContext(LexicalTextAreaContext);
+
   const editorRef = useRef<LexicalEditor | null>(null);
   const contentEditableRef = useRef<HTMLDivElement | null>(null);
-  const { onEnterPress, namespace } = useContext(LexicalTextAreaContext);
 
   const { styles } = useStyle();
 
@@ -112,12 +87,6 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
     },
     get input() {
       return contentEditableRef.current;
-    },
-    get value() {
-      return innerValue;
-    },
-    set value(val: string) {
-      setInnerValue(val);
     },
   }));
 
@@ -170,31 +139,19 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
         ErrorBoundary={LexicalErrorBoundary}
       />
 
-      {!disabled && (
-        <OnChangePlugin
-          onChange={(_editorState, editor) => {
-            editor.read(() => {
-              const nextInnerValue = $getRoot().getTextContent();
-              setInnerValue(nextInnerValue);
-              const selection = window.getSelection();
-              const rangeCount = selection?.rangeCount || 0;
-
-              const cursorPosition =
-                rangeCount > 0 ? selection?.getRangeAt(0)?.startOffset || 0 : 0;
-              const syntheticEvent = createSyntheticEvent(nextInnerValue);
-              syntheticEvent.target.selectionStart = cursorPosition;
-              syntheticEvent.target.selectionEnd = cursorPosition;
-              onChange?.(syntheticEvent);
-            });
-          }}
-        />
-      )}
       {!disabled && <AutoFocusPlugin />}
       <DisabledPlugin disabled={!!disabled} />
       <PlaceholderPlugin placeholder={placeholder} />
       {!disabled && <EnterEventPlugin onEnterPress={onEnterPress} />}
       {!disabled && <PastePlugin />}
-      <RenderValuePlugin value={value as string} />
+      <RenderValuePlugin
+        value={value}
+        onChange={(markedText, plainText) => {
+          onChange?.(markedText, plainText);
+        }}
+        onChangeNodes={onChangeNodes}
+        aiContextNodeConfigs={aiContextNodeConfigs}
+      />
     </LexicalComposer>
   );
 });

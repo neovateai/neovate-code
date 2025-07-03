@@ -15,8 +15,13 @@ interface ChatInputProps {
 
 export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const { state } = useAppContext();
-  const { processUserInput, chatInputUp, chatInputDown, chatInputChange } =
-    useChatActions();
+  const {
+    processUserInput,
+    chatInputUp,
+    chatInputDown,
+    chatInputChange,
+    cancelQuery,
+  } = useChatActions();
   const { getCurrentStatusMessage } = useMessageFormatting();
 
   const [value, setValue] = useState('');
@@ -36,9 +41,16 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const isToolApproved = state.status === APP_STATUS.TOOL_APPROVED;
   const isToolExecuting = state.status === APP_STATUS.TOOL_EXECUTING;
   const isFailed = state.status === APP_STATUS.FAILED;
+  const isCancelled = state.status === APP_STATUS.CANCELLED;
   const isWaitingForInput = isProcessing || isToolApproved || isToolExecuting;
 
   useInput((_, key) => {
+    if (key.escape) {
+      if (isWaitingForInput) {
+        cancelQuery();
+      }
+      return;
+    }
     if (key.upArrow) {
       if (isVisible) {
         navigatePrevious(); // 切换suggestion
@@ -101,11 +113,12 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const getBorderColor = () => {
     if (isWaitingForInput) return BORDER_COLORS.PROCESSING;
     if (isFailed) return BORDER_COLORS.ERROR;
+    if (isCancelled) return BORDER_COLORS.WARNING;
     return BORDER_COLORS.DEFAULT;
   };
 
   const getTextColor = () => {
-    return isWaitingForInput || isFailed ? 'gray' : 'white';
+    return isWaitingForInput || isFailed || isCancelled ? 'gray' : 'white';
   };
 
   return (
@@ -148,7 +161,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
         isVisible={isVisible && !isWaitingForInput}
       />
       <Box flexDirection="row" paddingX={2} gap={1}>
-        <Text color="gray">ctrl+c to exit | enter to send</Text>
+        <Text color="gray">ctrl+c to exit | enter to send | esc to cancel</Text>
         <Box flexGrow={1} />
       </Box>
     </Box>

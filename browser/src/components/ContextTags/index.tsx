@@ -66,11 +66,13 @@ export const FileContextTag = ({
           }}
         />
       ) : (
-        <DevFileIcon
-          isFolder={context && !isFile}
-          className={styles.icon}
-          fileExt={displayText.split('.').pop() ?? ''}
-        />
+        context && (
+          <DevFileIcon
+            isFolder={context?.type === 'directory'}
+            className={styles.icon}
+            fileExt={displayText.split('.').pop() ?? ''}
+          />
+        )
       )}
       {displayText}
     </Tag>

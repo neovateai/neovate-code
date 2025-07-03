@@ -1,10 +1,8 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { useLexicalIsTextContentEmpty } from '@lexical/react/useLexicalIsTextContentEmpty';
-import { useEffect } from 'react';
+import { memo, useEffect } from 'react';
 
-export const PlaceholderPlugin = (props: {
-  placeholder: string | undefined;
-}) => {
+const PlaceholderPlugin = (props: { placeholder: string | undefined }) => {
   const [editor] = useLexicalComposerContext();
   const isEmpty = useLexicalIsTextContentEmpty(editor);
 
@@ -22,3 +20,5 @@ export const PlaceholderPlugin = (props: {
 
   return null;
 };
+
+export default memo(PlaceholderPlugin);

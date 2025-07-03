@@ -1,3 +1,4 @@
+import { createStableToolKey } from '../../utils/formatToolUse';
 import { useAppContext } from '../AppContext';
 import { APP_STATUS } from '../constants';
 
@@ -30,7 +31,7 @@ export function useToolApproval() {
     params: Record<string, any>,
   ): Promise<boolean> => {
     // Check approval memory first
-    const toolKey = `${name}:${JSON.stringify(params)}`;
+    const toolKey = createStableToolKey(name, params);
     const toolOnlyKey = name;
 
     if (
@@ -83,7 +84,7 @@ export function useToolApproval() {
   };
 
   const getToolKey = (toolName: string, params: Record<string, any>) => {
-    return `${toolName}:${JSON.stringify(params)}`;
+    return createStableToolKey(toolName, params);
   };
 
   return {
