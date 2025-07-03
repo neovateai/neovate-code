@@ -60,9 +60,10 @@ const ChatSender: React.FC = () => {
   const {
     suggestions,
     showSearch,
-    handleValue,
+    handleSelectValue,
     currentContextType,
     setCurrentContextType,
+    getOriginalContextByValue,
   } = useSuggestion(contextSearchInput);
 
   const handleSubmit = () => {
@@ -102,7 +103,7 @@ const ChatSender: React.FC = () => {
         onBlur={() => setKeepMenuOpen(false)}
         onSelect={(value) => {
           setKeepMenuOpen(true);
-          const contextItem = handleValue(value);
+          const contextItem = handleSelectValue(value);
           if (contextItem) {
             setKeepMenuOpen(false);
             const nextInputValue =
@@ -111,8 +112,8 @@ const ChatSender: React.FC = () => {
               prompt.slice(insertNodePosition + 1);
             actions.updatePrompt(nextInputValue);
 
-            // TODO remove next line
-            context.actions.addContext(contextItem);
+            // now add context at onChangeNodes
+            // context.actions.addContext(contextItem);
           }
         }}
       >
@@ -122,12 +123,26 @@ const ChatSender: React.FC = () => {
               value={{
                 onEnterPress: handleEnterPress,
                 onChangeNodes: (prevNodes, nextNodes) => {
+                  // remove old nodes
                   differenceWith(prevNodes, nextNodes, (prev, next) => {
                     return prev.originalText === next.originalText;
                   }).forEach((node) => {
                     context.actions.removeContext(node.originalText);
                   });
-                  // TODO 在这里新增ContextNode
+
+                  // add new nodes
+                  differenceWith(nextNodes, prevNodes, (next, prev) => {
+                    return next.originalText === prev.originalText;
+                  }).forEach((node) => {
+                    console.log('need add', node);
+                    const contextItem = getOriginalContextByValue(
+                      node.displayText,
+                      node.type,
+                    );
+                    if (contextItem) {
+                      context.actions.addContext(contextItem);
+                    }
+                  });
                 },
                 value: prompt,
                 onChange: (markedText, plainText) => {
