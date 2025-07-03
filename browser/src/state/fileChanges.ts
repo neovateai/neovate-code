@@ -38,15 +38,6 @@ export const fileChangesState = proxy<FileChangesStore>({
 });
 
 export const fileChangesActions = {
-  // 修改本地file内容
-  writeFileContent: async (path: string, newCode: string) => {
-    const fileState = fileChangesState.files[path];
-    if (fileState) {
-      await editFile(path, newCode);
-      fileState.content = newCode;
-    }
-  },
-
   // 更新fileState
   updateFileState: async (
     path: string,
@@ -59,6 +50,11 @@ export const fileChangesActions = {
     }
     const nextFileState = fileStateFn(prevFileState);
     fileChangesState.files[path] = nextFileState;
+    // 更新后，将最终内容写入文件
+    const finalContent = fileChangesActions.getFinalContent(path);
+    if (finalContent) {
+      await editFile(path, finalContent);
+    }
 
     const originalCode = nextFileState.content;
     const modifiedCode = fileChangesActions.getFinalContent(path) || '';
@@ -66,6 +62,57 @@ export const fileChangesActions = {
       path,
       originalCode,
       modifiedCode,
+      mode,
+    );
+  },
+
+  acceptEdit: (
+    path: string,
+    editToAccept: FileEdit,
+    mode?: CodeNormalViewerMode,
+  ) => {
+    fileChangesActions.updateFileState(
+      path,
+      (prevState) => {
+        const newContent = prevState.content.replace(
+          editToAccept.old_string,
+          editToAccept.new_string,
+        );
+        const nextEdit: FileEdit = {
+          ...editToAccept,
+          editStatus: 'accept',
+        };
+        return {
+          ...prevState,
+          content: newContent,
+          edits: prevState.edits.map((edit) =>
+            edit.toolCallId === nextEdit.toolCallId ? nextEdit : edit,
+          ),
+        };
+      },
+      mode,
+    );
+  },
+
+  rejectEdit: (
+    path: string,
+    editToReject: FileEdit,
+    mode?: CodeNormalViewerMode,
+  ) => {
+    fileChangesActions.updateFileState(
+      path,
+      (prevState) => {
+        const nextEdit: FileEdit = {
+          ...editToReject,
+          editStatus: 'reject',
+        };
+        return {
+          ...prevState,
+          edits: prevState.edits.map((edit) =>
+            edit.toolCallId === nextEdit.toolCallId ? nextEdit : edit,
+          ),
+        };
+      },
       mode,
     );
   },
@@ -138,6 +185,10 @@ export const fileChangesActions = {
       // 如果没有accept或reject过，则认为edit是有效的，需要应用
       if (!edit.editStatus) {
         return content.replace(edit.old_string, edit.new_string);
+      }
+      if (edit.editStatus === 'accept') {
+        // `accept` 意味着 content 已经被更新
+        return content;
       }
       return content;
     }, fileState.content);

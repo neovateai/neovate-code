@@ -1,10 +1,18 @@
 import { proxy } from 'valtio';
 import { submitToolApproval } from '@/api/toolApproval';
+import type { CodeNormalViewerMode } from '@/types/codeViewer';
 import type {
   ToolApprovalErrorMessage,
   ToolApprovalRequestMessage,
   ToolApprovalResultMessage,
 } from '@/types/message';
+import * as fileChanges from './fileChanges';
+
+export interface EditPayload {
+  path: string;
+  edit: fileChanges.FileEdit;
+  mode?: CodeNormalViewerMode;
+}
 
 export interface ToolApprovalState {
   // 当前审批状态
@@ -12,6 +20,7 @@ export interface ToolApprovalState {
   callId: string | null;
   toolName: string | null;
   params: Record<string, any> | null;
+  editPayload?: EditPayload;
 
   // 提交状态
   submitting: boolean;
@@ -42,6 +51,24 @@ export const toolApprovalActions = {
     toolApprovalState.params = message.args as Record<string, any>;
     toolApprovalState.currentRequest = message;
     toolApprovalState.submitError = null;
+
+    if (message.toolName === 'edit') {
+      const { file_path, old_string, new_string, mode } = message.args as {
+        file_path: string;
+        old_string: string;
+        new_string: string;
+        mode?: CodeNormalViewerMode;
+      };
+      toolApprovalState.editPayload = {
+        path: file_path,
+        edit: {
+          toolCallId: message.toolCallId,
+          old_string,
+          new_string,
+        },
+        mode,
+      };
+    }
   },
 
   // 处理审批结果
@@ -54,6 +81,7 @@ export const toolApprovalActions = {
     toolApprovalState.submitting = false;
     toolApprovalState.submitError = null;
     toolApprovalState.lastSubmitOption = 'once';
+    toolApprovalState.editPayload = undefined;
   },
 
   // 处理审批错误
@@ -69,6 +97,18 @@ export const toolApprovalActions = {
   ) => {
     if (!toolApprovalState.callId) {
       return;
+    }
+
+    if (
+      toolApprovalState.toolName === 'edit' &&
+      toolApprovalState.editPayload
+    ) {
+      const { path, edit, mode } = toolApprovalState.editPayload;
+      if (approved) {
+        fileChanges.fileChangesActions.acceptEdit(path, edit, mode);
+      } else {
+        fileChanges.fileChangesActions.rejectEdit(path, edit, mode);
+      }
     }
 
     toolApprovalState.submitting = true;
@@ -94,6 +134,7 @@ export const toolApprovalActions = {
     toolApprovalState.submitting = false;
     toolApprovalState.submitError = null;
     toolApprovalState.lastSubmitOption = 'once';
+    toolApprovalState.editPayload = undefined;
   },
 
   // 重试提交（在出错时使用）

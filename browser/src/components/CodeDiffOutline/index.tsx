@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSnapshot } from 'valtio';
 import * as codeViewer from '@/state/codeViewer';
 import * as fileChanges from '@/state/fileChanges';
+import { toolApprovalActions } from '@/state/toolApproval';
 import type { CodeNormalViewerMode, DiffStat } from '@/types/codeViewer';
 import { diff, inferFileType } from '@/utils/codeViewer';
 import CodeDiffView from '../CodeViewer/CodeDiffView';
@@ -153,45 +154,13 @@ const CodeDiffOutline = (props: Props) => {
   }
 
   const handleAccept = () => {
-    fileChanges.fileChangesActions.updateFileState(
-      path,
-      (prevState) => {
-        const nextEdit: fileChanges.FileEdit = {
-          ...edit,
-          editStatus: 'accept',
-        };
-        return {
-          ...prevState,
-          content: code.newContent,
-          edits: prevState.edits.map((edit) =>
-            edit.toolCallId === nextEdit.toolCallId ? nextEdit : edit,
-          ),
-        };
-      },
-      normalViewerMode,
-    );
-    fileChanges.fileChangesActions.writeFileContent(path, code.newContent);
+    fileChanges.fileChangesActions.acceptEdit(path, edit, normalViewerMode);
+    toolApprovalActions.approveToolUse(true, 'once');
   };
 
   const handleReject = () => {
-    fileChanges.fileChangesActions.updateFileState(
-      path,
-      (prevState) => {
-        const nextEdit: fileChanges.FileEdit = {
-          ...edit,
-          editStatus: 'reject',
-        };
-        return {
-          ...prevState,
-          content: code.oldContent,
-          edits: prevState.edits.map((edit) =>
-            edit.toolCallId === nextEdit.toolCallId ? nextEdit : edit,
-          ),
-        };
-      },
-      normalViewerMode,
-    );
-    fileChanges.fileChangesActions.writeFileContent(path, code.oldContent);
+    fileChanges.fileChangesActions.rejectEdit(path, edit, normalViewerMode);
+    toolApprovalActions.approveToolUse(false, 'once');
   };
 
   return (
