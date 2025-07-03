@@ -12,6 +12,7 @@ import {
   ImageItem,
 } from '../types/completions';
 import { CreateServerOpts } from '../types/server';
+import { getToolApprovalService } from './tool-approval';
 
 const debug = createDebug('takumi:server:completions');
 
@@ -124,6 +125,7 @@ export async function runCode(opts: RunCompletionOpts) {
     debug('input', JSON.stringify(input, null, 2));
 
     const service = mode === 'plan' ? opts.planService : opts.service;
+    const toolApprovalService = getToolApprovalService(service.context);
 
     debug('mode', mode);
 
@@ -186,6 +188,47 @@ export async function runCode(opts: RunCompletionOpts) {
             result: JSON.stringify(result),
           }),
         );
+      },
+      async onToolApprove(callId, name, params) {
+        debug(`Tool approval request: ${name} with callId ${callId}`);
+
+        try {
+          dataStream.writeMessageAnnotation({
+            type: 'tool_approval_request',
+            toolCallId: callId,
+            toolName: name,
+            args: params,
+          });
+
+          const approved = await toolApprovalService.requestApproval(
+            callId,
+            name,
+            params,
+          );
+
+          dataStream.writeMessageAnnotation({
+            type: 'tool_approval_result',
+            toolCallId: callId,
+            toolName: name,
+            approved,
+          });
+
+          debug(
+            `Tool approval result: ${name} with callId ${callId}, approved: ${approved}`,
+          );
+          return approved;
+        } catch (error) {
+          debug(`Tool approval error: ${name} with callId ${callId}`, error);
+
+          dataStream.writeMessageAnnotation({
+            type: 'tool_approval_error',
+            toolCallId: callId,
+            toolName: name,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+
+          return false;
+        }
       },
     });
     debug('result', result);

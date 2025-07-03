@@ -187,7 +187,10 @@ export function useChatActions() {
     }
   };
 
-  const executeQuery = async (input: string | any[]): Promise<any> => {
+  const executeQuery = async (
+    input: string | any[],
+    forceStage?: 'plan' | 'code',
+  ): Promise<any> => {
     // Prepare input for query function
     let queryInput;
     if (typeof input === 'string') {
@@ -204,8 +207,8 @@ export function useChatActions() {
       queryInput = input;
     }
 
-    const service =
-      state.stage === 'plan' ? services.planService : services.service;
+    const stage = forceStage || state.stage;
+    const service = stage === 'plan' ? services.planService : services.service;
     let textDelta = '';
     let reasoningDelta = '';
 
@@ -374,7 +377,7 @@ export function useChatActions() {
       });
 
       dispatch({ type: 'SET_STATUS', payload: APP_STATUS.COMPLETED });
-      if (state.stage === 'plan') {
+      if (stage === 'plan') {
         dispatch({
           type: 'SET_PLAN_MODAL',
           payload: { text: result.finalText || '' },

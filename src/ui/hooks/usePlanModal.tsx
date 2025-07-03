@@ -10,7 +10,7 @@ export function usePlanModal() {
     if (approved && state.planModal) {
       dispatch({ type: 'SET_STAGE', payload: APP_STAGE.CODE });
       dispatch({ type: 'SET_PLAN_MODAL', payload: null });
-      await executeQuery(state.planModal.text);
+      await executeQuery(state.planModal.text, 'code');
     } else {
       dispatch({ type: 'SET_STAGE', payload: APP_STAGE.PLAN });
       dispatch({ type: 'SET_PLAN_MODAL', payload: null });

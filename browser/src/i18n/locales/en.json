@@ -93,6 +93,37 @@
     "callFailed": "Failed to call {{toolName}} tool",
     "detailInfo": "Detail Info"
   },
+  "toolApproval": {
+    "title": "Tool Execution Permission Confirmation",
+    "description": "AI requests to execute the following tool, do you allow it?",
+    "toolName": "Tool Name",
+    "parameters": "Parameters",
+    "approveOnce": "Allow (Once)",
+    "approveAlways": "Allow (Always for this command)",
+    "approveAlwaysTool": "Allow (Always for {{toolName}})",
+    "deny": "Deny",
+    "approved": "Tool execution approved",
+    "denied": "Tool execution denied",
+    "approvalOption": "Approval Option",
+    "error": "Tool Approval Error",
+    "errorMessage": "Error Message",
+    "showParameters": "Show Parameters",
+    "hideParameters": "Hide Parameters",
+    "submitFailed": "Submit Failed",
+    "retry": "Retry",
+    "submitting": "Submitting approval result...",
+    "toolDescriptions": {
+      "read": "Read file: {{filePath}}",
+      "bash": "Execute command: {{command}}",
+      "edit": "Edit file: {{filePath}}",
+      "write": "Write file: {{filePath}}",
+      "fetch": "Network request: {{url}}",
+      "glob": "File matching: {{pattern}}",
+      "grep": "Text search: {{pattern}}",
+      "ls": "List directory: {{dirPath}}",
+      "default": "Tool call: {{toolName}}"
+    }
+  },
   "mcp": {
     "management": "MCP Management",
     "services": "MCP Services",

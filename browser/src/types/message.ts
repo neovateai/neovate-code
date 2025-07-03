@@ -17,6 +17,9 @@ export enum UIMessageType {
   ToolCallResult = 'tool_result',
   Tool = 'tool',
   TextDelta = 'text_delta',
+  ToolApprovalRequest = 'tool_approval_request',
+  ToolApprovalResult = 'tool_approval_result',
+  ToolApprovalError = 'tool_approval_error',
 }
 
 export type UIMessage = Omit<BaseUIMessage, 'annotations'> & {
@@ -38,7 +41,10 @@ export type UIMessageAnnotation =
   | ReasoningMessage
   | ToolCallMessage
   | ToolCallResultMessage
-  | ToolMessage;
+  | ToolMessage
+  | ToolApprovalRequestMessage
+  | ToolApprovalResultMessage
+  | ToolApprovalErrorMessage;
 
 export interface ToolMessage {
   type: UIMessageType.Tool;
@@ -98,3 +104,30 @@ export type MessageAnnotation =
   | SourceMessage
   | FileMessage
   | StepStartMessage;
+
+export interface ToolApprovalRequestMessage {
+  type: UIMessageType.ToolApprovalRequest;
+  toolCallId: string;
+  toolName: string;
+  args: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export interface ToolApprovalResultMessage {
+  type: UIMessageType.ToolApprovalResult;
+  toolCallId: string;
+  toolName: string;
+  approved: boolean;
+  option?: 'once' | 'always' | 'always_tool';
+  timestamp: number;
+  [key: string]: unknown;
+}
+
+export interface ToolApprovalErrorMessage {
+  type: UIMessageType.ToolApprovalError;
+  toolCallId: string;
+  toolName: string;
+  error: string;
+  timestamp: number;
+  [key: string]: unknown;
+}

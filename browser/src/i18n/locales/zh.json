@@ -93,6 +93,37 @@
     "callFailed": "调用{{toolName}}工具失败",
     "detailInfo": "详细信息"
   },
+  "toolApproval": {
+    "title": "工具执行权限确认",
+    "description": "AI 请求执行以下工具，是否允许？",
+    "toolName": "工具名称",
+    "parameters": "参数",
+    "approveOnce": "允许（一次）",
+    "approveAlways": "允许（此命令总是）",
+    "approveAlwaysTool": "允许（{{toolName}} 总是）",
+    "deny": "拒绝",
+    "approved": "工具执行已批准",
+    "denied": "工具执行已拒绝",
+    "approvalOption": "批准选项",
+    "error": "工具审批错误",
+    "errorMessage": "错误信息",
+    "showParameters": "查看参数",
+    "hideParameters": "隐藏参数",
+    "submitFailed": "提交失败",
+    "retry": "重试",
+    "submitting": "正在提交审批结果...",
+    "toolDescriptions": {
+      "read": "读取文件: {{filePath}}",
+      "bash": "执行命令: {{command}}",
+      "edit": "编辑文件: {{filePath}}",
+      "write": "写入文件: {{filePath}}",
+      "fetch": "网络请求: {{url}}",
+      "glob": "文件匹配: {{pattern}}",
+      "grep": "文本搜索: {{pattern}}",
+      "ls": "列出目录: {{dirPath}}",
+      "default": "工具调用: {{toolName}}"
+    }
+  },
   "mcp": {
     "management": "MCP 管理",
     "services": "MCP 服务",

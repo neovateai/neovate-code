@@ -9,6 +9,7 @@ import AssistantFooter from '@/components/AssistantFooter';
 import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
 import CodeViewer from '@/components/CodeViewer';
+import MessageProcessor from '@/components/MessageProcessor';
 import { UserMessage, UserMessageFooter } from '@/components/UserMessage';
 import Welcome from '@/components/Welcome';
 import ChatProvider, { useChatState } from '@/hooks/provider';
@@ -109,6 +110,8 @@ const Chat: React.FC = () => {
   return (
     <>
       <div className={styles.chat}>
+        <MessageProcessor messages={messages} />
+
         <div className={styles.chatList}>
           {items?.length ? (
             <Bubble.List
