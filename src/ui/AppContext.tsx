@@ -226,7 +226,7 @@ interface AppProviderProps {
   initialPrompt?: string;
 }
 
-function AppProviderComponent({
+export function AppProvider({
   children,
   context,
   service,
@@ -258,25 +258,13 @@ function AppProviderComponent({
       resolve: null,
     },
     approvalMemory: {
-      proceedOnce: new Set(context.approvalMemory.proceedOnce),
-      proceedAlways: new Set(context.approvalMemory.proceedAlways),
-      proceedAlwaysTool: new Set(context.approvalMemory.proceedAlwaysTool),
+      proceedOnce: new Set(),
+      proceedAlways: new Set(),
+      proceedAlwaysTool: new Set(),
     },
   };
 
   const [state, dispatch] = useReducer(appReducer, initialState);
-
-  React.useEffect(() => {
-    context.approvalMemory.proceedOnce = new Set(
-      state.approvalMemory.proceedOnce,
-    );
-    context.approvalMemory.proceedAlways = new Set(
-      state.approvalMemory.proceedAlways,
-    );
-    context.approvalMemory.proceedAlwaysTool = new Set(
-      state.approvalMemory.proceedAlwaysTool,
-    );
-  }, [state.approvalMemory, context]);
 
   const contextValue: AppContextType = {
     state,
@@ -299,21 +287,6 @@ function AppProviderComponent({
     <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>
   );
 }
-
-const arePropsEqual = (
-  prevProps: AppProviderProps,
-  nextProps: AppProviderProps,
-): boolean => {
-  return (
-    prevProps.context.cwd === nextProps.context.cwd &&
-    prevProps.service.id === nextProps.service.id &&
-    prevProps.planService.id === nextProps.planService.id &&
-    prevProps.stage === nextProps.stage &&
-    prevProps.initialPrompt === nextProps.initialPrompt
-  );
-};
-
-export const AppProvider = React.memo(AppProviderComponent, arePropsEqual);
 
 // Hook to use the app context
 export function useAppContext() {
