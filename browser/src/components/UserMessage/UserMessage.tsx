@@ -18,9 +18,10 @@ const UserMessage = (props: UserMessageProps) => {
       value={{
         namespace: 'UserMessage',
         aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
+        value: contextContent ?? content,
       }}
     >
-      <LexicalTextArea value={contextContent ?? content} disabled />
+      <LexicalTextArea disabled />
     </LexicalTextAreaContext>
   );
 };
