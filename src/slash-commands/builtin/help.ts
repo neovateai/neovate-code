@@ -14,7 +14,7 @@ export const helpCommand: LocalCommand = {
     const builtinCommands = commands.filter(
       (cmd) =>
         !cmd.name.includes(':') &&
-        ['clear', 'help', 'read-file', 'test'].includes(cmd.name),
+        ['clear', 'exit', 'help', 'read-file', 'test'].includes(cmd.name),
     );
 
     const userCommands = commands.filter((cmd) => cmd.name.startsWith('user:'));
@@ -24,7 +24,7 @@ export const helpCommand: LocalCommand = {
     const pluginCommands = commands.filter(
       (cmd) =>
         !cmd.name.includes(':') &&
-        !['clear', 'help', 'read-file', 'test'].includes(cmd.name),
+        !['clear', 'exit', 'help', 'read-file', 'test'].includes(cmd.name),
     );
 
     let result = 'Available slash commands:\n\n';
