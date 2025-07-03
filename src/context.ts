@@ -70,11 +70,6 @@ export class Context {
   generalInfo: Record<string, string>;
   paths: Paths;
   slashCommands: SlashCommandRegistry;
-  approvalMemory: {
-    proceedOnce: Set<string>;
-    proceedAlways: Set<string>;
-    proceedAlwaysTool: Set<string>;
-  };
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName || PRODUCT_NAME;
@@ -90,11 +85,6 @@ export class Context {
     this.history = [];
     this.paths = opts.paths;
     this.slashCommands = opts.slashCommands;
-    this.approvalMemory = {
-      proceedOnce: new Set(),
-      proceedAlways: new Set(),
-      proceedAlwaysTool: new Set(),
-    };
   }
 
   static async create(opts: CreateContextOpts) {
