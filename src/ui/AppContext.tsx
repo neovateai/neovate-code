@@ -75,9 +75,11 @@ export type AppAction =
   | { type: 'ADD_MESSAGE'; payload: Message }
   | { type: 'SET_CURRENT_MESSAGE'; payload: Message | null }
   | { type: 'CLEAR_CURRENT_MESSAGE' }
+  | { type: 'CLEAR_MESSAGES' }
   | { type: 'SET_PLAN_MODAL'; payload: { text: string } | null }
   | { type: 'SET_SLASH_COMMAND_JSX'; payload: ReactNode | null }
   | { type: 'ADD_HISTORY'; payload: string }
+  | { type: 'CLEAR_HISTORY' }
   | { type: 'SET_HISTORY_INDEX'; payload: number | null }
   | { type: 'SET_DRAFT_INPUT'; payload: string | null }
   | {
@@ -125,6 +127,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'CLEAR_CURRENT_MESSAGE':
       return { ...state, currentMessage: null };
 
+    case 'CLEAR_MESSAGES':
+      return { ...state, messages: [] };
+
     case 'SET_PLAN_MODAL':
       return { ...state, planModal: action.payload };
 
@@ -133,6 +138,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'ADD_HISTORY':
       return { ...state, history: [...state.history, action.payload] };
+
+    case 'CLEAR_HISTORY':
+      return { ...state, history: [] };
 
     case 'SET_HISTORY_INDEX':
       return { ...state, historyIndex: action.payload };
