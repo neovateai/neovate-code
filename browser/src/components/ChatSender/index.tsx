@@ -111,6 +111,7 @@ const ChatSender: React.FC = () => {
               prompt.slice(insertNodePosition + 1);
             actions.updatePrompt(nextInputValue);
 
+            // TODO remove next line
             context.actions.addContext(contextItem);
           }
         }}
@@ -126,6 +127,7 @@ const ChatSender: React.FC = () => {
                   }).forEach((node) => {
                     context.actions.removeContext(node.originalText);
                   });
+                  // TODO 在这里新增ContextNode
                 },
                 value: prompt,
                 onChange: (markedText, plainText) => {

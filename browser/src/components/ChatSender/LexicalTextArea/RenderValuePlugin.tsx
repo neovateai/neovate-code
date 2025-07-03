@@ -102,6 +102,7 @@ const RenderValuePlugin = (props: Props) => {
         }
 
         const mentionNode = $createAiContextNode(originalConfig, info);
+
         paragraph.append(mentionNode);
         allNodes.push(mentionNode);
         nodes.push({
@@ -213,8 +214,6 @@ const RenderValuePlugin = (props: Props) => {
         const root = $getRoot();
         const { nodes, paragraph, plainText, resetSelection } =
           parseContent(innerValue);
-
-        console.log(nodes, plainText);
 
         const shouldRebuild = !areNodesEqual(nodes, oldNodesRef.current);
 
