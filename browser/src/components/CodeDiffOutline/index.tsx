@@ -38,31 +38,6 @@ const useStyles = createStyles(
         padding: 4px;
         background-color: #f9f9f9;
       `,
-      item: css`
-        padding: 8px 4px;
-        margin: 4px 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-radius: 4px;
-
-        &:hover {
-          background-color: #eee;
-        }
-      `,
-      itemLeft: css`
-        display: flex;
-        align-items: center;
-        column-gap: 8px;
-      `,
-      itemRight: css`
-        display: flex;
-        align-items: center;
-        column-gap: 8px;
-      `,
-      itemDivider: css`
-        margin: 0;
-      `,
     };
   },
 );
