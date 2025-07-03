@@ -36,7 +36,6 @@ const useStyle = createStyles(
         height: 100%;
         display: flex;
         flex-direction: column;
-        min-height: 200px;
         ${maxHeight
           ? css`
               max-height: ${maxHeight}px;
@@ -91,7 +90,7 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
       if (editor && model) {
         const lineCount = model.getLineCount();
         const height = editor.getBottomForLineNumber(lineCount);
-        setHeight(height);
+        setHeight(Math.max(height, 200));
       }
     } else {
       setHeight(undefined);
