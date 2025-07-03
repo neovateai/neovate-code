@@ -20,6 +20,7 @@ type QueryOpts = {
     name: string,
     params: Record<string, any>,
   ) => Promise<boolean>;
+  onCancelCheck?: () => boolean;
 };
 
 export async function query(opts: QueryOpts) {
@@ -36,6 +37,15 @@ export async function query(opts: QueryOpts) {
   let finalText: string | null = null;
   let isFirstRun = true;
   while (true) {
+    // Check for cancellation before starting each iteration
+    if (opts.onCancelCheck && opts.onCancelCheck()) {
+      return {
+        finalText: null,
+        history: service.history,
+        cancelled: true,
+      };
+    }
+
     const { stream } = await service.run({
       input,
       thinking,
@@ -44,6 +54,15 @@ export async function query(opts: QueryOpts) {
     });
     let hasToolUse = false;
     for await (const chunk of stream) {
+      // Check for cancellation during stream processing
+      if (opts.onCancelCheck && opts.onCancelCheck()) {
+        return {
+          finalText: null,
+          history: service.history,
+          cancelled: true,
+        };
+      }
+
       const parsed = parseStreamChunk(chunk.toString());
       for (const item of parsed) {
         switch (item.type) {

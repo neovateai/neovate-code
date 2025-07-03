@@ -23,6 +23,7 @@ export const STATUS_MESSAGES = {
   [APP_STATUS.TOOL_EXECUTING]: 'Executing tool...',
   [APP_STATUS.PROCESSING]: 'Processing...',
   [APP_STATUS.PROCESSING + '_plan']: 'Planning...',
+  [APP_STATUS.CANCELLED]: 'Query cancelled',
 } as const;
 
 // Tool names and configurations
