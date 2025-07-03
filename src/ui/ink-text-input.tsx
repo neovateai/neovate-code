@@ -331,7 +331,14 @@ function TextInput({
           }
         }
       } else if (key.return) {
-        if (key.meta) {
+        if (key.ctrl) {
+          // Ctrl+Enter inserts a newline
+          nextValue =
+            originalValue.slice(0, cursorOffset) +
+            '\n' +
+            originalValue.slice(cursorOffset, originalValue.length);
+          nextCursorOffset++;
+        } else if (key.meta) {
           // This does not work yet. We would like to have this behavior:
           //     Mac terminal: Settings → Profiles → Keyboard → Use Option as Meta key
           //     iTerm2: Open Settings → Profiles → Keys → General → Set Left/Right Option as Esc+
