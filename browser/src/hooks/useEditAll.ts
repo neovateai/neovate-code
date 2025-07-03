@@ -15,6 +15,8 @@ const useEditAll = (path?: string) => {
           ),
         };
       });
+
+      fileChanges.fileChangesActions.writeFileContent(path, modifiedCode);
     }
   };
 
@@ -31,6 +33,8 @@ const useEditAll = (path?: string) => {
           ),
         };
       });
+
+      fileChanges.fileChangesActions.writeFileContent(path, originalCode);
     }
   };
 
