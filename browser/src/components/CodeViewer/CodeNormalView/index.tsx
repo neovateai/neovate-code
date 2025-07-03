@@ -88,9 +88,14 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
       const editor = editorRef.current;
       const model = editor?.getModel();
       if (editor && model) {
-        const lineCount = model.getLineCount();
-        const height = editor.getBottomForLineNumber(lineCount);
-        setHeight(Math.max(height, 200));
+        try {
+          const lineCount = model.getLineCount();
+          const height = editor.getBottomForLineNumber(lineCount);
+          setHeight(Math.max(height, 200));
+        } catch (e) {
+          console.error('Auto set height error:', e);
+          setHeight(undefined);
+        }
       }
     } else {
       setHeight(undefined);
