@@ -6,7 +6,7 @@ import {
 } from '../constants';
 
 export function useMessageFormatting() {
-  const { state } = useAppContext();
+  const { state, services } = useAppContext();
 
   const getToolDescription = (
     toolName: string,
@@ -16,7 +16,7 @@ export function useMessageFormatting() {
       TOOL_DESCRIPTION_EXTRACTORS[
         toolName as keyof typeof TOOL_DESCRIPTION_EXTRACTORS
       ];
-    return extractor ? extractor(args) : '';
+    return extractor ? extractor(args, services.context.cwd) : '';
   };
 
   const formatToolResult = (toolName: string, result: any): string => {

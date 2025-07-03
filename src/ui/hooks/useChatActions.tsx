@@ -279,14 +279,14 @@ export function useChatActions() {
             },
           });
         },
-        async onToolUse(callId, name, params) {
+        async onToolUse(callId, name, params, cwd) {
           // Set executing tool info and status
           const getDescription =
             TOOL_DESCRIPTION_EXTRACTORS[
               name as keyof typeof TOOL_DESCRIPTION_EXTRACTORS
             ];
           const description = getDescription
-            ? getDescription(params)
+            ? getDescription(params, cwd)
             : JSON.stringify(params);
 
           dispatch({

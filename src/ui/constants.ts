@@ -1,3 +1,5 @@
+import path from 'path';
+
 // Status-related constants
 export const APP_STATUS = {
   IDLE: 'idle',
@@ -37,14 +39,18 @@ export const TOOL_NAMES = {
 
 // Tool description extractors
 export const TOOL_DESCRIPTION_EXTRACTORS = {
-  [TOOL_NAMES.READ]: (args: any) => args.file_path,
-  [TOOL_NAMES.BASH]: (args: any) => args.command,
-  [TOOL_NAMES.EDIT]: (args: any) => args.file_path,
-  [TOOL_NAMES.WRITE]: (args: any) => args.file_path,
-  [TOOL_NAMES.FETCH]: (args: any) => args.url,
-  [TOOL_NAMES.GLOB]: (args: any) => args.pattern,
-  [TOOL_NAMES.GREP]: (args: any) => args.pattern,
-  [TOOL_NAMES.LS]: (args: any) => args.dir_path,
+  [TOOL_NAMES.READ]: (args: any, cwd: string) =>
+    path.relative(cwd, args.file_path),
+  [TOOL_NAMES.BASH]: (args: any, cwd: string) => args.command,
+  [TOOL_NAMES.EDIT]: (args: any, cwd: string) =>
+    path.relative(cwd, args.file_path),
+  [TOOL_NAMES.WRITE]: (args: any, cwd: string) =>
+    path.relative(cwd, args.file_path),
+  [TOOL_NAMES.FETCH]: (args: any, cwd: string) => args.url,
+  [TOOL_NAMES.GLOB]: (args: any, cwd: string) => args.pattern,
+  [TOOL_NAMES.GREP]: (args: any, cwd: string) => args.pattern,
+  [TOOL_NAMES.LS]: (args: any, cwd: string) =>
+    args.dir_path ? path.relative(cwd, args.dir_path) : '.',
 } as const;
 
 // Message types
