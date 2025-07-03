@@ -36,6 +36,7 @@ const useStyle = createStyles(
         height: 100%;
         display: flex;
         flex-direction: column;
+        min-height: 200px;
         ${maxHeight
           ? css`
               max-height: ${maxHeight}px;

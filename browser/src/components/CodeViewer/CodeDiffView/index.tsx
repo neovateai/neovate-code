@@ -30,6 +30,8 @@ const useStyle = createStyles(
         height: 100%;
         display: flex;
         flex-direction: column;
+        /* when editor only has 1 line diff, the height is 200px, so default min height is 200px */
+        min-height: 200px;
         ${maxHeight
           ? css`
               max-height: ${maxHeight};
