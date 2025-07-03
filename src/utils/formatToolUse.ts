@@ -7,6 +7,24 @@ interface ToolUse {
   callId: string;
 }
 
+export function createStableToolKey(
+  toolName: string,
+  params: Record<string, any>,
+): string {
+  // sort parameter keys to ensure stable string serialization
+  const sortedParams = Object.keys(params)
+    .sort()
+    .reduce(
+      (result, key) => {
+        result[key] = params[key];
+        return result;
+      },
+      {} as Record<string, any>,
+    );
+
+  return `${toolName}:${JSON.stringify(sortedParams)}`;
+}
+
 export function formatToolUse(toolUse: ToolUse): AgentInputItem {
   const { name, params, result, callId } = toolUse;
   // Default to using original format. Set environment variable USE_ASSISTANT_TOOL_FORMAT=1 to enable simplified format

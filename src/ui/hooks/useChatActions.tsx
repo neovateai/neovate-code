@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { isReasoningModel } from '../../provider';
 import { query } from '../../query';
 import { isSlashCommand, parseSlashCommand } from '../../slash-commands';
+import { createStableToolKey } from '../../utils/formatToolUse';
 import { useAppContext } from '../AppContext';
 import {
   APP_STATUS,
@@ -12,6 +13,12 @@ import {
 
 export function useChatActions() {
   const { state, dispatch, services } = useAppContext();
+
+  const latestStateRef = useRef(state);
+
+  useEffect(() => {
+    latestStateRef.current = state;
+  }, [state]);
 
   const addHistory = (input: string) => {
     dispatch({ type: 'ADD_HISTORY', payload: input });
@@ -328,17 +335,19 @@ export function useChatActions() {
         },
         async onToolApprove(callId, name, params) {
           // Check approval memory first
-          const toolKey = `${name}:${JSON.stringify(params)}`;
+          const toolKey = createStableToolKey(name, params);
           const toolOnlyKey = name;
 
           if (
-            state.approvalMemory.proceedAlways.has(toolKey) ||
-            state.approvalMemory.proceedAlwaysTool.has(toolOnlyKey)
+            latestStateRef.current.approvalMemory.proceedAlways.has(toolKey) ||
+            latestStateRef.current.approvalMemory.proceedAlwaysTool.has(
+              toolOnlyKey,
+            )
           ) {
             return true;
           }
 
-          if (state.approvalMemory.proceedOnce.has(toolKey)) {
+          if (latestStateRef.current.approvalMemory.proceedOnce.has(toolKey)) {
             dispatch({
               type: 'REMOVE_APPROVAL_MEMORY',
               payload: { type: 'once', key: toolKey },
