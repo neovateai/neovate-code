@@ -1,11 +1,11 @@
 import { LeftOutlined } from '@ant-design/icons';
 import useXComponentConfig from '@ant-design/x/es/_util/hooks/use-x-component-config';
 import { useXProviderContext } from '@ant-design/x/es/x-provider';
-import { Button, Cascader, Flex, Input, type InputRef, version } from 'antd';
+import { Button, Cascader, Flex, Input, version } from 'antd';
 import type { CascaderProps } from 'antd';
 import classnames from 'classnames';
 import { useEvent, useMergedState } from 'rc-util';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import useStyle from './style';
 import useActive from './useActive';
 
@@ -97,7 +97,6 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
   });
   const [info, setInfo] = useState<T | undefined>();
 
-  const searchBoxRef = useRef<InputRef>(null);
   const [mouseInPopup, setMouseInPopup] = useState(false);
 
   const triggerOpen = (nextOpen: boolean) => {
@@ -112,9 +111,6 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
       } else {
         setInfo(nextInfo);
         triggerOpen(true);
-        if (showSearch) {
-          searchBoxRef.current?.focus();
-        }
       }
     },
   );
@@ -166,7 +162,7 @@ function Suggestion<T = any>(props: SuggestionProps<T>) {
           )}
           {showSearch && (
             <Input
-              ref={searchBoxRef}
+              autoFocus
               style={{
                 margin: '4px 0',
               }}

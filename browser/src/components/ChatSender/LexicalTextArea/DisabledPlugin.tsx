@@ -1,7 +1,7 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { useEffect } from 'react';
+import { memo, useEffect } from 'react';
 
-export const DisabledPlugin = ({ disabled }: { disabled: boolean }) => {
+const DisabledPlugin = ({ disabled }: { disabled: boolean }) => {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -10,3 +10,5 @@ export const DisabledPlugin = ({ disabled }: { disabled: boolean }) => {
 
   return null;
 };
+
+export default memo(DisabledPlugin);

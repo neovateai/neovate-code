@@ -6,24 +6,33 @@ import {
   type LexicalNode,
   TextNode,
 } from 'lexical';
-import { useContext, useEffect, useRef } from 'react';
-import type { AiContextCacheNode, AppendedLexicalNode } from '@/types/context';
-import { LexicalTextAreaContext } from '../LexicalTextAreaContext';
+import { memo, useEffect, useRef, useState } from 'react';
+import type {
+  AiContextCacheNode,
+  AiContextNodeConfig,
+  AppendedLexicalNode,
+} from '@/types/context';
 import { $createAiContextNode } from './AiContextNode';
 
 interface Props {
-  value: string;
+  value?: string;
+  aiContextNodeConfigs: AiContextNodeConfig[];
+  onChange?: (markedText: string, plainText: string) => void;
+  onChangeNodes?: (
+    prevNodes: AiContextCacheNode[],
+    nextNodes: AiContextCacheNode[],
+  ) => void;
 }
 
 const RenderValuePlugin = (props: Props) => {
-  const { value } = props;
+  const { value = '', onChange, onChangeNodes, aiContextNodeConfigs } = props;
   const [editor] = useLexicalComposerContext();
-  const { aiContextNodeConfigs, onChangeNodes, onChangePlainText } = useContext(
-    LexicalTextAreaContext,
-  );
-  const oldValueRef = useRef('');
+
+  const oldMarkedTextRef = useRef('');
   const oldNodesRef = useRef<AiContextCacheNode[]>([]);
   const oldLexicalNodesRef = useRef<AppendedLexicalNode[]>([]);
+  const [innerValue, setInnerValue] = useState(value);
+  const [isComposing, setIsComposing] = useState(false);
 
   const SearchRegex = new RegExp(
     aiContextNodeConfigs
@@ -94,6 +103,7 @@ const RenderValuePlugin = (props: Props) => {
         }
 
         const mentionNode = $createAiContextNode(originalConfig, info);
+
         paragraph.append(mentionNode);
         allNodes.push(mentionNode);
         nodes.push({
@@ -200,46 +210,84 @@ const RenderValuePlugin = (props: Props) => {
   };
 
   useEffect(() => {
-    if (oldValueRef.current === value) {
-      return;
+    if (innerValue !== oldMarkedTextRef.current) {
+      editor.update(() => {
+        const root = $getRoot();
+        const { nodes, paragraph, plainText, resetSelection } =
+          parseContent(innerValue);
+
+        const shouldRebuild = !areNodesEqual(nodes, oldNodesRef.current);
+
+        if (shouldRebuild) {
+          root.clear();
+          root.append(paragraph);
+
+          resetSelection?.();
+
+          onChangeNodes?.(oldNodesRef.current, nodes);
+          oldNodesRef.current = nodes;
+          oldLexicalNodesRef.current = paragraph
+            .getChildren()
+            .map((lexicalNode) => {
+              return {
+                lexicalNode,
+                type: lexicalNode.getType(),
+                length: lexicalNode.getTextContentSize(),
+              };
+            });
+        }
+
+        onChange?.(innerValue, plainText);
+        oldMarkedTextRef.current = innerValue;
+      });
     }
+  }, [innerValue]);
 
-    editor.update(() => {
-      const root = $getRoot();
-      const { nodes, paragraph, plainText, resetSelection } =
-        parseContent(value);
+  useEffect(() => {
+    if (value !== innerValue) {
+      setInnerValue(value);
+    }
+  }, [value]);
 
-      const shouldRebuild =
-        root.getTextContent() !== value ||
-        !areNodesEqual(nodes, oldNodesRef.current);
+  useEffect(() => {
+    const dom = editor.getRootElement?.();
+    if (!dom) return;
 
-      if (shouldRebuild) {
-        root.clear();
-        root.append(paragraph);
+    const handleCompositionStart = () => {
+      setIsComposing(true);
+    };
+    const handleCompositionEnd = () => {
+      setIsComposing(false);
+      // composition 结束时手动同步内容
+      editor.update(() => {
+        const root = $getRoot();
+        const markedText = root.getTextContent();
+        setInnerValue(markedText);
+      });
+    };
 
-        resetSelection?.();
+    dom.addEventListener('compositionstart', handleCompositionStart);
+    dom.addEventListener('compositionend', handleCompositionEnd);
 
-        onChangeNodes?.(oldNodesRef.current, nodes);
-        oldNodesRef.current = nodes;
-      }
+    return () => {
+      dom.removeEventListener('compositionstart', handleCompositionStart);
+      dom.removeEventListener('compositionend', handleCompositionEnd);
+    };
+  }, [editor]);
 
-      oldLexicalNodesRef.current = paragraph
-        .getChildren()
-        .map((lexicalNode) => {
-          return {
-            lexicalNode,
-            type: lexicalNode.getType(),
-            length: lexicalNode.getTextContentSize(),
-          };
-        });
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        if (isComposing) return; // 组合中不更新
+        const root = $getRoot();
+        const markedText = root.getTextContent();
 
-      onChangePlainText?.(plainText);
+        setInnerValue(markedText);
+      });
     });
-
-    oldValueRef.current = value;
-  }, [value, editor, onChangeNodes, onChangePlainText]);
+  }, [editor, isComposing]);
 
   return null;
 };
 
-export default RenderValuePlugin;
+export default memo(RenderValuePlugin);

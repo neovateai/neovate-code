@@ -45,11 +45,13 @@ export const FileContextTag = ({
       {onClose && hover ? (
         <CloseOutlined className={styles.icon} onClick={onClose} />
       ) : (
-        <DevFileIcon
-          isFolder={context?.type === 'directory'}
-          className={styles.icon}
-          fileExt={displayText.split('.').pop() ?? ''}
-        />
+        context && (
+          <DevFileIcon
+            isFolder={context?.type === 'directory'}
+            className={styles.icon}
+            fileExt={displayText.split('.').pop() ?? ''}
+          />
+        )
       )}
       {displayText}
     </Tag>
