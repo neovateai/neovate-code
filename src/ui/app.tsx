@@ -1,5 +1,5 @@
 import { Box, Static } from 'ink';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAppContext } from './AppContext';
 import { ApprovalModal } from './components/ApprovalModal';
 import { ChatInput } from './components/ChatInput';
@@ -14,6 +14,21 @@ export function App() {
   const { state } = useAppContext();
   const { processUserInput } = useChatActions();
   const initialPromptProcessed = useRef(false);
+  const [forceRerender, setForceRerender] = useState(0);
+
+  // Handle terminal resize to force re-render and cleanup
+  useEffect(() => {
+    const onResize = () => {
+      // Force component re-render to clean up any rendering artifacts
+      setForceRerender((prev) => prev + 1);
+    };
+
+    process.on('SIGWINCH', onResize);
+
+    return () => {
+      process.removeListener('SIGWINCH', onResize);
+    };
+  }, []);
 
   // Process initial prompt when app loads
   useEffect(() => {
@@ -31,7 +46,7 @@ export function App() {
   ) : null;
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" key={forceRerender}>
       <Static items={['header', ...state.messages] as any[]}>
         {(item, index) => {
           if (item === 'header') {
