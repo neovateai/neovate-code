@@ -54,11 +54,11 @@ export function createGrepTool(opts: { context: Context }) {
         const durationMs = Date.now() - start;
         return {
           success: true,
+          message: `Found ${matches.length} files in ${durationMs}ms.`,
           data: {
             filenames: matches,
             durationMs,
             numFiles: matches.length,
-            message: `Found ${matches.length} files in ${durationMs}ms.`,
           },
         };
       } catch (e) {

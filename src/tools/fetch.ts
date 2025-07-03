@@ -27,6 +27,7 @@ Remembers:
         if (cached && cached.durationMs < CACHE_TTL_MS) {
           return {
             success: true,
+            message: `Successfully fetched content from ${url} (cached)`,
             data: {
               ...cached,
               cached: true,
@@ -103,6 +104,7 @@ Provide a concise response based only on the content above. In your response:
         urlCache.set(key, data);
         return {
           success: true,
+          message: `Successfully fetched content from ${url}`,
           data,
         };
       } catch (e) {

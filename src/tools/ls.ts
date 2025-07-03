@@ -25,10 +25,18 @@ export function createLSTool(opts: { context: Context }) {
       const tree = createFileTree(result);
       const userTree = printTree(opts.context.cwd, tree);
       if (result.length < MAX_FILES) {
-        return userTree;
+        return {
+          success: true,
+          message: `Listed ${result.length} files/directories`,
+          data: userTree,
+        };
       } else {
         const assistantData = `${TRUNCATED_MESSAGE}${userTree}`;
-        return assistantData;
+        return {
+          success: true,
+          message: `Listed ${result.length} files/directories (truncated)`,
+          data: assistantData,
+        };
       }
     },
   });

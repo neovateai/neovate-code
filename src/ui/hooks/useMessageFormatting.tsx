@@ -3,7 +3,6 @@ import {
   APP_STATUS,
   STATUS_MESSAGES,
   TOOL_DESCRIPTION_EXTRACTORS,
-  TOOL_RESULT_FORMATTERS,
 } from '../constants';
 
 export function useMessageFormatting() {
@@ -21,15 +20,15 @@ export function useMessageFormatting() {
   };
 
   const formatToolResult = (toolName: string, result: any): string => {
-    const formatter =
-      TOOL_RESULT_FORMATTERS[toolName as keyof typeof TOOL_RESULT_FORMATTERS];
-
     if (!result.success && result.error) {
       return result.error;
     }
 
-    const formatted = formatter ? formatter(result) : '';
-    return formatted || JSON.stringify(result);
+    if (result.success && result.message) {
+      return result.message;
+    }
+
+    return JSON.stringify(result);
   };
 
   const getStatusMessage = (

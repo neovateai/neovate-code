@@ -47,21 +47,6 @@ export const TOOL_DESCRIPTION_EXTRACTORS = {
   [TOOL_NAMES.LS]: (args: any) => args.dir_path,
 } as const;
 
-// Tool result formatters
-export const TOOL_RESULT_FORMATTERS = {
-  [TOOL_NAMES.READ]: (result: any) =>
-    result.success ? `Read ${result.data.totalLines} lines.` : '',
-  [TOOL_NAMES.BASH]: (result: any) =>
-    result.success ? result.output.trim() : '',
-  [TOOL_NAMES.EDIT]: (result: any) => result,
-  [TOOL_NAMES.WRITE]: (result: any) => result,
-  [TOOL_NAMES.LS]: (result: any) => result,
-  [TOOL_NAMES.FETCH]: (result: any) =>
-    result.success ? result.data.result : '',
-  [TOOL_NAMES.GLOB]: (result: any) => result.message,
-  [TOOL_NAMES.GREP]: (result: any) => result,
-} as const;
-
 // Message types
 export const MESSAGE_TYPES = {
   TEXT: 'text',
