@@ -47,7 +47,7 @@ export class AiContextNode extends DecoratorNode<JSX.Element> {
     );
     if (!foundConfig) {
       throw new Error(
-        `[AiContextNode] 未找到 type 为 ${config.type} 的 config，请检查 AI_CONTEXT_NODE_CONFIGS`,
+        `[AiContextNode] Can't find the config which type is ${config.type}，please check AI_CONTEXT_NODE_CONFIGS`,
       );
     }
     return new AiContextNode(foundConfig, info);
