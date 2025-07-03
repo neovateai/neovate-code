@@ -30,7 +30,6 @@ Options:
   -h, --help                    Show help
   -m, --model <model>           Specify model to use
   --smallModel <model>          Specify a smaller model for some tasks
-  --plan                        Plan mode
   --logLevel <level>            Specify log level
   --port <port>                 Specify port to use
 
@@ -95,9 +94,8 @@ export async function runServer(opts: RunCliOpts) {
 
     logger.logGeneralInfo({
       infos: {
-        log: traceFile.replace(homedir(), '~'),
-        workspace: cwd.replace(homedir(), '~'),
-        model: context.config.model,
+        'Log File': traceFile.replace(homedir(), '~'),
+        ...context.generalInfo,
       },
     });
 
@@ -111,7 +109,6 @@ export async function runServer(opts: RunCliOpts) {
       context,
       prompt: argv._[0]! as string,
       cwd,
-      plan: argv.plan,
       logLevel: argv.logLevel,
       port: argv.port,
     });

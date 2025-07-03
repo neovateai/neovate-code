@@ -14,6 +14,11 @@ type QueryOpts = {
     params: Record<string, any>,
   ) => void;
   onToolUseResult?: (callId: string, name: string, result: string) => void;
+  onToolApprove?: (
+    callId: string,
+    name: string,
+    params: Record<string, any>,
+  ) => Promise<boolean>;
 };
 
 export async function query(opts: QueryOpts) {
@@ -53,13 +58,40 @@ export async function query(opts: QueryOpts) {
             break;
           case 'tool_use':
             await opts.onToolUse?.(item.callId, item.name, item.params);
-            const result = await service.callTool(
-              item.callId,
+
+            // Check if approval is needed
+            const needsApproval = await service.shouldApprove(
               item.name,
               item.params,
             );
-            await opts.onToolUseResult?.(item.callId, item.name, result);
-            hasToolUse = true;
+            let approved = true;
+
+            if (needsApproval && opts.onToolApprove) {
+              approved = await opts.onToolApprove(
+                item.callId,
+                item.name,
+                item.params,
+              );
+            }
+
+            if (approved) {
+              const result = await service.callTool(
+                item.callId,
+                item.name,
+                item.params,
+              );
+              await opts.onToolUseResult?.(item.callId, item.name, result);
+              hasToolUse = true;
+            } else {
+              // Tool execution was denied, add a result indicating this
+              const deniedResult = 'Tool execution was denied by user.';
+              await opts.onToolUseResult?.(
+                item.callId,
+                item.name,
+                deniedResult,
+              );
+              hasToolUse = true;
+            }
             break;
           default:
             break;

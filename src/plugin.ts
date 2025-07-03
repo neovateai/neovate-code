@@ -174,4 +174,5 @@ export type Plugin = {
       attachedContexts: any[];
     },
   ) => Promise<any> | any;
+  command?: (this: PluginContext) => Promise<any[]> | any[];
 };

@@ -23,7 +23,7 @@ export type UIMessage = Omit<BaseUIMessage, 'annotations'> & {
   annotations: UIMessageAnnotation[];
 };
 
-export type UserMessage = Omit<UIMessage, 'role'> & {
+export type UIUserMessage = Omit<UIMessage, 'role'> & {
   role: 'user';
   attachedContexts: ContextItem[];
   /**
@@ -76,6 +76,7 @@ export type TextMessage = {
   type: UIMessageType.Text;
   text: string;
   state?: UIMessageType.TextDelta | UIMessageType.Text;
+  mode?: string;
 };
 
 export type ReasoningMessage = ReasoningUIPart & {

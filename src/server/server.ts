@@ -65,6 +65,7 @@ const registerRoutes = async (
   app: FastifyInstance,
   opts: CreateServerOpts,
   service: Service,
+  planService: Service,
 ) => {
   const { logLevel: _, ...pluginOpts } = opts;
 
@@ -72,12 +73,17 @@ const registerRoutes = async (
     prefix: `${BASE_API_PREFIX}/chat`,
     ...pluginOpts,
     service,
+    planService,
   });
   await app.register(import('./routes/files'), {
     prefix: BASE_API_PREFIX,
     ...pluginOpts,
   });
   await app.register(import('./routes/app-data'), {
+    prefix: BASE_API_PREFIX,
+    ...pluginOpts,
+  });
+  await app.register(import('./routes/settings'), {
     prefix: BASE_API_PREFIX,
     ...pluginOpts,
   });
@@ -139,6 +145,7 @@ export async function runBrowserServer(opts: RunBrowserServerOpts) {
 export async function createServer(opts: CreateServerOpts) {
   const app: FastifyInstance = fastify({
     logger: opts.logLevel ? { level: opts.logLevel } : false,
+    bodyLimit: 100 * 1024 * 1024, // 100MB limit for handling large images and files
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   const port = await portfinder.getPortPromise({
@@ -151,9 +158,14 @@ export async function createServer(opts: CreateServerOpts) {
     agentType: 'code',
   });
 
+  const planService = await Service.create({
+    context: opts.context,
+    agentType: 'plan',
+  });
+
   try {
     await registerPlugins(app);
-    await registerRoutes(app, opts, service);
+    await registerRoutes(app, opts, service, planService);
 
     await app.listen({
       port,

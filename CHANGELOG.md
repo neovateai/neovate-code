@@ -1,3 +1,34 @@
+## 0.1.9
+
+`2025-07-01`
+
+- fix: create tracing output directory if missing by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.1.8
+
+`2025-07-01`
+
+- feat: add branch generation and checkout functionality [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add --ai option to append [AI] suffix to commit [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: improve Git command error handling and robustness by [@sorrycc](https://github.com/sorrycc)
+- refactor: show generated commit message earlier by [@sorrycc](https://github.com/sorrycc)
+- fix: simplify result assignment in service class by [@阿平](https://github.com/阿平) in [#80](https://github.com/umijs/takumi/pull/80)
+- feat: introduce granular tool approval with UI and modes [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance user message handling and context management in chat UI by [@阿平](https://github.com/阿平) in [#79](https://github.com/umijs/takumi/pull/79)
+- feat: add enable and disable commands for MCP servers by [@sorrycc](https://github.com/sorrycc)
+- feat: add and display tool messages for grep and glob by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.1.7
+
+`2025-06-30`
+
+- refactor: history items to structured message format; update Gemini Pro model by [@sorrycc](https://github.com/sorrycc)
+- feat(browser): takumi settings page by [@YK菌](https://github.com/YK菌) in [#75](https://github.com/umijs/takumi/pull/75)
+- feat(browser): add plan mode to enhance task management functionality by [@阿平](https://github.com/阿平) in [#77](https://github.com/umijs/takumi/pull/77)
+
+
 ## 0.1.6
 
 `2025-06-30`

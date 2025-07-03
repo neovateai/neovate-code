@@ -8,17 +8,16 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { AiSdkModel, aisdk } from './utils/ai-sdk';
 
 const GEMINI_FLASH_LITE_MODEL = 'gemini-2.5-flash-lite-preview-06-17';
-const GEMINI_PRO_MODEL = 'gemini-2.5-pro-preview-05-06';
 
 const THINKING_MODELS = [
   'o3',
   'o3-mini',
   'deepseek-reasoner',
-  GEMINI_PRO_MODEL,
+  'gemini-2.5-pro',
   'claude-3-7-sonnet-20250219-thinking',
   'grok-3-fast-beta',
 ];
-const MODEL_ALIAS: Record<string, string> = {
+export const MODEL_ALIAS: Record<string, string> = {
   deepseek: 'deepseek-chat',
   r1: 'deepseek-reasoner',
   '41': 'gpt-4.1',
@@ -26,7 +25,7 @@ const MODEL_ALIAS: Record<string, string> = {
   '4o': 'gpt-4o',
   'flash-lite': GEMINI_FLASH_LITE_MODEL,
   flash: 'gemini-2.5-flash',
-  gemini: GEMINI_PRO_MODEL,
+  gemini: 'gemini-2.5-pro',
   grok: 'grok-3-fast-beta',
   sonnet: 'claude-sonnet-4-20250514',
   'sonnet-3.5': 'claude-3-5-sonnet-20241022',
@@ -37,6 +36,7 @@ const MODEL_ALIAS: Record<string, string> = {
   'openrouter/sonnet': 'openrouter/anthropic/claude-sonnet-4',
   'openrouter/r1': 'openrouter/deepseek/deepseek-r1-0528',
   'openrouter/deepseek': 'openrouter/deepseek/deepseek-chat-v3-0324',
+  cypher: 'openrouter/openrouter/cypher-alpha:free',
   'aihubmix/sonnet-3.5': 'aihubmix/claude-3-5-sonnet-20241022',
   'aihubmix/sonnet-3.7': 'aihubmix/claude-3-7-sonnet-20250219',
   'aihubmix/sonnet': 'aihubmix/claude-sonnet-4-20250514',
@@ -58,7 +58,7 @@ const OPENAI_MODELS = [
 const GOOGLE_MODELS = [
   GEMINI_FLASH_LITE_MODEL,
   'gemini-2.5-flash',
-  GEMINI_PRO_MODEL,
+  'gemini-2.5-pro',
 ];
 const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'];
 const XAI_MODELS = [
@@ -93,6 +93,7 @@ const AIHUBMIX_MODELS = [
   'o4-mini',
 ];
 const OPENROUTER_MODELS = [
+  'openrouter/cypher-alpha:free',
   'anthropic/claude-3.5-sonnet',
   'anthropic/claude-3.7-sonnet',
   'anthropic/claude-sonnet-4',

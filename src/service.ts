@@ -10,7 +10,7 @@ import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
 import { Context } from './context';
 import { PluginHookType } from './plugin';
-import { Tools } from './tool';
+import { EnhancedTool, Tools, enhanceTool } from './tool';
 import { createBashTool } from './tools/bash';
 import { createEditTool } from './tools/edit';
 import { createFetchTool } from './tools/fetch';
@@ -19,6 +19,7 @@ import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
 import { createWriteTool } from './tools/write';
+import { formatToolUse } from './utils/formatToolUse';
 import { parseMessage } from './utils/parse-message';
 
 export type AgentType = 'code' | 'plan';
@@ -73,17 +74,37 @@ export class Service {
     const context = opts.context;
     const readonlyTools = [
       createReadTool({ context }),
-      createLSTool({ context }),
-      createGlobTool({ context }),
-      createGrepTool({ context }),
-      createFetchTool({ context }),
+      enhanceTool(createLSTool({ context }), {
+        category: 'read',
+        riskLevel: 'low',
+      }),
+      enhanceTool(createGlobTool({ context }), {
+        category: 'read',
+        riskLevel: 'low',
+      }),
+      enhanceTool(createGrepTool({ context }), {
+        category: 'read',
+        riskLevel: 'low',
+      }),
+      enhanceTool(createFetchTool({ context }), {
+        category: 'network',
+        riskLevel: 'medium',
+      }),
     ];
     const writeTools = [
-      createWriteTool({ context }),
-      createEditTool({ context }),
+      enhanceTool(createWriteTool({ context }), {
+        category: 'write',
+        riskLevel: 'medium',
+      }),
+      enhanceTool(createEditTool({ context }), {
+        category: 'write',
+        riskLevel: 'medium',
+      }),
       createBashTool({ context }),
     ];
-    const mcpTools = context.mcpTools;
+    const mcpTools = context.mcpTools.map((tool) =>
+      enhanceTool(tool, { category: 'network', riskLevel: 'medium' }),
+    );
     const planTools = [...readonlyTools];
     const codeTools = [...readonlyTools, ...writeTools, ...mcpTools];
     let tools = opts.agentType === 'code' ? codeTools : planTools;
@@ -202,7 +223,7 @@ export class Service {
         type: PluginHookType.Series,
       });
 
-      const history = result.history;
+      const history: AgentInputItem[] = result.history;
       const toolUse = parsed.find((item) => item.type === 'tool_use');
       if (toolUse) {
         const callId = crypto.randomUUID();
@@ -214,12 +235,23 @@ export class Service {
             callId,
           }) + '\n',
         );
-        history.push({
-          type: 'function_call',
-          name: toolUse.name,
-          arguments: JSON.stringify(toolUse.params),
-          callId,
-        } as FunctionCallItem);
+        // TODO: use formatToolUse instead of the following code
+        // history.push({
+        //   role: 'assistant',
+        //   type: 'message',
+        //   content: [
+        //     {
+        //       type: 'output_text',
+        //       text: JSON.stringify({
+        //         type: 'function_call',
+        //         name: toolUse.name,
+        //         arguments: JSON.stringify(toolUse.params),
+        //         callId,
+        //       }),
+        //     },
+        //   ],
+        //   status: 'in_progress',
+        // });
       }
       stream.push(null);
       this.history = history;
@@ -259,16 +291,14 @@ export class Service {
       type: PluginHookType.Series,
     });
 
-    this.history.push({
-      type: 'function_call_result',
-      name,
-      output: {
-        type: 'text',
-        text: typeof result === 'string' ? result : JSON.stringify(result),
-      },
-      status: 'completed',
-      callId,
-    });
+    this.history.push(formatToolUse({ name, params, result, callId }));
     return result;
+  }
+
+  async shouldApprove(
+    name: string,
+    params: Record<string, any>,
+  ): Promise<boolean> {
+    return await this.tools.shouldApprove(name, params, this.context);
   }
 }

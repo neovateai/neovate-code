@@ -6,7 +6,7 @@ import { last } from 'lodash-es';
 import { PluginHookType } from '../../plugin';
 import { runCode } from '../services/completions';
 import { RouteCompletionsOpts } from '../types';
-import { CompletionRequest } from '../types/completions';
+import { CompletionRequest, ContextType } from '../types/completions';
 
 const debug = createDebug('takumi:server:completions');
 
@@ -22,7 +22,7 @@ const CompletionRequestSchema = Type.Object({
     }),
     { minItems: 1 },
   ),
-  plan: Type.Optional(Type.Boolean()),
+  mode: Type.String(),
 });
 
 const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
@@ -38,6 +38,7 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
     },
     async (request, reply) => {
       const messages = request.body.messages;
+      const mode = request.body.mode;
       const lastMessage = last(messages);
       debug('Received messages:', messages);
 
@@ -50,13 +51,13 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
         args: [
           {
             message: lastMessage,
-            attachedContexts: lastMessage.attachedContexts,
+            attachedContexts: lastMessage.attachedContexts || [],
           },
         ],
         type: PluginHookType.Series,
       });
 
-      const prompt = lastMessage.content;
+      const prompt = lastMessage.planContent ?? lastMessage.content;
 
       opts.context.addHistory(prompt);
 
@@ -71,6 +72,11 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
               ...opts,
               prompt,
               dataStream,
+              mode,
+              // files are processed through context in plugins, only handling other types here
+              attachedContexts: (lastMessage.attachedContexts || []).filter(
+                (context) => context.type !== ContextType.FILE,
+              ),
             });
           },
           onError(error) {
@@ -80,6 +86,7 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
         });
       } catch (error) {
         debug('Unhandled error:', error);
+        console.log('error', error);
         if (!reply.sent) {
           reply.status(500).send({ error: 'Internal server error' });
         }
