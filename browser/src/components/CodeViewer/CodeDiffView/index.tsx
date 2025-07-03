@@ -117,6 +117,8 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
         className={styles.editor}
         originalLanguage={item.language}
         modifiedLanguage={item.language}
+        keepCurrentModifiedModel
+        keepCurrentOriginalModel
         original={item.originalCode}
         modified={item.modifiedCode}
         onMount={(editor) => {

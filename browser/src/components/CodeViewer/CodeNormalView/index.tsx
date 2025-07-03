@@ -144,6 +144,7 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
         className={styles.editor}
         language={item.language}
         value={item.code}
+        keepCurrentModel
         onMount={(editor) => {
           editorRef.current = editor;
           handleCalcHeight();
