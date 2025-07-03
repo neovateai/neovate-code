@@ -134,7 +134,6 @@ const ChatSender: React.FC = () => {
                   differenceWith(nextNodes, prevNodes, (next, prev) => {
                     return next.originalText === prev.originalText;
                   }).forEach((node) => {
-                    console.log('need add', node);
                     const contextItem = getOriginalContextByValue(
                       node.displayText,
                       node.type,
