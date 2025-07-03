@@ -80,17 +80,27 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
   const handleCalcHeight = () => {
     if (heightFollow === 'content') {
       const modifiedEditor = editorRef.current?.getModifiedEditor();
+      const modifiedModel = modifiedEditor?.getModel();
 
-      if (!item.diffStat?.diffBlockStats.length || !modifiedEditor) {
+      if (
+        !item.diffStat?.diffBlockStats.length ||
+        !modifiedEditor ||
+        !modifiedModel
+      ) {
         return;
       }
 
-      const lastViewLine =
-        item.diffStat.diffBlockStats[item.diffStat.diffBlockStats.length - 1]
-          .modifiedEndLineNumber + 3;
+      try {
+        const lastViewLine =
+          item.diffStat.diffBlockStats[item.diffStat.diffBlockStats.length - 1]
+            .modifiedEndLineNumber + 3;
 
-      const height = modifiedEditor.getBottomForLineNumber(lastViewLine);
-      setHeight(Math.max(height, 200));
+        const height = modifiedEditor.getBottomForLineNumber(lastViewLine);
+        setHeight(Math.max(height, 200));
+      } catch (e) {
+        console.error('Auto set height error:', e);
+        setHeight(undefined);
+      }
     } else {
       setHeight(undefined);
     }
