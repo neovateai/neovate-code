@@ -25,6 +25,10 @@ export interface RunCliOpts {
   plugins?: Plugin[];
 }
 
+// ref:
+// https://github.com/yargs/yargs-parser/blob/6d69295/lib/index.ts#L19
+process.env.YARGS_MIN_NODE_VERSION = '18';
+
 export async function runCli(opts: RunCliOpts) {
   clearTracing();
   opts.productName = opts.productName || PRODUCT_NAME;

@@ -12,6 +12,7 @@ type QueryOpts = {
     callId: string,
     name: string,
     params: Record<string, any>,
+    cwd: string,
   ) => void;
   onToolUseResult?: (callId: string, name: string, result: string) => void;
   onToolApprove?: (
@@ -57,7 +58,12 @@ export async function query(opts: QueryOpts) {
             await opts.onReasoning?.(item.content);
             break;
           case 'tool_use':
-            await opts.onToolUse?.(item.callId, item.name, item.params);
+            await opts.onToolUse?.(
+              item.callId,
+              item.name,
+              item.params,
+              service.context.cwd,
+            );
 
             // Check if approval is needed
             const needsApproval = await service.shouldApprove(

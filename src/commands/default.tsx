@@ -1,5 +1,4 @@
 import { withTrace } from '@openai/agents';
-import { randomUUID } from 'crypto';
 import { format } from 'date-fns';
 import createDebug from 'debug';
 import { render } from 'ink';
@@ -14,6 +13,7 @@ import { Service } from '../service';
 import { setupTracing } from '../tracing';
 import { APP_STAGE, AppProvider } from '../ui/AppContext';
 import { App } from '../ui/app';
+import { randomUUID } from '../utils/randomUUID';
 import { readStdin } from '../utils/readStdin';
 
 const debug = createDebug('takumi:commands:default');

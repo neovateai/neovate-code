@@ -35,6 +35,7 @@ export function createReadTool(opts: { context: Context }): EnhancedTool {
           const content = fs.readFileSync(fullFilePath, 'utf-8');
           return {
             success: true,
+            message: `Read ${content.split('\n').length} lines.`,
             data: {
               filePath: file_path,
               content,

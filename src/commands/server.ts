@@ -1,5 +1,4 @@
 import { withTrace } from '@openai/agents';
-import { randomUUID } from 'crypto';
 import { format } from 'date-fns';
 import createDebug from 'debug';
 import { homedir } from 'os';
@@ -12,6 +11,7 @@ import { contextPlugin } from '../server/plugins/context';
 import { runBrowserServer } from '../server/server';
 import { setupTracing } from '../tracing';
 import * as logger from '../utils/logger';
+import { randomUUID } from '../utils/randomUUID';
 
 const debug = createDebug('takumi:commands:server');
 
