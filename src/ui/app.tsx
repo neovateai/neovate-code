@@ -16,15 +16,14 @@ export function App() {
   const initialPromptProcessed = useRef(false);
   const [forceRerender, setForceRerender] = useState(0);
 
+  const onResize = () => {
+    process.stdout.write('\x1bc');
+    setForceRerender((prev) => prev + 1);
+  };
+
   // Handle terminal resize to force re-render and cleanup
   useEffect(() => {
-    const onResize = () => {
-      // Force component re-render to clean up any rendering artifacts
-      setForceRerender((prev) => prev + 1);
-    };
-
     process.on('SIGWINCH', onResize);
-
     return () => {
       process.removeListener('SIGWINCH', onResize);
     };
