@@ -7,13 +7,15 @@ import { clearTracing } from './tracing';
 
 const debug = createDebug('takumi:index');
 
-export { Agent, Runner, tool } from '@openai/agents';
+export { Agent, Runner, tool as _tool } from '@openai/agents';
 export { checkAndUpdate as _checkAndUpdate } from 'upgear';
 export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
 export { createDeepSeek as _createDeepSeek } from '@ai-sdk/deepseek';
 export { createAnthropic as _createAnthropic } from '@ai-sdk/anthropic';
 export { aisdk as _aisdk } from './utils/ai-sdk';
 export { default as _picocolors } from 'picocolors';
+export { enhanceTool as _enhanceTool } from './tool';
+export { z as _zod } from 'zod';
 
 export type { Plugin, Context };
 
