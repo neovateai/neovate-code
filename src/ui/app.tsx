@@ -24,7 +24,7 @@ export function App() {
   useEffect(() => {
     process.stdout.on('resize', onResize);
     return () => {
-      process.removeListener('resize', onResize);
+      process.stdout.off('resize', onResize);
     };
   }, []);
 
