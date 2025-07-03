@@ -8,7 +8,7 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
   if (!message) {
     return null;
   }
-  const { toolCallId, args } = message;
+  const { toolCallId, args, state } = message;
   const { file_path, old_string, new_string } = args as {
     file_path: string;
     old_string: string;
@@ -38,6 +38,7 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
         new_string,
         editStatus,
       }}
+      state={state}
     />
   );
 }

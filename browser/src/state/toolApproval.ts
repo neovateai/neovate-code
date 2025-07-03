@@ -52,7 +52,7 @@ export const toolApprovalActions = {
     toolApprovalState.currentRequest = message;
     toolApprovalState.submitError = null;
 
-    if (message.toolName === 'edit') {
+    if (message.toolName === 'edit' || message.toolName === 'write') {
       const { file_path, old_string, new_string, mode } = message.args as {
         file_path: string;
         old_string: string;

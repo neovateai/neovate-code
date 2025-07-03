@@ -44,7 +44,9 @@ const useStyles = createStyles(
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 8px 2px;
+        padding: 2px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
       `,
       headerLeft: css`
         display: flex;
@@ -136,8 +138,8 @@ const CodeDiffOutlineHeader = (props: Props) => {
   }
 
   return (
-    <div className={styles.header}>
-      <div className={styles.headerLeft} onClick={onToggleExpand}>
+    <div className={styles.header} onClick={onToggleExpand}>
+      <div className={styles.headerLeft}>
         <span className={styles.rotateIcon}>
           {loading ? <LoadingOutlined /> : <RightOutlined />}
         </span>
