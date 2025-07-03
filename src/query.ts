@@ -89,14 +89,18 @@ export async function query(opts: QueryOpts) {
               await opts.onToolUseResult?.(item.callId, item.name, result);
               hasToolUse = true;
             } else {
-              // Tool execution was denied, add a result indicating this
+              // Tool execution was denied by user - stop the query
               const deniedResult = 'Tool execution was denied by user.';
               await opts.onToolUseResult?.(
                 item.callId,
                 item.name,
                 deniedResult,
               );
-              hasToolUse = true;
+              return {
+                finalText: null,
+                history: service.history,
+                denied: true,
+              };
             }
             break;
           default:
