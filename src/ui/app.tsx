@@ -21,11 +21,10 @@ export function App() {
     setForceRerender((prev) => prev + 1);
   };
 
-  // Handle terminal resize to force re-render and cleanup
   useEffect(() => {
-    process.on('SIGWINCH', onResize);
+    process.stdout.on('resize', onResize);
     return () => {
-      process.removeListener('SIGWINCH', onResize);
+      process.removeListener('resize', onResize);
     };
   }, []);
 
