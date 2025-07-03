@@ -77,6 +77,12 @@ export async function run(opts: RunOpts) {
       context,
     });
     if (!quiet) {
+      const onResize = () => {
+        process.stdout.write('\x1bc');
+      };
+
+      process.on('SIGWINCH', onResize);
+
       render(
         <AppProvider
           context={context}
@@ -94,6 +100,7 @@ export async function run(opts: RunOpts) {
       );
       const exit = () => {
         debug('exit');
+        process.removeListener('SIGWINCH', onResize);
         opts.context.destroy().then(() => {
           process.exit(0);
         });
