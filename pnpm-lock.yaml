@@ -167,6 +167,9 @@ importers:
       spawn-rx:
         specifier: ^5.1.2
         version: 5.1.2
+      string-width:
+        specifier: ^7.2.0
+        version: 7.2.0
       tsx:
         specifier: ^4.20.3
         version: 4.20.3
