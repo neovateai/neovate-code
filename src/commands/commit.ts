@@ -184,7 +184,7 @@ export async function runCommit(opts: RunCliOpts) {
 
     if (argv.stage) {
       try {
-        execSync('git add .', { stdio: 'pipe' });
+        execSync('git add .', { stdio: 'inherit' });
       } catch (error: any) {
         const errorMessage =
           error.stderr?.toString() || error.message || 'Unknown error';
@@ -334,7 +334,7 @@ async function checkoutNewBranch(branchName: string): Promise<void> {
     });
 
     // Create and checkout new branch
-    execSync(`git checkout -b ${branchName}`, { stdio: 'pipe' });
+    execSync(`git checkout -b ${branchName}`, { stdio: 'inherit' });
     logger.logResult(
       `Successfully created and checked out branch: ${branchName}`,
     );
@@ -369,7 +369,7 @@ async function commitChanges(message: string, skipHooks = false) {
   logger.logAction({ message: 'Commit the changes.' });
 
   try {
-    execSync(`git commit -m "${message}" ${noVerify}`, { stdio: 'pipe' });
+    execSync(`git commit -m "${message}" ${noVerify}`, { stdio: 'inherit' });
     logger.logResult('Commit message committed');
   } catch (error: any) {
     const errorMessage =
@@ -438,7 +438,7 @@ async function pushChanges() {
             : 'Push changes to remote repository.',
       });
 
-      execSync('git push', { stdio: 'pipe' });
+      execSync('git push', { stdio: 'inherit' });
       logger.logResult('Changes pushed to remote repository');
       return;
     } catch (error: any) {
