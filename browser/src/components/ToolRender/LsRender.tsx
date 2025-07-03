@@ -65,7 +65,7 @@ export default function LsRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
 
   const { state } = message;
-  const items = parseLsResult(message.result);
+  const items = parseLsResult(message.result?.data);
   const dirPath = (message.args?.dir_path as string) || '';
   const { t } = useTranslation();
 
