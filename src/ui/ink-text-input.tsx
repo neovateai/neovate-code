@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { Text, useInput } from 'ink';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { Except } from 'type-fest';
 
 export type TextInputProps = {
@@ -29,6 +29,12 @@ export type TextInputProps = {
    * Highlight pasted text
    */
   readonly highlightPastedText?: boolean; // eslint-disable-line react/boolean-prop-naming
+
+  /**
+   * Maximum number of lines to display (for multiline mode). When exceeded,
+   * the display will scroll to show recent lines.
+   */
+  readonly maxLines?: number;
 
   /**
    * Value to display in a text input.
@@ -91,6 +97,49 @@ function findNextWordJump(prompt: string, cursorOffset: number) {
   return prompt.length;
 }
 
+function getCurrentLineInfo(text: string, cursorOffset: number) {
+  const lines = text.split('\n');
+  let currentOffset = 0;
+  let currentLine = 0;
+  let columnInLine = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const lineLength = lines[i].length;
+
+    if (currentOffset + lineLength >= cursorOffset) {
+      currentLine = i;
+      columnInLine = cursorOffset - currentOffset;
+      break;
+    }
+
+    currentOffset += lineLength + 1; // +1 for the newline character
+  }
+
+  return { currentLine, columnInLine, lines };
+}
+
+function moveToLine(text: string, targetLine: number, targetColumn: number) {
+  const lines = text.split('\n');
+
+  if (targetLine < 0) {
+    return 0;
+  }
+
+  if (targetLine >= lines.length) {
+    return text.length;
+  }
+
+  let offset = 0;
+  for (let i = 0; i < targetLine; i++) {
+    offset += lines[i].length + 1; // +1 for newline
+  }
+
+  const lineLength = lines[targetLine].length;
+  const columnInLine = Math.min(targetColumn, lineLength);
+
+  return offset + columnInLine;
+}
+
 function TextInput({
   value: originalValue,
   placeholder = '',
@@ -98,6 +147,7 @@ function TextInput({
   mask,
   highlightPastedText = false,
   showCursor = true,
+  maxLines,
   onChange,
   onSubmit,
   onTabPress,
@@ -108,7 +158,20 @@ function TextInput({
     cursorWidth: 0,
   });
 
+  // Use ref to keep track of the latest value to avoid race conditions
+  const latestValueRef = useRef(originalValue || '');
+  const latestCursorOffsetRef = useRef(state.cursorOffset);
+
   const { cursorOffset, cursorWidth } = state;
+
+  // Update refs when values change
+  useEffect(() => {
+    latestValueRef.current = originalValue || '';
+  }, [originalValue]);
+
+  useEffect(() => {
+    latestCursorOffsetRef.current = cursorOffset;
+  }, [cursorOffset]);
 
   useEffect(() => {
     setState((previousState) => {
@@ -142,7 +205,39 @@ function TextInput({
   const cursorActualWidth = highlightPastedText ? cursorWidth : 0;
 
   const value = mask ? mask.repeat(originalValue.length) : originalValue;
-  let renderedValue = value;
+
+  // Handle maxLines display limitation
+  let displayValue = value;
+  if (maxLines && maxLines > 0) {
+    const lines = value.split('\n');
+    if (lines.length > maxLines) {
+      // Find which line contains the cursor
+      const valueBeforeCursor = value.slice(0, cursorOffset);
+      const linesBeforeCursor = valueBeforeCursor.split('\n');
+      const cursorLine = linesBeforeCursor.length - 1;
+
+      // Calculate display window
+      let startLine = 0;
+      let endLine = maxLines;
+
+      if (cursorLine >= maxLines) {
+        // Cursor is beyond visible area, scroll to show cursor
+        startLine = cursorLine - maxLines + 1;
+        endLine = cursorLine + 1;
+      } else if (cursorLine < 0) {
+        // Cursor is before visible area
+        startLine = 0;
+        endLine = maxLines;
+      }
+
+      const displayLines = lines.slice(startLine, endLine);
+      displayValue = displayLines.join('\n');
+
+      // Note: cursor offset adjustment is handled in the rendering logic below
+    }
+  }
+
+  let renderedValue = displayValue;
   let renderedPlaceholder = placeholder ? chalk.grey(placeholder) : undefined;
 
   // Fake mouse cursor, because it's too inconvenient to deal with actual cursor and ansi escapes.
@@ -152,27 +247,48 @@ function TextInput({
         ? chalk.inverse(placeholder[0]) + chalk.grey(placeholder.slice(1))
         : chalk.inverse(' ');
 
-    renderedValue = value.length > 0 ? '' : chalk.inverse(' ');
+    renderedValue = displayValue.length > 0 ? '' : chalk.inverse(' ');
 
     let i = 0;
+    let actualCursorOffset = cursorOffset;
 
-    for (const char of value) {
+    // Adjust cursor offset if we're showing a subset of lines
+    if (maxLines && maxLines > 0) {
+      const lines = value.split('\n');
+      if (lines.length > maxLines) {
+        const valueBeforeCursor = value.slice(0, cursorOffset);
+        const linesBeforeCursor = valueBeforeCursor.split('\n');
+        const cursorLine = linesBeforeCursor.length - 1;
+
+        let startLine = 0;
+        if (cursorLine >= maxLines) {
+          startLine = cursorLine - maxLines + 1;
+        }
+
+        if (startLine > 0) {
+          const hiddenPortion = lines.slice(0, startLine).join('\n') + '\n';
+          actualCursorOffset = cursorOffset - hiddenPortion.length;
+        }
+      }
+    }
+
+    for (const char of displayValue) {
       renderedValue +=
-        i >= cursorOffset - cursorActualWidth && i <= cursorOffset
+        i >= actualCursorOffset - cursorActualWidth && i <= actualCursorOffset
           ? chalk.inverse(char)
           : char;
 
       i++;
     }
 
-    if (value.length > 0 && cursorOffset === value.length) {
+    if (displayValue.length > 0 && actualCursorOffset === displayValue.length) {
       renderedValue += chalk.inverse(' ');
     }
   }
 
   useInput(
     (input, key) => {
-      if (key.upArrow || key.downArrow || (key.ctrl && input === 'c')) {
+      if (key.ctrl && input === 'c') {
         return;
       }
 
@@ -189,8 +305,32 @@ function TextInput({
       let nextValue = originalValue;
       let nextCursorWidth = 0;
 
-      // TODO: continue improving the cursor management to feel native
-      if (key.return) {
+      // Handle up/down arrow keys for multiline navigation
+      if (key.upArrow || key.downArrow) {
+        if (showCursor) {
+          const { currentLine, columnInLine } = getCurrentLineInfo(
+            originalValue,
+            cursorOffset,
+          );
+
+          if (key.upArrow && currentLine > 0) {
+            nextCursorOffset = moveToLine(
+              originalValue,
+              currentLine - 1,
+              columnInLine,
+            );
+          } else if (key.downArrow) {
+            const lines = originalValue.split('\n');
+            if (currentLine < lines.length - 1) {
+              nextCursorOffset = moveToLine(
+                originalValue,
+                currentLine + 1,
+                columnInLine,
+              );
+            }
+          }
+        }
+      } else if (key.return) {
         if (key.meta) {
           // This does not work yet. We would like to have this behavior:
           //     Mac terminal: Settings → Profiles → Keyboard → Use Option as Meta key
@@ -304,24 +444,37 @@ function TextInput({
           nextCursorOffset--;
         }
       } else {
+        // Handle regular input and paste operations
+        // Use latest values from refs to avoid race conditions
+        const currentValue = latestValueRef.current;
+        const currentCursorOffset = latestCursorOffsetRef.current;
+
         nextValue =
-          originalValue.slice(0, cursorOffset) +
+          currentValue.slice(0, currentCursorOffset) +
           input +
-          originalValue.slice(cursorOffset, originalValue.length);
+          currentValue.slice(currentCursorOffset, currentValue.length);
 
-        nextCursorOffset += input.length;
+        nextCursorOffset = currentCursorOffset + input.length;
 
+        // Update refs immediately to prevent race conditions
+        latestValueRef.current = nextValue;
+        latestCursorOffsetRef.current = nextCursorOffset;
+
+        // Don't highlight large pastes to avoid rendering issues
         if (input.length > 1) {
-          nextCursorWidth = input.length;
+          nextCursorWidth = 0;
+        } else {
+          nextCursorWidth = 0;
         }
       }
 
-      if (cursorOffset < 0) {
+      // Fix boundary checks to use nextCursorOffset instead of cursorOffset
+      if (nextCursorOffset < 0) {
         nextCursorOffset = 0;
       }
 
-      if (cursorOffset > originalValue.length) {
-        nextCursorOffset = originalValue.length;
+      if (nextCursorOffset > nextValue.length) {
+        nextCursorOffset = nextValue.length;
       }
 
       setState({
@@ -339,7 +492,7 @@ function TextInput({
   return (
     <Text>
       {placeholder
-        ? value.length > 0
+        ? displayValue.length > 0
           ? renderedValue
           : renderedPlaceholder
         : renderedValue}

@@ -7,6 +7,7 @@ import { useAutoSuggestion } from '../hooks/useAutoSuggestion';
 import { useChatActions } from '../hooks/useChatActions';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import TextInput from '../ink-text-input';
+import { sanitizeText } from '../utils/text-utils';
 import { AutoSuggestionDisplay } from './AutoSuggestionDisplay';
 
 interface ChatInputProps {
@@ -43,20 +44,26 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       if (isVisible) {
         navigatePrevious(); // 切换suggestion
       } else {
-        setVisible(false);
-        const history = chatInputUp(value);
-        setValue(history);
-        setCursorPosition(history.length);
+        const lines = value.split('\n');
+        if (lines.length === 1 || !value.trim()) {
+          setVisible(false);
+          const history = chatInputUp(value);
+          setValue(history);
+          setCursorPosition(history.length);
+        }
       }
     }
     if (key.downArrow) {
       if (isVisible) {
         navigateNext(); // 切换suggestion
       } else {
-        setVisible(false);
-        const history = chatInputDown(value);
-        setValue(history);
-        setCursorPosition(history.length);
+        const lines = value.split('\n');
+        if (lines.length === 1 || !value.trim()) {
+          setVisible(false);
+          const history = chatInputDown(value);
+          setValue(history);
+          setCursorPosition(history.length);
+        }
       }
     }
     if (key.return && isVisible) {
@@ -126,14 +133,16 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
           <TextInput
             value={value}
             onChange={(input) => {
-              chatInputChange(input);
-              setValue(input);
+              const val = sanitizeText(input);
+              chatInputChange(val);
+              setValue(val);
               setCursorPosition(undefined); // 清除强制光标位置
               resetVisible(); // 重置建议面板显示状态
             }}
             onSubmit={isVisible ? () => {} : handleSubmit}
             onTabPress={handleTabPress}
             cursorPosition={cursorPosition}
+            maxLines={8}
           />
         )}
       </Box>
