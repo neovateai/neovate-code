@@ -457,10 +457,7 @@ async function pushChanges() {
         throw new Error('Push failed: Authentication error');
       }
 
-      if (
-        errorMessage.includes('rejected') &&
-        errorMessage.includes('non-fast-forward')
-      ) {
+      if (errorMessage.includes('rejected')) {
         logger.logError({
           error: 'Push rejected: Remote has newer commits. Please pull first.',
         });
