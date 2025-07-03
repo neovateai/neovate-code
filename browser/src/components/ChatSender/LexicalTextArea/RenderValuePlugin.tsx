@@ -32,6 +32,7 @@ const RenderValuePlugin = (props: Props) => {
   const oldNodesRef = useRef<AiContextCacheNode[]>([]);
   const oldLexicalNodesRef = useRef<AppendedLexicalNode[]>([]);
   const [innerValue, setInnerValue] = useState(value);
+  const [isComposing, setIsComposing] = useState(false);
 
   const SearchRegex = new RegExp(
     aiContextNodeConfigs
@@ -249,14 +250,42 @@ const RenderValuePlugin = (props: Props) => {
   }, [value]);
 
   useEffect(() => {
-    return editor.registerUpdateListener(({ editorState }) => {
-      editorState.read(() => {
+    const dom = editor.getRootElement?.();
+    if (!dom) return;
+
+    const handleCompositionStart = () => {
+      setIsComposing(true);
+    };
+    const handleCompositionEnd = () => {
+      setIsComposing(false);
+      // composition 结束时手动同步内容
+      editor.update(() => {
         const root = $getRoot();
         const markedText = root.getTextContent();
         setInnerValue(markedText);
       });
-    });
+    };
+
+    dom.addEventListener('compositionstart', handleCompositionStart);
+    dom.addEventListener('compositionend', handleCompositionEnd);
+
+    return () => {
+      dom.removeEventListener('compositionstart', handleCompositionStart);
+      dom.removeEventListener('compositionend', handleCompositionEnd);
+    };
   }, [editor]);
+
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        if (isComposing) return; // 组合中不更新
+        const root = $getRoot();
+        const markedText = root.getTextContent();
+
+        setInnerValue(markedText);
+      });
+    });
+  }, [editor, isComposing]);
 
   return null;
 };
