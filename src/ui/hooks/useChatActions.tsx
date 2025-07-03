@@ -376,6 +376,16 @@ export function useChatActions() {
         },
       });
 
+      // Check if tool was denied
+      if (result.denied) {
+        dispatch({
+          type: 'SET_STATUS',
+          payload: APP_STATUS.AWAITING_USER_INPUT,
+        });
+        dispatch({ type: 'SET_CURRENT_MESSAGE', payload: null });
+        return result;
+      }
+
       dispatch({ type: 'SET_STATUS', payload: APP_STATUS.COMPLETED });
       if (stage === 'plan') {
         dispatch({
