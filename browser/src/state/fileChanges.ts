@@ -38,6 +38,15 @@ export const fileChangesState = proxy<FileChangesStore>({
 });
 
 export const fileChangesActions = {
+  // 修改本地file内容
+  writeFileContent: async (path: string, newCode: string) => {
+    const fileState = fileChangesState.files[path];
+    if (fileState) {
+      await editFile(path, newCode);
+      fileState.content = newCode;
+    }
+  },
+
   // 更新fileState
   updateFileState: async (
     path: string,
