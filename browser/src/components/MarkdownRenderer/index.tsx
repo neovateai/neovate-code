@@ -1,31 +1,35 @@
 import { CheckOutlined, CopyOutlined } from '@ant-design/icons';
 import { message } from 'antd';
 import { Fragment, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
+import { useClipboard } from '@/hooks/useClipboard';
 
 interface MarkdownRendererProps {
   content: string;
 }
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
+  const { t } = useTranslation();
+  const { writeText } = useClipboard();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const copyToClipboard = async (code: string) => {
     try {
-      await navigator.clipboard.writeText(code);
+      await writeText(code);
       setCopiedCode(code);
-      message.success('代码已复制到剪贴板');
+      message.success(t('markdown.copySuccess'));
 
       // 2秒后重置复制状态
       setTimeout(() => {
         setCopiedCode(null);
       }, 2000);
     } catch (err) {
-      message.error('复制失败');
+      message.error(t('markdown.copyFailed'));
     }
   };
 
@@ -43,7 +47,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
             <button
               onClick={() => copyToClipboard(codeString)}
               className="absolute right-2 top-2 z-10 p-1.5  rounded bg-gray-700 hover:bg-gray-600 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center"
-              title="复制代码"
+              title={t('markdown.copyCode')}
             >
               {isCopied ? (
                 <CheckOutlined className="text-green-400" />

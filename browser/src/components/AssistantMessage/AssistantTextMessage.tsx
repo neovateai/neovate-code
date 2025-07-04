@@ -1,11 +1,13 @@
 import { Spin } from 'antd';
+import { useTranslation } from 'react-i18next';
 import type { TextMessage } from '@/types/message';
 import MarkdownRenderer from '../MarkdownRenderer';
 
 const AssistantTextMessage: React.FC<{
   message: TextMessage;
 }> = ({ message }) => {
-  console.log(message);
+  const { t } = useTranslation();
+
   if (message.text === '<use_tool') {
     return null;
   }
@@ -15,7 +17,7 @@ const AssistantTextMessage: React.FC<{
     return (
       <div className="flex text-xs gap-2">
         <Spin size="small" />
-        工具调用中...
+        {t('message.toolCalling')}
       </div>
     );
   }

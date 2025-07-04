@@ -14,6 +14,14 @@
     "enable": "启用",
     "disable": "禁用"
   },
+  "markdown": {
+    "copyCode": "复制代码",
+    "copySuccess": "代码已复制到剪贴板",
+    "copyFailed": "复制失败"
+  },
+  "message": {
+    "toolCalling": "工具调用中..."
+  },
   "sidebar": {
     "newConversation": "新建对话",
     "conversations": "对话列表",
