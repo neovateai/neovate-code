@@ -111,6 +111,30 @@ export const APPROVAL_OPTIONS = [
   },
 ] as const;
 
+// Edit approval options (for edit tool specifically)
+export const EDIT_APPROVAL_OPTIONS = [
+  {
+    label: 'Yes (once)',
+    value: 'approve_once',
+  },
+  {
+    label: 'Yes (always for this command)',
+    value: 'approve_always',
+  },
+  {
+    label: 'Yes (always for tool)',
+    value: 'approve_always_tool',
+  },
+  {
+    label: 'Modify with external editor',
+    value: 'modify_with_editor',
+  },
+  {
+    label: 'No',
+    value: 'deny',
+  },
+] as const;
+
 // Plan modal options
 export const PLAN_OPTIONS = [
   {

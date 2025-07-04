@@ -63,6 +63,7 @@ export interface AppState {
     toolName: string | null;
     params: Record<string, any> | null;
     resolve: ((approved: boolean) => void) | null;
+    isModifying: boolean;
   };
 
   // Approval memory
@@ -100,6 +101,7 @@ export type AppAction =
         toolName?: string | null;
         params?: Record<string, any> | null;
         resolve?: ((approved: boolean) => void) | null;
+        isModifying?: boolean;
       };
     }
   | {
@@ -270,6 +272,7 @@ export function AppProvider({
       toolName: null,
       params: null,
       resolve: null,
+      isModifying: false,
     },
     approvalMemory: {
       proceedOnce: new Set(),
