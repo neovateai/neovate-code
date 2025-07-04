@@ -1,5 +1,5 @@
 import { Box, Static } from 'ink';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAppContext } from './AppContext';
 import { ApprovalModal } from './components/ApprovalModal';
 import { ChatInput } from './components/ChatInput';
@@ -14,6 +14,19 @@ export function App() {
   const { state } = useAppContext();
   const { processUserInput } = useChatActions();
   const initialPromptProcessed = useRef(false);
+  const [forceRerender, setForceRerender] = useState(0);
+
+  const onResize = () => {
+    process.stdout.write('\x1bc');
+    setForceRerender((prev) => prev + 1);
+  };
+
+  useEffect(() => {
+    process.stdout.on('resize', onResize);
+    return () => {
+      process.stdout.off('resize', onResize);
+    };
+  }, []);
 
   // Process initial prompt when app loads
   useEffect(() => {
@@ -31,7 +44,7 @@ export function App() {
   ) : null;
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" key={forceRerender}>
       <Static items={['header', ...state.messages] as any[]}>
         {(item, index) => {
           if (item === 'header') {
