@@ -97,6 +97,8 @@ const PastePlugin = ({
 
                       resolve();
                     });
+                  } else {
+                    resolve();
                   }
                 });
               }),
