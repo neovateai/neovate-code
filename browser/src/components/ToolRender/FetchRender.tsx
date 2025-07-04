@@ -42,7 +42,7 @@ export default function FetchRender({ message }: { message?: ToolMessage }) {
         <LinkOutlined />
         <div className="flex-1 truncate text-xs text-gray-400">{url}</div>
         <div className="text-xs text-gray-400 flex justify-between items-center gap-2">
-          <span className="flex-1">{durationMs}ms</span>
+          {state === 'result' && <span className="flex-1">{durationMs}ms</span>}
           <ToolStatus state={state} />
         </div>
       </div>
