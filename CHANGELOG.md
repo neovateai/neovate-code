@@ -1,3 +1,40 @@
+## 0.1.10
+
+`2025-07-04`
+
+- feat: add multiline text input support with arrow key navigation by [@阿平](https://github.com/阿平) in [#88](https://github.com/umijs/takumi/pull/88)
+- feat: add debounced resize handler for terminal window [AI] by [@阿平](https://github.com/阿平) in [#90](https://github.com/umijs/takumi/pull/90)
+- feat: set terminal title for default command [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: stream shell command output directly [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat(cli): implement terminal resize handling to force component re-render by [@YK菌](https://github.com/YK菌) in [#87](https://github.com/umijs/takumi/pull/87)
+- refactor: use proper enum type for plugin hook type in command registry by [@阿平](https://github.com/阿平) in [#89](https://github.com/umijs/takumi/pull/89)
+- feat(browser): edit & write tool render by [@thy](https://github.com/thy) in [#78](https://github.com/umijs/takumi/pull/78)
+- feat(browser): optimize chat sender by [@Z-Bokle](https://github.com/Z-Bokle) in [#86](https://github.com/umijs/takumi/pull/86)
+- feat: implement query cancellation via escape key [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add exit slash command by [@sorrycc](https://github.com/sorrycc)
+- feat: add approval memory persistence to context [AI] by [@阿平](https://github.com/阿平) in [#84](https://github.com/umijs/takumi/pull/84)
+- refactor: convert clear command to JSX and clear chat state by [@sorrycc](https://github.com/sorrycc)
+- fix: stop query on denied tool execution [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: display relative paths in tool descriptions by [@sorrycc](https://github.com/sorrycc)
+- refactor: unify tool result format and simplify UI formatting [AI] by [@sorrycc](https://github.com/sorrycc)
+- fix: simplify push rejection check by [@sorrycc](https://github.com/sorrycc)
+- fix: show git command output by [@sorrycc](https://github.com/sorrycc)
+- feat(browser): implement tool approval system with UI components and backend service [AI] by [@阿平](https://github.com/阿平) in [#83](https://github.com/umijs/takumi/pull/83)
+- feat: add openrouter cypher model and inline gemini pro constant by [@sorrycc](https://github.com/sorrycc)
+- fix: force executeQuery to code stage after plan approval [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance chat input auto-suggestion control by [@sorrycc](https://github.com/sorrycc)
+- feat: move cursor to end on chat history navigation [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add slash command auto-suggestion with enhanced command matching [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add loading spinner to chat input by [@sorrycc](https://github.com/sorrycc)
+- build: specify pnpm version via packageManager field by [@sorrycc](https://github.com/sorrycc)
+- refactor: extract UI state to React Context and enhance quiet mode [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add comprehensive slash command system and documentation [AI] by [@sorrycc](https://github.com/sorrycc)
+- fix: add simplified tool use format with environment toggle by [@阿平](https://github.com/阿平) in [#82](https://github.com/umijs/takumi/pull/82)
+- fix(browser): handle default values for attachedContexts in multiple files #81 by [@阿平](https://github.com/阿平)
+- feat: add spinner to processing state [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: only include directory structure for projects [AI] by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.1.9
 
 `2025-07-01`
