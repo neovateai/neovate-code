@@ -1,21 +1,6 @@
 import { Context } from '../../context';
 import { PromptCommand } from '../types';
 
-export const initCommand: PromptCommand = {
-  type: 'prompt',
-  name: 'init',
-  description: 'Initialize the application',
-  progressMessage: 'Initializing...',
-  async getPromptForCommand(args: string) {
-    return [
-      {
-        role: 'user',
-        content: `print the file ${args}`,
-      },
-    ];
-  },
-};
-
 export function createInitCommand(opts: { context: Context }) {
   const productName = opts.context.productName;
   return {
