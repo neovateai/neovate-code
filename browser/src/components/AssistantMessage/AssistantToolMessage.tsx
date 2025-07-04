@@ -21,7 +21,8 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
 
   if (
     result?.success === false ||
-    result === 'Tool execution was denied by user.' // 后端类型暂未统一，需要hack
+    (typeof result === 'string' &&
+      result === 'Tool execution was denied by user.') // 后端类型暂未统一，需要hack
   ) {
     return <FailRender message={message} />;
   }
