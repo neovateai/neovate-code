@@ -175,6 +175,7 @@ const ChatSender: React.FC = () => {
                 onCancel={() => {
                   stop();
                 }}
+                value={prompt}
                 loading={loading}
                 allowSpeech
                 actions={false}

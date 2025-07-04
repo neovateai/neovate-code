@@ -3,6 +3,10 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
+  $isRangeSelection,
+  $isTextNode,
+  type BaseSelection,
   type LexicalNode,
   TextNode,
 } from 'lexical';
@@ -31,6 +35,7 @@ const RenderValuePlugin = (props: Props) => {
   const oldMarkedTextRef = useRef('');
   const oldNodesRef = useRef<AiContextCacheNode[]>([]);
   const oldLexicalNodesRef = useRef<AppendedLexicalNode[]>([]);
+  const oldSelectionRef = useRef<BaseSelection | null>(null);
   const [innerValue, setInnerValue] = useState(value);
   const [isComposing, setIsComposing] = useState(false);
 
@@ -203,6 +208,17 @@ const RenderValuePlugin = (props: Props) => {
             }
           }
         }
+      } else {
+        if ($isRangeSelection(oldSelectionRef.current)) {
+          const uniqueTextNode = paragraph.getLastChild();
+
+          if ($isTextNode(uniqueTextNode)) {
+            uniqueTextNode.select(
+              oldSelectionRef.current.anchor.offset,
+              oldSelectionRef.current.focus.offset,
+            );
+          }
+        }
       }
     };
 
@@ -216,7 +232,11 @@ const RenderValuePlugin = (props: Props) => {
         const { nodes, paragraph, plainText, resetSelection } =
           parseContent(innerValue);
 
-        const shouldRebuild = !areNodesEqual(nodes, oldNodesRef.current);
+        const withoutSpecialNode =
+          nodes.length === 0 && oldNodesRef.current.length === 0;
+
+        const shouldRebuild =
+          withoutSpecialNode || !areNodesEqual(nodes, oldNodesRef.current);
 
         if (shouldRebuild) {
           root.clear();
@@ -281,6 +301,8 @@ const RenderValuePlugin = (props: Props) => {
         if (isComposing) return; // 组合中不更新
         const root = $getRoot();
         const markedText = root.getTextContent();
+
+        oldSelectionRef.current = $getSelection();
 
         setInnerValue(markedText);
       });
