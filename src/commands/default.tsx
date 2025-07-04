@@ -15,6 +15,7 @@ import { APP_STAGE, AppProvider } from '../ui/AppContext';
 import { App } from '../ui/app';
 import { randomUUID } from '../utils/randomUUID';
 import { readStdin } from '../utils/readStdin';
+import { setTerminalTitle } from '../utils/setTerminalTitle';
 
 const debug = createDebug('takumi:commands:default');
 
@@ -106,6 +107,7 @@ export async function run(opts: RunOpts) {
 }
 
 export async function runDefault(opts: RunCliOpts) {
+  setTerminalTitle(opts.productName.toLowerCase());
   const traceName = `${opts.productName}-default`;
   return await withTrace(traceName, async () => {
     const startTime = Date.now();
