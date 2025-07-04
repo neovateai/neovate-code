@@ -76,7 +76,7 @@ const PastePlugin = ({
           if (imgs.length > 0) {
             onPastingImage?.(true);
 
-            Promise.allSettled(
+            Promise.all(
               Array.from(imgs).map((img) => {
                 return new Promise<void>((resolve) => {
                   const src = img.getAttribute('src');
