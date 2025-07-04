@@ -1,6 +1,7 @@
 import { Context } from '../context';
 import { PluginHookType } from '../plugin';
 import { builtinCommands } from './builtin';
+import { createInitCommand } from './builtin/init';
 import { loadGlobalCommands, loadProjectCommands } from './filesystem-loader';
 import { SlashCommandRegistryImpl } from './registry';
 import { SlashCommand, SlashCommandRegistry } from './types';
@@ -11,7 +12,7 @@ export * from './builtin';
 export * from './filesystem-loader';
 
 export async function createSlashCommandRegistry(
-  context: any,
+  context: Context,
 ): Promise<SlashCommandRegistry> {
   const registry = new SlashCommandRegistryImpl();
 
@@ -19,6 +20,9 @@ export async function createSlashCommandRegistry(
   builtinCommands.forEach((command) => {
     registry.register(command);
   });
+
+  // need context
+  registry.register(createInitCommand({ context }));
 
   // Register filesystem commands
   try {
