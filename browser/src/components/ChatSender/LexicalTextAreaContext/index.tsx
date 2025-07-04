@@ -10,6 +10,7 @@ export const LexicalTextAreaContext = createContext<{
   ) => void;
   value?: string;
   onChange?: (markedText: string, plainText: string) => void;
+  onPastingImage?: (loading: boolean) => void;
   aiContextNodeConfigs: AiContextNodeConfig[];
   namespace: string;
 }>({ aiContextNodeConfigs: [], namespace: '' });

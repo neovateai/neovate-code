@@ -159,6 +159,10 @@ const ChatSender: React.FC = () => {
                   actions.updatePrompt(markedText);
                   actions.updatePlainText(plainText);
                 },
+                onPastingImage: (loading) => {
+                  console.log('setLoading', loading);
+                  context.actions.setContextLoading(loading);
+                },
                 aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
                 namespace: 'SenderTextarea',
               }}

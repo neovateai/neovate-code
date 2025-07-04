@@ -4,6 +4,7 @@ import { PASTE_COMMAND } from 'lexical';
 import { memo, useCallback, useEffect } from 'react';
 import { ContextType } from '@/constants/context';
 import * as context from '@/state/context';
+import { imageUrlToBase64 } from '@/utils/context';
 
 // 根据图片 src 猜测 mime 类型
 function guessImageMime(src: string): string {
@@ -24,7 +25,11 @@ function guessImageMime(src: string): string {
   return 'image/png';
 }
 
-const PastePlugin = () => {
+const PastePlugin = ({
+  onPastingImage,
+}: {
+  onPastingImage?: (loading: boolean) => void;
+}) => {
   const [editor] = useLexicalComposerContext();
 
   const [messageInstance, messageContextHolder] = message.useMessage();
@@ -69,20 +74,34 @@ const PastePlugin = () => {
           const imgs = doc.querySelectorAll('img');
 
           if (imgs.length > 0) {
-            imgs.forEach((img) => {
-              const src = img.getAttribute('src');
-              if (src) {
-                const mime = guessImageMime(src);
-                context.actions.addContext({
-                  type: ContextType.IMAGE,
-                  value: `@Image:[${Date.now()}]`,
-                  displayText: src.split('/').pop() || src,
-                  context: {
-                    src,
-                    mime,
-                  },
+            onPastingImage?.(true);
+
+            Promise.allSettled(
+              Array.from(imgs).map((img) => {
+                return new Promise<void>((resolve) => {
+                  const src = img.getAttribute('src');
+
+                  if (src) {
+                    const mime = guessImageMime(src);
+
+                    imageUrlToBase64(src).then((base64) => {
+                      context.actions.addContext({
+                        type: ContextType.IMAGE,
+                        value: `@Image:[${Date.now()}]`,
+                        displayText: src.split('/').pop() || src,
+                        context: {
+                          src: base64,
+                          mime,
+                        },
+                      });
+
+                      resolve();
+                    });
+                  }
                 });
-              }
+              }),
+            ).finally(() => {
+              onPastingImage?.(false);
             });
           }
         }
