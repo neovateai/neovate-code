@@ -215,7 +215,6 @@ const RenderValuePlugin = (props: Props) => {
 
           if ($isTextNode(uniqueTextNode)) {
             const content = uniqueTextNode.getTextContent();
-            console.log(JSON.stringify(content));
 
             // input break line
             const inputDiff = getTextDiff(oldMarkedTextRef.current, content);
@@ -224,19 +223,13 @@ const RenderValuePlugin = (props: Props) => {
               inputDiff.every(
                 (diff) => diff.type === '+' && diff.content.includes('\n'),
               );
-            console.log(inputDiff);
+
             if (inputBreakLine) {
               const lastDiff = inputDiff[inputDiff.length - 1];
               const lastPos = lastDiff.index + lastDiff.content.length;
               uniqueTextNode.select(lastPos, lastPos);
-              console.log('break line select', lastPos);
             } else {
               uniqueTextNode.select(
-                oldSelectionRef.current.focus.offset,
-                oldSelectionRef.current.focus.offset,
-              );
-              console.log(
-                'normal select',
                 oldSelectionRef.current.focus.offset,
                 oldSelectionRef.current.focus.offset,
               );
