@@ -16,42 +16,42 @@ import {
   SiYaml,
 } from 'react-icons/si';
 
-function getPlainIcon(ext: string) {
+function getPlainIcon(ext: string, size: number) {
   switch (ext) {
     case 'json':
-      return <SiJson size={12} />;
+      return <SiJson size={size} />;
     case 'npmrc':
-      return <SiNpm size={12} />;
+      return <SiNpm size={size} />;
     case 'css':
-      return <SiCss3 size={12} />;
+      return <SiCss3 size={size} />;
     case 'html':
-      return <SiHtml5 size={12} />;
+      return <SiHtml5 size={size} />;
     case 'js':
     case 'mjs':
     case 'cjs':
-      return <SiJavascript size={12} />;
+      return <SiJavascript size={size} />;
     case 'ts':
     case 'mts':
     case 'cts':
-      return <SiTypescript size={12} />;
+      return <SiTypescript size={size} />;
     case 'jsx':
     case 'tsx':
-      return <SiReact size={12} />;
+      return <SiReact size={size} />;
     case 'md':
-      return <SiMarkdown size={12} />;
+      return <SiMarkdown size={size} />;
     case 'vue':
-      return <SiVuedotjs size={12} />;
+      return <SiVuedotjs size={size} />;
     case 'yaml':
-      return <SiYaml size={12} />;
+      return <SiYaml size={size} />;
     case 'png':
     case 'jpg':
     case 'jpeg':
     case 'gif':
     case 'svg':
     case 'webp':
-      return <FileImageOutlined size={12} />;
+      return <FileImageOutlined size={size} />;
     default:
-      return <FileOutlined size={12} />;
+      return <FileOutlined size={size} />;
   }
 }
 
@@ -60,11 +60,13 @@ const DevFileIcon = ({
   fileExt,
   style,
   className,
+  size = 12,
 }: {
   isFolder?: boolean;
   fileExt: string;
   style?: React.CSSProperties;
   className?: string;
+  size?: number;
 }) => {
   return (
     <Icon
@@ -72,7 +74,7 @@ const DevFileIcon = ({
         if (isFolder) {
           return <FolderOutlined />;
         } else {
-          return getPlainIcon(fileExt.toLowerCase());
+          return getPlainIcon(fileExt.toLowerCase(), size);
         }
       }}
       style={style}

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { isReasoningModel } from '../../provider';
 import { query } from '../../query';
 import { isSlashCommand, parseSlashCommand } from '../../slash-commands';
+import { createStableToolKey } from '../../utils/formatToolUse';
 import { useAppContext } from '../AppContext';
 import {
   APP_STATUS,
@@ -12,6 +13,13 @@ import {
 
 export function useChatActions() {
   const { state, dispatch, services } = useAppContext();
+
+  const latestStateRef = useRef(state);
+  const cancelFlagRef = useRef(false);
+
+  useEffect(() => {
+    latestStateRef.current = state;
+  }, [state]);
 
   const addHistory = (input: string) => {
     dispatch({ type: 'ADD_HISTORY', payload: input });
@@ -49,6 +57,13 @@ export function useChatActions() {
 
   const chatInputChange = (input: string) => {
     dispatch({ type: 'SET_HISTORY_INDEX', payload: null });
+  };
+
+  const cancelQuery = () => {
+    cancelFlagRef.current = true;
+    dispatch({ type: 'SET_STATUS', payload: APP_STATUS.CANCELLED });
+    dispatch({ type: 'SET_CURRENT_MESSAGE', payload: null });
+    dispatch({ type: 'SET_CURRENT_EXECUTING_TOOL', payload: null });
   };
 
   const processUserInput = async (
@@ -191,6 +206,8 @@ export function useChatActions() {
     input: string | any[],
     forceStage?: 'plan' | 'code',
   ): Promise<any> => {
+    // Reset cancel flag at the start of each query
+    cancelFlagRef.current = false;
     // Prepare input for query function
     let queryInput;
     if (typeof input === 'string') {
@@ -234,7 +251,11 @@ export function useChatActions() {
         input: queryInput,
         service,
         thinking: isReasoningModel(service.context.config.model),
+        onCancelCheck: () => cancelFlagRef.current,
         async onTextDelta(text) {
+          if (cancelFlagRef.current) {
+            throw new Error('Query cancelled by user');
+          }
           if (reasoningDelta && state.currentMessage) {
             reasoningDelta = '';
             dispatch({ type: 'ADD_MESSAGE', payload: state.currentMessage });
@@ -253,6 +274,9 @@ export function useChatActions() {
           });
         },
         async onText(text) {
+          if (cancelFlagRef.current) {
+            throw new Error('Query cancelled by user');
+          }
           dispatch({ type: 'CLEAR_CURRENT_MESSAGE' });
           textDelta = '';
           dispatch({
@@ -267,6 +291,9 @@ export function useChatActions() {
           });
         },
         async onReasoning(text) {
+          if (cancelFlagRef.current) {
+            throw new Error('Query cancelled by user');
+          }
           reasoningDelta += text;
           dispatch({
             type: 'SET_CURRENT_MESSAGE',
@@ -279,14 +306,17 @@ export function useChatActions() {
             },
           });
         },
-        async onToolUse(callId, name, params) {
+        async onToolUse(callId, name, params, cwd) {
+          if (cancelFlagRef.current) {
+            throw new Error('Query cancelled by user');
+          }
           // Set executing tool info and status
           const getDescription =
             TOOL_DESCRIPTION_EXTRACTORS[
               name as keyof typeof TOOL_DESCRIPTION_EXTRACTORS
             ];
           const description = getDescription
-            ? getDescription(params)
+            ? getDescription(params, cwd)
             : JSON.stringify(params);
 
           dispatch({
@@ -328,17 +358,19 @@ export function useChatActions() {
         },
         async onToolApprove(callId, name, params) {
           // Check approval memory first
-          const toolKey = `${name}:${JSON.stringify(params)}`;
+          const toolKey = createStableToolKey(name, params);
           const toolOnlyKey = name;
 
           if (
-            state.approvalMemory.proceedAlways.has(toolKey) ||
-            state.approvalMemory.proceedAlwaysTool.has(toolOnlyKey)
+            latestStateRef.current.approvalMemory.proceedAlways.has(toolKey) ||
+            latestStateRef.current.approvalMemory.proceedAlwaysTool.has(
+              toolOnlyKey,
+            )
           ) {
             return true;
           }
 
-          if (state.approvalMemory.proceedOnce.has(toolKey)) {
+          if (latestStateRef.current.approvalMemory.proceedOnce.has(toolKey)) {
             dispatch({
               type: 'REMOVE_APPROVAL_MEMORY',
               payload: { type: 'once', key: toolKey },
@@ -376,6 +408,33 @@ export function useChatActions() {
         },
       });
 
+      // Check if query was cancelled
+      if (result.cancelled) {
+        dispatch({
+          type: 'ADD_MESSAGE',
+          payload: {
+            role: MESSAGE_ROLES.ASSISTANT,
+            content: {
+              type: MESSAGE_TYPES.TEXT,
+              text: 'Query cancelled by user.',
+            },
+          },
+        });
+        dispatch({ type: 'SET_STATUS', payload: APP_STATUS.CANCELLED });
+        dispatch({ type: 'SET_CURRENT_MESSAGE', payload: null });
+        return result;
+      }
+
+      // Check if tool was denied
+      if (result.denied) {
+        dispatch({
+          type: 'SET_STATUS',
+          payload: APP_STATUS.AWAITING_USER_INPUT,
+        });
+        dispatch({ type: 'SET_CURRENT_MESSAGE', payload: null });
+        return result;
+      }
+
       dispatch({ type: 'SET_STATUS', payload: APP_STATUS.COMPLETED });
       if (stage === 'plan') {
         dispatch({
@@ -385,6 +444,21 @@ export function useChatActions() {
       }
       return result;
     } catch (e: any) {
+      if (cancelFlagRef.current || e.message === 'Query cancelled by user') {
+        dispatch({
+          type: 'ADD_MESSAGE',
+          payload: {
+            role: MESSAGE_ROLES.ASSISTANT,
+            content: {
+              type: MESSAGE_TYPES.TEXT,
+              text: 'Query cancelled by user.',
+            },
+          },
+        });
+        dispatch({ type: 'SET_STATUS', payload: APP_STATUS.CANCELLED });
+        dispatch({ type: 'SET_CURRENT_MESSAGE', payload: null });
+        return { finalText: 'Query cancelled by user.', cancelled: true };
+      }
       dispatch({ type: 'SET_STATUS', payload: APP_STATUS.FAILED });
       dispatch({ type: 'SET_ERROR', payload: e.message || String(e) });
       dispatch({ type: 'SET_CURRENT_MESSAGE', payload: null });
@@ -399,5 +473,6 @@ export function useChatActions() {
     chatInputChange,
     processUserInput,
     executeQuery,
+    cancelQuery,
   };
 }

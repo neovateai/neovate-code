@@ -22,6 +22,7 @@ const useStyle = createStyles(({ token, css }) => {
 
 const Layout: React.FC = () => {
   const { styles } = useStyle();
+
   useMount(() => {
     actions.getAppData();
   });

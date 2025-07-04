@@ -12,6 +12,7 @@ type QueryOpts = {
     callId: string,
     name: string,
     params: Record<string, any>,
+    cwd: string,
   ) => void;
   onToolUseResult?: (callId: string, name: string, result: string) => void;
   onToolApprove?: (
@@ -19,6 +20,7 @@ type QueryOpts = {
     name: string,
     params: Record<string, any>,
   ) => Promise<boolean>;
+  onCancelCheck?: () => boolean;
 };
 
 export async function query(opts: QueryOpts) {
@@ -35,6 +37,15 @@ export async function query(opts: QueryOpts) {
   let finalText: string | null = null;
   let isFirstRun = true;
   while (true) {
+    // Check for cancellation before starting each iteration
+    if (opts.onCancelCheck && opts.onCancelCheck()) {
+      return {
+        finalText: null,
+        history: service.history,
+        cancelled: true,
+      };
+    }
+
     const { stream } = await service.run({
       input,
       thinking,
@@ -43,6 +54,15 @@ export async function query(opts: QueryOpts) {
     });
     let hasToolUse = false;
     for await (const chunk of stream) {
+      // Check for cancellation during stream processing
+      if (opts.onCancelCheck && opts.onCancelCheck()) {
+        return {
+          finalText: null,
+          history: service.history,
+          cancelled: true,
+        };
+      }
+
       const parsed = parseStreamChunk(chunk.toString());
       for (const item of parsed) {
         switch (item.type) {
@@ -57,7 +77,12 @@ export async function query(opts: QueryOpts) {
             await opts.onReasoning?.(item.content);
             break;
           case 'tool_use':
-            await opts.onToolUse?.(item.callId, item.name, item.params);
+            await opts.onToolUse?.(
+              item.callId,
+              item.name,
+              item.params,
+              service.context.cwd,
+            );
 
             // Check if approval is needed
             const needsApproval = await service.shouldApprove(
@@ -83,14 +108,18 @@ export async function query(opts: QueryOpts) {
               await opts.onToolUseResult?.(item.callId, item.name, result);
               hasToolUse = true;
             } else {
-              // Tool execution was denied, add a result indicating this
+              // Tool execution was denied by user - stop the query
               const deniedResult = 'Tool execution was denied by user.';
               await opts.onToolUseResult?.(
                 item.callId,
                 item.name,
                 deniedResult,
               );
-              hasToolUse = true;
+              return {
+                finalText: null,
+                history: service.history,
+                denied: true,
+              };
             }
             break;
           default:

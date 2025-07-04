@@ -1,3 +1,5 @@
+import path from 'path';
+
 // Status-related constants
 export const APP_STATUS = {
   IDLE: 'idle',
@@ -21,6 +23,7 @@ export const STATUS_MESSAGES = {
   [APP_STATUS.TOOL_EXECUTING]: 'Executing tool...',
   [APP_STATUS.PROCESSING]: 'Processing...',
   [APP_STATUS.PROCESSING + '_plan']: 'Planning...',
+  [APP_STATUS.CANCELLED]: 'Query cancelled',
 } as const;
 
 // Tool names and configurations
@@ -37,29 +40,18 @@ export const TOOL_NAMES = {
 
 // Tool description extractors
 export const TOOL_DESCRIPTION_EXTRACTORS = {
-  [TOOL_NAMES.READ]: (args: any) => args.file_path,
-  [TOOL_NAMES.BASH]: (args: any) => args.command,
-  [TOOL_NAMES.EDIT]: (args: any) => args.file_path,
-  [TOOL_NAMES.WRITE]: (args: any) => args.file_path,
-  [TOOL_NAMES.FETCH]: (args: any) => args.url,
-  [TOOL_NAMES.GLOB]: (args: any) => args.pattern,
-  [TOOL_NAMES.GREP]: (args: any) => args.pattern,
-  [TOOL_NAMES.LS]: (args: any) => args.dir_path,
-} as const;
-
-// Tool result formatters
-export const TOOL_RESULT_FORMATTERS = {
-  [TOOL_NAMES.READ]: (result: any) =>
-    result.success ? `Read ${result.data.totalLines} lines.` : '',
-  [TOOL_NAMES.BASH]: (result: any) =>
-    result.success ? result.output.trim() : '',
-  [TOOL_NAMES.EDIT]: (result: any) => result,
-  [TOOL_NAMES.WRITE]: (result: any) => result,
-  [TOOL_NAMES.LS]: (result: any) => result,
-  [TOOL_NAMES.FETCH]: (result: any) =>
-    result.success ? result.data.result : '',
-  [TOOL_NAMES.GLOB]: (result: any) => result.message,
-  [TOOL_NAMES.GREP]: (result: any) => result,
+  [TOOL_NAMES.READ]: (args: any, cwd: string) =>
+    path.relative(cwd, args.file_path),
+  [TOOL_NAMES.BASH]: (args: any, cwd: string) => args.command,
+  [TOOL_NAMES.EDIT]: (args: any, cwd: string) =>
+    path.relative(cwd, args.file_path),
+  [TOOL_NAMES.WRITE]: (args: any, cwd: string) =>
+    path.relative(cwd, args.file_path),
+  [TOOL_NAMES.FETCH]: (args: any, cwd: string) => args.url,
+  [TOOL_NAMES.GLOB]: (args: any, cwd: string) => args.pattern,
+  [TOOL_NAMES.GREP]: (args: any, cwd: string) => args.pattern,
+  [TOOL_NAMES.LS]: (args: any, cwd: string) =>
+    args.dir_path ? path.relative(cwd, args.dir_path) : '.',
 } as const;
 
 // Message types

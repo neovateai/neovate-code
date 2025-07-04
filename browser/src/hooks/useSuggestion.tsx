@@ -95,13 +95,15 @@ export const useSuggestion = (
   const suggestions = useMemo(() => {
     const originalArray = suggentionMap[currentContextType] ?? [];
     if (showSearch && searchText) {
-      return originalArray.filter((item) => item.value.includes(searchText));
+      return originalArray.filter((item) =>
+        item.value.toLocaleLowerCase().includes(searchText.toLocaleLowerCase()),
+      );
     }
 
     return originalArray;
   }, [suggentionMap, currentContextType, searchText, showSearch]);
 
-  const handleValue = (value: string) => {
+  const handleSelectValue = (value: string) => {
     if (Object.values(ContextType).includes(value as ContextType)) {
       setCurrentContextType(value as ContextType);
 
@@ -129,11 +131,30 @@ export const useSuggestion = (
     }
   };
 
+  const getOriginalContextByValue = (value: string, type: ContextType) => {
+    const config = AI_CONTEXT_NODE_CONFIGS.find(
+      (config) => config.type === type,
+    );
+    const getOriginalContext = originalContextGetterMap[type];
+    const originalContext = getOriginalContext?.(value);
+    const contextItemValue = config?.valueFormatter?.(value) || value;
+
+    const contextItem: ContextItem = {
+      type,
+      context: originalContext,
+      value: contextItemValue,
+      displayText: value,
+    };
+
+    return contextItem;
+  };
+
   return {
     suggestions,
     showSearch,
-    handleValue,
+    handleSelectValue,
     setCurrentContextType,
     currentContextType,
+    getOriginalContextByValue,
   };
 };

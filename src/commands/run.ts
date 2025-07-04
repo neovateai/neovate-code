@@ -15,13 +15,18 @@ async function executeShell(
   cwd: string,
 ): Promise<{ success: boolean; output: string }> {
   try {
+    logger.logAction({ message: `Executing command: ${command}` });
     const output = execSync(command, {
       cwd,
       encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['ignore', 'inherit', 'inherit'],
     });
-    return { success: true, output };
+    logger.logAction({ message: `Command executed successfully` });
+    return { success: true, output: output?.toString() || '' };
   } catch (error: any) {
+    logger.logError({
+      error: `Command execution failed: ${error.message || 'Unknown error'}`,
+    });
     return {
       success: false,
       output: error.message || 'Command execution failed',
@@ -121,12 +126,9 @@ ${command}
 
     // If --yes mode is enabled, execute the command without confirmation
     if (argv.yes) {
-      logger.logAction({ message: `Executing command: ${command}` });
       const result = await executeShell(command, process.cwd());
 
-      if (result.success) {
-        console.log(result.output);
-      } else {
+      if (!result.success) {
         logger.logError({
           error: `Command execution failed: ${result.output}`,
         });
@@ -176,11 +178,9 @@ ${command}
       return;
     }
 
-    logger.logAction({ message: `Executing command: ${command}` });
     const executeResult = await executeShell(command, process.cwd());
 
     if (executeResult.success) {
-      logger.logInfo(executeResult.output);
       logger.logOutro();
     } else {
       logger.logError({

@@ -87,7 +87,7 @@ cd /foo/bar && pytest tests
           timeout: timeout || 1800000,
           cwd: opts.context.cwd,
         });
-        return { success: true, output: result.toString() };
+        return { success: true, message: result.toString() };
       } catch (e) {
         return {
           success: false,

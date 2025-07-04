@@ -8,7 +8,8 @@ export const LexicalTextAreaContext = createContext<{
     prevNodes: AiContextCacheNode[],
     nextNodes: AiContextCacheNode[],
   ) => void;
-  onChangePlainText?: (plainText: string) => void;
+  value?: string;
+  onChange?: (markedText: string, plainText: string) => void;
   aiContextNodeConfigs: AiContextNodeConfig[];
   namespace: string;
 }>({ aiContextNodeConfigs: [], namespace: '' });

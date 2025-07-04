@@ -89,7 +89,9 @@
     },
     "filesFound": "找到 {{count}} 个文件",
     "moreFiles": "...还有 {{count}} 个文件",
-    "lines": "{{count}} 行"
+    "lines": "{{count}} 行",
+    "callFailed": "调用{{toolName}}工具失败",
+    "detailInfo": "详细信息"
   },
   "toolApproval": {
     "title": "工具执行权限确认",
@@ -250,5 +252,52 @@
       "effective": "当前有效插件",
       "none": "无"
     }
+  },
+  "toolRenders": {
+    "read": {
+      "read": "读取",
+      "lines": "行"
+    },
+    "ls": {
+      "listedItems": "列出 {{path}} 中的 {{count}} 个项目"
+    },
+    "grep": {
+      "grep": "搜索",
+      "inFiles": "在 {{count}} 个文件中"
+    },
+    "bash": {
+      "noOutput": "无输出。"
+    }
+  },
+  "senderFooterBoard": {
+    "agentMode": {
+      "label": "Agent 模式",
+      "description": "用于涉及代码生成、文件修改、运行命令或任何其他主动开发任务"
+    },
+    "askMode": {
+      "label": "Ask 模式",
+      "description": "允许你直接在终端中向 AI 提问并获取帮助，无需修改文件"
+    }
+  },
+  "codeViewer": {
+    "lineCount": "行",
+    "charCount": "个字符",
+    "tempFile": "临时文件",
+    "copySuccess": "复制成功",
+    "copyFail": "复制失败",
+    "toolButton": {
+      "nextDiff": "查看下一个Diff",
+      "prevDiff": "查看上一个Diff",
+      "rejectAll": "全部拒绝",
+      "acceptAll": "全部接受",
+      "accept": "接受",
+      "reject": "拒绝",
+      "copyModifiedCode": "复制修改后的代码"
+    }
+  },
+  "editRender": {
+    "loading": "加载中...",
+    "error": "错误",
+    "preparingDiff": "准备Diff..."
   }
 }

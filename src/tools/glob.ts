@@ -45,12 +45,12 @@ Glob
           : `Found ${filenames.length} files in ${Date.now() - start}ms.`;
         return {
           success: true,
+          message,
           data: {
             filenames,
             durationMs: Date.now() - start,
             numFiles: filenames.length,
             truncated,
-            message,
           },
         };
       } catch (e) {

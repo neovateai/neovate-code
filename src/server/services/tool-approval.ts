@@ -1,5 +1,6 @@
 import createDebug from 'debug';
 import type { Context } from '../../context';
+import { createStableToolKey } from '../../utils/formatToolUse';
 
 const debug = createDebug('takumi:server:tool-approval');
 
@@ -88,7 +89,7 @@ export class ToolApprovalService {
       throw new Error('Too many pending approval requests');
     }
 
-    const toolKey = this.createStableToolKey(toolName, params);
+    const toolKey = createStableToolKey(toolName, params);
     const toolOnlyKey = toolName;
 
     if (
@@ -142,7 +143,7 @@ export class ToolApprovalService {
     }
 
     const { toolName, params, resolve } = pendingApproval;
-    const toolKey = this.createStableToolKey(toolName, params);
+    const toolKey = createStableToolKey(toolName, params);
 
     if (approved) {
       this.updateApprovalMemory(toolKey, toolName, option);
@@ -264,25 +265,6 @@ export class ToolApprovalService {
       },
       5 * 60 * 1000,
     );
-  }
-
-  // 创建稳定的工具键（修复 JSON.stringify 问题）
-  private createStableToolKey(
-    toolName: string,
-    params: Record<string, any>,
-  ): string {
-    // 对参数键进行排序以确保稳定的字符串化结果
-    const sortedParams = Object.keys(params)
-      .sort()
-      .reduce(
-        (result, key) => {
-          result[key] = params[key];
-          return result;
-        },
-        {} as Record<string, any>,
-      );
-
-    return `${toolName}:${JSON.stringify(sortedParams)}`;
   }
 
   // 更新审批记忆（带限制检查）

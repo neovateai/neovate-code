@@ -43,6 +43,7 @@ const useStyle = createStyles(({ token, css }) => {
       font-size: ${token.fontSizeSM}px;
       max-height: 120px;
       overflow-y: auto;
+      white-space: pre-wrap;
     `,
     errorAlert: css`
       background: ${token.colorErrorBg};

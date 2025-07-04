@@ -1,5 +1,6 @@
 import { RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { VscSearch } from 'react-icons/vsc';
 import type { ToolMessage } from '@/types/message';
 import type { IGrepToolResult } from '@/types/tool';
@@ -8,6 +9,7 @@ import { ToolStatus } from './ToolStatus';
 
 export default function GrepRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
+  const { t } = useTranslation();
 
   const { result, args, state } = message;
   const [isExpanded, setIsExpanded] = useState(true);
@@ -42,11 +44,12 @@ export default function GrepRender({ message }: { message?: ToolMessage }) {
         <VscSearch />
         <div className="flex-1 flex justify-between items-center text-xs">
           <span>
-            grep&nbsp;
+            {t('toolRenders.grep.grep')}&nbsp;
             <code className="bg-gray-200 text-gray-800 px-1 rounded-sm font-mono">
               {(args?.pattern as string) || ''}
             </code>
-            &nbsp; in {filenames?.length || 0} files
+            &nbsp;{' '}
+            {t('toolRenders.grep.inFiles', { count: filenames?.length || 0 })}
           </span>
           <div className="flex items-center gap-2">
             {durationMs && <p className="text-gray-500">{durationMs}ms</p>}

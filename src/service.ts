@@ -1,16 +1,10 @@
-import {
-  Agent,
-  AgentInputItem,
-  FunctionCallItem,
-  Runner,
-} from '@openai/agents';
-import { randomUUID } from 'crypto';
+import { Agent, AgentInputItem, Runner } from '@openai/agents';
 import { Readable } from 'stream';
 import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
 import { Context } from './context';
 import { PluginHookType } from './plugin';
-import { EnhancedTool, Tools, enhanceTool } from './tool';
+import { Tools, enhanceTool } from './tool';
 import { createBashTool } from './tools/bash';
 import { createEditTool } from './tools/edit';
 import { createFetchTool } from './tools/fetch';
@@ -21,6 +15,7 @@ import { createReadTool } from './tools/read';
 import { createWriteTool } from './tools/write';
 import { formatToolUse } from './utils/formatToolUse';
 import { parseMessage } from './utils/parse-message';
+import { randomUUID } from './utils/randomUUID';
 
 export type AgentType = 'code' | 'plan';
 
@@ -226,7 +221,7 @@ export class Service {
       const history: AgentInputItem[] = result.history;
       const toolUse = parsed.find((item) => item.type === 'tool_use');
       if (toolUse) {
-        const callId = crypto.randomUUID();
+        const callId = randomUUID();
         stream.push(
           JSON.stringify({
             type: 'tool_use',

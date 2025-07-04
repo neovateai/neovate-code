@@ -7,13 +7,15 @@ import { clearTracing } from './tracing';
 
 const debug = createDebug('takumi:index');
 
-export { Agent, Runner } from '@openai/agents';
+export { Agent, Runner, tool as _tool } from '@openai/agents';
 export { checkAndUpdate as _checkAndUpdate } from 'upgear';
 export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
 export { createDeepSeek as _createDeepSeek } from '@ai-sdk/deepseek';
 export { createAnthropic as _createAnthropic } from '@ai-sdk/anthropic';
 export { aisdk as _aisdk } from './utils/ai-sdk';
 export { default as _picocolors } from 'picocolors';
+export { enhanceTool as _enhanceTool } from './tool';
+export { z as _zod } from 'zod';
 
 export type { Plugin, Context };
 
@@ -24,6 +26,10 @@ export interface RunCliOpts {
   modelProvider?: ModelProvider;
   plugins?: Plugin[];
 }
+
+// ref:
+// https://github.com/yargs/yargs-parser/blob/6d69295/lib/index.ts#L19
+process.env.YARGS_MIN_NODE_VERSION = '18';
 
 export async function runCli(opts: RunCliOpts) {
   clearTracing();

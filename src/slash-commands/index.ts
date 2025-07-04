@@ -1,4 +1,5 @@
 import { Context } from '../context';
+import { PluginHookType } from '../plugin';
 import { builtinCommands } from './builtin';
 import { loadGlobalCommands, loadProjectCommands } from './filesystem-loader';
 import { SlashCommandRegistryImpl } from './registry';
@@ -42,7 +43,7 @@ export async function createSlashCommandRegistry(
       hook: 'command',
       args: [],
       memo: [] as SlashCommand[],
-      type: 'SeriesMerge' as any,
+      type: PluginHookType.SeriesMerge,
     });
 
     if (Array.isArray(pluginCommands)) {

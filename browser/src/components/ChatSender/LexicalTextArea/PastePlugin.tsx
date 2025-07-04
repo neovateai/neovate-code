@@ -1,7 +1,7 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { message } from 'antd';
 import { PASTE_COMMAND } from 'lexical';
-import { useCallback, useEffect } from 'react';
+import { memo, useCallback, useEffect } from 'react';
 import { ContextType } from '@/constants/context';
 import * as context from '@/state/context';
 
@@ -134,4 +134,4 @@ const PastePlugin = () => {
   return <>{messageContextHolder}</>;
 };
 
-export default PastePlugin;
+export default memo(PastePlugin);
