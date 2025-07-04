@@ -1,9 +1,12 @@
 import BashRenderComponent from './BashRender';
+import EditRenderComponent from './EditRender';
+import FailRenderComponent from './FailRender';
 import FetchRenderComponent from './FetchRender';
 import GlobRenderComponent from './GlobRender';
 import GrepRenderComponent from './GrepRender';
 import LsRenderComponent from './LsRender';
 import ReadRenderComponent from './ReadRender';
+import WriteRenderComponent from './WriteRender';
 import { withDebugInfo } from './withDebugInfo';
 
 export const BashRender = withDebugInfo(BashRenderComponent);
@@ -12,3 +15,6 @@ export const GrepRender = withDebugInfo(GrepRenderComponent);
 export const GlobRender = withDebugInfo(GlobRenderComponent);
 export const LsRender = withDebugInfo(LsRenderComponent);
 export const ReadRender = withDebugInfo(ReadRenderComponent);
+export const EditRender = withDebugInfo(EditRenderComponent);
+export const WriteRender = withDebugInfo(WriteRenderComponent);
+export const FailRender = withDebugInfo(FailRenderComponent);

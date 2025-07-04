@@ -2,7 +2,9 @@ import Icon, { CloseOutlined, FileUnknownOutlined } from '@ant-design/icons';
 import { Image, Popover, Tag } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
+import { readFile } from '@/api/files';
 import type { FileItem, ImageItem } from '@/api/model';
+import * as codeViewer from '@/state/codeViewer';
 import DevFileIcon from '../DevFileIcon';
 
 const useStyle = createStyles(({ css }) => {
@@ -33,17 +35,36 @@ export const FileContextTag = ({
 
   const { styles } = useStyle();
 
+  const isFile = context?.type === 'file';
+
   return (
     <Tag
       color="blue"
       className={styles.tag}
+      style={{ cursor: isFile ? 'pointer' : undefined }}
       data-ai-context-id="file"
       contentEditable={false}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onClick={async () => {
+        if (isFile) {
+          const fileContent = (await readFile(displayText)).data.content;
+          codeViewer.actions.updateNormalViewerConfig({
+            path: displayText,
+            code: fileContent,
+          });
+          codeViewer.actions.setVisible(true);
+        }
+      }}
     >
       {onClose && hover ? (
-        <CloseOutlined className={styles.icon} onClick={onClose} />
+        <CloseOutlined
+          className={styles.icon}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose?.();
+          }}
+        />
       ) : (
         context && (
           <DevFileIcon

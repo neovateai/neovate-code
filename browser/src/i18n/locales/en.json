@@ -89,7 +89,9 @@
     },
     "filesFound": "Found {{count}} files",
     "moreFiles": "...{{count}} more files",
-    "lines": "{{count}} lines"
+    "lines": "{{count}} lines",
+    "callFailed": "Failed to call {{toolName}} tool",
+    "detailInfo": "Detail Info"
   },
   "toolApproval": {
     "title": "Tool Execution Permission Confirmation",
@@ -250,5 +252,52 @@
       "effective": "Current effective plugins",
       "none": "None"
     }
+  },
+  "toolRenders": {
+    "read": {
+      "read": "read",
+      "lines": "lines"
+    },
+    "ls": {
+      "listedItems": "Listed {{count}} items in {{path}}"
+    },
+    "grep": {
+      "grep": "grep",
+      "inFiles": "in {{count}} files"
+    },
+    "bash": {
+      "noOutput": "No output."
+    }
+  },
+  "senderFooterBoard": {
+    "agentMode": {
+      "label": "Agent Mode",
+      "description": "For tasks involving code generation, file modification, running commands, or any other active development tasks"
+    },
+    "askMode": {
+      "label": "Ask Mode",
+      "description": "Allows you to ask the AI questions and get help directly in the terminal, without modifying files"
+    }
+  },
+  "codeViewer": {
+    "lineCount": "line(s)",
+    "charCount": "char(s)",
+    "tempFile": "Temporary File",
+    "copySuccess": "Copy content successfully",
+    "copyFail": "Copy content failed",
+    "toolButton": {
+      "nextDiff": "Next Diff",
+      "prevDiff": "Previous Diff",
+      "rejectAll": "Reject All",
+      "acceptAll": "Accept All",
+      "accept": "Accept",
+      "reject": "Reject",
+      "copyModifiedCode": "Copy Modified Code"
+    }
+  },
+  "editRender": {
+    "loading": "Loading...",
+    "error": "Error",
+    "preparingDiff": "Preparing diff..."
   }
 }

@@ -1,146 +1,98 @@
-import {
-  DeleteOutlined,
-  EditOutlined,
-  PlusOutlined,
-  QuestionCircleOutlined,
-  SettingOutlined,
-} from '@ant-design/icons';
-import { Conversations } from '@ant-design/x';
-import { useNavigate } from '@tanstack/react-router';
-import { Avatar, Button } from 'antd';
+import { MenuOutlined } from '@ant-design/icons';
+import { Button } from 'antd';
 import { createStyles } from 'antd-style';
-import { useTranslation } from 'react-i18next';
-import logoPng from './imgs/kmi-ai.png';
+import { useEffect, useState } from 'react';
+import { useSnapshot } from 'valtio';
+import * as codeViewer from '@/state/codeViewer';
+import SiderMain from './SiderMain';
 
-const useStyle = createStyles(({ token, css }) => {
+const useStyles = createStyles(({ css, cx, token }) => {
+  const hoveredPopoverWrapper = css`
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+  `;
   return {
-    sider: css`
-      background: ${token.colorBgLayout}80;
-      width: 280px;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      padding: 0 12px;
-      box-sizing: border-box;
-    `,
-    logo: css`
-      display: flex;
-      align-items: center;
-      justify-content: start;
-      padding: 0 24px;
-      box-sizing: border-box;
-      gap: 8px;
-      margin: 24px 0;
-
-      span {
-        font-weight: bold;
-        color: ${token.colorText};
-        font-size: 16px;
+    hoveredPopoverWrapper,
+    popoverWrapper: cx(
+      hoveredPopoverWrapper,
+      css`
+        padding: 0 12px;
+      `,
+    ),
+    popoverContent: css`
+      height: 100vh;
+      background: ${token.colorBgLayout};
+      border-radius: 8px;
+      border: 1px solid ${token.colorBorder};
+      transition:
+        box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: box-shadow, transform;
+      &:hover {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
       }
     `,
-    addBtn: css`
-      background: #1677ff0f;
-      border: 1px solid #1677ff34;
-      height: 40px;
-    `,
-    conversations: css`
-      flex: 1;
-      overflow-y: auto;
-      margin-top: 12px;
-      padding: 0;
-
-      .ant-conversations-list {
-        padding-inline-start: 0;
+    button: css`
+      position: relative;
+      top: 20px;
+      left: 8px;
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform;
+      &:hover {
+        transform: scale(1.12);
+      }
+      &:active {
+        transform: scale(0.95);
       }
     `,
-    siderFooter: css`
-      border-top: 1px solid ${token.colorBorderSecondary};
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    `,
-    siderFooterRight: css`
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    popoverButtonWrapper: css`
+      display: block;
+      margin: 0 0 20px 0;
     `,
   };
 });
 
 const Sider = () => {
-  const { styles } = useStyle();
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+  const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
+  const [active, setActive] = useState(false);
+  const { styles } = useStyles();
 
-  return (
-    <div className={styles.sider}>
-      {/* 🌟 Logo */}
-      <div className={styles.logo}>
-        <img
-          src={logoPng}
-          draggable={false}
-          alt="logo"
-          width={24}
-          height={24}
-        />
-        <span>Takumi</span>
-      </div>
+  const MenuButton = (
+    <Button
+      icon={<MenuOutlined />}
+      onMouseEnter={() => setActive(true)}
+      onClick={() => codeViewer.actions.setVisible(false)}
+      className={styles.button}
+    />
+  );
 
-      {/* 🌟 添加会话 */}
-      <Button
-        onClick={() => {
-          console.log('add conversation');
-        }}
-        type="link"
-        className={styles.addBtn}
-        icon={<PlusOutlined />}
-      >
-        {t('sidebar.newConversation')}
-      </Button>
+  useEffect(() => {
+    setActive(false);
+  }, [codeViewerVisible]);
 
-      {/* 🌟 会话管理 */}
-      <Conversations
-        items={[]}
-        className={styles.conversations}
-        activeKey={''}
-        onActiveChange={async (val) => {
-          console.log('onActiveChange', val);
-        }}
-        groupable
-        styles={{ item: { padding: '0 8px' } }}
-        menu={(conversation) => ({
-          items: [
-            {
-              label: t('menu.rename'),
-              key: 'rename',
-              icon: <EditOutlined />,
-            },
-            {
-              label: t('menu.delete'),
-              key: 'delete',
-              icon: <DeleteOutlined />,
-              danger: true,
-              onClick: () => {
-                console.log('delete conversation', conversation);
-              },
-            },
-          ],
-        })}
-      />
-
-      <div className={styles.siderFooter}>
-        <Avatar size={24} />
-        <div className={styles.siderFooterRight}>
-          <Button
-            type="text"
-            icon={<SettingOutlined />}
-            onClick={() => navigate({ to: '/settings' })}
-          />
-          <Button type="text" icon={<QuestionCircleOutlined />} />
+  return codeViewerVisible ? (
+    <>
+      {active ? (
+        <div
+          className={styles.hoveredPopoverWrapper}
+          onMouseLeave={() => setActive(false)}
+        >
+          <div className={styles.popoverContent}>
+            <SiderMain
+              popoverButton={
+                <div className={styles.popoverButtonWrapper}>{MenuButton}</div>
+              }
+            />
+          </div>
         </div>
-      </div>
-    </div>
+      ) : (
+        <div className={styles.popoverWrapper}>{MenuButton}</div>
+      )}
+    </>
+  ) : (
+    <SiderMain />
   );
 };
 

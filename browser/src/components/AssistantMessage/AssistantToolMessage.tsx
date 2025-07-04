@@ -3,18 +3,25 @@ import { useTranslation } from 'react-i18next';
 import type { ToolMessage } from '@/types/message';
 import {
   BashRender,
+  EditRender,
+  FailRender,
   FetchRender,
   GlobRender,
   GrepRender,
   LsRender,
   ReadRender,
+  WriteRender,
 } from '../ToolRender';
 
 const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
   message,
 }) => {
   const { t } = useTranslation();
-  const { state, toolName, args, step } = message;
+  const { state, toolName, args, step, result } = message;
+
+  if (result?.success === false) {
+    return <FailRender message={message} />;
+  }
 
   switch (toolName) {
     case 'grep':
@@ -29,6 +36,10 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
       return <BashRender message={message} />;
     case 'fetch':
       return <FetchRender message={message} />;
+    case 'edit':
+      return <EditRender message={message} />;
+    case 'write':
+      return <WriteRender message={message} />;
   }
 
   // 控制结果展开/收起的状态，默认收起

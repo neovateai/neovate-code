@@ -1,5 +1,6 @@
 import { RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BsTerminal } from 'react-icons/bs';
 import type { ToolMessage } from '@/types/message';
 import type { IBashToolResult } from '@/types/tool';
@@ -9,6 +10,7 @@ export default function BashRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
   const { args, result, state } = message;
   const [isExpanded, setIsExpanded] = useState(false);
+  const { t } = useTranslation();
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
@@ -23,7 +25,11 @@ export default function BashRender({ message }: { message?: ToolMessage }) {
       return <pre className="text-xs m-2 whitespace-pre-wrap">{output}</pre>;
     }
     if (!stdout && !stderr) {
-      return <p className="text-xs text-gray-400 px-2 py-1">No output.</p>;
+      return (
+        <p className="text-xs text-gray-400 px-2 py-1">
+          {t('toolRenders.bash.noOutput')}
+        </p>
+      );
     }
     return (
       <div className="px-2 py-1">
