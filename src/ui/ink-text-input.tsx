@@ -18,7 +18,7 @@ export type TextInputProps = {
    * Listen to user's input. Useful in case there are multiple input components
    * at the same time and input must be "routed" to a specific component.
    */
-  readonly focus?: boolean; // eslint-disable-line react/boolean-prop-naming
+  readonly focus?: boolean;
 
   /**
    * Replace all chars and mask the value. Useful for password inputs.
@@ -28,12 +28,12 @@ export type TextInputProps = {
   /**
    * Whether to show cursor and allow navigation inside text input with arrow keys.
    */
-  readonly showCursor?: boolean; // eslint-disable-line react/boolean-prop-naming
+  readonly showCursor?: boolean;
 
   /**
    * Highlight pasted text
    */
-  readonly highlightPastedText?: boolean; // eslint-disable-line react/boolean-prop-naming
+  readonly highlightPastedText?: boolean;
 
   /**
    * Maximum number of lines to display (for multiline mode). When exceeded,
@@ -65,6 +65,11 @@ export type TextInputProps = {
    * Force cursor position to a specific offset.
    */
   readonly cursorPosition?: number;
+
+  /**
+   * Callback when cursor position changes
+   */
+  readonly onCursorPositionChange?: (pos: number) => void;
 };
 
 function findPrevWordJump(prompt: string, cursorOffset: number) {
@@ -114,6 +119,7 @@ function TextInput({
   onSubmit,
   onTabPress,
   cursorPosition,
+  onCursorPositionChange,
 }: TextInputProps) {
   const [state, setState] = useState({
     cursorOffset: (originalValue || '').length,
@@ -163,6 +169,12 @@ function TextInput({
       });
     }
   }, [cursorPosition, originalValue, focus, showCursor]);
+
+  useEffect(() => {
+    if (onCursorPositionChange) {
+      onCursorPositionChange(state.cursorOffset);
+    }
+  }, [state.cursorOffset]);
 
   const cursorActualWidth = highlightPastedText ? cursorWidth : 0;
 

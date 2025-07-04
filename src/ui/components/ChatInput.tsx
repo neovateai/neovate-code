@@ -7,6 +7,7 @@ import { useAutoSuggestion } from '../hooks/useAutoSuggestion';
 import { useChatActions } from '../hooks/useChatActions';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import TextInput from '../ink-text-input';
+import { getCurrentLineInfo } from '../utils/cursor-utils';
 import { sanitizeText } from '../utils/text-utils';
 import { AutoSuggestionDisplay } from './AutoSuggestionDisplay';
 
@@ -60,26 +61,54 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
         navigatePrevious(); // 切换suggestion
       } else {
         const lines = value.split('\n');
+        const currentCursorPos = cursorPosition ?? value.length;
         if (lines.length === 1 || !value.trim()) {
+          // 单行输入或空输入，直接切换history
           setVisible(false);
           const history = chatInputUp(value);
           setValue(history);
           setCursorPosition(history.length);
+        } else {
+          // 多行输入，判断光标是否在第一行
+          const { currentLine } = getCurrentLineInfo(value, currentCursorPos);
+          if (currentLine === 0) {
+            setVisible(false);
+            const history = chatInputUp(value);
+            setValue(history);
+            setCursorPosition(history.length);
+          }
         }
       }
+      return;
     }
     if (key.downArrow) {
       if (isVisible) {
         navigateNext(); // 切换suggestion
       } else {
         const lines = value.split('\n');
+        const currentCursorPos = cursorPosition ?? value.length;
         if (lines.length === 1 || !value.trim()) {
+          // 单行输入或空输入，直接切换history
           setVisible(false);
           const history = chatInputDown(value);
           setValue(history);
           setCursorPosition(history.length);
+        } else {
+          // 多行输入，判断光标是否在最后一行
+          const { currentLine, lines: textLines } = getCurrentLineInfo(
+            value,
+            currentCursorPos,
+          );
+          const lastLine = textLines.length - 1;
+          if (currentLine === lastLine) {
+            setVisible(false);
+            const history = chatInputDown(value);
+            setValue(history);
+            setCursorPosition(history.length);
+          }
         }
       }
+      return;
     }
     if (key.return && isVisible) {
       handleSuggestionAccept();
@@ -159,6 +188,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
             onTabPress={handleTabPress}
             cursorPosition={cursorPosition}
             maxLines={DEFAULT_MAX_LINES}
+            onCursorPositionChange={setCursorPosition}
           />
         )}
       </Box>
@@ -173,7 +203,9 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
         isVisible={isVisible && !isWaitingForInput}
       />
       <Box flexDirection="row" paddingX={2} gap={1}>
-        <Text color="gray">ctrl+c to exit | enter to send | esc to cancel</Text>
+        <Text color="gray">
+          ctrl+c to exit | enter to send | esc to cancel | ↑/↓ 切换历史
+        </Text>
         <Box flexGrow={1} />
       </Box>
     </Box>
