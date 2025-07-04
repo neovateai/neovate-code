@@ -84,7 +84,7 @@ const PastePlugin = ({
                   if (src) {
                     const mime = guessImageMime(src);
 
-                    imageUrlToBase64(src).then((base64) => {
+                    imageUrlToBase64(src, mime).then((base64) => {
                       context.actions.addContext({
                         type: ContextType.IMAGE,
                         value: `@Image:[${Date.now()}]`,

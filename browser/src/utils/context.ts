@@ -1,4 +1,4 @@
-export async function imageUrlToBase64(url: string) {
+export async function imageUrlToBase64(url: string, mime: string) {
   return new Promise<string>((resolve) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -18,7 +18,7 @@ export async function imageUrlToBase64(url: string) {
 
       ctx.drawImage(img, 0, 0);
 
-      const base64String = canvas.toDataURL('image/png'); // 可指定格式，如'image/jpeg'
+      const base64String = canvas.toDataURL(mime);
       resolve(base64String);
     };
 
