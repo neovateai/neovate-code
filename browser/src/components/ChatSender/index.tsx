@@ -76,7 +76,7 @@ const ChatSender: React.FC = () => {
   };
 
   const handleEnterPress = () => {
-    if (prompt.trim()) {
+    if (!loading && prompt.trim()) {
       handleSubmit();
     }
   };
