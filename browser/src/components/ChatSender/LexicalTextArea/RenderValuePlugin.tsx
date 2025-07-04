@@ -16,6 +16,7 @@ import type {
   AiContextNodeConfig,
   AppendedLexicalNode,
 } from '@/types/context';
+import { getTextDiff } from '@/utils/chat';
 import { $createAiContextNode } from './AiContextNode';
 
 interface Props {
@@ -213,10 +214,33 @@ const RenderValuePlugin = (props: Props) => {
           const uniqueTextNode = paragraph.getLastChild();
 
           if ($isTextNode(uniqueTextNode)) {
-            uniqueTextNode.select(
-              oldSelectionRef.current.anchor.offset,
-              oldSelectionRef.current.focus.offset,
-            );
+            const content = uniqueTextNode.getTextContent();
+            console.log(JSON.stringify(content));
+
+            // input break line
+            const inputDiff = getTextDiff(oldMarkedTextRef.current, content);
+            const inputBreakLine =
+              inputDiff.length > 0 &&
+              inputDiff.every(
+                (diff) => diff.type === '+' && diff.content.includes('\n'),
+              );
+            console.log(inputDiff);
+            if (inputBreakLine) {
+              const lastDiff = inputDiff[inputDiff.length - 1];
+              const lastPos = lastDiff.index + lastDiff.content.length;
+              uniqueTextNode.select(lastPos, lastPos);
+              console.log('break line select', lastPos);
+            } else {
+              uniqueTextNode.select(
+                oldSelectionRef.current.focus.offset,
+                oldSelectionRef.current.focus.offset,
+              );
+              console.log(
+                'normal select',
+                oldSelectionRef.current.focus.offset,
+                oldSelectionRef.current.focus.offset,
+              );
+            }
           }
         }
       }
@@ -244,17 +268,19 @@ const RenderValuePlugin = (props: Props) => {
 
           resetSelection?.();
 
-          onChangeNodes?.(oldNodesRef.current, nodes);
-          oldNodesRef.current = nodes;
-          oldLexicalNodesRef.current = paragraph
-            .getChildren()
-            .map((lexicalNode) => {
-              return {
-                lexicalNode,
-                type: lexicalNode.getType(),
-                length: lexicalNode.getTextContentSize(),
-              };
-            });
+          if (!withoutSpecialNode) {
+            onChangeNodes?.(oldNodesRef.current, nodes);
+            oldNodesRef.current = nodes;
+            oldLexicalNodesRef.current = paragraph
+              .getChildren()
+              .map((lexicalNode) => {
+                return {
+                  lexicalNode,
+                  type: lexicalNode.getType(),
+                  length: lexicalNode.getTextContentSize(),
+                };
+              });
+          }
         }
 
         onChange?.(innerValue, plainText);
@@ -281,7 +307,8 @@ const RenderValuePlugin = (props: Props) => {
       // composition 结束时手动同步内容
       editor.update(() => {
         const root = $getRoot();
-        const markedText = root.getTextContent();
+        const markedText = root.getTextContent().trimEnd();
+        oldSelectionRef.current = $getSelection();
         setInnerValue(markedText);
       });
     };
@@ -298,9 +325,9 @@ const RenderValuePlugin = (props: Props) => {
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
       editorState.read(() => {
-        if (isComposing) return; // 组合中不更新
+        if (isComposing) return;
         const root = $getRoot();
-        const markedText = root.getTextContent();
+        const markedText = root.getTextContent().trimEnd();
 
         oldSelectionRef.current = $getSelection();
 
