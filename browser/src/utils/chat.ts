@@ -12,7 +12,7 @@ interface TextDiff {
  * 如果是添加的文本，会以'+'开头
  * 如果是删除的文本，会以'-'开头
  */
-function getTextDiff(str1: string, str2: string): TextDiff[] {
+export function getTextDiff(str1: string, str2: string): TextDiff[] {
   const diffs: TextDiff[] = [];
 
   // 如果字符串完全相同，直接返回空数组

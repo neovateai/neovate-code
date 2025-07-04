@@ -94,7 +94,7 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
           setHeight(Math.max(height, 200));
         } catch (e) {
           console.error('Auto set height error:', e);
-          setHeight(undefined);
+          setHeight(maxHeight);
         }
       }
     } else {
