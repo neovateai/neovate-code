@@ -1,5 +1,5 @@
 import { Box, Static } from 'ink';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAppContext } from './AppContext';
 import { ApprovalModal } from './components/ApprovalModal';
 import { ChatInput } from './components/ChatInput';
@@ -7,6 +7,7 @@ import { Header } from './components/Header';
 import { MessageWrapper } from './components/MessageComponents';
 import { PlanModal } from './components/PlanModal';
 import { useChatActions } from './hooks/useChatActions';
+import { useDebounceResize } from './hooks/useDebounceResize';
 
 export function App() {
   const [slashCommandJSX, setSlashCommandJSX] =
@@ -14,19 +15,7 @@ export function App() {
   const { state } = useAppContext();
   const { processUserInput } = useChatActions();
   const initialPromptProcessed = useRef(false);
-  const [forceRerender, setForceRerender] = useState(0);
-
-  const onResize = () => {
-    process.stdout.write('\x1bc');
-    setForceRerender((prev) => prev + 1);
-  };
-
-  useEffect(() => {
-    process.stdout.on('resize', onResize);
-    return () => {
-      process.stdout.off('resize', onResize);
-    };
-  }, []);
+  const forceRerender = useDebounceResize();
 
   // Process initial prompt when app loads
   useEffect(() => {
