@@ -2,6 +2,11 @@ import chalk from 'chalk';
 import { Text, useInput } from 'ink';
 import React, { useEffect, useRef, useState } from 'react';
 import type { Except } from 'type-fest';
+import { getCurrentLineInfo, moveToLine } from './utils/cursor-utils';
+
+// UI Display Constants
+const DEFAULT_MAX_LINES = 8;
+const MAX_PASTE_HIGHLIGHT_LENGTH = 1;
 
 export type TextInputProps = {
   /**
@@ -95,49 +100,6 @@ function findNextWordJump(prompt: string, cursorOffset: number) {
   }
 
   return prompt.length;
-}
-
-function getCurrentLineInfo(text: string, cursorOffset: number) {
-  const lines = text.split('\n');
-  let currentOffset = 0;
-  let currentLine = 0;
-  let columnInLine = 0;
-
-  for (let i = 0; i < lines.length; i++) {
-    const lineLength = lines[i].length;
-
-    if (currentOffset + lineLength >= cursorOffset) {
-      currentLine = i;
-      columnInLine = cursorOffset - currentOffset;
-      break;
-    }
-
-    currentOffset += lineLength + 1; // +1 for the newline character
-  }
-
-  return { currentLine, columnInLine, lines };
-}
-
-function moveToLine(text: string, targetLine: number, targetColumn: number) {
-  const lines = text.split('\n');
-
-  if (targetLine < 0) {
-    return 0;
-  }
-
-  if (targetLine >= lines.length) {
-    return text.length;
-  }
-
-  let offset = 0;
-  for (let i = 0; i < targetLine; i++) {
-    offset += lines[i].length + 1; // +1 for newline
-  }
-
-  const lineLength = lines[targetLine].length;
-  const columnInLine = Math.min(targetColumn, lineLength);
-
-  return offset + columnInLine;
 }
 
 function TextInput({
@@ -468,7 +430,7 @@ function TextInput({
         latestCursorOffsetRef.current = nextCursorOffset;
 
         // Don't highlight large pastes to avoid rendering issues
-        if (input.length > 1) {
+        if (input.length > MAX_PASTE_HIGHLIGHT_LENGTH) {
           nextCursorWidth = 0;
         } else {
           nextCursorWidth = 0;

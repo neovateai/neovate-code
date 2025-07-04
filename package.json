@@ -100,7 +100,6 @@
     "react": "^19.1.0",
     "resolve": "^1.22.10",
     "spawn-rx": "^5.1.2",
-    "string-width": "^7.2.0",
     "tsx": "^4.20.3",
     "turndown": "^7.2.0",
     "type-fest": "^4.41.0",

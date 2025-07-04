@@ -10,6 +10,9 @@ import TextInput from '../ink-text-input';
 import { sanitizeText } from '../utils/text-utils';
 import { AutoSuggestionDisplay } from './AutoSuggestionDisplay';
 
+// UI Display Constants
+const DEFAULT_MAX_LINES = 8;
+
 interface ChatInputProps {
   setSlashCommandJSX: (jsx: React.ReactNode) => void;
 }
@@ -142,7 +145,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
             onSubmit={isVisible ? () => {} : handleSubmit}
             onTabPress={handleTabPress}
             cursorPosition={cursorPosition}
-            maxLines={8}
+            maxLines={DEFAULT_MAX_LINES}
           />
         )}
       </Box>
