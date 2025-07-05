@@ -22,6 +22,8 @@ interface RunCompletionOpts extends CreateServerOpts {
   planService: Service;
   mode: string;
   attachedContexts: ContextItem[];
+  requestId?: string;
+  signal?: AbortSignal;
 }
 
 function isImageContext(context: ContextItem): context is ContextItem & {
@@ -115,8 +117,19 @@ function convertUserPromptToAgentInput(
 }
 
 export async function runCode(opts: RunCompletionOpts) {
-  const { dataStream, mode, attachedContexts } = opts;
+  const { dataStream, mode, attachedContexts, signal } = opts;
+
   try {
+    // 检查是否已经取消
+    if (signal?.aborted) {
+      debug('Request already aborted before starting');
+      dataStream.writeMessageAnnotation({
+        type: 'request_canceled',
+        message: '请求已被用户取消',
+      });
+      return;
+    }
+
     const input: AgentInputItem[] = convertUserPromptToAgentInput(
       opts.prompt,
       attachedContexts,
@@ -133,7 +146,11 @@ export async function runCode(opts: RunCompletionOpts) {
       input,
       service,
       thinking: isReasoningModel(service.context.config.model),
+      signal, // 传递 AbortSignal
       onTextDelta(text) {
+        // 检查是否已经取消
+        if (signal?.aborted) return;
+
         debug(`Text delta: ${text}`);
         dataStream.writeMessageAnnotation({
           type: 'text_delta',
@@ -141,6 +158,9 @@ export async function runCode(opts: RunCompletionOpts) {
         });
       },
       async onText(text) {
+        // 检查是否已经取消
+        if (signal?.aborted) return;
+
         dataStream.writeMessageAnnotation({
           type: 'text',
           text,
@@ -151,6 +171,9 @@ export async function runCode(opts: RunCompletionOpts) {
         dataStream.write(formatDataStreamPart('text', text));
       },
       onReasoning(text) {
+        // 检查是否已经取消
+        if (signal?.aborted) return;
+
         debug(`Reasoning: ${text}`);
         dataStream.writeMessageAnnotation({
           type: 'reasoning',
@@ -159,6 +182,9 @@ export async function runCode(opts: RunCompletionOpts) {
         dataStream.write(formatDataStreamPart('reasoning', text));
       },
       onToolUse(callId, name, params) {
+        // 检查是否已经取消
+        if (signal?.aborted) return;
+
         debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
         dataStream.writeMessageAnnotation({
           type: 'tool_call',
@@ -175,6 +201,9 @@ export async function runCode(opts: RunCompletionOpts) {
         );
       },
       onToolUseResult(callId, name, result) {
+        // 检查是否已经取消
+        if (signal?.aborted) return;
+
         debug(`Tool use result: ${name} with result ${JSON.stringify(result)}`);
         dataStream.writeMessageAnnotation({
           type: 'tool_result',
@@ -190,6 +219,9 @@ export async function runCode(opts: RunCompletionOpts) {
         );
       },
       async onToolApprove(callId, name, params) {
+        // 检查是否已经取消
+        if (signal?.aborted) return false;
+
         debug(`Tool approval request: ${name} with callId ${callId}`);
 
         try {
@@ -205,6 +237,9 @@ export async function runCode(opts: RunCompletionOpts) {
             name,
             params,
           );
+
+          // 再次检查是否已经取消
+          if (signal?.aborted) return false;
 
           dataStream.writeMessageAnnotation({
             type: 'tool_approval_result',
@@ -232,8 +267,22 @@ export async function runCode(opts: RunCompletionOpts) {
       },
     });
     debug('result', result);
-  } finally {
-    // TODO: Cannot destroy here, otherwise it will cause mcp to be unavailable
-    // await opts.context.destroy();
+  } catch (error: unknown) {
+    // 检查是否是取消错误
+    if (
+      (typeof error === 'object' &&
+        error !== null &&
+        'name' in error &&
+        error.name === 'AbortError') ||
+      signal?.aborted
+    ) {
+      debug('Request was canceled');
+      dataStream.writeMessageAnnotation({
+        type: 'request_canceled',
+        message: '请求已被用户取消',
+      });
+    } else {
+      throw error;
+    }
   }
 }

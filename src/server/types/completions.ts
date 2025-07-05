@@ -51,6 +51,10 @@ export interface CompletionRequest {
    * The mode of the completion, can be 'agent', 'ask', 'plan'
    */
   mode: string;
+  /**
+   * 请求ID，用于取消请求
+   */
+  id?: string;
 }
 
 export interface CompletionTextContent {

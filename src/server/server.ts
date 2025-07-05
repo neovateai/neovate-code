@@ -98,6 +98,13 @@ const registerRoutes = async (
     ...pluginOpts,
   });
 
+  await app.register(import('./routes/cancel'), {
+    prefix: BASE_API_PREFIX,
+    ...pluginOpts,
+    service,
+    planService,
+  });
+
   await opts.context.apply({
     hook: 'serverRoutes',
     args: [

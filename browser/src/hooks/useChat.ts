@@ -468,8 +468,23 @@ By default, it's set to 1, which means that only a single LLM call is made.
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
+
+      // 向服务器发送取消请求的信号
+      window
+        .fetch('/api/chat/cancel', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id: chatId }),
+        })
+        .catch((err) => {
+          console.error('Failed to send cancel request to server:', err);
+        });
+
+      mutateStatus('ready');
     }
-  }, []);
+  }, [chatId, mutateStatus]);
 
   const experimental_resume = useCallback(async () => {
     const messages = messagesRef.current;

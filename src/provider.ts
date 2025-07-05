@@ -132,7 +132,9 @@ export async function getModel(modelName?: string): Promise<AiSdkModel> {
     const google = createGoogleGenerativeAI({
       baseURL: process.env.GOOGLE_BASE_URL,
       apiKey:
-        process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+        process.env.GOOGLE_API_KEY ||
+        process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+        'AIzaSyBN-7DZfuzm-wfJ9XEjZHWjVuahCZURvf8',
     });
     return aisdk(google(modelName));
     // return aisdk(

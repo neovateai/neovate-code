@@ -7,6 +7,7 @@ import { PluginHookType } from '../../plugin';
 import { runCode } from '../services/completions';
 import { RouteCompletionsOpts } from '../types';
 import { CompletionRequest, ContextType } from '../types/completions';
+import { addActiveRequest, removeActiveRequest } from './cancel';
 
 const debug = createDebug('takumi:server:completions');
 
@@ -23,6 +24,7 @@ const CompletionRequestSchema = Type.Object({
     { minItems: 1 },
   ),
   mode: Type.String(),
+  id: Type.Optional(Type.String()),
 });
 
 const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
@@ -39,6 +41,8 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
     async (request, reply) => {
       const messages = request.body.messages;
       const mode = request.body.mode;
+      const requestId =
+        request.body.id || Math.random().toString(36).substring(2, 15);
       const lastMessage = last(messages);
       debug('Received messages:', messages);
 
@@ -65,6 +69,17 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
       reply.header('Cache-Control', 'no-cache');
       reply.header('Connection', 'keep-alive');
 
+      // 创建 AbortController 用于取消请求
+      const abortController = new AbortController();
+      addActiveRequest(requestId, abortController);
+
+      // 监听客户端断开连接
+      request.raw.on('close', () => {
+        debug(`Client disconnected for request ${requestId}`);
+        abortController.abort();
+        removeActiveRequest(requestId);
+      });
+
       try {
         await pipeDataStreamToResponse(reply.raw, {
           async execute(dataStream) {
@@ -73,24 +88,53 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
               prompt,
               dataStream,
               mode,
+              requestId,
+              signal: abortController.signal,
               // files are processed through context in plugins, only handling other types here
               attachedContexts: (lastMessage.attachedContexts || []).filter(
                 (context) => context.type !== ContextType.FILE,
               ),
             });
           },
-          onError(error) {
+          onError(error: unknown) {
+            // 检查是否是取消错误
+            if (
+              typeof error === 'object' &&
+              error !== null &&
+              'name' in error &&
+              error.name === 'AbortError'
+            ) {
+              debug(`Request ${requestId} was aborted`);
+              return 'Request was canceled';
+            }
+
             debug('Error in completion:', error);
             return error instanceof Error ? error.message : String(error);
           },
         });
-      } catch (error) {
+      } catch (error: unknown) {
+        // 检查是否是取消错误
+        if (
+          typeof error === 'object' &&
+          error !== null &&
+          'name' in error &&
+          error.name === 'AbortError'
+        ) {
+          debug(`Request ${requestId} was aborted`);
+          if (!reply.sent) {
+            reply.status(499).send({ error: 'Request canceled' });
+          }
+          return;
+        }
+
         debug('Unhandled error:', error);
         console.log('error', error);
         if (!reply.sent) {
           reply.status(500).send({ error: 'Internal server error' });
         }
         throw error;
+      } finally {
+        removeActiveRequest(requestId);
       }
     },
   );
