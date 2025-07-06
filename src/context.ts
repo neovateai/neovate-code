@@ -70,6 +70,8 @@ export class Context {
   generalInfo: Record<string, string>;
   paths: Paths;
   slashCommands: SlashCommandRegistry;
+  configManager: ConfigManager;
+
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName || PRODUCT_NAME;
@@ -85,6 +87,11 @@ export class Context {
     this.history = [];
     this.paths = opts.paths;
     this.slashCommands = opts.slashCommands;
+    this.configManager = new ConfigManager(
+      this.cwd,
+      this.productName,
+      this.argvConfig,
+    );
   }
 
   static async create(opts: CreateContextOpts) {

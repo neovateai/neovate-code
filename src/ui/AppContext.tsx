@@ -295,10 +295,18 @@ export function AppProvider({
       proceedAlwaysTool: new Set(),
     },
     // default to vscode
-    externalEditor: 'code',
+    externalEditor: context.configManager.config.externalEditor || 'code',
   };
 
   const [state, dispatch] = useReducer(appReducer, initialState);
+
+  useEffect(() => {
+    context.configManager.setConfig(
+      false,
+      'externalEditor',
+      state.externalEditor,
+    );
+  }, [state.externalEditor]);
 
   const contextValue: AppContextType = {
     state,

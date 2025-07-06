@@ -28,6 +28,7 @@ export type Config = {
   approvalMode: ApprovalMode;
   plugins: string[];
   mcpServers: Record<string, McpServerConfig>;
+  externalEditor: string;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -37,6 +38,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   plugins: [],
   mcpServers: {},
   model: 'flash',
+  externalEditor: 'code',
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
