@@ -9,7 +9,10 @@ import {
 } from '../constants';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import { useToolApproval } from '../hooks/useToolApproval';
-import DiffViewer from './DiffViewer';
+import DiffRenderer, {
+  type EditParams,
+  type WriteParams,
+} from './DiffRenderer';
 
 interface ApprovalModalSelectInputProps {
   toolName: string;
@@ -75,7 +78,9 @@ function ApprovalModalSelectInput({
 
   // Use different options for edit tool vs other tools
   const baseOptions =
-    toolName === 'edit' ? EDIT_APPROVAL_OPTIONS : APPROVAL_OPTIONS;
+    toolName === 'edit' || toolName === 'write'
+      ? EDIT_APPROVAL_OPTIONS
+      : APPROVAL_OPTIONS;
   const optionsWithToolName = baseOptions.map((option) =>
     option.value === 'approve_always_tool'
       ? { ...option, label: `Yes (always for ${toolName})` }
@@ -103,22 +108,11 @@ function ToolDetails({ toolName, params }: ToolDetailsProps) {
   const { getToolDescription } = useMessageFormatting();
   const description = getToolDescription(toolName, params);
 
-  if (toolName === 'edit') {
+  if (toolName === 'edit' || toolName === 'write') {
     return (
-      <DiffViewer
-        originalContent={params.old_string}
-        newContent={params.new_string}
-        fileName={params.file_path}
-      />
-    );
-  }
-
-  if (toolName === 'write') {
-    return (
-      <DiffViewer
-        originalContent={''}
-        newContent={params.content}
-        fileName={params.file_path}
+      <DiffRenderer
+        toolName={toolName}
+        params={params as unknown as EditParams | WriteParams}
       />
     );
   }

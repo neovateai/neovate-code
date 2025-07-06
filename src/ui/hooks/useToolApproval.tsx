@@ -3,9 +3,14 @@ import { createStableToolKey } from '../../utils/formatToolUse';
 import { useAppContext } from '../AppContext';
 import { APP_STATUS } from '../constants';
 import { openInExternalEditor } from '../utils/external-editor';
+import {
+  type EditParams,
+  type WriteParams,
+  getDiffParams,
+} from '../utils/get-diff-params';
 
 export function useToolApproval() {
-  const { state, dispatch } = useAppContext();
+  const { state, dispatch, services } = useAppContext();
 
   const approveToolUse = (approved: boolean) => {
     if (state.approval.resolve) {
@@ -91,9 +96,9 @@ export function useToolApproval() {
 
   const openWithExternalEditor = async (
     toolName: string,
-    params: Record<string, any>,
+    params: EditParams | WriteParams,
   ) => {
-    if (toolName !== 'edit') {
+    if (toolName !== 'edit' && toolName !== 'write') {
       throw new Error('External editor is only supported for edit tool');
     }
 
@@ -113,7 +118,12 @@ export function useToolApproval() {
 
       // Get current content and open in external editor
       // Use new_string if it exists (from previous modifications), otherwise old_string
-      const currentContent = params.new_string || params.old_string || '';
+      const { originalContent, newContent } = getDiffParams(
+        toolName,
+        params,
+        services.context.cwd,
+      );
+
       const fileName = params.file_path
         ? path.basename(params.file_path)
         : undefined;
@@ -122,10 +132,10 @@ export function useToolApproval() {
         : '.txt';
 
       const modifiedContent = await openInExternalEditor({
-        content: currentContent,
+        content: newContent,
         fileName,
         fileExtension,
-        originalContent: params.old_string || '',
+        originalContent,
         showDiff: true,
         editorCommand: state.externalEditor,
       });

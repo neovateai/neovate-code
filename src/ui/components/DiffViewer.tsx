@@ -30,13 +30,6 @@ const DEFAULT_TERMINAL_WIDTH = 80;
 const DEFAULT_MAX_HEIGHT = 20;
 const MAX_CONTEXT_LINES_WITHOUT_GAP = 5;
 
-function getRelativePath(filePath: string, cwd: string): string {
-  if (path.isAbsolute(filePath)) {
-    return path.relative(cwd, filePath);
-  }
-  return filePath;
-}
-
 function generateFileDiff(
   originalContent: string,
   newContent: string,
@@ -379,14 +372,7 @@ function DiffViewer({
   maxHeight = DEFAULT_MAX_HEIGHT,
   terminalWidth = DEFAULT_TERMINAL_WIDTH,
 }: DiffProps) {
-  const { services } = useAppContext();
-
   const diffLines = generateDiffLines(originalContent, newContent, fileName);
-
-  const cwd = services.context.cwd;
-  const relativeFileName = fileName
-    ? getRelativePath(fileName, cwd)
-    : undefined;
 
   if (diffLines.length === 0) {
     return (
@@ -411,15 +397,10 @@ function DiffViewer({
   }
 
   if (isNewFile(diffLines)) {
-    return RenderNewFileContent(diffLines, relativeFileName, terminalWidth);
+    return RenderNewFileContent(diffLines, fileName, terminalWidth);
   }
 
-  return RenderDiffContent(
-    diffLines,
-    relativeFileName,
-    maxHeight,
-    terminalWidth,
-  );
+  return RenderDiffContent(diffLines, fileName, maxHeight, terminalWidth);
 }
 
 export default DiffViewer;

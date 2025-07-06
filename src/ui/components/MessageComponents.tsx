@@ -4,6 +4,10 @@ import { Message } from '../AppContext';
 import { MESSAGE_ROLES, MESSAGE_TYPES, SPACING, UI_COLORS } from '../constants';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import Markdown from '../ink-markdown';
+import DiffRenderer, {
+  type EditParams,
+  type WriteParams,
+} from './DiffRenderer';
 
 interface UserMessageProps {
   message: Message;
@@ -100,6 +104,16 @@ export function ToolMessage({ message }: ToolMessageProps) {
       <Box flexDirection="column">
         <Text color={UI_COLORS.ERROR}>{result.error}</Text>
       </Box>
+    );
+  }
+
+  const params = message.content.args;
+  if (toolName === 'edit' || (toolName === 'write' && params)) {
+    return (
+      <DiffRenderer
+        toolName={toolName}
+        params={params as unknown as EditParams | WriteParams}
+      />
     );
   }
 
