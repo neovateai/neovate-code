@@ -35,7 +35,10 @@ function ApprovalModalSelectInput({
     if (item.value === 'modify_with_editor') {
       try {
         setError(null);
-        await openWithExternalEditor(toolName, params);
+        await openWithExternalEditor(
+          toolName,
+          params as unknown as EditParams | WriteParams,
+        );
         // After successful modification, the modal will show updated diff
         // User can then approve or modify again
         return;
