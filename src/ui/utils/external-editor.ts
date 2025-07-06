@@ -23,6 +23,8 @@ export interface ExternalEditorOptions {
   originalContent?: string;
   /** Whether to show diff view in supported editors (VS Code) */
   showDiff?: boolean;
+  /** Custom editor command to use instead of auto-detection */
+  editorCommand?: string;
 }
 
 /**
@@ -34,6 +36,7 @@ export async function openInExternalEditor({
   fileExtension = '.txt',
   originalContent,
   showDiff = false,
+  editorCommand,
 }: ExternalEditorOptions): Promise<string> {
   // Input validation
   if (typeof content !== 'string') {
@@ -58,7 +61,9 @@ export async function openInExternalEditor({
 
   try {
     // Get editor command
-    const editor = getEditorCommand();
+    const editor = editorCommand
+      ? parseEditorCommand(editorCommand)
+      : getEditorCommand();
 
     if (
       supportsDiffView(editor.command) &&
@@ -263,7 +268,7 @@ function isVisualEditor(editorCommand: string): boolean {
  * Check if an editor supports diff view
  */
 function supportsDiffView(editorCommand: string): boolean {
-  return ['code', 'code-insiders'].includes(editorCommand);
+  return ['code', 'code-insiders', 'cursor', 'zed'].includes(editorCommand);
 }
 
 /**

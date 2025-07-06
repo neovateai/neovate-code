@@ -113,6 +113,16 @@ function ToolDetails({ toolName, params }: ToolDetailsProps) {
     );
   }
 
+  if (toolName === 'write') {
+    return (
+      <DiffViewer
+        originalContent={''}
+        newContent={params.content}
+        fileName={params.file_path}
+      />
+    );
+  }
+
   return (
     <>
       <Box marginY={1}>

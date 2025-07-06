@@ -57,6 +57,9 @@ export function useMessageFormatting() {
   };
 
   const getCurrentStatusMessage = (): string => {
+    if (state.isSlashCommandJSXVisible) {
+      return 'Please complete the current operation before continuing...';
+    }
     const isPlan = state.stage === 'plan';
     return getStatusMessage(state.status, isPlan, state.currentExecutingTool);
   };

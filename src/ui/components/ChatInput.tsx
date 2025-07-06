@@ -20,6 +20,7 @@ interface ChatInputProps {
 
 export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const { state } = useAppContext();
+  const isSlashCommandJSXVisible = state.isSlashCommandJSXVisible;
   const {
     processUserInput,
     chatInputUp,
@@ -47,16 +48,23 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const isToolExecuting = state.status === APP_STATUS.TOOL_EXECUTING;
   const isFailed = state.status === APP_STATUS.FAILED;
   const isCancelled = state.status === APP_STATUS.CANCELLED;
-  const isWaitingForInput = isProcessing || isToolApproved || isToolExecuting;
+  const isWaitingForInput =
+    isProcessing ||
+    isToolApproved ||
+    isToolExecuting ||
+    isSlashCommandJSXVisible;
 
   useInput((_, key) => {
     if (key.escape) {
-      if (isWaitingForInput) {
+      if (isWaitingForInput && !isSlashCommandJSXVisible) {
         cancelQuery();
       }
       return;
     }
     if (key.upArrow) {
+      if (isSlashCommandJSXVisible) {
+        return; // 当有活跃的 SlashCommandJSX 时禁用上键
+      }
       if (isVisible) {
         navigatePrevious(); // 切换suggestion
       } else {
@@ -82,6 +90,9 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       return;
     }
     if (key.downArrow) {
+      if (isSlashCommandJSXVisible) {
+        return; // 当有活跃的 SlashCommandJSX 时禁用下键
+      }
       if (isVisible) {
         navigateNext(); // 切换suggestion
       } else {

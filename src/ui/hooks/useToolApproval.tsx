@@ -2,7 +2,7 @@ import path from 'path';
 import { createStableToolKey } from '../../utils/formatToolUse';
 import { useAppContext } from '../AppContext';
 import { APP_STATUS } from '../constants';
-import { openInExternalEditor } from '../utils/externalEditor';
+import { openInExternalEditor } from '../utils/external-editor';
 
 export function useToolApproval() {
   const { state, dispatch } = useAppContext();
@@ -127,6 +127,7 @@ export function useToolApproval() {
         fileExtension,
         originalContent: params.old_string || '',
         showDiff: true,
+        editorCommand: state.externalEditor,
       });
 
       // Update params with modified content

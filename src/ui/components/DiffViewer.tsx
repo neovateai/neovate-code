@@ -1,7 +1,9 @@
 import crypto from 'crypto';
 import { createTwoFilesPatch } from 'diff';
 import { Box, Text } from 'ink';
+import path from 'path';
 import React from 'react';
+import { useAppContext } from '../AppContext';
 
 interface DiffProps {
   originalContent: string;
@@ -28,6 +30,13 @@ const DEFAULT_TERMINAL_WIDTH = 80;
 const DEFAULT_MAX_HEIGHT = 20;
 const MAX_CONTEXT_LINES_WITHOUT_GAP = 5;
 
+function getRelativePath(filePath: string, cwd: string): string {
+  if (path.isAbsolute(filePath)) {
+    return path.relative(cwd, filePath);
+  }
+  return filePath;
+}
+
 function generateFileDiff(
   originalContent: string,
   newContent: string,
@@ -53,6 +62,21 @@ function generateDiffStats(diffContent: string): DiffStats {
     if (line.startsWith('+') && !line.startsWith('+++')) {
       linesAdded += 1;
     } else if (line.startsWith('-') && !line.startsWith('---')) {
+      linesRemoved += 1;
+    }
+  }
+
+  return { linesAdded, linesRemoved };
+}
+
+function calculateStatsFromParsedLines(parsedLines: DiffLine[]): DiffStats {
+  let linesAdded = 0;
+  let linesRemoved = 0;
+
+  for (const line of parsedLines) {
+    if (line.type === 'add') {
+      linesAdded += 1;
+    } else if (line.type === 'del') {
       linesRemoved += 1;
     }
   }
@@ -148,7 +172,7 @@ function isNewFile(parsedLines: DiffLine[]): boolean {
   );
 }
 
-function renderNewFileContent(
+function RenderNewFileContent(
   parsedLines: DiffLine[],
   fileName: string | undefined,
   terminalWidth: number,
@@ -192,7 +216,7 @@ function renderNewFileContent(
   );
 }
 
-function renderDiffContent(
+function RenderDiffContent(
   parsedLines: DiffLine[],
   fileName: string | undefined,
   maxHeight: number,
@@ -226,13 +250,7 @@ function renderDiffContent(
     baseIndentation = 0;
   }
 
-  const stats = generateDiffStats(
-    generateFileDiff(
-      parsedLines[0]?.content || '',
-      parsedLines[0]?.content || '',
-      fileName || 'file',
-    ),
-  );
+  const stats = calculateStatsFromParsedLines(parsedLines);
 
   const key = fileName
     ? `diff-box-${fileName}`
@@ -354,14 +372,21 @@ function renderDiffContent(
   );
 }
 
-export function DiffViewer({
+function DiffViewer({
   originalContent,
   newContent,
   fileName,
   maxHeight = DEFAULT_MAX_HEIGHT,
   terminalWidth = DEFAULT_TERMINAL_WIDTH,
 }: DiffProps) {
+  const { services } = useAppContext();
+
   const diffLines = generateDiffLines(originalContent, newContent, fileName);
+
+  const cwd = services.context.cwd;
+  const relativeFileName = fileName
+    ? getRelativePath(fileName, cwd)
+    : undefined;
 
   if (diffLines.length === 0) {
     return (
@@ -386,10 +411,15 @@ export function DiffViewer({
   }
 
   if (isNewFile(diffLines)) {
-    return renderNewFileContent(diffLines, fileName, terminalWidth);
+    return RenderNewFileContent(diffLines, relativeFileName, terminalWidth);
   }
 
-  return renderDiffContent(diffLines, fileName, maxHeight, terminalWidth);
+  return RenderDiffContent(
+    diffLines,
+    relativeFileName,
+    maxHeight,
+    terminalWidth,
+  );
 }
 
 export default DiffViewer;

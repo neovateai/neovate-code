@@ -55,6 +55,7 @@ export interface AppState {
   // Modal states
   planModal: { text: string } | null;
   slashCommandJSX: ReactNode | null;
+  isSlashCommandJSXVisible: boolean;
 
   // Approval system
   approval: {
@@ -72,6 +73,9 @@ export interface AppState {
     proceedAlways: Set<string>;
     proceedAlwaysTool: Set<string>;
   };
+
+  // External editor settings
+  externalEditor: string;
 }
 
 // Action types
@@ -85,6 +89,7 @@ export type AppAction =
   | { type: 'CLEAR_MESSAGES' }
   | { type: 'SET_PLAN_MODAL'; payload: { text: string } | null }
   | { type: 'SET_SLASH_COMMAND_JSX'; payload: ReactNode | null }
+  | { type: 'SET_SLASH_COMMAND_JSX_VISIBLE'; payload: boolean }
   | { type: 'ADD_HISTORY'; payload: string }
   | { type: 'CLEAR_HISTORY' }
   | { type: 'SET_HISTORY_INDEX'; payload: number | null }
@@ -112,7 +117,8 @@ export type AppAction =
       type: 'REMOVE_APPROVAL_MEMORY';
       payload: { type: 'once' | 'always' | 'tool'; key: string };
     }
-  | { type: 'CLEAR_APPROVAL_MEMORY' };
+  | { type: 'CLEAR_APPROVAL_MEMORY' }
+  | { type: 'SET_EXTERNAL_EDITOR'; payload: string };
 
 // Reducer
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -143,6 +149,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'SET_SLASH_COMMAND_JSX':
       return { ...state, slashCommandJSX: action.payload };
+
+    case 'SET_SLASH_COMMAND_JSX_VISIBLE':
+      return { ...state, isSlashCommandJSXVisible: action.payload };
 
     case 'ADD_HISTORY':
       return { ...state, history: [...state.history, action.payload] };
@@ -214,6 +223,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
         },
       };
 
+    case 'SET_EXTERNAL_EDITOR':
+      return {
+        ...state,
+        externalEditor: action.payload,
+      };
     default:
       return state;
   }
@@ -266,6 +280,7 @@ export function AppProvider({
     currentExecutingTool: null,
     planModal: null,
     slashCommandJSX: null,
+    isSlashCommandJSXVisible: false,
     approval: {
       pending: false,
       callId: null,
@@ -279,6 +294,8 @@ export function AppProvider({
       proceedAlways: new Set(),
       proceedAlwaysTool: new Set(),
     },
+    // default to vscode
+    externalEditor: 'code',
   };
 
   const [state, dispatch] = useReducer(appReducer, initialState);
