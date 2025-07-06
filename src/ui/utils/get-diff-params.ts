@@ -20,6 +20,17 @@ interface DiffResult {
   fileName: string;
 }
 
+interface WriteResult {
+  success: boolean;
+  message: string;
+  data: {
+    filePath: string;
+    oldContent: string;
+    content: string;
+    type: 'replace' | 'add';
+  };
+}
+
 function getRelativePath(filePath: string, cwd: string): string {
   return path.isAbsolute(filePath) ? path.relative(cwd, filePath) : filePath;
 }
@@ -28,6 +39,7 @@ export function getDiffParams(
   toolName: string,
   params: EditParams | WriteParams,
   cwd: string,
+  result?: Record<string, any>,
 ): DiffResult {
   const { file_path } = params;
   const relativeFilePath = getRelativePath(file_path, cwd);
@@ -41,6 +53,16 @@ export function getDiffParams(
     };
   }
   if (toolName === 'write') {
+    if (result?.success) {
+      const writeResult = result as WriteResult;
+      return {
+        originalContent: writeResult.data.oldContent || '',
+        newContent: writeResult.data.content,
+        fileName: relativeFilePath,
+      };
+    }
+
+    // approve 确认
     const { content, file_path } = params as WriteParams;
     const fullFilePath = path.isAbsolute(file_path)
       ? file_path

@@ -113,6 +113,7 @@ export function ToolMessage({ message }: ToolMessageProps) {
       <DiffRenderer
         toolName={toolName}
         params={params as unknown as EditParams | WriteParams}
+        result={result}
       />
     );
   }
