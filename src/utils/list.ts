@@ -1,5 +1,6 @@
 import fs from 'fs';
 import { basename, join, relative, sep } from 'path';
+import { isIgnored } from './gitignore';
 
 export const MAX_FILES = 1000;
 export const TRUNCATED_MESSAGE = `There are more than ${MAX_FILES} files in the repository. Use the LS tool (passing a specific path), Bash tool, and other tools to explore nested directories. The first ${MAX_FILES} files and directories are included below:\n\n`;
@@ -30,10 +31,17 @@ export function listDirectory(initialPath: string, cwd: string) {
       if (child.name === 'node_modules') {
         continue;
       }
+
+      const childPath = join(path, child.name);
+
+      // Skip if ignored by gitignore
+      if (isIgnored(childPath, cwd)) {
+        continue;
+      }
+
       if (child.isDirectory()) {
-        queue.push(join(path, child.name) + sep);
+        queue.push(childPath + sep);
       } else {
-        const childPath = join(path, child.name);
         if (skip(childPath)) {
           continue;
         }
@@ -52,6 +60,34 @@ function skip(path: string) {
     return true;
   }
   return false;
+}
+
+export function listRootDirectory(rootPath: string): string[] {
+  const results: string[] = [];
+  try {
+    const children = fs.readdirSync(rootPath, { withFileTypes: true });
+    for (const child of children) {
+      if (child.name === 'node_modules' || child.name.startsWith('.')) {
+        continue;
+      }
+
+      const childPath = join(rootPath, child.name);
+
+      // Skip if ignored by gitignore
+      if (isIgnored(childPath, rootPath)) {
+        continue;
+      }
+
+      if (child.isDirectory()) {
+        results.push(child.name + sep);
+      } else {
+        results.push(child.name);
+      }
+    }
+  } catch (e) {
+    console.error(`Error listing root directory: ${rootPath}`, e);
+  }
+  return results;
 }
 
 type TreeNode = {
