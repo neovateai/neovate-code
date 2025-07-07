@@ -14,6 +14,14 @@
     "enable": "enable",
     "disable": "disable"
   },
+  "markdown": {
+    "copyCode": "Copy Code",
+    "copySuccess": "Code copied to clipboard",
+    "copyFailed": "Copy failed"
+  },
+  "message": {
+    "toolCalling": "Tool calling..."
+  },
   "sidebar": {
     "newConversation": "New Conversation",
     "conversations": "Conversations",

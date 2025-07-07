@@ -19,7 +19,11 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
   const { t } = useTranslation();
   const { state, toolName, args, step, result } = message;
 
-  if (result?.success === false) {
+  if (
+    result?.success === false ||
+    (typeof result === 'string' &&
+      result === 'Tool execution was denied by user.') // 后端类型暂未统一，需要hack
+  ) {
     return <FailRender message={message} />;
   }
 
