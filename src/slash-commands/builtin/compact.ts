@@ -25,11 +25,13 @@ export const compactCommand: LocalJSXCommand = {
       const isPlan = state.stage === APP_STAGE.PLAN;
       const service = isPlan ? services.planService : services.service;
       if (service.history.length === 0) {
+        debug('skipping compacting, history length is 0');
         return null;
       }
 
       // Skip compacting if less than 10 messages
       if (service.history.length < 10) {
+        debug('skipping compacting, history length is less than 10');
         return null;
       }
 
@@ -42,7 +44,6 @@ export const compactCommand: LocalJSXCommand = {
             modelProvider: services.context.getModelProvider(),
           });
           service.history.length = 0;
-          debug('summary', summary);
           onDone(summary);
         };
         run();
