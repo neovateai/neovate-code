@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { createTwoFilesPatch } from 'diff';
 import { Box, Text } from 'ink';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 interface DiffProps {
   originalContent: string;
@@ -370,7 +370,10 @@ function DiffViewer({
   maxHeight = DEFAULT_MAX_HEIGHT,
   terminalWidth = DEFAULT_TERMINAL_WIDTH,
 }: DiffProps) {
-  const diffLines = generateDiffLines(originalContent, newContent, fileName);
+  const diffLines = useMemo(
+    () => generateDiffLines(originalContent, newContent, fileName),
+    [originalContent, newContent, fileName],
+  );
 
   if (diffLines.length === 0) {
     return (

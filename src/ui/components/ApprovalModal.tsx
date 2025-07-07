@@ -10,6 +10,11 @@ import {
 import { useExternalEditor } from '../hooks/useExternalEditor';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import { useToolApproval } from '../hooks/useToolApproval';
+import {
+  type SelectOption,
+  isEditParams,
+  isWriteParams,
+} from '../utils/type-guards';
 import DiffRenderer, {
   type EditParams,
   type WriteParams,
@@ -17,7 +22,7 @@ import DiffRenderer, {
 
 interface ApprovalModalSelectInputProps {
   toolName: string;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
 }
 
 function ApprovalModalSelectInput({
@@ -29,14 +34,15 @@ function ApprovalModalSelectInput({
     useExternalEditor();
   const [error, setError] = React.useState<string | null>(null);
 
-  const handleSelect = async (item: any) => {
+  const handleSelect = async (item: SelectOption) => {
     if (item.value === 'modify_with_editor') {
       try {
         setError(null);
-        await openWithExternalEditor(
-          toolName,
-          params as unknown as EditParams | WriteParams,
-        );
+        if (isEditParams(params) || isWriteParams(params)) {
+          await openWithExternalEditor(toolName, params);
+        } else {
+          throw new Error('Invalid parameters for external editor');
+        }
         // After successful modification, the modal will show updated diff
         // User can then approve or modify again
         return;
@@ -86,7 +92,7 @@ function ApprovalModalSelectInput({
     option.value === 'approve_always_tool'
       ? { ...option, label: `Yes (always for ${toolName})` }
       : option,
-  ) as any[];
+  );
 
   return (
     <>
@@ -102,7 +108,7 @@ function ApprovalModalSelectInput({
 
 interface ToolDetailsProps {
   toolName: string;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
 }
 
 function ToolDetails({ toolName, params }: ToolDetailsProps) {
@@ -110,12 +116,10 @@ function ToolDetails({ toolName, params }: ToolDetailsProps) {
   const description = getToolDescription(toolName, params);
 
   if (toolName === 'edit' || toolName === 'write') {
-    return (
-      <DiffRenderer
-        toolName={toolName}
-        params={params as unknown as EditParams | WriteParams}
-      />
-    );
+    if (isEditParams(params) || isWriteParams(params)) {
+      return <DiffRenderer toolName={toolName} params={params} />;
+    }
+    return <Text color={UI_COLORS.ERROR}>Invalid edit/write parameters</Text>;
   }
 
   return (
