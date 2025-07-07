@@ -24,7 +24,7 @@ export interface ExternalEditorOptions {
   /** Whether to show diff view in supported editors (VS Code) */
   showDiff?: boolean;
   /** Custom editor command to use instead of auto-detection */
-  editorCommand?: string;
+  editorCommand: string;
 }
 
 /**
@@ -61,15 +61,9 @@ export async function openInExternalEditor({
 
   try {
     // Get editor command
-    const editor = editorCommand
-      ? parseEditorCommand(editorCommand)
-      : getEditorCommand();
+    const editor = parseEditorCommand(editorCommand);
 
-    if (
-      supportsDiffView(editor.command) &&
-      showDiff &&
-      originalContent !== undefined
-    ) {
+    if (showDiff && originalContent !== undefined) {
       // For VS Code, create both original and new files for diff comparison
       const originalFileName = `${baseFileName}-original-${timestamp}${extension}`;
       const originalFilePath = path.join(tempDir, originalFileName);
@@ -148,11 +142,7 @@ export async function openInExternalEditor({
     }
 
     // Remove header if it was added
-    if (
-      !supportsDiffView(editor.command) &&
-      showDiff &&
-      originalContent !== undefined
-    ) {
+    if (showDiff && originalContent !== undefined) {
       const headerEnd = '// Remove this header if desired.\n\n';
       const headerIndex = modifiedContent.indexOf(headerEnd);
       if (headerIndex !== -1) {
@@ -181,92 +171,35 @@ export async function openInExternalEditor({
 }
 
 /**
- * Get the editor command based on environment variables and platform
- */
-function getEditorCommand(): { command: string; args: string[] } {
-  // Always try VS Code first if available (most common case)
-  if (commandExists('code')) {
-    return { command: 'code', args: ['--wait'] };
-  }
-
-  // Check environment variables
-  const visualEditor = process.env.VISUAL;
-  const editor = process.env.EDITOR;
-
-  if (visualEditor) {
-    return parseEditorCommand(visualEditor);
-  }
-
-  if (editor) {
-    return parseEditorCommand(editor);
-  }
-
-  // Try other popular visual editors
-  const visualEditors = [
-    'code-insiders', // VS Code Insiders
-    'atom',
-    'subl', // Sublime Text
-    'gedit',
-  ];
-
-  for (const editorName of visualEditors) {
-    if (commandExists(editorName)) {
-      const result =
-        editorName === 'code-insiders'
-          ? { command: editorName, args: ['--wait'] }
-          : { command: editorName, args: [] };
-
-      return result;
-    }
-  }
-
-  // Platform-specific defaults as fallback
-  const platform = os.platform();
-
-  switch (platform) {
-    case 'darwin': // macOS
-      return { command: 'open', args: ['-a', 'TextEdit', '-W'] }; // Force TextEdit specifically
-    case 'win32': // Windows
-      return { command: 'notepad', args: [] };
-    default: // Linux and others
-      // Try terminal editors as last resort
-      const terminalEditors = ['nano', 'vim', 'vi', 'emacs'];
-      for (const editorName of terminalEditors) {
-        if (commandExists(editorName)) {
-          return { command: editorName, args: [] };
-        }
-      }
-      throw new Error(
-        'No suitable editor found. Please set EDITOR or VISUAL environment variable.',
-      );
-  }
-}
-
-/**
  * Parse editor command string into command and args
  */
-function parseEditorCommand(editorString: string): {
+function parseEditorCommand(editorCommand: string): {
   command: string;
   args: string[];
 } {
-  const parts = editorString.trim().split(/\s+/);
-  const command = parts[0];
-  const args = parts.slice(1);
-  return { command, args };
+  if (
+    ['code', 'code-insiders', 'cursor', 'surf', 'trae', 'codium'].includes(
+      editorCommand,
+    )
+  ) {
+    return { command: editorCommand, args: ['--wait'] };
+  }
+  return { command: editorCommand, args: [] };
 }
 
 /**
  * Check if an editor is a visual (GUI) editor
  */
 function isVisualEditor(editorCommand: string): boolean {
-  return ['code', 'code-insiders', 'cursor', 'zed'].includes(editorCommand);
-}
-
-/**
- * Check if an editor supports diff view
- */
-function supportsDiffView(editorCommand: string): boolean {
-  return ['code', 'code-insiders', 'cursor', 'zed'].includes(editorCommand);
+  return [
+    'code',
+    'code-insiders',
+    'cursor',
+    'zed',
+    'surf',
+    'trae',
+    'codium',
+  ].includes(editorCommand);
 }
 
 /**

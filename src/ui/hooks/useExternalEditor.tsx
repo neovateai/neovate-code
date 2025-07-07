@@ -16,6 +16,7 @@ type EditorType =
   | 'codium'
   | 'wstorm'
   | 'trae'
+  | 'zed'
   | 'no_support';
 
 const VSCODE_EDITORS = {
@@ -151,6 +152,10 @@ function getTerminal(): EditorType {
   // JetBrains IDEs
   if (bundleId.includes('webstorm') || terminal === 'JetBrains-JediTerm') {
     return 'wstorm';
+  }
+
+  if (terminal === 'zed') {
+    return 'zed';
   }
 
   return NO_SUPPORT;
