@@ -24,7 +24,7 @@ interface Props {
   virtual?: boolean;
   onSelect?: (firstKey: string, itemValue: string) => void;
   /** 返回值会覆盖默认的二级列表 */
-  onSearch?: (firstKey: string, text: string) => SuggestionItem[] | undefined;
+  onSearch?: (firstKey: string, text: string) => SuggestionItem[] | void;
 }
 
 const useStyles = createStyles(({ css, token }) => {
@@ -48,6 +48,7 @@ const useStyles = createStyles(({ css, token }) => {
       align-items: center;
       justify-content: space-between;
       width: 100%;
+      column-gap: 12px;
     `,
     listItemContentMain: css`
       display: flex;
@@ -58,6 +59,7 @@ const useStyles = createStyles(({ css, token }) => {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding: 4px 0;
     `,
     listInput: css`
       margin: 0 4px;
@@ -65,6 +67,7 @@ const useStyles = createStyles(({ css, token }) => {
     list: css`
       max-height: 500px;
       overflow-y: auto;
+      width: 400px;
     `,
     popup: css`
       background-color: ${token.colorBgElevated};
@@ -89,6 +92,7 @@ const SuggesionList = (props: Props) => {
   const popupRef = useRef<HTMLDivElement>(null);
 
   const firstLevelList = useMemo(() => items, [items]);
+
   const secondLevelList = useMemo(() => {
     if (searchResults) {
       return searchResults;
@@ -99,11 +103,12 @@ const SuggesionList = (props: Props) => {
     }
   }, [items, searchResults, selectedFirstKey]);
 
-  const clearSearch = () => {
+  const clearSearch = (targetFirstKey: string) => {
     if (inputRef.current?.input) {
       inputRef.current.input.value = '';
     }
     setSearchResults(undefined);
+    onSearch?.(targetFirstKey, '');
   };
 
   const renderItem = (item: SuggestionItem) => {
@@ -116,7 +121,7 @@ const SuggesionList = (props: Props) => {
             onSelect?.(selectedFirstKey, item.value);
             setSelectedFirstKey(undefined);
           } else {
-            clearSearch();
+            clearSearch(item.value);
             setSelectedFirstKey(item.value);
           }
         }}
@@ -148,7 +153,6 @@ const SuggesionList = (props: Props) => {
           <Input
             ref={inputRef}
             className={styles.listInput}
-            size="small"
             variant="underlined"
             autoFocus
             onChange={(e) => {
@@ -156,7 +160,11 @@ const SuggesionList = (props: Props) => {
                 selectedFirstKey,
                 e.target.value,
               );
-              setSearchResults(searchResults);
+              if (searchResults) {
+                setSearchResults(searchResults);
+              } else {
+                setSearchResults(undefined);
+              }
             }}
             placeholder={t('common.placeholder')}
           />
@@ -167,8 +175,6 @@ const SuggesionList = (props: Props) => {
     }
   }, [onSearch, selectedFirstKey]);
 
-  // TODO 最大宽度xx，超出时xxx
-
   // auto close popup when lost focus
   useEffect(() => {
     if (!open) return;
@@ -177,6 +183,7 @@ const SuggesionList = (props: Props) => {
         popupRef.current &&
         !popupRef.current.contains(event.target as Node)
       ) {
+        setSelectedFirstKey(undefined);
         onOpenChange?.(false);
       }
     }
@@ -190,7 +197,8 @@ const SuggesionList = (props: Props) => {
     <Dropdown
       open={open}
       onOpenChange={onOpenChange}
-      placement="top"
+      placement="topRight"
+      // destroyOnHidden
       popupRender={() => (
         <div className={styles.popup} ref={popupRef}>
           {ListHeader}

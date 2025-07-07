@@ -21,9 +21,6 @@ const useStyle = createStyles(({ css, token }) => {
       display: flex;
       align-items: center;
     `,
-    input: css`
-      /* margin-right: 8px; */
-    `,
     icon: css`
       font-size: 14px;
       height: 22px;
@@ -50,7 +47,7 @@ const AddContext = () => {
       onOpenChange={(open) => setOpenPopup(open)}
       items={defaultSuggestions}
       onSearch={(type, text) => {
-        return handleSearch(type as ContextType, text);
+        handleSearch(type as ContextType, text);
       }}
       onSelect={(type, itemValue) => {
         setOpenPopup(false);

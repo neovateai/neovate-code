@@ -1,6 +1,7 @@
 import { ArrowRightOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { Suggestion } from '@ant-design/x';
 import { type GetProp } from 'antd';
+import { debounce } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import DevFileIcon from '@/components/DevFileIcon';
@@ -14,7 +15,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
   const { fileList } = useSnapshot(state);
 
   useEffect(() => {
-    actions.getFileList();
+    actions.getFileList({ maxSize: 20 });
   }, []);
 
   const fileSuggestions = useMemo(() => {
@@ -62,16 +63,16 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     [ContextType.FILE]: getOriginalFile,
   };
 
-  // TODO 服务端搜索
-  const handleSearch = (type: ContextType, text: string) => {
-    const targetSuggestions = defaultSuggestions.find(
-      (s) => s.value === type,
-    )?.children;
-
-    return targetSuggestions?.filter((suggestion) =>
-      suggestion.value.includes(text),
-    );
+  const searchFunctionMap: { [key in ContextType]?: (text: string) => void } = {
+    [ContextType.FILE]: (text) =>
+      actions.getFileList({ maxSize: 20, searchString: text }),
   };
+
+  const handleSearch = debounce((type: ContextType, text: string) => {
+    const targetFunction = searchFunctionMap[type];
+
+    targetFunction?.(text);
+  }, 800);
 
   const getOriginalContextByValue = (type: ContextType, value: string) => {
     const config = AI_CONTEXT_NODE_CONFIGS.find(
