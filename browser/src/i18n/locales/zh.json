@@ -304,5 +304,9 @@
     "loading": "加载中...",
     "error": "错误",
     "preparingDiff": "准备Diff..."
+  },
+  "copy": {
+    "copySuccess": "复制成功",
+    "copyFailed": "复制失败"
   }
 }

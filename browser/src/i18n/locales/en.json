@@ -19,11 +19,6 @@
     "dislikeSuccess": "Thank you for your feedback. We will improve our responses.",
     "submitError": "Failed to submit feedback. Please try again."
   },
-  "markdown": {
-    "copyCode": "Copy Code",
-    "copySuccess": "Code copied to clipboard",
-    "copyFailed": "Copy failed"
-  },
   "message": {
     "toolCalling": "Tool calling..."
   },
@@ -312,5 +307,9 @@
     "loading": "Loading...",
     "error": "Error",
     "preparingDiff": "Preparing diff..."
+  },
+  "copy": {
+    "copySuccess": "Copy successfully",
+    "copyFailed": "Copy failed"
   }
 }
