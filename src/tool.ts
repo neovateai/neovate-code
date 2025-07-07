@@ -1,4 +1,5 @@
 import { FunctionTool, Tool } from '@openai/agents';
+import { isClaude } from './utils/model';
 
 export type ApprovalContext = {
   toolName: string;
@@ -120,7 +121,7 @@ export class Tools {
   }
 
   getToolsPrompt(model: string) {
-    const isClaude = model.includes('sonnet');
+    const isClaudeModel = isClaude(model);
     const availableTools = `
   ${Object.entries(this.tools)
     .map(([key, tool]) => {
@@ -142,7 +143,7 @@ You only have access to the tools provided below. You can only use one tool per 
 
 ## Tool Use Formatting
 Tool use is formatted using XML-style tags. The tool use is enclosed in <use_tool></use_tool> and each parameter is similarly enclosed within its own set of tags. ${
-      isClaude
+      isClaudeModel
         ? `Parameters need to be enclosed within <arguments></arguments> tags.
 Here's the structure:
 <use_tool>
