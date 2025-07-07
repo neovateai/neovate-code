@@ -12,7 +12,7 @@ export default function FailRender({ message }: { message: ToolMessage }) {
   };
 
   return (
-    <div className="text-sm rounded-md overflow-hidden bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700/50">
+    <div className="text-sm rounded-md overflow-hidden bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700/50 my-2">
       <div
         className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700/30 transition-colors duration-200"
         onClick={handleToggle}

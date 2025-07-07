@@ -27,7 +27,7 @@ export default function FetchRender({ message }: { message?: ToolMessage }) {
   };
 
   return (
-    <div className="text-sm rounded-md overflow-hidden mb-2">
+    <div className="text-sm rounded-md overflow-hidden my-2">
       <div
         className="flex items-center gap-2 cursor-pointer"
         onClick={toggleExpand}

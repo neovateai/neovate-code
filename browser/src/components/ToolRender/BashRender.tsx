@@ -46,7 +46,7 @@ export default function BashRender({ message }: { message?: ToolMessage }) {
   };
 
   return (
-    <div className="text-sm bg-gray-800 rounded-md overflow-hidden min-w-80">
+    <div className="text-sm bg-gray-800 rounded-md overflow-hidden min-w-80 my-2">
       <div
         className="flex items-center gap-2 p-2 bg-gray-700 cursor-pointer"
         onClick={toggleExpand}

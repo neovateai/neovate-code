@@ -23,4 +23,6 @@ export interface IGrepToolResult {
 
 export interface IReadToolResult {
   totalLines?: number;
+  filePath?: string;
+  content?: string;
 }

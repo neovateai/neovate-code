@@ -15,7 +15,7 @@ export default function ToolApprovalResult({
   const { t } = useTranslation();
   const { approved, toolName } = message;
 
-  const baseClasses = 'mx-0 my-2 rounded-lg p-2 text-sm';
+  const baseClasses = 'mx-0 rounded-lg p-2 text-sm my-4';
   const approvedClasses = 'border border-green-200 bg-green-50 text-green-700';
   const deniedClasses = 'border border-red-200 bg-red-50 text-red-700';
 
