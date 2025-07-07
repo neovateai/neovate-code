@@ -183,6 +183,10 @@ const SuggesionList = (props: Props) => {
         popupRef.current &&
         !popupRef.current.contains(event.target as Node)
       ) {
+        if (selectedFirstKey) {
+          clearSearch(selectedFirstKey);
+        }
+
         setSelectedFirstKey(undefined);
         onOpenChange?.(false);
       }

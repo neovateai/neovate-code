@@ -72,7 +72,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     const targetFunction = searchFunctionMap[type];
 
     targetFunction?.(text);
-  }, 800);
+  }, 500);
 
   const getOriginalContextByValue = (type: ContextType, value: string) => {
     const config = AI_CONTEXT_NODE_CONFIGS.find(
