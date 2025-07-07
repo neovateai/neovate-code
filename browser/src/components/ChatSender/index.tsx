@@ -17,30 +17,38 @@ import SenderFooter from './SenderFooter';
 import SenderFooterBoard from './SenderFooterBoard';
 import SenderHeader from './SenderHeader';
 
-const useStyle = createStyles(
-  ({ token, css }, { maxWidth }: { maxWidth: number }) => {
-    return {
-      sender: css`
-        width: 100%;
-        max-width: ${maxWidth}px;
-        margin: 0 auto;
-      `,
-      speechButton: css`
-        font-size: 18px;
-        color: ${token.colorText} !important;
-      `,
-      senderPrompt: css`
-        width: 100%;
-        max-width: ${maxWidth}px;
-        margin: 0 auto;
-        color: ${token.colorText};
-      `,
-    };
-  },
-);
+const useStyle = createStyles(({ token, css }) => {
+  const maxWidth = 800;
+  return {
+    sender: css`
+      width: 100%;
+      max-width: ${maxWidth}px;
+      margin: 0 auto;
+    `,
+    senderRoot: css`
+      margin: 0;
+      max-width: none;
+    `,
+    suggestion: css`
+      max-width: ${maxWidth}px;
+      margin: auto;
+      width: 100%;
+    `,
+    speechButton: css`
+      font-size: 18px;
+      color: ${token.colorText} !important;
+    `,
+    senderPrompt: css`
+      width: 100%;
+      max-width: ${maxWidth}px;
+      margin: 0 auto;
+      color: ${token.colorText};
+    `,
+  };
+});
 
 const ChatSender: React.FC = () => {
-  const { styles } = useStyle({ maxWidth: 800 });
+  const { styles } = useStyle();
   const { loading, stop, onQuery } = useChatState();
   const { t } = useTranslation();
   const [insertNodePosition, setInsertNodePosition] = useState(0);
@@ -115,11 +123,12 @@ const ChatSender: React.FC = () => {
         }}
       >
         <SuggesionList
+          className={styles.suggestion}
           open={openPopup}
           onOpenChange={(open) => setOpenPopup(open)}
           items={defaultSuggestions}
           onSearch={(type, text) => {
-            handleSearch(type as ContextType, text);
+            return handleSearch(type as ContextType, text);
           }}
           onSelect={(type, itemValue) => {
             setOpenPopup(false);
@@ -138,6 +147,7 @@ const ChatSender: React.FC = () => {
         >
           <Sender
             className={styles.sender}
+            rootClassName={styles.senderRoot}
             header={<SenderHeader />}
             footer={({ components }) => {
               return <SenderFooter components={components} />;

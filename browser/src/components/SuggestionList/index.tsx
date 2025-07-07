@@ -17,6 +17,7 @@ export type SuggestionItem = {
 };
 
 interface Props {
+  className?: string;
   children?: React.ReactElement;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -81,7 +82,8 @@ const useStyles = createStyles(({ css, token }) => {
 });
 
 const SuggesionList = (props: Props) => {
-  const { children, onSearch, onOpenChange, onSelect, open, items } = props;
+  const { children, onSearch, onOpenChange, onSelect, open, items, className } =
+    props;
 
   const { t } = useTranslation();
   const { styles } = useStyles();
@@ -199,6 +201,7 @@ const SuggesionList = (props: Props) => {
 
   return (
     <Dropdown
+      className={className}
       open={open}
       onOpenChange={onOpenChange}
       placement="topRight"
