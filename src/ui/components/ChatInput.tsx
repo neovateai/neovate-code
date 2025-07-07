@@ -136,11 +136,20 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const handleSuggestionAccept = () => {
     if (isVisible) {
       const completedCommand = getCompletedCommand();
-      setValue('');
-      // 立即执行补全的命令
-      processUserInput(completedCommand.trim(), setSlashCommandJSX).catch(
-        () => {},
-      );
+      const fileQuery = extractFileQuery(value);
+
+      // In file mode (@), just complete the suggestion like Tab
+      if (fileQuery.hasFileQuery) {
+        setValue(completedCommand);
+        setCursorPosition(completedCommand.length);
+        setVisible(false);
+      } else {
+        // In slash command mode, execute the command
+        setValue('');
+        processUserInput(completedCommand.trim(), setSlashCommandJSX).catch(
+          () => {},
+        );
+      }
     }
   };
 
