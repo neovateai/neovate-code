@@ -64,7 +64,7 @@ When making changes to files, first understand the file's code conventions. Mimi
 # Code style
 - IMPORTANT: DO NOT ADD ***ANY*** COMMENTS unless asked
 
-${!useFC ? options.tools.getToolsPrompt() : ''}
+${!useFC ? options.tools.getToolsPrompt(options.model) : ''}
 `.trim();
     },
     model: options.model,

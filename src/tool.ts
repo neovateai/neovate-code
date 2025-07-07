@@ -119,7 +119,8 @@ export class Tools {
     return 'write'; // Default to write for safety
   }
 
-  getToolsPrompt() {
+  getToolsPrompt(model: string) {
+    const isClaude = model.includes('sonnet');
     const availableTools = `
   ${Object.entries(this.tools)
     .map(([key, tool]) => {
@@ -140,7 +141,19 @@ export class Tools {
 You only have access to the tools provided below. You can only use one tool per message, and will receive the result of that tool use in the user's response. You use tools step-by-step to accomplish a given task, with each tool use informed by the result of the previous tool use.
 
 ## Tool Use Formatting
-Tool use is formatted using XML-style tags. The tool use is enclosed in <use_tool></use_tool> and each parameter is similarly enclosed within its own set of tags.
+Tool use is formatted using XML-style tags. The tool use is enclosed in <use_tool></use_tool> and each parameter is similarly enclosed within its own set of tags. ${
+      isClaude
+        ? `Parameters need to be enclosed within <arguments></arguments> tags.
+Here's the structure:
+<use_tool>
+  <tool_name>tool name here</tool_name>
+  <arguments>
+    {"param1": "value1","param2": "value2 \"escaped string\""}
+  </arguments>
+</use_tool>
+  `
+        : ''
+    }
 
 Description: Tools have defined input schemas that specify required and optional parameters.
 
