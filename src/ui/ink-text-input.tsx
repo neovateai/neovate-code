@@ -174,7 +174,7 @@ function TextInput({
     if (onCursorPositionChange) {
       onCursorPositionChange(state.cursorOffset);
     }
-  }, [state.cursorOffset]);
+  }, [state.cursorOffset, onCursorPositionChange]);
 
   const cursorActualWidth = highlightPastedText ? cursorWidth : 0;
 
@@ -425,28 +425,27 @@ function TextInput({
           nextCursorOffset--;
         }
       } else {
-        // Handle regular input and paste operations
-        // Use latest values from refs to avoid race conditions
-        const currentValue = latestValueRef.current;
-        const currentCursorOffset = latestCursorOffsetRef.current;
+        // Handle regular input and paste operations with functional update
+        setState((prevState) => {
+          const newValue =
+            originalValue.slice(0, prevState.cursorOffset) +
+            input +
+            originalValue.slice(prevState.cursorOffset, originalValue.length);
 
-        nextValue =
-          currentValue.slice(0, currentCursorOffset) +
-          input +
-          currentValue.slice(currentCursorOffset, currentValue.length);
+          const newCursorOffset = prevState.cursorOffset + input.length;
 
-        nextCursorOffset = currentCursorOffset + input.length;
+          // Don't highlight large pastes to avoid rendering issues
+          const newCursorWidth =
+            input.length > MAX_PASTE_HIGHLIGHT_LENGTH ? 0 : 0;
 
-        // Update refs immediately to prevent race conditions
-        latestValueRef.current = nextValue;
-        latestCursorOffsetRef.current = nextCursorOffset;
+          onChange(newValue);
 
-        // Don't highlight large pastes to avoid rendering issues
-        if (input.length > MAX_PASTE_HIGHLIGHT_LENGTH) {
-          nextCursorWidth = 0;
-        } else {
-          nextCursorWidth = 0;
-        }
+          return {
+            cursorOffset: newCursorOffset,
+            cursorWidth: newCursorWidth,
+          };
+        });
+        return;
       }
 
       // Fix boundary checks to use nextCursorOffset instead of cursorOffset
