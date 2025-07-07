@@ -3,7 +3,7 @@ import { useAppContext } from '../AppContext';
 import { APP_STATUS } from '../constants';
 
 export function useToolApproval() {
-  const { state, dispatch } = useAppContext();
+  const { state, dispatch, services } = useAppContext();
 
   const approveToolUse = (approved: boolean) => {
     if (state.approval.resolve) {
