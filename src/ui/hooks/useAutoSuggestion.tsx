@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SlashCommand } from '../../slash-commands/types';
 import { useAppContext } from '../AppContext';
+import {
+  extractFileQuery,
+  useFileAutoSuggestion,
+} from './useFileAutoSuggestion';
 
 export interface SuggestionItem {
   name: string;
-  description: string;
+  description: string | undefined;
 }
 
 export interface AutoSuggestionState {
@@ -18,7 +22,16 @@ export function useAutoSuggestion(input: string) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [forceHidden, setForceHidden] = useState(false);
 
+  // Get file suggestions
+  const fileSuggestions = useFileAutoSuggestion(input);
+
   const suggestions = useMemo(() => {
+    // Handle file suggestions for @ anywhere in input
+    if (fileSuggestions.length > 0) {
+      return fileSuggestions;
+    }
+
+    // Handle slash command suggestions for / prefix
     if (!input.startsWith('/')) {
       return [];
     }
@@ -41,10 +54,13 @@ export function useAutoSuggestion(input: string) {
       name: cmd.name,
       description: cmd.description || '',
     }));
-  }, [input, services.context.slashCommands]);
+  }, [input, services.context.slashCommands, fileSuggestions]);
 
+  const fileQuery = extractFileQuery(input);
   const isVisible =
-    suggestions.length > 0 && input.startsWith('/') && !forceHidden;
+    suggestions.length > 0 &&
+    (input.startsWith('/') || fileQuery.hasFileQuery) &&
+    !forceHidden;
 
   useEffect(() => {
     setSelectedIndex(0);
@@ -77,6 +93,16 @@ export function useAutoSuggestion(input: string) {
     const selected = getSelectedSuggestion();
     if (!selected) return input;
 
+    // Handle file suggestions
+    if (fileQuery.hasFileQuery) {
+      const beforeAt = input.substring(0, fileQuery.startIndex);
+      const afterAt = input.substring(
+        fileQuery.startIndex + fileQuery.fullMatch.length,
+      );
+      return `${beforeAt}@${selected.name} ${afterAt}`.trim() + ' ';
+    }
+
+    // Handle slash command suggestions
     const args = input.includes(' ') ? input.split(' ').slice(1).join(' ') : '';
     return `/${selected.name} ${args}`.trim() + ' ';
   };
