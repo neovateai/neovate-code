@@ -120,6 +120,11 @@
     "submitFailed": "Submit Failed",
     "retry": "Retry",
     "submitting": "Submitting approval result...",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "autoApprove": "Auto-approve",
+    "autoApproveForTool": "For this tool",
+    "autoApproveForAll": "For all tools",
     "toolDescriptions": {
       "read": "Read file: {{filePath}}",
       "bash": "Execute command: {{command}}",

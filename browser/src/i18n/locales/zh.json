@@ -120,6 +120,11 @@
     "submitFailed": "提交失败",
     "retry": "重试",
     "submitting": "正在提交审批结果...",
+    "cancel": "取消",
+    "continue": "继续",
+    "autoApprove": "自动批准",
+    "autoApproveForTool": "为此工具",
+    "autoApproveForAll": "为所有工具",
     "toolDescriptions": {
       "read": "读取文件: {{filePath}}",
       "bash": "执行命令: {{command}}",

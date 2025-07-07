@@ -1,6 +1,9 @@
-import { CheckOutlined, CloseOutlined, EyeOutlined } from '@ant-design/icons';
-import { Button, Flex, Tag, Typography } from 'antd';
-import { createStyles } from 'antd-style';
+import {
+  CheckOutlined,
+  CloseOutlined,
+  GlobalOutlined,
+} from '@ant-design/icons';
+import { Button, Checkbox, Flex, Select, Typography } from 'antd';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
@@ -8,60 +11,6 @@ import { toolApprovalActions, toolApprovalState } from '@/state/toolApproval';
 import type { ToolApprovalRequestMessage } from '@/types/message';
 
 const { Text } = Typography;
-
-const useStyle = createStyles(({ token, css }) => {
-  return {
-    container: css`
-      padding: ${token.paddingMD}px 0;
-      border-left: 3px solid ${token.colorWarning};
-      padding-left: ${token.paddingMD}px;
-      background: ${token.colorWarningBg};
-      border-radius: 0 ${token.borderRadiusLG}px ${token.borderRadiusLG}px 0;
-      margin: ${token.marginXS}px 0;
-    `,
-    title: css`
-      color: ${token.colorWarningText};
-      font-weight: 500;
-      margin-bottom: ${token.marginXS}px;
-    `,
-    description: css`
-      color: ${token.colorTextSecondary};
-      margin-bottom: ${token.marginMD}px;
-    `,
-    toolInfo: css`
-      background: ${token.colorBgContainer};
-      border-radius: ${token.borderRadius}px;
-      padding: ${token.paddingSM}px;
-      margin-bottom: ${token.marginMD}px;
-    `,
-    params: css`
-      background: ${token.colorFillQuaternary};
-      border-radius: ${token.borderRadius}px;
-      padding: ${token.paddingSM}px;
-      margin-top: ${token.marginXS}px;
-      font-family: ${token.fontFamilyCode};
-      font-size: ${token.fontSizeSM}px;
-      max-height: 120px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-    `,
-    errorAlert: css`
-      background: ${token.colorErrorBg};
-      border: 1px solid ${token.colorErrorBorder};
-      border-radius: ${token.borderRadius}px;
-      padding: ${token.paddingSM}px;
-      margin-bottom: ${token.marginMD}px;
-    `,
-    loadingIndicator: css`
-      color: ${token.colorPrimary};
-      font-size: ${token.fontSizeSM}px;
-    `,
-    buttonGroup: css`
-      gap: ${token.marginXS}px;
-      flex-wrap: wrap;
-    `,
-  };
-});
 
 interface ToolApprovalConfirmationProps {
   message: ToolApprovalRequestMessage;
@@ -71,9 +20,11 @@ export default function ToolApprovalConfirmation({
   message,
 }: ToolApprovalConfirmationProps) {
   const { t } = useTranslation();
-  const { styles } = useStyle();
   const snap = useSnapshot(toolApprovalState);
-  const [showParams, setShowParams] = useState(false);
+  const [autoApprove, setAutoApprove] = useState(false);
+  const [autoApproveMode, setAutoApproveMode] = useState<
+    'always' | 'always_tool'
+  >('always_tool');
 
   // 检查当前消息是否为当前待处理的请求
   if (
@@ -124,8 +75,11 @@ export default function ToolApprovalConfirmation({
     }
   };
 
-  const onApprove = (option: 'once' | 'always' | 'always_tool') => {
-    toolApprovalActions.approveToolUse(true, option);
+  const onApprove = () => {
+    toolApprovalActions.approveToolUse(
+      true,
+      autoApprove ? autoApproveMode : 'once',
+    );
   };
 
   const onDeny = () => {
@@ -141,46 +95,69 @@ export default function ToolApprovalConfirmation({
   const hasError = !!snap.submitError;
 
   return (
-    <div className={styles.container}>
-      {/* 标题 */}
-      <Text className={styles.title}>
-        🔐 {t('toolApproval.title', '工具执行权限确认')}
-      </Text>
-
-      {/* 描述 */}
-      <Text className={styles.description}>
-        {t('toolApproval.description', 'AI 请求执行以下工具，是否允许？')}
-      </Text>
-
-      {/* 工具信息 */}
-      <div className={styles.toolInfo}>
-        <Flex justify="space-between" align="center">
-          <Flex align="center" gap="small">
-            <Tag color="blue">{message.toolName}</Tag>
-            <Text type="secondary">{description}</Text>
-          </Flex>
-          <Button
-            type="text"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => setShowParams(!showParams)}
+    <div className="mx-0 my-1 rounded-lg border border-gray-200 bg-white p-2.5">
+      <Flex vertical gap="middle">
+        <div className="flex items-center gap-2">
+          <GlobalOutlined />
+          <Text
+            className="truncate"
+            title={description}
+            style={{
+              maxWidth: 'calc(100% - 30px)',
+            }}
           >
-            {showParams
-              ? t('toolApproval.hideParameters')
-              : t('toolApproval.showParameters')}
-          </Button>
-        </Flex>
+            {description}
+          </Text>
+        </div>
 
-        {showParams && (
-          <pre className={styles.params}>
-            {JSON.stringify(message.args, null, 2)}
-          </pre>
-        )}
-      </div>
+        <div className="flex items-center justify-between">
+          <Flex align="center" gap="small">
+            <Checkbox
+              checked={autoApprove}
+              onChange={(e) => setAutoApprove(e.target.checked)}
+              disabled={isSubmitting}
+            >
+              {t('toolApproval.autoApprove', 'Auto-approve')}
+            </Checkbox>
+            {autoApprove && (
+              <Select
+                value={autoApproveMode}
+                onChange={setAutoApproveMode}
+                disabled={isSubmitting}
+                size="small"
+                style={{ width: 140 }}
+              >
+                <Select.Option value="always_tool">
+                  {t('toolApproval.autoApproveForTool', 'For this tool')}
+                </Select.Option>
+                <Select.Option value="always">
+                  {t('toolApproval.autoApproveForAll', 'For all tools')}
+                </Select.Option>
+              </Select>
+            )}
+          </Flex>
+
+          {/* 操作按钮 */}
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={onDeny} disabled={isSubmitting} size="small">
+              {t('toolApproval.cancel', 'Cancel')}
+            </Button>
+            <Button
+              type="primary"
+              icon={<CheckOutlined />}
+              onClick={onApprove}
+              disabled={isSubmitting}
+              size="small"
+            >
+              {t('toolApproval.continue', 'Continue')}
+            </Button>
+          </div>
+        </div>
+      </Flex>
 
       {/* 错误提示 */}
       {hasError && (
-        <div className={styles.errorAlert}>
+        <div className="mb-4 rounded border border-red-200 bg-red-50 p-3">
           <Flex align="center" justify="space-between">
             <Flex align="center" gap="small">
               <CloseOutlined style={{ color: '#ff4d4f' }} />
@@ -200,46 +177,11 @@ export default function ToolApprovalConfirmation({
       )}
 
       {/* 提交中提示 */}
-      {isSubmitting && (
-        <Text className={styles.loadingIndicator}>
+      {isSubmitting && !hasError && (
+        <Text className="text-sm text-blue-500">
           ⏳ {t('toolApproval.submitting')}
         </Text>
       )}
-
-      {/* 操作按钮 */}
-      <Flex className={styles.buttonGroup}>
-        <Button
-          type="primary"
-          icon={<CheckOutlined />}
-          onClick={() => onApprove('once')}
-          disabled={isSubmitting}
-          size="small"
-        >
-          {t('toolApproval.approveOnce', '允许一次')}
-        </Button>
-
-        <Button
-          onClick={() => onApprove('always')}
-          disabled={isSubmitting}
-          size="small"
-        >
-          {t('toolApproval.approveAlways', '允许此命令')}
-        </Button>
-
-        <Button
-          onClick={() => onApprove('always_tool')}
-          disabled={isSubmitting}
-          size="small"
-        >
-          {t('toolApproval.approveAlwaysTool', `允许 ${message.toolName}`, {
-            toolName: message.toolName,
-          })}
-        </Button>
-
-        <Button danger onClick={onDeny} disabled={isSubmitting} size="small">
-          {t('toolApproval.deny', '拒绝')}
-        </Button>
-      </Flex>
     </div>
   );
 }
