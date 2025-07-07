@@ -10,7 +10,7 @@ import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
 import { getInputInfo } from '@/utils/chat';
-import Suggestion from '../Suggestion';
+import SuggesionList from '../SuggestionList';
 import LexicalTextArea from './LexicalTextArea';
 import { LexicalTextAreaContext } from './LexicalTextAreaContext';
 import SenderFooter from './SenderFooter';
@@ -28,11 +28,6 @@ const useStyle = createStyles(({ token, css }) => {
     senderRoot: css`
       margin: 0;
       max-width: none;
-    `,
-    suggestion: css`
-      max-width: ${maxWidth}px;
-      margin: auto;
-      width: 100%;
     `,
     speechButton: css`
       font-size: 18px;
@@ -52,19 +47,14 @@ const ChatSender: React.FC = () => {
   const { loading, stop, onQuery } = useChatState();
   const { t } = useTranslation();
   const [insertNodePosition, setInsertNodePosition] = useState(0);
-  const [contextSearchInput, setContextSearchInput] = useState('');
-  const [keepMenuOpen, setKeepMenuOpen] = useState(false);
+
+  const [openPopup, setOpenPopup] = useState(false);
+
   const prevInputValue = useRef<string>(state.prompt);
   const { prompt } = useSnapshot(state);
 
-  const {
-    suggestions,
-    showSearch,
-    handleSelectValue,
-    currentContextType,
-    setCurrentContextType,
-    getOriginalContextByValue,
-  } = useSuggestion(contextSearchInput);
+  const { defaultSuggestions, handleSearch, getOriginalContextByValue } =
+    useSuggestion();
 
   const handleSubmit = () => {
     onQuery({
@@ -83,112 +73,96 @@ const ChatSender: React.FC = () => {
 
   return (
     <>
-      <Suggestion
-        className={styles.suggestion}
-        items={suggestions}
-        showSearch={
-          showSearch && {
-            placeholder: t('common.placeholder'),
-            onSearch: (text) => {
-              setContextSearchInput(text);
-            },
-          }
-        }
-        showBackButton={currentContextType !== ContextType.UNKNOWN}
-        onBack={() => {
-          setContextSearchInput('');
-          setCurrentContextType(ContextType.UNKNOWN);
-        }}
-        outsideOpen={keepMenuOpen}
-        onBlur={() => setKeepMenuOpen(false)}
-        onSelect={(value) => {
-          setKeepMenuOpen(true);
-          const contextItem = handleSelectValue(value);
-          if (contextItem) {
-            setKeepMenuOpen(false);
-            const nextInputValue =
-              prompt.slice(0, insertNodePosition) +
-              contextItem.value +
-              prompt.slice(insertNodePosition + 1);
-            actions.updatePrompt(nextInputValue);
+      <LexicalTextAreaContext.Provider
+        value={{
+          onEnterPress: handleEnterPress,
+          onChangeNodes: (prevNodes, nextNodes) => {
+            // remove old nodes
+            differenceWith(prevNodes, nextNodes, (prev, next) => {
+              return prev.originalText === next.originalText;
+            }).forEach((node) => {
+              context.actions.removeContext(node.originalText);
+            });
 
-            // now add context at onChangeNodes
-            // context.actions.addContext(contextItem);
-          }
+            // add new nodes
+            differenceWith(nextNodes, prevNodes, (next, prev) => {
+              return next.originalText === prev.originalText;
+            }).forEach((node) => {
+              const contextItem = getOriginalContextByValue(
+                node.type,
+                node.displayText,
+              );
+              if (contextItem) {
+                context.actions.addContext(contextItem);
+              }
+            });
+          },
+          value: prompt,
+          onChange: (markedText, plainText) => {
+            const { isInputingAiContext, position } = getInputInfo(
+              prevInputValue.current,
+              markedText,
+            );
+            if (isInputingAiContext) {
+              setInsertNodePosition(position);
+              setOpenPopup(true);
+            } else {
+              setOpenPopup(false);
+            }
+            prevInputValue.current = markedText;
+            actions.updatePrompt(markedText);
+            actions.updatePlainText(plainText);
+          },
+          aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
+          namespace: 'SenderTextarea',
         }}
       >
-        {({ onTrigger, onKeyDown }) => {
-          return (
-            <LexicalTextAreaContext.Provider
-              value={{
-                onEnterPress: handleEnterPress,
-                onChangeNodes: (prevNodes, nextNodes) => {
-                  // remove old nodes
-                  differenceWith(prevNodes, nextNodes, (prev, next) => {
-                    return prev.originalText === next.originalText;
-                  }).forEach((node) => {
-                    context.actions.removeContext(node.originalText);
-                  });
-
-                  // add new nodes
-                  differenceWith(nextNodes, prevNodes, (next, prev) => {
-                    return next.originalText === prev.originalText;
-                  }).forEach((node) => {
-                    const contextItem = getOriginalContextByValue(
-                      node.displayText,
-                      node.type,
-                    );
-                    if (contextItem) {
-                      context.actions.addContext(contextItem);
-                    }
-                  });
-                },
-                value: prompt,
-                onChange: (markedText, plainText) => {
-                  const { isInputingAiContext, position } = getInputInfo(
-                    prevInputValue.current,
-                    markedText,
-                  );
-                  if (isInputingAiContext) {
-                    setInsertNodePosition(position);
-                    onTrigger();
-                  } else {
-                    onTrigger(false);
-                  }
-                  prevInputValue.current = markedText;
-                  actions.updatePrompt(markedText);
-                  actions.updatePlainText(plainText);
-                },
-                aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
-                namespace: 'SenderTextarea',
-              }}
-            >
-              <Sender
-                className={styles.sender}
-                rootClassName={styles.senderRoot}
-                header={<SenderHeader />}
-                footer={({ components }) => {
-                  return <SenderFooter components={components} />;
-                }}
-                onSubmit={handleSubmit}
-                onKeyDown={onKeyDown}
-                onCancel={() => {
-                  stop();
-                }}
-                value={prompt}
-                loading={loading}
-                allowSpeech
-                actions={false}
-                components={{
-                  input: LexicalTextArea,
-                }}
-                placeholder={t('chat.inputPlaceholder')}
-              />
-              <SenderFooterBoard />
-            </LexicalTextAreaContext.Provider>
-          );
-        }}
-      </Suggestion>
+        <SuggesionList
+          open={openPopup}
+          onOpenChange={(open) => setOpenPopup(open)}
+          items={defaultSuggestions}
+          onSearch={(type, text) => {
+            return handleSearch(type as ContextType, text);
+          }}
+          onSelect={(type, itemValue) => {
+            setOpenPopup(false);
+            const contextItem = getOriginalContextByValue(
+              type as ContextType,
+              itemValue,
+            );
+            if (contextItem) {
+              const nextInputValue =
+                prompt.slice(0, insertNodePosition) +
+                contextItem.value +
+                prompt.slice(insertNodePosition + 1);
+              actions.updatePrompt(nextInputValue);
+            }
+          }}
+        >
+          <Sender
+            className={styles.sender}
+            rootClassName={styles.senderRoot}
+            header={<SenderHeader />}
+            footer={({ components }) => {
+              return <SenderFooter components={components} />;
+            }}
+            onSubmit={handleSubmit}
+            // onKeyDown={onKeyDown}
+            onCancel={() => {
+              stop();
+            }}
+            value={prompt}
+            loading={loading}
+            allowSpeech
+            actions={false}
+            components={{
+              input: LexicalTextArea,
+            }}
+            placeholder={t('chat.inputPlaceholder')}
+          />
+        </SuggesionList>
+        <SenderFooterBoard />
+      </LexicalTextAreaContext.Provider>
     </>
   );
 };

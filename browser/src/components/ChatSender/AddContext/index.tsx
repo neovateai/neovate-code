@@ -3,7 +3,7 @@ import { Tag } from 'antd';
 import { createStyles } from 'antd-style';
 import { useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
-import Suggestion from '@/components/Suggestion';
+import SuggesionList from '@/components/SuggestionList';
 import { ContextType } from '@/constants/context';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
@@ -37,62 +37,42 @@ const AddContext = () => {
   const { attachedContexts, contextsSelectedValues } = useSnapshot(
     context.state,
   );
-  const [searchText, setSearchText] = useState('');
-  const [keepMenuOpen, setKeepMenuOpen] = useState(false);
+  const [openPopup, setOpenPopup] = useState(false);
 
-  const {
-    suggestions,
-    showSearch,
-    handleSelectValue,
-    currentContextType,
-    setCurrentContextType,
-  } = useSuggestion(searchText, contextsSelectedValues);
+  const { defaultSuggestions, handleSearch, getOriginalContextByValue } =
+    useSuggestion(contextsSelectedValues);
 
   const { styles } = useStyle();
 
   return (
-    <Suggestion
-      showSearch={
-        showSearch && {
-          placeholder: 'Please input to search...',
-          onSearch: (text) => {
-            setSearchText(text);
-          },
-        }
-      }
-      items={suggestions}
-      showBackButton={currentContextType !== ContextType.UNKNOWN}
-      onBack={() => {
-        setSearchText('');
-        setCurrentContextType(ContextType.UNKNOWN);
+    <SuggesionList
+      open={openPopup}
+      onOpenChange={(open) => setOpenPopup(open)}
+      items={defaultSuggestions}
+      onSearch={(type, text) => {
+        return handleSearch(type as ContextType, text);
       }}
-      onBlur={() => {
-        setKeepMenuOpen(false);
-      }}
-      outsideOpen={keepMenuOpen}
-      onSelect={(value) => {
-        setKeepMenuOpen(true);
-        const contextItem = handleSelectValue(value);
+      onSelect={(type, itemValue) => {
+        setOpenPopup(false);
+        const contextItem = getOriginalContextByValue(
+          type as ContextType,
+          itemValue,
+        );
+
         if (contextItem) {
-          setKeepMenuOpen(false);
           context.actions.addContext(contextItem);
         }
       }}
     >
-      {({ onKeyDown, onTrigger }) => (
-        <Tag
-          ref={tagRef}
-          className={styles.tag}
-          icon={<Icon className={styles.icon} component={() => <div>@</div>} />}
-          onKeyDown={onKeyDown}
-          onClick={() => {
-            onTrigger();
-          }}
-        >
-          {attachedContexts.length === 0 && <span>Add Context</span>}
-        </Tag>
-      )}
-    </Suggestion>
+      <Tag
+        ref={tagRef}
+        className={styles.tag}
+        icon={<Icon className={styles.icon} component={() => <div>@</div>} />}
+        onClick={() => setOpenPopup(true)}
+      >
+        {attachedContexts.length === 0 && <span>Add Context</span>}
+      </Tag>
+    </SuggesionList>
   );
 };
 

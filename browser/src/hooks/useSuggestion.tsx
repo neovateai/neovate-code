@@ -1,8 +1,7 @@
 import { ArrowRightOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { Suggestion } from '@ant-design/x';
 import { type GetProp } from 'antd';
-import { createStyles } from 'antd-style';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import DevFileIcon from '@/components/DevFileIcon';
 import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
@@ -11,30 +10,14 @@ import type { ContextItem, ContextStoreValue } from '@/types/context';
 
 type SuggestionItems = Exclude<GetProp<typeof Suggestion, 'items'>, () => void>;
 
-const useStyle = createStyles(({ css }) => {
-  return {
-    label: css`
-      font-weight: 600;
-    `,
-  };
-});
-
-export const useSuggestion = (
-  searchText: string,
-  selectedValues?: readonly string[],
-) => {
+export const useSuggestion = (selectedValues?: readonly string[]) => {
   const { fileList } = useSnapshot(state);
-  const [currentContextType, setCurrentContextType] = useState(
-    ContextType.UNKNOWN,
-  );
-
-  const { styles } = useStyle();
 
   useEffect(() => {
     actions.getFileList();
   }, []);
 
-  const files = useMemo(() => {
+  const fileSuggestions = useMemo(() => {
     return fileList.map((file) => {
       const label = file.type === 'file' ? file.name : file.path;
       const extra =
@@ -43,7 +26,7 @@ export const useSuggestion = (
           : null;
 
       return {
-        label: <div className={styles.label}>{label}</div>,
+        label: label,
         value: file.path,
         icon: (
           <DevFileIcon
@@ -68,18 +51,10 @@ export const useSuggestion = (
         value: ContextType.FILE,
         icon: <FileSearchOutlined />,
         extra: <ArrowRightOutlined />,
+        children: fileSuggestions,
       },
     ] as SuggestionItems;
-  }, []);
-
-  const suggentionMap = useMemo<{
-    [key in ContextType]?: SuggestionItems;
-  }>(() => {
-    return {
-      [ContextType.UNKNOWN]: defaultSuggestions,
-      [ContextType.FILE]: files,
-    };
-  }, [files, defaultSuggestions]);
+  }, [fileSuggestions]);
 
   const originalContextGetterMap: {
     [key in ContextType]?: (value: string) => ContextStoreValue | undefined;
@@ -87,51 +62,17 @@ export const useSuggestion = (
     [ContextType.FILE]: getOriginalFile,
   };
 
-  const showSearch = useMemo(
-    () => currentContextType === ContextType.FILE,
-    [currentContextType],
-  );
-
-  const suggestions = useMemo(() => {
-    const originalArray = suggentionMap[currentContextType] ?? [];
-    if (showSearch && searchText) {
-      return originalArray.filter((item) =>
-        item.value.toLocaleLowerCase().includes(searchText.toLocaleLowerCase()),
-      );
-    }
-
-    return originalArray;
-  }, [suggentionMap, currentContextType, searchText, showSearch]);
-
-  const handleSelectValue = (value: string) => {
-    if (Object.values(ContextType).includes(value as ContextType)) {
-      setCurrentContextType(value as ContextType);
-
-      return null;
-    } else {
-      const type = currentContextType;
-      const config = AI_CONTEXT_NODE_CONFIGS.find(
-        (config) => config.type === type,
-      );
-
-      const getOriginalContext = originalContextGetterMap[currentContextType];
-      const originalContext = getOriginalContext?.(value);
-      const contextItemValue = config?.valueFormatter?.(value) || value;
-
-      setCurrentContextType(ContextType.UNKNOWN);
-
-      const contextItem: ContextItem = {
-        type,
-        context: originalContext,
-        value: contextItemValue,
-        displayText: value,
-      };
-
-      return contextItem;
-    }
+  // TODO 服务端搜索
+  const handleSearch = (type: ContextType, text: string) => {
+    const targetSuggestions = defaultSuggestions.find(
+      (s) => s.value === type,
+    )?.children;
+    return targetSuggestions?.filter((suggestion) =>
+      suggestion.value.includes(text),
+    );
   };
 
-  const getOriginalContextByValue = (value: string, type: ContextType) => {
+  const getOriginalContextByValue = (type: ContextType, value: string) => {
     const config = AI_CONTEXT_NODE_CONFIGS.find(
       (config) => config.type === type,
     );
@@ -150,11 +91,8 @@ export const useSuggestion = (
   };
 
   return {
-    suggestions,
-    showSearch,
-    handleSelectValue,
-    setCurrentContextType,
-    currentContextType,
     getOriginalContextByValue,
+    defaultSuggestions,
+    handleSearch,
   };
 };
