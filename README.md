@@ -1,11 +1,11 @@
-# Takumi
+# Takumi - Your AI Coding Assistant
 
-[![](https://badgen.net/npm/v/takumi)](https://www.npmjs.com/package/takumi)
-[![](https://badgen.net/npm/dm/takumi)](https://www.npmjs.com/package/takumi)
-[![](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml)
-[![](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
+[![npm version](https://badgen.net/npm/v/takumi)](https://www.npmjs.com/package/takumi)
+[![npm downloads](https://badgen.net/npm/dm/takumi)](https://www.npmjs.com/package/takumi)
+[![CI Status](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions)
+[![MIT License](https://badgen.net/npm/license/takumi)](https://opensource.org/licenses/MIT)
 
-Pronounced `/tɑːˈkuːmi/`, a coding agent to enhance your development workflow.
+Pronounced `/tɑːˈkuːmi/`, Takumi is an AI-powered coding assistant that enhances your development workflow with intelligent code generation, analysis, and automation.
 
 ![](https://cdn.jsdelivr.net/gh/sorrycc-bot/image-2025-04@main/uPic/takumi-20250618-1.gif)
 
