@@ -5,6 +5,7 @@ import { useAppContext } from '../AppContext';
 import { APP_STATUS, BORDER_COLORS } from '../constants';
 import { useAutoSuggestion } from '../hooks/useAutoSuggestion';
 import { useChatActions } from '../hooks/useChatActions';
+import { extractFileQuery } from '../hooks/useFileAutoSuggestion';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import TextInput from '../ink-text-input';
 import { getCurrentLineInfo } from '../utils/cursor-utils';
@@ -201,6 +202,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
         suggestions={suggestions}
         selectedIndex={selectedIndex}
         isVisible={isVisible && !isWaitingForInput}
+        isFileMode={extractFileQuery(value).hasFileQuery}
       />
       <Box flexDirection="row" paddingX={2} gap={1}>
         <Text color="gray">
