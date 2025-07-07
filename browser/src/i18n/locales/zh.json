@@ -14,6 +14,11 @@
     "enable": "启用",
     "disable": "禁用"
   },
+  "feedback": {
+    "likeSuccess": "感谢您的好评！",
+    "dislikeSuccess": "感谢您的反馈，我们会改进回复质量。",
+    "submitError": "提交反馈失败，请重试。"
+  },
   "sidebar": {
     "newConversation": "新建对话",
     "conversations": "对话列表",

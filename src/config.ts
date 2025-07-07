@@ -28,6 +28,7 @@ export type Config = {
   approvalMode: ApprovalMode;
   plugins: string[];
   mcpServers: Record<string, McpServerConfig>;
+  recordFeedback: boolean;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -37,6 +38,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   plugins: [],
   mcpServers: {},
   model: 'flash',
+  recordFeedback: false,
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -46,7 +48,7 @@ const VALID_CONFIG_KEYS = [
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = ['mcpServers'];
-const BOOLEAN_CONFIG_KEYS = ['quiet'];
+const BOOLEAN_CONFIG_KEYS = ['quiet', 'recordFeedback'];
 
 export class ConfigManager {
   globalConfig: Partial<Config>;

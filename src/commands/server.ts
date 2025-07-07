@@ -32,7 +32,7 @@ Options:
   --smallModel <model>          Specify a smaller model for some tasks
   --logLevel <level>            Specify log level
   --port <port>                 Specify port to use
-
+  -r, --recordFeedback          Enable record-like functionality
 Examples:
   ${p} server "Refactor this file to use hooks."
   ${p} server -m gpt-4o "Add tests for the following code." --port 3000
@@ -49,9 +49,10 @@ export async function runServer(opts: RunCliOpts) {
       alias: {
         model: 'm',
         help: 'h',
+        recordFeedback: 'r',
       },
       default: {},
-      boolean: ['help', 'plan'],
+      boolean: ['help', 'plan', 'recordFeedback'],
       string: ['model', 'smallModel', 'planModel', 'logLevel'],
       number: ['port'],
     });
@@ -83,6 +84,7 @@ export async function runServer(opts: RunCliOpts) {
         planModel: argv.planModel,
         quiet: argv.quiet,
         plugins: argv.plugin,
+        recordFeedback: argv.recordFeedback,
       },
       plugins: [contextPlugin, ...(opts.plugins || [])],
     });

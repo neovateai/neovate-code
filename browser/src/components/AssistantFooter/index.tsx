@@ -5,11 +5,12 @@ import {
   LikeOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
-import { Button, Flex, Typography } from 'antd';
+import { Button, Flex, Typography, message as antdMessage } from 'antd';
 import { last } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { useChatState } from '@/hooks/provider';
+import { state as appDataState } from '@/state/appData';
 import { actions, state } from '@/state/sender';
 import { type UIMessage, UIMessageType } from '@/types/message';
 import { mergeMessages } from '@/utils/mergeMessages';
@@ -26,8 +27,26 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
   status,
 }) => {
   const { mode } = useSnapshot(state);
+  const { appData } = useSnapshot(appDataState);
   const { t } = useTranslation();
   const { approvePlan } = useChatState();
+
+  const [messageApi, contextHolder] = antdMessage.useMessage();
+
+  const handleFeedback = async (feedback: 'like' | 'dislike') => {
+    try {
+      // TODO: 调用反馈接口
+      console.log('Feedback:', feedback, 'for message:', message.id);
+      messageApi.success(
+        feedback === 'like'
+          ? t('feedback.likeSuccess')
+          : t('feedback.dislikeSuccess'),
+      );
+    } catch (error) {
+      console.error('Failed to submit feedback:', error);
+      messageApi.error(t('feedback.submitError'));
+    }
+  };
 
   if (mode === 'plan' && status === 'ready') {
     const mergedMessage = mergeMessages(message.annotations || []);
@@ -64,12 +83,29 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
   }
 
   return (
-    <Flex className="p-2">
-      <Button type="text" size="small" icon={<ReloadOutlined />} />
-      <Button type="text" size="small" icon={<CopyOutlined />} />
-      <Button type="text" size="small" icon={<LikeOutlined />} />
-      <Button type="text" size="small" icon={<DislikeOutlined />} />
-    </Flex>
+    <>
+      {contextHolder}
+      <Flex className="p-2">
+        <Button type="text" size="small" icon={<ReloadOutlined />} />
+        <Button type="text" size="small" icon={<CopyOutlined />} />
+        {appData.config?.recordFeedback && (
+          <>
+            <Button
+              type="text"
+              size="small"
+              icon={<LikeOutlined />}
+              onClick={() => handleFeedback('like')}
+            />
+            <Button
+              type="text"
+              size="small"
+              icon={<DislikeOutlined />}
+              onClick={() => handleFeedback('dislike')}
+            />
+          </>
+        )}
+      </Flex>
+    </>
   );
 };
 
