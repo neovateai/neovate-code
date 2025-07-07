@@ -152,7 +152,11 @@ const SuggesionList = (props: Props) => {
             variant="underlined"
             autoFocus
             onChange={(e) => {
-              onSearch?.(selectedFirstKey, e.target.value);
+              const searchResults = onSearch?.(
+                selectedFirstKey,
+                e.target.value,
+              );
+              setSearchResults(searchResults);
             }}
             placeholder={t('common.placeholder')}
           />

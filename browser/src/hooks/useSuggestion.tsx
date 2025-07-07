@@ -67,6 +67,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     const targetSuggestions = defaultSuggestions.find(
       (s) => s.value === type,
     )?.children;
+
     return targetSuggestions?.filter((suggestion) =>
       suggestion.value.includes(text),
     );
