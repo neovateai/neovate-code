@@ -7,20 +7,22 @@ export function createInitCommand(opts: { context: Context }) {
     type: 'prompt',
     name: 'init',
     description: `Create ${productName}.md files to customize your interactions with ${productName.toLowerCase()}.`,
-    progressMessage: 'Analyzing codebase...',
+    progressMessage: `Analyzing codebase to create ${productName}.md...`,
     async getPromptForCommand() {
       return [
         {
           role: 'user',
-          content: `
-Please analyze this codebase and create a ${productName}.md file containing:
-1. Build/lint/test commands - especially for running a single test
-2. Code style guidelines including imports, formatting, types, naming conventions, error handling, etc.
+          content: `Analyze this codebase and create/improve ${productName}.md with:
 
-The file you create will be given to agentic coding agents (such as yourself) that operate in this repository. Make it about 20 lines long.
-If there's already a ${productName}.md, improve it.
-If there are Cursor rules (in .cursor/rules/ or .cursorrules) or Copilot rules (in .github/copilot-instructions.md), make sure to include them.
-          `,
+## Commands
+- Build, lint, test commands
+- Single test execution
+
+## Code Style  
+- Import organization, formatting, naming
+- Error handling patterns
+
+Keep it concise (~20 lines). Include existing .cursorrules or .github/copilot-instructions.md if found.`,
         },
       ];
     },
