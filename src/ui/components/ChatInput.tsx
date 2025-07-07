@@ -215,7 +215,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       />
       <Box flexDirection="row" paddingX={2} gap={1}>
         <Text color="gray">
-          ctrl+c to exit | enter to send | esc to cancel | ↑/↓ 切换历史
+          ctrl+c to exit | enter to send | esc to cancel | ↑/↓ navigate history
         </Text>
         <Box flexGrow={1} />
       </Box>
