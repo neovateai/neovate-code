@@ -9,7 +9,6 @@ import createDebug from 'debug';
 import { last } from 'lodash-es';
 import React, { useEffect } from 'react';
 import { createCompactAgent } from '../../agents/compact';
-import { APP_STAGE } from '../../ui/constants';
 import { useAppContext } from '../../ui/hooks';
 import { LocalJSXCommand } from '../types';
 
@@ -22,7 +21,7 @@ export const compactCommand: LocalJSXCommand = {
   async call(onDone) {
     return React.createElement(() => {
       const { services, state } = useAppContext();
-      const isPlan = state.stage === APP_STAGE.PLAN;
+      const isPlan = state.currentMode === 'plan';
       const service = isPlan ? services.planService : services.service;
       if (service.history.length === 0) {
         debug('skipping compacting, history length is 0');

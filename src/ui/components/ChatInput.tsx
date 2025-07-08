@@ -7,6 +7,7 @@ import { useAutoSuggestion } from '../hooks/useAutoSuggestion';
 import { useChatActions } from '../hooks/useChatActions';
 import { extractFileQuery } from '../hooks/useFileAutoSuggestion';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
+import { useModeSwitch } from '../hooks/useModeSwitch';
 import TextInput from '../ink-text-input';
 import { getCurrentLineInfo } from '../utils/cursor-utils';
 import { sanitizeText } from '../utils/text-utils';
@@ -29,6 +30,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
     cancelQuery,
   } = useChatActions();
   const { getCurrentStatusMessage } = useMessageFormatting();
+  const { switchMode, getModeDisplay } = useModeSwitch();
 
   const [value, setValue] = useState('');
   const [cursorPosition, setCursorPosition] = useState<number | undefined>();
@@ -115,6 +117,9 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
     }
     if (key.return && isVisible) {
       handleSuggestionAccept();
+    }
+    if (key.tab && key.shift) {
+      switchMode();
     }
   });
 
@@ -220,6 +225,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
           ctrl+c to exit | enter to send | esc to cancel | ↑/↓ navigate history
         </Text>
         <Box flexGrow={1} />
+        {getModeDisplay() && <Text color="yellow">{getModeDisplay()}</Text>}
       </Box>
     </Box>
   );

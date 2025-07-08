@@ -12,11 +12,6 @@ export const APP_STATUS = {
   CANCELLED: 'cancelled',
 } as const;
 
-export const APP_STAGE = {
-  PLAN: 'plan',
-  CODE: 'code',
-} as const;
-
 // Status messages
 export const STATUS_MESSAGES = {
   [APP_STATUS.TOOL_APPROVED]: 'Tool approved, starting execution...',

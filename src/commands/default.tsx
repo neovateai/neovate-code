@@ -11,7 +11,7 @@ import { Context } from '../context';
 import { PluginHookType } from '../plugin';
 import { Service } from '../service';
 import { setupTracing } from '../tracing';
-import { APP_STAGE, AppProvider } from '../ui/AppContext';
+import { AppProvider } from '../ui/AppContext';
 import { App } from '../ui/app';
 import { randomUUID } from '../utils/randomUUID';
 import { readStdin } from '../utils/readStdin';
@@ -21,7 +21,6 @@ const debug = createDebug('takumi:commands:default');
 
 export interface RunOpts {
   prompt: string;
-  plan?: boolean;
   context: Context;
 }
 
@@ -83,7 +82,6 @@ export async function run(opts: RunOpts) {
           context={context}
           service={service}
           planService={planService}
-          stage={opts.plan ? APP_STAGE.PLAN : APP_STAGE.CODE}
           initialPrompt={prompt}
         >
           <App />
@@ -119,7 +117,7 @@ export async function runDefault(opts: RunCliOpts) {
       },
       default: {},
       array: ['plugin'],
-      boolean: ['json', 'help', 'plan', 'quiet'],
+      boolean: ['json', 'help', 'quiet'],
       string: ['model', 'smallModel', 'planModel'],
     });
     if (argv.help) {
@@ -158,7 +156,6 @@ export async function runDefault(opts: RunCliOpts) {
     await run({
       context,
       prompt: argv._[0]! as string,
-      plan: argv.plan,
     });
     await context.apply({
       hook: 'cliEnd',
@@ -191,7 +188,6 @@ Options:
   --smallModel <model>          Specify a smaller model for some tasks
   -q, --quiet                   Quiet mode, non interactive
   --json                        Output result as JSON
-  --plan                        Plan mode
 
 Examples:
   ${p} "Refactor this file to use hooks."

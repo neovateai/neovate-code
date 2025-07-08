@@ -224,8 +224,18 @@ export function useChatActions() {
       queryInput = input;
     }
 
-    const stage = forceStage || state.stage;
-    const service = stage === 'plan' ? services.planService : services.service;
+    const shouldUsePlanService = (() => {
+      if (forceStage === 'code') {
+        return false;
+      }
+      if (state.currentMode === 'plan') {
+        return true;
+      }
+      return false;
+    })();
+    const service = shouldUsePlanService
+      ? services.planService
+      : services.service;
     let textDelta = '';
     let reasoningDelta = '';
 
@@ -358,6 +368,16 @@ export function useChatActions() {
           });
         },
         async onToolApprove(callId, name, params) {
+          // Auto-approve read and write tools if in autoEdit mode
+          if (latestStateRef.current.currentMode === 'autoEdit') {
+            const readTools = ['read', 'ls', 'glob', 'grep'];
+            const writeTools = ['write', 'edit'];
+            if (readTools.includes(name) || writeTools.includes(name)) {
+              return true;
+            }
+            // Command tools (bash) and network tools (fetch) still need approval
+          }
+
           // Check approval memory first
           const toolKey = createStableToolKey(name, params);
           const toolOnlyKey = name;
@@ -437,7 +457,7 @@ export function useChatActions() {
       }
 
       dispatch({ type: 'SET_STATUS', payload: APP_STATUS.COMPLETED });
-      if (stage === 'plan') {
+      if (shouldUsePlanService) {
         dispatch({
           type: 'SET_PLAN_MODAL',
           payload: { text: result.finalText || '' },

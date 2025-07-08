@@ -1,16 +1,10 @@
-import React, {
-  ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useReducer,
-} from 'react';
+import React, { ReactNode, createContext, useContext, useReducer } from 'react';
 import { Context } from '../context';
 import { Service } from '../service';
-import { APP_STAGE, APP_STATUS, MESSAGE_ROLES } from './constants';
+import { APP_STATUS, MESSAGE_ROLES } from './constants';
 
 // Re-export constants for convenience
-export { APP_STATUS, APP_STAGE, MESSAGE_ROLES };
+export { APP_STATUS, MESSAGE_ROLES };
 
 // Types
 export interface Message {
@@ -30,8 +24,10 @@ export interface AppState {
   productName: string;
   version: string;
   generalInfo: Record<string, string>;
-  stage: (typeof APP_STAGE)[keyof typeof APP_STAGE];
   initialPrompt?: string;
+
+  // Mode switching
+  currentMode: 'normal' | 'autoEdit' | 'plan';
 
   // Status and error handling
   status: (typeof APP_STATUS)[keyof typeof APP_STATUS];
@@ -78,7 +74,7 @@ export interface AppState {
 export type AppAction =
   | { type: 'SET_STATUS'; payload: AppState['status'] }
   | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'SET_STAGE'; payload: AppState['stage'] }
+  | { type: 'SET_CURRENT_MODE'; payload: AppState['currentMode'] }
   | { type: 'ADD_MESSAGE'; payload: Message }
   | { type: 'SET_CURRENT_MESSAGE'; payload: Message | null }
   | { type: 'CLEAR_CURRENT_MESSAGE' }
@@ -123,8 +119,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_ERROR':
       return { ...state, error: action.payload };
 
-    case 'SET_STAGE':
-      return { ...state, stage: action.payload };
+    case 'SET_CURRENT_MODE':
+      return { ...state, currentMode: action.payload };
 
     case 'ADD_MESSAGE':
       return { ...state, messages: [...state.messages, action.payload] };
@@ -237,7 +233,6 @@ interface AppProviderProps {
   context: Context;
   service: Service;
   planService: Service;
-  stage: (typeof APP_STAGE)[keyof typeof APP_STAGE];
   initialPrompt?: string;
 }
 
@@ -246,15 +241,14 @@ export function AppProvider({
   context,
   service,
   planService,
-  stage,
   initialPrompt,
 }: AppProviderProps) {
   const initialState: AppState = {
     productName: context.productName,
     version: context.version,
     generalInfo: context.generalInfo,
-    stage,
     initialPrompt,
+    currentMode: 'normal',
     status: APP_STATUS.IDLE,
     error: null,
     messages: [],
