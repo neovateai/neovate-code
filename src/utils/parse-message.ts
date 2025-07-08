@@ -18,12 +18,19 @@ interface ToolUse {
 type MessageContent = TextContent | ToolUse;
 
 function parseJsonSafely(jsonString: string): Record<string, any> {
+  const trimmed = jsonString.trim();
+
+  // 处理空字符串的情况
+  if (!trimmed) {
+    return {};
+  }
+
   try {
-    return JSON.parse(jsonString);
+    return JSON.parse(trimmed);
   } catch (e) {
     debug('parseJsonSafely error', e, jsonString);
-    if (jsonString.endsWith('}}')) {
-      const fixedJsonString = jsonString.slice(0, -1);
+    if (trimmed.endsWith('}}')) {
+      const fixedJsonString = trimmed.slice(0, -1);
       try {
         debug('parseJsonSafely fixedJsonString', fixedJsonString);
         return JSON.parse(fixedJsonString);
