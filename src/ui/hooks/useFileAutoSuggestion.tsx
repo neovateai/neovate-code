@@ -54,10 +54,17 @@ export function useFileAutoSuggestion(input: string): SuggestionItem[] {
 
       if (query === '') {
         // For empty query, only show root directory files/directories
-        allPaths = listRootDirectory(services.context.cwd);
+        allPaths = listRootDirectory(
+          services.context.cwd,
+          services.context.productName,
+        );
       } else {
         // For non-empty query, search recursively through all files
-        allPaths = listDirectory(services.context.cwd, services.context.cwd);
+        allPaths = listDirectory(
+          services.context.cwd,
+          services.context.cwd,
+          services.context.productName,
+        );
       }
 
       const filteredPaths = allPaths.filter((path) => {

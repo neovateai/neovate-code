@@ -21,7 +21,11 @@ export function createLSTool(opts: { context: Context }) {
       const fullFilePath = path.isAbsolute(dir_path)
         ? dir_path
         : path.resolve(opts.context.cwd, dir_path);
-      const result = listDirectory(fullFilePath, opts.context.cwd).sort();
+      const result = listDirectory(
+        fullFilePath,
+        opts.context.cwd,
+        opts.context.productName,
+      ).sort();
       const tree = createFileTree(result);
       const userTree = printTree(opts.context.cwd, tree);
       if (result.length < MAX_FILES) {
