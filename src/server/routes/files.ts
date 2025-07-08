@@ -225,8 +225,15 @@ async function getHighPriorityItems(cwd: string, includeMetadata: boolean) {
 
   const files = gitStatus
     .split('\n')
-    .filter((line) => !line.startsWith('D') && !line.startsWith('??'))
-    .map((item) => item.split(' ')[2]);
+    .filter(
+      (line) =>
+        !line.startsWith('D') &&
+        !line.startsWith('??') &&
+        !line.startsWith('R '),
+    )
+    .map((item) =>
+      item.startsWith('MM') ? item.split(' ')[1] : item.split(' ')[2],
+    );
 
   return Promise.all(
     files.map(async (file) => {
