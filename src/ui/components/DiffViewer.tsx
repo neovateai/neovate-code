@@ -44,22 +44,6 @@ function generateFileDiff(
   );
 }
 
-function generateDiffStats(diffContent: string): DiffStats {
-  let linesAdded = 0;
-  let linesRemoved = 0;
-
-  const lines = diffContent.split(/\r?\n/);
-  for (const line of lines) {
-    if (line.startsWith('+') && !line.startsWith('+++')) {
-      linesAdded += 1;
-    } else if (line.startsWith('-') && !line.startsWith('---')) {
-      linesRemoved += 1;
-    }
-  }
-
-  return { linesAdded, linesRemoved };
-}
-
 function calculateStatsFromParsedLines(parsedLines: DiffLine[]): DiffStats {
   let linesAdded = 0;
   let linesRemoved = 0;
@@ -177,9 +161,6 @@ function RenderNewFileContent(
 
   return (
     <Box
-      borderStyle="round"
-      borderColor="gray"
-      paddingX={1}
       flexDirection="column"
       width={Math.min(terminalWidth, DEFAULT_TERMINAL_WIDTH)}
     >
@@ -197,7 +178,7 @@ function RenderNewFileContent(
       <Box flexDirection="column">
         {lines.map((line, index) => (
           <Box key={index}>
-            <Text color="gray">{(index + 1).toString().padStart(4)}</Text>
+            <Text color="gray">{(index + 1).toString().padStart(4)} </Text>
             <Text color="green">+ </Text>
             <Text color="green">{line}</Text>
           </Box>
@@ -251,11 +232,31 @@ function RenderDiffContent(
   const visibleLines = displayableLines.slice(0, maxHeight - 2); // Reserve space for header and potential truncation message
   const hasMoreLines = displayableLines.length > visibleLines.length;
 
+  const renderLines = useMemo(() => {
+    const { linesAdded, linesRemoved } = stats;
+    if (!linesAdded && !linesRemoved) return null;
+
+    const addedText = linesAdded ? (
+      <Text color="green">+{linesAdded}</Text>
+    ) : null;
+
+    const removedText = linesRemoved ? (
+      <Text color="red">-{linesRemoved}</Text>
+    ) : null;
+
+    return (
+      <Text>
+        {' '}
+        ({addedText}
+        {addedText && removedText ? ' ' : null}
+        {removedText})
+      </Text>
+    );
+  }, [stats.linesAdded, stats.linesRemoved]);
+
   return (
     <Box
       key={key}
-      borderStyle="round"
-      borderColor="gray"
       paddingX={1}
       flexDirection="column"
       width={Math.min(terminalWidth, DEFAULT_TERMINAL_WIDTH)}
@@ -266,14 +267,7 @@ function RenderDiffContent(
             <Text bold color="cyan">
               {fileName}
             </Text>
-          </Box>
-          <Box>
-            {stats.linesAdded > 0 && (
-              <Text color="green">+{stats.linesAdded} </Text>
-            )}
-            {stats.linesRemoved > 0 && (
-              <Text color="red">-{stats.linesRemoved}</Text>
-            )}
+            <Text>{renderLines}</Text>
           </Box>
         </Box>
       )}
