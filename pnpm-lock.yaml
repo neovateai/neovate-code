@@ -77,6 +77,9 @@ importers:
       '@types/resolve':
         specifier: ^1.20.6
         version: 1.20.6
+      '@types/shell-quote':
+        specifier: ^1.7.5
+        version: 1.7.5
       '@types/turndown':
         specifier: ^5.0.5
         version: 5.0.5
@@ -167,6 +170,9 @@ importers:
       resolve:
         specifier: ^1.22.10
         version: 1.22.10
+      shell-quote:
+        specifier: ^1.8.3
+        version: 1.8.3
       spawn-rx:
         specifier: ^5.1.2
         version: 5.1.2
@@ -2303,6 +2309,9 @@ packages:
 
   '@types/semver@7.7.0':
     resolution: {integrity: sha512-k107IF4+Xr7UHjwDc7Cfd6PRQfbdkiRabXGRjo07b4WyPahFBZCZ1sE+BNxYIJPPg73UkfOsVOLwqVc/6ETrIA==}
+
+  '@types/shell-quote@1.7.5':
+    resolution: {integrity: sha512-+UE8GAGRPbJVQDdxi16dgadcBfQ+KG2vgZhV1+3A1XmHbmwcdwhCUwIdy+d3pAGrbvgRoVSjeI9vOWyq376Yzw==}
 
   '@types/turndown@5.0.5':
     resolution: {integrity: sha512-TL2IgGgc7B5j78rIccBtlYAnkuv8nUQqhQc+DSYV5j9Be9XOcm/SKOVRuA47xAVI3680Tk9B1d8flK2GWT2+4w==}
@@ -8018,6 +8027,8 @@ snapshots:
   '@types/resolve@1.20.6': {}
 
   '@types/semver@7.7.0': {}
+
+  '@types/shell-quote@1.7.5': {}
 
   '@types/turndown@5.0.5': {}
 
