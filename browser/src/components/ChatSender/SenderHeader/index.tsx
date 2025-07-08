@@ -1,5 +1,5 @@
 import { Sender } from '@ant-design/x';
-import { Flex } from 'antd';
+import { Flex, Spin } from 'antd';
 import React, { Fragment, useCallback, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
@@ -30,7 +30,7 @@ export const renderContextTag = (
 };
 
 const SenderHeader: React.FC = () => {
-  const { attachedContexts } = useSnapshot(context.state);
+  const { attachedContexts, loading } = useSnapshot(context.state);
 
   const handleRemoveContext = useCallback((value: string) => {
     context.actions.removeContext(value);
@@ -50,10 +50,12 @@ const SenderHeader: React.FC = () => {
       open={true}
       styles={{ content: { padding: 0 } }}
     >
-      <Flex gap={6} wrap="wrap" style={{ padding: 8, lineHeight: '22px' }}>
-        <AddContext />
-        {contextTags}
-      </Flex>
+      <Spin spinning={loading}>
+        <Flex gap={6} wrap="wrap" style={{ padding: 8, lineHeight: '22px' }}>
+          <AddContext />
+          {contextTags}
+        </Flex>
+      </Spin>
     </Sender.Header>
   );
 };
