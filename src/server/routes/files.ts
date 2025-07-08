@@ -14,8 +14,6 @@ const FileListRequestSchema = Type.Object({
   pattern: Type.Optional(Type.String()),
   maxDepth: Type.Optional(Type.Number()),
   includeMetadata: Type.Optional(Type.Number()),
-  maxSize: Type.Optional(Type.Number()),
-  searchString: Type.Optional(Type.String()),
 });
 
 const FileEditRequestSchema = Type.Object({
@@ -50,8 +48,6 @@ function normalizeRequestParams(query: FileListRequest, cwd: string) {
     pattern,
     maxDepth = DEFAULT_MAX_DEPTH,
     includeMetadata = DEFAULT_INCLUDE_METADATA,
-    maxSize,
-    searchString,
   } = query;
 
   return {
@@ -60,8 +56,6 @@ function normalizeRequestParams(query: FileListRequest, cwd: string) {
     maxDepth,
     includeMetadata: includeMetadata === 1,
     targetDir: path.resolve(cwd, directory),
-    maxSize,
-    searchString,
   };
 }
 
@@ -259,28 +253,7 @@ const filesRoute: FastifyPluginAsync<CreateServerOpts> = async (app, opts) => {
           maxDepth: params.maxDepth,
         };
 
-        let items = await walkDirectory(params.targetDir, context);
-
-        // 新增：模糊搜索过滤
-        if (params.searchString) {
-          const search = params.searchString.toLowerCase();
-          // 先按文件/目录名包含
-          let primary: FileItem[] = [];
-          let secondary: FileItem[] = [];
-          for (const item of items) {
-            if (item.name.toLowerCase().includes(search)) {
-              primary.push(item);
-            } else if (item.path.toLowerCase().includes(search)) {
-              secondary.push(item);
-            }
-          }
-          items = [...primary, ...secondary];
-        }
-
-        // 新增：数量截断
-        if (typeof params.maxSize === 'number' && params.maxSize > 0) {
-          items = items.slice(0, params.maxSize);
-        }
+        const items = await walkDirectory(params.targetDir, context);
 
         const sortedItems = sortItems(items);
         const { files, directories } = separateItemsByType(sortedItems);
