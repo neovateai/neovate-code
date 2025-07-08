@@ -13,7 +13,7 @@ import { actions, state } from '@/state/suggestion';
 import type { ContextItem, ContextStoreValue } from '@/types/context';
 
 export const useSuggestion = (selectedValues?: readonly string[]) => {
-  const { fileList } = useSnapshot(state);
+  const { fileList, loading } = useSnapshot(state);
 
   useEffect(() => {
     actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
@@ -100,5 +100,6 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     getOriginalContextByValue,
     defaultSuggestions,
     handleSearch,
+    loading,
   };
 };

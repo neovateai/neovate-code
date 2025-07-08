@@ -58,8 +58,12 @@ const ChatSender: React.FC = () => {
   const prevInputValue = useRef<string>(state.prompt);
   const { prompt } = useSnapshot(state);
 
-  const { defaultSuggestions, handleSearch, getOriginalContextByValue } =
-    useSuggestion();
+  const {
+    defaultSuggestions,
+    handleSearch,
+    getOriginalContextByValue,
+    loading: suggestionLoading,
+  } = useSuggestion();
 
   const handleSubmit = () => {
     onQuery({
@@ -126,6 +130,7 @@ const ChatSender: React.FC = () => {
         }}
       >
         <SuggesionList
+          loading={suggestionLoading}
           className={styles.suggestion}
           open={openPopup}
           onOpenChange={(open) => setOpenPopup(open)}

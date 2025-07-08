@@ -26,6 +26,7 @@ interface Props {
   onSelect?: (firstKey: string, itemValue: string) => void;
   /** 返回值会覆盖默认的二级列表 */
   onSearch?: (firstKey: string, text: string) => SuggestionItem[] | void;
+  loading?: boolean;
 }
 
 const useStyles = createStyles(({ css, token }) => {
@@ -82,8 +83,16 @@ const useStyles = createStyles(({ css, token }) => {
 });
 
 const SuggesionList = (props: Props) => {
-  const { children, onSearch, onOpenChange, onSelect, open, items, className } =
-    props;
+  const {
+    children,
+    onSearch,
+    onOpenChange,
+    onSelect,
+    open,
+    items,
+    className,
+    loading,
+  } = props;
 
   const { t } = useTranslation();
   const { styles } = useStyles();
@@ -215,6 +224,7 @@ const SuggesionList = (props: Props) => {
               emptyText: t('common.empty'),
             }}
             split={false}
+            loading={loading}
             dataSource={selectedFirstKey ? secondLevelList : firstLevelList}
             renderItem={renderItem}
           />

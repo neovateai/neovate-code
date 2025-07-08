@@ -210,14 +210,48 @@ async function walkDirectory(
   return items;
 }
 
-function sortItems(items: FileItem[], gitStatus: string): FileItem[] {
-  return items.sort((a, b) => {
-    const aInStatus = gitStatus.includes(a.path) && a.type === 'file';
-    const bInStatus = gitStatus.includes(b.path) && b.type === 'file';
-    if (aInStatus !== bInStatus) {
-      return aInStatus ? -1 : 1;
-    }
+async function getHighPriorityItems(cwd: string, includeMetadata: boolean) {
+  const gitStatus = await (async () => {
+    const { stdout } = await execFileNoThrow(
+      cwd,
+      'git',
+      ['status', '--short'],
+      undefined,
+      undefined,
+      false,
+    );
+    return stdout.trim();
+  })();
 
+  console.log('gitStatus', gitStatus);
+
+  const files = gitStatus
+    .split('\n')
+    .filter((line) => !line.startsWith('D') && !line.startsWith('??'))
+    .map((item) => item.split(' ')[2]);
+
+  return Promise.all(
+    files.map(async (file) => {
+      const fullPath = path.join(cwd, file);
+      const relativePath = path.relative(cwd, fullPath);
+      const name = path.basename(file);
+      const isHidden = name.startsWith('.');
+      const item = await createFileItem(
+        fullPath,
+        relativePath,
+        name,
+        'file',
+        includeMetadata,
+        isHidden,
+      );
+
+      return item;
+    }),
+  );
+}
+
+function sortItems(items: FileItem[]): FileItem[] {
+  return items.sort((a, b) => {
     if (a.type !== b.type) {
       return a.type === 'directory' ? -1 : 1;
     }
@@ -285,19 +319,14 @@ const filesRoute: FastifyPluginAsync<CreateServerOpts> = async (app, opts) => {
           items = [...primary, ...secondary];
         }
 
-        const gitStatus = await (async () => {
-          const { stdout } = await execFileNoThrow(
-            cwd,
-            'git',
-            ['status', '--short'],
-            undefined,
-            undefined,
-            false,
-          );
-          return stdout.trim();
-        })();
+        const highPriorityItems = await getHighPriorityItems(
+          cwd,
+          params.includeMetadata,
+        );
 
-        const sortedItems = sortItems(items, gitStatus);
+        console.log(highPriorityItems);
+
+        const sortedItems = [...highPriorityItems, ...sortItems(items)];
 
         const slicedItems =
           params.maxSize && params.maxSize > 0

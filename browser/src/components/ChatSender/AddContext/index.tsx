@@ -36,8 +36,12 @@ const AddContext = () => {
   );
   const [openPopup, setOpenPopup] = useState(false);
 
-  const { defaultSuggestions, handleSearch, getOriginalContextByValue } =
-    useSuggestion(contextsSelectedValues);
+  const {
+    defaultSuggestions,
+    handleSearch,
+    getOriginalContextByValue,
+    loading: suggestionLoading,
+  } = useSuggestion(contextsSelectedValues);
 
   const { styles } = useStyle();
 
@@ -46,6 +50,7 @@ const AddContext = () => {
       open={openPopup}
       onOpenChange={(open) => setOpenPopup(open)}
       items={defaultSuggestions}
+      loading={suggestionLoading}
       onSearch={(type, text) => {
         handleSearch(type as ContextType, text);
       }}
