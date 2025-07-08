@@ -142,20 +142,11 @@ export class Tools {
 You only have access to the tools provided below. You can only use one tool per message, and will receive the result of that tool use in the user's response. You use tools step-by-step to accomplish a given task, with each tool use informed by the result of the previous tool use.
 
 ## Tool Use Formatting
-Tool use is formatted using XML-style tags. The tool use is enclosed in <use_tool></use_tool> and each parameter is similarly enclosed within its own set of tags. ${
-      isClaudeModel
-        ? `Parameters need to be enclosed within <arguments></arguments> tags, arguments must follow the tool's input schema, quotes within string must be properly escaped, ensure it's valid JSON.
-Here's the structure:
 
-<use_tool>
-  <tool_name>tool name here</tool_name>
-  <arguments>
-    {"param1": "value1","param2": "value2 \"escaped string\""}
-  </arguments>
-</use_tool>
-  `
-        : ''
-    }
+**CRITICAL: Always close all XML tags properly.**
+**CRITICAL: Ensure valid JSON in arguments with proper escaping.**
+
+Tool use is formatted using XML-style tags. The tool use is enclosed in <use_tool></use_tool> and Parameters are enclosed within <arguments></arguments> tags as valid JSON.
 
 Description: Tools have defined input schemas that specify required and optional parameters.
 
@@ -171,11 +162,11 @@ Usage:
   </arguments>
 </use_tool>
 
-IMPORTANT: arguments must follow the tool's input schema. Values in JSON strings must be strictly escaped according to JSON specification. All values must conform to JSON specification, and the entire arguments must be a valid JSON string.
-
 When using tools, the tool use must be placed at the end of your response, top level, and not nested within other tags. Do not call tools when you don't have enough information.
 
 Always adhere to this format for the tool use to ensure proper parsing and execution.
+
+**Before submitting: Double-check that every < has a matching > and every <tag> has a </tag>**
 
 ## Available Tools
 
