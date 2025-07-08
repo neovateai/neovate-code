@@ -59,11 +59,6 @@ export const fileChangesActions = {
     }
     const nextFileState = fileStateFn(prevFileState);
     fileChangesState.files[path] = nextFileState;
-    // 更新后，将最终内容写入文件
-    const finalContent = fileChangesActions.getFinalContent(path);
-    if (finalContent) {
-      await editFile(path, finalContent);
-    }
 
     const originalCode = nextFileState.content;
     const modifiedCode = fileChangesActions.getFinalContent(path) || '';
@@ -75,27 +70,31 @@ export const fileChangesActions = {
     );
   },
 
-  acceptEdit: (
+  handleEdit: (
     path: string,
-    editToAccept: FileEdit,
+    edit: FileEdit,
+    action: 'accept' | 'reject',
     mode?: CodeNormalViewerMode,
   ) => {
     fileChangesActions.updateFileState(
       path,
       (prevState) => {
-        const newContent = prevState.content.replace(
-          editToAccept.old_string,
-          editToAccept.new_string,
-        );
         const nextEdit: FileEdit = {
-          ...editToAccept,
-          editStatus: 'accept',
+          ...edit,
+          editStatus: action,
         };
+
+        // 如果是接受编辑，则更新内容
+        const newContent =
+          action === 'accept'
+            ? prevState.content.replace(edit.old_string, edit.new_string)
+            : prevState.content;
+
         return {
           ...prevState,
           content: newContent,
-          edits: prevState.edits.map((edit) =>
-            edit.toolCallId === nextEdit.toolCallId ? nextEdit : edit,
+          edits: prevState.edits.map((e) =>
+            e.toolCallId === nextEdit.toolCallId ? nextEdit : e,
           ),
         };
       },
@@ -103,27 +102,22 @@ export const fileChangesActions = {
     );
   },
 
+  // 接受编辑的快捷方法
+  acceptEdit: (
+    path: string,
+    editToAccept: FileEdit,
+    mode?: CodeNormalViewerMode,
+  ) => {
+    fileChangesActions.handleEdit(path, editToAccept, 'accept', mode);
+  },
+
+  // 拒绝编辑的快捷方法
   rejectEdit: (
     path: string,
     editToReject: FileEdit,
     mode?: CodeNormalViewerMode,
   ) => {
-    fileChangesActions.updateFileState(
-      path,
-      (prevState) => {
-        const nextEdit: FileEdit = {
-          ...editToReject,
-          editStatus: 'reject',
-        };
-        return {
-          ...prevState,
-          edits: prevState.edits.map((edit) =>
-            edit.toolCallId === nextEdit.toolCallId ? nextEdit : edit,
-          ),
-        };
-      },
-      mode,
-    );
+    fileChangesActions.handleEdit(path, editToReject, 'reject', mode);
   },
 
   updateCodeViewerState: async (

@@ -101,7 +101,8 @@ export const toolApprovalActions = {
 
     if (
       toolApprovalState.toolName === 'edit' &&
-      toolApprovalState.editPayload
+      toolApprovalState.editPayload &&
+      option === 'once'
     ) {
       const { path, edit, mode } = toolApprovalState.editPayload;
       if (approved) {
