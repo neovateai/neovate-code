@@ -75,7 +75,7 @@ async function generateSummaryMessage(opts: {
 
   const agent = createCompactAgent({
     model: opts.model,
-    language: opts.language ?? 'english',
+    language: opts.language ?? 'English',
   });
   const runner = new Runner({
     modelProvider: opts.modelProvider,
