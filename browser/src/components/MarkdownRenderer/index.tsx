@@ -1,6 +1,6 @@
 import { CheckOutlined, CopyOutlined } from '@ant-design/icons';
 import { message } from 'antd';
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
@@ -58,7 +58,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
             <SyntaxHighlighter
               style={tomorrow}
               language={language}
-              PreTag={Fragment}
+              PreTag="div"
               wrapLines={false}
               customStyle={{ margin: 0, padding: '1rem' }}
             >
@@ -84,7 +84,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   return (
     <div>
       <ReactMarkdown
-        className="prose"
+        className="prose prose-sm max-w-none leading-snug"
         remarkPlugins={[remarkGfm]}
         components={components}
       >
