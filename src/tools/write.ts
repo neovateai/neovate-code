@@ -29,7 +29,12 @@ export function createWriteTool(opts: { context: Context }) {
         return {
           success: true,
           message: `File successfully written to ${file_path}`,
-          data: { filePath: file_path },
+          data: {
+            filePath: file_path,
+            oldContent,
+            content,
+            type: oldFileExists ? 'replace' : 'add',
+          },
         };
       } catch (e) {
         return {

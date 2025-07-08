@@ -338,7 +338,7 @@ export function useChatActions() {
             },
           });
         },
-        onToolUseResult(callId, name, result) {
+        onToolUseResult(callId, name, result, args) {
           // Clear executing tool info and return to processing
           dispatch({ type: 'SET_CURRENT_EXECUTING_TOOL', payload: null });
           dispatch({ type: 'SET_STATUS', payload: APP_STATUS.PROCESSING });
@@ -352,6 +352,7 @@ export function useChatActions() {
                 toolCallId: callId,
                 toolName: name,
                 result,
+                args,
               },
             },
           });

@@ -14,7 +14,12 @@ type QueryOpts = {
     params: Record<string, any>,
     cwd: string,
   ) => void;
-  onToolUseResult?: (callId: string, name: string, result: string) => void;
+  onToolUseResult?: (
+    callId: string,
+    name: string,
+    result: string,
+    args?: Record<string, any>,
+  ) => void;
   onToolApprove?: (
     callId: string,
     name: string,
@@ -105,7 +110,12 @@ export async function query(opts: QueryOpts) {
                 item.name,
                 item.params,
               );
-              await opts.onToolUseResult?.(item.callId, item.name, result);
+              await opts.onToolUseResult?.(
+                item.callId,
+                item.name,
+                result,
+                item.params,
+              );
               hasToolUse = true;
             } else {
               // Tool execution was denied by user - stop the query

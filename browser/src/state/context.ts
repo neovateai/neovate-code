@@ -12,9 +12,13 @@ interface ContextState {
   attachedContexts: ContextItem[];
 
   contextsSelectedValues: string[];
+
+  loading: boolean;
 }
 
 export const state = proxy<ContextState>({
+  loading: false,
+
   attachedContexts: [],
 
   get contextsSelectedValues() {
@@ -63,5 +67,9 @@ export const actions = {
     // although the contextItem is created by editor
     const nextPrompt = sender.state.prompt.replaceAll(value, '');
     sender.actions.updatePrompt(nextPrompt);
+  },
+
+  setContextLoading: (loading: boolean) => {
+    state.loading = loading;
   },
 };

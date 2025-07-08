@@ -68,6 +68,7 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
     value,
     onChange,
     onChangeNodes,
+    onPastingImage,
     aiContextNodeConfigs,
   } = useContext(LexicalTextAreaContext);
 
@@ -143,7 +144,7 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
       <DisabledPlugin disabled={!!disabled} />
       <PlaceholderPlugin placeholder={placeholder} />
       {!disabled && <EnterEventPlugin onEnterPress={onEnterPress} />}
-      {!disabled && <PastePlugin />}
+      {!disabled && <PastePlugin onPastingImage={onPastingImage} />}
       <RenderValuePlugin
         value={value}
         onChange={(markedText, plainText) => {

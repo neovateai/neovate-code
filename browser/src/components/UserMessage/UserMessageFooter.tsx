@@ -48,7 +48,10 @@ const UserMessageFooter = memo<UserMessageFooterProps>((props) => {
   }, []);
 
   const contextTags = useMemo(() => {
-    return attachedContexts.map((contextItem) => renderContextTag(contextItem));
+    return (
+      attachedContexts?.map((contextItem) => renderContextTag(contextItem)) ||
+      null
+    );
   }, [attachedContexts]);
 
   const buttonText = useMemo(() => {

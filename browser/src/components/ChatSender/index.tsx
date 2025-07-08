@@ -71,7 +71,7 @@ const ChatSender: React.FC = () => {
   };
 
   const handleEnterPress = () => {
-    if (prompt.trim()) {
+    if (!loading && prompt.trim()) {
       handleSubmit();
     }
   };
@@ -117,6 +117,9 @@ const ChatSender: React.FC = () => {
             prevInputValue.current = markedText;
             actions.updatePrompt(markedText);
             actions.updatePlainText(plainText);
+          },
+          onPastingImage: (loading) => {
+            context.actions.setContextLoading(loading);
           },
           aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
           namespace: 'SenderTextarea',
