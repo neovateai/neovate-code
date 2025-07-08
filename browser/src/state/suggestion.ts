@@ -24,7 +24,6 @@ export const actions = {
     });
   },
   getFileList: async (queries?: FileListQueries) => {
-    console.log(queries);
     if (state.loading) {
       return;
     }

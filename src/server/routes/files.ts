@@ -3,6 +3,7 @@ import createDebug from 'debug';
 import { FastifyPluginAsync } from 'fastify';
 import * as fs from 'fs/promises';
 import path from 'path';
+import { execFileNoThrow } from '../../utils/execFileNoThrow';
 import { loadIgnorePatterns } from '../context/context-files';
 import { CreateServerOpts } from '../types';
 import { FileItem, FileListRequest } from '../types/files';
@@ -209,11 +210,18 @@ async function walkDirectory(
   return items;
 }
 
-function sortItems(items: FileItem[]): FileItem[] {
+function sortItems(items: FileItem[], gitStatus: string): FileItem[] {
   return items.sort((a, b) => {
+    const aInStatus = gitStatus.includes(a.path) && a.type === 'file';
+    const bInStatus = gitStatus.includes(b.path) && b.type === 'file';
+    if (aInStatus !== bInStatus) {
+      return aInStatus ? -1 : 1;
+    }
+
     if (a.type !== b.type) {
       return a.type === 'directory' ? -1 : 1;
     }
+
     return a.path.localeCompare(b.path);
   });
 }
@@ -261,10 +269,10 @@ const filesRoute: FastifyPluginAsync<CreateServerOpts> = async (app, opts) => {
 
         let items = await walkDirectory(params.targetDir, context);
 
-        // 新增：模糊搜索过滤
+        // search
         if (params.searchString) {
           const search = params.searchString.toLowerCase();
-          // 先按文件/目录名包含
+
           let primary: FileItem[] = [];
           let secondary: FileItem[] = [];
           for (const item of items) {
@@ -277,20 +285,33 @@ const filesRoute: FastifyPluginAsync<CreateServerOpts> = async (app, opts) => {
           items = [...primary, ...secondary];
         }
 
-        // 新增：数量截断
-        if (typeof params.maxSize === 'number' && params.maxSize > 0) {
-          items = items.slice(0, params.maxSize);
-        }
+        const gitStatus = await (async () => {
+          const { stdout } = await execFileNoThrow(
+            cwd,
+            'git',
+            ['status', '--short'],
+            undefined,
+            undefined,
+            false,
+          );
+          return stdout.trim();
+        })();
 
-        const sortedItems = sortItems(items);
-        const { files, directories } = separateItemsByType(sortedItems);
+        const sortedItems = sortItems(items, gitStatus);
+
+        const slicedItems =
+          params.maxSize && params.maxSize > 0
+            ? sortedItems.slice(0, params.maxSize)
+            : sortedItems;
+
+        const { files, directories } = separateItemsByType(slicedItems);
 
         return reply.send({
           success: true,
           data: {
             cwd,
             directory: params.targetDir,
-            items: sortedItems,
+            items: slicedItems,
             files,
             directories,
           },
