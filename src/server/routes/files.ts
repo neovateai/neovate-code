@@ -223,8 +223,6 @@ async function getHighPriorityItems(cwd: string, includeMetadata: boolean) {
     return stdout.trim();
   })();
 
-  console.log('gitStatus', gitStatus);
-
   const files = gitStatus
     .split('\n')
     .filter((line) => !line.startsWith('D') && !line.startsWith('??'))
@@ -323,8 +321,6 @@ const filesRoute: FastifyPluginAsync<CreateServerOpts> = async (app, opts) => {
           cwd,
           params.includeMetadata,
         );
-
-        console.log(highPriorityItems);
 
         const sortedItems = [...highPriorityItems, ...sortItems(items)];
 
