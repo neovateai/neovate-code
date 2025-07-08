@@ -211,47 +211,52 @@ async function walkDirectory(
 }
 
 async function getHighPriorityItems(cwd: string, includeMetadata: boolean) {
-  const gitStatus = await (async () => {
-    const { stdout } = await execFileNoThrow(
-      cwd,
-      'git',
-      ['status', '--short'],
-      undefined,
-      undefined,
-      false,
-    );
-    return stdout.trim();
-  })();
-
-  const files = gitStatus
-    .split('\n')
-    .filter((line) => line.trim().length > 0)
-    .filter(
-      (line) =>
-        !line.startsWith('D') &&
-        !line.startsWith('??') &&
-        !line.startsWith('R'),
-    )
-    .map((item) => item.slice(3).trim());
-
-  return Promise.all(
-    files.map(async (file) => {
-      const fullPath = path.join(cwd, file);
-      const relativePath = path.relative(cwd, fullPath);
-      const name = path.basename(file);
-      const isHidden = name.startsWith('.');
-      const item = await createFileItem(
-        fullPath,
-        relativePath,
-        name,
-        'file',
-        includeMetadata,
-        isHidden,
+  try {
+    const gitStatus = await (async () => {
+      const { stdout } = await execFileNoThrow(
+        cwd,
+        'git',
+        ['status', '--short'],
+        undefined,
+        undefined,
+        false,
       );
+      return stdout.trim();
+    })();
 
-      return item;
-    }),
-  );
+    const files = gitStatus
+      .split('\n')
+      .filter((line) => line.trim().length > 0)
+      .filter(
+        (line) =>
+          !line.startsWith('D') &&
+          !line.startsWith('??') &&
+          !line.startsWith('R'),
+      )
+      .map((item) => item.slice(3).trim());
+
+    return Promise.all(
+      files.map(async (file) => {
+        const fullPath = path.join(cwd, file);
+        const relativePath = path.relative(cwd, fullPath);
+        const name = path.basename(file);
+        const isHidden = name.startsWith('.');
+        const item = await createFileItem(
+          fullPath,
+          relativePath,
+          name,
+          'file',
+          includeMetadata,
+          isHidden,
+        );
+
+        return item;
+      }),
+    );
+  } catch (e) {
+    debug(`Error getting high priority items: ${cwd}`, e);
+    return [];
+  }
 }
 
 function sortItems(items: FileItem[]): FileItem[] {
