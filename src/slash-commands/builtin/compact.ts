@@ -40,7 +40,12 @@ export const compactCommand: LocalJSXCommand = {
               modelProvider: services.context.getModelProvider(),
             });
             service.history.length = 0;
-            onDone(summary);
+            debug('compacted summary', summary);
+            service.history.push({
+              role: 'user',
+              content: summary,
+            });
+            onDone('Chat history compressed successfully');
           } catch (error) {
             debug('error compacting', error);
             onDone(

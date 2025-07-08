@@ -48,9 +48,9 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const isToolExecuting = state.status === APP_STATUS.TOOL_EXECUTING;
   const isFailed = state.status === APP_STATUS.FAILED;
   const isCancelled = state.status === APP_STATUS.CANCELLED;
-  const isAwaitingUserInput = state.status === APP_STATUS.AWAITING_USER_INPUT;
+  const isSlashCommand = state.slashCommandJSX !== null;
   const isWaitingForInput =
-    isProcessing || isToolApproved || isToolExecuting || isAwaitingUserInput;
+    isProcessing || isToolApproved || isToolExecuting || isSlashCommand;
 
   useInput((_, key) => {
     if (key.escape) {

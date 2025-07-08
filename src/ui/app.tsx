@@ -12,7 +12,7 @@ import { useDebounceResize } from './hooks/useDebounceResize';
 export function App() {
   const [slashCommandJSX, setSlashCommandJSX] =
     React.useState<React.ReactNode | null>(null);
-  const { state } = useAppContext();
+  const { state, dispatch } = useAppContext();
   const { processUserInput } = useChatActions();
   const initialPromptProcessed = useRef(false);
   const forceRerender = useDebounceResize();
@@ -24,6 +24,13 @@ export function App() {
       processUserInput(state.initialPrompt, setSlashCommandJSX).catch(() => {});
     }
   }, [state.initialPrompt, processUserInput]);
+
+  useEffect(() => {
+    dispatch({
+      type: 'SET_SLASH_COMMAND_JSX',
+      payload: slashCommandJSX,
+    });
+  }, [slashCommandJSX]);
 
   const showModal = state.planModal || state.approval.pending;
   const modalContent = state.planModal ? (
