@@ -33,7 +33,7 @@ interface GenerateBranchNameOpts {
 async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
   const agent = createCommitAgent({
     model: opts.model,
-    language: opts.language ?? 'english',
+    language: opts.language ?? 'English',
   });
   const runner = new Runner({
     modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
@@ -49,7 +49,7 @@ async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
 async function generateBranchName(opts: GenerateBranchNameOpts) {
   const agent = createBranchAgent({
     model: opts.model,
-    language: opts.language ?? 'english',
+    language: opts.language ?? 'English',
   });
   const runner = new Runner({
     modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
