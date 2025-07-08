@@ -26,25 +26,27 @@ export const compactCommand: LocalJSXCommand = {
       const service = isPlan ? services.planService : services.service;
       if (service.history.length === 0) {
         debug('skipping compacting, history length is 0');
-        return null;
-      }
-
-      // Skip compacting if less than 10 messages
-      if (service.history.length < 10) {
-        debug('skipping compacting, history length is less than 10');
-        return null;
+        onDone('No messages to compact');
+        return;
       }
 
       useEffect(() => {
         const run = async () => {
-          const summary = await generateSummaryMessage({
-            history: service.history,
-            model: services.context.config.model,
-            language: services.context.config.language,
-            modelProvider: services.context.getModelProvider(),
-          });
-          service.history.length = 0;
-          onDone(summary);
+          try {
+            const summary = await generateSummaryMessage({
+              history: service.history,
+              model: services.context.config.model,
+              language: services.context.config.language,
+              modelProvider: services.context.getModelProvider(),
+            });
+            service.history.length = 0;
+            onDone(summary);
+          } catch (error) {
+            debug('error compacting', error);
+            onDone(
+              `Error compacting: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            );
+          }
         };
         run();
       }, []);
@@ -73,6 +75,7 @@ async function generateSummaryMessage(opts: {
   const runner = new Runner({
     modelProvider: opts.modelProvider,
   });
+  debug('running compact agent', messages);
   const result = await runner.run(agent, messages);
   const summary = result.finalOutput;
   if (typeof summary !== 'string') {
