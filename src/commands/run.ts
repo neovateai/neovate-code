@@ -7,7 +7,6 @@ import yargsParser from 'yargs-parser';
 import { RunCliOpts } from '..';
 import { createShellAgent } from '../agents/shell';
 import { Context } from '../context';
-import { getDefaultModelProvider } from '../provider';
 import * as logger from '../utils/logger';
 
 async function executeShell(
@@ -110,7 +109,7 @@ export async function runRun(opts: RunCliOpts) {
       model: context.config.model,
     });
     const runner = new Runner({
-      modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
+      modelProvider: context.getModelProvider(),
     });
     const result = await runner.run(agent, prompt);
     let command = result.finalOutput;

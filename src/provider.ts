@@ -108,12 +108,6 @@ const OPENROUTER_MODELS = [
   'openai/o4-mini',
 ];
 
-export function getDefaultModelProvider(): ModelProvider {
-  return {
-    getModel,
-  };
-}
-
 export async function getModel(modelName?: string): Promise<AiSdkModel> {
   if (!modelName) {
     throw new Error('Model name is required');
