@@ -118,7 +118,7 @@ export async function runDefault(opts: RunCliOpts) {
       default: {},
       array: ['plugin'],
       boolean: ['json', 'help', 'quiet'],
-      string: ['model', 'smallModel', 'planModel'],
+      string: ['model', 'smallModel', 'planModel', 'systemPrompt'],
     });
     if (argv.help) {
       printHelp(opts.productName.toLowerCase());
@@ -144,6 +144,7 @@ export async function runDefault(opts: RunCliOpts) {
         planModel: argv.planModel,
         quiet: argv.quiet,
         plugins: argv.plugin,
+        systemPrompt: argv.systemPrompt,
       },
       plugins: opts.plugins,
       traceFile,
@@ -185,7 +186,8 @@ Arguments:
 Options:
   -h, --help                    Show help
   -m, --model <model>           Specify model to use
-  --smallModel <model>          Specify a smaller model for some tasks
+  --small-model <model>         Specify a smaller model for some tasks
+  --system-prompt <prompt>      Custom system prompt for code agent
   -q, --quiet                   Quiet mode, non interactive
   --json                        Output result as JSON
 

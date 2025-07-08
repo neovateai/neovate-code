@@ -10,6 +10,14 @@ export function createCodeAgent(options: {
   return new Agent({
     name: 'code',
     instructions: async (context, agent) => {
+      const customSystemPrompt = options.context.argvConfig.systemPrompt;
+      if (customSystemPrompt) {
+        return `${customSystemPrompt}
+
+${options.tools.getToolsPrompt(options.model)}
+`.trim();
+      }
+
       return `
 You are an interactive CLI tool that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.
 

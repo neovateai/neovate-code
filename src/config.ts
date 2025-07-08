@@ -28,6 +28,7 @@ export type Config = {
   approvalMode: ApprovalMode;
   plugins: string[];
   mcpServers: Record<string, McpServerConfig>;
+  systemPrompt?: string;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -43,6 +44,7 @@ const VALID_CONFIG_KEYS = [
   'model',
   'smallModel',
   'planModel',
+  'systemPrompt',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = ['mcpServers'];
