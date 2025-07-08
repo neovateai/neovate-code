@@ -51,7 +51,21 @@ export class DirectoryStructureContributor implements ContextContributor {
   name = 'directoryStructure';
   async getContent(opts: GetContentOpts) {
     const LSTool = createLSTool(opts);
-    return await LSTool.invoke(null as any, JSON.stringify({ dir_path: '.' }));
+    const result = (await LSTool.invoke(
+      null as any,
+      JSON.stringify({ dir_path: '.' }),
+    )) as unknown as { success: boolean; message: string; data: string };
+    debug('directoryStructure', result);
+
+    if (result.success) {
+      return `
+      ${result.message}
+      <directory_structure>
+        ${result.data}
+      </directory_structure>
+      `;
+    }
+    return null;
   }
 }
 
