@@ -8,7 +8,7 @@ import {
 
 export interface SuggestionItem {
   name: string;
-  description: string;
+  description: string | undefined;
 }
 
 export interface AutoSuggestionState {

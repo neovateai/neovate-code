@@ -6,6 +6,7 @@ import { readFile } from '@/api/files';
 import type { FileItem, ImageItem } from '@/api/model';
 import * as codeViewer from '@/state/codeViewer';
 import DevFileIcon from '../DevFileIcon';
+import EllipsisText from './EllipsisText';
 
 const useStyle = createStyles(({ css }) => {
   return {
@@ -74,7 +75,7 @@ export const FileContextTag = ({
           />
         )
       )}
-      {displayText}
+      <EllipsisText maxWidth={240}>{displayText}</EllipsisText>
     </Tag>
   );
 };
@@ -103,7 +104,7 @@ export const AttachmentContextTag = ({
       ) : (
         <FileUnknownOutlined className={styles.icon} />
       )}
-      {displayText}
+      <EllipsisText maxWidth={240}>{displayText}</EllipsisText>
     </Tag>
   );
 };
@@ -157,7 +158,7 @@ export const ImageContextTag = ({
             )}
           />
         )}
-        {displayText}
+        <EllipsisText maxWidth={240}>{displayText}</EllipsisText>
       </Tag>
     </Popover>
   );

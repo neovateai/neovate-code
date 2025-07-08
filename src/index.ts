@@ -1,4 +1,3 @@
-import { ModelProvider } from '@openai/agents';
 import createDebug from 'debug';
 import { PRODUCT_NAME } from './constants';
 import type { Context } from './context';
@@ -23,7 +22,6 @@ export interface RunCliOpts {
   cwd: string;
   productName: string;
   version: string;
-  modelProvider?: ModelProvider;
   plugins?: Plugin[];
 }
 

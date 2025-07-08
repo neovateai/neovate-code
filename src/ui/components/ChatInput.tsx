@@ -48,7 +48,9 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const isToolExecuting = state.status === APP_STATUS.TOOL_EXECUTING;
   const isFailed = state.status === APP_STATUS.FAILED;
   const isCancelled = state.status === APP_STATUS.CANCELLED;
-  const isWaitingForInput = isProcessing || isToolApproved || isToolExecuting;
+  const isSlashCommand = state.slashCommandJSX !== null;
+  const isWaitingForInput =
+    isProcessing || isToolApproved || isToolExecuting || isSlashCommand;
 
   useInput((_, key) => {
     if (key.escape) {
@@ -136,11 +138,20 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const handleSuggestionAccept = () => {
     if (isVisible) {
       const completedCommand = getCompletedCommand();
-      setValue('');
-      // 立即执行补全的命令
-      processUserInput(completedCommand.trim(), setSlashCommandJSX).catch(
-        () => {},
-      );
+      const fileQuery = extractFileQuery(value);
+
+      // In file mode (@), just complete the suggestion like Tab
+      if (fileQuery.hasFileQuery) {
+        setValue(completedCommand);
+        setCursorPosition(completedCommand.length);
+        setVisible(false);
+      } else {
+        // In slash command mode, execute the command
+        setValue('');
+        processUserInput(completedCommand.trim(), setSlashCommandJSX).catch(
+          () => {},
+        );
+      }
     }
   };
 

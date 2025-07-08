@@ -13,30 +13,29 @@ import { RunCliOpts } from '..';
 import { createBranchAgent } from '../agents/branch';
 import { createCommitAgent } from '../agents/commit';
 import { Context } from '../context';
-import { getDefaultModelProvider } from '../provider';
 import * as logger from '../utils/logger';
 
 interface GenerateCommitMessageOpts {
   prompt: string;
   model: string;
   language?: string;
-  modelProvider?: ModelProvider;
+  modelProvider: ModelProvider;
 }
 
 interface GenerateBranchNameOpts {
   commitMessage: string;
   model: string;
   language?: string;
-  modelProvider?: ModelProvider;
+  modelProvider: ModelProvider;
 }
 
 async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
   const agent = createCommitAgent({
     model: opts.model,
-    language: opts.language ?? 'english',
+    language: opts.language ?? 'English',
   });
   const runner = new Runner({
-    modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
+    modelProvider: opts.modelProvider,
   });
   const result = await runner.run(agent, opts.prompt);
   const message = result.finalOutput;
@@ -49,10 +48,10 @@ async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
 async function generateBranchName(opts: GenerateBranchNameOpts) {
   const agent = createBranchAgent({
     model: opts.model,
-    language: opts.language ?? 'english',
+    language: opts.language ?? 'English',
   });
   const runner = new Runner({
-    modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
+    modelProvider: opts.modelProvider,
   });
   const result = await runner.run(agent, opts.commitMessage);
   const branchName = result.finalOutput;
@@ -252,7 +251,7 @@ ${repoStyle}
         `,
           model,
           language: context.config.language,
-          modelProvider: opts.modelProvider,
+          modelProvider: context.getModelProvider(),
         });
         stop();
         checkCommitMessage(message, argv.ai);
@@ -277,7 +276,7 @@ ${repoStyle}
         commitMessage: finalMessage,
         model,
         language: context.config.language,
-        modelProvider: opts.modelProvider,
+        modelProvider: context.getModelProvider(),
       });
       stop();
       await checkoutNewBranch(branchName);
@@ -290,7 +289,7 @@ ${repoStyle}
       await handleInteractiveMode(finalMessage, {
         model,
         language: context.config.language,
-        modelProvider: opts.modelProvider ?? getDefaultModelProvider(),
+        modelProvider: context.getModelProvider(),
         productName: opts.productName,
       });
     } else {

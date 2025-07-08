@@ -113,6 +113,9 @@ importers:
       defu:
         specifier: ^6.1.4
         version: 6.1.4
+      diff:
+        specifier: ^8.0.2
+        version: 8.0.2
       dotenv:
         specifier: ^17.0.1
         version: 17.0.1
