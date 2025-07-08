@@ -13,33 +13,6 @@ import { logError } from './logger';
 
 const debug = createDebug('takumi:utils:EnhancedExecutor');
 
-const BANNED_COMMANDS = [
-  'alias',
-  'aria2c',
-  'axel',
-  'bash',
-  'chrome',
-  'curl',
-  'curlie',
-  'eval',
-  'firefox',
-  'fish',
-  'http-prompt',
-  'httpie',
-  'links',
-  'lynx',
-  'nc',
-  'rm',
-  'safari',
-  'sh',
-  'source',
-  'telnet',
-  'w3m',
-  'wget',
-  'xh',
-  'zsh',
-];
-
 const DEFAULT_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const MAX_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 const SIGTERM_CODE = 143;
@@ -76,64 +49,6 @@ type QueuedCommand = {
   resolve: (result: ExecResult) => void;
   reject: (error: Error) => void;
 };
-
-function getCommandRoot(command: string): string | undefined {
-  return command
-    .trim()
-    .replace(/[{}()]/g, '')
-    .split(/[\s;&|]+/)[0]
-    ?.split(/[/\\]/)
-    .pop();
-}
-
-function isHighRiskCommand(command: string): boolean {
-  const highRiskPatterns = [
-    /rm\s+.*(-rf|--recursive)/i,
-    /sudo/i,
-    /curl.*\|.*sh/i,
-    /wget.*\|.*sh/i,
-    /dd\s+if=/i,
-    /mkfs/i,
-    /fdisk/i,
-    /format/i,
-    /del\s+.*\/[qs]/i,
-  ];
-
-  if (command.includes('$(') || command.includes('`')) {
-    return true;
-  }
-
-  const commandRoot = getCommandRoot(command);
-  if (!commandRoot) {
-    return true;
-  }
-
-  return (
-    highRiskPatterns.some((pattern) => pattern.test(command)) ||
-    BANNED_COMMANDS.includes(commandRoot.toLowerCase())
-  );
-}
-
-function validateCommand(command: string): string | null {
-  if (!command.trim()) {
-    return 'Command cannot be empty.';
-  }
-
-  const commandRoot = getCommandRoot(command);
-  if (!commandRoot) {
-    return 'Could not identify command root.';
-  }
-
-  if (command.includes('$(') || command.includes('`')) {
-    return 'Command substitution is not allowed for security reasons.';
-  }
-
-  if (BANNED_COMMANDS.includes(commandRoot.toLowerCase())) {
-    return `Command '${commandRoot}' is not allowed for security reasons. Banned commands: ${BANNED_COMMANDS.join(', ')}`;
-  }
-
-  return null;
-}
 
 export class EnhancedExecutor {
   private static instance: EnhancedExecutor | null = null;
@@ -244,22 +159,6 @@ export class EnhancedExecutor {
       isolated = false,
     } = options;
     const actualTimeout = Math.min(timeout, MAX_TIMEOUT);
-
-    // Security validation first
-    const validationError = validateCommand(command);
-    if (validationError) {
-      return {
-        success: false,
-        command,
-        timeout: actualTimeout,
-        exitCode: 1,
-        signal: null,
-        stdout: '',
-        stderr: validationError,
-        interrupted: false,
-        error: validationError,
-      };
-    }
 
     if (isolated) {
       return this.executeIsolated(command, actualTimeout);
@@ -621,9 +520,4 @@ export class EnhancedExecutor {
     const executor = EnhancedExecutor.getInstance(cwd);
     return executor.execute(command, { timeout, isolated: false });
   }
-
-  static isHighRiskCommand = isHighRiskCommand;
-  static getCommandRoot = getCommandRoot;
-  static validateCommand = validateCommand;
-  static BANNED_COMMANDS = BANNED_COMMANDS;
 }
