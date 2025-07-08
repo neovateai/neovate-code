@@ -2,13 +2,27 @@ import { Box, Text } from 'ink';
 import SelectInput from 'ink-select-input';
 import React from 'react';
 import { useAppContext } from '../AppContext';
-import { APPROVAL_OPTIONS, UI_COLORS } from '../constants';
+import {
+  APPROVAL_OPTIONS,
+  EDIT_APPROVAL_OPTIONS,
+  UI_COLORS,
+} from '../constants';
+import { useExternalEditor } from '../hooks/useExternalEditor';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import { useToolApproval } from '../hooks/useToolApproval';
+import {
+  type SelectOption,
+  isEditParams,
+  isWriteParams,
+} from '../utils/type-guards';
+import DiffRenderer, {
+  type EditParams,
+  type WriteParams,
+} from './DiffRenderer';
 
 interface ApprovalModalSelectInputProps {
   toolName: string;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
 }
 
 function ApprovalModalSelectInput({
@@ -16,8 +30,47 @@ function ApprovalModalSelectInput({
   params,
 }: ApprovalModalSelectInputProps) {
   const { approveToolUse, addApprovalMemory, getToolKey } = useToolApproval();
+  const { openWithExternalEditor, isSupportExternalEditor } =
+    useExternalEditor();
+  const [error, setError] = React.useState<string | null>(null);
 
-  const handleSelect = (item: any) => {
+  const handleSelect = async (item: SelectOption) => {
+    if (item.value === 'modify_with_editor') {
+      try {
+        setError(null);
+        if (isEditParams(params) || isWriteParams(params)) {
+          await openWithExternalEditor(toolName, params);
+        } else {
+          throw new Error('Invalid parameters for external editor');
+        }
+        // After successful modification, the modal will show updated diff
+        // User can then approve or modify again
+        return;
+      } catch (error) {
+        console.error('Failed to open external editor:', error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'Failed to open external editor';
+
+        // Show user-friendly error messages
+        if (errorMessage.includes('timeout')) {
+          setError(
+            'Editor timed out. Please try again with a shorter editing session.',
+          );
+        } else if (errorMessage.includes('Failed to start editor')) {
+          setError(
+            'Could not start external editor. Please check if the editor is installed.',
+          );
+        } else if (errorMessage.includes('too large')) {
+          setError('File content is too large to edit externally.');
+        } else {
+          setError(`Editor error: ${errorMessage}`);
+        }
+        return;
+      }
+    }
+
     const approved = item.value !== 'deny';
     const toolKey = getToolKey(toolName, params);
 
@@ -30,23 +83,44 @@ function ApprovalModalSelectInput({
     approveToolUse(approved);
   };
 
-  const optionsWithToolName = APPROVAL_OPTIONS.map((option) =>
+  // Use different options for edit tool vs other tools
+  const baseOptions =
+    (toolName === 'edit' || toolName === 'write') && isSupportExternalEditor
+      ? EDIT_APPROVAL_OPTIONS
+      : APPROVAL_OPTIONS;
+  const optionsWithToolName = baseOptions.map((option) =>
     option.value === 'approve_always_tool'
       ? { ...option, label: `Yes (always for ${toolName})` }
       : option,
-  ) as any[];
+  );
 
-  return <SelectInput items={optionsWithToolName} onSelect={handleSelect} />;
+  return (
+    <>
+      {error && (
+        <Box marginY={1}>
+          <Text color={UI_COLORS.ERROR}>Error: {error}</Text>
+        </Box>
+      )}
+      <SelectInput items={optionsWithToolName} onSelect={handleSelect} />
+    </>
+  );
 }
 
 interface ToolDetailsProps {
   toolName: string;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
 }
 
 function ToolDetails({ toolName, params }: ToolDetailsProps) {
   const { getToolDescription } = useMessageFormatting();
   const description = getToolDescription(toolName, params);
+
+  if (toolName === 'edit' || toolName === 'write') {
+    if (isEditParams(params) || isWriteParams(params)) {
+      return <DiffRenderer toolName={toolName} params={params} />;
+    }
+    return <Text color={UI_COLORS.ERROR}>Invalid edit/write parameters</Text>;
+  }
 
   return (
     <>
@@ -85,7 +159,28 @@ export function ApprovalModal() {
     return null;
   }
 
-  const { toolName, params } = state.approval;
+  const { toolName, params, isModifying } = state.approval;
+
+  // Show modification in progress state
+  if (isModifying) {
+    return (
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor={UI_COLORS.INFO}
+        padding={1}
+        justifyContent="center"
+        alignItems="center"
+      >
+        <Text bold color={UI_COLORS.INFO}>
+          External Editor Active
+        </Text>
+        <Text color={UI_COLORS.SUCCESS}>
+          Save and close external editor to continue
+        </Text>
+      </Box>
+    );
+  }
 
   return (
     <Box
