@@ -1,21 +1,22 @@
 import { ArrowRightOutlined, FileSearchOutlined } from '@ant-design/icons';
-import { Suggestion } from '@ant-design/x';
-import { type GetProp } from 'antd';
 import { debounce } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import DevFileIcon from '@/components/DevFileIcon';
-import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
+import type { SuggestionItem } from '@/components/SuggestionList';
+import {
+  AI_CONTEXT_NODE_CONFIGS,
+  CONTEXT_MAX_POPUP_ITEM_COUNT,
+  ContextType,
+} from '@/constants/context';
 import { actions, state } from '@/state/suggestion';
 import type { ContextItem, ContextStoreValue } from '@/types/context';
-
-type SuggestionItems = Exclude<GetProp<typeof Suggestion, 'items'>, () => void>;
 
 export const useSuggestion = (selectedValues?: readonly string[]) => {
   const { fileList } = useSnapshot(state);
 
   useEffect(() => {
-    actions.getFileList({ maxSize: 20 });
+    actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
   }, []);
 
   const fileSuggestions = useMemo(() => {
@@ -54,7 +55,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
         extra: <ArrowRightOutlined />,
         children: fileSuggestions,
       },
-    ] as SuggestionItems;
+    ] as SuggestionItem[];
   }, [fileSuggestions]);
 
   const originalContextGetterMap: {
@@ -65,7 +66,10 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
 
   const searchFunctionMap: { [key in ContextType]?: (text: string) => void } = {
     [ContextType.FILE]: (text) =>
-      actions.getFileList({ maxSize: 20, searchString: text }),
+      actions.getFileList({
+        maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT,
+        searchString: text,
+      }),
   };
 
   const handleSearch = debounce((type: ContextType, text: string) => {
