@@ -82,7 +82,7 @@ const useStyles = createStyles(({ css, token }) => {
   };
 });
 
-const SuggesionList = (props: Props) => {
+const SuggestionList = (props: Props) => {
   const {
     children,
     onSearch,
@@ -238,4 +238,4 @@ const SuggesionList = (props: Props) => {
   );
 };
 
-export default SuggesionList;
+export default SuggestionList;

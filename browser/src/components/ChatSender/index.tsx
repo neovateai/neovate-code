@@ -10,7 +10,7 @@ import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
 import { getInputInfo } from '@/utils/chat';
-import SuggesionList from '../SuggestionList';
+import SuggestionList from '../SuggestionList';
 import LexicalTextArea from './LexicalTextArea';
 import { LexicalTextAreaContext } from './LexicalTextAreaContext';
 import SenderFooter from './SenderFooter';
@@ -129,7 +129,7 @@ const ChatSender: React.FC = () => {
           namespace: 'SenderTextarea',
         }}
       >
-        <SuggesionList
+        <SuggestionList
           loading={suggestionLoading}
           className={styles.suggestion}
           open={openPopup}
@@ -174,7 +174,7 @@ const ChatSender: React.FC = () => {
             }}
             placeholder={t('chat.inputPlaceholder')}
           />
-        </SuggesionList>
+        </SuggestionList>
         <SenderFooterBoard />
       </LexicalTextAreaContext.Provider>
     </>

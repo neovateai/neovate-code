@@ -3,7 +3,7 @@ import { Tag } from 'antd';
 import { createStyles } from 'antd-style';
 import { useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
-import SuggesionList from '@/components/SuggestionList';
+import SuggestionList from '@/components/SuggestionList';
 import { ContextType } from '@/constants/context';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
@@ -46,7 +46,7 @@ const AddContext = () => {
   const { styles } = useStyle();
 
   return (
-    <SuggesionList
+    <SuggestionList
       open={openPopup}
       onOpenChange={(open) => setOpenPopup(open)}
       items={defaultSuggestions}
@@ -74,7 +74,7 @@ const AddContext = () => {
       >
         {attachedContexts.length === 0 && <span>Add Context</span>}
       </Tag>
-    </SuggesionList>
+    </SuggestionList>
   );
 };
 
