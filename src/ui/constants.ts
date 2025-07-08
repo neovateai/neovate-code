@@ -36,12 +36,18 @@ export const TOOL_NAMES = {
 // Tool description extractors
 export const TOOL_DESCRIPTION_EXTRACTORS = {
   [TOOL_NAMES.READ]: (args: any, cwd: string) =>
-    path.relative(cwd, args.file_path),
+    !args.file_path
+      ? 'No file path provided'
+      : path.relative(cwd, args.file_path),
   [TOOL_NAMES.BASH]: (args: any, cwd: string) => args.command,
   [TOOL_NAMES.EDIT]: (args: any, cwd: string) =>
-    path.relative(cwd, args.file_path),
+    !args.file_path
+      ? 'No file path provided'
+      : path.relative(cwd, args.file_path),
   [TOOL_NAMES.WRITE]: (args: any, cwd: string) =>
-    path.relative(cwd, args.file_path),
+    !args.file_path
+      ? 'No file path provided'
+      : path.relative(cwd, args.file_path),
   [TOOL_NAMES.FETCH]: (args: any, cwd: string) => args.url,
   [TOOL_NAMES.GLOB]: (args: any, cwd: string) => args.pattern,
   [TOOL_NAMES.GREP]: (args: any, cwd: string) => args.pattern,
