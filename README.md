@@ -9,6 +9,14 @@ Pronounced `/tɑːˈkuːmi/`, Takumi is an AI-powered coding assistant that enha
 
 ![](https://cdn.jsdelivr.net/gh/sorrycc-bot/image-2025-04@main/uPic/takumi-20250618-1.gif)
 
+## Features
+
+- AI-powered code generation and analysis
+- Multi-LLM provider support (OpenAI, Google, Anthropic, etc.)
+- Interactive CLI interface
+- Smart code completion and suggestions
+- Automated testing and debugging assistance
+
 ## Getting Started
 
 > Make sure you have Node.js version 18 or higher installed.
