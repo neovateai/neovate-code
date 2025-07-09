@@ -11,6 +11,12 @@ interface GetContentOpts {
   context: Context;
 }
 
+interface LSToolResult {
+  success: boolean;
+  message: string;
+  data: string;
+}
+
 type GetContent = (opts: GetContentOpts) => Promise<string | null>;
 
 export interface ContextContributor {
@@ -54,18 +60,20 @@ export class DirectoryStructureContributor implements ContextContributor {
     const result = (await LSTool.invoke(
       null as any,
       JSON.stringify({ dir_path: '.' }),
-    )) as unknown as { success: boolean; message: string; data: string };
+    )) as unknown as LSToolResult;
     debug('directoryStructure', result);
 
     if (result.success) {
       return `
-      ${result.message}
-      <directory_structure>
-        ${result.data}
-      </directory_structure>
-      `;
+${result.message}
+<directory_structure>
+${result.data}
+</directory_structure>
+      `.trim();
+    } else {
+      debug('directoryStructure failed', result.message);
+      return null;
     }
-    return null;
   }
 }
 
