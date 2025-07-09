@@ -225,7 +225,10 @@ async function getGitStatusItems(
         !line.startsWith('??') &&
         !line.startsWith('R'),
     )
-    .map((item) => item.slice(3).trim())
+    .map((line) => {
+      const texts = line.split(' ');
+      return texts[texts.length - 1];
+    })
     .filter(
       (path) =>
         !searchString ||
