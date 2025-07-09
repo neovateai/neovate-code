@@ -34,31 +34,27 @@ interface FileEditRequest {
 }
 
 const DEFAULT_DIRECTORY = '.';
-const DEFAULT_MAX_DEPTH = 3;
+const DEFAULT_MAX_SIZE = 50;
 const DEFAULT_INCLUDE_METADATA = 0;
 
 interface WalkContext {
   cwd: string;
   ignorePatterns: RegExp[];
-  pattern?: RegExp;
   includeMetadata: boolean;
-  maxDepth: number;
+  maxSize: number;
+  searchString?: string;
 }
 
 function normalizeRequestParams(query: FileListRequest, cwd: string) {
   const {
     directory = DEFAULT_DIRECTORY,
-    pattern,
-    maxDepth = DEFAULT_MAX_DEPTH,
     includeMetadata = DEFAULT_INCLUDE_METADATA,
-    maxSize,
+    maxSize = DEFAULT_MAX_SIZE,
     searchString,
   } = query;
 
   return {
     directory,
-    pattern: pattern ? new RegExp(pattern, 'i') : undefined,
-    maxDepth,
     includeMetadata: includeMetadata === 1,
     targetDir: path.resolve(cwd, directory),
     maxSize,
@@ -111,8 +107,13 @@ async function createFileItem(
   return fileItem;
 }
 
-function shouldIncludeFile(name: string, pattern?: RegExp): boolean {
-  return !pattern || pattern.test(name);
+function shouldIncludeFileOrFolder(
+  path: string,
+  searchString?: string,
+): boolean {
+  return (
+    !searchString || path.toLowerCase().includes(searchString.toLowerCase())
+  );
 }
 
 function shouldIgnorePath(
@@ -127,90 +128,81 @@ function shouldIgnorePath(
   return ignorePatterns.some((pattern) => pattern.test(fullPath));
 }
 
-async function walkDirectory(
+async function recursiveWalk(
   dir: string,
   context: WalkContext,
-  currentDepth: number = 0,
-): Promise<FileItem[]> {
-  if (currentDepth > context.maxDepth) {
+  currentItemCount: number = 0,
+) {
+  if (currentItemCount > context.maxSize) {
     return [];
   }
 
   const items: FileItem[] = [];
-
+  const { cwd, ignorePatterns, includeMetadata, maxSize } = context;
   try {
     const fs = await import('fs/promises');
     const entries = await fs.readdir(dir, { withFileTypes: true });
-
-    // 并行处理所有条目
-    const processPromises = entries.map(async (entry) => {
-      const fullPath = path.join(dir, entry.name);
-      const relativePath = path.relative(context.cwd, fullPath);
-
-      // 检查是否应该忽略
-      if (shouldIgnorePath(fullPath, entry.name, context.ignorePatterns)) {
-        return null;
+    for (const entry of entries) {
+      if (items.length + currentItemCount > maxSize) {
+        break;
       }
 
-      const isHidden = entry.name.startsWith('.');
+      const fullPath = path.join(dir, entry.name);
+      const relativePath = path.relative(cwd, fullPath);
+      const name = entry.name;
+      const isHidden = name.startsWith('.');
+      if (shouldIgnorePath(fullPath, name, ignorePatterns)) {
+        continue;
+      }
 
       if (entry.isFile()) {
-        // 检查文件模式匹配
-        if (!shouldIncludeFile(entry.name, context.pattern)) {
-          return null;
+        if (shouldIncludeFileOrFolder(relativePath, context.searchString)) {
+          const fileItem = await createFileItem(
+            fullPath,
+            relativePath,
+            name,
+            'file',
+            includeMetadata,
+            isHidden,
+          );
+
+          items.push(fileItem);
+        }
+      } else if (entry.isDirectory()) {
+        if (shouldIncludeFileOrFolder(relativePath, context.searchString)) {
+          const folderItem = await createFileItem(
+            fullPath,
+            relativePath,
+            name,
+            'directory',
+            includeMetadata,
+            isHidden,
+          );
+          items.push(folderItem);
         }
 
-        return createFileItem(
-          fullPath,
-          relativePath,
-          entry.name,
-          'file',
-          context.includeMetadata,
-          isHidden,
-        );
-      } else if (entry.isDirectory()) {
-        const folderItem = await createFileItem(
-          fullPath,
-          relativePath,
-          entry.name,
-          'directory',
-          context.includeMetadata,
-          isHidden,
-        );
-
-        // 递归遍历子目录
-        const subItems = await walkDirectory(
+        const subItems = await recursiveWalk(
           fullPath,
           context,
-          currentDepth + 1,
+          currentItemCount + items.length,
         );
 
-        return [folderItem, ...subItems];
-      }
-
-      return null;
-    });
-
-    const results = await Promise.all(processPromises);
-
-    // 扁平化结果并过滤 null 值
-    for (const result of results) {
-      if (result) {
-        if (Array.isArray(result)) {
-          items.push(...result);
-        } else {
-          items.push(result);
-        }
+        items.push(...subItems);
       }
     }
-  } catch (error) {
-    debug(`Error walking directory: ${dir}`, error);
-  }
 
-  return items;
+    return items;
+  } catch (e) {
+    debug(`Error walking directory: ${dir}`, e);
+    return [];
+  }
 }
 
-async function getGitStatusItems(cwd: string, includeMetadata: boolean) {
+async function getGitStatusItems(
+  cwd: string,
+  includeMetadata: boolean,
+  searchString?: string,
+) {
   const gitStatus = await (async () => {
     const { stdout } = await execFileNoThrow(
       cwd,
@@ -232,7 +224,12 @@ async function getGitStatusItems(cwd: string, includeMetadata: boolean) {
         !line.startsWith('??') &&
         !line.startsWith('R'),
     )
-    .map((item) => item.slice(3).trim());
+    .map((item) => item.slice(3).trim())
+    .filter(
+      (path) =>
+        !searchString ||
+        path.toLowerCase().includes(searchString.toLocaleLowerCase()),
+    );
 
   return Promise.all(
     files.map(async (file) => {
@@ -297,52 +294,38 @@ const filesRoute: FastifyPluginAsync<CreateServerOpts> = async (app, opts) => {
             });
         }
 
-        const context: WalkContext = {
-          cwd,
-          ignorePatterns: loadIgnorePatterns(cwd),
-          pattern: params.pattern,
-          includeMetadata: params.includeMetadata,
-          maxDepth: params.maxDepth,
-        };
-
-        let items = await walkDirectory(params.targetDir, context);
-
-        // search
-        if (params.searchString) {
-          const search = params.searchString.toLowerCase();
-
-          let primary: FileItem[] = [];
-          let secondary: FileItem[] = [];
-          for (const item of items) {
-            if (item.name.toLowerCase().includes(search)) {
-              primary.push(item);
-            } else if (item.path.toLowerCase().includes(search)) {
-              secondary.push(item);
-            }
-          }
-          items = [...primary, ...secondary];
-        }
-
-        const highPriorityItems = await getGitStatusItems(
+        const gitStatusItems = await getGitStatusItems(
           cwd,
           params.includeMetadata,
+          params.searchString,
         );
 
-        const sortedItems = [...highPriorityItems, ...sortItems(items)];
+        let targetItems: FileItem[] = gitStatusItems.slice(0, params.maxSize);
 
-        const slicedItems =
-          params.maxSize && params.maxSize > 0
-            ? sortedItems.slice(0, params.maxSize)
-            : sortedItems;
+        if (targetItems.length < params.maxSize) {
+          const remainingSize = params.maxSize - gitStatusItems.length;
 
-        const { files, directories } = separateItemsByType(slicedItems);
+          const context: WalkContext = {
+            cwd,
+            ignorePatterns: loadIgnorePatterns(cwd),
+            maxSize: remainingSize,
+            searchString: params.searchString,
+            includeMetadata: params.includeMetadata,
+          };
+
+          const items = await recursiveWalk(params.targetDir, context);
+
+          targetItems = [...targetItems, ...sortItems(items)];
+        }
+
+        const { files, directories } = separateItemsByType(targetItems);
 
         return reply.send({
           success: true,
           data: {
             cwd,
             directory: params.targetDir,
-            items: slicedItems,
+            items: targetItems,
             files,
             directories,
           },
