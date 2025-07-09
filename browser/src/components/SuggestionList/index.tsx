@@ -44,6 +44,9 @@ const useStyles = createStyles(({ css, token }) => {
     listItemLabel: css`
       font-weight: 600;
     `,
+    listItemLabelSearch: css`
+      color: #ff0000;
+    `,
     listItemContent: css`
       padding: 0 ${token.paddingSM}px;
       display: flex;
@@ -121,6 +124,27 @@ const SuggestionList = (props: Props) => {
     onSearch?.(targetFirstKey, '');
   };
 
+  const renderItemText = (
+    text: React.ReactNode,
+    searchText?: string | null,
+  ) => {
+    if (!searchText || typeof text !== 'string') {
+      return text;
+    } else {
+      const normalTexts = text.split(searchText);
+      const renderedTexts = [
+        normalTexts[0],
+        ...normalTexts.slice(1).map((text, index) => (
+          <React.Fragment key={index}>
+            <span className={styles.listItemLabelSearch}>{searchText}</span>
+            {text}
+          </React.Fragment>
+        )),
+      ];
+      return renderedTexts;
+    }
+  };
+
   const renderItem = (item: SuggestionItem) => {
     return (
       <List.Item
@@ -140,10 +164,12 @@ const SuggestionList = (props: Props) => {
           <div className={styles.listItemContentMain}>
             <div>{item.icon}</div>
             <AutoTooltip maxWidth={300} className={styles.listItemLabel}>
-              {item.label}
+              {renderItemText(item.label, inputRef.current?.input?.value)}
             </AutoTooltip>
           </div>
-          <AutoTooltip maxWidth={300}>{item.extra}</AutoTooltip>
+          <AutoTooltip maxWidth={300}>
+            {renderItemText(item.extra, inputRef.current?.input?.value)}
+          </AutoTooltip>
         </div>
       </List.Item>
     );
