@@ -50,7 +50,7 @@ export function formatToolUse(toolUse: ToolUse): AgentInputItem {
   return {
     role: 'user',
     type: 'message',
-    content: `[${name} for ${JSON.stringify(params)}] result: <function_results>\n${JSON.stringify(
+    content: `[${name} for ${JSON.stringify(params)}] result: \n<function_results>\n${JSON.stringify(
       result,
     )}\n</function_results>`,
   };
