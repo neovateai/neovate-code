@@ -204,6 +204,7 @@ async function getGitStatusItems(
   searchString?: string,
 ) {
   const gitStatus = await (async () => {
+    // won't throw error
     const { stdout } = await execFileNoThrow(
       cwd,
       'git',

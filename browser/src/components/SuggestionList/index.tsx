@@ -1,5 +1,5 @@
 import { LeftOutlined } from '@ant-design/icons';
-import { Button, Dropdown, Input, type InputRef, List } from 'antd';
+import { Button, Input, type InputRef, List, Popover } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -75,7 +75,6 @@ const useStyles = createStyles(({ css, token }) => {
       background-color: ${token.colorBgElevated};
       border-radius: ${token.borderRadius}px;
       border: 1px solid ${token.colorBorder};
-      box-shadow: ${token.boxShadowSecondary};
       padding: 4px;
       width: fit-content;
     `,
@@ -209,13 +208,12 @@ const SuggestionList = (props: Props) => {
   }, [open, onOpenChange]);
 
   return (
-    <Dropdown
+    <Popover
       className={className}
       open={open}
       onOpenChange={onOpenChange}
-      placement="topRight"
-      // destroyOnHidden
-      popupRender={() => (
+      placement="topLeft"
+      content={() => (
         <div className={styles.popup} ref={popupRef}>
           {ListHeader}
           <List
@@ -231,10 +229,15 @@ const SuggestionList = (props: Props) => {
         </div>
       )}
       trigger={[]}
-      autoFocus
+      arrow={false}
+      styles={{
+        body: {
+          padding: 0,
+        },
+      }}
     >
       {children}
-    </Dropdown>
+    </Popover>
   );
 };
 
