@@ -72,7 +72,7 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
         <SenderAttachments />
         <Divider type="vertical" />
         {isProcessing ? (
-          <LoadingButton type="default" />
+          <LoadingButton type="default" disabled={false} />
         ) : (
           <SendButton type="primary" />
         )}

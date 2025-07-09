@@ -1,4 +1,5 @@
 import { Agent, AgentInputItem, Runner } from '@openai/agents';
+import createDebug from 'debug';
 import { Readable } from 'stream';
 import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
@@ -17,6 +18,8 @@ import { formatToolUse } from './utils/formatToolUse';
 import { parseMessage } from './utils/parse-message';
 import { randomUUID } from './utils/randomUUID';
 
+const debug = createDebug('takumi:service');
+
 export type AgentType = 'code' | 'plan';
 
 export type ServiceOpts = CreateServiceOpts & {
@@ -32,6 +35,7 @@ export interface CreateServiceOpts {
 export interface ServiceRunOpts {
   input: AgentInputItem[];
   thinking?: boolean;
+  abortSignal?: AbortSignal;
 }
 
 export interface ServiceRunResult {
@@ -121,9 +125,15 @@ export class Service {
   }
 
   async run(opts: ServiceRunOpts): Promise<ServiceRunResult> {
+    if (opts.abortSignal?.aborted) {
+      debug('Request already cancelled, not executing run');
+      throw new DOMException('The operation was aborted', 'AbortError');
+    }
+
     const stream = new Readable({
       read() {},
     });
+
     const input = await (async () => {
       const systemPromptStrs = await this.context.buildSystemPrompts();
       const systemPrompts = systemPromptStrs.map((str) => ({
@@ -134,9 +144,12 @@ export class Service {
         this.history.filter((item) => (item as any).role !== 'system') || [];
       return [...systemPrompts, ...prevInput, ...opts.input];
     })();
-    this.#processStream(input, stream, opts.thinking).catch((error) => {
-      stream.emit('error', error);
-    });
+
+    this.#processStream(input, stream, opts.thinking, opts.abortSignal).catch(
+      (error) => {
+        stream.emit('error', error);
+      },
+    );
     return { stream };
   }
 
@@ -144,8 +157,14 @@ export class Service {
     input: AgentInputItem[],
     stream: Readable,
     thinking?: boolean,
+    abortSignal?: AbortSignal,
   ) {
     try {
+      if (abortSignal?.aborted) {
+        debug('Request already cancelled, not processing stream');
+        throw new DOMException('The operation was aborted', 'AbortError');
+      }
+
       const runner = new Runner({
         modelProvider: this.opts.context.getModelProvider(),
         modelSettings: {
@@ -160,43 +179,67 @@ export class Service {
           },
         },
       });
+
       const result = await runner.run(this.agent!, input, {
         stream: true,
       });
+
       let text = '';
-      for await (const chunk of result.toStream()) {
-        if (
-          chunk.type === 'raw_model_stream_event' &&
-          chunk.data.type === 'model'
-        ) {
-          switch (chunk.data.event.type) {
-            case 'text-delta':
-              const textDelta = chunk.data.event.textDelta;
-              text += textDelta;
-              const parsed = parseMessage(text);
-              if (parsed[0]?.type === 'text' && parsed[0].partial) {
+      try {
+        const resultStream = result.toStream();
+
+        for await (const chunk of resultStream) {
+          if (abortSignal?.aborted) {
+            debug('Detected cancellation, stopping stream processing');
+            throw new DOMException('The operation was aborted', 'AbortError');
+          }
+
+          if (
+            chunk.type === 'raw_model_stream_event' &&
+            chunk.data.type === 'model'
+          ) {
+            switch (chunk.data.event.type) {
+              case 'text-delta':
+                const textDelta = chunk.data.event.textDelta;
+                text += textDelta;
+                const parsed = parseMessage(text);
+                if (parsed[0]?.type === 'text' && parsed[0].partial) {
+                  stream.push(
+                    JSON.stringify({
+                      type: 'text-delta',
+                      content: textDelta,
+                      partial: true,
+                    }) + '\n',
+                  );
+                }
+                break;
+              case 'reasoning':
                 stream.push(
                   JSON.stringify({
-                    type: 'text-delta',
-                    content: textDelta,
-                    partial: true,
+                    type: 'reasoning',
+                    content: chunk.data.event.textDelta,
                   }) + '\n',
                 );
-              }
-              break;
-            case 'reasoning':
-              stream.push(
-                JSON.stringify({
-                  type: 'reasoning',
-                  content: chunk.data.event.textDelta,
-                }) + '\n',
-              );
-              break;
-            default:
-              break;
+                break;
+              default:
+                break;
+            }
           }
         }
+      } catch (error) {
+        if (abortSignal?.aborted) {
+          debug('Caught error, detected cancellation');
+          throw new DOMException('The operation was aborted', 'AbortError');
+        }
+        throw error;
       }
+
+      // Final check for cancellation
+      if (abortSignal?.aborted) {
+        debug('Final check detected cancellation');
+        throw new DOMException('The operation was aborted', 'AbortError');
+      }
+
       const parsed = parseMessage(text);
       if (parsed[0]?.type === 'text') {
         stream.push(
@@ -251,6 +294,12 @@ export class Service {
       stream.push(null);
       this.history = history;
     } catch (error) {
+      // 检查是否是取消错误
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        debug('Caught AbortError, terminating stream processing');
+        stream.push(null); // 关闭流
+        return; // 直接返回，不继续执行
+      }
       stream.emit('error', error);
     }
   }
