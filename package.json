@@ -91,6 +91,7 @@
     "ink-select-input": "^6.2.0",
     "ink-spinner": "^5.0.0",
     "jiti": "^2.4.2",
+    "jsonrepair": "^3.12.0",
     "lint-staged": "^16.1.2",
     "lodash-es": "^4.17.21",
     "marked": "^16.0.0",

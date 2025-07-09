@@ -1,6 +1,6 @@
 import { Box, Text, useInput } from 'ink';
 import Spinner from 'ink-spinner';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../AppContext';
 import { APP_STATUS, BORDER_COLORS } from '../constants';
 import { useAutoSuggestion } from '../hooks/useAutoSuggestion';
@@ -34,6 +34,9 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
 
   const [value, setValue] = useState('');
   const [cursorPosition, setCursorPosition] = useState<number | undefined>();
+  const [ctrlCPressed, setCtrlCPressed] = useState(false);
+  const [showExitWarning, setShowExitWarning] = useState(false);
+  const ctrlCTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const {
     suggestions,
     selectedIndex,
@@ -54,7 +57,47 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const isWaitingForInput =
     isProcessing || isToolApproved || isToolExecuting || isSlashCommand;
 
-  useInput((_, key) => {
+  const handleExit = () => {
+    // Clear any existing timeout
+    if (ctrlCTimeoutRef.current) {
+      clearTimeout(ctrlCTimeoutRef.current);
+    }
+
+    process.exit(0);
+  };
+
+  const handleCtrlC = () => {
+    if (ctrlCPressed) {
+      // Second press - exit immediately
+      handleExit();
+    } else {
+      // First press - show warning and set timeout
+      setCtrlCPressed(true);
+      setShowExitWarning(true);
+
+      // Reset after 1 second
+      ctrlCTimeoutRef.current = setTimeout(() => {
+        setCtrlCPressed(false);
+        setShowExitWarning(false);
+        ctrlCTimeoutRef.current = null;
+      }, 1000);
+    }
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (ctrlCTimeoutRef.current) {
+        clearTimeout(ctrlCTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useInput((input, key) => {
+    if (key.ctrl && input === 'c') {
+      handleCtrlC();
+      return;
+    }
     if (key.escape) {
       if (isWaitingForInput) {
         cancelQuery();
@@ -214,6 +257,11 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
           <Text color={BORDER_COLORS.ERROR}>{state.error}</Text>
         </Box>
       )}
+      {showExitWarning && (
+        <Box paddingX={2}>
+          <Text color={BORDER_COLORS.WARNING}>Press Ctrl+C again to exit</Text>
+        </Box>
+      )}
       <AutoSuggestionDisplay
         suggestions={suggestions}
         selectedIndex={selectedIndex}
@@ -222,7 +270,8 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       />
       <Box flexDirection="row" paddingX={2} gap={1}>
         <Text color="gray">
-          ctrl+c to exit | enter to send | esc to cancel | ↑/↓ navigate history
+          ctrl+c twice to exit | enter to send | esc to cancel | ↑/↓ navigate
+          history
         </Text>
         <Box flexGrow={1} />
         {getModeDisplay() && <Text color="yellow">{getModeDisplay()}</Text>}

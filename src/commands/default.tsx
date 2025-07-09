@@ -88,7 +88,7 @@ export async function run(opts: RunOpts) {
         </AppProvider>,
         {
           patchConsole: process.env.DEBUG ? false : true,
-          exitOnCtrlC: true,
+          exitOnCtrlC: false,
         },
       );
       const exit = () => {
@@ -97,9 +97,6 @@ export async function run(opts: RunOpts) {
           process.exit(0);
         });
       };
-      process.on('SIGINT', exit);
-      process.on('SIGQUIT', exit);
-      process.on('SIGTERM', exit);
     }
   } catch (e) {}
 }
