@@ -232,7 +232,7 @@ async function getGitStatusItems(
     .filter(
       (path) =>
         !searchString ||
-        path.toLowerCase().includes(searchString.toLocaleLowerCase()),
+        path.toLowerCase().includes(searchString.toLowerCase()),
     );
 
   return Promise.all(
