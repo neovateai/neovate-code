@@ -1,3 +1,8 @@
+import createDebug from 'debug';
+import { jsonrepair } from 'jsonrepair';
+
+const debug = createDebug('takumi:utils:parse-message');
+
 interface TextContent {
   type: 'text';
   content: string;
@@ -59,11 +64,18 @@ export function parseMessage(text: string): MessageContent[] {
             // 如果jsonString为空，解析会失败，所以我们给一个默认的空对象
             currentToolUse.params = jsonString ? JSON.parse(jsonString) : {};
           } catch (e) {
-            // 如果JSON格式错误或不完整（流式场景），则优雅地处理
-            currentToolUse.params = {
-              _error: 'Invalid or incomplete JSON',
-              _raw: jsonString,
-            };
+            try {
+              // 尝试用 jsonrepair 修复
+              const repairedJsonString = jsonrepair(jsonString);
+              currentToolUse.params = JSON.parse(repairedJsonString);
+            } catch (e) {
+              debug('jsonrepair failed', e);
+              // 如果JSON格式错误或不完整（流式场景），则优雅地处理
+              currentToolUse.params = {
+                _error: 'Invalid or incomplete JSON',
+                _raw: jsonString,
+              };
+            }
           }
         }
         // 重置参数状态，返回到“工具内部但不在参数内”的状态
