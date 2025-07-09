@@ -294,11 +294,10 @@ export class Service {
       stream.push(null);
       this.history = history;
     } catch (error) {
-      // 检查是否是取消错误
       if (error instanceof DOMException && error.name === 'AbortError') {
         debug('Caught AbortError, terminating stream processing');
-        stream.push(null); // 关闭流
-        return; // 直接返回，不继续执行
+        stream.push(null);
+        return;
       }
       stream.emit('error', error);
     }

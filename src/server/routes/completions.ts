@@ -111,7 +111,6 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
       try {
         await pipeDataStreamToResponse(reply.raw, {
           async execute(dataStream) {
-            debug('Starting runCode execution');
             await runCode({
               ...opts,
               prompt,
@@ -124,7 +123,6 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
                 (context) => context.type !== ContextType.FILE,
               ),
             });
-            debug('runCode execution completed');
           },
           onError(error) {
             // Check if it's a cancellation error
@@ -137,7 +135,6 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
             return error instanceof Error ? error.message : String(error);
           },
         });
-        debug('pipeDataStreamToResponse completed');
       } catch (error) {
         // Check if it's a cancellation error
         if (error instanceof Error && error.name === 'AbortError') {
@@ -149,14 +146,12 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
         }
 
         debug('Unhandled error:', error);
-        debug('Unhandled error:', error);
         console.log('error', error);
         if (!reply.sent) {
           reply.status(500).send({ error: 'Internal server error' });
         }
         throw error;
       }
-      debug('completions request processing completed');
     },
   );
 };

@@ -49,9 +49,6 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
     return MODES_MAP[mode];
   }, [mode]);
 
-  // 判断是否正在处理用户请求
-  // 'submitted': 消息已发送到API，等待响应流开始
-  // 'streaming': 响应正在从API流式传输，接收数据块
   const isProcessing = status === 'submitted' || status === 'streaming';
 
   return (

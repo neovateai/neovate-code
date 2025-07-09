@@ -46,7 +46,7 @@ export async function query(opts: QueryOpts) {
   let finalText: string | null = null;
   let isFirstRun = true;
   while (true) {
-    // Check abortSignal.aborted directly
+    // Check for cancellation before starting each iteration
     if (abortSignal?.aborted) {
       debug('Detected cancel signal, stopping query processing');
       return {
@@ -59,6 +59,7 @@ export async function query(opts: QueryOpts) {
     const { stream } = await service.run({
       input,
       thinking,
+      // disable thinking for non-first runs
       ...(isFirstRun ? {} : { thinking: false }),
       abortSignal,
     });
