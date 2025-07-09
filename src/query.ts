@@ -32,7 +32,6 @@ type QueryOpts = {
 
 export async function query(opts: QueryOpts) {
   const debug = createDebug('takumi:query');
-  debug('Query function started');
   const { service, thinking, abortSignal } = opts;
   let input =
     typeof opts.input === 'string'
