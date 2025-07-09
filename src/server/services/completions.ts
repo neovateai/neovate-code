@@ -143,6 +143,7 @@ export async function runCode(opts: RunCompletionOpts) {
       thinking: isReasoningModel(service.context.config.model),
       abortSignal,
       onTextDelta(text) {
+        debug(`Text delta: ${text}`);
         dataStream.writeMessageAnnotation({
           type: 'text_delta',
           text,
@@ -155,6 +156,7 @@ export async function runCode(opts: RunCompletionOpts) {
           mode,
         });
         await delay(10);
+        debug(`Text: ${text}`);
         dataStream.write(formatDataStreamPart('text', text));
       },
       onReasoning(text) {
