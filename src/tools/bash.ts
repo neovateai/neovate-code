@@ -37,6 +37,7 @@ const BANNED_COMMANDS = [
 
 const DEFAULT_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const MAX_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+const MAX_OUTPUT_SIZE = 1024 * 1024; // 1MB
 
 function getCommandRoot(command: string): string | undefined {
   return command
@@ -92,7 +93,7 @@ function validateCommand(command: string): string | null {
   }
 
   if (BANNED_COMMANDS.includes(commandRoot.toLowerCase())) {
-    return `Command '${commandRoot}' is not allowed for security reasons. Banned commands: ${BANNED_COMMANDS.join(', ')}`;
+    return 'Command not allowed for security reasons.';
   }
 
   return null;
@@ -168,13 +169,25 @@ async function executeCommand(
 
     shell.stdout?.on('data', (data: Buffer) => {
       if (!exited) {
-        stdout += data.toString().replace(/\x1b\[[0-9;]*m/g, '');
+        const newData = data.toString().replace(/\x1b\[[0-9;]*m/g, '');
+        if (stdout.length + newData.length > MAX_OUTPUT_SIZE) {
+          stdout += newData.substring(0, MAX_OUTPUT_SIZE - stdout.length);
+          stdout += '\n... [Output truncated due to size limit]';
+        } else {
+          stdout += newData;
+        }
       }
     });
 
     shell.stderr?.on('data', (data: Buffer) => {
       if (!exited) {
-        stderr += data.toString().replace(/\x1b\[[0-9;]*m/g, '');
+        const newData = data.toString().replace(/\x1b\[[0-9;]*m/g, '');
+        if (stderr.length + newData.length > MAX_OUTPUT_SIZE) {
+          stderr += newData.substring(0, MAX_OUTPUT_SIZE - stderr.length);
+          stderr += '\n... [Output truncated due to size limit]';
+        } else {
+          stderr += newData;
+        }
       }
     });
 
