@@ -68,7 +68,7 @@ function formatToolResult(result: any): string {
   }
 
   const resultData = result.data
-    ? `\n<function_results_data>\n${stringify(result.data)}\n</function_results_data>\n`
+    ? `\n<function_results_data>\n${JSON.stringify(result.data)}\n</function_results_data>\n`
     : '';
 
   return `${result.message}${resultData}`;
@@ -128,17 +128,4 @@ export function formatToolUse(toolUse: ToolUse): AgentInputItem {
   }
 
   return createUserFormatItem(toolUse);
-}
-
-function stringify(obj: any): string {
-  return JSON.stringify(
-    obj,
-    (key, value) => {
-      if (typeof value === 'string') {
-        return value;
-      }
-      return value;
-    },
-    2,
-  );
 }
