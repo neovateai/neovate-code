@@ -42,6 +42,10 @@ export function getDiffParams(
   result?: Record<string, any>,
 ): DiffResult {
   const { file_path } = params;
+  if (!file_path) {
+    throw new Error('No file_path found in params');
+  }
+
   const relativeFilePath = getRelativePath(file_path, cwd);
 
   if (toolName === 'edit') {
