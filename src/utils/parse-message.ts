@@ -1,7 +1,3 @@
-import createDebug from 'debug';
-
-const debug = createDebug('takumi:utils:parse-message');
-
 interface TextContent {
   type: 'text';
   content: string;
@@ -16,32 +12,6 @@ interface ToolUse {
 }
 
 type MessageContent = TextContent | ToolUse;
-
-function parseJsonSafely(jsonString: string): Record<string, any> {
-  const trimmed = jsonString.trim();
-
-  // 处理空字符串的情况
-  if (!trimmed) {
-    return {};
-  }
-
-  try {
-    return JSON.parse(trimmed);
-  } catch (e) {
-    debug('parseJsonSafely error', e, jsonString);
-    if (trimmed.endsWith('}}')) {
-      const fixedJsonString = trimmed.slice(0, -1);
-      try {
-        debug('parseJsonSafely fixedJsonString', fixedJsonString);
-        return JSON.parse(fixedJsonString);
-      } catch (e) {
-        debug('parseJsonSafely fixedJsonString error', e);
-        throw e;
-      }
-    }
-    throw e;
-  }
-}
 
 export function parseMessage(text: string): MessageContent[] {
   const contentBlocks: MessageContent[] = [];
@@ -87,8 +57,9 @@ export function parseMessage(text: string): MessageContent[] {
           try {
             // 尝试解析JSON字符串
             // 如果jsonString为空，解析会失败，所以我们给一个默认的空对象
-            currentToolUse.params = parseJsonSafely(jsonString) || {};
+            currentToolUse.params = jsonString ? JSON.parse(jsonString) : {};
           } catch (e) {
+            // 如果JSON格式错误或不完整（流式场景），则优雅地处理
             currentToolUse.params = {
               _error: 'Invalid or incomplete JSON',
               _raw: jsonString,

@@ -312,27 +312,4 @@ Based on the weather data, it looks like a great day!`;
       });
     });
   });
-
-  describe('The "to" argument must be of type string', () => {
-    it('should parse tool use', () => {
-      const input =
-        '现在我发现了一个关键问题！在 `TOOL_DESCRIPTION_EXTRACTORS` 中，bash 的描述提取器直接返回 `args.command`，这意味着对于长命令，每次都会返回完整的命令字符串作为描述。这就是卡顿的主要原因！\n\n让我优化这个问题：\n\n<use_tool>\n<tool_name>edit</tool_name>\n<arguments>\n{"file_path": "src/ui/constants.ts", "old_string": "  [TOOL_NAMES.BASH]: (args: any, cwd: string) => args.command,", "new_string": "  [TOOL_NAMES.BASH]: (args: any, cwd: string) => {\\n    const command = String(args.command || \'\');\\n    return command.length > 100 ? `${command.slice(0, 100)}...` : command;\\n  },"}}\n</arguments>\n</use_tool>\n\n现在我需要恢复 ApprovalModal 中对 bash 描述的显示，因为现在描述已经被优化了：\n\n<use_tool>\n<tool_name>edit</tool_name>\n<arguments>\n{"file_path": "src/ui/components/ApprovalModal.tsx", "old_string": "  const description = useMemo(() => {\\n    if (toolName === \'bash\') {\\n      return \'\';\\n    }\\n    return getToolDescription(toolName, params);\\n  }, [toolName, params, getToolDescription]);", "new_string": "  const description = useMemo(() => {\\n    return getToolDescription(toolName, params);\\n  }, [toolName, params, getToolDescription]);"}}\n</arguments>\n</use_tool>\n\n<use_tool>\n<tool_name>edit</tool_name>\n<arguments>\n{"file_path": "src/ui/components/ApprovalModal.tsx", "old_string": "        <Box marginY={1}>\\n          <Text bold color={UI_COLORS.TOOL}>\\n            {toolName}\\n          </Text>\\n        </Box>", "new_string": "        <Box marginY={1}>\\n          <Text>\\n            <Text bold color={UI_COLORS.TOOL}>\\n              {toolName}\\n            </Text>\\n            {description && (\\n              <Text color={UI_COLORS.SUCCESS}> ({description})</Text>\\n            )}\\n          </Text>\\n        </Box>"}}\n</arguments>\n</use_tool>\n\n## 根本问题解决\n\n我发现了真正的性能瓶颈：`TOOL_DESCRIPTION_EXTRACTORS` 中的 bash 提取器直接返回完整命令，导致：\n\n1. **重复渲染长文本**: 描述和参数都显示完整命令\n2. **UI 渲染负担**: Ink 需要渲染两次长文本\n3. **内存占用**: 保存多份长字符串引用\n\n### 解决方案\n\n1. **优化描述提取器**: 在 `constants.ts` 中截断 bash 命令描述为 100 字符\n2. **保持完整显示**: 在参数区域仍显示完整命令（已截断处理）\n3. **缓存优化**: 使用 `useMemo` 避免重复计算\n\n这样既解决了性能问题，又保持了用户体验——描述区显示命令预览，参数区显示详细信息。';
-      const result = parseMessage(input);
-      expect(result[1]).toEqual({
-        type: 'tool_use',
-        name: 'edit',
-        params: {
-          file_path: 'src/ui/constants.ts',
-          old_string:
-            '  [TOOL_NAMES.BASH]: (args: any, cwd: string) => args.command,',
-          new_string:
-            '  [TOOL_NAMES.BASH]: (args: any, cwd: string) => {\n' +
-            "    const command = String(args.command || '');\n" +
-            '    return command.length > 100 ? `${command.slice(0, 100)}...` : command;\n' +
-            '  },',
-        },
-        partial: false,
-      });
-    });
-  });
 });
