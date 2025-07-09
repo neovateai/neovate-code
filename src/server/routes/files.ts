@@ -210,7 +210,7 @@ async function walkDirectory(
   return items;
 }
 
-async function getHighPriorityItems(cwd: string, includeMetadata: boolean) {
+async function getGitStatusItems(cwd: string, includeMetadata: boolean) {
   const gitStatus = await (async () => {
     const { stdout } = await execFileNoThrow(
       cwd,
@@ -323,7 +323,7 @@ const filesRoute: FastifyPluginAsync<CreateServerOpts> = async (app, opts) => {
           items = [...primary, ...secondary];
         }
 
-        const highPriorityItems = await getHighPriorityItems(
+        const highPriorityItems = await getGitStatusItems(
           cwd,
           params.includeMetadata,
         );
