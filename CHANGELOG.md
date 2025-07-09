@@ -1,3 +1,25 @@
+## 0.3.0
+
+`2025-07-08`
+
+- feat: add custom system prompt support for code agent [AI] by [@sorrycc](https://github.com/sorrycc)
+- fix: handle undefined file paths and improve error messaging with context by [@sorrycc](https://github.com/sorrycc)
+- feat: support product-specific ignore files [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add interactive mode switching [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: remove TAKUMI_FC flag and streamline model provider access by [@sorrycc](https://github.com/sorrycc)
+- refactor(browser): context UI upgrade and image url to base64 [AI] by [@Z-Bokle](https://github.com/Z-Bokle) in [#94](https://github.com/umijs/takumi/pull/94)
+- refactor: simplify compact agent instructions and xml structure by [@阿平](https://github.com/阿平) in [#102](https://github.com/umijs/takumi/pull/102)
+- feat: add compact command to summarize conversation history by [@阿平](https://github.com/阿平) in [#101](https://github.com/umijs/takumi/pull/101)
+- feat: add external editor support for file modifications [AI] by [@阿平](https://github.com/阿平) in [#97](https://github.com/umijs/takumi/pull/97)
+- feat: add model-specific tool prompt formatting by [@阿平](https://github.com/阿平) in [#100](https://github.com/umijs/takumi/pull/100)
+- refactor: make auto suggestion item description optional by [@sorrycc](https://github.com/sorrycc)
+- fix: refine suggestion acceptance for file and slash commands [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat(browser): markdown render & tool call loading by [@thy](https://github.com/thy) in [#93](https://github.com/umijs/takumi/pull/93)
+- feat: add file auto-suggestion with gitignore support [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add init command and improve chat input UI text by [@阿平](https://github.com/阿平) in [#92](https://github.com/umijs/takumi/pull/92)
+- fix(browser): fixed problem about Sender won't clear content when submit by [@Z-Bokle](https://github.com/Z-Bokle) in [#91](https://github.com/umijs/takumi/pull/91)
+
+
 ## 0.2.0
 
 `2025-07-04`

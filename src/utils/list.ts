@@ -1,11 +1,15 @@
 import fs from 'fs';
 import { basename, join, relative, sep } from 'path';
-import { isIgnored } from './gitignore';
+import { isIgnored } from './ignore';
 
 export const MAX_FILES = 1000;
 export const TRUNCATED_MESSAGE = `There are more than ${MAX_FILES} files in the repository. Use the LS tool (passing a specific path), Bash tool, and other tools to explore nested directories. The first ${MAX_FILES} files and directories are included below:\n\n`;
 
-export function listDirectory(initialPath: string, cwd: string) {
+export function listDirectory(
+  initialPath: string,
+  cwd: string,
+  productName: string = 'takumi',
+) {
   const results: string[] = [];
   const queue = [initialPath];
   while (queue.length > 0) {
@@ -34,8 +38,8 @@ export function listDirectory(initialPath: string, cwd: string) {
 
       const childPath = join(path, child.name);
 
-      // Skip if ignored by gitignore
-      if (isIgnored(childPath, cwd)) {
+      // Skip if ignored by gitignore or takumiignore
+      if (isIgnored(childPath, cwd, productName)) {
         continue;
       }
 
@@ -62,7 +66,10 @@ function skip(path: string) {
   return false;
 }
 
-export function listRootDirectory(rootPath: string): string[] {
+export function listRootDirectory(
+  rootPath: string,
+  productName: string = 'takumi',
+): string[] {
   const results: string[] = [];
   try {
     const children = fs.readdirSync(rootPath, { withFileTypes: true });
@@ -73,8 +80,8 @@ export function listRootDirectory(rootPath: string): string[] {
 
       const childPath = join(rootPath, child.name);
 
-      // Skip if ignored by gitignore
-      if (isIgnored(childPath, rootPath)) {
+      // Skip if ignored by gitignore or takumiignore
+      if (isIgnored(childPath, rootPath, productName)) {
         continue;
       }
 

@@ -57,7 +57,7 @@ export function useMessageFormatting() {
   };
 
   const getCurrentStatusMessage = (): string => {
-    const isPlan = state.stage === 'plan';
+    const isPlan = state.currentMode === 'plan';
     return getStatusMessage(state.status, isPlan, state.currentExecutingTool);
   };
 

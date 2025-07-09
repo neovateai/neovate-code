@@ -12,11 +12,6 @@ export const APP_STATUS = {
   CANCELLED: 'cancelled',
 } as const;
 
-export const APP_STAGE = {
-  PLAN: 'plan',
-  CODE: 'code',
-} as const;
-
 // Status messages
 export const STATUS_MESSAGES = {
   [APP_STATUS.TOOL_APPROVED]: 'Tool approved, starting execution...',
@@ -41,12 +36,24 @@ export const TOOL_NAMES = {
 // Tool description extractors
 export const TOOL_DESCRIPTION_EXTRACTORS = {
   [TOOL_NAMES.READ]: (args: any, cwd: string) =>
-    path.relative(cwd, args.file_path),
-  [TOOL_NAMES.BASH]: (args: any, cwd: string) => args.command,
+    !args.file_path
+      ? 'No file path provided'
+      : path.relative(cwd, args.file_path),
+  [TOOL_NAMES.BASH]: (args: any, cwd: string) => {
+    if (!args.command || typeof args.command !== 'string') {
+      return 'No command provided';
+    }
+    const command = args.command.trim();
+    return command.length > 100 ? command.substring(0, 97) + '...' : command;
+  },
   [TOOL_NAMES.EDIT]: (args: any, cwd: string) =>
-    path.relative(cwd, args.file_path),
+    !args.file_path
+      ? 'No file path provided'
+      : path.relative(cwd, args.file_path),
   [TOOL_NAMES.WRITE]: (args: any, cwd: string) =>
-    path.relative(cwd, args.file_path),
+    !args.file_path
+      ? 'No file path provided'
+      : path.relative(cwd, args.file_path),
   [TOOL_NAMES.FETCH]: (args: any, cwd: string) => args.url,
   [TOOL_NAMES.GLOB]: (args: any, cwd: string) => args.pattern,
   [TOOL_NAMES.GREP]: (args: any, cwd: string) => args.pattern,

@@ -66,7 +66,13 @@ export function applyEdit(
 
   if (updatedFile === originalFile) {
     throw new Error(
-      'Original and edited file match exactly. Failed to apply edit.',
+      `Original and edited file match exactly. Failed to apply edit. ${JSON.stringify(
+        {
+          file_path,
+          old_string,
+          new_string,
+        },
+      )}`,
     );
   }
 
