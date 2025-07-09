@@ -37,7 +37,7 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
 }) => {
   const { styles } = useStyle();
   const { mode } = useSnapshot(state);
-  const { loading } = useChatState();
+  const { status } = useChatState();
 
   const { SendButton, LoadingButton } = components;
 
@@ -48,6 +48,11 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
   const modeDetail = useMemo(() => {
     return MODES_MAP[mode];
   }, [mode]);
+
+  // 判断是否正在处理用户请求
+  // 'submitted': 消息已发送到API，等待响应流开始
+  // 'streaming': 响应正在从API流式传输，接收数据块
+  const isProcessing = status === 'submitted' || status === 'streaming';
 
   return (
     <Flex justify="space-between" align="center">
@@ -63,10 +68,10 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
         <Divider type="vertical" />
       </Flex>
       <Flex align="center">
-        <McpDropdown loading={loading} />
+        <McpDropdown loading={isProcessing} />
         <SenderAttachments />
         <Divider type="vertical" />
-        {loading ? (
+        {isProcessing ? (
           <LoadingButton type="default" />
         ) : (
           <SendButton type="primary" />
@@ -75,4 +80,5 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
     </Flex>
   );
 };
+
 export default SenderFooter;
