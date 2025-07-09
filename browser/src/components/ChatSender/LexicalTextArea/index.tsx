@@ -19,6 +19,7 @@ import { LexicalTextAreaContext } from '../LexicalTextAreaContext';
 import { AiContextNode } from './AiContextNode';
 import DisabledPlugin from './DisabledPlugin';
 import EnterEventPlugin from './EnterEventPlugin';
+import HistoryPlugin from './HistoryPlugin';
 import PastePlugin from './PastePlugin';
 import PlaceholderPlugin from './PlaceholderPlugin';
 import RenderValuePlugin from './RenderValuePlugin';
@@ -145,6 +146,7 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
       <PlaceholderPlugin placeholder={placeholder} />
       {!disabled && <EnterEventPlugin onEnterPress={onEnterPress} />}
       {!disabled && <PastePlugin onPastingImage={onPastingImage} />}
+      {!disabled && <HistoryPlugin />}
       <RenderValuePlugin
         value={value}
         onChange={(markedText, plainText) => {
