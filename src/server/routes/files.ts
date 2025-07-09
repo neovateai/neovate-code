@@ -213,7 +213,8 @@ async function getGitStatusItems(
       undefined,
       false,
     );
-    return stdout.trim();
+    // DO NOT USE TRIM HERE, it will make the result inconsistent
+    return stdout;
   })();
 
   const files = gitStatus
@@ -225,10 +226,7 @@ async function getGitStatusItems(
         !line.startsWith('??') &&
         !line.startsWith('R'),
     )
-    .map((line) => {
-      const texts = line.split(' ');
-      return texts[texts.length - 1];
-    })
+    .map((line) => line.slice(3))
     .filter(
       (path) =>
         !searchString ||
