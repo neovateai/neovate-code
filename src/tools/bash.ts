@@ -92,10 +92,6 @@ function validateCommand(command: string): string | null {
     return 'Command substitution is not allowed for security reasons.';
   }
 
-  if (BANNED_COMMANDS.includes(commandRoot.toLowerCase())) {
-    return 'Command not allowed for security reasons.';
-  }
-
   return null;
 }
 

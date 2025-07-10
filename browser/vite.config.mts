@@ -34,6 +34,7 @@ export default defineConfig({
     outDir: '../dist/browser',
   },
   server: {
+    host: '0.0.0.0',
     port: 8000,
     proxy: {
       '/api': {
