@@ -1,47 +1,53 @@
-# Takumi
+# Takumi - Your AI Coding Assistant
 
-[![](https://badgen.net/npm/v/takumi)](https://www.npmjs.com/package/takumi)
-[![](https://badgen.net/npm/dm/takumi)](https://www.npmjs.com/package/takumi)
-[![](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml)
-[![](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
+[![npm version](https://img.shields.io/npm/v/takumi)](https://www.npmjs.com/package/takumi)
+[![npm downloads](https://img.shields.io/npm/dm/takumi)](https://www.npmjs.com/package/takumi)
+[![CI Status](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions)
+[![MIT License](https://img.shields.io/npm/l/takumi)](LICENSE)
 
-Pronounced `/tɑːˈkuːmi/`, a coding agent to enhance your development workflow.
+Pronounced `/tɑːˈkuːmi/`, Takumi is an AI-powered coding assistant that enhances your development workflow with intelligent code generation, analysis, and automation.
 
-![](https://cdn.jsdelivr.net/gh/sorrycc-bot/image-2025-04@main/uPic/takumi-20250618-1.gif)
+![Takumi Demo](https://cdn.jsdelivr.net/gh/sorrycc-bot/image-2025-04@main/uPic/takumi-20250618-1.gif)
 
-## Getting Started
+## Features
 
-> Make sure you have Node.js version 18 or higher installed.
+- AI-powered code generation and analysis
+- Intelligent code refactoring suggestions
+- Automated testing and debugging
+- Seamless integration with your development workflow
 
-1. **Install the CLI globally.** Use npm or other package managers.
+## Quick Start
 
+### Prerequisites
+- Node.js 18+
+
+### Installation
 ```bash
-$ npm install -g takumi
+npm install -g takumi
 ```
 
-2. **Set up the API keys.** Configure one or more API keys for the LLMs providers.
-
+### Configuration
+Set your API keys (at least one required):
 ```bash
-$ export OPENAI_API_KEY="sk-..."
-$ export GOOGLE_API_KEY="sk-..."
-$ export ANTHROPIC_API_KEY="sk-..."
-$ export DEEPSEEK_API_KEY="sk-..."
-$ export XAI_API_KEY="sk-..."
-$ export AIHUBMIX_API_KEY="sk-..."
-$ export OPENROUTER_API_KEY="sk-..."
+export OPENAI_API_KEY="your-key"  # Or other supported providers
 ```
 
-You are now ready to use Takumi.
-
+### Usage
 ```bash
-$ takumi
-> explain this codebase to me
+takumi
+> help  # See available commands
 ```
+
+## Documentation
+
+- [User Guide](docs/)
+- [API Reference](docs/api.md)
+- [Plugin Development](docs/plugin.md)
 
 ## Contributing
 
-Contributions are welcome! Please read the [CONTRIBUTING.md](./CONTRIBUTING.md) file for guidelines on setting up the development environment, running tests, and submitting pull requests.
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-[MIT](./LICENSE)
+MIT © [UmiJS Team](https://umijs.org)
