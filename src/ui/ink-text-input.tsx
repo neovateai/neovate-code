@@ -172,7 +172,11 @@ function TextInput({
 
   useEffect(() => {
     if (onCursorPositionChange) {
-      onCursorPositionChange(state.cursorOffset);
+      // Use React's scheduler to avoid race conditions
+      const timeoutId = setTimeout(() => {
+        onCursorPositionChange(state.cursorOffset);
+      }, 0);
+      return () => clearTimeout(timeoutId);
     }
   }, [state.cursorOffset, onCursorPositionChange]);
 
@@ -194,10 +198,19 @@ function TextInput({
       let startLine = 0;
       let endLine = maxLines;
 
-      if (cursorLine >= maxLines) {
-        // Cursor is beyond visible area, scroll to show cursor
-        startLine = cursorLine - maxLines + 1;
-        endLine = cursorLine + 1;
+      // Check if cursor is at the end of the text
+      const isAtEnd = cursorOffset === value.length;
+      const isNearEnd = cursorLine >= lines.length - Math.ceil(maxLines / 2);
+
+      if (isAtEnd || isNearEnd) {
+        // If cursor is at end or near end, show the last maxLines
+        startLine = Math.max(0, lines.length - maxLines);
+        endLine = lines.length;
+      } else if (cursorLine >= maxLines) {
+        // Cursor is beyond visible area, scroll to show cursor in the middle
+        const halfMaxLines = Math.floor(maxLines / 2);
+        startLine = Math.max(0, cursorLine - halfMaxLines);
+        endLine = Math.min(lines.length, startLine + maxLines);
       } else if (cursorLine < 0) {
         // Cursor is before visible area
         startLine = 0;
@@ -235,8 +248,18 @@ function TextInput({
         const cursorLine = linesBeforeCursor.length - 1;
 
         let startLine = 0;
-        if (cursorLine >= maxLines) {
-          startLine = cursorLine - maxLines + 1;
+
+        // Use the same logic as the display calculation
+        const isAtEnd = cursorOffset === value.length;
+        const isNearEnd = cursorLine >= lines.length - Math.ceil(maxLines / 2);
+
+        if (isAtEnd || isNearEnd) {
+          // If cursor is at end or near end, show the last maxLines
+          startLine = Math.max(0, lines.length - maxLines);
+        } else if (cursorLine >= maxLines) {
+          // Cursor is beyond visible area, scroll to show cursor in the middle
+          const halfMaxLines = Math.floor(maxLines / 2);
+          startLine = Math.max(0, cursorLine - halfMaxLines);
         }
 
         if (startLine > 0) {
@@ -426,25 +449,25 @@ function TextInput({
         }
       } else {
         // Handle regular input and paste operations with functional update
-        setState((prevState) => {
-          const newValue =
-            originalValue.slice(0, prevState.cursorOffset) +
-            input +
-            originalValue.slice(prevState.cursorOffset, originalValue.length);
+        const newValue =
+          originalValue.slice(0, cursorOffset) +
+          input +
+          originalValue.slice(cursorOffset, originalValue.length);
 
-          const newCursorOffset = prevState.cursorOffset + input.length;
+        const newCursorOffset = cursorOffset + input.length;
 
-          // Don't highlight large pastes to avoid rendering issues
-          const newCursorWidth =
-            input.length > MAX_PASTE_HIGHLIGHT_LENGTH ? 0 : 0;
+        // Don't highlight large pastes to avoid rendering issues
+        const newCursorWidth =
+          input.length > MAX_PASTE_HIGHLIGHT_LENGTH ? 0 : 0;
 
-          onChange(newValue);
-
-          return {
-            cursorOffset: newCursorOffset,
-            cursorWidth: newCursorWidth,
-          };
+        setState({
+          cursorOffset: newCursorOffset,
+          cursorWidth: newCursorWidth,
         });
+
+        if (newValue !== originalValue) {
+          onChange(newValue);
+        }
         return;
       }
 
