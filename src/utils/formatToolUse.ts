@@ -47,6 +47,24 @@ export function formatToolUse(toolUse: ToolUse): AgentInputItem {
     };
   }
 
+  if (name === 'read' && result.success && result.data.type === 'image') {
+    return {
+      role: 'assistant',
+      type: 'message',
+      content: [
+        {
+          type: 'image',
+          image: result.data.source.data,
+          providerData: {
+            type: 'image',
+            mimeType: result.data.source.mimeType,
+          },
+        },
+      ],
+      status: 'completed',
+    };
+  }
+
   return {
     role: 'user',
     type: 'message',
