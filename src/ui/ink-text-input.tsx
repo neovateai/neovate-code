@@ -180,49 +180,87 @@ function TextInput({
     }
   }, [state.cursorOffset, onCursorPositionChange]);
 
+  // Unified state update function to avoid race conditions
+  const updateState = (
+    newValue: string,
+    newCursorOffset: number,
+    newCursorWidth: number = 0,
+  ) => {
+    // Ensure cursor offset is within bounds
+    const safeCursorOffset = Math.max(
+      0,
+      Math.min(newCursorOffset, newValue.length),
+    );
+
+    setState({
+      cursorOffset: safeCursorOffset,
+      cursorWidth: newCursorWidth,
+    });
+
+    if (newValue !== originalValue) {
+      onChange(newValue);
+    }
+  };
+
   const cursorActualWidth = highlightPastedText ? cursorWidth : 0;
 
   const value = mask ? mask.repeat(originalValue.length) : originalValue;
 
-  // Handle maxLines display limitation
-  let displayValue = value;
-  if (maxLines && maxLines > 0) {
-    const lines = value.split('\n');
-    if (lines.length > maxLines) {
-      // Find which line contains the cursor
-      const valueBeforeCursor = value.slice(0, cursorOffset);
-      const linesBeforeCursor = valueBeforeCursor.split('\n');
-      const cursorLine = linesBeforeCursor.length - 1;
-
-      // Calculate display window
-      let startLine = 0;
-      let endLine = maxLines;
-
-      // Check if cursor is at the end of the text
-      const isAtEnd = cursorOffset === value.length;
-      const isNearEnd = cursorLine >= lines.length - Math.ceil(maxLines / 2);
-
-      if (isAtEnd || isNearEnd) {
-        // If cursor is at end or near end, show the last maxLines
-        startLine = Math.max(0, lines.length - maxLines);
-        endLine = lines.length;
-      } else if (cursorLine >= maxLines) {
-        // Cursor is beyond visible area, scroll to show cursor in the middle
-        const halfMaxLines = Math.floor(maxLines / 2);
-        startLine = Math.max(0, cursorLine - halfMaxLines);
-        endLine = Math.min(lines.length, startLine + maxLines);
-      } else if (cursorLine < 0) {
-        // Cursor is before visible area
-        startLine = 0;
-        endLine = maxLines;
-      }
-
-      const displayLines = lines.slice(startLine, endLine);
-      displayValue = displayLines.join('\n');
-
-      // Note: cursor offset adjustment is handled in the rendering logic below
+  // Calculate display window and cursor offset for multiline display
+  const calculateDisplayInfo = (text: string, cursorPos: number) => {
+    if (!maxLines || maxLines <= 0) {
+      return {
+        displayValue: text,
+        actualCursorOffset: cursorPos,
+        startLine: 0,
+      };
     }
-  }
+
+    const lines = text.split('\n');
+    if (lines.length <= maxLines) {
+      return {
+        displayValue: text,
+        actualCursorOffset: cursorPos,
+        startLine: 0,
+      };
+    }
+
+    // Find which line contains the cursor
+    const valueBeforeCursor = text.slice(0, cursorPos);
+    const linesBeforeCursor = valueBeforeCursor.split('\n');
+    const cursorLine = linesBeforeCursor.length - 1;
+
+    // Calculate display window
+    let startLine = 0;
+    const isAtEnd = cursorPos === text.length;
+    const isNearEnd = cursorLine >= lines.length - Math.ceil(maxLines / 2);
+
+    if (isAtEnd || isNearEnd) {
+      // If cursor is at end or near end, show the last maxLines
+      startLine = Math.max(0, lines.length - maxLines);
+    } else if (cursorLine >= maxLines) {
+      // Cursor is beyond visible area, scroll to show cursor in the middle
+      const halfMaxLines = Math.floor(maxLines / 2);
+      startLine = Math.max(0, cursorLine - halfMaxLines);
+    }
+
+    const displayLines = lines.slice(startLine, startLine + maxLines);
+    const displayValue = displayLines.join('\n');
+
+    // Calculate actual cursor offset within the display window
+    let actualCursorOffset = cursorPos;
+    if (startLine > 0) {
+      const hiddenPortion = lines.slice(0, startLine).join('\n') + '\n';
+      actualCursorOffset = cursorPos - hiddenPortion.length;
+    }
+
+    return { displayValue, actualCursorOffset, startLine };
+  };
+
+  const { displayValue, actualCursorOffset } = calculateDisplayInfo(
+    value,
+    cursorOffset,
+  );
 
   let renderedValue = displayValue;
   let renderedPlaceholder = placeholder ? chalk.grey(placeholder) : undefined;
@@ -237,38 +275,6 @@ function TextInput({
     renderedValue = displayValue.length > 0 ? '' : chalk.inverse(' ');
 
     let i = 0;
-    let actualCursorOffset = cursorOffset;
-
-    // Adjust cursor offset if we're showing a subset of lines
-    if (maxLines && maxLines > 0) {
-      const lines = value.split('\n');
-      if (lines.length > maxLines) {
-        const valueBeforeCursor = value.slice(0, cursorOffset);
-        const linesBeforeCursor = valueBeforeCursor.split('\n');
-        const cursorLine = linesBeforeCursor.length - 1;
-
-        let startLine = 0;
-
-        // Use the same logic as the display calculation
-        const isAtEnd = cursorOffset === value.length;
-        const isNearEnd = cursorLine >= lines.length - Math.ceil(maxLines / 2);
-
-        if (isAtEnd || isNearEnd) {
-          // If cursor is at end or near end, show the last maxLines
-          startLine = Math.max(0, lines.length - maxLines);
-        } else if (cursorLine >= maxLines) {
-          // Cursor is beyond visible area, scroll to show cursor in the middle
-          const halfMaxLines = Math.floor(maxLines / 2);
-          startLine = Math.max(0, cursorLine - halfMaxLines);
-        }
-
-        if (startLine > 0) {
-          const hiddenPortion = lines.slice(0, startLine).join('\n') + '\n';
-          actualCursorOffset = cursorOffset - hiddenPortion.length;
-        }
-      }
-    }
-
     for (const char of displayValue) {
       renderedValue +=
         i >= actualCursorOffset - cursorActualWidth && i <= actualCursorOffset
@@ -448,46 +454,20 @@ function TextInput({
           nextCursorOffset--;
         }
       } else {
-        // Handle regular input and paste operations with functional update
-        const newValue =
+        // Handle regular input and paste operations
+        nextValue =
           originalValue.slice(0, cursorOffset) +
           input +
           originalValue.slice(cursorOffset, originalValue.length);
 
-        const newCursorOffset = cursorOffset + input.length;
+        nextCursorOffset = cursorOffset + input.length;
 
         // Don't highlight large pastes to avoid rendering issues
-        const newCursorWidth =
-          input.length > MAX_PASTE_HIGHLIGHT_LENGTH ? 0 : 0;
-
-        setState({
-          cursorOffset: newCursorOffset,
-          cursorWidth: newCursorWidth,
-        });
-
-        if (newValue !== originalValue) {
-          onChange(newValue);
-        }
-        return;
+        nextCursorWidth = input.length > MAX_PASTE_HIGHLIGHT_LENGTH ? 0 : 0;
       }
 
-      // Fix boundary checks to use nextCursorOffset instead of cursorOffset
-      if (nextCursorOffset < 0) {
-        nextCursorOffset = 0;
-      }
-
-      if (nextCursorOffset > nextValue.length) {
-        nextCursorOffset = nextValue.length;
-      }
-
-      setState({
-        cursorOffset: nextCursorOffset,
-        cursorWidth: nextCursorWidth,
-      });
-
-      if (nextValue !== originalValue) {
-        onChange(nextValue);
-      }
+      // Use unified state update function
+      updateState(nextValue, nextCursorOffset, nextCursorWidth);
     },
     { isActive: focus },
   );
