@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 import { z } from 'zod';
+import { IMAGE_EXTENSIONS } from '../constants';
 import { Context } from '../context';
 import { EnhancedTool, enhanceTool } from '../tool';
 
@@ -14,18 +15,6 @@ type ImageMediaType =
   | 'image/bmp'
   | 'image/svg+xml'
   | 'image/tiff';
-
-const IMAGE_EXTENSIONS = new Set([
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.gif',
-  '.bmp',
-  '.webp',
-  '.svg',
-  '.tiff',
-  '.tif',
-]);
 
 const MAX_WIDTH = 2000;
 const MAX_HEIGHT = 2000;
@@ -52,14 +41,9 @@ function createImageResponse(buffer: Buffer, ext: string) {
   return {
     success: true,
     message: 'Read image file successfully.',
-    data: {
-      type: 'image',
-      filePath: '',
-      source: {
-        mime_type,
-        data: `data:${mime_type};base64,${buffer.toString('base64')}`,
-      },
-    },
+    mimeType: mime_type,
+    type: 'image',
+    data: buffer.toString('base64'),
   };
 }
 
@@ -155,7 +139,6 @@ export function createReadTool(opts: { context: Context }): EnhancedTool {
           // Handle image files
           if (IMAGE_EXTENSIONS.has(ext)) {
             const result = await processImage(fullFilePath);
-            result.data.filePath = file_path;
             return result;
           }
 
@@ -164,9 +147,8 @@ export function createReadTool(opts: { context: Context }): EnhancedTool {
           return {
             success: true,
             message: `Read ${content.split('\n').length} lines.`,
+            type: 'text',
             data: {
-              // 兼容之前 tool 的实现，最小改动
-              type: 'text',
               filePath: file_path,
               content,
               totalLines: content.split('\n').length,
