@@ -3,7 +3,9 @@ import { Bubble } from '@ant-design/x';
 import { createFileRoute } from '@tanstack/react-router';
 import { type GetProp, Spin } from 'antd';
 import { createStyles } from 'antd-style';
+import { useEffect } from 'react';
 import { useSnapshot } from 'valtio';
+import { getAllSlashCommands } from '@/api/slashCommands';
 import AssistantAvatar from '@/components/AssistantAvatar';
 import AssistantFooter from '@/components/AssistantFooter';
 import AssistantMessage from '@/components/AssistantMessage';
@@ -58,6 +60,12 @@ const Chat: React.FC = () => {
   const { messages, status } = useChatState();
   const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
   const { styles } = useStyle({ codeViewerVisible });
+
+  useEffect(() => {
+    getAllSlashCommands().then((res) => {
+      console.log('slash commands', res);
+    });
+  }, []);
 
   const items = messages?.map((message, index) => {
     const isLastMessage = index === messages.length - 1;

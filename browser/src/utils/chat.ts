@@ -67,10 +67,17 @@ export function getTextDiff(str1: string, str2: string): TextDiff[] {
 export function getInputInfo(prevContent: string, nextContent: string) {
   const diffs = getTextDiff(prevContent, nextContent);
 
-  // 本次输入只输入了一个@，代表唤起菜单
+  // 本次输入只输入了一个@，代表唤起AI上下文菜单
+  const isInputingAiContext =
+    diffs.length === 1 && diffs[0].content === '@' && diffs[0].type === '+';
+
+  // 本次输入只输入了一个/，代表唤起slash命令菜单
+  const isInputingSlashCommand =
+    diffs.length === 1 && diffs[0].content === '/' && diffs[0].type === '+';
+
   return {
-    isInputingAiContext:
-      diffs.length === 1 && diffs[0].content === '@' && diffs[0].type === '+',
+    isInputingAiContext,
+    isInputingSlashCommand,
     position: diffs[0]?.index,
   };
 }

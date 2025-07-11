@@ -22,6 +22,11 @@ interface RunCompletionOpts extends CreateServerOpts {
   planService: Service;
   mode: string;
   attachedContexts: ContextItem[];
+  slashCommand?: {
+    command: string;
+    args: string;
+    originalInput: string;
+  };
 }
 
 function isImageContext(context: ContextItem): context is ContextItem & {
@@ -117,6 +122,48 @@ function convertUserPromptToAgentInput(
 export async function runCode(opts: RunCompletionOpts) {
   const { dataStream, mode, attachedContexts } = opts;
   try {
+    // Check if this is a slash command
+    if (opts.slashCommand) {
+      debug('Processing slash command:', opts.slashCommand);
+      const { slashCommand } = opts;
+      const service = mode === 'plan' ? opts.planService : opts.service;
+      const command = service.context.slashCommands.get(slashCommand.command);
+
+      if (!command) {
+        const errorText = `Unknown command: /${slashCommand.command}. Type /help to see available commands.`;
+        dataStream.write(formatDataStreamPart('text', errorText));
+        return;
+      }
+
+      try {
+        if (command.type === 'local') {
+          const result = await command.call(slashCommand.args, service.context);
+          if (result) {
+            dataStream.write(formatDataStreamPart('text', result));
+          }
+          return;
+        } else if (command.type === 'prompt') {
+          const messages = await command.getPromptForCommand(slashCommand.args);
+          const promptInput = messages.map((msg) => ({
+            role: msg.role as 'user',
+            content: msg.content,
+          }));
+
+          opts.prompt = promptInput.map((msg) => msg.content).join('\n');
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
+        dataStream.write(
+          formatDataStreamPart(
+            'text',
+            `Error executing command: ${errorMessage}`,
+          ),
+        );
+        return;
+      }
+    }
+
     const input: AgentInputItem[] = convertUserPromptToAgentInput(
       opts.prompt,
       attachedContexts,

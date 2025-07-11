@@ -4,6 +4,10 @@ import createDebug from 'debug';
 import { FastifyPluginAsync } from 'fastify';
 import { last } from 'lodash-es';
 import { PluginHookType } from '../../plugin';
+import {
+  isSlashCommand,
+  parseSlashCommand,
+} from '../../slash-commands/registry';
 import { runCode } from '../services/completions';
 import { RouteCompletionsOpts } from '../types';
 import { CompletionRequest, ContextType } from '../types/completions';
@@ -58,6 +62,52 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
       });
 
       const prompt = lastMessage.planContent ?? lastMessage.content;
+
+      // 检测是否为slash command
+      if (isSlashCommand(prompt)) {
+        const parsed = parseSlashCommand(prompt);
+        if (parsed) {
+          debug('Detected slash command:', parsed);
+          // 传递slash command信息给runCode
+          opts.context.addHistory(prompt);
+
+          reply.header('Content-Type', 'text/plain; charset=utf-8');
+          reply.header('Cache-Control', 'no-cache');
+          reply.header('Connection', 'keep-alive');
+
+          try {
+            await pipeDataStreamToResponse(reply.raw, {
+              async execute(dataStream) {
+                await runCode({
+                  ...opts,
+                  prompt,
+                  dataStream,
+                  mode,
+                  attachedContexts: (lastMessage.attachedContexts || []).filter(
+                    (context) => context.type !== ContextType.FILE,
+                  ),
+                  slashCommand: {
+                    ...parsed,
+                    originalInput: prompt,
+                  },
+                });
+              },
+              onError(error) {
+                debug('Error in slash command:', error);
+                return error instanceof Error ? error.message : String(error);
+              },
+            });
+          } catch (error) {
+            debug('Unhandled slash command error:', error);
+            console.log('error', error);
+            if (!reply.sent) {
+              reply.status(500).send({ error: 'Internal server error' });
+            }
+            throw error;
+          }
+          return;
+        }
+      }
 
       opts.context.addHistory(prompt);
 

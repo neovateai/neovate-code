@@ -97,6 +97,11 @@ const registerRoutes = async (
     prefix: BASE_API_PREFIX,
     ...pluginOpts,
   });
+  await app.register(import('./routes/slash-commands'), {
+    prefix: BASE_API_PREFIX,
+    ...pluginOpts,
+    context: opts.context,
+  });
 
   await opts.context.apply({
     hook: 'serverRoutes',

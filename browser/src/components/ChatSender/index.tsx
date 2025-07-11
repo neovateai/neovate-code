@@ -1,15 +1,17 @@
 import { Sender } from '@ant-design/x';
 import { createStyles } from 'antd-style';
 import { differenceWith } from 'lodash-es';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
+import { useSlashCommands } from '@/hooks/useSlashCommands';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
 import { getInputInfo } from '@/utils/chat';
+import SlashCommandsList from '../SlashCommandsList';
 import Suggestion from '../Suggestion';
 import LexicalTextArea from './LexicalTextArea';
 import { LexicalTextAreaContext } from './LexicalTextAreaContext';
@@ -54,6 +56,8 @@ const ChatSender: React.FC = () => {
   const [insertNodePosition, setInsertNodePosition] = useState(0);
   const [contextSearchInput, setContextSearchInput] = useState('');
   const [keepMenuOpen, setKeepMenuOpen] = useState(false);
+  const [showSlashCommands, setShowSlashCommands] = useState(false);
+  const [slashCommandPosition, setSlashCommandPosition] = useState(0);
   const prevInputValue = useRef<string>(state.prompt);
   const { prompt } = useSnapshot(state);
 
@@ -65,6 +69,8 @@ const ChatSender: React.FC = () => {
     setCurrentContextType,
     getOriginalContextByValue,
   } = useSuggestion(contextSearchInput);
+
+  const { commands } = useSlashCommands();
 
   const handleSubmit = () => {
     onQuery({
@@ -81,8 +87,39 @@ const ChatSender: React.FC = () => {
     }
   };
 
+  const handleSlashCommandSelect = (command: any) => {
+    const nextInputValue =
+      prompt.slice(0, slashCommandPosition) +
+      `/${command.name} ` +
+      prompt.slice(slashCommandPosition + 1);
+    actions.updatePrompt(nextInputValue);
+    setShowSlashCommands(false);
+  };
+
+  const handleClickOutside = () => {
+    if (showSlashCommands) {
+      setShowSlashCommands(false);
+    }
+  };
+
+  // 处理 ESC 键关闭 slash commands popup
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showSlashCommands) {
+        setShowSlashCommands(false);
+      }
+    };
+
+    if (showSlashCommands) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [showSlashCommands]);
+
   return (
-    <>
+    <div style={{ position: 'relative' }} onClick={handleClickOutside}>
       <Suggestion
         className={styles.suggestion}
         items={suggestions}
@@ -145,14 +182,21 @@ const ChatSender: React.FC = () => {
                 },
                 value: prompt,
                 onChange: (markedText, plainText) => {
-                  const { isInputingAiContext, position } = getInputInfo(
-                    prevInputValue.current,
-                    markedText,
-                  );
+                  const {
+                    isInputingAiContext,
+                    isInputingSlashCommand,
+                    position,
+                  } = getInputInfo(prevInputValue.current, markedText);
                   if (isInputingAiContext) {
                     setInsertNodePosition(position);
+                    setShowSlashCommands(false);
                     onTrigger();
+                  } else if (isInputingSlashCommand) {
+                    setSlashCommandPosition(position);
+                    setShowSlashCommands(true);
+                    onTrigger(false);
                   } else {
+                    setShowSlashCommands(false);
                     onTrigger(false);
                   }
                   prevInputValue.current = markedText;
@@ -193,7 +237,31 @@ const ChatSender: React.FC = () => {
           );
         }}
       </Suggestion>
-    </>
+
+      {/* Slash Commands Popup */}
+      {showSlashCommands && (
+        <div
+          className={styles.suggestion}
+          style={{
+            position: 'absolute',
+            bottom: '100%',
+            left: 0,
+            right: 0,
+            marginBottom: 8,
+            maxHeight: '300px',
+            overflowY: 'auto',
+            backgroundColor: 'var(--ant-color-bg-container)',
+            border: '1px solid var(--ant-color-border)',
+            borderRadius: 'var(--ant-border-radius)',
+            boxShadow: 'var(--ant-box-shadow)',
+            zIndex: 1000,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <SlashCommandsList onCommandSelect={handleSlashCommandSelect} />
+        </div>
+      )}
+    </div>
   );
 };
 
