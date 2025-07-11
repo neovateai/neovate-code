@@ -49,19 +49,15 @@ export function formatToolUse(toolUse: ToolUse): AgentInputItem {
 
   if (name === 'read' && result.success && result.data.type === 'image') {
     return {
-      role: 'assistant',
+      role: 'user',
       type: 'message',
       content: [
         {
-          type: 'image',
+          type: 'input_image',
           image: result.data.source.data,
-          providerData: {
-            type: 'image',
-            mimeType: result.data.source.mimeType,
-          },
+          providerData: { mime_type: result.data.source.mime_type },
         },
       ],
-      status: 'completed',
     };
   }
 

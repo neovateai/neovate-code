@@ -48,17 +48,16 @@ function getImageMimeType(filePath: string): ImageMediaType {
 }
 
 function createImageResponse(buffer: Buffer, ext: string) {
+  const mime_type = getImageMimeType(ext);
   return {
     success: true,
     message: 'Read image file successfully.',
     data: {
       type: 'image',
       filePath: '',
-      mimeType: getImageMimeType(ext),
       source: {
-        type: 'base64' as const,
-        mimeType: getImageMimeType(ext),
-        data: buffer.toString('base64'),
+        mime_type,
+        data: `data:${mime_type};base64,${buffer.toString('base64')}`,
       },
     },
   };
