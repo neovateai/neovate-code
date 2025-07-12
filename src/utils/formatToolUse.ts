@@ -1,16 +1,6 @@
 import { AgentInputItem } from '@openai/agents';
 import { isArray, isPlainObject } from 'lodash-es';
-
-const TOOL_NAMES = {
-  READ: 'read',
-  BASH: 'bash',
-  EDIT: 'edit',
-  WRITE: 'write',
-  FETCH: 'fetch',
-  GLOB: 'glob',
-  GREP: 'grep',
-  LS: 'ls',
-} as const;
+import { TOOL_NAMES } from '../ui/constants.js';
 
 type ToolName = (typeof TOOL_NAMES)[keyof typeof TOOL_NAMES];
 
