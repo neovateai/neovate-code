@@ -108,7 +108,11 @@ export function ToolMessage({ message }: ToolMessageProps) {
   }
 
   const params = message.content.args;
-  if (toolName === 'edit' || (toolName === 'write' && params)) {
+  // When canceling, params is a string
+  if (
+    (toolName === 'edit' || toolName === 'write') &&
+    typeof params === 'object'
+  ) {
     return (
       <DiffRenderer
         toolName={toolName}

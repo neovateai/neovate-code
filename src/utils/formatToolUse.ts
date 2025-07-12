@@ -1,10 +1,32 @@
 import { AgentInputItem } from '@openai/agents';
 import { isArray, isPlainObject } from 'lodash-es';
 
+const TOOL_NAMES = {
+  READ: 'read',
+  BASH: 'bash',
+  EDIT: 'edit',
+  WRITE: 'write',
+  FETCH: 'fetch',
+  GLOB: 'glob',
+  GREP: 'grep',
+  LS: 'ls',
+} as const;
+
+type ToolName = (typeof TOOL_NAMES)[keyof typeof TOOL_NAMES];
+
+interface ToolResult {
+  success: boolean;
+  message?: string;
+  data?: any;
+  error?: string;
+  type?: 'image' | 'text';
+  mimeType?: string;
+}
+
 interface ToolUse {
   name: string;
   params: Record<string, any>;
-  result: Record<string, any>;
+  result: ToolResult | string;
   callId: string;
 }
 
@@ -20,7 +42,24 @@ const isImageData = (data: any): data is ImageData =>
 const isUrl = (data: string): boolean =>
   data.startsWith('http://') || data.startsWith('https://');
 
-export function parseImageData(data: string, mimeType: string): string {
+const isSuccessToolResult = (result: any): result is ToolResult =>
+  isPlainObject(result) && 'success' in result;
+
+const TOOL_DESCRIPTIONS: Record<
+  ToolName,
+  (params: Record<string, any>) => string
+> = {
+  [TOOL_NAMES.READ]: (params) => `file_path: ${params.file_path}`,
+  [TOOL_NAMES.BASH]: (params) => `command: ${params.command}`,
+  [TOOL_NAMES.EDIT]: (params) => `file_path: ${params.file_path}`,
+  [TOOL_NAMES.WRITE]: (params) => `file_path: ${params.file_path}`,
+  [TOOL_NAMES.FETCH]: (params) => `url: ${params.url}`,
+  [TOOL_NAMES.GLOB]: (params) => `pattern: ${params.pattern}`,
+  [TOOL_NAMES.GREP]: (params) => `pattern: ${params.pattern}`,
+  [TOOL_NAMES.LS]: (params) => `dir_path: ${params.dir_path}`,
+};
+
+function parseImageData(data: string, mimeType: string): string {
   return isUrl(data) ? data : `data:${mimeType};base64,${data}`;
 }
 
@@ -28,18 +67,61 @@ export function createStableToolKey(
   toolName: string,
   params: Record<string, any>,
 ): string {
-  // sort parameter keys to ensure stable string serialization
-  const sortedParams = Object.keys(params)
-    .sort()
-    .reduce(
-      (result, key) => {
-        result[key] = params[key];
-        return result;
-      },
-      {} as Record<string, any>,
-    );
-
+  const sortedEntries = Object.entries(params).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
+  const sortedParams = Object.fromEntries(sortedEntries);
   return `${toolName}:${JSON.stringify(sortedParams)}`;
+}
+
+function safeStringify(
+  obj: any,
+  fallbackMessage = '[Unable to serialize object]',
+): string {
+  try {
+    return JSON.stringify(obj, null, 2);
+  } catch (error) {
+    console.warn('JSON stringify failed:', error);
+    return fallbackMessage;
+  }
+}
+
+function formatToolDescription(tool: ToolUse): string {
+  const getDescription = TOOL_DESCRIPTIONS[tool.name as ToolName];
+  if (getDescription && tool.params) {
+    try {
+      return `[${tool.name} for '${getDescription(tool.params)}']`;
+    } catch (error) {
+      console.warn('Failed to format tool description:', error);
+      return `[${tool.name}]`;
+    }
+  }
+  return `[${tool.name}]`;
+}
+
+function formatToolResult(result: any): string {
+  if (typeof result === 'string') {
+    return result;
+  }
+
+  if (!result) {
+    return '(tool did not return anything)';
+  }
+
+  if (!isSuccessToolResult(result)) {
+    return `\n<function_results_data>\n${safeStringify(result)}\n</function_results_data>\n`;
+  }
+
+  if (!result.success) {
+    const errorMessage = result.error || 'Unknown error occurred';
+    return `The tool execution failed with the following error:\n<error>\n${errorMessage}\n</error>`;
+  }
+
+  const resultData = result.data
+    ? `\n<function_results_data>\n${safeStringify(result.data)}\n</function_results_data>\n`
+    : '';
+
+  return `${result.message || ''}${resultData}`;
 }
 
 function createImageInputItem(data: string, mimeType: string): AgentInputItem {
@@ -58,7 +140,7 @@ function createImageInputItem(data: string, mimeType: string): AgentInputItem {
 
 function createAssistantToolFormatItem(
   name: string,
-  result: Record<string, any>,
+  result: ToolResult | string,
   callId: string,
 ): AgentInputItem {
   return {
@@ -88,60 +170,66 @@ function createMultipleImagesInputItem(
     role: 'user',
     type: 'message',
     content: result.map((item) => {
-      if (item.type === 'image') {
+      if (isImageData(item)) {
         return {
           type: 'input_image',
           image: parseImageData(item.data, item.mimeType),
           providerData: { mimeType: item.mimeType },
         };
       }
+
+      const paramsText = params ? ` for ${safeStringify(params)}` : '';
       return {
         type: 'input_text',
-        text: `[${name}${params ? ` for ${JSON.stringify(params)}` : ''}] result: \n<function_results>\n${JSON.stringify(
-          item,
-        )}\n</function_results>`,
+        text: `[${name}${paramsText}] result: \n<function_results>\n${safeStringify(item)}\n</function_results>`,
       };
     }),
   };
 }
 
-function createDefaultInputItem(
-  name: string,
-  params: Record<string, any>,
-  result: Record<string, any>,
-): AgentInputItem {
+function createUserFormatItem(toolUse: ToolUse): AgentInputItem {
+  if (process.env.USE_DETAILED_TOOL_FORMAT === '1') {
+    const formattedResult = formatToolResult(toolUse.result);
+    const description = formatToolDescription(toolUse);
+
+    return {
+      role: 'user',
+      type: 'message',
+      content: `${description} Result: \n <function_results>\n${formattedResult}\n</function_results>`,
+    };
+  }
+
+  const { name, params, result } = toolUse;
   return {
     role: 'user',
     type: 'message',
-    content: `[${name} for ${JSON.stringify(params)}] result: \n<function_results>\n${JSON.stringify(
-      result,
-    )}\n</function_results>`,
+    content: `[${name} for ${safeStringify(params)}] result: \n<function_results>\n${safeStringify(result)}\n</function_results>`,
   };
 }
 
 export function formatToolUse(toolUse: ToolUse): AgentInputItem {
   const { name, params, result, callId } = toolUse;
 
-  // Use simplified format if environment variable is set
-  if (process.env.USE_ASSISTANT_TOOL_FORMAT === '1') {
-    return createAssistantToolFormatItem(name, result, callId);
+  if (
+    name === TOOL_NAMES.READ &&
+    isSuccessToolResult(result) &&
+    result.success &&
+    result.type === 'image'
+  ) {
+    return createImageInputItem(result.data, result.mimeType!);
   }
 
-  // Handle image results from read tool
-  if (name === 'read' && result.success && result.type === 'image') {
-    return createImageInputItem(result.data, result.mimeType);
-  }
-
-  // Handle direct image results
   if (isImageData(result)) {
     return createImageInputItem(result.data, result.mimeType);
   }
 
-  // Handle array of results that may contain images
   if (isArray(result) && result.some(isImageData)) {
     return createMultipleImagesInputItem(name, params, result);
   }
 
-  // Default case for text results
-  return createDefaultInputItem(name, params, result);
+  if (process.env.USE_ASSISTANT_TOOL_FORMAT === '1') {
+    return createAssistantToolFormatItem(name, result, callId);
+  }
+
+  return createUserFormatItem(toolUse);
 }
