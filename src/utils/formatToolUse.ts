@@ -1,4 +1,5 @@
 import { AgentInputItem } from '@openai/agents';
+import { TOOL_NAMES } from '../ui/constants.js';
 
 interface ToolResult {
   success: boolean;
@@ -23,17 +24,6 @@ export function createStableToolKey(
   );
   return `${toolName}:${JSON.stringify(sortedParams)}`;
 }
-
-const TOOL_NAMES = {
-  READ: 'read',
-  BASH: 'bash',
-  EDIT: 'edit',
-  WRITE: 'write',
-  FETCH: 'fetch',
-  GLOB: 'glob',
-  GREP: 'grep',
-  LS: 'ls',
-} as const;
 
 function safeStringify(obj: any): string {
   try {
