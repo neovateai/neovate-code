@@ -285,6 +285,12 @@ cd /foo/bar && pytest tests
           .describe(`Optional timeout in milliseconds (max ${MAX_TIMEOUT})`),
       }),
       execute: async ({ command, timeout = DEFAULT_TIMEOUT }) => {
+        if (!command) {
+          return {
+            success: false,
+            error: 'Command cannot be empty.',
+          };
+        }
         return executeCommand(
           command,
           timeout || DEFAULT_TIMEOUT,
@@ -298,6 +304,10 @@ cd /foo/bar && pytest tests
       needsApproval: async (context: ApprovalContext) => {
         const { params, approvalMode } = context;
         const command = params.command as string;
+
+        if (!command) {
+          return false;
+        }
 
         // Always require approval for high-risk commands
         if (isHighRiskCommand(command)) {

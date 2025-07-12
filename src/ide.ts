@@ -19,21 +19,8 @@ export class IDE {
 
   // 发现端口
   async findPort() {
-    // 方法1: 环境变量
-    const envPort = process.env.CLAUDE_CODE_SSE_PORT;
+    const envPort = process.env.TAKUMI_SSE_PORT;
     if (envPort) return parseInt(envPort);
-
-    // 方法2: 扫描锁文件
-    // const lockDir = path.join(os.homedir(), '.claude', 'ide');
-    // if (fs.existsSync(lockDir)) {
-    //   const lockFiles = fs.readdirSync(lockDir)
-    //     .filter(f => f.endsWith('.lock'));
-
-    //   if (lockFiles.length > 0) {
-    //     const port = lockFiles[0].replace('.lock', '');
-    //     return parseInt(port);
-    //   }
-    // }
   }
 
   // 连接到 extension
@@ -64,23 +51,31 @@ export class IDE {
   }
 
   async disconnect() {
+    debug('Disconnecting from IDE extension');
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
+    // Clear any pending requests
+    this.pendingRequests.clear();
   }
 
   // 处理消息
   handleMessage(message: any) {
+    debug('Handling message:', message);
     if (message.id && this.pendingRequests.has(message.id)) {
       const { resolve, reject } = this.pendingRequests.get(message.id)!;
       this.pendingRequests.delete(message.id);
 
       if (message.error) {
+        debug('Request failed:', message.error);
         reject(new Error(message.error.message));
       } else {
+        debug('Request succeeded:', message.result);
         resolve(message.result);
       }
+    } else {
+      debug('Received message without matching request ID:', message);
     }
   }
 
@@ -94,14 +89,14 @@ export class IDE {
     return new Promise((resolve, reject) => {
       this.pendingRequests.set(id, { resolve, reject });
 
-      this.ws!.send(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          id,
-          method,
-          params,
-        }),
-      );
+      const message = {
+        id,
+        method,
+        params,
+      };
+
+      debug('Sending request:', message);
+      this.ws!.send(JSON.stringify(message));
 
       // 超时处理
       setTimeout(() => {
@@ -118,42 +113,60 @@ export class IDE {
     filePath: string,
     options: { preview?: boolean } = {},
   ): Promise<any> {
-    return this.request('tools/call', {
-      name: 'openFile',
-      arguments: {
-        filePath,
-        preview: options.preview || false,
-        startText: '',
-        endText: '',
-      },
+    debug('Opening file:', filePath);
+    return this.request('openFile', {
+      filePath,
+      preview: options.preview || false,
+    });
+  }
+
+  async openDiff(
+    old_file_path: string,
+    new_file_path: string,
+    new_file_contents: string,
+    tab_name: string,
+  ): Promise<any> {
+    debug('Opening diff:', { old_file_path, new_file_path, tab_name });
+    return this.request('openDiff', {
+      old_file_path,
+      new_file_path,
+      new_file_contents,
+      tab_name,
     });
   }
 
   async getWorkspaceFolders(): Promise<any> {
-    return this.request('tools/call', {
-      name: 'getWorkspaceFolders',
-      arguments: {},
-    });
+    debug('Getting workspace folders');
+    return this.request('getWorkspaceFolders', {});
   }
 
   async getOpenEditors(): Promise<any> {
-    return this.request('tools/call', {
-      name: 'getOpenEditors',
-      arguments: {},
-    });
+    debug('Getting open editors');
+    return this.request('getOpenEditors', {});
   }
 
   async getDiagnostics(): Promise<any> {
-    return this.request('tools/call', {
-      name: 'getDiagnostics',
-      arguments: {},
-    });
+    debug('Getting diagnostics');
+    return this.request('getDiagnostics', {});
   }
 
   async getCurrentSelection(): Promise<any> {
-    return this.request('tools/call', {
-      name: 'getCurrentSelection',
-      arguments: {},
-    });
+    debug('Getting current selection');
+    return this.request('getCurrentSelection', {});
+  }
+
+  async getLatestSelection(): Promise<any> {
+    debug('Getting latest selection');
+    return this.request('getLatestSelection', {});
+  }
+
+  async closeTab(tab_name: string): Promise<any> {
+    debug('Closing tab:', tab_name);
+    return this.request('close_tab', { tab_name });
+  }
+
+  async closeAllDiffTabs(): Promise<any> {
+    debug('Closing all diff tabs');
+    return this.request('closeAllDiffTabs', {});
   }
 }
