@@ -137,7 +137,7 @@ function createAssistantToolFormatItem(
     content: [
       {
         type: 'output_text',
-        text: JSON.stringify({
+        text: safeStringify({
           type: 'function_call_result',
           name,
           result,
