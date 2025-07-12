@@ -71,7 +71,6 @@ function safeStringify(
   try {
     return JSON.stringify(obj, null, 2);
   } catch (error) {
-    console.warn('JSON stringify failed:', error);
     return fallbackMessage;
   }
 }
@@ -82,7 +81,6 @@ function formatToolDescription(tool: ToolUse): string {
     try {
       return `[${tool.name} for '${getDescription(tool.params)}']`;
     } catch (error) {
-      console.warn('Failed to format tool description:', error);
       return `[${tool.name}]`;
     }
   }
