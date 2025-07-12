@@ -35,6 +35,14 @@ const TOOL_NAMES = {
   LS: 'ls',
 } as const;
 
+function safeStringify(obj: any): string {
+  try {
+    return JSON.stringify(obj);
+  } catch (error) {
+    return '[Unable to serialize object]';
+  }
+}
+
 const TOOL_DESCRIPTIONS: Record<
   string,
   (params: Record<string, any>) => string
@@ -51,7 +59,10 @@ const TOOL_DESCRIPTIONS: Record<
 
 function formatToolDescription(tool: ToolUse): string {
   const getDescription = TOOL_DESCRIPTIONS[tool.name];
-  return `[${tool.name}${getDescription ? ` for '${getDescription(tool.params)}'` : ''}]`;
+  if (getDescription && tool.params) {
+    return `[${tool.name} for '${getDescription(tool.params)}']`;
+  }
+  return `[${tool.name}]`;
 }
 
 function formatToolResult(result: any): string {
@@ -68,7 +79,7 @@ function formatToolResult(result: any): string {
   }
 
   const resultData = result.data
-    ? `\n<function_results_data>\n${JSON.stringify(result.data)}\n</function_results_data>\n`
+    ? `\n<function_results_data>\n${safeStringify(result.data)}\n</function_results_data>\n`
     : '';
 
   return `${result.message}${resultData}`;
@@ -85,7 +96,7 @@ function createAssistantFormatItem(
     content: [
       {
         type: 'output_text',
-        text: JSON.stringify({
+        text: safeStringify({
           type: 'function_call_result',
           name,
           result,
@@ -113,7 +124,7 @@ function createUserFormatItem(toolUse: ToolUse): AgentInputItem {
   return {
     role: 'user',
     type: 'message',
-    content: `[${name} for ${JSON.stringify(params)}] result: \n<function_results>\n${JSON.stringify(
+    content: `[${name} for ${safeStringify(params)}] result: \n<function_results>\n${safeStringify(
       result,
     )}\n</function_results>`,
   };
