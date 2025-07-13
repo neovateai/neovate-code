@@ -207,19 +207,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   const gitStatus = await getGitStatus({ cwd: opts.cwd });
   debug('git status', gitStatus);
 
-  let ide: IDE | null = null;
-  const ide2 = new IDE();
-  const idePort = await ide2.findPort();
-  debug('ide port', idePort);
-  if (idePort) {
-    try {
-      await ide2.connect();
-      ide = ide2;
-      debug('ide connected');
-    } catch (e) {
-      debug('Failed to connect to IDE');
-    }
-  }
+  const ide = new IDE();
 
   // Create a temporary context for slash command registry initialization
   const tempContextForSlash = {

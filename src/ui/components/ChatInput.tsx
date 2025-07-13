@@ -6,6 +6,7 @@ import { APP_STATUS, BORDER_COLORS } from '../constants';
 import { useAutoSuggestion } from '../hooks/useAutoSuggestion';
 import { useChatActions } from '../hooks/useChatActions';
 import { extractFileQuery } from '../hooks/useFileAutoSuggestion';
+import { useIDEStatus } from '../hooks/useIDEStatus';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import { useModeSwitch } from '../hooks/useModeSwitch';
 import TextInput from '../ink-text-input';
@@ -31,6 +32,11 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   } = useChatActions();
   const { getCurrentStatusMessage } = useMessageFormatting();
   const { switchMode, getModeDisplay } = useModeSwitch();
+  const {
+    isConnected: ideConnected,
+    latestSelection,
+    hasPort,
+  } = useIDEStatus();
 
   const [value, setValue] = useState('');
   const [cursorPosition, setCursorPosition] = useState<number | undefined>();
@@ -274,6 +280,20 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
           history
         </Text>
         <Box flexGrow={1} />
+        {/* IDE Status - only show if port is available */}
+        {hasPort && (
+          <Box flexDirection="row" gap={1}>
+            <Text color={ideConnected ? 'green' : 'gray'}>
+              {ideConnected ? '🔗' : '⚠️'} IDE
+            </Text>
+            {latestSelection && (
+              <Text color="cyan">
+                {latestSelection.filePath.split('/').pop()}:
+                {latestSelection.selection.start.line + 1}
+              </Text>
+            )}
+          </Box>
+        )}
         {getModeDisplay() && <Text color="yellow">{getModeDisplay()}</Text>}
       </Box>
     </Box>

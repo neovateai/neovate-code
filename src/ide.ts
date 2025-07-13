@@ -1,6 +1,86 @@
 import createDebug from 'debug';
 import WebSocket from 'ws';
 
+// Response type interfaces
+interface BaseResponse {
+  success: boolean;
+  message?: string;
+}
+
+interface OpenFileResponse extends BaseResponse {
+  filePath?: string;
+}
+
+interface OpenDiffResponse extends BaseResponse {
+  message: string;
+}
+
+interface DiagnosticItem {
+  message: string;
+  severity: string;
+  range: {
+    start: { line: number; character: number };
+    end: { line: number; character: number };
+  };
+}
+
+interface DiagnosticsResponse {
+  diagnostics: Array<{
+    uri: string;
+    diagnostics: DiagnosticItem[];
+  }>;
+}
+
+interface EditorInfo {
+  filePath: string;
+  isActive: boolean;
+}
+
+interface OpenEditorsResponse {
+  editors: EditorInfo[];
+}
+
+interface WorkspaceFolder {
+  name: string;
+  uri: string;
+}
+
+interface WorkspaceFoldersResponse {
+  folders: WorkspaceFolder[];
+}
+
+export interface SelectionInfo {
+  filePath: string;
+  text: string;
+  selection: {
+    start: { line: number; character: number };
+    end: { line: number; character: number };
+  };
+}
+
+export interface SelectionResponse extends SelectionInfo {}
+
+export interface SelectionErrorResponse {
+  error: string;
+}
+
+interface CloseTabResponse extends BaseResponse {
+  message: string;
+}
+
+interface CloseAllDiffTabsResponse extends BaseResponse {
+  closedCount: number;
+}
+
+export type SelectionResult = SelectionResponse | SelectionErrorResponse;
+
+// WebSocket message types
+interface WSMessage {
+  id?: number;
+  error?: { message: string };
+  result?: unknown;
+}
+
 const debug = createDebug('takumi:ide');
 
 export class IDE {
@@ -8,7 +88,7 @@ export class IDE {
   private requestId: number;
   private pendingRequests: Map<
     number,
-    { resolve: (value: any) => void; reject: (reason?: any) => void }
+    { resolve: (value: unknown) => void; reject: (reason?: unknown) => void }
   >;
 
   constructor() {
@@ -61,7 +141,7 @@ export class IDE {
   }
 
   // 处理消息
-  handleMessage(message: any) {
+  handleMessage(message: WSMessage) {
     debug('Handling message:', message);
     if (message.id && this.pendingRequests.has(message.id)) {
       const { resolve, reject } = this.pendingRequests.get(message.id)!;
@@ -82,8 +162,8 @@ export class IDE {
   // 发送请求
   async request(
     method: string,
-    params: Record<string, any> = {},
-  ): Promise<any> {
+    params: Record<string, unknown> = {},
+  ): Promise<unknown> {
     const id = ++this.requestId;
 
     return new Promise((resolve, reject) => {
@@ -112,12 +192,12 @@ export class IDE {
   async openFile(
     filePath: string,
     options: { preview?: boolean } = {},
-  ): Promise<any> {
+  ): Promise<OpenFileResponse> {
     debug('Opening file:', filePath);
     return this.request('openFile', {
       filePath,
       preview: options.preview || false,
-    });
+    }) as unknown as OpenFileResponse;
   }
 
   async openDiff(
@@ -125,48 +205,59 @@ export class IDE {
     new_file_path: string,
     new_file_contents: string,
     tab_name: string,
-  ): Promise<any> {
+  ): Promise<OpenDiffResponse> {
     debug('Opening diff:', { old_file_path, new_file_path, tab_name });
     return this.request('openDiff', {
       old_file_path,
       new_file_path,
       new_file_contents,
       tab_name,
-    });
+    }) as unknown as OpenDiffResponse;
   }
 
-  async getWorkspaceFolders(): Promise<any> {
+  async getWorkspaceFolders(): Promise<WorkspaceFoldersResponse> {
     debug('Getting workspace folders');
-    return this.request('getWorkspaceFolders', {});
+    return this.request(
+      'getWorkspaceFolders',
+      {},
+    ) as unknown as WorkspaceFoldersResponse;
   }
 
-  async getOpenEditors(): Promise<any> {
+  async getOpenEditors(): Promise<OpenEditorsResponse> {
     debug('Getting open editors');
-    return this.request('getOpenEditors', {});
+    return this.request('getOpenEditors', {}) as unknown as OpenEditorsResponse;
   }
 
-  async getDiagnostics(): Promise<any> {
+  async getDiagnostics(): Promise<DiagnosticsResponse> {
     debug('Getting diagnostics');
-    return this.request('getDiagnostics', {});
+    return this.request('getDiagnostics', {}) as unknown as DiagnosticsResponse;
   }
 
-  async getCurrentSelection(): Promise<any> {
+  async getCurrentSelection(): Promise<SelectionResult> {
     debug('Getting current selection');
-    return this.request('getCurrentSelection', {});
+    return this.request(
+      'getCurrentSelection',
+      {},
+    ) as unknown as SelectionResult;
   }
 
-  async getLatestSelection(): Promise<any> {
+  async getLatestSelection(): Promise<SelectionResult> {
     debug('Getting latest selection');
-    return this.request('getLatestSelection', {});
+    return this.request('getLatestSelection', {}) as unknown as SelectionResult;
   }
 
-  async closeTab(tab_name: string): Promise<any> {
+  async closeTab(tab_name: string): Promise<CloseTabResponse> {
     debug('Closing tab:', tab_name);
-    return this.request('close_tab', { tab_name });
+    return this.request('close_tab', {
+      tab_name,
+    }) as unknown as CloseTabResponse;
   }
 
-  async closeAllDiffTabs(): Promise<any> {
+  async closeAllDiffTabs(): Promise<CloseAllDiffTabsResponse> {
     debug('Closing all diff tabs');
-    return this.request('closeAllDiffTabs', {});
+    return this.request(
+      'closeAllDiffTabs',
+      {},
+    ) as unknown as CloseAllDiffTabsResponse;
   }
 }
