@@ -1,57 +1,114 @@
 import { CloudUploadOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { Attachments } from '@ant-design/x';
 import { Button, message } from 'antd';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   CONTEXT_AVAILABLE_FILE_TYPES,
   CONTEXT_MAX_FILE_SIZE,
   ContextType,
 } from '@/constants/context';
-import { actions } from '@/state/context';
+import * as context from '@/state/context';
 
 const SenderAttachments = () => {
   // const { attachments } = useSnapshot(state);
 
+  const availableImageTypes = useMemo(
+    () =>
+      CONTEXT_AVAILABLE_FILE_TYPES.filter((type) =>
+        type.mime.startsWith('image/'),
+      ),
+    [],
+  );
+
+  const { t } = useTranslation();
+
+  const [messageApi, contextHolder] = message.useMessage();
+
   return (
-    <Attachments
-      // action="/api/upload"
+    <>
+      <Attachments
+        // action="/api/upload"
+        accept={CONTEXT_AVAILABLE_FILE_TYPES.map((type) => type.extName).join(
+          ',',
+        )}
+        beforeUpload={(file) => {
+          if (
+            availableImageTypes.findIndex((type) =>
+              file.name.endsWith(type.extName),
+            ) > -1
+          ) {
+            // upload image file
+            // automatically transform file to image context
+            const reader = new FileReader();
+            reader.onload = () => {
+              const base64String = reader.result?.toString();
 
-      accept={CONTEXT_AVAILABLE_FILE_TYPES.map((type) => type.extName).join(
-        ',',
-      )}
-      beforeUpload={(file) => {
-        if (file.size > CONTEXT_MAX_FILE_SIZE) {
-          message.error(
-            `文件大小超出${CONTEXT_MAX_FILE_SIZE / 1024 / 1024}MB限制`,
+              if (base64String) {
+                context.actions.addContext({
+                  type: ContextType.IMAGE,
+                  value: `@Image:[${Date.now()}]`,
+                  displayText: file.name,
+                  context: {
+                    src: base64String,
+                    mime: file.type,
+                  },
+                });
+              }
+            };
+
+            reader.onerror = (e) => {
+              messageApi.error(t('context.uploadError'));
+              console.error(e);
+            };
+
+            reader.readAsDataURL(file);
+
+            return false;
+          }
+
+          if (file.size > CONTEXT_MAX_FILE_SIZE) {
+            messageApi.error(
+              t('context.fileSizeLimited', {
+                limit: `${CONTEXT_MAX_FILE_SIZE / 1024 / 1024}MB`,
+              }),
+            );
+            return false;
+          }
+
+          messageApi.error(
+            t('context.unsupportedType', {
+              type: file.type || file.name.split('.').pop(),
+            }),
           );
-          return false;
-        }
 
-        // TODO Check
-        return false;
-      }}
-      onChange={({ file }) => {
-        // TODO server is not ready, so the file status won't be [done]
-        if (file.status === 'done') {
-          actions.addContext({
-            value: file.uid,
-            displayText: file.name,
-            type: ContextType.ATTACHMENT,
-            context: file,
-          });
-        }
-      }}
-      getDropContainer={() => document.body}
-      placeholder={{
-        icon: <CloudUploadOutlined />,
-        title: '拖拽文件到这里上传',
-        description: '支持上传图片、文本文件',
-      }}
-    >
-      <Button
-        type="text"
-        icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
-      />
-    </Attachments>
+          return false;
+        }}
+        onChange={({ file }) => {
+          // TODO server is not ready, so the file status won't be [done]
+          if (file.status === 'done') {
+            context.actions.addContext({
+              value: file.uid,
+              displayText: file.name,
+              type: ContextType.ATTACHMENT,
+              context: file,
+            });
+          }
+        }}
+        getDropContainer={() => document.body}
+        placeholder={{
+          icon: <CloudUploadOutlined />,
+          title: '拖拽文件到这里上传',
+          description: '支持上传图片、文本文件',
+        }}
+      >
+        <Button
+          type="text"
+          icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
+        />
+      </Attachments>
+      {contextHolder}
+    </>
   );
 };
 

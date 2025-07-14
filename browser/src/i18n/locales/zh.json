@@ -67,7 +67,10 @@
     "selection": "选择",
     "terminal": "终端",
     "git": "Git",
-    "usedReferences": "已使用 {{count}} 个引用"
+    "usedReferences": "已使用 {{count}} 个引用",
+    "unsupportedType": "不支持的文件类型：{{type}}",
+    "uploadError": "上传文件出现错误",
+    "fileSizeLimited": "文件大小超出{{limit}}限制"
   },
   "menu": {
     "rename": "重命名",
