@@ -125,26 +125,11 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
             });
           },
           onError(error) {
-            // Check if it's a cancellation error
-            if (error instanceof Error && error.name === 'AbortError') {
-              debug('Request was aborted, returning cancellation message');
-              return 'Request was cancelled by the client';
-            }
-            debug('Request error:', error);
             debug('Error in completion:', error);
             return error instanceof Error ? error.message : String(error);
           },
         });
       } catch (error) {
-        // Check if it's a cancellation error
-        if (error instanceof Error && error.name === 'AbortError') {
-          debug('Caught AbortError, request was aborted');
-          if (!reply.sent) {
-            reply.status(499).send({ error: 'Client closed request' });
-          }
-          return;
-        }
-
         debug('Unhandled error:', error);
         console.log('error', error);
         if (!reply.sent) {
