@@ -1,4 +1,5 @@
 import { AgentInputItem } from '@openai/agents';
+import { FilesContributor } from './context-contributor';
 import { Service } from './service';
 
 type QueryOpts = {
@@ -39,6 +40,33 @@ export async function query(opts: QueryOpts) {
           },
         ]
       : opts.input;
+
+  // Format the last user message using FileContributor
+  let lastUserMessageIndex = -1;
+  for (let i = input.length - 1; i >= 0; i--) {
+    if ((input[i] as any).role === 'user') {
+      lastUserMessageIndex = i;
+      break;
+    }
+  }
+  if (lastUserMessageIndex !== -1) {
+    const lastUserMessage = input[lastUserMessageIndex] as any;
+    const filesContributor = new FilesContributor();
+    const fileContent = await filesContributor.getContent({
+      context: service.context,
+      prompt:
+        typeof lastUserMessage.content === 'string'
+          ? lastUserMessage.content
+          : '',
+    });
+    if (fileContent) {
+      input[lastUserMessageIndex] = {
+        ...lastUserMessage,
+        content: `${lastUserMessage.content}\n\n${fileContent}`,
+      };
+    }
+  }
+
   let finalText: string | null = null;
   let isFirstRun = true;
   while (true) {

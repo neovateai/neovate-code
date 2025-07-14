@@ -46,6 +46,7 @@ export class Service {
   context: Context;
   history: AgentInputItem[] = [];
   id: string;
+  private textBuffer: string = '';
 
   constructor(opts: ServiceOpts) {
     this.opts = opts;
@@ -64,6 +65,57 @@ export class Service {
             tools: this.tools,
             context: this.context,
           });
+  }
+
+  private hasIncompleteXmlTag(text: string): boolean {
+    const incompletePatterns = [
+      '<use_tool',
+      '<tool_name',
+      '<arguments',
+      '</use_tool',
+      '</tool_name',
+      '</arguments',
+    ];
+
+    // More efficient approach: check all possible suffixes at once
+    for (const pattern of incompletePatterns) {
+      // Check for exact match first (most common case)
+      if (text.endsWith(pattern)) {
+        return true;
+      }
+
+      // Only check partial matches if text is shorter than pattern
+      if (text.length < pattern.length) {
+        if (
+          pattern.startsWith(text.slice(-Math.min(text.length, pattern.length)))
+        ) {
+          return true;
+        }
+      } else {
+        // For longer text, check if any suffix matches pattern prefix
+        const maxCheck = Math.min(pattern.length - 1, text.length);
+        for (let i = 1; i <= maxCheck; i++) {
+          if (text.slice(-i) === pattern.slice(0, i)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  private pushTextDelta(stream: Readable, content: string, text: string): void {
+    const parsed = parseMessage(text);
+    if (parsed[0]?.type === 'text' && parsed[0].partial) {
+      stream.push(
+        JSON.stringify({
+          type: 'text-delta',
+          content,
+          partial: true,
+        }) + '\n',
+      );
+    }
   }
 
   static async create(opts: CreateServiceOpts) {
@@ -150,6 +202,9 @@ export class Service {
     stream: Readable,
     thinking?: boolean,
   ) {
+    // Reset buffer at start of new stream
+    this.textBuffer = '';
+
     try {
       const runner = new Runner({
         modelProvider: this.opts.context.getModelProvider(),
@@ -177,16 +232,21 @@ export class Service {
           switch (chunk.data.event.type) {
             case 'text-delta':
               const textDelta = chunk.data.event.textDelta;
+              this.textBuffer += textDelta;
               text += textDelta;
-              const parsed = parseMessage(text);
-              if (parsed[0]?.type === 'text' && parsed[0].partial) {
-                stream.push(
-                  JSON.stringify({
-                    type: 'text-delta',
-                    content: textDelta,
-                    partial: true,
-                  }) + '\n',
-                );
+
+              // Check if the current text has incomplete XML tags
+              if (this.hasIncompleteXmlTag(text)) {
+                // Buffer the text and continue without parsing
+                continue;
+              }
+
+              // If we have buffered content, process it
+              if (this.textBuffer) {
+                this.pushTextDelta(stream, this.textBuffer, text);
+                this.textBuffer = '';
+              } else {
+                this.pushTextDelta(stream, textDelta, text);
               }
               break;
             case 'reasoning':
@@ -202,6 +262,13 @@ export class Service {
           }
         }
       }
+
+      // Handle any remaining buffered content
+      if (this.textBuffer) {
+        this.pushTextDelta(stream, this.textBuffer, text);
+        this.textBuffer = '';
+      }
+
       const parsed = parseMessage(text);
       if (parsed[0]?.type === 'text') {
         stream.push(

@@ -2,6 +2,7 @@ import createDebug from 'debug';
 import fs from 'fs';
 import path from 'path';
 import { getCodebaseContext } from './codebase';
+import { IMAGE_EXTENSIONS } from './constants';
 import { Context } from './context';
 import { createLSTool } from './tools/ls';
 
@@ -9,6 +10,7 @@ const debug = createDebug('takumi:context-contributor');
 
 interface GetContentOpts {
   context: Context;
+  prompt?: string;
 }
 
 interface LSToolResult {
@@ -34,9 +36,7 @@ export class GitStatusContributor implements ContextContributor {
 export class IDEContributor implements ContextContributor {
   name = 'ide';
   async getContent(opts: GetContentOpts) {
-    // disable ide for now
-    // enable after clone a new vscode plugin
-    if (opts.context.ide && process.env.IDE) {
+    if (opts.context.ide.ws) {
       const workspaceFolders = await opts.context.ide.getWorkspaceFolders();
       const openEditors = await opts.context.ide.getOpenEditors();
       const currentSelection = await opts.context.ide.getCurrentSelection();
@@ -129,8 +129,8 @@ export class ReadmeContributor implements ContextContributor {
 export class CodebaseContributor implements ContextContributor {
   name = 'codebase';
   async getContent(opts: GetContentOpts) {
-    const ats = opts.context.history
-      .join(' ')
+    const prompt = opts.prompt || opts.context.history.join(' ');
+    const ats = prompt
       .split(' ')
       .filter((p) => p.startsWith('@'))
       .map((p) => p.slice(1));
@@ -149,8 +149,8 @@ export class CodebaseContributor implements ContextContributor {
 export class FilesContributor implements ContextContributor {
   name = 'files';
   async getContent(opts: GetContentOpts) {
-    const ats = opts.context.history
-      .join(' ')
+    const prompt = opts.prompt || '';
+    const ats = prompt
       .split(' ')
       .filter((p) => {
         return p.startsWith('@') && p !== '@codebase';
@@ -180,6 +180,7 @@ export class FilesContributor implements ContextContributor {
 
   renderFilesToXml(files: string[], context: Context): string {
     const fileContents = files
+      .filter((fc) => !IMAGE_EXTENSIONS.has(path.extname(fc).toLowerCase()))
       .map(
         (fc) => `
       <file>

@@ -32,11 +32,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   } = useChatActions();
   const { getCurrentStatusMessage } = useMessageFormatting();
   const { switchMode, getModeDisplay } = useModeSwitch();
-  const {
-    isConnected: ideConnected,
-    latestSelection,
-    hasPort,
-  } = useIDEStatus();
+  const { latestSelection, installStatus } = useIDEStatus();
 
   const [value, setValue] = useState('');
   const [cursorPosition, setCursorPosition] = useState<number | undefined>();
@@ -112,7 +108,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
     }
     if (key.upArrow) {
       if (isVisible) {
-        navigatePrevious(); // 切换suggestion
+        navigatePrevious(); // Navigate suggestions
       } else {
         const lines = value.split('\n');
         const currentCursorPos = cursorPosition ?? value.length;
@@ -226,6 +222,19 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
     return isWaitingForInput || isFailed || isCancelled ? 'gray' : 'white';
   };
 
+  const getIDEStatusDisplay = () => {
+    switch (installStatus) {
+      case 'not-detected':
+        return { icon: '❌', text: 'Extension Not Installed', color: 'red' };
+      case 'detected':
+        return { icon: '⚠️', text: 'Extension Detected', color: 'yellow' };
+      case 'connected':
+        return { icon: '🔗', text: 'IDE Connected', color: 'green' };
+      default:
+        return { icon: '❓', text: 'Unknown Status', color: 'gray' };
+    }
+  };
+
   return (
     <Box flexDirection="column" marginTop={1}>
       <Box
@@ -247,14 +256,21 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
               const val = sanitizeText(input);
               chatInputChange(val);
               setValue(val);
-              setCursorPosition(undefined); // 清除强制光标位置
-              resetVisible(); // 重置建议面板显示状态
+              // Clear cursor position only when value actually changes
+              if (val !== value) {
+                setCursorPosition(undefined);
+              }
+              resetVisible();
             }}
             onSubmit={isVisible ? () => {} : handleSubmit}
             onTabPress={handleTabPress}
             cursorPosition={cursorPosition}
             maxLines={DEFAULT_MAX_LINES}
-            onCursorPositionChange={setCursorPosition}
+            onCursorPositionChange={(pos) => {
+              if (pos !== cursorPosition) {
+                setCursorPosition(pos);
+              }
+            }}
           />
         )}
       </Box>
@@ -280,13 +296,13 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
           history
         </Text>
         <Box flexGrow={1} />
-        {/* IDE Status - only show if port is available */}
-        {hasPort && (
+        {/* IDE Status - only show if extension is detected or connected */}
+        {installStatus !== 'not-detected' && (
           <Box flexDirection="row" gap={1}>
-            <Text color={ideConnected ? 'green' : 'gray'}>
-              {ideConnected ? '🔗' : '⚠️'} IDE
+            <Text color={getIDEStatusDisplay().color as any}>
+              {getIDEStatusDisplay().icon} {getIDEStatusDisplay().text}
             </Text>
-            {latestSelection && (
+            {latestSelection && installStatus === 'connected' && (
               <Text color="cyan">
                 {latestSelection.filePath.split('/').pop()}:
                 {latestSelection.selection.start.line + 1}
