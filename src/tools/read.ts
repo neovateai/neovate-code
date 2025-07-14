@@ -93,13 +93,23 @@ Usage:
       execute: async ({ file_path }) => {
         try {
           const ext = path.extname(file_path).toLowerCase();
-          const fullFilePath = path.isAbsolute(file_path)
-            ? file_path
-            : path.resolve(opts.context.cwd, file_path);
 
-          if (!fs.existsSync(fullFilePath)) {
-            throw new Error(`File ${fullFilePath} does not exist.`);
-          }
+          let fullFilePath = (() => {
+            if (path.isAbsolute(file_path)) {
+              return file_path;
+            }
+            const full = path.resolve(opts.context.cwd, file_path);
+            if (fs.existsSync(full)) {
+              return full;
+            }
+            if (file_path.startsWith('@')) {
+              const full = path.resolve(opts.context.cwd, file_path.slice(1));
+              if (fs.existsSync(full)) {
+                return full;
+              }
+            }
+            throw new Error(`File ${file_path} does not exist.`);
+          })();
 
           // Handle image files
           if (IMAGE_EXTENSIONS.has(ext)) {
