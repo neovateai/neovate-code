@@ -1,14 +1,107 @@
 import createDebug from 'debug';
+import path from 'path';
+import { fileURLToPath, resolve } from 'url';
 import WebSocket from 'ws';
+import {
+  InstallationResult,
+  PlatformInfo,
+  attemptInstallation,
+  isExtensionInstalled,
+} from './utils/ide';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = resolve(__filename, '../');
+
+const VSIX_PATH = path.resolve(__dirname, 'vendor', 'takumi.vsix');
+
+// Response type interfaces
+interface BaseResponse {
+  success: boolean;
+  message?: string;
+}
+
+interface OpenFileResponse extends BaseResponse {
+  filePath?: string;
+}
+
+interface OpenDiffResponse extends BaseResponse {
+  message: string;
+}
+
+interface DiagnosticItem {
+  message: string;
+  severity: string;
+  range: {
+    start: { line: number; character: number };
+    end: { line: number; character: number };
+  };
+}
+
+interface DiagnosticsResponse {
+  diagnostics: Array<{
+    uri: string;
+    diagnostics: DiagnosticItem[];
+  }>;
+}
+
+interface EditorInfo {
+  filePath: string;
+  isActive: boolean;
+}
+
+interface OpenEditorsResponse {
+  editors: EditorInfo[];
+}
+
+interface WorkspaceFolder {
+  name: string;
+  uri: string;
+}
+
+interface WorkspaceFoldersResponse {
+  folders: WorkspaceFolder[];
+}
+
+export interface SelectionInfo {
+  filePath: string;
+  text: string;
+  selection: {
+    start: { line: number; character: number };
+    end: { line: number; character: number };
+  };
+}
+
+export interface SelectionResponse extends SelectionInfo {}
+
+export interface SelectionErrorResponse {
+  error: string;
+}
+
+interface CloseTabResponse extends BaseResponse {
+  message: string;
+}
+
+interface CloseAllDiffTabsResponse extends BaseResponse {
+  closedCount: number;
+}
+
+export type SelectionResult = SelectionResponse | SelectionErrorResponse;
+
+// WebSocket message types
+interface WSMessage {
+  id?: number;
+  error?: { message: string };
+  result?: unknown;
+}
 
 const debug = createDebug('takumi:ide');
 
 export class IDE {
-  private ws: WebSocket | null;
+  ws: WebSocket | null;
   private requestId: number;
   private pendingRequests: Map<
     number,
-    { resolve: (value: any) => void; reject: (reason?: any) => void }
+    { resolve: (value: unknown) => void; reject: (reason?: unknown) => void }
   >;
 
   constructor() {
@@ -19,21 +112,8 @@ export class IDE {
 
   // 发现端口
   async findPort() {
-    // 方法1: 环境变量
-    const envPort = process.env.CLAUDE_CODE_SSE_PORT;
+    const envPort = process.env.TAKUMI_SSE_PORT;
     if (envPort) return parseInt(envPort);
-
-    // 方法2: 扫描锁文件
-    // const lockDir = path.join(os.homedir(), '.claude', 'ide');
-    // if (fs.existsSync(lockDir)) {
-    //   const lockFiles = fs.readdirSync(lockDir)
-    //     .filter(f => f.endsWith('.lock'));
-
-    //   if (lockFiles.length > 0) {
-    //     const port = lockFiles[0].replace('.lock', '');
-    //     return parseInt(port);
-    //   }
-    // }
   }
 
   // 连接到 extension
@@ -59,49 +139,62 @@ export class IDE {
         this.handleMessage(message);
       });
 
+      this.ws.on('close', () => {
+        debug('Disconnected from the IDE extension.');
+        this.ws = null;
+      });
+
       this.ws.on('error', reject);
     });
   }
 
   async disconnect() {
+    debug('Disconnecting from IDE extension');
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
+    // Clear any pending requests
+    this.pendingRequests.clear();
   }
 
   // 处理消息
-  handleMessage(message: any) {
+  handleMessage(message: WSMessage) {
+    debug('Handling message:', message);
     if (message.id && this.pendingRequests.has(message.id)) {
       const { resolve, reject } = this.pendingRequests.get(message.id)!;
       this.pendingRequests.delete(message.id);
 
       if (message.error) {
+        debug('Request failed:', message.error);
         reject(new Error(message.error.message));
       } else {
+        debug('Request succeeded:', message.result);
         resolve(message.result);
       }
+    } else {
+      debug('Received message without matching request ID:', message);
     }
   }
 
   // 发送请求
   async request(
     method: string,
-    params: Record<string, any> = {},
-  ): Promise<any> {
+    params: Record<string, unknown> = {},
+  ): Promise<unknown> {
     const id = ++this.requestId;
 
     return new Promise((resolve, reject) => {
       this.pendingRequests.set(id, { resolve, reject });
 
-      this.ws!.send(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          id,
-          method,
-          params,
-        }),
-      );
+      const message = {
+        id,
+        method,
+        params,
+      };
+
+      debug('Sending request:', message);
+      this.ws!.send(JSON.stringify(message));
 
       // 超时处理
       setTimeout(() => {
@@ -117,43 +210,108 @@ export class IDE {
   async openFile(
     filePath: string,
     options: { preview?: boolean } = {},
-  ): Promise<any> {
-    return this.request('tools/call', {
-      name: 'openFile',
-      arguments: {
-        filePath,
-        preview: options.preview || false,
-        startText: '',
-        endText: '',
-      },
-    });
+  ): Promise<OpenFileResponse> {
+    debug('Opening file:', filePath);
+    return this.request('openFile', {
+      filePath,
+      preview: options.preview || false,
+    }) as unknown as OpenFileResponse;
   }
 
-  async getWorkspaceFolders(): Promise<any> {
-    return this.request('tools/call', {
-      name: 'getWorkspaceFolders',
-      arguments: {},
-    });
+  async openDiff(
+    old_file_path: string,
+    new_file_path: string,
+    new_file_contents: string,
+    tab_name: string,
+  ): Promise<OpenDiffResponse> {
+    debug('Opening diff:', { old_file_path, new_file_path, tab_name });
+    return this.request('openDiff', {
+      old_file_path,
+      new_file_path,
+      new_file_contents,
+      tab_name,
+    }) as unknown as OpenDiffResponse;
   }
 
-  async getOpenEditors(): Promise<any> {
-    return this.request('tools/call', {
-      name: 'getOpenEditors',
-      arguments: {},
-    });
+  async getWorkspaceFolders(): Promise<WorkspaceFoldersResponse> {
+    debug('Getting workspace folders');
+    return this.request(
+      'getWorkspaceFolders',
+      {},
+    ) as unknown as WorkspaceFoldersResponse;
   }
 
-  async getDiagnostics(): Promise<any> {
-    return this.request('tools/call', {
-      name: 'getDiagnostics',
-      arguments: {},
-    });
+  async getOpenEditors(): Promise<OpenEditorsResponse> {
+    debug('Getting open editors');
+    return this.request('getOpenEditors', {}) as unknown as OpenEditorsResponse;
   }
 
-  async getCurrentSelection(): Promise<any> {
-    return this.request('tools/call', {
-      name: 'getCurrentSelection',
-      arguments: {},
-    });
+  async getDiagnostics(): Promise<DiagnosticsResponse> {
+    debug('Getting diagnostics');
+    return this.request('getDiagnostics', {}) as unknown as DiagnosticsResponse;
+  }
+
+  async getCurrentSelection(): Promise<SelectionResult> {
+    debug('Getting current selection');
+    return this.request(
+      'getCurrentSelection',
+      {},
+    ) as unknown as SelectionResult;
+  }
+
+  async getLatestSelection(): Promise<SelectionResult> {
+    debug('Getting latest selection');
+    return this.request('getLatestSelection', {}) as unknown as SelectionResult;
+  }
+
+  async closeTab(tab_name: string): Promise<CloseTabResponse> {
+    debug('Closing tab:', tab_name);
+    return this.request('close_tab', {
+      tab_name,
+    }) as unknown as CloseTabResponse;
+  }
+
+  async closeAllDiffTabs(): Promise<CloseAllDiffTabsResponse> {
+    debug('Closing all diff tabs');
+    return this.request(
+      'closeAllDiffTabs',
+      {},
+    ) as unknown as CloseAllDiffTabsResponse;
+  }
+
+  async setupIDEIntegration(
+    terminal: string,
+  ): Promise<InstallationResult | undefined> {
+    debug('Setting up IDE integration');
+
+    // Skip auto-install if disabled
+    if (process.env.TAKUMI_IDE_SKIP_AUTO_INSTALL) {
+      debug('Skipping auto-install due to environment variable');
+      return;
+    }
+
+    const platformInfo: PlatformInfo = {
+      terminal,
+      platform: process.platform,
+    };
+
+    // Check and install extension
+    const isInstalled = await isExtensionInstalled(platformInfo);
+    debug('Extension installed:', isInstalled);
+
+    const vsixPath = process.env.TAKUMI_VSIX_PATH || VSIX_PATH;
+    let result: InstallationResult;
+    if (vsixPath && !isInstalled) {
+      result = await attemptInstallation(platformInfo, vsixPath);
+    } else {
+      result = {
+        installed: isInstalled,
+        error: isInstalled ? null : 'VSIX path not provided',
+        installedVersion: isInstalled ? '1.0.22' : null,
+      };
+    }
+
+    debug('Installation result:', result);
+    return result;
   }
 }

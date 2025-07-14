@@ -1,6 +1,6 @@
 {
   "name": "takumi",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "files": [
     "dist",
@@ -24,6 +24,11 @@
     "build:post": "tsx scripts/post-build.ts",
     "build": "rm -rf dist dist-dts && npm run build:cli && npm run build:index && npm run build:dts && npm run build:browser && npm run build:post",
     "ci": "npm run typecheck && npm run format:check && npm run test",
+    "extension:build": "pnpm --filter takumi-assistant build",
+    "extension:dev": "pnpm --filter takumi-assistant dev",
+    "extension:publish": "cd vscode-extension && npm run publish && cd ..",
+    "extension:package": "pnpm --filter takumi-assistant package",
+    "extension:bump": "pnpm --filter takumi-assistant bump",
     "release": "npm run ci && utools release --git-tag --github-release --changelog",
     "release:minor": "npm run ci && utools release --git-tag --github-release --changelog --bump minor",
     "release:major": "npm run ci && utools release --git-tag --github-release --changelog --bump major",

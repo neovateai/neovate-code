@@ -1,3 +1,29 @@
+## 0.4.0
+
+`2025-07-14`
+
+- feat: add VS Code extension workspace and build scripts by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance context contributors with prompt parameter and file content integration [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: enable IDE workspace context with WebSocket connection handling by [@sorrycc](https://github.com/sorrycc)
+- feat: add openrouter/k2 model alias and update approved list by [@sorrycc](https://github.com/sorrycc)
+- feat: Add IDE extension installation and detection workflow [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat(browser): upgrade context popup by [@Z-Bokle](https://github.com/Z-Bokle) in [#99](https://github.com/umijs/takumi/pull/99)
+- feat: add environment variables to context by [@sorrycc](https://github.com/sorrycc)
+- refactor: Simplify IDE initialization and add connection status tracking [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: extract tool names to constants for centralized management by [@sorrycc](https://github.com/sorrycc)
+- fix: validate params type in tool message component by [@阿平](https://github.com/阿平) in [#114](https://github.com/umijs/takumi/pull/114)
+- feat: allow all bash commands and enable external host access by [@阿平](https://github.com/阿平) in [#113](https://github.com/umijs/takumi/pull/113)
+- refactor: improve tool use formatting with detailed descriptions and error handling by [@阿平](https://github.com/阿平) in [#110](https://github.com/umijs/takumi/pull/110)
+- feat: update IDE methods and add new functionality to diff handling by [@sorrycc](https://github.com/sorrycc)
+- feat: add jsonrepair for handling malformed json in message parsing by [@阿平](https://github.com/阿平) in [#109](https://github.com/umijs/takumi/pull/109)
+- feat: update terminal title without star prefix by [@sorrycc](https://github.com/sorrycc)
+- feat: implement double ctrl+c exit warning with timeout handler [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: improve bash tool with safer command execution and validation [AI] by [@阿平](https://github.com/阿平) in [#106](https://github.com/umijs/takumi/pull/106)
+- refactor: improve tool use formatting and documentation clarity by [@阿平](https://github.com/阿平) in [#105](https://github.com/umijs/takumi/pull/105)
+- feat: enhance directory structure contributor with formatted output by [@阿平](https://github.com/阿平) in [#107](https://github.com/umijs/takumi/pull/107)
+- refactor: improve diff viewer component layout and stats rendering by [@阿平](https://github.com/阿平) in [#103](https://github.com/umijs/takumi/pull/103)
+
+
 ## 0.3.0
 
 `2025-07-08`

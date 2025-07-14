@@ -6,6 +6,7 @@ import { APP_STATUS, BORDER_COLORS } from '../constants';
 import { useAutoSuggestion } from '../hooks/useAutoSuggestion';
 import { useChatActions } from '../hooks/useChatActions';
 import { extractFileQuery } from '../hooks/useFileAutoSuggestion';
+import { useIDEStatus } from '../hooks/useIDEStatus';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import { useModeSwitch } from '../hooks/useModeSwitch';
 import TextInput from '../ink-text-input';
@@ -31,6 +32,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   } = useChatActions();
   const { getCurrentStatusMessage } = useMessageFormatting();
   const { switchMode, getModeDisplay } = useModeSwitch();
+  const { latestSelection, installStatus } = useIDEStatus();
 
   const [value, setValue] = useState('');
   const [cursorPosition, setCursorPosition] = useState<number | undefined>();
@@ -220,6 +222,19 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
     return isWaitingForInput || isFailed || isCancelled ? 'gray' : 'white';
   };
 
+  const getIDEStatusDisplay = () => {
+    switch (installStatus) {
+      case 'not-detected':
+        return { icon: '❌', text: 'Extension Not Installed', color: 'red' };
+      case 'detected':
+        return { icon: '⚠️', text: 'Extension Detected', color: 'yellow' };
+      case 'connected':
+        return { icon: '🔗', text: 'IDE Connected', color: 'green' };
+      default:
+        return { icon: '❓', text: 'Unknown Status', color: 'gray' };
+    }
+  };
+
   return (
     <Box flexDirection="column" marginTop={1}>
       <Box
@@ -274,6 +289,20 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
           history
         </Text>
         <Box flexGrow={1} />
+        {/* IDE Status - only show if extension is detected or connected */}
+        {installStatus !== 'not-detected' && (
+          <Box flexDirection="row" gap={1}>
+            <Text color={getIDEStatusDisplay().color as any}>
+              {getIDEStatusDisplay().icon} {getIDEStatusDisplay().text}
+            </Text>
+            {latestSelection && installStatus === 'connected' && (
+              <Text color="cyan">
+                {latestSelection.filePath.split('/').pop()}:
+                {latestSelection.selection.start.line + 1}
+              </Text>
+            )}
+          </Box>
+        )}
         {getModeDisplay() && <Text color="yellow">{getModeDisplay()}</Text>}
       </Box>
     </Box>

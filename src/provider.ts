@@ -36,6 +36,7 @@ export const MODEL_ALIAS: Record<string, string> = {
   'openrouter/sonnet': 'openrouter/anthropic/claude-sonnet-4',
   'openrouter/r1': 'openrouter/deepseek/deepseek-r1-0528',
   'openrouter/deepseek': 'openrouter/deepseek/deepseek-chat-v3-0324',
+  'openrouter/k2': 'openrouter/moonshotai/kimi-k2',
   cypher: 'openrouter/openrouter/cypher-alpha:free',
   'aihubmix/sonnet-3.5': 'aihubmix/claude-3-5-sonnet-20241022',
   'aihubmix/sonnet-3.7': 'aihubmix/claude-3-7-sonnet-20250219',
@@ -106,6 +107,7 @@ const OPENROUTER_MODELS = [
   'openai/o3-pro',
   'openai/o3-mini',
   'openai/o4-mini',
+  'moonshotai/kimi-k2',
 ];
 
 export async function getModel(modelName?: string): Promise<AiSdkModel> {

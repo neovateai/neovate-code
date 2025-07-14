@@ -10,8 +10,18 @@ interface FileListResponse {
   error?: string;
 }
 
-export const getFileList = (): Promise<ApiResponse<FileListResponse>> => {
-  return request.get('/files/list');
+export interface FileListQueries {
+  searchString?: string;
+
+  maxSize?: number;
+}
+
+export const getFileList = (
+  queries?: FileListQueries,
+): Promise<ApiResponse<FileListResponse>> => {
+  return request.get('/files/list', {
+    params: queries,
+  });
 };
 
 interface FileEditResponse {
