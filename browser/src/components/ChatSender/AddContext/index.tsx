@@ -3,7 +3,7 @@ import { Tag } from 'antd';
 import { createStyles } from 'antd-style';
 import { useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
-import Suggestion from '@/components/Suggestion';
+import SuggestionList from '@/components/SuggestionList';
 import { ContextType } from '@/constants/context';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
@@ -21,9 +21,6 @@ const useStyle = createStyles(({ css, token }) => {
       display: flex;
       align-items: center;
     `,
-    input: css`
-      /* margin-right: 8px; */
-    `,
     icon: css`
       font-size: 14px;
       height: 22px;
@@ -37,62 +34,47 @@ const AddContext = () => {
   const { attachedContexts, contextsSelectedValues } = useSnapshot(
     context.state,
   );
-  const [searchText, setSearchText] = useState('');
-  const [keepMenuOpen, setKeepMenuOpen] = useState(false);
+  const [openPopup, setOpenPopup] = useState(false);
 
   const {
-    suggestions,
-    showSearch,
-    handleSelectValue,
-    currentContextType,
-    setCurrentContextType,
-  } = useSuggestion(searchText, contextsSelectedValues);
+    defaultSuggestions,
+    handleSearch,
+    getOriginalContextByValue,
+    loading: suggestionLoading,
+  } = useSuggestion(contextsSelectedValues);
 
   const { styles } = useStyle();
 
   return (
-    <Suggestion
-      showSearch={
-        showSearch && {
-          placeholder: 'Please input to search...',
-          onSearch: (text) => {
-            setSearchText(text);
-          },
-        }
-      }
-      items={suggestions}
-      showBackButton={currentContextType !== ContextType.UNKNOWN}
-      onBack={() => {
-        setSearchText('');
-        setCurrentContextType(ContextType.UNKNOWN);
+    <SuggestionList
+      open={openPopup}
+      onOpenChange={(open) => setOpenPopup(open)}
+      items={defaultSuggestions}
+      loading={suggestionLoading}
+      onSearch={(type, text) => {
+        handleSearch(type as ContextType, text);
       }}
-      onBlur={() => {
-        setKeepMenuOpen(false);
-      }}
-      outsideOpen={keepMenuOpen}
-      onSelect={(value) => {
-        setKeepMenuOpen(true);
-        const contextItem = handleSelectValue(value);
+      onSelect={(type, itemValue) => {
+        setOpenPopup(false);
+        const contextItem = getOriginalContextByValue(
+          type as ContextType,
+          itemValue,
+        );
+
         if (contextItem) {
-          setKeepMenuOpen(false);
           context.actions.addContext(contextItem);
         }
       }}
     >
-      {({ onKeyDown, onTrigger }) => (
-        <Tag
-          ref={tagRef}
-          className={styles.tag}
-          icon={<Icon className={styles.icon} component={() => <div>@</div>} />}
-          onKeyDown={onKeyDown}
-          onClick={() => {
-            onTrigger();
-          }}
-        >
-          {attachedContexts.length === 0 && <span>Add Context</span>}
-        </Tag>
-      )}
-    </Suggestion>
+      <Tag
+        ref={tagRef}
+        className={styles.tag}
+        icon={<Icon className={styles.icon} component={() => <div>@</div>} />}
+        onClick={() => setOpenPopup(true)}
+      >
+        {attachedContexts.length === 0 && <span>Add Context</span>}
+      </Tag>
+    </SuggestionList>
   );
 };
 

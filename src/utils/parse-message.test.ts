@@ -311,5 +311,24 @@ Based on the weather data, it looks like a great day!`;
         partial: false,
       });
     });
+
+    it('should parse tool use with jsonrepair', () => {
+      const input = `<use_tool>
+<tool_name>edit</tool_name>
+<arguments>
+{"file_path": "src/ui/constants.ts", "old_string": "1"}}
+</arguments>
+</use_tool>`;
+
+      const result = parseMessage(input);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        type: 'tool_use',
+        name: 'edit',
+        params: { file_path: 'src/ui/constants.ts', old_string: '1' },
+        partial: false,
+      });
+    });
   });
 });

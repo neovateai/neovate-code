@@ -1,5 +1,6 @@
 import React, { ReactNode, createContext, useContext, useReducer } from 'react';
 import { Context } from '../context';
+import { SelectionInfo } from '../ide';
 import { Service } from '../service';
 import { APP_STATUS, MESSAGE_ROLES } from './constants';
 
@@ -68,6 +69,13 @@ export interface AppState {
     proceedAlways: Set<string>;
     proceedAlwaysTool: Set<string>;
   };
+
+  // IDE status
+  ide: {
+    isConnected: boolean;
+    latestSelection: SelectionInfo | null;
+    installStatus: 'not-detected' | 'detected' | 'connected';
+  };
 }
 
 // Action types
@@ -108,7 +116,13 @@ export type AppAction =
       type: 'REMOVE_APPROVAL_MEMORY';
       payload: { type: 'once' | 'always' | 'tool'; key: string };
     }
-  | { type: 'CLEAR_APPROVAL_MEMORY' };
+  | { type: 'CLEAR_APPROVAL_MEMORY' }
+  | { type: 'SET_IDE_CONNECTED'; payload: boolean }
+  | { type: 'SET_IDE_LATEST_SELECTION'; payload: SelectionInfo | null }
+  | {
+      type: 'SET_IDE_INSTALL_STATUS';
+      payload: 'not-detected' | 'detected' | 'connected';
+    };
 
 // Reducer
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -209,6 +223,33 @@ function appReducer(state: AppState, action: AppAction): AppState {
           proceedAlwaysTool: new Set(),
         },
       };
+
+    case 'SET_IDE_CONNECTED':
+      return {
+        ...state,
+        ide: {
+          ...state.ide,
+          isConnected: action.payload,
+        },
+      };
+
+    case 'SET_IDE_LATEST_SELECTION':
+      return {
+        ...state,
+        ide: {
+          ...state.ide,
+          latestSelection: action.payload,
+        },
+      };
+
+    case 'SET_IDE_INSTALL_STATUS':
+      return {
+        ...state,
+        ide: {
+          ...state.ide,
+          installStatus: action.payload,
+        },
+      };
     default:
       return state;
   }
@@ -271,6 +312,11 @@ export function AppProvider({
       proceedOnce: new Set(),
       proceedAlways: new Set(),
       proceedAlwaysTool: new Set(),
+    },
+    ide: {
+      isConnected: false,
+      latestSelection: null,
+      installStatus: 'not-detected' as const,
     },
   };
 

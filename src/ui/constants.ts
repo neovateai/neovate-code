@@ -39,7 +39,13 @@ export const TOOL_DESCRIPTION_EXTRACTORS = {
     !args.file_path
       ? 'No file path provided'
       : path.relative(cwd, args.file_path),
-  [TOOL_NAMES.BASH]: (args: any, cwd: string) => args.command,
+  [TOOL_NAMES.BASH]: (args: any, cwd: string) => {
+    if (!args.command || typeof args.command !== 'string') {
+      return 'No command provided';
+    }
+    const command = args.command.trim();
+    return command.length > 100 ? command.substring(0, 97) + '...' : command;
+  },
   [TOOL_NAMES.EDIT]: (args: any, cwd: string) =>
     !args.file_path
       ? 'No file path provided'

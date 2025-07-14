@@ -36,6 +36,7 @@ export const MODEL_ALIAS: Record<string, string> = {
   'openrouter/sonnet': 'openrouter/anthropic/claude-sonnet-4',
   'openrouter/r1': 'openrouter/deepseek/deepseek-r1-0528',
   'openrouter/deepseek': 'openrouter/deepseek/deepseek-chat-v3-0324',
+  'openrouter/k2': 'openrouter/moonshotai/kimi-k2',
   cypher: 'openrouter/openrouter/cypher-alpha:free',
   'aihubmix/sonnet-3.5': 'aihubmix/claude-3-5-sonnet-20241022',
   'aihubmix/sonnet-3.7': 'aihubmix/claude-3-7-sonnet-20250219',
@@ -46,6 +47,7 @@ export const MODEL_ALIAS: Record<string, string> = {
   'aihubmix/gemini': 'aihubmix/gemini-2.5-pro',
   'aihubmix/flash': 'aihubmix/gemini-2.5-flash',
   'aihubmix/flash-lite': `aihubmix/${GEMINI_FLASH_LITE_MODEL}`,
+  k2: 'kimi-k2-0711-preview',
 };
 const OPENAI_MODELS = [
   'gpt-4.1',
@@ -106,7 +108,9 @@ const OPENROUTER_MODELS = [
   'openai/o3-pro',
   'openai/o3-mini',
   'openai/o4-mini',
+  'moonshotai/kimi-k2',
 ];
+const MOONSHOT_MODELS = ['kimi-k2-0711-preview'];
 
 export async function getModel(modelName?: string): Promise<AiSdkModel> {
   if (!modelName) {
@@ -171,6 +175,14 @@ export async function getModel(modelName?: string): Promise<AiSdkModel> {
       });
       return aisdk(aihubmix(modelName));
     }
+  }
+  // moonshot
+  if (MOONSHOT_MODELS.includes(modelName)) {
+    const moonshot = createOpenAI({
+      baseURL: 'https://api.moonshot.cn/v1',
+      apiKey: process.env.MOONSHOT_API_KEY,
+    });
+    return aisdk(moonshot(modelName));
   }
   // openrouter
   if (modelName.startsWith('openrouter/')) {

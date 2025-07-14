@@ -4,7 +4,6 @@ import {
   CodebaseContributor,
   ContextContributor,
   DirectoryStructureContributor,
-  FilesContributor,
   GitStatusContributor,
   IDEContributor,
   ReadmeContributor,
@@ -36,7 +35,6 @@ export class SystemPromptBuilder {
       new RulesContributor(),
       new ReadmeContributor(),
       new CodebaseContributor(),
-      new FilesContributor(),
     ];
     let context: Record<string, string> = {};
     for (const contributor of contributors) {

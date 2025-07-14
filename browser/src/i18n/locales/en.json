@@ -12,7 +12,8 @@
     "search": "Search",
     "placeholder": "Please input to search...",
     "enable": "enable",
-    "disable": "disable"
+    "disable": "disable",
+    "empty": "No Data"
   },
   "markdown": {
     "copyCode": "Copy Code",
