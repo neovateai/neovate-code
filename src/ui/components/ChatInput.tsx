@@ -181,14 +181,22 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
               const val = sanitizeText(input);
               chatInputChange(val);
               setValue(val);
-              setCursorPosition(undefined); // 清除强制光标位置
+              // 只在值真正变化时才清除光标位置
+              if (val !== value) {
+                setCursorPosition(undefined); // 清除强制光标位置
+              }
               resetVisible(); // 重置建议面板显示状态
             }}
             onSubmit={isVisible ? () => {} : handleSubmit}
             onTabPress={handleTabPress}
             cursorPosition={cursorPosition}
             maxLines={DEFAULT_MAX_LINES}
-            onCursorPositionChange={setCursorPosition}
+            onCursorPositionChange={(pos) => {
+              // 防抖和循环检查，避免死循环
+              if (pos !== cursorPosition) {
+                setCursorPosition(pos);
+              }
+            }}
           />
         )}
       </Box>

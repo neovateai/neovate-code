@@ -172,10 +172,10 @@ function TextInput({
 
   useEffect(() => {
     if (onCursorPositionChange) {
-      // Use React's scheduler to avoid race conditions
+      // Add debouncing to prevent excessive calls
       const timeoutId = setTimeout(() => {
         onCursorPositionChange(state.cursorOffset);
-      }, 0);
+      }, 16); // ~60fps debouncing
       return () => clearTimeout(timeoutId);
     }
   }, [state.cursorOffset, onCursorPositionChange]);
@@ -191,6 +191,15 @@ function TextInput({
       0,
       Math.min(newCursorOffset, newValue.length),
     );
+
+    // Prevent unnecessary updates
+    if (
+      safeCursorOffset === state.cursorOffset &&
+      newCursorWidth === state.cursorWidth &&
+      newValue === originalValue
+    ) {
+      return;
+    }
 
     setState({
       cursorOffset: safeCursorOffset,
