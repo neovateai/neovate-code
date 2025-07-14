@@ -11,7 +11,9 @@ export interface FileItem {
 
 export interface FileListRequest {
   directory?: string;
-  pattern?: string;
-  maxDepth?: number;
   includeMetadata?: number;
+  /** 最多返回的文件/目录数量 */
+  maxSize?: number;
+  /** 模糊搜索字符串 */
+  searchString?: string;
 }
