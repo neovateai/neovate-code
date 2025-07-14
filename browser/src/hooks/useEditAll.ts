@@ -1,6 +1,5 @@
 import * as codeViewer from '@/state/codeViewer';
 import * as fileChanges from '@/state/fileChanges';
-import * as toolApproval from '@/state/toolApproval';
 
 const useEditAll = (path?: string) => {
   const acceptAll = (modifiedCode: string) => {
@@ -17,7 +16,7 @@ const useEditAll = (path?: string) => {
         };
       });
 
-      toolApproval.toolApprovalActions.approveToolUse(true, 'once');
+      fileChanges.fileChangesActions.writeFileContent(path, modifiedCode);
     }
   };
 
@@ -36,7 +35,6 @@ const useEditAll = (path?: string) => {
       });
 
       fileChanges.fileChangesActions.writeFileContent(path, originalCode);
-      toolApproval.toolApprovalActions.approveToolUse(false, 'once');
     }
   };
 

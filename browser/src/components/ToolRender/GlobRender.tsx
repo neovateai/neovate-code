@@ -43,7 +43,7 @@ export default function GlobRender({ message }: { message?: ToolMessage }) {
   };
 
   return (
-    <div className="text-sm my-2">
+    <div className="text-sm">
       <div
         className="flex items-center gap-2 cursor-pointer"
         onClick={toggleExpand}

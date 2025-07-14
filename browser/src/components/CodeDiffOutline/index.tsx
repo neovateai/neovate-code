@@ -92,7 +92,16 @@ const CodeDiffOutline = (props: Props) => {
 
   useEffect(() => {
     if (file) {
-      onShowCodeViewer();
+      const newGlobalContent =
+        fileChanges.fileChangesActions.getFinalContent(path) || '';
+
+      fileChanges.fileChangesActions.updateCodeViewerState(
+        path,
+        file.content,
+        newGlobalContent,
+        normalViewerMode,
+      );
+      codeViewer.actions.setVisible(true);
     }
   }, [file]);
 

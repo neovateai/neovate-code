@@ -1,7 +1,6 @@
 import { EyeOutlined } from '@ant-design/icons';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { actions, state as codeViewerState } from '@/state/codeViewer';
+import { actions } from '@/state/codeViewer';
 import type { ToolMessage } from '@/types/message';
 import type { IReadToolResult } from '@/types/tool';
 import { ToolStatus } from './ToolStatus';
@@ -20,19 +19,9 @@ export default function ReadRender({ message }: { message?: ToolMessage }) {
         code: data.content,
         path: filePath,
       });
-      actions.setVisible(!codeViewerState.visible);
-    }
-  };
-
-  useEffect(() => {
-    if (data?.content) {
-      actions.updateNormalViewerConfig({
-        code: data.content,
-        path: filePath,
-      });
       actions.setVisible(true);
     }
-  }, [data?.content]);
+  };
 
   return (
     <div

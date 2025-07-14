@@ -159,6 +159,8 @@ export const fileChangesActions = {
   // 初始化fileState, push edits
   initFileState: async (path: string, edits: FileEdit[]) => {
     const fileState = fileChangesState.files[path];
+    console.log('thy debug initFileState', path, edits);
+    console.log('thy debug fileState', fileState);
     if (!fileState) {
       const fileContent = await readFile(path);
       if (fileContent.success) {
@@ -166,6 +168,7 @@ export const fileChangesActions = {
           fileContent.data.content,
           edits,
         );
+        console.log('thy debug originalContent', originalContent);
         fileChangesState.files[path] = proxy<FileState>({
           path,
           content: originalContent,

@@ -14,7 +14,7 @@ export default function DebugInfo({ message }: { message?: ToolMessage }) {
   };
 
   return (
-    <div className="text-xs">
+    <div className="mt-2 text-xs">
       <div
         className="flex items-center gap-1 cursor-pointer text-gray-500"
         onClick={toggleExpand}
