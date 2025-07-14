@@ -15,6 +15,14 @@ interface HistoryState {
   editorState: EditorState;
 }
 
+function getStackTail<T>(stack: T[]) {
+  if (stack.length > 0) {
+    return stack[stack.length - 1];
+  } else {
+    return undefined;
+  }
+}
+
 const HistoryPlugin = () => {
   const [editor] = useLexicalComposerContext();
 
@@ -51,8 +59,7 @@ const HistoryPlugin = () => {
           $getRoot().getTextContent(),
         );
 
-        const redoStackTailContent =
-          redoStack.current[redoStack.current.length - 1]?.content;
+        const redoStackTailContent = getStackTail(redoStack.current)?.content;
         if (currentStateContent !== redoStackTailContent) {
           handlePushRedo({
             editorState: currentState,
@@ -63,7 +70,7 @@ const HistoryPlugin = () => {
 
         // restore the previous state
         undoStack.current.pop();
-        const previousState = undoStack.current[undoStack.current.length - 1];
+        const previousState = getStackTail(undoStack.current)!;
 
         if (previousState.content.length === 0) {
           // cannot set an empty state to editor, so clear the editor
@@ -91,8 +98,7 @@ const HistoryPlugin = () => {
         const currentStateContent = currentState.read(() =>
           $getRoot().getTextContent(),
         );
-        const undoStackTailContent =
-          undoStack.current[undoStack.current.length - 1]?.content;
+        const undoStackTailContent = getStackTail(undoStack.current)?.content;
 
         if (currentStateContent !== undoStackTailContent) {
           handlePushUndo({
@@ -113,10 +119,8 @@ const HistoryPlugin = () => {
 
     const removeUpdateListener = editor.registerUpdateListener(
       ({ prevEditorState }) => {
-        const undoStackTailContent =
-          undoStack.current[undoStack.current.length - 1]?.content;
-        const redoStackTailContent =
-          redoStack.current[redoStack.current.length - 1]?.content;
+        const undoStackTailContent = getStackTail(undoStack.current)?.content;
+        const redoStackTailContent = getStackTail(redoStack.current)?.content;
         const prevStateContent = prevEditorState.read(() =>
           $getRoot().getTextContent(),
         );
