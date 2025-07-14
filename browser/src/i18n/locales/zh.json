@@ -69,8 +69,12 @@
     "git": "Git",
     "usedReferences": "已使用 {{count}} 个引用",
     "unsupportedType": "不支持的文件类型：{{type}}",
-    "uploadError": "上传文件出现错误",
-    "fileSizeLimited": "文件大小超出{{limit}}限制"
+    "attachments": {
+      "uploadError": "上传文件出现错误",
+      "fileSizeLimited": "文件大小超出{{limit}}限制",
+      "dragFileHere": "拖拽文件到这里上传",
+      "supportTypeDesc": "支持上传图片、文本文件"
+    }
   },
   "menu": {
     "rename": "重命名",

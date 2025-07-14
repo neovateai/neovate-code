@@ -58,7 +58,7 @@ const SenderAttachments = () => {
             };
 
             reader.onerror = (e) => {
-              messageApi.error(t('context.uploadError'));
+              messageApi.error(t('context.attachments.uploadError'));
               console.error(e);
             };
 
@@ -69,7 +69,7 @@ const SenderAttachments = () => {
 
           if (file.size > CONTEXT_MAX_FILE_SIZE) {
             messageApi.error(
-              t('context.fileSizeLimited', {
+              t('context.attachments.fileSizeLimited', {
                 limit: `${CONTEXT_MAX_FILE_SIZE / 1024 / 1024}MB`,
               }),
             );
@@ -98,8 +98,8 @@ const SenderAttachments = () => {
         getDropContainer={() => document.body}
         placeholder={{
           icon: <CloudUploadOutlined />,
-          title: '拖拽文件到这里上传',
-          description: '支持上传图片、文本文件',
+          title: t('context.attachments.dragFileHere'),
+          description: t('context.attachments.supportTypeDesc'),
         }}
       >
         <Button
