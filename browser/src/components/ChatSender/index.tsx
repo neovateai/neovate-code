@@ -52,10 +52,12 @@ const ChatSender: React.FC = () => {
   const { loading, stop, onQuery } = useChatState();
   const { t } = useTranslation();
   const [insertNodePosition, setInsertNodePosition] = useState(0);
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number }>();
 
   const [openPopup, setOpenPopup] = useState(false);
 
   const prevInputValue = useRef<string>(state.prompt);
+
   const { prompt } = useSnapshot(state);
 
   const {
@@ -125,11 +127,17 @@ const ChatSender: React.FC = () => {
           onPastingImage: (loading) => {
             context.actions.setContextLoading(loading);
           },
+          onCursorPostionChange: (pos) => setCursorPos(pos),
           aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
           namespace: 'SenderTextarea',
         }}
       >
         <SuggestionList
+          popupOffset={
+            cursorPos
+              ? `${cursorPos.y + 40}px auto auto ${cursorPos.x}px`
+              : undefined
+          }
           loading={suggestionLoading}
           className={styles.suggestion}
           open={openPopup}

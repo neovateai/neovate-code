@@ -27,10 +27,17 @@ interface Props {
     prevNodes: AiContextCacheNode[],
     nextNodes: AiContextCacheNode[],
   ) => void;
+  onCursorPostionChange?: (pos?: { x: number; y: number }) => void;
 }
 
 const RenderValuePlugin = (props: Props) => {
-  const { value = '', onChange, onChangeNodes, aiContextNodeConfigs } = props;
+  const {
+    value = '',
+    onChange,
+    onChangeNodes,
+    onCursorPostionChange,
+    aiContextNodeConfigs,
+  } = props;
   const [editor] = useLexicalComposerContext();
 
   const oldMarkedTextRef = useRef('');
@@ -46,6 +53,21 @@ const RenderValuePlugin = (props: Props) => {
       .join('|'),
     'g',
   );
+
+  const getCursorSelection = () => {
+    const selection = window.getSelection();
+    if (selection?.rangeCount) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const editorElement = editor.getRootElement();
+      const editorRect = editorElement?.getBoundingClientRect();
+      if (editorRect) {
+        const x = rect.left - editorRect.left;
+        const y = rect.top - editorRect.top;
+        return { x, y };
+      }
+    }
+  };
 
   const isNodeEqual = (
     node1: AiContextCacheNode,
@@ -277,6 +299,7 @@ const RenderValuePlugin = (props: Props) => {
         }
 
         onChange?.(innerValue, plainText);
+        onCursorPostionChange?.(getCursorSelection());
         oldMarkedTextRef.current = innerValue;
       });
     }
