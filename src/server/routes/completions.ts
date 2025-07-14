@@ -93,16 +93,11 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
       // Register event listeners
       request.raw.on('close', handleClose);
       request.raw.on('aborted', handleAborted);
-      request.raw.socket.on('error', handleSocketError);
-      request.raw.socket.on('close', handleSocketClose);
 
-      // Cleanup function to remove all event listeners
-      const cleanup = () => {
-        request.raw.off('close', handleClose);
-        request.raw.off('aborted', handleAborted);
-        request.raw.socket.off('error', handleSocketError);
-        request.raw.socket.off('close', handleSocketClose);
-      };
+      if (request.raw.socket) {
+        request.raw.socket.on('error', handleSocketError);
+        request.raw.socket.on('close', handleSocketClose);
+      }
 
       try {
         await pipeDataStreamToResponse(reply.raw, {
@@ -132,9 +127,6 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
           reply.status(500).send({ error: 'Internal server error' });
         }
         throw error;
-      } finally {
-        // Always cleanup event listeners
-        cleanup();
       }
     },
   );
