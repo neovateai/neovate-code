@@ -38,3 +38,5 @@ export const MODES = [
 ];
 
 export const MODES_MAP = keyBy(MODES, 'key');
+
+export const MAX_HISTORY_STACK_SIZE = 50;

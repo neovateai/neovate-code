@@ -7,6 +7,7 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import { memo, useEffect, useRef } from 'react';
+import { MAX_HISTORY_STACK_SIZE } from '@/constants/chat';
 
 interface HistoryState {
   timestamp: number;
@@ -21,6 +22,20 @@ const HistoryPlugin = () => {
   const undoStack = useRef<HistoryState[]>([]);
   const redoStack = useRef<HistoryState[]>([]);
   const isRedoing = useRef(false);
+
+  const handlePushUndo = (state: HistoryState) => {
+    undoStack.current.push(state);
+    if (undoStack.current.length > MAX_HISTORY_STACK_SIZE) {
+      undoStack.current.shift();
+    }
+  };
+
+  const handlePushRedo = (state: HistoryState) => {
+    redoStack.current.push(state);
+    if (redoStack.current.length > MAX_HISTORY_STACK_SIZE) {
+      redoStack.current.shift();
+    }
+  };
 
   useEffect(() => {
     const removeUndoListener = editor.registerCommand(
@@ -39,7 +54,7 @@ const HistoryPlugin = () => {
         const redoStackTailContent =
           redoStack.current[redoStack.current.length - 1]?.content;
         if (currentStateContent !== redoStackTailContent) {
-          redoStack.current.push({
+          handlePushRedo({
             editorState: currentState,
             content: currentStateContent,
             timestamp: Date.now(),
@@ -80,7 +95,7 @@ const HistoryPlugin = () => {
           undoStack.current[undoStack.current.length - 1]?.content;
 
         if (currentStateContent !== undoStackTailContent) {
-          undoStack.current.push({
+          handlePushUndo({
             editorState: currentState,
             content: currentStateContent,
             timestamp: Date.now(),
@@ -110,7 +125,7 @@ const HistoryPlugin = () => {
           prevStateContent !== undoStackTailContent &&
           prevStateContent !== redoStackTailContent
         ) {
-          undoStack.current.push({
+          handlePushUndo({
             editorState: prevEditorState,
             content: prevStateContent,
             timestamp: Date.now(),
