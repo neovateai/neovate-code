@@ -1,7 +1,6 @@
 import { tool } from '@openai/agents';
 import fs from 'fs';
 import path from 'path';
-import sharp from 'sharp';
 import { z } from 'zod';
 import { IMAGE_EXTENSIONS } from '../constants';
 import { Context } from '../context';
@@ -16,8 +15,6 @@ type ImageMediaType =
   | 'image/svg+xml'
   | 'image/tiff';
 
-const MAX_WIDTH = 2000;
-const MAX_HEIGHT = 2000;
 const MAX_IMAGE_SIZE = 3.75 * 1024 * 1024; // 3.75MB in bytes
 
 function getImageMimeType(filePath: string): ImageMediaType {
@@ -37,11 +34,11 @@ function getImageMimeType(filePath: string): ImageMediaType {
 }
 
 function createImageResponse(buffer: Buffer, ext: string) {
-  const mime_type = getImageMimeType(ext);
+  const mimeType = getImageMimeType(ext);
   return {
     success: true,
     message: 'Read image file successfully.',
-    mimeType: mime_type,
+    mimeType,
     type: 'image',
     data: buffer.toString('base64'),
   };
@@ -52,68 +49,27 @@ async function processImage(filePath: string): Promise<any> {
     const stats = fs.statSync(filePath);
     const ext = path.extname(filePath).toLowerCase();
 
-    // For SVG files, read as text since they don't need processing
-    if (ext === '.svg') {
-      const buffer = fs.readFileSync(filePath);
+    // Security: Validate file path to prevent traversal attacks
+    const resolvedPath = path.resolve(filePath);
+    if (!resolvedPath.startsWith(process.cwd())) {
+      throw new Error('Invalid file path: path traversal detected');
+    }
+
+    const buffer = fs.readFileSync(filePath);
+
+    // If file is within size limit, return as-is
+    if (stats.size <= MAX_IMAGE_SIZE) {
       return createImageResponse(buffer, ext);
     }
 
-    const image = sharp(fs.readFileSync(filePath));
-    const metadata = await image.metadata();
-
-    if (!metadata.width || !metadata.height) {
-      if (stats.size > MAX_IMAGE_SIZE) {
-        const compressedBuffer = await image.jpeg({ quality: 80 }).toBuffer();
-        return createImageResponse(compressedBuffer, '.jpeg');
-      }
-    }
-
-    let width = metadata.width || 0;
-    let height = metadata.height || 0;
-
-    // Check if the original file works as-is
-    if (
-      stats.size <= MAX_IMAGE_SIZE &&
-      width <= MAX_WIDTH &&
-      height <= MAX_HEIGHT
-    ) {
-      return createImageResponse(fs.readFileSync(filePath), ext);
-    }
-
-    // Calculate new dimensions while maintaining aspect ratio
-    if (width > MAX_WIDTH) {
-      height = Math.round((height * MAX_WIDTH) / width);
-      width = MAX_WIDTH;
-    }
-
-    if (height > MAX_HEIGHT) {
-      width = Math.round((width * MAX_HEIGHT) / height);
-      height = MAX_HEIGHT;
-    }
-
-    // Resize image
-    const resizedImageBuffer = await image
-      .resize(width, height, {
-        fit: 'inside',
-        withoutEnlargement: true,
-      })
-      .toBuffer();
-
-    // If still too large after resize, compress quality
-    if (resizedImageBuffer.length > MAX_IMAGE_SIZE) {
-      const compressedBuffer = await image.jpeg({ quality: 80 }).toBuffer();
-      return createImageResponse(compressedBuffer, '.jpeg');
-    }
-
-    return createImageResponse(resizedImageBuffer, ext);
+    // If file is too large, return error with helpful message
+    throw new Error(
+      `Image file is too large (${Math.round((stats.size / 1024 / 1024) * 100) / 100}MB). ` +
+        `Maximum supported size is ${Math.round((MAX_IMAGE_SIZE / 1024 / 1024) * 100) / 100}MB. ` +
+        `Please resize the image and try again.`,
+    );
   } catch (error) {
-    // Fallback: try to return original image if size allows
-    const buffer = fs.readFileSync(filePath);
-    if (buffer.length <= MAX_IMAGE_SIZE) {
-      return createImageResponse(buffer, path.extname(filePath));
-    } else {
-      throw error;
-    }
+    throw error;
   }
 }
 
