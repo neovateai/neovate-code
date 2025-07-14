@@ -97,7 +97,7 @@ interface WSMessage {
 const debug = createDebug('takumi:ide');
 
 export class IDE {
-  private ws: WebSocket | null;
+  ws: WebSocket | null;
   private requestId: number;
   private pendingRequests: Map<
     number,
@@ -137,6 +137,11 @@ export class IDE {
         debug('Received message from the IDE extension.', data.toString());
         const message = JSON.parse(data.toString());
         this.handleMessage(message);
+      });
+
+      this.ws.on('close', () => {
+        debug('Disconnected from the IDE extension.');
+        this.ws = null;
       });
 
       this.ws.on('error', reject);
