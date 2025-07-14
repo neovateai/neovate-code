@@ -4,6 +4,7 @@ import createDebug from 'debug';
 import { isReasoningModel } from '../../provider';
 import { query } from '../../query';
 import { Service } from '../../service';
+import { isSlashCommand, parseSlashCommand } from '../../slash-commands';
 import { delay } from '../../utils/delay';
 import {
   AttachmentItem,
@@ -22,11 +23,6 @@ interface RunCompletionOpts extends CreateServerOpts {
   planService: Service;
   mode: string;
   attachedContexts: ContextItem[];
-  slashCommand?: {
-    command: string;
-    args: string;
-    originalInput: string;
-  };
 }
 
 function isImageContext(context: ContextItem): context is ContextItem & {
@@ -123,15 +119,29 @@ export async function runCode(opts: RunCompletionOpts) {
   const { dataStream, mode, attachedContexts } = opts;
   try {
     // Check if this is a slash command
-    if (opts.slashCommand) {
-      debug('Processing slash command:', opts.slashCommand);
-      const { slashCommand } = opts;
+    if (isSlashCommand(opts.prompt)) {
+      debug('Processing slash command:', opts.prompt);
+      const slashCommand = parseSlashCommand(opts.prompt);
+      console.log('thy debug slashCommand', slashCommand);
+      if (!slashCommand) {
+        dataStream.writeMessageAnnotation({
+          type: 'text',
+          text: 'Invalid slash command',
+          mode,
+        });
+        return;
+      }
+
       const service = mode === 'plan' ? opts.planService : opts.service;
       const command = service.context.slashCommands.get(slashCommand.command);
 
       if (!command) {
         const errorText = `Unknown command: /${slashCommand.command}. Type /help to see available commands.`;
-        dataStream.write(formatDataStreamPart('text', errorText));
+        dataStream.writeMessageAnnotation({
+          type: 'text',
+          text: errorText,
+          mode,
+        });
         return;
       }
 
@@ -139,7 +149,11 @@ export async function runCode(opts: RunCompletionOpts) {
         if (command.type === 'local') {
           const result = await command.call(slashCommand.args, service.context);
           if (result) {
-            dataStream.write(formatDataStreamPart('text', result));
+            dataStream.writeMessageAnnotation({
+              type: 'text',
+              text: result,
+              mode,
+            });
           }
           return;
         } else if (command.type === 'prompt') {
