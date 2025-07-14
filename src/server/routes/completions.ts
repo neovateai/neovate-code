@@ -69,44 +69,40 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
       const abortController = new AbortController();
       debug('Created AbortController');
 
-      // Listen for request close event
-      request.raw.on('close', () => {
-        debug('close event triggered');
-        if (!reply.sent) {
-          debug('Client closed connection, aborting request');
-          abortController.abort();
+      // Centralized abort handler to avoid code duplication
+      let hasAborted = false;
+      const handleAbort = (reason: string, error?: Error) => {
+        if (hasAborted || reply.sent) {
+          return;
         }
-      });
+        hasAborted = true;
+        debug(`${reason}, aborting request`, error?.message || '');
+        abortController.abort();
+      };
 
-      // Listen for request abort event
-      request.raw.on('aborted', () => {
-        debug('aborted event triggered');
-        if (!reply.sent) {
-          debug('Client aborted connection, aborting request');
-          abortController.abort();
-        }
-      });
-
-      // Listen for socket error event
-      request.raw.socket.on('error', (err) => {
-        debug('socket error event triggered', err);
-        if (!reply.sent) {
-          debug('Socket error, aborting request');
-          abortController.abort();
-        }
-      });
-
-      // Listen for socket close event
-      request.raw.socket.on('close', (hadError) => {
-        debug(
-          'socket close event triggered',
-          hadError ? 'with error' : 'without error',
+      // Event listeners for request cancellation
+      const handleClose = () => handleAbort('Client closed connection');
+      const handleAborted = () => handleAbort('Client aborted connection');
+      const handleSocketError = (err: Error) =>
+        handleAbort('Socket error', err);
+      const handleSocketClose = (hadError: boolean) =>
+        handleAbort(
+          `Socket closed ${hadError ? 'with error' : 'without error'}`,
         );
-        if (!reply.sent) {
-          debug('Socket closed, aborting request');
-          abortController.abort();
-        }
-      });
+
+      // Register event listeners
+      request.raw.on('close', handleClose);
+      request.raw.on('aborted', handleAborted);
+      request.raw.socket.on('error', handleSocketError);
+      request.raw.socket.on('close', handleSocketClose);
+
+      // Cleanup function to remove all event listeners
+      const cleanup = () => {
+        request.raw.off('close', handleClose);
+        request.raw.off('aborted', handleAborted);
+        request.raw.socket.off('error', handleSocketError);
+        request.raw.socket.off('close', handleSocketClose);
+      };
 
       try {
         await pipeDataStreamToResponse(reply.raw, {
@@ -136,6 +132,9 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
           reply.status(500).send({ error: 'Internal server error' });
         }
         throw error;
+      } finally {
+        // Always cleanup event listeners
+        cleanup();
       }
     },
   );
