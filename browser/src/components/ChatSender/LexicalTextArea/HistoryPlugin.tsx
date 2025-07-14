@@ -7,7 +7,7 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import { memo, useEffect, useRef } from 'react';
-import { MAX_HISTORY_STACK_SIZE } from '@/constants/chat';
+import { MAX_HISTORY_STACK_SIZE } from '@/constants/editor';
 
 interface HistoryState {
   timestamp: number;
