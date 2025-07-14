@@ -14,7 +14,7 @@
     "enable": "启用",
     "disable": "禁用",
     "empty": "暂无数据",
-    "slashCommands": "斜杠命令",
+    "slashCommands": "快捷指令",
     "filesAndFolders": "文件和文件夹"
   },
   "markdown": {
@@ -55,7 +55,7 @@
     "sendMessage": "发送消息",
     "thinking": "思考中...",
     "stopGenerating": "停止生成",
-    "inputPlaceholder": "询问或输入 @ 使用技能"
+    "inputPlaceholder": "询问或输入 @ 使用快捷指令"
   },
   "prompts": {
     "upgrades": "升级",
