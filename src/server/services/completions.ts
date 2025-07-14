@@ -22,7 +22,6 @@ interface RunCompletionOpts extends CreateServerOpts {
   planService: Service;
   mode: string;
   attachedContexts: ContextItem[];
-  abortSignal?: AbortSignal;
 }
 
 function isImageContext(context: ContextItem): context is ContextItem & {
@@ -116,14 +115,7 @@ function convertUserPromptToAgentInput(
 }
 
 export async function runCode(opts: RunCompletionOpts) {
-  const { dataStream, mode, attachedContexts, abortSignal } = opts;
-
-  // Check if already cancelled
-  if (abortSignal?.aborted) {
-    debug('Request already aborted before starting');
-    throw new Error('Request was cancelled by the client');
-  }
-
+  const { dataStream, mode, attachedContexts } = opts;
   try {
     const input: AgentInputItem[] = convertUserPromptToAgentInput(
       opts.prompt,
@@ -136,12 +128,11 @@ export async function runCode(opts: RunCompletionOpts) {
     const toolApprovalService = getToolApprovalService(service.context);
 
     debug('mode', mode);
-    debug('Preparing to call query function');
+
     const result = await query({
       input,
       service,
       thinking: isReasoningModel(service.context.config.model),
-      abortSignal,
       onTextDelta(text) {
         debug(`Text delta: ${text}`);
         dataStream.writeMessageAnnotation({
@@ -202,12 +193,6 @@ export async function runCode(opts: RunCompletionOpts) {
         debug(`Tool approval request: ${name} with callId ${callId}`);
 
         try {
-          // Check if already cancelled
-          if (abortSignal?.aborted) {
-            debug('Tool approval cancelled because request was aborted');
-            return false;
-          }
-
           dataStream.writeMessageAnnotation({
             type: 'tool_approval_request',
             toolCallId: callId,
@@ -215,14 +200,11 @@ export async function runCode(opts: RunCompletionOpts) {
             args: params,
           });
 
-          // Create an abortable tool approval request
           const approved = await toolApprovalService.requestApproval(
             callId,
             name,
             params,
           );
-
-          debug('Tool approval result:', approved ? 'approved' : 'denied');
 
           dataStream.writeMessageAnnotation({
             type: 'tool_approval_result',
@@ -249,26 +231,7 @@ export async function runCode(opts: RunCompletionOpts) {
         }
       },
     });
-
     debug('result', result);
-
-    // Check if result indicates cancellation
-    if (result.cancelled) {
-      debug('Query was cancelled');
-      throw new DOMException('The operation was aborted', 'AbortError');
-    }
-  } catch (error) {
-    // If error is due to AbortSignal, convert to AbortError
-    if (abortSignal?.aborted) {
-      debug('Caught cancel signal, converting to AbortError');
-      const abortError = new DOMException(
-        'The operation was aborted',
-        'AbortError',
-      );
-      throw abortError;
-    }
-    debug('runCode execution error:', error);
-    throw error;
   } finally {
     // TODO: Cannot destroy here, otherwise it will cause mcp to be unavailable
     // await opts.context.destroy();
