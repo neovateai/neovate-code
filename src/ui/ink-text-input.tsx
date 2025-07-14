@@ -1,12 +1,12 @@
 import chalk from 'chalk';
 import { Text, useInput } from 'ink';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import type { Except } from 'type-fest';
 import { getCurrentLineInfo, moveToLine } from './utils/cursor-utils';
 
 // UI Display Constants
-const DEFAULT_MAX_LINES = 8;
 const MAX_PASTE_HIGHLIGHT_LENGTH = 1;
+const CURSOR_DEBOUNCE_MS = 16;
 
 export type TextInputProps = {
   /**
@@ -126,20 +126,7 @@ function TextInput({
     cursorWidth: 0,
   });
 
-  // Use ref to keep track of the latest value to avoid race conditions
-  const latestValueRef = useRef(originalValue || '');
-  const latestCursorOffsetRef = useRef(state.cursorOffset);
-
   const { cursorOffset, cursorWidth } = state;
-
-  // Update refs when values change
-  useEffect(() => {
-    latestValueRef.current = originalValue || '';
-  }, [originalValue]);
-
-  useEffect(() => {
-    latestCursorOffsetRef.current = cursorOffset;
-  }, [cursorOffset]);
 
   useEffect(() => {
     setState((previousState) => {
@@ -175,41 +162,40 @@ function TextInput({
       // Add debouncing to prevent excessive calls
       const timeoutId = setTimeout(() => {
         onCursorPositionChange(state.cursorOffset);
-      }, 16); // ~60fps debouncing
+      }, CURSOR_DEBOUNCE_MS); // ~60fps debouncing
       return () => clearTimeout(timeoutId);
     }
   }, [state.cursorOffset, onCursorPositionChange]);
 
   // Unified state update function to avoid race conditions
-  const updateState = (
-    newValue: string,
-    newCursorOffset: number,
-    newCursorWidth: number = 0,
-  ) => {
-    // Ensure cursor offset is within bounds
-    const safeCursorOffset = Math.max(
-      0,
-      Math.min(newCursorOffset, newValue.length),
-    );
+  const updateState = useCallback(
+    (newValue: string, newCursorOffset: number, newCursorWidth: number = 0) => {
+      // Ensure cursor offset is within bounds
+      const safeCursorOffset = Math.max(
+        0,
+        Math.min(newCursorOffset, newValue.length),
+      );
 
-    // Prevent unnecessary updates
-    if (
-      safeCursorOffset === state.cursorOffset &&
-      newCursorWidth === state.cursorWidth &&
-      newValue === originalValue
-    ) {
-      return;
-    }
+      // Prevent unnecessary updates
+      if (
+        safeCursorOffset === state.cursorOffset &&
+        newCursorWidth === state.cursorWidth &&
+        newValue === originalValue
+      ) {
+        return;
+      }
 
-    setState({
-      cursorOffset: safeCursorOffset,
-      cursorWidth: newCursorWidth,
-    });
+      setState({
+        cursorOffset: safeCursorOffset,
+        cursorWidth: newCursorWidth,
+      });
 
-    if (newValue !== originalValue) {
-      onChange(newValue);
-    }
-  };
+      if (newValue !== originalValue) {
+        onChange(newValue);
+      }
+    },
+    [state.cursorOffset, state.cursorWidth, originalValue, onChange],
+  );
 
   const cursorActualWidth = highlightPastedText ? cursorWidth : 0;
 
@@ -242,7 +228,8 @@ function TextInput({
     // Calculate display window
     let startLine = 0;
     const isAtEnd = cursorPos === text.length;
-    const isNearEnd = cursorLine >= lines.length - Math.ceil(maxLines / 2);
+    const scrollThreshold = Math.max(1, Math.ceil(maxLines / 2));
+    const isNearEnd = cursorLine >= lines.length - scrollThreshold;
 
     if (isAtEnd || isNearEnd) {
       // If cursor is at end or near end, show the last maxLines
