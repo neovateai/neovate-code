@@ -9,3 +9,4 @@
 /fixtures/*/node_modules
 /dist-browser
 /.claude
+/tmp

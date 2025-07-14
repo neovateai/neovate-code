@@ -43,7 +43,7 @@ type ContextOpts = CreateContextOpts & {
   mcpManager: MCPManager;
   mcpTools: Tool[];
   git: string | null;
-  ide: IDE | null;
+  ide: IDE;
   generalInfo: Record<string, string>;
   paths: Paths;
   slashCommands: SlashCommandRegistry;
@@ -74,7 +74,7 @@ export class Context {
   mcpManager: MCPManager;
   mcpTools: Tool[];
   git: string | null;
-  ide: IDE | null;
+  ide: IDE;
   history: string[];
   generalInfo: Record<string, string>;
   paths: Paths;
