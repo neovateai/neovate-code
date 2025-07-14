@@ -9,8 +9,6 @@ interface ToolResult {
   message?: string;
   data?: any;
   error?: string;
-  type?: 'image' | 'text';
-  mimeType?: string;
 }
 
 interface ToolUse {
