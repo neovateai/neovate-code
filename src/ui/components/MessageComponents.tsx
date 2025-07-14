@@ -1,5 +1,7 @@
 import { Box, Text } from 'ink';
 import React from 'react';
+import { useMemo } from 'react';
+import type { TodoItem as TodoItemType } from '../../tools/todo';
 import { Message } from '../AppContext';
 import { MESSAGE_ROLES, MESSAGE_TYPES, SPACING, UI_COLORS } from '../constants';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
@@ -9,6 +11,140 @@ import DiffRenderer, {
   type WriteParams,
 } from './DiffRenderer';
 
+export type { TodoItemType };
+
+// TodoList
+const statusWeights = {
+  completed: 0,
+  in_progress: 1,
+  pending: 2,
+};
+
+const priorityWeights = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+
+function compareTodos(todoA: TodoItemType, todoB: TodoItemType) {
+  // 首先按状态排序
+  const statusDiff = statusWeights[todoA.status] - statusWeights[todoB.status];
+  if (statusDiff !== 0) return statusDiff;
+
+  // 然后按优先级排序
+  return priorityWeights[todoA.priority] - priorityWeights[todoB.priority];
+}
+
+interface TodoItemProps {
+  todo: TodoItemType;
+  isCurrent: boolean;
+  verbose: boolean;
+  previousStatus?: string;
+}
+
+function TodoItem({
+  todo,
+  isCurrent = false,
+  verbose,
+  previousStatus,
+}: TodoItemProps) {
+  const color = useMemo(() => {
+    if (previousStatus !== 'completed' && todo.status === 'completed') {
+      return 'green';
+    }
+    if (previousStatus !== 'in_progress' && todo.status === 'in_progress') {
+      return 'blue';
+    }
+  }, [todo.status, previousStatus]);
+
+  return (
+    <Box flexDirection="row">
+      <Box minWidth={2}>
+        <Text color={color} bold={isCurrent}>
+          {todo.status === 'completed' ? '☑' : '☐'}
+        </Text>
+      </Box>
+      <Box>
+        <Text
+          bold={isCurrent}
+          color={color}
+          strikethrough={todo.status === 'completed'}
+        >
+          {todo.content}
+        </Text>
+        {verbose && (
+          <Text dimColor>
+            {' '}
+            (P
+            {todo.priority === 'high'
+              ? '0'
+              : todo.priority === 'medium'
+                ? '1'
+                : '2'}
+            )
+          </Text>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+interface IndentedContainerProps {
+  children: React.ReactNode;
+  height: number;
+}
+
+function IndentedContainer({ children, height }: IndentedContainerProps) {
+  return (
+    <Box flexDirection="row" height={height} overflowY="hidden">
+      <Text> ⎿ </Text>
+      {children}
+    </Box>
+  );
+}
+
+interface TodoListProps {
+  oldTodos: TodoItemType[];
+  newTodos: TodoItemType[];
+  verbose: boolean;
+}
+
+export function TodoList({
+  oldTodos,
+  newTodos,
+  verbose = false,
+}: TodoListProps) {
+  if (newTodos.length === 0) {
+    return (
+      <IndentedContainer height={1}>
+        <Text dimColor>(Empty todo list)</Text>
+      </IndentedContainer>
+    );
+  }
+
+  return (
+    <Box flexDirection="column">
+      {newTodos.sort(compareTodos).map((todo) => {
+        const oldTodo = oldTodos.find((t) => t.id === todo.id);
+        return (
+          <TodoItem
+            key={todo.id}
+            todo={todo}
+            isCurrent={todo.status === 'in_progress'}
+            verbose={verbose}
+            previousStatus={oldTodo?.status}
+          />
+        );
+      })}
+    </Box>
+  );
+}
+
+export function TodoRead({ todos }: { todos: TodoItemType[] }) {
+  return <TodoList oldTodos={[]} newTodos={todos} verbose={false} />;
+}
+
+// UserMessage
 interface UserMessageProps {
   message: Message;
 }
@@ -118,6 +254,20 @@ export function ToolMessage({ message }: ToolMessageProps) {
         toolName={toolName}
         params={params as unknown as EditParams | WriteParams}
         result={result}
+      />
+    );
+  }
+
+  if (toolName === 'todo_read') {
+    return <TodoRead todos={result.data} />;
+  }
+
+  if (toolName === 'todo_write') {
+    return (
+      <TodoList
+        oldTodos={result.data.oldTodos}
+        newTodos={result.data.newTodos}
+        verbose={false}
       />
     );
   }

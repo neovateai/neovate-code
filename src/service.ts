@@ -68,13 +68,7 @@ export class Service {
 
   static async create(opts: CreateServiceOpts) {
     const context = opts.context;
-    try {
-      const todoTool = createTodoTool({ context });
-      console.log('todoTool', todoTool);
-    } catch (error) {
-      console.error('error', error);
-    }
-    // console.log('create service', createTodoTool({ context }));
+    const { todoWriteTool, todoReadTool } = createTodoTool({ context });
     const readonlyTools = [
       createReadTool({ context }),
       enhanceTool(createLSTool({ context }), {
@@ -93,6 +87,7 @@ export class Service {
         category: 'network',
         riskLevel: 'medium',
       }),
+      todoReadTool,
     ];
     const writeTools = [
       enhanceTool(createWriteTool({ context }), {
@@ -103,9 +98,10 @@ export class Service {
         category: 'write',
         riskLevel: 'medium',
       }),
-      // createTodoTool({ context }),
       createBashTool({ context }),
+      todoWriteTool,
     ];
+
     const mcpTools = context.mcpTools.map((tool) =>
       enhanceTool(tool, { category: 'network', riskLevel: 'medium' }),
     );
