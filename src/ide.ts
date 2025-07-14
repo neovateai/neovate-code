@@ -1,5 +1,18 @@
 import createDebug from 'debug';
+import path from 'path';
+import { fileURLToPath, resolve } from 'url';
 import WebSocket from 'ws';
+import {
+  InstallationResult,
+  PlatformInfo,
+  attemptInstallation,
+  isExtensionInstalled,
+} from './utils/ide';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = resolve(__filename, '../');
+
+const VSIX_PATH = path.resolve(__dirname, 'vendor', 'takumi.vsix');
 
 // Response type interfaces
 interface BaseResponse {
@@ -259,5 +272,41 @@ export class IDE {
       'closeAllDiffTabs',
       {},
     ) as unknown as CloseAllDiffTabsResponse;
+  }
+
+  async setupIDEIntegration(
+    terminal: string,
+  ): Promise<InstallationResult | undefined> {
+    debug('Setting up IDE integration');
+
+    // Skip auto-install if disabled
+    if (process.env.TAKUMI_IDE_SKIP_AUTO_INSTALL) {
+      debug('Skipping auto-install due to environment variable');
+      return;
+    }
+
+    const platformInfo: PlatformInfo = {
+      terminal,
+      platform: process.platform,
+    };
+
+    // Check and install extension
+    const isInstalled = await isExtensionInstalled(platformInfo);
+    debug('Extension installed:', isInstalled);
+
+    const vsixPath = process.env.TAKUMI_VSIX_PATH || VSIX_PATH;
+    let result: InstallationResult;
+    if (vsixPath && !isInstalled) {
+      result = await attemptInstallation(platformInfo, vsixPath);
+    } else {
+      result = {
+        installed: isInstalled,
+        error: isInstalled ? null : 'VSIX path not provided',
+        installedVersion: isInstalled ? '1.0.22' : null,
+      };
+    }
+
+    debug('Installation result:', result);
+    return result;
   }
 }

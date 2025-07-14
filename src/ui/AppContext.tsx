@@ -74,6 +74,7 @@ export interface AppState {
   ide: {
     isConnected: boolean;
     latestSelection: SelectionInfo | null;
+    installStatus: 'not-detected' | 'detected' | 'connected';
   };
 }
 
@@ -117,7 +118,11 @@ export type AppAction =
     }
   | { type: 'CLEAR_APPROVAL_MEMORY' }
   | { type: 'SET_IDE_CONNECTED'; payload: boolean }
-  | { type: 'SET_IDE_LATEST_SELECTION'; payload: SelectionInfo | null };
+  | { type: 'SET_IDE_LATEST_SELECTION'; payload: SelectionInfo | null }
+  | {
+      type: 'SET_IDE_INSTALL_STATUS';
+      payload: 'not-detected' | 'detected' | 'connected';
+    };
 
 // Reducer
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -236,6 +241,15 @@ function appReducer(state: AppState, action: AppAction): AppState {
           latestSelection: action.payload,
         },
       };
+
+    case 'SET_IDE_INSTALL_STATUS':
+      return {
+        ...state,
+        ide: {
+          ...state.ide,
+          installStatus: action.payload,
+        },
+      };
     default:
       return state;
   }
@@ -302,6 +316,7 @@ export function AppProvider({
     ide: {
       isConnected: false,
       latestSelection: null,
+      installStatus: 'not-detected' as const,
     },
   };
 
