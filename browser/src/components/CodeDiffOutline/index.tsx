@@ -90,21 +90,6 @@ const CodeDiffOutline = (props: Props) => {
     }
   }, [state]);
 
-  useEffect(() => {
-    if (file) {
-      const newGlobalContent =
-        fileChanges.fileChangesActions.getFinalContent(path) || '';
-
-      fileChanges.fileChangesActions.updateCodeViewerState(
-        path,
-        file.content,
-        newGlobalContent,
-        normalViewerMode,
-      );
-      codeViewer.actions.setVisible(true);
-    }
-  }, [file]);
-
   const earlyCode = useMemo(() => {
     if (!earlyFile) {
       return {
@@ -160,18 +145,6 @@ const CodeDiffOutline = (props: Props) => {
     toolApprovalActions.approveToolUse(false, 'once');
   };
 
-  const onShowCodeViewer = () => {
-    const newGlobalContent =
-      fileChanges.fileChangesActions.getFinalContent(path) || '';
-    fileChanges.fileChangesActions.updateCodeViewerState(
-      path,
-      file.content,
-      newGlobalContent,
-      normalViewerMode,
-    );
-    codeViewer.actions.setVisible(true);
-  };
-
   return (
     <div className={styles.root}>
       <CodeDiffOutlineHeader
@@ -183,7 +156,18 @@ const CodeDiffOutline = (props: Props) => {
         normalViewMode={normalViewerMode}
         onAccept={handleAccept}
         onReject={handleReject}
-        onShowCodeViewer={onShowCodeViewer}
+        onShowCodeViewer={() => {
+          const newGlobalContent =
+            fileChanges.fileChangesActions.getFinalContent(path) || '';
+
+          fileChanges.fileChangesActions.updateCodeViewerState(
+            path,
+            file.content,
+            newGlobalContent,
+            normalViewerMode,
+          );
+          codeViewer.actions.setVisible(true);
+        }}
         isExpanded={isExpanded}
         onToggleExpand={() => setIsExpanded(!isExpanded)}
       />
