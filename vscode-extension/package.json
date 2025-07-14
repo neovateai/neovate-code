@@ -1,0 +1,48 @@
+{
+  "name": "takumi-assistant",
+  "displayName": "takumi-assistant",
+  "description": "Assistant for takumi.",
+  "version": "0.0.2",
+  "publisher": "sorrycc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/umijs/takumi/tree/master/vscode-extension"
+  },
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "simple-mcp-server.start",
+        "title": "Start MCP Server"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run build",
+    "build": "node esbuild.js --production",
+    "dev": "node esbuild.js --watch",
+    "pretest": "pnpm run build",
+    "test": "vscode-test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "package": "vsce package --no-dependencies --out ../vendor/takumi.vsix",
+    "publish": "vsce publish --no-dependencies",
+    "bump": "npm version patch"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.99.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.25.6"
+  }
+}

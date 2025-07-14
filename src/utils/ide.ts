@@ -5,7 +5,7 @@ import fs from 'fs';
 const debug = createDebug('takumi:utils:ide');
 
 // VS Code Extension ID
-export const vscode_extension_id = 'sorrycc.takumi';
+export const vscode_extension_id = 'sorrycc.takumi-assistant';
 
 // Platform and terminal detection
 export interface PlatformInfo {
