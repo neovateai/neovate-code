@@ -29,9 +29,9 @@ export function activate(context: vscode.ExtensionContext) {
       console.log('[Extension] MCP server start command triggered');
 
       if (mcpServer) {
-        const message = `MCP Server is already running on port ${mcpServer.port}`;
+        const message = `[Takumi] MCP Server is already running on port ${mcpServer.port}`;
         console.log('[Extension] Server already running:', message);
-        vscode.window.showInformationMessage(message);
+        // vscode.window.showInformationMessage(message);
         return;
       }
 

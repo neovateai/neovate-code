@@ -26,7 +26,7 @@
     "ci": "npm run typecheck && npm run format:check && npm run test",
     "extension:build": "pnpm --filter takumi-assistant build",
     "extension:dev": "pnpm --filter takumi-assistant dev",
-    "extension:publish": "echo 'cd vscode-extension and run publish'",
+    "extension:publish": "cd vscode-extension && npm run publish && cd ..",
     "extension:package": "pnpm --filter takumi-assistant package",
     "extension:bump": "pnpm --filter takumi-assistant bump",
     "release": "npm run ci && utools release --git-tag --github-release --changelog",
