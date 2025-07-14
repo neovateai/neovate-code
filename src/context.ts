@@ -24,8 +24,16 @@ import {
 } from './slash-commands';
 import { SystemPromptBuilder } from './system-prompt-builder';
 import { aisdk } from './utils/ai-sdk';
+import { getEnv } from './utils/env';
 import { getGitStatus } from './utils/git';
 import { relativeToHome } from './utils/path';
+
+type Env = {
+  hasInternetAccess: boolean;
+  platform: string;
+  nodeVersion: string;
+  terminal: string | null;
+};
 
 const debug = createDebug('takumi:context');
 
@@ -39,6 +47,7 @@ type ContextOpts = CreateContextOpts & {
   generalInfo: Record<string, string>;
   paths: Paths;
   slashCommands: SlashCommandRegistry;
+  env: Env;
 };
 
 type Paths = {
@@ -70,6 +79,7 @@ export class Context {
   generalInfo: Record<string, string>;
   paths: Paths;
   slashCommands: SlashCommandRegistry;
+  env: Env;
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName || PRODUCT_NAME;
@@ -85,6 +95,7 @@ export class Context {
     this.history = [];
     this.paths = opts.paths;
     this.slashCommands = opts.slashCommands;
+    this.env = opts.env;
   }
 
   static async create(opts: CreateContextOpts) {
@@ -181,6 +192,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     type: PluginHookType.Series,
   });
 
+  const env = await getEnv();
   const generalInfo = await apply({
     hook: 'generalInfo',
     args: [],
@@ -207,19 +219,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   const gitStatus = await getGitStatus({ cwd: opts.cwd });
   debug('git status', gitStatus);
 
-  let ide: IDE | null = null;
-  const ide2 = new IDE();
-  const idePort = await ide2.findPort();
-  debug('ide port', idePort);
-  if (idePort) {
-    try {
-      await ide2.connect();
-      ide = ide2;
-      debug('ide connected');
-    } catch (e) {
-      debug('Failed to connect to IDE');
-    }
-  }
+  const ide = new IDE();
 
   // Create a temporary context for slash command registry initialization
   const tempContextForSlash = {
@@ -253,6 +253,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     generalInfo,
     paths,
     slashCommands,
+    env,
   });
 }
 

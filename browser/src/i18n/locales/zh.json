@@ -12,7 +12,8 @@
     "search": "搜索",
     "placeholder": "请输入搜索内容...",
     "enable": "启用",
-    "disable": "禁用"
+    "disable": "禁用",
+    "empty": "暂无数据"
   },
   "markdown": {
     "copyCode": "复制代码",
