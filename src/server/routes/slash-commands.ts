@@ -15,22 +15,28 @@ const slashCommandsRoute: FastifyPluginAsync<CreateServerOpts> = async (
         builtin: commands.filter(
           (cmd) =>
             !cmd.name.includes(':') &&
-            ['clear', 'exit', 'help', 'init', 'compact'].includes(cmd.name),
+            ['clear', 'exit', 'help', 'init', 'compact'].includes(cmd.name) &&
+            cmd.type !== 'local-jsx',
         ),
         user: commands.filter((cmd) => cmd.name.startsWith('user:')),
         project: commands.filter((cmd) => cmd.name.startsWith('project:')),
         plugin: commands.filter(
           (cmd) =>
             !cmd.name.includes(':') &&
-            !['clear', 'exit', 'help', 'init', 'compact'].includes(cmd.name),
+            !['clear', 'exit', 'help', 'init', 'compact'].includes(cmd.name) &&
+            cmd.type !== 'local-jsx',
         ),
       };
+
+      const filteredCommands = commands.filter(
+        (cmd) => cmd.type !== 'local-jsx',
+      );
 
       return {
         success: true,
         data: {
-          total: commands.length,
-          commands,
+          total: filteredCommands.length,
+          commands: filteredCommands,
           categorized: categorizedCommands,
         },
       };
