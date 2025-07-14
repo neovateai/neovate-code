@@ -202,9 +202,9 @@ export function formatToolUse(toolUse: ToolUse): AgentInputItem {
     name === TOOL_NAMES.READ &&
     isSuccessToolResult(result) &&
     result.success &&
-    result.type === 'image'
+    result.data.type === 'image'
   ) {
-    return createImageInputItem(result.data, result.mimeType!);
+    return createImageInputItem(result.data.content, result.data.mimeType);
   }
 
   if (isImageData(result)) {

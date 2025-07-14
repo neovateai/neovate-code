@@ -38,9 +38,11 @@ function createImageResponse(buffer: Buffer, ext: string) {
   return {
     success: true,
     message: 'Read image file successfully.',
-    mimeType,
-    type: 'image',
-    data: buffer.toString('base64'),
+    data: {
+      type: 'image',
+      mimeType,
+      content: buffer.toString('base64'),
+    },
   };
 }
 
@@ -103,8 +105,8 @@ export function createReadTool(opts: { context: Context }): EnhancedTool {
           return {
             success: true,
             message: `Read ${content.split('\n').length} lines.`,
-            type: 'text',
             data: {
+              type: 'text',
               filePath: file_path,
               content,
               totalLines: content.split('\n').length,
