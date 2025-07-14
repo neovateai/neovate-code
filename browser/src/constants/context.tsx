@@ -10,6 +10,7 @@ export enum ContextType {
   FILE = '__file',
   ATTACHMENT = '__attachment',
   IMAGE = '__image',
+  SLASH_COMMAND = '__slash_command',
   UNKNOWN = '__unknown',
 }
 

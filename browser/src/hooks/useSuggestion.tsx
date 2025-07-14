@@ -1,6 +1,11 @@
-import { ArrowRightOutlined, FileSearchOutlined } from '@ant-design/icons';
+import {
+  ArrowRightOutlined,
+  FileSearchOutlined,
+  MessageOutlined,
+} from '@ant-design/icons';
 import { debounce } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import DevFileIcon from '@/components/DevFileIcon';
 import type { SuggestionItem } from '@/components/SuggestionList';
@@ -11,9 +16,12 @@ import {
 } from '@/constants/context';
 import { actions, state } from '@/state/suggestion';
 import type { ContextItem, ContextStoreValue } from '@/types/context';
+import { useSlashCommands } from './useSlashCommands';
 
 export const useSuggestion = (selectedValues?: readonly string[]) => {
   const { fileList, loading } = useSnapshot(state);
+  const { t } = useTranslation();
+  const { commands, search: searchCommands } = useSlashCommands();
 
   useEffect(() => {
     actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
@@ -42,26 +50,56 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     });
   }, [fileList]);
 
+  const slashCommandSuggestions = useMemo(() => {
+    return commands.map((command) => {
+      return {
+        label: command.name,
+        value: command.name,
+        disabled: selectedValues?.includes(command.name),
+        extra: command.description,
+      };
+    });
+  }, [commands]);
+
   const getOriginalFile = (value: string) => {
     return fileList.find((file) => file.path === value);
+  };
+
+  const getOriginalCommand = (value: string) => {
+    const command = commands.find((command) => command.name === value);
+    if (command) {
+      return {
+        ...command,
+        uid: command.name,
+      };
+    }
+    return command;
   };
 
   const defaultSuggestions = useMemo(() => {
     return [
       {
-        label: 'Files & Folders',
+        label: t('common.slashCommands'),
+        value: ContextType.SLASH_COMMAND,
+        icon: <MessageOutlined />,
+        extra: <ArrowRightOutlined />,
+        children: slashCommandSuggestions,
+      },
+      {
+        label: t('common.filesAndFolders'),
         value: ContextType.FILE,
         icon: <FileSearchOutlined />,
         extra: <ArrowRightOutlined />,
         children: fileSuggestions,
       },
     ] as SuggestionItem[];
-  }, [fileSuggestions]);
+  }, [fileSuggestions, slashCommandSuggestions, t]);
 
   const originalContextGetterMap: {
     [key in ContextType]?: (value: string) => ContextStoreValue | undefined;
   } = {
     [ContextType.FILE]: getOriginalFile,
+    [ContextType.SLASH_COMMAND]: getOriginalCommand,
   };
 
   const searchFunctionMap: { [key in ContextType]?: (text: string) => void } = {
@@ -70,6 +108,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
         maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT,
         searchString: text,
       }),
+    [ContextType.SLASH_COMMAND]: (text) => searchCommands(text),
   };
 
   const handleSearch = debounce((type: ContextType, text: string) => {

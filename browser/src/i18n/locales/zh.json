@@ -13,7 +13,9 @@
     "placeholder": "请输入搜索内容...",
     "enable": "启用",
     "disable": "禁用",
-    "empty": "暂无数据"
+    "empty": "暂无数据",
+    "slashCommands": "斜杠命令",
+    "filesAndFolders": "文件和文件夹"
   },
   "markdown": {
     "copyCode": "复制代码",

@@ -13,7 +13,9 @@
     "placeholder": "Please input to search...",
     "enable": "enable",
     "disable": "disable",
-    "empty": "No Data"
+    "empty": "No Data",
+    "slashCommands": "Slash Commands",
+    "filesAndFolders": "Files & Folders"
   },
   "markdown": {
     "copyCode": "Copy Code",
