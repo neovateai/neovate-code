@@ -34,9 +34,7 @@ const SenderAttachments = () => {
         )}
         beforeUpload={(file) => {
           if (
-            availableImageTypes.findIndex((type) =>
-              file.name.endsWith(type.extName),
-            ) > -1
+            availableImageTypes.some((type) => file.name.endsWith(type.extName))
           ) {
             // upload image file
             // automatically transform file to image context
