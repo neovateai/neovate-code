@@ -1,0 +1,253 @@
+import { tool } from '@openai/agents';
+import fs from 'fs';
+import path from 'path';
+import { z } from 'zod';
+import { Context } from '../context';
+import { EnhancedTool, enhanceTool } from '../tool';
+
+type TodoStatus = 'pending' | 'in_progress' | 'completed';
+type TodoPriority = 'high' | 'medium' | 'low';
+
+interface Todo {
+  id: string;
+  content: string;
+  status: TodoStatus;
+  priority: TodoPriority;
+  createdAt: string;
+  completedAt?: string;
+}
+
+interface TodoOperation {
+  action: 'add' | 'list' | 'complete' | 'remove' | 'clear' | 'update';
+  id?: string;
+  content?: string;
+  priority?: TodoPriority;
+  status?: TodoStatus;
+}
+
+const TodoOperationSchema = z.object({
+  action: z.enum(['add', 'list', 'complete', 'remove', 'clear', 'update']),
+  id: z.string().nullable(),
+  content: z.string().nullable(),
+  priority: z.enum(['high', 'medium', 'low']).nullable(),
+  status: z.enum(['pending', 'in_progress', 'completed']).nullable(),
+});
+
+function getTodoFilePath(context: Context): string {
+  return path.join(context.cwd, '.takumi-todos.json');
+}
+
+function loadTodos(context: Context): Todo[] {
+  try {
+    const filePath = getTodoFilePath(context);
+    if (!fs.existsSync(filePath)) {
+      return [];
+    }
+    const content = fs.readFileSync(filePath, 'utf-8');
+    return JSON.parse(content);
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveTodos(context: Context, todos: Todo[]): void {
+  const filePath = getTodoFilePath(context);
+  fs.writeFileSync(filePath, JSON.stringify(todos, null, 2));
+}
+
+function generateId(): string {
+  return Math.random().toString(36).substr(2, 9);
+}
+
+function sortTodos(todos: Todo[]): Todo[] {
+  const statusOrder = { in_progress: 0, pending: 1, completed: 2 };
+  const priorityOrder = { high: 0, medium: 1, low: 2 };
+
+  return todos.sort((a, b) => {
+    if (a.status !== b.status) {
+      return statusOrder[a.status] - statusOrder[b.status];
+    }
+    if (a.priority !== b.priority) {
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    }
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
+}
+
+function processTodoOperation(context: Context, operation: TodoOperation) {
+  const todos = loadTodos(context);
+  let result: any;
+
+  // Validate inputs based on action
+  if (operation.action === 'add' && !operation.content?.trim()) {
+    throw new Error(
+      'InputValidationError: Content is required and cannot be empty for adding a todo',
+    );
+  }
+
+  if (
+    ['complete', 'update', 'remove'].includes(operation.action) &&
+    !operation.id?.trim()
+  ) {
+    throw new Error(
+      `InputValidationError: ID is required for ${operation.action} operation`,
+    );
+  }
+
+  switch (operation.action) {
+    case 'list':
+      result = sortTodos(todos);
+      break;
+
+    case 'add':
+      const oldTodosAdd = [...todos];
+      const newTodo: Todo = {
+        id: generateId(),
+        content: operation.content!.trim(),
+        status: 'pending',
+        priority: operation.priority || 'medium',
+        createdAt: new Date().toISOString(),
+      };
+      todos.push(newTodo);
+      saveTodos(context, todos);
+      result = { oldTodos: oldTodosAdd, newTodos: sortTodos(todos) };
+      break;
+
+    case 'complete':
+      const todoToComplete = todos.find((t) => t.id === operation.id);
+      if (!todoToComplete) {
+        throw new Error(`Todo with ID ${operation.id} not found`);
+      }
+      const oldTodos = [...todos];
+      todoToComplete.status = 'completed';
+      todoToComplete.completedAt = new Date().toISOString();
+      saveTodos(context, todos);
+      result = { oldTodos, newTodos: sortTodos(todos) };
+      break;
+
+    case 'update':
+      const todoToUpdate = todos.find((t) => t.id === operation.id);
+      if (!todoToUpdate) {
+        throw new Error(`Todo with ID ${operation.id} not found`);
+      }
+      const oldTodosUpdate = [...todos];
+      if (operation.status) {
+        todoToUpdate.status = operation.status;
+        if (operation.status === 'completed' && !todoToUpdate.completedAt) {
+          todoToUpdate.completedAt = new Date().toISOString();
+        }
+      }
+      if (operation.priority) {
+        todoToUpdate.priority = operation.priority;
+      }
+      if (operation.content) {
+        todoToUpdate.content = operation.content.trim();
+      }
+      saveTodos(context, todos);
+      result = { oldTodos: oldTodosUpdate, newTodos: sortTodos(todos) };
+      break;
+
+    case 'remove':
+      const todoIndex = todos.findIndex((t) => t.id === operation.id);
+      if (todoIndex === -1) {
+        throw new Error(`Todo with ID ${operation.id} not found`);
+      }
+      const oldTodosRemove = [...todos];
+      todos.splice(todoIndex, 1);
+      saveTodos(context, todos);
+      result = { oldTodos: oldTodosRemove, newTodos: sortTodos(todos) };
+      break;
+
+    case 'clear':
+      const oldTodosClear = [...todos];
+      saveTodos(context, []);
+      result = { oldTodos: oldTodosClear, newTodos: [] };
+      break;
+
+    default:
+      throw new Error(`Unknown action: ${operation.action}`);
+  }
+
+  return result;
+}
+
+export function createTodoTool(opts: { context: Context }): EnhancedTool {
+  return enhanceTool(
+    tool({
+      name: 'todo',
+      description: `Use this tool to create and manage a structured task list for your current coding session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
+It also helps the user understand the progress of the task and overall progress of their requests.
+
+## When to Use This Tool
+Use this tool proactively in these scenarios:
+
+1. Complex multi-step tasks - When a task requires 3 or more distinct steps or actions
+2. Non-trivial and complex tasks - Tasks that require careful planning or multiple operations
+3. User explicitly requests todo list - When the user directly asks you to use the todo list
+4. User provides multiple tasks - When users provide a list of things to be done (numbered or comma-separated)
+5. After receiving new instructions - Immediately capture user requirements as todos
+6. When you start working on a task - Mark it as in_progress BEFORE beginning work. Ideally you should only have one todo as in_progress at a time
+7. After completing a task - Mark it as completed and add any new follow-up tasks discovered during implementation
+
+## When NOT to Use This Tool
+
+Skip using this tool when:
+1. There is only a single, straightforward task
+2. The task is trivial and tracking it provides no organizational benefit
+3. The task can be completed in less than 3 trivial steps
+4. The task is purely conversational or informational
+
+NOTE that you should not use this tool if there is only one trivial task to do. In this case you are better off just doing the task directly.
+
+## Task States and Management
+
+1. **Task States**: Use these states to track progress:
+   - pending: Task not yet started
+   - in_progress: Currently working on (limit to ONE task at a time)
+   - completed: Task finished successfully
+
+2. **Task Management**:
+   - Update task status in real-time as you work
+   - Mark tasks complete IMMEDIATELY after finishing (don't batch completions)
+   - Only have ONE task in_progress at any time
+   - Complete current tasks before starting new ones
+   - Remove tasks that are no longer relevant from the list entirely
+
+3. **Task Completion Requirements**:
+   - ONLY mark a task as completed when you have FULLY accomplished it
+   - If you encounter errors, blockers, or cannot finish, keep the task as in_progress
+   - When blocked, create a new task describing what needs to be resolved
+   - Never mark a task as completed if:
+     - Tests are failing
+     - Implementation is partial
+     - You encountered unresolved errors
+     - You couldn't find necessary files or dependencies
+
+4. **Task Breakdown**:
+   - Create specific, actionable items
+   - Break complex tasks into smaller, manageable steps
+   - Use clear, descriptive task names
+
+When in doubt, use this tool. Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully.
+
+Available actions: add, list, complete, update, remove, clear
+Status options: pending, in_progress, completed
+Priority options: high, medium, low`,
+      parameters: TodoOperationSchema,
+      execute: async (operation) => {
+        try {
+          return processTodoOperation(opts.context, operation);
+        } catch (e) {
+          return {
+            success: false,
+            error: e instanceof Error ? e.message : 'Unknown error',
+          };
+        }
+      },
+    }),
+    {
+      category: 'write',
+      riskLevel: 'low',
+    },
+  );
+}

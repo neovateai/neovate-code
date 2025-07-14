@@ -12,6 +12,7 @@ import { createGlobTool } from './tools/glob';
 import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
+import { createTodoTool } from './tools/todo';
 import { createWriteTool } from './tools/write';
 import { formatToolUse } from './utils/formatToolUse';
 import { parseMessage } from './utils/parse-message';
@@ -67,6 +68,13 @@ export class Service {
 
   static async create(opts: CreateServiceOpts) {
     const context = opts.context;
+    try {
+      const todoTool = createTodoTool({ context });
+      console.log('todoTool', todoTool);
+    } catch (error) {
+      console.error('error', error);
+    }
+    // console.log('create service', createTodoTool({ context }));
     const readonlyTools = [
       createReadTool({ context }),
       enhanceTool(createLSTool({ context }), {
@@ -95,6 +103,7 @@ export class Service {
         category: 'write',
         riskLevel: 'medium',
       }),
+      // createTodoTool({ context }),
       createBashTool({ context }),
     ];
     const mcpTools = context.mcpTools.map((tool) =>
