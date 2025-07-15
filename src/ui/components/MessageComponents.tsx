@@ -1,6 +1,7 @@
 import { Box, Text } from 'ink';
 import React from 'react';
 import { useMemo } from 'react';
+import { TOOL_NAME } from '../../constants';
 import type { TodoItem as TodoItemType } from '../../tools/todo';
 import { Message } from '../AppContext';
 import { MESSAGE_ROLES, MESSAGE_TYPES, SPACING, UI_COLORS } from '../constants';
@@ -27,11 +28,11 @@ const priorityWeights = {
 };
 
 function compareTodos(todoA: TodoItemType, todoB: TodoItemType) {
-  // 首先按状态排序
+  // Sort by status first
   const statusDiff = statusWeights[todoA.status] - statusWeights[todoB.status];
   if (statusDiff !== 0) return statusDiff;
 
-  // 然后按优先级排序
+  // Then sort by priority
   return priorityWeights[todoA.priority] - priorityWeights[todoB.priority];
 }
 
@@ -258,11 +259,11 @@ export function ToolMessage({ message }: ToolMessageProps) {
     );
   }
 
-  if (toolName === 'todo_read') {
+  if (toolName === TOOL_NAME.TODO_READ) {
     return <TodoRead todos={result.data} />;
   }
 
-  if (toolName === 'todo_write') {
+  if (toolName === TOOL_NAME.TODO_WRITE) {
     return (
       <TodoList
         oldTodos={result.data.oldTodos}

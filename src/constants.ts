@@ -11,3 +11,10 @@ export const IMAGE_EXTENSIONS = new Set([
   '.tiff',
   '.tif',
 ]);
+
+// todo-write will be converted to todo_write causing tool name mismatch
+export enum TOOL_NAME {
+  TODO_WRITE = 'todoWrite',
+  TODO_READ = 'todoRead',
+  BASH = 'bash',
+}

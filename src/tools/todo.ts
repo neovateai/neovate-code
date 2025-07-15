@@ -3,6 +3,7 @@ import fs from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
+import { TOOL_NAME } from '../constants';
 import { Context } from '../context';
 import { enhanceTool } from '../tool';
 import { randomUUID } from '../utils/randomUUID';
@@ -262,7 +263,7 @@ export function createTodoTool(opts: { context: Context }) {
   }
 
   const todoWriteTool = tool({
-    name: 'todo-write',
+    name: TOOL_NAME.TODO_WRITE,
     description: TODO_WRITE_PROMPT,
     parameters: z.object({
       todos: TodoListSchema.describe('The updated todo list'),
@@ -292,7 +293,7 @@ export function createTodoTool(opts: { context: Context }) {
   });
 
   const todoReadTool = tool({
-    name: 'todo-read',
+    name: TOOL_NAME.TODO_READ,
     description: TODO_READ_PROMPT,
     parameters: z.object({}).passthrough(),
     async execute() {
