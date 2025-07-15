@@ -10,7 +10,8 @@ import {
   type LexicalNode,
   TextNode,
 } from 'lexical';
-import { memo, useEffect, useRef, useState } from 'react';
+import { debounce } from 'lodash-es';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import type {
   AiContextCacheNode,
   AiContextNodeConfig,
@@ -54,20 +55,23 @@ const RenderValuePlugin = (props: Props) => {
     'g',
   );
 
-  const getCursorSelection = () => {
-    const selection = window.getSelection();
-    if (selection?.rangeCount) {
-      const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      const editorElement = editor.getRootElement();
-      const editorRect = editorElement?.getBoundingClientRect();
-      if (editorRect) {
-        const x = rect.left - editorRect.left;
-        const y = rect.top - editorRect.top;
-        return { x, y };
+  const getCursorSelection = useCallback(
+    debounce(() => {
+      const selection = window.getSelection();
+      if (selection?.rangeCount) {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        const editorElement = editor.getRootElement();
+        const editorRect = editorElement?.getBoundingClientRect();
+        if (editorRect) {
+          const x = rect.left - editorRect.left;
+          const y = rect.top - editorRect.top;
+          return { x, y };
+        }
       }
-    }
-  };
+    }, 100),
+    [],
+  );
 
   const isNodeEqual = (
     node1: AiContextCacheNode,
@@ -299,6 +303,7 @@ const RenderValuePlugin = (props: Props) => {
         }
 
         onChange?.(innerValue, plainText);
+
         onCursorPositionChange?.(getCursorSelection());
         oldMarkedTextRef.current = innerValue;
       });
