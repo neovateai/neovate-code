@@ -28,6 +28,7 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
   const { mode } = useSnapshot(state);
   const { t } = useTranslation();
   const { approvePlan } = useChatState();
+  const { status: chatStatus } = useChatState();
 
   if (mode === 'plan' && status === 'ready') {
     const mergedMessage = mergeMessages(message.annotations || []);
@@ -61,6 +62,10 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
         </div>
       );
     }
+  }
+
+  if (chatStatus !== 'ready') {
+    return null;
   }
 
   return (

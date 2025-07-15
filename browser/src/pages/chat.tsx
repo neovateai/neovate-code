@@ -1,8 +1,9 @@
 import { UserOutlined } from '@ant-design/icons';
 import { Bubble } from '@ant-design/x';
 import { createFileRoute } from '@tanstack/react-router';
-import { type GetProp, Spin } from 'antd';
+import { type GetProp, Skeleton, Spin } from 'antd';
 import { createStyles } from 'antd-style';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import AssistantAvatar from '@/components/AssistantAvatar';
 import AssistantFooter from '@/components/AssistantFooter';
@@ -58,6 +59,7 @@ const Chat: React.FC = () => {
   const { messages, status } = useChatState();
   const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
   const { styles } = useStyle({ codeViewerVisible });
+  const { t } = useTranslation();
 
   const items = messages?.map((message, index) => {
     const isLastMessage = index === messages.length - 1;
@@ -94,13 +96,27 @@ const Chat: React.FC = () => {
       avatar: <AssistantAvatar />,
       variant: 'outlined',
       messageRender(message) {
-        return <AssistantMessage message={message} />;
+        const isLastMessage =
+          messages.length > 0 &&
+          message.id === messages[messages.length - 1].id;
+        return (
+          <div>
+            <AssistantMessage message={message} />
+            {isLastMessage && status === 'streaming' && (
+              <div className="flex items-center space-x-2 pt-2">
+                <Spin size="small" />
+                <span className="text-sm text-gray-500 pl-2 animate-pulse">
+                  {t('chat.thinking')}
+                </span>
+              </div>
+            )}
+          </div>
+        );
       },
       loadingRender() {
         return (
-          <div className="flex items-center space-x-3">
-            <Spin size="small" />
-            <span className="text-sm text-gray-500 pl-2">Thinking...</span>
+          <div style={{ width: 600 }}>
+            <Skeleton active paragraph={{ rows: 2 }} title={false} />
           </div>
         );
       },
