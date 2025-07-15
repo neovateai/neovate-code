@@ -58,7 +58,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     return commands.map((command) => {
       return {
         label: command.name,
-        value: command.name,
+        value: `/${command.name}`,
         disabled: selectedValues?.includes(command.name),
         extra: command.description,
       };

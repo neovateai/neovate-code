@@ -163,3 +163,32 @@ export const ImageContextTag = ({
     </Popover>
   );
 };
+
+export const SlashCommandContextTag = ({
+  displayText,
+  onClose,
+}: {
+  displayText: string;
+  onClose?: () => void;
+}) => {
+  const [hover, setHover] = useState(false);
+  const { styles } = useStyle();
+
+  return (
+    <Tag
+      color="green"
+      className={styles.tag}
+      data-ai-context-id="slash_command"
+      contentEditable={false}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      {onClose && hover ? (
+        <CloseOutlined className={styles.icon} onClick={onClose} />
+      ) : (
+        <span className={styles.icon}>/</span>
+      )}
+      <EllipsisText maxWidth={240}>{displayText}</EllipsisText>
+    </Tag>
+  );
+};
