@@ -234,10 +234,7 @@ async function saveTodos(todos: TodoList, filePath: string) {
 }
 
 export function createTodoTool(opts: { context: Context }) {
-  const uuid = (() => {
-    const uuid = randomUUID().replace(/-/g, '');
-    return uuid;
-  })();
+  const uuid = randomUUID().replace(/-/g, '');
 
   const { context } = opts;
 
