@@ -17,7 +17,7 @@ export type SuggestionItem = {
 };
 
 interface Props {
-  popupOffset?: string;
+  popupOffset?: { top: number; left: number };
   className?: string;
   children?: React.ReactElement;
   open?: boolean;
@@ -261,7 +261,8 @@ const SuggestionList = (props: Props) => {
       styles={{
         body: {
           position: popupOffset ? 'relative' : undefined,
-          inset: popupOffset,
+          top: popupOffset?.top,
+          left: popupOffset?.left,
           padding: 0,
         },
       }}

@@ -134,9 +134,7 @@ const ChatSender: React.FC = () => {
       >
         <SuggestionList
           popupOffset={
-            cursorPos
-              ? `${cursorPos.y + 40}px auto auto ${cursorPos.x}px`
-              : undefined
+            cursorPos && { top: cursorPos.y + 40, left: cursorPos.x }
           }
           loading={suggestionLoading}
           className={styles.suggestion}
