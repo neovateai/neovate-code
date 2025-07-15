@@ -143,9 +143,6 @@ export async function runCode(opts: RunCompletionOpts) {
         });
       },
       async onText(text) {
-        if (abortSignal?.aborted) {
-          throw new Error('Query cancelled by user');
-        }
         dataStream.writeMessageAnnotation({
           type: 'text',
           text,
@@ -156,9 +153,6 @@ export async function runCode(opts: RunCompletionOpts) {
         dataStream.write(formatDataStreamPart('text', text));
       },
       onReasoning(text) {
-        if (abortSignal?.aborted) {
-          throw new Error('Query cancelled by user');
-        }
         debug(`Reasoning: ${text}`);
         dataStream.writeMessageAnnotation({
           type: 'reasoning',
@@ -167,9 +161,6 @@ export async function runCode(opts: RunCompletionOpts) {
         dataStream.write(formatDataStreamPart('reasoning', text));
       },
       onToolUse(callId, name, params) {
-        if (abortSignal?.aborted) {
-          throw new Error('Query cancelled by user');
-        }
         debug(`Tool use: ${name} with params ${JSON.stringify(params)}`);
         dataStream.writeMessageAnnotation({
           type: 'tool_call',
@@ -245,15 +236,6 @@ export async function runCode(opts: RunCompletionOpts) {
     debug('result', result);
 
     return result;
-  } catch (e) {
-    if (e instanceof Error && e.message === 'Query cancelled by user') {
-      dataStream.write(
-        formatDataStreamPart('error', 'Query cancelled by user.'),
-      );
-      return { finalText: 'Query cancelled by user.', cancelled: true };
-    }
-
-    throw e;
   } finally {
     // TODO: Cannot destroy here, otherwise it will cause mcp to be unavailable
     // await opts.context.destroy();
