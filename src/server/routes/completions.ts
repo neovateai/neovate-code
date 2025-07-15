@@ -69,34 +69,26 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
       const abortController = new AbortController();
       debug('Created AbortController');
 
-      // Centralized abort handler to avoid code duplication
+      const cleanupSocketListeners = () => {
+        if (request.raw.socket) {
+          request.raw.socket.removeListener('close', handleAbort);
+        }
+      };
+
       let hasAborted = false;
-      const handleAbort = (reason: string, error?: Error) => {
+      const handleAbort = (hadError: boolean) => {
         if (hasAborted || reply.sent) {
           return;
         }
         hasAborted = true;
-        debug(`${reason}, aborting request`, error?.message || '');
+        debug(`${hadError ? 'with error' : 'without error'}, aborting request`);
+        cleanupSocketListeners();
         abortController.abort();
       };
 
-      // Event listeners for request cancellation
-      const handleClose = () => handleAbort('Client closed connection');
-      const handleAborted = () => handleAbort('Client aborted connection');
-      const handleSocketError = (err: Error) =>
-        handleAbort('Socket error', err);
-      const handleSocketClose = (hadError: boolean) =>
-        handleAbort(
-          `Socket closed ${hadError ? 'with error' : 'without error'}`,
-        );
-
-      // Register event listeners
-      request.raw.on('close', handleClose);
-      request.raw.on('aborted', handleAborted);
-
+      // Register socket event listener (socket.close covers both user cancellation and network errors)
       if (request.raw.socket) {
-        request.raw.socket.on('error', handleSocketError);
-        request.raw.socket.on('close', handleSocketClose);
+        request.raw.socket.on('close', handleAbort);
       }
 
       try {

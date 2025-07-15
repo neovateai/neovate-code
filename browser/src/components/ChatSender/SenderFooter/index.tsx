@@ -65,7 +65,7 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
         <Divider type="vertical" />
       </Flex>
       <Flex align="center">
-        <McpDropdown loading={isProcessing} />
+        <McpDropdown />
         <SenderAttachments />
         <Divider type="vertical" />
         {isProcessing ? (
