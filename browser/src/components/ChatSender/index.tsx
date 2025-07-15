@@ -141,7 +141,10 @@ const ChatSender: React.FC = () => {
           onSelect={(type, itemValue) => {
             setOpenPopup(false);
             if (type === ContextType.SLASH_COMMAND) {
-              const nextInputValue = `/${itemValue} ` + prompt;
+              const nextInputValue =
+                `/${itemValue} ` +
+                prompt.slice(0, insertNodePosition) +
+                prompt.slice(insertNodePosition + 1);
               actions.updatePrompt(nextInputValue);
               return;
             }
