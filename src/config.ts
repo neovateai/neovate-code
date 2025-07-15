@@ -29,6 +29,7 @@ export type Config = {
   plugins: string[];
   mcpServers: Record<string, McpServerConfig>;
   systemPrompt?: string;
+  todoFeatureEnabled?: boolean;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -38,6 +39,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   plugins: [],
   mcpServers: {},
   model: 'flash',
+  todoFeatureEnabled: true,
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -45,10 +47,11 @@ const VALID_CONFIG_KEYS = [
   'smallModel',
   'planModel',
   'systemPrompt',
+  'todoFeatureEnabled',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = ['mcpServers'];
-const BOOLEAN_CONFIG_KEYS = ['quiet'];
+const BOOLEAN_CONFIG_KEYS = ['quiet', 'todoFeatureEnabled'];
 
 export class ConfigManager {
   globalConfig: Partial<Config>;
