@@ -14,17 +14,21 @@ import {
   CONTEXT_MAX_POPUP_ITEM_COUNT,
   ContextType,
 } from '@/constants/context';
+import {
+  actions as slashCommandActions,
+  state as slashCommandState,
+} from '@/state/slashCommands';
 import { actions, state } from '@/state/suggestion';
 import type { ContextItem, ContextStoreValue } from '@/types/context';
-import { useSlashCommands } from './useSlashCommands';
 
 export const useSuggestion = (selectedValues?: readonly string[]) => {
   const { fileList, loading } = useSnapshot(state);
   const { t } = useTranslation();
-  const { commands, search: searchCommands } = useSlashCommands();
+  const { commands } = useSnapshot(slashCommandState);
 
   useEffect(() => {
     actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
+    slashCommandActions.loadCommands();
   }, []);
 
   const fileSuggestions = useMemo(() => {
@@ -66,7 +70,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
   };
 
   const getOriginalCommand = (value: string) => {
-    const command = commands.find((command) => command.name === value);
+    const command = slashCommandActions.getByName(value);
     if (command) {
       return {
         ...command,
@@ -108,7 +112,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
         maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT,
         searchString: text,
       }),
-    [ContextType.SLASH_COMMAND]: (text) => searchCommands(text),
+    [ContextType.SLASH_COMMAND]: (text) => slashCommandActions.search(text),
   };
 
   const handleSearch = debounce((type: ContextType, text: string) => {
