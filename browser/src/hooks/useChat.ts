@@ -22,7 +22,6 @@ import { throttle } from 'lodash-es';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
-import { UIMessageType } from '@/types/message';
 import { useStableValue } from './useStableValue';
 
 export type { CreateMessage, Message, UseChatOptions };
@@ -469,26 +468,9 @@ By default, it's set to 1, which means that only a single LLM call is made.
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
-      const cancelMessage: UIMessage = {
-        id: generateId(),
-        createdAt: new Date(),
-        role: 'assistant',
-        content: 'Query cancelled by user.',
-        parts: [{ type: 'text', text: 'Query cancelled by user.' }],
-        annotations: [
-          {
-            type: UIMessageType.Text,
-            text: 'Query cancelled by user.',
-            mode: 'agent',
-          },
-        ],
-      };
-
-      const currentMessages = messagesRef.current;
-      mutate([...currentMessages, cancelMessage], false);
-      mutateStatus('ready');
     }
-  }, [generateId, mutate, mutateStatus]);
+  }, []);
+
   const experimental_resume = useCallback(async () => {
     const messages = messagesRef.current;
 

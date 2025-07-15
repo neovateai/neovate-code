@@ -234,8 +234,6 @@ export async function runCode(opts: RunCompletionOpts) {
       },
     });
     debug('result', result);
-
-    return result;
   } finally {
     // TODO: Cannot destroy here, otherwise it will cause mcp to be unavailable
     // await opts.context.destroy();
