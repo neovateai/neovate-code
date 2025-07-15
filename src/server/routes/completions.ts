@@ -73,7 +73,6 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
             if (isSlashCommand(opts.prompt)) {
               debug('Processing slash command:', opts.prompt);
               const slashCommand = parseSlashCommand(opts.prompt);
-              console.log('thy debug slashCommand', slashCommand);
               if (!slashCommand) {
                 dataStream.writeMessageAnnotation({
                   type: 'text',
