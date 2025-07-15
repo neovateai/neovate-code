@@ -1,12 +1,12 @@
 import chalk from 'chalk';
 import { Text, useInput } from 'ink';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import type { Except } from 'type-fest';
 import { getCurrentLineInfo, moveToLine } from './utils/cursor-utils';
 
 // UI Display Constants
-const DEFAULT_MAX_LINES = 8;
 const MAX_PASTE_HIGHLIGHT_LENGTH = 1;
+const CURSOR_DEBOUNCE_MS = 16;
 
 export type TextInputProps = {
   /**
@@ -126,20 +126,7 @@ function TextInput({
     cursorWidth: 0,
   });
 
-  // Use ref to keep track of the latest value to avoid race conditions
-  const latestValueRef = useRef(originalValue || '');
-  const latestCursorOffsetRef = useRef(state.cursorOffset);
-
   const { cursorOffset, cursorWidth } = state;
-
-  // Update refs when values change
-  useEffect(() => {
-    latestValueRef.current = originalValue || '';
-  }, [originalValue]);
-
-  useEffect(() => {
-    latestCursorOffsetRef.current = cursorOffset;
-  }, [cursorOffset]);
 
   useEffect(() => {
     setState((previousState) => {
@@ -172,44 +159,104 @@ function TextInput({
 
   useEffect(() => {
     if (onCursorPositionChange) {
-      onCursorPositionChange(state.cursorOffset);
+      // Add debouncing to prevent excessive calls
+      const timeoutId = setTimeout(() => {
+        onCursorPositionChange(state.cursorOffset);
+      }, CURSOR_DEBOUNCE_MS); // ~60fps debouncing
+      return () => clearTimeout(timeoutId);
     }
-  }, [state.cursorOffset]);
+  }, [state.cursorOffset, onCursorPositionChange]);
+
+  // Unified state update function to avoid race conditions
+  const updateState = useCallback(
+    (newValue: string, newCursorOffset: number, newCursorWidth: number = 0) => {
+      // Ensure cursor offset is within bounds
+      const safeCursorOffset = Math.max(
+        0,
+        Math.min(newCursorOffset, newValue.length),
+      );
+
+      // Prevent unnecessary updates
+      if (
+        safeCursorOffset === state.cursorOffset &&
+        newCursorWidth === state.cursorWidth &&
+        newValue === originalValue
+      ) {
+        return;
+      }
+
+      setState({
+        cursorOffset: safeCursorOffset,
+        cursorWidth: newCursorWidth,
+      });
+
+      if (newValue !== originalValue) {
+        onChange(newValue);
+      }
+    },
+    [state.cursorOffset, state.cursorWidth, originalValue, onChange],
+  );
 
   const cursorActualWidth = highlightPastedText ? cursorWidth : 0;
 
   const value = mask ? mask.repeat(originalValue.length) : originalValue;
 
-  // Handle maxLines display limitation
-  let displayValue = value;
-  if (maxLines && maxLines > 0) {
-    const lines = value.split('\n');
-    if (lines.length > maxLines) {
-      // Find which line contains the cursor
-      const valueBeforeCursor = value.slice(0, cursorOffset);
-      const linesBeforeCursor = valueBeforeCursor.split('\n');
-      const cursorLine = linesBeforeCursor.length - 1;
-
-      // Calculate display window
-      let startLine = 0;
-      let endLine = maxLines;
-
-      if (cursorLine >= maxLines) {
-        // Cursor is beyond visible area, scroll to show cursor
-        startLine = cursorLine - maxLines + 1;
-        endLine = cursorLine + 1;
-      } else if (cursorLine < 0) {
-        // Cursor is before visible area
-        startLine = 0;
-        endLine = maxLines;
-      }
-
-      const displayLines = lines.slice(startLine, endLine);
-      displayValue = displayLines.join('\n');
-
-      // Note: cursor offset adjustment is handled in the rendering logic below
+  // Calculate display window and cursor offset for multiline display
+  const calculateDisplayInfo = (text: string, cursorPos: number) => {
+    if (!maxLines || maxLines <= 0) {
+      return {
+        displayValue: text,
+        actualCursorOffset: cursorPos,
+        startLine: 0,
+      };
     }
-  }
+
+    const lines = text.split('\n');
+    if (lines.length <= maxLines) {
+      return {
+        displayValue: text,
+        actualCursorOffset: cursorPos,
+        startLine: 0,
+      };
+    }
+
+    // Find which line contains the cursor
+    const valueBeforeCursor = text.slice(0, cursorPos);
+    const linesBeforeCursor = valueBeforeCursor.split('\n');
+    const cursorLine = linesBeforeCursor.length - 1;
+
+    // Calculate display window
+    let startLine = 0;
+    const isAtEnd = cursorPos === text.length;
+    const scrollThreshold = Math.max(1, Math.ceil(maxLines / 2));
+    const isNearEnd = cursorLine >= lines.length - scrollThreshold;
+
+    if (isAtEnd || isNearEnd) {
+      // If cursor is at end or near end, show the last maxLines
+      startLine = Math.max(0, lines.length - maxLines);
+    } else if (cursorLine >= maxLines) {
+      // Cursor is beyond visible area, scroll to show cursor in the middle
+      const halfMaxLines = Math.floor(maxLines / 2);
+      startLine = Math.max(0, cursorLine - halfMaxLines);
+    }
+
+    const displayLines = lines.slice(startLine, startLine + maxLines);
+    const displayValue = displayLines.join('\n');
+
+    // Calculate actual cursor offset within the display window
+    let actualCursorOffset = cursorPos;
+    if (startLine > 0) {
+      const hiddenPortion = lines.slice(0, startLine).join('\n') + '\n';
+      actualCursorOffset = cursorPos - hiddenPortion.length;
+    }
+
+    return { displayValue, actualCursorOffset, startLine };
+  };
+
+  const { displayValue, actualCursorOffset } = calculateDisplayInfo(
+    value,
+    cursorOffset,
+  );
 
   let renderedValue = displayValue;
   let renderedPlaceholder = placeholder ? chalk.grey(placeholder) : undefined;
@@ -224,28 +271,6 @@ function TextInput({
     renderedValue = displayValue.length > 0 ? '' : chalk.inverse(' ');
 
     let i = 0;
-    let actualCursorOffset = cursorOffset;
-
-    // Adjust cursor offset if we're showing a subset of lines
-    if (maxLines && maxLines > 0) {
-      const lines = value.split('\n');
-      if (lines.length > maxLines) {
-        const valueBeforeCursor = value.slice(0, cursorOffset);
-        const linesBeforeCursor = valueBeforeCursor.split('\n');
-        const cursorLine = linesBeforeCursor.length - 1;
-
-        let startLine = 0;
-        if (cursorLine >= maxLines) {
-          startLine = cursorLine - maxLines + 1;
-        }
-
-        if (startLine > 0) {
-          const hiddenPortion = lines.slice(0, startLine).join('\n') + '\n';
-          actualCursorOffset = cursorOffset - hiddenPortion.length;
-        }
-      }
-    }
-
     for (const char of displayValue) {
       renderedValue +=
         i >= actualCursorOffset - cursorActualWidth && i <= actualCursorOffset
@@ -426,46 +451,19 @@ function TextInput({
         }
       } else {
         // Handle regular input and paste operations
-        // Use latest values from refs to avoid race conditions
-        const currentValue = latestValueRef.current;
-        const currentCursorOffset = latestCursorOffsetRef.current;
-
         nextValue =
-          currentValue.slice(0, currentCursorOffset) +
+          originalValue.slice(0, cursorOffset) +
           input +
-          currentValue.slice(currentCursorOffset, currentValue.length);
+          originalValue.slice(cursorOffset, originalValue.length);
 
-        nextCursorOffset = currentCursorOffset + input.length;
-
-        // Update refs immediately to prevent race conditions
-        latestValueRef.current = nextValue;
-        latestCursorOffsetRef.current = nextCursorOffset;
+        nextCursorOffset = cursorOffset + input.length;
 
         // Don't highlight large pastes to avoid rendering issues
-        if (input.length > MAX_PASTE_HIGHLIGHT_LENGTH) {
-          nextCursorWidth = 0;
-        } else {
-          nextCursorWidth = 0;
-        }
+        nextCursorWidth = input.length > MAX_PASTE_HIGHLIGHT_LENGTH ? 0 : 0;
       }
 
-      // Fix boundary checks to use nextCursorOffset instead of cursorOffset
-      if (nextCursorOffset < 0) {
-        nextCursorOffset = 0;
-      }
-
-      if (nextCursorOffset > nextValue.length) {
-        nextCursorOffset = nextValue.length;
-      }
-
-      setState({
-        cursorOffset: nextCursorOffset,
-        cursorWidth: nextCursorWidth,
-      });
-
-      if (nextValue !== originalValue) {
-        onChange(nextValue);
-      }
+      // Use unified state update function
+      updateState(nextValue, nextCursorOffset, nextCursorWidth);
     },
     { isActive: focus },
   );

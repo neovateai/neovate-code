@@ -108,7 +108,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
     }
     if (key.upArrow) {
       if (isVisible) {
-        navigatePrevious(); // 切换suggestion
+        navigatePrevious(); // Navigate suggestions
       } else {
         const lines = value.split('\n');
         const currentCursorPos = cursorPosition ?? value.length;
@@ -256,14 +256,21 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
               const val = sanitizeText(input);
               chatInputChange(val);
               setValue(val);
-              setCursorPosition(undefined); // 清除强制光标位置
-              resetVisible(); // 重置建议面板显示状态
+              // Clear cursor position only when value actually changes
+              if (val !== value) {
+                setCursorPosition(undefined);
+              }
+              resetVisible();
             }}
             onSubmit={isVisible ? () => {} : handleSubmit}
             onTabPress={handleTabPress}
             cursorPosition={cursorPosition}
             maxLines={DEFAULT_MAX_LINES}
-            onCursorPositionChange={setCursorPosition}
+            onCursorPositionChange={(pos) => {
+              if (pos !== cursorPosition) {
+                setCursorPosition(pos);
+              }
+            }}
           />
         )}
       </Box>
