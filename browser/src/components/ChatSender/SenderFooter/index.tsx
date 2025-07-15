@@ -37,7 +37,7 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
 }) => {
   const { styles } = useStyle();
   const { mode } = useSnapshot(state);
-  const { loading } = useChatState();
+  const { status } = useChatState();
 
   const { SendButton, LoadingButton } = components;
 
@@ -48,6 +48,8 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
   const modeDetail = useMemo(() => {
     return MODES_MAP[mode];
   }, [mode]);
+
+  const isProcessing = status === 'submitted' || status === 'streaming';
 
   return (
     <Flex justify="space-between" align="center">
@@ -63,11 +65,11 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
         <Divider type="vertical" />
       </Flex>
       <Flex align="center">
-        <McpDropdown loading={loading} />
+        <McpDropdown />
         <SenderAttachments />
         <Divider type="vertical" />
-        {loading ? (
-          <LoadingButton type="default" />
+        {isProcessing ? (
+          <LoadingButton type="default" disabled={false} />
         ) : (
           <SendButton type="primary" />
         )}
@@ -75,4 +77,5 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
     </Flex>
   );
 };
+
 export default SenderFooter;
