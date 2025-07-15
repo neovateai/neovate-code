@@ -69,7 +69,7 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
     onChange,
     onChangeNodes,
     onPastingImage,
-    onCursorPostionChange,
+    onCursorPositionChange,
     aiContextNodeConfigs,
   } = useContext(LexicalTextAreaContext);
 
@@ -152,7 +152,7 @@ const LexicalTextArea = forwardRef<Ref, Props>((props, ref) => {
           onChange?.(markedText, plainText);
         }}
         onChangeNodes={onChangeNodes}
-        onCursorPostionChange={onCursorPostionChange}
+        onCursorPositionChange={onCursorPositionChange}
         aiContextNodeConfigs={aiContextNodeConfigs}
       />
     </LexicalComposer>

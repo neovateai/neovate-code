@@ -127,7 +127,7 @@ const ChatSender: React.FC = () => {
           onPastingImage: (loading) => {
             context.actions.setContextLoading(loading);
           },
-          onCursorPostionChange: (pos) => setCursorPos(pos),
+          onCursorPositionChange: (pos) => setCursorPos(pos),
           aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
           namespace: 'SenderTextarea',
         }}

@@ -27,7 +27,7 @@ interface Props {
     prevNodes: AiContextCacheNode[],
     nextNodes: AiContextCacheNode[],
   ) => void;
-  onCursorPostionChange?: (pos?: { x: number; y: number }) => void;
+  onCursorPositionChange?: (pos?: { x: number; y: number }) => void;
 }
 
 const RenderValuePlugin = (props: Props) => {
@@ -35,7 +35,7 @@ const RenderValuePlugin = (props: Props) => {
     value = '',
     onChange,
     onChangeNodes,
-    onCursorPostionChange,
+    onCursorPositionChange,
     aiContextNodeConfigs,
   } = props;
   const [editor] = useLexicalComposerContext();
@@ -299,7 +299,7 @@ const RenderValuePlugin = (props: Props) => {
         }
 
         onChange?.(innerValue, plainText);
-        onCursorPostionChange?.(getCursorSelection());
+        onCursorPositionChange?.(getCursorSelection());
         oldMarkedTextRef.current = innerValue;
       });
     }
