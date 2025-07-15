@@ -27,6 +27,7 @@ import {
 } from '@openai/agents';
 import { isZodObject } from '@openai/agents/utils';
 import { mergeConsecutiveSystemMessages } from './merge-consecutive-system-messages';
+import { removeImagePrefix } from './removeImagePrefix';
 
 /**
  * @internal
@@ -59,6 +60,10 @@ export function itemsToLanguageV1Messages(
         continue;
       }
 
+      const isGeminiModel =
+        model.modelId.includes('gemini') &&
+        model.provider === 'google.generative-ai';
+
       if (role === 'user') {
         messages.push({
           role,
@@ -68,6 +73,19 @@ export function itemsToLanguageV1Messages(
               : content.map((c) => {
                   if (c.type === 'input_text') {
                     return { type: 'text', text: c.text };
+                  }
+                  if (c.type === 'input_image' && isGeminiModel) {
+                    if (typeof c.image !== 'string') {
+                      throw new UserError('Image data must be a string');
+                    }
+
+                    const image = removeImagePrefix(c.image as string);
+                    return {
+                      type: 'file',
+                      mimeType:
+                        (c.providerData?.mimeType as string) || 'image/jpeg',
+                      data: image,
+                    };
                   }
                   if (c.type === 'input_image') {
                     const url = new URL(c.image as string);
