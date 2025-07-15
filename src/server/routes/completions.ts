@@ -69,20 +69,11 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
       const abortController = new AbortController();
       debug('Created AbortController');
 
-      const cleanupSocketListeners = () => {
-        if (request.raw.socket) {
-          request.raw.socket.removeListener('close', handleAbort);
-        }
-      };
-
-      let hasAborted = false;
       const handleAbort = (hadError: boolean) => {
-        if (hasAborted || reply.sent) {
+        if (reply.sent) {
           return;
         }
-        hasAborted = true;
         debug(`${hadError ? 'with error' : 'without error'}, aborting request`);
-        cleanupSocketListeners();
         abortController.abort();
       };
 
