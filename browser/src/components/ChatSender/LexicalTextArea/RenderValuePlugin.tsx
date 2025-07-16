@@ -72,7 +72,7 @@ const RenderValuePlugin = (props: Props) => {
           }
         }
       }, 300),
-    [],
+    [editor],
   );
 
   const isNodeEqual = (
