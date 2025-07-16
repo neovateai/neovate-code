@@ -153,9 +153,7 @@ export class Service {
     ];
 
     const { todoWriteTool, todoReadTool } = createTodoTool({ context });
-    const todoTools = context.config.todoFeatureEnabled
-      ? [todoReadTool, todoWriteTool]
-      : [];
+    const todoTools = context.config.todo ? [todoReadTool, todoWriteTool] : [];
 
     const mcpTools = context.mcpTools.map((tool) =>
       enhanceTool(tool, { category: 'network', riskLevel: 'medium' }),

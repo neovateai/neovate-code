@@ -4,7 +4,7 @@ import { Context } from '../context';
 import { Tools } from '../tool';
 
 function getTasksPrompt(context: Context) {
-  if (!context.config.todoFeatureEnabled) {
+  if (!context.config.todo) {
     return '';
   }
 
