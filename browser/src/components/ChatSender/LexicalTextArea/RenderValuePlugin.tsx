@@ -74,6 +74,11 @@ const RenderValuePlugin = (props: Props) => {
       }, 300),
     [editor],
   );
+  useEffect(() => {
+    return () => {
+      getCursorSelection.cancel?.();
+    };
+  }, []);
 
   const isNodeEqual = (
     node1: AiContextCacheNode,
