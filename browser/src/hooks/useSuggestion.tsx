@@ -100,7 +100,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
         children: slashCommandSuggestions,
       },
     ] as SuggestionItem[];
-  }, [fileSuggestions]);
+  }, [fileSuggestions, slashCommandSuggestions]);
 
   const originalContextGetterMap: {
     [key in ContextType]?: (value: string) => ContextStoreValue | undefined;
