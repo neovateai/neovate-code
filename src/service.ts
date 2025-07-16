@@ -12,6 +12,7 @@ import { createGlobTool } from './tools/glob';
 import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
+import { createTodoTool } from './tools/todo';
 import { createWriteTool } from './tools/write';
 import { formatToolUse } from './utils/formatToolUse';
 import { parseMessage } from './utils/parse-message';
@@ -45,6 +46,7 @@ export class Service {
   context: Context;
   history: AgentInputItem[] = [];
   id: string;
+  private textBuffer: string = '';
 
   constructor(opts: ServiceOpts) {
     this.opts = opts;
@@ -65,8 +67,60 @@ export class Service {
           });
   }
 
+  private hasIncompleteXmlTag(text: string): boolean {
+    const incompletePatterns = [
+      '<use_tool',
+      '<tool_name',
+      '<arguments',
+      '</use_tool',
+      '</tool_name',
+      '</arguments',
+    ];
+
+    // More efficient approach: check all possible suffixes at once
+    for (const pattern of incompletePatterns) {
+      // Check for exact match first (most common case)
+      if (text.endsWith(pattern)) {
+        return true;
+      }
+
+      // Only check partial matches if text is shorter than pattern
+      if (text.length < pattern.length) {
+        if (
+          pattern.startsWith(text.slice(-Math.min(text.length, pattern.length)))
+        ) {
+          return true;
+        }
+      } else {
+        // For longer text, check if any suffix matches pattern prefix
+        const maxCheck = Math.min(pattern.length - 1, text.length);
+        for (let i = 1; i <= maxCheck; i++) {
+          if (text.slice(-i) === pattern.slice(0, i)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  private pushTextDelta(stream: Readable, content: string, text: string): void {
+    const parsed = parseMessage(text);
+    if (parsed[0]?.type === 'text' && parsed[0].partial) {
+      stream.push(
+        JSON.stringify({
+          type: 'text-delta',
+          content,
+          partial: true,
+        }) + '\n',
+      );
+    }
+  }
+
   static async create(opts: CreateServiceOpts) {
     const context = opts.context;
+
     const readonlyTools = [
       createReadTool({ context }),
       enhanceTool(createLSTool({ context }), {
@@ -97,11 +151,21 @@ export class Service {
       }),
       createBashTool({ context }),
     ];
+
+    const { todoWriteTool, todoReadTool } = createTodoTool({ context });
+    const todoTools = context.config.todo ? [todoReadTool, todoWriteTool] : [];
+
     const mcpTools = context.mcpTools.map((tool) =>
       enhanceTool(tool, { category: 'network', riskLevel: 'medium' }),
     );
+
     const planTools = [...readonlyTools];
-    const codeTools = [...readonlyTools, ...writeTools, ...mcpTools];
+    const codeTools = [
+      ...readonlyTools,
+      ...writeTools,
+      ...todoTools,
+      ...mcpTools,
+    ];
     let tools = opts.agentType === 'code' ? codeTools : planTools;
     tools = await context.apply({
       hook: 'tool',
@@ -145,6 +209,9 @@ export class Service {
     stream: Readable,
     thinking?: boolean,
   ) {
+    // Reset buffer at start of new stream
+    this.textBuffer = '';
+
     try {
       const runner = new Runner({
         modelProvider: this.opts.context.getModelProvider(),
@@ -172,16 +239,21 @@ export class Service {
           switch (chunk.data.event.type) {
             case 'text-delta':
               const textDelta = chunk.data.event.textDelta;
+              this.textBuffer += textDelta;
               text += textDelta;
-              const parsed = parseMessage(text);
-              if (parsed[0]?.type === 'text' && parsed[0].partial) {
-                stream.push(
-                  JSON.stringify({
-                    type: 'text-delta',
-                    content: textDelta,
-                    partial: true,
-                  }) + '\n',
-                );
+
+              // Check if the current text has incomplete XML tags
+              if (this.hasIncompleteXmlTag(text)) {
+                // Buffer the text and continue without parsing
+                continue;
+              }
+
+              // If we have buffered content, process it
+              if (this.textBuffer) {
+                this.pushTextDelta(stream, this.textBuffer, text);
+                this.textBuffer = '';
+              } else {
+                this.pushTextDelta(stream, textDelta, text);
               }
               break;
             case 'reasoning':
@@ -197,6 +269,13 @@ export class Service {
           }
         }
       }
+
+      // Handle any remaining buffered content
+      if (this.textBuffer) {
+        this.pushTextDelta(stream, this.textBuffer, text);
+        this.textBuffer = '';
+      }
+
       const parsed = parseMessage(text);
       if (parsed[0]?.type === 'text') {
         stream.push(

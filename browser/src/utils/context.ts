@@ -27,3 +27,22 @@ export async function imageUrlToBase64(url: string) {
     };
   });
 }
+
+// 根据图片 src 猜测 mime 类型
+export function guessImageMime(src: string): string {
+  if (src.startsWith('data:')) {
+    const match = src.match(/^data:(image\/[a-zA-Z0-9.+-]+)[;,]/);
+    if (match) return match[1];
+  } else if (src.endsWith('.jpg') || src.endsWith('.jpeg')) {
+    return 'image/jpeg';
+  } else if (src.endsWith('.png')) {
+    return 'image/png';
+  } else if (src.endsWith('.gif')) {
+    return 'image/gif';
+  } else if (src.endsWith('.webp')) {
+    return 'image/webp';
+  } else if (src.endsWith('.svg')) {
+    return 'image/svg+xml';
+  }
+  return 'image/png';
+}

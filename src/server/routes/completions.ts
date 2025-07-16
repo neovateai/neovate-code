@@ -66,6 +66,23 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
       reply.header('Cache-Control', 'no-cache');
       reply.header('Connection', 'keep-alive');
 
+      // Create an AbortController for cancelling requests
+      const abortController = new AbortController();
+      debug('Created AbortController');
+
+      const handleAbort = (hadError: boolean) => {
+        if (reply.sent) {
+          return;
+        }
+        debug(`${hadError ? 'with error' : 'without error'}, aborting request`);
+        abortController.abort();
+      };
+
+      // Register socket event listener (socket.close covers both user cancellation and network errors)
+      if (request.raw.socket) {
+        request.raw.socket.on('close', handleAbort);
+      }
+
       try {
         await pipeDataStreamToResponse(reply.raw, {
           async execute(dataStream) {
@@ -142,6 +159,8 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
               prompt,
               dataStream,
               mode,
+              // Pass AbortSignal to runCode function
+              abortSignal: abortController.signal,
               // files are processed through context in plugins, only handling other types here
               attachedContexts: (lastMessage.attachedContexts || []).filter(
                 (context) => context.type !== ContextType.FILE,
