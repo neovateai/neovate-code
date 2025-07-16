@@ -1,7 +1,7 @@
 import { Sender } from '@ant-design/x';
 import { createStyles } from 'antd-style';
 import { differenceWith } from 'lodash-es';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';

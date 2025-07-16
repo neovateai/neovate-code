@@ -1,6 +1,11 @@
-import { ArrowRightOutlined, FileSearchOutlined } from '@ant-design/icons';
+import {
+  ArrowRightOutlined,
+  FileSearchOutlined,
+  MessageOutlined,
+} from '@ant-design/icons';
 import { debounce } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import DevFileIcon from '@/components/DevFileIcon';
 import type { SuggestionItem } from '@/components/SuggestionList';
@@ -9,14 +14,24 @@ import {
   CONTEXT_MAX_POPUP_ITEM_COUNT,
   ContextType,
 } from '@/constants/context';
+import {
+  actions as slashCommandActions,
+  state as slashCommandState,
+} from '@/state/slashCommands';
 import { actions, state } from '@/state/suggestion';
 import type { ContextItem, ContextStoreValue } from '@/types/context';
 
 export const useSuggestion = (selectedValues?: readonly string[]) => {
   const { fileList, loading } = useSnapshot(state);
-
+  const { commands, loading: slashCommandLoading } =
+    useSnapshot(slashCommandState);
+  const { t } = useTranslation();
   useEffect(() => {
     actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
+    slashCommandActions.loadCommands({
+      page: 1,
+      pageSize: CONTEXT_MAX_POPUP_ITEM_COUNT,
+    });
   }, []);
 
   const fileSuggestions = useMemo(() => {
@@ -42,18 +57,47 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     });
   }, [fileList]);
 
+  const slashCommandSuggestions = useMemo(() => {
+    return commands.map((command) => {
+      return {
+        label: command.name,
+        value: `/${command.name}`,
+        disabled: selectedValues?.includes(command.name),
+        extra: command.description,
+      };
+    });
+  }, [commands, selectedValues]);
+
   const getOriginalFile = (value: string) => {
     return fileList.find((file) => file.path === value);
+  };
+
+  const getOriginalCommand = (value: string) => {
+    const command = commands.find((command) => command.name === value);
+    if (command) {
+      return {
+        ...command,
+        uid: command.name,
+      };
+    }
+    return command;
   };
 
   const defaultSuggestions = useMemo(() => {
     return [
       {
-        label: 'Files & Folders',
+        label: t('context.file'),
         value: ContextType.FILE,
         icon: <FileSearchOutlined />,
         extra: <ArrowRightOutlined />,
         children: fileSuggestions,
+      },
+      {
+        label: t('context.slashCommand'),
+        value: ContextType.SLASH_COMMAND,
+        icon: <MessageOutlined />,
+        extra: <ArrowRightOutlined />,
+        children: slashCommandSuggestions,
       },
     ] as SuggestionItem[];
   }, [fileSuggestions]);
@@ -62,6 +106,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     [key in ContextType]?: (value: string) => ContextStoreValue | undefined;
   } = {
     [ContextType.FILE]: getOriginalFile,
+    [ContextType.SLASH_COMMAND]: getOriginalCommand,
   };
 
   const searchFunctionMap: { [key in ContextType]?: (text: string) => void } = {
@@ -69,6 +114,11 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
       actions.getFileList({
         maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT,
         searchString: text,
+      }),
+    [ContextType.SLASH_COMMAND]: (text) =>
+      slashCommandActions.searchWithTextQuery(text, {
+        page: 1,
+        pageSize: CONTEXT_MAX_POPUP_ITEM_COUNT,
       }),
   };
 
@@ -100,6 +150,6 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     getOriginalContextByValue,
     defaultSuggestions,
     handleSearch,
-    loading,
+    loading: loading || slashCommandLoading,
   };
 };

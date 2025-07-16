@@ -1,9 +1,10 @@
 import { Type } from '@sinclair/typebox';
-import { pipeDataStreamToResponse } from 'ai';
+import { formatDataStreamPart, pipeDataStreamToResponse } from 'ai';
 import createDebug from 'debug';
 import { FastifyPluginAsync } from 'fastify';
 import { last } from 'lodash-es';
 import { PluginHookType } from '../../plugin';
+import { isSlashCommand, parseSlashCommand } from '../../slash-commands';
 import { runCode } from '../services/completions';
 import { RouteCompletionsOpts } from '../types';
 import { CompletionRequest, ContextType } from '../types/completions';
@@ -57,7 +58,7 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
         type: PluginHookType.Series,
       });
 
-      const prompt = lastMessage.planContent ?? lastMessage.content;
+      let prompt = lastMessage.planContent ?? lastMessage.content;
 
       opts.context.addHistory(prompt);
 
@@ -85,6 +86,72 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
       try {
         await pipeDataStreamToResponse(reply.raw, {
           async execute(dataStream) {
+            // Check if this is a slash command
+            if (isSlashCommand(prompt)) {
+              debug('Processing slash command:', prompt);
+              const slashCommand = parseSlashCommand(prompt);
+              if (!slashCommand) {
+                dataStream.writeMessageAnnotation({
+                  type: 'text',
+                  text: 'Invalid slash command',
+                  mode,
+                });
+                return;
+              }
+
+              const service = mode === 'plan' ? opts.planService : opts.service;
+              const command = service.context.slashCommands.get(
+                slashCommand.command,
+              );
+
+              if (!command) {
+                const errorText = `Unknown command: /${slashCommand.command}. Type /help to see available commands.`;
+                dataStream.writeMessageAnnotation({
+                  type: 'text',
+                  text: errorText,
+                  mode,
+                });
+                return;
+              }
+
+              try {
+                if (command.type === 'local') {
+                  const result = await command.call(
+                    slashCommand.args,
+                    service.context,
+                  );
+                  if (result) {
+                    dataStream.writeMessageAnnotation({
+                      type: 'text',
+                      text: result,
+                      mode,
+                    });
+                  }
+                  return;
+                } else if (command.type === 'prompt') {
+                  const messages = await command.getPromptForCommand(
+                    slashCommand.args,
+                  );
+                  const promptInput = messages.map((msg) => ({
+                    role: msg.role as 'user',
+                    content: msg.content,
+                  }));
+
+                  prompt = promptInput.map((msg) => msg.content).join('\n');
+                }
+              } catch (error) {
+                const errorMessage =
+                  error instanceof Error ? error.message : 'Unknown error';
+                dataStream.write(
+                  formatDataStreamPart(
+                    'text',
+                    `Error executing command: ${errorMessage}`,
+                  ),
+                );
+                return;
+              }
+            }
+
             await runCode({
               ...opts,
               prompt,

@@ -3,6 +3,7 @@ import {
   AttachmentContextTag,
   FileContextTag,
   ImageContextTag,
+  SlashCommandContextTag,
 } from '@/components/ContextTags';
 import type { AiContextNodeConfig, ContextFileType } from '@/types/context';
 
@@ -10,6 +11,7 @@ export enum ContextType {
   FILE = '__file',
   ATTACHMENT = '__attachment',
   IMAGE = '__image',
+  SLASH_COMMAND = '__slash_command',
   UNKNOWN = '__unknown',
 }
 
@@ -54,6 +56,23 @@ export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
         displayText={info.displayText}
         onClose={onClose}
         context={context as ImageItem}
+      />
+    ),
+  },
+  {
+    type: ContextType.SLASH_COMMAND,
+    matchRegex: /@SlashCommand:\[(?<value>[^\]]+)\]/,
+    aiContextId: 'slash_command',
+    valueFormatter: (value) => `@SlashCommand:[${value}]`,
+    pickInfo: (regExpExecArray) => ({
+      value: regExpExecArray[0],
+      displayText: regExpExecArray.groups?.value || '',
+    }),
+    render: ({ info, onClose }) => (
+      <SlashCommandContextTag
+        key={info.value}
+        displayText={info.displayText}
+        onClose={onClose}
       />
     ),
   },

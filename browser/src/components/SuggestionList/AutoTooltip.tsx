@@ -31,6 +31,7 @@ const AutoTooltip = (props: Props) => {
           maxWidth: props.maxWidth,
           textOverflow: 'ellipsis',
           overflow: 'hidden',
+          whiteSpace: 'nowrap',
         } as React.CSSProperties)}
         ref={ref}
       />
