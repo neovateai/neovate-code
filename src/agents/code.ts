@@ -138,6 +138,8 @@ When making changes to files, first understand the file's code conventions. Mimi
 
 ${getTasksPrompt(options.context)}
 
+${options.context.argvConfig.appendSystemPrompt ? options.context.argvConfig.appendSystemPrompt : ''}
+
 ${options.tools.getToolsPrompt(options.model)}
 `.trim();
     },

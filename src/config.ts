@@ -30,6 +30,7 @@ export type Config = {
   mcpServers: Record<string, McpServerConfig>;
   systemPrompt?: string;
   todo?: boolean;
+  appendSystemPrompt?: string;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
