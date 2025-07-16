@@ -183,10 +183,8 @@ export const SlashCommandContextTag = ({
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      {onClose && hover ? (
+      {onClose && hover && (
         <CloseOutlined className={styles.icon} onClick={onClose} />
-      ) : (
-        <span className={styles.icon}>/</span>
       )}
       <EllipsisText maxWidth={240}>{displayText}</EllipsisText>
     </Tag>
