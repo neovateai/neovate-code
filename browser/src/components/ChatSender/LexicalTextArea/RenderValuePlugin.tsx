@@ -11,7 +11,7 @@ import {
   TextNode,
 } from 'lexical';
 import { throttle } from 'lodash-es';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   AiContextCacheNode,
   AiContextNodeConfig,
@@ -55,22 +55,23 @@ const RenderValuePlugin = (props: Props) => {
     'g',
   );
 
-  const getCursorSelection = useCallback(
-    throttle(() => {
-      const selection = window.getSelection();
-      if (selection?.rangeCount) {
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        const editorElement = editor.getRootElement();
-        const editorRect = editorElement?.getBoundingClientRect();
+  const getCursorSelection = useMemo(
+    () =>
+      throttle(() => {
+        const selection = window.getSelection();
+        if (selection?.rangeCount) {
+          const range = selection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          const editorElement = editor.getRootElement();
+          const editorRect = editorElement?.getBoundingClientRect();
 
-        if (editorRect) {
-          const x = rect.left - editorRect.left;
-          const y = rect.top - editorRect.top;
-          return { x, y };
+          if (editorRect) {
+            const x = rect.left - editorRect.left;
+            const y = rect.top - editorRect.top;
+            return { x, y };
+          }
         }
-      }
-    }, 300),
+      }, 300),
     [],
   );
 
