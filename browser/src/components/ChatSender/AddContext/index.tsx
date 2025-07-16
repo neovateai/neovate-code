@@ -39,6 +39,7 @@ const AddContext = () => {
   const {
     defaultSuggestions,
     handleSearch,
+    handleClearSearch,
     getOriginalContextByValue,
     loading: suggestionLoading,
   } = useSuggestion(contextsSelectedValues);
@@ -53,6 +54,9 @@ const AddContext = () => {
       loading={suggestionLoading}
       onSearch={(type, text) => {
         handleSearch(type as ContextType, text);
+      }}
+      onClearSearch={(type) => {
+        handleClearSearch(type as ContextType);
       }}
       onSelect={(type, itemValue) => {
         setOpenPopup(false);

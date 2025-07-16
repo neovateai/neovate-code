@@ -61,6 +61,7 @@ const ChatSender: React.FC = () => {
   const {
     defaultSuggestions,
     handleSearch,
+    handleClearSearch,
     getOriginalContextByValue,
     loading: suggestionLoading,
   } = useSuggestion();
@@ -137,6 +138,9 @@ const ChatSender: React.FC = () => {
           items={defaultSuggestions}
           onSearch={(type, text) => {
             return handleSearch(type as ContextType, text);
+          }}
+          onClearSearch={(type) => {
+            handleClearSearch(type as ContextType);
           }}
           onSelect={(type, itemValue) => {
             setOpenPopup(false);

@@ -17,21 +17,60 @@ export interface CategorizedCommands {
 
 export interface SlashCommandsResponse {
   total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
   commands: SlashCommand[];
   categorized: CategorizedCommands;
 }
 
 export interface SlashCommandSearchResponse {
   prefix: string;
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
   matches: SlashCommand[];
   count: number;
 }
 
+export interface SlashCommandsQuery {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+}
+
+export interface SlashCommandSearchQuery {
+  page?: number;
+  pageSize?: number;
+}
+
 // 获取所有slash commands
-export const getAllSlashCommands = (): Promise<
-  ApiResponse<SlashCommandsResponse>
-> => {
-  return request.get('/slash-commands');
+export const getAllSlashCommands = (
+  query?: SlashCommandsQuery,
+): Promise<ApiResponse<SlashCommandsResponse>> => {
+  const params = new URLSearchParams();
+
+  if (query?.page !== undefined) {
+    params.append('page', query.page.toString());
+  }
+  if (query?.pageSize !== undefined) {
+    params.append('pageSize', query.pageSize.toString());
+  }
+  if (query?.search !== undefined && query.search.trim()) {
+    params.append('search', query.search.trim());
+  }
+
+  const queryString = params.toString();
+  const url = queryString
+    ? `/slash-commands?${queryString}`
+    : '/slash-commands';
+
+  return request.get(url);
 };
 
 // 获取特定的slash command
@@ -44,6 +83,21 @@ export const getSlashCommand = (
 // 搜索slash commands
 export const searchSlashCommands = (
   prefix: string,
+  query?: SlashCommandSearchQuery,
 ): Promise<ApiResponse<SlashCommandSearchResponse>> => {
-  return request.get(`/slash-commands/search/${encodeURIComponent(prefix)}`);
+  const params = new URLSearchParams();
+
+  if (query?.page !== undefined) {
+    params.append('page', query.page.toString());
+  }
+  if (query?.pageSize !== undefined) {
+    params.append('pageSize', query.pageSize.toString());
+  }
+
+  const queryString = params.toString();
+  const url = queryString
+    ? `/slash-commands/search/${encodeURIComponent(prefix)}?${queryString}`
+    : `/slash-commands/search/${encodeURIComponent(prefix)}`;
+
+  return request.get(url);
 };

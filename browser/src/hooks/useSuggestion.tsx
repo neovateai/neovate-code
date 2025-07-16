@@ -24,7 +24,11 @@ import type { ContextItem, ContextStoreValue } from '@/types/context';
 export const useSuggestion = (selectedValues?: readonly string[]) => {
   const { fileList, loading } = useSnapshot(state);
   const { t } = useTranslation();
-  const { commands } = useSnapshot(slashCommandState);
+  const {
+    commands,
+    searchResults,
+    loading: slashCommandLoading,
+  } = useSnapshot(slashCommandState);
 
   useEffect(() => {
     actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
@@ -55,7 +59,10 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
   }, [fileList]);
 
   const slashCommandSuggestions = useMemo(() => {
-    return commands.map((command) => {
+    // 如果有搜索结果，使用搜索结果，否则使用全部命令
+    const targetCommands = searchResults.length > 0 ? searchResults : commands;
+
+    return targetCommands.map((command) => {
       return {
         label: command.name,
         value: `/${command.name}`,
@@ -63,7 +70,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
         extra: command.description,
       };
     });
-  }, [commands]);
+  }, [commands, searchResults, selectedValues]);
 
   const getOriginalFile = (value: string) => {
     return fileList.find((file) => file.path === value);
@@ -112,7 +119,12 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
         maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT,
         searchString: text,
       }),
-    [ContextType.SLASH_COMMAND]: (text) => slashCommandActions.search(text),
+    [ContextType.SLASH_COMMAND]: (text) => {
+      // 异步搜索，结果会更新到slashCommandState中
+      slashCommandActions.searchWithTextQuery(text, {
+        pageSize: CONTEXT_MAX_POPUP_ITEM_COUNT,
+      });
+    },
   };
 
   const handleSearch = debounce((type: ContextType, text: string) => {
@@ -120,6 +132,12 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
 
     targetFunction?.(text);
   }, 500);
+
+  const handleClearSearch = (type: ContextType) => {
+    if (type === ContextType.SLASH_COMMAND) {
+      slashCommandActions.clearSearch();
+    }
+  };
 
   const getOriginalContextByValue = (type: ContextType, value: string) => {
     const config = AI_CONTEXT_NODE_CONFIGS.find(
@@ -143,6 +161,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     getOriginalContextByValue,
     defaultSuggestions,
     handleSearch,
-    loading,
+    handleClearSearch,
+    loading: loading || slashCommandLoading,
   };
 };

@@ -24,8 +24,10 @@ interface Props {
   items: SuggestionItem[];
   virtual?: boolean;
   onSelect?: (firstKey: string, itemValue: string) => void;
-  /** 返回值会覆盖默认的二级列表 */
-  onSearch?: (firstKey: string, text: string) => SuggestionItem[] | void;
+  /** 搜索回调函数，不返回结果，搜索结果通过状态管理更新 */
+  onSearch?: (firstKey: string, text: string) => void;
+  /** 清理搜索状态的回调函数 */
+  onClearSearch?: (firstKey: string) => void;
   loading?: boolean;
 }
 
@@ -94,34 +96,30 @@ const SuggestionList = (props: Props) => {
     items,
     className,
     loading,
+    onClearSearch,
   } = props;
 
   const { t } = useTranslation();
   const { styles } = useStyles();
 
   const [selectedFirstKey, setSelectedFirstKey] = useState<string>();
-  const [searchResults, setSearchResults] = useState<SuggestionItem[]>();
   const inputRef = useRef<InputRef>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
   const firstLevelList = useMemo(() => items, [items]);
 
   const secondLevelList = useMemo(() => {
-    if (searchResults) {
-      return searchResults;
-    } else {
-      return (
-        items.find((item) => item.value === selectedFirstKey)?.children || []
-      );
-    }
-  }, [items, searchResults, selectedFirstKey]);
+    return (
+      items.find((item) => item.value === selectedFirstKey)?.children || []
+    );
+  }, [items, selectedFirstKey]);
 
   const clearSearch = (targetFirstKey: string) => {
     if (inputRef.current?.input) {
       inputRef.current.input.value = '';
     }
-    setSearchResults(undefined);
     onSearch?.(targetFirstKey, '');
+    onClearSearch?.(targetFirstKey);
   };
 
   const renderItemText = (
@@ -192,15 +190,8 @@ const SuggestionList = (props: Props) => {
             variant="underlined"
             autoFocus
             onChange={(e) => {
-              const searchResults = onSearch?.(
-                selectedFirstKey,
-                e.target.value,
-              );
-              if (searchResults) {
-                setSearchResults(searchResults);
-              } else {
-                setSearchResults(undefined);
-              }
+              const searchText = e.target.value;
+              onSearch?.(selectedFirstKey, searchText);
             }}
             placeholder={t('common.placeholder')}
           />
