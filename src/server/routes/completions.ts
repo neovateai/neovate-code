@@ -58,7 +58,7 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
         type: PluginHookType.Series,
       });
 
-      const prompt = lastMessage.planContent ?? lastMessage.content;
+      let prompt = lastMessage.planContent ?? lastMessage.content;
 
       opts.context.addHistory(prompt);
 
@@ -87,9 +87,9 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
         await pipeDataStreamToResponse(reply.raw, {
           async execute(dataStream) {
             // Check if this is a slash command
-            if (isSlashCommand(opts.prompt)) {
-              debug('Processing slash command:', opts.prompt);
-              const slashCommand = parseSlashCommand(opts.prompt);
+            if (isSlashCommand(prompt)) {
+              debug('Processing slash command:', prompt);
+              const slashCommand = parseSlashCommand(prompt);
               if (!slashCommand) {
                 dataStream.writeMessageAnnotation({
                   type: 'text',
@@ -137,9 +137,7 @@ const completionsRoute: FastifyPluginAsync<RouteCompletionsOpts> = async (
                     content: msg.content,
                   }));
 
-                  opts.prompt = promptInput
-                    .map((msg) => msg.content)
-                    .join('\n');
+                  prompt = promptInput.map((msg) => msg.content).join('\n');
                 }
               } catch (error) {
                 const errorMessage =
