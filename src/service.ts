@@ -12,6 +12,7 @@ import { createGlobTool } from './tools/glob';
 import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
+import { createTodoTool } from './tools/todo';
 import { createWriteTool } from './tools/write';
 import { formatToolUse } from './utils/formatToolUse';
 import { parseMessage } from './utils/parse-message';
@@ -119,6 +120,7 @@ export class Service {
 
   static async create(opts: CreateServiceOpts) {
     const context = opts.context;
+
     const readonlyTools = [
       createReadTool({ context }),
       enhanceTool(createLSTool({ context }), {
@@ -149,11 +151,21 @@ export class Service {
       }),
       createBashTool({ context }),
     ];
+
+    const { todoWriteTool, todoReadTool } = createTodoTool({ context });
+    const todoTools = context.config.todo ? [todoReadTool, todoWriteTool] : [];
+
     const mcpTools = context.mcpTools.map((tool) =>
       enhanceTool(tool, { category: 'network', riskLevel: 'medium' }),
     );
+
     const planTools = [...readonlyTools];
-    const codeTools = [...readonlyTools, ...writeTools, ...mcpTools];
+    const codeTools = [
+      ...readonlyTools,
+      ...writeTools,
+      ...todoTools,
+      ...mcpTools,
+    ];
     let tools = opts.agentType === 'code' ? codeTools : planTools;
     tools = await context.apply({
       hook: 'tool',
