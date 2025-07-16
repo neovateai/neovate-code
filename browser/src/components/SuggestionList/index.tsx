@@ -1,7 +1,13 @@
 import { LeftOutlined } from '@ant-design/icons';
 import { Button, Input, type InputRef, List, Popover } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import AutoTooltip from './AutoTooltip';
 
@@ -103,6 +109,7 @@ const SuggestionList = (props: Props) => {
 
   const [selectedFirstKey, setSelectedFirstKey] = useState<string>();
   const [searchResults, setSearchResults] = useState<SuggestionItem[]>();
+  const [offsetStyles, setOffsetStyles] = useState<React.CSSProperties>({});
   const inputRef = useRef<InputRef>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
@@ -235,6 +242,37 @@ const SuggestionList = (props: Props) => {
     };
   }, [open, onOpenChange]);
 
+  useLayoutEffect(() => {
+    const timer = setTimeout(() => {
+      if (popupOffset) {
+        if (open) {
+          const rect = popupRef.current?.getBoundingClientRect();
+
+          if (rect && rect.right + popupOffset.left > window.innerWidth) {
+            // 会超出右侧，重新计算left，让popup恰好贴在窗口右侧
+            setOffsetStyles({
+              position: 'relative',
+              top: popupOffset.top,
+              left: window.innerWidth - rect.right,
+            });
+          } else {
+            setOffsetStyles({
+              position: 'relative',
+              top: popupOffset.top,
+              left: popupOffset.left,
+            });
+          }
+        } else {
+          setOffsetStyles({});
+        }
+      } else {
+        setOffsetStyles({});
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [popupOffset, open]);
+
   return (
     <Popover
       className={className}
@@ -260,10 +298,8 @@ const SuggestionList = (props: Props) => {
       arrow={false}
       styles={{
         body: {
-          position: popupOffset ? 'relative' : undefined,
-          top: popupOffset?.top,
-          left: popupOffset?.left,
           padding: 0,
+          ...offsetStyles,
         },
       }}
     >

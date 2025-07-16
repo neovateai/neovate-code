@@ -10,7 +10,7 @@ import {
   type LexicalNode,
   TextNode,
 } from 'lexical';
-import { debounce } from 'lodash-es';
+import { throttle } from 'lodash-es';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import type {
   AiContextCacheNode,
@@ -56,20 +56,21 @@ const RenderValuePlugin = (props: Props) => {
   );
 
   const getCursorSelection = useCallback(
-    debounce(() => {
+    throttle(() => {
       const selection = window.getSelection();
       if (selection?.rangeCount) {
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
         const editorElement = editor.getRootElement();
         const editorRect = editorElement?.getBoundingClientRect();
+
         if (editorRect) {
           const x = rect.left - editorRect.left;
           const y = rect.top - editorRect.top;
           return { x, y };
         }
       }
-    }, 100),
+    }, 300),
     [],
   );
 
