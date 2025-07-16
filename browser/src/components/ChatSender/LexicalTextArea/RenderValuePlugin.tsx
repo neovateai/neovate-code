@@ -11,7 +11,7 @@ import {
   TextNode,
 } from 'lexical';
 import { throttle } from 'lodash-es';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   AiContextCacheNode,
   AiContextNodeConfig,
