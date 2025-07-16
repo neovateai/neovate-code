@@ -59,7 +59,6 @@ const Chat: React.FC = () => {
   const { messages, status } = useChatState();
   const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
   const { styles } = useStyle({ codeViewerVisible });
-  const { t } = useTranslation();
 
   const items = messages?.map((message, index) => {
     const isLastMessage = index === messages.length - 1;
@@ -96,22 +95,7 @@ const Chat: React.FC = () => {
       avatar: <AssistantAvatar />,
       variant: 'outlined',
       messageRender(message) {
-        const isLastMessage =
-          messages.length > 0 &&
-          message.id === messages[messages.length - 1].id;
-        return (
-          <div>
-            <AssistantMessage message={message} />
-            {isLastMessage && status === 'streaming' && (
-              <div className="flex items-center space-x-2 pt-2">
-                <Spin size="small" />
-                <span className="text-sm text-gray-500 pl-2 animate-pulse">
-                  {t('chat.thinking')}
-                </span>
-              </div>
-            )}
-          </div>
-        );
+        return <AssistantMessage message={message} />;
       },
       loadingRender() {
         return (

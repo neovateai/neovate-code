@@ -5,7 +5,7 @@ import {
   LikeOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
-import { Button, Flex, Typography } from 'antd';
+import { Button, Flex, Spin, Typography } from 'antd';
 import { last } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
@@ -65,7 +65,14 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
   }
 
   if (chatStatus !== 'ready') {
-    return null;
+    return (
+      <div className="flex items-center space-x-2 pt-2">
+        <Spin size="small" />
+        <span className="text-sm text-gray-500 pl-2 animate-pulse">
+          {t('chat.thinking')}
+        </span>
+      </div>
+    );
   }
 
   return (

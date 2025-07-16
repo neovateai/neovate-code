@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import remarkGfm from 'remark-gfm';
 import { useClipboard } from '@/hooks/useClipboard';
 
@@ -84,7 +84,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   return (
     <div>
       <ReactMarkdown
-        className="prose"
+        className="prose prose-pre:bg-none prose-pre:p-0"
         remarkPlugins={[remarkGfm]}
         components={components}
       >
