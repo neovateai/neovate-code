@@ -1,4 +1,5 @@
 import { Agent, AgentInputItem, Runner } from '@openai/agents';
+import createDebug from 'debug';
 import { Readable } from 'stream';
 import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
@@ -17,6 +18,8 @@ import { createWriteTool } from './tools/write';
 import { formatToolUse } from './utils/formatToolUse';
 import { parseMessage } from './utils/parse-message';
 import { randomUUID } from './utils/randomUUID';
+
+const debug = createDebug('takumi:service');
 
 export type AgentType = 'code' | 'plan';
 
@@ -277,11 +280,6 @@ export class Service {
       }
 
       const parsed = parseMessage(text);
-      if (parsed[0]?.type === 'text') {
-        stream.push(
-          JSON.stringify({ type: 'text', content: parsed[0].content }) + '\n',
-        );
-      }
 
       // hook query
       await this.context.apply({
@@ -298,34 +296,28 @@ export class Service {
       });
 
       const history: AgentInputItem[] = result.history;
-      const toolUse = parsed.find((item) => item.type === 'tool_use');
-      if (toolUse) {
-        const callId = randomUUID();
-        stream.push(
-          JSON.stringify({
-            type: 'tool_use',
-            name: toolUse.name,
-            params: toolUse.params,
-            callId,
-          }) + '\n',
-        );
-        // TODO: use formatToolUse instead of the following code
-        // history.push({
-        //   role: 'assistant',
-        //   type: 'message',
-        //   content: [
-        //     {
-        //       type: 'output_text',
-        //       text: JSON.stringify({
-        //         type: 'function_call',
-        //         name: toolUse.name,
-        //         arguments: JSON.stringify(toolUse.params),
-        //         callId,
-        //       }),
-        //     },
-        //   ],
-        //   status: 'in_progress',
-        // });
+
+      for (const item of parsed) {
+        switch (item.type) {
+          case 'text':
+            stream.push(
+              JSON.stringify({ type: 'text', content: item.content }) + '\n',
+            );
+            break;
+          case 'tool_use':
+            stream.push(
+              JSON.stringify({
+                type: 'tool_use',
+                name: item.name,
+                params: item.params,
+                callId: randomUUID(),
+              }) + '\n',
+            );
+            break;
+          default:
+            debug('unknown item type: %o', item);
+            break;
+        }
       }
       stream.push(null);
       this.history = history;

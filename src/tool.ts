@@ -1,5 +1,4 @@
 import { FunctionTool, Tool } from '@openai/agents';
-import { isClaude } from './utils/model';
 
 export type ApprovalContext = {
   toolName: string;
@@ -120,8 +119,7 @@ export class Tools {
     return 'write'; // Default to write for safety
   }
 
-  getToolsPrompt(model: string) {
-    const isClaudeModel = isClaude(model);
+  getToolsPrompt() {
     const availableTools = `
   ${Object.entries(this.tools)
     .map(([key, tool]) => {
@@ -141,12 +139,11 @@ export class Tools {
 
 You only have access to the tools provided below. You can only use one tool per message, and will receive the result of that tool use in the user's response. You use tools step-by-step to accomplish a given task, with each tool use informed by the result of the previous tool use.
 
+IMPORTANT: If multiple actions are needed, use one tool at a time per message to accomplish the task iteratively.
+
 ## Tool Use Formatting
 
-**CRITICAL: Always close all XML tags properly.**
-**CRITICAL: Ensure valid JSON in arguments with proper escaping.**
-
-Tool use is formatted using XML-style tags. The tool use is enclosed in <use_tool></use_tool> and Parameters are enclosed within <arguments></arguments> tags as valid JSON.
+Tool use is formatted using XML-style tags. The tool use is enclosed in <use_tool></use_tool> and each parameter is similarly enclosed within its own set of tags.
 
 Description: Tools have defined input schemas that specify required and optional parameters.
 
@@ -155,22 +152,30 @@ Parameters:
 - arguments: (required) A JSON object containing the tool's input parameters, following the tool's input schema, quotes within string must be properly escaped, ensure it's valid JSON
 
 Usage:
-<use_tool>
-  <tool_name>tool name here</tool_name>
-  <arguments>
-    {"param1": "value1","param2": "value2 \"escaped string\""}
-  </arguments>
-</use_tool>
+<example>
+  <use_tool>
+    <tool_name>tool name here</tool_name>
+    <arguments>
+      {"param1": "value1","param2": "value2 \"escaped string\""}
+    </arguments>
+  </use_tool>
+</example>
 
 When using tools, the tool use must be placed at the end of your response, top level, and not nested within other tags. Do not call tools when you don't have enough information.
 
 Always adhere to this format for the tool use to ensure proper parsing and execution.
 
-**Before submitting: Double-check that every < has a matching > and every <tag> has a </tag>**
-
 ## Available Tools
 
 ${availableTools}
+
+# Tool Use Guidelines
+
+1. Choose the most appropriate tool based on the task and the tool descriptions provided.
+2. If multiple actions are needed, use one tool at a time per message to accomplish the task iteratively.
+3. Formulate your tool use using the XML format specified for each tool.
+4. After each tool use, the user will respond with the result of that tool use.
+5. ALWAYS wait for user confirmation after each tool use before proceeding.
     `;
   }
 }
