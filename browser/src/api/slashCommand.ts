@@ -26,27 +26,10 @@ export interface SlashCommandsResponse {
   categorized: CategorizedCommands;
 }
 
-export interface SlashCommandSearchResponse {
-  prefix: string;
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-  matches: SlashCommand[];
-  count: number;
-}
-
 export interface SlashCommandsQuery {
   page?: number;
   pageSize?: number;
   search?: string;
-}
-
-export interface SlashCommandSearchQuery {
-  page?: number;
-  pageSize?: number;
 }
 
 // 获取所有slash commands
