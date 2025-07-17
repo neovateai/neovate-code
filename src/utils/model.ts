@@ -7,7 +7,8 @@ import { MODEL_ALIAS } from '../provider';
 const debug = createDebug('takumi:utils:model');
 
 const COMPRESSION_RESERVE_TOKENS = {
-  SMALL_CONTEXT: 27_000, // for 32K/64K models
+  MINI_CONTEXT: 10_000, // for 32K models
+  SMALL_CONTEXT: 27_000, // for 64K models
   MEDIUM_CONTEXT: 30_000, // for 128K models
   LARGE_CONTEXT: 40_000, // for 200K+ models
 } as const;
@@ -213,7 +214,9 @@ export class ModelInfo {
     const { contextLimit } = model;
     let maxAllowedSize = contextLimit;
     switch (contextLimit) {
-      case LIMIT_32K: // deepseek or kwaiplot
+      case LIMIT_32K: // kwaiplot
+        maxAllowedSize = contextLimit - COMPRESSION_RESERVE_TOKENS.MINI_CONTEXT;
+        break;
       case LIMIT_64K:
         maxAllowedSize =
           contextLimit - COMPRESSION_RESERVE_TOKENS.SMALL_CONTEXT;

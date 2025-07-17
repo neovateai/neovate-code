@@ -234,7 +234,7 @@ export class Service {
 
     let lastUsage = this.lastUsage;
 
-    // 出现了异常导致 lastUsage 未被赋值, 使用 lastUsageResponse 代替
+    // If there is an exception causing lastUsage to not be set, use lastUsageResponse instead
     if (
       lastUsage.totalTokens === 0 &&
       this.usage.lastUsageResponse &&
@@ -244,14 +244,16 @@ export class Service {
       debug('lastUsage is not set, use lastUsageResponse');
     }
 
-    // If the current used tokens have not exceeded 90% of the minimum available tokens, don't compress
-    if (lastUsage.totalTokens <= MIN_TOKEN_THRESHOLD) {
+    // If the current token usage is less than the minimum model token compression threshold, don't compress
+    if (lastUsage.totalTokens < MIN_TOKEN_THRESHOLD) {
+      debug("lastUsage.totalTokens < MIN_TOKEN_THRESHOLD, don't compress");
       return false;
     }
 
     // If model information is not available, don't compress
     const model = await this.context.modelInfo.get(this.modelId);
     if (!model) {
+      debug(`model ${this.modelId} is not available, don't compress`);
       return false;
     }
 

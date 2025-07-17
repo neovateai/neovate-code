@@ -19,6 +19,6 @@ export enum TOOL_NAME {
   BASH = 'bash',
 }
 
-// 32k
-export const MIN_TOKEN_THRESHOLD = 32_000 * 0.9;
+// Reserve 20% buffer for small models
+export const MIN_TOKEN_THRESHOLD = 32_000 * 0.8;
 export const OUTPUT_TOKEN_MAX = 32_000;
