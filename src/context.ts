@@ -26,6 +26,7 @@ import { SystemPromptBuilder } from './system-prompt-builder';
 import { aisdk } from './utils/ai-sdk';
 import { getEnv } from './utils/env';
 import { getGitStatus } from './utils/git';
+import { ModelInfo } from './utils/model';
 import { relativeToHome } from './utils/path';
 
 type Env = {
@@ -80,6 +81,7 @@ export class Context {
   paths: Paths;
   slashCommands: SlashCommandRegistry;
   env: Env;
+  modelInfo: ModelInfo;
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName || PRODUCT_NAME;
@@ -96,6 +98,7 @@ export class Context {
     this.paths = opts.paths;
     this.slashCommands = opts.slashCommands;
     this.env = opts.env;
+    this.modelInfo = new ModelInfo(this);
   }
 
   static async create(opts: CreateContextOpts) {

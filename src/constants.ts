@@ -18,3 +18,7 @@ export enum TOOL_NAME {
   TODO_READ = 'todoRead',
   BASH = 'bash',
 }
+
+// 32k
+export const MIN_TOKEN_THRESHOLD = 32_000 * 0.9;
+export const OUTPUT_TOKEN_MAX = 32_000;

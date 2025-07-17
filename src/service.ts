@@ -1,7 +1,9 @@
 import { Agent, AgentInputItem, Runner } from '@openai/agents';
+import createDebug from 'debug';
 import { Readable } from 'stream';
 import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
+import { MIN_TOKEN_THRESHOLD, OUTPUT_TOKEN_MAX } from './constants';
 import { Context } from './context';
 import { PluginHookType } from './plugin';
 import { Tools, enhanceTool } from './tool';
@@ -14,9 +16,13 @@ import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
 import { createTodoTool } from './tools/todo';
 import { createWriteTool } from './tools/write';
+import { generateSummaryMessage } from './utils/compact';
 import { formatToolUse } from './utils/formatToolUse';
 import { parseMessage } from './utils/parse-message';
 import { randomUUID } from './utils/randomUUID';
+import { Usage } from './utils/usage';
+
+const debug = createDebug('takumi:service');
 
 export type AgentType = 'code' | 'plan';
 
@@ -47,12 +53,19 @@ export class Service {
   history: AgentInputItem[] = [];
   id: string;
   private textBuffer: string = '';
+  private usage: Usage;
+  private lastUsage: Usage;
+  private modelId: string;
 
   constructor(opts: ServiceOpts) {
     this.opts = opts;
     this.id = opts.id || randomUUID();
     this.context = opts.context;
     this.tools = opts.tools;
+    this.modelId =
+      this.opts.agentType === 'code'
+        ? this.context.config.model
+        : this.context.config.planModel;
     this.agent =
       this.opts.agentType === 'code'
         ? createCodeAgent({
@@ -65,6 +78,8 @@ export class Service {
             tools: this.tools,
             context: this.context,
           });
+    this.usage = new Usage();
+    this.lastUsage = new Usage();
   }
 
   private hasIncompleteXmlTag(text: string): boolean {
@@ -184,10 +199,87 @@ export class Service {
     });
   }
 
+  public async compact() {
+    const { summary, usage } = await generateSummaryMessage({
+      history: this.history,
+      model: this.modelId,
+      language: this.context.config.language,
+      modelProvider: this.opts.context.getModelProvider(),
+    });
+
+    debug('compacted usage', usage);
+    this.lastUsage = new Usage(usage);
+
+    this.history.length = 0;
+    this.history.push({
+      role: 'user',
+      content: summary,
+    });
+
+    debug('compacted summary', summary);
+    console.log('compacted summary', summary);
+    return {
+      summary,
+      usage,
+    };
+  }
+
+  async #tryCompress() {
+    if (this.history.length === 0) {
+      return false;
+    }
+
+    // If the current used tokens have not exceeded 90% of the minimum available tokens, don't compress
+    if (this.lastUsage.totalTokens <= MIN_TOKEN_THRESHOLD) {
+      return false;
+    }
+
+    // If model information is not available, don't compress
+    const model = await this.context.modelInfo.get(this.modelId);
+    if (!model) {
+      return false;
+    }
+
+    const outputLimit =
+      Math.min(model.outputLimit, OUTPUT_TOKEN_MAX) || OUTPUT_TOKEN_MAX;
+    const compressThreshold = Math.max(
+      (model.contextLimit - outputLimit) * 0.9,
+      0,
+    );
+
+    debug(
+      `[compress] ${this.modelId}: outputLimit:${outputLimit} compressThreshold:${compressThreshold}`,
+    );
+
+    if (this.lastUsage.totalTokens > compressThreshold) {
+      debug('compressing...');
+      await this.compact();
+      return true;
+    }
+    return false;
+  }
+
   async run(opts: ServiceRunOpts): Promise<ServiceRunResult> {
     const stream = new Readable({
       read() {},
     });
+
+    try {
+      const compressed = await this.#tryCompress();
+      if (compressed) {
+        stream.emit(
+          JSON.stringify({
+            type: 'compressed',
+            content: 'Token limit exceeded, content has been compressed',
+          }),
+        );
+      }
+    } catch (error) {
+      debug('error #tryCompress', error);
+      stream.emit('error', error);
+      return { stream };
+    }
+
     const input = await (async () => {
       const systemPromptStrs = await this.context.buildSystemPrompts();
       const systemPrompts = systemPromptStrs.map((str) => ({
@@ -198,6 +290,7 @@ export class Service {
         this.history.filter((item) => (item as any).role !== 'system') || [];
       return [...systemPrompts, ...prevInput, ...opts.input];
     })();
+
     this.#processStream(input, stream, opts.thinking).catch((error) => {
       stream.emit('error', error);
     });
@@ -264,6 +357,26 @@ export class Service {
                 }) + '\n',
               );
               break;
+            case 'finish':
+              let usagePromptTokens = Number.isNaN(
+                chunk.data.event.usage?.promptTokens,
+              )
+                ? 0
+                : (chunk.data.event.usage?.promptTokens ?? 0);
+              let usageCompletionTokens = Number.isNaN(
+                chunk.data.event.usage?.completionTokens,
+              )
+                ? 0
+                : (chunk.data.event.usage?.completionTokens ?? 0);
+
+              this.lastUsage = new Usage({
+                inputTokens: usagePromptTokens,
+                outputTokens: usageCompletionTokens,
+                totalTokens: usagePromptTokens + usageCompletionTokens,
+                // 取 cache token 信息 后续用于 usage promptCacheHitTokens 等信息展示
+                usageDetail: chunk.data.event?.providerMetadata?.[this.modelId],
+              });
+              break;
             default:
               break;
           }
@@ -283,6 +396,10 @@ export class Service {
         );
       }
 
+      if (this.lastUsage.inputTokens > 0) {
+        this.usage.add(this.lastUsage);
+      }
+
       // hook query
       await this.context.apply({
         hook: 'query',
@@ -291,7 +408,7 @@ export class Service {
             text,
             parsed,
             input,
-            usage: result.state.toJSON().lastModelResponse?.usage,
+            usage: this.lastUsage.toJSON(),
           },
         ],
         type: PluginHookType.Series,
