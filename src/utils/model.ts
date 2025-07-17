@@ -180,13 +180,17 @@ export class ModelInfo {
       debug('use memory cache');
       return this.memoryCache;
     }
+
     const models = await this.context.apply({
       hook: 'modelsInfo',
       args: [],
-      type: PluginHookType.First,
+      memo: MODELS_INFO,
+      type: PluginHookType.SeriesMerge,
     });
-    this.memoryCache = models || MODELS_INFO;
-    return this.memoryCache as Record<string, Model>;
+
+    debug('modelsInfo', models);
+    this.memoryCache = models;
+    return models;
   }
 
   async get(modelId: string) {
