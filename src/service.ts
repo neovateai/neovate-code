@@ -304,6 +304,9 @@ export class Service {
     // Reset buffer at start of new stream
     this.textBuffer = '';
 
+    // Reset last usage at start of new stream
+    this.lastUsage.clear();
+
     try {
       const runner = new Runner({
         modelProvider: this.opts.context.getModelProvider(),
@@ -323,6 +326,7 @@ export class Service {
         stream: true,
       });
       let text = '';
+
       for await (const chunk of result.toStream()) {
         if (
           chunk.type === 'raw_model_stream_event' &&
