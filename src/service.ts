@@ -228,8 +228,20 @@ export class Service {
       return false;
     }
 
+    let lastUsage = this.lastUsage;
+
+    // 出现了异常导致 lastUsage 未被赋值, 使用 lastUsageResponse 代替
+    if (
+      lastUsage.totalTokens === 0 &&
+      this.usage.lastUsageResponse &&
+      this.usage.lastUsageResponse.totalTokens > 0
+    ) {
+      lastUsage = this.usage.lastUsageResponse;
+      debug('lastUsage is not set, use lastUsageResponse');
+    }
+
     // If the current used tokens have not exceeded 90% of the minimum available tokens, don't compress
-    if (this.lastUsage.totalTokens <= MIN_TOKEN_THRESHOLD) {
+    if (lastUsage.totalTokens <= MIN_TOKEN_THRESHOLD) {
       return false;
     }
 
@@ -250,7 +262,7 @@ export class Service {
       `[compress] ${this.modelId}: outputLimit:${outputLimit} compressThreshold:${compressThreshold}`,
     );
 
-    if (this.lastUsage.totalTokens > compressThreshold) {
+    if (lastUsage.totalTokens > compressThreshold) {
       debug('compressing...');
       await this.compact();
       return true;

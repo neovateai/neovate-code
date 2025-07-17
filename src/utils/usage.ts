@@ -29,6 +29,11 @@ export class Usage {
 
   public usageDetails: Array<Record<string, any>> = [];
 
+  /**
+   * The last model response usage.
+   */
+  public lastUsageResponse: Usage | null = null;
+
   constructor(input?: Partial<UsageData> & { requests?: number }) {
     if (typeof input === 'undefined') {
       this.requests = 0;
@@ -50,6 +55,7 @@ export class Usage {
     this.inputTokens += newUsage.inputTokens ?? 0;
     this.outputTokens += newUsage.outputTokens ?? 0;
     this.totalTokens += newUsage.totalTokens ?? 0;
+    this.lastUsageResponse = newUsage;
     if (newUsage.usageDetails) {
       this.usageDetails.push(...newUsage.usageDetails);
     }
@@ -61,6 +67,7 @@ export class Usage {
     this.outputTokens = 0;
     this.totalTokens = 0;
     this.usageDetails = [];
+    this.lastUsageResponse = null;
   }
 
   toJSON() {
