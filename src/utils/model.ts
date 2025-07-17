@@ -1,9 +1,19 @@
 import createDebug from 'debug';
+import { OUTPUT_TOKEN_MAX } from '../constants';
 import { Context } from '../context';
 import { PluginHookType } from '../plugin';
 import { MODEL_ALIAS } from '../provider';
 
 const debug = createDebug('takumi:utils:model');
+
+const COMPRESSION_RESERVE_TOKENS = {
+  SMALL_CONTEXT: 27_000, // for 32K/64K models
+  MEDIUM_CONTEXT: 30_000, // for 128K models
+  LARGE_CONTEXT: 40_000, // for 200K+ models
+} as const;
+
+const COMPRESSION_RATIO = 0.9;
+const COMPRESSION_RATIO_SMALL_CONTEXT = 0.8;
 
 /**
  * Check if the given model is a Claude model
@@ -197,5 +207,39 @@ export class ModelInfo {
     const model = MODEL_ALIAS[modelId];
     const models = await this.getModels();
     return models[model];
+  }
+
+  getCompressThreshold(model: Model) {
+    const { contextLimit } = model;
+    let maxAllowedSize = contextLimit;
+    switch (contextLimit) {
+      case LIMIT_32K: // deepseek or kwaiplot
+      case LIMIT_64K:
+        maxAllowedSize =
+          contextLimit - COMPRESSION_RESERVE_TOKENS.SMALL_CONTEXT;
+        break;
+      case LIMIT_128K: // most models
+        maxAllowedSize =
+          contextLimit - COMPRESSION_RESERVE_TOKENS.MEDIUM_CONTEXT;
+        break;
+      case LIMIT_200K: // claude / gemini
+        maxAllowedSize =
+          contextLimit - COMPRESSION_RESERVE_TOKENS.LARGE_CONTEXT;
+        break;
+      default:
+        maxAllowedSize = Math.max(
+          contextLimit - COMPRESSION_RESERVE_TOKENS.LARGE_CONTEXT,
+          contextLimit * COMPRESSION_RATIO_SMALL_CONTEXT,
+        );
+        break;
+    }
+    const outputLimit =
+      Math.min(model.outputLimit, OUTPUT_TOKEN_MAX) || OUTPUT_TOKEN_MAX;
+
+    // 0.9 的阈值在小模型不一定合理 所以这里引入 maxAllowedSize 作为兜底
+    return Math.max(
+      (model.contextLimit - outputLimit) * COMPRESSION_RATIO,
+      maxAllowedSize,
+    );
   }
 }

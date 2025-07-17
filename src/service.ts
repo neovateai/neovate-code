@@ -3,7 +3,7 @@ import createDebug from 'debug';
 import { Readable } from 'stream';
 import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
-import { MIN_TOKEN_THRESHOLD, OUTPUT_TOKEN_MAX } from './constants';
+import { MIN_TOKEN_THRESHOLD } from './constants';
 import { Context } from './context';
 import { PluginHookType } from './plugin';
 import { Tools, enhanceTool } from './tool';
@@ -255,19 +255,18 @@ export class Service {
       return false;
     }
 
-    const outputLimit =
-      Math.min(model.outputLimit, OUTPUT_TOKEN_MAX) || OUTPUT_TOKEN_MAX;
-    const compressThreshold = Math.max(
-      (model.contextLimit - outputLimit) * 0.9,
-      0,
-    );
+    const compressThreshold =
+      this.context.modelInfo.getCompressThreshold(model);
 
     debug(
-      `[compress] ${this.modelId}: outputLimit:${outputLimit} compressThreshold:${compressThreshold}`,
+      `[compress] ${this.modelId} compressThreshold:${compressThreshold} lastUsage:${lastUsage.totalTokens}`,
     );
 
-    if (lastUsage.totalTokens > compressThreshold) {
+    if (lastUsage.totalTokens >= compressThreshold) {
       debug('compressing...');
+      // TODO: Currently using direct compression. Future improvements could
+      // - Dynamic compression ratios (2:1 or 4:1)
+      // - Merging duplicate file reads
       await this.compact();
       return true;
     }
