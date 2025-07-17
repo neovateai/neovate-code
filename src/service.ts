@@ -224,6 +224,10 @@ export class Service {
   }
 
   async #tryCompress() {
+    if (!this.context.config.autoCompact) {
+      return false;
+    }
+
     if (this.history.length === 0) {
       return false;
     }
