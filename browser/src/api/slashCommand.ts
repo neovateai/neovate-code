@@ -17,18 +17,11 @@ export interface CategorizedCommands {
 
 export interface SlashCommandsResponse {
   total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
   commands: SlashCommand[];
   categorized: CategorizedCommands;
 }
 
 export interface SlashCommandsQuery {
-  page?: number;
-  pageSize?: number;
   search?: string;
 }
 
@@ -36,22 +29,6 @@ export interface SlashCommandsQuery {
 export const getSlashCommands = (
   query?: SlashCommandsQuery,
 ): Promise<ApiResponse<SlashCommandsResponse>> => {
-  const params = new URLSearchParams();
-
-  if (query?.page !== undefined) {
-    params.append('page', query.page.toString());
-  }
-  if (query?.pageSize !== undefined) {
-    params.append('pageSize', query.pageSize.toString());
-  }
-  if (query?.search !== undefined && query.search.trim()) {
-    params.append('search', query.search.trim());
-  }
-
-  const queryString = params.toString();
-  const url = queryString
-    ? `/slash-commands?${queryString}`
-    : '/slash-commands';
-
-  return request.get(url);
+  // 直接将 query 作为 params 传递给 request.get
+  return request.get('/slash-commands', { params: query });
 };

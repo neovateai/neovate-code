@@ -3,8 +3,6 @@ import { FastifyPluginAsync } from 'fastify';
 import { CreateServerOpts } from '../types';
 
 const SlashCommandsQuerySchema = Type.Object({
-  page: Type.Optional(Type.Number({ minimum: 1 })),
-  pageSize: Type.Optional(Type.Number({ minimum: 1, maximum: 100 })),
   search: Type.Optional(Type.String()),
 });
 
@@ -14,7 +12,7 @@ const slashCommandsRoute: FastifyPluginAsync<CreateServerOpts> = async (
 ) => {
   // 获取所有slash commands
   app.get<{
-    Querystring: { page?: number; pageSize?: number; search?: string };
+    Querystring: { search?: string };
   }>(
     '/slash-commands',
     {
@@ -24,7 +22,7 @@ const slashCommandsRoute: FastifyPluginAsync<CreateServerOpts> = async (
     },
     async (request, reply) => {
       try {
-        const { page = 1, pageSize = 50, search } = request.query;
+        const { search } = request.query;
 
         let commands = opts.context.slashCommands.getAll();
 
@@ -57,23 +55,14 @@ const slashCommandsRoute: FastifyPluginAsync<CreateServerOpts> = async (
           ),
         };
 
-        // 分页处理
-        const total = commands.length;
-        const totalPages = Math.ceil(total / pageSize);
-        const startIndex = (page - 1) * pageSize;
-        const endIndex = startIndex + pageSize;
-        const paginatedCommands = commands.slice(startIndex, endIndex);
+        // 限制返回前50条
+        const limitedCommands = commands.slice(0, 50);
 
         return {
           success: true,
           data: {
-            total,
-            page,
-            pageSize,
-            totalPages,
-            hasNextPage: page < totalPages,
-            hasPreviousPage: page > 1,
-            commands: paginatedCommands,
+            total: limitedCommands.length,
+            commands: limitedCommands,
             categorized: categorizedCommands,
           },
         };

@@ -28,10 +28,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
   const { t } = useTranslation();
   useEffect(() => {
     actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
-    slashCommandActions.loadCommands({
-      page: 1,
-      pageSize: CONTEXT_MAX_POPUP_ITEM_COUNT,
-    });
+    slashCommandActions.loadCommands();
   }, []);
 
   const fileSuggestions = useMemo(() => {
@@ -116,10 +113,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
         searchString: text,
       }),
     [ContextType.SLASH_COMMAND]: (text) =>
-      slashCommandActions.searchWithTextQuery(text, {
-        page: 1,
-        pageSize: CONTEXT_MAX_POPUP_ITEM_COUNT,
-      }),
+      slashCommandActions.searchWithTextQuery(text),
   };
 
   const handleSearch = debounce((type: ContextType, text: string) => {

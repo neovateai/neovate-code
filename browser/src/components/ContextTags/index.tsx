@@ -186,7 +186,9 @@ export const SlashCommandContextTag = ({
       {onClose && hover && (
         <CloseOutlined className={styles.icon} onClick={onClose} />
       )}
-      <EllipsisText maxWidth={240}>{displayText}</EllipsisText>
+      <EllipsisText maxWidth={240}>
+        {displayText.replace('/', '@')}
+      </EllipsisText>
     </Tag>
   );
 };

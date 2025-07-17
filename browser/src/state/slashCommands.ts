@@ -6,9 +6,6 @@ interface SlashCommandsState {
   commands: SlashCommand[];
   categorized: CategorizedCommands;
   total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
   loading: boolean;
   error: string | null;
 }
@@ -22,9 +19,6 @@ export const state = proxy<SlashCommandsState>({
     plugin: [],
   },
   total: 0,
-  page: 1,
-  pageSize: 50,
-  totalPages: 0,
   loading: false,
   error: null,
 });
@@ -79,15 +73,6 @@ export const actions = {
       console.error('Search slash commands failed:', error);
     } finally {
       state.loading = false;
-    }
-  },
-
-  loadPage: async (page: number) => {
-    if (page >= 1 && page <= state.totalPages && !state.loading) {
-      await actions.loadCommands({
-        page,
-        pageSize: state.pageSize,
-      });
     }
   },
 };
