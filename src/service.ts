@@ -225,6 +225,7 @@ export class Service {
 
   async #tryCompress() {
     if (!this.context.config.autoCompact) {
+      debug("autoCompact is disabled, don't compress");
       return false;
     }
 

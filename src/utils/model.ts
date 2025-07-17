@@ -182,6 +182,7 @@ const MODELS_INFO: Models = {
 export class ModelInfo {
   private context: Context;
   private memoryCache: Record<string, Model> | null = null;
+  private modelCache = new Map<string, Model | null>();
   constructor(context: Context) {
     this.context = context;
   }
@@ -205,9 +206,21 @@ export class ModelInfo {
   }
 
   async get(modelId: string) {
-    const model = MODEL_ALIAS[modelId];
+    if (this.modelCache.has(modelId)) {
+      return this.modelCache.get(modelId);
+    }
+
+    const model = MODEL_ALIAS[modelId] || modelId;
     const models = await this.getModels();
-    return models[model];
+    const modelInfo = models[model] || null;
+
+    if (!modelInfo) {
+      debug(`model ${modelId} is not available`);
+      return null;
+    }
+
+    this.modelCache.set(modelId, modelInfo);
+    return modelInfo;
   }
 
   getCompressThreshold(model: Model) {
