@@ -217,7 +217,6 @@ export class Service {
     });
 
     debug('compacted summary', summary);
-    console.log('compacted summary', summary);
     return {
       summary,
       usage,
