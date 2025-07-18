@@ -197,11 +197,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   // Placed after config so we can customize prompts based on the user's model
   opts.argvConfig = await apply({
     hook: 'argvConfig',
-    args: [
-      {
-        argvConfig: opts.argvConfig,
-      },
-    ],
+    args: [{}],
     memo: opts.argvConfig,
     type: PluginHookType.SeriesMerge,
   });
