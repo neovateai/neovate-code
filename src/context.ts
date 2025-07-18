@@ -56,9 +56,13 @@ type Paths = {
   projectConfigDir: string;
 };
 
+type ArgvConfig = Partial<Config> & {
+  appendSystemPrompt?: string;
+};
+
 export interface CreateContextOpts {
   cwd: string;
-  argvConfig?: Partial<Config>;
+  argvConfig?: ArgvConfig;
   productName?: string;
   version?: string;
   plugins?: Plugin[];
@@ -70,7 +74,7 @@ export class Context {
   productName: string;
   version: string;
   config: Config;
-  argvConfig: Partial<Config>;
+  argvConfig: ArgvConfig;
   pluginManager: PluginManager;
   mcpManager: MCPManager;
   mcpTools: Tool[];

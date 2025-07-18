@@ -37,7 +37,6 @@ export type Config = {
    * @default true
    */
   autoCompact?: boolean;
-  [key: string]: any;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
