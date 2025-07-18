@@ -82,6 +82,8 @@ export function createCodeAgent(options: {
       if (customSystemPrompt) {
         return `${customSystemPrompt}
 
+${options.context.argvConfig.appendSystemPrompt ? options.context.argvConfig.appendSystemPrompt : ''}
+
 ${options.tools.getToolsPrompt(options.model)}
 `.trim();
       }
@@ -139,6 +141,8 @@ When making changes to files, first understand the file's code conventions. Mimi
 - IMPORTANT: DO NOT ADD ***ANY*** COMMENTS unless asked
 
 ${getTasksPrompt(options.context)}
+
+${options.context.argvConfig.appendSystemPrompt ? options.context.argvConfig.appendSystemPrompt : ''}
 
 ${options.tools.getToolsPrompt(options.model)}
 `.trim();

@@ -56,9 +56,13 @@ type Paths = {
   projectConfigDir: string;
 };
 
+type ArgvConfig = Partial<Config> & {
+  appendSystemPrompt?: string;
+};
+
 export interface CreateContextOpts {
   cwd: string;
-  argvConfig?: Partial<Config>;
+  argvConfig?: ArgvConfig;
   productName?: string;
   version?: string;
   plugins?: Plugin[];
@@ -70,7 +74,7 @@ export class Context {
   productName: string;
   version: string;
   config: Config;
-  argvConfig: Partial<Config>;
+  argvConfig: ArgvConfig;
   pluginManager: PluginManager;
   mcpManager: MCPManager;
   mcpTools: Tool[];
@@ -174,6 +178,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   const apply = async (hookOpts: any) => {
     return pluginManager.apply({ ...hookOpts, pluginContext: tempContext });
   };
+
   const tempContext = {
     ...opts,
     pluginManager,
@@ -187,6 +192,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     memo: initialConfig,
     type: PluginHookType.SeriesMerge,
   });
+
   debug('resolvedConfig', resolvedConfig);
   tempContext.config = resolvedConfig;
   await apply({
@@ -194,6 +200,16 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     args: [{ resolvedConfig }],
     type: PluginHookType.Series,
   });
+
+  // Placed after config so we can customize prompts based on the user's model
+  opts.argvConfig = await apply({
+    hook: 'argvConfig',
+    args: [{}],
+    memo: opts.argvConfig,
+    type: PluginHookType.SeriesMerge,
+  });
+
+  debug('argvConfig', opts.argvConfig);
 
   const env = await getEnv();
   const generalInfo = await apply({

@@ -115,7 +115,13 @@ export async function runDefault(opts: RunCliOpts) {
       default: {},
       array: ['plugin'],
       boolean: ['json', 'help', 'quiet'],
-      string: ['model', 'smallModel', 'planModel', 'systemPrompt'],
+      string: [
+        'model',
+        'smallModel',
+        'planModel',
+        'systemPrompt',
+        'appendSystemPrompt',
+      ],
     });
     if (argv.help) {
       printHelp(opts.productName.toLowerCase());
@@ -142,6 +148,7 @@ export async function runDefault(opts: RunCliOpts) {
         quiet: argv.quiet,
         plugins: argv.plugin,
         systemPrompt: argv.systemPrompt,
+        appendSystemPrompt: argv.appendSystemPrompt,
       },
       plugins: opts.plugins,
       traceFile,
