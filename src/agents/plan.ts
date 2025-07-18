@@ -53,7 +53,7 @@ ${
     ? ''
     : `IMPORTANT: Answer in ${options.context.config.language}.`
 }
-${options.tools.getToolsPrompt(options.model)}
+${options.tools.getToolsPrompt()}
 `.trim();
     },
     model: options.model,
