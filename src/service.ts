@@ -223,6 +223,11 @@ export class Service {
     };
   }
 
+  public clear() {
+    this.history.length = 0;
+    this.lastUsage.clear();
+  }
+
   async #tryCompress() {
     if (!this.context.config.autoCompact) {
       debug("autoCompact is disabled, don't compress");

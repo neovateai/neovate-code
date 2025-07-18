@@ -194,13 +194,13 @@ export class ModelInfo {
     }
 
     const models = await this.context.apply({
-      hook: 'modelsInfo',
+      hook: 'modelInfo',
       args: [],
       memo: MODELS_INFO,
       type: PluginHookType.SeriesMerge,
     });
 
-    debug('modelsInfo', models);
+    debug('modelInfo', models);
     this.memoryCache = models;
     return models;
   }
