@@ -12,8 +12,8 @@ export const clearCommand: LocalJSXCommand = {
       const { services } = useAppContext();
 
       React.useEffect(() => {
-        services.service.history.length = 0;
-        services.planService.history.length = 0;
+        services.service.clear();
+        services.planService.clear();
         onDone('Messages cleared.');
       }, []);
 

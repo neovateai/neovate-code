@@ -6,7 +6,7 @@ Review staged changes and provide detailed code review suggestions.
    - Review the staged changes using `git diff --cached`
    - Examine modified files for code quality, security, and best practices
    - Check for potential bugs, performance issues, or breaking changes
-3. **Provide Feedback**:
+2. **Provide Feedback**:
    - Highlight positive aspects of the implementation
    - Identify areas for improvement with specific suggestions
    - Note any security concerns or potential vulnerabilities
