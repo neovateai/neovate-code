@@ -80,6 +80,8 @@ export function createCodeAgent(options: {
       if (customSystemPrompt) {
         return `${customSystemPrompt}
 
+${options.context.argvConfig.appendSystemPrompt ? options.context.argvConfig.appendSystemPrompt : ''}
+
 ${options.tools.getToolsPrompt(options.model)}
 `.trim();
       }

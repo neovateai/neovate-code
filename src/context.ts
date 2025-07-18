@@ -202,7 +202,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
         argvConfig: opts.argvConfig,
       },
     ],
-    memo: {},
+    memo: opts.argvConfig,
     type: PluginHookType.SeriesMerge,
   });
 
