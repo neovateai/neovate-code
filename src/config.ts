@@ -30,6 +30,13 @@ export type Config = {
   mcpServers: Record<string, McpServerConfig>;
   systemPrompt?: string;
   todo?: boolean;
+  /**
+   * Controls whether automatic conversation compression is enabled.
+   * When set to false, conversation history will accumulate and context limit will be exceeded.
+   *
+   * @default true
+   */
+  autoCompact?: boolean;
   [key: string]: any;
 };
 
@@ -41,6 +48,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   mcpServers: {},
   model: 'flash',
   todo: true,
+  autoCompact: true,
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -49,10 +57,11 @@ const VALID_CONFIG_KEYS = [
   'planModel',
   'systemPrompt',
   'todo',
+  'autoCompact',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = ['mcpServers'];
-const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo'];
+const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact'];
 
 export class ConfigManager {
   globalConfig: Partial<Config>;

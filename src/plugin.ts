@@ -176,4 +176,5 @@ export type Plugin = {
   ) => Promise<any> | any;
   command?: (this: PluginContext) => Promise<any[]> | any[];
   argvConfig?: (this: PluginContext) => Promise<any> | any;
+  modelInfo?: (this: PluginContext) => Promise<any> | any;
 };
