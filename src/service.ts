@@ -415,6 +415,20 @@ export class Service {
         this.textBuffer = '';
       }
 
+      // only accept one tool use per message
+      const parts = text.split('</use_tool>');
+      if (parts.length > 2 && result.history.length > 0) {
+        const lastEntry = result.history[result.history.length - 1];
+        if (
+          lastEntry.type === 'message' &&
+          lastEntry.content &&
+          lastEntry.content[0]
+        ) {
+          text = parts[0] + '</use_tool>';
+          (lastEntry.content[0] as any).text = text;
+        }
+      }
+
       const parsed = parseMessage(text);
       if (parsed[0]?.type === 'text') {
         stream.push(
