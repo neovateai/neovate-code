@@ -168,14 +168,6 @@ Always adhere to this format for the tool use to ensure proper parsing and execu
 ## Available Tools
 
 ${availableTools}
-
-# Tool Use Guidelines
-
-1. Choose the most appropriate tool based on the task and the tool descriptions provided.
-2. If multiple actions are needed, use one tool at a time per message to accomplish the task iteratively.
-3. Formulate your tool use using the XML format specified for each tool.
-4. After each tool use, the user will respond with the result of that tool use.
-5. ALWAYS wait for user confirmation after each tool use before proceeding.
     `;
   }
 }
