@@ -532,4 +532,8 @@ export class Service {
   ): Promise<boolean> {
     return await this.tools.shouldApprove(name, params, this.context);
   }
+
+  public getUsage() {
+    return this.usage;
+  }
 }

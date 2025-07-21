@@ -21,6 +21,21 @@ interface ChatInputProps {
   setSlashCommandJSX: (jsx: React.ReactNode) => void;
 }
 
+const TokenUsage = () => {
+  const { state, services } = useAppContext();
+  const isPlan = state.currentMode === 'plan';
+  const service = isPlan ? services.planService : services.service;
+  const usage = service.getUsage();
+  return (
+    <Box flexDirection="row" gap={1} paddingX={2}>
+      <Text color="gray">Tokens:</Text>
+      <Text color="gray">
+        {usage.inputTokens} input, {usage.outputTokens} output
+      </Text>
+    </Box>
+  );
+};
+
 export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const { state } = useAppContext();
   const {
@@ -312,6 +327,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
         )}
         {getModeDisplay() && <Text color="yellow">{getModeDisplay()}</Text>}
       </Box>
+      {ctrlCPressed && <TokenUsage />}
     </Box>
   );
 }
