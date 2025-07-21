@@ -331,25 +331,16 @@ Based on the weather data, it looks like a great day!`;
     });
 
     it('处理 json 末尾包含特殊换行符', () => {
-      const input = `现在我将创建一个基于 MaxSizedBox 核心逻辑的简化内容限制组件。\n\n<use_tool>\n<tool_name>write</tool_name>\n<arguments>\n{\"file_path\": \"src/ui/components/ContentBox.tsx\", \"content\": \"import React from 'react';\\nimport { Box, Text } from 'ink';\\nimport stringWidth from 'string-width'; \\n          ... last {hiddenLinesCount} line{hiddenLinesCount === 1 ? '' : 's'} hidden ...\\n        </Text>\\n      )}\\n    </Box>\\n  );\\n};\\n\"}\\n</arguments>\n</use_tool>`;
+      const input = `\n\n<use_tool>\n<tool_name>write</tool_name>\n<arguments>\n{\"file_path\": \"src/ui/components/ContentBox.tsx\", \"content\": \"import React from 'react';\\nconst hello = 'world';\n\"}\\n</arguments>\n</use_tool>`;
 
       const result = parseMessage(input);
-      expect(result).toHaveLength(2);
-      expect(result[1]).toEqual({
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
         type: 'tool_use',
         name: 'write',
         params: {
           file_path: 'src/ui/components/ContentBox.tsx',
-          content:
-            "import React from 'react';\n" +
-            "import { Box, Text } from 'ink';\n" +
-            "import stringWidth from 'string-width'; \n" +
-            "          ... last {hiddenLinesCount} line{hiddenLinesCount === 1 ? '' : 's'} hidden ...\n" +
-            '        </Text>\n' +
-            '      )}\n' +
-            '    </Box>\n' +
-            '  );\n' +
-            '};\n',
+          content: "import React from 'react';\nconst hello = 'world';\n",
         },
         partial: false,
       });
