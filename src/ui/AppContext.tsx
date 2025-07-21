@@ -93,7 +93,6 @@ export type AppAction =
   | { type: 'SET_PLAN_MODAL'; payload: { text: string } | null }
   | { type: 'SET_SLASH_COMMAND_JSX'; payload: ReactNode | null }
   | { type: 'TOGGLE_VERBOSE' }
-  | { type: 'SET_VERBOSE'; payload: boolean }
   | { type: 'ADD_HISTORY'; payload: string }
   | { type: 'CLEAR_HISTORY' }
   | { type: 'SET_HISTORY_INDEX'; payload: number | null }
@@ -161,9 +160,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'TOGGLE_VERBOSE':
       return { ...state, verbose: !state.verbose };
-
-    case 'SET_VERBOSE':
-      return { ...state, verbose: action.payload };
 
     case 'ADD_HISTORY':
       return { ...state, history: [...state.history, action.payload] };
