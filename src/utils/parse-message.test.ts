@@ -155,7 +155,8 @@ Let me also check the time.
         type: 'tool_use',
         name: 'weather',
         params: {
-          city: 'Tok',
+          _error: 'Incomplete JSON',
+          _raw: '{"city": "Tok',
         },
         partial: true,
       });

@@ -178,21 +178,15 @@ export function parseMessage(text: string): MessageContent[] {
       if (currentParamName === 'tool_name') {
         currentToolUse.name = value.trim();
       } else if (currentParamName === 'arguments') {
-        let jsonString = value.trim();
+        const jsonString = value.trim();
         try {
           // 再次尝试解析，很可能会失败，但以防万一是个完整的JSON
           currentToolUse.params = jsonString ? JSON.parse(jsonString) : {};
         } catch (e) {
-          try {
-            // 尝试用 jsonrepair 修复
-            const repairedJsonString = jsonrepair(jsonString);
-            currentToolUse.params = JSON.parse(repairedJsonString);
-          } catch (e) {
-            currentToolUse.params = {
-              _error: 'Incomplete JSON',
-              _raw: jsonString,
-            };
-          }
+          currentToolUse.params = {
+            _error: 'Incomplete JSON',
+            _raw: jsonString,
+          };
         }
       }
     }
