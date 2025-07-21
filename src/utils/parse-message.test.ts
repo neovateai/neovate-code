@@ -334,7 +334,6 @@ Based on the weather data, it looks like a great day!`;
 
       const result = parseMessage(input);
       expect(result).toHaveLength(2);
-      console.log(result);
       expect(result[1]).toEqual({
         type: 'tool_use',
         name: 'write',
