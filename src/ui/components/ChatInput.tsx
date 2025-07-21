@@ -11,6 +11,7 @@ import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import { useModeSwitch } from '../hooks/useModeSwitch';
 import TextInput from '../ink-text-input';
 import { getCurrentLineInfo } from '../utils/cursor-utils';
+import { refresh } from '../utils/refresh';
 import { sanitizeText } from '../utils/text-utils';
 import { AutoSuggestionDisplay } from './AutoSuggestionDisplay';
 
@@ -37,7 +38,7 @@ const TokenUsage = () => {
 };
 
 export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
-  const { state } = useAppContext();
+  const { state, dispatch } = useAppContext();
   const {
     processUserInput,
     chatInputUp,
@@ -113,6 +114,12 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   useInput((input, key) => {
     if (key.ctrl && input === 'c') {
       handleCtrlC();
+      return;
+    }
+    if (key.ctrl && input === 'r') {
+      refresh().catch(() => {});
+      // Handle Ctrl+R for toggling verbose mode
+      dispatch({ type: 'TOGGLE_VERBOSE' });
       return;
     }
     if (key.escape) {
@@ -264,6 +271,8 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
           <Text color="gray">
             <Spinner type="dots" /> {getCurrentStatusMessage()}
           </Text>
+        ) : state.verbose ? (
+          <Text color="gray">Verbose mode enabled · Ctrl+R to toggle</Text>
         ) : (
           <TextInput
             value={value}

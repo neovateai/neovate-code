@@ -1,4 +1,4 @@
-import { Box, Static } from 'ink';
+import { Box, Static, Text } from 'ink';
 import React, { useEffect, useRef } from 'react';
 import { useAppContext } from './AppContext';
 import { ApprovalModal } from './components/ApprovalModal';
@@ -41,7 +41,10 @@ export function App() {
 
   return (
     <Box flexDirection="column" key={forceRerender}>
-      <Static items={['header', ...state.messages] as any[]}>
+      <Static
+        items={['header', ...state.messages] as any[]}
+        key={`static-${state.verbose}`}
+      >
         {(item, index) => {
           if (item === 'header') {
             return (

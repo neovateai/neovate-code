@@ -3,16 +3,22 @@ import React from 'react';
 import { useMemo } from 'react';
 import { TOOL_NAME } from '../../constants';
 import type { TodoItem as TodoItemType } from '../../tools/todo';
-import { Message } from '../AppContext';
+import { Message, useAppContext } from '../AppContext';
 import { MESSAGE_ROLES, MESSAGE_TYPES, SPACING, UI_COLORS } from '../constants';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import Markdown from '../ink-markdown';
+import {
+  calculateTextTruncation,
+  useTerminalWidth,
+} from '../utils/text-truncation';
 import DiffRenderer, {
   type EditParams,
   type WriteParams,
 } from './DiffRenderer';
 
 export type { TodoItemType };
+
+const MAXIMUM_RESULT_DISPLAY_CHARACTERS = 50000;
 
 // TodoList
 const statusWeights = {
@@ -232,6 +238,8 @@ interface ToolMessageProps {
 
 export function ToolMessage({ message }: ToolMessageProps) {
   const { formatToolResult } = useMessageFormatting();
+  const { state } = useAppContext();
+  const terminalWidth = useTerminalWidth();
 
   const result = message.content.result;
   const toolName = message.content.toolName;
@@ -268,18 +276,44 @@ export function ToolMessage({ message }: ToolMessageProps) {
       <TodoList
         oldTodos={result.data.oldTodos}
         newTodos={result.data.newTodos}
-        verbose={false}
+        verbose={state.verbose}
       />
     );
   }
 
-  const text = toolName
+  let text = toolName
     ? formatToolResult(toolName, result)
     : JSON.stringify(result);
 
+  if (typeof text === 'string') {
+    if (text.length > MAXIMUM_RESULT_DISPLAY_CHARACTERS) {
+      // Truncate the result display to fit within the available width.
+      text = '...' + text.slice(-MAXIMUM_RESULT_DISPLAY_CHARACTERS);
+    }
+  }
+
+  const { shouldTruncate, truncatedText, extraLines } = calculateTextTruncation(
+    text,
+    {
+      terminalWidth,
+      maxLines: 1,
+    },
+  );
+
+  const displayText = useMemo(() => {
+    if (shouldTruncate && !state.verbose) {
+      if (extraLines > 0) {
+        return truncatedText + `... +${extraLines} lines (ctrl+r to see all)`;
+      } else {
+        return truncatedText + '... (ctrl+r to expand)';
+      }
+    }
+    return text;
+  }, [shouldTruncate, state.verbose, truncatedText, extraLines]);
+
   return (
     <Box flexDirection="column">
-      <Text color={UI_COLORS.TOOL_RESULT}>↳ {text}</Text>
+      <Text color={UI_COLORS.TOOL_RESULT}>↳ {displayText}</Text>
     </Box>
   );
 }
