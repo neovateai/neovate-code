@@ -152,14 +152,12 @@ Parameters:
 - arguments: (required) A JSON object containing the tool's input parameters, following the tool's input schema, quotes within string must be properly escaped, ensure it's valid JSON
 
 Usage:
-<example>
   <use_tool>
     <tool_name>tool name here</tool_name>
     <arguments>
       {"param1": "value1","param2": "value2 \"escaped string\""}
     </arguments>
   </use_tool>
-</example>
 
 When using tools, the tool use must be placed at the end of your response, top level, and not nested within other tags. Do not call tools when you don't have enough information.
 
