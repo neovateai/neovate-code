@@ -120,6 +120,9 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       refresh().catch(() => {});
       // Handle Ctrl+R for toggling verbose mode
       dispatch({ type: 'TOGGLE_VERBOSE' });
+      // Clear input value when toggling verbose mode
+      setValue('');
+      setCursorPosition(undefined);
       return;
     }
     if (key.escape) {
