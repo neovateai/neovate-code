@@ -22,6 +22,7 @@ interface RunCompletionOpts extends CreateServerOpts {
   planService: Service;
   mode: string;
   attachedContexts: ContextItem[];
+  abortSignal?: AbortSignal;
 }
 
 function isImageContext(context: ContextItem): context is ContextItem & {
@@ -115,7 +116,7 @@ function convertUserPromptToAgentInput(
 }
 
 export async function runCode(opts: RunCompletionOpts) {
-  const { dataStream, mode, attachedContexts } = opts;
+  const { dataStream, mode, attachedContexts, abortSignal } = opts;
   try {
     const input: AgentInputItem[] = convertUserPromptToAgentInput(
       opts.prompt,
@@ -133,6 +134,7 @@ export async function runCode(opts: RunCompletionOpts) {
       input,
       service,
       thinking: isReasoningModel(service.context.config.model),
+      onCancelCheck: () => abortSignal?.aborted ?? false,
       onTextDelta(text) {
         debug(`Text delta: ${text}`);
         dataStream.writeMessageAnnotation({

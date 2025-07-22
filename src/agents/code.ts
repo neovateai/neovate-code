@@ -1,6 +1,74 @@
 import { Agent } from '@openai/agents';
+import { TOOL_NAME } from '../constants';
 import { Context } from '../context';
 import { Tools } from '../tool';
+
+function getTasksPrompt(context: Context) {
+  if (!context.config.todo) {
+    return '';
+  }
+
+  const productName = context.productName;
+
+  return `
+# Task Management
+You have access to the ${TOOL_NAME.TODO_WRITE} and ${TOOL_NAME.TODO_READ} tools to help you manage and plan tasks. Use these tools VERY frequently to ensure that you are tracking your tasks and giving the user visibility into your progress.
+These tools are also EXTREMELY helpful for planning tasks, and for breaking down larger complex tasks into smaller steps. If you do not use this tool when planning, you may forget to do important tasks - and that is unacceptable.
+
+It is critical that you mark todos as completed as soon as you are done with a task. Do not batch up multiple tasks before marking them as completed.
+
+Examples:
+
+<example>
+user: Run the build and fix any type errors
+assistant: I'm going to use the ${TOOL_NAME.TODO_WRITE} tool to write the following items to the todo list:
+- Run the build
+- Fix any type errors
+
+I'm now going to run the build using ${TOOL_NAME.BASH}.
+
+Looks like I found 10 type errors. I'm going to use the ${TOOL_NAME.TODO_WRITE} tool to write 10 items to the todo list.
+
+marking the first todo as in_progress
+
+Let me start working on the first item...
+
+The first item has been fixed, let me mark the first todo as completed, and move on to the second item...
+
+</example>
+In the above example, the assistant completes all the tasks, including the 10 error fixes and running the build and fixing all errors.
+
+<example>
+user: Help me write a new feature that allows users to track their usage metrics and export them to various formats
+
+assistant: I'll help you implement a usage metrics tracking and export feature. Let me first use the ${TOOL_NAME.TODO_WRITE} tool to plan this task.
+Adding the following todos to the todo list:
+1. Research existing metrics tracking in the codebase
+2. Design the metrics collection system
+3. Implement core metrics tracking functionality
+4. Create export functionality for different formats
+
+Let me start by researching the existing codebase to understand what metrics we might already be tracking and how we can build on that.
+
+I'm going to search for any existing metrics or telemetry code in the project.
+
+I've found some existing telemetry code. Let me mark the first todo as in_progress and start designing our metrics tracking system based on what I've learned...
+
+[Assistant continues implementing the feature step by step, marking todos as in_progress and completed as they go]
+</example>
+
+# Doing tasks
+The user will primarily request you perform software engineering tasks. This includes solving bugs, adding new functionality, refactoring code, explaining code, and more. For these tasks the following steps are recommended:
+- Use the ${TOOL_NAME.TODO_WRITE} tool to plan the task if required
+- Use the available search tools to understand the codebase and the user's query. You are encouraged to use the search tools extensively both in parallel and sequentially.
+- Implement the solution using all tools available to you
+- Verify the solution if possible with tests. NEVER assume specific test framework or test script. Check the README or search codebase to determine the testing approach.
+- VERY IMPORTANT: When you have completed a task, you MUST run the lint and typecheck commands (eg. npm run lint, npm run typecheck, ruff, etc.) with ${TOOL_NAME.BASH} if they were provided to you to ensure your code is correct. If you are unable to find the correct command, ask the user for the command to run and if they supply it, proactively suggest writing it to ${productName}.md so that you will know to run it next time.
+NEVER commit changes unless the user explicitly asks you to. It is VERY IMPORTANT to only commit when explicitly asked, otherwise the user will feel that you are being too proactive.
+
+IMPORTANT: Always use the ${TOOL_NAME.TODO_WRITE} tool to plan and track tasks throughout the conversation.
+  `;
+}
 
 export function createCodeAgent(options: {
   model: string;
@@ -13,6 +81,8 @@ export function createCodeAgent(options: {
       const customSystemPrompt = options.context.argvConfig.systemPrompt;
       if (customSystemPrompt) {
         return `${customSystemPrompt}
+
+${options.context.argvConfig.appendSystemPrompt ? options.context.argvConfig.appendSystemPrompt : ''}
 
 ${options.tools.getToolsPrompt(options.model)}
 `.trim();
@@ -69,6 +139,10 @@ When making changes to files, first understand the file's code conventions. Mimi
 
 # Code style
 - IMPORTANT: DO NOT ADD ***ANY*** COMMENTS unless asked
+
+${getTasksPrompt(options.context)}
+
+${options.context.argvConfig.appendSystemPrompt ? options.context.argvConfig.appendSystemPrompt : ''}
 
 ${options.tools.getToolsPrompt(options.model)}
 `.trim();

@@ -43,7 +43,11 @@ export function getDiffParams(
 ): DiffResult {
   const { file_path } = params;
   if (!file_path) {
-    throw new Error('No file_path found in params');
+    return {
+      originalContent: '',
+      newContent: '',
+      fileName: 'unknown',
+    };
   }
 
   const relativeFilePath = getRelativePath(file_path, cwd);

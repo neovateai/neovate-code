@@ -335,9 +335,14 @@ const RenderValuePlugin = (props: Props) => {
       // composition 结束时手动同步内容
       editor.update(() => {
         const root = $getRoot();
-        const markedText = root.getTextContent().trimEnd();
+        const markedText = root.getTextContent();
         oldSelectionRef.current = $getSelection();
-        setInnerValue(markedText);
+        if (markedText.endsWith('\n')) {
+          setInnerValue(markedText);
+        } else {
+          // bugfix: 只有一个换行符lexical不会换行，因此需要在最后默认添加一个
+          setInnerValue(markedText + '\n');
+        }
       });
     };
 
@@ -355,11 +360,16 @@ const RenderValuePlugin = (props: Props) => {
       editorState.read(() => {
         if (isComposing) return;
         const root = $getRoot();
-        const markedText = root.getTextContent().trimEnd();
+        const markedText = root.getTextContent();
 
         oldSelectionRef.current = $getSelection();
 
-        setInnerValue(markedText);
+        if (markedText.endsWith('\n')) {
+          setInnerValue(markedText);
+        } else {
+          // bugfix: 只有一个换行符lexical不会换行，因此需要在最后默认添加一个
+          setInnerValue(markedText + '\n');
+        }
       });
     });
   }, [editor, isComposing]);

@@ -1,7 +1,9 @@
 import { Agent, AgentInputItem, Runner } from '@openai/agents';
+import createDebug from 'debug';
 import { Readable } from 'stream';
 import { createCodeAgent } from './agents/code';
 import { createPlanAgent } from './agents/plan';
+import { MIN_TOKEN_THRESHOLD } from './constants';
 import { Context } from './context';
 import { PluginHookType } from './plugin';
 import { Tools, enhanceTool } from './tool';
@@ -12,10 +14,15 @@ import { createGlobTool } from './tools/glob';
 import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
+import { createTodoTool } from './tools/todo';
 import { createWriteTool } from './tools/write';
+import { generateSummaryMessage } from './utils/compact';
 import { formatToolUse } from './utils/formatToolUse';
 import { parseMessage } from './utils/parse-message';
 import { randomUUID } from './utils/randomUUID';
+import { Usage } from './utils/usage';
+
+const debug = createDebug('takumi:service');
 
 export type AgentType = 'code' | 'plan';
 
@@ -45,12 +52,20 @@ export class Service {
   context: Context;
   history: AgentInputItem[] = [];
   id: string;
+  private textBuffer: string = '';
+  private usage: Usage;
+  private lastUsage: Usage;
+  private modelId: string;
 
   constructor(opts: ServiceOpts) {
     this.opts = opts;
     this.id = opts.id || randomUUID();
     this.context = opts.context;
     this.tools = opts.tools;
+    this.modelId =
+      this.opts.agentType === 'code'
+        ? this.context.config.model
+        : this.context.config.planModel;
     this.agent =
       this.opts.agentType === 'code'
         ? createCodeAgent({
@@ -63,10 +78,64 @@ export class Service {
             tools: this.tools,
             context: this.context,
           });
+    this.usage = new Usage();
+    this.lastUsage = new Usage();
+  }
+
+  private hasIncompleteXmlTag(text: string): boolean {
+    const incompletePatterns = [
+      '<use_tool',
+      '<tool_name',
+      '<arguments',
+      '</use_tool',
+      '</tool_name',
+      '</arguments',
+    ];
+
+    // More efficient approach: check all possible suffixes at once
+    for (const pattern of incompletePatterns) {
+      // Check for exact match first (most common case)
+      if (text.endsWith(pattern)) {
+        return true;
+      }
+
+      // Only check partial matches if text is shorter than pattern
+      if (text.length < pattern.length) {
+        if (
+          pattern.startsWith(text.slice(-Math.min(text.length, pattern.length)))
+        ) {
+          return true;
+        }
+      } else {
+        // For longer text, check if any suffix matches pattern prefix
+        const maxCheck = Math.min(pattern.length - 1, text.length);
+        for (let i = 1; i <= maxCheck; i++) {
+          if (text.slice(-i) === pattern.slice(0, i)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  private pushTextDelta(stream: Readable, content: string, text: string): void {
+    const parsed = parseMessage(text);
+    if (parsed[0]?.type === 'text' && parsed[0].partial) {
+      stream.push(
+        JSON.stringify({
+          type: 'text-delta',
+          content,
+          partial: true,
+        }) + '\n',
+      );
+    }
   }
 
   static async create(opts: CreateServiceOpts) {
     const context = opts.context;
+
     const readonlyTools = [
       createReadTool({ context }),
       enhanceTool(createLSTool({ context }), {
@@ -97,11 +166,21 @@ export class Service {
       }),
       createBashTool({ context }),
     ];
+
+    const { todoWriteTool, todoReadTool } = createTodoTool({ context });
+    const todoTools = context.config.todo ? [todoReadTool, todoWriteTool] : [];
+
     const mcpTools = context.mcpTools.map((tool) =>
       enhanceTool(tool, { category: 'network', riskLevel: 'medium' }),
     );
+
     const planTools = [...readonlyTools];
-    const codeTools = [...readonlyTools, ...writeTools, ...mcpTools];
+    const codeTools = [
+      ...readonlyTools,
+      ...writeTools,
+      ...todoTools,
+      ...mcpTools,
+    ];
     let tools = opts.agentType === 'code' ? codeTools : planTools;
     tools = await context.apply({
       hook: 'tool',
@@ -120,10 +199,109 @@ export class Service {
     });
   }
 
+  public async compact() {
+    const { summary, usage } = await generateSummaryMessage({
+      history: this.history,
+      model: this.modelId,
+      language: this.context.config.language,
+      modelProvider: this.opts.context.getModelProvider(),
+    });
+
+    debug('compacted usage', usage);
+    this.lastUsage = new Usage(usage);
+
+    this.history.length = 0;
+    this.history.push({
+      role: 'user',
+      content: summary,
+    });
+
+    debug('compacted summary', summary);
+    return {
+      summary,
+      usage,
+    };
+  }
+
+  public clear() {
+    this.history.length = 0;
+    this.lastUsage.clear();
+  }
+
+  async #tryCompress() {
+    if (!this.context.config.autoCompact) {
+      debug("autoCompact is disabled, don't compress");
+      return false;
+    }
+
+    if (this.history.length === 0) {
+      return false;
+    }
+
+    let lastUsage = this.lastUsage;
+
+    // If there is an exception causing lastUsage to not be set, use lastUsageResponse instead
+    if (
+      lastUsage.totalTokens === 0 &&
+      this.usage.lastUsageResponse &&
+      this.usage.lastUsageResponse.totalTokens > 0
+    ) {
+      lastUsage = this.usage.lastUsageResponse;
+      debug('lastUsage is not set, use lastUsageResponse');
+    }
+
+    // If the current token usage is less than the minimum model token compression threshold, don't compress
+    if (lastUsage.totalTokens < MIN_TOKEN_THRESHOLD) {
+      debug("lastUsage.totalTokens < MIN_TOKEN_THRESHOLD, don't compress");
+      return false;
+    }
+
+    // If model information is not available, don't compress
+    const model = await this.context.modelInfo.get(this.modelId);
+    if (!model) {
+      debug(`model ${this.modelId} is not available, don't compress`);
+      return false;
+    }
+
+    const compressThreshold =
+      this.context.modelInfo.getCompressThreshold(model);
+
+    debug(
+      `[compress] ${this.modelId} compressThreshold:${compressThreshold} lastUsage:${lastUsage.totalTokens}`,
+    );
+
+    if (lastUsage.totalTokens >= compressThreshold) {
+      debug('compressing...');
+      // TODO: Currently using direct compression. Future improvements could
+      // - Dynamic compression ratios (2:1 or 4:1)
+      // - Merging duplicate file reads
+      await this.compact();
+      return true;
+    }
+    return false;
+  }
+
   async run(opts: ServiceRunOpts): Promise<ServiceRunResult> {
     const stream = new Readable({
       read() {},
     });
+
+    try {
+      const compressed = await this.#tryCompress();
+      if (compressed) {
+        stream.emit(
+          JSON.stringify({
+            type: 'compressed',
+            content: 'Token limit exceeded, content has been compressed',
+          }),
+        );
+      }
+    } catch (error) {
+      debug('error #tryCompress', error);
+      stream.emit('error', error);
+      return { stream };
+    }
+
     const input = await (async () => {
       const systemPromptStrs = await this.context.buildSystemPrompts();
       const systemPrompts = systemPromptStrs.map((str) => ({
@@ -134,6 +312,7 @@ export class Service {
         this.history.filter((item) => (item as any).role !== 'system') || [];
       return [...systemPrompts, ...prevInput, ...opts.input];
     })();
+
     this.#processStream(input, stream, opts.thinking).catch((error) => {
       stream.emit('error', error);
     });
@@ -145,6 +324,12 @@ export class Service {
     stream: Readable,
     thinking?: boolean,
   ) {
+    // Reset buffer at start of new stream
+    this.textBuffer = '';
+
+    // Reset last usage at start of new stream
+    this.lastUsage.clear();
+
     try {
       const runner = new Runner({
         modelProvider: this.opts.context.getModelProvider(),
@@ -164,6 +349,7 @@ export class Service {
         stream: true,
       });
       let text = '';
+
       for await (const chunk of result.toStream()) {
         if (
           chunk.type === 'raw_model_stream_event' &&
@@ -172,16 +358,21 @@ export class Service {
           switch (chunk.data.event.type) {
             case 'text-delta':
               const textDelta = chunk.data.event.textDelta;
+              this.textBuffer += textDelta;
               text += textDelta;
-              const parsed = parseMessage(text);
-              if (parsed[0]?.type === 'text' && parsed[0].partial) {
-                stream.push(
-                  JSON.stringify({
-                    type: 'text-delta',
-                    content: textDelta,
-                    partial: true,
-                  }) + '\n',
-                );
+
+              // Check if the current text has incomplete XML tags
+              if (this.hasIncompleteXmlTag(text)) {
+                // Buffer the text and continue without parsing
+                continue;
+              }
+
+              // If we have buffered content, process it
+              if (this.textBuffer) {
+                this.pushTextDelta(stream, this.textBuffer, text);
+                this.textBuffer = '';
+              } else {
+                this.pushTextDelta(stream, textDelta, text);
               }
               break;
             case 'reasoning':
@@ -192,16 +383,61 @@ export class Service {
                 }) + '\n',
               );
               break;
+            case 'finish':
+              let usagePromptTokens = Number.isNaN(
+                chunk.data.event.usage?.promptTokens,
+              )
+                ? 0
+                : (chunk.data.event.usage?.promptTokens ?? 0);
+              let usageCompletionTokens = Number.isNaN(
+                chunk.data.event.usage?.completionTokens,
+              )
+                ? 0
+                : (chunk.data.event.usage?.completionTokens ?? 0);
+
+              this.lastUsage = new Usage({
+                inputTokens: usagePromptTokens,
+                outputTokens: usageCompletionTokens,
+                totalTokens: usagePromptTokens + usageCompletionTokens,
+                // 取 cache token 信息 后续用于 usage promptCacheHitTokens 等信息展示
+                usageDetail: chunk.data.event?.providerMetadata?.[this.modelId],
+              });
+              break;
             default:
               break;
           }
         }
       }
+
+      // Handle any remaining buffered content
+      if (this.textBuffer) {
+        this.pushTextDelta(stream, this.textBuffer, text);
+        this.textBuffer = '';
+      }
+
+      // only accept one tool use per message
+      const parts = text.split('</use_tool>');
+      if (parts.length > 2 && result.history.length > 0) {
+        const lastEntry = result.history[result.history.length - 1];
+        if (
+          lastEntry.type === 'message' &&
+          lastEntry.content &&
+          lastEntry.content[0]
+        ) {
+          text = parts[0] + '</use_tool>';
+          (lastEntry.content[0] as any).text = text;
+        }
+      }
+
       const parsed = parseMessage(text);
       if (parsed[0]?.type === 'text') {
         stream.push(
           JSON.stringify({ type: 'text', content: parsed[0].content }) + '\n',
         );
+      }
+
+      if (this.lastUsage.inputTokens > 0) {
+        this.usage.add(this.lastUsage);
       }
 
       // hook query
@@ -212,7 +448,7 @@ export class Service {
             text,
             parsed,
             input,
-            usage: result.state.toJSON().lastModelResponse?.usage,
+            usage: this.lastUsage.toJSON(),
           },
         ],
         type: PluginHookType.Series,
@@ -295,5 +531,9 @@ export class Service {
     params: Record<string, any>,
   ): Promise<boolean> {
     return await this.tools.shouldApprove(name, params, this.context);
+  }
+
+  public getUsage() {
+    return this.usage;
   }
 }

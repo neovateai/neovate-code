@@ -18,7 +18,7 @@ export default function BashRender({ message }: { message?: ToolMessage }) {
 
   const command = (args?.command as string) || '';
   const { stdout, stderr } = (result?.data || {}) as IBashToolResult;
-  const output = (result as { output?: string })?.output;
+  const output = (result as { stdout?: string })?.stdout;
 
   const renderContent = () => {
     if (output) {

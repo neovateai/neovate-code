@@ -67,7 +67,14 @@
     "selection": "Selection",
     "terminal": "Terminal",
     "git": "Git",
-    "usedReferences": "Used {{count}} references"
+    "usedReferences": "Used {{count}} references",
+    "unsupportedType": "Unsupported file type: {{type}}",
+    "attachments": {
+      "uploadError": "There's some error happened when uploading",
+      "fileSizeLimited": "File size should be smaller than {{limit}}",
+      "dragFileHere": "Drag file here to upload",
+      "supportTypeDesc": "Support pictures and text files"
+    }
   },
   "menu": {
     "rename": "Rename",

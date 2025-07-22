@@ -10,8 +10,9 @@ export function createEditTool(opts: { context: Context }) {
     name: 'edit',
     description: `
 Edit files in the local filesystem.
-Remembers:
-- Use the read tool to understand the file's contents before using this tool.
+Usage:
+- You must use your read tool at least once in the conversation before editing. This tool will error if you attempt an edit without reading the file.
+- When editing text from Read tool output, ensure you preserve the exact indentation (tabs/spaces) as it appears AFTER the line number prefix. The line number prefix format is: spaces + line number + tab. Everything after that tab is the actual file content to match. Never include any part of the line number prefix in the old_string or new_string.
 - For moving or renaming files, you should generally use the Bash tool with the 'mv' command instead.
 - For larger edits, use the Write tool to overwrite files.
 - For file creation, use the Write tool.

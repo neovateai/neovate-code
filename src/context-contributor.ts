@@ -2,6 +2,7 @@ import createDebug from 'debug';
 import fs from 'fs';
 import path from 'path';
 import { getCodebaseContext } from './codebase';
+import { IMAGE_EXTENSIONS } from './constants';
 import { Context } from './context';
 import { createLSTool } from './tools/ls';
 
@@ -179,6 +180,7 @@ export class FilesContributor implements ContextContributor {
 
   renderFilesToXml(files: string[], context: Context): string {
     const fileContents = files
+      .filter((fc) => !IMAGE_EXTENSIONS.has(path.extname(fc).toLowerCase()))
       .map(
         (fc) => `
       <file>

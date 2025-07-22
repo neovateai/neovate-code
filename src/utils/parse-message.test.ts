@@ -319,7 +319,6 @@ Based on the weather data, it looks like a great day!`;
 {"file_path": "src/ui/constants.ts", "old_string": "1"}}
 </arguments>
 </use_tool>`;
-
       const result = parseMessage(input);
 
       expect(result).toHaveLength(1);
@@ -327,6 +326,22 @@ Based on the weather data, it looks like a great day!`;
         type: 'tool_use',
         name: 'edit',
         params: { file_path: 'src/ui/constants.ts', old_string: '1' },
+        partial: false,
+      });
+    });
+
+    it('处理 json 末尾包含特殊换行符', () => {
+      const input = `\n\n<use_tool>\n<tool_name>write</tool_name>\n<arguments>\n{\"file_path\": \"src/ui/components/ContentBox.tsx\", \"content\": \"import React from 'react';\\nconst hello = 'world';\n\"}\\n</arguments>\n</use_tool>`;
+
+      const result = parseMessage(input);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        type: 'tool_use',
+        name: 'write',
+        params: {
+          file_path: 'src/ui/components/ContentBox.tsx',
+          content: "import React from 'react';\nconst hello = 'world';\n",
+        },
         partial: false,
       });
     });

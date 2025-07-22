@@ -1,57 +1,113 @@
 import { CloudUploadOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { Attachments } from '@ant-design/x';
 import { Button, message } from 'antd';
+import type { RcFile } from 'antd/es/upload';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   CONTEXT_AVAILABLE_FILE_TYPES,
   CONTEXT_MAX_FILE_SIZE,
   ContextType,
 } from '@/constants/context';
-import { actions } from '@/state/context';
+import * as context from '@/state/context';
 
 const SenderAttachments = () => {
   // const { attachments } = useSnapshot(state);
 
-  return (
-    <Attachments
-      // action="/api/upload"
+  const availableImageTypes = useMemo(
+    () =>
+      CONTEXT_AVAILABLE_FILE_TYPES.filter((type) =>
+        type.mime.startsWith('image/'),
+      ),
+    [],
+  );
 
-      accept={CONTEXT_AVAILABLE_FILE_TYPES.map((type) => type.extName).join(
-        ',',
-      )}
-      beforeUpload={(file) => {
-        if (file.size > CONTEXT_MAX_FILE_SIZE) {
-          message.error(
-            `文件大小超出${CONTEXT_MAX_FILE_SIZE / 1024 / 1024}MB限制`,
-          );
-          return false;
-        }
+  const { t } = useTranslation();
 
-        // TODO Check
-        return false;
-      }}
-      onChange={({ file }) => {
-        // TODO server is not ready, so the file status won't be [done]
-        if (file.status === 'done') {
-          actions.addContext({
-            value: file.uid,
+  const [messageApi, contextHolder] = message.useMessage();
+
+  const handleBeforeUpload = (file: RcFile) => {
+    if (availableImageTypes.some((type) => file.name.endsWith(type.extName))) {
+      // upload image file
+      // automatically transform file to image context
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64String = reader.result?.toString();
+
+        if (base64String) {
+          context.actions.addContext({
+            type: ContextType.IMAGE,
+            value: `@Image:[${Date.now()}]`,
             displayText: file.name,
-            type: ContextType.ATTACHMENT,
-            context: file,
+            context: {
+              src: base64String,
+              mime: file.type,
+            },
           });
         }
-      }}
-      getDropContainer={() => document.body}
-      placeholder={{
-        icon: <CloudUploadOutlined />,
-        title: '拖拽文件到这里上传',
-        description: '支持上传图片、文本文件',
-      }}
-    >
-      <Button
-        type="text"
-        icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
-      />
-    </Attachments>
+      };
+
+      reader.onerror = (e) => {
+        messageApi.error(t('context.attachments.uploadError'));
+        console.error(e);
+      };
+
+      reader.readAsDataURL(file);
+
+      return false;
+    }
+
+    if (file.size > CONTEXT_MAX_FILE_SIZE) {
+      messageApi.error(
+        t('context.attachments.fileSizeLimited', {
+          limit: `${CONTEXT_MAX_FILE_SIZE / 1024 / 1024}MB`,
+        }),
+      );
+      return false;
+    }
+
+    messageApi.error(
+      t('context.unsupportedType', {
+        type: file.type || file.name.split('.').pop(),
+      }),
+    );
+
+    return false;
+  };
+
+  return (
+    <>
+      <Attachments
+        // action="/api/upload"
+        accept={CONTEXT_AVAILABLE_FILE_TYPES.map((type) => type.extName).join(
+          ',',
+        )}
+        beforeUpload={handleBeforeUpload}
+        onChange={({ file }) => {
+          // TODO server is not ready, so the file status won't be [done]
+          if (file.status === 'done') {
+            context.actions.addContext({
+              value: file.uid,
+              displayText: file.name,
+              type: ContextType.ATTACHMENT,
+              context: file,
+            });
+          }
+        }}
+        getDropContainer={() => document.body}
+        placeholder={{
+          icon: <CloudUploadOutlined />,
+          title: t('context.attachments.dragFileHere'),
+          description: t('context.attachments.supportTypeDesc'),
+        }}
+      >
+        <Button
+          type="text"
+          icon={<PaperClipOutlined style={{ fontSize: 18 }} />}
+        />
+      </Attachments>
+      {contextHolder}
+    </>
   );
 };
 

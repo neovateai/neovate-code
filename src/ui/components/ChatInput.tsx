@@ -21,6 +21,21 @@ interface ChatInputProps {
   setSlashCommandJSX: (jsx: React.ReactNode) => void;
 }
 
+const TokenUsage = () => {
+  const { state, services } = useAppContext();
+  const isPlan = state.currentMode === 'plan';
+  const service = isPlan ? services.planService : services.service;
+  const usage = service.getUsage();
+  return (
+    <Box flexDirection="row" gap={1} paddingX={2}>
+      <Text color="gray">Tokens:</Text>
+      <Text color="gray">
+        {usage.inputTokens} input, {usage.outputTokens} output
+      </Text>
+    </Box>
+  );
+};
+
 export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const { state } = useAppContext();
   const {
@@ -108,7 +123,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
     }
     if (key.upArrow) {
       if (isVisible) {
-        navigatePrevious(); // 切换suggestion
+        navigatePrevious(); // Navigate suggestions
       } else {
         const lines = value.split('\n');
         const currentCursorPos = cursorPosition ?? value.length;
@@ -256,14 +271,21 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
               const val = sanitizeText(input);
               chatInputChange(val);
               setValue(val);
-              setCursorPosition(undefined); // 清除强制光标位置
-              resetVisible(); // 重置建议面板显示状态
+              // Clear cursor position only when value actually changes
+              if (val !== value) {
+                setCursorPosition(undefined);
+              }
+              resetVisible();
             }}
             onSubmit={isVisible ? () => {} : handleSubmit}
             onTabPress={handleTabPress}
             cursorPosition={cursorPosition}
             maxLines={DEFAULT_MAX_LINES}
-            onCursorPositionChange={setCursorPosition}
+            onCursorPositionChange={(pos) => {
+              if (pos !== cursorPosition) {
+                setCursorPosition(pos);
+              }
+            }}
           />
         )}
       </Box>
@@ -305,6 +327,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
         )}
         {getModeDisplay() && <Text color="yellow">{getModeDisplay()}</Text>}
       </Box>
+      {ctrlCPressed && <TokenUsage />}
     </Box>
   );
 }

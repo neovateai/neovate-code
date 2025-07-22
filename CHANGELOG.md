@@ -1,3 +1,29 @@
+## 0.5.1
+
+`2025-07-21`
+
+- fix: limit tool use to one and improve diff param handling by [@sorrycc](https://github.com/sorrycc)
+- feat: add Groq API model support by [@sorrycc](https://github.com/sorrycc)
+- feat: add appendSystemPrompt option to argv configuration by [@阿平](https://github.com/阿平) in [#123](https://github.com/umijs/takumi/pull/123)
+- feat: update code agent prompts and simplify todo tool descriptions by [@阿平](https://github.com/阿平) in [#122](https://github.com/umijs/takumi/pull/122)
+- feat: add automatic conversation compression based on token limits by [@阿平](https://github.com/阿平) in [#124](https://github.com/umijs/takumi/pull/124)
+
+
+## 0.5.0
+
+`2025-07-16`
+
+- feat: add todo tool for task management by [@阿平](https://github.com/阿平) in [#118](https://github.com/umijs/takumi/pull/118)
+- feat(broswer): Allow drag pictures to context by [@Z-Bokle](https://github.com/Z-Bokle) in [#116](https://github.com/umijs/takumi/pull/116)
+- fix(browser): duplicate write while editing by [@thy](https://github.com/thy) in [#120](https://github.com/umijs/takumi/pull/120)
+- feat(browser): optimize cancel request [AI] by [@ZhangBo](https://github.com/ZhangBo) in [#111](https://github.com/umijs/takumi/pull/111)
+- feat: add review staged docs and handle partial XML in streams [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance file path resolution logic to recognize 'at' symbol for plugins by [@sorrycc](https://github.com/sorrycc)
+- feat: add image file support to read and mcp tool support image by [@阿平](https://github.com/阿平) in [#115](https://github.com/umijs/takumi/pull/115)
+- fix: resolve race conditions in text input cursor handling by [@阿平](https://github.com/阿平) in [#96](https://github.com/umijs/takumi/pull/96)
+- feat: add Moonshot model integration support by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.4.0
 
 `2025-07-14`
