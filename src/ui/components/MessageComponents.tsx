@@ -281,35 +281,37 @@ export function ToolMessage({ message }: ToolMessageProps) {
     );
   }
 
-  let text = toolName
-    ? formatToolResult(toolName, result)
-    : JSON.stringify(result);
+  let text = toolName ? formatToolResult(toolName, result) : null;
+  if (toolName && text) {
+    return (
+      <Box flexDirection="column">
+        <Text color={UI_COLORS.TOOL_RESULT}>↳ {text}</Text>
+      </Box>
+    );
+  }
+
+  text = JSON.stringify(result);
 
   if (typeof text === 'string') {
     if (text.length > MAXIMUM_RESULT_DISPLAY_CHARACTERS) {
       // Truncate the result display to fit within the available width.
-      text = '...' + text.slice(-MAXIMUM_RESULT_DISPLAY_CHARACTERS);
+      text = text.slice(-MAXIMUM_RESULT_DISPLAY_CHARACTERS) + '...';
     }
   }
 
-  const { shouldTruncate, truncatedText, extraLines } = calculateTextTruncation(
-    text,
-    {
-      terminalWidth,
-      maxLines: 1,
-    },
-  );
+  const { totalLines, content } = useMemo(() => {
+    return calculateTextTruncation(
+      text,
+      terminalWidth - SPACING.MESSAGE_MARGIN_LEFT,
+    );
+  }, [text, terminalWidth]);
 
   const displayText = useMemo(() => {
-    if (shouldTruncate && !state.verbose) {
-      if (extraLines > 0) {
-        return truncatedText + `... +${extraLines} lines (ctrl+r to see all)`;
-      } else {
-        return truncatedText + '... (ctrl+r to expand)';
-      }
+    if (totalLines > 1 && !state.verbose) {
+      return `${toolName} execution completed (${totalLines} lines of output - press ctrl+r to view details)`;
     }
     return text;
-  }, [shouldTruncate, state.verbose, truncatedText, extraLines]);
+  }, [totalLines, state.verbose, text, toolName]);
 
   return (
     <Box flexDirection="column">

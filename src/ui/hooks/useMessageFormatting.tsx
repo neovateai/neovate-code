@@ -19,7 +19,7 @@ export function useMessageFormatting() {
     return extractor ? extractor(args, services.context.cwd) : '';
   };
 
-  const formatToolResult = (toolName: string, result: any): string => {
+  const formatToolResult = (toolName: string, result: any): string | null => {
     if (!result.success && result.error) {
       return result.error;
     }
@@ -28,7 +28,7 @@ export function useMessageFormatting() {
       return result.message;
     }
 
-    return JSON.stringify(result);
+    return null;
   };
 
   const getStatusMessage = (
