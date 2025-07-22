@@ -37,6 +37,7 @@ export const MODEL_ALIAS: Record<string, string> = {
   'openrouter/r1': 'openrouter/deepseek/deepseek-r1-0528',
   'openrouter/deepseek': 'openrouter/deepseek/deepseek-chat-v3-0324',
   'openrouter/k2': 'openrouter/moonshotai/kimi-k2',
+  'openrouter/qwen': 'openrouter/qwen/qwen3-235b-a22b-07-25',
   cypher: 'openrouter/openrouter/cypher-alpha:free',
   'aihubmix/sonnet-3.5': 'aihubmix/claude-3-5-sonnet-20241022',
   'aihubmix/sonnet-3.7': 'aihubmix/claude-3-7-sonnet-20250219',
@@ -110,6 +111,7 @@ const OPENROUTER_MODELS = [
   'openai/o3-mini',
   'openai/o4-mini',
   'moonshotai/kimi-k2',
+  'qwen/qwen3-235b-a22b-07-25',
 ];
 const MOONSHOT_MODELS = ['kimi-k2-0711-preview'];
 const GROQ_MODELS = ['moonshotai/kimi-k2-instruct', 'qwen/qwen3-32b'];
