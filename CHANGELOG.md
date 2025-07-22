@@ -1,3 +1,14 @@
+## 0.5.1
+
+`2025-07-21`
+
+- fix: limit tool use to one and improve diff param handling by [@sorrycc](https://github.com/sorrycc)
+- feat: add Groq API model support by [@sorrycc](https://github.com/sorrycc)
+- feat: add appendSystemPrompt option to argv configuration by [@阿平](https://github.com/阿平) in [#123](https://github.com/umijs/takumi/pull/123)
+- feat: update code agent prompts and simplify todo tool descriptions by [@阿平](https://github.com/阿平) in [#122](https://github.com/umijs/takumi/pull/122)
+- feat: add automatic conversation compression based on token limits by [@阿平](https://github.com/阿平) in [#124](https://github.com/umijs/takumi/pull/124)
+
+
 ## 0.5.0
 
 `2025-07-16`

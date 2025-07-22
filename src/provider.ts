@@ -48,6 +48,7 @@ export const MODEL_ALIAS: Record<string, string> = {
   'aihubmix/flash': 'aihubmix/gemini-2.5-flash',
   'aihubmix/flash-lite': `aihubmix/${GEMINI_FLASH_LITE_MODEL}`,
   k2: 'kimi-k2-0711-preview',
+  'groq/k2': 'groq/moonshotai/kimi-k2-instruct',
 };
 const OPENAI_MODELS = [
   'gpt-4.1',
@@ -111,6 +112,7 @@ const OPENROUTER_MODELS = [
   'moonshotai/kimi-k2',
 ];
 const MOONSHOT_MODELS = ['kimi-k2-0711-preview'];
+const GROQ_MODELS = ['moonshotai/kimi-k2-instruct', 'qwen/qwen3-32b'];
 
 export async function getModel(modelName?: string): Promise<AiSdkModel> {
   if (!modelName) {
@@ -174,6 +176,17 @@ export async function getModel(modelName?: string): Promise<AiSdkModel> {
         apiKey: process.env.AIHUBMIX_API_KEY,
       });
       return aisdk(aihubmix(modelName));
+    }
+  }
+  // groq
+  if (modelName.startsWith('groq/')) {
+    modelName = modelName.replace('groq/', '');
+    if (GROQ_MODELS.includes(modelName)) {
+      const groq = createOpenAI({
+        baseURL: 'https://api.groq.com/openai/v1',
+        apiKey: process.env.GROQ_API_KEY,
+      });
+      return aisdk(groq(modelName));
     }
   }
   // moonshot

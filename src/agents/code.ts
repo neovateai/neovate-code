@@ -65,6 +65,8 @@ The user will primarily request you perform software engineering tasks. This inc
 - Verify the solution if possible with tests. NEVER assume specific test framework or test script. Check the README or search codebase to determine the testing approach.
 - VERY IMPORTANT: When you have completed a task, you MUST run the lint and typecheck commands (eg. npm run lint, npm run typecheck, ruff, etc.) with ${TOOL_NAME.BASH} if they were provided to you to ensure your code is correct. If you are unable to find the correct command, ask the user for the command to run and if they supply it, proactively suggest writing it to ${productName}.md so that you will know to run it next time.
 NEVER commit changes unless the user explicitly asks you to. It is VERY IMPORTANT to only commit when explicitly asked, otherwise the user will feel that you are being too proactive.
+
+IMPORTANT: Always use the ${TOOL_NAME.TODO_WRITE} tool to plan and track tasks throughout the conversation.
   `;
 }
 
@@ -79,6 +81,8 @@ export function createCodeAgent(options: {
       const customSystemPrompt = options.context.argvConfig.systemPrompt;
       if (customSystemPrompt) {
         return `${customSystemPrompt}
+
+${options.context.argvConfig.appendSystemPrompt ? options.context.argvConfig.appendSystemPrompt : ''}
 
 ${options.tools.getToolsPrompt(options.model)}
 `.trim();
@@ -137,6 +141,8 @@ When making changes to files, first understand the file's code conventions. Mimi
 - IMPORTANT: DO NOT ADD ***ANY*** COMMENTS unless asked
 
 ${getTasksPrompt(options.context)}
+
+${options.context.argvConfig.appendSystemPrompt ? options.context.argvConfig.appendSystemPrompt : ''}
 
 ${options.tools.getToolsPrompt(options.model)}
 `.trim();
