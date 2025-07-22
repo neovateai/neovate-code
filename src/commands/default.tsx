@@ -13,6 +13,7 @@ import { Service } from '../service';
 import { setupTracing } from '../tracing';
 import { AppProvider } from '../ui/AppContext';
 import { App } from '../ui/app';
+import { patchConsole } from '../utils/patchConsole';
 import { randomUUID } from '../utils/randomUUID';
 import { readStdin } from '../utils/readStdin';
 import { setTerminalTitle } from '../utils/setTerminalTitle';
@@ -76,6 +77,7 @@ export async function run(opts: RunOpts) {
       agentType: 'plan',
       context,
     });
+
     if (!quiet) {
       render(
         <AppProvider
@@ -87,7 +89,7 @@ export async function run(opts: RunOpts) {
           <App />
         </AppProvider>,
         {
-          patchConsole: process.env.DEBUG ? false : true,
+          patchConsole: false, //process.env.DEBUG ? false : true,
           exitOnCtrlC: false,
         },
       );
@@ -97,6 +99,10 @@ export async function run(opts: RunOpts) {
           process.exit(0);
         });
       };
+
+      // Handle process termination signals
+      process.on('SIGINT', exit);
+      process.on('SIGTERM', exit);
     }
   } catch (e) {}
 }
@@ -134,9 +140,20 @@ export async function runDefault(opts: RunCliOpts) {
       'sessions',
       `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
     );
+
+    // Create log file path by replacing .jsonl with .log
+    const logFile = traceFile.replace('.jsonl', '.log');
+
+    // Patch console methods to log to file and optionally suppress output
+    patchConsole({
+      logFile,
+      silent: true,
+    });
+
     setupTracing(traceFile);
     const cwd = opts.cwd || process.cwd();
     debug('cwd', cwd);
+
     const context = await Context.create({
       productName: opts.productName,
       version: opts.version,
@@ -152,6 +169,7 @@ export async function runDefault(opts: RunCliOpts) {
       },
       plugins: opts.plugins,
       traceFile,
+      stagewise: !argv.quiet,
     });
     await context.apply({
       hook: 'cliStart',

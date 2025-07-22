@@ -3,7 +3,7 @@ Review staged changes and provide detailed code review suggestions.
 ## Process:
 
 1. **Analyze Changes**: 
-   - Review the staged changes using `git diff --cached`
+   - Review the staged changes using `git --no-pager diff --cached -- . ':!pnpm-lock.yaml'`
    - Examine modified files for code quality, security, and best practices
    - Check for potential bugs, performance issues, or breaking changes
 2. **Provide Feedback**:
