@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { parseFrontMatter } from '../utils/frontmatter';
 import { PromptCommand } from './types';
 
 export interface FilesystemCommandLoaderOptions {
@@ -43,16 +44,19 @@ export function loadFilesystemCommands(
 
       try {
         const content = fs.readFileSync(filePath, 'utf-8');
+        const { frontmatter, content: body } = parseFrontMatter(content);
 
         const command: PromptCommand = {
           type: 'prompt',
           name: fullCommandName,
-          description: `${prefix} command: ${commandName}`,
+          description:
+            frontmatter?.description || `${prefix} command: ${commandName}`,
           progressMessage: `Executing ${prefix} command...`,
+          allowedTools: frontmatter?.['allowed-tools'],
           async getPromptForCommand(args: string) {
             // Use the file content as the prompt
             // Replace $ARGUMENTS placeholder with actual args
-            let prompt = content.trim();
+            let prompt = body.trim();
             if (prompt.includes('$ARGUMENTS')) {
               prompt = prompt.replace(/\$ARGUMENTS/g, args || '');
             } else if (args.trim()) {
