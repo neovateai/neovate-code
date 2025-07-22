@@ -194,7 +194,15 @@ export class IDE {
       };
 
       debug('Sending request:', message);
-      this.ws!.send(JSON.stringify(message));
+
+      // Check WebSocket connection status
+      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        debug('WebSocket is not open, readyState:', this.ws?.readyState);
+        this.pendingRequests.delete(id);
+        return;
+      }
+
+      this.ws.send(JSON.stringify(message));
 
       // 超时处理
       setTimeout(() => {
