@@ -58,13 +58,17 @@ export function parseMessage(text: string): MessageContent[] {
         if (currentParamName === 'tool_name') {
           currentToolUse.name = value.trim();
         } else if (currentParamName === 'arguments') {
-          const jsonString = value.trim();
+          let jsonString = value.trim();
           try {
             // 尝试解析JSON字符串
             // 如果jsonString为空，解析会失败，所以我们给一个默认的空对象
             currentToolUse.params = jsonString ? JSON.parse(jsonString) : {};
           } catch (e) {
             try {
+              // 仅移除最后一个 }\\n 导致的 json 解析失败，避免修改 json 内部的换行符
+              if (jsonString.endsWith('}\\n')) {
+                jsonString = jsonString.replace(/}\\n$/, '}');
+              }
               // 尝试用 jsonrepair 修复
               const repairedJsonString = jsonrepair(jsonString);
               currentToolUse.params = JSON.parse(repairedJsonString);
