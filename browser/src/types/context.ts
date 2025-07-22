@@ -18,6 +18,10 @@ export interface ContextItem {
   value: string;
   displayText: string;
   context?: ContextStoreValue;
+  /**
+   * If true, it will not be removed after send
+   */
+  remainAfterSend?: boolean;
   [key: string]: any;
 }
 

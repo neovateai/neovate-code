@@ -56,10 +56,11 @@ const AddContext = () => {
       }}
       onSelect={(type, itemValue) => {
         setOpenPopup(false);
-        const contextItem = getOriginalContextByValue(
-          type as ContextType,
-          itemValue,
-        );
+        const contextItem = getOriginalContextByValue({
+          type: type as ContextType,
+          value: itemValue,
+          remainAfterSend: true,
+        });
 
         if (contextItem) {
           context.actions.addContext(contextItem);

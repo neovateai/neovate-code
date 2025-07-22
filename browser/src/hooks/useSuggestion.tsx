@@ -78,7 +78,13 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     targetFunction?.(text);
   }, 500);
 
-  const getOriginalContextByValue = (type: ContextType, value: string) => {
+  const getOriginalContextByValue = (opts: {
+    type: ContextItem['type'];
+    value: string;
+    remainAfterSend?: ContextItem['remainAfterSend'];
+  }) => {
+    const { type, value, remainAfterSend } = opts;
+
     const config = AI_CONTEXT_NODE_CONFIGS.find(
       (config) => config.type === type,
     );
@@ -91,6 +97,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
       context: originalContext,
       value: contextItemValue,
       displayText: value,
+      remainAfterSend,
     };
 
     return contextItem;

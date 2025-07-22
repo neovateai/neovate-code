@@ -72,6 +72,7 @@ const ChatSender: React.FC = () => {
       originalContent: state.plainText,
     });
     actions.updatePrompt('');
+    context.actions.afterSend();
   };
 
   const handleEnterPress = () => {
@@ -97,10 +98,10 @@ const ChatSender: React.FC = () => {
             differenceWith(nextNodes, prevNodes, (next, prev) => {
               return next.originalText === prev.originalText;
             }).forEach((node) => {
-              const contextItem = getOriginalContextByValue(
-                node.type,
-                node.displayText,
-              );
+              const contextItem = getOriginalContextByValue({
+                type: node.type,
+                value: node.displayText,
+              });
               if (contextItem) {
                 context.actions.addContext(contextItem);
               }
@@ -140,10 +141,10 @@ const ChatSender: React.FC = () => {
           }}
           onSelect={(type, itemValue) => {
             setOpenPopup(false);
-            const contextItem = getOriginalContextByValue(
-              type as ContextType,
-              itemValue,
-            );
+            const contextItem = getOriginalContextByValue({
+              type: type as ContextType,
+              value: itemValue,
+            });
             if (contextItem) {
               const nextInputValue =
                 prompt.slice(0, insertNodePosition) +

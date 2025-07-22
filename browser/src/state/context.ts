@@ -58,7 +58,7 @@ export const actions = {
     state.attachedContexts.push(contextItem);
   },
 
-  /** 删除上下文 */
+  /** 删除上下文，从文本框中自动添加的context会通过这个方法删除 */
   removeContext: (value: string) => {
     state.attachedContexts = state.attachedContexts.filter(
       (item) => item.value !== value,
@@ -67,6 +67,12 @@ export const actions = {
     // although the contextItem is created by editor
     const nextPrompt = sender.state.prompt.replaceAll(value, '');
     sender.actions.updatePrompt(nextPrompt);
+  },
+
+  afterSend: () => {
+    state.attachedContexts = state.attachedContexts.filter(
+      (item) => item.remainAfterSend,
+    );
   },
 
   setContextLoading: (loading: boolean) => {
