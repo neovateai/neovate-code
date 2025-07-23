@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  marked-terminal:
+    hash: 536fe9685e91d559cf29a033191aa39da45729949e9d1c69989255091c8618fb
+    path: patches/marked-terminal.patch
+
 importers:
 
   .:
@@ -157,7 +162,7 @@ importers:
         version: 16.1.1
       marked-terminal:
         specifier: ^7.3.0
-        version: 7.3.0(marked@16.1.1)
+        version: 7.3.0(patch_hash=536fe9685e91d559cf29a033191aa39da45729949e9d1c69989255091c8618fb)(marked@16.1.1)
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -12148,7 +12153,7 @@ snapshots:
 
   markdown-table@3.0.4: {}
 
-  marked-terminal@7.3.0(marked@16.1.1):
+  marked-terminal@7.3.0(patch_hash=536fe9685e91d559cf29a033191aa39da45729949e9d1c69989255091c8618fb)(marked@16.1.1):
     dependencies:
       ansi-escapes: 7.0.0
       ansi-regex: 6.1.0

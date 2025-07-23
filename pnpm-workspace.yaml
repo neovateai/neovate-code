@@ -1,3 +1,6 @@
 packages:
-  - 'browser'
-  - 'vscode-extension'
+  - browser
+  - vscode-extension
+
+patchedDependencies:
+  marked-terminal: patches/marked-terminal.patch
