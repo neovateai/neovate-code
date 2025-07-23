@@ -141,7 +141,7 @@ export async function query(opts: QueryOpts) {
               );
               result = await service.context.apply({
                 hook: 'toolResult',
-                args: [{ toolName: item.name }],
+                args: [item],
                 memo: result,
                 type: PluginHookType.SeriesLast,
               });
