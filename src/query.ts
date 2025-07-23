@@ -140,9 +140,9 @@ export async function query(opts: QueryOpts) {
                 item.params,
               );
               const customResult = await service.context.apply({
-                hook: 'toolResultFormat',
+                hook: 'toolResult',
                 args: [{ toolName: item.name, result }],
-                type: PluginHookType.First,
+                type: PluginHookType.SeriesLast,
               });
               await opts.onToolUseResult?.(
                 item.callId,
