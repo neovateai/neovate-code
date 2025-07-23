@@ -209,6 +209,15 @@ export function formatToolUse(toolUse: ToolUse): AgentInputItem {
     return createImageInputItem(result.data, result.mimeType);
   }
 
+  // Handle formatted multimodal data
+  if (
+    isSuccessToolResult(result) &&
+    isArray(result.data) &&
+    result.data.some(isImageData)
+  ) {
+    return createMultipleImagesInputItem(name, params, result.data);
+  }
+
   if (isArray(result) && result.some(isImageData)) {
     return createMultipleImagesInputItem(name, params, result);
   }

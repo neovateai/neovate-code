@@ -1,5 +1,6 @@
 import { AgentInputItem } from '@openai/agents';
 import { FilesContributor } from './context-contributor';
+import { PluginHookType } from './plugin';
 import { Service } from './service';
 
 type QueryOpts = {
@@ -133,11 +134,17 @@ export async function query(opts: QueryOpts) {
             }
 
             if (approved) {
-              const result = await service.callTool(
+              let result = await service.callTool(
                 item.callId,
                 item.name,
                 item.params,
               );
+              result = await service.context.apply({
+                hook: 'toolResult',
+                args: [item],
+                memo: result,
+                type: PluginHookType.SeriesLast,
+              });
               await opts.onToolUseResult?.(
                 item.callId,
                 item.name,
