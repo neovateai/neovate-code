@@ -134,12 +134,12 @@ export async function query(opts: QueryOpts) {
             }
 
             if (approved) {
-              const result = await service.callTool(
+              let result = await service.callTool(
                 item.callId,
                 item.name,
                 item.params,
               );
-              const customResult = await service.context.apply({
+              result = await service.context.apply({
                 hook: 'toolResult',
                 args: [{ toolName: item.name }],
                 memo: result,
@@ -148,7 +148,7 @@ export async function query(opts: QueryOpts) {
               await opts.onToolUseResult?.(
                 item.callId,
                 item.name,
-                customResult || result,
+                result,
                 item.params,
               );
               hasToolUse = true;
