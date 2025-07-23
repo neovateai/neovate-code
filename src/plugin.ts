@@ -179,6 +179,6 @@ export type Plugin = {
   modelInfo?: (this: PluginContext) => Promise<any> | any;
   toolResult?: (
     this: PluginContext,
-    opts: { toolName: string },
+    opts: { params: any; name: string; callId: string },
   ) => Promise<any> | any;
 };
