@@ -1,5 +1,6 @@
 import { AgentInputItem } from '@openai/agents';
 import { FilesContributor } from './context-contributor';
+import { PluginHookType } from './plugin';
 import { Service } from './service';
 
 type QueryOpts = {
@@ -138,10 +139,15 @@ export async function query(opts: QueryOpts) {
                 item.name,
                 item.params,
               );
+              const customResult = await service.context.apply({
+                hook: 'toolResultFormat',
+                args: [{ toolName: item.name, result }],
+                type: PluginHookType.First,
+              });
               await opts.onToolUseResult?.(
                 item.callId,
                 item.name,
-                result,
+                customResult || result,
                 item.params,
               );
               hasToolUse = true;
