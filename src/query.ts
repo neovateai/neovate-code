@@ -1,11 +1,13 @@
-import { AgentInputItem } from '@openai/agents';
+import { AgentInputItem, type Tool } from '@openai/agents';
 import { FilesContributor } from './context-contributor';
 import { Service } from './service';
+import { Tools } from './tool';
 
 type QueryOpts = {
   input: string | AgentInputItem[];
   service: Service;
   thinking?: boolean;
+  allowedTools?: string[];
   onTextDelta?: (text: string) => void;
   onText?: (text: string) => void;
   onReasoning?: (text: string) => void;
@@ -30,7 +32,13 @@ type QueryOpts = {
 };
 
 export async function query(opts: QueryOpts) {
-  const { service, thinking } = opts;
+  let { service, thinking, allowedTools } = opts;
+
+  // Reset to original tool set, then filter as needed
+  service.resetTools();
+  if (allowedTools) {
+    service = service.withTools(service.getTools(allowedTools));
+  }
   let input =
     typeof opts.input === 'string'
       ? [

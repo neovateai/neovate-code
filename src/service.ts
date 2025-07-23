@@ -48,6 +48,7 @@ export interface ServiceRunResult {
 export class Service {
   private opts: ServiceOpts;
   private tools: Tools;
+  private originalTools: Tools;
   protected agent?: Agent;
   context: Context;
   history: AgentInputItem[] = [];
@@ -62,24 +63,32 @@ export class Service {
     this.id = opts.id || randomUUID();
     this.context = opts.context;
     this.tools = opts.tools;
+    this.originalTools = this.cloneTools(opts.tools);
     this.modelId =
       this.opts.agentType === 'code'
         ? this.context.config.model
         : this.context.config.planModel;
-    this.agent =
-      this.opts.agentType === 'code'
-        ? createCodeAgent({
-            model: this.context.config.model,
-            tools: this.tools,
-            context: this.context,
-          })
-        : createPlanAgent({
-            model: this.context.config.planModel,
-            tools: this.tools,
-            context: this.context,
-          });
+    this.agent = this.createAgent();
     this.usage = new Usage();
     this.lastUsage = new Usage();
+  }
+
+  private createAgent(): Agent {
+    return this.opts.agentType === 'code'
+      ? createCodeAgent({
+          model: this.context.config.model,
+          tools: this.tools,
+          context: this.context,
+        })
+      : createPlanAgent({
+          model: this.context.config.planModel,
+          tools: this.tools,
+          context: this.context,
+        });
+  }
+
+  private cloneTools(tools: Tools): Tools {
+    return tools.clone();
   }
 
   private hasIncompleteXmlTag(text: string): boolean {
@@ -535,5 +544,35 @@ export class Service {
 
   public getUsage() {
     return this.usage;
+  }
+
+  public getTools(allowedTools?: string[]): Tools {
+    if (!allowedTools) {
+      return this.originalTools;
+    }
+
+    return this.originalTools.filterByNames(allowedTools);
+  }
+
+  public withTools(tools: Tools): Service {
+    if (tools.equals(this.tools)) {
+      return this;
+    }
+
+    this.tools = this.cloneTools(tools);
+    this.agent = this.createAgent();
+
+    return this;
+  }
+
+  public resetTools(): Service {
+    if (this.tools.equals(this.originalTools)) {
+      return this;
+    }
+
+    this.tools = this.cloneTools(this.originalTools);
+    this.agent = this.createAgent();
+
+    return this;
   }
 }

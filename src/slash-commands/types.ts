@@ -3,6 +3,7 @@ import { Context } from '../context';
 export interface BaseSlashCommand {
   name: string;
   description: string;
+  allowedTools?: string[];
 }
 
 export interface LocalCommand extends BaseSlashCommand {
@@ -22,7 +23,6 @@ export interface PromptCommand extends BaseSlashCommand {
   type: 'prompt';
   argNames?: string[];
   progressMessage: string;
-  allowedTools?: string[];
   getPromptForCommand(
     args: string,
   ): Promise<Array<{ role: string; content: string }>>;

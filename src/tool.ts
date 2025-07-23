@@ -120,6 +120,41 @@ export class Tools {
     return 'write'; // Default to write for safety
   }
 
+  filterByNames(allowedNames: string[]): Tools {
+    if (!Array.isArray(allowedNames)) {
+      throw new Error('allowedNames must be an array');
+    }
+
+    const filteredTools = Object.values(this.tools).filter((tool) =>
+      allowedNames.includes(tool.name),
+    );
+
+    return new Tools(filteredTools);
+  }
+
+  equals(other: Tools): boolean {
+    if (!(other instanceof Tools)) {
+      return false;
+    }
+
+    const thisToolNames = Object.keys(this.tools).sort();
+    const otherToolNames = Object.keys(other.tools).sort();
+
+    if (thisToolNames.length !== otherToolNames.length) {
+      return false;
+    }
+
+    return thisToolNames.join(',') === otherToolNames.join(',');
+  }
+
+  clone(): Tools {
+    const toolsArray = Object.values(this.tools).map((tool) => ({
+      ...tool,
+      approval: tool.approval ? { ...tool.approval } : undefined,
+    }));
+    return new Tools(toolsArray);
+  }
+
   getToolsPrompt(model: string) {
     const isClaudeModel = isClaude(model);
     const availableTools = `

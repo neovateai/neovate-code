@@ -192,7 +192,7 @@ export function useChatActions() {
         }));
 
         // Continue with regular AI processing using internal query
-        return executeQuery(queryInput);
+        return executeQuery(queryInput, { allowedTools: command.allowedTools });
       }
     } catch (e: any) {
       dispatch({ type: 'SET_STATUS', payload: APP_STATUS.FAILED });
@@ -204,7 +204,7 @@ export function useChatActions() {
 
   const executeQuery = async (
     input: string | any[],
-    forceStage?: 'plan' | 'code',
+    options?: { forceStage?: 'plan' | 'code'; allowedTools?: string[] },
   ): Promise<any> => {
     // Reset cancel flag at the start of each query
     cancelFlagRef.current = false;
@@ -225,7 +225,7 @@ export function useChatActions() {
     }
 
     const shouldUsePlanService = (() => {
-      if (forceStage === 'code') {
+      if (options?.forceStage === 'code') {
         return false;
       }
       if (state.currentMode === 'plan') {
@@ -261,6 +261,7 @@ export function useChatActions() {
         input: queryInput,
         service,
         thinking: isReasoningModel(service.context.config.model),
+        allowedTools: options?.allowedTools,
         onCancelCheck: () => cancelFlagRef.current,
         async onTextDelta(text) {
           if (cancelFlagRef.current) {
