@@ -48,6 +48,8 @@ const LIMIT_32K = 32_768;
 const LIMIT_64K = 65_536;
 // 128K
 const LIMIT_128K = 131_072;
+// 256K
+const LIMIT_256K = 262_144;
 // 1024K
 const LIMIT_1M = 1_048_576;
 // 200K
@@ -85,7 +87,7 @@ const MODELS_INFO: Models = {
     contextLimit: LIMIT_1M,
     outputLimit: LIMIT_64K,
   },
-  'gemini-2.5-flash-lite-preview-06-17': {
+  'gemini-2.5-flash-lite': {
     contextLimit: LIMIT_1M,
     outputLimit: LIMIT_64K,
   },
@@ -136,6 +138,14 @@ const MODELS_INFO: Models = {
   'openrouter/moonshotai/kimi-k2': {
     contextLimit: LIMIT_128K,
     outputLimit: LIMIT_16K,
+  },
+  'openrouter/qwen/qwen3-235b-a22b-07-25': {
+    contextLimit: LIMIT_128K,
+    outputLimit: LIMIT_128K,
+  },
+  'openrouter/qwen/qwen3-coder': {
+    contextLimit: LIMIT_256K,
+    outputLimit: LIMIT_64K,
   },
   'openrouter/openrouter/cypher-alpha:free': {
     contextLimit: 1_000_000,
