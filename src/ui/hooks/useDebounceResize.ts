@@ -1,7 +1,8 @@
 import { debounce } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 
-const DEBOUNCE_TIME = 100;
+const DEBOUNCE_TIME = 200;
+const WIDTH_THRESHOLD = 3;
 
 export function useDebounceResize() {
   const [forceRerender, setForceRerender] = useState(0);
@@ -11,7 +12,8 @@ export function useDebounceResize() {
     const onResize = debounce(() => {
       if (!process.stdout.isTTY) return;
       const currentWidth = process.stdout.columns || 0;
-      if (currentWidth !== lastWidthRef.current) {
+      const widthDiff = Math.abs(currentWidth - lastWidthRef.current);
+      if (widthDiff > WIDTH_THRESHOLD) {
         lastWidthRef.current = currentWidth;
         process.stdout.write('\x1bc');
         setForceRerender((prev) => prev + 1);
