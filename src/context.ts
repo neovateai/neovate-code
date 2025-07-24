@@ -51,6 +51,7 @@ type ContextOpts = CreateContextOpts & {
   slashCommands: SlashCommandRegistry;
   env: Env;
   stagewise?: StagewiseAgent;
+  stagewisePort?: number;
 };
 
 type Paths = {
@@ -90,6 +91,7 @@ export class Context {
   env: Env;
   modelInfo: ModelInfo;
   stagewise?: StagewiseAgent;
+  stagewisePort?: number;
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName || PRODUCT_NAME;
@@ -294,6 +296,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
       });
       const port = await stagewise.start();
       context.stagewise = stagewise;
+      context.stagewisePort = port;
       debug(`Stagewise agent started on port ${port}`);
     } catch (error) {
       debug('Failed to start Stagewise agent:', error);
