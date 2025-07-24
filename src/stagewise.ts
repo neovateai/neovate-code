@@ -6,6 +6,7 @@ import {
 import createDebug from 'debug';
 import { Context } from './context';
 import { Service } from './service';
+import { relativeToHome } from './utils/path';
 
 const debug = createDebug('takumi:stagewise');
 
@@ -33,7 +34,7 @@ export class StagewiseAgent {
 
     this.server.setAgentName(`${this.context.productName} AI Agent`);
     this.server.setAgentDescription(
-      'A coding agent to enhance your development workflow.',
+      `A coding agent to enhance your development workflow. [${relativeToHome(this.context.cwd)}]`,
     );
 
     this.server.interface.availability.set(true);

@@ -36,25 +36,20 @@ export class GitStatusContributor implements ContextContributor {
 export class IDEContributor implements ContextContributor {
   name = 'ide';
   async getContent(opts: GetContentOpts) {
-    try {
-      if (opts.context.ide.ws) {
-        const workspaceFolders = await opts.context.ide.getWorkspaceFolders();
-        const openEditors = await opts.context.ide.getOpenEditors();
-        const currentSelection = await opts.context.ide.getCurrentSelection();
-        debug('workspaceFolders', workspaceFolders);
-        debug('openEditors', openEditors);
-        debug('currentSelection', currentSelection);
-        return JSON.stringify({
-          IDEWorkspaceFolders: JSON.stringify(workspaceFolders),
-          IDEOpenEditors: JSON.stringify(openEditors),
-          IDECurrentSelection: JSON.stringify(currentSelection),
-        });
-      }
-      return null;
-    } catch (error) {
-      debug('ide failed', error);
-      return null;
+    if (opts.context.ide.ws) {
+      const workspaceFolders = await opts.context.ide.getWorkspaceFolders();
+      const openEditors = await opts.context.ide.getOpenEditors();
+      const currentSelection = await opts.context.ide.getCurrentSelection();
+      debug('workspaceFolders', workspaceFolders);
+      debug('openEditors', openEditors);
+      debug('currentSelection', currentSelection);
+      return JSON.stringify({
+        IDEWorkspaceFolders: JSON.stringify(workspaceFolders),
+        IDEOpenEditors: JSON.stringify(openEditors),
+        IDECurrentSelection: JSON.stringify(currentSelection),
+      });
     }
+    return null;
   }
 }
 

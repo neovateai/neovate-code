@@ -5,6 +5,7 @@ import { compactCommand } from './compact';
 import { exitCommand } from './exit';
 import { helpCommand } from './help';
 import { createInitCommand } from './init';
+import { stagewiseCommand } from './stagewise';
 
 export * from './clear';
 export * from './exit';
@@ -19,5 +20,6 @@ export function createBuiltinCommands(opts: {
     helpCommand,
     createInitCommand(opts),
     compactCommand,
+    stagewiseCommand,
   ];
 }
