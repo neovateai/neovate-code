@@ -292,9 +292,9 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
       const stagewise = new StagewiseAgent({
         context,
       });
-      const port = await stagewise.start();
+      await stagewise.start();
       context.stagewise = stagewise;
-      debug(`Stagewise agent started on port ${port}`);
+      debug(`Stagewise agent started on port ${stagewise.port}`);
     } catch (error) {
       debug('Failed to start Stagewise agent:', error);
     }

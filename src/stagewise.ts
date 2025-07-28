@@ -6,6 +6,7 @@ import {
 import createDebug from 'debug';
 import { Context } from './context';
 import { Service } from './service';
+import { relativeToHome } from './utils/path';
 
 const debug = createDebug('takumi:stagewise');
 
@@ -17,6 +18,7 @@ export class StagewiseAgent {
   private context: Context;
   private service?: Service;
   private server: AgentServer | null = null;
+  public port: number = 0;
 
   constructor(opts: StagewiseAgentOpts) {
     this.context = opts.context;
@@ -32,9 +34,7 @@ export class StagewiseAgent {
     this.server = await createAgentServer();
 
     this.server.setAgentName(`${this.context.productName} AI Agent`);
-    this.server.setAgentDescription(
-      'A coding agent to enhance your development workflow.',
-    );
+    this.server.setAgentDescription(relativeToHome(this.context.cwd));
 
     this.server.interface.availability.set(true);
 
@@ -44,8 +44,9 @@ export class StagewiseAgent {
       },
     );
 
-    debug(`Stagewise agent server running on port ${this.server.port}`);
-    return this.server.port;
+    this.port = this.server.port;
+    debug(`Stagewise agent server running on port ${this.port}`);
+    return this.port;
   }
 
   async stop() {
