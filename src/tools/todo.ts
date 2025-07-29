@@ -224,11 +224,7 @@ export function createTodoTool(opts: { context: Context }) {
   const { context } = opts;
 
   function ensureTodoDirectory() {
-    const todoDir = path.join(
-      context.cwd,
-      `.${context.productName.toLowerCase()}`,
-      'todos',
-    );
+    const todoDir = path.join(context.paths.globalConfigDir, 'todos');
     if (!fs.existsSync(todoDir)) {
       fs.mkdirSync(todoDir, { recursive: true });
     }
