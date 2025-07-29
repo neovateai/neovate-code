@@ -178,7 +178,11 @@ export function parseMessage(text: string): MessageContent[] {
       if (currentParamName === 'tool_name') {
         currentToolUse.name = value.trim();
       } else if (currentParamName === 'arguments') {
-        const jsonString = value.trim();
+        let jsonString = value.trim();
+        // 处理 arguments 未闭合的情况
+        if (jsonString.endsWith('</use_tool>')) {
+          jsonString = jsonString.replace(/<\/use_tool>$/, '');
+        }
         try {
           // 再次尝试解析，很可能会失败，但以防万一是个完整的JSON
           currentToolUse.params = jsonString ? JSON.parse(jsonString) : {};
