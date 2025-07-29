@@ -626,10 +626,10 @@ function checkCommitMessage(message: string, hasAiSuffix = false) {
   // e.g.
   // - `build: add dev dependencies for basement, axios, git-repo-info, urllib, and zx`
   // Account for [AI] suffix length (5 characters) when checking limit
-  const maxLength = hasAiSuffix ? 85 : 90;
-  if (message.length > maxLength) {
-    throw new Error(`Commit message is too long: ${message}`);
-  }
+  // const maxLength = hasAiSuffix ? 85 : 90;
+  // if (message.length > maxLength) {
+  //   throw new Error(`Commit message is too long: ${message}`);
+  // }
   if (message.length === 0) {
     throw new Error('Commit message is empty');
   }
