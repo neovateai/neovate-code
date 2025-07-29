@@ -85,6 +85,7 @@ export async function runServer(opts: RunCliOpts) {
         plugins: argv.plugin,
       },
       plugins: [contextPlugin, ...(opts.plugins || [])],
+      mcp: true,
     });
 
     logger.logIntro({

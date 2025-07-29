@@ -118,9 +118,11 @@ export async function runDefault(opts: RunCliOpts) {
         help: 'h',
         quiet: 'q',
       },
-      default: {},
+      default: {
+        mcp: true,
+      },
       array: ['plugin'],
-      boolean: ['json', 'help', 'quiet'],
+      boolean: ['json', 'help', 'quiet', 'mcp'],
       string: [
         'model',
         'smallModel',
@@ -172,6 +174,7 @@ export async function runDefault(opts: RunCliOpts) {
       plugins: opts.plugins,
       traceFile,
       stagewise: !argv.quiet,
+      mcp: argv.mcp,
     });
     await context.apply({
       hook: 'cliStart',
@@ -214,6 +217,7 @@ Options:
   --system-prompt <prompt>      Custom system prompt for code agent
   -q, --quiet                   Quiet mode, non interactive
   --json                        Output result as JSON
+  --no-mcp                      Disable MCP servers
 
 Examples:
   ${p} "Refactor this file to use hooks."

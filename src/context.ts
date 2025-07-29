@@ -70,6 +70,7 @@ export interface CreateContextOpts {
   plugins?: Plugin[];
   traceFile?: string;
   stagewise?: boolean;
+  mcp?: boolean;
 }
 
 export class Context {
@@ -236,7 +237,9 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   });
   debug('generalInfo', generalInfo);
 
-  const mcpManager = await MCPManager.create(resolvedConfig.mcpServers);
+  const mcpManager = await MCPManager.create(
+    opts.mcp ? resolvedConfig.mcpServers : [],
+  );
   const mcpTools = await mcpManager.getAllTools();
   debug('mcpManager created');
   debug('mcpTools', mcpTools);
