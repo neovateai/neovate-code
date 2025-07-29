@@ -229,6 +229,7 @@ Please follow a similar style for this commit message while still adhering to th
       argvConfig: {
         model: argv.model,
         plugins: argv.plugin,
+        language: argv.language,
       },
       plugins: opts.plugins,
     });

@@ -170,6 +170,7 @@ export async function runDefault(opts: RunCliOpts) {
         plugins: argv.plugin,
         systemPrompt: argv.systemPrompt,
         appendSystemPrompt: argv.appendSystemPrompt,
+        language: argv.language,
       },
       plugins: opts.plugins,
       traceFile,
