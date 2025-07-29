@@ -304,6 +304,7 @@ ${repoStyle}
         copyToClipboard(finalMessage);
       }
     }
+    process.exit(0);
   });
 }
 
