@@ -155,8 +155,7 @@ Let me also check the time.
         type: 'tool_use',
         name: 'weather',
         params: {
-          _error: 'Incomplete JSON',
-          _raw: '{"city": "Tok',
+          city: 'Tok',
         },
         partial: true,
       });
@@ -359,6 +358,26 @@ Based on the weather data, it looks like a great day!`;
         name: 'edit',
         params: { file_path: 'src/ui/constants.ts', old_string: '1' },
         partial: true,
+      });
+    });
+
+    it('当 jsonrepair 无法修复时，应该回退', () => {
+      const input = `<use_tool>
+<tool_name>test_tool</tool_name>
+<arguments>
+{{"demo":"This is not JSON at all""
+</arguments>
+</use_tool>`;
+      const result = parseMessage(input);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        type: 'tool_use',
+        name: 'test_tool',
+        params: {
+          _error: 'Invalid or incomplete JSON',
+          _raw: '{{"demo":"This is not JSON at all""',
+        },
+        partial: false,
       });
     });
   });

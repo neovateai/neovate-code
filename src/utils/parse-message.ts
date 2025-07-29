@@ -187,10 +187,18 @@ export function parseMessage(text: string): MessageContent[] {
           // 再次尝试解析，很可能会失败，但以防万一是个完整的JSON
           currentToolUse.params = jsonString ? JSON.parse(jsonString) : {};
         } catch (e) {
-          currentToolUse.params = {
-            _error: 'Incomplete JSON',
-            _raw: jsonString,
-          };
+          try {
+            // 尝试使用 jsonrepair 修复
+            const repairedJsonString = jsonrepair(jsonString);
+            currentToolUse.params = JSON.parse(repairedJsonString);
+          } catch (e) {
+            debug('currentParamName jsonrepair failed', e);
+            // 如果修复失败，则返回错误
+            currentToolUse.params = {
+              _error: 'Incomplete JSON',
+              _raw: jsonString,
+            };
+          }
         }
       }
     }
