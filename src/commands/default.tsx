@@ -144,7 +144,7 @@ export async function runDefault(opts: RunCliOpts) {
     // Create log file path by replacing .jsonl with .log
     const logFile = traceFile.replace('.jsonl', '.log');
 
-    if (!argv.quiet) {
+    if (!argv.quiet && process.env.PATCH_CONSOLE !== 'none') {
       // Patch console methods to log to file and optionally suppress output
       patchConsole({
         logFile,
