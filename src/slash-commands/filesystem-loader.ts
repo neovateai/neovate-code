@@ -49,8 +49,7 @@ export function loadFilesystemCommands(
         const command: PromptCommand = {
           type: 'prompt',
           name: fullCommandName,
-          description:
-            frontmatter?.description || `${prefix} command: ${commandName}`,
+          description: frontmatter?.description ?? '',
           progressMessage: `Executing ${prefix} command...`,
           async getPromptForCommand(args: string) {
             // Use the file content as the prompt
