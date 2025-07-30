@@ -23,7 +23,7 @@ export const MODEL_ALIAS: Record<string, string> = {
   'flash-lite': 'gemini-2.5-flash-lite',
   flash: 'gemini-2.5-flash',
   gemini: 'gemini-2.5-pro',
-  grok: 'grok-3-fast-beta',
+  grok: 'grok-4',
   sonnet: 'claude-sonnet-4-20250514',
   'sonnet-3.5': 'claude-3-5-sonnet-20241022',
   'sonnet-3.7': 'claude-3-7-sonnet-20250219',
@@ -36,7 +36,6 @@ export const MODEL_ALIAS: Record<string, string> = {
   'openrouter/k2': 'openrouter/moonshotai/kimi-k2',
   'openrouter/q3': 'openrouter/qwen/qwen3-235b-a22b-07-25',
   'openrouter/q3-coder': 'openrouter/qwen/qwen3-coder',
-  cypher: 'openrouter/openrouter/cypher-alpha:free',
   'aihubmix/sonnet-3.5': 'aihubmix/claude-3-5-sonnet-20241022',
   'aihubmix/sonnet-3.7': 'aihubmix/claude-3-7-sonnet-20250219',
   'aihubmix/sonnet': 'aihubmix/claude-sonnet-4-20250514',
@@ -49,6 +48,11 @@ export const MODEL_ALIAS: Record<string, string> = {
   k2: 'kimi-k2-0711-preview',
   'groq/k2': 'groq/moonshotai/kimi-k2-instruct',
   'iflow/q3-coder': 'iflow/Qwen3-Coder',
+  'iflow/k2': 'iflow/KIMI-K2',
+  'iflow/r1': 'iflow/DeepSeek-R1',
+  'iflow/deepseek': 'iflow/DeepSeek-V3',
+  'iflow/q3': 'iflow/Qwen3-235B-A22B-Instruct',
+  'iflow/q3-thinking': 'iflow/Qwen3-235B-A22B-Thinking-2507',
 };
 const OPENAI_MODELS = [
   'gpt-4.1',
@@ -65,10 +69,11 @@ const GOOGLE_MODELS = [
 ];
 const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'];
 const XAI_MODELS = [
-  'grok-3-beta',
-  'grok-3-fast-beta',
-  'grok-3-mini-beta',
-  'grok-3-mini-fast-beta',
+  'grok-3',
+  'grok-3-fast',
+  'grok-3-mini',
+  'grok-3-mini-fast',
+  'grok-4',
 ];
 const ANTHROPIC_MODELS = [
   'claude-opus-4-20250514',
@@ -80,7 +85,7 @@ const ANTHROPIC_MODELS = [
 const AIHUBMIX_MODELS = [
   'gemini-2.5-pro',
   'gemini-2.5-flash',
-  'gemini-2.5-flash-lite-preview-06-17',
+  'gemini-2.5-flash-lite',
   'DeepSeek-R1',
   'DeepSeek-V3',
   'claude-opus-4-20250514',
@@ -96,7 +101,6 @@ const AIHUBMIX_MODELS = [
   'o4-mini',
 ];
 const OPENROUTER_MODELS = [
-  'openrouter/cypher-alpha:free',
   'anthropic/claude-3.5-sonnet',
   'anthropic/claude-3.7-sonnet',
   'anthropic/claude-sonnet-4',
@@ -113,7 +117,16 @@ const OPENROUTER_MODELS = [
   'qwen/qwen3-235b-a22b-07-25',
   'qwen/qwen3-coder',
 ];
-const IFLOW_MODELS = ['Qwen3-Coder'];
+// ref:
+// https://docs.iflow.cn/docs/
+const IFLOW_MODELS = [
+  'Qwen3-Coder',
+  'KIMI-K2',
+  'DeepSeek-V3',
+  'DeepSeek-R1',
+  'Qwen3-235B-A22B-Instruct',
+  'Qwen3-235B-A22B-Thinking-2507',
+];
 const MOONSHOT_MODELS = ['kimi-k2-0711-preview'];
 const GROQ_MODELS = ['moonshotai/kimi-k2-instruct', 'qwen/qwen3-32b'];
 
