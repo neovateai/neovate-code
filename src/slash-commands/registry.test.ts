@@ -64,17 +64,44 @@ describe('parseSlashCommand', () => {
     const result = parseSlashCommand('  /help  ');
     expect(result).toEqual({ command: 'help', args: '' });
   });
+
+  it('should return null for file paths', () => {
+    expect(parseSlashCommand('/home/user/file.txt')).toBeNull();
+    expect(parseSlashCommand('/usr/bin/node')).toBeNull();
+    expect(parseSlashCommand('/path/to/directory/')).toBeNull();
+    expect(parseSlashCommand('/src/components/App.tsx')).toBeNull();
+    expect(parseSlashCommand('/etc/hosts')).toBeNull();
+  });
+
+  it('should still parse valid slash commands', () => {
+    expect(parseSlashCommand('/clear')).toEqual({ command: 'clear', args: '' });
+    expect(parseSlashCommand('/exit')).toEqual({ command: 'exit', args: '' });
+    expect(parseSlashCommand('/help something')).toEqual({
+      command: 'help',
+      args: 'something',
+    });
+  });
 });
 
 describe('isSlashCommand', () => {
   it('should identify slash commands', () => {
     expect(isSlashCommand('/help')).toBe(true);
     expect(isSlashCommand('  /help  ')).toBe(true);
+    expect(isSlashCommand('/clear')).toBe(true);
+    expect(isSlashCommand('/exit')).toBe(true);
   });
 
   it('should identify non-slash commands', () => {
     expect(isSlashCommand('help')).toBe(false);
     expect(isSlashCommand('regular text')).toBe(false);
     expect(isSlashCommand('')).toBe(false);
+  });
+
+  it('should not identify file paths as slash commands', () => {
+    expect(isSlashCommand('/home/user/file.txt')).toBe(false);
+    expect(isSlashCommand('/usr/bin/node')).toBe(false);
+    expect(isSlashCommand('/path/to/directory/')).toBe(false);
+    expect(isSlashCommand('/src/components/App.tsx')).toBe(false);
+    expect(isSlashCommand('/etc/hosts')).toBe(false);
   });
 });
