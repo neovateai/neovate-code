@@ -48,6 +48,7 @@ export const MODEL_ALIAS: Record<string, string> = {
   'aihubmix/flash-lite': `aihubmix/gemini-2.5-flash-lite`,
   k2: 'kimi-k2-0711-preview',
   'groq/k2': 'groq/moonshotai/kimi-k2-instruct',
+  'iflow/q3-coder': 'iflow/Qwen3-Coder',
 };
 const OPENAI_MODELS = [
   'gpt-4.1',
@@ -112,6 +113,7 @@ const OPENROUTER_MODELS = [
   'qwen/qwen3-235b-a22b-07-25',
   'qwen/qwen3-coder',
 ];
+const IFLOW_MODELS = ['Qwen3-Coder'];
 const MOONSHOT_MODELS = ['kimi-k2-0711-preview'];
 const GROQ_MODELS = ['moonshotai/kimi-k2-instruct', 'qwen/qwen3-32b'];
 
@@ -188,6 +190,17 @@ export async function getModel(modelName?: string): Promise<AiSdkModel> {
         apiKey: process.env.GROQ_API_KEY,
       });
       return aisdk(groq(modelName));
+    }
+  }
+  // iflow
+  if (modelName.startsWith('iflow/')) {
+    modelName = modelName.replace('iflow/', '');
+    if (IFLOW_MODELS.includes(modelName)) {
+      const iflow = createOpenAI({
+        baseURL: 'https://apis.iflow.cn/v1/',
+        apiKey: process.env.IFLOW_API_KEY,
+      });
+      return aisdk(iflow(modelName));
     }
   }
   // moonshot

@@ -147,6 +147,10 @@ const MODELS_INFO: Models = {
     contextLimit: LIMIT_256K,
     outputLimit: LIMIT_64K,
   },
+  'iflow/Qwen3-Coder': {
+    contextLimit: LIMIT_256K,
+    outputLimit: LIMIT_64K,
+  },
   'openrouter/openrouter/cypher-alpha:free': {
     contextLimit: 1_000_000,
     outputLimit: 1_000_000,
