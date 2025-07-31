@@ -54,13 +54,13 @@ async function main() {
   const pkg = JSON.parse(
     fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8'),
   );
-  console.log(
+  console.error(
     pc.cyan(
       `
 ▀█▀ ▄▀█ █▄▀ █ █ █▀▄▀█ █
  █  █▀█ █ █ █▄█ █ ▀ █ █
     `.trimEnd(),
-    ),
+    ) + '\n',
   );
   try {
     await checkUpdate();

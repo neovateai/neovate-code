@@ -65,6 +65,7 @@ export async function run(opts: RunOpts) {
     await runInQuiet(opts);
     return;
   }
+  setTerminalTitle(opts.context.productName.toLowerCase());
   try {
     let prompt = opts.prompt;
     debug('prompt', prompt);
@@ -108,7 +109,6 @@ export async function run(opts: RunOpts) {
 }
 
 export async function runDefault(opts: RunCliOpts) {
-  setTerminalTitle(opts.productName.toLowerCase());
   const traceName = `${opts.productName}-default`;
   return await withTrace(traceName, async () => {
     const startTime = Date.now();
@@ -146,7 +146,8 @@ export async function runDefault(opts: RunCliOpts) {
     // Create log file path by replacing .jsonl with .log
     const logFile = traceFile.replace('.jsonl', '.log');
 
-    if (!argv.quiet && process.env.PATCH_CONSOLE !== 'none') {
+    const quiet = argv.quiet || !process.stdin.isTTY;
+    if (!quiet && process.env.PATCH_CONSOLE !== 'none') {
       // Patch console methods to log to file and optionally suppress output
       patchConsole({
         logFile,
@@ -174,7 +175,7 @@ export async function runDefault(opts: RunCliOpts) {
       },
       plugins: opts.plugins,
       traceFile,
-      stagewise: !argv.quiet,
+      stagewise: !quiet,
       mcp: argv.mcp,
     });
     await context.apply({
