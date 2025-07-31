@@ -60,7 +60,7 @@ async function main() {
 ▀█▀ ▄▀█ █▄▀ █ █ █▀▄▀█ █
  █  █▀█ █ █ █▄█ █ ▀ █ █
     `.trimEnd(),
-    ) + '\n',
+    ),
   );
   try {
     await checkUpdate();
