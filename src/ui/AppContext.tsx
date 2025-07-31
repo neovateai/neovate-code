@@ -1,4 +1,10 @@
-import React, { ReactNode, createContext, useContext, useReducer } from 'react';
+import React, {
+  ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useReducer,
+} from 'react';
 import { Context } from '../context';
 import { SelectionInfo } from '../ide';
 import { Service } from '../service';
@@ -308,11 +314,7 @@ export function AppProvider({
       resolve: null,
       isModifying: false,
     },
-    approvalMemory: {
-      proceedOnce: new Set(),
-      proceedAlways: new Set(),
-      proceedAlwaysTool: new Set(),
-    },
+    approvalMemory: context.approvalMemory,
     ide: {
       isConnected: false,
       latestSelection: null,
@@ -321,6 +323,10 @@ export function AppProvider({
   };
 
   const [state, dispatch] = useReducer(appReducer, initialState);
+
+  useEffect(() => {
+    context.approvalMemory = state.approvalMemory;
+  }, [state.approvalMemory]);
 
   const contextValue: AppContextType = {
     state,

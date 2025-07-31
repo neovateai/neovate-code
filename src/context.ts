@@ -91,6 +91,13 @@ export class Context {
   env: Env;
   modelInfo: ModelInfo;
   stagewise?: StagewiseAgent;
+
+  approvalMemory: {
+    proceedOnce: Set<string>;
+    proceedAlways: Set<string>;
+    proceedAlwaysTool: Set<string>;
+  };
+
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName || PRODUCT_NAME;
@@ -109,6 +116,12 @@ export class Context {
     this.env = opts.env;
     this.modelInfo = new ModelInfo(this);
     this.stagewise = opts.stagewise;
+
+    this.approvalMemory = {
+      proceedOnce: new Set(),
+      proceedAlways: new Set(),
+      proceedAlwaysTool: new Set(),
+    };
   }
 
   static async create(opts: CreateContextOpts) {
