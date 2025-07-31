@@ -1,3 +1,33 @@
+## 0.6.0
+
+`2025-07-31`
+
+- fix: remove unnecessary newline in CLI output by [@sorrycc](https://github.com/sorrycc)
+- fix: pipe and jq don't work by [@sorrycc](https://github.com/sorrycc)
+- refactor: update model aliases and info with new providers and limits by [@sorrycc](https://github.com/sorrycc)
+- feat: add iFlow AI model provider by [@sorrycc](https://github.com/sorrycc)
+- feat: add file path detection to slash command parser by [@阿平](https://github.com/阿平) in [#144](https://github.com/umijs/takumi/pull/144)
+- feat: add frontmatter support for command descriptions by [@阿平](https://github.com/阿平) in [#143](https://github.com/umijs/takumi/pull/143)
+- fix: handling the case for unclosed tool arguments parsing by [@阿平](https://github.com/阿平) in [#142](https://github.com/umijs/takumi/pull/142)
+- refactor: move todo directory to global config dir by [@sorrycc](https://github.com/sorrycc)
+- fix: exit process after commit by [@sorrycc](https://github.com/sorrycc)
+- feat: add --no-mcp flag to disable MCP servers by [@sorrycc](https://github.com/sorrycc)
+- feat: Add env var to control console patching by [@sorrycc](https://github.com/sorrycc)
+- feat: add stagewise command and improve agent description by [@阿平](https://github.com/阿平) in [#141](https://github.com/umijs/takumi/pull/141)
+- feat: add result param to toolResult plugin interface by [@阿平](https://github.com/阿平) in [#139](https://github.com/umijs/takumi/pull/139)
+- perf: optimize resize debounce with width threshold check by [@阿平](https://github.com/阿平) in [#140](https://github.com/umijs/takumi/pull/140)
+- fix: only patch console when not in quiet mode by [@阿平](https://github.com/阿平) in [#138](https://github.com/umijs/takumi/pull/138)
+- refactor: update toolResult plugin interface params by [@阿平](https://github.com/阿平) in [#137](https://github.com/umijs/takumi/pull/137)
+- feat: add toolResultFormat hook for custom tool output formatting by [@阿平](https://github.com/阿平) in [#136](https://github.com/umijs/takumi/pull/136)
+- fix: patch marked-terminal to handle nested list items correctly by [@阿平](https://github.com/阿平) in [#135](https://github.com/umijs/takumi/pull/135)
+- feat: add OpenRouter Qwen models and update Gemini Flash Lite model by [@sorrycc](https://github.com/sorrycc)
+- feat: add Stagewise agent integration with enhanced logging [AI] by [@sorrycc](https://github.com/sorrycc)
+- fix: add websocket connection check before sending message by [@阿平](https://github.com/阿平) in [#134](https://github.com/umijs/takumi/pull/134)
+- feat: add support for new OpenRouter model qwen/qwen3-235b-a22b-07-25 by [@@_@](https://github.com/@_@) in [#133](https://github.com/umijs/takumi/pull/133)
+- fix: improve json parsing for tool use arguments by [@阿平](https://github.com/阿平) in [#128](https://github.com/umijs/takumi/pull/128)
+- feat: add token usage display when ctrl+c is pressed by [@阿平](https://github.com/阿平) in [#127](https://github.com/umijs/takumi/pull/127)
+
+
 ## 0.5.1
 
 `2025-07-21`
