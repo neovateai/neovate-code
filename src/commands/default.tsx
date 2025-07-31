@@ -122,7 +122,7 @@ export async function runDefault(opts: RunCliOpts) {
         mcp: true,
       },
       array: ['plugin'],
-      boolean: ['json', 'help', 'quiet', 'mcp'],
+      boolean: ['help', 'quiet', 'mcp'],
       string: [
         'model',
         'smallModel',
@@ -218,7 +218,6 @@ Options:
   --small-model <model>         Specify a smaller model for some tasks
   --system-prompt <prompt>      Custom system prompt for code agent
   -q, --quiet                   Quiet mode, non interactive
-  --json                        Output result as JSON
   --no-mcp                      Disable MCP servers
 
 Examples:
