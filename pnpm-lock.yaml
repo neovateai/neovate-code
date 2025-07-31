@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
+  '@openai/agents-core':
+    hash: 190ba119cdb7b7c13198d57a9d9c9493069ce9527662a4e520e105edf17b86a7
+    path: patches/@openai__agents-core.patch
   marked-terminal:
     hash: 536fe9685e91d559cf29a033191aa39da45729949e9d1c69989255091c8618fb
     path: patches/marked-terminal.patch
@@ -52,6 +55,9 @@ importers:
       '@openai/agents':
         specifier: ^0.0.12
         version: 0.0.12(ws@8.18.3)(zod@3.25.76)
+      '@openai/agents-core':
+        specifier: ^0.0.12
+        version: 0.0.12(patch_hash=190ba119cdb7b7c13198d57a9d9c9493069ce9527662a4e520e105edf17b86a7)(ws@8.18.3)(zod@3.25.76)
       '@openai/agents-extensions':
         specifier: ^0.0.12
         version: 0.0.12(@openai/agents@0.0.12(ws@8.18.3)(zod@3.25.76))(ws@8.18.3)
@@ -8491,7 +8497,7 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
 
-  '@openai/agents-core@0.0.12(ws@8.18.3)(zod@3.25.76)':
+  '@openai/agents-core@0.0.12(patch_hash=190ba119cdb7b7c13198d57a9d9c9493069ce9527662a4e520e105edf17b86a7)(ws@8.18.3)(zod@3.25.76)':
     dependencies:
       '@openai/zod': zod@3.25.67
       debug: 4.4.1(supports-color@8.1.1)
@@ -8516,7 +8522,7 @@ snapshots:
 
   '@openai/agents-openai@0.0.12(ws@8.18.3)(zod@3.25.76)':
     dependencies:
-      '@openai/agents-core': 0.0.12(ws@8.18.3)(zod@3.25.76)
+      '@openai/agents-core': 0.0.12(patch_hash=190ba119cdb7b7c13198d57a9d9c9493069ce9527662a4e520e105edf17b86a7)(ws@8.18.3)(zod@3.25.76)
       '@openai/zod': zod@3.25.67
       debug: 4.4.1(supports-color@8.1.1)
       openai: 5.10.1(ws@8.18.3)(zod@3.25.76)
@@ -8527,7 +8533,7 @@ snapshots:
 
   '@openai/agents-realtime@0.0.12(zod@3.25.76)':
     dependencies:
-      '@openai/agents-core': 0.0.12(ws@8.18.3)(zod@3.25.76)
+      '@openai/agents-core': 0.0.12(patch_hash=190ba119cdb7b7c13198d57a9d9c9493069ce9527662a4e520e105edf17b86a7)(ws@8.18.3)(zod@3.25.76)
       '@openai/zod': zod@3.25.67
       '@types/ws': 8.18.1
       debug: 4.4.1(supports-color@8.1.1)
@@ -8540,7 +8546,7 @@ snapshots:
 
   '@openai/agents@0.0.12(ws@8.18.3)(zod@3.25.76)':
     dependencies:
-      '@openai/agents-core': 0.0.12(ws@8.18.3)(zod@3.25.76)
+      '@openai/agents-core': 0.0.12(patch_hash=190ba119cdb7b7c13198d57a9d9c9493069ce9527662a4e520e105edf17b86a7)(ws@8.18.3)(zod@3.25.76)
       '@openai/agents-openai': 0.0.12(ws@8.18.3)(zod@3.25.76)
       '@openai/agents-realtime': 0.0.12(zod@3.25.76)
       debug: 4.4.1(supports-color@8.1.1)
