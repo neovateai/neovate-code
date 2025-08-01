@@ -1,12 +1,16 @@
 import { tool } from '@openai/agents';
-import { spawn } from 'child_process';
 import crypto from 'crypto';
+import createDebug from 'debug';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { z } from 'zod';
 import { Context } from '../context';
 import { ApprovalContext, EnhancedTool, enhanceTool } from '../tool';
+import { getErrorMessage } from '../utils/error';
+import { shellExecute } from '../utils/shell-execution';
+
+const debug = createDebug('takumi:tools:bash');
 
 const BANNED_COMMANDS = [
   'alias',
@@ -37,7 +41,6 @@ const BANNED_COMMANDS = [
 
 const DEFAULT_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const MAX_TIMEOUT = 10 * 60 * 1000; // 10 minutes
-const MAX_OUTPUT_SIZE = 1024 * 1024; // 1MB
 
 function getCommandRoot(command: string): string | undefined {
   return command
@@ -124,127 +127,84 @@ async function executeCommand(
         return `{ ${cmd} }; __code=$?; pgrep -g 0 >${tempFilePath} 2>&1; exit $__code;`;
       })();
 
-  return new Promise((resolve) => {
-    const shell = isWindows
-      ? spawn('cmd.exe', ['/c', wrappedCommand], {
-          stdio: ['ignore', 'pipe', 'pipe'],
-          cwd,
-        })
-      : spawn('bash', ['-c', wrappedCommand], {
-          stdio: ['ignore', 'pipe', 'pipe'],
-          detached: true,
-          cwd,
-        });
+  debug('wrappedCommand', wrappedCommand);
 
-    let exited = false;
-    let stdout = '';
-    let stderr = '';
-    let error: Error | null = null;
-    let code: number | null = null;
-    let processSignal: NodeJS.Signals | null = null;
+  const { result: resultPromise } = shellExecute(
+    wrappedCommand,
+    cwd,
+    actualTimeout,
+  );
 
-    // Set up timeout
-    const timeoutId = setTimeout(() => {
-      if (!exited && shell.pid) {
-        if (isWindows) {
-          spawn('taskkill', ['/pid', shell.pid.toString(), '/f', '/t']);
-        } else {
-          try {
-            process.kill(-shell.pid, 'SIGTERM');
-            setTimeout(() => {
-              if (shell.pid && !exited) {
-                process.kill(-shell.pid, 'SIGKILL');
-              }
-            }, 200);
-          } catch {
-            shell.kill('SIGKILL');
-          }
+  const result = await resultPromise;
+
+  const backgroundPIDs: number[] = [];
+  if (os.platform() !== 'win32') {
+    if (fs.existsSync(tempFilePath)) {
+      const pgrepLines = fs
+        .readFileSync(tempFilePath, 'utf8')
+        .split('\n')
+        .filter(Boolean);
+      for (const line of pgrepLines) {
+        if (!/^\d+$/.test(line)) {
+          console.error(`pgrep: ${line}`);
+        }
+        const pid = Number(line);
+        if (pid !== result.pid) {
+          backgroundPIDs.push(pid);
         }
       }
-    }, actualTimeout);
+    }
+  }
 
-    shell.stdout?.on('data', (data: Buffer) => {
-      if (!exited) {
-        const newData = data.toString().replace(/\x1b\[[0-9;]*m/g, '');
-        if (stdout.length + newData.length > MAX_OUTPUT_SIZE) {
-          stdout += newData.substring(0, MAX_OUTPUT_SIZE - stdout.length);
-          stdout += '\n... [Output truncated due to size limit]';
-        } else {
-          stdout += newData;
-        }
-      }
-    });
+  let llmContent = '';
+  if (result.cancelled) {
+    llmContent = 'Command execution timed out and was cancelled.';
+    if (result.output.trim()) {
+      llmContent += ` Below is the output (on stdout and stderr) before it was cancelled:\n${result.output}`;
+    } else {
+      llmContent += ' There was no output before it was cancelled.';
+    }
+  } else {
+    const finalError = result.error
+      ? result.error.message.replace(wrappedCommand, command)
+      : '(none)';
+    llmContent = [
+      `Command: ${command}`,
+      `Directory: ${cwd || '(root)'}`,
+      `Stdout: ${result.stdout || '(empty)'}`,
+      `Stderr: ${result.stderr || '(empty)'}`,
+      `Error: ${finalError}`, // Use the cleaned error string.
+      `Exit Code: ${result.exitCode ?? '(none)'}`,
+      `Signal: ${result.signal ?? '(none)'}`,
+      `Background PIDs: ${
+        backgroundPIDs.length ? backgroundPIDs.join(', ') : '(none)'
+      }`,
+      `Process Group PGID: ${result.pid ?? '(none)'}`,
+    ].join('\n');
+  }
 
-    shell.stderr?.on('data', (data: Buffer) => {
-      if (!exited) {
-        const newData = data.toString().replace(/\x1b\[[0-9;]*m/g, '');
-        if (stderr.length + newData.length > MAX_OUTPUT_SIZE) {
-          stderr += newData.substring(0, MAX_OUTPUT_SIZE - stderr.length);
-          stderr += '\n... [Output truncated due to size limit]';
-        } else {
-          stderr += newData;
-        }
-      }
-    });
+  debug('llmContent', llmContent);
 
-    shell.on('error', (err: Error) => {
-      error = err;
-      error.message = error.message.replace(wrappedCommand, command);
-    });
+  let message = '';
+  if (result.output.trim()) {
+    message = result.output;
+  } else {
+    if (result.cancelled) {
+      message = 'Command execution timed out and was cancelled.';
+    } else if (result.signal) {
+      message = `Command execution was terminated by signal ${result.signal}.`;
+    } else if (result.error) {
+      message = `Command failed: ${getErrorMessage(result.error)}`;
+    } else if (result.exitCode !== null && result.exitCode !== 0) {
+      message = `Command exited with code: ${result.exitCode}`;
+    }
+  }
 
-    shell.on('exit', (_code: number | null, _signal: NodeJS.Signals | null) => {
-      exited = true;
-      code = _code;
-      processSignal = _signal;
-      clearTimeout(timeoutId);
-
-      // Parse background PIDs on non-Windows systems
-      const backgroundPIDs: number[] = [];
-      if (!isWindows && fs.existsSync(tempFilePath)) {
-        try {
-          const pgrepLines = fs
-            .readFileSync(tempFilePath, 'utf8')
-            .split('\n')
-            .filter(Boolean);
-          for (const line of pgrepLines) {
-            if (/^\d+$/.test(line)) {
-              const pid = Number(line);
-              if (pid !== shell.pid) {
-                backgroundPIDs.push(pid);
-              }
-            }
-          }
-          fs.unlinkSync(tempFilePath);
-        } catch {
-          // Ignore cleanup errors
-        }
-      }
-
-      const result = {
-        command,
-        timeout: actualTimeout,
-        exitCode: code,
-        signal: processSignal,
-        stdout: stdout.trim(),
-        stderr: stderr.trim(),
-        backgroundPIDs: backgroundPIDs.length > 0 ? backgroundPIDs : undefined,
-      };
-
-      if (error || code !== 0 || processSignal) {
-        resolve({
-          success: false,
-          error: error?.message || `Command exited with code ${code}`,
-          ...result,
-        });
-      } else {
-        resolve({
-          success: true,
-          message: stdout.trim() || 'Command executed successfully',
-          ...result,
-        });
-      }
-    });
-  });
+  return {
+    success: true,
+    message,
+    date: llmContent,
+  };
 }
 
 export function createBashTool(opts: { context: Context }): EnhancedTool {
@@ -281,17 +241,29 @@ cd /foo/bar && pytest tests
           .describe(`Optional timeout in milliseconds (max ${MAX_TIMEOUT})`),
       }),
       execute: async ({ command, timeout = DEFAULT_TIMEOUT }) => {
-        if (!command) {
+        try {
+          if (!command) {
+            return {
+              success: false,
+              error: 'Command cannot be empty.',
+            };
+          }
+          const result = await executeCommand(
+            command,
+            timeout || DEFAULT_TIMEOUT,
+            opts.context.cwd,
+          );
+
+          return result;
+        } catch (e) {
           return {
             success: false,
-            error: 'Command cannot be empty.',
+            error:
+              e instanceof Error
+                ? `Command execution failed: ${getErrorMessage(e)}`
+                : 'Command execution failed.',
           };
         }
-        return executeCommand(
-          command,
-          timeout || DEFAULT_TIMEOUT,
-          opts.context.cwd,
-        );
       },
     }),
     {
