@@ -1,3 +1,11 @@
+/**
+ * Shell execution implementation with robust output handling and binary detection.
+ * This implementation references the shell execution service from Google Gemini CLI,
+ * with enhanced encoding detection and binary output handling capabilities.
+ *
+ * Based on Apache License, thanks to the original work:
+ * ref: https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/services/shellExecutionService.ts
+ */
 import { spawn } from 'child_process';
 import os from 'os';
 import stripAnsi from 'strip-ansi';
