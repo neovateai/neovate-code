@@ -115,6 +115,9 @@ importers:
       chalk:
         specifier: ^5.4.1
         version: 5.4.1
+      chardet:
+        specifier: ^2.1.0
+        version: 2.1.0
       chokidar:
         specifier: ^4.0.3
         version: 4.0.3
@@ -193,6 +196,9 @@ importers:
       spawn-rx:
         specifier: ^5.1.2
         version: 5.1.2
+      strip-ansi:
+        specifier: ^7.1.0
+        version: 7.1.0
       tsx:
         specifier: ^4.20.3
         version: 4.20.3
@@ -3366,6 +3372,9 @@ packages:
 
   character-reference-invalid@2.0.1:
     resolution: {integrity: sha512-iBZ4F4wRbyORVsu0jPV7gXkOsGYjGHPmAyv+HiHG8gi5PtC9KI2j1+v8/tlibRvjoWX027ypmG/n0HtO5t7unw==}
+
+  chardet@2.1.0:
+    resolution: {integrity: sha512-bNFETTG/pM5ryzQ9Ad0lJOTa6HWD/YsScAR3EnCPZRPlQh77JocYktSHOUHelyhm8IARL+o4c4F1bP5KVOjiRA==}
 
   check-error@2.1.1:
     resolution: {integrity: sha512-OAlb+T7V4Op9OwdkjmguYRqncdlx5JiofwOAUkmTF+jNdHwzTaTs4sRAGpzLF3oOz5xAyDGrPgeIDFQmDOTiJw==}
@@ -10497,6 +10506,8 @@ snapshots:
   character-reference-invalid@1.1.4: {}
 
   character-reference-invalid@2.0.1: {}
+
+  chardet@2.1.0: {}
 
   check-error@2.1.1: {}
 
