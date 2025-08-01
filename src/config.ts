@@ -3,19 +3,13 @@ import fs from 'fs';
 import { homedir } from 'os';
 import path from 'path';
 
-type McpStdioServerConfig = {
-  type?: 'stdio';
-  command: string;
-  args: string[];
+type McpServerConfig = {
+  command?: string;
+  args?: string[];
   env?: Record<string, string>;
+  url?: string;
   disable?: boolean;
 };
-type McpSSEServerConfig = {
-  type: 'sse';
-  url: string;
-  disable?: boolean;
-};
-type McpServerConfig = McpStdioServerConfig | McpSSEServerConfig;
 
 export type ApprovalMode = 'default' | 'autoEdit' | 'yolo';
 

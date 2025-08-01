@@ -111,17 +111,13 @@ const mcpRoute: FastifyPluginAsync = async (app) => {
         ? configManager.globalConfig.mcpServers || {}
         : configManager.projectConfig.mcpServers || {};
 
-      if (transport === 'sse') {
-        if (!url) {
-          throw new Error('URL is required for SSE transport');
-        }
+      if (url) {
         mcpServers[name] = {
-          type: 'sse',
           url,
         };
       } else {
         if (!command) {
-          throw new Error('Command is required for stdio transport');
+          throw new Error('Command is required when URL is not provided');
         }
         mcpServers[name] = {
           command,
@@ -195,24 +191,30 @@ const mcpRoute: FastifyPluginAsync = async (app) => {
       // Update existing server config
       const existingServer = mcpServers[name];
 
-      if (transport === 'sse' || existingServer.type === 'sse') {
-        const sseServer =
-          existingServer.type === 'sse' ? existingServer : { url: '' };
-        mcpServers[name] = {
-          type: 'sse',
-          url: url || sseServer.url,
+      let newConfig;
+      if (url) {
+        // If url is provided, it's a URL-based server.
+        // It should discard command/args.
+        newConfig = {
+          url: url,
+          env: env ? JSON.parse(env) : existingServer.env,
+        };
+      } else if (command) {
+        // If command is provided, it's a command-based server.
+        // It should discard url.
+        newConfig = {
+          command: command,
+          args: args || existingServer.args,
+          env: env ? JSON.parse(env) : existingServer.env,
         };
       } else {
-        const stdioServer =
-          !existingServer.type || existingServer.type === 'stdio'
-            ? (existingServer as any)
-            : { command: '', args: [], env: undefined };
-        mcpServers[name] = {
-          command: command || stdioServer.command,
-          args: args || stdioServer.args,
-          env: env ? JSON.parse(env) : stdioServer.env,
-        };
+        // If neither is provided, just update non-type fields like args and env.
+        newConfig = { ...existingServer };
+        if (args) newConfig.args = args;
+        if (env) newConfig.env = JSON.parse(env);
       }
+
+      mcpServers[name] = newConfig;
 
       configManager.setConfig(global, 'mcpServers', JSON.stringify(mcpServers));
 

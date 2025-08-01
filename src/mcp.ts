@@ -6,7 +6,6 @@ import {
 import createDebug from 'debug';
 
 export interface MCPConfig {
-  type?: 'stdio' | 'sse';
   command?: string;
   args?: string[];
   env?: Record<string, string>;
@@ -39,22 +38,26 @@ export class MCPManager {
         continue;
       }
       let server: MCPServerStdio | MCPServerStreamableHttp;
-      if (config.type === 'stdio' || !config.type) {
+      if (config.url) {
+        server = new MCPServerStreamableHttp({
+          url: config.url,
+          timeout: config.timeout,
+        });
+      } else if (config.command) {
         const env = config.env;
         if (env) {
           env.PATH = process.env.PATH || '';
         }
         server = new MCPServerStdio({
-          command: config.command!,
+          command: config.command,
           args: config.args,
           env,
           timeout: config.timeout,
         });
       } else {
-        server = new MCPServerStreamableHttp({
-          url: config.url!,
-          timeout: config.timeout,
-        });
+        throw new Error(
+          `Invalid MCP config for ${key}: missing url or command`,
+        );
       }
       servers.set(key, server);
     }

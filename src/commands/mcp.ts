@@ -14,7 +14,7 @@ Options:
   -h, --help                            Show help
   -g, --global                          Use global config instead of project config
   -e, --env <json>                      Environment variables as JSON string
-  --transport <type>                    Transport type (stdio or sse)
+  --url <url>                           URL for HTTP/SSE transport
 
 Commands:
   get [options] <name>                  Get an MCP server configuration
@@ -29,7 +29,7 @@ Examples:
   ${p} mcp get my-server              Get configuration for my-server
   ${p} mcp add my-server npx @example/mcp-server  Add stdio MCP server
   ${p} mcp add -g my-server npx @example/mcp-server  Add stdio MCP server globally
-  ${p} mcp add --transport sse my-sse http://localhost:3000  Add SSE MCP server
+  ${p} mcp add --url http://localhost:3000 my-sse  Add HTTP/SSE MCP server
   ${p} mcp add -e '{"API_KEY":"123"}' my-server npx @example/mcp-server  Add server with env vars
   ${p} mcp list                       Show all project MCP servers
   ${p} mcp ls -g                      Show all global MCP servers
@@ -50,7 +50,7 @@ export async function runMCP(opts: RunCliOpts) {
       env: 'e',
     },
     boolean: ['help', 'global'],
-    string: ['env', 'transport'],
+    string: ['env', 'url'],
   });
   const command = argv._[0];
 
@@ -98,10 +98,9 @@ export async function runMCP(opts: RunCliOpts) {
       (argv.global
         ? configManager.globalConfig.mcpServers
         : configManager.projectConfig.mcpServers) || {};
-    if (argv.transport === 'sse') {
+    if (argv.url) {
       mcpServers[key] = {
-        type: 'sse',
-        url: value,
+        url: argv.url,
       };
     } else {
       const [command, ...args] = argv._.slice(2) as string[];
