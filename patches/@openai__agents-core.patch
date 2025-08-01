@@ -1,0 +1,76 @@
+diff --git a/dist/mcp.d.ts b/dist/mcp.d.ts
+index f9c6aa8e0ab5a2b43803d1cc8f2c6ede0d913986..09e489084510b5ee9af989de1c18b7a7580cbcd4 100644
+--- a/dist/mcp.d.ts
++++ b/dist/mcp.d.ts
+@@ -146,6 +146,7 @@ export interface BaseMCPServerStdioOptions {
+     encoding?: string;
+     encodingErrorHandler?: 'strict' | 'ignore' | 'replace';
+     logger?: Logger;
++    timeout?: number;
+ }
+ export interface DefaultMCPServerStdioOptions extends BaseMCPServerStdioOptions {
+     command: string;
+@@ -165,6 +166,7 @@ export interface MCPServerStreamableHttpOptions {
+     requestInit?: any;
+     reconnectionOptions?: any;
+     sessionId?: string;
++    timeout?: number;
+ }
+ /**
+  * Represents a JSON-RPC request message.
+diff --git a/dist/shims/mcp-server/node.mjs b/dist/shims/mcp-server/node.mjs
+index f595594fd235cdf92a024a1f34bd7c69de2ec00c..f191f28d0d4a98764317e052a32d9c3c494b324a 100644
+--- a/dist/shims/mcp-server/node.mjs
++++ b/dist/shims/mcp-server/node.mjs
+@@ -8,6 +8,9 @@ npm install @modelcontextprotocol/sdk
+     `.trim());
+     throw error;
+ }
++
++const DEFAULT_TOOL_CALL_TIMEOUT = 60000;
++
+ export class NodeMCPServerStdio extends BaseMCPServerStdio {
+     session = null;
+     _cacheDirty = true;
+@@ -17,9 +20,11 @@ export class NodeMCPServerStdio extends BaseMCPServerStdio {
+     params;
+     _name;
+     transport = null;
++    timeout;
+     constructor(params) {
+         super(params);
+         this.clientSessionTimeoutSeconds = params.clientSessionTimeoutSeconds ?? 5;
++        this.timeout = params.timeout ?? DEFAULT_TOOL_CALL_TIMEOUT;
+         if ('fullCommand' in params) {
+             const elements = params.fullCommand.split(' ');
+             const command = elements.shift();
+@@ -92,6 +97,8 @@ export class NodeMCPServerStdio extends BaseMCPServerStdio {
+         const response = await this.session.callTool({
+             name: toolName,
+             arguments: args ?? {},
++        }, undefined, {
++            timeout: this.timeout,
+         });
+         const parsed = CallToolResultSchema.parse(response);
+         const result = parsed.content;
+@@ -121,9 +128,11 @@ export class NodeMCPServerStreamableHttp extends BaseMCPServerStreamableHttp {
+     params;
+     _name;
+     transport = null;
++    timeout;
+     constructor(params) {
+         super(params);
+         this.clientSessionTimeoutSeconds = params.clientSessionTimeoutSeconds ?? 5;
++        this.timeout = params.timeout ?? DEFAULT_TOOL_CALL_TIMEOUT;
+         this.params = params;
+         this._name = params.name || `streamable-http: ${this.params.url}`;
+     }
+@@ -180,6 +189,8 @@ export class NodeMCPServerStreamableHttp extends BaseMCPServerStreamableHttp {
+         const response = await this.session.callTool({
+             name: toolName,
+             arguments: args ?? {},
++        }, undefined, {
++            timeout: this.timeout,
+         });
+         const parsed = CallToolResultSchema.parse(response);
+         const result = parsed.content;

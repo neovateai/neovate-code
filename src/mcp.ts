@@ -12,6 +12,10 @@ export interface MCPConfig {
   env?: Record<string, string>;
   url?: string;
   disable?: boolean;
+  /**
+   * The timeout for tool calls in milliseconds.
+   */
+  timeout?: number;
 }
 
 const debug = createDebug('takumi:mcp');
@@ -44,10 +48,12 @@ export class MCPManager {
           command: config.command!,
           args: config.args,
           env,
+          timeout: config.timeout,
         });
       } else {
         server = new MCPServerStreamableHttp({
           url: config.url!,
+          timeout: config.timeout,
         });
       }
       servers.set(key, server);
