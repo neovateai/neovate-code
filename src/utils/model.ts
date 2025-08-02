@@ -225,6 +225,7 @@ const MODELS_INFO: Models = {
     MODELS_INFO_BY_MODEL.QWEN3_235B_A22B_THINK,
   // moonshotai
   'kimi-k2-0711-preview': MODELS_INFO_BY_MODEL.KIMI_K2,
+  'kimi-k2-turbo-preview': MODELS_INFO_BY_MODEL.KIMI_K2,
   // groq
   'groq/qwen/qwen3-32b': MODELS_INFO_BY_MODEL.QWEN3_32B,
   'groq/moonshotai/kimi-k2-instruct': MODELS_INFO_BY_MODEL.KIMI_K2,

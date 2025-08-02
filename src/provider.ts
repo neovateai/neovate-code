@@ -46,6 +46,7 @@ export const MODEL_ALIAS: Record<string, string> = {
   'aihubmix/flash': 'aihubmix/gemini-2.5-flash',
   'aihubmix/flash-lite': `aihubmix/gemini-2.5-flash-lite`,
   k2: 'kimi-k2-0711-preview',
+  'k2-turbo': 'kimi-k2-turbo-preview',
   'groq/k2': 'groq/moonshotai/kimi-k2-instruct',
   'iflow/q3-coder': 'iflow/Qwen3-Coder',
   'iflow/k2': 'iflow/KIMI-K2',
@@ -127,7 +128,7 @@ const IFLOW_MODELS = [
   'Qwen3-235B-A22B-Instruct',
   'Qwen3-235B-A22B-Thinking-2507',
 ];
-const MOONSHOT_MODELS = ['kimi-k2-0711-preview'];
+const MOONSHOT_MODELS = ['kimi-k2-0711-preview', 'kimi-k2-turbo-preview'];
 const GROQ_MODELS = ['moonshotai/kimi-k2-instruct', 'qwen/qwen3-32b'];
 
 export async function getModel(modelName?: string): Promise<AiSdkModel> {
