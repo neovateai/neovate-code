@@ -226,12 +226,18 @@ Notes:
 - If you _still_ need to run \`grep\`, STOP. ALWAYS USE ripgrep at \`rg\` first, which all users have pre-installed.
 - When issuing multiple commands, use the ';' or '&&' operator to separate them. DO NOT use newlines (newlines are ok in quoted strings).
 - Try to maintain your current working directory throughout the session by using absolute paths and avoiding usage of \`cd\`. You may use \`cd\` if the User explicitly requests it.
+- Don't add \`<command>\` wrapper to the command.
+
 <good-example>
 pytest /foo/bar/tests
 </good-example>
 <bad-example>
 cd /foo/bar && pytest tests
-</bad-example>`.trim(),
+</bad-example>
+<bad-example>
+<command>pytest /foo/bar/tests</command>
+</bad-example>
+`.trim(),
       parameters: z.object({
         command: z.string().describe('The command to execute'),
         timeout: z
