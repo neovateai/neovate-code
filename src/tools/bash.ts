@@ -42,6 +42,47 @@ const BANNED_COMMANDS = [
 const DEFAULT_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const MAX_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
+const MAX_MESSAGE_LENGTH = 500;
+
+/**
+ * Intelligently truncate output, prioritizing appropriate breakpoints to maintain readability
+ */
+function truncateOutput(
+  output: string,
+  maxLength: number = MAX_MESSAGE_LENGTH,
+): string {
+  if (output.length <= maxLength) return output;
+
+  // Prioritize breaking at line breaks to maintain readability
+  const lines = output.split('\n');
+  let truncated = '';
+
+  for (const line of lines) {
+    const nextLength = (truncated + line + '\n').length;
+    if (nextLength > maxLength) {
+      // If there's already content, break here
+      if (truncated) {
+        return truncated.trim() + '\n...';
+      }
+
+      // If the line is too long, try to break at a word boundary
+      const availableLength = maxLength - 3; // Reserve space for '...'
+      const lastSpace = line.lastIndexOf(' ', availableLength);
+
+      // If a suitable space position is found (not too early)
+      if (lastSpace > availableLength * 0.7) {
+        return line.slice(0, lastSpace) + '...';
+      }
+
+      // Otherwise, break at the character boundary
+      return line.slice(0, availableLength) + '...';
+    }
+    truncated += line + '\n';
+  }
+
+  return truncated.trim();
+}
+
 function getCommandRoot(command: string): string | undefined {
   return command
     .trim()
@@ -186,8 +227,21 @@ async function executeCommand(
   debug('llmContent', llmContent);
 
   let message = '';
-  if (result.output.trim()) {
-    message = result.output;
+  if (result.output?.trim()) {
+    debug('result.output:', result.output);
+
+    const safeOutput =
+      typeof result.output === 'string' ? result.output : String(result.output);
+    message = truncateOutput(safeOutput);
+
+    if (message !== result.output) {
+      debug(
+        'output was truncated from',
+        result.output.length,
+        'to',
+        message.length,
+      );
+    }
   } else {
     if (result.cancelled) {
       message = 'Command execution timed out and was cancelled.';
@@ -197,13 +251,15 @@ async function executeCommand(
       message = `Command failed: ${getErrorMessage(result.error)}`;
     } else if (result.exitCode !== null && result.exitCode !== 0) {
       message = `Command exited with code: ${result.exitCode}`;
+    } else {
+      message = 'Command executed successfully.';
     }
   }
 
   return {
     success: true,
     message,
-    date: llmContent,
+    data: llmContent,
   };
 }
 
