@@ -36,6 +36,7 @@ export const MODEL_ALIAS: Record<string, string> = {
   'openrouter/k2': 'openrouter/moonshotai/kimi-k2',
   'openrouter/q3': 'openrouter/qwen/qwen3-235b-a22b-07-25',
   'openrouter/q3-coder': 'openrouter/qwen/qwen3-coder',
+  'openrouter/horizon': 'openrouter/openrouter/horizon-beta',
   'aihubmix/sonnet-3.5': 'aihubmix/claude-3-5-sonnet-20241022',
   'aihubmix/sonnet-3.7': 'aihubmix/claude-3-7-sonnet-20250219',
   'aihubmix/sonnet': 'aihubmix/claude-sonnet-4-20250514',
@@ -117,6 +118,7 @@ const OPENROUTER_MODELS = [
   'moonshotai/kimi-k2',
   'qwen/qwen3-235b-a22b-07-25',
   'qwen/qwen3-coder',
+  'openrouter/horizon-beta',
 ];
 // ref:
 // https://docs.iflow.cn/docs/

@@ -151,6 +151,10 @@ const MODELS_INFO_BY_MODEL = {
     contextLimit: LIMIT_200K,
     outputLimit: LIMIT_100K,
   },
+  HORIZON: {
+    contextLimit: LIMIT_256K,
+    outputLimit: LIMIT_128K,
+  },
 };
 
 // Data source https://models.dev/
@@ -215,6 +219,7 @@ const MODELS_INFO: Models = {
   'openrouter/moonshotai/kimi-k2': MODELS_INFO_BY_MODEL.KIMI_K2,
   'openrouter/qwen/qwen3-235b-a22b-07-25': MODELS_INFO_BY_MODEL.QWEN3_CODER,
   'openrouter/qwen/qwen3-coder': MODELS_INFO_BY_MODEL.QWEN3_CODER,
+  'openrouter/openrouter/horizon-beta': MODELS_INFO_BY_MODEL.HORIZON,
   // iflow
   'iflow/Qwen3-Coder': MODELS_INFO_BY_MODEL.QWEN3_CODER,
   'iflow/KIMI-K2': MODELS_INFO_BY_MODEL.KIMI_K2,
