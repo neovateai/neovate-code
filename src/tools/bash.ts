@@ -197,13 +197,15 @@ async function executeCommand(
       message = `Command failed: ${getErrorMessage(result.error)}`;
     } else if (result.exitCode !== null && result.exitCode !== 0) {
       message = `Command exited with code: ${result.exitCode}`;
+    } else {
+      message = 'Command executed successfully.';
     }
   }
 
   return {
     success: true,
     message,
-    date: llmContent,
+    data: llmContent,
   };
 }
 
