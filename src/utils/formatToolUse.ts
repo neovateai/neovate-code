@@ -107,11 +107,7 @@ function formatToolResult(result: any): string {
     ? `\n<function_results_data>\n${safeStringify(result.data)}\n</function_results_data>\n`
     : '';
 
-  const message = result.message || '';
-  const maxLength = 100;
-  const truncatedMessage =
-    message.length > maxLength ? message.slice(0, maxLength) + '...' : message;
-  return `${truncatedMessage}${resultData}`;
+  return `${result.message || ''}${resultData}`;
 }
 
 function createImageInputItem(data: string, mimeType: string): AgentInputItem {
