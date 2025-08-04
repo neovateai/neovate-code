@@ -251,7 +251,7 @@ ${diff}
 ${repoStyle}
         `,
           model,
-          language: context.config.language,
+          language: context.config.commit?.language ?? context.config.language,
           modelProvider: context.getModelProvider(),
         });
         stop();
@@ -276,7 +276,7 @@ ${repoStyle}
       const branchName = await generateBranchName({
         commitMessage: finalMessage,
         model,
-        language: context.config.language,
+        language: context.config.commit?.language ?? context.config.language,
         modelProvider: context.getModelProvider(),
       });
       stop();
@@ -289,7 +289,7 @@ ${repoStyle}
     if (argv.interactive && !isNonInteractiveParam) {
       await handleInteractiveMode(finalMessage, {
         model,
-        language: context.config.language,
+        language: context.config.commit?.language ?? context.config.language,
         modelProvider: context.getModelProvider(),
         productName: opts.productName,
       });
