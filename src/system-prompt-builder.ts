@@ -28,7 +28,7 @@ export class SystemPromptBuilder {
     const appContext = this.context;
     const contributors: ContextContributor[] = [
       new GitStatusContributor(),
-      ...(process.env.TAKUMI_ENABLE_IDE_CONTRIBUTOR !== 'none'
+      ...(process.env.TAKUMI_IDE_CONTRIBUTOR !== 'none'
         ? [new IDEContributor()]
         : []),
       ...(isProjectDirectory(appContext.cwd)
