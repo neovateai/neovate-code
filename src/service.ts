@@ -282,6 +282,20 @@ export class Service {
   }
 
   async run(opts: ServiceRunOpts): Promise<ServiceRunResult> {
+    if (
+      opts.input.length &&
+      typeof (opts.input[0] as any).content === 'string'
+    ) {
+      await this.context.apply({
+        hook: 'userMessage',
+        args: [
+          {
+            text: (opts.input[0] as any).content,
+          },
+        ],
+        type: PluginHookType.Series,
+      });
+    }
     const stream = new Readable({
       read() {},
     });
@@ -440,24 +454,11 @@ export class Service {
         this.usage.add(this.lastUsage);
       }
 
-      // hook query
-      await this.context.apply({
-        hook: 'query',
-        args: [
-          {
-            text,
-            parsed,
-            input,
-            usage: this.lastUsage.toJSON(),
-          },
-        ],
-        type: PluginHookType.Series,
-      });
-
       const history: AgentInputItem[] = result.history;
       const toolUse = parsed.find((item) => item.type === 'tool_use');
       if (toolUse) {
         const callId = randomUUID();
+        toolUse.callId = callId;
         stream.push(
           JSON.stringify({
             type: 'tool_use',
@@ -486,6 +487,21 @@ export class Service {
       }
       stream.push(null);
       this.history = history;
+
+      // hook query
+      await this.context.apply({
+        hook: 'query',
+        args: [
+          {
+            text,
+            parsed,
+            input,
+            usage: this.lastUsage.toJSON(),
+            model: this.modelId,
+          },
+        ],
+        type: PluginHookType.Series,
+      });
     } catch (error) {
       stream.emit('error', error);
     }

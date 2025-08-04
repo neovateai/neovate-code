@@ -17,6 +17,7 @@ import {
   PluginHookType,
   PluginManager,
 } from './plugin';
+import { createJsonlPlugin } from './plugins/jsonl';
 import { getModel } from './provider';
 import {
   SlashCommandRegistry,
@@ -26,7 +27,7 @@ import { StagewiseAgent } from './stagewise';
 import { SystemPromptBuilder } from './system-prompt-builder';
 import { aisdk } from './utils/ai-sdk';
 import { getEnv } from './utils/env';
-import { getGitStatus } from './utils/git';
+import { getGitStatus, getLlmGitStatus } from './utils/git';
 import { ModelInfo } from './utils/model';
 import { relativeToHome } from './utils/path';
 
@@ -165,6 +166,11 @@ export class Context {
     await this.mcpManager.destroy();
     await this.ide?.disconnect();
     await this.stagewise?.stop();
+    await this.apply({
+      hook: 'destroy',
+      args: [],
+      type: PluginHookType.Parallel,
+    });
   }
 }
 
@@ -175,6 +181,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     globalConfigDir: path.join(homedir(), `.${lowerProductName}`),
     projectConfigDir: path.join(opts.cwd, `.${lowerProductName}`),
   };
+  const gitStatus = await getGitStatus({ cwd: opts.cwd });
 
   debug('createContext', opts);
   const configManager = new ConfigManager(
@@ -186,6 +193,16 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   debug('initialConfig', initialConfig);
 
   const buildinPlugins: Plugin[] = [];
+  if (opts.traceFile) {
+    buildinPlugins.push(
+      createJsonlPlugin({
+        filePath: opts.traceFile,
+        cwd: opts.cwd,
+        version: opts.version || '0.0.0',
+        gitBranch: gitStatus?.branch,
+      }),
+    );
+  }
   const pluginsConfigs: (string | Plugin)[] = [
     ...buildinPlugins,
     ...(initialConfig.plugins || []),
@@ -236,7 +253,6 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     hook: 'generalInfo',
     args: [],
     memo: {
-      ...(opts.traceFile && { 'Log File': relativeToHome(opts.traceFile) }),
       Workspace: relativeToHome(opts.cwd),
       Model: resolvedConfig.model,
       ...(resolvedConfig.smallModel !== resolvedConfig.model && {
@@ -257,7 +273,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   debug('mcpManager created');
   debug('mcpTools', mcpTools);
 
-  const gitStatus = await getGitStatus({ cwd: opts.cwd });
+  const llmGitStatus = await getLlmGitStatus(gitStatus);
   debug('git status', gitStatus);
 
   const ide = new IDE();
@@ -269,7 +285,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     pluginManager,
     mcpManager,
     mcpTools,
-    git: gitStatus,
+    git: llmGitStatus,
     ide,
     generalInfo,
     paths,
@@ -294,7 +310,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     pluginManager,
     mcpManager,
     mcpTools,
-    git: gitStatus,
+    git: llmGitStatus,
     ide,
     generalInfo,
     paths,

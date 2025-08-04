@@ -13,10 +13,11 @@ interface ToolUse {
   type: 'tool_use';
   name: string;
   params: Partial<Record<string, string>>;
+  callId?: string;
   partial: boolean;
 }
 
-type MessageContent = TextContent | ToolUse;
+export type MessageContent = TextContent | ToolUse;
 
 export function parseMessage(text: string): MessageContent[] {
   const contentBlocks: MessageContent[] = [];

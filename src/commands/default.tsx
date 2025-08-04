@@ -10,7 +10,6 @@ import { RunCliOpts } from '..';
 import { Context } from '../context';
 import { PluginHookType } from '../plugin';
 import { Service } from '../service';
-import { setupTracing } from '../tracing';
 import { AppProvider } from '../ui/AppContext';
 import { App } from '../ui/app';
 import { patchConsole } from '../utils/patchConsole';
@@ -154,8 +153,6 @@ export async function runDefault(opts: RunCliOpts) {
         silent: true,
       });
     }
-
-    setupTracing(traceFile);
     const cwd = opts.cwd || process.cwd();
     debug('cwd', cwd);
 
