@@ -105,7 +105,9 @@ export async function run(opts: RunOpts) {
       process.on('SIGINT', exit);
       process.on('SIGTERM', exit);
     }
-  } catch (e) {}
+  } catch (e) {
+    throw e;
+  }
 }
 
 export async function runDefault(opts: RunCliOpts) {
