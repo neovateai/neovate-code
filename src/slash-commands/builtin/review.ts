@@ -8,12 +8,21 @@ export function createReviewCommand() {
     progressMessage: 'Analyzing changes...',
     async getPromptForCommand(args?: string) {
       const prNumber = args?.trim();
+      const lockFiles = [
+        'pnpm-lock.yaml',
+        'package-lock.json',
+        'yarn.lock',
+        'bun.lockb',
+        'Gemfile.lock',
+        'Cargo.lock',
+      ];
+      const lockFilesPattern = lockFiles.map((file) => `':!${file}'`).join(' ');
       return [
         {
           role: 'user',
           content: `You are an expert code reviewer. Follow these steps:
 
-1. If no PR number is provided in the args, use bash("git --no-pager diff --cached -- . ':!pnpm-lock.yaml'") to get the diff
+1. If no PR number is provided in the args, use bash("git --no-pager diff --cached -- . ${lockFilesPattern}") to get the diff
 2. If a PR number is provided, use bash("gh pr checkout <number>") to checkout the PR and bash("gh pr diff <number>") to get the diff
 3. Analyze the changes and provide a thorough code review that includes:
    - Overview of what the PR does
