@@ -18,12 +18,12 @@ import {
   PluginManager,
 } from './plugin';
 import { createJsonlPlugin } from './plugins/jsonl';
+import { createStagewisePlugin } from './plugins/stagewise';
 import { getModel } from './provider';
 import {
   SlashCommandRegistry,
   createSlashCommandRegistry,
 } from './slash-commands';
-import { StagewiseAgent } from './stagewise';
 import { SystemPromptBuilder } from './system-prompt-builder';
 import { aisdk } from './utils/ai-sdk';
 import { getEnv } from './utils/env';
@@ -51,7 +51,6 @@ type ContextOpts = CreateContextOpts & {
   paths: Paths;
   slashCommands: SlashCommandRegistry;
   env: Env;
-  stagewise?: StagewiseAgent;
 };
 
 type Paths = {
@@ -70,8 +69,8 @@ export interface CreateContextOpts {
   version?: string;
   plugins?: Plugin[];
   traceFile?: string;
-  stagewise?: boolean;
   mcp?: boolean;
+  stagewise?: boolean;
 }
 
 export class Context {
@@ -91,7 +90,6 @@ export class Context {
   slashCommands: SlashCommandRegistry;
   env: Env;
   modelInfo: ModelInfo;
-  stagewise?: StagewiseAgent;
 
   approvalMemory: {
     proceedOnce: Set<string>;
@@ -116,7 +114,6 @@ export class Context {
     this.slashCommands = opts.slashCommands;
     this.env = opts.env;
     this.modelInfo = new ModelInfo(this);
-    this.stagewise = opts.stagewise;
 
     this.approvalMemory = {
       proceedOnce: new Set(),
@@ -165,7 +162,6 @@ export class Context {
   async destroy() {
     await this.mcpManager.destroy();
     await this.ide?.disconnect();
-    await this.stagewise?.stop();
     await this.apply({
       hook: 'destroy',
       args: [],
@@ -202,6 +198,9 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
         gitBranch: gitStatus?.branch,
       }),
     );
+  }
+  if (opts.stagewise) {
+    buildinPlugins.push(createStagewisePlugin({}));
   }
   const pluginsConfigs: (string | Plugin)[] = [
     ...buildinPlugins,
@@ -317,21 +316,6 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     slashCommands,
     env,
   });
-
-  // Initialize Stagewise agent if enabled
-  if (opts.stagewise) {
-    try {
-      const stagewise = new StagewiseAgent({
-        context,
-      });
-      await stagewise.start();
-      context.stagewise = stagewise;
-      debug(`Stagewise agent started on port ${stagewise.port}`);
-    } catch (error) {
-      debug('Failed to start Stagewise agent:', error);
-    }
-  }
-
   return context;
 }
 

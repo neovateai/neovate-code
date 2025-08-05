@@ -97,10 +97,11 @@ export class PluginManager {
   }
 }
 
-type PluginContext = Omit<
-  Context,
-  'destroy' | 'getModelProvider' | 'buildSystemPrompts' | 'addHistory'
->;
+// type PluginContext = Omit<
+//   Context,
+//   'destroy' | 'getModelProvider' | 'buildSystemPrompts' | 'addHistory'
+// >;
+type PluginContext = Context;
 
 type TempPluginContext = CreateContextOpts & {
   pluginManager: PluginManager;
@@ -118,6 +119,14 @@ export type GeneralInfo = Record<
       enforce: Enforce;
       text: string;
     }
+>;
+
+type Status = Record<
+  string,
+  {
+    description?: string;
+    items: string[];
+  }
 >;
 
 export type Plugin = {
@@ -200,6 +209,7 @@ export type Plugin = {
   command?: (this: PluginContext) => Promise<any[]> | any[];
   argvConfig?: (this: PluginContext) => Promise<any> | any;
   modelInfo?: (this: PluginContext) => Promise<any> | any;
+  status?: (this: PluginContext) => Promise<Status> | Status;
   toolResult?: (
     this: PluginContext,
     result: any,

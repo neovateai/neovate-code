@@ -4,11 +4,44 @@ import {
   createAgentServer,
 } from '@stagewise/agent-interface/agent';
 import createDebug from 'debug';
-import { Context } from './context';
-import { Service } from './service';
-import { relativeToHome } from './utils/path';
+import { Context } from '../context';
+import { Plugin } from '../plugin';
+import { Service } from '../service';
+import { relativeToHome } from '../utils/path';
 
-const debug = createDebug('takumi:stagewise');
+const debug = createDebug('takumi:plugins:stagewise');
+
+type CreateStagewisePluginOpts = {};
+
+export const createStagewisePlugin = (opts: CreateStagewisePluginOpts) => {
+  let sw: StagewiseAgent | null = null;
+  return {
+    name: 'stagewise',
+    async cliStart() {
+      try {
+        sw = new StagewiseAgent({
+          context: this,
+        });
+        await sw.start();
+        debug(`Stagewise agent started on port ${sw.port}`);
+      } catch (error) {
+        debug('Failed to start Stagewise agent:', error);
+      }
+    },
+    async destroy() {
+      await sw?.stop();
+    },
+    async status() {
+      const port = sw?.port;
+      const status = port ? `Connected, port: ${port}` : 'Disconnected';
+      return {
+        Stagewise: {
+          items: [status],
+        },
+      };
+    },
+  } as Plugin;
+};
 
 export interface StagewiseAgentOpts {
   context: Context;
@@ -134,8 +167,8 @@ export class StagewiseAgent {
         'Generating response...',
       );
 
-      const { query } = await import('./query');
-      const { isReasoningModel } = await import('./provider');
+      const { query } = await import('../query');
+      const { isReasoningModel } = await import('../provider');
 
       const result = await query({
         input: [{ role: 'user', content: enhancedContent }],
