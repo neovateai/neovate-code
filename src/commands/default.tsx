@@ -228,7 +228,8 @@ Commands:
   commit                        Commit changes to the repository
   mcp                           Manage MCP servers
   run                           Run a command
+  log                           Start log viewer server
   server (experimental)         Start a server, run in browser mode
-    `.trim(),
+    `.trimEnd(),
   );
 }
