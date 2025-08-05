@@ -1,12 +1,16 @@
 import {
+  FunctionTool,
+  type MCPServer,
+  MCPServerSSE,
   MCPServerStdio,
   MCPServerStreamableHttp,
-  getAllMcpTools,
+  type Tool,
+  mcpToFunctionTool,
 } from '@openai/agents';
 import createDebug from 'debug';
 
 export interface MCPConfig {
-  type?: 'stdio' | 'sse';
+  type?: 'stdio' | 'sse' | 'http';
   command?: string;
   args?: string[];
   env?: Record<string, string>;
@@ -20,7 +24,7 @@ export interface MCPConfig {
 
 const debug = createDebug('takumi:mcp');
 
-type MCP = MCPServerStdio | MCPServerStreamableHttp;
+type MCP = MCPServerStdio | MCPServerStreamableHttp | MCPServerSSE;
 
 export class MCPManager {
   private servers: Map<string, MCP> = new Map();
@@ -32,14 +36,14 @@ export class MCPManager {
     mcpServers: Record<string, MCPConfig>,
   ): Promise<MCPManager> {
     debug('create MCPManager', mcpServers);
-    const servers = new Map<string, MCPServerStdio | MCPServerStreamableHttp>();
+    const servers = new Map<string, MCP>();
     for (const [key, config] of Object.entries(mcpServers)) {
       if (config.disable) {
         debug(`Skipping disabled MCP server: ${key}`);
         continue;
       }
-      let server: MCPServerStdio | MCPServerStreamableHttp;
-      if (config.type === 'stdio' || !config.type) {
+      let server: MCPServerStdio | MCPServerStreamableHttp | MCPServerSSE;
+      if (config.command) {
         const env = config.env;
         if (env) {
           env.PATH = process.env.PATH || '';
@@ -50,11 +54,22 @@ export class MCPManager {
           env,
           timeout: config.timeout,
         });
+      } else if (config.url) {
+        if (config.type === 'sse') {
+          server = new MCPServerSSE({
+            url: config.url!,
+            timeout: config.timeout,
+          });
+        } else {
+          server = new MCPServerStreamableHttp({
+            url: config.url!,
+            timeout: config.timeout,
+          });
+        }
       } else {
-        server = new MCPServerStreamableHttp({
-          url: config.url!,
-          timeout: config.timeout,
-        });
+        throw new Error(
+          `MCP server ${key} must have either command or url configured`,
+        );
       }
       servers.set(key, server);
     }
@@ -67,14 +82,14 @@ export class MCPManager {
   }
 
   async getAllTools() {
-    return getAllMcpTools(Array.from(this.servers.values()));
+    return this.getAllMcpTools(Array.from(this.servers.values()));
   }
 
   async getTools(keys: string[]) {
     const servers = keys
       .map((key) => this.servers.get(key))
-      .filter(Boolean) as (MCPServerStdio | MCPServerStreamableHttp)[];
-    return getAllMcpTools(servers);
+      .filter(Boolean) as MCP[];
+    return this.getAllMcpTools(servers);
   }
 
   async destroy() {
@@ -83,4 +98,44 @@ export class MCPManager {
     );
     this.servers.clear();
   }
+
+  async getAllMcpTools<TContext = UnknownContext>(
+    mcpServers: MCPServer[],
+    convertSchemasToStrict: boolean = false,
+  ): Promise<Tool<TContext>[]> {
+    // @see https://github.com/openai/openai-agents-js/issues/295
+    const allTools: Tool<TContext>[] = [];
+    const toolNames = new Set<string>();
+    for (const server of mcpServers) {
+      const serverTools = await this.getFunctionToolsFromServer(
+        server,
+        convertSchemasToStrict,
+      );
+      const serverToolNames = new Set(serverTools.map((t) => t.name));
+      const intersection = [...serverToolNames].filter((n) => toolNames.has(n));
+      if (intersection.length > 0) {
+        throw new Error(
+          `Duplicate tool names found across MCP servers: ${intersection.join(', ')}`,
+        );
+      }
+      for (const t of serverTools) {
+        toolNames.add(t.name);
+        allTools.push(t);
+      }
+    }
+    return allTools;
+  }
+
+  async getFunctionToolsFromServer<TContext = UnknownContext>(
+    server: MCPServer,
+    convertSchemasToStrict: boolean,
+  ) {
+    const mcpTools = await server.listTools();
+    const tools: FunctionTool<TContext, any, string>[] = mcpTools.map((t) =>
+      mcpToFunctionTool(t, server, convertSchemasToStrict),
+    );
+    return tools;
+  }
 }
+
+type UnknownContext = unknown;
