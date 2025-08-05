@@ -55,7 +55,7 @@ function truncateOutput(output: string, maxLines: number = 5): string {
   const visibleLines = lines.slice(0, maxLines);
   const remainingCount = lines.length - maxLines;
 
-  return visibleLines.join('\n') + `\n...+${remainingCount} lines`;
+  return visibleLines.join('\n') + `\n… +${remainingCount} lines`;
 }
 
 function getCommandRoot(command: string): string | undefined {
