@@ -12,6 +12,7 @@ import { PluginHookType } from '../plugin';
 import { Service } from '../service';
 import { AppProvider } from '../ui/AppContext';
 import { App } from '../ui/app';
+import { formatPath } from '../ui/utils/path-utils';
 import { patchConsole } from '../utils/patchConsole';
 import { randomUUID } from '../utils/randomUUID';
 import { readStdin } from '../utils/readStdin';
@@ -134,12 +135,15 @@ export async function runDefault(opts: RunCliOpts) {
       printHelp(opts.productName.toLowerCase());
       return;
     }
+    const cwd = opts.cwd || process.cwd();
+    debug('cwd', cwd);
     const uuid = randomUUID().slice(0, 4);
     const traceFile = path.join(
       homedir(),
       `.${opts.productName.toLowerCase()}`,
-      'sessions',
-      `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
+      'projects',
+      formatPath(cwd),
+      `${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
     );
 
     // Create log file path by replacing .jsonl with .log
@@ -153,8 +157,6 @@ export async function runDefault(opts: RunCliOpts) {
         silent: true,
       });
     }
-    const cwd = opts.cwd || process.cwd();
-    debug('cwd', cwd);
 
     const context = await Context.create({
       productName: opts.productName,

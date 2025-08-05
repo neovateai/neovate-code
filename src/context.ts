@@ -56,6 +56,7 @@ type ContextOpts = CreateContextOpts & {
 type Paths = {
   globalConfigDir: string;
   projectConfigDir: string;
+  traceFile?: string;
 };
 
 type ArgvConfig = Partial<Config> & {
@@ -176,6 +177,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   const paths = {
     globalConfigDir: path.join(homedir(), `.${lowerProductName}`),
     projectConfigDir: path.join(opts.cwd, `.${lowerProductName}`),
+    traceFile: opts.traceFile,
   };
   const gitStatus = await getGitStatus({ cwd: opts.cwd });
 

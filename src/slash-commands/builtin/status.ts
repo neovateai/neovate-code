@@ -1,4 +1,5 @@
 import { PluginHookType } from '../../plugin';
+import { relativeToHome } from '../../utils/path';
 import { LocalCommand } from '../types';
 
 export const statusCommand: LocalCommand = {
@@ -12,7 +13,11 @@ export const statusCommand: LocalCommand = {
       memo: {
         [`${context.productName}`]: {
           description: `v${context.version}`,
-          items: [],
+          items: [
+            context.paths.traceFile
+              ? relativeToHome(context.paths.traceFile)
+              : 'No trace file',
+          ],
         },
         'Working Directory': {
           items: [context.cwd],

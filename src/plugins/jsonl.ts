@@ -18,14 +18,6 @@ export const createJsonlPlugin = (opts: CreateJsonlPluginOpts) => {
   });
   return {
     name: 'jsonl',
-    generalInfo() {
-      return {
-        'Log File': {
-          enforce: 'pre',
-          text: relativeToHome(opts.filePath),
-        },
-      };
-    },
     userMessage(opts) {
       jsonlLogger.writeUserMessage(opts.text);
     },
