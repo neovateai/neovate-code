@@ -54,9 +54,14 @@ export const createJsonlPlugin = (opts: CreateJsonlPluginOpts) => {
       });
     },
     toolResult(result, opts) {
-      // TODO: isError
-      const isError = false;
-      jsonlLogger.writeToolResult(opts.callId, result, isError);
+      try {
+        const isError = result?.success === false;
+        jsonlLogger.writeToolResult(
+          opts.callId,
+          result?.message || JSON.stringify(result),
+          isError,
+        );
+      } catch (err) {}
       return result;
     },
     async destroy() {
