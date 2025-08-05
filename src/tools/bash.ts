@@ -42,45 +42,20 @@ const BANNED_COMMANDS = [
 const DEFAULT_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const MAX_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
-const MAX_MESSAGE_LENGTH = 500;
-
 /**
- * Intelligently truncate output, prioritizing appropriate breakpoints to maintain readability
+ * Truncate output by line count, showing maximum 5 lines
  */
-function truncateOutput(
-  output: string,
-  maxLength: number = MAX_MESSAGE_LENGTH,
-): string {
-  if (output.length <= maxLength) return output;
-
-  // Prioritize breaking at line breaks to maintain readability
+function truncateOutput(output: string, maxLines: number = 5): string {
   const lines = output.split('\n');
-  let truncated = '';
 
-  for (const line of lines) {
-    const nextLength = (truncated + line + '\n').length;
-    if (nextLength > maxLength) {
-      // If there's already content, break here
-      if (truncated) {
-        return truncated.trim() + '\n...';
-      }
-
-      // If the line is too long, try to break at a word boundary
-      const availableLength = maxLength - 3; // Reserve space for '...'
-      const lastSpace = line.lastIndexOf(' ', availableLength);
-
-      // If a suitable space position is found (not too early)
-      if (lastSpace > availableLength * 0.7) {
-        return line.slice(0, lastSpace) + '...';
-      }
-
-      // Otherwise, break at the character boundary
-      return line.slice(0, availableLength) + '...';
-    }
-    truncated += line + '\n';
+  if (lines.length <= maxLines) {
+    return output;
   }
 
-  return truncated.trim();
+  const visibleLines = lines.slice(0, maxLines);
+  const remainingCount = lines.length - maxLines;
+
+  return visibleLines.join('\n') + `\n… +${remainingCount} lines`;
 }
 
 function getCommandRoot(command: string): string | undefined {
