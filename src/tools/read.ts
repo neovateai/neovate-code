@@ -80,7 +80,6 @@ const MAX_LINE_LENGTH = 2000;
 
 export function createReadTool(opts: { context: Context }): EnhancedTool {
   const productName = opts.context.productName.toLowerCase();
-  // TODO 需要支持 limit/offset
   return enhanceTool(
     tool({
       name: 'read',
@@ -112,6 +111,14 @@ Usage:
       }),
       execute: async ({ file_path, offset, limit }) => {
         try {
+          // Validate parameters
+          if (offset !== undefined && offset !== null && offset < 1) {
+            throw new Error('Offset must be >= 1');
+          }
+          if (limit !== undefined && limit !== null && limit < 1) {
+            throw new Error('Limit must be >= 1');
+          }
+
           const ext = path.extname(file_path).toLowerCase();
 
           let fullFilePath = (() => {
