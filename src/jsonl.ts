@@ -39,7 +39,7 @@ interface AssistantMessage {
 
 type Message = UserMessage | AssistantMessage;
 
-interface LogEntry {
+export interface LogEntry {
   parentUuid: string | null;
   isSidechain: boolean;
   userType: string;

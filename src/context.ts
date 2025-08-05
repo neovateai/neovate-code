@@ -29,6 +29,7 @@ import { aisdk } from './utils/ai-sdk';
 import { getEnv } from './utils/env';
 import { getGitStatus, getLlmGitStatus } from './utils/git';
 import { ModelInfo } from './utils/model';
+import { parseJsonlHistory } from './utils/parseJsonl';
 import { relativeToHome } from './utils/path';
 
 type Env = {
@@ -72,6 +73,7 @@ export interface CreateContextOpts {
   traceFile?: string;
   mcp?: boolean;
   stagewise?: boolean;
+  history?: string[];
 }
 
 export class Context {
@@ -110,7 +112,7 @@ export class Context {
     this.git = opts.git;
     this.ide = opts.ide;
     this.generalInfo = opts.generalInfo;
-    this.history = [];
+    this.history = opts.history || [];
     this.paths = opts.paths;
     this.slashCommands = opts.slashCommands;
     this.env = opts.env;
@@ -300,6 +302,13 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
 
   const slashCommands = await createSlashCommandRegistry(tempContextForSlash);
 
+  // Load history from JSONL files when traceFile is provided
+  let history = opts.history || [];
+  if (opts.traceFile && !opts.history) {
+    const traceDir = path.dirname(opts.traceFile);
+    history = parseJsonlHistory(traceDir);
+  }
+
   const context = new Context({
     cwd: opts.cwd,
     productName: opts.productName,
@@ -307,6 +316,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     argvConfig: opts.argvConfig,
     plugins: opts.plugins,
     traceFile: opts.traceFile,
+    history,
     config: resolvedConfig,
     pluginManager,
     mcpManager,
