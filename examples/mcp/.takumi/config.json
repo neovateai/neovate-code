@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@executeautomation/playwright-mcp-server"]
+    },
+    "context7": {
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "cloudflare": {
+      "type": "sse",
+      "url": "https://docs.mcp.cloudflare.com/sse"
+    }
+  }
+}

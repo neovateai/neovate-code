@@ -1,0 +1,10 @@
+{
+  "name": "@example/mcp",
+  "version": "1.0.0",
+  "description": "MCP example",
+  "private": true,
+  "scripts": {
+    "dev": "bun run ../../src/cli.ts 'Please help me with the available tools' --systemPrompt 'Use the tools to respond to user requests.'"
+  },
+  "keywords": []
+}
