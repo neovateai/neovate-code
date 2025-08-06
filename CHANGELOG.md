@@ -1,3 +1,10 @@
+## 0.7.1
+
+`2025-08-06`
+
+- fix: update logfiles directory path for non-local environments by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.7.0
 
 `2025-08-06`
