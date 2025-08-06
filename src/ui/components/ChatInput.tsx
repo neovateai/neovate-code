@@ -1,6 +1,7 @@
 import { Box, Text, useInput } from 'ink';
 import Spinner from 'ink-spinner';
 import React, { useEffect, useRef, useState } from 'react';
+import { relativeToHome } from '../../utils/path';
 import { useAppContext } from '../AppContext';
 import { APP_STATUS, BORDER_COLORS } from '../constants';
 import { useAutoSuggestion } from '../hooks/useAutoSuggestion';
@@ -21,17 +22,27 @@ interface ChatInputProps {
   setSlashCommandJSX: (jsx: React.ReactNode) => void;
 }
 
-const TokenUsage = () => {
+const ExitStatus = () => {
   const { state, services } = useAppContext();
   const isPlan = state.currentMode === 'plan';
   const service = isPlan ? services.planService : services.service;
   const usage = service.getUsage();
   return (
-    <Box flexDirection="row" gap={1} paddingX={2}>
-      <Text color="gray">Tokens:</Text>
-      <Text color="gray">
-        {usage.inputTokens} input, {usage.outputTokens} output
-      </Text>
+    <Box flexDirection="column">
+      <Box flexDirection="row" gap={1} paddingX={2}>
+        <Text color="gray">Log File:</Text>
+        <Text color="gray">
+          {service.context.paths.traceFile
+            ? relativeToHome(service.context.paths.traceFile)
+            : 'No trace file'}
+        </Text>
+      </Box>
+      <Box flexDirection="row" gap={1} paddingX={2}>
+        <Text color="gray">Tokens:</Text>
+        <Text color="gray">
+          {usage.inputTokens} input, {usage.outputTokens} output
+        </Text>
+      </Box>
     </Box>
   );
 };
@@ -327,7 +338,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
         )}
         {getModeDisplay() && <Text color="yellow">{getModeDisplay()}</Text>}
       </Box>
-      {ctrlCPressed && <TokenUsage />}
+      {ctrlCPressed && <ExitStatus />}
     </Box>
   );
 }

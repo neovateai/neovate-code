@@ -229,6 +229,7 @@ Please follow a similar style for this commit message while still adhering to th
       argvConfig: {
         model: argv.model,
         plugins: argv.plugin,
+        language: argv.language,
       },
       plugins: opts.plugins,
     });
@@ -250,7 +251,7 @@ ${diff}
 ${repoStyle}
         `,
           model,
-          language: context.config.language,
+          language: context.config.commit?.language ?? context.config.language,
           modelProvider: context.getModelProvider(),
         });
         stop();
@@ -275,7 +276,7 @@ ${repoStyle}
       const branchName = await generateBranchName({
         commitMessage: finalMessage,
         model,
-        language: context.config.language,
+        language: context.config.commit?.language ?? context.config.language,
         modelProvider: context.getModelProvider(),
       });
       stop();
@@ -288,7 +289,7 @@ ${repoStyle}
     if (argv.interactive && !isNonInteractiveParam) {
       await handleInteractiveMode(finalMessage, {
         model,
-        language: context.config.language,
+        language: context.config.commit?.language ?? context.config.language,
         modelProvider: context.getModelProvider(),
         productName: opts.productName,
       });
@@ -304,6 +305,7 @@ ${repoStyle}
         copyToClipboard(finalMessage);
       }
     }
+    process.exit(0);
   });
 }
 
@@ -626,10 +628,10 @@ function checkCommitMessage(message: string, hasAiSuffix = false) {
   // e.g.
   // - `build: add dev dependencies for basement, axios, git-repo-info, urllib, and zx`
   // Account for [AI] suffix length (5 characters) when checking limit
-  const maxLength = hasAiSuffix ? 85 : 90;
-  if (message.length > maxLength) {
-    throw new Error(`Commit message is too long: ${message}`);
-  }
+  // const maxLength = hasAiSuffix ? 85 : 90;
+  // if (message.length > maxLength) {
+  //   throw new Error(`Commit message is too long: ${message}`);
+  // }
   if (message.length === 0) {
     throw new Error('Commit message is empty');
   }

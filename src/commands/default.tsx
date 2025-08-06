@@ -10,9 +10,9 @@ import { RunCliOpts } from '..';
 import { Context } from '../context';
 import { PluginHookType } from '../plugin';
 import { Service } from '../service';
-import { setupTracing } from '../tracing';
 import { AppProvider } from '../ui/AppContext';
 import { App } from '../ui/app';
+import { formatPath } from '../ui/utils/path-utils';
 import { patchConsole } from '../utils/patchConsole';
 import { randomUUID } from '../utils/randomUUID';
 import { readStdin } from '../utils/readStdin';
@@ -65,6 +65,7 @@ export async function run(opts: RunOpts) {
     await runInQuiet(opts);
     return;
   }
+  setTerminalTitle(opts.context.productName.toLowerCase());
   try {
     let prompt = opts.prompt;
     debug('prompt', prompt);
@@ -104,11 +105,12 @@ export async function run(opts: RunOpts) {
       process.on('SIGINT', exit);
       process.on('SIGTERM', exit);
     }
-  } catch (e) {}
+  } catch (e) {
+    throw e;
+  }
 }
 
 export async function runDefault(opts: RunCliOpts) {
-  setTerminalTitle(opts.productName.toLowerCase());
   const traceName = `${opts.productName}-default`;
   return await withTrace(traceName, async () => {
     const startTime = Date.now();
@@ -118,9 +120,11 @@ export async function runDefault(opts: RunCliOpts) {
         help: 'h',
         quiet: 'q',
       },
-      default: {},
+      default: {
+        mcp: true,
+      },
       array: ['plugin'],
-      boolean: ['json', 'help', 'quiet'],
+      boolean: ['help', 'quiet', 'mcp'],
       string: [
         'model',
         'smallModel',
@@ -133,28 +137,28 @@ export async function runDefault(opts: RunCliOpts) {
       printHelp(opts.productName.toLowerCase());
       return;
     }
+    const cwd = opts.cwd || process.cwd();
+    debug('cwd', cwd);
     const uuid = randomUUID().slice(0, 4);
     const traceFile = path.join(
       homedir(),
       `.${opts.productName.toLowerCase()}`,
-      'sessions',
-      `${opts.productName}-${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
+      'projects',
+      formatPath(cwd),
+      `${format(new Date(), 'yyyy-MM-dd-HHmmss')}-${uuid}.jsonl`,
     );
 
     // Create log file path by replacing .jsonl with .log
     const logFile = traceFile.replace('.jsonl', '.log');
 
-    if (!argv.quiet) {
+    const quiet = argv.quiet || !process.stdin.isTTY;
+    if (!quiet && process.env.PATCH_CONSOLE !== 'none') {
       // Patch console methods to log to file and optionally suppress output
       patchConsole({
         logFile,
         silent: true,
       });
     }
-
-    setupTracing(traceFile);
-    const cwd = opts.cwd || process.cwd();
-    debug('cwd', cwd);
 
     const context = await Context.create({
       productName: opts.productName,
@@ -168,10 +172,12 @@ export async function runDefault(opts: RunCliOpts) {
         plugins: argv.plugin,
         systemPrompt: argv.systemPrompt,
         appendSystemPrompt: argv.appendSystemPrompt,
+        language: argv.language,
       },
       plugins: opts.plugins,
       traceFile,
-      stagewise: !argv.quiet,
+      stagewise: !quiet,
+      mcp: argv.mcp,
     });
     await context.apply({
       hook: 'cliStart',
@@ -213,7 +219,7 @@ Options:
   --small-model <model>         Specify a smaller model for some tasks
   --system-prompt <prompt>      Custom system prompt for code agent
   -q, --quiet                   Quiet mode, non interactive
-  --json                        Output result as JSON
+  --no-mcp                      Disable MCP servers
 
 Examples:
   ${p} "Refactor this file to use hooks."
@@ -224,7 +230,8 @@ Commands:
   commit                        Commit changes to the repository
   mcp                           Manage MCP servers
   run                           Run a command
+  log                           Start log viewer server
   server (experimental)         Start a server, run in browser mode
-    `.trim(),
+    `.trimEnd(),
   );
 }

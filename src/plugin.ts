@@ -1,6 +1,9 @@
+import { AgentInputItem } from '@openai/agents';
 import defu from 'defu';
 import { Config } from './config';
 import { Context, CreateContextOpts } from './context';
+import { MessageContent } from './utils/parse-message';
+import { UsageData } from './utils/usage';
 
 export enum PluginHookType {
   First = 'first',
@@ -94,10 +97,11 @@ export class PluginManager {
   }
 }
 
-type PluginContext = Omit<
-  Context,
-  'destroy' | 'getModelProvider' | 'buildSystemPrompts' | 'addHistory'
->;
+// type PluginContext = Omit<
+//   Context,
+//   'destroy' | 'getModelProvider' | 'buildSystemPrompts' | 'addHistory'
+// >;
+type PluginContext = Context;
 
 type TempPluginContext = CreateContextOpts & {
   pluginManager: PluginManager;
@@ -108,6 +112,23 @@ type TempPluginContext = CreateContextOpts & {
 type AgentType = 'code' | 'plan';
 type Enforce = 'pre' | 'post';
 
+export type GeneralInfo = Record<
+  string,
+  | string
+  | {
+      enforce: Enforce;
+      text: string;
+    }
+>;
+
+type Status = Record<
+  string,
+  {
+    description?: string;
+    items: string[];
+  }
+>;
+
 export type Plugin = {
   enforce?: Enforce;
   name?: string;
@@ -116,7 +137,7 @@ export type Plugin = {
     this: TempPluginContext,
     opts: { resolvedConfig: any },
   ) => Promise<any> | any;
-  generalInfo?: (this: TempPluginContext) => any | Promise<any>;
+  generalInfo?: (this: TempPluginContext) => GeneralInfo | Promise<GeneralInfo>;
   cliStart?: (this: PluginContext) => Promise<any> | any;
   cliEnd?: (
     this: PluginContext,
@@ -138,10 +159,21 @@ export type Plugin = {
     this: PluginContext,
     opts: { callId: string; name: string; params: any; result: any },
   ) => Promise<any> | any;
+  userMessage?: (
+    this: PluginContext,
+    opts: { text: string },
+  ) => Promise<any> | any;
   query?: (
     this: PluginContext,
-    opts: { text: string; parsed: any; input: any },
+    opts: {
+      text: string;
+      parsed: MessageContent[];
+      input: AgentInputItem[];
+      model: string;
+      usage: UsageData;
+    },
   ) => Promise<any> | any;
+  destroy?: (this: PluginContext) => Promise<any> | any;
   env?: (this: PluginContext) => Record<string, string>;
   model?: (
     this: PluginContext,
@@ -177,6 +209,7 @@ export type Plugin = {
   command?: (this: PluginContext) => Promise<any[]> | any[];
   argvConfig?: (this: PluginContext) => Promise<any> | any;
   modelInfo?: (this: PluginContext) => Promise<any> | any;
+  status?: (this: PluginContext) => Promise<Status> | Status;
   toolResult?: (
     this: PluginContext,
     result: any,

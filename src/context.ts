@@ -17,17 +17,19 @@ import {
   PluginHookType,
   PluginManager,
 } from './plugin';
+import { createJsonlPlugin } from './plugins/jsonl';
+import { createStagewisePlugin } from './plugins/stagewise';
 import { getModel } from './provider';
 import {
   SlashCommandRegistry,
   createSlashCommandRegistry,
 } from './slash-commands';
-import { StagewiseAgent } from './stagewise';
 import { SystemPromptBuilder } from './system-prompt-builder';
 import { aisdk } from './utils/ai-sdk';
 import { getEnv } from './utils/env';
-import { getGitStatus } from './utils/git';
+import { getGitStatus, getLlmGitStatus } from './utils/git';
 import { ModelInfo } from './utils/model';
+import { parseJsonlHistory } from './utils/parseJsonl';
 import { relativeToHome } from './utils/path';
 
 type Env = {
@@ -50,12 +52,12 @@ type ContextOpts = CreateContextOpts & {
   paths: Paths;
   slashCommands: SlashCommandRegistry;
   env: Env;
-  stagewise?: StagewiseAgent;
 };
 
 type Paths = {
   globalConfigDir: string;
   projectConfigDir: string;
+  traceFile?: string;
 };
 
 type ArgvConfig = Partial<Config> & {
@@ -69,7 +71,9 @@ export interface CreateContextOpts {
   version?: string;
   plugins?: Plugin[];
   traceFile?: string;
+  mcp?: boolean;
   stagewise?: boolean;
+  history?: string[];
 }
 
 export class Context {
@@ -89,7 +93,13 @@ export class Context {
   slashCommands: SlashCommandRegistry;
   env: Env;
   modelInfo: ModelInfo;
-  stagewise?: StagewiseAgent;
+
+  approvalMemory: {
+    proceedOnce: Set<string>;
+    proceedAlways: Set<string>;
+    proceedAlwaysTool: Set<string>;
+  };
+
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName || PRODUCT_NAME;
@@ -102,12 +112,17 @@ export class Context {
     this.git = opts.git;
     this.ide = opts.ide;
     this.generalInfo = opts.generalInfo;
-    this.history = [];
+    this.history = opts.history || [];
     this.paths = opts.paths;
     this.slashCommands = opts.slashCommands;
     this.env = opts.env;
     this.modelInfo = new ModelInfo(this);
-    this.stagewise = opts.stagewise;
+
+    this.approvalMemory = {
+      proceedOnce: new Set(),
+      proceedAlways: new Set(),
+      proceedAlwaysTool: new Set(),
+    };
   }
 
   static async create(opts: CreateContextOpts) {
@@ -150,7 +165,11 @@ export class Context {
   async destroy() {
     await this.mcpManager.destroy();
     await this.ide?.disconnect();
-    await this.stagewise?.stop();
+    await this.apply({
+      hook: 'destroy',
+      args: [],
+      type: PluginHookType.Parallel,
+    });
   }
 }
 
@@ -160,7 +179,9 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   const paths = {
     globalConfigDir: path.join(homedir(), `.${lowerProductName}`),
     projectConfigDir: path.join(opts.cwd, `.${lowerProductName}`),
+    traceFile: opts.traceFile,
   };
+  const gitStatus = await getGitStatus({ cwd: opts.cwd });
 
   debug('createContext', opts);
   const configManager = new ConfigManager(
@@ -172,6 +193,19 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   debug('initialConfig', initialConfig);
 
   const buildinPlugins: Plugin[] = [];
+  if (opts.traceFile) {
+    buildinPlugins.push(
+      createJsonlPlugin({
+        filePath: opts.traceFile,
+        cwd: opts.cwd,
+        version: opts.version || '0.0.0',
+        gitBranch: gitStatus?.branch,
+      }),
+    );
+  }
+  if (opts.stagewise) {
+    buildinPlugins.push(createStagewisePlugin({}));
+  }
   const pluginsConfigs: (string | Plugin)[] = [
     ...buildinPlugins,
     ...(initialConfig.plugins || []),
@@ -222,7 +256,6 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     hook: 'generalInfo',
     args: [],
     memo: {
-      ...(opts.traceFile && { 'Log File': relativeToHome(opts.traceFile) }),
       Workspace: relativeToHome(opts.cwd),
       Model: resolvedConfig.model,
       ...(resolvedConfig.smallModel !== resolvedConfig.model && {
@@ -236,12 +269,14 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   });
   debug('generalInfo', generalInfo);
 
-  const mcpManager = await MCPManager.create(resolvedConfig.mcpServers);
+  const mcpManager = await MCPManager.create(
+    opts.mcp ? resolvedConfig.mcpServers : [],
+  );
   const mcpTools = await mcpManager.getAllTools();
   debug('mcpManager created');
   debug('mcpTools', mcpTools);
 
-  const gitStatus = await getGitStatus({ cwd: opts.cwd });
+  const llmGitStatus = await getLlmGitStatus(gitStatus);
   debug('git status', gitStatus);
 
   const ide = new IDE();
@@ -253,7 +288,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     pluginManager,
     mcpManager,
     mcpTools,
-    git: gitStatus,
+    git: llmGitStatus,
     ide,
     generalInfo,
     paths,
@@ -267,6 +302,13 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
 
   const slashCommands = await createSlashCommandRegistry(tempContextForSlash);
 
+  // Load history from JSONL files when traceFile is provided
+  let history = opts.history || [];
+  if (opts.traceFile && !opts.history) {
+    const traceDir = path.dirname(opts.traceFile);
+    history = parseJsonlHistory(traceDir);
+  }
+
   const context = new Context({
     cwd: opts.cwd,
     productName: opts.productName,
@@ -274,32 +316,18 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     argvConfig: opts.argvConfig,
     plugins: opts.plugins,
     traceFile: opts.traceFile,
+    history,
     config: resolvedConfig,
     pluginManager,
     mcpManager,
     mcpTools,
-    git: gitStatus,
+    git: llmGitStatus,
     ide,
     generalInfo,
     paths,
     slashCommands,
     env,
   });
-
-  // Initialize Stagewise agent if enabled
-  if (opts.stagewise) {
-    try {
-      const stagewise = new StagewiseAgent({
-        context,
-      });
-      const port = await stagewise.start();
-      context.stagewise = stagewise;
-      debug(`Stagewise agent started on port ${port}`);
-    } catch (error) {
-      debug('Failed to start Stagewise agent:', error);
-    }
-  }
-
   return context;
 }
 

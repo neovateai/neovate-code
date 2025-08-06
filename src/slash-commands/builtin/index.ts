@@ -6,6 +6,8 @@ import { exitCommand } from './exit';
 import { helpCommand } from './help';
 import { createInitCommand } from './init';
 import { createModelCommand } from './model';
+import { createReviewCommand } from './review';
+import { statusCommand } from './status';
 
 export * from './clear';
 export * from './exit';
@@ -20,6 +22,8 @@ export function createBuiltinCommands(opts: {
     helpCommand,
     createInitCommand(opts),
     createModelCommand(opts),
+    createReviewCommand(),
     compactCommand,
+    statusCommand,
   ];
 }

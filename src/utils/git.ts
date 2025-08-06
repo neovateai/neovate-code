@@ -82,19 +82,35 @@ export async function getGitStatus(opts: { cwd: string }) {
     );
     return stdout.trim();
   })();
+  return {
+    branch,
+    mainBranch,
+    status,
+    log,
+    author,
+    authorLog,
+  };
+}
+
+export async function getLlmGitStatus(
+  status: Awaited<ReturnType<typeof getGitStatus>>,
+) {
+  if (!status) {
+    return null;
+  }
   return `
 This is the git status at the start of the conversation. Note that this status is a snapshot in time, and will not update during the conversation.
-Current branch: ${branch}
+Current branch: ${status.branch}
 
-Main branch (you will usually use this for PRs): ${mainBranch}
+Main branch (you will usually use this for PRs): ${status.mainBranch}
 
 Status:
-${status || '(clean)'}
+${status.status || '(clean)'}
 
 Recent commits:
-${log}
+${status.log}
 
 Your recent commits:
-${authorLog || '(no recent commits)'}
+${status.authorLog || '(no recent commits)'}
   `.trim();
 }

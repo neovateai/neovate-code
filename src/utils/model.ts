@@ -54,139 +54,186 @@ const LIMIT_256K = 262_144;
 const LIMIT_1M = 1_048_576;
 // 200K
 const LIMIT_200K = 204_800;
+// 100K
+const LIMIT_100K = 102_400;
 
-const LIMIT_62K = 64_000;
-
-// Data source https://models.dev/
-const MODELS_INFO: Models = {
-  'deepseek-chat': {
-    contextLimit: LIMIT_64K,
-    outputLimit: LIMIT_8K,
-  },
-  'deepseek-reasoner': {
-    contextLimit: LIMIT_64K,
-    outputLimit: LIMIT_8K,
-  },
-  'gpt-4.1': {
-    contextLimit: LIMIT_1M,
+const MODELS_INFO_BY_MODEL = {
+  DEEPSEEK_V3: {
+    contextLimit: LIMIT_128K,
     outputLimit: LIMIT_32K,
   },
-  'gpt-4': {
+  DEEPSEEK_R1: {
     contextLimit: LIMIT_128K,
-    outputLimit: LIMIT_8K,
+    outputLimit: LIMIT_32K,
   },
-  'gpt-4o': {
+  KIMI_K2: {
     contextLimit: LIMIT_128K,
-    outputLimit: LIMIT_8K,
-  },
-  'gpt-4o-mini': {
-    contextLimit: LIMIT_128K,
-    outputLimit: LIMIT_16K,
-  },
-  'gemini-2.5-flash': {
-    contextLimit: LIMIT_1M,
     outputLimit: LIMIT_64K,
   },
-  'gemini-2.5-flash-lite': {
-    contextLimit: LIMIT_1M,
-    outputLimit: LIMIT_64K,
-  },
-  'gemini-2.5-pro': {
-    contextLimit: LIMIT_1M,
-    outputLimit: LIMIT_64K,
-  },
-  'grok-3-fast-beta': {
-    contextLimit: LIMIT_128K,
-    outputLimit: LIMIT_8K,
-  },
-  'claude-sonnet-4-20250514': {
-    contextLimit: LIMIT_200K,
-    outputLimit: LIMIT_62K,
-  },
-  'claude-3-5-sonnet-20241022': {
-    contextLimit: LIMIT_200K,
-    outputLimit: LIMIT_8K,
-  },
-  'claude-3-7-sonnet-20250219': {
-    contextLimit: LIMIT_200K,
-    outputLimit: LIMIT_8K,
-  },
-  'claude-3-7-sonnet-20250219-thinking': {
-    contextLimit: LIMIT_200K,
-    outputLimit: LIMIT_62K,
-  },
-  'openrouter/anthropic/claude-3.5-sonnet': {
-    contextLimit: LIMIT_200K,
-    outputLimit: LIMIT_8K,
-  },
-  'openrouter/anthropic/claude-3.7-sonnet': {
-    contextLimit: LIMIT_200K,
-    outputLimit: LIMIT_8K,
-  },
-  'openrouter/anthropic/claude-sonnet-4': {
-    contextLimit: LIMIT_200K,
-    outputLimit: LIMIT_62K,
-  },
-  'openrouter/deepseek/deepseek-r1-0528': {
-    contextLimit: LIMIT_64K,
-    outputLimit: LIMIT_8K,
-  },
-  'openrouter/deepseek/deepseek-chat-v3-0324': {
-    contextLimit: LIMIT_64K,
-    outputLimit: LIMIT_8K,
-  },
-  'openrouter/moonshotai/kimi-k2': {
-    contextLimit: LIMIT_128K,
-    outputLimit: LIMIT_16K,
-  },
-  'openrouter/qwen/qwen3-235b-a22b-07-25': {
-    contextLimit: LIMIT_128K,
-    outputLimit: LIMIT_128K,
-  },
-  'openrouter/qwen/qwen3-coder': {
+  QWEN3_CODER: {
     contextLimit: LIMIT_256K,
     outputLimit: LIMIT_64K,
   },
-  'openrouter/openrouter/cypher-alpha:free': {
-    contextLimit: 1_000_000,
-    outputLimit: 1_000_000,
-  },
-  'aihubmix/claude-3-5-sonnet-20241022': {
-    contextLimit: LIMIT_200K,
-    outputLimit: LIMIT_8K,
-  },
-  'aihubmix/claude-3-7-sonnet-20250219': {
-    contextLimit: LIMIT_200K,
-    outputLimit: LIMIT_8K,
-  },
-  'aihubmix/claude-sonnet-4-20250514': {
-    contextLimit: LIMIT_200K,
-    outputLimit: LIMIT_62K,
-  },
-  'aihubmix/r1': {
-    contextLimit: LIMIT_64K,
-    outputLimit: LIMIT_8K,
-  },
-  'aihubmix/deepseek': {
-    contextLimit: LIMIT_64K,
-    outputLimit: LIMIT_8K,
-  },
-  'aihubmix/gemini': {
-    contextLimit: LIMIT_1M,
-    outputLimit: LIMIT_64K,
-  },
-  'aihubmix/flash': {
-    contextLimit: LIMIT_1M,
-    outputLimit: LIMIT_64K,
-  },
-  'aihubmix/flash-lite': {
-    contextLimit: LIMIT_1M,
-    outputLimit: LIMIT_64K,
-  },
-  'kimi-k2-0711-preview': {
+  QWEN3_32B: {
     contextLimit: LIMIT_128K,
     outputLimit: LIMIT_16K,
   },
+  QWEN3_235B_A22B_INST: {
+    contextLimit: LIMIT_256K,
+    outputLimit: LIMIT_64K,
+  },
+  QWEN3_235B_A22B_THINK: {
+    contextLimit: LIMIT_256K,
+    outputLimit: LIMIT_64K,
+  },
+  GEMINI_25_FLASH: {
+    contextLimit: LIMIT_1M,
+    outputLimit: LIMIT_64K,
+  },
+  GEMINI_25_FLASH_LITE: {
+    contextLimit: LIMIT_64K,
+    outputLimit: LIMIT_64K,
+  },
+  GEMINI_25_PRO: {
+    contextLimit: LIMIT_1M,
+    outputLimit: LIMIT_64K,
+  },
+  GROK_3: {
+    contextLimit: LIMIT_128K,
+    outputLimit: LIMIT_8K,
+  },
+  GROK_4: {
+    contextLimit: LIMIT_256K,
+    outputLimit: LIMIT_64K,
+  },
+  CLAUDE_35_SONNET: {
+    contextLimit: LIMIT_200K,
+    outputLimit: LIMIT_8K,
+  },
+  CLAUDE_37_SONNET: {
+    contextLimit: LIMIT_200K,
+    outputLimit: LIMIT_64K,
+  },
+  CLAUDE_4_SONNET: {
+    contextLimit: LIMIT_200K,
+    outputLimit: LIMIT_64K,
+  },
+  CLAUDE_4_OPUS: {
+    contextLimit: LIMIT_200K,
+    outputLimit: LIMIT_32K,
+  },
+  // openai
+  GPT_41: {
+    contextLimit: LIMIT_1M,
+    outputLimit: LIMIT_32K,
+  },
+  GPT_4: {
+    contextLimit: LIMIT_8K,
+    outputLimit: LIMIT_8K,
+  },
+  GPT_4O: {
+    contextLimit: LIMIT_128K,
+    outputLimit: LIMIT_16K,
+  },
+  O3: {
+    contextLimit: LIMIT_200K,
+    outputLimit: LIMIT_100K,
+  },
+  O3_PRO: {
+    contextLimit: LIMIT_200K,
+    outputLimit: LIMIT_100K,
+  },
+  O3_MINI: {
+    contextLimit: LIMIT_200K,
+    outputLimit: LIMIT_100K,
+  },
+  O4_MINI: {
+    contextLimit: LIMIT_200K,
+    outputLimit: LIMIT_100K,
+  },
+  HORIZON: {
+    contextLimit: LIMIT_256K,
+    outputLimit: LIMIT_128K,
+  },
+};
+
+// Data source https://models.dev/
+const MODELS_INFO: Models = {
+  // openai
+  'gpt-4.1': MODELS_INFO_BY_MODEL.GPT_41,
+  'gpt-4': MODELS_INFO_BY_MODEL.GPT_4,
+  'gpt-4o': MODELS_INFO_BY_MODEL.GPT_4O,
+  o3: MODELS_INFO_BY_MODEL.O3,
+  'o3-mini': MODELS_INFO_BY_MODEL.O3_MINI,
+  'o4-mini': MODELS_INFO_BY_MODEL.O4_MINI,
+  // google
+  'gemini-2.5-flash': MODELS_INFO_BY_MODEL.GEMINI_25_FLASH,
+  'gemini-2.5-flash-lite': MODELS_INFO_BY_MODEL.GEMINI_25_FLASH_LITE,
+  'gemini-2.5-pro': MODELS_INFO_BY_MODEL.GEMINI_25_PRO,
+  // deepseek
+  'deepseek-chat': MODELS_INFO_BY_MODEL.DEEPSEEK_V3,
+  'deepseek-reasoner': MODELS_INFO_BY_MODEL.DEEPSEEK_R1,
+  // xai
+  'grok-3': MODELS_INFO_BY_MODEL.GROK_3,
+  'grok-3-fast': MODELS_INFO_BY_MODEL.GROK_3,
+  'grok-3-mini': MODELS_INFO_BY_MODEL.GROK_3,
+  'grok-3-mini-fast': MODELS_INFO_BY_MODEL.GROK_3,
+  'grok-4': MODELS_INFO_BY_MODEL.GROK_4,
+  // anthropic
+  'claude-opus-4-20250514': MODELS_INFO_BY_MODEL.CLAUDE_4_OPUS,
+  'claude-sonnet-4-20250514': MODELS_INFO_BY_MODEL.CLAUDE_4_SONNET,
+  'claude-3-7-sonnet-20250219': MODELS_INFO_BY_MODEL.CLAUDE_37_SONNET,
+  'claude-3-7-sonnet-20250219-thinking': MODELS_INFO_BY_MODEL.CLAUDE_37_SONNET,
+  'claude-3-5-sonnet-20241022': MODELS_INFO_BY_MODEL.CLAUDE_35_SONNET,
+  // aihubmix
+  'aihubmix/gemini-2.5-pro': MODELS_INFO_BY_MODEL.GEMINI_25_PRO,
+  'aihubmix/gemini-2.5-flash': MODELS_INFO_BY_MODEL.GEMINI_25_FLASH,
+  'aihubmix/gemini-2.5-flash-lite': MODELS_INFO_BY_MODEL.GEMINI_25_FLASH_LITE,
+  'aihubmix/DeepSeek-R1': MODELS_INFO_BY_MODEL.DEEPSEEK_R1,
+  'aihubmix/DeepSeek-V3': MODELS_INFO_BY_MODEL.DEEPSEEK_V3,
+  'aihubmix/claude-opus-4-20250514': MODELS_INFO_BY_MODEL.CLAUDE_4_OPUS,
+  'aihubmix/claude-sonnet-4-20250514': MODELS_INFO_BY_MODEL.CLAUDE_4_SONNET,
+  'aihubmix/claude-3-7-sonnet-20250219': MODELS_INFO_BY_MODEL.CLAUDE_37_SONNET,
+  'aihubmix/claude-3-5-sonnet-20241022': MODELS_INFO_BY_MODEL.CLAUDE_35_SONNET,
+  'aihubmix/gpt-4.1': MODELS_INFO_BY_MODEL.GPT_41,
+  'aihubmix/gpt-4': MODELS_INFO_BY_MODEL.GPT_4,
+  'aihubmix/gpt-4o': MODELS_INFO_BY_MODEL.GPT_4O,
+  'aihubmix/o3': MODELS_INFO_BY_MODEL.O3,
+  'aihubmix/o3-mini': MODELS_INFO_BY_MODEL.O3_MINI,
+  'aihubmix/o4-mini': MODELS_INFO_BY_MODEL.O4_MINI,
+  // openrouter
+  'openrouter/anthropic/claude-3.5-sonnet':
+    MODELS_INFO_BY_MODEL.CLAUDE_35_SONNET,
+  'openrouter/anthropic/claude-3.7-sonnet':
+    MODELS_INFO_BY_MODEL.CLAUDE_37_SONNET,
+  'openrouter/anthropic/claude-sonnet-4': MODELS_INFO_BY_MODEL.CLAUDE_4_SONNET,
+  'openrouter/deepseek/deepseek-r1-0528': MODELS_INFO_BY_MODEL.DEEPSEEK_R1,
+  'openrouter/deepseek/deepseek-chat-v3-0324': MODELS_INFO_BY_MODEL.DEEPSEEK_V3,
+  'openrouter/openai/gpt-4.1': MODELS_INFO_BY_MODEL.GPT_41,
+  'openrouter/openai/gpt-4': MODELS_INFO_BY_MODEL.GPT_4,
+  'openrouter/openai/gpt-4o': MODELS_INFO_BY_MODEL.GPT_4O,
+  'openrouter/openai/o3': MODELS_INFO_BY_MODEL.O3,
+  'openrouter/openai/o3-pro': MODELS_INFO_BY_MODEL.O3_PRO,
+  'openrouter/openai/o3-mini': MODELS_INFO_BY_MODEL.O3_MINI,
+  'openrouter/openai/o4-mini': MODELS_INFO_BY_MODEL.O4_MINI,
+  'openrouter/moonshotai/kimi-k2': MODELS_INFO_BY_MODEL.KIMI_K2,
+  'openrouter/qwen/qwen3-235b-a22b-07-25': MODELS_INFO_BY_MODEL.QWEN3_CODER,
+  'openrouter/qwen/qwen3-coder': MODELS_INFO_BY_MODEL.QWEN3_CODER,
+  'openrouter/openrouter/horizon-beta': MODELS_INFO_BY_MODEL.HORIZON,
+  // iflow
+  'iflow/Qwen3-Coder': MODELS_INFO_BY_MODEL.QWEN3_CODER,
+  'iflow/KIMI-K2': MODELS_INFO_BY_MODEL.KIMI_K2,
+  'iflow/DeepSeek-V3': MODELS_INFO_BY_MODEL.DEEPSEEK_V3,
+  'iflow/DeepSeek-R1': MODELS_INFO_BY_MODEL.DEEPSEEK_R1,
+  'iflow/Qwen3-235B-A22B-Instruct': MODELS_INFO_BY_MODEL.QWEN3_235B_A22B_INST,
+  'iflow/Qwen3-235B-A22B-Thinking-2507':
+    MODELS_INFO_BY_MODEL.QWEN3_235B_A22B_THINK,
+  // moonshotai
+  'kimi-k2-0711-preview': MODELS_INFO_BY_MODEL.KIMI_K2,
+  'kimi-k2-turbo-preview': MODELS_INFO_BY_MODEL.KIMI_K2,
+  // groq
+  'groq/qwen/qwen3-32b': MODELS_INFO_BY_MODEL.QWEN3_32B,
+  'groq/moonshotai/kimi-k2-instruct': MODELS_INFO_BY_MODEL.KIMI_K2,
 };
 
 export class ModelInfo {

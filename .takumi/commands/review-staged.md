@@ -1,3 +1,6 @@
+---
+description: Review staged code changes and provide code review feedback
+---
 Review staged changes and provide detailed code review suggestions.
 
 ## Process:

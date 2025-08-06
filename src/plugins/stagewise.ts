@@ -4,10 +4,44 @@ import {
   createAgentServer,
 } from '@stagewise/agent-interface/agent';
 import createDebug from 'debug';
-import { Context } from './context';
-import { Service } from './service';
+import { Context } from '../context';
+import { Plugin } from '../plugin';
+import { Service } from '../service';
+import { relativeToHome } from '../utils/path';
 
-const debug = createDebug('takumi:stagewise');
+const debug = createDebug('takumi:plugins:stagewise');
+
+type CreateStagewisePluginOpts = {};
+
+export const createStagewisePlugin = (opts: CreateStagewisePluginOpts) => {
+  let sw: StagewiseAgent | null = null;
+  return {
+    name: 'stagewise',
+    async cliStart() {
+      try {
+        sw = new StagewiseAgent({
+          context: this,
+        });
+        await sw.start();
+        debug(`Stagewise agent started on port ${sw.port}`);
+      } catch (error) {
+        debug('Failed to start Stagewise agent:', error);
+      }
+    },
+    async destroy() {
+      await sw?.stop();
+    },
+    async status() {
+      const port = sw?.port;
+      const status = port ? `Connected, port: ${port}` : 'Disconnected';
+      return {
+        Stagewise: {
+          items: [status],
+        },
+      };
+    },
+  } as Plugin;
+};
 
 export interface StagewiseAgentOpts {
   context: Context;
@@ -17,6 +51,7 @@ export class StagewiseAgent {
   private context: Context;
   private service?: Service;
   private server: AgentServer | null = null;
+  public port: number = 0;
 
   constructor(opts: StagewiseAgentOpts) {
     this.context = opts.context;
@@ -32,9 +67,7 @@ export class StagewiseAgent {
     this.server = await createAgentServer();
 
     this.server.setAgentName(`${this.context.productName} AI Agent`);
-    this.server.setAgentDescription(
-      'A coding agent to enhance your development workflow.',
-    );
+    this.server.setAgentDescription(relativeToHome(this.context.cwd));
 
     this.server.interface.availability.set(true);
 
@@ -44,8 +77,9 @@ export class StagewiseAgent {
       },
     );
 
-    debug(`Stagewise agent server running on port ${this.server.port}`);
-    return this.server.port;
+    this.port = this.server.port;
+    debug(`Stagewise agent server running on port ${this.port}`);
+    return this.port;
   }
 
   async stop() {
@@ -133,8 +167,8 @@ export class StagewiseAgent {
         'Generating response...',
       );
 
-      const { query } = await import('./query');
-      const { isReasoningModel } = await import('./provider');
+      const { query } = await import('../query');
+      const { isReasoningModel } = await import('../provider');
 
       const result = await query({
         input: [{ role: 'user', content: enhancedContent }],

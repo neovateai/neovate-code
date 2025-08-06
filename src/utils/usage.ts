@@ -1,4 +1,4 @@
-interface UsageData {
+export interface UsageData {
   requests: number;
   inputTokens: number;
   outputTokens: number;

@@ -35,11 +35,24 @@ export class SlashCommandRegistryImpl implements SlashCommandRegistry {
   }
 }
 
+function isFilePath(input: string): boolean {
+  const trimmed = input.trim();
+  // If the string starts with '/' and contains another '/', we consider it a file path.
+  // This reliably identifies paths like '/path/to/file' while avoiding
+  // misclassifying single-segment commands like '/help' or '/agent.run'.
+  return trimmed.startsWith('/') && trimmed.indexOf('/', 1) !== -1;
+}
+
 export function parseSlashCommand(
   input: string,
 ): { command: string; args: string } | null {
   const trimmed = input.trim();
   if (!trimmed.startsWith('/')) {
+    return null;
+  }
+
+  // Check if it's a file path rather than a slash command
+  if (isFilePath(trimmed)) {
     return null;
   }
 
@@ -58,5 +71,6 @@ export function parseSlashCommand(
 }
 
 export function isSlashCommand(input: string): boolean {
-  return input.trim().startsWith('/');
+  const trimmed = input.trim();
+  return trimmed.startsWith('/') && !isFilePath(trimmed);
 }

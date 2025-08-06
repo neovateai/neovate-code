@@ -1,0 +1,26 @@
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index dcc389f6572dee0ba479f618f6c9611171d01e3e..5fbb6ebae6796472844f1b08cee2fee0affb9b27 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -9,7 +9,7 @@ export { assistant, system, user } from './helpers/message';
+ export { extractAllTextOutput, RunHandoffCallItem, RunHandoffOutputItem, RunItem, RunMessageOutputItem, RunReasoningItem, RunToolApprovalItem, RunToolCallItem, RunToolCallOutputItem, } from './items';
+ export { AgentHooks } from './lifecycle';
+ export { getLogger } from './logger';
+-export { getAllMcpTools, invalidateServerToolsCache, MCPServer, MCPServerStdio, MCPServerStreamableHttp, MCPServerSSE, } from './mcp';
++export { getAllMcpTools, invalidateServerToolsCache, MCPServer, MCPServerStdio, MCPServerStreamableHttp, MCPServerSSE, mcpToFunctionTool } from './mcp';
+ export { MCPToolFilterCallable, MCPToolFilterContext, MCPToolFilterStatic, createMCPToolStaticFilter, } from './mcpUtil';
+ export { Model, ModelProvider, ModelRequest, ModelResponse, ModelSettings, ModelSettingsToolChoice, SerializedHandoff, SerializedTool, SerializedOutputType, } from './model';
+ export { setDefaultModelProvider } from './providers';
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 19dcfdc7f52f82e8736eb0f0ba87edd36bfb0b00..beb5be66edeb7f3b03050b01a5349dfa4ce26e85 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -10,7 +10,7 @@ export { assistant, system, user } from "./helpers/message.mjs";
+ export { extractAllTextOutput, RunHandoffCallItem, RunHandoffOutputItem, RunMessageOutputItem, RunReasoningItem, RunToolApprovalItem, RunToolCallItem, RunToolCallOutputItem, } from "./items.mjs";
+ export { AgentHooks } from "./lifecycle.mjs";
+ export { getLogger } from "./logger.mjs";
+-export { getAllMcpTools, invalidateServerToolsCache, MCPServerStdio, MCPServerStreamableHttp, MCPServerSSE, } from "./mcp.mjs";
++export { getAllMcpTools, invalidateServerToolsCache, MCPServerStdio, MCPServerStreamableHttp, MCPServerSSE, mcpToFunctionTool } from "./mcp.mjs";
+ export { createMCPToolStaticFilter, } from "./mcpUtil.mjs";
+ export { setDefaultModelProvider } from "./providers.mjs";
+ export { RunResult, StreamedRunResult } from "./result.mjs";
