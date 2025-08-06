@@ -90,7 +90,7 @@ async function createLogServer(opts: {
   const isLocal = __dirname.endsWith('takumi/src/commands');
   const logfilesDir = isLocal
     ? path.resolve(__dirname, '../../logfiles')
-    : path.resolve(__dirname, '../logfiles');
+    : path.resolve(__dirname, './logfiles');
 
   // Serve index.html at root
   app.get('/', async (request, reply) => {
