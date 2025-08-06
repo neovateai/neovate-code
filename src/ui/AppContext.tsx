@@ -132,7 +132,8 @@ export type AppAction =
       type: 'SET_IDE_INSTALL_STATUS';
       payload: 'not-detected' | 'detected' | 'connected';
     }
-  | { type: 'SET_MODEL'; payload: string };
+  | { type: 'SET_MODEL'; payload: string }
+  | { type: 'SET_GENERAL_INFO'; payload: Record<string, string> };
 
 // Reducer
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -263,6 +264,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'SET_MODEL':
       return { ...state, model: action.payload };
+
+    case 'SET_GENERAL_INFO':
+      return { ...state, generalInfo: action.payload };
 
     default:
       return state;
