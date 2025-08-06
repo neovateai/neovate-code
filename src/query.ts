@@ -7,6 +7,7 @@ type QueryOpts = {
   input: string | AgentInputItem[];
   service: Service;
   thinking?: boolean;
+  model?: string;
   onTextDelta?: (text: string) => void;
   onText?: (text: string) => void;
   onReasoning?: (text: string) => void;
@@ -85,6 +86,7 @@ export async function query(opts: QueryOpts) {
       thinking,
       // disable thinking for non-first runs
       ...(isFirstRun ? {} : { thinking: false }),
+      ...(opts.model ? { model: opts.model } : {}),
     });
     let hasToolUse = false;
     for await (const chunk of stream) {
