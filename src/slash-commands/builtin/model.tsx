@@ -1,9 +1,11 @@
 import { Box, Text, useInput } from 'ink';
-import SelectInput from 'ink-select-input';
 import pc from 'picocolors';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Context } from '../../context';
+import { PluginHookType } from '../../plugin';
 import { MODEL_ALIAS } from '../../provider';
+import { useAppContext } from '../../ui/AppContext';
+import PaginatedSelectInput from '../../ui/components/PaginatedSelectInput';
 import { LocalJSXCommand } from '../types';
 
 interface ModelSelectProps {
@@ -12,16 +14,38 @@ interface ModelSelectProps {
   onSelect: (model: string) => void;
 }
 
-const selectItems = Object.entries(MODEL_ALIAS).map(([key, value]) => ({
-  label: `${key} → ${pc.gray(`(${value})`)}`,
-  value: value,
-}));
+const DEFAULT_SELECT_ITEMS = Object.entries(MODEL_ALIAS).map(
+  ([key, value]) => ({
+    label: `${key} → ${pc.gray(`(${value})`)}`,
+    value: value,
+  }),
+);
 
 const ModelSelect: React.FC<ModelSelectProps> = ({
   context,
   onExit,
   onSelect,
 }) => {
+  const { state, dispatch } = useAppContext();
+  const [selectItems, setSelectItems] = useState<
+    {
+      label: string;
+      value: string;
+    }[]
+  >([]);
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      const models = await context.apply({
+        hook: 'modelList',
+        args: [],
+        type: PluginHookType.First,
+      });
+      setSelectItems(models || DEFAULT_SELECT_ITEMS);
+    };
+    fetchModels();
+  }, []);
+
   useInput((_: string, key) => {
     if (key.escape) {
       onExit();
@@ -29,8 +53,8 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
   });
 
   const model = useMemo(() => {
-    return MODEL_ALIAS[context.config.model] || context.config.model;
-  }, [context.config.model]);
+    return MODEL_ALIAS[state.model] || state.model;
+  }, [state.model]);
 
   return (
     <Box
@@ -51,21 +75,17 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
           </Text>
         </Text>
       </Box>
-      <Box marginBottom={1}>
-        <SelectInput
+      <Box>
+        <PaginatedSelectInput
           items={selectItems}
           initialIndex={selectItems.findIndex((item) => item.value === model)}
+          itemsPerPage={10}
           onSelect={(item) => {
-            console.log(item);
-            context.config.model = item.value;
+            dispatch({ type: 'SET_MODEL', payload: item.value });
             onSelect(item.value);
           }}
+          onCancel={onExit}
         />
-      </Box>
-      <Box>
-        <Text color="gray" dimColor>
-          (Use Enter to select, ESC to cancel)
-        </Text>
       </Box>
     </Box>
   );

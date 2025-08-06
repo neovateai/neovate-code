@@ -215,4 +215,5 @@ export type Plugin = {
     result: any,
     opts: { params: any; name: string; callId: string },
   ) => Promise<any> | any;
+  modelList?: (this: PluginContext) => Promise<any> | any;
 };

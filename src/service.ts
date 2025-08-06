@@ -363,9 +363,14 @@ export class Service {
           },
         },
       });
+
+      if (model) {
+        debug('run custom model', model);
+        this.agent!.model = model;
+      }
+
       const result = await runner.run(this.agent!, input, {
         stream: true,
-        ...(model ? { model } : {}),
       });
       let text = '';
 
