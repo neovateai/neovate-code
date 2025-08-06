@@ -63,6 +63,10 @@ export async function runCli(opts: RunCliOpts) {
       const { runServer } = await import('./commands/server');
       await runServer(opts);
       break;
+    case 'log':
+      const { runLog } = await import('./commands/log');
+      await runLog(opts);
+      break;
     default:
       const { runDefault } = await import('./commands/default');
       await runDefault(opts);

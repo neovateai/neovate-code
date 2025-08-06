@@ -1,0 +1,1465 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Activity - Log Viewer</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei',
+          'SimHei', sans-serif;
+        background: #ffffff;
+        min-height: 100vh;
+        color: #333333;
+        line-height: 1.4;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1rem 2rem 2rem 2rem;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      h1 {
+        color: #000000;
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+
+      .subtitle {
+        color: #666666;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .nav-links {
+        display: flex;
+        justify-content: center;
+        gap: 0;
+      }
+
+      .nav-link {
+        background: #ffffff;
+        color: #0066cc;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        border: 1px solid #e0e0e0;
+        transition: all 0.2s ease;
+        font-weight: normal;
+      }
+
+      .nav-link:hover {
+        text-decoration: underline;
+        border-color: #0066cc;
+      }
+
+      .nav-link.active {
+        background: #0066cc;
+        color: white;
+        font-weight: 600;
+      }
+
+      .live-container {
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        overflow: hidden;
+        height: calc(100vh - 200px);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .live-header {
+        background: #f5f5f5;
+        color: #333333;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .live-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #cc0000;
+      }
+
+      .status-dot.connected {
+        background: #0066cc;
+      }
+
+      .activity-stream {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .activity-entry {
+        border-bottom: 1px solid #e0e0e0;
+        padding: 1rem 1.5rem;
+        transition: background-color 0.2s ease;
+        position: relative;
+      }
+
+      .activity-entry:hover {
+        background: #f5f5f5;
+      }
+
+      .activity-entry.new {
+        background: #f5f5f5;
+        border-left: 3px solid #0066cc;
+      }
+
+      .activity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+
+      .activity-source {
+        font-weight: 600;
+        color: #000000;
+        font-size: 0.9rem;
+      }
+
+      .activity-timestamp {
+        font-size: 0.8rem;
+        color: #666666;
+        font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+      }
+
+      .activity-content {
+        background: #ffffff;
+        padding: 1rem;
+        border: 1px solid #e0e0e0;
+        font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+        font-size: 0.85rem;
+        line-height: 1.4;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .activity-type {
+        display: inline-block;
+        background: #333333;
+        color: white;
+        padding: 2px 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+      }
+
+      .activity-type.user {
+        background: #0066cc;
+      }
+
+      .activity-type.assistant {
+        background: #333333;
+      }
+
+      .activity-type.tool {
+        background: #666666;
+        color: white;
+      }
+
+      .activity-type.summary {
+        background: #999999;
+      }
+
+      /* Tool rendering styles */
+      .tool-call-container {
+        background: #f5f5f5;
+        border: 1px solid #e0e0e0;
+        margin: 0.5rem 0;
+        font-size: 0.85rem;
+      }
+
+      .tool-call-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: #e0e0e0;
+        font-weight: 600;
+        color: #333333;
+      }
+
+      .tool-call-content {
+        background: #ffffff;
+        padding: 8px;
+        border-left: 2px solid #666666;
+      }
+
+      .tool-result-container {
+        background: #f5f5f5;
+        border: 1px solid #e0e0e0;
+        margin: 0.5rem 0;
+        font-size: 0.85rem;
+      }
+
+      .tool-result-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: #e0e0e0;
+        font-weight: 600;
+        color: #333333;
+      }
+
+      .tool-result-content {
+        background: #ffffff;
+        padding: 8px;
+        border-left: 2px solid #666666;
+        font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+        font-size: 0.8rem;
+      }
+
+      .controls {
+        padding: 1rem 1.5rem;
+        background: #f5f5f5;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .control-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .btn {
+        background: #0066cc;
+        color: white;
+        border: 1px solid #0066cc;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background-color 0.2s ease;
+      }
+
+      .btn:hover {
+        background: #0052a3;
+        border-color: #0052a3;
+      }
+
+      .btn.btn-success {
+        background: #0066cc;
+        border-color: #0066cc;
+      }
+
+      .btn.btn-success:hover {
+        background: #0052a3;
+        border-color: #0052a3;
+      }
+
+      .btn.btn-danger {
+        background: #cc0000;
+        border-color: #cc0000;
+      }
+
+      .btn.btn-danger:hover {
+        background: #a60000;
+        border-color: #a60000;
+      }
+
+      .btn.btn-secondary {
+        background: #666666;
+        border-color: #666666;
+      }
+
+      .btn.btn-secondary:hover {
+        background: #4d4d4d;
+        border-color: #4d4d4d;
+      }
+
+      .activity-stats {
+        font-size: 0.85rem;
+        color: #666666;
+      }
+
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+        color: #666666;
+        text-align: center;
+      }
+
+      .empty-state-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #999999;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 1rem;
+        }
+
+        h1 {
+          font-size: 1.5rem;
+        }
+
+        .live-container {
+          height: calc(100vh - 150px);
+        }
+
+        .controls {
+          flex-direction: column;
+          gap: 1rem;
+          align-items: stretch;
+        }
+
+        .control-group {
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Live Activity Stream</h1>
+        <p class="subtitle">Real-time JSONL message feed from all projects</p>
+
+        <div class="nav-links">
+          <a href="/" class="nav-link">Projects</a>
+          <a href="/live" class="nav-link active">Live Activity</a>
+        </div>
+      </header>
+
+      <div class="live-container">
+        <div class="live-header">
+          <div class="live-title">Activity Stream</div>
+          <div class="status-indicator">
+            <div class="status-dot" id="status-dot"></div>
+            <span id="status-text">Disconnected</span>
+          </div>
+        </div>
+
+        <div class="activity-stream" id="activity-stream">
+          <div class="empty-state" id="empty-state">
+            <div class="empty-state-icon">📡</div>
+            <h3>Waiting for Activity</h3>
+            <p>
+              Click "Start Watching" to begin monitoring activity in real-time.
+            </p>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="control-group">
+            <button
+              class="btn btn-success"
+              id="start-btn"
+              onclick="startWatching()"
+            >
+              Start Watching
+            </button>
+            <button
+              class="btn btn-danger"
+              id="stop-btn"
+              onclick="stopWatching()"
+              style="display: none"
+            >
+              Stop Watching
+            </button>
+            <button class="btn btn-secondary" onclick="clearActivity()">
+              Clear
+            </button>
+          </div>
+          <div class="activity-stats">
+            <span id="message-count">0 messages</span> •
+            <span id="uptime">Not connected</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ABOUTME: Live activity stream WebSocket manager for real-time JSONL message monitoring
+      // ABOUTME: Displays all incoming messages from all projects in a live scrolling feed
+
+      // Base class for all tool handlers
+      class ToolHandler {
+        constructor(toolName) {
+          this.toolName = toolName;
+        }
+
+        renderToolCall(toolCall) {
+          const toolDiv = document.createElement('div');
+          toolDiv.className = 'tool-call-container';
+
+          const header = this.createHeader(toolCall);
+          const content = this.renderInput(toolCall.input);
+
+          toolDiv.appendChild(header);
+          toolDiv.appendChild(content);
+
+          return toolDiv;
+        }
+
+        renderToolResult(toolResult, toolCall) {
+          const resultDiv = document.createElement('div');
+          resultDiv.className = 'tool-result-container';
+
+          const header = this.createResultHeader(toolCall);
+          const content = this.renderOutput(toolResult, toolCall);
+
+          resultDiv.appendChild(header);
+          resultDiv.appendChild(content);
+
+          return resultDiv;
+        }
+
+        createHeader(toolCall) {
+          const header = document.createElement('div');
+          header.className = 'tool-call-header';
+          header.innerHTML = `<span>${this.getIcon()}</span><span>Tool: ${this.toolName}</span>`;
+          return header;
+        }
+
+        createResultHeader(toolCall) {
+          const header = document.createElement('div');
+          header.className = 'tool-result-header';
+          header.innerHTML = `<span>📋</span><span>${this.toolName} Result</span>`;
+          return header;
+        }
+
+        renderInput(input) {
+          const content = document.createElement('div');
+          content.className = 'tool-call-content';
+          content.textContent = JSON.stringify(input, null, 2);
+          return content;
+        }
+
+        renderOutput(result, toolCall) {
+          const content = document.createElement('div');
+          content.className = 'tool-result-content';
+          content.textContent =
+            typeof result === 'string'
+              ? result
+              : JSON.stringify(result, null, 2);
+          return content;
+        }
+
+        getIcon() {
+          return '🔧';
+        }
+      }
+
+      // Handler for Bash tool
+      class BashHandler extends ToolHandler {
+        constructor() {
+          super('Bash');
+        }
+
+        renderInput(input) {
+          const content = document.createElement('div');
+          content.className = 'tool-call-content';
+
+          const command = document.createElement('div');
+          command.style.fontWeight = 'bold';
+          command.style.marginBottom = '8px';
+          command.textContent = `$ ${input.command}`;
+
+          if (input.description) {
+            const desc = document.createElement('div');
+            desc.style.fontStyle = 'italic';
+            desc.style.color = '#666';
+            desc.style.marginBottom = '8px';
+            desc.textContent = input.description;
+            content.appendChild(desc);
+          }
+
+          content.appendChild(command);
+          return content;
+        }
+
+        renderOutput(result, toolCall) {
+          const content = document.createElement('div');
+          content.className = 'tool-result-content';
+          content.style.fontFamily = 'monospace';
+          content.style.whiteSpace = 'pre-wrap';
+          content.textContent = result;
+          return content;
+        }
+
+        getIcon() {
+          return '💻';
+        }
+      }
+
+      // Handler for Read tool
+      class ReadHandler extends ToolHandler {
+        constructor() {
+          super('Read');
+        }
+
+        renderInput(input) {
+          const content = document.createElement('div');
+          content.className = 'tool-call-content';
+
+          const path = document.createElement('div');
+          path.style.fontWeight = 'bold';
+          path.textContent = `📄 ${input.file_path}`;
+
+          content.appendChild(path);
+
+          if (input.offset || input.limit) {
+            const params = document.createElement('div');
+            params.style.fontSize = '0.9em';
+            params.style.color = '#666';
+            params.style.marginTop = '4px';
+            const offset = input.offset || 0;
+            const limit = input.limit || 'end';
+            params.textContent = `Lines: ${offset} to ${limit}`;
+            content.appendChild(params);
+          }
+
+          return content;
+        }
+
+        renderOutput(result, toolCall) {
+          const content = document.createElement('div');
+          content.className = 'tool-result-content';
+          content.style.fontFamily = 'monospace';
+          content.style.fontSize = '0.85em';
+          content.style.whiteSpace = 'pre';
+          content.style.maxHeight = '400px';
+          content.style.overflowY = 'auto';
+          content.textContent = result;
+          return content;
+        }
+
+        getIcon() {
+          return '📖';
+        }
+      }
+
+      // Handler for Edit/Write tools
+      class EditHandler extends ToolHandler {
+        constructor() {
+          super('Edit');
+        }
+
+        renderInput(input) {
+          const content = document.createElement('div');
+          content.className = 'tool-call-content';
+
+          const path = document.createElement('div');
+          path.style.fontWeight = 'bold';
+          path.style.marginBottom = '8px';
+          path.textContent = `${input.file_path}`;
+
+          if (input.old_string && input.new_string) {
+            const changeDiv = document.createElement('div');
+            changeDiv.style.marginTop = '8px';
+            changeDiv.style.padding = '8px';
+            changeDiv.style.background = '#f8f9fa';
+            changeDiv.style.borderRadius = '4px';
+            changeDiv.style.fontSize = '0.85em';
+
+            const oldDiv = document.createElement('div');
+            oldDiv.style.marginBottom = '4px';
+            oldDiv.innerHTML = `<span style="color: #dc3545; font-weight: bold;">- </span>${this.escapeHtml(input.old_string.substring(0, 100))}${input.old_string.length > 100 ? '...' : ''}`;
+
+            const newDiv = document.createElement('div');
+            newDiv.innerHTML = `<span style="color: #28a745; font-weight: bold;">+ </span>${this.escapeHtml(input.new_string.substring(0, 100))}${input.new_string.length > 100 ? '...' : ''}`;
+
+            changeDiv.appendChild(oldDiv);
+            changeDiv.appendChild(newDiv);
+            content.appendChild(changeDiv);
+          }
+
+          content.appendChild(path);
+          return content;
+        }
+
+        escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+
+        getIcon() {
+          return '';
+        }
+      }
+
+      // Handler for MultiEdit tool
+      class MultiEditHandler extends ToolHandler {
+        constructor() {
+          super('MultiEdit');
+        }
+
+        renderInput(input) {
+          const content = document.createElement('div');
+          content.className = 'tool-call-content';
+
+          const multiEditDiv = document.createElement('div');
+          multiEditDiv.style.padding = '12px';
+          multiEditDiv.style.background = '#f8f9fa';
+          multiEditDiv.style.borderRadius = '8px';
+          multiEditDiv.style.border = '1px solid #dee2e6';
+
+          const header = document.createElement('div');
+          header.style.fontWeight = 'bold';
+          header.style.marginBottom = '12px';
+          header.style.borderBottom = '1px solid #ddd';
+          header.style.paddingBottom = '6px';
+          header.textContent = `Multi-Edit: ${input.file_path}`;
+
+          multiEditDiv.appendChild(header);
+
+          if (input.edits && Array.isArray(input.edits)) {
+            input.edits.forEach((edit, index) => {
+              const editDiv = document.createElement('div');
+              editDiv.style.marginBottom = '12px';
+              editDiv.style.padding = '8px';
+              editDiv.style.background = '#ffffff';
+              editDiv.style.borderRadius = '4px';
+              editDiv.style.border = '1px solid #e9ecef';
+
+              const editHeader = document.createElement('div');
+              editHeader.style.fontWeight = 'bold';
+              editHeader.style.marginBottom = '6px';
+              editHeader.style.fontSize = '0.9em';
+              editHeader.textContent = `Edit ${index + 1}:`;
+
+              const oldDiv = document.createElement('div');
+              oldDiv.style.marginBottom = '4px';
+              oldDiv.style.fontSize = '0.85em';
+
+              // Create safe elements to prevent HTML injection
+              const oldSymbol = document.createElement('span');
+              oldSymbol.style.color = '#dc3545';
+              oldSymbol.style.fontWeight = 'bold';
+              oldSymbol.textContent = '- ';
+
+              const oldText = document.createTextNode(
+                edit.old_string.substring(0, 80) +
+                  (edit.old_string.length > 80 ? '...' : ''),
+              );
+
+              oldDiv.appendChild(oldSymbol);
+              oldDiv.appendChild(oldText);
+
+              const newDiv = document.createElement('div');
+              newDiv.style.fontSize = '0.85em';
+
+              // Create safe elements to prevent HTML injection
+              const newSymbol = document.createElement('span');
+              newSymbol.style.color = '#28a745';
+              newSymbol.style.fontWeight = 'bold';
+              newSymbol.textContent = '+ ';
+
+              const newText = document.createTextNode(
+                edit.new_string.substring(0, 80) +
+                  (edit.new_string.length > 80 ? '...' : ''),
+              );
+
+              newDiv.appendChild(newSymbol);
+              newDiv.appendChild(newText);
+
+              editDiv.appendChild(editHeader);
+              editDiv.appendChild(oldDiv);
+              editDiv.appendChild(newDiv);
+              multiEditDiv.appendChild(editDiv);
+            });
+          }
+
+          content.appendChild(multiEditDiv);
+          return content;
+        }
+
+        getIcon() {
+          return '';
+        }
+      }
+
+      // Handler for Write tool
+      class WriteHandler extends ToolHandler {
+        constructor() {
+          super('Write');
+        }
+
+        renderInput(input) {
+          const content = document.createElement('div');
+          content.className = 'tool-call-content';
+
+          const path = document.createElement('div');
+          path.style.fontWeight = 'bold';
+          path.style.marginBottom = '8px';
+          path.textContent = `${input.file_path}`;
+
+          const contentInfo = document.createElement('div');
+          contentInfo.style.fontSize = '0.9em';
+          contentInfo.style.color = '#666';
+          const contentLength = input.content ? input.content.length : 0;
+          contentInfo.textContent = `Writing ${contentLength} characters`;
+
+          content.appendChild(path);
+          content.appendChild(contentInfo);
+          return content;
+        }
+
+        getIcon() {
+          return '';
+        }
+      }
+
+      // Handler for LS tool
+      class LSHandler extends ToolHandler {
+        constructor() {
+          super('LS');
+        }
+
+        renderInput(input) {
+          const content = document.createElement('div');
+          content.className = 'tool-call-content';
+
+          const path = document.createElement('div');
+          path.style.fontWeight = 'bold';
+          path.textContent = `${input.path}`;
+
+          content.appendChild(path);
+          return content;
+        }
+
+        renderOutput(result, toolCall) {
+          const content = document.createElement('div');
+          content.className = 'tool-result-content';
+          content.style.fontFamily = 'monospace';
+          content.style.whiteSpace = 'pre';
+          content.textContent = result;
+          return content;
+        }
+
+        getIcon() {
+          return '';
+        }
+      }
+
+      // Handler for Grep tool
+      class GrepHandler extends ToolHandler {
+        constructor() {
+          super('Grep');
+        }
+
+        renderInput(input) {
+          const content = document.createElement('div');
+          content.className = 'tool-call-content';
+
+          const pattern = document.createElement('div');
+          pattern.style.fontWeight = 'bold';
+          pattern.style.marginBottom = '4px';
+          pattern.textContent = `"${input.pattern}"`;
+
+          if (input.path) {
+            const path = document.createElement('div');
+            path.style.fontSize = '0.9em';
+            path.style.color = '#666';
+            path.textContent = `in: ${input.path}`;
+            content.appendChild(path);
+          }
+
+          content.appendChild(pattern);
+          return content;
+        }
+
+        renderOutput(result, toolCall) {
+          const content = document.createElement('div');
+          content.className = 'tool-result-content';
+          content.style.fontFamily = 'monospace';
+          content.style.fontSize = '0.85em';
+          content.style.whiteSpace = 'pre';
+          content.textContent = result;
+          return content;
+        }
+
+        getIcon() {
+          return '';
+        }
+      }
+
+      // Handler for Glob tool
+      class GlobHandler extends ToolHandler {
+        constructor() {
+          super('Glob');
+        }
+
+        renderInput(input) {
+          const content = document.createElement('div');
+          content.className = 'tool-call-content';
+
+          const globDiv = document.createElement('div');
+          globDiv.style.padding = '12px';
+          globDiv.style.background = '#fef3c7';
+          globDiv.style.borderRadius = '8px';
+          globDiv.style.border = '1px solid #fbbf24';
+
+          const header = document.createElement('div');
+          header.style.fontWeight = 'bold';
+          header.style.marginBottom = '8px';
+          header.style.color = '#92400e';
+          header.textContent = 'File Pattern Search';
+
+          const pattern = document.createElement('div');
+          pattern.style.fontFamily = 'monospace';
+          pattern.style.marginBottom = '4px';
+          pattern.textContent = `Pattern: ${input.pattern}`;
+
+          if (input.path) {
+            const path = document.createElement('div');
+            path.style.fontSize = '0.9em';
+            path.style.color = '#666';
+            path.textContent = `Path: ${input.path}`;
+            globDiv.appendChild(path);
+          }
+
+          globDiv.appendChild(header);
+          globDiv.appendChild(pattern);
+          content.appendChild(globDiv);
+          return content;
+        }
+
+        renderOutput(result, toolCall) {
+          const content = document.createElement('div');
+          content.className = 'tool-result-content';
+
+          let resultText = result;
+          if (Array.isArray(result) && result[0] && result[0].text) {
+            resultText = result[0].text;
+          }
+
+          const resultDiv = document.createElement('div');
+          resultDiv.style.fontFamily = 'monospace';
+          resultDiv.style.fontSize = '0.9em';
+
+          if (typeof resultText === 'string' && resultText.includes('\n')) {
+            const lines = resultText
+              .trim()
+              .split('\n')
+              .filter((line) => line.trim());
+
+            if (lines.length > 0) {
+              const headerDiv = document.createElement('div');
+              headerDiv.style.fontWeight = 'bold';
+              headerDiv.style.marginBottom = '12px';
+              headerDiv.style.color = '#374151';
+              headerDiv.textContent = `Found ${lines.length} matching file${lines.length === 1 ? '' : 's'}:`;
+
+              const filesDiv = document.createElement('div');
+
+              lines.forEach((filePath) => {
+                const fileDiv = document.createElement('div');
+                fileDiv.style.padding = '6px 8px';
+                fileDiv.style.marginBottom = '4px';
+                fileDiv.style.background = '#ffffff';
+                fileDiv.style.borderRadius = '4px';
+                fileDiv.style.border = '1px solid #e5e7eb';
+                fileDiv.style.fontFamily = 'monospace';
+                fileDiv.style.fontSize = '0.85em';
+                fileDiv.style.wordBreak = 'break-all';
+
+                // Add file icon based on extension
+                const extension = filePath.split('.').pop()?.toLowerCase();
+                let icon = '';
+                if (['js', 'ts', 'jsx', 'tsx'].includes(extension)) icon = '';
+                else if (['py'].includes(extension)) icon = '';
+                else if (['rs'].includes(extension)) icon = '';
+                else if (['html', 'htm'].includes(extension)) icon = '';
+                else if (['css'].includes(extension)) icon = '';
+                else if (['md'].includes(extension)) icon = '';
+                else if (['json'].includes(extension)) icon = '';
+
+                fileDiv.innerHTML = `${filePath}`;
+                filesDiv.appendChild(fileDiv);
+              });
+
+              resultDiv.appendChild(headerDiv);
+              resultDiv.appendChild(filesDiv);
+            } else {
+              resultDiv.style.background = '#fef2f2';
+              resultDiv.style.border = '1px solid #fecaca';
+              resultDiv.style.color = '#991b1b';
+              resultDiv.innerHTML = 'No files found matching the pattern';
+            }
+          } else {
+            resultDiv.style.whiteSpace = 'pre-wrap';
+            resultDiv.style.fontFamily = 'monospace';
+            resultDiv.style.fontSize = '0.9em';
+            resultDiv.textContent =
+              typeof resultText === 'string' ? resultText : 'No results';
+          }
+
+          content.appendChild(resultDiv);
+          return content;
+        }
+
+        getIcon() {
+          return '';
+        }
+      }
+
+      // Handler for TodoWrite tool
+      class TodoWriteHandler extends ToolHandler {
+        constructor() {
+          super('TodoWrite');
+        }
+
+        renderInput(input) {
+          const content = document.createElement('div');
+          content.className = 'tool-call-content';
+
+          if (input.todos && Array.isArray(input.todos)) {
+            const todoList = document.createElement('div');
+            todoList.style.marginTop = '8px';
+
+            const header = document.createElement('div');
+            header.style.fontWeight = 'bold';
+            header.style.marginBottom = '8px';
+            header.style.borderBottom = '1px solid #ddd';
+            header.style.paddingBottom = '4px';
+            header.textContent = `Todo List (${input.todos.length} items)`;
+
+            todoList.appendChild(header);
+
+            input.todos.forEach((todo) => {
+              const todoItem = document.createElement('div');
+              todoItem.style.display = 'flex';
+              todoItem.style.alignItems = 'flex-start';
+              todoItem.style.marginBottom = '8px';
+              todoItem.style.padding = '8px';
+              todoItem.style.borderRadius = '4px';
+              todoItem.style.fontSize = '0.9em';
+
+              // Status-based styling
+              if (todo.status === 'completed') {
+                todoItem.style.background = '#e8f5e8';
+                todoItem.style.borderLeft = '3px solid #28a745';
+              } else if (todo.status === 'in_progress') {
+                todoItem.style.background = '#fff3cd';
+                todoItem.style.borderLeft = '3px solid #ffc107';
+              } else {
+                todoItem.style.background = '#f8f9fa';
+                todoItem.style.borderLeft = '3px solid #6c757d';
+              }
+
+              // Status icon
+              const statusIcon = document.createElement('span');
+              statusIcon.style.marginRight = '8px';
+              statusIcon.style.fontSize = '1.1em';
+              if (todo.status === 'completed') {
+                statusIcon.textContent = '✓';
+              } else if (todo.status === 'in_progress') {
+                statusIcon.textContent = '○';
+              } else {
+                statusIcon.textContent = '○';
+              }
+
+              // Content container
+              const contentContainer = document.createElement('div');
+              contentContainer.style.flex = '1';
+
+              // Todo content
+              const todoContent = document.createElement('div');
+              todoContent.style.marginBottom = '4px';
+              if (todo.status === 'completed') {
+                todoContent.style.textDecoration = 'line-through';
+                todoContent.style.color = '#666';
+              }
+              todoContent.textContent = todo.content;
+
+              // Priority and ID
+              const metaInfo = document.createElement('div');
+              metaInfo.style.fontSize = '0.8em';
+              metaInfo.style.color = '#888';
+
+              const priorityColor =
+                todo.priority === 'high'
+                  ? '#dc3545'
+                  : todo.priority === 'medium'
+                    ? '#fd7e14'
+                    : '#28a745';
+              metaInfo.innerHTML = `<span style="color: ${priorityColor}; font-weight: bold;">●</span> ${todo.priority} priority • ID: ${todo.id}`;
+
+              contentContainer.appendChild(todoContent);
+              contentContainer.appendChild(metaInfo);
+
+              todoItem.appendChild(statusIcon);
+              todoItem.appendChild(contentContainer);
+              todoList.appendChild(todoItem);
+            });
+
+            content.appendChild(todoList);
+          } else {
+            content.textContent = JSON.stringify(input, null, 2);
+          }
+
+          return content;
+        }
+
+        getIcon() {
+          return '';
+        }
+      }
+
+      // Tool handler registry
+      const toolHandlers = {
+        Bash: new BashHandler(),
+        Read: new ReadHandler(),
+        Edit: new EditHandler(),
+        Write: new WriteHandler(),
+        MultiEdit: new MultiEditHandler(),
+        LS: new LSHandler(),
+        Grep: new GrepHandler(),
+        Glob: new GlobHandler(),
+        TodoWrite: new TodoWriteHandler(),
+        Task: new ToolHandler('Task'),
+        WebFetch: new ToolHandler('WebFetch'),
+      };
+
+      // Get appropriate handler for a tool
+      function getToolHandler(toolName) {
+        return toolHandlers[toolName] || new ToolHandler(toolName);
+      }
+
+      class LiveActivityManager {
+        constructor() {
+          this.ws = null;
+          this.isWatching = false;
+          this.shouldReconnect = false;
+          this.messageCount = 0;
+          this.startTime = null;
+          this.reconnectAttempts = 0;
+          this.maxReconnectAttempts = 5;
+          this.reconnectDelay = 1000;
+          this.autoScroll = true;
+        }
+
+        connect() {
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            return;
+          }
+
+          const protocol =
+            window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          const wsUrl = `${protocol}//${window.location.host}/ws/watch`;
+
+          try {
+            this.ws = new WebSocket(wsUrl);
+
+            this.ws.onopen = () => {
+              console.log('WebSocket connected');
+              this.reconnectAttempts = 0;
+              this.isWatching = true;
+              this.startTime = Date.now();
+              this.updateStatus('connected');
+              this.updateUptime();
+            };
+
+            this.ws.onmessage = (event) => {
+              try {
+                const watchEvent = JSON.parse(event.data);
+                this.handleWatchEvent(watchEvent);
+              } catch (e) {
+                console.error('Failed to parse watch event:', e);
+              }
+            };
+
+            this.ws.onclose = () => {
+              console.log('WebSocket disconnected');
+              this.isWatching = false;
+              this.updateStatus('disconnected');
+              this.scheduleReconnect();
+            };
+
+            this.ws.onerror = (error) => {
+              console.error('WebSocket error:', error);
+              this.updateStatus('error');
+            };
+          } catch (e) {
+            console.error('Failed to create WebSocket connection:', e);
+            this.scheduleReconnect();
+          }
+        }
+
+        disconnect() {
+          this.isWatching = false;
+          if (this.ws) {
+            this.ws.close();
+            this.ws = null;
+          }
+          this.updateStatus('disconnected');
+        }
+
+        scheduleReconnect() {
+          if (
+            !this.shouldReconnect ||
+            this.reconnectAttempts >= this.maxReconnectAttempts
+          ) {
+            if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+              this.updateStatus('failed');
+            }
+            return;
+          }
+
+          this.reconnectAttempts++;
+          const delay =
+            this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+
+          setTimeout(() => {
+            if (this.shouldReconnect) {
+              console.log(
+                `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
+              );
+              this.connect();
+            }
+          }, delay);
+        }
+
+        handleWatchEvent(watchEvent) {
+          console.log('Received watch event:', watchEvent);
+
+          if (watchEvent.type === 'log_entry' && watchEvent.entry) {
+            this.addActivityEntry(watchEvent);
+            this.messageCount++;
+            this.updateMessageCount();
+          }
+        }
+
+        addActivityEntry(watchEvent) {
+          const stream = document.getElementById('activity-stream');
+          const emptyState = document.getElementById('empty-state');
+
+          // Hide empty state if visible
+          if (emptyState && emptyState.style.display !== 'none') {
+            emptyState.style.display = 'none';
+          }
+
+          const entry = watchEvent.entry;
+          const entryDiv = document.createElement('div');
+          entryDiv.className = 'activity-entry new';
+
+          // Format project path to be more readable
+          let formattedProject = watchEvent.project;
+          if (formattedProject.startsWith('-Users-')) {
+            // Convert -Users-harper-Public-src-2389-cc-log-viewer to /Users/harper/Public/src/2389/cc-log-viewer
+            formattedProject = formattedProject
+              .replace(/^-/, '/')
+              .replace(/-/g, '/');
+          }
+
+          // Add session ID in parentheses if available
+          const sessionInfo = watchEvent.session
+            ? ` (${watchEvent.session.substring(0, 8)}...)`
+            : '';
+          const source = `${formattedProject}${sessionInfo}`;
+
+          // Determine entry type and content
+          let entryType = 'unknown';
+          let contentElements = [];
+
+          if (entry.type) {
+            entryType = entry.type;
+          }
+
+          if (entry.message && entry.message.content) {
+            if (typeof entry.message.content === 'string') {
+              contentElements.push({
+                type: 'text',
+                content: entry.message.content,
+              });
+            } else if (Array.isArray(entry.message.content)) {
+              // Handle mixed content including tool use with rich rendering
+              const textContent = entry.message.content
+                .filter((c) => c.type === 'text')
+                .map((c) => c.text)
+                .join('\n');
+
+              const toolUse = entry.message.content.filter(
+                (c) => c.type === 'tool_use',
+              );
+
+              const toolResults = entry.message.content.filter(
+                (c) => c.type === 'tool_result',
+              );
+
+              // Add text content if present
+              if (textContent.trim()) {
+                contentElements.push({ type: 'text', content: textContent });
+              }
+
+              // Add tool calls with rich rendering
+              if (toolUse.length > 0) {
+                entryType = 'tool';
+                toolUse.forEach((tool) => {
+                  const handler = getToolHandler(tool.name);
+                  contentElements.push({
+                    type: 'tool_call',
+                    element: handler.renderToolCall(tool),
+                  });
+                });
+              }
+
+              // Add tool results with rich rendering
+              if (toolResults.length > 0) {
+                entryType = 'tool';
+                toolResults.forEach((result) => {
+                  const toolName = result.tool_use_id
+                    ? result.tool_use_id.substring(0, 8)
+                    : 'unknown';
+                  const handler = getToolHandler(toolName);
+                  const resultContent =
+                    result.content ||
+                    result.text ||
+                    JSON.stringify(result, null, 2);
+                  contentElements.push({
+                    type: 'tool_result',
+                    element: handler.renderToolResult(resultContent, {
+                      name: toolName,
+                    }),
+                  });
+                });
+              }
+            }
+          } else if (entry.summary) {
+            contentElements.push({ type: 'text', content: entry.summary });
+            entryType = 'summary';
+          } else if (entry.tool_use_result) {
+            // Handle tool results as separate entries
+            entryType = 'tool';
+            const handler = getToolHandler('unknown');
+            const resultContent =
+              typeof entry.tool_use_result === 'string'
+                ? entry.tool_use_result
+                : JSON.stringify(entry.tool_use_result, null, 2);
+            contentElements.push({
+              type: 'tool_result',
+              element: handler.renderToolResult(resultContent, {
+                name: 'Tool',
+              }),
+            });
+          }
+
+          const timestamp = new Date(watchEvent.timestamp).toLocaleTimeString();
+
+          // Create header
+          const headerDiv = document.createElement('div');
+          headerDiv.className = 'activity-header';
+          headerDiv.innerHTML = `
+                    <div class="activity-source">
+                        <span class="activity-type ${entryType}">${entryType.toUpperCase()}</span>
+                        ${source}
+                    </div>
+                    <div class="activity-timestamp">${timestamp}</div>
+                `;
+          entryDiv.appendChild(headerDiv);
+
+          // Create content area
+          const contentDiv = document.createElement('div');
+          contentDiv.className = 'activity-content';
+
+          if (contentElements.length === 0) {
+            contentDiv.innerHTML = '<em>No content</em>';
+          } else {
+            contentElements.forEach((elem) => {
+              if (elem.type === 'text') {
+                const textDiv = document.createElement('div');
+                textDiv.style.whiteSpace = 'pre-wrap';
+                textDiv.textContent =
+                  elem.content.length > 500
+                    ? elem.content.substring(0, 500) + '...'
+                    : elem.content;
+                contentDiv.appendChild(textDiv);
+              } else if (
+                elem.type === 'tool_call' ||
+                elem.type === 'tool_result'
+              ) {
+                contentDiv.appendChild(elem.element);
+              }
+            });
+          }
+
+          entryDiv.appendChild(contentDiv);
+
+          // Add to stream
+          stream.appendChild(entryDiv);
+
+          // Remove 'new' class after animation
+          setTimeout(() => {
+            entryDiv.classList.remove('new');
+          }, 300);
+
+          // Auto-scroll to bottom if enabled
+          if (this.autoScroll) {
+            stream.scrollTop = stream.scrollHeight;
+          }
+
+          // Limit number of entries to prevent memory issues
+          const maxEntries = 1000;
+          const entries = stream.querySelectorAll('.activity-entry');
+          if (entries.length > maxEntries) {
+            entries[0].remove();
+          }
+        }
+
+        escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+
+        updateStatus(status) {
+          const statusDot = document.getElementById('status-dot');
+          const statusText = document.getElementById('status-text');
+          const startBtn = document.getElementById('start-btn');
+          const stopBtn = document.getElementById('stop-btn');
+
+          switch (status) {
+            case 'connected':
+              statusDot.className = 'status-dot connected';
+              statusText.textContent = 'Connected';
+              startBtn.style.display = 'none';
+              stopBtn.style.display = 'inline-block';
+              break;
+            case 'disconnected':
+              statusDot.className = 'status-dot';
+              statusText.textContent = 'Disconnected';
+              startBtn.style.display = 'inline-block';
+              stopBtn.style.display = 'none';
+              document.getElementById('uptime').textContent = 'Not connected';
+              break;
+            case 'error':
+            case 'failed':
+              statusDot.className = 'status-dot';
+              statusText.textContent = 'Connection Failed';
+              startBtn.style.display = 'inline-block';
+              stopBtn.style.display = 'none';
+              break;
+          }
+        }
+
+        updateMessageCount() {
+          const countElement = document.getElementById('message-count');
+          countElement.textContent = `${this.messageCount} message${this.messageCount !== 1 ? 's' : ''}`;
+        }
+
+        updateUptime() {
+          if (!this.startTime || !this.isWatching) {
+            return;
+          }
+
+          const uptimeElement = document.getElementById('uptime');
+          const elapsed = Date.now() - this.startTime;
+          const seconds = Math.floor(elapsed / 1000);
+          const minutes = Math.floor(seconds / 60);
+          const hours = Math.floor(minutes / 60);
+
+          let uptimeText = '';
+          if (hours > 0) {
+            uptimeText = `${hours}h ${minutes % 60}m`;
+          } else if (minutes > 0) {
+            uptimeText = `${minutes}m ${seconds % 60}s`;
+          } else {
+            uptimeText = `${seconds}s`;
+          }
+
+          uptimeElement.textContent = `Connected for ${uptimeText}`;
+
+          // Update every second
+          if (this.isWatching) {
+            setTimeout(() => this.updateUptime(), 1000);
+          }
+        }
+
+        startWatching() {
+          this.shouldReconnect = true; // User wants to maintain connection
+          this.connect();
+          this.messageCount = 0;
+          this.updateMessageCount();
+        }
+
+        stopWatching() {
+          this.shouldReconnect = false; // User wants to stop connection
+          this.disconnect();
+        }
+
+        clearActivity() {
+          const stream = document.getElementById('activity-stream');
+          const entries = stream.querySelectorAll('.activity-entry');
+          entries.forEach((entry) => entry.remove());
+
+          const emptyState = document.getElementById('empty-state');
+          if (emptyState) {
+            emptyState.style.display = 'flex';
+          }
+
+          this.messageCount = 0;
+          this.updateMessageCount();
+        }
+      }
+
+      // Global instance
+      const liveActivity = new LiveActivityManager();
+
+      // Global functions for buttons
+      function startWatching() {
+        liveActivity.startWatching();
+      }
+
+      function stopWatching() {
+        liveActivity.stopWatching();
+      }
+
+      function clearActivity() {
+        liveActivity.clearActivity();
+      }
+
+      // Initialize on page load
+      document.addEventListener('DOMContentLoaded', function () {
+        console.log('Live Activity Stream initialized');
+      });
+    </script>
+  </body>
+</html>

@@ -105,7 +105,9 @@ export async function run(opts: RunOpts) {
       process.on('SIGINT', exit);
       process.on('SIGTERM', exit);
     }
-  } catch (e) {}
+  } catch (e) {
+    throw e;
+  }
 }
 
 export async function runDefault(opts: RunCliOpts) {
@@ -228,7 +230,8 @@ Commands:
   commit                        Commit changes to the repository
   mcp                           Manage MCP servers
   run                           Run a command
+  log                           Start log viewer server
   server (experimental)         Start a server, run in browser mode
-    `.trim(),
+    `.trimEnd(),
   );
 }

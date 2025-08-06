@@ -75,9 +75,11 @@ async function processImage(filePath: string): Promise<any> {
   }
 }
 
+const MAX_LINES_TO_READ = 2000;
+const MAX_LINE_LENGTH = 2000;
+
 export function createReadTool(opts: { context: Context }): EnhancedTool {
   const productName = opts.context.productName.toLowerCase();
-  // TODO 需要支持 limit/offset
   return enhanceTool(
     tool({
       name: 'read',
@@ -85,13 +87,38 @@ export function createReadTool(opts: { context: Context }): EnhancedTool {
 Reads a file from the local filesystem. You can access any file directly by using this tool.
 
 Usage:
+- By default, it reads up to ${MAX_LINES_TO_READ} lines starting from the beginning of the file
+- You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters
+- Any lines longer than ${MAX_LINE_LENGTH} characters will be truncated
 - This tool allows ${productName} to read images (eg PNG, JPG, etc). When reading an image file the contents are presented visually as ${productName} is a multimodal LLM.
       `,
       parameters: z.object({
-        file_path: z.string(),
+        file_path: z.string().describe('The absolute path to the file to read'),
+        offset: z
+          .number()
+          .optional()
+          .nullable()
+          .describe(
+            'The line number to start reading from. Only provide if the file is too large to read at once',
+          ),
+        limit: z
+          .number()
+          .optional()
+          .nullable()
+          .describe(
+            `The number of lines to read. Only provide if the file is too large to read at once`,
+          ),
       }),
-      execute: async ({ file_path }) => {
+      execute: async ({ file_path, offset, limit }) => {
         try {
+          // Validate parameters
+          if (offset !== undefined && offset !== null && offset < 1) {
+            throw new Error('Offset must be >= 1');
+          }
+          if (limit !== undefined && limit !== null && limit < 1) {
+            throw new Error('Limit must be >= 1');
+          }
+
           const ext = path.extname(file_path).toLowerCase();
 
           let fullFilePath = (() => {
@@ -119,14 +146,40 @@ Usage:
 
           // Handle text files
           const content = fs.readFileSync(fullFilePath, 'utf-8');
+          const allLines = content.split(/\r?\n/);
+          const totalLines = allLines.length;
+
+          // Apply offset and limit with defaults
+          const actualOffset = offset ?? 1;
+          const actualLimit = limit ?? MAX_LINES_TO_READ;
+          const startLine = Math.max(0, actualOffset - 1); // Convert 1-based to 0-based
+          const endLine = Math.min(totalLines, startLine + actualLimit);
+          const selectedLines = allLines.slice(startLine, endLine);
+
+          // Truncate long lines
+          const truncatedLines = selectedLines.map((line) =>
+            line.length > MAX_LINE_LENGTH
+              ? line.substring(0, MAX_LINE_LENGTH) + '...'
+              : line,
+          );
+
+          const processedContent = truncatedLines.join('\n');
+          const actualLinesRead = selectedLines.length;
+
           return {
             success: true,
-            message: `Read ${content.split('\n').length} lines.`,
+            message:
+              offset !== undefined || limit !== undefined
+                ? `Read ${actualLinesRead} lines (from line ${startLine + 1} to ${endLine}).`
+                : `Read ${actualLinesRead} lines.`,
             data: {
               type: 'text',
               filePath: file_path,
-              content,
-              totalLines: content.split('\n').length,
+              content: processedContent,
+              totalLines,
+              offset: startLine + 1, // Convert back to 1-based
+              limit: actualLimit,
+              actualLinesRead,
             },
           };
         } catch (e) {
