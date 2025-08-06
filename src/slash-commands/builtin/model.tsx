@@ -10,7 +10,7 @@ import { LocalJSXCommand } from '../types';
 
 interface ModelSelectProps {
   context: Context;
-  onExit: () => void;
+  onExit: (model: string) => void;
   onSelect: (model: string) => void;
 }
 
@@ -48,7 +48,7 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
 
   useInput((_: string, key) => {
     if (key.escape) {
-      onExit();
+      onExit(state.model);
     }
   });
 
@@ -84,7 +84,6 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
             dispatch({ type: 'SET_MODEL', payload: item.value });
             onSelect(item.value);
           }}
-          onCancel={onExit}
         />
       </Box>
     </Box>
@@ -103,11 +102,11 @@ export function createModelCommand(opts: {
         return (
           <ModelSelect
             context={opts.context}
-            onExit={() => {
-              onDone('Model selected cancelled');
+            onExit={(model) => {
+              onDone(`Kept model as ${model}`);
             }}
             onSelect={(model) => {
-              onDone(`Model selected: ${model}`);
+              onDone(`Model changed to ${model}`);
             }}
           />
         );

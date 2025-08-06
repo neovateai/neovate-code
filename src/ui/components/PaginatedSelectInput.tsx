@@ -7,7 +7,6 @@ interface PaginatedSelectInputProps {
   initialIndex?: number;
   itemsPerPage?: number;
   onSelect: (item: { label: string; value: string }) => void;
-  onCancel?: () => void;
 }
 
 const PaginatedSelectInput: React.FC<PaginatedSelectInputProps> = ({
@@ -15,7 +14,6 @@ const PaginatedSelectInput: React.FC<PaginatedSelectInputProps> = ({
   initialIndex = 0,
   itemsPerPage = 10,
   onSelect,
-  onCancel,
 }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -36,11 +34,6 @@ const PaginatedSelectInput: React.FC<PaginatedSelectInputProps> = ({
   }, [initialIndex, itemsPerPage, items.length]);
 
   useInput((input, key) => {
-    if (key.escape) {
-      onCancel?.();
-      return;
-    }
-
     if (key.return) {
       onSelect(items[globalSelectedIndex]);
       return;
