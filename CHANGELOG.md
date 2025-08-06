@@ -1,3 +1,31 @@
+## 0.7.0
+
+`2025-08-06`
+
+- fix: remove redundant gh pr checkout command in review slash command by [@sorrycc](https://github.com/sorrycc)
+- feat: add SSE support to MCPManager [AI] by [@阿平](https://github.com/阿平) in [#154](https://github.com/umijs/takumi/pull/154)
+- feat: add line limit and offset support for file reading tool [AI] by [@阿平](https://github.com/阿平) in [#153](https://github.com/umijs/takumi/pull/153)
+- style: standardize font family quotes and clean up html whitespace by [@sorrycc](https://github.com/sorrycc)
+- feat: add log viewer and live activity pages with real-time WebSocket support [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add history loading from JSONL files and parseJsonl utility by [@sorrycc](https://github.com/sorrycc)
+- feat: add path formatting utility and update trace file location by [@sorrycc](https://github.com/sorrycc)
+- feat: update init command to generate comprehensive rule files with detailed development guidelines by [@sorrycc](https://github.com/sorrycc)
+- refactor: move stagewise agent to plugin system and update status command by [@sorrycc](https://github.com/sorrycc)
+- refactor: simplify output truncation to use line count instead of length [AI] by [@阿平](https://github.com/阿平) in [#152](https://github.com/umijs/takumi/pull/152)
+- refactor: exclude multiple lock files from git diff in review command by [@sorrycc](https://github.com/sorrycc)
+- feat: add review command for pull request and staged changes analysis [AI] by [@sorrycc](https://github.com/sorrycc)
+- fix: handle tool result errors and stringify non-string messages in jsonl plugin by [@sorrycc](https://github.com/sorrycc)
+- feat: implement jsonl logging plugin and update git status handling [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add nested commit.language config support and improve config get/set [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add env flag to toggle ide contributor by [@阿平](https://github.com/阿平) in [#151](https://github.com/umijs/takumi/pull/151)
+- fix: correct typo in bash command result property and truncate messages by [@阿平](https://github.com/阿平) in [#150](https://github.com/umijs/takumi/pull/150)
+- feat: add support for openrouter/horizon-beta model with 256k context limit by [@sorrycc](https://github.com/sorrycc)
+- feat: add k2-turbo model support by [@sorrycc](https://github.com/sorrycc)
+- feat: add shell execution utilities with encoding detection by [@阿平](https://github.com/阿平) in [#147](https://github.com/umijs/takumi/pull/147)
+- feat: add timeout configuration for MCP tool calls by [@阿平](https://github.com/阿平) in [#146](https://github.com/umijs/takumi/pull/146)
+- feat: add approval memory to context and sync with app state by [@阿平](https://github.com/阿平) in [#145](https://github.com/umijs/takumi/pull/145)
+
+
 ## 0.6.0
 
 `2025-07-31`
