@@ -40,9 +40,10 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
         const models = await context.apply({
           hook: 'modelList',
           args: [],
-          type: PluginHookType.First,
+          memo: [],
+          type: PluginHookType.SeriesMerge,
         });
-        setSelectItems(models || DEFAULT_SELECT_ITEMS);
+        setSelectItems(models.length > 0 ? models : DEFAULT_SELECT_ITEMS);
       } catch (error) {
         console.warn('Failed to fetch custom models, using defaults:', error);
         setSelectItems(DEFAULT_SELECT_ITEMS);
