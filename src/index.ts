@@ -15,6 +15,7 @@ export { aisdk as _aisdk } from './utils/ai-sdk';
 export { default as _picocolors } from 'picocolors';
 export { enhanceTool as _enhanceTool } from './tool';
 export { z as _zod } from 'zod';
+export { ConfigManager as _ConfigManager } from './config';
 
 export type { Plugin, Context };
 
