@@ -22,6 +22,7 @@ export interface PromptCommand extends BaseSlashCommand {
   type: 'prompt';
   argNames?: string[];
   progressMessage: string;
+  model?: string;
   getPromptForCommand(
     args: string,
   ): Promise<Array<{ role: string; content: string }>>;

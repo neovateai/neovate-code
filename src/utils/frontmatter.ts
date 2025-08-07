@@ -4,6 +4,7 @@ import { isArray, isString } from 'lodash-es';
 export interface FrontMatter {
   'allowed-tools'?: string[];
   description?: string;
+  model?: string;
 }
 
 function validateFrontMatterProperty<T>(
@@ -63,6 +64,15 @@ function validateAndParseFrontMatter(rawFrontmatter: unknown): FrontMatter {
     frontmatter.description = validateFrontMatterProperty(
       fm.description,
       'description',
+      isString,
+      'must be a string',
+    );
+  }
+
+  if ('model' in fm) {
+    frontmatter.model = validateFrontMatterProperty(
+      fm.model,
+      'model',
       isString,
       'must be a string',
     );

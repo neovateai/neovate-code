@@ -192,7 +192,8 @@ export function useChatActions() {
         }));
 
         // Continue with regular AI processing using internal query
-        return executeQuery(queryInput);
+        // Pass model if specified in command
+        return executeQuery(queryInput, { model: command.model });
       }
     } catch (e: any) {
       dispatch({ type: 'SET_STATUS', payload: APP_STATUS.FAILED });
@@ -204,8 +205,12 @@ export function useChatActions() {
 
   const executeQuery = async (
     input: string | any[],
-    forceStage?: 'plan' | 'code',
+    options?: {
+      forceStage?: 'plan' | 'code';
+      model?: string;
+    },
   ): Promise<any> => {
+    const { forceStage, model: customModel } = options || {};
     // Reset cancel flag at the start of each query
     cancelFlagRef.current = false;
     // Prepare input for query function
@@ -257,13 +262,14 @@ export function useChatActions() {
     }
 
     try {
+      const effectiveModel = customModel || state.model;
       const result = await query({
         input: queryInput,
         service,
-        thinking: isReasoningModel(state.model),
+        thinking: isReasoningModel(effectiveModel),
         onCancelCheck: () => cancelFlagRef.current,
         // only pass model if not using plan service
-        ...(shouldUsePlanService ? {} : { model: state.model }),
+        ...(shouldUsePlanService ? {} : { model: effectiveModel }),
         async onTextDelta(text) {
           if (cancelFlagRef.current) {
             throw new Error('Query cancelled by user');
