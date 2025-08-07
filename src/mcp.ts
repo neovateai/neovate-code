@@ -20,6 +20,7 @@ export interface MCPConfig {
    * The timeout for tool calls in milliseconds.
    */
   timeout?: number;
+  headers?: Record<string, string>;
 }
 
 const debug = createDebug('takumi:mcp');
@@ -55,15 +56,20 @@ export class MCPManager {
           timeout: config.timeout,
         });
       } else if (config.url) {
+        const requestInit = config.headers
+          ? { requestInit: { headers: config.headers } }
+          : {};
         if (config.type === 'sse') {
           server = new MCPServerSSE({
             url: config.url!,
             timeout: config.timeout,
+            ...requestInit,
           });
         } else {
           server = new MCPServerStreamableHttp({
             url: config.url!,
             timeout: config.timeout,
+            ...requestInit,
           });
         }
       } else {
