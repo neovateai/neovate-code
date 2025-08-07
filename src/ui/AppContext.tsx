@@ -82,6 +82,9 @@ export interface AppState {
     latestSelection: SelectionInfo | null;
     installStatus: 'not-detected' | 'detected' | 'connected';
   };
+
+  // Model
+  model: string;
 }
 
 // Action types
@@ -128,7 +131,9 @@ export type AppAction =
   | {
       type: 'SET_IDE_INSTALL_STATUS';
       payload: 'not-detected' | 'detected' | 'connected';
-    };
+    }
+  | { type: 'SET_MODEL'; payload: string }
+  | { type: 'SET_GENERAL_INFO'; payload: Record<string, string> };
 
 // Reducer
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -256,6 +261,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
           installStatus: action.payload,
         },
       };
+
+    case 'SET_MODEL':
+      return { ...state, model: action.payload };
+
+    case 'SET_GENERAL_INFO':
+      return { ...state, generalInfo: action.payload };
+
     default:
       return state;
   }
@@ -320,6 +332,7 @@ export function AppProvider({
       latestSelection: null,
       installStatus: 'not-detected' as const,
     },
+    model: context.config.model,
   };
 
   const [state, dispatch] = useReducer(appReducer, initialState);

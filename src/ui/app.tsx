@@ -7,15 +7,15 @@ import { Header } from './components/Header';
 import { MessageWrapper } from './components/MessageComponents';
 import { PlanModal } from './components/PlanModal';
 import { useChatActions } from './hooks/useChatActions';
-import { useDebounceResize } from './hooks/useDebounceResize';
+import { useTerminalRefresh } from './hooks/useTerminalRefresh';
 
 export function App() {
   const [slashCommandJSX, setSlashCommandJSX] =
     React.useState<React.ReactNode | null>(null);
-  const { state, dispatch } = useAppContext();
+  const { state, dispatch, services } = useAppContext();
   const { processUserInput } = useChatActions();
   const initialPromptProcessed = useRef(false);
-  const forceRerender = useDebounceResize();
+  const { forceRerender, forceUpdate } = useTerminalRefresh();
 
   // Process initial prompt when app loads
   useEffect(() => {
@@ -24,6 +24,25 @@ export function App() {
       processUserInput(state.initialPrompt, setSlashCommandJSX).catch(() => {});
     }
   }, [state.initialPrompt, processUserInput]);
+
+  useEffect(() => {
+    if (state.model === services.context.config.model) return;
+    // Update context config model
+    services.context.config.model = state.model;
+
+    // Update generalInfo with new model
+    const newGeneralInfo = {
+      ...state.generalInfo,
+      Model: state.model,
+    };
+
+    // Update context generalInfo
+    services.context.generalInfo = newGeneralInfo;
+
+    // Update state generalInfo
+    dispatch({ type: 'SET_GENERAL_INFO', payload: newGeneralInfo });
+    forceUpdate();
+  }, [state.model]);
 
   useEffect(() => {
     dispatch({

@@ -122,6 +122,11 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   }, []);
 
   useInput((input, key) => {
+    // In slash command mode, it has its own keyboard input logic, so we don't handle it here
+    if (isSlashCommand) {
+      return;
+    }
+
     if (key.ctrl && input === 'c') {
       handleCtrlC();
       return;
@@ -132,6 +137,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       }
       return;
     }
+
     if (key.upArrow) {
       if (isVisible) {
         navigatePrevious(); // Navigate suggestions
@@ -317,10 +323,12 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
         isFileMode={extractFileQuery(value).hasFileQuery}
       />
       <Box flexDirection="row" paddingX={2} gap={1}>
-        <Text color="gray">
-          ctrl+c twice to exit | enter to send | esc to cancel | ↑/↓ navigate
-          history
-        </Text>
+        {!isSlashCommand && (
+          <Text color="gray">
+            ctrl+c twice to exit | enter to send | esc to cancel | ↑/↓ navigate
+            history
+          </Text>
+        )}
         <Box flexGrow={1} />
         {/* IDE Status - only show if extension is detected or connected */}
         {installStatus !== 'not-detected' && (

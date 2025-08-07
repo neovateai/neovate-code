@@ -129,6 +129,11 @@ type Status = Record<
   }
 >;
 
+type ModelInfo = {
+  label: string;
+  value: string;
+};
+
 export type Plugin = {
   enforce?: Enforce;
   name?: string;
@@ -215,4 +220,8 @@ export type Plugin = {
     result: any,
     opts: { params: any; name: string; callId: string },
   ) => Promise<any> | any;
+  modelList?: (
+    this: PluginContext,
+    models: ModelInfo[],
+  ) => Promise<ModelInfo[]> | ModelInfo[];
 };
