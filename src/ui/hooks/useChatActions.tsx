@@ -242,8 +242,6 @@ export function useChatActions() {
     dispatch({ type: 'SET_STATUS', payload: APP_STATUS.PROCESSING });
     dispatch({ type: 'SET_ERROR', payload: null });
 
-    const shouldUseCustomModel = state.model !== services.context.config.model;
-
     // Add user message only for string input
     if (typeof input === 'string') {
       dispatch({
@@ -262,9 +260,10 @@ export function useChatActions() {
       const result = await query({
         input: queryInput,
         service,
-        thinking: isReasoningModel(service.context.config.model),
+        thinking: isReasoningModel(state.model),
         onCancelCheck: () => cancelFlagRef.current,
-        ...(shouldUseCustomModel ? { model: state.model } : {}),
+        // only pass model if not using plan service
+        ...(shouldUsePlanService ? {} : { model: state.model }),
         async onTextDelta(text) {
           if (cancelFlagRef.current) {
             throw new Error('Query cancelled by user');

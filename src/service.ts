@@ -301,6 +301,11 @@ export class Service {
       read() {},
     });
 
+    // Reset modelId, compression will consume it
+    if (opts.model) {
+      this.modelId = opts.model;
+    }
+
     try {
       const compressed = await this.#tryCompress();
       if (compressed) {
@@ -364,12 +369,16 @@ export class Service {
         },
       });
 
-      if (model) {
+      let agent = this.agent;
+      // model will always be passed, only clone if it's different
+      if (model && model !== this.agent?.model) {
         debug('run custom model', model);
-        this.agent!.model = model;
+        agent = this.agent!.clone({
+          model,
+        });
       }
 
-      const result = await runner.run(this.agent!, input, {
+      const result = await runner.run(agent!, input, {
         stream: true,
       });
       let text = '';

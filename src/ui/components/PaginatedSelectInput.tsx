@@ -35,7 +35,9 @@ const PaginatedSelectInput: React.FC<PaginatedSelectInputProps> = ({
 
   useInput((input, key) => {
     if (key.return) {
-      onSelect(items[globalSelectedIndex]);
+      if (items.length > 0 && globalSelectedIndex < items.length) {
+        onSelect(items[globalSelectedIndex]);
+      }
       return;
     }
 

@@ -36,12 +36,17 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
 
   useEffect(() => {
     const fetchModels = async () => {
-      const models = await context.apply({
-        hook: 'modelList',
-        args: [],
-        type: PluginHookType.First,
-      });
-      setSelectItems(models || DEFAULT_SELECT_ITEMS);
+      try {
+        const models = await context.apply({
+          hook: 'modelList',
+          args: [],
+          type: PluginHookType.First,
+        });
+        setSelectItems(models || DEFAULT_SELECT_ITEMS);
+      } catch (error) {
+        console.warn('Failed to fetch custom models, using defaults:', error);
+        setSelectItems(DEFAULT_SELECT_ITEMS);
+      }
     };
     fetchModels();
   }, []);
