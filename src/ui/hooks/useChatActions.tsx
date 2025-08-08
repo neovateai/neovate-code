@@ -262,14 +262,14 @@ export function useChatActions() {
     }
 
     try {
-      const effectiveModel = customModel || state.model;
+      const model = customModel || state.model;
       const result = await query({
         input: queryInput,
         service,
-        thinking: isReasoningModel(effectiveModel),
+        thinking: isReasoningModel(model),
         onCancelCheck: () => cancelFlagRef.current,
         // only pass model if not using plan service
-        ...(shouldUsePlanService ? {} : { model: effectiveModel }),
+        ...(shouldUsePlanService ? {} : { model }),
         async onTextDelta(text) {
           if (cancelFlagRef.current) {
             throw new Error('Query cancelled by user');
