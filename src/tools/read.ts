@@ -33,8 +33,8 @@ function getImageMimeType(filePath: string): ImageMediaType {
   return mimeTypes[ext] || 'image/jpeg';
 }
 
-function createImageResponse(buffer: Buffer, ext: string) {
-  const mimeType = getImageMimeType(ext);
+function createImageResponse(buffer: Buffer, filePath: string) {
+  const mimeType = getImageMimeType(filePath);
   return {
     success: true,
     message: 'Read image file successfully.',
@@ -49,7 +49,6 @@ function createImageResponse(buffer: Buffer, ext: string) {
 async function processImage(filePath: string): Promise<any> {
   try {
     const stats = fs.statSync(filePath);
-    const ext = path.extname(filePath).toLowerCase();
 
     // Security: Validate file path to prevent traversal attacks
     const resolvedPath = path.resolve(filePath);
@@ -61,7 +60,7 @@ async function processImage(filePath: string): Promise<any> {
 
     // If file is within size limit, return as-is
     if (stats.size <= MAX_IMAGE_SIZE) {
-      return createImageResponse(buffer, ext);
+      return createImageResponse(buffer, filePath);
     }
 
     // If file is too large, return error with helpful message
