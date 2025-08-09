@@ -17,7 +17,7 @@ export function usePlanModal() {
           : 'autoEdit';
       dispatch({ type: 'SET_CURRENT_MODE', payload: newMode });
 
-      await executeQuery(state.planModal.text, 'code');
+      await executeQuery(state.planModal.text, { forceStage: 'code' });
     } else {
       dispatch({ type: 'SET_PLAN_MODAL', payload: null });
     }

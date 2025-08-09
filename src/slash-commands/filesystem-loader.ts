@@ -50,6 +50,7 @@ export function loadFilesystemCommands(
           type: 'prompt',
           name: fullCommandName,
           description: frontmatter?.description ?? '',
+          model: frontmatter?.model,
           progressMessage: `Executing ${prefix} command...`,
           async getPromptForCommand(args: string) {
             // Use the file content as the prompt
