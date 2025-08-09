@@ -32,7 +32,7 @@ jobs:
           bun-version: latest
 
       - name: Build project
-        run: npm run build
+        run: pnpm build
 
       - name: Type check
         run: pnpm typecheck
