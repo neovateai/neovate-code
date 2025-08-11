@@ -2,7 +2,7 @@ import { platform } from 'process';
 import { Context } from './context';
 import {
   CodebaseContributor,
-  ContextContributor,
+  type ContextContributor,
   DirectoryStructureContributor,
   GitStatusContributor,
   IDEContributor,

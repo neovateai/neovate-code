@@ -1,12 +1,12 @@
 import React, {
-  ReactNode,
+  type ReactNode,
   createContext,
   useContext,
   useEffect,
   useReducer,
 } from 'react';
 import { Context } from '../context';
-import { SelectionInfo } from '../ide';
+import { type SelectionInfo } from '../ide';
 import { Service } from '../service';
 import { APP_STATUS, MESSAGE_ROLES } from './constants';
 

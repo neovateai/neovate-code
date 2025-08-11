@@ -1,5 +1,5 @@
 import { JsonlLogger } from '../jsonl';
-import { Plugin } from '../plugin';
+import { type Plugin } from '../plugin';
 import { relativeToHome } from '../utils/path';
 
 type CreateJsonlPluginOpts = {

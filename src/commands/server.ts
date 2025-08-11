@@ -4,7 +4,7 @@ import createDebug from 'debug';
 import { homedir } from 'os';
 import path from 'path';
 import yargsParser from 'yargs-parser';
-import { RunCliOpts } from '..';
+import { type RunCliOpts } from '..';
 import { Context } from '../context';
 import { PluginHookType } from '../plugin';
 import { contextPlugin } from '../server/plugins/context';

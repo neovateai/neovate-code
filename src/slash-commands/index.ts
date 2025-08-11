@@ -3,7 +3,7 @@ import { PluginHookType } from '../plugin';
 import { createBuiltinCommands } from './builtin';
 import { loadGlobalCommands, loadProjectCommands } from './filesystem-loader';
 import { SlashCommandRegistryImpl } from './registry';
-import { SlashCommand, SlashCommandRegistry } from './types';
+import { type SlashCommand, type SlashCommandRegistry } from './types';
 
 export * from './types';
 export * from './registry';

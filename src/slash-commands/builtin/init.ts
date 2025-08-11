@@ -1,5 +1,5 @@
 import { Context } from '../../context';
-import { PromptCommand } from '../types';
+import { type PromptCommand } from '../types';
 
 export function createInitCommand(opts: { context: Context }) {
   const productName = opts.context.productName;

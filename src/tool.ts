@@ -1,4 +1,4 @@
-import { FunctionTool, Tool } from '@openai/agents';
+import { type FunctionTool, type Tool } from '@openai/agents';
 import { isClaude } from './utils/model';
 
 export type ApprovalContext = {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { SlashCommand } from '../../slash-commands/types';
+import { type SlashCommand } from '../../slash-commands/types';
 import { useAppContext } from '../AppContext';
 import {
   extractFileQuery,

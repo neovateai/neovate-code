@@ -1,11 +1,11 @@
 import { Type } from '@sinclair/typebox';
 import chokidar, { FSWatcher } from 'chokidar';
 import createDebug from 'debug';
-import { FastifyPluginAsync } from 'fastify';
+import { type FastifyPluginAsync } from 'fastify';
 import * as fs from 'fs/promises';
 import { join } from 'path';
 import { WebSocketServer } from 'ws';
-import { LogEntry } from './jsonl';
+import { type LogEntry } from './jsonl';
 
 const debug = createDebug('takumi:project');
 

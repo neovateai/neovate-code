@@ -1,4 +1,4 @@
-import { Agent, AgentInputItem, Runner } from '@openai/agents';
+import { Agent, type AgentInputItem, Runner } from '@openai/agents';
 import createDebug from 'debug';
 import { Readable } from 'stream';
 import { createCodeAgent } from './agents/code';

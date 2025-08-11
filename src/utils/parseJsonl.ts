@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { LogEntry } from '../jsonl';
+import { type LogEntry } from '../jsonl';
 
 export function parseJsonlHistory(directoryPath: string): string[] {
   if (!existsSync(directoryPath)) {

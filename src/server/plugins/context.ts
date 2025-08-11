@@ -1,5 +1,5 @@
 import createDebug from 'debug';
-import { Plugin } from '../../plugin';
+import { type Plugin } from '../../plugin';
 import { getFileContext } from '../context/context-files';
 import { ContextType } from '../types/completions';
 

@@ -2,7 +2,7 @@ import {
   BatchTraceProcessor,
   Span,
   Trace,
-  TracingExporter,
+  type TracingExporter,
   setTraceProcessors,
 } from '@openai/agents';
 import createDebug from 'debug';

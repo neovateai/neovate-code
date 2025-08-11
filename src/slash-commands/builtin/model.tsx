@@ -6,7 +6,7 @@ import { PluginHookType } from '../../plugin';
 import { MODEL_ALIAS } from '../../provider';
 import { useAppContext } from '../../ui/AppContext';
 import PaginatedSelectInput from '../../ui/components/PaginatedSelectInput';
-import { LocalJSXCommand } from '../types';
+import { type LocalJSXCommand } from '../types';
 
 interface ModelSelectProps {
   context: Context;

@@ -4,7 +4,7 @@ import path from 'path';
 import { z } from 'zod';
 import { IMAGE_EXTENSIONS } from '../constants';
 import { Context } from '../context';
-import { EnhancedTool, enhanceTool } from '../tool';
+import { type EnhancedTool, enhanceTool } from '../tool';
 
 type ImageMediaType =
   | 'image/jpeg'

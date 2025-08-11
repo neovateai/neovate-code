@@ -1,4 +1,4 @@
-import { AgentInputItem } from '@openai/agents';
+import { type AgentInputItem } from '@openai/agents';
 import { isArray, isPlainObject } from 'lodash-es';
 import { TOOL_NAMES } from '../ui/constants.js';
 

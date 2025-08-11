@@ -1,5 +1,5 @@
 import {
-  FunctionTool,
+  type FunctionTool,
   type MCPServer,
   MCPServerSSE,
   MCPServerStdio,

@@ -1,6 +1,6 @@
 import { PluginHookType } from '../../plugin';
 import { relativeToHome } from '../../utils/path';
-import { LocalCommand } from '../types';
+import { type LocalCommand } from '../types';
 
 export const statusCommand: LocalCommand = {
   type: 'local',

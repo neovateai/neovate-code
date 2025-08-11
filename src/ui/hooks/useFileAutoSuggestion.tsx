@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { listDirectory, listRootDirectory } from '../../utils/list';
 import { useAppContext } from '../AppContext';
-import { SuggestionItem } from './useAutoSuggestion';
+import { type SuggestionItem } from './useAutoSuggestion';
 
 export interface FileQueryInfo {
   hasFileQuery: boolean;

@@ -1,4 +1,4 @@
-import { SlashCommand, SlashCommandRegistry } from './types';
+import { type SlashCommand, type SlashCommandRegistry } from './types';
 
 export class SlashCommandRegistryImpl implements SlashCommandRegistry {
   private commands: Map<string, SlashCommand> = new Map();

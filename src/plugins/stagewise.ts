@@ -1,11 +1,11 @@
 import {
-  AgentServer,
+  type AgentServer,
   AgentStateType,
   createAgentServer,
 } from '@stagewise/agent-interface/agent';
 import createDebug from 'debug';
 import { Context } from '../context';
-import { Plugin } from '../plugin';
+import { type Plugin } from '../plugin';
 import { Service } from '../service';
 import { relativeToHome } from '../utils/path';
 
