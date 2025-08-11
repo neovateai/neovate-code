@@ -5,7 +5,6 @@ import { compactCommand } from './compact';
 import { exitCommand } from './exit';
 import { helpCommand } from './help';
 import { createInitCommand } from './init';
-import { createModelCommand } from './model';
 import { createReviewCommand } from './review';
 import { statusCommand } from './status';
 
@@ -13,9 +12,10 @@ export * from './clear';
 export * from './exit';
 export * from './help';
 
-export function createBuiltinCommands(opts: {
+export async function createBuiltinCommands(opts: {
   context: Context;
-}): SlashCommand[] {
+}): Promise<SlashCommand[]> {
+  const { createModelCommand } = await import('./model');
   return [
     clearCommand,
     exitCommand,

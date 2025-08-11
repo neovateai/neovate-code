@@ -1,7 +1,7 @@
 import { Box, Text, useInput } from 'ink';
 import pc from 'picocolors';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Context } from '../../context';
+import type { Context } from '../../context';
 import { PluginHookType } from '../../plugin';
 import { MODEL_ALIAS } from '../../provider';
 import { useAppContext } from '../../ui/AppContext';
