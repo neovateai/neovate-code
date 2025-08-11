@@ -14,7 +14,7 @@ export async function createSlashCommandRegistry(
   context: Context,
 ): Promise<SlashCommandRegistry> {
   const registry = new SlashCommandRegistryImpl();
-  const builtinCommands = createBuiltinCommands({ context });
+  const builtinCommands = await createBuiltinCommands({ context });
 
   // Register built-in commands
   builtinCommands.forEach((command) => {
