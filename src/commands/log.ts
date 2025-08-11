@@ -1,13 +1,13 @@
-import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import { type TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import createDebug from 'debug';
-import fastify, { FastifyInstance } from 'fastify';
+import fastify, { type FastifyInstance } from 'fastify';
 import * as fs from 'fs/promises';
 import { homedir } from 'os';
 import path from 'path';
 import portfinder from 'portfinder';
 import { fileURLToPath } from 'url';
 import yargsParser from 'yargs-parser';
-import { RunCliOpts } from '..';
+import { type RunCliOpts } from '..';
 import projectRoute from '../project';
 import * as logger from '../utils/logger';
 

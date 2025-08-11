@@ -1,4 +1,4 @@
-import { LocalCommand } from '../types';
+import { type LocalCommand } from '../types';
 
 export const helpCommand: LocalCommand = {
   type: 'local',

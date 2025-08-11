@@ -6,7 +6,7 @@ import os from 'os';
 import path from 'path';
 import { z } from 'zod';
 import { Context } from '../context';
-import { ApprovalContext, EnhancedTool, enhanceTool } from '../tool';
+import { type ApprovalContext, type EnhancedTool, enhanceTool } from '../tool';
 import { getErrorMessage } from '../utils/error';
 import { shellExecute } from '../utils/shell-execution';
 

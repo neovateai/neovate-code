@@ -1,6 +1,6 @@
 import { Box, Text } from 'ink';
 import React from 'react';
-import { GeneralInfo } from '../../plugin';
+import { type GeneralInfo } from '../../plugin';
 
 interface GeneralInfoPanelProps {
   generalInfo: Record<string, string>;

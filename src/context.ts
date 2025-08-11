@@ -1,19 +1,19 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createDeepSeek } from '@ai-sdk/deepseek';
 import { createOpenAI } from '@ai-sdk/openai';
-import { ModelProvider, Tool } from '@openai/agents';
+import { type ModelProvider, type Tool } from '@openai/agents';
 import createDebug from 'debug';
 import { createJiti } from 'jiti';
 import { homedir } from 'os';
 import path from 'path';
 import resolve from 'resolve';
-import { Config, ConfigManager } from './config';
+import { type Config, ConfigManager } from './config';
 import { PRODUCT_NAME } from './constants';
 import { IDE } from './ide';
 import { MCPManager } from './mcp';
 import {
-  Plugin,
-  PluginApplyOpts,
+  type Plugin,
+  type PluginApplyOpts,
   PluginHookType,
   PluginManager,
 } from './plugin';
@@ -21,7 +21,7 @@ import { createJsonlPlugin } from './plugins/jsonl';
 import { createStagewisePlugin } from './plugins/stagewise';
 import { getModel } from './provider';
 import {
-  SlashCommandRegistry,
+  type SlashCommandRegistry,
   createSlashCommandRegistry,
 } from './slash-commands';
 import { SystemPromptBuilder } from './system-prompt-builder';

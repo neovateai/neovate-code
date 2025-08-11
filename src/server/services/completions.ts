@@ -1,17 +1,17 @@
-import { AgentInputItem } from '@openai/agents';
-import { DataStreamWriter, formatDataStreamPart } from 'ai';
+import { type AgentInputItem } from '@openai/agents';
+import { type DataStreamWriter, formatDataStreamPart } from 'ai';
 import createDebug from 'debug';
 import { isReasoningModel } from '../../provider';
 import { query } from '../../query';
 import { Service } from '../../service';
 import { delay } from '../../utils/delay';
 import {
-  AttachmentItem,
-  ContextItem,
+  type AttachmentItem,
+  type ContextItem,
   ContextType,
-  ImageItem,
+  type ImageItem,
 } from '../types/completions';
-import { CreateServerOpts } from '../types/server';
+import { type CreateServerOpts } from '../types/server';
 import { getToolApprovalService } from './tool-approval';
 
 const debug = createDebug('takumi:server:completions');

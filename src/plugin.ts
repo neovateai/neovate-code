@@ -1,9 +1,9 @@
-import { AgentInputItem } from '@openai/agents';
+import { type AgentInputItem } from '@openai/agents';
 import defu from 'defu';
-import { Config } from './config';
-import { Context, CreateContextOpts } from './context';
-import { MessageContent } from './utils/parse-message';
-import { UsageData } from './utils/usage';
+import { type Config } from './config';
+import { Context, type CreateContextOpts } from './context';
+import { type MessageContent } from './utils/parse-message';
+import { type UsageData } from './utils/usage';
 
 export enum PluginHookType {
   First = 'first',

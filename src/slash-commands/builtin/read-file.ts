@@ -1,4 +1,4 @@
-import { PromptCommand } from '../types';
+import { type PromptCommand } from '../types';
 
 export const readFileCommand: PromptCommand = {
   type: 'prompt',

@@ -1,7 +1,7 @@
 import {
   type AgentInputItem,
   type AssistantMessageItem,
-  ModelProvider,
+  type ModelProvider,
   Runner,
   type UserMessageItem,
 } from '@openai/agents';

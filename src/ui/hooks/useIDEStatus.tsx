@@ -1,7 +1,7 @@
 import createDebug from 'debug';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SelectionInfo, SelectionResult } from '../../ide';
-import { InstallationResult } from '../../utils/ide';
+import { type SelectionInfo, type SelectionResult } from '../../ide';
+import { type InstallationResult } from '../../utils/ide';
 import { useAppContext } from '../AppContext';
 
 const debug = createDebug('takumi:useIDEStatus');

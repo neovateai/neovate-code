@@ -1,6 +1,6 @@
 import { Box, Text } from 'ink';
 import React from 'react';
-import { SuggestionItem } from '../hooks/useAutoSuggestion';
+import { type SuggestionItem } from '../hooks/useAutoSuggestion';
 
 interface AutoSuggestionDisplayProps {
   suggestions: SuggestionItem[];

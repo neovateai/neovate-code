@@ -1,12 +1,12 @@
 import { Type } from '@sinclair/typebox';
 import createDebug from 'debug';
-import { FastifyPluginAsync } from 'fastify';
+import { type FastifyPluginAsync } from 'fastify';
 import * as fs from 'fs/promises';
 import path from 'path';
 import { execFileNoThrow } from '../../utils/execFileNoThrow';
 import { loadIgnorePatterns } from '../context/context-files';
-import { CreateServerOpts } from '../types';
-import { FileItem, FileListRequest } from '../types/files';
+import { type CreateServerOpts } from '../types';
+import { type FileItem, type FileListRequest } from '../types/files';
 
 const debug = createDebug('takumi:server:files');
 

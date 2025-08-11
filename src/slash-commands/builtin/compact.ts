@@ -2,7 +2,7 @@ import createDebug from 'debug';
 import React, { useEffect } from 'react';
 import { useAppContext } from '../../ui/hooks';
 import { generateSummaryMessage } from '../../utils/compact';
-import { LocalJSXCommand } from '../types';
+import { type LocalJSXCommand } from '../types';
 
 const debug = createDebug('takumi:slash-commands:compact');
 

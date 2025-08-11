@@ -4,7 +4,7 @@ import assert from 'assert';
 import { execSync } from 'child_process';
 import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
-import { RunCliOpts } from '..';
+import { type RunCliOpts } from '..';
 import { createShellAgent } from '../agents/shell';
 import { Context } from '../context';
 import * as logger from '../utils/logger';

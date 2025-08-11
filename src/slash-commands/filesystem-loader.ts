@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { parseFrontMatter } from '../utils/frontmatter';
-import { PromptCommand } from './types';
+import { type PromptCommand } from './types';
 
 export interface FilesystemCommandLoaderOptions {
   commandsDir: string;

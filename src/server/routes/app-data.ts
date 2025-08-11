@@ -1,6 +1,6 @@
-import { FastifyPluginAsync } from 'fastify';
-import { CreateServerOpts } from '../types';
-import { ApiResponse, ServerAppData } from '../types';
+import { type FastifyPluginAsync } from 'fastify';
+import { type CreateServerOpts } from '../types';
+import { type ApiResponse, type ServerAppData } from '../types';
 
 const appDataRoute: FastifyPluginAsync<CreateServerOpts> = async (
   app,

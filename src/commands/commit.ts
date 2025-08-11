@@ -1,15 +1,18 @@
 import {
-  ModelProvider,
+  type ModelProvider,
   Runner,
   setTraceProcessors,
   withTrace,
 } from '@openai/agents';
 import * as p from '@umijs/clack-prompts';
-import { ExecSyncOptionsWithStringEncoding, execSync } from 'child_process';
+import {
+  type ExecSyncOptionsWithStringEncoding,
+  execSync,
+} from 'child_process';
 import clipboardy from 'clipboardy';
 import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
-import { RunCliOpts } from '..';
+import { type RunCliOpts } from '..';
 import { createBranchAgent } from '../agents/branch';
 import { createCommitAgent } from '../agents/commit';
 import { Context } from '../context';

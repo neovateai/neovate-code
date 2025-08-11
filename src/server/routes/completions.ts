@@ -1,12 +1,12 @@
 import { Type } from '@sinclair/typebox';
 import { pipeDataStreamToResponse } from 'ai';
 import createDebug from 'debug';
-import { FastifyPluginAsync } from 'fastify';
+import { type FastifyPluginAsync } from 'fastify';
 import { last } from 'lodash-es';
 import { PluginHookType } from '../../plugin';
 import { runCode } from '../services/completions';
-import { RouteCompletionsOpts } from '../types';
-import { CompletionRequest, ContextType } from '../types/completions';
+import { type RouteCompletionsOpts } from '../types';
+import { type CompletionRequest, ContextType } from '../types/completions';
 
 const debug = createDebug('takumi:server:completions');
 

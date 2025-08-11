@@ -4,7 +4,7 @@ import {
   isSlashCommand,
   parseSlashCommand,
 } from './registry';
-import { LocalCommand } from './types';
+import { type LocalCommand } from './types';
 
 describe('SlashCommandRegistry', () => {
   it('should register and retrieve commands', () => {

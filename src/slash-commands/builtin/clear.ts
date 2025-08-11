@@ -1,4 +1,4 @@
-import { LocalJSXCommand } from '../types';
+import { type LocalJSXCommand } from '../types';
 
 export const clearCommand: LocalJSXCommand = {
   type: 'local-jsx',

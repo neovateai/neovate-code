@@ -3,8 +3,8 @@ import path from 'path';
 import { fileURLToPath, resolve } from 'url';
 import WebSocket from 'ws';
 import {
-  InstallationResult,
-  PlatformInfo,
+  type InstallationResult,
+  type PlatformInfo,
   attemptInstallation,
   isExtensionInstalled,
 } from './utils/ide';

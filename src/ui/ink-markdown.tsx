@@ -1,6 +1,8 @@
 import { Text } from 'ink';
 import { parse, setOptions } from 'marked';
-import TerminalRenderer, { TerminalRendererOptions } from 'marked-terminal';
+import TerminalRenderer, {
+  type TerminalRendererOptions,
+} from 'marked-terminal';
 import React from 'react';
 
 export type Props = TerminalRendererOptions & {

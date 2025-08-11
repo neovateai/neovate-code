@@ -1,7 +1,7 @@
-import { ModelProvider } from '@openai/agents';
+import { type ModelProvider } from '@openai/agents';
 import { Context } from '../../context';
 import { Service } from '../../service';
-import { ServerAppData } from './app-data';
+import { type ServerAppData } from './app-data';
 
 export interface RunBrowserServerOpts {
   prompt: string;

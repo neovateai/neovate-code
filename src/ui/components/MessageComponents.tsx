@@ -3,7 +3,7 @@ import React from 'react';
 import { useMemo } from 'react';
 import { TOOL_NAME } from '../../constants';
 import type { TodoItem as TodoItemType } from '../../tools/todo';
-import { Message } from '../AppContext';
+import { type Message } from '../AppContext';
 import { MESSAGE_ROLES, MESSAGE_TYPES, SPACING, UI_COLORS } from '../constants';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import Markdown from '../ink-markdown';

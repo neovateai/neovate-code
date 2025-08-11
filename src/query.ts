@@ -1,4 +1,4 @@
-import { AgentInputItem } from '@openai/agents';
+import { type AgentInputItem } from '@openai/agents';
 import { FilesContributor } from './context-contributor';
 import { PluginHookType } from './plugin';
 import { Service } from './service';
