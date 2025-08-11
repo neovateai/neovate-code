@@ -17,8 +17,7 @@ type ImageMediaType =
 
 const MAX_IMAGE_SIZE = 3.75 * 1024 * 1024; // 3.75MB in bytes
 
-function getImageMimeType(filePath: string): ImageMediaType {
-  const ext = path.extname(filePath).toLowerCase();
+function getImageMimeType(ext: string): ImageMediaType {
   const mimeTypes: Record<string, ImageMediaType> = {
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
