@@ -570,7 +570,7 @@ const projectRoute: FastifyPluginAsync = async (app, _opts) => {
         return projects;
       } catch (error) {
         debug('Error getting projects:', error);
-        reply.status(500);
+        reply.statusCode = 500;
         return {
           error: 'Failed to get projects',
           message: error instanceof Error ? error.message : 'Unknown error',
