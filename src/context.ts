@@ -3,6 +3,7 @@ import { createDeepSeek } from '@ai-sdk/deepseek';
 import { createOpenAI } from '@ai-sdk/openai';
 import { type ModelProvider, type Tool } from '@openai/agents';
 import createDebug from 'debug';
+import fs from 'fs';
 import { createJiti } from 'jiti';
 import { homedir } from 'os';
 import path from 'path';
@@ -206,8 +207,16 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   if (opts.stagewise) {
     buildinPlugins.push(createStagewisePlugin({}));
   }
+  // Scan for plugins in directories
+  const globalPluginsDir = path.join(paths.globalConfigDir, 'plugins');
+  const localPluginsDir = path.join(paths.projectConfigDir, 'plugins');
+  const globalPlugins = scanPluginDirectory(globalPluginsDir);
+  const localPlugins = scanPluginDirectory(localPluginsDir);
+
   const pluginsConfigs: (string | Plugin)[] = [
     ...buildinPlugins,
+    ...globalPlugins,
+    ...localPlugins,
     ...(initialConfig.plugins || []),
     ...(opts.plugins || []),
   ];
@@ -329,6 +338,21 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     env,
   });
   return context;
+}
+
+function scanPluginDirectory(pluginDir: string): string[] {
+  try {
+    if (!fs.existsSync(pluginDir)) {
+      return [];
+    }
+    const files = fs.readdirSync(pluginDir);
+    return files
+      .filter((file) => file.endsWith('.js') || file.endsWith('.ts'))
+      .map((file) => path.join(pluginDir, file));
+  } catch (error) {
+    debug('Error scanning plugin directory %s: %s', pluginDir, error);
+    return [];
+  }
 }
 
 function normalizePlugins(cwd: string, plugins: (string | Plugin)[]) {
