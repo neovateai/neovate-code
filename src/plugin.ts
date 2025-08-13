@@ -178,6 +178,7 @@ export type Plugin = {
   conversation?: (
     this: PluginContext,
     opts: {
+      prompt: string;
       finalText: string;
       history: AgentInputItem[];
       startTime: number;

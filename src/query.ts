@@ -43,6 +43,10 @@ export async function query(opts: QueryOpts) {
           },
         ]
       : opts.input;
+  const prompt =
+    input.length && typeof (input[0] as any).content === 'string'
+      ? (input[0] as any).content
+      : undefined;
 
   // Format the last user message using FileContributor
   let lastUserMessageIndex = -1;
@@ -180,6 +184,7 @@ export async function query(opts: QueryOpts) {
     hook: 'conversation',
     args: [
       {
+        prompt,
         finalText,
         history: service.history,
         startTime,
