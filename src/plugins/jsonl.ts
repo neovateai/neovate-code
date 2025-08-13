@@ -1,6 +1,5 @@
 import { JsonlLogger } from '../jsonl';
 import { type Plugin } from '../plugin';
-import { relativeToHome } from '../utils/path';
 
 type CreateJsonlPluginOpts = {
   filePath: string;
@@ -18,7 +17,7 @@ export const createJsonlPlugin = (opts: CreateJsonlPluginOpts) => {
   });
   return {
     name: 'jsonl',
-    userMessage(opts) {
+    userPrompt(opts) {
       jsonlLogger.writeUserMessage(opts.text);
     },
     query(opts) {
@@ -45,7 +44,7 @@ export const createJsonlPlugin = (opts: CreateJsonlPluginOpts) => {
         },
       });
     },
-    toolResult(result, opts) {
+    toolUseResult(result, opts) {
       try {
         const isError = result?.success === false;
         jsonlLogger.writeToolResult(

@@ -33,6 +33,7 @@ type QueryOpts = {
 
 export async function query(opts: QueryOpts) {
   const { service, thinking } = opts;
+  const startTime = Date.now();
   let input =
     typeof opts.input === 'string'
       ? [
@@ -136,17 +137,11 @@ export async function query(opts: QueryOpts) {
             }
 
             if (approved) {
-              let result = await service.callTool(
+              const result = await service.callTool(
                 item.callId,
                 item.name,
                 item.params,
               );
-              result = await service.context.apply({
-                hook: 'toolResult',
-                args: [item],
-                memo: result,
-                type: PluginHookType.SeriesLast,
-              });
               await opts.onToolUseResult?.(
                 item.callId,
                 item.name,
@@ -181,6 +176,18 @@ export async function query(opts: QueryOpts) {
       break;
     }
   }
+  await service.context.apply({
+    hook: 'conversation',
+    args: [
+      {
+        finalText,
+        history: service.history,
+        startTime,
+        endTime: Date.now(),
+      },
+    ],
+    type: PluginHookType.Series,
+  });
   return {
     finalText,
     history: service.history,

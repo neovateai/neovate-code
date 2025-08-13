@@ -156,18 +156,15 @@ export type Plugin = {
     this: PluginContext,
     opts: { prompt: string },
   ) => Promise<any> | any;
-  toolUse?: (
-    this: PluginContext,
-    opts: { callId: string; name: string; params: any },
-  ) => Promise<any> | any;
-  toolUseResult?: (
-    this: PluginContext,
-    opts: { callId: string; name: string; params: any; result: any },
-  ) => Promise<any> | any;
-  userMessage?: (
+  userPrompt?: (
     this: PluginContext,
     opts: { text: string },
   ) => Promise<any> | any;
+  systemPrompt?: (
+    this: PluginContext,
+    memo: string[],
+    opts: { prompt: string | undefined },
+  ) => Promise<string> | string;
   query?: (
     this: PluginContext,
     opts: {
@@ -176,6 +173,15 @@ export type Plugin = {
       input: AgentInputItem[];
       model: string;
       usage: UsageData;
+    },
+  ) => Promise<any> | any;
+  conversation?: (
+    this: PluginContext,
+    opts: {
+      finalText: string;
+      history: AgentInputItem[];
+      startTime: number;
+      endTime: number;
     },
   ) => Promise<any> | any;
   destroy?: (this: PluginContext) => Promise<any> | any;
@@ -190,7 +196,6 @@ export type Plugin = {
       createAnthropic: any;
     },
   ) => Promise<any> | any;
-  tool?: (this: PluginContext, opts: { agentType: AgentType }) => Promise<any>;
   serverAppData?: (
     this: PluginContext,
     opts: { context: any; cwd: string },
@@ -215,10 +220,15 @@ export type Plugin = {
   argvConfig?: (this: PluginContext) => Promise<any> | any;
   modelInfo?: (this: PluginContext) => Promise<any> | any;
   status?: (this: PluginContext) => Promise<Status> | Status;
-  toolResult?: (
+  tool?: (this: PluginContext, opts: { agentType: AgentType }) => Promise<any>;
+  toolUse?: (
+    this: PluginContext,
+    opts: { callId: string; name: string; params: any },
+  ) => Promise<any> | any;
+  toolUseResult?: (
     this: PluginContext,
     result: any,
-    opts: { params: any; name: string; callId: string },
+    opts: { callId: string; name: string; params: any },
   ) => Promise<any> | any;
   modelList?: (
     this: PluginContext,

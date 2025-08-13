@@ -283,15 +283,16 @@ export class Service {
   }
 
   async run(opts: ServiceRunOpts): Promise<ServiceRunResult> {
-    if (
-      opts.input.length &&
-      typeof (opts.input[0] as any).content === 'string'
-    ) {
+    const prompt =
+      opts.input.length && typeof (opts.input[0] as any).content === 'string'
+        ? (opts.input[0] as any).content
+        : undefined;
+    if (prompt) {
       await this.context.apply({
-        hook: 'userMessage',
+        hook: 'userPrompt',
         args: [
           {
-            text: (opts.input[0] as any).content,
+            text: prompt,
           },
         ],
         type: PluginHookType.Series,
@@ -323,7 +324,17 @@ export class Service {
     }
 
     const input = await (async () => {
-      const systemPromptStrs = await this.context.buildSystemPrompts();
+      let systemPromptStrs = await this.context.buildSystemPrompts();
+      systemPromptStrs = await this.context.apply({
+        hook: 'systemPrompt',
+        args: [
+          {
+            prompt,
+          },
+        ],
+        memo: systemPromptStrs,
+        type: PluginHookType.SeriesMerge,
+      });
       const systemPrompts = systemPromptStrs.map((str) => ({
         role: 'system' as const,
         content: str,
@@ -538,25 +549,23 @@ export class Service {
       ],
       type: PluginHookType.Series,
     });
-    const result = await this.tools!.invoke(
+    let result = await this.tools!.invoke(
       name,
       JSON.stringify(params),
       this.context,
     );
-
-    await this.context.apply({
+    result = await this.context.apply({
       hook: 'toolUseResult',
       args: [
         {
           callId,
           name,
           params,
-          result,
         },
       ],
-      type: PluginHookType.Series,
+      memo: result,
+      type: PluginHookType.SeriesLast,
     });
-
     this.history.push(formatToolUse({ name, params, result, callId }));
     return result;
   }
