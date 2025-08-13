@@ -5,13 +5,13 @@ import { type PromptCommand } from './types';
 
 export interface FilesystemCommandLoaderOptions {
   commandsDir: string;
-  prefix: string; // 'user' or 'project'
+  postfix?: string;
 }
 
 export function loadFilesystemCommands(
   options: FilesystemCommandLoaderOptions,
 ): PromptCommand[] {
-  const { commandsDir, prefix } = options;
+  const { commandsDir, postfix } = options;
   const commands: PromptCommand[] = [];
 
   // Check if commands directory exists
@@ -39,19 +39,27 @@ export function loadFilesystemCommands(
       // Extract command name from filename (remove .md extension)
       const commandName = path.basename(file, '.md');
 
-      // Create command with prefix (user: or project:)
-      const fullCommandName = `${prefix}:${commandName}`;
+      // Validate command name to prevent injection attacks
+      if (!/^[a-zA-Z0-9_-]+$/.test(commandName)) {
+        console.warn(`Skipping invalid command name: ${commandName}`);
+        continue;
+      }
 
       try {
         const content = fs.readFileSync(filePath, 'utf-8');
         const { frontmatter, content: body } = parseFrontMatter(content);
 
+        const baseDescription = frontmatter?.description ?? '';
+        const description = postfix
+          ? `${baseDescription} (${postfix})`
+          : baseDescription;
+
         const command: PromptCommand = {
           type: 'prompt',
-          name: fullCommandName,
-          description: frontmatter?.description ?? '',
+          name: commandName,
+          description,
           model: frontmatter?.model,
-          progressMessage: `Executing ${prefix} command...`,
+          progressMessage: `Executing command...`,
           async getPromptForCommand(args: string) {
             // Use the file content as the prompt
             // Replace $ARGUMENTS placeholder with actual args
@@ -94,7 +102,7 @@ export function loadGlobalCommands(globalConfigDir: string): PromptCommand[] {
   const commandsDir = path.join(globalConfigDir, 'commands');
   return loadFilesystemCommands({
     commandsDir,
-    prefix: 'user',
+    postfix: 'user',
   });
 }
 
@@ -102,6 +110,6 @@ export function loadProjectCommands(projectConfigDir: string): PromptCommand[] {
   const commandsDir = path.join(projectConfigDir, 'commands');
   return loadFilesystemCommands({
     commandsDir,
-    prefix: 'project',
+    postfix: 'project',
   });
 }

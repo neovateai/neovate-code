@@ -3,7 +3,11 @@ import { PluginHookType } from '../plugin';
 import { createBuiltinCommands } from './builtin';
 import { loadGlobalCommands, loadProjectCommands } from './filesystem-loader';
 import { SlashCommandRegistryImpl } from './registry';
-import { type SlashCommand, type SlashCommandRegistry } from './types';
+import {
+  CommandSource,
+  type SlashCommand,
+  type SlashCommandRegistry,
+} from './types';
 
 export * from './types';
 export * from './registry';
@@ -18,7 +22,7 @@ export async function createSlashCommandRegistry(
 
   // Register built-in commands
   builtinCommands.forEach((command) => {
-    registry.register(command);
+    registry.register(command, CommandSource.Builtin);
   });
 
   // Register filesystem commands
@@ -26,13 +30,13 @@ export async function createSlashCommandRegistry(
     // Load global commands from ~/.takumi/commands
     const globalCommands = loadGlobalCommands(context.paths.globalConfigDir);
     globalCommands.forEach((command) => {
-      registry.register(command);
+      registry.register(command, CommandSource.User);
     });
 
     // Load project commands from {cwd}/.takumi/commands
     const projectCommands = loadProjectCommands(context.paths.projectConfigDir);
     projectCommands.forEach((command) => {
-      registry.register(command);
+      registry.register(command, CommandSource.Project);
     });
   } catch (e) {
     console.warn('Warning: Could not load filesystem commands:', e);
@@ -49,7 +53,7 @@ export async function createSlashCommandRegistry(
 
     if (Array.isArray(pluginCommands)) {
       pluginCommands.forEach((command) => {
-        registry.register(command);
+        registry.register(command, CommandSource.Plugin);
       });
     }
   } catch (e) {

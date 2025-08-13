@@ -4,7 +4,7 @@ import {
   isSlashCommand,
   parseSlashCommand,
 } from './registry';
-import { type LocalCommand } from './types';
+import { CommandSource, type LocalCommand } from './types';
 
 describe('SlashCommandRegistry', () => {
   it('should register and retrieve commands', () => {
@@ -41,6 +41,129 @@ describe('SlashCommandRegistry', () => {
 
     expect(registry.hasCommand('test')).toBe(false);
     expect(registry.get('test')).toBeUndefined();
+  });
+
+  it('should implement priority-based command resolution', () => {
+    const registry = new SlashCommandRegistryImpl();
+
+    const builtinCommand: LocalCommand = {
+      type: 'local',
+      name: 'test',
+      description: 'Builtin test command',
+      async call() {
+        return 'builtin';
+      },
+    };
+
+    const userCommand: LocalCommand = {
+      type: 'local',
+      name: 'test',
+      description: 'User test command',
+      async call() {
+        return 'user';
+      },
+    };
+
+    const projectCommand: LocalCommand = {
+      type: 'local',
+      name: 'test',
+      description: 'Project test command',
+      async call() {
+        return 'project';
+      },
+    };
+
+    // Register builtin first
+    registry.register(builtinCommand, CommandSource.Builtin);
+    expect(registry.get('test')?.description).toBe('Builtin test command');
+
+    // Register user - should override builtin
+    registry.register(userCommand, CommandSource.User);
+    expect(registry.get('test')?.description).toBe('User test command');
+
+    // Register project - should override user
+    registry.register(projectCommand, CommandSource.Project);
+    expect(registry.get('test')?.description).toBe('Project test command');
+
+    // Registering builtin again should not override project
+    registry.register(builtinCommand, CommandSource.Builtin);
+    expect(registry.get('test')?.description).toBe('Project test command');
+  });
+
+  it('should allow same priority commands to override each other', () => {
+    const registry = new SlashCommandRegistryImpl();
+
+    const pluginCommand1: LocalCommand = {
+      type: 'local',
+      name: 'test',
+      description: 'Plugin command 1',
+      async call() {
+        return 'plugin1';
+      },
+    };
+
+    const pluginCommand2: LocalCommand = {
+      type: 'local',
+      name: 'test',
+      description: 'Plugin command 2',
+      async call() {
+        return 'plugin2';
+      },
+    };
+
+    registry.register(pluginCommand1, CommandSource.Plugin);
+    expect(registry.get('test')?.description).toBe('Plugin command 1');
+
+    registry.register(pluginCommand2, CommandSource.Plugin);
+    expect(registry.get('test')?.description).toBe('Plugin command 2');
+  });
+
+  it('should categorize commands by source', () => {
+    const registry = new SlashCommandRegistryImpl();
+
+    const builtinCmd: LocalCommand = {
+      type: 'local',
+      name: 'builtin',
+      description: 'Builtin command',
+      async call() {
+        return 'builtin';
+      },
+    };
+
+    const userCmd: LocalCommand = {
+      type: 'local',
+      name: 'user',
+      description: 'User command',
+      async call() {
+        return 'user';
+      },
+    };
+
+    const projectCmd: LocalCommand = {
+      type: 'local',
+      name: 'project',
+      description: 'Project command',
+      async call() {
+        return 'project';
+      },
+    };
+
+    registry.register(builtinCmd, CommandSource.Builtin);
+    registry.register(userCmd, CommandSource.User);
+    registry.register(projectCmd, CommandSource.Project);
+
+    const builtinCommands = registry.getCommandsBySource(CommandSource.Builtin);
+    const userCommands = registry.getCommandsBySource(CommandSource.User);
+    const projectCommands = registry.getCommandsBySource(CommandSource.Project);
+
+    expect(builtinCommands).toHaveLength(1);
+    expect(builtinCommands[0].name).toBe('builtin');
+
+    expect(userCommands).toHaveLength(1);
+    expect(userCommands[0].name).toBe('user');
+
+    expect(projectCommands).toHaveLength(1);
+    expect(projectCommands[0].name).toBe('project');
   });
 });
 

@@ -1,4 +1,4 @@
-import { type LocalCommand } from '../types';
+import { CommandSource, type LocalCommand } from '../types';
 
 export const helpCommand: LocalCommand = {
   type: 'local',
@@ -10,20 +10,18 @@ export const helpCommand: LocalCommand = {
       return 'No commands available.';
     }
 
-    // Categorize commands
-    const builtinCommands = commands.filter(
-      (cmd) =>
-        !cmd.name.includes(':') && ['clear', 'exit', 'help'].includes(cmd.name),
+    // Categorize commands by source
+    const builtinCommands = context.slashCommands.getCommandsBySource(
+      CommandSource.Builtin,
     );
-
-    const userCommands = commands.filter((cmd) => cmd.name.startsWith('user:'));
-    const projectCommands = commands.filter((cmd) =>
-      cmd.name.startsWith('project:'),
+    const userCommands = context.slashCommands.getCommandsBySource(
+      CommandSource.User,
     );
-    const pluginCommands = commands.filter(
-      (cmd) =>
-        !cmd.name.includes(':') &&
-        !['clear', 'exit', 'help'].includes(cmd.name),
+    const projectCommands = context.slashCommands.getCommandsBySource(
+      CommandSource.Project,
+    );
+    const pluginCommands = context.slashCommands.getCommandsBySource(
+      CommandSource.Plugin,
     );
 
     let result = 'Available slash commands:\n\n';

@@ -1,5 +1,12 @@
 import { Context } from '../context';
 
+export enum CommandSource {
+  Builtin = 'builtin',
+  User = 'user',
+  Project = 'project',
+  Plugin = 'plugin',
+}
+
 export interface BaseSlashCommand {
   name: string;
   description: string;
@@ -31,10 +38,11 @@ export interface PromptCommand extends BaseSlashCommand {
 export type SlashCommand = LocalCommand | LocalJSXCommand | PromptCommand;
 
 export interface SlashCommandRegistry {
-  register(command: SlashCommand): void;
+  register(command: SlashCommand, source?: CommandSource): void;
   unregister(name: string): void;
   get(name: string): SlashCommand | undefined;
   getAll(): SlashCommand[];
+  getCommandsBySource(source: CommandSource): SlashCommand[];
   hasCommand(name: string): boolean;
   getMatchingCommands(prefix: string): SlashCommand[];
 }

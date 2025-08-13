@@ -1,10 +1,53 @@
-import { type SlashCommand, type SlashCommandRegistry } from './types';
+import {
+  CommandSource,
+  type SlashCommand,
+  type SlashCommandRegistry,
+} from './types';
+
+interface CommandEntry {
+  command: SlashCommand;
+  source: CommandSource;
+}
 
 export class SlashCommandRegistryImpl implements SlashCommandRegistry {
-  private commands: Map<string, SlashCommand> = new Map();
+  private commands: Map<string, CommandEntry> = new Map();
 
-  register(command: SlashCommand): void {
-    this.commands.set(command.name, command);
+  // Priority order: project > user > plugin > builtin (higher number = higher priority)
+  private getPriority(source: CommandSource): number {
+    switch (source) {
+      case CommandSource.Project:
+        return 3;
+      case CommandSource.User:
+        return 2;
+      case CommandSource.Plugin:
+        return 1;
+      case CommandSource.Builtin:
+        return 0;
+      default:
+        return 0;
+    }
+  }
+
+  register(
+    command: SlashCommand,
+    source: CommandSource = CommandSource.Plugin,
+  ): void {
+    const existingEntry = this.commands.get(command.name);
+    const newPriority = this.getPriority(source);
+
+    if (existingEntry && this.getPriority(existingEntry.source) < newPriority) {
+      console.debug(
+        `Command '${command.name}' overridden by ${source} source (was ${existingEntry.source})`,
+      );
+    }
+
+    // Only register if this command has higher priority or doesn't exist
+    if (
+      !existingEntry ||
+      this.getPriority(existingEntry.source) <= newPriority
+    ) {
+      this.commands.set(command.name, { command, source });
+    }
   }
 
   unregister(name: string): void {
@@ -12,11 +55,18 @@ export class SlashCommandRegistryImpl implements SlashCommandRegistry {
   }
 
   get(name: string): SlashCommand | undefined {
-    return this.commands.get(name);
+    const entry = this.commands.get(name);
+    return entry?.command;
   }
 
   getAll(): SlashCommand[] {
-    return Array.from(this.commands.values());
+    return Array.from(this.commands.values()).map((entry) => entry.command);
+  }
+
+  getCommandsBySource(source: CommandSource): SlashCommand[] {
+    return Array.from(this.commands.values())
+      .filter((entry) => entry.source === source)
+      .map((entry) => entry.command);
   }
 
   hasCommand(name: string): boolean {
@@ -25,13 +75,15 @@ export class SlashCommandRegistryImpl implements SlashCommandRegistry {
 
   getMatchingCommands(prefix: string): SlashCommand[] {
     const lowerPrefix = prefix.toLowerCase();
-    return Array.from(this.commands.values()).filter((command) => {
-      const nameMatch = command.name.toLowerCase().startsWith(lowerPrefix);
-      const descriptionMatch = command.description
-        .toLowerCase()
-        .includes(lowerPrefix);
-      return nameMatch || descriptionMatch;
-    });
+    return Array.from(this.commands.values())
+      .map((entry) => entry.command)
+      .filter((command) => {
+        const nameMatch = command.name.toLowerCase().startsWith(lowerPrefix);
+        const descriptionMatch = command.description
+          .toLowerCase()
+          .includes(lowerPrefix);
+        return nameMatch || descriptionMatch;
+      });
   }
 }
 
