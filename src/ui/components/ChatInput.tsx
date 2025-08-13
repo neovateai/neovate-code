@@ -10,6 +10,7 @@ import { extractFileQuery } from '../hooks/useFileAutoSuggestion';
 import { useIDEStatus } from '../hooks/useIDEStatus';
 import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import { useModeSwitch } from '../hooks/useModeSwitch';
+import { useTryTips } from '../hooks/useTryTips';
 import TextInput from '../ink-text-input';
 import { getCurrentLineInfo } from '../utils/cursor-utils';
 import { sanitizeText } from '../utils/text-utils';
@@ -59,6 +60,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
   const { getCurrentStatusMessage } = useMessageFormatting();
   const { switchMode, getModeDisplay } = useModeSwitch();
   const { latestSelection, installStatus } = useIDEStatus();
+  const { currentTip } = useTryTips();
 
   const [value, setValue] = useState('');
   const [cursorPosition, setCursorPosition] = useState<number | undefined>();
@@ -284,6 +286,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
         ) : (
           <TextInput
             value={value}
+            placeholder={currentTip || ''}
             onChange={(input) => {
               const val = sanitizeText(input);
               chatInputChange(val);
