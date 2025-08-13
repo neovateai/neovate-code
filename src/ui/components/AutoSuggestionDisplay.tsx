@@ -46,7 +46,7 @@ export function AutoSuggestionDisplay({
         const actualIndex = windowStart + index;
         const isSelected = actualIndex === selectedIndex;
         return (
-          <Box key={suggestion.name} flexDirection="row">
+          <Box key={suggestion.name} flexDirection="column">
             <Text
               color={isSelected ? 'cyan' : 'gray'}
               backgroundColor={isSelected ? 'gray' : undefined}
@@ -55,10 +55,11 @@ export function AutoSuggestionDisplay({
               {suggestion.name}
             </Text>
             {suggestion.description && (
-              <Text color="dim" dimColor>
-                {' '}
-                - {suggestion.description}
-              </Text>
+              <Box marginLeft={2}>
+                <Text color="dim" dimColor>
+                  {suggestion.description}
+                </Text>
+              </Box>
             )}
           </Box>
         );

@@ -74,10 +74,9 @@ export function useFileAutoSuggestion(input: string): SuggestionItem[] {
 
       // Convert paths to suggestion items
       return filteredPaths.map((path) => {
-        const isDirectory = path.endsWith('/') || path.endsWith('\\');
         return {
           name: path,
-          description: isDirectory ? 'directory' : undefined,
+          description: undefined,
         };
       });
     } catch (error) {
