@@ -1,11 +1,14 @@
 import { Box, Static } from 'ink';
 import React, { useEffect, useRef } from 'react';
 import { useAppContext } from './AppContext';
+import { type QueuedMessage } from './AppContext';
 import { ApprovalModal } from './components/ApprovalModal';
 import { ChatInput } from './components/ChatInput';
 import { Header } from './components/Header';
 import { MessageWrapper } from './components/MessageComponents';
 import { PlanModal } from './components/PlanModal';
+import { QueueDisplay } from './components/QueueDisplay';
+import { StatusDisplay } from './components/StatusDisplay';
 import { useChatActions } from './hooks/useChatActions';
 import { useTerminalRefresh } from './hooks/useTerminalRefresh';
 
@@ -51,6 +54,16 @@ export function App() {
     });
   }, [slashCommandJSX]);
 
+  // Queue management functions
+  const handleAddToQueue = (content: string) => {
+    const newMessage: QueuedMessage = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      content,
+      timestamp: Date.now(),
+    };
+    dispatch({ type: 'ADD_TO_QUEUE', payload: newMessage });
+  };
+
   const showModal = state.planModal || state.approval.pending;
   const modalContent = state.planModal ? (
     <PlanModal planText={state.planModal.text} />
@@ -91,10 +104,17 @@ export function App() {
       {slashCommandJSX && (
         <Box marginTop={1}>{slashCommandJSX as React.ReactNode}</Box>
       )}
+      <StatusDisplay />
+      {state.queuedMessages.length > 0 && (
+        <QueueDisplay queuedMessages={state.queuedMessages} />
+      )}
       {showModal ? (
         modalContent
       ) : (
-        <ChatInput setSlashCommandJSX={setSlashCommandJSX} />
+        <ChatInput
+          setSlashCommandJSX={setSlashCommandJSX}
+          onAddToQueue={handleAddToQueue}
+        />
       )}
     </Box>
   );

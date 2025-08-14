@@ -10,6 +10,12 @@ import { type SelectionInfo } from '../ide';
 import { Service } from '../service';
 import { APP_STATUS, MESSAGE_ROLES } from './constants';
 
+export interface QueuedMessage {
+  id: string;
+  content: string;
+  timestamp: number;
+}
+
 // Re-export constants for convenience
 export { APP_STATUS, MESSAGE_ROLES };
 
@@ -43,6 +49,9 @@ export interface AppState {
   // Messages and conversation
   messages: Message[];
   currentMessage: Message | null;
+
+  // Queue functionality
+  queuedMessages: QueuedMessage[];
 
   // History and input
   history: string[];
@@ -96,6 +105,10 @@ export type AppAction =
   | { type: 'SET_CURRENT_MESSAGE'; payload: Message | null }
   | { type: 'CLEAR_CURRENT_MESSAGE' }
   | { type: 'CLEAR_MESSAGES' }
+  | { type: 'ADD_TO_QUEUE'; payload: QueuedMessage }
+  | { type: 'REMOVE_FROM_QUEUE'; payload: string[] }
+  | { type: 'CLEAR_QUEUE' }
+  | { type: 'SET_QUEUED_MESSAGES'; payload: QueuedMessage[] }
   | { type: 'SET_PLAN_MODAL'; payload: { text: string } | null }
   | { type: 'SET_SLASH_COMMAND_JSX'; payload: ReactNode | null }
   | { type: 'ADD_HISTORY'; payload: string }
@@ -158,6 +171,26 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'CLEAR_MESSAGES':
       return { ...state, messages: [] };
+
+    case 'ADD_TO_QUEUE':
+      return {
+        ...state,
+        queuedMessages: [...state.queuedMessages, action.payload],
+      };
+
+    case 'REMOVE_FROM_QUEUE':
+      return {
+        ...state,
+        queuedMessages: state.queuedMessages.filter(
+          (msg) => !action.payload.includes(msg.id),
+        ),
+      };
+
+    case 'CLEAR_QUEUE':
+      return { ...state, queuedMessages: [] };
+
+    case 'SET_QUEUED_MESSAGES':
+      return { ...state, queuedMessages: action.payload };
 
     case 'SET_PLAN_MODAL':
       return { ...state, planModal: action.payload };
@@ -312,6 +345,7 @@ export function AppProvider({
     error: null,
     messages: [],
     currentMessage: null,
+    queuedMessages: [],
     history: context.history,
     historyIndex: null,
     draftInput: null,

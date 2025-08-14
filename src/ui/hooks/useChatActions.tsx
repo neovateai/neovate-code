@@ -208,9 +208,10 @@ export function useChatActions() {
     options?: {
       forceStage?: 'plan' | 'code';
       model?: string;
+      fromQueue?: boolean;
     },
   ): Promise<any> => {
-    const { forceStage, model: customModel } = options || {};
+    const { forceStage, model: customModel, fromQueue } = options || {};
     // Reset cancel flag at the start of each query
     cancelFlagRef.current = false;
     // Prepare input for query function
@@ -471,6 +472,23 @@ export function useChatActions() {
           payload: { text: result.finalText || '' },
         });
       }
+
+      // Auto-execute queue if there are queued messages and this is not from queue execution
+      if (!fromQueue && latestStateRef.current.queuedMessages.length > 0) {
+        const queuedMessages = [...latestStateRef.current.queuedMessages];
+        dispatch({ type: 'CLEAR_QUEUE' });
+
+        // Execute queue after a small delay to ensure UI updates
+        setTimeout(async () => {
+          try {
+            await executeQueuedMessages(queuedMessages);
+          } catch (error) {
+            // On error, restore the messages to queue
+            dispatch({ type: 'SET_QUEUED_MESSAGES', payload: queuedMessages });
+          }
+        }, 100);
+      }
+
       return result;
     } catch (e: any) {
       if (cancelFlagRef.current || e.message === 'Query cancelled by user') {
@@ -495,6 +513,37 @@ export function useChatActions() {
     }
   };
 
+  const executeQueuedMessages = async (
+    queuedMessages: { id: string; content: string; timestamp: number }[],
+  ): Promise<any> => {
+    if (queuedMessages.length === 0) return;
+
+    // Join all queued messages with newlines, similar to QueuedCommands pattern
+    const batchInput = queuedMessages
+      .map((msg) => msg.content)
+      .filter(Boolean)
+      .join('\n');
+
+    // Process the batch as a single query
+    const result = await executeQuery(batchInput, { fromQueue: true });
+
+    // After queue execution completes, check if there are new messages in queue
+    // Use a small delay to ensure any concurrent queue additions are processed
+    setTimeout(() => {
+      const currentQueue = latestStateRef.current.queuedMessages;
+      if (currentQueue.length > 0) {
+        const newMessages = [...currentQueue];
+        dispatch({ type: 'CLEAR_QUEUE' });
+        executeQueuedMessages(newMessages).catch((error) => {
+          // On error, restore the messages to queue
+          dispatch({ type: 'SET_QUEUED_MESSAGES', payload: newMessages });
+        });
+      }
+    }, 50);
+
+    return result;
+  };
+
   return {
     addHistory,
     chatInputUp,
@@ -502,6 +551,7 @@ export function useChatActions() {
     chatInputChange,
     processUserInput,
     executeQuery,
+    executeQueuedMessages,
     cancelQuery,
   };
 }

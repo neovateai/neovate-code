@@ -1,14 +1,12 @@
 import { Box, Text, useInput } from 'ink';
-import Spinner from 'ink-spinner';
 import React, { useEffect, useRef, useState } from 'react';
 import { relativeToHome } from '../../utils/path';
 import { useAppContext } from '../AppContext';
-import { APP_STATUS, BORDER_COLORS } from '../constants';
+import { BORDER_COLORS } from '../constants';
 import { useAutoSuggestion } from '../hooks/useAutoSuggestion';
 import { useChatActions } from '../hooks/useChatActions';
 import { extractFileQuery } from '../hooks/useFileAutoSuggestion';
 import { useIDEStatus } from '../hooks/useIDEStatus';
-import { useMessageFormatting } from '../hooks/useMessageFormatting';
 import { useModeSwitch } from '../hooks/useModeSwitch';
 import { useTryTips } from '../hooks/useTryTips';
 import TextInput from '../ink-text-input';
@@ -21,6 +19,7 @@ const DEFAULT_MAX_LINES = 8;
 
 interface ChatInputProps {
   setSlashCommandJSX: (jsx: React.ReactNode) => void;
+  onAddToQueue?: (content: string) => void;
 }
 
 const ExitStatus = () => {
@@ -48,8 +47,11 @@ const ExitStatus = () => {
   );
 };
 
-export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
-  const { state } = useAppContext();
+export function ChatInput({
+  setSlashCommandJSX,
+  onAddToQueue,
+}: ChatInputProps) {
+  const { state, dispatch } = useAppContext();
   const {
     processUserInput,
     chatInputUp,
@@ -57,7 +59,6 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
     chatInputChange,
     cancelQuery,
   } = useChatActions();
-  const { getCurrentStatusMessage } = useMessageFormatting();
   const { switchMode, getModeDisplay } = useModeSwitch();
   const { latestSelection, installStatus } = useIDEStatus();
   const { currentTip } = useTryTips();
@@ -78,14 +79,7 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
     resetVisible,
   } = useAutoSuggestion(value);
 
-  const isProcessing = state.status === APP_STATUS.PROCESSING;
-  const isToolApproved = state.status === APP_STATUS.TOOL_APPROVED;
-  const isToolExecuting = state.status === APP_STATUS.TOOL_EXECUTING;
-  const isFailed = state.status === APP_STATUS.FAILED;
-  const isCancelled = state.status === APP_STATUS.CANCELLED;
   const isSlashCommand = state.slashCommandJSX !== null;
-  const isWaitingForInput =
-    isProcessing || isToolApproved || isToolExecuting || isSlashCommand;
 
   const handleExit = () => {
     // Clear any existing timeout
@@ -134,9 +128,8 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       return;
     }
     if (key.escape) {
-      if (isWaitingForInput) {
-        cancelQuery();
-      }
+      // Cancel query if processing
+      cancelQuery();
       return;
     }
 
@@ -144,6 +137,19 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       if (isVisible) {
         navigatePrevious(); // Navigate suggestions
       } else {
+        // Check for queued messages first
+        if (state.queuedMessages.length > 0) {
+          // Fill input with queued messages and clear the queue
+          const queuedContent = state.queuedMessages
+            .map((msg) => msg.content)
+            .join('\n');
+          setValue(queuedContent);
+          setCursorPosition(queuedContent.length);
+          dispatch({ type: 'CLEAR_QUEUE' });
+          return;
+        }
+
+        // Existing history navigation logic
         const lines = value.split('\n');
         const currentCursorPos = cursorPosition ?? value.length;
         if (lines.length === 1 || !value.trim()) {
@@ -241,19 +247,21 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
 
   const handleSubmit = () => {
     if (value.trim() === '') return;
-    setValue('');
-    processUserInput(value, setSlashCommandJSX).catch(() => {});
-  };
 
-  const getBorderColor = () => {
-    if (isWaitingForInput) return BORDER_COLORS.PROCESSING;
-    if (isFailed) return BORDER_COLORS.ERROR;
-    if (isCancelled) return BORDER_COLORS.WARNING;
-    return BORDER_COLORS.DEFAULT;
-  };
+    const isProcessing =
+      state.status === 'processing' ||
+      state.status === 'tool_approved' ||
+      state.status === 'tool_executing';
 
-  const getTextColor = () => {
-    return isWaitingForInput || isFailed || isCancelled ? 'gray' : 'white';
+    if (isProcessing && onAddToQueue) {
+      // If currently processing, add to queue
+      onAddToQueue(value.trim());
+      setValue('');
+    } else {
+      // If idle, send immediately
+      setValue('');
+      processUserInput(value, setSlashCommandJSX).catch(() => {});
+    }
   };
 
   const getIDEStatusDisplay = () => {
@@ -273,47 +281,40 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
     <Box flexDirection="column" marginTop={1}>
       <Box
         borderStyle="round"
-        borderColor={getBorderColor() as any}
+        borderColor={BORDER_COLORS.DEFAULT as any}
         paddingX={1}
         flexDirection="row"
         gap={1}
       >
-        <Text color={getTextColor()}>&gt;</Text>
-        {isWaitingForInput ? (
-          <Text color="gray">
-            <Spinner type="dots" /> {getCurrentStatusMessage()}
-          </Text>
-        ) : (
-          <TextInput
-            value={value}
-            placeholder={currentTip || ''}
-            onChange={(input) => {
-              const val = sanitizeText(input);
-              chatInputChange(val);
-              setValue(val);
-              // Clear cursor position only when value actually changes
-              if (val !== value) {
-                setCursorPosition(undefined);
-              }
-              resetVisible();
-            }}
-            onSubmit={isVisible ? () => {} : handleSubmit}
-            onTabPress={handleTabPress}
-            cursorPosition={cursorPosition}
-            maxLines={DEFAULT_MAX_LINES}
-            onCursorPositionChange={(pos) => {
-              if (pos !== cursorPosition) {
-                setCursorPosition(pos);
-              }
-            }}
-          />
-        )}
+        <Text color="white">&gt;</Text>
+        <TextInput
+          value={value}
+          placeholder={
+            state.queuedMessages.length > 0
+              ? 'press up to edit queued messages'
+              : currentTip || ''
+          }
+          onChange={(input) => {
+            const val = sanitizeText(input);
+            chatInputChange(val);
+            setValue(val);
+            // Clear cursor position only when value actually changes
+            if (val !== value) {
+              setCursorPosition(undefined);
+            }
+            resetVisible();
+          }}
+          onSubmit={isVisible ? () => {} : () => handleSubmit()}
+          onTabPress={handleTabPress}
+          cursorPosition={cursorPosition}
+          maxLines={DEFAULT_MAX_LINES}
+          onCursorPositionChange={(pos) => {
+            if (pos !== cursorPosition) {
+              setCursorPosition(pos);
+            }
+          }}
+        />
       </Box>
-      {isFailed && state.error && (
-        <Box paddingX={2}>
-          <Text color={BORDER_COLORS.ERROR}>{state.error}</Text>
-        </Box>
-      )}
       {showExitWarning && (
         <Box paddingX={2}>
           <Text color={BORDER_COLORS.WARNING}>Press Ctrl+C again to exit</Text>
@@ -322,14 +323,14 @@ export function ChatInput({ setSlashCommandJSX }: ChatInputProps) {
       <AutoSuggestionDisplay
         suggestions={suggestions}
         selectedIndex={selectedIndex}
-        isVisible={isVisible && !isWaitingForInput}
+        isVisible={isVisible}
         isFileMode={extractFileQuery(value).hasFileQuery}
       />
       <Box flexDirection="row" paddingX={2} gap={1}>
         {!isSlashCommand && (
           <Text color="gray">
-            ctrl+c twice to exit | enter to send | esc to cancel | ↑/↓ navigate
-            history
+            ctrl+c twice to exit | enter to send (or queue if busy) | esc to
+            cancel
           </Text>
         )}
         <Box flexGrow={1} />
