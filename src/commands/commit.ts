@@ -32,6 +32,14 @@ interface GenerateBranchNameOpts {
   modelProvider: ModelProvider;
 }
 
+/**
+ * Escapes a string argument for safe use in shell commands
+ * Uses JSON.stringify to properly handle quotes, parentheses, and other special characters
+ */
+function escapeShellArg(arg: string): string {
+  return JSON.stringify(arg);
+}
+
 async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
   const agent = createCommitAgent({
     model: opts.model,
@@ -321,7 +329,9 @@ async function checkoutNewBranch(branchName: string): Promise<void> {
   try {
     // Check if branch already exists
     try {
-      execSync(`git rev-parse --verify ${branchName}`, { stdio: 'ignore' });
+      execSync(`git rev-parse --verify ${escapeShellArg(branchName)}`, {
+        stdio: 'ignore',
+      });
       // Branch exists, add timestamp to make it unique
       const timestamp = new Date()
         .toISOString()
@@ -338,7 +348,9 @@ async function checkoutNewBranch(branchName: string): Promise<void> {
     });
 
     // Create and checkout new branch
-    execSync(`git checkout -b ${branchName}`, { stdio: 'inherit' });
+    execSync(`git checkout -b ${escapeShellArg(branchName)}`, {
+      stdio: 'inherit',
+    });
     logger.logResult(
       `Successfully created and checked out branch: ${branchName}`,
     );
@@ -373,7 +385,9 @@ async function commitChanges(message: string, skipHooks = false) {
   logger.logAction({ message: 'Commit the changes.' });
 
   try {
-    execSync(`git commit -m "${message}" ${noVerify}`, { stdio: 'inherit' });
+    execSync(`git commit -m ${escapeShellArg(message)} ${noVerify}`, {
+      stdio: 'inherit',
+    });
     logger.logResult('Commit message committed');
   } catch (error: any) {
     const errorMessage =
