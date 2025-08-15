@@ -36,6 +36,33 @@ function resolveCommandDescription(
   return kebabToTitleCase(commandName);
 }
 
+/**
+ * Recursively finds all .md files in a directory
+ */
+function findMarkdownFiles(dir: string, baseDir: string): string[] {
+  const files: string[] = [];
+
+  try {
+    const entries = fs.readdirSync(dir);
+
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry);
+      const stat = fs.statSync(fullPath);
+
+      if (stat.isDirectory()) {
+        // Recursively search subdirectories
+        files.push(...findMarkdownFiles(fullPath, baseDir));
+      } else if (stat.isFile() && entry.endsWith('.md')) {
+        files.push(fullPath);
+      }
+    }
+  } catch (error) {
+    console.warn(`Warning: Could not read directory ${dir}:`, error);
+  }
+
+  return files;
+}
+
 export function loadFilesystemCommands(
   options: FilesystemCommandLoaderOptions,
 ): PromptCommand[] {
@@ -48,27 +75,19 @@ export function loadFilesystemCommands(
   }
 
   try {
-    const files = fs.readdirSync(commandsDir);
+    const markdownFiles = findMarkdownFiles(commandsDir, commandsDir);
 
-    for (const file of files) {
-      // Only process .md files
-      if (!file.endsWith('.md')) {
-        continue;
-      }
+    for (const filePath of markdownFiles) {
+      // Calculate relative path from commands directory
+      const relativePath = path.relative(commandsDir, filePath);
 
-      const filePath = path.join(commandsDir, file);
-      const stat = fs.statSync(filePath);
-
-      // Skip directories
-      if (!stat.isFile()) {
-        continue;
-      }
-
-      // Extract command name from filename (remove .md extension)
-      const commandName = path.basename(file, '.md');
+      // Extract command name from relative path (remove .md extension and convert / to :)
+      const commandName = relativePath
+        .replace(/\.md$/, '')
+        .replace(/[/\\]/g, ':');
 
       // Validate command name to prevent injection attacks
-      if (!/^[a-zA-Z0-9_-]+$/.test(commandName)) {
+      if (!/^[a-zA-Z0-9_:-]+$/.test(commandName)) {
         console.warn(`Skipping invalid command name: ${commandName}`);
         continue;
       }

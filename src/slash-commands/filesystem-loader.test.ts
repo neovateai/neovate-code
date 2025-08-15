@@ -300,18 +300,6 @@ Another valid line should also be ignored`;
       expect(commands).toHaveLength(0);
     });
 
-    it('should skip directories', () => {
-      fs.mkdirSync(path.join(tempDir, 'subdir.md'));
-      fs.writeFileSync(path.join(tempDir, 'valid-command.md'), 'content');
-
-      const commands = loadFilesystemCommands({
-        commandsDir: tempDir,
-      });
-
-      expect(commands).toHaveLength(1);
-      expect(commands[0].name).toBe('valid-command');
-    });
-
     it('should skip commands with invalid names', () => {
       fs.writeFileSync(path.join(tempDir, 'valid-command.md'), 'content');
       fs.writeFileSync(path.join(tempDir, 'invalid@name.md'), 'content');
@@ -322,6 +310,144 @@ Another valid line should also be ignored`;
 
       expect(commands).toHaveLength(1);
       expect(commands[0].name).toBe('valid-command');
+    });
+  });
+
+  describe('recursive deep file discovery', () => {
+    it('should find and load nested .md files with colon naming', () => {
+      // Create nested directory structure
+      const subDir = path.join(tempDir, 'foo');
+      fs.mkdirSync(subDir);
+
+      // Create files at different levels
+      fs.writeFileSync(
+        path.join(tempDir, 'root-command.md'),
+        'Root level command',
+      );
+      fs.writeFileSync(path.join(subDir, 'bar.md'), 'Nested command');
+
+      const commands = loadFilesystemCommands({
+        commandsDir: tempDir,
+      });
+
+      expect(commands).toHaveLength(2);
+
+      const rootCommand = commands.find((cmd) => cmd.name === 'root-command');
+      const nestedCommand = commands.find((cmd) => cmd.name === 'foo:bar');
+
+      expect(rootCommand).toBeDefined();
+      expect(nestedCommand).toBeDefined();
+      expect(nestedCommand?.description).toBe('Nested command');
+    });
+
+    it('should handle deeply nested files', () => {
+      // Create deeply nested structure: foo/bar/baz.md
+      const fooDir = path.join(tempDir, 'foo');
+      const barDir = path.join(fooDir, 'bar');
+      fs.mkdirSync(fooDir);
+      fs.mkdirSync(barDir);
+
+      fs.writeFileSync(path.join(barDir, 'baz.md'), 'Deep nested command');
+
+      const commands = loadFilesystemCommands({
+        commandsDir: tempDir,
+      });
+
+      expect(commands).toHaveLength(1);
+      expect(commands[0].name).toBe('foo:bar:baz');
+      expect(commands[0].description).toBe('Deep nested command');
+    });
+
+    it('should handle multiple files in same subdirectory', () => {
+      const subDir = path.join(tempDir, 'category');
+      fs.mkdirSync(subDir);
+
+      fs.writeFileSync(path.join(subDir, 'first.md'), 'First command');
+      fs.writeFileSync(path.join(subDir, 'second.md'), 'Second command');
+
+      const commands = loadFilesystemCommands({
+        commandsDir: tempDir,
+      });
+
+      expect(commands).toHaveLength(2);
+
+      const firstCommand = commands.find(
+        (cmd) => cmd.name === 'category:first',
+      );
+      const secondCommand = commands.find(
+        (cmd) => cmd.name === 'category:second',
+      );
+
+      expect(firstCommand).toBeDefined();
+      expect(secondCommand).toBeDefined();
+      expect(firstCommand?.description).toBe('First command');
+      expect(secondCommand?.description).toBe('Second command');
+    });
+
+    it('should skip non-.md files in subdirectories', () => {
+      const subDir = path.join(tempDir, 'mixed');
+      fs.mkdirSync(subDir);
+
+      fs.writeFileSync(path.join(subDir, 'command.md'), 'Valid command');
+      fs.writeFileSync(path.join(subDir, 'readme.txt'), 'Not a command');
+      fs.writeFileSync(path.join(subDir, 'script.js'), 'Also not a command');
+
+      const commands = loadFilesystemCommands({
+        commandsDir: tempDir,
+      });
+
+      expect(commands).toHaveLength(1);
+      expect(commands[0].name).toBe('mixed:command');
+    });
+
+    it('should handle Windows-style paths correctly', () => {
+      const subDir = path.join(tempDir, 'windows');
+      fs.mkdirSync(subDir);
+
+      fs.writeFileSync(path.join(subDir, 'command.md'), 'Windows command');
+
+      const commands = loadFilesystemCommands({
+        commandsDir: tempDir,
+      });
+
+      expect(commands).toHaveLength(1);
+      // Should use : regardless of platform path separator
+      expect(commands[0].name).toBe('windows:command');
+    });
+
+    it('should validate nested command names with colons', () => {
+      const subDir = path.join(tempDir, 'valid-dir');
+      fs.mkdirSync(subDir);
+
+      // Valid nested command
+      fs.writeFileSync(
+        path.join(subDir, 'valid-name.md'),
+        'Valid nested command',
+      );
+
+      // Invalid character in filename (@ symbol)
+      fs.writeFileSync(path.join(subDir, 'invalid@name.md'), 'Invalid command');
+
+      const commands = loadFilesystemCommands({
+        commandsDir: tempDir,
+      });
+
+      expect(commands).toHaveLength(1);
+      expect(commands[0].name).toBe('valid-dir:valid-name');
+    });
+
+    it('should handle empty subdirectories gracefully', () => {
+      const emptyDir = path.join(tempDir, 'empty');
+      fs.mkdirSync(emptyDir);
+
+      fs.writeFileSync(path.join(tempDir, 'root.md'), 'Root command');
+
+      const commands = loadFilesystemCommands({
+        commandsDir: tempDir,
+      });
+
+      expect(commands).toHaveLength(1);
+      expect(commands[0].name).toBe('root');
     });
   });
 });
