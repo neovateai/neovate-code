@@ -12,6 +12,7 @@ import { type Config, ConfigManager } from './config';
 import { PRODUCT_NAME } from './constants';
 import { IDE } from './ide';
 import { MCPManager } from './mcp';
+import { OutputStyleManager } from './output-style';
 import {
   type Plugin,
   type PluginApplyOpts,
@@ -52,6 +53,7 @@ type ContextOpts = CreateContextOpts & {
   generalInfo: Record<string, string>;
   paths: Paths;
   slashCommands: SlashCommandRegistry;
+  outputStyleManager: OutputStyleManager;
   env: Env;
 };
 
@@ -92,6 +94,7 @@ export class Context {
   generalInfo: Record<string, string>;
   paths: Paths;
   slashCommands: SlashCommandRegistry;
+  outputStyleManager: OutputStyleManager;
   env: Env;
   modelInfo: ModelInfo;
 
@@ -116,6 +119,7 @@ export class Context {
     this.history = opts.history || [];
     this.paths = opts.paths;
     this.slashCommands = opts.slashCommands;
+    this.outputStyleManager = opts.outputStyleManager;
     this.env = opts.env;
     this.modelInfo = new ModelInfo(this);
 
@@ -311,6 +315,14 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
 
   const slashCommands = await createSlashCommandRegistry(tempContextForSlash);
 
+  // Create a temporary context for output style manager initialization
+  const tempContextForOutputStyle = {
+    ...tempContextForSlash,
+    slashCommands,
+  } as any;
+
+  const outputStyleManager = new OutputStyleManager(tempContextForOutputStyle);
+
   // Load history from JSONL files when traceFile is provided
   let history = opts.history || [];
   if (opts.traceFile && !opts.history) {
@@ -335,6 +347,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
     generalInfo,
     paths,
     slashCommands,
+    outputStyleManager,
     env,
   });
   return context;

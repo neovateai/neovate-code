@@ -67,6 +67,12 @@ export class Service {
       this.opts.agentType === 'code'
         ? this.context.config.model
         : this.context.config.planModel;
+    this.usage = new Usage();
+    this.lastUsage = new Usage();
+    this.setupAgent();
+  }
+
+  setupAgent() {
     this.agent =
       this.opts.agentType === 'code'
         ? createCodeAgent({
@@ -79,8 +85,6 @@ export class Service {
             tools: this.tools,
             context: this.context,
           });
-    this.usage = new Usage();
-    this.lastUsage = new Usage();
   }
 
   private hasIncompleteXmlTag(text: string): boolean {

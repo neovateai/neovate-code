@@ -42,6 +42,7 @@ export type Config = {
    */
   autoCompact?: boolean;
   commit?: CommitConfig;
+  outputStyle?: string;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -63,6 +64,7 @@ const VALID_CONFIG_KEYS = [
   'todo',
   'autoCompact',
   'commit',
+  'outputStyle',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit'];

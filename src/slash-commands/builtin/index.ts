@@ -16,12 +16,14 @@ export async function createBuiltinCommands(opts: {
   context: Context;
 }): Promise<SlashCommand[]> {
   const { createModelCommand } = await import('./model');
+  const { createOutputStyleCommand } = await import('./output-style');
   return [
     clearCommand,
     exitCommand,
     helpCommand,
     createInitCommand(opts),
     createModelCommand(opts),
+    createOutputStyleCommand(),
     createReviewCommand(),
     compactCommand,
     statusCommand,

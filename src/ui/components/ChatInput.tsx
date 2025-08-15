@@ -277,6 +277,10 @@ export function ChatInput({
     }
   };
 
+  if (isSlashCommand) {
+    return null;
+  }
+
   return (
     <Box flexDirection="column" marginTop={1}>
       <Box

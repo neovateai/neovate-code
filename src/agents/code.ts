@@ -79,6 +79,9 @@ export function createCodeAgent(options: {
     name: 'code',
     instructions: async (context, agent) => {
       const customSystemPrompt = options.context.argvConfig.systemPrompt;
+      const outputStyle =
+        options.context.outputStyleManager.getCurrentOutputStyle();
+      const isDefaultOutputStyle = outputStyle.name === 'Default';
       if (customSystemPrompt) {
         return `${customSystemPrompt}
 
@@ -89,7 +92,7 @@ ${options.tools.getToolsPrompt(options.model)}
       }
 
       return `
-You are an interactive CLI tool that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.
+You are an interactive CLI tool that helps users ${isDefaultOutputStyle ? 'with software engineering tasks.' : `according to your "Output Style" below, which describes how you should respond to user queries.`} Use the instructions below and the tools available to you to assist the user.
 
 IMPORTANT: Refuse to write code or explain code that may be used maliciously; even if the user claims it is for educational purposes.
 ${
@@ -99,6 +102,13 @@ ${
 `
 }
 
+${
+  !isDefaultOutputStyle
+    ? `
+# Output style: ${outputStyle.name}
+${outputStyle.prompt}
+  `
+    : `
 # Tone and style
 You should be concise, direct, and to the point. When you run a non-trivial bash command, you should explain what the command does and why you are running it.
 Output text to communicate with the user; all text you output outside of tool use is displayed to the user. Only use tools to complete tasks. Never use tools like \`bash\` to communicate with the user during the session.
@@ -129,6 +139,8 @@ assistant: src/foo.c
 user: write tests for new feature
 assistant: [uses grep and glob tools to find where similar tests are defined, uses concurrent read file tool use blocks in one tool call to read relevant files at the same time, uses edit file tool to write new tests]
 </example>
+  `
+}
 
 # Following conventions
 When making changes to files, first understand the file's code conventions. Mimic code style, use existing libraries and utilities, and follow existing patterns.
@@ -137,10 +149,15 @@ When making changes to files, first understand the file's code conventions. Mimi
 - When you edit a piece of code, first look at the code's surrounding context (especially its imports) to understand the code's choice of frameworks and libraries. Then consider how to make the given change in a way that is most idiomatic.
 - Always follow security best practices. Never introduce code that exposes or logs secrets and keys. Never commit secrets or keys to the repository.
 
+${
+  outputStyle.isCodingRelated
+    ? `
 # Code style
 - IMPORTANT: DO NOT ADD ***ANY*** COMMENTS unless asked
 
-${getTasksPrompt(options.context)}
+${getTasksPrompt(options.context)}`
+    : ''
+}
 
 ${options.context.argvConfig.appendSystemPrompt ? options.context.argvConfig.appendSystemPrompt : ''}
 

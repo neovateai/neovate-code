@@ -131,6 +131,7 @@ export async function runDefault(opts: RunCliOpts) {
         'planModel',
         'systemPrompt',
         'appendSystemPrompt',
+        'outputStyle',
       ],
     });
     if (argv.help) {
@@ -173,6 +174,7 @@ export async function runDefault(opts: RunCliOpts) {
         systemPrompt: argv.systemPrompt,
         appendSystemPrompt: argv.appendSystemPrompt,
         language: argv.language,
+        outputStyle: argv.outputStyle,
       },
       plugins: opts.plugins,
       traceFile,

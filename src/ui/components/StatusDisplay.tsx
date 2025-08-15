@@ -14,9 +14,7 @@ export function StatusDisplay() {
   const isToolExecuting = state.status === APP_STATUS.TOOL_EXECUTING;
   const isFailed = state.status === APP_STATUS.FAILED;
   const isCancelled = state.status === APP_STATUS.CANCELLED;
-  const isSlashCommand = state.slashCommandJSX !== null;
-  const isWaitingForInput =
-    isProcessing || isToolApproved || isToolExecuting || isSlashCommand;
+  const isWaitingForInput = isProcessing || isToolApproved || isToolExecuting;
 
   if (!isWaitingForInput && !isFailed && !isCancelled) {
     return null;
