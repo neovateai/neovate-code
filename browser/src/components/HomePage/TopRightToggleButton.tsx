@@ -1,6 +1,8 @@
 import { createStyles } from 'antd-style';
 import React from 'react';
+import { useSnapshot } from 'valtio';
 import ToggleExpandIcon from '@/icons/toggle-expand.svg?react';
+import * as homepage from '@/state/homepage';
 
 const useToggleButtonStyles = createStyles(({ css }) => ({
   topRightToggle: css`
@@ -16,10 +18,13 @@ const useToggleButtonStyles = createStyles(({ css }) => ({
 
 const TopRightToggleButton: React.FC = () => {
   const { styles } = useToggleButtonStyles();
+  const { rightPanelExpanded } = useSnapshot(homepage.state);
 
   const handleClick = () => {
-    console.log('TopRightToggleButton clicked');
+    homepage.actions.toggleRightPanel();
   };
+
+  if (rightPanelExpanded) return null;
 
   return (
     <ToggleExpandIcon className={styles.topRightToggle} onClick={handleClick} />
