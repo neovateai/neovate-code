@@ -11,6 +11,11 @@ import { useModeSwitch } from '../hooks/useModeSwitch';
 import { useTryTips } from '../hooks/useTryTips';
 import TextInput from '../ink-text-input';
 import { getCurrentLineInfo } from '../utils/cursor-utils';
+import {
+  type PastedContent,
+  processInputForPaste,
+  replacePlaceholdersWithContent,
+} from '../utils/pasted-text';
 import { sanitizeText } from '../utils/text-utils';
 import { AutoSuggestionDisplay } from './AutoSuggestionDisplay';
 
@@ -68,6 +73,10 @@ export function ChatInput({
   const [ctrlCPressed, setCtrlCPressed] = useState(false);
   const [showExitWarning, setShowExitWarning] = useState(false);
   const ctrlCTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [pastedContents, setPastedContents] = useState<
+    Record<number, PastedContent>
+  >({});
+  const [displayValue, setDisplayValue] = useState('');
   const {
     suggestions,
     selectedIndex,
@@ -155,17 +164,21 @@ export function ChatInput({
         if (lines.length === 1 || !value.trim()) {
           // 单行输入或空输入，直接切换history
           setVisible(false);
-          const history = chatInputUp(value);
-          setValue(history);
-          setCursorPosition(history.length);
+          const historyEntry = chatInputUp(value);
+          setValue(historyEntry.display);
+          setDisplayValue(historyEntry.display);
+          setPastedContents(historyEntry.pastedContents || {});
+          setCursorPosition(historyEntry.display.length);
         } else {
           // 多行输入，判断光标是否在第一行
           const { currentLine } = getCurrentLineInfo(value, currentCursorPos);
           if (currentLine === 0) {
             setVisible(false);
-            const history = chatInputUp(value);
-            setValue(history);
-            setCursorPosition(history.length);
+            const historyEntry = chatInputUp(value);
+            setValue(historyEntry.display);
+            setDisplayValue(historyEntry.display);
+            setPastedContents(historyEntry.pastedContents || {});
+            setCursorPosition(historyEntry.display.length);
           }
         }
       }
@@ -180,9 +193,11 @@ export function ChatInput({
         if (lines.length === 1 || !value.trim()) {
           // 单行输入或空输入，直接切换history
           setVisible(false);
-          const history = chatInputDown(value);
-          setValue(history);
-          setCursorPosition(history.length);
+          const historyEntry = chatInputDown(value);
+          setValue(historyEntry.display);
+          setDisplayValue(historyEntry.display);
+          setPastedContents(historyEntry.pastedContents || {});
+          setCursorPosition(historyEntry.display.length);
         } else {
           // 多行输入，判断光标是否在最后一行
           const { currentLine, lines: textLines } = getCurrentLineInfo(
@@ -192,9 +207,11 @@ export function ChatInput({
           const lastLine = textLines.length - 1;
           if (currentLine === lastLine) {
             setVisible(false);
-            const history = chatInputDown(value);
-            setValue(history);
-            setCursorPosition(history.length);
+            const historyEntry = chatInputDown(value);
+            setValue(historyEntry.display);
+            setDisplayValue(historyEntry.display);
+            setPastedContents(historyEntry.pastedContents || {});
+            setCursorPosition(historyEntry.display.length);
           }
         }
       }
@@ -253,14 +270,28 @@ export function ChatInput({
       state.status === 'tool_approved' ||
       state.status === 'tool_executing';
 
+    // Replace placeholders with actual content for processing
+    const processedValue = replacePlaceholdersWithContent(
+      value,
+      pastedContents,
+    );
+
     if (isProcessing && onAddToQueue) {
       // If currently processing, add to queue
-      onAddToQueue(value.trim());
+      onAddToQueue(processedValue.trim());
       setValue('');
+      setDisplayValue('');
+      setPastedContents({});
     } else {
       // If idle, send immediately
       setValue('');
-      processUserInput(value, setSlashCommandJSX).catch(() => {});
+      setDisplayValue('');
+      const currentPastedContents = pastedContents;
+      setPastedContents({});
+      processUserInput(processedValue, setSlashCommandJSX, {
+        display: value,
+        pastedContents: currentPastedContents,
+      }).catch(() => {});
     }
   };
 
@@ -301,7 +332,32 @@ export function ChatInput({
           onChange={(input) => {
             const val = sanitizeText(input);
             chatInputChange(val);
-            setValue(val);
+
+            // Check if this looks like pasted content
+            const lengthDiff = val.length - value.length;
+            const isPaste = lengthDiff > 50; // Simple heuristic for paste detection
+
+            if (isPaste && val.length > value.length) {
+              // Extract the pasted portion
+              const pastedText = val.slice(value.length);
+              const result = processInputForPaste(pastedText, pastedContents);
+
+              if (result.hasPastedContent) {
+                // Update state with placeholder version
+                const newValue = value + result.display;
+                setValue(newValue);
+                setDisplayValue(newValue);
+                setPastedContents(result.pastedContents);
+                setCursorPosition(newValue.length);
+              } else {
+                setValue(val);
+                setDisplayValue(val);
+              }
+            } else {
+              setValue(val);
+              setDisplayValue(val);
+            }
+
             // Clear cursor position only when value actually changes
             if (val !== value) {
               setCursorPosition(undefined);

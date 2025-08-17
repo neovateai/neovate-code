@@ -9,6 +9,11 @@ import { Context } from '../context';
 import { type SelectionInfo } from '../ide';
 import { Service } from '../service';
 import { APP_STATUS, MESSAGE_ROLES } from './constants';
+import {
+  type HistoryEntry,
+  type PastedContent,
+  normalizeHistoryEntry,
+} from './utils/pasted-text';
 
 export interface QueuedMessage {
   id: string;
@@ -54,7 +59,7 @@ export interface AppState {
   queuedMessages: QueuedMessage[];
 
   // History and input
-  history: string[];
+  history: HistoryEntry[];
   historyIndex: number | null;
   draftInput: string | null;
 
@@ -111,7 +116,7 @@ export type AppAction =
   | { type: 'SET_QUEUED_MESSAGES'; payload: QueuedMessage[] }
   | { type: 'SET_PLAN_MODAL'; payload: { text: string } | null }
   | { type: 'SET_SLASH_COMMAND_JSX'; payload: ReactNode | null }
-  | { type: 'ADD_HISTORY'; payload: string }
+  | { type: 'ADD_HISTORY'; payload: string | HistoryEntry }
   | { type: 'CLEAR_HISTORY' }
   | { type: 'SET_HISTORY_INDEX'; payload: number | null }
   | { type: 'SET_DRAFT_INPUT'; payload: string | null }
@@ -198,8 +203,15 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_SLASH_COMMAND_JSX':
       return { ...state, slashCommandJSX: action.payload };
 
-    case 'ADD_HISTORY':
-      return { ...state, history: [...state.history, action.payload] };
+    case 'ADD_HISTORY': {
+      const entry = normalizeHistoryEntry(action.payload);
+      // Check if the last entry is the same to avoid duplicates
+      const lastEntry = state.history[state.history.length - 1];
+      if (lastEntry && lastEntry.display === entry.display) {
+        return state;
+      }
+      return { ...state, history: [...state.history, entry] };
+    }
 
     case 'CLEAR_HISTORY':
       return { ...state, history: [] };
@@ -335,6 +347,11 @@ export function AppProvider({
   planService,
   initialPrompt,
 }: AppProviderProps) {
+  // Normalize the history from context (could be string[] from old format)
+  const normalizedHistory = context.history.map((item) =>
+    normalizeHistoryEntry(item),
+  );
+
   const initialState: AppState = {
     productName: context.productName,
     version: context.version,
@@ -346,7 +363,7 @@ export function AppProvider({
     messages: [],
     currentMessage: null,
     queuedMessages: [],
-    history: context.history,
+    history: normalizedHistory,
     historyIndex: null,
     draftInput: null,
     currentExecutingTool: null,

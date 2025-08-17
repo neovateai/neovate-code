@@ -10,6 +10,7 @@ import {
   MESSAGE_TYPES,
   TOOL_DESCRIPTION_EXTRACTORS,
 } from '../constants';
+import { type HistoryEntry, normalizeHistoryEntry } from '../utils/pasted-text';
 
 export function useChatActions() {
   const { state, dispatch, services } = useAppContext();
@@ -21,13 +22,13 @@ export function useChatActions() {
     latestStateRef.current = state;
   }, [state]);
 
-  const addHistory = (input: string) => {
+  const addHistory = (input: string | HistoryEntry) => {
     dispatch({ type: 'ADD_HISTORY', payload: input });
   };
 
-  const chatInputUp = (input: string): string => {
+  const chatInputUp = (input: string): HistoryEntry => {
     if (state.history.length === 0) {
-      return input;
+      return normalizeHistoryEntry(input);
     }
 
     let historyIndex = null;
@@ -41,14 +42,14 @@ export function useChatActions() {
     return state.history[historyIndex!];
   };
 
-  const chatInputDown = (input: string): string => {
+  const chatInputDown = (input: string): HistoryEntry => {
     if (state.historyIndex === null) {
-      return input;
+      return normalizeHistoryEntry(input);
     }
 
     if (state.historyIndex === state.history.length - 1) {
       dispatch({ type: 'SET_HISTORY_INDEX', payload: null });
-      return state.draftInput || '';
+      return normalizeHistoryEntry(state.draftInput || '');
     }
 
     dispatch({ type: 'SET_HISTORY_INDEX', payload: state.historyIndex + 1 });
@@ -69,10 +70,15 @@ export function useChatActions() {
   const processUserInput = async (
     input: string,
     setSlashCommandJSX?: (jsx: React.ReactNode) => void,
+    historyEntry?: HistoryEntry,
   ): Promise<any> => {
     dispatch({ type: 'SET_HISTORY_INDEX', payload: null });
-    // services.context.addHistory(input);
-    addHistory(input);
+    // Add to history with pasted content info if provided
+    if (historyEntry) {
+      addHistory(historyEntry);
+    } else {
+      addHistory(input);
+    }
 
     // Check if input is a slash command
     if (isSlashCommand(input)) {
