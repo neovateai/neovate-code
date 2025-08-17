@@ -10,6 +10,8 @@ import { Avatar, Button } from 'antd';
 import { createStyles } from 'antd-style';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSnapshot } from 'valtio';
+import * as homepage from '@/state/homepage';
 import LogoArea from './LogoArea';
 
 interface SiderMainProps {
@@ -20,11 +22,24 @@ const useStyle = createStyles(({ token, css }) => {
   return {
     sider: css`
       position: relative;
-      width: 280px;
       height: 100%;
       padding: 0 14px;
       box-sizing: border-box;
       border-right: 1px solid #ececed;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    `,
+    siderExpanded: css`
+      width: 280px;
+      opacity: 1;
+      visibility: visible;
+    `,
+    siderCollapsed: css`
+      width: 0;
+      padding: 0;
+      opacity: 0;
+      visibility: hidden;
+      border-right: none;
     `,
     logo: css`
       display: flex;
@@ -47,10 +62,16 @@ const useStyle = createStyles(({ token, css }) => {
       overflow-y: auto;
       margin-top: 12px;
       padding: 0;
+      opacity: 1;
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
       .ant-conversations-list {
         padding-inline-start: 0;
       }
+    `,
+    conversationsHidden: css`
+      opacity: 0;
+      pointer-events: none;
     `,
     siderFooter: css`
       position: absolute;
@@ -62,6 +83,12 @@ const useStyle = createStyles(({ token, css }) => {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      opacity: 1;
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    `,
+    siderFooterHidden: css`
+      opacity: 0;
+      pointer-events: none;
     `,
     siderFooterLeft: css`
       display: flex;
@@ -88,6 +115,9 @@ const useStyle = createStyles(({ token, css }) => {
         line-height: 1;
       }
     `,
+    siderExpanIcon: css`
+      transfrom: rotateY(180deg);
+    `,
   };
 });
 
@@ -96,14 +126,21 @@ const SiderMain = (props: SiderMainProps) => {
   const { styles } = useStyle();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { sidebarCollapsed } = useSnapshot(homepage.state);
 
   return (
-    <div className={styles.sider}>
+    <div
+      className={`${styles.sider} ${
+        sidebarCollapsed ? styles.siderCollapsed : styles.siderExpanded
+      }`}
+    >
       {popoverButton}
       <LogoArea />
       <Conversations
         items={[]}
-        className={styles.conversations}
+        className={`${styles.conversations} ${
+          sidebarCollapsed ? styles.conversationsHidden : ''
+        }`}
         activeKey={''}
         onActiveChange={async (val) => {
           console.log('onActiveChange', val);
@@ -129,7 +166,11 @@ const SiderMain = (props: SiderMainProps) => {
           ],
         })}
       />
-      <div className={styles.siderFooter}>
+      <div
+        className={`${styles.siderFooter} ${
+          sidebarCollapsed ? styles.siderFooterHidden : ''
+        }`}
+      >
         <div className={styles.siderFooterLeft}>
           <Avatar size={22} />
           <span>姓名</span>

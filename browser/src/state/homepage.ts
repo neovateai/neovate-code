@@ -1,7 +1,18 @@
 import { proxy } from 'valtio';
 
-interface HomepageState {}
+interface HomepageState {
+  sidebarCollapsed: boolean;
+}
 
-export const state = proxy<HomepageState>({});
+export const state = proxy<HomepageState>({
+  sidebarCollapsed: false,
+});
 
-export const actions = {};
+export const actions = {
+  toggleSidebar: () => {
+    state.sidebarCollapsed = !state.sidebarCollapsed;
+  },
+  setSidebarCollapsed: (collapsed: boolean) => {
+    state.sidebarCollapsed = collapsed;
+  },
+};

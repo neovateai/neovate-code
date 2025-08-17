@@ -1,7 +1,8 @@
 import { createStyles } from 'antd-style';
 import React from 'react';
 import LogoIcon from '@/icons/logo.svg?react';
-import ToggleExpandIcon from '@/icons/toggle-expand.svg?react';
+import CollapseIcon from '@/icons/toggle-expand.svg?react';
+import * as homepage from '@/state/homepage';
 
 const useStyle = createStyles(({ css }) => {
   return {
@@ -28,12 +29,17 @@ const useStyle = createStyles(({ css }) => {
 
 const LogoArea: React.FC = () => {
   const { styles } = useStyle();
+
+  const handleCollapse = () => {
+    homepage.actions.setSidebarCollapsed(true);
+  };
+
   return (
     <div className={styles.logoArea}>
       <div>
         <LogoIcon />
       </div>
-      <ToggleExpandIcon />
+      <CollapseIcon onClick={handleCollapse} />
     </div>
   );
 };
