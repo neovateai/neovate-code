@@ -1,7 +1,6 @@
 import {
   DeleteOutlined,
   EditOutlined,
-  PlusOutlined,
   QuestionCircleOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
@@ -11,7 +10,7 @@ import { Avatar, Button } from 'antd';
 import { createStyles } from 'antd-style';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import logoPng from './imgs/kmi-ai.png';
+import LogoArea from './LogoArea';
 
 interface SiderMainProps {
   popoverButton?: ReactNode;
@@ -20,13 +19,12 @@ interface SiderMainProps {
 const useStyle = createStyles(({ token, css }) => {
   return {
     sider: css`
-      background: ${token.colorBgLayout}80;
+      position: relative;
       width: 280px;
       height: 100%;
-      display: flex;
-      flex-direction: column;
-      padding: 0 12px;
+      padding: 0 14px;
       box-sizing: border-box;
+      border-right: 1px solid #ececed;
     `,
     logo: css`
       display: flex;
@@ -43,11 +41,7 @@ const useStyle = createStyles(({ token, css }) => {
         font-size: 16px;
       }
     `,
-    addBtn: css`
-      background: #1677ff0f;
-      border: 1px solid #1677ff34;
-      height: 40px;
-    `,
+
     conversations: css`
       flex: 1;
       overflow-y: auto;
@@ -59,18 +53,41 @@ const useStyle = createStyles(({ token, css }) => {
       }
     `,
     siderFooter: css`
-      border-top: 1px solid ${token.colorBorderSecondary};
-      height: 40px;
+      position: absolute;
+      bottom: 16px;
+      left: 0;
+      width: 100%;
+      height: 22px;
+      padding: 0 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+    `,
+    siderFooterLeft: css`
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      span {
+        color: rgba(0, 0, 0, 0.65);
+        font-family: 'PingFang HK';
+        font-size: 12px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 20px;
+      }
     `,
     siderFooterRight: css`
       display: flex;
       align-items: center;
       gap: 8px;
+      .ant-btn {
+        width: auto;
+        height: auto;
+      }
+      .ant-btn-icon {
+        line-height: 1;
+      }
     `,
-    popoverButtonWrapper: css``,
   };
 });
 
@@ -83,31 +100,7 @@ const SiderMain = (props: SiderMainProps) => {
   return (
     <div className={styles.sider}>
       {popoverButton}
-      {/* 🌟 Logo */}
-      <div className={styles.logo}>
-        <img
-          src={logoPng}
-          draggable={false}
-          alt="logo"
-          width={24}
-          height={24}
-        />
-        <span>Takumi</span>
-      </div>
-
-      {/* 🌟 添加会话 */}
-      <Button
-        onClick={() => {
-          console.log('add conversation');
-        }}
-        type="link"
-        className={styles.addBtn}
-        icon={<PlusOutlined />}
-      >
-        {t('sidebar.newConversation')}
-      </Button>
-
-      {/* 🌟 会话管理 */}
+      <LogoArea />
       <Conversations
         items={[]}
         className={styles.conversations}
@@ -136,9 +129,11 @@ const SiderMain = (props: SiderMainProps) => {
           ],
         })}
       />
-
       <div className={styles.siderFooter}>
-        <Avatar size={24} />
+        <div className={styles.siderFooterLeft}>
+          <Avatar size={22} />
+          <span>姓名</span>
+        </div>
         <div className={styles.siderFooterRight}>
           <Button
             type="text"
