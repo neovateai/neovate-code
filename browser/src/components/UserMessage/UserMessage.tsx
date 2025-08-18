@@ -35,6 +35,10 @@ const useStyles = createStyles(({ css }) => ({
       color: #110c22;
     }
 
+    p {
+      margin: 0;
+    }
+
     .lexical-editor p {
       margin: 0 !important;
       line-height: 1.5em !important;
