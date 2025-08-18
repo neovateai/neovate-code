@@ -9,7 +9,9 @@ export const SenderSelect = (props: Props) => {
     <Select
       className={cx('', className)}
       classNames={{
-        root: cx('[&_.ant-select-selector]:rounded-[50px]!'),
+        root: cx(
+          '[&_.ant-select-selector]:rounded-[50px]! [&_.ant-select-selector]:border [&_.ant-select-selector]:border-[#F0F2F5]',
+        ),
       }}
       {...rest}
     />
