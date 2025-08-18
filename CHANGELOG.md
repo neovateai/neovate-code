@@ -1,3 +1,10 @@
+## 0.8.2
+
+`2025-08-18`
+
+- fix: handle undefined array config values gracefully by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.8.1
 
 `2025-08-18`
