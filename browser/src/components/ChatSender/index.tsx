@@ -53,6 +53,7 @@ const ChatSender: React.FC = () => {
   const { t } = useTranslation();
 
   const [openPopup, setOpenPopup] = useState(false);
+  const [inputText, setInputText] = useState<string>('');
 
   const { prompt } = useSnapshot(state);
 
@@ -167,19 +168,22 @@ const ChatSender: React.FC = () => {
             return <SenderFooter components={components} />;
           }}
           onSubmit={handleSubmit}
-          // onKeyDown={onKeyDown}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleEnterPress();
+            }
+          }}
           onCancel={() => {
             stop();
           }}
-          value={prompt}
+          value={inputText}
           loading={loading}
           allowSpeech
           actions={false}
-          onChange={(val) => actions.updatePrompt(val)}
-          // components={{
-          //   // @ts-ignore
-          //   input: LexicalTextArea,
-          // }}
+          onChange={(val) => {
+            setInputText(val);
+            actions.updatePrompt(val);
+          }}
           placeholder={t('chat.inputPlaceholder')}
         />
       </SuggestionList>
