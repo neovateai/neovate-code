@@ -1,4 +1,3 @@
-import { UserOutlined } from '@ant-design/icons';
 import { Bubble } from '@ant-design/x';
 import { createFileRoute } from '@tanstack/react-router';
 import { type GetProp, Spin } from 'antd';
@@ -78,10 +77,8 @@ const Chat: React.FC = () => {
   const roles: GetProp<typeof Bubble.List, 'roles'> = {
     user: {
       placement: 'end',
-      avatar: {
-        icon: <UserOutlined />,
-        style: { background: '#87d068' },
-      },
+      avatar: undefined,
+      variant: 'borderless',
       messageRender(message) {
         return <UserMessage message={message} />;
       },
