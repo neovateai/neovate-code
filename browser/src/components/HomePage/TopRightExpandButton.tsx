@@ -3,7 +3,7 @@ import React from 'react';
 import ExpandIcon from '@/icons/toggle-expand.svg?react';
 
 const useButtonStyles = createStyles(({ css }) => ({
-  topRightToggle: css`
+  topRightExpand: css`
     position: fixed;
     top: 24px;
     right: 24px;
@@ -17,7 +17,7 @@ const useButtonStyles = createStyles(({ css }) => ({
 const TopRightExpandButton: React.FC = () => {
   const { styles } = useButtonStyles();
 
-  return <ExpandIcon className={styles.topRightToggle} />;
+  return <ExpandIcon className={styles.topRightExpand} />;
 };
 
 export default TopRightExpandButton;

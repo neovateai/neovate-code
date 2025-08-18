@@ -36,9 +36,7 @@ const LogoArea: React.FC = () => {
 
   return (
     <div className={styles.logoArea}>
-      <div>
-        <LogoIcon />
-      </div>
+      <LogoIcon />
       <CollapseIcon onClick={handleCollapse} />
     </div>
   );
