@@ -1,26 +1,27 @@
-diff --git a/dist/index.d.ts b/dist/index.d.ts
-index dcc389f6572dee0ba479f618f6c9611171d01e3e..5fbb6ebae6796472844f1b08cee2fee0affb9b27 100644
---- a/dist/index.d.ts
-+++ b/dist/index.d.ts
-@@ -9,7 +9,7 @@ export { assistant, system, user } from './helpers/message';
- export { extractAllTextOutput, RunHandoffCallItem, RunHandoffOutputItem, RunItem, RunMessageOutputItem, RunReasoningItem, RunToolApprovalItem, RunToolCallItem, RunToolCallOutputItem, } from './items';
- export { AgentHooks } from './lifecycle';
- export { getLogger } from './logger';
--export { getAllMcpTools, invalidateServerToolsCache, MCPServer, MCPServerStdio, MCPServerStreamableHttp, MCPServerSSE, } from './mcp';
-+export { getAllMcpTools, invalidateServerToolsCache, MCPServer, MCPServerStdio, MCPServerStreamableHttp, MCPServerSSE, mcpToFunctionTool } from './mcp';
- export { MCPToolFilterCallable, MCPToolFilterContext, MCPToolFilterStatic, createMCPToolStaticFilter, } from './mcpUtil';
- export { Model, ModelProvider, ModelRequest, ModelResponse, ModelSettings, ModelSettingsToolChoice, SerializedHandoff, SerializedTool, SerializedOutputType, } from './model';
- export { setDefaultModelProvider } from './providers';
-diff --git a/dist/index.mjs b/dist/index.mjs
-index 19dcfdc7f52f82e8736eb0f0ba87edd36bfb0b00..beb5be66edeb7f3b03050b01a5349dfa4ce26e85 100644
---- a/dist/index.mjs
-+++ b/dist/index.mjs
-@@ -10,7 +10,7 @@ export { assistant, system, user } from "./helpers/message.mjs";
- export { extractAllTextOutput, RunHandoffCallItem, RunHandoffOutputItem, RunMessageOutputItem, RunReasoningItem, RunToolApprovalItem, RunToolCallItem, RunToolCallOutputItem, } from "./items.mjs";
- export { AgentHooks } from "./lifecycle.mjs";
- export { getLogger } from "./logger.mjs";
--export { getAllMcpTools, invalidateServerToolsCache, MCPServerStdio, MCPServerStreamableHttp, MCPServerSSE, } from "./mcp.mjs";
-+export { getAllMcpTools, invalidateServerToolsCache, MCPServerStdio, MCPServerStreamableHttp, MCPServerSSE, mcpToFunctionTool } from "./mcp.mjs";
- export { createMCPToolStaticFilter, } from "./mcpUtil.mjs";
- export { setDefaultModelProvider } from "./providers.mjs";
- export { RunResult, StreamedRunResult } from "./result.mjs";
+diff --git a/dist/tool.d.ts b/dist/tool.d.ts
+index 865fde036398b9afa5141a8533f89ae5bd49947e..02cf7f76b120c038681f60077f791157ffe904a7 100644
+--- a/dist/tool.d.ts
++++ b/dist/tool.d.ts
+@@ -33,6 +33,10 @@ export type FunctionTool<Context = UnknownContext, TParameters extends ToolInput
+      * A JSON schema describing the parameters of the tool.
+      */
+     parameters: JsonObjectSchema<any>;
++    /**
++     * The original parameters of the tool.
++     */
++    originalParameters: ZodObject<any>;
+     /**
+      * Whether the tool is strict. If true, the model must try to strictly follow the schema (might result in slower response times).
+      */
+diff --git a/dist/tool.mjs b/dist/tool.mjs
+index d60b5d6f43a73a1e53ccee441873d8496d9a0255..40cc6c4d5ec088999fe987f8939bc69bf1865633 100644
+--- a/dist/tool.mjs
++++ b/dist/tool.mjs
+@@ -140,6 +140,7 @@ export function tool(options) {
+         name,
+         description: options.description,
+         parameters,
++        originalParameters: options.parameters,
+         strict: strictMode,
+         invoke,
+         needsApproval,
