@@ -1,5 +1,6 @@
 import Icon, { CheckOutlined } from '@ant-design/icons';
 import { useSnapshot } from 'valtio';
+import Truncate from '@/components/Truncate';
 import { MODES } from '@/constants/chat';
 import { actions, state } from '@/state/sender';
 import SenderComponent from '../SenderComponent';
@@ -9,6 +10,7 @@ const ModeSelect = () => {
 
   return (
     <SenderComponent.Select
+      open
       value={mode}
       onChange={(value) => {
         actions.updateMode(value as string);
@@ -32,14 +34,14 @@ const ModeSelect = () => {
         return (
           <div className="flex justify-start items-center gap-2 p-1">
             <Icon component={() => modeItem.icon} className="text-lg" />
-            <div className="flex justify-between w-80">
-              <div className="flex flex-col items-start gap-0.5">
+            <div className="flex justify-between w-70">
+              <div className="flex flex-col items-start gap-0.5 w-10/12">
                 <div className="text-sm text-[#110C22] font-normal">
                   {modeItem.label}
                 </div>
-                <div className="text-xs text-[#666F8D] font-normal truncate">
+                <Truncate className="text-xs text-[#666F8D] font-normal w-full">
                   {modeItem.description}
-                </div>
+                </Truncate>
               </div>
               {mode === value && (
                 <CheckOutlined className="text-[#7357FF]! text-base" />
