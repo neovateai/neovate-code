@@ -1,5 +1,5 @@
-import { SenderButton } from './button';
-import { SenderSelect } from './select';
+import { SenderButton } from './Button';
+import { SenderSelect } from './Select';
 
 export default {
   Button: SenderButton,
