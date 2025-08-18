@@ -8,17 +8,20 @@ const useHeaderStyles = createStyles(({ css }) => ({
     height: 60px;
     display: flex;
     align-items: center;
-    padding: 0 24px;
+    padding: 18px 24px 6px 24px;
     background: #ffffff;
     border-bottom: 1px solid #e5e5e5;
-    gap: 12px;
+    box-sizing: border-box;
+  `,
+
+  headerContent: css`
+    display: flex;
+    align-items: center;
+    height: 36px;
   `,
 
   collapseButton: css`
-    width: 25px;
-    height: 25px;
     cursor: pointer;
-    flex-shrink: 0;
   `,
 }));
 
@@ -31,11 +34,13 @@ const RightPanelHeader: React.FC = () => {
 
   return (
     <div className={styles.header}>
-      <ToggleExpandIcon
-        className={styles.collapseButton}
-        onClick={handleCollapseClick}
-        style={{ transform: 'rotate(180deg)' }}
-      />
+      <div className={styles.headerContent}>
+        <ToggleExpandIcon
+          className={styles.collapseButton}
+          onClick={handleCollapseClick}
+          style={{ transform: 'rotate(180deg)' }}
+        />
+      </div>
     </div>
   );
 };
