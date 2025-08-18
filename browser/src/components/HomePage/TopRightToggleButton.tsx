@@ -6,7 +6,7 @@ import * as homepage from '@/state/homepage';
 
 const useToggleButtonStyles = createStyles(({ css }) => ({
   topRightToggle: css`
-    position: absolute;
+    position: fixed;
     top: 24px;
     right: 24px;
     z-index: 10;
