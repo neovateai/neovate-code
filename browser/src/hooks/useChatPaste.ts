@@ -54,6 +54,7 @@ export function useChatPaste() {
 
                     imageUrlToBase64(src).then((base64) => {
                       // TODO 实现新增上下文
+                      console.log('handleHtml', base64, mime);
 
                       resolve();
                     });
