@@ -137,7 +137,10 @@ type ModelInfo = {
 export type Plugin = {
   enforce?: Enforce;
   name?: string;
-  config?: (this: TempPluginContext) => any | Promise<any>;
+  config?: (
+    this: TempPluginContext,
+    opts: { config: Config },
+  ) => any | Promise<any>;
   configResolved?: (
     this: TempPluginContext,
     opts: { resolvedConfig: any },

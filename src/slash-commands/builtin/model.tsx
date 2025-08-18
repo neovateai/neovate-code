@@ -2,7 +2,6 @@ import { Box, Text, useInput } from 'ink';
 import pc from 'picocolors';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ConfigManager } from '../../config';
-import { PRODUCT_NAME } from '../../constants';
 import type { Context } from '../../context';
 import { PluginHookType } from '../../plugin';
 import { MODEL_ALIAS } from '../../provider';
@@ -91,7 +90,7 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
           onSelect={(item) => {
             const configManager = new ConfigManager(
               context.cwd,
-              PRODUCT_NAME,
+              context.productName,
               {},
             );
             configManager.setConfig(true, 'model', item.value);
