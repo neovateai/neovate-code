@@ -40,6 +40,7 @@ export interface ServiceRunOpts {
   input: AgentInputItem[];
   thinking?: boolean;
   model?: string;
+  abortSignal?: AbortSignal;
 }
 
 export interface ServiceRunResult {
@@ -348,11 +349,15 @@ export class Service {
       return [...systemPrompts, ...prevInput, ...opts.input];
     })();
 
-    this.#processStream(input, stream, opts.thinking, opts.model).catch(
-      (error) => {
-        stream.emit('error', error);
-      },
-    );
+    this.#processStream(
+      input,
+      stream,
+      opts.thinking,
+      opts.model,
+      opts.abortSignal,
+    ).catch((error) => {
+      stream.emit('error', error);
+    });
     return { stream };
   }
 
@@ -361,6 +366,7 @@ export class Service {
     stream: Readable,
     thinking?: boolean,
     model?: string,
+    abortSignal?: AbortSignal,
   ) {
     // Reset buffer at start of new stream
     this.textBuffer = '';
@@ -395,6 +401,7 @@ export class Service {
 
       const result = await runner.run(agent!, input, {
         stream: true,
+        ...(abortSignal && { signal: abortSignal }),
       });
       let text = '';
 
