@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import SuggestionList from '@/components/SuggestionList';
 import { ContextType } from '@/constants/context';
@@ -11,6 +12,8 @@ const AddContext = () => {
     context.state,
   );
   const [openPopup, setOpenPopup] = useState(false);
+
+  const { t } = useTranslation();
 
   const {
     defaultSuggestions,
@@ -42,7 +45,7 @@ const AddContext = () => {
     >
       <SenderComponent.Button onClick={() => setOpenPopup(true)}>
         <div>@</div>
-        {attachedContexts.length === 0 && <div>Add Context</div>}
+        {attachedContexts.length === 0 && <div>{t('context.addContext')}</div>}
       </SenderComponent.Button>
     </SuggestionList>
   );
