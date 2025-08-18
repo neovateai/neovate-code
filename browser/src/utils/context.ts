@@ -1,4 +1,4 @@
-import type { FileItem } from '@/api/model';
+import type { FileItem, ImageItem } from '@/api/model';
 import { ContextType } from '@/constants/context';
 import type { ContextItem, ContextStoreValue } from '@/types/context';
 
@@ -63,6 +63,16 @@ export function storeValueToContextItem(
         displayText: (storeValue as FileItem).name,
         context: storeValue,
       };
+
+    case ContextType.IMAGE:
+      return {
+        type: ContextType.IMAGE,
+        value: (storeValue as ImageItem).src,
+        displayText: 'Image',
+        context: storeValue,
+      };
+
+    default:
+      return null;
   }
-  return null;
 }
