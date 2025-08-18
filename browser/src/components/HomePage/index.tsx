@@ -12,6 +12,7 @@ const useStyles = createStyles(({ css }) => {
     container: css`
       display: flex;
       height: 100vh;
+      width: 100%;
       overflow: hidden;
     `,
 
@@ -39,6 +40,7 @@ const useStyles = createStyles(({ css }) => {
       left: 24px;
       z-index: 1000;
       transition: all 0.2s ease;
+      cursor: pointer;
     `,
   };
 });
@@ -53,18 +55,11 @@ const HomePage: React.FC = () => {
     homepage.actions.setSidebarCollapsed(false);
   };
 
-  // 计算容器宽度：根据侧边栏状态动态计算
-  const containerWidth = sidebarCollapsed ? '100vw' : 'calc(100vw - 280px)';
-
   // 只计算右侧宽度，左侧自动填充剩余空间
   const rightWidth = rightPanelExpanded ? `${rightPanelWidthPercent}%` : '0%';
 
   return (
-    <div
-      ref={containerRef}
-      className={styles.container}
-      style={{ width: containerWidth }}
-    >
+    <div ref={containerRef} className={styles.container}>
       <div className={styles.leftSection}>
         <main className="flex-1 flex flex-col relative">
           {sidebarCollapsed && (
