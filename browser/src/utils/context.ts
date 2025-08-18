@@ -1,3 +1,7 @@
+import type { FileItem } from '@/api/model';
+import { ContextType } from '@/constants/context';
+import type { ContextItem, ContextStoreValue } from '@/types/context';
+
 export async function imageUrlToBase64(url: string) {
   return new Promise<string>((resolve) => {
     const canvas = document.createElement('canvas');
@@ -45,4 +49,20 @@ export function guessImageMime(src: string): string {
     return 'image/svg+xml';
   }
   return 'image/png';
+}
+
+export function storeValueToContextItem(
+  storeValue: ContextStoreValue,
+  type: ContextType,
+): ContextItem | null {
+  switch (type) {
+    case ContextType.FILE:
+      return {
+        type: ContextType.FILE,
+        value: (storeValue as FileItem).path,
+        displayText: (storeValue as FileItem).name,
+        context: storeValue,
+      };
+  }
+  return null;
 }
