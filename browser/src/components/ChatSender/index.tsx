@@ -1,4 +1,5 @@
 import { Sender } from '@ant-design/x';
+import { Spin } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -59,7 +60,7 @@ const ChatSender: React.FC = () => {
   const {
     defaultSuggestions,
     handleSearch,
-    getOriginalContextByValue,
+    // getOriginalContextByValue,
     loading: suggestionLoading,
   } = useSuggestion();
 
@@ -87,7 +88,7 @@ const ChatSender: React.FC = () => {
   */
 
   return (
-    <>
+    <Spin spinning={isPasting}>
       <SuggestionList
         loading={suggestionLoading}
         className={styles.suggestion}
@@ -97,13 +98,13 @@ const ChatSender: React.FC = () => {
         onSearch={(type, text) => {
           return handleSearch(type as ContextType, text);
         }}
-        onSelect={(type, itemValue) => {
-          setOpenPopup(false);
-          const contextItem = getOriginalContextByValue(
-            type as ContextType,
-            itemValue,
-          );
-        }}
+        // onSelect={(type, itemValue) => {
+        //   setOpenPopup(false);
+        //   const contextItem = getOriginalContextByValue(
+        //     type as ContextType,
+        //     itemValue,
+        //   );
+        // }}
       >
         <Sender
           className={styles.sender}
@@ -135,7 +136,7 @@ const ChatSender: React.FC = () => {
       </SuggestionList>
       <SenderFooterBoard />
       {contextHolder}
-    </>
+    </Spin>
   );
 };
 
