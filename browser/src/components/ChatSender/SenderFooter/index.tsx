@@ -8,6 +8,7 @@ import { MODES_MAP } from '@/constants/chat';
 import { useChatState } from '@/hooks/provider';
 import { actions, state } from '@/state/sender';
 import SenderAttachments from '../SenderAttachments';
+import SenderComponent from '../SenderComponent';
 
 type ActionsComponents = {
   SendButton: React.ComponentType<ButtonProps>;
@@ -62,6 +63,7 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
         >
           {modeDetail?.label} <DownOutlined />
         </Button>
+        <SenderComponent.Select />
         <Divider type="vertical" />
       </Flex>
       <Flex align="center">

@@ -49,6 +49,7 @@ const SenderHeader: React.FC = () => {
       closable={false}
       open={true}
       styles={{ content: { padding: 0 } }}
+      style={{ borderStyle: 'none' }}
     >
       <Spin spinning={loading}>
         <Flex gap={6} wrap="wrap" style={{ padding: 8, lineHeight: '22px' }}>

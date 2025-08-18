@@ -4,7 +4,7 @@ import SuggestionList from '@/components/SuggestionList';
 import { ContextType } from '@/constants/context';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
-import { SenderButton } from '../SenderButton';
+import SenderComponent from '../SenderComponent';
 
 const AddContext = () => {
   const { attachedContexts, contextsSelectedValues } = useSnapshot(
@@ -40,10 +40,10 @@ const AddContext = () => {
         }
       }}
     >
-      <SenderButton onClick={() => setOpenPopup(true)}>
+      <SenderComponent.Button onClick={() => setOpenPopup(true)}>
         <div>@</div>
         {attachedContexts.length === 0 && <div>Add Context</div>}
-      </SenderButton>
+      </SenderComponent.Button>
     </SuggestionList>
   );
 };
