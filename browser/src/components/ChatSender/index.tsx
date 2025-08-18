@@ -1,18 +1,15 @@
 import { Sender } from '@ant-design/x';
 import { createStyles } from 'antd-style';
-import { differenceWith } from 'lodash-es';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
-import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
+import { ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
+import { useChatPaste } from '@/hooks/useChatPaste';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
-import { getInputInfo } from '@/utils/chat';
 import SuggestionList from '../SuggestionList';
-import LexicalTextArea from './LexicalTextArea';
-import { LexicalTextAreaContext } from './LexicalTextAreaContext';
 import SenderFooter from './SenderFooter';
 import SenderFooterBoard from './SenderFooterBoard';
 import SenderHeader from './SenderHeader';
@@ -55,6 +52,8 @@ const ChatSender: React.FC = () => {
   const [openPopup, setOpenPopup] = useState(false);
   const [inputText, setInputText] = useState<string>('');
 
+  const { isPasting, handlePaste, contextHolder } = useChatPaste();
+
   const { prompt } = useSnapshot(state);
 
   const {
@@ -89,53 +88,6 @@ const ChatSender: React.FC = () => {
 
   return (
     <>
-      {/* <LexicalTextAreaContext.Provider
-        value={{
-          onEnterPress: handleEnterPress,
-          onChangeNodes: (prevNodes, nextNodes) => {
-            // remove old nodes
-            differenceWith(prevNodes, nextNodes, (prev, next) => {
-              return prev.originalText === next.originalText;
-            }).forEach((node) => {
-              context.actions.removeContext(node.originalText);
-            });
-
-            // add new nodes
-            differenceWith(nextNodes, prevNodes, (next, prev) => {
-              return next.originalText === prev.originalText;
-            }).forEach((node) => {
-              const contextItem = getOriginalContextByValue(
-                node.type,
-                node.displayText,
-              );
-              if (contextItem) {
-                context.actions.addContext(contextItem);
-              }
-            });
-          },
-          value: prompt,
-          onChange: (markedText, plainText) => {
-            const { isInputingAiContext, position } = getInputInfo(
-              prevInputValue.current,
-              markedText,
-            );
-            if (isInputingAiContext) {
-              setInsertNodePosition(position);
-              setOpenPopup(true);
-            } else {
-              setOpenPopup(false);
-            }
-            prevInputValue.current = markedText;
-            actions.updatePrompt(markedText);
-            actions.updatePlainText(plainText);
-          },
-          onPastingImage: (loading) => {
-            context.actions.setContextLoading(loading);
-          },
-          aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
-          namespace: 'SenderTextarea',
-        }}
-      > */}
       <SuggestionList
         loading={suggestionLoading}
         className={styles.suggestion}
@@ -151,13 +103,6 @@ const ChatSender: React.FC = () => {
             type as ContextType,
             itemValue,
           );
-          // if (contextItem) {
-          //   const nextInputValue =
-          //     prompt.slice(0, insertNodePosition) +
-          //     contextItem.value +
-          //     prompt.slice(insertNodePosition + 1);
-          //   actions.updatePrompt(nextInputValue);
-          // }
         }}
       >
         <Sender
@@ -168,6 +113,7 @@ const ChatSender: React.FC = () => {
             return <SenderFooter components={components} />;
           }}
           onSubmit={handleSubmit}
+          onPaste={handlePaste}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               handleEnterPress();
@@ -188,7 +134,7 @@ const ChatSender: React.FC = () => {
         />
       </SuggestionList>
       <SenderFooterBoard />
-      {/* </LexicalTextAreaContext.Provider> */}
+      {contextHolder}
     </>
   );
 };
