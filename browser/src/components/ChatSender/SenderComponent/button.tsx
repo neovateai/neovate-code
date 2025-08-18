@@ -12,7 +12,10 @@ export const SenderButton = (
   return (
     <button
       className={cx(
-        'text-[#110C22] text-center text-xs rounded-[50px] h-4 box-content py-2 px-3 flex justify-center items-center gap-1 border border-[#F0F2F5] cursor-pointer',
+        'text-[#110C22] text-center text-xs',
+        'border border-[#F0F2F5]',
+        'rounded-[50px] h-4 box-content py-2 px-3 flex justify-center items-center gap-1',
+        'cursor-pointer',
         className,
       )}
       {...rest}
