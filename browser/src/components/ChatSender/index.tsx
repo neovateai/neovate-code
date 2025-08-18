@@ -12,7 +12,6 @@ import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
 import SuggestionList from '../SuggestionList';
 import SenderFooter from './SenderFooter';
-import SenderFooterBoard from './SenderFooterBoard';
 import SenderHeader from './SenderHeader';
 
 const useStyle = createStyles(({ token, css }) => {
@@ -134,7 +133,6 @@ const ChatSender: React.FC = () => {
           placeholder={t('chat.inputPlaceholder')}
         />
       </SuggestionList>
-      <SenderFooterBoard />
       {contextHolder}
     </Spin>
   );
