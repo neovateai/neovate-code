@@ -11,14 +11,14 @@ interface UserMessageProps {
 const UserMessage = (props: UserMessageProps) => {
   const { message } = props;
 
-  const { content, contextContent } = message;
+  const { content } = message;
 
   return (
     <LexicalTextAreaContext
       value={{
         namespace: 'UserMessage',
         aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
-        value: contextContent ?? content,
+        value: content,
       }}
     >
       <LexicalTextArea disabled />

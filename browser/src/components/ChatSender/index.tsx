@@ -68,7 +68,6 @@ const ChatSender: React.FC = () => {
     onQuery({
       prompt,
       attachedContexts: context.state.attachedContexts,
-      originalContent: state.prompt,
     });
     setInputText('');
     actions.updatePrompt('');
