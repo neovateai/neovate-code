@@ -1,36 +1,12 @@
-import Icon from '@ant-design/icons';
-import { Tag } from 'antd';
-import { createStyles } from 'antd-style';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useSnapshot } from 'valtio';
 import SuggestionList from '@/components/SuggestionList';
 import { ContextType } from '@/constants/context';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
-
-const useStyle = createStyles(({ css, token }) => {
-  return {
-    tag: css`
-      user-select: none;
-      cursor: pointer;
-      border-style: dashed;
-      background-color: inherit;
-      line-height: inherit;
-      margin-right: 0;
-
-      display: flex;
-      align-items: center;
-    `,
-    icon: css`
-      font-size: 14px;
-      height: 22px;
-      color: ${token.colorText} !important;
-    `,
-  };
-});
+import { SenderButton } from '../SenderButton';
 
 const AddContext = () => {
-  const tagRef = useRef<HTMLDivElement>(null);
   const { attachedContexts, contextsSelectedValues } = useSnapshot(
     context.state,
   );
@@ -42,8 +18,6 @@ const AddContext = () => {
     getOriginalContextByValue,
     loading: suggestionLoading,
   } = useSuggestion(contextsSelectedValues);
-
-  const { styles } = useStyle();
 
   return (
     <SuggestionList
@@ -66,14 +40,10 @@ const AddContext = () => {
         }
       }}
     >
-      <Tag
-        ref={tagRef}
-        className={styles.tag}
-        icon={<Icon className={styles.icon} component={() => <div>@</div>} />}
-        onClick={() => setOpenPopup(true)}
-      >
-        {attachedContexts.length === 0 && <span>Add Context</span>}
-      </Tag>
+      <SenderButton onClick={() => setOpenPopup(true)}>
+        <div>@</div>
+        {attachedContexts.length === 0 && <div>Add Context</div>}
+      </SenderButton>
     </SuggestionList>
   );
 };
