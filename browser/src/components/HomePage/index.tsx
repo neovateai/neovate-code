@@ -1,9 +1,9 @@
 import { createStyles } from 'antd-style';
 import React from 'react';
 import { useSnapshot } from 'valtio';
-import ToggleExpandIcon from '@/icons/toggle-expand.svg?react';
+import TopLeftExpandButton from '@/icons/toggle-expand.svg?react';
 import * as homepage from '@/state/homepage';
-import TopRightToggleButton from './TopRightToggleButton';
+import TopRightExpandButton from './TopRightExpandButton';
 
 const useStyles = createStyles(({ css }) => {
   return {
@@ -13,6 +13,7 @@ const useStyles = createStyles(({ css }) => {
       left: 24px;
       z-index: 1000;
       transition: all 0.2s ease;
+      cursor: pointer;
     `,
   };
 });
@@ -29,10 +30,10 @@ const HomePage: React.FC = () => {
     <main className="flex-1 flex flex-col relative">
       {sidebarCollapsed && (
         <div className={styles.expandButton} onClick={handleExpandSidebar}>
-          <ToggleExpandIcon style={{ transform: 'rotate(180deg)' }} />
+          <TopLeftExpandButton style={{ transform: 'rotate(180deg)' }} />
         </div>
       )}
-      <TopRightToggleButton />
+      <TopRightExpandButton />
     </main>
   );
 };
