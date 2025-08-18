@@ -2,7 +2,6 @@ import { type ButtonProps, Divider, Flex } from 'antd';
 import McpDropdown from '@/components/McpDropdown';
 import { useChatState } from '@/hooks/provider';
 import SenderAttachments from '../SenderAttachments';
-import SenderComponent from '../SenderComponent';
 import ModeSelect from './ModeSelect';
 
 type ActionsComponents = {
@@ -25,7 +24,6 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
     <Flex justify="space-between" align="center">
       <Flex gap="small" align="center">
         <ModeSelect />
-        <SenderComponent.Select />
         <Divider type="vertical" />
       </Flex>
       <Flex align="center">

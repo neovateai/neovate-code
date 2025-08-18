@@ -10,7 +10,6 @@ const ModeSelect = () => {
 
   return (
     <SenderComponent.Select
-      open
       value={mode}
       onChange={(value) => {
         actions.updateMode(value as string);
@@ -32,10 +31,10 @@ const ModeSelect = () => {
         const { data, value } = option;
         const { modeItem } = data;
         return (
-          <div className="flex justify-start items-center gap-2 p-1">
+          <div className="flex justify-start items-center gap-4 p-1">
             <Icon component={() => modeItem.icon} className="text-lg" />
-            <div className="flex justify-between w-70">
-              <div className="flex flex-col items-start gap-0.5 w-10/12">
+            <div className="flex justify-between w-55">
+              <div className="flex flex-col items-start gap-0.5 w-21/24">
                 <div className="text-sm text-[#110C22] font-normal">
                   {modeItem.label}
                 </div>
