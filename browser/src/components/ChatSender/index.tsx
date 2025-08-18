@@ -70,6 +70,7 @@ const ChatSender: React.FC = () => {
       attachedContexts: context.state.attachedContexts,
       originalContent: state.prompt,
     });
+    setInputText('');
     actions.updatePrompt('');
   };
 
