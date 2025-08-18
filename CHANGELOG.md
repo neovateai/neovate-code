@@ -1,3 +1,31 @@
+## 0.8.0
+
+`2025-08-18`
+
+- refactor: pass config to plugin hook and use context product name by [@sorrycc](https://github.com/sorrycc)
+- feat: add model selection with config persistence and agent setup by [@sorrycc](https://github.com/sorrycc)
+- feat: add output style system with configurable prompt templates and slash command support [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add recursive deep file discovery for nested slash commands [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: implement message queue functionality with auto-execution and UI display [AI] by [@sorrycc](https://github.com/sorrycc)
+- fix: escape shell arguments to prevent command injection vulnerabilities [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add try tips hook and placeholder suggestions to chat input [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add kebabToTitleCase utility and enhance command description resolution with fallback logic [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: implement command source tracking and priority-based registration [AI] by [@sorrycc](https://github.com/sorrycc)
+- fix: add ts-ignore comment for LexicalTextArea component by [@sorrycc](https://github.com/sorrycc)
+- feat: add plugin directory scanning for global and local plugins [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add prompt parameter to conversation hook and extract prompt from input by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename userMessage to userPrompt and restructure plugin hooks by [@sorrycc](https://github.com/sorrycc)
+- dep: update dependencies by [@sorrycc](https://github.com/sorrycc)
+- style: add type imports with verbatimModuleSyntax enabled by [@阿平](https://github.com/阿平) in [#163](https://github.com/umijs/takumi/pull/163)
+- fix: bun compilation error due to circular references by [@阿平](https://github.com/阿平) in [#162](https://github.com/umijs/takumi/pull/162)
+- refactor: simplify image mime type detection by accepting extension directly by [@阿平](https://github.com/阿平) in [#161](https://github.com/umijs/takumi/pull/161)
+- build: add version check for bun before building [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add model override support for file-based slash commands [AI] by [@阿平](https://github.com/阿平) in [#159](https://github.com/umijs/takumi/pull/159)
+- feat: add custom headers support for MCP server configuration by [@阿平](https://github.com/阿平) in [#157](https://github.com/umijs/takumi/pull/157)
+- feat: add model selection command with interactive UI by [@阿平](https://github.com/阿平) in [#156](https://github.com/umijs/takumi/pull/156)
+- feat: add model option to query and service run options by @chencheng (云谦) in [#155](https://github.com/umijs/takumi/pull/155)
+
+
 ## 0.7.1
 
 `2025-08-06`
