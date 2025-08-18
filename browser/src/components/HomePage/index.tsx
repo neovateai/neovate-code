@@ -1,11 +1,11 @@
 import { createStyles } from 'antd-style';
 import React, { useRef } from 'react';
 import { useSnapshot } from 'valtio';
-import ToggleExpandIcon from '@/icons/toggle-expand.svg?react';
+import TopLeftExpandButton from '@/icons/toggle-expand.svg?react';
 import * as homepage from '@/state/homepage';
 import ResizeHandle from './ResizeHandle';
 import RightPanel from './RightPanel';
-import TopRightToggleButton from './TopRightToggleButton';
+import TopRightExpandButton from './TopRightExpandButton';
 
 const useStyles = createStyles(({ css }) => {
   return {
@@ -64,10 +64,10 @@ const HomePage: React.FC = () => {
         <main className="flex-1 flex flex-col relative">
           {sidebarCollapsed && (
             <div className={styles.expandButton} onClick={handleExpandSidebar}>
-              <ToggleExpandIcon style={{ transform: 'rotate(180deg)' }} />
+              <TopLeftExpandButton style={{ transform: 'rotate(180deg)' }} />
             </div>
           )}
-          <TopRightToggleButton />
+          <TopRightExpandButton />
         </main>
       </div>
 

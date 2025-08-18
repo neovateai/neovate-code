@@ -1,22 +1,11 @@
-import {
-  DeleteOutlined,
-  EditOutlined,
-  QuestionCircleOutlined,
-  SettingOutlined,
-} from '@ant-design/icons';
-import { Conversations } from '@ant-design/x';
+import { QuestionCircleOutlined, SettingOutlined } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
 import { Avatar, Button } from 'antd';
 import { createStyles } from 'antd-style';
-import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import * as homepage from '@/state/homepage';
 import LogoArea from './LogoArea';
-
-interface SiderMainProps {
-  popoverButton?: ReactNode;
-}
+import siderBg from './imgs/sider-bg.png';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
@@ -27,6 +16,7 @@ const useStyle = createStyles(({ token, css }) => {
       box-sizing: border-box;
       border-right: 1px solid #ececed;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: url(${siderBg}) no-repeat bottom / contain;
       overflow: hidden;
     `,
     siderExpanded: css`
@@ -55,23 +45,6 @@ const useStyle = createStyles(({ token, css }) => {
         color: ${token.colorText};
         font-size: 16px;
       }
-    `,
-
-    conversations: css`
-      flex: 1;
-      overflow-y: auto;
-      margin-top: 12px;
-      padding: 0;
-      opacity: 1;
-      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-      .ant-conversations-list {
-        padding-inline-start: 0;
-      }
-    `,
-    conversationsHidden: css`
-      opacity: 0;
-      pointer-events: none;
     `,
     siderFooter: css`
       position: absolute;
@@ -121,10 +94,8 @@ const useStyle = createStyles(({ token, css }) => {
   };
 });
 
-const SiderMain = (props: SiderMainProps) => {
-  const { popoverButton } = props;
+const SiderMain = () => {
   const { styles } = useStyle();
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { sidebarCollapsed } = useSnapshot(homepage.state);
 
@@ -134,38 +105,7 @@ const SiderMain = (props: SiderMainProps) => {
         sidebarCollapsed ? styles.siderCollapsed : styles.siderExpanded
       }`}
     >
-      {popoverButton}
       <LogoArea />
-      <Conversations
-        items={[]}
-        className={`${styles.conversations} ${
-          sidebarCollapsed ? styles.conversationsHidden : ''
-        }`}
-        activeKey={''}
-        onActiveChange={async (val) => {
-          console.log('onActiveChange', val);
-        }}
-        groupable
-        styles={{ item: { padding: '0 8px' } }}
-        menu={(conversation) => ({
-          items: [
-            {
-              label: t('menu.rename'),
-              key: 'rename',
-              icon: <EditOutlined />,
-            },
-            {
-              label: t('menu.delete'),
-              key: 'delete',
-              icon: <DeleteOutlined />,
-              danger: true,
-              onClick: () => {
-                console.log('delete conversation', conversation);
-              },
-            },
-          ],
-        })}
-      />
       <div
         className={`${styles.siderFooter} ${
           sidebarCollapsed ? styles.siderFooterHidden : ''

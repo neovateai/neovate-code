@@ -80,11 +80,7 @@ const Sider = () => {
           onMouseLeave={() => setActive(false)}
         >
           <div className={styles.popoverContent}>
-            <SiderMain
-              popoverButton={
-                <div className={styles.popoverButtonWrapper}>{MenuButton}</div>
-              }
-            />
+            <SiderMain />
           </div>
         </div>
       ) : (
