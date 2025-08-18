@@ -4,7 +4,6 @@ import RightPanelHeader from './RightPanelHeader';
 
 const useRightPanelStyles = createStyles(({ css }) => ({
   rightPanel: css`
-    border-left: 1px solid #e5e5e5;
     display: flex;
     flex-direction: column;
     height: 100%;

@@ -4,18 +4,23 @@ import * as homepage from '@/state/homepage';
 
 const useResizeHandleStyles = createStyles(({ css }) => ({
   handle: css`
-    width: 4px;
+    width: 1px;
     height: 100%;
-    background: transparent;
+    background: #e5e5e5;
     cursor: col-resize;
     position: relative;
+    transition:
+      width 0.2s ease,
+      background 0.2s ease;
 
     &:hover {
-      background: #3370ff;
+      background: #7357ff;
+      width: 3px;
     }
 
     &:active {
-      background: #3370ff;
+      background: #7357ff;
+      width: 3px;
     }
   `,
 }));
