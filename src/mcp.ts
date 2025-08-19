@@ -38,7 +38,7 @@ export class MCPManager {
   ): Promise<MCPManager> {
     debug('create MCPManager', mcpServers);
     const servers = new Map<string, MCP>();
-    for (const [key, config] of Object.entries(mcpServers)) {
+    for (const [key, config] of Object.entries(mcpServers || {})) {
       if (config.disable) {
         debug(`Skipping disabled MCP server: ${key}`);
         continue;
