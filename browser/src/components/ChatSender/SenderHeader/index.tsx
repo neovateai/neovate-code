@@ -28,6 +28,8 @@ const SenderHeader: React.FC = () => {
             ? (contextItem.context as ImageItem).src
             : undefined
         }
+        context={contextItem.context}
+        contextType={contextItem.type}
       />
     ));
   }, [attachedContexts, handleRemoveContext]);

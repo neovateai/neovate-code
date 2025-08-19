@@ -1,6 +1,10 @@
 import Icon, { CloseCircleFilled } from '@ant-design/icons';
 import { Popover } from 'antd';
 import { useState } from 'react';
+import type { FileItem } from '@/api/model';
+import DevFileIcon from '@/components/DevFileIcon';
+import { ContextType } from '@/constants/context';
+import type { ContextStoreValue } from '@/types/context';
 
 interface Props {
   /** 是否可关闭 */
@@ -13,10 +17,27 @@ interface Props {
   image?: string;
 
   value: string;
+
+  context?: ContextStoreValue;
+
+  contextType?: ContextType;
+}
+
+function renderIcon(type?: ContextType, context?: ContextStoreValue) {
+  if (!context || !type) {
+    return null;
+  }
+  switch (type) {
+    case ContextType.FILE:
+      const fileExt = (context as FileItem).name.split('.').pop() ?? '';
+      const isFolder = (context as FileItem).type === 'directory';
+      return <DevFileIcon fileExt={fileExt} isFolder={isFolder} />;
+  }
 }
 
 export const SenderContextTag = (props: Props) => {
-  const { closeable, onClose, label, image, value } = props;
+  const { closeable, onClose, label, image, value, context, contextType } =
+    props;
 
   const [hover, setHover] = useState(false);
 
@@ -40,7 +61,6 @@ export const SenderContextTag = (props: Props) => {
       >
         <div className="flex items-center gap-1 rounded-[50px] py-2 px-3 bg-[#F7F8FA] text-[#110C22] text-xs select-none">
           <div>
-            {/* TODO Icon */}
             {image ? (
               <img
                 src={image}
@@ -49,7 +69,7 @@ export const SenderContextTag = (props: Props) => {
                 className="rounded-2xl h-5 w-7.5"
               />
             ) : (
-              <Icon />
+              renderIcon(contextType, context)
             )}
           </div>
           <div>{label}</div>
