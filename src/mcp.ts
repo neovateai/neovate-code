@@ -105,6 +105,14 @@ export class MCPManager {
     this.servers.clear();
   }
 
+  getServerNames(): string[] {
+    return Array.from(this.servers.keys());
+  }
+
+  hasServer(name: string): boolean {
+    return this.servers.has(name);
+  }
+
   async getAllMcpTools<TContext = UnknownContext>(
     mcpServers: MCPServer[],
     convertSchemasToStrict: boolean = false,
