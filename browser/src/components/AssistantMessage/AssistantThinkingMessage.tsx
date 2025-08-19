@@ -2,6 +2,8 @@ import { RadarChartOutlined, RightOutlined } from '@ant-design/icons';
 import { useCallback, useState } from 'react';
 import type { ReasoningMessage } from '@/types/message';
 
+const clsPrefix = 'assistant-thinking-message';
+
 interface ThinkingMessageProps {
   message: ReasoningMessage;
   defaultExpanded?: boolean;
