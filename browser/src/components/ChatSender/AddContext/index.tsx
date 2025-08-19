@@ -18,7 +18,6 @@ const AddContext = () => {
   const {
     defaultSuggestions,
     handleSearch,
-
     loading: suggestionLoading,
   } = useSuggestion(contextsSelectedValues);
 

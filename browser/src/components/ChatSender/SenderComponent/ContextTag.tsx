@@ -1,5 +1,6 @@
 import Icon, { CloseCircleFilled } from '@ant-design/icons';
 import { Popover } from 'antd';
+import { cx } from 'antd-style';
 import { useState } from 'react';
 import type { FileItem } from '@/api/model';
 import DevFileIcon from '@/components/DevFileIcon';
@@ -38,16 +39,25 @@ function renderIcon(type?: ContextType, context?: ContextStoreValue) {
 }
 
 export const SenderContextTag = (props: Props) => {
-  const { closeable, onClose, label, image, value, context, contextType } =
-    props;
+  const {
+    closeable,
+    onClose,
+    onClick,
+    label,
+    image,
+    value,
+    context,
+    contextType,
+  } = props;
 
   const [hover, setHover] = useState(false);
 
   return (
     <div
-      className="relative"
+      className={cx('relative', { 'cursor-pointer': !!onClick })}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onClick={() => onClick?.(value)}
     >
       {closeable && hover && (
         <div
