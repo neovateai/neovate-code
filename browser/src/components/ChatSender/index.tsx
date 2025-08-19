@@ -1,18 +1,16 @@
 import { Sender } from '@ant-design/x';
+import { Spin } from 'antd';
 import { createStyles } from 'antd-style';
-import { differenceWith } from 'lodash-es';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
-import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
+import { ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
+import { useChatPaste } from '@/hooks/useChatPaste';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
-import { getInputInfo } from '@/utils/chat';
 import SuggestionList from '../SuggestionList';
-import LexicalTextArea from './LexicalTextArea';
-import { LexicalTextAreaContext } from './LexicalTextAreaContext';
 import SenderFooter from './SenderFooter';
 import SenderFooterBoard from './SenderFooterBoard';
 import SenderHeader from './SenderHeader';
@@ -51,17 +49,18 @@ const ChatSender: React.FC = () => {
   const { styles } = useStyle();
   const { loading, stop, onQuery } = useChatState();
   const { t } = useTranslation();
-  const [insertNodePosition, setInsertNodePosition] = useState(0);
 
   const [openPopup, setOpenPopup] = useState(false);
+  const [inputText, setInputText] = useState<string>('');
 
-  const prevInputValue = useRef<string>(state.prompt);
+  const { isPasting, handlePaste, contextHolder } = useChatPaste();
+
   const { prompt } = useSnapshot(state);
 
   const {
     defaultSuggestions,
     handleSearch,
-    getOriginalContextByValue,
+    // getOriginalContextByValue,
     loading: suggestionLoading,
   } = useSuggestion();
 
@@ -69,8 +68,8 @@ const ChatSender: React.FC = () => {
     onQuery({
       prompt,
       attachedContexts: context.state.attachedContexts,
-      originalContent: state.plainText,
     });
+    setInputText('');
     actions.updatePrompt('');
   };
 
@@ -80,105 +79,64 @@ const ChatSender: React.FC = () => {
     }
   };
 
-  return (
-    <>
-      <LexicalTextAreaContext.Provider
-        value={{
-          onEnterPress: handleEnterPress,
-          onChangeNodes: (prevNodes, nextNodes) => {
-            // remove old nodes
-            differenceWith(prevNodes, nextNodes, (prev, next) => {
-              return prev.originalText === next.originalText;
-            }).forEach((node) => {
-              context.actions.removeContext(node.originalText);
-            });
+  /*
+  TODO
+  1. 上下文挂载
+  2. 粘贴
+  3. 回车
+  4. 面板跟随光标
+  */
 
-            // add new nodes
-            differenceWith(nextNodes, prevNodes, (next, prev) => {
-              return next.originalText === prev.originalText;
-            }).forEach((node) => {
-              const contextItem = getOriginalContextByValue(
-                node.type,
-                node.displayText,
-              );
-              if (contextItem) {
-                context.actions.addContext(contextItem);
-              }
-            });
-          },
-          value: prompt,
-          onChange: (markedText, plainText) => {
-            const { isInputingAiContext, position } = getInputInfo(
-              prevInputValue.current,
-              markedText,
-            );
-            if (isInputingAiContext) {
-              setInsertNodePosition(position);
-              setOpenPopup(true);
-            } else {
-              setOpenPopup(false);
-            }
-            prevInputValue.current = markedText;
-            actions.updatePrompt(markedText);
-            actions.updatePlainText(plainText);
-          },
-          onPastingImage: (loading) => {
-            context.actions.setContextLoading(loading);
-          },
-          aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
-          namespace: 'SenderTextarea',
+  return (
+    <Spin spinning={isPasting}>
+      <SuggestionList
+        loading={suggestionLoading}
+        className={styles.suggestion}
+        open={openPopup}
+        onOpenChange={(open) => setOpenPopup(open)}
+        items={defaultSuggestions}
+        onSearch={(type, text) => {
+          return handleSearch(type as ContextType, text);
         }}
+        // onSelect={(type, itemValue) => {
+        //   setOpenPopup(false);
+        //   const contextItem = getOriginalContextByValue(
+        //     type as ContextType,
+        //     itemValue,
+        //   );
+        // }}
       >
-        <SuggestionList
-          loading={suggestionLoading}
-          className={styles.suggestion}
-          open={openPopup}
-          onOpenChange={(open) => setOpenPopup(open)}
-          items={defaultSuggestions}
-          onSearch={(type, text) => {
-            return handleSearch(type as ContextType, text);
+        <Sender
+          className={styles.sender}
+          rootClassName={styles.senderRoot}
+          header={<SenderHeader />}
+          footer={({ components }) => {
+            return <SenderFooter components={components} />;
           }}
-          onSelect={(type, itemValue) => {
-            setOpenPopup(false);
-            const contextItem = getOriginalContextByValue(
-              type as ContextType,
-              itemValue,
-            );
-            if (contextItem) {
-              const nextInputValue =
-                prompt.slice(0, insertNodePosition) +
-                contextItem.value +
-                prompt.slice(insertNodePosition + 1);
-              actions.updatePrompt(nextInputValue);
+          onSubmit={handleSubmit}
+          onPaste={handlePaste}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleEnterPress();
             }
           }}
-        >
-          <Sender
-            className={styles.sender}
-            rootClassName={styles.senderRoot}
-            header={<SenderHeader />}
-            footer={({ components }) => {
-              return <SenderFooter components={components} />;
-            }}
-            onSubmit={handleSubmit}
-            // onKeyDown={onKeyDown}
-            onCancel={() => {
-              stop();
-            }}
-            value={prompt}
-            loading={loading}
-            allowSpeech
-            actions={false}
-            components={{
-              // @ts-ignore
-              input: LexicalTextArea,
-            }}
-            placeholder={t('chat.inputPlaceholder')}
-          />
-        </SuggestionList>
-        <SenderFooterBoard />
-      </LexicalTextAreaContext.Provider>
-    </>
+          onCancel={() => {
+            stop();
+          }}
+          value={inputText}
+          loading={loading}
+          allowSpeech
+          actions={false}
+          onChange={(val) => {
+            setInputText(val);
+            actions.updatePrompt(val);
+          }}
+          placeholder={t('chat.inputPlaceholder')}
+        />
+      </SuggestionList>
+      <SenderFooterBoard />
+      {contextHolder}
+    </Spin>
   );
 };
 
