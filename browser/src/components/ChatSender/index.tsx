@@ -97,13 +97,12 @@ const ChatSender: React.FC = () => {
         onSearch={(type, text) => {
           return handleSearch(type as ContextType, text);
         }}
-        // onSelect={(type, itemValue) => {
-        //   setOpenPopup(false);
-        //   const contextItem = getOriginalContextByValue(
-        //     type as ContextType,
-        //     itemValue,
-        //   );
-        // }}
+        onSelect={(_type, _itemValue, contextItem) => {
+          setOpenPopup(false);
+          if (contextItem) {
+            context.actions.addContext(contextItem);
+          }
+        }}
       >
         <Sender
           className={styles.sender}
@@ -126,7 +125,11 @@ const ChatSender: React.FC = () => {
           loading={loading}
           allowSpeech
           actions={false}
+          submitType="enter"
           onChange={(val) => {
+            if (val === '@') {
+              setOpenPopup(true);
+            }
             setInputText(val);
             actions.updatePrompt(val);
           }}
