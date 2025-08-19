@@ -58,11 +58,14 @@ export class Service {
   private usage: Usage;
   private lastUsage: Usage;
   private modelId: string;
+  private baseTools: Tools;
+  private lastMcpToolsCount: number = 0;
 
   constructor(opts: ServiceOpts) {
     this.opts = opts;
     this.id = opts.id || randomUUID();
     this.context = opts.context;
+    this.baseTools = opts.tools;
     this.tools = opts.tools;
     this.modelId =
       this.opts.agentType === 'code'
@@ -86,6 +89,53 @@ export class Service {
             tools: this.tools,
             context: this.context,
           });
+  }
+
+  private async updateMcpTools(): Promise<boolean> {
+    // Only update for code agents that can use MCP tools
+    if (this.opts.agentType !== 'code') {
+      return false;
+    }
+
+    const availableMcpTools = this.context.mcpManager.getAvailableTools();
+
+    // Check if tools have changed
+    if (availableMcpTools.length === this.lastMcpToolsCount) {
+      return false; // No change
+    }
+
+    debug('Updating MCP tools:', {
+      previous: this.lastMcpToolsCount,
+      current: availableMcpTools.length,
+    });
+
+    // Mark MCP tools with a specific identifier for future filtering
+    const enhancedMcpTools = availableMcpTools.map((tool) => ({
+      ...enhanceTool(tool, {
+        category: 'network',
+        riskLevel: 'medium',
+      }),
+      // Add explicit MCP marker for reliable identification
+      __isMcpTool: true as const,
+    }));
+
+    // Get base tools as array from the Tools instance
+    const baseToolsArray = Object.values(this.baseTools.tools);
+
+    // Filter out previously added MCP tools using the explicit marker
+    const nonMcpBaseTools = baseToolsArray.filter((tool) => {
+      return !tool.__isMcpTool;
+    });
+
+    // Rebuild complete tool set
+    const allTools = [...nonMcpBaseTools, ...enhancedMcpTools];
+    this.tools = new Tools(allTools);
+    this.lastMcpToolsCount = availableMcpTools.length;
+
+    // Recreate agent with new tools
+    this.setupAgent();
+
+    return true; // Tools were updated
   }
 
   private hasIncompleteXmlTag(text: string): boolean {
@@ -176,9 +226,12 @@ export class Service {
     const { todoWriteTool, todoReadTool } = createTodoTool({ context });
     const todoTools = context.config.todo ? [todoReadTool, todoWriteTool] : [];
 
-    const mcpTools = context.mcpTools.map((tool) =>
-      enhanceTool(tool, { category: 'network', riskLevel: 'medium' }),
-    );
+    // Get currently available MCP tools (non-blocking)
+    const mcpTools = context.mcpManager
+      .getAvailableTools()
+      .map((tool) =>
+        enhanceTool(tool, { category: 'network', riskLevel: 'medium' }),
+      );
 
     const planTools = [...readonlyTools];
     const codeTools = [
@@ -303,6 +356,15 @@ export class Service {
         type: PluginHookType.Series,
       });
     }
+
+    // Wait for MCP initialization to complete before updating tools
+    if (this.context.mcpManager.isLoading()) {
+      await this.context.mcpManager.initAsync();
+    }
+
+    // Update MCP tools if available
+    await this.updateMcpTools();
+
     const stream = new Readable({
       read() {},
     });

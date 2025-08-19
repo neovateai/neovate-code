@@ -16,6 +16,7 @@ export type ToolApprovalInfo = {
 
 export type EnhancedTool = Tool<any> & {
   approval?: ToolApprovalInfo;
+  readonly __isMcpTool?: boolean;
 };
 
 export function enhanceTool(

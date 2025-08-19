@@ -167,6 +167,20 @@ export class Context {
     });
   }
 
+  async getMcpTools(): Promise<Tool[]> {
+    // Ensure MCP initialization is complete
+    await this.mcpManager.initAsync();
+    return this.mcpManager.getAvailableTools();
+  }
+
+  getMcpStatus() {
+    return {
+      isReady: this.mcpManager.isReady(),
+      isLoading: this.mcpManager.isLoading(),
+      servers: this.mcpManager.getAllServerStatus(),
+    };
+  }
+
   async destroy() {
     await this.mcpManager.destroy();
     await this.ide?.disconnect();
@@ -282,12 +296,18 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
   });
   debug('generalInfo', generalInfo);
 
-  const mcpManager = await MCPManager.create(
-    opts.mcp ? resolvedConfig.mcpServers : [],
+  const mcpManager = MCPManager.create(
+    opts.mcp ? resolvedConfig.mcpServers : {},
   );
-  const mcpTools = await mcpManager.getAllTools();
-  debug('mcpManager created');
-  debug('mcpTools', mcpTools);
+  // Start async initialization in background
+  if (opts.mcp && Object.keys(resolvedConfig.mcpServers).length > 0) {
+    mcpManager.initAsync().catch((error) => {
+      debug('MCP initialization failed:', error);
+    });
+  }
+  // Initially empty, will be populated as servers connect
+  const mcpTools: Tool[] = [];
+  debug('mcpManager created (async initialization started)');
 
   const llmGitStatus = await getLlmGitStatus(gitStatus);
   debug('git status', gitStatus);
