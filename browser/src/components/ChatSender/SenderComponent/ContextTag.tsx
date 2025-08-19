@@ -11,11 +11,13 @@ interface Props {
   closeable?: boolean;
   /** 关闭回调 */
   onClose?: (val: string) => void;
+  /** 点击回调 */
+  onClick?: (val: string) => void;
   /** 标签内容 */
   label: string;
   /** 标签图片 */
   image?: string;
-
+  /** 标签值，必须唯一 */
   value: string;
 
   context?: ContextStoreValue;
@@ -43,12 +45,13 @@ export const SenderContextTag = (props: Props) => {
 
   return (
     <div
+      className="relative"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
       {closeable && hover && (
         <div
-          className="float-end cursor-pointer relative right-3.5 bottom-1.5"
+          className="absolute cursor-pointer -top-1.5 -right-1.5 z-10"
           onClick={() => {
             onClose?.(value);
           }}
