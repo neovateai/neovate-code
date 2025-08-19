@@ -2,7 +2,6 @@ import { Box, Text, useInput } from 'ink';
 import pc from 'picocolors';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ConfigManager } from '../../config';
-import { PRODUCT_NAME } from '../../constants';
 import { useAppContext } from '../../ui/AppContext';
 import PaginatedSelectInput from '../../ui/components/PaginatedSelectInput';
 import { type LocalJSXCommand } from '../types';
@@ -82,7 +81,7 @@ const OutputStyleSelect: React.FC<OutputStyleSelectProps> = ({
             updatedOutputStyle = item.value;
             const configManager = new ConfigManager(
               context.cwd,
-              PRODUCT_NAME,
+              context.productName,
               {},
             );
             configManager.setConfig(false, 'outputStyle', item.value);

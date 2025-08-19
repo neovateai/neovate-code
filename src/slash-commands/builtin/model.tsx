@@ -1,6 +1,7 @@
 import { Box, Text, useInput } from 'ink';
 import pc from 'picocolors';
 import React, { useEffect, useMemo, useState } from 'react';
+import { ConfigManager } from '../../config';
 import type { Context } from '../../context';
 import { PluginHookType } from '../../plugin';
 import { MODEL_ALIAS } from '../../provider';
@@ -26,7 +27,7 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
   onExit,
   onSelect,
 }) => {
-  const { state, dispatch } = useAppContext();
+  const { services, state, dispatch } = useAppContext();
   const [selectItems, setSelectItems] = useState<
     {
       label: string;
@@ -87,6 +88,14 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
           initialIndex={selectItems.findIndex((item) => item.value === model)}
           itemsPerPage={10}
           onSelect={(item) => {
+            const configManager = new ConfigManager(
+              context.cwd,
+              context.productName,
+              {},
+            );
+            configManager.setConfig(true, 'model', item.value);
+            services.context.config.model = item.value;
+            services.service.setupAgent();
             dispatch({ type: 'SET_MODEL', payload: item.value });
             onSelect(item.value);
           }}
