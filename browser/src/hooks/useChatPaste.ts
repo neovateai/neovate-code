@@ -111,24 +111,26 @@ export function useChatPaste() {
 
     // 只获取第一个项目
     const item = clipboardItems[0];
-    // 处理图片
-    if (item.type.startsWith('image/')) {
-      return handleImage(item);
-    }
-    // 从HTML中解析可能的img标签
-    else if (item.type === 'text/html') {
-      return handleHtml(item);
-    }
-    // 处理文本
-    else if (item.type === 'text/plain') {
-      return false;
-    }
-    // 其他类型
-    else {
-      const errorMsg = t('context.unsupportedType', { type: item.type });
-      messageInstance.error(errorMsg);
-      console.error(errorMsg);
-      return true;
+
+    switch (item.type) {
+      case 'text/plain':
+        // 处理纯文本
+        return false;
+      case 'text/html':
+        // 处理HTML
+        return handleHtml(item);
+      case 'image/png':
+      case 'image/jpeg':
+      case 'image/gif':
+      case 'image/webp':
+      case 'image/svg+xml':
+        // 处理图片
+        return handleImage(item);
+      default:
+        const errorMsg = t('context.unsupportedType', { type: item.type });
+        messageInstance.error(errorMsg);
+        console.error(errorMsg);
+        return true;
     }
   };
 
