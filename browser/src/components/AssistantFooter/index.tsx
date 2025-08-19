@@ -10,6 +10,9 @@ import RefreshIcon from '@/icons/refresh.svg?react';
 import { actions, state } from '@/state/sender';
 import { type UIMessage, UIMessageType } from '@/types/message';
 import { mergeMessages } from '@/utils/mergeMessages';
+import './index.less';
+
+const clsPrefix = 'assistant-footer';
 
 const { Text } = Typography;
 
@@ -61,11 +64,19 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
   }
 
   return (
-    <Flex>
-      <Button type="text" size="small" icon={<RefreshIcon />} />
-      <Button type="text" size="small" icon={<CopyIcon />} />
-      <Button type="text" size="small" icon={<LikeIcon />} />
-      <Button type="text" size="small" icon={<DislikeIcon />} />
+    <Flex className={clsPrefix}>
+      <Button
+        className={`${clsPrefix}-icon`}
+        type="text"
+        icon={<RefreshIcon />}
+      />
+      <Button className={`${clsPrefix}-icon`} type="text" icon={<CopyIcon />} />
+      <Button className={`${clsPrefix}-icon`} type="text" icon={<LikeIcon />} />
+      <Button
+        className={`${clsPrefix}-icon`}
+        type="text"
+        icon={<DislikeIcon />}
+      />
     </Flex>
   );
 };

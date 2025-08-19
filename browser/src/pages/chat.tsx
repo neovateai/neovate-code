@@ -41,6 +41,12 @@ const useStyle = createStyles(
         .ant-bubble-content {
           min-height: 0px;
         }
+
+        .ant-btn-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
       `,
       codeViewerContainer: css`
         height: 100vh;
