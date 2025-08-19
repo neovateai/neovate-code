@@ -7,9 +7,12 @@ import MarkdownRenderer from '../MarkdownRenderer';
 import ToolApprovalConfirmation from '../ToolApprovalConfirmation';
 import ToolApprovalError from '../ToolApprovalError';
 import ToolApprovalResult from '../ToolApprovalResult';
-import AssistantTextMessage from './AssistantTextMessage';
-import AssistantThinkingMessage from './AssistantThinkingMessage';
-import AssistantToolMessage from './AssistantToolMessage';
+import './index.less';
+import AssistantTextMessage from './v1/AssistantTextMessage';
+import AssistantThinkingMessage from './v1/AssistantThinkingMessage';
+import AssistantToolMessage from './v1/AssistantToolMessage';
+
+const clsPrefix = 'assistant-message';
 
 interface MessageProps {
   message: UIMessage;
@@ -59,11 +62,11 @@ const AssistantMessage: React.FC<MessageProps> = ({ message }) => {
   }
 
   return (
-    <>
+    <div className={clsPrefix}>
       {messageParts.map((part, index) => (
         <MessagePart key={`${part.type}-${index}`} part={part} index={index} />
       ))}
-    </>
+    </div>
   );
 };
 

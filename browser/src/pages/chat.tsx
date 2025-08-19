@@ -91,8 +91,7 @@ const Chat: React.FC = () => {
     },
     assistant: {
       placement: 'start',
-      avatar: <AssistantAvatar />,
-      variant: 'outlined',
+      variant: 'borderless',
       messageRender(message) {
         return <AssistantMessage message={message} />;
       },
