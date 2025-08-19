@@ -1,15 +1,12 @@
-import {
-  CheckOutlined,
-  CopyOutlined,
-  DislikeOutlined,
-  LikeOutlined,
-  ReloadOutlined,
-} from '@ant-design/icons';
 import { Button, Flex, Typography } from 'antd';
 import { last } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { useChatState } from '@/hooks/provider';
+import CopyIcon from '@/icons/copy.svg?react';
+import DislikeIcon from '@/icons/dislike.svg?react';
+import LikeIcon from '@/icons/like.svg?react';
+import RefreshIcon from '@/icons/refresh.svg?react';
 import { actions, state } from '@/state/sender';
 import { type UIMessage, UIMessageType } from '@/types/message';
 import { mergeMessages } from '@/utils/mergeMessages';
@@ -48,7 +45,7 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
             <Button
               type="primary"
               size="middle"
-              icon={<CheckOutlined />}
+              icon={<RefreshIcon />}
               className="shrink-0"
               onClick={async () => {
                 actions.updateMode('agent');
@@ -64,11 +61,11 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
   }
 
   return (
-    <Flex className="p-2">
-      <Button type="text" size="small" icon={<ReloadOutlined />} />
-      <Button type="text" size="small" icon={<CopyOutlined />} />
-      <Button type="text" size="small" icon={<LikeOutlined />} />
-      <Button type="text" size="small" icon={<DislikeOutlined />} />
+    <Flex>
+      <Button type="text" size="small" icon={<RefreshIcon />} />
+      <Button type="text" size="small" icon={<CopyIcon />} />
+      <Button type="text" size="small" icon={<LikeIcon />} />
+      <Button type="text" size="small" icon={<DislikeIcon />} />
     </Flex>
   );
 };

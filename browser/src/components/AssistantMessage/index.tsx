@@ -7,10 +7,10 @@ import MarkdownRenderer from '../MarkdownRenderer';
 import ToolApprovalConfirmation from '../ToolApprovalConfirmation';
 import ToolApprovalError from '../ToolApprovalError';
 import ToolApprovalResult from '../ToolApprovalResult';
+import AssistantTextMessage from './AssistantTextMessage';
+import AssistantThinkingMessage from './AssistantThinkingMessage';
+import AssistantToolMessage from './AssistantToolMessage';
 import './index.less';
-import AssistantTextMessage from './v1/AssistantTextMessage';
-import AssistantThinkingMessage from './v1/AssistantThinkingMessage';
-import AssistantToolMessage from './v1/AssistantToolMessage';
 
 const clsPrefix = 'assistant-message';
 

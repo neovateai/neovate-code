@@ -35,6 +35,11 @@ const useStyle = createStyles(
 
         .ant-bubble-footer {
           width: 100%;
+          margin-top: 8px;
+        }
+
+        .ant-bubble-content {
+          min-height: 0px;
         }
       `,
       codeViewerContainer: css`
