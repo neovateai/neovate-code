@@ -13,6 +13,7 @@ export enum ContextType {
   UNKNOWN = '__unknown',
 }
 
+// TODO 待删除
 export const AI_CONTEXT_NODE_CONFIGS: AiContextNodeConfig[] = [
   {
     type: ContextType.FILE,
