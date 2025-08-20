@@ -51,7 +51,7 @@ const UserMessage = (props: UserMessageProps) => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.messageBox}>{content};</div>
+      <div className={styles.messageBox}>{content}</div>
     </div>
   );
 };
