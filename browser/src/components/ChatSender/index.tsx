@@ -1,6 +1,7 @@
 import { Sender } from '@ant-design/x';
 import { Spin } from 'antd';
 import { createStyles } from 'antd-style';
+import type { Bounds } from 'quill';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
@@ -10,6 +11,8 @@ import { useChatPaste } from '@/hooks/useChatPaste';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
+import QuillEditor from '../QuillEditor';
+import { QuillContext } from '../QuillEditor/QuillContext';
 import SuggestionList from '../SuggestionList';
 import SenderFooter from './SenderFooter';
 import SenderHeader from './SenderHeader';
@@ -51,6 +54,7 @@ const ChatSender: React.FC = () => {
 
   const [openPopup, setOpenPopup] = useState(false);
   const [inputText, setInputText] = useState<string>('');
+  const [bounds, setBounds] = useState<Bounds>();
 
   const { isPasting, handlePaste, contextHolder } = useChatPaste();
 
@@ -59,7 +63,6 @@ const ChatSender: React.FC = () => {
   const {
     defaultSuggestions,
     handleSearch,
-    // getOriginalContextByValue,
     loading: suggestionLoading,
   } = useSuggestion();
 
@@ -88,54 +91,68 @@ const ChatSender: React.FC = () => {
 
   return (
     <Spin spinning={isPasting}>
-      <SuggestionList
-        loading={suggestionLoading}
-        className={styles.suggestion}
-        open={openPopup}
-        onOpenChange={(open) => setOpenPopup(open)}
-        items={defaultSuggestions}
-        onSearch={(type, text) => {
-          return handleSearch(type as ContextType, text);
-        }}
-        onSelect={(_type, _itemValue, contextItem) => {
-          setOpenPopup(false);
-          if (contextItem) {
-            context.actions.addContext(contextItem);
-          }
+      <QuillContext
+        value={{
+          onInputAt: (inputing, _, bounds) => {
+            setOpenPopup(inputing);
+            setBounds(bounds);
+          },
         }}
       >
-        <Sender
-          className={styles.sender}
-          rootClassName={styles.senderRoot}
-          header={<SenderHeader />}
-          footer={({ components }) => {
-            return <SenderFooter components={components} />;
+        <SuggestionList
+          loading={suggestionLoading}
+          className={styles.suggestion}
+          open={openPopup}
+          onOpenChange={(open) => setOpenPopup(open)}
+          items={defaultSuggestions}
+          onSearch={(type, text) => {
+            return handleSearch(type as ContextType, text);
           }}
-          onSubmit={handleSubmit}
-          onPaste={handlePaste}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleEnterPress();
+          onSelect={(_type, _itemValue, contextItem) => {
+            setOpenPopup(false);
+            if (contextItem) {
+              context.actions.addContext(contextItem);
             }
           }}
-          onCancel={() => {
-            stop();
-          }}
-          value={inputText}
-          loading={loading}
-          allowSpeech
-          actions={false}
-          submitType="enter"
-          onChange={(val) => {
-            if (val === '@') {
-              setOpenPopup(true);
-            }
-            setInputText(val);
-            actions.updatePrompt(val);
-          }}
-          placeholder={t('chat.inputPlaceholder')}
-        />
-      </SuggestionList>
+          offset={{ top: (bounds?.top ?? -50) + 50, left: bounds?.left ?? 0 }}
+        >
+          <Sender
+            className={styles.sender}
+            rootClassName={styles.senderRoot}
+            header={<SenderHeader />}
+            footer={({ components }) => {
+              return <SenderFooter components={components} />;
+            }}
+            onSubmit={handleSubmit}
+            onPaste={handlePaste}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleEnterPress();
+              }
+            }}
+            onCancel={() => {
+              stop();
+            }}
+            value={inputText}
+            loading={loading}
+            allowSpeech
+            actions={false}
+            submitType="enter"
+            components={{
+              // @ts-ignore
+              input: QuillEditor,
+            }}
+            onChange={(val) => {
+              if (val === '@') {
+                setOpenPopup(true);
+              }
+              setInputText(val);
+              actions.updatePrompt(val);
+            }}
+            placeholder={t('chat.inputPlaceholder')}
+          />
+        </SuggestionList>
+      </QuillContext>
       {contextHolder}
     </Spin>
   );
