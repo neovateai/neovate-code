@@ -1,40 +1,29 @@
-import { UserOutlined } from '@ant-design/icons';
-import { Bubble } from '@ant-design/x';
 import { createFileRoute } from '@tanstack/react-router';
-import { type GetProp, Spin } from 'antd';
 import { createStyles } from 'antd-style';
+import React, { useEffect, useRef } from 'react';
 import { useSnapshot } from 'valtio';
-import AssistantAvatar from '@/components/AssistantAvatar';
-import AssistantFooter from '@/components/AssistantFooter';
-import AssistantMessage from '@/components/AssistantMessage';
-import ChatSender from '@/components/ChatSender';
-import CodeViewer from '@/components/CodeViewer';
-import MessageProcessor from '@/components/MessageProcessor';
-import { UserMessage, UserMessageFooter } from '@/components/UserMessage';
-import Welcome from '@/components/Welcome';
-import ChatProvider, { useChatState } from '@/hooks/provider';
-import * as codeViewer from '@/state/codeViewer';
-import type { UIMessage, UIUserMessage } from '@/types/message';
+import ChatContent from '@/components/ChatContent';
+import ResizeHandle from '@/components/ChatLayout/ResizeHandle';
+import RightPanel from '@/components/ChatLayout/RightPanel';
+import SidebarExpandButton from '@/components/ChatLayout/SidebarExpandButton';
+import TopRightExpandButton from '@/components/ChatLayout/TopRightExpandButton';
+import ChatProvider from '@/hooks/provider';
+import * as layout from '@/state/layout';
 
-const useStyle = createStyles(
-  ({ token, css }, { codeViewerVisible }: { codeViewerVisible?: boolean }) => {
-    return {
-      chat: css`
-        height: 100%;
-        /* width: 100%; */
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        padding-block: ${token.paddingLG}px;
-        gap: 16px;
-        flex: 1;
-      `,
-      chatList: css`
-        flex: 1;
-        overflow: auto;
+const useStyles = createStyles(({ css }) => {
+  return {
+    container: css`
+      display: flex;
+      height: 100vh;
+      width: 100%;
+      overflow: hidden;
+    `,
 
-        .ant-bubble-footer {
-          width: 100%;
+    leftSection: css`
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      min-width: 300px;
           margin-top: 8px;
         }
 
@@ -46,102 +35,68 @@ const useStyle = createStyles(
           display: flex;
           align-items: center;
           justify-content: center;
-        }
-      `,
-      codeViewerContainer: css`
-        height: 100vh;
-        width: 0;
-        background-color: #fff;
-        padding: 8px 0 8px 8px;
-        overflow: hidden;
-        transition: width 0.3s ease-in-out;
-        ${codeViewerVisible
-          ? css`
-              width: 40vw;
-            `
-          : ''}
-      `,
-    };
-  },
-);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    `,
+
+    rightSection: css`
+      flex-shrink: 0;
+      transition:
+        width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      min-width: 0;
+    `,
+  };
+});
 
 const Chat: React.FC = () => {
-  const { messages, status } = useChatState();
-  const { visible: codeViewerVisible } = useSnapshot(codeViewer.state);
-  const { styles } = useStyle({ codeViewerVisible });
+  const { styles } = useStyles();
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const rightPanelRef = useRef<HTMLDivElement | null>(null);
+  const { rightPanelExpanded, rightPanelWidthPercent } = useSnapshot(
+    layout.state,
+  );
 
-  const items = messages?.map((message, index) => {
-    const isLastMessage = index === messages.length - 1;
-    return {
-      ...message,
-      content: message,
-      typing: status === 'submitted' ? { step: 20, interval: 150 } : false,
-      loading: status === 'submitted' && isLastMessage,
-      footer:
-        isLastMessage && message.role === 'assistant'
-          ? () => (
-              <AssistantFooter message={message as UIMessage} status={status} />
-            )
-          : () => <UserMessageFooter message={message as UIUserMessage} />,
-    };
-  });
+  // Auto collapse Sidebar when right panel is expanded
+  useEffect(() => {
+    if (rightPanelExpanded) {
+      layout.actions.setSidebarCollapsed(true);
+    }
+  }, [rightPanelExpanded]);
 
-  const roles: GetProp<typeof Bubble.List, 'roles'> = {
-    user: {
-      placement: 'end',
-      avatar: {
-        icon: <UserOutlined />,
-        style: { background: '#87d068' },
-      },
-      messageRender(message) {
-        return <UserMessage message={message} />;
-      },
-      footer(message) {
-        return <UserMessageFooter message={message} />;
-      },
-    },
-    assistant: {
-      placement: 'start',
-      variant: 'borderless',
-      messageRender(message) {
-        return <AssistantMessage message={message} />;
-      },
-      loadingRender() {
-        return (
-          <div className="flex items-center space-x-3">
-            <Spin size="small" />
-            <span className="text-sm text-gray-500 pl-2">Thinking...</span>
-          </div>
-        );
-      },
-    },
-  };
+  // Only calculate right panel width, left side automatically fills remaining space
+  const rightWidth = rightPanelExpanded ? `${rightPanelWidthPercent}%` : '0%';
 
   return (
-    <>
-      <div className={styles.chat}>
-        <MessageProcessor messages={messages} />
+    <div ref={containerRef} className={styles.container}>
+      <SidebarExpandButton />
+      <div className={styles.leftSection}>
+        <main className="flex-1 flex flex-col relative">
+          <TopRightExpandButton />
+          <ChatContent />
+        </main>
+      </div>
 
-        <div className={styles.chatList}>
-          {items?.length ? (
-            <Bubble.List
-              items={items}
-              style={{
-                height: '100%',
-                paddingInline: 'calc(calc(100% - 700px) /2)',
-              }}
-              roles={roles}
-            />
-          ) : (
-            <Welcome />
-          )}
-        </div>
-        <ChatSender />
+      {rightPanelExpanded && (
+        <ResizeHandle
+          containerRef={containerRef}
+          rightPanelRef={rightPanelRef}
+        />
+      )}
+
+      <div
+        ref={rightPanelRef}
+        className={styles.rightSection}
+        style={{
+          width: rightWidth,
+          opacity: rightPanelExpanded ? 1 : 0,
+          visibility: rightPanelExpanded ? 'visible' : 'hidden',
+        }}
+      >
+        <RightPanel />
       </div>
-      <div className={styles.codeViewerContainer}>
-        <CodeViewer />
-      </div>
-    </>
+    </div>
   );
 };
 

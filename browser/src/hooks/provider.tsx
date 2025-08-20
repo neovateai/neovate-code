@@ -16,7 +16,6 @@ type ChatState = ReturnType<typeof useChat> & {
   onQuery: (opts: {
     prompt: string;
     readonly attachedContexts: ContextItem[];
-    readonly originalContent: string;
   }) => void;
   messagesWithPlaceholder: UIMessage[];
   originalMessages: UIMessage[];
@@ -87,14 +86,12 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const onQuery = async (opts: {
     prompt: string;
     readonly attachedContexts: ContextItem[];
-    readonly originalContent: string;
   }) => {
-    const { prompt, attachedContexts, originalContent } = opts;
+    const { prompt, attachedContexts } = opts;
     chatState.append({
       role: 'user',
-      content: originalContent,
+      content: prompt,
       attachedContexts,
-      contextContent: prompt,
     } as unknown as UIMessage);
   };
 

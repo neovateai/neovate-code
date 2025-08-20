@@ -17,6 +17,9 @@ const useStyle = createStyles(({ token, css }) => {
       background: ${token.colorBgContainer};
       font-family: AlibabaPuHuiTi, ${token.fontFamily}, sans-serif;
     `,
+    siderWrapper: css`
+      flex-shrink: 0;
+    `,
   };
 });
 
@@ -30,7 +33,9 @@ const Layout: React.FC = () => {
   return (
     <I18nProvider>
       <div className={styles.layout}>
-        <Sider />
+        <div className={styles.siderWrapper}>
+          <Sider />
+        </div>
         <Outlet />
         <TanStackRouterDevtools position="bottom-right" />
       </div>
