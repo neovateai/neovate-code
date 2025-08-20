@@ -1,6 +1,7 @@
 import React from 'react';
 import { Context } from '../../context';
-import { LocalJSXCommand } from '../types';
+import type { LocalJSXCommand } from '../types';
+
 export function createModelCommand(opts: {
   context: Context;
 }): LocalJSXCommand {

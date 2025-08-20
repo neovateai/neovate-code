@@ -1,3 +1,14 @@
 {
-  "plugins": ["./.takumi/plugin.js"]
+  "plugins": ["./.takumi/plugin.js"],
+  "mcpServers": {
+    "Framelink Figma MCP": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "figma-developer-mcp",
+        "--figma-api-key=figd_cLLHpOWkwVi8uI3Gw3rT6oQRHbbNyoYmmDCz1UiE",
+        "--stdio"
+      ]
+    }
+  }
 }
