@@ -1,5 +1,6 @@
 import { type FunctionTool, type Tool } from '@openai/agents';
 import { isClaude } from './utils/model';
+import { validateToolParams } from './utils/tools';
 
 export type ApprovalContext = {
   toolName: string;
@@ -50,6 +51,13 @@ export class Tools {
       };
     }
     if (tool.type === 'function') {
+      const result = validateToolParams(tool.originalParameters, args);
+      if (!result.success) {
+        return {
+          success: false,
+          error: `Invalid tool parameters: ${result.error}`,
+        };
+      }
       return await tool.invoke(runContext, args);
     } else {
       return {

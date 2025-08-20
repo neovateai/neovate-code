@@ -1,6 +1,6 @@
 {
   "name": "takumi",
-  "version": "0.7.1",
+  "version": "0.8.2",
   "type": "module",
   "files": [
     "dist",
@@ -66,9 +66,9 @@
     "@fastify/type-provider-typebox": "5.2.0",
     "@microsoft/api-extractor": "^7.52.10",
     "@modelcontextprotocol/inspector": "^0.16.3",
-    "@openai/agents": "^0.0.15",
-    "@openai/agents-core": "^0.0.15",
-    "@openai/agents-extensions": "^0.0.15",
+    "@openai/agents": "^0.0.16",
+    "@openai/agents-core": "^0.0.16",
+    "@openai/agents-extensions": "^0.0.16",
     "@openrouter/ai-sdk-provider": "^0.7.5",
     "@sinclair/typebox": "^0.34.38",
     "@stagewise/agent-interface": "^0.2.3",

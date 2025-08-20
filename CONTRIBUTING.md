@@ -22,6 +22,12 @@ It's recommended to use [Volta](https://volta.sh/) to manage the node and pnpm v
 export VOLTA_FEATURE_PNPM=1
 ```
 
+Make sure the bun's version is 1.2.7 before run build.
+
+```bash
+$ curl -fsSL https://bun.sh/install | bash -s "bun-v1.2.7"
+```
+
 Install and build the CLI.
 
 ```bash
