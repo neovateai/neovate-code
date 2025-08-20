@@ -32,7 +32,7 @@ export async function imageUrlToBase64(url: string) {
   });
 }
 
-// 根据图片 src 猜测 mime 类型
+// Guess mime type based on image src
 export function guessImageMime(src: string): string {
   if (src.startsWith('data:')) {
     const match = src.match(/^data:(image\/[a-zA-Z0-9.+-]+)[;,]/);

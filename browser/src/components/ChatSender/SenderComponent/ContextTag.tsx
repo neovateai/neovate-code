@@ -8,17 +8,17 @@ import { ContextType } from '@/constants/context';
 import type { ContextStoreValue } from '@/types/context';
 
 interface Props {
-  /** 是否可关闭 */
+  /** Whether it can be closed */
   closeable?: boolean;
-  /** 关闭回调 */
+  /** Close callback */
   onClose?: (val: string) => void;
-  /** 点击回调 */
+  /** Click callback */
   onClick?: (val: string) => void;
-  /** 标签内容 */
+  /** Tag content */
   label: string;
-  /** 标签图片 */
+  /** Tag image */
   image?: string;
-  /** 标签值，必须唯一 */
+  /** Tag value, must be unique */
   value: string;
 
   context?: ContextStoreValue;

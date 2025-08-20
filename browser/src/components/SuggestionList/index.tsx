@@ -27,7 +27,7 @@ interface Props {
     itemValue: string,
     contextItem?: ContextItem,
   ) => void;
-  /** 返回值会覆盖默认的二级列表 */
+  /** Return value will override the default second-level list */
   onSearch?: (firstKey: string, text: string) => SuggestionItem[] | void;
   loading?: boolean;
 }

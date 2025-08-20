@@ -103,28 +103,28 @@ export function useChatPaste() {
   const handlePaste = (event: React.ClipboardEvent<HTMLElement>) => {
     if (!event) return false;
 
-    // 阻止默认粘贴行为
+    // Prevent default paste behavior
     event.preventDefault();
 
     const clipboardItems = event.clipboardData?.items;
     if (!clipboardItems || clipboardItems.length === 0) return false;
 
-    // 只获取第一个项目
+    // Get only the first item
     const item = clipboardItems[0];
 
     switch (item.type) {
       case 'text/plain':
-        // 处理纯文本
+        // Handle plain text
         return false;
       case 'text/html':
-        // 处理HTML
+        // Handle HTML
         return handleHtml(item);
       case 'image/png':
       case 'image/jpeg':
       case 'image/gif':
       case 'image/webp':
       case 'image/svg+xml':
-        // 处理图片
+        // Handle images
         return handleImage(item);
       default:
         const errorMsg = t('context.unsupportedType', { type: item.type });

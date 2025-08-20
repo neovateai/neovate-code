@@ -80,10 +80,10 @@ const ChatSender: React.FC = () => {
 
   /*
   TODO
-  1. 上下文挂载
-  2. 粘贴
-  3. 回车
-  4. 面板跟随光标
+  1. Context mounting
+  2. Paste
+  3. Enter key
+  4. Panel follows cursor
   */
 
   return (

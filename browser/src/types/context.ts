@@ -22,94 +22,94 @@ export interface ContextFileType {
 }
 
 /**
- * 上下文实例配置
+ * Context instance configuration
  */
 export interface IContextInstanceConfig<S extends z.Schema> {
   /**
-   * 上下文项目标签，会展示在二级面板上
+   * Context item label, displayed on the second-level panel
    *
-   * 动态场景：根据文件类型展示不同标签
+   * Dynamic scenario: Display different labels based on file type
    */
   label: React.ReactNode;
 
   /**
-   * 上下文项目值，二级面板和已选择的上下文列表需要
+   * Context item value, required for second-level panel and selected context list
    *
-   * 动态场景：文件路径作为列表key
+   * Dynamic scenario: File path as list key
    */
   value: string;
 
   /**
-   * 上下文项目图标，会展示在二级面板上
+   * Context item icon, displayed on the second-level panel
    *
-   * 动态场景：根据文件类型展示不同图标
+   * Dynamic scenario: Display different icons based on file type
    *
-   * 不填写则使用IContextConfig.icon
+   * If not provided, use IContextConfig.icon
    */
   subIcon?: React.ReactNode;
 
   /**
-   * 上下文项目额外信息，会展示在二级面板上
+   * Context item extra information, displayed on the second-level panel
    *
-   * 不填写则不展示
+   * If not provided, will not be displayed
    */
   extra?: React.ReactNode;
 
   /**
-   * 上下文项目在二级面板上禁用
+   * Disable context item on the second-level panel
    *
-   * 动态场景：限制已选择的上下文不可重复选择
+   * Dynamic scenario: Prevent selected contexts from being selected again
    */
   disabled?: boolean;
 
   /**
-   * 已选中的上下文标签点击事件
+   * Click event for selected context tags
    *
-   * 动态场景：根据文件路径触发不同的内容展示
+   * Dynamic scenario: Trigger different content display based on file path
    */
   onSelectedItemClick?: (context: z.infer<S>) => void;
 }
 
 /**
- * 上下文类型配置
+ * Context type configuration
  */
 export interface IContextConfig<S extends z.Schema> {
   /**
-   * 上下文类型唯一Key
+   * Unique key for context type
    *
-   * 会扩展到AppData的ContextType枚举上，用于判断上下文类型
+   * Will be extended to the ContextType enum in AppData, used to determine context type
    *
    * @example '__file'
    */
   type: string;
 
   /**
-   * 上下文类型名称，会展示在一级面板上，以及作为搜索框的placeholder
+   * Context type name, displayed on the first-level panel and used as search box placeholder
    *
-   * 需要支持i18n
+   * Needs to support i18n
    *
-   * @example '文件'
+   * @example 'Files'
    */
   name: string | (() => string);
 
   /**
-   * 上下文类型图标，会展示在一级面板上
+   * Context type icon, displayed on the first-level panel
    */
   icon: React.ReactNode;
 
   /**
-   * 上下文项目schema
+   * Context item schema
    *
-   * 用于表示上下文实例对象storeValue的结构
+   * Used to represent the structure of context instance object storeValue
    */
   itemSchema: S;
 
   /**
-   * 上下文实例配置
+   * Context instance configuration
    *
-   * 影响二级面板表现和选中的Tag表现
+   * Affects second-level panel appearance and selected Tag appearance
    *
-   * 支持动态配置
+   * Supports dynamic configuration
    */
   instanceConfig:
     | IContextInstanceConfig<S>
@@ -119,23 +119,23 @@ export interface IContextConfig<S extends z.Schema> {
       ) => IContextInstanceConfig<S>);
 
   /**
-   * 拉取二级列表的方式，支持搜索
+   * Method to fetch second-level list, supports search
    *
-   * 会根据panelConfig映射为列表需要的配置
+   * Will be mapped to list required configuration according to panelConfig
    *
-   * 调用时已经过debounce处理
+   * Called after debounce processing
    */
   fetchList: (keyword?: string) => Promise<z.infer<S>[]>;
 }
 
 /**
- * 从上下文配置数组中提取出所有的type值组成联合类型
+ * Extract all type values from context configuration array to form union type
  */
 type ExtractContextTypes<T extends readonly IContextConfig<any>[]> =
   T[number]['type'];
 
 /**
- * 根据上下文配置动态生成ContextType对象
+ * Dynamically generate ContextType object based on context configuration
  */
 export type DynamicContextType<T extends readonly IContextConfig<any>[]> = {
   readonly [K in ExtractContextTypes<T> as Uppercase<string & K>]: K;
@@ -145,19 +145,19 @@ export interface IGlobalContextConfig<
   T extends readonly IContextConfig<z.AnyZodObject>[],
 > {
   /**
-   * 全局上下文配置
+   * Global context configuration
    */
   contextConfigs: T;
 
   /**
-   * 全局上下文类型
+   * Global context type
    */
   ContextType: DynamicContextType<T>;
 
   /**
-   * 拉取全局上下文列表的方式，支持搜索
+   * Method to fetch global context list, supports search
    *
-   * 调用时已经过debounce处理
+   * Called after debounce processing
    */
   fetchGlobalList: (keyword?: string) => Promise<
     {
