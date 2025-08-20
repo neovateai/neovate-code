@@ -241,7 +241,7 @@ async function createContext(opts: CreateContextOpts): Promise<Context> {
 
   const resolvedConfig = await apply({
     hook: 'config',
-    args: [],
+    args: [{ config: initialConfig }],
     memo: initialConfig,
     type: PluginHookType.SeriesMerge,
   });

@@ -1,32 +1,35 @@
-import {
-  DeleteOutlined,
-  EditOutlined,
-  PlusOutlined,
-  QuestionCircleOutlined,
-  SettingOutlined,
-} from '@ant-design/icons';
-import { Conversations } from '@ant-design/x';
+import { QuestionCircleOutlined, SettingOutlined } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
 import { Avatar, Button } from 'antd';
 import { createStyles } from 'antd-style';
-import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import logoPng from './imgs/kmi-ai.png';
-
-interface SiderMainProps {
-  popoverButton?: ReactNode;
-}
+import { useSnapshot } from 'valtio';
+import * as layout from '@/state/layout';
+import LogoArea from './LogoArea';
+import siderBg from './imgs/sider-bg.png';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
     sider: css`
-      background: ${token.colorBgLayout}80;
-      width: 280px;
+      position: relative;
       height: 100%;
-      display: flex;
-      flex-direction: column;
-      padding: 0 12px;
+      padding: 0 14px;
       box-sizing: border-box;
+      border-right: 1px solid #ececed;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: url(${siderBg}) no-repeat bottom / contain;
+      overflow: hidden;
+    `,
+    siderExpanded: css`
+      width: 280px;
+      opacity: 1;
+      visibility: visible;
+    `,
+    siderCollapsed: css`
+      width: 0;
+      padding: 0;
+      opacity: 0;
+      visibility: hidden;
+      border-right: none;
     `,
     logo: css`
       display: flex;
@@ -43,102 +46,75 @@ const useStyle = createStyles(({ token, css }) => {
         font-size: 16px;
       }
     `,
-    addBtn: css`
-      background: #1677ff0f;
-      border: 1px solid #1677ff34;
-      height: 40px;
-    `,
-    conversations: css`
-      flex: 1;
-      overflow-y: auto;
-      margin-top: 12px;
-      padding: 0;
-
-      .ant-conversations-list {
-        padding-inline-start: 0;
-      }
-    `,
     siderFooter: css`
-      border-top: 1px solid ${token.colorBorderSecondary};
-      height: 40px;
+      position: absolute;
+      bottom: 16px;
+      left: 0;
+      width: 100%;
+      height: 22px;
+      padding: 0 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      opacity: 1;
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    `,
+    siderFooterHidden: css`
+      opacity: 0;
+      pointer-events: none;
+    `,
+    siderFooterLeft: css`
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      span {
+        color: rgba(0, 0, 0, 0.65);
+        font-family: 'PingFang HK';
+        font-size: 12px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 20px;
+      }
     `,
     siderFooterRight: css`
       display: flex;
       align-items: center;
       gap: 8px;
+      .ant-btn {
+        width: auto;
+        height: auto;
+      }
+      .ant-btn-icon {
+        line-height: 1;
+      }
     `,
-    popoverButtonWrapper: css``,
+    siderExpanIcon: css`
+      transfrom: rotateY(180deg);
+    `,
   };
 });
 
-const SiderMain = (props: SiderMainProps) => {
-  const { popoverButton } = props;
+const SiderMain = () => {
   const { styles } = useStyle();
-  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { sidebarCollapsed } = useSnapshot(layout.state);
 
   return (
-    <div className={styles.sider}>
-      {popoverButton}
-      {/* 🌟 Logo */}
-      <div className={styles.logo}>
-        <img
-          src={logoPng}
-          draggable={false}
-          alt="logo"
-          width={24}
-          height={24}
-        />
-        <span>Takumi</span>
-      </div>
-
-      {/* 🌟 添加会话 */}
-      <Button
-        onClick={() => {
-          console.log('add conversation');
-        }}
-        type="link"
-        className={styles.addBtn}
-        icon={<PlusOutlined />}
+    <div
+      className={`${styles.sider} ${
+        sidebarCollapsed ? styles.siderCollapsed : styles.siderExpanded
+      }`}
+    >
+      <LogoArea />
+      <div
+        className={`${styles.siderFooter} ${
+          sidebarCollapsed ? styles.siderFooterHidden : ''
+        }`}
       >
-        {t('sidebar.newConversation')}
-      </Button>
-
-      {/* 🌟 会话管理 */}
-      <Conversations
-        items={[]}
-        className={styles.conversations}
-        activeKey={''}
-        onActiveChange={async (val) => {
-          console.log('onActiveChange', val);
-        }}
-        groupable
-        styles={{ item: { padding: '0 8px' } }}
-        menu={(conversation) => ({
-          items: [
-            {
-              label: t('menu.rename'),
-              key: 'rename',
-              icon: <EditOutlined />,
-            },
-            {
-              label: t('menu.delete'),
-              key: 'delete',
-              icon: <DeleteOutlined />,
-              danger: true,
-              onClick: () => {
-                console.log('delete conversation', conversation);
-              },
-            },
-          ],
-        })}
-      />
-
-      <div className={styles.siderFooter}>
-        <Avatar size={24} />
+        <div className={styles.siderFooterLeft}>
+          <Avatar size={22} />
+          <span>name</span>
+        </div>
         <div className={styles.siderFooterRight}>
           <Button
             type="text"
