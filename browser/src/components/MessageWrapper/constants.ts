@@ -9,50 +9,55 @@ import { MessageWrapperStatus } from './types';
 
 export interface StatusConfig {
   icon: React.ReactNode;
-  text: string;
+  text:
+    | 'messageWrapper.status.thinking'
+    | 'messageWrapper.status.completed'
+    | 'messageWrapper.status.cancelled'
+    | 'messageWrapper.status.error';
   className: string;
 }
 
-// 状态配置 - 基于Figma设计稿
+// Status configuration - Based on Figma design
+// Note: Text values will be replaced by i18n keys in component usage
 export const STATUS_CONFIG: Record<MessageWrapperStatus, StatusConfig> = {
   [MessageWrapperStatus.Thinking]: {
     icon: React.createElement(Loading3QuartersOutlined, {
       className: 'w-3.5 h-3.5 animate-spin',
       style: { color: '#7357FF' },
     }),
-    text: '思考中...',
+    text: 'messageWrapper.status.thinking',
     className: 'text-[#666F8D]',
   },
   [MessageWrapperStatus.Completed]: {
     icon: React.createElement(CheckCircleOutlined, {
       className: 'w-3.5 h-3.5',
     }),
-    text: '思考完成',
+    text: 'messageWrapper.status.completed',
     className: 'text-[#666F8D]',
   },
   [MessageWrapperStatus.Cancelled]: {
     icon: React.createElement(CloseCircleOutlined, {
       className: 'w-3.5 h-3.5',
     }),
-    text: '已取消',
+    text: 'messageWrapper.status.cancelled',
     className: 'text-[#666F8D]',
   },
   [MessageWrapperStatus.Error]: {
     icon: React.createElement(ExclamationCircleOutlined, {
       className: 'w-3.5 h-3.5',
     }),
-    text: '错误',
+    text: 'messageWrapper.status.error',
     className: 'text-[#666F8D]',
   },
 };
 
-// 图标样式
+// Icon styles
 export const ICON_STYLES = {
   base: 'flex items-center justify-center',
   size: 'w-5 h-5',
 } as const;
 
-// 默认样式常量 - 基于Figma设计稿
+// Default style constants - Based on Figma design
 export const DEFAULT_STYLES = {
   container: 'bg-white rounded-lg border border-[#EBEBEB]',
   header:

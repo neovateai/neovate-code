@@ -1,13 +1,13 @@
 export interface MessageWrapperProps {
-  // === 基础配置 ===
+  // === Basic Configuration ===
   children: React.ReactNode;
   className?: string;
 
-  // === 顶部内容配置 ===
+  // === Header Content Configuration ===
   title?: React.ReactNode;
   icon?: React.ReactNode;
 
-  // === 状态配置 ===
+  // === Status Configuration ===
   status?: MessageWrapperStatus;
   statusConfig?: {
     icon?: React.ReactNode;
@@ -15,7 +15,7 @@ export interface MessageWrapperProps {
     className?: string;
   };
 
-  // === 展开/收起配置 ===
+  // === Expand/Collapse Configuration ===
   defaultExpanded?: boolean;
   expanded?: boolean;
   onExpandChange?: (expanded: boolean) => void;
@@ -24,7 +24,7 @@ export interface MessageWrapperProps {
   maxHeight?: number | string;
   showGradientMask?: boolean;
 
-  // === 右上角操作按钮 ===
+  // === Top Right Action Buttons ===
   actions?: ActionButtonProps[];
   onActionClick?: (actionKey: string) => void;
 }

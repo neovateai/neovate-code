@@ -1,9 +1,10 @@
 import { DownOutlined } from '@ant-design/icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DEFAULT_STYLES, ICON_STYLES, STATUS_CONFIG } from './constants';
 import type { MessageWrapperProps } from './types';
 
-// 隐藏滚动条的样式
+// Hide scrollbar styles
 const scrollableStyle = {
   scrollbarWidth: 'none' as const,
   msOverflowStyle: 'none' as const,
@@ -13,12 +14,15 @@ const StatusIndicator: React.FC<{
   status: MessageWrapperProps['status'];
   customConfig?: MessageWrapperProps['statusConfig'];
 }> = ({ status, customConfig }) => {
+  const { t } = useTranslation();
+
   if (!status) return null;
 
   const defaultConfig = STATUS_CONFIG[status];
+
   const finalConfig = {
     icon: customConfig?.icon || defaultConfig.icon,
-    text: customConfig?.text || defaultConfig.text,
+    text: customConfig?.text || t(defaultConfig.text),
     className: customConfig?.className || defaultConfig.className,
   };
 
@@ -52,26 +56,26 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  // 状态管理
+  // State management
   const [isExpanded, setIsExpanded] = useState(expanded ?? defaultExpanded);
 
-  // 同步受控状态
+  // Sync controlled state
   useEffect(() => {
     if (expanded !== undefined) {
       setIsExpanded(expanded);
     }
   }, [expanded]);
 
-  // 检查滚动状态
+  // Check scroll state
   const checkScrollState = useCallback(() => {
     if (contentRef.current && isExpanded) {
       const { scrollHeight, clientHeight, scrollTop } = contentRef.current;
       const hasScrollbar = scrollHeight > clientHeight;
 
       if (hasScrollbar) {
-        // 检查是否可以向上滚动（不在顶部）
+        // Check if can scroll up (not at top)
         const canScrollUp = scrollTop > 1;
-        // 检查是否可以向下滚动（不在底部）
+        // Check if can scroll down (not at bottom)
         const canScrollDown =
           Math.abs(scrollHeight - clientHeight - scrollTop) > 1;
 
@@ -87,36 +91,36 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
     }
   }, [isExpanded]);
 
-  // 监听内容变化和展开状态变化
+  // Listen for content changes and expand state changes
   useEffect(() => {
     checkScrollState();
-    // 延迟检查，确保DOM已更新
+    // Delayed check to ensure DOM is updated
     const timer = setTimeout(checkScrollState, 100);
     return () => clearTimeout(timer);
   }, [checkScrollState, children, isExpanded]);
 
-  // 处理展开状态变化
+  // Handle expand state change
   const handleToggleExpand = useCallback(() => {
-    // 如果不可展开，直接返回
+    // If not expandable, return directly
     if (!expandable) return;
 
     const newExpanded = !isExpanded;
 
-    // 如果是受控组件，只触发回调
+    // If controlled component, only trigger callback
     if (expanded !== undefined) {
       onExpandChange?.(newExpanded);
     } else {
-      // 非受控组件，更新内部状态
+      // Uncontrolled component, update internal state
       setIsExpanded(newExpanded);
       onExpandChange?.(newExpanded);
     }
   }, [isExpanded, expanded, onExpandChange, expandable]);
 
-  // 处理操作按钮点击
+  // Handle action button click
   const handleActionClick = useCallback(
     (actionKey: string, actionCallback?: () => void) => {
       return (e: React.MouseEvent) => {
-        e.stopPropagation(); // 阻止冒泡到header的点击事件
+        e.stopPropagation(); // Prevent bubbling to header click event
         actionCallback?.();
         onActionClick?.(actionKey);
       };
@@ -124,7 +128,7 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
     [onActionClick],
   );
 
-  // 渲染图标
+  // Render icon
   const renderIcon = () => {
     if (!icon) return null;
 
@@ -143,7 +147,7 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
         `}
       </style>
       <div className={`${DEFAULT_STYLES.container} ${className}`}>
-        {/* Header区域 */}
+        {/* Header area */}
         <div
           className={`${DEFAULT_STYLES.header} ${expandable ? 'cursor-pointer' : 'cursor-default'}`}
           onClick={expandable ? handleToggleExpand : undefined}
@@ -161,18 +165,18 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
           }
         >
           <div className={DEFAULT_STYLES.headerLeft}>
-            {/* 图标 */}
+            {/* Icon */}
             {renderIcon()}
 
-            {/* 标题 */}
+            {/* Title */}
             {title && <span className={DEFAULT_STYLES.title}>{title}</span>}
 
-            {/* 状态指示器 */}
+            {/* Status indicator */}
             <StatusIndicator status={status} customConfig={statusConfig} />
           </div>
 
           <div className={DEFAULT_STYLES.headerRight}>
-            {/* 右上角操作按钮 */}
+            {/* Top right action buttons */}
             {actions && actions.length > 0 && (
               <div className="flex items-center gap-1 mr-2">
                 {actions.map((action) => (
@@ -188,7 +192,7 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
               </div>
             )}
 
-            {/* 展开箭头 */}
+            {/* Expand arrow */}
             {showExpandIcon && expandable && (
               <DownOutlined
                 className={`${DEFAULT_STYLES.arrow} ${
@@ -199,7 +203,7 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
           </div>
         </div>
 
-        {/* Content区域 */}
+        {/* Content area */}
         {expandable
           ? isExpanded && (
               <div className={DEFAULT_STYLES.content}>
@@ -218,7 +222,7 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
                   >
                     {children}
                   </div>
-                  {/* 顶部渐变遮罩 - 当启用渐变且可以向上滚动时显示 */}
+                  {/* Top gradient mask - show when gradient is enabled and can scroll up */}
                   {showGradientMask && canScrollUp && (
                     <div
                       className="absolute top-0 left-0 right-0 h-12 pointer-events-none z-10"
@@ -229,7 +233,7 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
                     />
                   )}
 
-                  {/* 底部渐变遮罩 - 当启用渐变且可以向下滚动时显示 */}
+                  {/* Bottom gradient mask - show when gradient is enabled and can scroll down */}
                   {showGradientMask && canScrollDown && (
                     <div
                       className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none z-10"
@@ -242,7 +246,7 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
                 </div>
               </div>
             )
-          : // 不可展开时，根据defaultExpanded决定是否显示内容
+          : // When not expandable, show content based on defaultExpanded
             isExpanded && (
               <div className="relative">
                 <div
@@ -259,7 +263,7 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
                 >
                   {children}
                 </div>
-                {/* 顶部渐变遮罩 - 当启用渐变且可以向上滚动时显示 */}
+                {/* Top gradient mask - show when gradient is enabled and can scroll up */}
                 {showGradientMask && canScrollUp && (
                   <div
                     className="absolute top-0 left-0 right-0 h-12 pointer-events-none z-10"
@@ -270,7 +274,7 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
                   />
                 )}
 
-                {/* 底部渐变遮罩 - 当启用渐变且可以向下滚动时显示 */}
+                {/* Bottom gradient mask - show when gradient is enabled and can scroll down */}
                 {showGradientMask && canScrollDown && (
                   <div
                     className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none z-10"

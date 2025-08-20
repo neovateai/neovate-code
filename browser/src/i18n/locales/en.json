@@ -315,5 +315,13 @@
     "loading": "Loading...",
     "error": "Error",
     "preparingDiff": "Preparing diff..."
+  },
+  "messageWrapper": {
+    "status": {
+      "thinking": "Thinking...",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "error": "Error"
+    }
   }
 }
