@@ -249,8 +249,6 @@ const SuggestionList = (props: Props) => {
     }
   }, [offset]);
 
-  console.log(offsetStyles);
-
   return (
     <Popover
       className={className}

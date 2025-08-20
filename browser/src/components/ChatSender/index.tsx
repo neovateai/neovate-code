@@ -2,7 +2,8 @@ import { Sender } from '@ant-design/x';
 import { Spin } from 'antd';
 import { createStyles } from 'antd-style';
 import type { Bounds } from 'quill';
-import { useState } from 'react';
+import Quill from 'quill';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { ContextType } from '@/constants/context';
@@ -54,7 +55,9 @@ const ChatSender: React.FC = () => {
 
   const [openPopup, setOpenPopup] = useState(false);
   const [inputText, setInputText] = useState<string>('');
+  const [atIndex, setAtIndex] = useState<number>();
   const [bounds, setBounds] = useState<Bounds>();
+  const quill = useRef<Quill>(null);
 
   const { isPasting, handlePaste, contextHolder } = useChatPaste();
 
@@ -85,17 +88,20 @@ const ChatSender: React.FC = () => {
   TODO
   1. Context mounting
   2. Paste
-  3. Enter key
-  4. Panel follows cursor
+  3. context menu keyboard navigation
   */
 
   return (
     <Spin spinning={isPasting}>
       <QuillContext
         value={{
-          onInputAt: (inputing, _, bounds) => {
+          onInputAt: (inputing, index, bounds) => {
             setOpenPopup(inputing);
             setBounds(bounds);
+            setAtIndex(index);
+          },
+          onQuillLoad: (quillInstance) => {
+            quill.current = quillInstance;
           },
         }}
       >
@@ -112,6 +118,18 @@ const ChatSender: React.FC = () => {
             setOpenPopup(false);
             if (contextItem) {
               context.actions.addContext(contextItem);
+              console.log(atIndex, 'atIndex');
+              if (atIndex !== undefined) {
+                console.log('will delete', quill.current?.getText(atIndex, 1));
+                console.log(quill.current?.getText(atIndex - 1, 3));
+                const d = quill.current?.deleteText(atIndex, 1);
+                console.log(d);
+              }
+              quill.current?.insertText(atIndex ?? 0, ' ');
+              quill.current?.insertEmbed(atIndex ?? 0, 'context', {
+                text: contextItem.displayText,
+                value: contextItem.value,
+              });
             }
           }}
           offset={{ top: (bounds?.top ?? -50) + 50, left: bounds?.left ?? 0 }}

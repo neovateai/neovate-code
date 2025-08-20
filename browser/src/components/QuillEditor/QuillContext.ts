@@ -9,6 +9,8 @@ interface QuillContextType {
   onQuillLoad?: (quill: Quill) => void;
   /** call this function when user delete context */
   onDeleteContext?: (contextValue: string) => void;
+  /** call this function when keyboard key down in editor */
+  onKeyDown?: (code: number) => void;
 }
 
 export const QuillContext = React.createContext<QuillContextType>({});

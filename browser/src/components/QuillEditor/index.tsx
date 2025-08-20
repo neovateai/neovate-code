@@ -30,7 +30,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill>(null);
 
-  const { onInputAt, onQuillLoad } = useContext(QuillContext);
+  const { onInputAt, onQuillLoad, onKeyDown } = useContext(QuillContext);
 
   useImperativeHandle(ref, () => {
     return {
@@ -50,6 +50,17 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
         placeholder: placeholder,
         modules: {
           toolbar: false,
+          keyboard: {
+            bindings: {
+              enter: {
+                key: 'Enter',
+                handler: () => {
+                  onKeyDown?.(13);
+                  return false;
+                },
+              },
+            },
+          },
         },
         readOnly: readonly,
       });
@@ -98,11 +109,6 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
   return (
     <div
       ref={editorRef}
-      // onClick={() =>
-      //   quillRef.current?.insertEmbed(0, 'context', {
-      //     text: '@test',
-      //   })
-      // }
       className="w-full"
       onMouseDown={(e) => e.stopPropagation()}
       onMouseUp={(e) => e.stopPropagation()}
