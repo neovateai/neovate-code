@@ -1,14 +1,9 @@
 import { DownOutlined } from '@ant-design/icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DEFAULT_STYLES, ICON_STYLES, STATUS_CONFIG } from './constants';
+import { STATUS_CONFIG } from './constants';
+import styles from './index.module.css';
 import type { MessageWrapperProps } from './types';
-
-// Hide scrollbar styles
-const scrollableStyle = {
-  scrollbarWidth: 'none' as const,
-  msOverflowStyle: 'none' as const,
-};
 
 const StatusIndicator: React.FC<{
   status: MessageWrapperProps['status'];
@@ -27,11 +22,9 @@ const StatusIndicator: React.FC<{
   };
 
   return (
-    <div
-      className={`${DEFAULT_STYLES.statusContainer} ${finalConfig.className}`}
-    >
-      <div className={DEFAULT_STYLES.statusIcon}>{finalConfig.icon}</div>
-      <span className={DEFAULT_STYLES.statusText}>{finalConfig.text}</span>
+    <div className={`${styles.statusContainer} ${finalConfig.className}`}>
+      <div className={styles.statusIcon}>{finalConfig.icon}</div>
+      <span className={styles.statusText}>{finalConfig.text}</span>
     </div>
   );
 };
@@ -132,162 +125,127 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
   const renderIcon = () => {
     if (!icon) return null;
 
-    return (
-      <div className={`${ICON_STYLES.base} ${DEFAULT_STYLES.icon}`}>{icon}</div>
-    );
+    return <div className={styles.icon}>{icon}</div>;
   };
 
   return (
-    <>
-      <style>
-        {`
-          .message-wrapper-scrollable::-webkit-scrollbar {
-            display: none;
-          }
-        `}
-      </style>
-      <div className={`${DEFAULT_STYLES.container} ${className}`}>
-        {/* Header area */}
-        <div
-          className={`${DEFAULT_STYLES.header} ${expandable ? 'cursor-pointer' : 'cursor-default'}`}
-          onClick={expandable ? handleToggleExpand : undefined}
-          role={expandable ? 'button' : undefined}
-          tabIndex={expandable ? 0 : undefined}
-          onKeyDown={
-            expandable
-              ? (e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleToggleExpand();
-                  }
+    <div className={`${styles.container} ${className}`}>
+      {/* Header area */}
+      <div
+        className={`${styles.header} ${
+          expandable ? styles.headerExpandable : styles.headerNotExpandable
+        }`}
+        onClick={expandable ? handleToggleExpand : undefined}
+        role={expandable ? 'button' : undefined}
+        tabIndex={expandable ? 0 : undefined}
+        onKeyDown={
+          expandable
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleToggleExpand();
                 }
-              : undefined
-          }
-        >
-          <div className={DEFAULT_STYLES.headerLeft}>
-            {/* Icon */}
-            {renderIcon()}
+              }
+            : undefined
+        }
+      >
+        <div className={styles.headerLeft}>
+          {/* Icon */}
+          {renderIcon()}
 
-            {/* Title */}
-            {title && <span className={DEFAULT_STYLES.title}>{title}</span>}
+          {/* Title */}
+          {title && <span className={styles.title}>{title}</span>}
 
-            {/* Status indicator */}
-            <StatusIndicator status={status} customConfig={statusConfig} />
-          </div>
-
-          <div className={DEFAULT_STYLES.headerRight}>
-            {/* Top right action buttons */}
-            {actions && actions.length > 0 && (
-              <div className="flex items-center gap-1 mr-2">
-                {actions.map((action) => (
-                  <button
-                    key={action.key}
-                    className={DEFAULT_STYLES.actionButton}
-                    onClick={handleActionClick(action.key, action.onClick)}
-                    type="button"
-                  >
-                    {action.icon}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Expand arrow */}
-            {showExpandIcon && expandable && (
-              <DownOutlined
-                className={`${DEFAULT_STYLES.arrow} ${
-                  isExpanded ? DEFAULT_STYLES.arrowExpanded : ''
-                }`}
-              />
-            )}
-          </div>
+          {/* Status indicator */}
+          <StatusIndicator status={status} customConfig={statusConfig} />
         </div>
 
-        {/* Content area */}
-        {expandable
-          ? isExpanded && (
-              <div className={DEFAULT_STYLES.content}>
-                <div className="relative">
-                  <div
-                    ref={contentRef}
-                    className={`${DEFAULT_STYLES.contentInner} ${DEFAULT_STYLES.scrollable} message-wrapper-scrollable`}
-                    style={{
-                      maxHeight:
-                        typeof maxHeight === 'number'
-                          ? `${maxHeight}px`
-                          : maxHeight,
-                      ...scrollableStyle,
-                    }}
-                    onScroll={checkScrollState}
-                  >
-                    {children}
-                  </div>
-                  {/* Top gradient mask - show when gradient is enabled and can scroll up */}
-                  {showGradientMask && canScrollUp && (
-                    <div
-                      className="absolute top-0 left-0 right-0 h-12 pointer-events-none z-10"
-                      style={{
-                        background:
-                          'linear-gradient(0deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%)',
-                      }}
-                    />
-                  )}
+        <div className={styles.headerRight}>
+          {/* Top right action buttons */}
+          {actions && actions.length > 0 && (
+            <div className={styles.actionButtonGroup}>
+              {actions.map((action) => (
+                <button
+                  key={action.key}
+                  className={styles.actionButton}
+                  onClick={handleActionClick(action.key, action.onClick)}
+                  type="button"
+                >
+                  {action.icon}
+                </button>
+              ))}
+            </div>
+          )}
 
-                  {/* Bottom gradient mask - show when gradient is enabled and can scroll down */}
-                  {showGradientMask && canScrollDown && (
-                    <div
-                      className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none z-10"
-                      style={{
-                        background:
-                          'linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%)',
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
-            )
-          : // When not expandable, show content based on defaultExpanded
-            isExpanded && (
-              <div className="relative">
+          {/* Expand arrow */}
+          {showExpandIcon && expandable && (
+            <DownOutlined
+              className={`${styles.arrow} ${
+                isExpanded ? styles.arrowExpanded : ''
+              }`}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Content area */}
+      {expandable
+        ? isExpanded && (
+            <div className={styles.content}>
+              <div className={styles.contentWrapper}>
                 <div
-                  ref={expandable ? undefined : contentRef}
-                  className={`${DEFAULT_STYLES.contentInner} ${DEFAULT_STYLES.scrollable} message-wrapper-scrollable`}
+                  ref={contentRef}
+                  className={`${styles.contentInner} ${styles.scrollable}`}
                   style={{
                     maxHeight:
                       typeof maxHeight === 'number'
                         ? `${maxHeight}px`
                         : maxHeight,
-                    ...scrollableStyle,
                   }}
-                  onScroll={expandable ? undefined : checkScrollState}
+                  onScroll={checkScrollState}
                 >
                   {children}
                 </div>
                 {/* Top gradient mask - show when gradient is enabled and can scroll up */}
                 {showGradientMask && canScrollUp && (
-                  <div
-                    className="absolute top-0 left-0 right-0 h-12 pointer-events-none z-10"
-                    style={{
-                      background:
-                        'linear-gradient(0deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%)',
-                    }}
-                  />
+                  <div className={styles.gradientMaskTop} />
                 )}
 
                 {/* Bottom gradient mask - show when gradient is enabled and can scroll down */}
                 {showGradientMask && canScrollDown && (
-                  <div
-                    className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none z-10"
-                    style={{
-                      background:
-                        'linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%)',
-                    }}
-                  />
+                  <div className={styles.gradientMaskBottom} />
                 )}
               </div>
-            )}
-      </div>
-    </>
+            </div>
+          )
+        : // When not expandable, show content based on defaultExpanded
+          isExpanded && (
+            <div className={styles.contentWrapper}>
+              <div
+                ref={expandable ? undefined : contentRef}
+                className={`${styles.contentInner} ${styles.scrollable}`}
+                style={{
+                  maxHeight:
+                    typeof maxHeight === 'number'
+                      ? `${maxHeight}px`
+                      : maxHeight,
+                }}
+                onScroll={expandable ? undefined : checkScrollState}
+              >
+                {children}
+              </div>
+              {/* Top gradient mask - show when gradient is enabled and can scroll up */}
+              {showGradientMask && canScrollUp && (
+                <div className={styles.gradientMaskTop} />
+              )}
+
+              {/* Bottom gradient mask - show when gradient is enabled and can scroll down */}
+              {showGradientMask && canScrollDown && (
+                <div className={styles.gradientMaskBottom} />
+              )}
+            </div>
+          )}
+    </div>
   );
 };
 
