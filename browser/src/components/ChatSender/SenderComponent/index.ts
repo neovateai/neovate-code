@@ -1,6 +1,6 @@
-import { SenderButton } from './Button';
 import { SenderContextTag } from './ContextTag';
-import { SenderSelect } from './Select';
+import { SenderButton } from './SenderButton';
+import { SenderSelect } from './SenderSelect';
 
 export default {
   Button: SenderButton,
