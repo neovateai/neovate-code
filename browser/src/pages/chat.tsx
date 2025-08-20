@@ -24,17 +24,6 @@ const useStyles = createStyles(({ css }) => {
       display: flex;
       overflow: hidden;
       min-width: 300px;
-          margin-top: 8px;
-        }
-
-        .ant-bubble-content {
-          min-height: 0px;
-        }
-
-        .ant-btn-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     `,
 
