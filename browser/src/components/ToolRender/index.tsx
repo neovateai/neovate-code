@@ -7,7 +7,7 @@ import GrepRenderComponent from './GrepRender';
 import LsRenderComponent from './LsRender';
 import ReadRenderComponent from './ReadRender';
 import WriteRenderComponent from './WriteRender';
-import { withDebugInfo } from './withDebugInfo';
+import { withDebugInfo } from './components/withDebugInfo';
 
 export const BashRender = withDebugInfo(BashRenderComponent);
 export const FetchRender = withDebugInfo(FetchRenderComponent);

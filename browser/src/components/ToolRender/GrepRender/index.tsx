@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { VscSearch } from 'react-icons/vsc';
 import type { ToolMessage } from '@/types/message';
 import type { IGrepToolResult } from '@/types/tool';
-import InnerList, { type ListItem } from './InnerList';
-import { ToolStatus } from './ToolStatus';
+import InnerList, { type ListItem } from '../LsRender/InnerList';
+import { ToolStatus } from '../components/ToolStatus';
 
 export default function GrepRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;

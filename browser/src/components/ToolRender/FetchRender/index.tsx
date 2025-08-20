@@ -2,7 +2,7 @@ import { LinkOutlined, RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import type { ToolMessage } from '@/types/message';
 import type { IFetchToolResult } from '@/types/tool';
-import { ToolStatus } from './ToolStatus';
+import { ToolStatus } from '../components/ToolStatus';
 
 export default function FetchRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;

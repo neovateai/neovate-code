@@ -2,7 +2,7 @@ import { EyeOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ToolMessage } from '@/types/message';
 import type { IReadToolResult } from '@/types/tool';
-import { ToolStatus } from './ToolStatus';
+import { ToolStatus } from '../components/ToolStatus';
 
 export default function ReadRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;

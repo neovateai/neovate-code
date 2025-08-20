@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { BsTerminal } from 'react-icons/bs';
 import type { ToolMessage } from '@/types/message';
 import type { IBashToolResult } from '@/types/tool';
-import { ToolStatus } from './ToolStatus';
+import { ToolStatus } from '../components/ToolStatus';
 
 export default function BashRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;

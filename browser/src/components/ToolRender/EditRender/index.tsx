@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
+import CodeDiffOutline from '@/components/CodeDiffOutline';
 import { fileChangesActions, fileChangesState } from '@/state/fileChanges';
 import type { ToolMessage } from '@/types/message';
-import CodeDiffOutline from '../CodeDiffOutline';
 
 export default function EditRender({ message }: { message?: ToolMessage }) {
   if (!message) {

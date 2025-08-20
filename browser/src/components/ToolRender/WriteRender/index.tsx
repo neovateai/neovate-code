@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
+import CodeDiffOutline from '@/components/CodeDiffOutline';
 import { fileChangesActions, fileChangesState } from '@/state/fileChanges';
 import type { ToolMessage } from '@/types/message';
-import CodeDiffOutline from '../CodeDiffOutline';
 
 // write tool认为都是新增的
 export default function WriteRender({ message }: { message?: ToolMessage }) {

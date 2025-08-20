@@ -2,8 +2,8 @@ import { FolderOutlined, RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ToolMessage } from '@/types/message';
+import { ToolStatus } from '../components/ToolStatus';
 import InnerList, { type ListItem } from './InnerList';
-import { ToolStatus } from './ToolStatus';
 
 const parseLsResult = (result: unknown): ListItem[] => {
   if (typeof result !== 'string' || !result) return [];

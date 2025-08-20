@@ -167,6 +167,7 @@ const RenderItem = ({
 };
 
 export default function InnerList({ items, showPath = true }: InnerListProps) {
+  console.log('items', items);
   return (
     <ul className="list-none m-0 p-0">
       {items.map((item, index) => (
