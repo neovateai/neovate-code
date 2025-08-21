@@ -71,6 +71,12 @@
   margin-left: 6px;
 }
 
+/* Expand icon styles */
+.expandIcon {
+  transition: transform 0.3s ease-in-out;
+  cursor: pointer;
+}
+
 .arrowExpanded {
   transform: rotate(180deg);
 }
@@ -130,7 +136,6 @@
 /* Content styles */
 .content {
   overflow: hidden;
-  transition: all 0.3s ease-in-out;
 }
 
 .contentInner {
