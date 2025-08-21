@@ -136,13 +136,22 @@ const ChatSender: React.FC = () => {
               if (atIndex !== undefined) {
                 const delIndex = Math.max(0, atIndex - 1);
 
+                // delete the @
                 quill.current?.deleteText(delIndex, 1);
 
-                quill.current?.insertText(delIndex, ' ');
-                quill.current?.insertEmbed(delIndex, 'context', {
-                  text: contextItem.displayText,
-                  value: contextItem.value,
-                });
+                // insert the context
+                quill.current?.insertEmbed(
+                  delIndex,
+                  'takumi-context',
+                  {
+                    text: contextItem.displayText,
+                    value: contextItem.value,
+                  },
+                  'user',
+                );
+
+                // insert a space
+                quill.current?.insertText(delIndex + 1, ' ');
               }
             }
           }}

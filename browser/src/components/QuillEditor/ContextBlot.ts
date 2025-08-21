@@ -1,8 +1,9 @@
+import type { EmbedBlot } from 'parchment';
 import Quill from 'quill';
 
-const Embed = Quill.import('blots/embed') as any;
+const Embed = Quill.import('blots/embed') as typeof EmbedBlot;
 
-interface ContextBlotValue {
+interface ContextBlotData {
   /** the text to display */
   text: string;
   /** the value of the blot */
@@ -10,36 +11,34 @@ interface ContextBlotValue {
 }
 
 class ContextBlot extends Embed {
-  static create(val: ContextBlotValue) {
+  static blotName = 'takumi-context';
+  static tagName = 'takumi-context';
+
+  static create(data: ContextBlotData) {
     const node = super.create();
-    node.innerHTML = `@${val.text}`;
+
+    if (node instanceof HTMLElement === false) {
+      return node;
+    }
+
+    node.innerHTML = `@${data.text}`;
     node.style.userSelect = 'none';
     // node.style.margin = '2px';
     node.style.padding = '0 2px';
     node.style.backgroundColor = '#44ee44';
     node.style.color = '#204820';
 
-    node.setAttribute('contenteditable', false);
+    node.setAttribute('contenteditable', 'false');
 
-    node.dataset.value = val.value;
-    node.dataset.text = val.text;
+    node.dataset.value = data.value;
+    node.dataset.text = data.text;
 
     return node;
   }
 
-  length() {
-    return 1;
-  }
-
-  static value(node: any) {
-    return {
-      text: node.dataset.text,
-      value: node.dataset.value,
-    };
+  static value(node: HTMLElement) {
+    return node.dataset.value;
   }
 }
-
-ContextBlot.blotName = 'context';
-ContextBlot.tagName = 'span';
 
 export default ContextBlot;

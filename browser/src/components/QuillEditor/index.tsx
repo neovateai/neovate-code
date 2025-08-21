@@ -25,6 +25,22 @@ function isInsertingAt(delta: Delta) {
   return last.insert === '@';
 }
 
+/** DO NOT USE QUILL's `getText`, it won't work with takumi-context.*/
+function getTextWithTakumiContext(contents: Delta) {
+  return contents.ops
+    .filter(
+      (op) =>
+        typeof op.insert === 'string' ||
+        (op.insert && typeof op.insert['takumi-context'] === 'string'),
+    )
+    .map((op) => {
+      return typeof op.insert === 'string'
+        ? op.insert
+        : op.insert!['takumi-context'];
+    })
+    .join('');
+}
+
 const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
   const { onChange, onSelect, placeholder, readonly } = props;
   const editorRef = useRef<HTMLDivElement>(null);
@@ -96,7 +112,10 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
             onInputAt?.(false);
           }
 
-          const currentText = quillInstance.getText();
+          const currentContents = quillInstance.getContents();
+
+          const currentText = getTextWithTakumiContext(currentContents);
+
           onChange?.(makeChangeEvent(currentText, editorRef.current));
           onQuillChange?.(currentText);
         }
