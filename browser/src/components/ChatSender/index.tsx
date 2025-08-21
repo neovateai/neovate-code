@@ -95,8 +95,6 @@ const ChatSender: React.FC = () => {
   3. context menu keyboard navigation
   */
 
-  console.log(JSON.stringify(prompt));
-
   return (
     <Spin spinning={isPasting}>
       <QuillContext
@@ -115,8 +113,6 @@ const ChatSender: React.FC = () => {
             }
           },
           onChange: (val) => {
-            console.log('change', JSON.stringify(val));
-
             // rich text will auto add '\n' at the end
             setInputText(val.trimEnd());
             actions.updatePrompt(val.trimEnd());
@@ -136,12 +132,9 @@ const ChatSender: React.FC = () => {
             setOpenPopup(false);
             if (contextItem) {
               context.actions.addContext(contextItem);
-              console.log(atIndex, 'atIndex');
+
               if (atIndex !== undefined) {
-                console.log('will delete', quill.current?.getText(atIndex, 1));
-                console.log(quill.current?.getText(atIndex - 1, 3));
-                const d = quill.current?.deleteText(atIndex, 1);
-                console.log(d);
+                quill.current?.deleteText(atIndex, 1);
               }
               quill.current?.insertText(atIndex ?? 0, ' ');
               quill.current?.insertEmbed(atIndex ?? 0, 'context', {
