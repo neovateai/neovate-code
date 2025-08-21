@@ -134,13 +134,21 @@ const ChatSender: React.FC = () => {
               context.actions.addContext(contextItem);
 
               if (atIndex !== undefined) {
-                quill.current?.deleteText(atIndex, 1);
+                const delIndex = Math.max(0, atIndex - 1);
+
+                console.log(delIndex, 'delIndex');
+
+                console.log('will delete', quill.current?.getText(delIndex, 1));
+                console.log(quill.current?.getText(delIndex, 3));
+                const d = quill.current?.deleteText(delIndex, 1);
+                console.log(d);
+
+                quill.current?.insertText(delIndex, ' ');
+                quill.current?.insertEmbed(delIndex, 'context', {
+                  text: contextItem.displayText,
+                  value: contextItem.value,
+                });
               }
-              quill.current?.insertText(atIndex ?? 0, ' ');
-              quill.current?.insertEmbed(atIndex ?? 0, 'context', {
-                text: contextItem.displayText,
-                value: contextItem.value,
-              });
             }
           }}
           offset={{ top: (bounds?.top ?? -50) + 50, left: bounds?.left ?? 0 }}
