@@ -65,14 +65,6 @@
   align-items: center;
 }
 
-/* Arrow styles */
-.arrow {
-  transition: transform 0.2s ease;
-  color: #666f8d;
-  width: 14px;
-  height: 14px;
-}
-
 .arrowExpanded {
   transform: rotate(180deg);
 }

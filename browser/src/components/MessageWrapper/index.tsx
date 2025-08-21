@@ -179,11 +179,19 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
 
           {/* Expand arrow */}
           {showExpandIcon && expandable && (
-            <DownOutlined
-              className={`${styles.arrow} ${
-                isExpanded ? styles.arrowExpanded : ''
-              }`}
-            />
+            <svg
+              width="13"
+              height="8"
+              viewBox="0 0 13 8"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className={`${isExpanded ? styles.arrowExpanded : ''}`}
+            >
+              <path
+                d="M0.694962 0.704741C0.435013 0.977729 0.435013 1.42033 0.694962 1.69332L6.02932 7.29526C6.28927 7.56825 6.71073 7.56825 6.97068 7.29526L12.305 1.69332C12.565 1.42033 12.565 0.977729 12.305 0.704741C12.0451 0.431753 11.6236 0.431753 11.3637 0.704741L6.5 5.81239L1.63632 0.704741C1.37637 0.431753 0.95491 0.431753 0.694962 0.704741Z"
+                fill="#666F8D"
+              />
+            </svg>
           )}
         </div>
       </div>
