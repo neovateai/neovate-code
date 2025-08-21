@@ -1,4 +1,3 @@
-import { DownOutlined } from '@ant-design/icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { STATUS_CONFIG } from './constants';
