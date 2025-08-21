@@ -1,3 +1,4 @@
+import { createStyles } from 'antd-style';
 import type { TextAreaProps, TextAreaRef } from 'antd/es/input/TextArea';
 import Quill, { Delta } from 'quill';
 import 'quill/dist/quill.core.css';
@@ -41,6 +42,24 @@ function getTextWithTakumiContext(contents: Delta) {
     .join('');
 }
 
+const useStyles = createStyles(({ css }) => {
+  return {
+    editor: css`
+      .ql-editor {
+        ::before {
+          color: #8d8a95 !important;
+          font-style: normal !important;
+        }
+
+        p {
+          font-size: 14px;
+          line-height: 22px;
+        }
+      }
+    `,
+  };
+});
+
 const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
   const { onChange, onSelect, onPaste, placeholder, readonly } = props;
   const editorRef = useRef<HTMLDivElement>(null);
@@ -52,6 +71,8 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
     onKeyDown,
     onChange: onQuillChange,
   } = useContext(QuillContext);
+
+  const { styles } = useStyles();
 
   useImperativeHandle(ref, () => {
     return {
@@ -130,7 +151,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
   return (
     <div
       ref={editorRef}
-      className="w-full"
+      className={`w-full text-sm ${styles.editor}`}
       onMouseDown={(e) => e.stopPropagation()}
       onMouseUp={(e) => e.stopPropagation()}
       // @ts-expect-error
