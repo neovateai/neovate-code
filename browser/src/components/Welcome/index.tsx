@@ -4,32 +4,34 @@ import { useTranslation } from 'react-i18next';
 import { useChatState } from '@/hooks/provider';
 import styles from './index.module.css';
 
-const Welcome: React.FC = () => {
+const useWelcomeData = () => {
   const { t } = useTranslation();
   const { append } = useChatState();
 
-  const capabilities = [
-    {
-      icon: '/src/assets/llm-support-icon.svg',
-      title: t('welcome.llmSupport.title'),
-      description: t('welcome.llmSupport.description'),
-    },
-    {
-      icon: '/src/assets/file-operations-icon.svg',
-      title: t('welcome.fileOperations.title'),
-      description: t('welcome.fileOperations.description'),
-    },
-    {
-      icon: '/src/assets/codebase-navigation-icon.svg',
-      title: t('welcome.codebaseNavigation.title'),
-      description: t('welcome.codebaseNavigation.description'),
-    },
-    {
-      icon: '/src/assets/plan-mode-icon.svg',
-      title: t('welcome.planMode.title'),
-      description: t('welcome.planMode.description'),
-    },
-  ];
+  const DESIGN_GUIDE = {
+    capabilities: [
+      {
+        icon: '/src/assets/llm-support-icon.svg',
+        title: t('welcome.llmSupport.title'),
+        description: t('welcome.llmSupport.description'),
+      },
+      {
+        icon: '/src/assets/file-operations-icon.svg',
+        title: t('welcome.fileOperations.title'),
+        description: t('welcome.fileOperations.description'),
+      },
+      {
+        icon: '/src/assets/codebase-navigation-icon.svg',
+        title: t('welcome.codebaseNavigation.title'),
+        description: t('welcome.codebaseNavigation.description'),
+      },
+      {
+        icon: '/src/assets/plan-mode-icon.svg',
+        title: t('welcome.planMode.title'),
+        description: t('welcome.planMode.description'),
+      },
+    ],
+  };
 
   const handleCapabilityClick = (capability: any) => {
     append({
@@ -39,6 +41,16 @@ const Welcome: React.FC = () => {
       }),
     });
   };
+
+  return {
+    DESIGN_GUIDE,
+    handleCapabilityClick,
+  };
+};
+
+const Welcome: React.FC = () => {
+  const { t } = useTranslation();
+  const { DESIGN_GUIDE, handleCapabilityClick } = useWelcomeData();
 
   return (
     <Space direction="vertical" size={16} className={styles.outerContainer}>
@@ -64,7 +76,7 @@ const Welcome: React.FC = () => {
               {t('welcome.capabilitiesTitle')}
             </div>
             <Flex wrap={false} gap={16} className={styles.capabilitiesRow}>
-              {capabilities.map((capability, index) => (
+              {DESIGN_GUIDE.capabilities.map((capability, index) => (
                 <div
                   key={index}
                   className={`${styles.capabilityCard} ${styles.capabilityItem}`}
