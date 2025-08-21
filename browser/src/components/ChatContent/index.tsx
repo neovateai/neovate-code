@@ -29,6 +29,17 @@ const useStyle = createStyles(({ token, css }) => {
 
       .ant-bubble-footer {
         width: 100%;
+        margin-top: 8px;
+      }
+
+      .ant-bubble-content {
+        min-height: 0px;
+      }
+
+      .ant-btn-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
     `,
   };
@@ -67,8 +78,7 @@ const ChatContent: React.FC = () => {
     },
     assistant: {
       placement: 'start',
-      avatar: <AssistantAvatar />,
-      variant: 'outlined',
+      variant: 'borderless',
       messageRender(message) {
         return <AssistantMessage message={message} />;
       },
