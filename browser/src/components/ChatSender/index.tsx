@@ -136,12 +136,7 @@ const ChatSender: React.FC = () => {
               if (atIndex !== undefined) {
                 const delIndex = Math.max(0, atIndex - 1);
 
-                console.log(delIndex, 'delIndex');
-
-                console.log('will delete', quill.current?.getText(delIndex, 1));
-                console.log(quill.current?.getText(delIndex, 3));
-                const d = quill.current?.deleteText(delIndex, 1);
-                console.log(d);
+                quill.current?.deleteText(delIndex, 1);
 
                 quill.current?.insertText(delIndex, ' ');
                 quill.current?.insertEmbed(delIndex, 'context', {
