@@ -16,11 +16,20 @@ const useStyle = createStyles(({ css }) => {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      max-width: 800px;
+      max-width: 70%;
+      margin-left: auto;
       row-gap: 6px;
     `,
     button: css`
       font-size: 12px;
+      color: #8b8b8b;
+      padding: 2px 8px;
+      height: auto;
+
+      &:hover {
+        color: #110c22;
+        background: rgba(246, 248, 251, 0.5);
+      }
     `,
     itemsContainer: css`
       display: flex;
