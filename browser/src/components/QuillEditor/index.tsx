@@ -49,6 +49,8 @@ const useStyles = createStyles(({ css }) => {
         ::before {
           color: #8d8a95 !important;
           font-style: normal !important;
+          font-size: 14px;
+          line-height: 22px;
         }
 
         p {
