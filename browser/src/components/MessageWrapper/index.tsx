@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import ExpandArrowIcon from '@/icons/expand-arrow.svg?react';
 import { STATUS_CONFIG } from './constants';
 import styles from './index.module.css';
 import type { MessageWrapperProps } from './types';
@@ -178,19 +179,9 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
 
           {/* Expand arrow */}
           {showExpandIcon && expandable && (
-            <svg
-              width="13"
-              height="8"
-              viewBox="0 0 13 8"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+            <ExpandArrowIcon
               className={`${styles.expandIcon} ${isExpanded ? styles.arrowExpanded : ''}`}
-            >
-              <path
-                d="M12.305 7.29526C12.565 7.02227 12.565 6.57967 12.305 6.30668L6.97068 0.704741C6.71073 0.431754 6.28927 0.431753 6.02932 0.704741L0.69496 6.30668C0.435012 6.57967 0.435012 7.02227 0.69496 7.29526C0.954908 7.56825 1.37637 7.56825 1.63632 7.29526L6.5 2.18761L11.3637 7.29526C11.6236 7.56825 12.0451 7.56825 12.305 7.29526Z"
-                fill="#666F8D"
-              />
-            </svg>
+            />
           )}
         </div>
       </div>
