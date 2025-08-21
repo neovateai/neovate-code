@@ -117,7 +117,6 @@ const ChatSender: React.FC = () => {
             setInputText(text.trimEnd());
             actions.updatePrompt(text.trimEnd());
             actions.updateDelta(delta);
-            console.log(text);
           },
         }}
       >
