@@ -1,8 +1,6 @@
-import { FolderOutlined, RightOutlined } from '@ant-design/icons';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import MessageWrapper from '@/components/MessageWrapper';
+import FolderIcon from '@/icons/folder.svg?react';
 import type { ToolMessage } from '@/types/message';
-import { ToolStatus } from '../ToolStatus';
 import InnerList, { type ListItem } from './InnerList';
 
 // Find the node by targetPath in the tree structure
@@ -97,56 +95,12 @@ const parseLsResult = (result: unknown, parentPath: string): ListItem[] => {
 export default function LsRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
 
-  const { state } = message;
   const dirPath = (message.args?.dir_path as string) || '';
   const items = parseLsResult(message.result?.data, dirPath);
-  const { t } = useTranslation();
-
-  const [isExpanded, setIsExpanded] = useState(true);
-
-  const toggleExpand = () => {
-    if (items.length > 0) {
-      setIsExpanded(!isExpanded);
-    }
-  };
-
-  let displayPath = dirPath;
-  let itemsCount = items.length;
-
-  if (items.length === 1 && items[0].isDirectory) {
-    displayPath = items[0].name;
-    itemsCount = items[0].children?.length || 0;
-  }
 
   return (
-    <div className="text-sm">
-      <div
-        className="flex items-center gap-2 cursor-pointer"
-        onClick={toggleExpand}
-      >
-        <span
-          className={`transition-transform duration-300 ease-in-out ${
-            isExpanded ? 'rotate-90' : ''
-          }`}
-        >
-          <RightOutlined />
-        </span>
-        <FolderOutlined />
-        <span className="flex-1">
-          {t('toolRenders.ls.listedItems', {
-            count: itemsCount,
-            path: displayPath.split('/').pop() || displayPath,
-          })}
-        </span>
-        <ToolStatus state={state} />
-      </div>
-      <div
-        className={`px-2 bg-gray-50 mt-1 overflow-y-auto transition-[max-height] duration-500 ease-in-out ${
-          isExpanded && items.length > 0 ? 'max-h-40' : 'max-h-0'
-        }`}
-      >
-        <InnerList items={items} showPath={false} />
-      </div>
-    </div>
+    <MessageWrapper title={dirPath} icon={<FolderIcon />}>
+      <InnerList items={items} showPath={false} />
+    </MessageWrapper>
   );
 }
