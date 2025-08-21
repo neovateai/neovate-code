@@ -344,9 +344,6 @@ importers:
       globals:
         specifier: ^16.0.0
         version: 16.2.0
-      parchment:
-        specifier: ^3.0.0
-        version: 3.0.0
       tailwindcss:
         specifier: ^4.1.10
         version: 4.1.10

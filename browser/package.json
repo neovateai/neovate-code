@@ -40,7 +40,6 @@
     "valtio": "^2.1.5"
   },
   "devDependencies": {
-    "parchment": "^3.0.0",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.1.10",
     "@tanstack/router-plugin": "^1.121.16",

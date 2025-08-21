@@ -1,7 +1,6 @@
-import type { EmbedBlot } from 'parchment';
-import Quill from 'quill';
+import Quill, { Parchment } from 'quill';
 
-const Embed = Quill.import('blots/embed') as typeof EmbedBlot;
+const Embed = Quill.import('blots/embed') as typeof Parchment.EmbedBlot;
 
 interface ContextBlotData {
   /** the text to display */

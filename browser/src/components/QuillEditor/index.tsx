@@ -1,6 +1,6 @@
 import type { TextAreaProps, TextAreaRef } from 'antd/es/input/TextArea';
 import Quill, { Delta } from 'quill';
-import 'quill/dist/quill.bubble.css';
+import 'quill/dist/quill.core.css';
 import {
   forwardRef,
   useContext,
@@ -42,7 +42,7 @@ function getTextWithTakumiContext(contents: Delta) {
 }
 
 const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
-  const { onChange, onSelect, placeholder, readonly } = props;
+  const { onChange, onSelect, onPaste, placeholder, readonly } = props;
   const editorRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill>(null);
 
@@ -65,10 +65,10 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
   });
 
   useLayoutEffect(() => {
-    if (editorRef.current) {
+    if (editorRef.current && !quillRef.current) {
       const quillInstance = new Quill(editorRef.current, {
-        theme: 'bubble',
         placeholder: placeholder,
+        formats: ['takumi-context'], // plain text and takumi-context only
         modules: {
           toolbar: false,
           keyboard: {
@@ -133,6 +133,8 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
       className="w-full"
       onMouseDown={(e) => e.stopPropagation()}
       onMouseUp={(e) => e.stopPropagation()}
+      // @ts-expect-error
+      onPaste={onPaste}
     />
   );
 });
