@@ -5,12 +5,14 @@ import { compactCommand } from './compact';
 import { exitCommand } from './exit';
 import { helpCommand } from './help';
 import { createInitCommand } from './init';
+import { createMcpCommand } from './mcp';
 import { createReviewCommand } from './review';
 import { statusCommand } from './status';
 
 export * from './clear';
 export * from './exit';
 export * from './help';
+export * from './mcp';
 
 export async function createBuiltinCommands(opts: {
   context: Context;
@@ -22,6 +24,7 @@ export async function createBuiltinCommands(opts: {
     exitCommand,
     helpCommand,
     createInitCommand(opts),
+    createMcpCommand(opts),
     createModelCommand(opts),
     createOutputStyleCommand(),
     createReviewCommand(),
