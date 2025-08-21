@@ -120,8 +120,7 @@ export class Tools {
     return 'write'; // Default to write for safety
   }
 
-  getToolsPrompt(model: string) {
-    const isClaudeModel = isClaude(model);
+  getToolsPrompt() {
     const availableTools = `
   ${Object.entries(this.tools)
     .map(([key, tool]) => {

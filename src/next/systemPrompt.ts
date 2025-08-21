@@ -1,15 +1,10 @@
-import { Agent } from '@openai/agents';
 import { TOOL_NAME } from '../constants';
-import { Context } from '../context';
-import { Tools } from '../tool';
 
-function getTasksPrompt(context: Context) {
-  if (!context.config.todo) {
+function getTasksPrompt(opts: { todo: boolean; productName: string }) {
+  if (!opts.todo) {
     return '';
   }
-
-  const productName = context.productName;
-
+  const productName = opts.productName;
   return `
 # Task Management
 You have access to the ${TOOL_NAME.TODO_WRITE} and ${TOOL_NAME.TODO_READ} tools to help you manage and plan tasks. Use these tools VERY frequently to ensure that you are tracking your tasks and giving the user visibility into your progress.
@@ -70,35 +65,26 @@ IMPORTANT: Always use the ${TOOL_NAME.TODO_WRITE} tool to plan and track tasks t
   `;
 }
 
-export function createCodeAgent(options: {
-  model: string;
-  context: Context;
-  tools: Tools;
+export function generateSystemPrompt(opts: {
+  todo: boolean;
+  productName: string;
+  language?: string;
+  appendSystemPrompt?: string;
 }) {
-  return new Agent({
-    name: 'code',
-    instructions: async (context, agent) => {
-      const customSystemPrompt = options.context.argvConfig.systemPrompt;
-      const outputStyle =
-        options.context.outputStyleManager.getCurrentOutputStyle();
-      const isDefaultOutputStyle = outputStyle.name === 'Default';
-      if (customSystemPrompt) {
-        return `${customSystemPrompt}
-
-${options.context.argvConfig.appendSystemPrompt ? options.context.argvConfig.appendSystemPrompt : ''}
-
-${options.tools.getToolsPrompt()}
-`.trim();
-      }
-
-      return `
+  const isDefaultOutputStyle = true;
+  const outputStyle = {
+    name: 'Default',
+    prompt: '',
+    isCodingRelated: true,
+  };
+  return `
 You are an interactive CLI tool that helps users ${isDefaultOutputStyle ? 'with software engineering tasks.' : `according to your "Output Style" below, which describes how you should respond to user queries.`} Use the instructions below and the tools available to you to assist the user.
 
 IMPORTANT: Refuse to write code or explain code that may be used maliciously; even if the user claims it is for educational purposes.
 ${
-  options.context.config.language === 'English'
+  opts.language === 'English'
     ? ''
-    : `IMPORTANT: Answer in ${options.context.config.language}.
+    : `IMPORTANT: Answer in ${opts.language}.
 `
 }
 
@@ -155,15 +141,10 @@ ${
 # Code style
 - IMPORTANT: DO NOT ADD ***ANY*** COMMENTS unless asked
 
-${getTasksPrompt(options.context)}`
+${getTasksPrompt(opts)}`
     : ''
 }
 
-${options.context.argvConfig.appendSystemPrompt ? options.context.argvConfig.appendSystemPrompt : ''}
-
-${options.tools.getToolsPrompt()}
+${opts.appendSystemPrompt ? opts.appendSystemPrompt : ''}
 `.trim();
-    },
-    model: options.model,
-  });
 }
