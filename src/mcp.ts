@@ -27,22 +27,110 @@ const debug = createDebug('takumi:mcp');
 
 type MCP = MCPServerStdio | MCPServerStreamableHttp | MCPServerSSE;
 
-export class MCPManager {
-  private servers: Map<string, MCP> = new Map();
-  constructor(servers: Map<string, MCP>) {
-    this.servers = servers;
-  }
+type MCPServerStatus =
+  | 'pending'
+  | 'connecting'
+  | 'connected'
+  | 'failed'
+  | 'disconnected';
 
-  static async create(
-    mcpServers: Record<string, MCPConfig>,
-  ): Promise<MCPManager> {
+interface ServerState {
+  server?: MCP;
+  status: MCPServerStatus;
+  error?: string;
+  tools?: Tool[];
+  retryCount: number;
+  isTemporaryError?: boolean;
+}
+
+export class MCPManager {
+  private servers: Map<string, ServerState> = new Map();
+  private configs: Record<string, MCPConfig> = {};
+  private isInitialized: boolean = false;
+  private initPromise?: Promise<void>;
+  private initLock: boolean = false;
+
+  static create(mcpServers: Record<string, MCPConfig>): MCPManager {
     debug('create MCPManager', mcpServers);
-    const servers = new Map<string, MCP>();
+    const manager = new MCPManager();
+    manager.configs = mcpServers || {};
+
+    // Initialize servers state without connecting
     for (const [key, config] of Object.entries(mcpServers || {})) {
       if (config.disable) {
         debug(`Skipping disabled MCP server: ${key}`);
         continue;
       }
+      manager.servers.set(key, {
+        status: 'pending',
+        retryCount: 0,
+      });
+    }
+
+    return manager;
+  }
+
+  async initAsync(): Promise<void> {
+    // Return existing promise if initialization is already in progress
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    // Double-check locking pattern for thread safety
+    if (this.initLock) {
+      // Wait for lock to be released and check if initialization completed
+      while (this.initLock) {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      if (this.isInitialized) {
+        return;
+      }
+    }
+
+    // Acquire lock
+    this.initLock = true;
+
+    try {
+      // Check again in case another thread completed initialization
+      if (this.isInitialized) {
+        return;
+      }
+
+      this.initPromise = this._performInit();
+      await this.initPromise;
+    } finally {
+      // Release lock
+      this.initLock = false;
+    }
+  }
+
+  private async _performInit(): Promise<void> {
+    debug('Starting async MCP initialization');
+    const connectionPromises: Promise<void>[] = [];
+
+    for (const [key, config] of Object.entries(this.configs)) {
+      if (config.disable) {
+        continue;
+      }
+
+      const connectionPromise = this._connectServer(key, config);
+      connectionPromises.push(connectionPromise);
+    }
+
+    // Wait for all connections to complete (success or failure)
+    await Promise.allSettled(connectionPromises);
+    this.isInitialized = true;
+    debug('MCP initialization completed');
+  }
+
+  private async _connectServer(key: string, config: MCPConfig): Promise<void> {
+    const serverState = this.servers.get(key);
+    if (!serverState) return;
+
+    try {
+      debug(`Connecting MCP server: ${key}`);
+      serverState.status = 'connecting';
+
       let server: MCPServerStdio | MCPServerStreamableHttp | MCPServerSSE;
       if (config.command) {
         const env = config.env;
@@ -77,32 +165,155 @@ export class MCPManager {
           `MCP server ${key} must have either command or url configured`,
         );
       }
-      servers.set(key, server);
+
+      await server.connect();
+
+      // Get tools from connected server
+      const tools = await this.getFunctionToolsFromServer(server, false);
+
+      serverState.server = server;
+      serverState.status = 'connected';
+      serverState.tools = tools;
+      serverState.error = undefined;
+
+      debug(
+        `MCP server connected successfully: ${key}, tools: ${tools.length}`,
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      debug(`Failed to connect MCP server ${key}: ${errorMessage}`);
+
+      // Classify error types for better handling
+      const isTemporaryError = this._isTemporaryError(error);
+
+      serverState.status = 'failed';
+      serverState.error = errorMessage;
+      serverState.retryCount += 1;
+
+      // Add error classification metadata
+      serverState.isTemporaryError = isTemporaryError;
+
+      // Clean up failed connection attempt
+      if (serverState.server) {
+        try {
+          await serverState.server.close();
+        } catch (cleanupError) {
+          debug(
+            `Error cleaning up failed connection for ${key}:`,
+            cleanupError,
+          );
+        }
+        serverState.server = undefined;
+      }
     }
-    debug('mcp servers created', servers);
-    await Promise.all(
-      Array.from(servers.values()).map((server) => server.connect()),
-    );
-    debug('mcp servers connected');
-    return new MCPManager(servers);
   }
 
-  async getAllTools() {
-    return this.getAllMcpTools(Array.from(this.servers.values()));
+  async getAllTools(): Promise<Tool[]> {
+    const connectedServers = Array.from(this.servers.values())
+      .filter((state) => state.status === 'connected' && state.server)
+      .map((state) => state.server!);
+
+    return this.getAllMcpTools(connectedServers);
   }
 
-  async getTools(keys: string[]) {
+  getAvailableTools(): Tool[] {
+    const tools: Tool[] = [];
+    for (const serverState of this.servers.values()) {
+      if (serverState.status === 'connected' && serverState.tools) {
+        tools.push(...serverState.tools);
+      }
+    }
+    return tools;
+  }
+
+  async getTools(keys: string[]): Promise<Tool[]> {
     const servers = keys
       .map((key) => this.servers.get(key))
-      .filter(Boolean) as MCP[];
+      .filter((state) => state && state.status === 'connected' && state.server)
+      .map((state) => state!.server!);
     return this.getAllMcpTools(servers);
   }
 
   async destroy() {
-    await Promise.all(
-      Array.from(this.servers.values()).map((server) => server.close()),
-    );
+    const closePromises = Array.from(this.servers.values())
+      .filter((state) => state.server)
+      .map((state) => state.server!.close());
+
+    await Promise.allSettled(closePromises);
     this.servers.clear();
+    this.isInitialized = false;
+    this.initPromise = undefined;
+  }
+
+  getServerNames(): string[] {
+    return Array.from(this.servers.keys());
+  }
+
+  hasServer(name: string): boolean {
+    return this.servers.has(name);
+  }
+
+  getServerStatus(name: string): MCPServerStatus | undefined {
+    return this.servers.get(name)?.status;
+  }
+
+  getServerError(name: string): string | undefined {
+    return this.servers.get(name)?.error;
+  }
+
+  getAllServerStatus(): Record<
+    string,
+    { status: MCPServerStatus; error?: string; toolCount: number }
+  > {
+    const result: Record<
+      string,
+      { status: MCPServerStatus; error?: string; toolCount: number }
+    > = {};
+    for (const [name, state] of this.servers.entries()) {
+      result[name] = {
+        status: state.status,
+        error: state.error,
+        toolCount: state.tools?.length || 0,
+      };
+    }
+    return result;
+  }
+
+  isReady(): boolean {
+    return this.isInitialized;
+  }
+
+  isLoading(): boolean {
+    return !!this.initPromise && !this.isInitialized;
+  }
+
+  async retryConnection(serverName: string): Promise<void> {
+    const config = this.configs[serverName];
+    if (!config) {
+      throw new Error(`Server ${serverName} not found in configuration`);
+    }
+
+    const serverState = this.servers.get(serverName);
+    if (!serverState) {
+      throw new Error(`Server ${serverName} state not found`);
+    }
+
+    // Close existing connection if any
+    if (serverState.server) {
+      try {
+        await serverState.server.close();
+      } catch (error) {
+        debug(`Error closing server ${serverName}:`, error);
+      }
+    }
+
+    // Reset state and retry
+    serverState.server = undefined;
+    serverState.tools = undefined;
+    serverState.error = undefined;
+
+    await this._connectServer(serverName, config);
   }
 
   async getAllMcpTools<TContext = UnknownContext>(
@@ -141,6 +352,56 @@ export class MCPManager {
       mcpToFunctionTool(t, server, convertSchemasToStrict),
     );
     return tools;
+  }
+
+  private _isTemporaryError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+
+    const message = error.message.toLowerCase();
+
+    // Network-related temporary errors
+    const temporaryErrors = [
+      'timeout',
+      'connection refused',
+      'network error',
+      'temporary',
+      'try again',
+      'rate limit',
+      'too many requests',
+      'service unavailable',
+      'socket hang up',
+      'econnreset',
+      'enotfound',
+      'econnrefused',
+      'etimedout',
+    ];
+
+    // Configuration or permanent errors
+    const permanentErrors = [
+      'command not found',
+      'no such file',
+      'permission denied',
+      'invalid configuration',
+      'malformed',
+      'syntax error',
+      'authentication failed',
+      'unauthorized',
+    ];
+
+    // Check for permanent errors first (higher priority)
+    if (permanentErrors.some((permanent) => message.includes(permanent))) {
+      return false;
+    }
+
+    // Check for temporary errors
+    if (temporaryErrors.some((temporary) => message.includes(temporary))) {
+      return true;
+    }
+
+    // Default to temporary for unknown errors (safer for retries)
+    return true;
   }
 }
 

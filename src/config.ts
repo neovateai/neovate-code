@@ -130,7 +130,7 @@ export class ConfigManager {
     const configPath = global ? this.globalConfigPath : this.projectConfigPath;
     if (ARRAY_CONFIG_KEYS.includes(key)) {
       (config[key as keyof Config] as any) = [
-        ...(config[key as keyof Config] as string[]),
+        ...((config[key as keyof Config] as string[]) || []),
         ...values,
       ];
     } else if (OBJECT_CONFIG_KEYS.includes(key)) {

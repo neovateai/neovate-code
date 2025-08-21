@@ -104,16 +104,16 @@ export function itemsToLanguageV1Messages(
         messages.push({
           role,
           content: content
-            .filter((c) => c.type === 'input_text' || c.type === 'output_text')
+            .filter((c) => c.type === 'output_text')
             .map((c) => {
-              if (c.type === 'output_text') {
-                return { type: 'text', text: c.text };
-              }
-              if (c.type === 'input_text') {
-                return { type: 'text', text: c.text };
-              }
-              const exhaustiveCheck = c satisfies never;
-              throw new UserError(`Unknown content type: ${exhaustiveCheck}`);
+              const { providerData: contentProviderData } = c;
+              return {
+                type: 'text',
+                text: c.text,
+                providerMetadata: {
+                  ...(contentProviderData ?? {}),
+                },
+              };
             }),
           providerMetadata: {
             [model.provider]: {
