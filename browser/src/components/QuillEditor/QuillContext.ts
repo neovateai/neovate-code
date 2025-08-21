@@ -13,6 +13,8 @@ interface QuillContextType {
   onKeyDown?: (code: number) => void;
   /** call this function when editor value change */
   onChange?: (value: string, delta: Delta) => void;
+
+  readonly?: boolean;
 }
 
 export const QuillContext = React.createContext<QuillContextType>({});

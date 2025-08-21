@@ -21,7 +21,7 @@ const useStyles = createStyles(({ css }) => ({
     max-width: 600px;
     width: fit-content;
 
-    .lexical-editor {
+    .ql-editor {
       font-family:
         'PingFang SC',
         -apple-system,
@@ -38,7 +38,7 @@ const useStyles = createStyles(({ css }) => ({
       margin: 0;
     }
 
-    .lexical-editor p {
+    .ql-editor p {
       margin: 0 !important;
       line-height: 1.5em !important;
     }
@@ -58,6 +58,7 @@ const UserMessage = (props: UserMessageProps) => {
           <QuillContext
             value={{
               onQuillLoad: (quill) => quill.setContents(delta),
+              readonly: true,
             }}
           >
             <QuillEditor />

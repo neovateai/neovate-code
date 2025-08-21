@@ -13,9 +13,7 @@ import ContextBlot from './ContextBlot';
 import { QuillContext } from './QuillContext';
 import { makeChangeEvent, makeSelectEvent } from './events';
 
-interface IQuillEditorProps extends TextAreaProps {
-  readonly?: boolean;
-}
+interface IQuillEditorProps extends TextAreaProps {}
 
 interface IQuillEditorRef extends TextAreaRef {}
 
@@ -65,7 +63,7 @@ const useStyles = createStyles(({ css }) => {
 });
 
 const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
-  const { onChange, onSelect, onPaste, placeholder, readonly } = props;
+  const { onChange, onSelect, onPaste, placeholder } = props;
   const editorRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill>(null);
 
@@ -74,6 +72,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
     onQuillLoad,
     onKeyDown,
     onChange: onQuillChange,
+    readonly,
   } = useContext(QuillContext);
 
   const { styles } = useStyles();
