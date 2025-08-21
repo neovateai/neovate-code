@@ -11,21 +11,25 @@ const useWelcomeData = () => {
   const DESIGN_GUIDE = {
     capabilities: [
       {
+        key: 'llmSupport',
         icon: '/src/assets/llm-support-icon.svg',
         title: t('welcome.llmSupport.title'),
         description: t('welcome.llmSupport.description'),
       },
       {
+        key: 'fileOperations',
         icon: '/src/assets/file-operations-icon.svg',
         title: t('welcome.fileOperations.title'),
         description: t('welcome.fileOperations.description'),
       },
       {
+        key: 'codebaseNavigation',
         icon: '/src/assets/codebase-navigation-icon.svg',
         title: t('welcome.codebaseNavigation.title'),
         description: t('welcome.codebaseNavigation.description'),
       },
       {
+        key: 'planMode',
         icon: '/src/assets/plan-mode-icon.svg',
         title: t('welcome.planMode.title'),
         description: t('welcome.planMode.description'),
@@ -76,9 +80,9 @@ const Welcome: React.FC = () => {
               {t('welcome.capabilitiesTitle')}
             </div>
             <Flex wrap={false} gap={16} className={styles.capabilitiesRow}>
-              {DESIGN_GUIDE.capabilities.map((capability, index) => (
+              {DESIGN_GUIDE.capabilities.map((capability) => (
                 <div
-                  key={index}
+                  key={capability.key}
                   className={`${styles.capabilityCard} ${styles.capabilityItem}`}
                   onClick={() => handleCapabilityClick(capability)}
                 >
