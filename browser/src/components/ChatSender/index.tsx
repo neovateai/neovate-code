@@ -12,7 +12,7 @@ import { useChatPaste } from '@/hooks/useChatPaste';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
-import QuillEditor from '../QuillEditor';
+import QuillEditor, { KeyCode } from '../QuillEditor';
 import { QuillContext } from '../QuillEditor/QuillContext';
 import SuggestionList from '../SuggestionList';
 import SenderFooter from './SenderFooter';
@@ -76,6 +76,7 @@ const ChatSender: React.FC = () => {
     });
     setInputText('');
     actions.updatePrompt('');
+    quill.current?.setText('\n');
   };
 
   const handleEnterPress = () => {
@@ -84,12 +85,17 @@ const ChatSender: React.FC = () => {
     }
   };
 
+  const handleEnterPressRef = useRef(handleEnterPress);
+  handleEnterPressRef.current = handleEnterPress;
+
   /*
   TODO
   1. Context mounting
   2. Paste
   3. context menu keyboard navigation
   */
+
+  console.log(JSON.stringify(prompt));
 
   return (
     <Spin spinning={isPasting}>
@@ -102,6 +108,18 @@ const ChatSender: React.FC = () => {
           },
           onQuillLoad: (quillInstance) => {
             quill.current = quillInstance;
+          },
+          onKeyDown: (code) => {
+            if (code === KeyCode.Enter) {
+              handleEnterPressRef.current();
+            }
+          },
+          onChange: (val) => {
+            console.log('change', JSON.stringify(val));
+
+            // rich text will auto add '\n' at the end
+            setInputText(val.trimEnd());
+            actions.updatePrompt(val.trimEnd());
           },
         }}
       >
@@ -143,11 +161,11 @@ const ChatSender: React.FC = () => {
             }}
             onSubmit={handleSubmit}
             onPaste={handlePaste}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleEnterPress();
-              }
-            }}
+            // onKeyDown={(e) => {
+            //   if (e.key === 'Enter') {
+            //     handleEnterPress();
+            //   }
+            // }}
             onCancel={() => {
               stop();
             }}
@@ -160,13 +178,13 @@ const ChatSender: React.FC = () => {
               // @ts-ignore
               input: QuillEditor,
             }}
-            onChange={(val) => {
-              if (val === '@') {
-                setOpenPopup(true);
-              }
-              setInputText(val);
-              actions.updatePrompt(val);
-            }}
+            // onChange={(val) => {
+            //   if (val === '@') {
+            //     setOpenPopup(true);
+            //   }
+            //   setInputText(val);
+            //   actions.updatePrompt(val);
+            // }}
             placeholder={t('chat.inputPlaceholder')}
           />
         </SuggestionList>

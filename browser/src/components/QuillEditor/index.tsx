@@ -26,11 +26,16 @@ function isInsertingAt(delta: Delta) {
 }
 
 const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
-  const { onChange, onSelect, value = '', placeholder, readonly } = props;
+  const { onChange, onSelect, placeholder, readonly } = props;
   const editorRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill>(null);
 
-  const { onInputAt, onQuillLoad, onKeyDown } = useContext(QuillContext);
+  const {
+    onInputAt,
+    onQuillLoad,
+    onKeyDown,
+    onChange: onQuillChange,
+  } = useContext(QuillContext);
 
   useImperativeHandle(ref, () => {
     return {
@@ -55,7 +60,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
               enter: {
                 key: 'Enter',
                 handler: () => {
-                  onKeyDown?.(13);
+                  onKeyDown?.(KeyCode.Enter);
                   return false;
                 },
               },
@@ -93,6 +98,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
 
           const currentText = quillInstance.getText();
           onChange?.(makeChangeEvent(currentText, editorRef.current));
+          onQuillChange?.(currentText);
         }
       });
 
@@ -101,10 +107,6 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
       quillRef.current = quillInstance;
     }
   }, []);
-
-  // useEffect(() => {
-  //   quillRef.current?.setText(value.toString());
-  // }, [props.value]);
 
   return (
     <div
@@ -117,3 +119,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
 });
 
 export default Editor;
+
+export enum KeyCode {
+  Enter = 13,
+}
