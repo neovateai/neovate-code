@@ -19,6 +19,11 @@
   min-height: 36px;
 }
 
+/* Header when content is collapsed */
+.headerCollapsed {
+  border-radius: 8px;
+}
+
 .headerExpandable {
   cursor: pointer;
 }

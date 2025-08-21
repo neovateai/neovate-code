@@ -133,7 +133,7 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
       <div
         className={`${styles.header} ${
           expandable ? styles.headerExpandable : styles.headerNotExpandable
-        }`}
+        } ${!isExpanded ? styles.headerCollapsed : ''}`}
         onClick={expandable ? handleToggleExpand : undefined}
         role={expandable ? 'button' : undefined}
         tabIndex={expandable ? 0 : undefined}
