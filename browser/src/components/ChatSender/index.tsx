@@ -2,7 +2,7 @@ import { Sender } from '@ant-design/x';
 import { Spin } from 'antd';
 import { createStyles } from 'antd-style';
 import type { Bounds } from 'quill';
-import Quill from 'quill';
+import Quill, { Delta } from 'quill';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
@@ -61,7 +61,7 @@ const ChatSender: React.FC = () => {
 
   const { isPasting, handlePaste, contextHolder } = useChatPaste();
 
-  const { prompt } = useSnapshot(state);
+  const { prompt, delta } = useSnapshot(state);
 
   const {
     defaultSuggestions,
@@ -73,9 +73,11 @@ const ChatSender: React.FC = () => {
     onQuery({
       prompt,
       attachedContexts: context.state.attachedContexts,
+      delta: delta as Delta,
     });
     setInputText('');
     actions.updatePrompt('');
+    actions.updateDelta(new Delta());
     quill.current?.setText('\n');
   };
 
@@ -90,9 +92,7 @@ const ChatSender: React.FC = () => {
 
   /*
   TODO
-  1. Context mounting
-  2. Paste
-  3. context menu keyboard navigation
+  1. context menu keyboard navigation
   */
 
   return (
@@ -112,10 +112,12 @@ const ChatSender: React.FC = () => {
               handleEnterPressRef.current();
             }
           },
-          onChange: (val) => {
+          onChange: (text, delta) => {
             // rich text will auto add '\n' at the end
-            setInputText(val.trimEnd());
-            actions.updatePrompt(val.trimEnd());
+            setInputText(text.trimEnd());
+            actions.updatePrompt(text.trimEnd());
+            actions.updateDelta(delta);
+            console.log(text);
           },
         }}
       >

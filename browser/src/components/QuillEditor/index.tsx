@@ -32,12 +32,14 @@ function getTextWithTakumiContext(contents: Delta) {
     .filter(
       (op) =>
         typeof op.insert === 'string' ||
-        (op.insert && typeof op.insert['takumi-context'] === 'string'),
+        (op.insert &&
+          (op.insert['takumi-context'] as any)?.value &&
+          typeof (op.insert['takumi-context'] as any).value === 'string'),
     )
     .map((op) => {
       return typeof op.insert === 'string'
         ? op.insert
-        : op.insert!['takumi-context'];
+        : (op.insert!['takumi-context'] as any).value;
     })
     .join('');
 }
@@ -140,7 +142,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
           const currentText = getTextWithTakumiContext(currentContents);
 
           onChange?.(makeChangeEvent(currentText, editorRef.current));
-          onQuillChange?.(currentText);
+          onQuillChange?.(currentText, currentContents);
         }
       });
 

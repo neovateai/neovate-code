@@ -36,7 +36,7 @@ class ContextBlot extends Embed {
   }
 
   static value(node: HTMLElement) {
-    return node.dataset.value;
+    return node.dataset;
   }
 }
 

@@ -1,4 +1,4 @@
-import type { Bounds } from 'quill';
+import type { Bounds, Delta } from 'quill';
 import type Quill from 'quill';
 import React from 'react';
 
@@ -12,7 +12,7 @@ interface QuillContextType {
   /** call this function when keyboard key down in editor */
   onKeyDown?: (code: number) => void;
   /** call this function when editor value change */
-  onChange?: (value: string) => void;
+  onChange?: (value: string, delta: Delta) => void;
 }
 
 export const QuillContext = React.createContext<QuillContextType>({});
