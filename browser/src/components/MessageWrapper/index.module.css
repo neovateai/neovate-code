@@ -53,16 +53,17 @@
 
 /* Title styles */
 .title {
-  font-weight: normal;
+  font-weight: 500;
   color: #666f8d;
   font-size: 12px;
-  line-height: 14px;
+  line-height: 16px;
   max-width: 325px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: flex;
   align-items: center;
+  margin-left: 6px;
 }
 
 .arrowExpanded {
@@ -88,9 +89,10 @@
 
 .statusText {
   font-size: 12px;
+  line-height: 16px;
+  margin-left: 6px;
   font-weight: 500;
   color: #666f8d;
-  line-height: 1;
 }
 
 /* Action button styles */
