@@ -17,6 +17,12 @@ export const statusCommand: LocalCommand = {
             context.paths.traceFile
               ? relativeToHome(context.paths.traceFile)
               : 'No trace file',
+            // .jsonl 换成 .log
+            context.paths.traceFile
+              ? relativeToHome(
+                  context.paths.traceFile.replace('.jsonl', '.log'),
+                )
+              : 'No log file',
           ],
         },
         'Working Directory': {

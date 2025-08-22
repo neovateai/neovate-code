@@ -4,6 +4,7 @@ import { query } from '../../query';
 import { isSlashCommand, parseSlashCommand } from '../../slash-commands';
 import { createStableToolKey } from '../../utils/formatToolUse';
 import { useAppContext } from '../AppContext';
+import { detectImageFormat } from '../components/TextInput/utils/imagePaste';
 import {
   APP_STATUS,
   MESSAGE_ROLES,
@@ -69,6 +70,7 @@ export function useChatActions() {
   const processUserInput = async (
     input: string,
     setSlashCommandJSX?: (jsx: React.ReactNode) => void,
+    pastedImages?: string[] | string | null,
   ): Promise<any> => {
     dispatch({ type: 'SET_HISTORY_INDEX', payload: null });
     // services.context.addHistory(input);
@@ -79,7 +81,46 @@ export function useChatActions() {
       return handleSlashCommand(input, setSlashCommandJSX);
     }
 
-    // Regular query processing
+    // Regular query processing - handle multimodal input if images are provided
+    if (pastedImages) {
+      // Normalize to array format for backwards compatibility
+      const imagesArray = Array.isArray(pastedImages)
+        ? pastedImages
+        : [pastedImages];
+
+      if (imagesArray.length > 0) {
+        const content: Array<{
+          type: 'input_text' | 'input_image';
+          text?: string;
+          image?: string;
+          providerData?: any;
+        }> = [
+          {
+            type: 'input_text' as const,
+            text: input,
+          },
+        ];
+
+        // Add all images to the content array
+        imagesArray.forEach((imageBase64) => {
+          const imageFormat = detectImageFormat(imageBase64);
+          content.push({
+            type: 'input_image' as const,
+            image: `data:image/${imageFormat};base64,${imageBase64}`,
+            providerData: { mime_type: `image/${imageFormat}` },
+          });
+        });
+
+        const multimodalInput = [
+          {
+            role: 'user' as const,
+            content,
+          },
+        ];
+        return executeQuery(multimodalInput);
+      }
+    }
+
     return executeQuery(input);
   };
 

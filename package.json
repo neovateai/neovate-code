@@ -54,6 +54,7 @@
   "license": "MIT",
   "description": "A coding agent CLI to enhance your development workflow.",
   "devDependencies": {
+    "wrap-ansi": "^9.0.0",
     "@ai-sdk/anthropic": "^1.2.12",
     "@ai-sdk/deepseek": "^0.2.16",
     "@ai-sdk/google": "^1.2.22",
