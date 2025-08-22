@@ -10,6 +10,7 @@ import ToolApprovalResult from '../ToolApprovalResult';
 import AssistantTextMessage from './AssistantTextMessage';
 import AssistantThinkingMessage from './AssistantThinkingMessage';
 import AssistantToolMessage from './AssistantToolMessage';
+import styles from './index.module.css';
 
 interface MessageProps {
   message: UIMessage;
@@ -59,11 +60,11 @@ const AssistantMessage: React.FC<MessageProps> = ({ message }) => {
   }
 
   return (
-    <>
+    <div className={styles.assistantMessage}>
       {messageParts.map((part, index) => (
         <MessagePart key={`${part.type}-${index}`} part={part} index={index} />
       ))}
-    </>
+    </div>
   );
 };
 

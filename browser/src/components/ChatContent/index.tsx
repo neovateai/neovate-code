@@ -57,10 +57,7 @@ const ChatContent: React.FC = () => {
   const roles: GetProp<typeof Bubble.List, 'roles'> = {
     user: {
       placement: 'end',
-      avatar: {
-        icon: <UserOutlined />,
-        style: { background: '#87d068' },
-      },
+      variant: 'borderless',
       messageRender(message) {
         return <UserMessage message={message} />;
       },
