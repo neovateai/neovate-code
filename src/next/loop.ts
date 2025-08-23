@@ -1,5 +1,4 @@
-import { Agent, type ModelProvider, Runner } from '@openai/agents';
-import { getModel } from '../provider';
+import { Agent, Runner } from '@openai/agents';
 import type { Tools } from '../tool';
 import { parseMessage } from '../utils/parse-message';
 import { randomUUID } from '../utils/randomUUID';
@@ -111,8 +110,6 @@ ${opts.systemPrompt || ''}
 ${opts.tools.getToolsPrompt()}
       `,
     });
-    // console.log('----history----', JSON.stringify(history.messages, null, 2));
-    // console.log('----history----', JSON.stringify(history.toAgentInput(), null, 2));
     const result = await runner.run(agent, history.toAgentInput(), {
       stream: true,
     });

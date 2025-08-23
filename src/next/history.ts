@@ -17,11 +17,6 @@ type UserMessage = {
   content: string | MessageContent[];
 };
 
-type Usage = {
-  input_tokens: number;
-  output_tokens: number;
-};
-
 type AssistantMessage = {
   role: 'assistant';
   type: 'message';

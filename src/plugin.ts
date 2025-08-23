@@ -161,13 +161,17 @@ export type Plugin = {
   ) => Promise<any> | any;
   userPrompt?: (
     this: PluginContext,
-    opts: { text: string },
+    opts: { text: string; sessionId: string },
   ) => Promise<any> | any;
   systemPrompt?: (
     this: PluginContext,
     memo: string[],
     opts: { prompt: string | undefined },
   ) => Promise<string> | string;
+  text?: (
+    this: PluginContext,
+    opts: { text: string; sessionId: string },
+  ) => Promise<any> | any;
   query?: (
     this: PluginContext,
     opts: {
@@ -176,6 +180,7 @@ export type Plugin = {
       input: AgentInputItem[];
       model: string;
       usage: UsageData;
+      sessionId: string;
     },
   ) => Promise<any> | any;
   conversation?: (
@@ -227,15 +232,21 @@ export type Plugin = {
   tool?: (this: PluginContext, opts: { agentType: AgentType }) => Promise<any>;
   toolUse?: (
     this: PluginContext,
-    opts: { callId: string; name: string; params: any },
+    opts: { toolUse: any; sessionId: string },
   ) => Promise<any> | any;
   toolUseResult?: (
     this: PluginContext,
-    result: any,
-    opts: { callId: string; name: string; params: any },
+    // result: any,
+    opts: {
+      toolUse: any;
+      result: any;
+      sessionId: string;
+    },
   ) => Promise<any> | any;
   modelList?: (
     this: PluginContext,
     models: ModelInfo[],
   ) => Promise<ModelInfo[]> | ModelInfo[];
+  provider?: (this: PluginContext) => Promise<any> | any;
+  modelAlias?: (this: PluginContext) => Promise<any> | any;
 };
