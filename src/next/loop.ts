@@ -1,4 +1,4 @@
-import { Agent, Runner } from '@openai/agents';
+import { Agent, type AgentInputItem, Runner } from '@openai/agents';
 import type { Tools } from '../tool';
 import { parseMessage } from '../utils/parse-message';
 import { randomUUID } from '../utils/randomUUID';
@@ -110,9 +110,14 @@ ${opts.systemPrompt || ''}
 ${opts.tools.getToolsPrompt()}
       `,
     });
-    const result = await runner.run(agent, history.toAgentInput(), {
-      stream: true,
-    });
+    const contextMessages: AgentInputItem[] = [];
+    const result = await runner.run(
+      agent,
+      [...contextMessages, ...history.toAgentInput()],
+      {
+        stream: true,
+      },
+    );
 
     let text = '';
     let textBuffer = '';

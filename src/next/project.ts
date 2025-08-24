@@ -1,4 +1,5 @@
 import { PluginHookType } from '../plugin';
+import { SystemPromptBuilder } from '../system-prompt-builder';
 import { Tools } from '../tool';
 import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
@@ -67,6 +68,7 @@ export class Project {
       todo: false,
       productName: this.context.productName,
     });
+    // const llmsContenxt = new SystemPromptBuilder(this.context);
     const result = await runLoop({
       input: message,
       model,
