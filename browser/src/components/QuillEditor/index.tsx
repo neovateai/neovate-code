@@ -1,6 +1,6 @@
 import { createStyles } from 'antd-style';
 import type { TextAreaProps, TextAreaRef } from 'antd/es/input/TextArea';
-import Quill, { Delta } from 'quill';
+import Quill from 'quill';
 import 'quill/dist/quill.core.css';
 import {
   forwardRef,
@@ -12,35 +12,13 @@ import {
 import ContextBlot from './ContextBlot';
 import { QuillContext } from './QuillContext';
 import { makeChangeEvent, makeSelectEvent } from './events';
+import { getTextWithTakumiContext, isInsertingAt } from './utils';
 
 interface IQuillEditorProps extends TextAreaProps {}
 
 interface IQuillEditorRef extends TextAreaRef {}
 
 Quill.register(ContextBlot);
-
-function isInsertingAt(delta: Delta) {
-  const last = delta.ops[delta.ops.length - 1];
-  return last.insert === '@';
-}
-
-/** DO NOT USE QUILL's `getText`, it won't work with takumi-context.*/
-function getTextWithTakumiContext(contents: Delta) {
-  return contents.ops
-    .filter(
-      (op) =>
-        typeof op.insert === 'string' ||
-        (op.insert &&
-          (op.insert['takumi-context'] as any)?.value &&
-          typeof (op.insert['takumi-context'] as any).value === 'string'),
-    )
-    .map((op) => {
-      return typeof op.insert === 'string'
-        ? op.insert
-        : (op.insert!['takumi-context'] as any).value;
-    })
-    .join('');
-}
 
 const useStyles = createStyles(({ css }) => {
   return {
@@ -136,12 +114,10 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
             onInputAt?.(false);
           }
 
-          const currentContents = quillInstance.getContents();
-
-          const currentText = getTextWithTakumiContext(currentContents);
+          const currentText = getTextWithTakumiContext(delta);
 
           onChange?.(makeChangeEvent(currentText, editorRef.current));
-          onQuillChange?.(currentText, currentContents);
+          onQuillChange?.(currentText, delta);
         }
       });
 
