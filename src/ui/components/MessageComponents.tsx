@@ -299,6 +299,48 @@ export function SystemMessage({ message }: SystemMessageProps) {
   );
 }
 
+interface BashCommandMessageProps {
+  message: Message;
+}
+
+export function BashCommandMessage({ message }: BashCommandMessageProps) {
+  return (
+    <Box flexDirection="column">
+      <Text bold color="magenta">
+        bash
+      </Text>
+      <Text color="magenta">
+        {message.content.text || `$ ${message.content.command}`}
+      </Text>
+    </Box>
+  );
+}
+
+interface BashResultMessageProps {
+  message: Message;
+}
+
+export function BashResultMessage({ message }: BashResultMessageProps) {
+  const { output, exitCode } = message.content;
+  const hasError = exitCode !== undefined && exitCode !== 0;
+
+  return (
+    <Box flexDirection="column">
+      {output && output.trim() && (
+        <Box paddingLeft={2}>
+          <Text color={hasError ? 'red' : 'gray'}>{output.trim()}</Text>
+        </Box>
+      )}
+      <Box paddingLeft={2}>
+        <Text dimColor>
+          Exit code: {exitCode ?? 'unknown'}
+          {hasError && ' (error)'}
+        </Text>
+      </Box>
+    </Box>
+  );
+}
+
 interface MessageWrapperProps {
   message: Message;
   productName: string;
@@ -313,6 +355,9 @@ export function MessageWrapper({
   const getMessageComponent = () => {
     switch (message.role) {
       case MESSAGE_ROLES.USER:
+        if (message.content.type === MESSAGE_TYPES.BASH_COMMAND) {
+          return <BashCommandMessage message={message} />;
+        }
         return <UserMessage message={message} />;
       case MESSAGE_ROLES.ASSISTANT:
         if (message.content.type === MESSAGE_TYPES.THINKING) {
@@ -326,6 +371,9 @@ export function MessageWrapper({
               dynamic={dynamic}
             />
           );
+        }
+        if (message.content.type === MESSAGE_TYPES.BASH_RESULT) {
+          return <BashResultMessage message={message} />;
         }
         return <AssistantToolMessage message={message} />;
       case MESSAGE_ROLES.SYSTEM:

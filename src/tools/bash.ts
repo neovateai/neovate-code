@@ -39,7 +39,7 @@ const BANNED_COMMANDS = [
   'zsh',
 ];
 
-const DEFAULT_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+export const DEFAULT_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const MAX_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
 /**
@@ -114,7 +114,7 @@ function validateCommand(command: string): string | null {
   return null;
 }
 
-async function executeCommand(
+export async function executeCommand(
   command: string,
   timeout: number,
   cwd: string,

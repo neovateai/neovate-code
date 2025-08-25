@@ -67,6 +67,8 @@ export const MESSAGE_TYPES = {
   THINKING: 'thinking',
   TOOL_CALL: 'tool-call',
   TOOL_RESULT: 'tool-result',
+  BASH_COMMAND: 'bash-command',
+  BASH_RESULT: 'bash-result',
 } as const;
 
 // Message roles
@@ -96,6 +98,7 @@ export const BORDER_COLORS = {
   PROCESSING: 'gray',
   ERROR: 'redBright',
   WARNING: 'yellow',
+  BASH: 'magentaBright',
 } as const;
 
 // Approval options

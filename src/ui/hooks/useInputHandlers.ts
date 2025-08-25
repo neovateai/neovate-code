@@ -75,11 +75,22 @@ export function useInputHandlers({
         clearImages();
       } else {
         // If idle, or if there are images (images can't be queued), send immediately
+        let submissionValue = finalValue;
+
+        // Add bash prefix for history if in bash mode
+        if (state.inputMode === 'bash') {
+          submissionValue = `!${finalValue}`;
+        }
+
         inputState.setValue('');
         pasteManager.clearPastedText();
         const imageData = getImageData();
         clearImages();
-        await processUserInput(finalValue, setSlashCommandJSX, imageData);
+
+        // Reset to prompt mode after submission
+        dispatch({ type: 'SET_INPUT_MODE', payload: 'prompt' });
+
+        await processUserInput(submissionValue, setSlashCommandJSX, imageData);
       }
     } catch (error) {
       inputState.setError(
@@ -97,6 +108,8 @@ export function useInputHandlers({
     clearImages,
     processUserInput,
     setSlashCommandJSX,
+    state.inputMode,
+    dispatch,
   ]);
 
   const handleTextPaste = useCallback(
@@ -282,8 +295,29 @@ export function useInputHandlers({
 
   const handleChange = useCallback(
     (val: string) => {
-      chatInputChange(val);
-      inputState.setValue(val);
+      // Check for bash mode switch
+      if (val.startsWith('!') && state.inputMode !== 'bash') {
+        // Only switch to bash mode if not already in bash mode
+        dispatch({ type: 'SET_INPUT_MODE', payload: 'bash' });
+        // Remove the '!' prefix when switching to bash mode
+        const bashCommand = val.slice(1);
+        chatInputChange(bashCommand);
+        inputState.setValue(bashCommand);
+      } else if (
+        !val.startsWith('!') &&
+        state.inputMode === 'bash' &&
+        val.trim() === ''
+      ) {
+        // Only switch back to prompt mode if input is empty (user cleared the bash command)
+        dispatch({ type: 'SET_INPUT_MODE', payload: 'prompt' });
+        chatInputChange(val);
+        inputState.setValue(val);
+      } else {
+        // Normal input handling
+        chatInputChange(val);
+        inputState.setValue(val);
+      }
+
       resetVisible();
       if (pastedImages.length > 0) {
         updateImagesFromValue(val);
@@ -295,6 +329,8 @@ export function useInputHandlers({
       resetVisible,
       pastedImages.length,
       updateImagesFromValue,
+      state.inputMode,
+      dispatch,
     ],
   );
 

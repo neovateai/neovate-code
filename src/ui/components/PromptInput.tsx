@@ -68,6 +68,14 @@ export function ChatInput({
     onShowExitWarning: inputState.setShowExitWarning,
   });
 
+  const handleEscape = () => {
+    if (state.inputMode === 'bash') {
+      keyboardShortcuts.handleEscapeFromBash();
+    } else {
+      handlers.cancelQuery();
+    }
+  };
+
   const isSlashCommand = state.slashCommandJSX !== null;
 
   const handleTabPress = (isShiftTab: boolean) => {
@@ -117,12 +125,18 @@ export function ChatInput({
     <Box flexDirection="column" marginTop={1}>
       <Box
         borderStyle="round"
-        borderColor={BORDER_COLORS.DEFAULT as any}
+        borderColor={
+          (state.inputMode === 'bash'
+            ? BORDER_COLORS.BASH
+            : BORDER_COLORS.DEFAULT) as any
+        }
         paddingX={1}
         flexDirection="row"
         gap={1}
       >
-        <Text color="white">&gt;</Text>
+        <Text color={state.inputMode === 'bash' ? 'magenta' : 'white'}>
+          {state.inputMode === 'bash' ? '!' : '>'}
+        </Text>
         <TextInput
           multiline
           value={inputState.state.value}
@@ -141,7 +155,7 @@ export function ChatInput({
               setMessage(null);
             }
           }}
-          onEscape={handlers.cancelQuery}
+          onEscape={handleEscape}
           onImagePaste={(image) => {
             handlers.handleImagePasteWithUI(image);
           }}
@@ -199,8 +213,9 @@ export function ChatInput({
       <Box flexDirection="row" paddingX={2} gap={1}>
         {!isSlashCommand && (
           <Text color="gray">
-            ctrl+c twice to exit | enter to send (or queue if busy) | esc to
-            cancel
+            {state.inputMode === 'bash'
+              ? '! for bash mode | ctrl+c twice to exit | enter to run command'
+              : '! for bash mode | ctrl+c twice to exit | enter to send (or queue if busy) | esc to cancel'}
           </Text>
         )}
         <Box flexGrow={1} />
@@ -218,7 +233,11 @@ export function ChatInput({
             )}
           </Box>
         )}
-        {getModeDisplay() && <Text color="yellow">{getModeDisplay()}</Text>}
+        {getModeDisplay() && (
+          <Text color={state.inputMode === 'bash' ? 'magenta' : 'yellow'}>
+            {getModeDisplay()}
+          </Text>
+        )}
       </Box>
       {inputState.state.ctrlCPressed && <ExitStatus />}
     </Box>

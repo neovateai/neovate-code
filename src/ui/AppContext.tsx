@@ -29,6 +29,9 @@ export interface Message {
     toolName?: string;
     args?: Record<string, any>;
     result?: any;
+    command?: string;
+    output?: string;
+    exitCode?: number;
   };
 }
 
@@ -57,6 +60,9 @@ export interface AppState {
   history: string[];
   historyIndex: number | null;
   draftInput: string | null;
+
+  // Input mode
+  inputMode: 'prompt' | 'bash';
 
   // Tool execution
   currentExecutingTool: {
@@ -146,7 +152,8 @@ export type AppAction =
       payload: 'not-detected' | 'detected' | 'connected';
     }
   | { type: 'SET_MODEL'; payload: string }
-  | { type: 'SET_GENERAL_INFO'; payload: Record<string, string> };
+  | { type: 'SET_GENERAL_INFO'; payload: Record<string, string> }
+  | { type: 'SET_INPUT_MODE'; payload: 'prompt' | 'bash' };
 
 // Reducer
 function appReducer(state: AppState, action: AppAction): AppState {
@@ -301,6 +308,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_GENERAL_INFO':
       return { ...state, generalInfo: action.payload };
 
+    case 'SET_INPUT_MODE':
+      return { ...state, inputMode: action.payload };
+
     default:
       return state;
   }
@@ -349,6 +359,7 @@ export function AppProvider({
     history: context.history,
     historyIndex: null,
     draftInput: null,
+    inputMode: 'prompt',
     currentExecutingTool: null,
     planModal: null,
     slashCommandJSX: null,

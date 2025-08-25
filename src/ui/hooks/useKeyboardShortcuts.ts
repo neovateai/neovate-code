@@ -10,7 +10,7 @@ export function useKeyboardShortcuts({
   onCtrlCPressed,
   onShowExitWarning,
 }: UseKeyboardShortcutsProps) {
-  const { switchMode } = useModeSwitch();
+  const { switchMode, switchToPrompt } = useModeSwitch();
   const ctrlCTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cleanup timeout on unmount
@@ -48,8 +48,13 @@ export function useKeyboardShortcuts({
     switchMode();
   }, [switchMode]);
 
+  const handleEscapeFromBash = useCallback(() => {
+    switchToPrompt();
+  }, [switchToPrompt]);
+
   return {
     handleExitMessage,
     handleShiftTab,
+    handleEscapeFromBash,
   };
 }

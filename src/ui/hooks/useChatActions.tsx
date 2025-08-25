@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { isReasoningModel } from '../../provider';
 import { query } from '../../query';
 import { isSlashCommand, parseSlashCommand } from '../../slash-commands';
-import { createStableToolKey } from '../../utils/formatToolUse';
+import { DEFAULT_TIMEOUT, executeCommand } from '../../tools/bash';
+import { createStableToolKey, formatToolUse } from '../../utils/formatToolUse';
 import { useAppContext } from '../AppContext';
 import { detectImageFormat } from '../components/TextInput/utils/imagePaste';
 import {
@@ -67,6 +68,90 @@ export function useChatActions() {
     dispatch({ type: 'SET_CURRENT_EXECUTING_TOOL', payload: null });
   };
 
+  const handleBashCommand = async (command: string): Promise<any> => {
+    if (!command.trim()) {
+      return { finalText: 'Empty command', success: false };
+    }
+
+    dispatch({ type: 'SET_STATUS', payload: APP_STATUS.PROCESSING });
+    dispatch({ type: 'SET_ERROR', payload: null });
+
+    // Add bash command message
+    dispatch({
+      type: 'ADD_MESSAGE',
+      payload: {
+        role: MESSAGE_ROLES.USER,
+        content: {
+          type: MESSAGE_TYPES.BASH_COMMAND,
+          command: command,
+          text: `${services.context.cwd}$ ${command}`,
+        },
+      },
+    });
+
+    const addResultMessage = (output: string, exitCode: number) => {
+      dispatch({
+        type: 'ADD_MESSAGE',
+        payload: {
+          role: MESSAGE_ROLES.ASSISTANT,
+          content: {
+            type: MESSAGE_TYPES.BASH_RESULT,
+            output,
+            exitCode,
+          },
+        },
+      });
+    };
+
+    const addToHistory = (result: any) => {
+      services.service.history.push(
+        formatToolUse({
+          callId: '',
+          name: 'bash',
+          params: { command },
+          result,
+        }),
+      );
+    };
+
+    try {
+      const result = await executeCommand(
+        command,
+        DEFAULT_TIMEOUT,
+        services.context.cwd,
+      );
+
+      const output = result.output || result.message || '';
+      const exitCode = result.exitCode ?? (result.success ? 0 : 1);
+      const success = exitCode === 0;
+
+      addResultMessage(output, exitCode);
+      dispatch({ type: 'SET_STATUS', payload: APP_STATUS.COMPLETED });
+      addToHistory(result);
+
+      return {
+        finalText: output || 'Command executed',
+        success,
+      };
+    } catch (error: any) {
+      const errorMessage = error.message || 'Command execution failed';
+
+      addResultMessage(errorMessage, 1);
+      dispatch({ type: 'SET_STATUS', payload: APP_STATUS.FAILED });
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
+
+      addToHistory({
+        success: false,
+        error: errorMessage,
+      });
+
+      return {
+        finalText: errorMessage,
+        success: false,
+      };
+    }
+  };
+
   const processUserInput = async (
     input: string,
     setSlashCommandJSX?: (jsx: React.ReactNode) => void,
@@ -75,6 +160,12 @@ export function useChatActions() {
     dispatch({ type: 'SET_HISTORY_INDEX', payload: null });
     // services.context.addHistory(input);
     addHistory(input);
+
+    // Check if input is a bash command (starts with !)
+    if (input.startsWith('!')) {
+      const command = input.slice(1).trim();
+      return handleBashCommand(command);
+    }
 
     // Check if input is a slash command
     if (isSlashCommand(input)) {
@@ -593,6 +684,7 @@ export function useChatActions() {
     processUserInput,
     executeQuery,
     executeQueuedMessages,
+    handleBashCommand,
     cancelQuery,
   };
 }

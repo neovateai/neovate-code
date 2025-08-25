@@ -29,21 +29,44 @@ export function useModeSwitch() {
   };
 
   const getModeDisplay = () => {
+    const modeDisplays: string[] = [];
+
     switch (state.currentMode) {
-      case 'normal':
-        return '';
       case 'autoEdit':
-        return 'auto edit is on';
+        modeDisplays.push('auto edit is on');
+        break;
       case 'plan':
-        return 'plan mode on';
-      default:
-        return '';
+        modeDisplays.push('plan mode on');
+        break;
     }
+
+    if (state.inputMode === 'bash') {
+      modeDisplays.push('bash mode');
+    }
+
+    return modeDisplays.join(' | ');
+  };
+
+  const switchToBash = () => {
+    dispatch({ type: 'SET_INPUT_MODE', payload: 'bash' });
+  };
+
+  const switchToPrompt = () => {
+    dispatch({ type: 'SET_INPUT_MODE', payload: 'prompt' });
+  };
+
+  const toggleInputMode = () => {
+    const newMode = state.inputMode === 'prompt' ? 'bash' : 'prompt';
+    dispatch({ type: 'SET_INPUT_MODE', payload: newMode });
   };
 
   return {
     currentMode: state.currentMode,
+    inputMode: state.inputMode,
     switchMode,
+    switchToBash,
+    switchToPrompt,
+    toggleInputMode,
     getModeDisplay,
   };
 }
