@@ -2,6 +2,7 @@ import { PluginHookType } from '../plugin';
 import { Tools } from '../tool';
 import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
+import { LlmsContext } from './llmsContext';
 import { runLoop } from './loop';
 import { modelAlias, providers, resolveModel } from './model';
 import { OutputFormat } from './outputFormat';
@@ -70,7 +71,10 @@ export class Project {
       todo: false,
       productName: this.context.productName,
     });
-    // const llmsContenxt = new SystemPromptBuilder(this.context);
+    const llmsContext = await LlmsContext.create({
+      context: this.context,
+      userPrompt: message,
+    });
     outputFormat.onInit({
       text: message,
       sessionId: this.session.id,
@@ -78,12 +82,13 @@ export class Project {
       model,
       cwd: this.context.cwd,
     });
+    // TODO: signal
     const result = await runLoop({
       input: message,
       model,
       tools: new Tools(tools),
       systemPrompt,
-      // TODO: signal
+      llmsContexts: llmsContext.messages,
       onTextDelta: async (text) => {},
       onText: async (text) => {
         await this.context.apply({

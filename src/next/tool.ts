@@ -22,10 +22,13 @@ export async function resolveTools(opts: ResolveToolsOpts) {
   const context = opts.context as any;
   const readonlyTools = [
     createReadTool({ context }),
-    enhanceTool(createLSTool({ context }), {
-      category: 'read',
-      riskLevel: 'low',
-    }),
+    enhanceTool(
+      createLSTool({ cwd: context.cwd, productName: context.productName }),
+      {
+        category: 'read',
+        riskLevel: 'low',
+      },
+    ),
     enhanceTool(createGlobTool({ context }), {
       category: 'read',
       riskLevel: 'low',

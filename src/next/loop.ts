@@ -1,4 +1,4 @@
-import { Agent, type AgentInputItem, Runner } from '@openai/agents';
+import { Agent, Runner, type SystemMessageItem } from '@openai/agents';
 import type { Tools } from '../tool';
 import { parseMessage } from '../utils/parse-message';
 import { randomUUID } from '../utils/randomUUID';
@@ -25,6 +25,7 @@ type RunLoopOpts = {
   systemPrompt?: string;
   maxTurns?: number;
   signal?: AbortSignal;
+  llmsContexts?: string[];
   onTextDelta?: (text: string) => Promise<void>;
   onText?: (text: string) => Promise<void>;
   onReasoning?: (text: string) => Promise<void>;
@@ -110,10 +111,16 @@ ${opts.systemPrompt || ''}
 ${opts.tools.getToolsPrompt()}
       `,
     });
-    const contextMessages: AgentInputItem[] = [];
+    const llmsContexts = opts.llmsContexts || [];
+    const llmsContextMessages = llmsContexts.map((llmsContext) => {
+      return {
+        role: 'system',
+        content: llmsContext,
+      } as SystemMessageItem;
+    });
     const result = await runner.run(
       agent,
-      [...contextMessages, ...history.toAgentInput()],
+      [...llmsContextMessages, ...history.toAgentInput()],
       {
         stream: true,
       },
