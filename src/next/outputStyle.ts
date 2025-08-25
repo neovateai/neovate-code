@@ -2,7 +2,10 @@ import fm from 'front-matter';
 import fs from 'fs';
 import { glob } from 'glob';
 import path from 'path';
-import { getBuiltinOutputStyles } from '../output-style/builtin';
+import {
+  defaultOutputStyle,
+  getBuiltinOutputStyles,
+} from '../output-style/builtin';
 import { kebabToTitleCase } from '../utils/string';
 import type { Paths } from './paths';
 
@@ -81,8 +84,24 @@ export class OutputStyleManager {
     });
   }
 
-  getOutputStyle(name: string): OutputStyle | undefined {
-    return this.outputStyles.find((style) => style.name === name);
+  getOutputStyle(name: string | undefined): OutputStyle {
+    const defaultOutputStyle = this.getDefaultOutputStyle();
+    if (!name) {
+      return defaultOutputStyle;
+    }
+    return (
+      this.outputStyles.find((style) => style.name === name) ||
+      defaultOutputStyle
+    );
+  }
+
+  getDefaultOutputStyle(): OutputStyle {
+    return new OutputStyle({
+      name: defaultOutputStyle.name,
+      description: defaultOutputStyle.description,
+      isCodingRelated: defaultOutputStyle.isCodingRelated,
+      prompt: defaultOutputStyle.prompt,
+    });
   }
 }
 

@@ -6,6 +6,7 @@ import { LlmsContext } from './llmsContext';
 import { runLoop } from './loop';
 import { modelAlias, providers, resolveModel } from './model';
 import { OutputFormat } from './outputFormat';
+import { OutputStyleManager } from './outputStyle';
 import { Session, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
 import { resolveTools } from './tool';
@@ -63,9 +64,14 @@ export class Project {
       memo: tools,
       type: PluginHookType.SeriesMerge,
     });
+    const outputStyle = new OutputStyleManager({
+      paths: this.context.paths,
+    }).getOutputStyle(this.context.config.outputStyle);
     const systemPrompt = generateSystemPrompt({
-      todo: false,
+      todo: this.context.config.todo!,
       productName: this.context.productName,
+      language: this.context.config.language,
+      outputStyle,
     });
     const llmsContext = await LlmsContext.create({
       context: this.context,
