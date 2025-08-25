@@ -33,7 +33,38 @@ function parseArgs(argv: any) {
   });
 }
 
-function printHelp() {}
+function printHelp(p: string) {
+  console.log(
+    `
+Usage:
+  ${p} [options] [command] <prompt>
+
+Run the code agent with a prompt, interactive by default, use -q/--quiet for non-interactive mode.
+
+Arguments:
+  prompt                        Prompt to run
+
+Options:
+  -h, --help                    Show help
+  -m, --model <model>           Specify model to use
+  --small-model <model>         Specify a smaller model for some tasks
+  --system-prompt <prompt>      Custom system prompt for code agent
+  -q, --quiet                   Quiet mode, non interactive
+  --no-mcp                      Disable MCP servers
+
+Examples:
+  ${p} "Refactor this file to use hooks."
+  ${p} -m gpt-4o "Add tests for the following code."
+
+Commands:
+  config                        Manage configuration
+  commit                        Commit changes to the repository
+  mcp                           Manage MCP servers
+  run                           Run a command
+  log                           Start log viewer server
+    `.trimEnd(),
+  );
+}
 
 export async function runNeovate(opts: {
   productName: string;
@@ -42,7 +73,7 @@ export async function runNeovate(opts: {
 }) {
   const argv = parseArgs(process.argv.slice(2));
   if (argv.help) {
-    printHelp();
+    printHelp(opts.productName.toLowerCase());
     return;
   }
   const cwd = argv.cwd || process.cwd();
@@ -74,7 +105,7 @@ export async function runNeovate(opts: {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8'),
+  fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf-8'),
 );
 runNeovate({
   productName: PRODUCT_NAME,
