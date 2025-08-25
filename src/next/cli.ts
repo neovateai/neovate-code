@@ -49,8 +49,13 @@ Arguments:
 Options:
   -h, --help                    Show help
   -m, --model <model>           Specify model to use
+  --plan-model <model>          Specify a plan model for some tasks
   --small-model <model>         Specify a smaller model for some tasks
+  --cwd <path>                  Specify the working directory
+  --resume <session-id>         Resume a session
   --system-prompt <prompt>      Custom system prompt for code agent
+  --output-format <format>      Output format, text, stream-json, json
+  --output-style <style>        Output style
   -q, --quiet                   Quiet mode, non interactive
   --no-mcp                      Disable MCP servers
 
