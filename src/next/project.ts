@@ -12,11 +12,9 @@ import { Usage } from './usage';
 export type SessionId = string;
 
 export class Project {
-  cwd: string;
   session: Session;
   context: Context;
-  constructor(opts: { cwd: string; sessionId: SessionId; context: Context }) {
-    this.cwd = opts.cwd;
+  constructor(opts: { sessionId: SessionId; context: Context }) {
     this.session = opts.sessionId
       ? new Session({
           id: opts.sessionId,
@@ -78,6 +76,7 @@ export class Project {
       sessionId: this.session.id,
       tools,
       model,
+      cwd: this.context.cwd,
     });
     const result = await runLoop({
       input: message,

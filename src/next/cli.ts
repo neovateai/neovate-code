@@ -104,7 +104,6 @@ export async function runNeovate(opts: {
     plugins: opts.plugins,
   });
   const project = new Project({
-    cwd,
     context,
     sessionId: argv.resume,
   });
