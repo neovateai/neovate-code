@@ -7,6 +7,7 @@ import { useAutoSuggestion } from '../hooks/useAutoSuggestion';
 import { useChatActions } from '../hooks/useChatActions';
 import { extractFileQuery } from '../hooks/useFileAutoSuggestion';
 import { useIDEStatus } from '../hooks/useIDEStatus';
+import { useImagePaste } from '../hooks/useImagePaste';
 import { useModeSwitch } from '../hooks/useModeSwitch';
 import { useTerminalSize } from '../hooks/useTerminalSize';
 import { useTryTips } from '../hooks/useTryTips';
@@ -14,16 +15,22 @@ import { getCurrentLineInfo } from '../utils/cursor-utils';
 import { AutoSuggestionDisplay } from './AutoSuggestionDisplay';
 import TextInput from './TextInput';
 
-// Helper function to generate pasted text prompt
-function getPastedTextPrompt(text: string): string {
-  const newlineCount = (text.match(/\r\n|\r|\n/g) || []).length;
-  return `[Pasted text +${newlineCount} lines] `;
+// Helper function to generate pasted text prompt with unique ID
+function getPastedTextPrompt(text: string, pasteId: string): string {
+  // Count actual lines by splitting on line breaks and filtering empty trailing lines
+  const lines = text.split(/\r\n|\r|\n/);
+  const lineCount = lines.length;
+  return `[Pasted text ${pasteId} ${lineCount} lines] `;
 }
 
-// Image placeholder constants and settings
-const IMAGE_PLACEHOLDER_PREFIX = '[Image ';
-const IMAGE_PLACEHOLDER_SUFFIX = ']';
-const MAX_IMAGES = 5;
+// Global paste counter for generating incremental IDs
+let pasteCounter = 0;
+
+// Helper function to generate unique paste ID
+function generatePasteId(): string {
+  // Use simple incremental format: #1, #2, #3, etc.
+  return `#${++pasteCounter}`;
+}
 
 interface ChatInputProps {
   setSlashCommandJSX: (jsx: React.ReactNode) => void;
@@ -70,18 +77,26 @@ export function ChatInput({
   const { switchMode, getModeDisplay } = useModeSwitch();
   const { latestSelection, installStatus } = useIDEStatus();
   const { currentTip } = useTryTips();
+  const {
+    pastedImages,
+    imagePasteMessage,
+    handleImagePaste,
+    clearImages,
+    updateImagesFromValue,
+    replaceImagePlaceholders,
+    getImageData,
+    setMessage,
+    maxImages,
+  } = useImagePaste();
 
   const [value, setValue] = useState('');
   const [cursorPosition, setCursorPosition] = useState<number | undefined>();
   const [ctrlCPressed, setCtrlCPressed] = useState(false);
   const [showExitWarning, setShowExitWarning] = useState(false);
-  const [pastedText, setPastedText] = useState<string | null>(null);
-  const [pastedImages, setPastedImages] = useState<
-    Array<{ id: string; base64: string; placeholder: string }>
-  >([]);
-  const [imagePasteMessage, setImagePasteMessage] = useState<string | null>(
-    null,
+  const [pastedTextMap, setPastedTextMap] = useState<Map<string, string>>(
+    new Map(),
   );
+  const [isPasting, setIsPasting] = useState(false);
   const ctrlCTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const {
     suggestions,
@@ -95,33 +110,6 @@ export function ChatInput({
   } = useAutoSuggestion(value);
 
   const isSlashCommand = state.slashCommandJSX !== null;
-
-  const handleExit = () => {
-    // Clear any existing timeout
-    if (ctrlCTimeoutRef.current) {
-      clearTimeout(ctrlCTimeoutRef.current);
-    }
-
-    process.exit(0);
-  };
-
-  const handleCtrlC = () => {
-    if (ctrlCPressed) {
-      // Second press - exit immediately
-      handleExit();
-    } else {
-      // First press - show warning and set timeout
-      setCtrlCPressed(true);
-      setShowExitWarning(true);
-
-      // Reset after 1 second
-      ctrlCTimeoutRef.current = setTimeout(() => {
-        setCtrlCPressed(false);
-        setShowExitWarning(false);
-        ctrlCTimeoutRef.current = null;
-      }, 1000);
-    }
-  };
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -180,37 +168,29 @@ export function ChatInput({
   const handleSubmit = () => {
     if (value.trim() === '') return;
 
-    // Handle pasted text replacement before submission
+    // Handle all pasted text replacements before submission
     let finalValue = value;
-    if (pastedText) {
-      const pastedPrompt = getPastedTextPrompt(pastedText);
-      if (finalValue.includes(pastedPrompt)) {
-        finalValue = finalValue.replace(pastedPrompt, pastedText);
+    pastedTextMap.forEach((originalText, prompt) => {
+      if (finalValue.includes(prompt)) {
+        finalValue = finalValue.replace(prompt, originalText);
       }
-    }
+    });
 
     // Handle image placeholder replacement - remove placeholders from text but keep image data
-    if (pastedImages.length > 0) {
-      pastedImages.forEach(({ placeholder }) => {
-        if (finalValue.includes(placeholder)) {
-          finalValue = finalValue.replace(placeholder, '').trim();
-        }
-      });
-    }
+    finalValue = replaceImagePlaceholders(finalValue);
 
     if (isProcessing && onAddToQueue && pastedImages.length === 0) {
       // If currently processing, add to queue (but not if there are images)
       onAddToQueue(finalValue.trim());
       setValue('');
-      setPastedText(null);
-      setPastedImages([]);
+      setPastedTextMap(new Map()); // Clear pasted text mappings
+      clearImages();
     } else {
       // If idle, or if there are images (images can't be queued), send immediately
       setValue('');
-      setPastedText(null);
-      const imageData =
-        pastedImages.length > 0 ? pastedImages.map((img) => img.base64) : null;
-      setPastedImages([]);
+      setPastedTextMap(new Map()); // Clear pasted text mappings
+      const imageData = getImageData();
+      clearImages();
       processUserInput(finalValue, setSlashCommandJSX, imageData).catch(
         () => {},
       );
@@ -222,8 +202,16 @@ export function ChatInput({
     // Replace any \r with \n first to match useTextInput's conversion behavior
     const text = rawText.replace(/\r/g, '\n');
 
-    // Get prompt with newline count
-    const pastedPrompt = getPastedTextPrompt(text);
+    // Generate unique paste ID and prompt
+    const pasteId = generatePasteId();
+    const pastedPrompt = getPastedTextPrompt(text, pasteId);
+
+    // Store the mapping relationship
+    setPastedTextMap((prev) => new Map(prev).set(pastedPrompt, text));
+
+    // Set pasting state
+    setIsPasting(true);
+    setTimeout(() => setIsPasting(false), 500);
 
     // Update the input with a visual indicator that text has been pasted
     const currentCursorPos = cursorPosition ?? value.length;
@@ -234,33 +222,21 @@ export function ChatInput({
 
     setValue(newValue);
     setCursorPosition(currentCursorPos + pastedPrompt.length);
-    setPastedText(text);
   };
 
   // Handle image paste
-  const handleImagePaste = (image: string) => {
-    if (pastedImages.length >= MAX_IMAGES) {
-      setImagePasteMessage(`Maximum ${MAX_IMAGES} images allowed`);
-      setTimeout(() => setImagePasteMessage(null), 3000);
-      return;
+  const handleImagePasteWithUI = (image: string) => {
+    const placeholder = handleImagePaste(image);
+    if (placeholder) {
+      // Add placeholder to input value to show visual feedback
+      const currentCursorPos = cursorPosition ?? value.length;
+      const newValue =
+        value.slice(0, currentCursorPos) +
+        placeholder +
+        value.slice(currentCursorPos);
+      setValue(newValue);
+      setCursorPosition(currentCursorPos + placeholder.length);
     }
-
-    const imageId = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const placeholder = `${IMAGE_PLACEHOLDER_PREFIX}${pastedImages.length + 1}${IMAGE_PLACEHOLDER_SUFFIX}`;
-
-    setPastedImages((prev) => [
-      ...prev,
-      { id: imageId, base64: image, placeholder },
-    ]);
-
-    // Add placeholder to input value to show visual feedback
-    const currentCursorPos = cursorPosition ?? value.length;
-    const newValue =
-      value.slice(0, currentCursorPos) +
-      placeholder +
-      value.slice(currentCursorPos);
-    setValue(newValue);
-    setCursorPosition(currentCursorPos + placeholder.length);
   };
 
   const getIDEStatusDisplay = () => {
@@ -276,12 +252,12 @@ export function ChatInput({
     }
   };
 
+  const { columns } = useTerminalSize();
+  const textInputColumns = columns - 6;
+
   if (isSlashCommand) {
     return null;
   }
-
-  const { columns, rows } = useTerminalSize();
-  const textInputColumns = columns - 6;
 
   return (
     <Box flexDirection="column" marginTop={1}>
@@ -309,12 +285,7 @@ export function ChatInput({
             resetVisible();
             // Clear pastedImages if user manually removes placeholders
             if (pastedImages.length > 0) {
-              const updatedImages = pastedImages.filter((img) =>
-                val.includes(img.placeholder),
-              );
-              if (updatedImages.length !== pastedImages.length) {
-                setPastedImages(updatedImages);
-              }
+              updateImagesFromValue(val);
             }
           }}
           onHistoryUp={() => {
@@ -329,6 +300,7 @@ export function ChatInput({
                   .join('\n');
                 setValue(queuedContent);
                 setCursorPosition(queuedContent.length);
+                setPastedTextMap(new Map()); // Clear pasted text mappings
                 dispatch({ type: 'CLEAR_QUEUE' });
                 return;
               }
@@ -342,6 +314,7 @@ export function ChatInput({
                 const history = chatInputUp(value);
                 setValue(history);
                 setCursorPosition(history.length);
+                setPastedTextMap(new Map()); // Clear pasted text mappings
               } else {
                 // 多行输入，判断光标是否在第一行
                 const { currentLine } = getCurrentLineInfo(
@@ -353,6 +326,7 @@ export function ChatInput({
                   const history = chatInputUp(value);
                   setValue(history);
                   setCursorPosition(history.length);
+                  setPastedTextMap(new Map()); // Clear pasted text mappings
                 }
               }
             }
@@ -369,6 +343,7 @@ export function ChatInput({
                 const history = chatInputDown(value);
                 setValue(history);
                 setCursorPosition(history.length);
+                setPastedTextMap(new Map()); // Clear pasted text mappings
               } else {
                 // 多行输入，判断光标是否在最后一行
                 const { currentLine, lines: textLines } = getCurrentLineInfo(
@@ -381,6 +356,7 @@ export function ChatInput({
                   const history = chatInputDown(value);
                   setValue(history);
                   setCursorPosition(history.length);
+                  setPastedTextMap(new Map()); // Clear pasted text mappings
                 }
               }
             }
@@ -415,11 +391,11 @@ export function ChatInput({
           onMessage={(show, text) => {
             // Handle custom messages from TextInput (like image paste errors)
             if (show && text) {
-              setImagePasteMessage(text);
+              setMessage(text);
               // Auto-hide message after 4 seconds
-              setTimeout(() => setImagePasteMessage(null), 4000);
+              setTimeout(() => setMessage(null), 4000);
             } else {
-              setImagePasteMessage(null);
+              setMessage(null);
             }
           }}
           onEscape={() => {
@@ -428,7 +404,7 @@ export function ChatInput({
           }}
           onImagePaste={(image) => {
             console.log('onImagePaste', image);
-            handleImagePaste(image);
+            handleImagePasteWithUI(image);
           }}
           onPaste={handleTextPaste}
           onSubmit={
@@ -436,6 +412,7 @@ export function ChatInput({
           }
           cursorOffset={cursorPosition ?? 0}
           onChangeCursorOffset={(pos) => setCursorPosition(pos)}
+          disableCursorMovementForUpDownKeys={isVisible}
           onTabPress={handleTabPress}
           columns={textInputColumns}
           isDimmed={isProcessing}
@@ -459,11 +436,16 @@ export function ChatInput({
           </Text>
         </Box>
       )}
+      {isPasting && (
+        <Box paddingX={2}>
+          <Text color="yellow">Pasting...</Text>
+        </Box>
+      )}
       {pastedImages.length > 0 && (
         <Box paddingX={2}>
           <Text color="cyan">
             {pastedImages.length} image{pastedImages.length > 1 ? 's' : ''}{' '}
-            pasted (max {MAX_IMAGES})
+            pasted (max {maxImages})
           </Text>
         </Box>
       )}

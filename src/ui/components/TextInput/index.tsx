@@ -151,7 +151,7 @@ export default function TextInput({
   cursorOffset,
   onChangeCursorOffset,
   onTabPress,
-}: Props): JSX.Element {
+}: Props): React.JSX.Element {
   const { onInput, renderedValue } = useTextInput({
     value: originalValue,
     onChange,
@@ -179,9 +179,9 @@ export default function TextInput({
   });
 
   // Enhanced paste detection state with image path support
-  const [pasteState, setPasteState] = React.useState<{
+  // Use ref to avoid state race conditions during fast sequential updates
+  const pasteStateRef = React.useRef<{
     chunks: string[];
-    // prettier-ignore
     timeoutId: ReturnType<typeof setTimeout> | null;
   }>({ chunks: [], timeoutId: null });
 
@@ -198,51 +198,53 @@ export default function TextInput({
   };
 
   // Enhanced paste timeout with image path detection
-  const resetPasteTimeout = (
-    currentTimeoutId: ReturnType<typeof setTimeout> | null,
-  ) => {
-    if (currentTimeoutId) {
-      clearTimeout(currentTimeoutId);
+  const resetPasteTimeout = () => {
+    const currentState = pasteStateRef.current;
+    if (currentState.timeoutId) {
+      clearTimeout(currentState.timeoutId);
     }
-    return setTimeout(() => {
-      setPasteState(({ chunks }) => {
-        const pastedText = chunks.join('');
 
-        // Check if pasted content might be an image path
-        if (onImagePaste && isImagePathText(pastedText)) {
-          // Try to process as image path
-          Promise.resolve().then(async () => {
-            try {
-              const imageResult = await processImageFromPath(pastedText);
+    const timeoutId = setTimeout(() => {
+      const chunks = pasteStateRef.current.chunks;
+      const pastedText = chunks.join('');
 
-              if (imageResult) {
-                // Successfully loaded image from path
-                onImagePaste(imageResult.base64);
-              } else {
-                // Not a valid image path, treat as regular text
-                onPaste?.(pastedText);
-              }
-            } catch (error) {
-              // Error processing image, treat as regular text
-              console.error('Failed to process image path:', error);
+      // Reset state immediately to prevent data loss
+      pasteStateRef.current = { chunks: [], timeoutId: null };
+
+      // Check if pasted content might be an image path
+      if (onImagePaste && isImagePathText(pastedText)) {
+        // Try to process as image path
+        (async () => {
+          try {
+            const imageResult = await processImageFromPath(pastedText);
+            if (imageResult) {
+              // Successfully loaded image from path
+              onImagePaste(imageResult.base64);
+            } else {
+              // Not a valid image path, treat as regular text
               onPaste?.(pastedText);
             }
-          });
-          return { chunks: [], timeoutId: null };
-        }
+          } catch (error) {
+            // Error processing image, treat as regular text
+            console.error('Failed to process image path:', error);
+            onPaste?.(pastedText);
+          }
+        })();
+      } else {
+        // Regular text paste processing - call synchronously to prevent loss
+        onPaste?.(pastedText);
+      }
+    }, 300); // 增加超时时间从100ms到300ms，提高大量文本粘贴的可靠性
 
-        // Regular text paste processing
-        Promise.resolve().then(() => onPaste?.(pastedText));
-        return { chunks: [], timeoutId: null };
-      });
-    }, 100);
+    pasteStateRef.current.timeoutId = timeoutId;
   };
 
   const wrappedOnInput = (input: string, key: Key): void => {
     // Check if input might be an image path (immediate check for small inputs)
     const isImageFormat = isImagePathText(input);
 
-    // Handle pastes (>800 chars) or potential image paths or existing timeout
+    // Handle pastes (>600 chars) or potential image paths or existing timeout
+    // Lower threshold to catch more paste scenarios
     // Usually we get one or two input characters at a time. If we
     // get a bunch, the user has probably pasted.
     // Unfortunately node batches long pastes, so it's possible
@@ -251,19 +253,25 @@ export default function TextInput({
     // This batching number is not consistent.
     if (
       onPaste &&
-      (input.length > 800 || pasteState.timeoutId || isImageFormat)
+      (input.length > 600 || pasteStateRef.current.timeoutId || isImageFormat)
     ) {
-      setPasteState(({ chunks, timeoutId }) => {
-        return {
-          chunks: [...chunks, input],
-          timeoutId: resetPasteTimeout(timeoutId),
-        };
-      });
+      // Use ref to avoid state race conditions
+      pasteStateRef.current.chunks.push(input);
+      resetPasteTimeout();
       return;
     }
 
     onInput(input, key);
   };
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (pasteStateRef.current.timeoutId) {
+        clearTimeout(pasteStateRef.current.timeoutId);
+      }
+    };
+  }, []);
 
   useInput(wrappedOnInput, { isActive: focus });
 
