@@ -1,4 +1,5 @@
 import { type FunctionTool, type Tool } from '@openai/agents';
+import { validateToolParams } from './utils/tools';
 
 export type ApprovalContext = {
   toolName: string;
@@ -15,6 +16,7 @@ export type ToolApprovalInfo = {
 
 export type EnhancedTool = Tool<any> & {
   approval?: ToolApprovalInfo;
+  readonly __isMcpTool?: boolean;
 };
 
 export function enhanceTool(
@@ -49,6 +51,13 @@ export class Tools {
       };
     }
     if (tool.type === 'function') {
+      const result = validateToolParams(tool.originalParameters, args);
+      if (!result.success) {
+        return {
+          success: false,
+          error: `Invalid tool parameters: ${result.error}`,
+        };
+      }
       return await tool.invoke(runContext, args);
     } else {
       return {

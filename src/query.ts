@@ -34,6 +34,7 @@ type QueryOpts = {
 export async function query(opts: QueryOpts) {
   const { service, thinking } = opts;
   const startTime = Date.now();
+  const abortController = new AbortController();
   let input =
     typeof opts.input === 'string'
       ? [
@@ -79,6 +80,9 @@ export async function query(opts: QueryOpts) {
   while (true) {
     // Check for cancellation before starting each iteration
     if (opts.onCancelCheck && opts.onCancelCheck()) {
+      if (!abortController.signal.aborted) {
+        abortController.abort();
+      }
       return {
         finalText: null,
         history: service.history,
@@ -86,93 +90,100 @@ export async function query(opts: QueryOpts) {
       };
     }
 
-    const { stream } = await service.run({
-      input,
-      thinking,
-      // disable thinking for non-first runs
-      ...(isFirstRun ? {} : { thinking: false }),
-      ...(opts.model ? { model: opts.model } : {}),
-    });
     let hasToolUse = false;
-    for await (const chunk of stream) {
-      // Check for cancellation during stream processing
-      if (opts.onCancelCheck && opts.onCancelCheck()) {
+    try {
+      const { stream } = await service.run({
+        input,
+        thinking,
+        // disable thinking for non-first runs
+        ...(isFirstRun ? {} : { thinking: false }),
+        ...(opts.model ? { model: opts.model } : {}),
+        abortSignal: abortController.signal,
+      });
+
+      for await (const chunk of stream) {
+        const parsed = parseStreamChunk(chunk.toString());
+        for (const item of parsed) {
+          switch (item.type) {
+            case 'text-delta':
+              await opts.onTextDelta?.(item.content);
+              break;
+            case 'text':
+              await opts.onText?.(item.content);
+              finalText = item.content;
+              break;
+            case 'reasoning':
+              await opts.onReasoning?.(item.content);
+              break;
+            case 'tool_use':
+              await opts.onToolUse?.(
+                item.callId,
+                item.name,
+                item.params,
+                service.context.cwd,
+              );
+
+              // Check if approval is needed
+              const needsApproval = await service.shouldApprove(
+                item.name,
+                item.params,
+              );
+              let approved = true;
+
+              if (needsApproval && opts.onToolApprove) {
+                approved = await opts.onToolApprove(
+                  item.callId,
+                  item.name,
+                  item.params,
+                );
+              }
+
+              if (approved) {
+                const result = await service.callTool(
+                  item.callId,
+                  item.name,
+                  item.params,
+                );
+                await opts.onToolUseResult?.(
+                  item.callId,
+                  item.name,
+                  result,
+                  item.params,
+                );
+                hasToolUse = true;
+              } else {
+                // Tool execution was denied by user - stop the query
+                const deniedResult = 'Tool execution was denied by user.';
+                await opts.onToolUseResult?.(
+                  item.callId,
+                  item.name,
+                  deniedResult,
+                );
+                return {
+                  finalText: null,
+                  history: service.history,
+                  denied: true,
+                };
+              }
+              break;
+            default:
+              break;
+          }
+        }
+      }
+    } catch (error: any) {
+      // Handle abort errors gracefully
+      if (error.name === 'AbortError' || abortController.signal.aborted) {
         return {
           finalText: null,
           history: service.history,
           cancelled: true,
         };
       }
-
-      const parsed = parseStreamChunk(chunk.toString());
-      for (const item of parsed) {
-        switch (item.type) {
-          case 'text-delta':
-            await opts.onTextDelta?.(item.content);
-            break;
-          case 'text':
-            await opts.onText?.(item.content);
-            finalText = item.content;
-            break;
-          case 'reasoning':
-            await opts.onReasoning?.(item.content);
-            break;
-          case 'tool_use':
-            await opts.onToolUse?.(
-              item.callId,
-              item.name,
-              item.params,
-              service.context.cwd,
-            );
-
-            // Check if approval is needed
-            const needsApproval = await service.shouldApprove(
-              item.name,
-              item.params,
-            );
-            let approved = true;
-
-            if (needsApproval && opts.onToolApprove) {
-              approved = await opts.onToolApprove(
-                item.callId,
-                item.name,
-                item.params,
-              );
-            }
-
-            if (approved) {
-              const result = await service.callTool(
-                item.callId,
-                item.name,
-                item.params,
-              );
-              await opts.onToolUseResult?.(
-                item.callId,
-                item.name,
-                result,
-                item.params,
-              );
-              hasToolUse = true;
-            } else {
-              // Tool execution was denied by user - stop the query
-              const deniedResult = 'Tool execution was denied by user.';
-              await opts.onToolUseResult?.(
-                item.callId,
-                item.name,
-                deniedResult,
-              );
-              return {
-                finalText: null,
-                history: service.history,
-                denied: true,
-              };
-            }
-            break;
-          default:
-            break;
-        }
-      }
+      // Re-throw other errors
+      throw error;
     }
+
     if (hasToolUse) {
       input = [];
       isFirstRun = false;

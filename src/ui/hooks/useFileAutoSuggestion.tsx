@@ -11,6 +11,16 @@ export interface FileQueryInfo {
 }
 
 export function extractFileQuery(input: string): FileQueryInfo {
+  // Handle undefined or null input
+  if (!input || typeof input !== 'string') {
+    return {
+      hasFileQuery: false,
+      query: '',
+      fullMatch: '',
+      startIndex: -1,
+    };
+  }
+
   // Find the last @ that's preceded by space or at start and at the end of input
   const atMatches = [...input.matchAll(/(?:^|\s)(@[^\s]*)$/g)];
   const lastAtMatch = atMatches[atMatches.length - 1];
