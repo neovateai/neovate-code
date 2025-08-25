@@ -1,5 +1,4 @@
 import { type FunctionTool, type Tool } from '@openai/agents';
-import { isClaude } from './utils/model';
 import { validateToolParams } from './utils/tools';
 
 export type ApprovalContext = {
@@ -129,8 +128,7 @@ export class Tools {
     return 'write'; // Default to write for safety
   }
 
-  getToolsPrompt(model: string) {
-    const isClaudeModel = isClaude(model);
+  getToolsPrompt() {
     const availableTools = `
   ${Object.entries(this.tools)
     .map(([key, tool]) => {

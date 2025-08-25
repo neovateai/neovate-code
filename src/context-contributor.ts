@@ -13,7 +13,7 @@ interface GetContentOpts {
   prompt?: string;
 }
 
-interface LSToolResult {
+export interface LSToolResult {
   success: boolean;
   message: string;
   data: string;
@@ -56,7 +56,10 @@ export class IDEContributor implements ContextContributor {
 export class DirectoryStructureContributor implements ContextContributor {
   name = 'directoryStructure';
   async getContent(opts: GetContentOpts) {
-    const LSTool = createLSTool(opts);
+    const LSTool = createLSTool({
+      cwd: opts.context.cwd,
+      productName: opts.context.productName,
+    });
     const result = (await LSTool.invoke(
       null as any,
       JSON.stringify({ dir_path: '.' }),

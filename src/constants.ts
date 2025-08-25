@@ -1,4 +1,4 @@
-export const PRODUCT_NAME = 'TAKUMI';
+export const PRODUCT_NAME = 'NEOVATE';
 
 export const IMAGE_EXTENSIONS = new Set([
   '.png',

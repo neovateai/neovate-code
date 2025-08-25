@@ -178,6 +178,9 @@ importers:
       marked-terminal:
         specifier: ^7.3.0
         version: 7.3.0(patch_hash=536fe9685e91d559cf29a033191aa39da45729949e9d1c69989255091c8618fb)(marked@16.1.2)
+      minimatch:
+        specifier: ^10.0.1
+        version: 10.0.3
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1

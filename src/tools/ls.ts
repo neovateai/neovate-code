@@ -10,7 +10,7 @@ import {
   printTree,
 } from '../utils/list';
 
-export function createLSTool(opts: { context: Context }) {
+export function createLSTool(opts: { cwd: string; productName: string }) {
   return tool({
     name: 'ls',
     description: 'Lists files and directories in a given path.',
@@ -20,14 +20,14 @@ export function createLSTool(opts: { context: Context }) {
     execute: async ({ dir_path }) => {
       const fullFilePath = path.isAbsolute(dir_path)
         ? dir_path
-        : path.resolve(opts.context.cwd, dir_path);
+        : path.resolve(opts.cwd, dir_path);
       const result = listDirectory(
         fullFilePath,
-        opts.context.cwd,
-        opts.context.productName,
+        opts.cwd,
+        opts.productName,
       ).sort();
       const tree = createFileTree(result);
-      const userTree = printTree(opts.context.cwd, tree);
+      const userTree = printTree(opts.cwd, tree);
       if (result.length < MAX_FILES) {
         return {
           success: true,
