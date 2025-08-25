@@ -1,3 +1,4 @@
+import assert from 'assert';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -28,6 +29,7 @@ function parseArgs(argv: any) {
       'systemPrompt',
       'appendSystemPrompt',
       'outputStyle',
+      'outputFormat',
       'cwd',
     ],
   });
@@ -76,6 +78,7 @@ export async function runNeovate(opts: {
     printHelp(opts.productName.toLowerCase());
     return;
   }
+  const prompt = argv._[0];
   const cwd = argv.cwd || process.cwd();
   const context = await Context.create({
     cwd,
@@ -86,6 +89,7 @@ export async function runNeovate(opts: {
       smallModel: argv.smallModel,
       planModel: argv.planModel,
       quiet: argv.quiet,
+      outputFormat: argv.outputFormat,
       plugins: argv.plugin,
       systemPrompt: argv.systemPrompt,
       appendSystemPrompt: argv.appendSystemPrompt,
@@ -99,8 +103,19 @@ export async function runNeovate(opts: {
     context,
     sessionId: argv.resume,
   });
-  const result = await project.send('create a new file called "test.txt"');
-  console.log(result);
+  if (argv.quiet) {
+    try {
+      assert(prompt, 'Prompt is required in quiet mode');
+      await project.send(prompt as string);
+      process.exit(0);
+    } catch (e: any) {
+      console.error(`Error: ${e.message}`);
+      process.exit(1);
+    }
+  } else {
+    // Interactive mode
+    throw new Error('Interactive mode is not supported yet');
+  }
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

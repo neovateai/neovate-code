@@ -43,6 +43,7 @@ export type Config = {
   autoCompact?: boolean;
   commit?: CommitConfig;
   outputStyle?: string;
+  outputFormat?: 'text' | 'stream-json' | 'json';
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -54,6 +55,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   model: 'flash',
   todo: true,
   autoCompact: true,
+  outputFormat: 'text',
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),

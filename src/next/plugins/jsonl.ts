@@ -15,7 +15,6 @@ export const createJsonlPlugin = (opts: CreateJsonlPluginOpts): Plugin => {
       return cachedJsonlLogger.get(sessionId)!;
     }
     const filePath = path.join(opts.baseDir, sessionId + '.jsonl');
-    console.log('filePath', filePath);
     const jsonlLogger = new JsonlLogger({
       filePath,
       sessionId,

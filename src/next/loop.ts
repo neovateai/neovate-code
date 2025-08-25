@@ -6,7 +6,7 @@ import { History, type Message } from './history';
 import type { ModelInfo } from './model';
 import { Usage } from './usage';
 
-type ToolUse = {
+export type ToolUse = {
   name: string;
   params: Record<string, any>;
   callId: string;
@@ -34,7 +34,7 @@ type RunLoopOpts = {
   onToolApprove?: (toolUse: ToolUse) => Promise<boolean>;
 };
 
-type LoopResult =
+export type LoopResult =
   | {
       success: true;
       data: Record<string, any>;

@@ -1,15 +1,15 @@
 import { PluginHookType } from '../plugin';
-import { SystemPromptBuilder } from '../system-prompt-builder';
 import { Tools } from '../tool';
 import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
 import { runLoop } from './loop';
 import { modelAlias, providers, resolveModel } from './model';
+import { OutputFormat } from './outputFormat';
 import { generateSystemPrompt } from './systemPrompt';
 import { resolveTools } from './tool';
 import { Usage } from './usage';
 
-type SessionId = string;
+export type SessionId = string;
 
 export class Project {
   cwd: string;
@@ -28,6 +28,10 @@ export class Project {
     this.context = opts.context;
   }
   async send(message: string, opts: { model?: string } = {}) {
+    const outputFormat = new OutputFormat({
+      format: this.context.config.outputFormat!,
+      quiet: this.context.config.quiet,
+    });
     await this.context.apply({
       hook: 'userPrompt',
       args: [
@@ -69,6 +73,12 @@ export class Project {
       productName: this.context.productName,
     });
     // const llmsContenxt = new SystemPromptBuilder(this.context);
+    outputFormat.onInit({
+      text: message,
+      sessionId: this.session.id,
+      tools,
+      model,
+    });
     const result = await runLoop({
       input: message,
       model,
@@ -87,6 +97,10 @@ export class Project {
           ],
           type: PluginHookType.Series,
         });
+        outputFormat.onText({
+          text,
+          sessionId: this.session.id,
+        });
       },
       onReasoning: async (text) => console.log(text),
       onToolUse: async (toolUse) => {
@@ -99,6 +113,10 @@ export class Project {
             },
           ],
           type: PluginHookType.Series,
+        });
+        outputFormat.onToolUse({
+          toolUse,
+          sessionId: this.session.id,
         });
       },
       onToolUseResult: async (toolUseResult) => {
@@ -114,11 +132,20 @@ export class Project {
           ],
           type: PluginHookType.Series,
         });
+        outputFormat.onToolUseResult({
+          toolUse,
+          result,
+          sessionId: this.session.id,
+        });
       },
       onTurn: async (turn) => {},
       onToolApprove: async (toolUse) => {
         return true;
       },
+    });
+    outputFormat.onEnd({
+      result,
+      sessionId: this.session.id,
     });
     return result;
   }
