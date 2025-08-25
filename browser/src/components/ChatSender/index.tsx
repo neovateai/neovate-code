@@ -154,6 +154,19 @@ const ChatSender: React.FC = () => {
                   'user',
                 );
 
+                // TODO insert a command
+                // quill.current?.setContents([
+                //   {
+                //     insert: {
+                //       'takumi-command': {
+                //         text: 'update-readme',
+                //         value: 'update-readme',
+                //       },
+                //     },
+                //   },
+                //   { insert: '\n' },
+                // ]);
+
                 // insert a space
                 quill.current?.insertText(delIndex + 1, ' ');
               }
