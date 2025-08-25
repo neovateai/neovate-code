@@ -283,6 +283,11 @@
     },
     "bash": {
       "noOutput": "No output."
+    },
+    "todo": {
+      "title": "Todos",
+      "noTodos": "No todos found",
+      "operationFailed": "Todo operation failed"
     }
   },
   "senderFooterBoard": {
