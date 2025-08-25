@@ -9,11 +9,9 @@ export interface MessageWrapperProps {
 
   // === Status Configuration ===
   status?: MessageWrapperStatus;
-  statusConfig?: {
-    icon?: React.ReactNode;
-    text?: string;
-    className?: string;
-  };
+  statusIcon?: React.ReactNode;
+  statusText?: string;
+  statusClassName?: string;
 
   // === Expand/Collapse Configuration ===
   defaultExpanded?: boolean;

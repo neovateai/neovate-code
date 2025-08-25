@@ -7,8 +7,10 @@ import type { MessageWrapperProps } from './types';
 
 const StatusIndicator: React.FC<{
   status: MessageWrapperProps['status'];
-  customConfig?: MessageWrapperProps['statusConfig'];
-}> = ({ status, customConfig }) => {
+  statusIcon?: React.ReactNode;
+  statusText?: string;
+  statusClassName?: string;
+}> = ({ status, statusIcon, statusText, statusClassName }) => {
   const { t } = useTranslation();
 
   if (!status) return null;
@@ -16,9 +18,9 @@ const StatusIndicator: React.FC<{
   const defaultConfig = STATUS_CONFIG[status];
 
   const finalConfig = {
-    icon: customConfig?.icon || defaultConfig.icon,
-    text: customConfig?.text || t(defaultConfig.text),
-    className: customConfig?.className || defaultConfig.className,
+    icon: statusIcon || defaultConfig.icon,
+    text: statusText || t(defaultConfig.text),
+    className: statusClassName || defaultConfig.className,
   };
 
   return (
@@ -35,6 +37,9 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
   title,
   icon,
   status,
+  statusIcon,
+  statusText,
+  statusClassName,
   defaultExpanded = true,
   expanded,
   onExpandChange,
@@ -42,7 +47,6 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
   expandable = true,
   maxHeight = 220,
   showGradientMask = true,
-  statusConfig,
   actions = [],
   onActionClick,
 }) => {
@@ -157,7 +161,12 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
           {title && <span className={styles.title}>{title}</span>}
 
           {/* Status indicator */}
-          <StatusIndicator status={status} customConfig={statusConfig} />
+          <StatusIndicator
+            status={status}
+            statusIcon={statusIcon}
+            statusText={statusText}
+            statusClassName={statusClassName}
+          />
         </div>
 
         <div className={styles.headerRight}>
@@ -249,4 +258,3 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
 
 export default MessageWrapper;
 export * from './types';
-export { MessageWrapperStatus } from './types';
