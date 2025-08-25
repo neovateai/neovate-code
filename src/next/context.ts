@@ -1,6 +1,5 @@
 import fs from 'fs';
 import { createJiti } from 'jiti';
-import os from 'os';
 import path from 'path';
 import resolve from 'resolve';
 import { type Config, ConfigManager } from '../config';
@@ -10,7 +9,7 @@ import {
   PluginHookType,
   PluginManager,
 } from '../plugin';
-import { formatPath } from '../ui/utils/path-utils';
+import { Paths } from './paths';
 import { createJsonlPlugin } from './plugins/jsonl';
 
 type ContextOpts = {
@@ -19,7 +18,7 @@ type ContextOpts = {
   version: string;
   config: Config;
   pluginManager: PluginManager;
-  paths: Record<string, string>;
+  paths: Paths;
   argvConfig: Record<string, any>;
 };
 
@@ -36,7 +35,7 @@ export class Context {
   productName: string;
   version: string;
   config: Config;
-  paths: Record<string, string>;
+  paths: Paths;
   #pluginManager: PluginManager;
   #argvConfig: Record<string, any>;
 
@@ -68,10 +67,10 @@ export class Context {
   static async create(opts: ContextCreateOpts) {
     const { cwd, version } = opts;
     const productName = opts.productName.toLowerCase();
-    const paths = {
-      globalConfigDir: path.join(os.homedir(), `.${productName}`),
-      projectConfigDir: path.join(opts.cwd, `.${productName}`),
-    };
+    const paths = new Paths({
+      productName,
+      cwd,
+    });
     const configManager = new ConfigManager(
       cwd,
       productName,
@@ -80,11 +79,7 @@ export class Context {
     const initialConfig = configManager.config;
     const buildInPlugins: Plugin[] = [
       createJsonlPlugin({
-        baseDir: path.join(
-          paths.globalConfigDir,
-          'projects',
-          formatPath(opts.cwd),
-        ),
+        paths,
         cwd: opts.cwd,
         version,
       }),

@@ -12,7 +12,7 @@ type MessageContent = {
   tool_use_id?: string;
 };
 
-type UserMessage = {
+export type UserMessage = {
   role: 'user';
   content: string | MessageContent[];
 };

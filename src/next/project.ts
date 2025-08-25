@@ -1,6 +1,7 @@
 import { PluginHookType } from '../plugin';
 import { Tools } from '../tool';
 import { Context } from './context';
+import type { UserMessage } from './history';
 import { LlmsContext } from './llmsContext';
 import { runLoop } from './loop';
 import { modelAlias, providers, resolveModel } from './model';
@@ -12,7 +13,8 @@ import { resolveTools } from './tool';
 export class Project {
   session: Session;
   context: Context;
-  constructor(opts: { sessionId: SessionId; context: Context }) {
+  constructor(opts: { sessionId?: SessionId; context: Context }) {
+    // TODO: resume session
     this.session = opts.sessionId
       ? new Session({
           id: opts.sessionId,
@@ -76,15 +78,23 @@ export class Project {
       model,
       cwd: this.context.cwd,
     });
+    const userMessage: UserMessage = {
+      role: 'user',
+      content: message,
+    };
+    const input =
+      this.session.history.messages.length > 0
+        ? [...this.session.history.messages, userMessage]
+        : [userMessage];
     // TODO: signal
     const result = await runLoop({
-      input: message,
+      input,
       model,
       tools: new Tools(tools),
       cwd: this.context.cwd,
       systemPrompt,
       llmsContexts: llmsContext.messages,
-      onTextDelta: async (text) => {},
+      onTextDelta: async () => {},
       onText: async (text) => {
         await this.context.apply({
           hook: 'text',
@@ -137,8 +147,8 @@ export class Project {
           sessionId: this.session.id,
         });
       },
-      onTurn: async (turn) => {},
-      onToolApprove: async (toolUse) => {
+      onTurn: async () => {},
+      onToolApprove: async () => {
         return true;
       },
     });
@@ -147,6 +157,9 @@ export class Project {
       sessionId: this.session.id,
     });
     // update history to session
+    if (result.success && result.data.history) {
+      this.session.updateHistory(result.data.history);
+    }
     return result;
   }
 }

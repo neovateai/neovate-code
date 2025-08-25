@@ -1,9 +1,9 @@
-import path from 'path';
 import { JsonlLogger } from '../../jsonl';
 import { type Plugin } from '../../plugin';
+import type { Paths } from '../paths';
 
 type CreateJsonlPluginOpts = {
-  baseDir: string;
+  paths: Paths;
   cwd: string;
   version: string;
 };
@@ -14,7 +14,7 @@ export const createJsonlPlugin = (opts: CreateJsonlPluginOpts): Plugin => {
     if (cachedJsonlLogger.has(sessionId)) {
       return cachedJsonlLogger.get(sessionId)!;
     }
-    const filePath = path.join(opts.baseDir, sessionId + '.jsonl');
+    const filePath = opts.paths.getSessionLogPath(sessionId);
     const jsonlLogger = new JsonlLogger({
       filePath,
       sessionId,
