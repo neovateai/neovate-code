@@ -2,7 +2,7 @@ import Quill, { Parchment } from 'quill';
 
 const Embed = Quill.import('blots/embed') as typeof Parchment.EmbedBlot;
 
-interface ContextBlotData {
+export interface ContextBlotData {
   /** the text to display */
   text: string;
   /** the value of the blot */

@@ -118,6 +118,9 @@ const ChatSender: React.FC = () => {
             actions.updatePrompt(text.trimEnd());
             actions.updateDelta(delta);
           },
+          onDeleteContexts: (values) => {
+            values.forEach((value) => context.actions.removeContext(value));
+          },
         }}
       >
         <SuggestionList

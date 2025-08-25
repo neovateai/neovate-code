@@ -1,6 +1,6 @@
 import { createStyles } from 'antd-style';
 import type { TextAreaProps, TextAreaRef } from 'antd/es/input/TextArea';
-import Quill from 'quill';
+import Quill, { Delta } from 'quill';
 import 'quill/dist/quill.core.css';
 import {
   forwardRef,
@@ -12,7 +12,12 @@ import {
 import ContextBlot from './ContextBlot';
 import { QuillContext } from './QuillContext';
 import { makeChangeEvent, makeSelectEvent } from './events';
-import { getTextWithTakumiContext, isInsertingAt } from './utils';
+import {
+  getRemovedTakumiContexts,
+  getTakumiContexts,
+  getTextWithTakumiContext,
+  isInsertingAt,
+} from './utils';
 
 interface IQuillEditorProps extends TextAreaProps {}
 
@@ -44,11 +49,13 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
   const { onChange, onSelect, onPaste, placeholder } = props;
   const editorRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill>(null);
+  const oldContentsRef = useRef<Delta>(new Delta());
 
   const {
     onInputAt,
     onQuillLoad,
     onKeyDown,
+    onDeleteContexts,
     onChange: onQuillChange,
     readonly,
   } = useContext(QuillContext);
@@ -114,11 +121,21 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
             onInputAt?.(false);
           }
 
-          const currentText = getTextWithTakumiContext(delta);
+          const currentContents = quillInstance.getContents();
+
+          const removedTakumiContexts = getRemovedTakumiContexts(
+            oldContentsRef.current,
+            currentContents,
+          );
+
+          onDeleteContexts?.(removedTakumiContexts.map((ctx) => ctx.value));
+
+          const currentText = getTextWithTakumiContext(currentContents);
 
           onChange?.(makeChangeEvent(currentText, editorRef.current));
-          onQuillChange?.(currentText, delta);
+          onQuillChange?.(currentText, currentContents);
         }
+        oldContentsRef.current = quillInstance.getContents();
       });
 
       onQuillLoad?.(quillInstance);
