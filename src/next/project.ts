@@ -87,6 +87,7 @@ export class Project {
       input: message,
       model,
       tools: new Tools(tools),
+      cwd: this.context.cwd,
       systemPrompt,
       llmsContexts: llmsContext.messages,
       onTextDelta: async (text) => {},

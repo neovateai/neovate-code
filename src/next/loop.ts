@@ -2,9 +2,12 @@ import { Agent, Runner, type SystemMessageItem } from '@openai/agents';
 import type { Tools } from '../tool';
 import { parseMessage } from '../utils/parse-message';
 import { randomUUID } from '../utils/randomUUID';
+import { At } from './at';
 import { History, type Message } from './history';
 import type { ModelInfo } from './model';
 import { Usage } from './usage';
+
+const DEFAULT_MAX_TURNS = 50;
 
 export type ToolUse = {
   name: string;
@@ -16,23 +19,6 @@ export type ToolUseResult = {
   toolUse: ToolUse;
   result: any;
   approved: boolean;
-};
-
-type RunLoopOpts = {
-  input: string | Message[];
-  model: ModelInfo;
-  tools: Tools;
-  systemPrompt?: string;
-  maxTurns?: number;
-  signal?: AbortSignal;
-  llmsContexts?: string[];
-  onTextDelta?: (text: string) => Promise<void>;
-  onText?: (text: string) => Promise<void>;
-  onReasoning?: (text: string) => Promise<void>;
-  onToolUse?: (toolUse: ToolUse) => Promise<void>;
-  onToolUseResult?: (toolUseResult: ToolUseResult) => Promise<void>;
-  onTurn?: (turn: { usage: Usage }) => Promise<void>;
-  onToolApprove?: (toolUse: ToolUse) => Promise<boolean>;
 };
 
 export type LoopResult =
@@ -54,9 +40,26 @@ export type LoopResult =
       };
     };
 
-const DEFAULT_MAX_TURNS = 50;
+type RunLoopOpts = {
+  input: string | Message[];
+  model: ModelInfo;
+  tools: Tools;
+  cwd: string;
+  systemPrompt?: string;
+  maxTurns?: number;
+  signal?: AbortSignal;
+  llmsContexts?: string[];
+  onTextDelta?: (text: string) => Promise<void>;
+  onText?: (text: string) => Promise<void>;
+  onReasoning?: (text: string) => Promise<void>;
+  onToolUse?: (toolUse: ToolUse) => Promise<void>;
+  onToolUseResult?: (toolUseResult: ToolUseResult) => Promise<void>;
+  onTurn?: (turn: { usage: Usage }) => Promise<void>;
+  onToolApprove?: (toolUse: ToolUse) => Promise<boolean>;
+};
 
 // TODO: support retry
+// TODO: compress
 export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   const startTime = Date.now();
   let turnsCount = 0;
@@ -118,13 +121,15 @@ ${opts.tools.getToolsPrompt()}
         content: llmsContext,
       } as SystemMessageItem;
     });
-    const result = await runner.run(
-      agent,
-      [...llmsContextMessages, ...history.toAgentInput()],
-      {
-        stream: true,
-      },
-    );
+    let agentInput = [...llmsContextMessages, ...history.toAgentInput()];
+    // add file and directory contents for the last user prompt
+    agentInput = At.normalize({
+      input: agentInput,
+      cwd: opts.cwd,
+    });
+    const result = await runner.run(agent, agentInput, {
+      stream: true,
+    });
 
     let text = '';
     let textBuffer = '';

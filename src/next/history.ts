@@ -83,19 +83,12 @@ export class History {
         }
         return {
           role: 'user',
-          content:
-            typeof message.content === 'string'
-              ? message.content
-              : message.content.map((content) => {
-                  return content;
-                }),
+          content: message.content,
         };
       } else {
         return {
           role: 'assistant',
-          content: message.content.map((content) => {
-            return content;
-          }),
+          content: message.content,
         } as any;
       }
     });
