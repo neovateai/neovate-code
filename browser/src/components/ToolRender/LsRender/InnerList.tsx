@@ -9,9 +9,7 @@ import {
   FileProtectOutlined,
   FileTextOutlined,
   FileZipOutlined,
-  FolderOutlined,
   LockOutlined,
-  RightOutlined,
 } from '@ant-design/icons';
 import { useState } from 'react';
 import { FaJava } from 'react-icons/fa';
@@ -31,6 +29,9 @@ import {
   SiTypescript,
   SiYaml,
 } from 'react-icons/si';
+import FolderIcon from '@/icons/folder.svg?react';
+import RightArrowIcon from '@/icons/rightArrow.svg?react';
+import styles from './index.module.css';
 
 export interface ListItem {
   name: string;
@@ -46,7 +47,7 @@ interface InnerListProps {
 
 const getIconForFile = (filename: string) => {
   if (filename.endsWith('/')) {
-    return <FolderOutlined />;
+    return <FolderIcon />;
   }
 
   const extension = filename.split('.').pop()?.toLowerCase();
@@ -120,43 +121,46 @@ const RenderItem = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const hasChildren = item.children && item.children.length > 0;
+  // flatten children count
+  const childrenCount =
+    item.children?.reduce(
+      (acc, child) => acc + (child.children?.length || 0),
+      0,
+    ) || 0;
 
   const toggleExpand = () => {
-    if (hasChildren) {
+    if (childrenCount > 0) {
       setIsExpanded(!isExpanded);
     }
   };
 
   return (
     <>
-      <li
-        className="flex text-xs truncate items-center gpa-1 p-1 rounded cursor-pointer hover:bg-gray-100"
-        onClick={toggleExpand}
-      >
+      <li className={styles.itemContainer} onClick={toggleExpand}>
         <span
-          className="text-gray-500 w-4 h-4 flex items-center justify-center"
+          className={styles.itemIcon}
           style={{
             transform:
-              hasChildren && isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+              childrenCount > 0 && isExpanded
+                ? 'rotate(90deg)'
+                : 'rotate(0deg)',
             transition: 'transform 0.2s ease-in-out',
           }}
         >
-          {hasChildren ? (
-            <RightOutlined />
-          ) : (
-            <span className="inline-block w-4" />
-          )}
+          {childrenCount > 0 && <RightArrowIcon />}
         </span>
-        <span className="text-gray-500 w-4 h-4 flex items-center justify-center">
-          {item.isDirectory ? <FolderOutlined /> : getIconForFile(item.name)}
+        <span className={styles.itemIcon}>
+          {item.isDirectory ? <FolderIcon /> : getIconForFile(item.name)}
         </span>
-        <span className={item.isDirectory ? 'text-blue-600' : ''}>
+        <span className={styles.itemTitle}>
           {showPath ? item.name : item.name.split('/').pop()}
         </span>
+        <span className={styles.itemCount}>
+          {childrenCount > 0 ? childrenCount : null}
+        </span>
       </li>
-      {hasChildren && isExpanded && (
-        <ul className="list-none m-0 p-0 pl-4">
+      {childrenCount > 0 && isExpanded && (
+        <ul className={styles.listContainer}>
           {item.children?.map((child, index) => (
             <RenderItem key={index} item={child} showPath={showPath} />
           ))}
@@ -167,8 +171,9 @@ const RenderItem = ({
 };
 
 export default function InnerList({ items, showPath = true }: InnerListProps) {
+  console.log('items', items);
   return (
-    <ul className="list-none m-0 p-0">
+    <ul className={styles.listContainer}>
       {items.map((item, index) => (
         <RenderItem key={index} item={item} showPath={showPath} />
       ))}
