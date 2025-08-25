@@ -1,16 +1,13 @@
 import { PluginHookType } from '../plugin';
 import { Tools } from '../tool';
-import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
 import { LlmsContext } from './llmsContext';
 import { runLoop } from './loop';
 import { modelAlias, providers, resolveModel } from './model';
 import { OutputFormat } from './outputFormat';
+import { Session, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
 import { resolveTools } from './tool';
-import { Usage } from './usage';
-
-export type SessionId = string;
 
 export class Project {
   session: Session;
@@ -19,11 +16,8 @@ export class Project {
     this.session = opts.sessionId
       ? new Session({
           id: opts.sessionId,
-          project: this,
         })
-      : Session.create({
-          project: this,
-        });
+      : Session.create();
     this.context = opts.context;
   }
   async send(message: string, opts: { model?: string } = {}) {
@@ -152,23 +146,7 @@ export class Project {
       result,
       sessionId: this.session.id,
     });
+    // update history to session
     return result;
-  }
-}
-
-class Session {
-  id: SessionId;
-  project: Project;
-  usage: Usage;
-  constructor(opts: { id: SessionId; project: Project }) {
-    this.id = opts.id;
-    this.project = opts.project;
-    this.usage = Usage.empty();
-  }
-  static create(opts: { project: Project }) {
-    return new Session({
-      id: randomUUID(),
-      project: opts.project,
-    });
   }
 }
