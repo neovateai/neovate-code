@@ -29,6 +29,27 @@
     "settings": "设置",
     "help": "帮助"
   },
+  "welcome": {
+    "title": "我是Takumi，开发任务交给我",
+    "capabilitiesTitle": "我的能力",
+    "introduceCapability": "请介绍一下{{capability}}的功能",
+    "llmSupport": {
+      "title": "支持LLM",
+      "description": "兼容多种主流大模型，包括OpenAI、Claude、Gemini等"
+    },
+    "fileOperations": {
+      "title": "文件操作",
+      "description": "智能理解与编辑项目文件，支持多种编程语言"
+    },
+    "codebaseNavigation": {
+      "title": "代码库导航",
+      "description": "智能导航项目结构，快速分析与查找"
+    },
+    "planMode": {
+      "title": "计划模式",
+      "description": "自动拆解复杂任务，步骤可视可改"
+    }
+  },
   "chat": {
     "welcomeTitle": "你好，我是 Takumi",
     "welcomeDescription": "我是您的 AI 编程助手，专注于提升开发工作流程。我能帮助您编写代码、优化性能、生成测试、分析架构，以及执行各种开发任务～",

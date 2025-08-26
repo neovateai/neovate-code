@@ -4,7 +4,6 @@ import { createStyles } from 'antd-style';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UIUserMessage } from '@/types/message';
-import { renderContextTag } from '../ChatSender/SenderHeader';
 
 interface UserMessageFooterProps {
   message: UIUserMessage;
@@ -57,10 +56,7 @@ const UserMessageFooter = memo<UserMessageFooterProps>((props) => {
   }, []);
 
   const contextTags = useMemo(() => {
-    return (
-      attachedContexts?.map((contextItem) => renderContextTag(contextItem)) ||
-      null
-    );
+    return attachedContexts?.map((contextItem) => null);
   }, [attachedContexts]);
 
   const buttonText = useMemo(() => {
