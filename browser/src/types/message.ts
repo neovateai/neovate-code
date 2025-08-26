@@ -6,6 +6,7 @@ import type {
   StepStartUIPart,
   ToolInvocationUIPart,
 } from '@ai-sdk/ui-utils';
+import type { Delta } from 'quill';
 import type { ContextItem } from './context';
 
 export enum UIMessageType {
@@ -29,10 +30,7 @@ export type UIMessage = Omit<BaseUIMessage, 'annotations'> & {
 export type UIUserMessage = Omit<UIMessage, 'role'> & {
   role: 'user';
   attachedContexts: ContextItem[];
-  /**
-   * Original content input by the user, including context markers
-   */
-  contextContent: string;
+  delta: Delta;
 };
 
 export type UIMessageAnnotation =
