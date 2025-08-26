@@ -315,5 +315,13 @@
     "loading": "加载中...",
     "error": "错误",
     "preparingDiff": "准备Diff..."
+  },
+  "messageWrapper": {
+    "status": {
+      "thinking": "思考中...",
+      "completed": "思考完成",
+      "cancelled": "已取消",
+      "error": "错误"
+    }
   }
 }
