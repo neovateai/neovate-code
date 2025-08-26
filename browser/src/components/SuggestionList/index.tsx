@@ -136,50 +136,60 @@ const SuggestionList = (props: Props) => {
   };
 
   // Handle keyboard navigation
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    const currentList = selectedFirstKey ? secondLevelList : firstLevelList;
+  const handleKeyDown = useMemo(
+    () => (event: React.KeyboardEvent) => {
+      const currentList = selectedFirstKey ? secondLevelList : firstLevelList;
 
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        setSelectedIndex((prev) =>
-          prev < currentList.length - 1 ? prev + 1 : 0,
-        );
-        break;
-      case 'ArrowUp':
-        event.preventDefault();
-        setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : currentList.length - 1,
-        );
-        break;
-      case 'Enter':
-        event.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < currentList.length) {
-          const selectedItem = currentList[selectedIndex];
-          if (selectedFirstKey) {
-            onSelect?.(
-              selectedFirstKey,
-              selectedItem.value,
-              selectedItem.contextItem,
-            );
-            setSelectedFirstKey(undefined);
-            onOpenChange?.(false);
-          } else {
-            clearSearch(selectedItem.value);
-            setSelectedFirstKey(selectedItem.value);
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault();
+          setSelectedIndex((prev) =>
+            prev < currentList.length - 1 ? prev + 1 : 0,
+          );
+          break;
+        case 'ArrowUp':
+          event.preventDefault();
+          setSelectedIndex((prev) =>
+            prev > 0 ? prev - 1 : currentList.length - 1,
+          );
+          break;
+        case 'Enter':
+          event.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < currentList.length) {
+            const selectedItem = currentList[selectedIndex];
+            if (selectedFirstKey) {
+              onSelect?.(
+                selectedFirstKey,
+                selectedItem.value,
+                selectedItem.contextItem,
+              );
+              setSelectedFirstKey(undefined);
+              onOpenChange?.(false);
+            } else {
+              clearSearch(selectedItem.value);
+              setSelectedFirstKey(selectedItem.value);
+            }
           }
-        }
-        break;
-      case 'Escape':
-        event.preventDefault();
-        if (selectedFirstKey) {
-          setSelectedFirstKey(undefined);
-        } else {
-          onOpenChange?.(false);
-        }
-        break;
-    }
-  };
+          break;
+        case 'Escape':
+          event.preventDefault();
+          if (selectedFirstKey) {
+            setSelectedFirstKey(undefined);
+          } else {
+            onOpenChange?.(false);
+          }
+          break;
+      }
+    },
+    [
+      selectedFirstKey,
+      secondLevelList,
+      firstLevelList,
+      selectedIndex,
+      onSelect,
+      onOpenChange,
+    ],
+  );
 
   const renderItemText = (
     text: React.ReactNode,
@@ -236,15 +246,28 @@ const SuggestionList = (props: Props) => {
     );
   };
 
+  const handleBackClick = useMemo(
+    () => () => setSelectedFirstKey(undefined),
+    [],
+  );
+
+  const handleInputChange = useMemo(
+    () => (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (selectedFirstKey) {
+        const searchResults = onSearch?.(selectedFirstKey, e.target.value);
+        setSearchResults(searchResults || undefined);
+      }
+    },
+    [onSearch, selectedFirstKey],
+  );
+
   const ListHeader = useMemo(() => {
     if (selectedFirstKey) {
       return (
         <div className={styles.listHeader}>
           <Button
             icon={<LeftOutlined />}
-            onClick={() => {
-              setSelectedFirstKey(undefined);
-            }}
+            onClick={handleBackClick}
             type="text"
           />
           <Input
@@ -252,62 +275,65 @@ const SuggestionList = (props: Props) => {
             className={styles.listInput}
             variant="underlined"
             autoFocus
-            onChange={(e) => {
-              const searchResults = onSearch?.(
-                selectedFirstKey,
-                e.target.value,
-              );
-              if (searchResults) {
-                setSearchResults(searchResults);
-              } else {
-                setSearchResults(undefined);
-              }
-            }}
+            onChange={handleInputChange}
             placeholder={t('common.placeholder')}
           />
         </div>
       );
-    } else {
-      return null;
     }
-  }, [onSearch, selectedFirstKey]);
+    return null;
+  }, [selectedFirstKey, handleBackClick, handleInputChange, t]);
 
-  // auto focus when popup opens and set default selection
+  // Combined effect for popup state management
   useEffect(() => {
-    if (open && popupRef.current) {
-      // Focus the popup container to enable keyboard navigation
-      popupRef.current.focus();
-      // Default select the first item when popup opens
+    if (open) {
+      // Focus popup container when it opens
+      if (popupRef.current) {
+        popupRef.current.focus();
+      }
+
+      // Set default selection (first item)
       const currentList = selectedFirstKey ? secondLevelList : firstLevelList;
       setSelectedIndex(currentList.length > 0 ? 0 : -1);
     }
   }, [open, selectedFirstKey, firstLevelList, secondLevelList]);
 
-  // Reset selected index when switching between first and second level
+  // Handle click outside to close popup
   useEffect(() => {
-    if (open) {
-      const currentList = selectedFirstKey ? secondLevelList : firstLevelList;
-      setSelectedIndex(currentList.length > 0 ? 0 : -1);
+    if (!open) return;
+
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        popupRef.current &&
+        !popupRef.current.contains(event.target as Node)
+      ) {
+        if (selectedFirstKey) {
+          clearSearch(selectedFirstKey);
+        }
+        setSelectedFirstKey(undefined);
+        setSelectedIndex(-1);
+        onOpenChange?.(false);
+      }
     }
-  }, [selectedFirstKey, open, firstLevelList, secondLevelList]);
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open, onOpenChange, selectedFirstKey]);
 
   // Scroll selected item into view
   useEffect(() => {
     if (selectedIndex >= 0 && listRef.current) {
-      // Use a more reliable method to find the selected item
       const selectedItem = listRef.current.querySelector(
         `[data-index="${selectedIndex}"]`,
       ) as HTMLElement;
+
       if (selectedItem) {
-        // Get the list container for proper scrolling
         const listContainer =
           listRef.current.querySelector('.ant-list') || listRef.current;
-
-        // Calculate if item is visible
         const containerRect = listContainer.getBoundingClientRect();
         const itemRect = selectedItem.getBoundingClientRect();
-
-        // Check if item is outside the visible area
         const isAbove = itemRect.top < containerRect.top;
         const isBelow = itemRect.bottom > containerRect.bottom;
 
@@ -321,29 +347,6 @@ const SuggestionList = (props: Props) => {
       }
     }
   }, [selectedIndex]);
-
-  // auto close popup when lost focus
-  useEffect(() => {
-    if (!open) return;
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        popupRef.current &&
-        !popupRef.current.contains(event.target as Node)
-      ) {
-        if (selectedFirstKey) {
-          clearSearch(selectedFirstKey);
-        }
-
-        setSelectedFirstKey(undefined);
-        setSelectedIndex(-1);
-        onOpenChange?.(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [open, onOpenChange, selectedFirstKey]);
 
   const offsetStyles = useMemo(() => {
     if (offset) {
