@@ -27,6 +27,7 @@
     "i18next-browser-languagedetector": "^8.2.0",
     "lodash-es": "^4.17.21",
     "monaco-editor": "^0.52.2",
+    "quill": "^2.0.3",
     "rc-util": "^5.44.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
