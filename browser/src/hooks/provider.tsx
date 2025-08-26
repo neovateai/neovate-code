@@ -106,7 +106,7 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
       chatState.append({
         ...lastUserMessage,
         id: `retry-${Date.now()}`, // generate new id to avoid duplicate
-      } as unknown as UIMessage);
+      });
     }
   };
 

@@ -36,11 +36,11 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
    * read all Text Message and copy to clipboard
    */
   const handleCopy = () => {
-    const text = message.annotations
+    const text = message?.annotations
       ?.filter((item) => item.type === UIMessageType.Text)
       .map((item) => item.text)
       .join('\n');
-    writeText(text);
+    writeText(text || '');
     setIsCopySuccess(true);
   };
 
