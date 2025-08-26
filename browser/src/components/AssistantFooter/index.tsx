@@ -28,7 +28,7 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
 }) => {
   const { mode } = useSnapshot(state);
   const { t } = useTranslation();
-  const { approvePlan, status: chatStatus } = useChatState();
+  const { approvePlan, status: chatStatus, onRetry } = useChatState();
   const { writeText } = useClipboard();
   const [isCopySuccess, setIsCopySuccess] = useState(false);
 
@@ -104,6 +104,7 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
         className={styles.assistantFooterIcon}
         type="text"
         icon={<RefreshIcon />}
+        onClick={onRetry}
       />
       <Button
         className={styles.assistantFooterIcon}
