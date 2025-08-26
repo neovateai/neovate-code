@@ -132,7 +132,6 @@ const SuggestionList = (props: Props) => {
       inputRef.current.input.value = '';
     }
     setSearchResults(undefined);
-    setSelectedIndex(-1);
     onSearch?.(targetFirstKey, '');
   };
 
@@ -164,7 +163,7 @@ const SuggestionList = (props: Props) => {
               selectedItem.contextItem,
             );
             setSelectedFirstKey(undefined);
-            setSelectedIndex(-1);
+            onOpenChange?.(false);
           } else {
             clearSearch(selectedItem.value);
             setSelectedFirstKey(selectedItem.value);
@@ -175,7 +174,6 @@ const SuggestionList = (props: Props) => {
         event.preventDefault();
         if (selectedFirstKey) {
           setSelectedFirstKey(undefined);
-          setSelectedIndex(-1);
         } else {
           onOpenChange?.(false);
         }
@@ -216,7 +214,7 @@ const SuggestionList = (props: Props) => {
           if (selectedFirstKey) {
             onSelect?.(selectedFirstKey, item.value, item.contextItem);
             setSelectedFirstKey(undefined);
-            setSelectedIndex(-1);
+            onOpenChange?.(false);
           } else {
             clearSearch(item.value);
             setSelectedFirstKey(item.value);
@@ -274,19 +272,24 @@ const SuggestionList = (props: Props) => {
     }
   }, [onSearch, selectedFirstKey]);
 
-  // auto focus when popup opens and reset selected index when switching levels
+  // auto focus when popup opens and set default selection
   useEffect(() => {
     if (open && popupRef.current) {
       // Focus the popup container to enable keyboard navigation
       popupRef.current.focus();
-      setSelectedIndex(-1);
+      // Default select the first item when popup opens
+      const currentList = selectedFirstKey ? secondLevelList : firstLevelList;
+      setSelectedIndex(currentList.length > 0 ? 0 : -1);
     }
-  }, [open]);
+  }, [open, selectedFirstKey, firstLevelList, secondLevelList]);
 
   // Reset selected index when switching between first and second level
   useEffect(() => {
-    setSelectedIndex(-1);
-  }, [selectedFirstKey]);
+    if (open) {
+      const currentList = selectedFirstKey ? secondLevelList : firstLevelList;
+      setSelectedIndex(currentList.length > 0 ? 0 : -1);
+    }
+  }, [selectedFirstKey, open, firstLevelList, secondLevelList]);
 
   // Scroll selected item into view
   useEffect(() => {
