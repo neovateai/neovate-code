@@ -1,21 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import MessageWrapper, {
-  MessageWrapperStatus,
-} from '@/components/MessageWrapper';
-import TodoCompleted from '@/icons/todo-completed.svg?react';
-import TodoLoading from '@/icons/todo-progress.svg?react';
+import MessageWrapper from '@/components/MessageWrapper';
+import TodoList, { type TodoItem } from '@/components/TodoList';
 import TodoIcon from '@/icons/todo.svg?react';
 import type { ToolMessage } from '@/types/message';
 import styles from './TodoRender.module.css';
 
-// Todo data type definition
-interface TodoItem {
-  id: string;
-  content: string;
-  status: 'pending' | 'in_progress' | 'completed';
-  priority: 'low' | 'medium' | 'high';
-}
+// Todo data type definition is now imported from TodoList component
 
 interface TodoReadResult {
   success: boolean;
@@ -46,12 +37,21 @@ const useTodoData = (message?: ToolMessage) => {
     let todos: TodoItem[] = [];
 
     if (message.toolName === 'todoRead') {
+      console.log('message.result===todoRead===', message.result);
       const result = message.result as unknown as TodoReadResult;
-      todos = result.data;
+      if (result.success && Array.isArray(result.data)) {
+        todos = result.data;
+      }
     } else if (message.toolName === 'todoWrite') {
+      console.log('message.result===todoWrite===', message.result);
       const result = message.result as unknown as TodoWriteResult;
-      const { newTodos } = result.data;
-      todos = newTodos;
+      if (
+        result.success &&
+        result.data?.newTodos &&
+        Array.isArray(result.data.newTodos)
+      ) {
+        todos = result.data.newTodos;
+      }
     }
 
     // Calculate statistics
@@ -66,55 +66,6 @@ const useTodoData = (message?: ToolMessage) => {
   }, [message]);
 };
 
-// TodoList component (temporary implementation, will be split later)
-const TodoList: React.FC<{
-  todos: TodoItem[];
-}> = ({ todos }) => {
-  const { t } = useTranslation();
-
-  if (todos.length === 0) {
-    return (
-      <div className={styles.noTodos}>
-        <p className={styles.noTodosText}>
-          {String(t('toolRenders.todo.noTodos'))}
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.todoList}>
-      {todos.map((todo) => (
-        <div key={todo.id} className={styles.todoItem}>
-          {/* Checkbox */}
-          <div
-            className={`${styles.todoCheckbox} ${
-              todo.status === 'completed'
-                ? styles['todoCheckbox--completed']
-                : todo.status === 'in_progress'
-                  ? styles['todoCheckbox--inProgress']
-                  : styles['todoCheckbox--pending']
-            }`}
-          >
-            {todo.status === 'completed' && <TodoCompleted />}
-            {todo.status === 'in_progress' && (
-              <div>
-                <TodoLoading
-                  className={`animate-spin ${styles.loadingSpinner}`}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Text content */}
-          <span className={styles.todoText}>{todo.content}</span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// Main component
 const TodoRender: React.FC<TodoRenderProps> = ({ message }) => {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
@@ -128,7 +79,6 @@ const TodoRender: React.FC<TodoRenderProps> = ({ message }) => {
       <MessageWrapper
         title={t('toolRenders.todo.title')}
         icon={<TodoIcon />}
-        status={MessageWrapperStatus.Error}
         defaultExpanded={true}
         expandable={false}
       >
@@ -161,4 +111,4 @@ const TodoRender: React.FC<TodoRenderProps> = ({ message }) => {
 };
 
 export default TodoRender;
-export type { TodoItem, TodoRenderProps };
+export type { TodoRenderProps };
