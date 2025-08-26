@@ -29,6 +29,7 @@ type AssistantContent = string | Array<TextPart | ReasoningPart | ToolCallPart>;
 type AssistantMessage = {
   role: 'assistant';
   content: AssistantContent;
+  text: string;
 };
 export type UserMessage = {
   role: 'user';
@@ -110,27 +111,14 @@ export class History {
           content,
         } as UserMessageItem;
       } else if (message.role === 'assistant') {
-        let content = (() => {
-          if (Array.isArray(message.content)) {
-            return message.content.map((part) => {
-              if (part.type === 'text') {
-                return { type: 'output_text', text: part.text };
-              } else {
-                return part;
-              }
-            });
-          } else {
-            return [
-              {
-                type: 'output_text',
-                text: message.content,
-              },
-            ];
-          }
-        })();
         return {
           role: 'assistant',
-          content,
+          content: [
+            {
+              type: 'output_text',
+              text: message.text,
+            },
+          ],
         } as AssistantMessageItem;
       } else if (message.role === 'system') {
         return {

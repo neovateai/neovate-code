@@ -216,6 +216,7 @@ ${opts.tools.getToolsPrompt()}
     }
 
     // Only accept one tool use per message
+    // TODO: fix this...
     const parts = text.split('</use_tool>');
     if (parts.length > 2 && result.history.length > 0) {
       const lastEntry = result.history[result.history.length - 1];
@@ -231,33 +232,39 @@ ${opts.tools.getToolsPrompt()}
 
     const parsed = parseMessage(text);
     if (parsed[0]?.type === 'text') {
-      await history.addMessage({
-        role: 'assistant',
-        content: parsed[0].content,
-      });
       await opts.onText?.(parsed[0].content);
       finalText = parsed[0].content;
     }
-    const toolUse = parsed.find((item) => item.type === 'tool_use') as ToolUse;
-
+    parsed.forEach((item) => {
+      if (item.type === 'tool_use') {
+        const callId = randomUUID();
+        item.callId = callId;
+      }
+    });
     opts.onTurn?.({
       usage: lastUsage,
     });
-
-    if (toolUse) {
-      const callId = randomUUID();
-      toolUse.callId = callId;
-      await history.addMessage({
-        role: 'assistant',
-        content: [
-          {
+    await history.addMessage({
+      role: 'assistant',
+      content: parsed.map((item) => {
+        if (item.type === 'text') {
+          return {
+            type: 'text',
+            text: item.content,
+          };
+        } else {
+          return {
             type: 'tool_use',
-            id: toolUse.callId,
-            name: toolUse.name,
-            input: toolUse.params,
-          },
-        ],
-      });
+            id: item.callId!,
+            name: item.name,
+            input: item.params,
+          };
+        }
+      }),
+      text,
+    });
+    const toolUse = parsed.find((item) => item.type === 'tool_use') as ToolUse;
+    if (toolUse) {
       await opts.onToolUse?.(toolUse as ToolUse);
       const approved = opts.onToolApprove
         ? await opts.onToolApprove(toolUse as ToolUse)
