@@ -305,6 +305,11 @@ const SuggestionList = (props: Props) => {
         popupRef.current.focus();
       }
 
+      // Focus input when displaying second level list
+      if (selectedFirstKey && inputRef.current) {
+        inputRef.current.focus();
+      }
+
       // Set default selection (first item)
       const currentList = selectedFirstKey ? secondLevelList : firstLevelList;
       setSelectedIndex(currentList.length > 0 ? 0 : -1);
@@ -379,6 +384,7 @@ const SuggestionList = (props: Props) => {
       open={open}
       onOpenChange={onOpenChange}
       placement="topLeft"
+      destroyOnHidden // must be set to true to get focus when each time the popup is opened
       content={() => (
         <div
           className={styles.popup}
