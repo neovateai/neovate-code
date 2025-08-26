@@ -9,7 +9,6 @@ import {
   useLayoutEffect,
   useRef,
 } from 'react';
-import CommandBlot from './CommandBlot';
 import ContextBlot from './ContextBlot';
 import { QuillContext } from './QuillContext';
 import { makeChangeEvent, makeSelectEvent } from './events';
@@ -24,7 +23,6 @@ interface IQuillEditorProps extends TextAreaProps {}
 interface IQuillEditorRef extends TextAreaRef {}
 
 Quill.register(ContextBlot);
-Quill.register(CommandBlot);
 
 const useStyles = createStyles(({ css }) => {
   return {
@@ -78,7 +76,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
     if (editorRef.current && !quillRef.current) {
       const quillInstance = new Quill(editorRef.current, {
         placeholder: placeholder,
-        formats: ['takumi-context', 'takumi-command'], // plain text and takumi-context only
+        formats: ['takumi-context'], // plain text and takumi-context only
         modules: {
           toolbar: false,
           keyboard: {
