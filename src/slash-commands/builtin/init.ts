@@ -13,7 +13,7 @@ export function createInitCommand(opts: { productName: string }) {
         {
           role: 'user',
           content: `
-Please analyze this codebase and create a comprehensive ${ruleFile} file that will guide future instances of Claude Code working in this repository.
+Please analyze this codebase and create a comprehensive ${ruleFile} file that will guide future instances of ${productName} working in this repository.
 
 ## ESSENTIAL CONTENT TO INCLUDE
 
