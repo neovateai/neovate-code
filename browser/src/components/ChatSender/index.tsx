@@ -87,9 +87,6 @@ const ChatSender: React.FC = () => {
     }
   };
 
-  const handleEnterPressRef = useRef(handleEnterPress);
-  handleEnterPressRef.current = handleEnterPress;
-
   return (
     <Spin spinning={isPasting}>
       <QuillContext
@@ -111,7 +108,7 @@ const ChatSender: React.FC = () => {
               quill.current?.hasFocus() &&
               !openPopup
             ) {
-              handleEnterPressRef.current();
+              handleEnterPress();
             }
           },
           onChange: (text, delta) => {

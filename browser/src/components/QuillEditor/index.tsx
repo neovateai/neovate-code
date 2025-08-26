@@ -66,6 +66,9 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
     readonly,
   } = useContext(QuillContext);
 
+  const onKeyDownRef = useRef(onKeyDown);
+  onKeyDownRef.current = onKeyDown;
+
   const { styles } = useStyles();
 
   useImperativeHandle(ref, () => {
@@ -91,7 +94,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
               enter: {
                 key: 'Enter',
                 handler: () => {
-                  onKeyDown?.(KeyCode.Enter);
+                  onKeyDownRef.current?.(KeyCode.Enter);
                   return false;
                 },
               },
