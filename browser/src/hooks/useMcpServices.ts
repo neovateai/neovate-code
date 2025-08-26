@@ -188,9 +188,23 @@ export const useMcpServices = (
             }),
           );
 
-          // Update known services
-          const newKnownServices = new Set([...allKnownServices, serverName]);
-          updateKnownServices(newKnownServices);
+          // Update known services using current state
+          setAllKnownServices((prev) => {
+            const newKnownServices = new Set([...prev, serverName]);
+            // Save to localStorage immediately
+            try {
+              localStorage.setItem(
+                MCP_STORAGE_KEYS.KNOWN_SERVICES,
+                JSON.stringify([...newKnownServices]),
+              );
+            } catch (error) {
+              console.warn(
+                'Failed to save known services to localStorage:',
+                error,
+              );
+            }
+            return newKnownServices;
+          });
         }
 
         if (onSuccess) {
@@ -210,7 +224,7 @@ export const useMcpServices = (
         }
       }
     },
-    [serviceConfigs, allKnownServices, updateKnownServices, t, onToggleError],
+    [serviceConfigs, t, onToggleError],
   );
 
   return {
