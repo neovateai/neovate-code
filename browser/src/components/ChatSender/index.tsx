@@ -101,8 +101,6 @@ const ChatSender: React.FC = () => {
             quill.current = quillInstance;
           },
           onKeyDown: (code) => {
-            console.log(openPopup, 'openPopup');
-            console.log(quill.current?.hasFocus(), 'hasFocus');
             if (
               code === KeyCode.Enter &&
               quill.current?.hasFocus() &&
