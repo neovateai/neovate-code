@@ -2,7 +2,7 @@ import { CodeOutlined, RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import type { ToolMessage } from '@/types/message';
 import type { IGlobToolResult } from '@/types/tool';
-import InnerList, { type ListItem } from './InnerList';
+import InnerList, { type ListItem } from './LsRender/InnerList';
 import { ToolStatus } from './ToolStatus';
 
 export default function GlobRender({ message }: { message?: ToolMessage }) {
