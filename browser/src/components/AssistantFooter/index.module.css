@@ -3,12 +3,6 @@
   gap: 8px;
 }
 
-.assistantFooter :global(.ant-btn-icon) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .assistantFooterIcon {
   width: 18px !important;
   height: 18px !important;

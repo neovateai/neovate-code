@@ -22,6 +22,16 @@
   margin-top: 8px;
 }
 
+.chatList :global(.ant-bubble-content) {
+  min-height: 0px;
+}
+
+.chatList :global(.ant-btn-icon) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .bubbleList {
   height: 100%;
   max-width: 800px;
