@@ -1,7 +1,9 @@
 import { Sender } from '@ant-design/x';
 import { Spin } from 'antd';
 import { createStyles } from 'antd-style';
-import { useState } from 'react';
+import type { Bounds } from 'quill';
+import Quill, { Delta } from 'quill';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { ContextType } from '@/constants/context';
@@ -10,9 +12,10 @@ import { useChatPaste } from '@/hooks/useChatPaste';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
+import QuillEditor, { KeyCode } from '../QuillEditor';
+import { QuillContext } from '../QuillEditor/QuillContext';
 import SuggestionList from '../SuggestionList';
 import SenderFooter from './SenderFooter';
-import SenderFooterBoard from './SenderFooterBoard';
 import SenderHeader from './SenderHeader';
 
 const useStyle = createStyles(({ token, css }) => {
@@ -52,15 +55,17 @@ const ChatSender: React.FC = () => {
 
   const [openPopup, setOpenPopup] = useState(false);
   const [inputText, setInputText] = useState<string>('');
+  const [atIndex, setAtIndex] = useState<number>();
+  const [bounds, setBounds] = useState<Bounds>();
+  const quill = useRef<Quill>(null);
 
   const { isPasting, handlePaste, contextHolder } = useChatPaste();
 
-  const { prompt } = useSnapshot(state);
+  const { prompt, delta } = useSnapshot(state);
 
   const {
     defaultSuggestions,
     handleSearch,
-    // getOriginalContextByValue,
     loading: suggestionLoading,
   } = useSuggestion();
 
@@ -68,9 +73,12 @@ const ChatSender: React.FC = () => {
     onQuery({
       prompt,
       attachedContexts: context.state.attachedContexts,
+      delta: delta as Delta,
     });
     setInputText('');
     actions.updatePrompt('');
+    actions.updateDelta(new Delta());
+    quill.current?.setText('\n');
   };
 
   const handleEnterPress = () => {
@@ -79,62 +87,105 @@ const ChatSender: React.FC = () => {
     }
   };
 
+  const handleEnterPressRef = useRef(handleEnterPress);
+  handleEnterPressRef.current = handleEnterPress;
+
   /*
   TODO
-  1. 上下文挂载
-  2. 粘贴
-  3. 回车
-  4. 面板跟随光标
+  1. context menu keyboard navigation
   */
 
   return (
     <Spin spinning={isPasting}>
-      <SuggestionList
-        loading={suggestionLoading}
-        className={styles.suggestion}
-        open={openPopup}
-        onOpenChange={(open) => setOpenPopup(open)}
-        items={defaultSuggestions}
-        onSearch={(type, text) => {
-          return handleSearch(type as ContextType, text);
+      <QuillContext
+        value={{
+          onInputAt: (inputing, index, bounds) => {
+            setOpenPopup(inputing);
+            setBounds(bounds);
+            setAtIndex(index);
+          },
+          onQuillLoad: (quillInstance) => {
+            quill.current = quillInstance;
+          },
+          onKeyDown: (code) => {
+            if (code === KeyCode.Enter) {
+              handleEnterPressRef.current();
+            }
+          },
+          onChange: (text, delta) => {
+            // rich text will auto add '\n' at the end
+            setInputText(text.trimEnd());
+            actions.updatePrompt(text.trimEnd());
+            actions.updateDelta(delta);
+          },
+          onDeleteContexts: (values) => {
+            values.forEach((value) => context.actions.removeContext(value));
+          },
         }}
-        // onSelect={(type, itemValue) => {
-        //   setOpenPopup(false);
-        //   const contextItem = getOriginalContextByValue(
-        //     type as ContextType,
-        //     itemValue,
-        //   );
-        // }}
       >
-        <Sender
-          className={styles.sender}
-          rootClassName={styles.senderRoot}
-          header={<SenderHeader />}
-          footer={({ components }) => {
-            return <SenderFooter components={components} />;
+        <SuggestionList
+          loading={suggestionLoading}
+          className={styles.suggestion}
+          open={openPopup}
+          onOpenChange={(open) => setOpenPopup(open)}
+          items={defaultSuggestions}
+          onSearch={(type, text) => {
+            return handleSearch(type as ContextType, text);
           }}
-          onSubmit={handleSubmit}
-          onPaste={handlePaste}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleEnterPress();
+          onSelect={(_type, _itemValue, contextItem) => {
+            setOpenPopup(false);
+            if (contextItem) {
+              context.actions.addContext(contextItem);
+
+              if (atIndex !== undefined) {
+                const delIndex = Math.max(0, atIndex - 1);
+
+                // delete the @
+                quill.current?.deleteText(delIndex, 1);
+
+                // insert the context
+                quill.current?.insertEmbed(
+                  delIndex,
+                  'takumi-context',
+                  {
+                    text: contextItem.displayText,
+                    value: contextItem.value,
+                  },
+                  'user',
+                );
+
+                // insert a space
+                quill.current?.insertText(delIndex + 1, ' ');
+              }
             }
           }}
-          onCancel={() => {
-            stop();
-          }}
-          value={inputText}
-          loading={loading}
-          allowSpeech
-          actions={false}
-          onChange={(val) => {
-            setInputText(val);
-            actions.updatePrompt(val);
-          }}
-          placeholder={t('chat.inputPlaceholder')}
-        />
-      </SuggestionList>
-      <SenderFooterBoard />
+          offset={{ top: (bounds?.top ?? -50) + 50, left: bounds?.left ?? 0 }}
+        >
+          <Sender
+            className={styles.sender}
+            rootClassName={styles.senderRoot}
+            header={<SenderHeader />}
+            footer={({ components }) => {
+              return <SenderFooter components={components} />;
+            }}
+            onSubmit={handleSubmit}
+            onPaste={handlePaste}
+            onCancel={() => {
+              stop();
+            }}
+            value={inputText}
+            loading={loading}
+            allowSpeech
+            actions={false}
+            submitType="enter"
+            components={{
+              // @ts-ignore
+              input: QuillEditor,
+            }}
+            placeholder={t('chat.inputPlaceholder')}
+          />
+        </SuggestionList>
+      </QuillContext>
       {contextHolder}
     </Spin>
   );

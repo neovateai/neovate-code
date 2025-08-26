@@ -3,17 +3,16 @@ import { Button, Input, type InputRef, List, Popover } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ContextItem } from '@/types/context';
 import AutoTooltip from './AutoTooltip';
 
 export type SuggestionItem = {
   label: React.ReactNode;
   value: string;
-
   icon?: React.ReactNode;
-
   children?: SuggestionItem[];
-
   extra?: React.ReactNode;
+  contextItem?: ContextItem;
 };
 
 interface Props {
@@ -23,10 +22,15 @@ interface Props {
   onOpenChange?: (open: boolean) => void;
   items: SuggestionItem[];
   virtual?: boolean;
-  onSelect?: (firstKey: string, itemValue: string) => void;
-  /** 返回值会覆盖默认的二级列表 */
+  onSelect?: (
+    firstKey: string,
+    itemValue: string,
+    contextItem?: ContextItem,
+  ) => void;
+  /** Return value will override the default second-level list */
   onSearch?: (firstKey: string, text: string) => SuggestionItem[] | void;
   loading?: boolean;
+  offset?: { left: number; top: number };
 }
 
 const useStyles = createStyles(({ css, token }) => {
@@ -94,6 +98,7 @@ const SuggestionList = (props: Props) => {
     items,
     className,
     loading,
+    offset,
   } = props;
 
   const { t } = useTranslation();
@@ -152,7 +157,7 @@ const SuggestionList = (props: Props) => {
         key={item.value}
         onClick={() => {
           if (selectedFirstKey) {
-            onSelect?.(selectedFirstKey, item.value);
+            onSelect?.(selectedFirstKey, item.value, item.contextItem);
             setSelectedFirstKey(undefined);
           } else {
             clearSearch(item.value);
@@ -233,6 +238,17 @@ const SuggestionList = (props: Props) => {
     };
   }, [open, onOpenChange]);
 
+  const offsetStyles = useMemo(() => {
+    if (offset) {
+      return {
+        ...offset,
+        position: 'relative',
+      };
+    } else {
+      return {};
+    }
+  }, [offset]);
+
   return (
     <Popover
       className={className}
@@ -259,6 +275,7 @@ const SuggestionList = (props: Props) => {
       styles={{
         body: {
           padding: 0,
+          ...offsetStyles,
         },
       }}
     >

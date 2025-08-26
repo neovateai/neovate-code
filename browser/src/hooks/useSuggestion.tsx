@@ -4,13 +4,9 @@ import { useEffect, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import DevFileIcon from '@/components/DevFileIcon';
 import type { SuggestionItem } from '@/components/SuggestionList';
-import {
-  AI_CONTEXT_NODE_CONFIGS,
-  CONTEXT_MAX_POPUP_ITEM_COUNT,
-  ContextType,
-} from '@/constants/context';
+import { CONTEXT_MAX_POPUP_ITEM_COUNT, ContextType } from '@/constants/context';
 import { actions, state } from '@/state/suggestion';
-import type { ContextItem, ContextStoreValue } from '@/types/context';
+import { storeValueToContextItem } from '@/utils/context';
 
 export const useSuggestion = (selectedValues?: readonly string[]) => {
   const { fileList, loading } = useSnapshot(state);
@@ -38,13 +34,10 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
         ),
         disabled: selectedValues?.includes(file.path),
         extra,
-      };
+        contextItem: storeValueToContextItem(file, ContextType.FILE),
+      } as SuggestionItem;
     });
   }, [fileList]);
-
-  const getOriginalFile = (value: string) => {
-    return fileList.find((file) => file.path === value);
-  };
 
   const defaultSuggestions = useMemo(() => {
     return [
@@ -57,12 +50,6 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
       },
     ] as SuggestionItem[];
   }, [fileSuggestions]);
-
-  const originalContextGetterMap: {
-    [key in ContextType]?: (value: string) => ContextStoreValue | undefined;
-  } = {
-    [ContextType.FILE]: getOriginalFile,
-  };
 
   const searchFunctionMap: { [key in ContextType]?: (text: string) => void } = {
     [ContextType.FILE]: (text) =>
@@ -78,26 +65,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     targetFunction?.(text);
   }, 500);
 
-  const getOriginalContextByValue = (type: ContextType, value: string) => {
-    const config = AI_CONTEXT_NODE_CONFIGS.find(
-      (config) => config.type === type,
-    );
-    const getOriginalContext = originalContextGetterMap[type];
-    const originalContext = getOriginalContext?.(value);
-    const contextItemValue = config?.valueFormatter?.(value) || value;
-
-    const contextItem: ContextItem = {
-      type,
-      context: originalContext,
-      value: contextItemValue,
-      displayText: value,
-    };
-
-    return contextItem;
-  };
-
   return {
-    getOriginalContextByValue,
     defaultSuggestions,
     handleSearch,
     loading,
