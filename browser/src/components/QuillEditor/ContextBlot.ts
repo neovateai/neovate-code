@@ -24,8 +24,8 @@ class ContextBlot extends Embed {
     node.style.userSelect = 'none';
     // node.style.margin = '2px';
     node.style.padding = '0 2px';
-    node.style.backgroundColor = '#44ee44';
-    node.style.color = '#204820';
+    node.style.backgroundColor = '#EEEBFF';
+    node.style.color = '#7357FF';
 
     node.setAttribute('contenteditable', 'false');
 
