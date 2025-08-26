@@ -35,6 +35,7 @@ interface Props {
   ) => void;
   /** Return value will override the default second-level list */
   onSearch?: (firstKey: string, text: string) => SuggestionItem[] | void;
+  onLostFocus?: () => void;
   loading?: boolean;
   offset?: { left: number; top: number };
 }
@@ -109,6 +110,7 @@ const SuggestionList = (props: Props) => {
     className,
     loading,
     offset,
+    onLostFocus,
   } = props;
 
   const { t } = useTranslation();
@@ -174,6 +176,7 @@ const SuggestionList = (props: Props) => {
               );
               setSelectedFirstKey(undefined);
               onOpenChange?.(false);
+              onLostFocus?.();
             } else {
               clearSearch(selectedItem.value);
               setSelectedFirstKey(selectedItem.value);
@@ -186,6 +189,7 @@ const SuggestionList = (props: Props) => {
             setSelectedFirstKey(undefined);
           } else {
             onOpenChange?.(false);
+            onLostFocus?.();
           }
           break;
       }
@@ -198,6 +202,7 @@ const SuggestionList = (props: Props) => {
       onSelect,
       onOpenChange,
       clearSearch,
+      onLostFocus,
     ],
   );
 
@@ -235,6 +240,7 @@ const SuggestionList = (props: Props) => {
             onSelect?.(selectedFirstKey, item.value, item.contextItem);
             setSelectedFirstKey(undefined);
             onOpenChange?.(false);
+            onLostFocus?.();
           } else {
             clearSearch(item.value);
             setSelectedFirstKey(item.value);
@@ -320,6 +326,7 @@ const SuggestionList = (props: Props) => {
         setSelectedFirstKey(undefined);
         setSelectedIndex(-1);
         onOpenChange?.(false);
+        onLostFocus?.();
       }
     }
 
@@ -327,7 +334,7 @@ const SuggestionList = (props: Props) => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [open, onOpenChange, selectedFirstKey]);
+  }, [open, onOpenChange, selectedFirstKey, onLostFocus]);
 
   // Scroll selected item into view
   useEffect(() => {

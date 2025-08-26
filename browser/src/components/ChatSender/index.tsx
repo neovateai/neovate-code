@@ -159,6 +159,7 @@ const ChatSender: React.FC = () => {
               }
             }
           }}
+          onLostFocus={() => quill.current?.focus()}
           offset={{ top: (bounds?.top ?? -50) + 50, left: bounds?.left ?? 0 }}
         >
           <Sender
