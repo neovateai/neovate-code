@@ -29,6 +29,27 @@
     "settings": "Settings",
     "help": "Help"
   },
+  "welcome": {
+    "title": "I'm Takumi, your development partner",
+    "capabilitiesTitle": "My Capabilities",
+    "introduceCapability": "Please introduce the features of {{capability}}",
+    "llmSupport": {
+      "title": "LLM Support",
+      "description": "Compatible with multiple mainstream models including OpenAI, Claude, Gemini, etc."
+    },
+    "fileOperations": {
+      "title": "File Operations",
+      "description": "Intelligently understand and edit project files, supporting multiple programming languages"
+    },
+    "codebaseNavigation": {
+      "title": "Codebase Navigation",
+      "description": "Smart navigation of project structure, quick analysis and search"
+    },
+    "planMode": {
+      "title": "Plan Mode",
+      "description": "Automatically break down complex tasks into visible and editable steps"
+    }
+  },
   "chat": {
     "welcomeTitle": "Hello, I'm Takumi",
     "welcomeDescription": "I'm your AI programming assistant that helps improve development workflows. I can write code, optimize performance, generate tests, analyze architecture and assist with development tasks.",
