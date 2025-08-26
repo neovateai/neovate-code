@@ -12,7 +12,7 @@ export default function GlobRender({ message }: { message?: ToolMessage }) {
   const { path } = message.args as { path: string };
 
   const items: ListItem[] = filenames.map((filename) => ({
-    name: filename.replace(path, ''),
+    name: path ? filename.replace(path, '') : filename,
     isDirectory: filename.endsWith('/'),
   }));
 
