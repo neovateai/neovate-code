@@ -45,6 +45,9 @@ const useStyles = createStyles(({ css, token }) => {
         background-color: ${token.controlItemBgHover};
       }
     `,
+    listItemSelected: css`
+      background-color: ${token.controlItemBgActive} !important;
+    `,
     listItemLabel: css`
       font-weight: 600;
     `,
@@ -84,6 +87,7 @@ const useStyles = createStyles(({ css, token }) => {
       border: 1px solid ${token.colorBorder};
       padding: 4px;
       width: fit-content;
+      outline: none;
     `,
   };
 });
@@ -106,8 +110,10 @@ const SuggestionList = (props: Props) => {
 
   const [selectedFirstKey, setSelectedFirstKey] = useState<string>();
   const [searchResults, setSearchResults] = useState<SuggestionItem[]>();
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const inputRef = useRef<InputRef>(null);
   const popupRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const firstLevelList = useMemo(() => items, [items]);
 
@@ -126,7 +132,55 @@ const SuggestionList = (props: Props) => {
       inputRef.current.input.value = '';
     }
     setSearchResults(undefined);
+    setSelectedIndex(-1);
     onSearch?.(targetFirstKey, '');
+  };
+
+  // Handle keyboard navigation
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    const currentList = selectedFirstKey ? secondLevelList : firstLevelList;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < currentList.length - 1 ? prev + 1 : 0,
+        );
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        setSelectedIndex((prev) =>
+          prev > 0 ? prev - 1 : currentList.length - 1,
+        );
+        break;
+      case 'Enter':
+        event.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < currentList.length) {
+          const selectedItem = currentList[selectedIndex];
+          if (selectedFirstKey) {
+            onSelect?.(
+              selectedFirstKey,
+              selectedItem.value,
+              selectedItem.contextItem,
+            );
+            setSelectedFirstKey(undefined);
+            setSelectedIndex(-1);
+          } else {
+            clearSearch(selectedItem.value);
+            setSelectedFirstKey(selectedItem.value);
+          }
+        }
+        break;
+      case 'Escape':
+        event.preventDefault();
+        if (selectedFirstKey) {
+          setSelectedFirstKey(undefined);
+          setSelectedIndex(-1);
+        } else {
+          onOpenChange?.(false);
+        }
+        break;
+    }
   };
 
   const renderItemText = (
@@ -150,15 +204,19 @@ const SuggestionList = (props: Props) => {
     }
   };
 
-  const renderItem = (item: SuggestionItem) => {
+  const renderItem = (item: SuggestionItem, index: number) => {
+    const isSelected = selectedIndex === index;
     return (
       <List.Item
-        className={styles.listItem}
+        className={`${styles.listItem} ${isSelected ? styles.listItemSelected : ''}`}
         key={item.value}
+        data-index={index}
+        onMouseEnter={() => setSelectedIndex(index)}
         onClick={() => {
           if (selectedFirstKey) {
             onSelect?.(selectedFirstKey, item.value, item.contextItem);
             setSelectedFirstKey(undefined);
+            setSelectedIndex(-1);
           } else {
             clearSearch(item.value);
             setSelectedFirstKey(item.value);
@@ -216,6 +274,51 @@ const SuggestionList = (props: Props) => {
     }
   }, [onSearch, selectedFirstKey]);
 
+  // auto focus when popup opens and reset selected index when switching levels
+  useEffect(() => {
+    if (open && popupRef.current) {
+      // Focus the popup container to enable keyboard navigation
+      popupRef.current.focus();
+      setSelectedIndex(-1);
+    }
+  }, [open]);
+
+  // Reset selected index when switching between first and second level
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [selectedFirstKey]);
+
+  // Scroll selected item into view
+  useEffect(() => {
+    if (selectedIndex >= 0 && listRef.current) {
+      // Use a more reliable method to find the selected item
+      const selectedItem = listRef.current.querySelector(
+        `[data-index="${selectedIndex}"]`,
+      ) as HTMLElement;
+      if (selectedItem) {
+        // Get the list container for proper scrolling
+        const listContainer =
+          listRef.current.querySelector('.ant-list') || listRef.current;
+
+        // Calculate if item is visible
+        const containerRect = listContainer.getBoundingClientRect();
+        const itemRect = selectedItem.getBoundingClientRect();
+
+        // Check if item is outside the visible area
+        const isAbove = itemRect.top < containerRect.top;
+        const isBelow = itemRect.bottom > containerRect.bottom;
+
+        if (isAbove || isBelow) {
+          selectedItem.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'nearest',
+          });
+        }
+      }
+    }
+  }, [selectedIndex]);
+
   // auto close popup when lost focus
   useEffect(() => {
     if (!open) return;
@@ -229,6 +332,7 @@ const SuggestionList = (props: Props) => {
         }
 
         setSelectedFirstKey(undefined);
+        setSelectedIndex(-1);
         onOpenChange?.(false);
       }
     }
@@ -236,7 +340,7 @@ const SuggestionList = (props: Props) => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [open, onOpenChange]);
+  }, [open, onOpenChange, selectedFirstKey]);
 
   const offsetStyles = useMemo(() => {
     if (offset) {
@@ -256,9 +360,15 @@ const SuggestionList = (props: Props) => {
       onOpenChange={onOpenChange}
       placement="topLeft"
       content={() => (
-        <div className={styles.popup} ref={popupRef}>
+        <div
+          className={styles.popup}
+          ref={popupRef}
+          tabIndex={-1}
+          onKeyDown={handleKeyDown}
+        >
           {ListHeader}
           <List
+            ref={listRef}
             className={styles.list}
             locale={{
               emptyText: t('common.empty'),
