@@ -1,7 +1,9 @@
 import { PluginHookType } from '../plugin';
 import { Tools } from '../tool';
+import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
-import type { UserMessage } from './history';
+import type { NormalizedMessage } from './history';
+import { JsonlLogger } from './jsonl';
 import { LlmsContext } from './llmsContext';
 import { runLoop } from './loop';
 import { modelAlias, providers, resolveModel } from './model';
@@ -27,6 +29,9 @@ export class Project {
     const outputFormat = new OutputFormat({
       format: this.context.config.outputFormat!,
       quiet: this.context.config.quiet,
+    });
+    const jsonlLogger = new JsonlLogger({
+      filePath: this.context.paths.getSessionLogPath(this.session.id),
     });
     await this.context.apply({
       hook: 'userPrompt',
@@ -84,10 +89,17 @@ export class Project {
       model,
       cwd: this.context.cwd,
     });
-    const userMessage: UserMessage = {
+    const userMessage: NormalizedMessage = {
       role: 'user',
       content: message,
+      type: 'message',
+      timestamp: new Date().toISOString(),
+      uuid: randomUUID(),
+      parentUuid: null,
     };
+    jsonlLogger.onMessage({
+      message: userMessage,
+    });
     const input =
       this.session.history.messages.length > 0
         ? [...this.session.history.messages, userMessage]
@@ -100,6 +112,18 @@ export class Project {
       cwd: this.context.cwd,
       systemPrompt,
       llmsContexts: llmsContext.messages,
+      onMessage: async (message) => {
+        const normalizedMessage = {
+          ...message,
+          sessionId: this.session.id,
+        };
+        outputFormat.onMessage({
+          message: normalizedMessage,
+        });
+        jsonlLogger.onMessage({
+          message: normalizedMessage,
+        });
+      },
       onTextDelta: async () => {},
       onText: async (text) => {
         await this.context.apply({
@@ -111,10 +135,6 @@ export class Project {
             },
           ],
           type: PluginHookType.Series,
-        });
-        outputFormat.onText({
-          text,
-          sessionId: this.session.id,
         });
       },
       onReasoning: async (text) => console.log(text),
@@ -128,10 +148,6 @@ export class Project {
             },
           ],
           type: PluginHookType.Series,
-        });
-        outputFormat.onToolUse({
-          toolUse,
-          sessionId: this.session.id,
         });
       },
       onToolUseResult: async (toolUseResult) => {
@@ -147,11 +163,6 @@ export class Project {
           ],
           type: PluginHookType.Series,
         });
-        outputFormat.onToolUseResult({
-          toolUse,
-          result,
-          sessionId: this.session.id,
-        });
       },
       onTurn: async () => {},
       onToolApprove: async () => {
@@ -162,7 +173,6 @@ export class Project {
       result,
       sessionId: this.session.id,
     });
-    // update history to session
     if (result.success && result.data.history) {
       this.session.updateHistory(result.data.history);
     }

@@ -10,7 +10,7 @@ export class Session {
   constructor(opts: { id: SessionId; history?: History }) {
     this.id = opts.id;
     this.usage = Usage.empty();
-    this.history = opts.history || new History([]);
+    this.history = opts.history || new History({ messages: [] });
   }
   updateHistory(history: History) {
     this.history = history;

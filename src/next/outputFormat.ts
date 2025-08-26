@@ -1,5 +1,5 @@
 import type { EnhancedTool } from '../tool';
-import type { LoopResult, ToolUse } from './loop';
+import type { LoopResult } from './loop';
 import type { ModelInfo } from './model';
 
 type Format = 'text' | 'stream-json' | 'json';
@@ -28,11 +28,12 @@ export class OutputFormat {
     if (!this.quiet) {
       return;
     }
+    const model = `${opts.model.provider.id}/${opts.model.model.id}`;
     const data = {
       type: 'system',
       subtype: 'init',
-      session_id: opts.sessionId,
-      model: opts.model.model.id,
+      sessionId: opts.sessionId,
+      model,
       cwd: opts.cwd,
       tools: opts.tools.map((tool) => tool.name),
     };
@@ -42,75 +43,11 @@ export class OutputFormat {
       this.dataArr.push(data);
     }
   }
-  onText(opts: { text: string; sessionId: string }) {
+  onMessage(opts: { message: any }) {
     if (!this.quiet) {
       return;
     }
-    const data = {
-      type: 'assistant',
-      message: {
-        type: 'message',
-        role: 'assistant',
-        content: [
-          {
-            type: 'text',
-            text: opts.text,
-          },
-        ],
-      },
-      session_id: opts.sessionId,
-    };
-    if (this.format === 'stream-json') {
-      console.log(JSON.stringify(data));
-    } else if (this.format === 'json') {
-      this.dataArr.push(data);
-    }
-  }
-  onToolUse(opts: { toolUse: ToolUse; sessionId: string }) {
-    if (!this.quiet) {
-      return;
-    }
-    const data = {
-      type: 'assistant',
-      message: {
-        type: 'message',
-        role: 'assistant',
-        content: [
-          {
-            type: 'tool_use',
-            id: opts.toolUse.callId,
-            name: opts.toolUse.name,
-            input: opts.toolUse.params,
-          },
-        ],
-      },
-      session_id: opts.sessionId,
-    };
-    if (this.format === 'stream-json') {
-      console.log(JSON.stringify(data));
-    } else if (this.format === 'json') {
-      this.dataArr.push(data);
-    }
-  }
-  onToolUseResult(opts: { toolUse: ToolUse; result: any; sessionId: string }) {
-    if (!this.quiet) {
-      return;
-    }
-    const data = {
-      type: 'user',
-      message: {
-        type: 'message',
-        role: 'user',
-        content: [
-          {
-            type: 'tool_result',
-            tool_use_id: opts.toolUse.callId,
-            content: opts.result,
-          },
-        ],
-      },
-      session_id: opts.sessionId,
-    };
+    const data = { ...opts.message };
     if (this.format === 'stream-json') {
       console.log(JSON.stringify(data));
     } else if (this.format === 'json') {
@@ -121,14 +58,17 @@ export class OutputFormat {
     if (!this.quiet) {
       return;
     }
+    const isError = !opts.result.success;
+    const subtype = isError ? 'error' : 'success';
     const data: any = {
       type: 'result',
-      subtype: opts.result.success ? 'success' : 'error',
-      is_error: !opts.result.success,
+      subtype,
+      isError,
       content: opts.result.success
         ? opts.result.data.text
         : opts.result.error.message,
-      session_id: opts.sessionId,
+      sessionId: opts.sessionId,
+      ...(isError ? { __result: opts.result } : {}),
     };
     if (opts.result.success) {
       data.usage = {

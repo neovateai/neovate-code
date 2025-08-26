@@ -10,7 +10,6 @@ import {
   PluginManager,
 } from '../plugin';
 import { Paths } from './paths';
-import { createJsonlPlugin } from './plugins/jsonl';
 
 type ContextOpts = {
   cwd: string;
@@ -77,13 +76,7 @@ export class Context {
       opts.argvConfig || {},
     );
     const initialConfig = configManager.config;
-    const buildInPlugins: Plugin[] = [
-      createJsonlPlugin({
-        paths,
-        cwd: opts.cwd,
-        version,
-      }),
-    ];
+    const buildInPlugins: Plugin[] = [];
     const globalPlugins = scanPlugins(
       path.join(paths.globalConfigDir, 'plugins'),
     );

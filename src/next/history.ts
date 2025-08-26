@@ -1,98 +1,158 @@
-import type { AgentInputItem } from '@openai/agents';
-import type { ToolUseResult } from './loop';
+import type {
+  AgentInputItem,
+  AssistantMessageItem,
+  SystemMessageItem,
+  UserMessageItem,
+} from '@openai/agents';
+import { randomUUID } from '../utils/randomUUID';
 
-type MessageContent = {
-  type: 'text' | 'tool_use' | 'tool_result';
-  text?: string;
-  id?: string;
-  name?: string;
-  input?: Record<string, any>;
-  content?: string;
-  is_error?: boolean;
-  tool_use_id?: string;
+type SystemMessage = {
+  role: 'system';
+  content: string;
 };
-
-export type UserMessage = {
-  role: 'user';
-  content: string | MessageContent[];
+type TextPart = {
+  type: 'text';
+  text: string;
 };
-
+type UserContent = string | Array<TextPart>;
+type ToolCallPart = {
+  type: 'tool_use';
+  id: string;
+  name: string;
+  input: Record<string, any>;
+};
+type ReasoningPart = {
+  type: 'reasoning';
+  text: string;
+};
+type AssistantContent = string | Array<TextPart | ReasoningPart | ToolCallPart>;
 type AssistantMessage = {
   role: 'assistant';
+  content: AssistantContent;
+};
+export type UserMessage = {
+  role: 'user';
+  content: UserContent;
+};
+type ToolMessage = {
+  role: 'user';
+  content: ToolContent;
+};
+type ToolContent = Array<ToolResultPart>;
+type ToolResultPart = {
+  type: 'tool_result';
+  id: string;
+  name: string;
+  input: Record<string, any>;
+  result: any;
+  isError?: boolean;
+};
+type Message = SystemMessage | UserMessage | AssistantMessage | ToolMessage;
+export type NormalizedMessage = Message & {
   type: 'message';
-  content: MessageContent[];
+  timestamp: string;
+  uuid: string;
+  parentUuid: string | null;
 };
 
-export type Message = UserMessage | AssistantMessage;
+export type OnMessage = (message: NormalizedMessage) => Promise<void>;
+export type HistoryOpts = {
+  messages: NormalizedMessage[];
+  onMessage?: OnMessage;
+};
 
 export class History {
-  messages: Message[] = [];
-  constructor(messages: Message[]) {
-    this.messages = messages;
+  messages: NormalizedMessage[];
+  onMessage?: OnMessage;
+  constructor(opts: HistoryOpts) {
+    this.messages = opts.messages || [];
+    this.onMessage = opts.onMessage;
   }
 
-  addUserMessage(content: string | MessageContent[]): void {
-    this.messages.push({
-      role: 'user',
-      content,
-    });
-  }
-
-  addAssistantMessage(content: string | MessageContent[]): void {
-    if (typeof content === 'string') {
-      content = [
-        {
-          type: 'text',
-          text: content,
-        },
-      ];
-    }
-    this.messages.push({
-      role: 'assistant',
+  async addMessage(message: Message): Promise<void> {
+    const lastMessage = this.messages[this.messages.length - 1];
+    const normalizedMessage: NormalizedMessage = {
+      ...message,
       type: 'message',
-      content,
-    });
-  }
-
-  addToolResult(toolUseResult: ToolUseResult): void {
-    this.messages.push({
-      role: 'user',
-      content: [
-        {
-          type: 'tool_result',
-          content: toolUseResult.result,
-          is_error: !toolUseResult.approved,
-          tool_use_id: toolUseResult.toolUse.callId,
-        },
-      ],
-    });
+      timestamp: new Date().toISOString(),
+      uuid: randomUUID(),
+      parentUuid: lastMessage?.uuid || null,
+    };
+    this.messages.push(normalizedMessage);
+    await this.onMessage?.(normalizedMessage);
   }
 
   toAgentInput(): AgentInputItem[] {
     return this.messages.map((message) => {
       if (message.role === 'user') {
-        if (
-          message.content.length === 1 &&
-          typeof message.content[0] === 'object' &&
-          message.content[0].type === 'tool_result'
-        ) {
-          return {
-            role: 'user',
-            content: message.content[0].content,
-          };
-        }
+        const content = (() => {
+          let content: any = message.content;
+          if (!Array.isArray(content)) {
+            content = [
+              {
+                type: 'input_text',
+                text: content,
+              },
+            ];
+          }
+          content = content.map((part: any) => {
+            if (part.type === 'tool_result') {
+              const text = `[${part.name} for ${safeStringify(part.input)}] result: \n<function_results>\n${safeStringify(part.result)}\n</function_results>`;
+              return { type: 'input_text', text };
+            } else {
+              return part;
+            }
+          });
+          return content;
+        })();
         return {
           role: 'user',
-          content: message.content,
-        };
-      } else {
+          content,
+        } as UserMessageItem;
+      } else if (message.role === 'assistant') {
+        let content = (() => {
+          if (Array.isArray(message.content)) {
+            return message.content.map((part) => {
+              if (part.type === 'text') {
+                return { type: 'output_text', text: part.text };
+              } else {
+                return part;
+              }
+            });
+          } else {
+            return [
+              {
+                type: 'output_text',
+                text: message.content,
+              },
+            ];
+          }
+        })();
         return {
           role: 'assistant',
+          content,
+        } as AssistantMessageItem;
+      } else if (message.role === 'system') {
+        return {
+          role: 'system',
           content: message.content,
-        } as any;
+        } as SystemMessageItem;
+      } else {
+        throw new Error(`Unsupported message role: ${message}.`);
       }
     });
   }
 
   async compress() {}
+}
+
+function safeStringify(
+  obj: any,
+  fallbackMessage = '[Unable to serialize object]',
+): string {
+  try {
+    return JSON.stringify(obj, null, 2);
+  } catch (error) {
+    return fallbackMessage;
+  }
 }

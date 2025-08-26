@@ -3,7 +3,7 @@ import type { Tools } from '../tool';
 import { parseMessage } from '../utils/parse-message';
 import { randomUUID } from '../utils/randomUUID';
 import { At } from './at';
-import { History, type Message } from './history';
+import { History, type NormalizedMessage, type OnMessage } from './history';
 import type { ModelInfo } from './model';
 import { Usage } from './usage';
 
@@ -41,7 +41,7 @@ export type LoopResult =
     };
 
 type RunLoopOpts = {
-  input: string | Message[];
+  input: string | NormalizedMessage[];
   model: ModelInfo;
   tools: Tools;
   cwd: string;
@@ -56,6 +56,7 @@ type RunLoopOpts = {
   onToolUseResult?: (toolUseResult: ToolUseResult) => Promise<void>;
   onTurn?: (turn: { usage: Usage }) => Promise<void>;
   onToolApprove?: (toolUse: ToolUse) => Promise<boolean>;
+  onMessage?: OnMessage;
 };
 
 // TODO: support retry
@@ -67,16 +68,21 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   let finalText = '';
   let lastUsage = Usage.empty();
   const totalUsage = Usage.empty();
-  const history = new History(
-    Array.isArray(opts.input)
+  const history = new History({
+    messages: Array.isArray(opts.input)
       ? opts.input
       : [
           {
             role: 'user',
             content: opts.input,
+            type: 'message',
+            timestamp: new Date().toISOString(),
+            uuid: randomUUID(),
+            parentUuid: null,
           },
         ],
-  );
+    onMessage: opts.onMessage,
+  });
 
   const maxTurns = opts.maxTurns ?? DEFAULT_MAX_TURNS;
 
@@ -196,6 +202,7 @@ ${opts.tools.getToolsPrompt()}
             status: error.data?.error?.status,
             url: error.url,
             error,
+            stack: error.stack,
           },
         },
       };
@@ -224,7 +231,10 @@ ${opts.tools.getToolsPrompt()}
 
     const parsed = parseMessage(text);
     if (parsed[0]?.type === 'text') {
-      history.addAssistantMessage(parsed[0].content);
+      await history.addMessage({
+        role: 'assistant',
+        content: parsed[0].content,
+      });
       await opts.onText?.(parsed[0].content);
       finalText = parsed[0].content;
     }
@@ -237,14 +247,17 @@ ${opts.tools.getToolsPrompt()}
     if (toolUse) {
       const callId = randomUUID();
       toolUse.callId = callId;
-      history.addAssistantMessage([
-        {
-          type: 'tool_use',
-          tool_use_id: toolUse.callId,
-          name: toolUse.name,
-          input: toolUse.params,
-        },
-      ]);
+      await history.addMessage({
+        role: 'assistant',
+        content: [
+          {
+            type: 'tool_use',
+            id: toolUse.callId,
+            name: toolUse.name,
+            input: toolUse.params,
+          },
+        ],
+      });
       await opts.onToolUse?.(toolUse as ToolUse);
       const approved = opts.onToolApprove
         ? await opts.onToolApprove(toolUse as ToolUse)
@@ -256,23 +269,42 @@ ${opts.tools.getToolsPrompt()}
           JSON.stringify(toolUse.params),
           {},
         );
-        const formattedToolUse = formatToolUse(toolUse, toolResult);
+        // const formattedToolUse = formatToolUse(toolUse, toolResult);
         const toolUseResult = {
           toolUse,
-          result: formattedToolUse.content,
+          result: toolResult,
           approved,
         };
-        history.addToolResult(toolUseResult);
+        await history.addMessage({
+          role: 'user',
+          content: [
+            {
+              type: 'tool_result',
+              id: toolUse.callId,
+              name: toolUse.name,
+              input: toolUse.params,
+              result: toolResult,
+              // TODO: more isError cases
+              isError: !approved,
+            },
+          ],
+        });
         await opts.onToolUseResult?.(toolUseResult);
       } else {
         const deniedResult = 'Tool execution was denied by user.';
-        const toolUseResult = {
-          toolUse,
-          result: deniedResult,
-          approved,
-        };
-        history.addToolResult(toolUseResult);
-        await opts.onToolUseResult?.(toolUseResult);
+        await history.addMessage({
+          role: 'user',
+          content: [
+            {
+              type: 'tool_result',
+              id: toolUse.callId,
+              name: toolUse.name,
+              input: toolUse.params,
+              result: deniedResult,
+              isError: true,
+            },
+          ],
+        });
         return {
           success: false,
           error: {
@@ -350,24 +382,4 @@ async function pushTextDelta(
   if (parsed[0]?.type === 'text' && parsed[0].partial) {
     await onTextDelta?.(content);
   }
-}
-
-function safeStringify(
-  obj: any,
-  fallbackMessage = '[Unable to serialize object]',
-): string {
-  try {
-    return JSON.stringify(obj, null, 2);
-  } catch (error) {
-    return fallbackMessage;
-  }
-}
-
-function formatToolUse(toolUse: ToolUse, result: any) {
-  const { name, params } = toolUse;
-  return {
-    role: 'user',
-    type: 'message',
-    content: `[${name} for ${safeStringify(params)}] result: \n<function_results>\n${safeStringify(result)}\n</function_results>`,
-  };
 }

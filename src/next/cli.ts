@@ -114,6 +114,7 @@ export async function runNeovate(opts: {
       process.exit(0);
     } catch (e: any) {
       console.error(`Error: ${e.message}`);
+      console.error(e.stack);
       process.exit(1);
     }
   } else {
