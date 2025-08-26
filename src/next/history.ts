@@ -30,6 +30,7 @@ type AssistantMessage = {
   role: 'assistant';
   content: AssistantContent;
   text: string;
+  model: string;
 };
 export type UserMessage = {
   role: 'user';

@@ -128,7 +128,8 @@ export function loadPolishedMarkdownFiles(
     cwd: dir,
   });
   return files.map((relativePath) => {
-    const file = loadMarkdownFile(relativePath);
+    const absPath = path.join(dir, relativePath);
+    const file = loadMarkdownFile(absPath);
     const name = relativePath.replace(/\.md$/, '').replace(/[/\\]/g, ':');
     let description = file.attributes.description?.trim();
     if (!description) {

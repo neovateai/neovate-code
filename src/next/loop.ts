@@ -244,6 +244,7 @@ ${opts.tools.getToolsPrompt()}
     opts.onTurn?.({
       usage: lastUsage,
     });
+    const model = `${opts.model.provider.id}/${opts.model.model.id}`;
     await history.addMessage({
       role: 'assistant',
       content: parsed.map((item) => {
@@ -262,6 +263,7 @@ ${opts.tools.getToolsPrompt()}
         }
       }),
       text,
+      model,
     });
     const toolUse = parsed.find((item) => item.type === 'tool_use') as ToolUse;
     if (toolUse) {

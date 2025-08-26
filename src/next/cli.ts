@@ -116,6 +116,7 @@ export async function runNeovate(opts: {
     try {
       assert(prompt, 'Prompt is required in quiet mode');
       let input = prompt as string;
+      let model;
       if (isSlashCommand(input)) {
         const parsed = parseSlashCommand(input);
         if (parsed) {
@@ -140,13 +141,16 @@ export async function runNeovate(opts: {
                 `Only one prompt is supported for ${parsed.command} in quiet mode`,
               );
               input = prompt?.[0]?.content;
+              if (command.model) {
+                model = command.model;
+              }
             } else {
               throw new Error(`Unsupported slash command: ${parsed.command}`);
             }
           }
         }
       }
-      await project.send(input);
+      await project.send(input, { model });
       process.exit(0);
     } catch (e: any) {
       console.error(`Error: ${e.message}`);
