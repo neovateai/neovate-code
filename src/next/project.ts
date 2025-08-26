@@ -19,8 +19,9 @@ export class Project {
   constructor(opts: { sessionId?: SessionId; context: Context }) {
     // TODO: resume session
     this.session = opts.sessionId
-      ? new Session({
+      ? Session.resume({
           id: opts.sessionId,
+          logPath: opts.context.paths.getSessionLogPath(opts.sessionId),
         })
       : Session.create();
     this.context = opts.context;
