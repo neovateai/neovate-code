@@ -12,7 +12,6 @@ import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
 import SuggestionList from '../SuggestionList';
 import SenderFooter from './SenderFooter';
-import SenderFooterBoard from './SenderFooterBoard';
 import SenderHeader from './SenderHeader';
 
 const useStyle = createStyles(({ token, css }) => {
@@ -81,10 +80,10 @@ const ChatSender: React.FC = () => {
 
   /*
   TODO
-  1. 上下文挂载
-  2. 粘贴
-  3. 回车
-  4. 面板跟随光标
+  1. Context mounting
+  2. Paste
+  3. Enter key
+  4. Panel follows cursor
   */
 
   return (
@@ -98,13 +97,12 @@ const ChatSender: React.FC = () => {
         onSearch={(type, text) => {
           return handleSearch(type as ContextType, text);
         }}
-        // onSelect={(type, itemValue) => {
-        //   setOpenPopup(false);
-        //   const contextItem = getOriginalContextByValue(
-        //     type as ContextType,
-        //     itemValue,
-        //   );
-        // }}
+        onSelect={(_type, _itemValue, contextItem) => {
+          setOpenPopup(false);
+          if (contextItem) {
+            context.actions.addContext(contextItem);
+          }
+        }}
       >
         <Sender
           className={styles.sender}
@@ -127,14 +125,17 @@ const ChatSender: React.FC = () => {
           loading={loading}
           allowSpeech
           actions={false}
+          submitType="enter"
           onChange={(val) => {
+            if (val === '@') {
+              setOpenPopup(true);
+            }
             setInputText(val);
             actions.updatePrompt(val);
           }}
           placeholder={t('chat.inputPlaceholder')}
         />
       </SuggestionList>
-      <SenderFooterBoard />
       {contextHolder}
     </Spin>
   );

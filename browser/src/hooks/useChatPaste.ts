@@ -1,7 +1,13 @@
 import { message } from 'antd';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { guessImageMime, imageUrlToBase64 } from '@/utils/context';
+import { ContextType } from '@/constants/context';
+import * as context from '@/state/context';
+import {
+  guessImageMime,
+  imageUrlToBase64,
+  storeValueToContextItem,
+} from '@/utils/context';
 
 export function useChatPaste() {
   const [isPasting, setIsPasting] = useState(false);
@@ -20,7 +26,18 @@ export function useChatPaste() {
           if (!base64String) {
             return;
           }
-          // TODO 实现新增上下文
+
+          const contextItem = storeValueToContextItem(
+            {
+              mime: blob.type,
+              src: base64String,
+            },
+            ContextType.IMAGE,
+          );
+
+          if (contextItem) {
+            context.actions.addContext(contextItem);
+          }
         };
         reader.readAsDataURL(blob);
       } else {
@@ -53,8 +70,16 @@ export function useChatPaste() {
                     const mime = guessImageMime(src);
 
                     imageUrlToBase64(src).then((base64) => {
-                      // TODO 实现新增上下文
-                      console.log('handleHtml', base64, mime);
+                      const contextItem = storeValueToContextItem(
+                        {
+                          mime,
+                          src: base64,
+                        },
+                        ContextType.IMAGE,
+                      );
+                      if (contextItem) {
+                        context.actions.addContext(contextItem);
+                      }
 
                       resolve();
                     });
@@ -78,28 +103,28 @@ export function useChatPaste() {
   const handlePaste = (event: React.ClipboardEvent<HTMLElement>) => {
     if (!event) return false;
 
-    // 阻止默认粘贴行为
+    // Prevent default paste behavior
     event.preventDefault();
 
     const clipboardItems = event.clipboardData?.items;
     if (!clipboardItems || clipboardItems.length === 0) return false;
 
-    // 只获取第一个项目
+    // Get only the first item
     const item = clipboardItems[0];
 
     switch (item.type) {
       case 'text/plain':
-        // 处理纯文本
+        // Handle plain text
         return false;
       case 'text/html':
-        // 处理HTML
+        // Handle HTML
         return handleHtml(item);
       case 'image/png':
       case 'image/jpeg':
       case 'image/gif':
       case 'image/webp':
       case 'image/svg+xml':
-        // 处理图片
+        // Handle images
         return handleImage(item);
       default:
         const errorMsg = t('context.unsupportedType', { type: item.type });
