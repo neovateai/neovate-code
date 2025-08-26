@@ -1,4 +1,3 @@
-import { UserOutlined } from '@ant-design/icons';
 import { Bubble } from '@ant-design/x';
 import { type GetProp, Spin } from 'antd';
 import { createStyles } from 'antd-style';
