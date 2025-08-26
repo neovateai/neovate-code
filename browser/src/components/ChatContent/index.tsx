@@ -1,8 +1,7 @@
-import { UserOutlined } from '@ant-design/icons';
 import { Bubble } from '@ant-design/x';
-import { type GetProp, Spin } from 'antd';
+import { type GetProp } from 'antd';
+import { Skeleton } from 'antd';
 import { createStyles } from 'antd-style';
-import AssistantAvatar from '@/components/AssistantAvatar';
 import AssistantFooter from '@/components/AssistantFooter';
 import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
@@ -29,6 +28,7 @@ const useStyle = createStyles(({ token, css }) => {
 
       .ant-bubble-footer {
         width: 100%;
+        margin-top: 8px;
       }
     `,
   };
@@ -67,16 +67,14 @@ const ChatContent: React.FC = () => {
     },
     assistant: {
       placement: 'start',
-      avatar: <AssistantAvatar />,
-      variant: 'outlined',
+      variant: 'borderless',
       messageRender(message) {
         return <AssistantMessage message={message} />;
       },
       loadingRender() {
         return (
-          <div className="flex items-center space-x-3">
-            <Spin size="small" />
-            <span className="text-sm text-gray-500 pl-2">Thinking...</span>
+          <div style={{ width: 600 }}>
+            <Skeleton active paragraph={{ rows: 2 }} title={false} />
           </div>
         );
       },

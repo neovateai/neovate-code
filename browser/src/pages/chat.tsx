@@ -36,11 +36,6 @@ const useStyles = createStyles(({ css }) => {
       overflow: hidden;
       min-width: 0;
 
-      .ant-bubble-footer {
-        width: 100%;
-        margin-top: 8px;
-      }
-
       .ant-bubble-content {
         min-height: 0px;
       }
