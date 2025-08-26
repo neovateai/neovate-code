@@ -1,7 +1,13 @@
 import { LeftOutlined } from '@ant-design/icons';
 import { Button, Input, type InputRef, List, Popover } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ContextItem } from '@/types/context';
 import AutoTooltip from './AutoTooltip';
@@ -127,17 +133,20 @@ const SuggestionList = (props: Props) => {
     }
   }, [items, searchResults, selectedFirstKey]);
 
-  const clearSearch = (targetFirstKey: string) => {
-    if (inputRef.current?.input) {
-      inputRef.current.input.value = '';
-    }
-    setSearchResults(undefined);
-    onSearch?.(targetFirstKey, '');
-  };
+  const clearSearch = useCallback(
+    (targetFirstKey: string) => {
+      if (inputRef.current?.input) {
+        inputRef.current.input.value = '';
+      }
+      setSearchResults(undefined);
+      onSearch?.(targetFirstKey, '');
+    },
+    [onSearch],
+  );
 
   // Handle keyboard navigation
-  const handleKeyDown = useMemo(
-    () => (event: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
       const currentList = selectedFirstKey ? secondLevelList : firstLevelList;
 
       switch (event.key) {
@@ -188,6 +197,7 @@ const SuggestionList = (props: Props) => {
       selectedIndex,
       onSelect,
       onOpenChange,
+      clearSearch,
     ],
   );
 
@@ -246,13 +256,10 @@ const SuggestionList = (props: Props) => {
     );
   };
 
-  const handleBackClick = useMemo(
-    () => () => setSelectedFirstKey(undefined),
-    [],
-  );
+  const handleBackClick = useCallback(() => setSelectedFirstKey(undefined), []);
 
-  const handleInputChange = useMemo(
-    () => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       if (selectedFirstKey) {
         const searchResults = onSearch?.(selectedFirstKey, e.target.value);
         setSearchResults(searchResults || undefined);

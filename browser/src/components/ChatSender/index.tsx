@@ -108,7 +108,7 @@ const ChatSender: React.FC = () => {
             quill.current = quillInstance;
           },
           onKeyDown: (code) => {
-            if (code === KeyCode.Enter) {
+            if (code === KeyCode.Enter && quill.current?.hasFocus()) {
               handleEnterPressRef.current();
             }
           },
