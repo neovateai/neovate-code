@@ -36,12 +36,13 @@ export class OutputStyle {
 
 export type OutputStyleManagerOpts = {
   paths: Paths;
+  outputStyles: OutputStyle[];
 };
 
 export class OutputStyleManager {
   outputStyles: OutputStyle[] = [];
   constructor(opts: OutputStyleManagerOpts) {
-    this.outputStyles = this.load(opts.paths);
+    this.outputStyles = [...this.load(opts.paths), ...opts.outputStyles];
   }
 
   load(paths: Paths): OutputStyle[] {

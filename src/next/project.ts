@@ -70,8 +70,15 @@ export class Project {
       memo: tools,
       type: PluginHookType.SeriesMerge,
     });
+    const pluginOutputStyles = await this.context.apply({
+      hook: 'outputStyle',
+      args: [],
+      memo: [],
+      type: PluginHookType.SeriesMerge,
+    });
     const outputStyle = new OutputStyleManager({
       paths: this.context.paths,
+      outputStyles: pluginOutputStyles,
     }).getOutputStyle(this.context.config.outputStyle);
     const systemPrompt = generateSystemPrompt({
       todo: this.context.config.todo!,
