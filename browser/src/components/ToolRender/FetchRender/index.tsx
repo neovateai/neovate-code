@@ -1,6 +1,7 @@
 import { LoadingOutlined } from '@ant-design/icons';
 import { useMemo } from 'react';
 import MessageWrapper from '@/components/MessageWrapper';
+import { useClipboard } from '@/hooks/useClipboard';
 import CopyIcon from '@/icons/copy.svg?react';
 import SearchIcon from '@/icons/search.svg?react';
 import type { ToolMessage } from '@/types/message';
@@ -9,6 +10,8 @@ export default function FetchRender({ message }: { message?: ToolMessage }) {
   if (!message) return null;
 
   const { args, state } = message;
+
+  const { writeText } = useClipboard();
 
   const url = (args?.url as string) || '';
   const prompt = (args?.prompt as string) || '';
@@ -19,6 +22,9 @@ export default function FetchRender({ message }: { message?: ToolMessage }) {
         {
           key: 'success',
           icon: <CopyIcon />,
+          onClick: () => {
+            writeText(url);
+          },
         },
       ];
     }
