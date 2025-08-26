@@ -1,8 +1,7 @@
-import { Context } from '../../context';
 import { type PromptCommand } from '../types';
 
-export function createInitCommand(opts: { context: Context }) {
-  const productName = opts.context.productName;
+export function createInitCommand(opts: { productName: string }) {
+  const productName = opts.productName;
   const ruleFile = `${productName.toUpperCase()}.md`;
   return {
     type: 'prompt',

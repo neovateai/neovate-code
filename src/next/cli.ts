@@ -4,9 +4,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import yargsParser from 'yargs-parser';
 import { PRODUCT_NAME } from '../constants';
-import { type Plugin } from '../plugin';
+import { type Plugin, PluginHookType } from '../plugin';
 import { Context } from './context';
 import { Project } from './project';
+import {
+  SlashCommandManager,
+  isSlashCommand,
+  parseSlashCommand,
+} from './slashCommand';
 
 function parseArgs(argv: any) {
   return yargsParser(argv, {
@@ -110,7 +115,38 @@ export async function runNeovate(opts: {
   if (argv.quiet) {
     try {
       assert(prompt, 'Prompt is required in quiet mode');
-      await project.send(prompt as string);
+      let input = prompt as string;
+      if (isSlashCommand(input)) {
+        const parsed = parseSlashCommand(input);
+        if (parsed) {
+          const pluginSlashCommands = await context.apply({
+            hook: 'command',
+            args: [],
+            type: PluginHookType.SeriesMerge,
+          });
+          const slashCommandManager = new SlashCommandManager({
+            productName: opts.productName,
+            paths: context.paths,
+            slashCommands: pluginSlashCommands,
+          });
+          const command = slashCommandManager.get(parsed.command);
+          if (command) {
+            // TODO: support other slash command types
+            if (command.type === 'prompt') {
+              const prompt = await command.getPromptForCommand(parsed.args);
+              assert(prompt, `Prompt is required for ${parsed.command}`);
+              assert(
+                prompt.length === 1,
+                `Only one prompt is supported for ${parsed.command} in quiet mode`,
+              );
+              input = prompt?.[0]?.content;
+            } else {
+              throw new Error(`Unsupported slash command: ${parsed.command}`);
+            }
+          }
+        }
+      }
+      await project.send(input);
       process.exit(0);
     } catch (e: any) {
       console.error(`Error: ${e.message}`);

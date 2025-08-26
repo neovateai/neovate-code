@@ -112,13 +112,15 @@ type MarkdownFile = {
   body: string;
 };
 
-type NormalizedMarkdownFile = MarkdownFile & {
+export type NormalizedMarkdownFile = MarkdownFile & {
   description: string;
   name: string;
   relativePath: string;
 };
 
-function loadPolishedMarkdownFiles(dir: string): NormalizedMarkdownFile[] {
+export function loadPolishedMarkdownFiles(
+  dir: string,
+): NormalizedMarkdownFile[] {
   if (!fs.existsSync(dir)) {
     return [];
   }

@@ -105,18 +105,16 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
   );
 };
 
-export function createModelCommand(opts: {
-  context: Context;
-}): LocalJSXCommand {
+export function createModelCommand(): LocalJSXCommand {
   return {
     type: 'local-jsx',
     name: 'model',
     description: 'Switch or display current model',
-    async call(onDone) {
+    async call(onDone, context: Context) {
       const ModelComponent = () => {
         return (
           <ModelSelect
-            context={opts.context}
+            context={context}
             onExit={(model) => {
               onDone(`Kept model as ${model}`);
             }}

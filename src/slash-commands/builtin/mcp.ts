@@ -173,8 +173,8 @@ function parseArgs(args: string): {
 
   return result;
 }
-export function createMcpCommand(opts: { context: Context }) {
-  const productName = opts.context.productName.toLowerCase();
+export function createMcpCommand(opts: { productName: string }) {
+  const productName = opts.productName.toLowerCase();
   return {
     type: 'local',
     name: 'mcp',
