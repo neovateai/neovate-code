@@ -154,19 +154,6 @@ const ChatSender: React.FC = () => {
                   'user',
                 );
 
-                // TODO insert a command
-                // quill.current?.setContents([
-                //   {
-                //     insert: {
-                //       'takumi-command': {
-                //         text: 'update-readme',
-                //         value: 'update-readme',
-                //       },
-                //     },
-                //   },
-                //   { insert: '\n' },
-                // ]);
-
                 // insert a space
                 quill.current?.insertText(delIndex + 1, ' ');
               }
@@ -183,11 +170,6 @@ const ChatSender: React.FC = () => {
             }}
             onSubmit={handleSubmit}
             onPaste={handlePaste}
-            // onKeyDown={(e) => {
-            //   if (e.key === 'Enter') {
-            //     handleEnterPress();
-            //   }
-            // }}
             onCancel={() => {
               stop();
             }}
@@ -200,13 +182,6 @@ const ChatSender: React.FC = () => {
               // @ts-ignore
               input: QuillEditor,
             }}
-            // onChange={(val) => {
-            //   if (val === '@') {
-            //     setOpenPopup(true);
-            //   }
-            //   setInputText(val);
-            //   actions.updatePrompt(val);
-            // }}
             placeholder={t('chat.inputPlaceholder')}
           />
         </SuggestionList>
