@@ -48,33 +48,6 @@ const McpApiKeyModal: React.FC<McpApiKeyModalProps> = ({
       width={420}
       centered
       className={styles.modal}
-      styles={{
-        header: {
-          paddingBottom: '12px',
-          paddingLeft: '24px',
-          paddingRight: '24px',
-          paddingTop: '24px',
-          borderBottom: 'none',
-          backgroundColor: '#FFFFFF',
-        },
-        body: {
-          paddingTop: '0px',
-          paddingLeft: '24px',
-          paddingRight: '24px',
-          paddingBottom: '0px',
-        },
-        footer: {
-          paddingTop: '16px',
-          paddingLeft: '24px',
-          paddingRight: '24px',
-          paddingBottom: '24px',
-          borderTop: 'none',
-          backgroundColor: '#FFFFFF',
-        },
-        mask: {
-          backgroundColor: 'rgba(0, 0, 0, 0.45)',
-        },
-      }}
       footer={[
         <Button key="cancel" onClick={onCancel} className={styles.cancelButton}>
           {t('common.cancel')}
