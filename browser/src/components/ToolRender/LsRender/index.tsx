@@ -84,7 +84,7 @@ const parseLsResult = (result: unknown, parentPath: string): ListItem[] => {
   if (parentPath && rootItems.length > 0) {
     // find the target node by full parentPath
     const targetNode = findNodeByPath(rootItems, parentPath);
-    if (targetNode && targetNode.children) {
+    if (targetNode && targetNode?.children) {
       return targetNode.children;
     }
   }

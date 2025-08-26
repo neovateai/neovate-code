@@ -49,3 +49,13 @@
   align-items: center;
   justify-content: center;
 }
+
+.expandIcon {
+  transform: rotate(0deg);
+  transition: transform 0.2s ease-in-out;
+}
+
+.expandIconExpanded {
+  transform: rotate(90deg);
+  transition: transform 0.2s ease-in-out;
+}
