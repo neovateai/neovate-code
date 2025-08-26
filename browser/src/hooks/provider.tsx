@@ -1,5 +1,6 @@
 import type { UIMessage } from '@ai-sdk/ui-utils';
 import { findLast } from 'lodash-es';
+import type { Delta } from 'quill';
 import { createContext, useContext, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import { state } from '@/state/sender';
@@ -16,6 +17,7 @@ type ChatState = ReturnType<typeof useChat> & {
   onQuery: (opts: {
     prompt: string;
     readonly attachedContexts: ContextItem[];
+    readonly delta: Delta;
   }) => void;
   onRetry: () => void;
   messagesWithPlaceholder: UIMessage[];
@@ -87,11 +89,13 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const onQuery = async (opts: {
     prompt: string;
     readonly attachedContexts: ContextItem[];
+    readonly delta: Delta;
   }) => {
-    const { prompt, attachedContexts } = opts;
+    const { prompt, attachedContexts, delta } = opts;
     chatState.append({
       role: 'user',
       content: prompt,
+      delta,
       attachedContexts,
     } as unknown as UIMessage);
   };

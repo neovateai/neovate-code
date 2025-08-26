@@ -1,6 +1,8 @@
 import { createStyles } from 'antd-style';
 import { memo } from 'react';
 import type { UIUserMessage } from '@/types/message';
+import QuillEditor from '../QuillEditor';
+import { QuillContext } from '../QuillEditor/QuillContext';
 
 interface UserMessageProps {
   message: UIUserMessage;
@@ -19,7 +21,7 @@ const useStyles = createStyles(({ css }) => ({
     max-width: 600px;
     width: fit-content;
 
-    .lexical-editor {
+    .ql-editor {
       font-family:
         'PingFang SC',
         -apple-system,
@@ -36,7 +38,7 @@ const useStyles = createStyles(({ css }) => ({
       margin: 0;
     }
 
-    .lexical-editor p {
+    .ql-editor p {
       margin: 0 !important;
       line-height: 1.5em !important;
     }
@@ -47,11 +49,24 @@ const UserMessage = (props: UserMessageProps) => {
   const { message } = props;
   const { styles } = useStyles();
 
-  const { content } = message;
+  const { content, delta } = message;
 
   return (
     <div className={styles.container}>
-      <div className={styles.messageBox}>{content}</div>
+      <div className={styles.messageBox}>
+        {delta ? (
+          <QuillContext
+            value={{
+              onQuillLoad: (quill) => quill.setContents(delta),
+              readonly: true,
+            }}
+          >
+            <QuillEditor />
+          </QuillContext>
+        ) : (
+          content
+        )}
+      </div>
     </div>
   );
 };

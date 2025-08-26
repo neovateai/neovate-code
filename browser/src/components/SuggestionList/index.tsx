@@ -30,6 +30,7 @@ interface Props {
   /** Return value will override the default second-level list */
   onSearch?: (firstKey: string, text: string) => SuggestionItem[] | void;
   loading?: boolean;
+  offset?: { left: number; top: number };
 }
 
 const useStyles = createStyles(({ css, token }) => {
@@ -97,6 +98,7 @@ const SuggestionList = (props: Props) => {
     items,
     className,
     loading,
+    offset,
   } = props;
 
   const { t } = useTranslation();
@@ -236,6 +238,17 @@ const SuggestionList = (props: Props) => {
     };
   }, [open, onOpenChange]);
 
+  const offsetStyles = useMemo(() => {
+    if (offset) {
+      return {
+        ...offset,
+        position: 'relative',
+      };
+    } else {
+      return {};
+    }
+  }, [offset]);
+
   return (
     <Popover
       className={className}
@@ -262,6 +275,7 @@ const SuggestionList = (props: Props) => {
       styles={{
         body: {
           padding: 0,
+          ...offsetStyles,
         },
       }}
     >

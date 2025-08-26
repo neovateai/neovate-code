@@ -62,13 +62,13 @@
   color: #666f8d;
   font-size: 12px;
   line-height: 16px;
-  max-width: 325px;
+  max-width: 375px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  display: flex;
-  align-items: center;
-  margin-left: 6px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 4px;
 }
 
 /* Expand icon styles */
@@ -101,7 +101,7 @@
 .statusText {
   font-size: 12px;
   line-height: 16px;
-  margin-left: 6px;
+  margin-left: 4px;
   font-weight: 500;
   color: #666f8d;
 }
@@ -130,6 +130,10 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* When expand icon is shown, add margin to action button group */
+.actionButtonGroupWithExpandIcon {
   margin-right: 8px;
 }
 

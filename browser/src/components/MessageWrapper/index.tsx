@@ -172,7 +172,9 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
         <div className={styles.headerRight}>
           {/* Top right action buttons */}
           {actions && actions.length > 0 && (
-            <div className={styles.actionButtonGroup}>
+            <div
+              className={`${styles.actionButtonGroup} ${showExpandIcon && expandable ? styles.actionButtonGroupWithExpandIcon : ''}`}
+            >
               {actions.map((action) => (
                 <button
                   key={action.key}
