@@ -39,6 +39,13 @@ const useStyles = createStyles(({ css }) => {
           font-size: 14px;
           line-height: 22px;
         }
+
+        .takumi-context {
+          color: #7357ff;
+          background-color: #eeebff;
+          padding: 0 2px;
+          user-select: none;
+        }
       }
     `,
   };

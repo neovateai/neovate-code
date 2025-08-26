@@ -21,11 +21,7 @@ class ContextBlot extends Embed {
     }
 
     node.innerHTML = `@${data.text}`;
-    node.style.userSelect = 'none';
-    // node.style.margin = '2px';
-    node.style.padding = '0 2px';
-    node.style.backgroundColor = '#EEEBFF';
-    node.style.color = '#7357FF';
+    node.className = 'takumi-context';
 
     node.setAttribute('contenteditable', 'false');
 
