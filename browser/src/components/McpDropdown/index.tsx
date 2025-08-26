@@ -1,6 +1,5 @@
-import { ApiOutlined, EditOutlined } from '@ant-design/icons';
 import { useBoolean, useSetState, useToggle } from 'ahooks';
-import { Button, Checkbox, Dropdown, Input, Modal, Space, message } from 'antd';
+import { Button, Dropdown, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,7 +11,6 @@ import McpManager from '@/components/McpManager';
 import {
   FIGMA_CONFIG,
   MCP_KEY_PREFIXES,
-  MCP_MENU_KEYS,
   MCP_STORAGE_KEYS,
   getPresetMcpServicesWithTranslations,
 } from '@/constants/mcp';
@@ -23,12 +21,14 @@ import type {
   McpServerConfig,
   PresetMcpService,
 } from '@/types/mcp';
-import { containerEventHandlers, modalEventHandlers } from '@/utils/eventUtils';
+import McpApiKeyModal from './McpApiKeyModal';
+import styles from './McpDropdown.module.css';
+import McpDropdownContent from './McpDropdownContent';
 
 const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
   const { t } = useTranslation();
 
-  // Simplified boolean states with ahooks
+  // State management using ahooks
   const [mcpManagerOpen, { toggle: toggleMcpManager }] = useToggle(false);
   const [
     mcpLoading,
@@ -42,8 +42,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     editApiKeyModalOpen,
     { setTrue: openEditApiKeyModal, setFalse: closeEditApiKeyModal },
   ] = useBoolean(false);
-
-  // Combined modal states
+  // Modal state
   const [modalState, setModalState] = useSetState<{
     editingService: McpServer | null;
     editApiKey: string;
@@ -52,7 +51,6 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     editApiKey: '',
   });
 
-  // Keep complex state as is since it's not a simple boolean
   const [mcpServers, setMcpServers] = useState<McpServer[]>([]);
 
   const {
@@ -69,10 +67,7 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
   const loadMcpServers = async () => {
     try {
       setMcpLoadingTrue();
-      // Load both global and project-level MCP services simultaneously
       const { globalServers, projectServers } = await loadMcpData();
-
-      // Restore known services and configurations from localStorage (ensure using latest data)
       const { knownServices, configs } = initializeFromLocalStorage();
 
       const mcpList: McpServer[] = [];
@@ -116,7 +111,6 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
           `${MCP_KEY_PREFIXES.PROJECT}-${serviceName}`,
         );
 
-        // If global configuration exists but not installed
         if (globalConfig && !globalServers[serviceName]) {
           mcpList.push({
             key: `${MCP_KEY_PREFIXES.DISABLED_GLOBAL}-${serviceName}`,
@@ -127,7 +121,6 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
           });
         }
 
-        // If project configuration exists but not installed
         if (projectConfig && !projectServers[serviceName]) {
           mcpList.push({
             key: `${MCP_KEY_PREFIXES.DISABLED_PROJECT}-${serviceName}`,
@@ -157,10 +150,8 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
   ) => {
     try {
       if (enabled) {
-        // Enable service - use the service's original scope
         const cachedConfig = serviceConfigs.get(`${scope}-${serverName}`);
         if (cachedConfig) {
-          // Restore configuration from cache
           const configToAdd = {
             name: serverName,
             command: cachedConfig.command,
@@ -186,13 +177,11 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
           return;
         }
       } else {
-        // Disable service - first save configuration to cache, then remove from corresponding scope configuration
         const serverToDisable = mcpServers.find(
           (s) => s.name === serverName && s.scope === scope,
         );
 
-        if (serverToDisable && serverToDisable.config) {
-          // Save configuration to cache
+        if (serverToDisable?.config) {
           const newConfigs = new Map(serviceConfigs);
           const config = serverToDisable.config;
           const configToCache = {
@@ -206,12 +195,10 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
           newConfigs.set(`${scope}-${serverName}`, configToCache);
           updateServiceConfigs(newConfigs);
 
-          // Update known services list
           const newKnownServices = new Set([...allKnownServices, serverName]);
           updateKnownServices(newKnownServices);
         }
 
-        // Remove from corresponding scope configuration
         await removeMCPServer(serverName, scope === 'global');
         message.success(
           t('mcp.disabled', {
@@ -221,7 +208,6 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         );
       }
 
-      // Reload services list
       await loadMcpServers();
     } catch (error) {
       console.error('Failed to toggle MCP server:', error);
@@ -274,27 +260,21 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       message.success(t('mcp.apiKeyUpdated'));
       loadMcpServers();
       closeEditApiKeyModal();
-      setModalState({
-        editingService: null,
-        editApiKey: '',
-      });
+      setModalState({ editingService: null, editApiKey: '' });
     } catch (error) {
       message.error(t('mcp.updateFailed'));
     }
   };
 
+  const handleCancelApiKeyEdit = () => {
+    closeEditApiKeyModal();
+    setModalState({ editingService: null, editApiKey: '' });
+  };
+
   const handleQuickAdd = async (service: PresetMcpService) => {
     try {
-      // Add to project-level configuration
-      const configToAdd = {
-        ...service.config,
-        global: false, // Force project level
-      };
-
-      await addMCPServer(configToAdd);
+      await addMCPServer({ ...service.config, global: false });
       message.success(t('mcp.added', { name: service.name }));
-
-      // Reload services list
       await loadMcpServers();
     } catch (error) {
       console.error('Failed to add preset service:', error);
@@ -304,7 +284,6 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      // Reload service state when localStorage changes
       if (
         e.key === MCP_STORAGE_KEYS.KNOWN_SERVICES ||
         e.key === MCP_STORAGE_KEYS.SERVICE_CONFIGS
@@ -313,187 +292,13 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
       }
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [allKnownServices, serviceConfigs]);
-
-  const dropdownItems = [
-    {
-      key: MCP_MENU_KEYS.MANAGE,
-      label: (
-        <Space>
-          <ApiOutlined />
-          {t('mcp.mcpManagementTitle')}
-        </Space>
-      ),
-      onClick: () => toggleMcpManager(),
-    },
-    { type: 'divider' as const },
-    // Installed services
-    ...mcpServers
-      .filter((server) => server.installed)
-      .map((server) => ({
-        key: server.key,
-        label: (
-          <div className="flex justify-between items-center w-full">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={server.installed}
-                onChange={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleToggleEnabled(
-                    server.name,
-                    e.target.checked,
-                    server.scope,
-                  );
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-              />
-              <div>
-                <span className="text-inherit font-medium">{server.name}</span>
-                <div
-                  className={`text-xs leading-tight mt-px font-medium ${
-                    server.scope === 'global'
-                      ? 'text-blue-500'
-                      : 'text-green-500'
-                  }`}
-                >
-                  {server.scope === 'global'
-                    ? t('mcp.globalScope')
-                    : t('mcp.projectScope')}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              {server.config.args?.some((arg: string) =>
-                arg.includes(FIGMA_CONFIG.API_KEY_ARG),
-              ) && (
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<EditOutlined />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditApiKey(server);
-                  }}
-                  className="px-1"
-                />
-              )}
-            </div>
-          </div>
-        ),
-      })),
-    // Disabled services
-    ...mcpServers
-      .filter((server) => !server.installed)
-      .map((server) => ({
-        key: server.key,
-        label: (
-          <div className="flex justify-between items-center w-full">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={false}
-                onChange={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (e.target.checked) {
-                    handleToggleEnabled(
-                      server.name,
-                      e.target.checked,
-                      server.scope,
-                    );
-                  }
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-              />
-              <div>
-                <span className="text-gray-400 opacity-70 font-normal">
-                  {server.name}
-                </span>
-                <div className="text-xs text-gray-400 leading-tight mt-px">
-                  {t('mcp.disabledStatus')} (
-                  {server.scope === 'global'
-                    ? t('mcp.globalScope')
-                    : t('mcp.projectScope')}
-                  )
-                </div>
-              </div>
-            </div>
-          </div>
-        ),
-      })),
-    ...presetMcpServices
-      .filter(
-        (service) =>
-          !mcpServers.some((server) => server.name === service.config.name),
-      )
-      .map((service) => ({
-        key: `${MCP_KEY_PREFIXES.PRESET}-${service.key}`,
-        label: (
-          <div className="flex justify-between items-center w-full">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={false}
-                onChange={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (e.target.checked) {
-                    handleQuickAdd(service);
-                  }
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-              />
-              <div className="flex items-center gap-1.5">
-                <div>
-                  <span className="text-gray-400 opacity-70 font-normal">
-                    {service.name}
-                  </span>
-                  <div className="text-xs text-gray-400 leading-tight mt-px">
-                    {t('mcp.available')}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ),
-      })),
-    ...(mcpServers.length === 0 && presetMcpServices.length === 0
-      ? [
-          {
-            key: MCP_MENU_KEYS.NO_SERVICES,
-            label: (
-              <span className="text-gray-400 italic">
-                {t('mcp.noServicesAvailable')}
-              </span>
-            ),
-            disabled: true,
-          },
-        ]
-      : []),
-  ];
 
   return (
     <>
       <Dropdown
-        menu={{
-          items: dropdownItems,
-          selectable: false,
-          onClick: ({ domEvent }) => {
-            // Prevent dropdown from closing when menu is clicked
-            domEvent.stopPropagation();
-          },
-        }}
+        menu={{ items: [], selectable: false }}
         placement="topCenter"
         trigger={['click']}
         open={dropdownOpen}
@@ -505,15 +310,42 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
             setDropdownFalse();
           }
         }}
-        overlayClassName="w-80"
+        overlayStyle={{ width: '220px' }}
+        dropdownRender={() => (
+          <McpDropdownContent
+            mcpServers={mcpServers}
+            presetMcpServices={presetMcpServices}
+            onToggleService={handleToggleEnabled}
+            onEditApiKey={handleEditApiKey}
+            onQuickAdd={handleQuickAdd}
+            onOpenManager={toggleMcpManager}
+          />
+        )}
       >
-        <Button
-          type="text"
-          className="text-lg"
-          icon={<ApiOutlined size={20} />}
-          title={t('mcp.mcpManagementTitle')}
-          loading={loading || mcpLoading}
-        />
+        {loading || mcpLoading ? (
+          <Button
+            className={styles.triggerButton}
+            title={t('mcp.mcpManagementTitle')}
+            loading={true}
+          >
+            MCP
+          </Button>
+        ) : (
+          <div
+            className={styles.triggerButton}
+            title={t('mcp.mcpManagementTitle')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                // Dropdown automatically handles click events
+              }
+            }}
+          >
+            MCP
+          </div>
+        )}
       </Dropdown>
 
       <McpManager
@@ -524,42 +356,14 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         }}
       />
 
-      <Modal
-        title={t('mcp.editApiKey', { name: modalState.editingService?.name })}
-        open={editApiKeyModalOpen}
-        onOk={handleSaveApiKey}
-        onCancel={() => {
-          closeEditApiKeyModal();
-          setModalState({
-            editingService: null,
-            editApiKey: '',
-          });
-        }}
-        okText={t('common.save')}
-        cancelText={t('common.cancel')}
-        getContainer={() => document.body}
-        mask={true}
-        maskClosable={false}
-        keyboard={false}
-        destroyOnClose={true}
-      >
-        <div className="mt-4" {...containerEventHandlers}>
-          <Input
-            placeholder={t('mcp.apiKeyPlaceholder')}
-            value={modalState.editApiKey}
-            onChange={(e) => setModalState({ editApiKey: e.target.value })}
-            onPressEnter={handleSaveApiKey}
-            autoFocus
-            className="mb-2"
-            {...modalEventHandlers}
-          />
-          <div className="text-xs text-gray-600 mt-3">
-            {t('mcp.apiKeyDescription', {
-              name: modalState.editingService?.name,
-            })}
-          </div>
-        </div>
-      </Modal>
+      <McpApiKeyModal
+        visible={editApiKeyModalOpen}
+        editingService={modalState.editingService}
+        apiKey={modalState.editApiKey}
+        onSave={handleSaveApiKey}
+        onCancel={handleCancelApiKeyEdit}
+        onApiKeyChange={(value) => setModalState({ editApiKey: value })}
+      />
     </>
   );
 };

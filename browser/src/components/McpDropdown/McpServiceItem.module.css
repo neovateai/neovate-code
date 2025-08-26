@@ -1,0 +1,51 @@
+/* Service item container */
+.serviceItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 13px;
+  margin: 0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.serviceItem:hover {
+  background-color: #f9fafb;
+}
+
+/* Service info area */
+.serviceInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+/* Service name */
+.serviceName {
+  color: #110c22;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* Edit button */
+.editButton {
+  padding: 4px;
+  width: 24px;
+  height: 24px;
+  min-width: 0;
+  color: #bcbdc0;
+  background: transparent;
+  border: none;
+  transition: color 0.2s;
+}
+
+.editButton:hover {
+  color: #7357ff;
+  background: transparent;
+}
+
+.editButton:focus,
+.editButton:active {
+  outline: none;
+  box-shadow: none;
+}
