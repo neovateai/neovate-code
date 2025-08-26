@@ -37,13 +37,11 @@ const useTodoData = (message?: ToolMessage) => {
     let todos: TodoItem[] = [];
 
     if (message.toolName === 'todoRead') {
-      console.log('message.result===todoRead===', message.result);
       const result = message.result as unknown as TodoReadResult;
       if (result.success && Array.isArray(result.data)) {
         todos = result.data;
       }
     } else if (message.toolName === 'todoWrite') {
-      console.log('message.result===todoWrite===', message.result);
       const result = message.result as unknown as TodoWriteResult;
       if (
         result.success &&
