@@ -3,7 +3,10 @@ import { Button } from 'antd';
 import { createStyles } from 'antd-style';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ImageItem } from '@/api/model';
+import { ContextType } from '@/constants/context';
 import type { UIUserMessage } from '@/types/message';
+import SenderComponent from '../ChatSender/SenderComponent';
 
 interface UserMessageFooterProps {
   message: UIUserMessage;
@@ -56,7 +59,20 @@ const UserMessageFooter = memo<UserMessageFooterProps>((props) => {
   }, []);
 
   const contextTags = useMemo(() => {
-    return attachedContexts?.map((contextItem) => null);
+    return attachedContexts?.map((contextItem, index) => (
+      <SenderComponent.ContextTag
+        key={index}
+        label={contextItem.displayText}
+        value={contextItem.value}
+        context={contextItem.context}
+        contextType={contextItem.type}
+        image={
+          contextItem.type === ContextType.IMAGE
+            ? (contextItem.context as ImageItem).src
+            : undefined
+        }
+      />
+    ));
   }, [attachedContexts]);
 
   const buttonText = useMemo(() => {

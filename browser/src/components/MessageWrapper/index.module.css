@@ -62,12 +62,12 @@
   color: #666f8d;
   font-size: 12px;
   line-height: 16px;
-  max-width: 325px;
+  max-width: 375px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  display: flex;
-  align-items: center;
+  display: inline-block;
+  vertical-align: middle;
   margin-left: 4px;
 }
 
