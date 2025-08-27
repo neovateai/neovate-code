@@ -1,15 +1,15 @@
 import { PlusOutlined } from '@ant-design/icons';
 import { useSetState, useToggle } from 'ahooks';
-import { Button, Modal, Space } from 'antd';
+import { Button, Modal } from 'antd';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MCP_DEFAULTS } from '@/constants/mcp';
+import { useMcpServerManager } from '@/hooks/useMcpServerManager';
 import type { McpManagerProps } from '@/types/mcp';
 import { containerEventHandlers } from '@/utils/eventUtils';
 import McpAddForm from './McpAddForm';
 import styles from './McpManager.module.css';
 import McpServerTable from './McpServerTable';
-import { useMcpServerManager } from './hooks/useMcpServerManager';
 
 const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
   const { t } = useTranslation();
@@ -47,12 +47,12 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
 
   return (
     <Modal
-      title={<Space>{t('mcp.mcpManagementTitle')}</Space>}
+      title={t('mcp.mcpManagementTitle')}
       open={visible}
       onCancel={onClose}
       width={640}
       footer={[
-        <Button key="cancel" onClick={onClose} className="mr-2">
+        <Button key="cancel" onClick={onClose}>
           {t('common.cancel')}
         </Button>,
         <Button
@@ -67,12 +67,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       ]}
       className={styles.modal}
     >
-      <Space
-        direction="vertical"
-        className="w-full"
-        size="middle"
-        {...containerEventHandlers}
-      >
+      <div {...containerEventHandlers}>
         <McpServerTable
           servers={servers}
           loading={loading}
@@ -88,7 +83,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           onInputModeChange={(mode) => setFormState({ inputMode: mode })}
           onScopeChange={(scope) => setFormState({ addScope: scope })}
         />
-      </Space>
+      </div>
     </Modal>
   );
 };

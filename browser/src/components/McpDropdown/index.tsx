@@ -1,12 +1,8 @@
-import { useBoolean, useSetState, useToggle } from 'ahooks';
+import { useBoolean, useToggle } from 'ahooks';
 import { Button, Dropdown, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  addMCPServer,
-  removeMCPServer,
-  updateMCPServer,
-} from '@/api/mcpService';
+import { addMCPServer, removeMCPServer } from '@/api/mcpService';
 import McpManager from '@/components/McpManager';
 import {
   MCP_KEY_PREFIXES,
