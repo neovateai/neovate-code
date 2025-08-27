@@ -1,13 +1,6 @@
-import { Editor } from '@monaco-editor/react';
 import { createStyles } from 'antd-style';
-import * as monaco from 'monaco-editor';
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import { codeToHtml } from 'shiki';
 import type {
   CodeNormalViewerMetaInfo,
   CodeNormalViewerMode,
@@ -36,6 +29,7 @@ const useStyle = createStyles(
         height: 100%;
         display: flex;
         flex-direction: column;
+        overflow: hidden;
         ${maxHeight
           ? css`
               max-height: ${maxHeight}px;
@@ -45,6 +39,37 @@ const useStyle = createStyles(
       editor: css`
         height: 100%;
         flex: 1;
+        overflow: auto;
+        position: relative;
+
+        overflow-y: auto;
+        overflow-x: auto;
+
+        > div {
+          height: 100%;
+          overflow: visible;
+        }
+
+        pre {
+          margin: 0 !important;
+          padding: 12px 16px !important;
+          background: transparent !important;
+          overflow: visible !important;
+          min-height: fit-content;
+          height: auto !important;
+          max-height: none !important;
+        }
+
+        code {
+          font-family:
+            'Source Code Pro', 'Consolas', 'Monaco', monospace !important;
+          font-size: 12px !important;
+          line-height: 1.3 !important;
+          letter-spacing: -0.02em !important;
+          display: block !important;
+          white-space: pre !important;
+          overflow: visible !important;
+        }
       `,
       linesDecorations: css`
         background-color: ${mode === 'new' ? '#e6ffed' : '#ffeef0'};
@@ -59,122 +84,69 @@ const useStyle = createStyles(
 );
 
 const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
-  const { item, hideToolbar, maxHeight, heightFollow = 'container' } = props;
+  const { item, hideToolbar, maxHeight } = props;
 
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>(null);
-  const decorationsCollection =
-    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
   const [metaInfo, setMetaInfo] = useState<CodeNormalViewerMetaInfo>({
     lineCount: 0,
     charCount: 0,
   });
+  const [highlightedCode, setHighlightedCode] = useState<string>('');
   const { styles } = useStyle({ mode: item.mode, maxHeight });
-  const [height, setHeight] = useState<number>();
 
   useImperativeHandle(ref, () => {
     return {
       jumpToLine(lineCount) {
-        editorRef.current?.revealLineInCenter(lineCount);
-        editorRef.current?.setPosition({
-          lineNumber: lineCount,
-          column: 1,
-        });
+        // Simple scroll to line implementation
+        const container = document.querySelector('.shiki-container');
+        if (container) {
+          const lineElement = container.querySelector(
+            `[data-line="${lineCount}"]`,
+          );
+          if (lineElement) {
+            lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
       },
     };
   });
 
-  const handleCalcHeight = () => {
-    if (heightFollow === 'content') {
-      const editor = editorRef.current;
-      const model = editor?.getModel();
-      if (editor && model) {
-        try {
-          const lineCount = model.getLineCount();
-          const height = editor.getBottomForLineNumber(lineCount);
-          setHeight(Math.max(height, 200));
-        } catch (e) {
-          console.error('Auto set height error:', e);
-          setHeight(maxHeight);
-        }
-      }
-    } else {
-      setHeight(undefined);
-    }
-  };
-
-  const handleDecorateLine = () => {
-    if (editorRef.current && item.mode) {
-      const model = editorRef.current.getModel();
-      const lineCount = model?.getLineCount();
-
-      decorationsCollection.current?.clear();
-
-      if (lineCount) {
-        const decorations = Array.from({ length: lineCount }, (_, index) => {
-          return {
-            range: new monaco.Range(index + 1, 1, index + 1, 1),
-            options: {
-              isWholeLine: true,
-              linesDecorationsClassName: styles.linesDecorationsGutter,
-              className: styles.linesDecorations,
-            },
-          };
-        });
-
-        decorationsCollection.current =
-          editorRef.current?.createDecorationsCollection(decorations);
-      }
-    }
-  };
-
   useEffect(() => {
-    handleDecorateLine();
+    const lines = item.code.split('\n');
+    setMetaInfo({
+      lineCount: lines.length,
+      charCount: item.code.length,
+    });
 
-    return () => {
-      if (decorationsCollection.current) {
-        decorationsCollection.current.clear();
+    // Highlight code with shiki
+    const highlightCode = async () => {
+      try {
+        const html = await codeToHtml(item.code, {
+          lang: item.language || 'text',
+          theme: 'material-theme-lighter',
+          transformers: [
+            {
+              line(node, line) {
+                node.properties['data-line'] = line;
+              },
+            },
+          ],
+        });
+        setHighlightedCode(html);
+      } catch (error) {
+        console.error('Failed to highlight code:', error);
+        setHighlightedCode(`<pre><code>${item.code}</code></pre>`);
       }
     };
-  }, [item]);
 
-  useEffect(() => {
-    handleCalcHeight();
-  }, [item, heightFollow]);
+    highlightCode();
+  }, [item.code, item.language]);
 
   return (
     <div className={styles.container}>
       {!hideToolbar && <NormalToolbar normalMetaInfo={metaInfo} item={item} />}
-      <Editor
-        height={height}
-        className={styles.editor}
-        language={item.language}
-        value={item.code}
-        keepCurrentModel
-        onMount={(editor) => {
-          editorRef.current = editor;
-          handleCalcHeight();
-          handleDecorateLine();
-          setMetaInfo({
-            lineCount: editor.getModel()?.getLineCount() || 0,
-            charCount: item.code.length,
-          });
-        }}
-        beforeMount={(monaco) => {
-          monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-            jsx: monaco.languages.typescript.JsxEmit.React,
-            target: monaco.languages.typescript.ScriptTarget.ESNext,
-            jsxFactory: 'React.createElement',
-            reactNamespace: 'React',
-            allowNonTsExtensions: true,
-            allowJs: true,
-          });
-        }}
-        options={{
-          readOnly: true,
-          fontSize: 14,
-          minimap: { enabled: false },
-        }}
-      />
+      <div className={`${styles.editor} shiki-container`}>
+        <div dangerouslySetInnerHTML={{ __html: highlightedCode }} />
+      </div>
     </div>
   );
 });
