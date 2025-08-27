@@ -280,8 +280,8 @@
     },
     "plugins": {
       "title": "Plugin Configuration",
-      "tooltip": "Configure plugins used by the project",
-      "placeholder": "Enter plugin name or path",
+      "tooltip": "Enter plugin name or path, press Enter after each plugin when adding multiple",
+      "placeholder": "Enter plugin name or path, press Enter after each plugin when adding multiple",
       "add": "Add",
       "delete": "Delete Plugin",
       "deleteConfirm": "Are you sure you want to delete plugin \"{{plugin}}\"?",

@@ -280,8 +280,8 @@
     },
     "plugins": {
       "title": "插件配置",
-      "tooltip": "配置项目使用的插件",
-      "placeholder": "输入插件名称或路径",
+      "tooltip": "输入插件名称或插件路径，添加多个插件时每输入一个按Enter键即可",
+      "placeholder": "输入插件名称或插件路径，添加多个插件时每输入一个按Enter键即可",
       "add": "添加",
       "delete": "删除插件",
       "deleteConfirm": "确定要删除插件 \"{{plugin}}\" 吗？",

@@ -1,5 +1,4 @@
-import { FolderOutlined, GlobalOutlined } from '@ant-design/icons';
-import { Card, Segmented, Typography } from 'antd';
+import { Radio, Typography } from 'antd';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
@@ -12,47 +11,32 @@ const SettingsScopeSwitch: React.FC = () => {
   const { settings } = useSnapshot(state);
 
   return (
-    <Card className="border border-gray-200">
-      <div className="flex justify-between items-center">
-        <div>
-          <Text strong>{t('settings.scope.title')}</Text>
-          <div className="mt-1">
-            <Text type="secondary" className="text-xs">
-              {settings.currentScope === 'global'
-                ? t('settings.scope.globalDesc')
-                : t('settings.scope.projectDesc')}
-            </Text>
-          </div>
-        </div>
-
-        <Segmented
+    <div className="mt-6 mb-6">
+      <div className="flex items-center gap-4">
+        <Text strong className="text-sm">
+          {t('settings.scope.title')}
+        </Text>
+        <Radio.Group
           value={settings.currentScope}
-          onChange={(value) =>
-            actions.switchScope(value as 'global' | 'project')
+          onChange={(e) =>
+            actions.switchScope(e.target.value as 'global' | 'project')
           }
-          options={[
-            {
-              label: (
-                <div className="flex items-center gap-1.5">
-                  <GlobalOutlined />
-                  {t('settings.scope.global')}
-                </div>
-              ),
-              value: 'global',
-            },
-            {
-              label: (
-                <div className="flex items-center gap-1.5">
-                  <FolderOutlined />
-                  {t('settings.scope.project')}
-                </div>
-              ),
-              value: 'project',
-            },
-          ]}
-        />
+          className="flex gap-4"
+        >
+          <Radio value="global" className="flex items-center">
+            <span className="ml-2">{t('settings.scope.global')}</span>
+          </Radio>
+          <Radio value="project" className="flex items-center">
+            <span className="ml-2">{t('settings.scope.project')}</span>
+          </Radio>
+        </Radio.Group>
+        <div className="text-xs text-gray-500">
+          {settings.currentScope === 'global'
+            ? t('settings.scope.globalDesc')
+            : t('settings.scope.projectDesc')}
+        </div>
       </div>
-    </Card>
+    </div>
   );
 };
 

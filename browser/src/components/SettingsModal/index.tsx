@@ -1,12 +1,9 @@
-import { ApiOutlined, ControlOutlined, RobotOutlined } from '@ant-design/icons';
-import { Card, Col, Modal, Row, Spin, Typography } from 'antd';
+import { Button, Modal, Spin, Typography } from 'antd';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';
-import BehaviorSettings from './BehaviorSettings';
 import ModelSettings from './ModelSettings';
-import PluginSettings from './PluginSettings';
 import SettingsScopeSwitch from './SettingsScopeSwitch';
 
 const { Text } = Typography;
@@ -26,76 +23,84 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
     }
   }, [open, settings.loaded, settings.loading]);
 
+  const handleSave = async () => {
+    try {
+      // Save settings logic would go here
+      onClose();
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    }
+  };
+
+  const handleCancel = () => {
+    onClose();
+  };
+
   const modalContent = settings.loading ? (
     <div className="flex justify-center items-center h-[300px] flex-col gap-4">
       <Spin size="large" />
       <Text type="secondary">{t('settings.loading')}</Text>
     </div>
   ) : (
-    <div className="space-y-4">
-      {/* Scope Switch */}
-      <SettingsScopeSwitch />
+    <>
+      {/* Main Content */}
+      <div className="space-y-6 mb-6">
+        {/* Scope Switch */}
+        <SettingsScopeSwitch />
 
-      {/* Settings Content */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={12}>
-          <Card
-            title={
-              <div className="flex items-center gap-2">
-                <RobotOutlined />
-                <span>{t('settings.model.title')}</span>
-              </div>
-            }
-            className="h-fit border border-gray-200 [&_.ant-card-body]:p-4"
-            size="small"
-          >
-            <ModelSettings />
-          </Card>
-        </Col>
+        {/* All Settings in one section */}
+        <div>
+          <ModelSettings />
+        </div>
+      </div>
 
-        <Col xs={24} lg={12}>
-          <Card
-            title={
-              <div className="flex items-center gap-2">
-                <ControlOutlined />
-                <span>{t('settings.behavior.title')}</span>
-              </div>
-            }
-            className="h-fit border border-gray-200 [&_.ant-card-body]:p-4"
-            size="small"
-          >
-            <BehaviorSettings />
-          </Card>
-        </Col>
-
-        <Col xs={24}>
-          <Card
-            title={
-              <div className="flex items-center gap-2">
-                <ApiOutlined />
-                <span>{t('settings.plugins.title')}</span>
-              </div>
-            }
-            className="border border-gray-200 [&_.ant-card-body]:p-4"
-            size="small"
-          >
-            <PluginSettings />
-          </Card>
-        </Col>
-      </Row>
-    </div>
+      {/* Footer Buttons */}
+      <div className="flex justify-end gap-2 pt-4">
+        <Button
+          onClick={handleCancel}
+          className="rounded-full border border-gray-300 bg-white text-gray-900 hover:bg-gray-50"
+          style={{ borderRadius: '26px', padding: '6px 16px', height: 'auto' }}
+        >
+          {t('common.cancel')}
+        </Button>
+        <Button
+          onClick={handleSave}
+          className="rounded-full border-0"
+          style={{
+            borderRadius: '26px',
+            padding: '6px 16px',
+            height: 'auto',
+            backgroundColor: '#110C22',
+            color: '#FFFFFF',
+            borderColor: 'transparent',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#110C22';
+            e.currentTarget.style.color = '#FFFFFF';
+            e.currentTarget.style.borderColor = 'transparent';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#110C22';
+            e.currentTarget.style.color = '#FFFFFF';
+            e.currentTarget.style.borderColor = 'transparent';
+          }}
+        >
+          {t('common.save')}
+        </Button>
+      </div>
+    </>
   );
 
   return (
     <Modal
       title={t('settings.title')}
       open={open}
-      onCancel={onClose}
+      onCancel={handleCancel}
       footer={null}
-      width={800}
+      width={880}
       centered
       destroyOnClose
-      className="[&_.ant-modal-body]:max-h-[70vh] [&_.ant-modal-body]:overflow-y-auto"
+      className="[&_.ant-modal-body]:max-h-[70vh] [&_.ant-modal-body]:overflow-y-auto [&_.ant-modal-body]:p-6"
     >
       {modalContent}
     </Modal>
