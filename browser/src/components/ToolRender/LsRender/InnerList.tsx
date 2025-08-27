@@ -171,7 +171,6 @@ const RenderItem = ({
 };
 
 export default function InnerList({ items, showPath = true }: InnerListProps) {
-  console.log('items', items);
   return (
     <ul className={styles.listContainer}>
       {items.map((item, index) => (
