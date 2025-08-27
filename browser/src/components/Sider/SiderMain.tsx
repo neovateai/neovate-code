@@ -1,9 +1,9 @@
 import { QuestionCircleOutlined, SettingOutlined } from '@ant-design/icons';
-import { useNavigate } from '@tanstack/react-router';
 import { Avatar, Button } from 'antd';
 import { createStyles } from 'antd-style';
 import { useSnapshot } from 'valtio';
 import * as layout from '@/state/layout';
+import { uiActions } from '@/state/ui';
 import LogoArea from './LogoArea';
 import siderBg from './imgs/sider-bg.png';
 
@@ -96,7 +96,6 @@ const useStyle = createStyles(({ token, css }) => {
 
 const SiderMain = () => {
   const { styles } = useStyle();
-  const navigate = useNavigate();
   const { sidebarCollapsed } = useSnapshot(layout.state);
 
   return (
@@ -119,7 +118,7 @@ const SiderMain = () => {
           <Button
             type="text"
             icon={<SettingOutlined />}
-            onClick={() => navigate({ to: '/settings' })}
+            onClick={() => uiActions.openSettingsModal()}
           />
           <Button type="text" icon={<QuestionCircleOutlined />} />
         </div>
