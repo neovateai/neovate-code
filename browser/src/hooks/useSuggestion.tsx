@@ -1,4 +1,4 @@
-import { ArrowRightOutlined, FileSearchOutlined } from '@ant-design/icons';
+import { FileSearchOutlined } from '@ant-design/icons';
 import { debounce } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
@@ -45,7 +45,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
         label: 'Files & Folders',
         value: ContextType.FILE,
         icon: <FileSearchOutlined />,
-        extra: <ArrowRightOutlined />,
+        // extra: <ArrowRightOutlined />,
         children: fileSuggestions,
       },
     ] as SuggestionItem[];

@@ -1,6 +1,11 @@
-import { LeftOutlined } from '@ant-design/icons';
-import { Button, Input, type InputRef, List, Popover } from 'antd';
-import { createStyles } from 'antd-style';
+import Icon, {
+  ArrowRightOutlined,
+  CheckOutlined,
+  LeftOutlined,
+} from '@ant-design/icons';
+import { Input, type InputRef, List, Popover } from 'antd';
+import { cx } from 'antd-style';
+import { groupBy } from 'lodash-es';
 import React, {
   useCallback,
   useEffect,
@@ -9,6 +14,8 @@ import React, {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSnapshot } from 'valtio';
+import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';
 import AutoTooltip from './AutoTooltip';
 
@@ -27,7 +34,6 @@ interface Props {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   items: SuggestionItem[];
-  virtual?: boolean;
   onSelect?: (
     firstKey: string,
     itemValue: string,
@@ -39,65 +45,6 @@ interface Props {
   loading?: boolean;
   offset?: { left: number; top: number };
 }
-
-const useStyles = createStyles(({ css, token }) => {
-  return {
-    listItem: css`
-      min-width: 200px;
-      height: 40px;
-      user-select: none;
-      cursor: pointer;
-
-      &:hover {
-        background-color: ${token.controlItemBgHover};
-      }
-    `,
-    listItemSelected: css`
-      background-color: ${token.controlItemBgActive} !important;
-    `,
-    listItemLabel: css`
-      font-weight: 600;
-    `,
-    listItemLabelSearch: css`
-      color: #ff0000;
-    `,
-    listItemContent: css`
-      padding: 0 ${token.paddingSM}px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      column-gap: 12px;
-    `,
-    listItemContentMain: css`
-      display: flex;
-      align-items: center;
-      column-gap: 12px;
-    `,
-    listHeader: css`
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 4px 0;
-    `,
-    listInput: css`
-      margin: 0 4px;
-    `,
-    list: css`
-      max-height: 500px;
-      overflow-y: auto;
-      width: 400px;
-    `,
-    popup: css`
-      background-color: ${token.colorBgElevated};
-      border-radius: ${token.borderRadius}px;
-      border: 1px solid ${token.colorBorder};
-      padding: 4px;
-      width: fit-content;
-      outline: none;
-    `,
-  };
-});
 
 const SuggestionList = (props: Props) => {
   const {
@@ -114,7 +61,6 @@ const SuggestionList = (props: Props) => {
   } = props;
 
   const { t } = useTranslation();
-  const { styles } = useStyles();
 
   const [selectedFirstKey, setSelectedFirstKey] = useState<string>();
   const [searchResults, setSearchResults] = useState<SuggestionItem[]>();
@@ -134,6 +80,22 @@ const SuggestionList = (props: Props) => {
       );
     }
   }, [items, searchResults, selectedFirstKey]);
+
+  const { attachedContexts } = useSnapshot(context.state);
+
+  const selectedContextMap = useMemo(
+    () => groupBy(attachedContexts, 'type'),
+    [attachedContexts],
+  );
+
+  const isSecondItemSelected = (val: string) => {
+    return (
+      selectedFirstKey &&
+      selectedContextMap?.[selectedFirstKey]?.some(
+        (secondItem) => secondItem.value === val,
+      )
+    );
+  };
 
   const clearSearch = useCallback(
     (targetFirstKey: string) => {
@@ -169,14 +131,16 @@ const SuggestionList = (props: Props) => {
           if (selectedIndex >= 0 && selectedIndex < currentList.length) {
             const selectedItem = currentList[selectedIndex];
             if (selectedFirstKey) {
-              onSelect?.(
-                selectedFirstKey,
-                selectedItem.value,
-                selectedItem.contextItem,
-              );
-              setSelectedFirstKey(undefined);
-              onOpenChange?.(false);
-              onLostFocus?.();
+              if (!isSecondItemSelected(selectedItem.value)) {
+                onSelect?.(
+                  selectedFirstKey,
+                  selectedItem.value,
+                  selectedItem.contextItem,
+                );
+                setSelectedFirstKey(undefined);
+                onOpenChange?.(false);
+                onLostFocus?.();
+              }
             } else {
               clearSearch(selectedItem.value);
               setSelectedFirstKey(selectedItem.value);
@@ -218,7 +182,7 @@ const SuggestionList = (props: Props) => {
         normalTexts[0],
         ...normalTexts.slice(1).map((text, index) => (
           <React.Fragment key={index}>
-            <span className={styles.listItemLabelSearch}>{searchText}</span>
+            <span>{searchText}</span>
             {text}
           </React.Fragment>
         )),
@@ -229,34 +193,46 @@ const SuggestionList = (props: Props) => {
 
   const renderItem = (item: SuggestionItem, index: number) => {
     const isSelected = selectedIndex === index;
+    const isFirstLevel = !selectedFirstKey;
+    const isSecondSeleted = isSecondItemSelected(item.value);
+
     return (
       <List.Item
-        className={`${styles.listItem} ${isSelected ? styles.listItemSelected : ''}`}
+        className={cx('p-0! select-none', {
+          'bg-[#F5F6F7]': isSelected,
+          'cursor-pointer': !isSecondSeleted,
+          'cursor-not-allowed': !!isSecondSeleted,
+        })}
         key={item.value}
         data-index={index}
         onMouseEnter={() => setSelectedIndex(index)}
-        onClick={() => {
+        onClick={(e) => {
           if (selectedFirstKey) {
-            onSelect?.(selectedFirstKey, item.value, item.contextItem);
-            setSelectedFirstKey(undefined);
-            onOpenChange?.(false);
-            onLostFocus?.();
+            if (isSecondSeleted) {
+              e.preventDefault();
+            } else {
+              onSelect?.(selectedFirstKey, item.value, item.contextItem);
+              setSelectedFirstKey(undefined);
+              onOpenChange?.(false);
+              onLostFocus?.();
+            }
           } else {
             clearSearch(item.value);
             setSelectedFirstKey(item.value);
           }
         }}
       >
-        <div className={styles.listItemContent}>
-          <div className={styles.listItemContentMain}>
+        <div className="flex justify-between items-center w-full px-3.5 py-2">
+          <div className="flex gap-1 items-center">
             <div>{item.icon}</div>
-            <AutoTooltip maxWidth={300} className={styles.listItemLabel}>
+            <AutoTooltip maxWidth={120} className="text-sm text-[#110C22]">
               {renderItemText(item.label, inputRef.current?.input?.value)}
             </AutoTooltip>
           </div>
-          <AutoTooltip maxWidth={300}>
-            {renderItemText(item.extra, inputRef.current?.input?.value)}
-          </AutoTooltip>
+          {isFirstLevel && <ArrowRightOutlined />}
+          {!isFirstLevel && isSecondSeleted && (
+            <Icon component={CheckOutlined} className="text-[#7357FF]!" />
+          )}
         </div>
       </List.Item>
     );
@@ -277,16 +253,15 @@ const SuggestionList = (props: Props) => {
   const ListHeader = useMemo(() => {
     if (selectedFirstKey) {
       return (
-        <div className={styles.listHeader}>
-          <Button
-            icon={<LeftOutlined />}
+        <div className="flex items-center justify-between h-5.5 pb-1 px-3.5 w-full">
+          <Icon
+            component={LeftOutlined}
+            className="text-xs"
             onClick={handleBackClick}
-            type="text"
           />
           <Input
             ref={inputRef}
-            className={styles.listInput}
-            variant="underlined"
+            variant="borderless"
             autoFocus
             onChange={handleInputChange}
             placeholder={t('common.placeholder')}
@@ -387,15 +362,15 @@ const SuggestionList = (props: Props) => {
       destroyOnHidden // must be set to true to get focus when each time the popup is opened
       content={() => (
         <div
-          className={styles.popup}
+          className="rounded-[10px] border border-[#eeeff0] bg-white py-2"
           ref={popupRef}
           tabIndex={-1}
           onKeyDown={handleKeyDown}
         >
           {ListHeader}
           <List
+            className="w-55 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent hover:scrollbar-thumb-gray-400/60 scrollbar-thumb-rounded-full"
             ref={listRef}
-            className={styles.list}
             locale={{
               emptyText: t('common.empty'),
             }}
