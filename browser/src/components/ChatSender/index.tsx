@@ -87,14 +87,6 @@ const ChatSender: React.FC = () => {
     }
   };
 
-  const handleEnterPressRef = useRef(handleEnterPress);
-  handleEnterPressRef.current = handleEnterPress;
-
-  /*
-  TODO
-  1. context menu keyboard navigation
-  */
-
   return (
     <Spin spinning={isPasting}>
       <QuillContext
@@ -105,11 +97,16 @@ const ChatSender: React.FC = () => {
             setAtIndex(index);
           },
           onQuillLoad: (quillInstance) => {
+            quillInstance.focus();
             quill.current = quillInstance;
           },
           onKeyDown: (code) => {
-            if (code === KeyCode.Enter) {
-              handleEnterPressRef.current();
+            if (
+              code === KeyCode.Enter &&
+              quill.current?.hasFocus() &&
+              !openPopup
+            ) {
+              handleEnterPress();
             }
           },
           onChange: (text, delta) => {
@@ -127,7 +124,9 @@ const ChatSender: React.FC = () => {
           loading={suggestionLoading}
           className={styles.suggestion}
           open={openPopup}
-          onOpenChange={(open) => setOpenPopup(open)}
+          onOpenChange={(open) => {
+            setOpenPopup(open);
+          }}
           items={defaultSuggestions}
           onSearch={(type, text) => {
             return handleSearch(type as ContextType, text);
@@ -159,6 +158,7 @@ const ChatSender: React.FC = () => {
               }
             }
           }}
+          onLostFocus={() => quill.current?.focus()}
           offset={{ top: (bounds?.top ?? -50) + 50, left: bounds?.left ?? 0 }}
         >
           <Sender

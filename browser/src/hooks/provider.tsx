@@ -19,6 +19,7 @@ type ChatState = ReturnType<typeof useChat> & {
     readonly attachedContexts: ContextItem[];
     readonly delta: Delta;
   }) => void;
+  onRetry: () => void;
   messagesWithPlaceholder: UIMessage[];
   originalMessages: UIMessage[];
 };
@@ -99,6 +100,20 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
     } as unknown as UIMessage);
   };
 
+  const onRetry = () => {
+    const lastUserMessage = findLast(
+      chatState.messages,
+      (message) => message.role === 'user',
+    );
+    if (lastUserMessage) {
+      // retry last user message
+      chatState.append({
+        ...lastUserMessage,
+        id: `retry-${Date.now()}`, // generate new id to avoid duplicate
+      });
+    }
+  };
+
   return (
     <ChatContext.Provider
       value={{
@@ -107,6 +122,7 @@ const ChatProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
         messages: messagesWithPlaceholder,
         loading,
         onQuery,
+        onRetry,
         messagesWithPlaceholder,
       }}
     >

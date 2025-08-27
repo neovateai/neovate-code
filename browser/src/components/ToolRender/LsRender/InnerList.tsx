@@ -121,15 +121,12 @@ const RenderItem = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // 递归方式获取所有子节点的数量
-  const getChildrenCount = (node: ListItem): number => {
-    if (!node.children || node.children.length === 0) return 0;
-    return node.children.reduce(
-      (acc, child) => acc + 1 + getChildrenCount(child),
+  // flatten children count
+  const childrenCount =
+    item.children?.reduce(
+      (acc, child) => acc + (child.children?.length || 0),
       0,
-    );
-  };
-  const childrenCount = getChildrenCount(item);
+    ) || 0;
 
   const toggleExpand = () => {
     if (childrenCount > 0) {
@@ -141,11 +138,14 @@ const RenderItem = ({
     <>
       <li className={styles.itemContainer} onClick={toggleExpand}>
         <span
-          className={`${styles.itemIcon} ${
-            childrenCount > 0 && isExpanded
-              ? styles.expandIconExpanded
-              : styles.expandIcon
-          }`}
+          className={styles.itemIcon}
+          style={{
+            transform:
+              childrenCount > 0 && isExpanded
+                ? 'rotate(90deg)'
+                : 'rotate(0deg)',
+            transition: 'transform 0.2s ease-in-out',
+          }}
         >
           {childrenCount > 0 && <RightArrowIcon />}
         </span>

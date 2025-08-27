@@ -305,6 +305,11 @@
     },
     "bash": {
       "noOutput": "无输出。"
+    },
+    "todo": {
+      "title": "待办列表",
+      "noTodos": "暂无待办事项",
+      "operationFailed": "待办操作失败"
     }
   },
   "senderFooterBoard": {
