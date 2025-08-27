@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import yargsParser from 'yargs-parser';
 import { PRODUCT_NAME } from '../constants';
 import { type Plugin, PluginHookType } from '../plugin';
+import { clearTracing } from '../tracing';
 import { Context } from './context';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
@@ -191,6 +192,7 @@ export async function runNeovate(opts: {
   version: string;
   plugins: Plugin[];
 }) {
+  clearTracing();
   const argv = parseArgs(process.argv.slice(2));
   if (argv.help) {
     printHelp(opts.productName.toLowerCase());
