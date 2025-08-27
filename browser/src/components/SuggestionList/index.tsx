@@ -225,10 +225,26 @@ const SuggestionList = (props: Props) => {
         <div className="flex justify-between items-center w-full px-3.5 py-1.5">
           <div className="flex gap-1 items-center h-5">
             <div>{item.icon}</div>
-            <AutoTooltip maxWidth={120} className="text-sm text-[#110C22]">
+            <AutoTooltip
+              maxWidth={120}
+              className="text-sm text-[#110C22]"
+              forceShowTip={isSelected}
+              placement="left"
+            >
               {renderItemText(item.label, inputRef.current?.input?.value)}
             </AutoTooltip>
           </div>
+          {item.extra && (
+            <AutoTooltip
+              maxWidth={80}
+              ellipsisAtStart
+              className="text-xs text-gray-500"
+              forceShowTip={isSelected}
+              placement="right"
+            >
+              {renderItemText(item.extra, inputRef.current?.input?.value)}
+            </AutoTooltip>
+          )}
           {isFirstLevel && <ArrowRightOutlined />}
           {!isFirstLevel && isSecondSeleted && (
             <Icon component={CheckOutlined} className="text-[#7357FF]!" />
@@ -369,7 +385,7 @@ const SuggestionList = (props: Props) => {
         >
           {ListHeader}
           <List
-            className="w-55 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent hover:scrollbar-thumb-gray-400/60 scrollbar-thumb-rounded-full"
+            className="w-85 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent hover:scrollbar-thumb-gray-400/60 scrollbar-thumb-rounded-full"
             ref={listRef}
             locale={{
               emptyText: t('common.empty'),
