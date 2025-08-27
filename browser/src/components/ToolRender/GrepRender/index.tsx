@@ -1,5 +1,5 @@
 import MessageWrapper from '@/components/MessageWrapper';
-import SearchIcon from '@/icons/search.svg?react';
+import SearchIcon from '@/icons/grep-search.svg?react';
 import SuccessIcon from '@/icons/success.svg?react';
 import type { ToolMessage } from '@/types/message';
 
