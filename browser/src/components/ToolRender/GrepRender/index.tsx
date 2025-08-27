@@ -23,8 +23,6 @@ export default function GrepRender({ message }: { message?: ToolMessage }) {
           onClick: () => {},
         },
       ]}
-    >
-      ''
-    </MessageWrapper>
+    />
   );
 }

@@ -5,6 +5,8 @@
   background-color: white;
   border-radius: 8px;
   border: 1px solid #ebebeb;
+  margin-bottom: 12px;
+  min-width: 789px;
 }
 
 /* Header styles */

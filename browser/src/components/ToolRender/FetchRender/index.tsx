@@ -47,8 +47,6 @@ export default function FetchRender({ message }: { message?: ToolMessage }) {
       defaultExpanded={false}
       showExpandIcon={false}
       actions={actions}
-    >
-      ''
-    </MessageWrapper>
+    />
   );
 }
