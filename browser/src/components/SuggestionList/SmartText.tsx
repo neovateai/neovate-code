@@ -143,6 +143,7 @@ const SmartText = (props: Props) => {
 
   return (
     <Tooltip
+      mouseEnterDelay={0.5}
       title={showTooltip ? tooltipContent : null}
       open={showTooltip && forceShowTip}
       placement={placement}
