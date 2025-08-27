@@ -178,17 +178,24 @@ const SuggestionList = (props: Props) => {
     if (!searchText || typeof text !== 'string') {
       return text;
     } else {
-      const normalTexts = text.split(searchText);
-      const renderedTexts = [
-        normalTexts[0],
-        ...normalTexts.slice(1).map((text, index) => (
-          <React.Fragment key={index}>
-            <span>{searchText}</span>
-            {text}
-          </React.Fragment>
-        )),
-      ];
-      return renderedTexts;
+      const searchRegex = new RegExp(
+        `(${searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
+        'gi',
+      );
+      const parts = text.split(searchRegex);
+
+      return parts
+        .map((part, index) => {
+          if (part.toLowerCase() === searchText.toLowerCase()) {
+            return (
+              <span key={index} className="text-[#7357FF]">
+                {part}
+              </span>
+            );
+          }
+          return part;
+        })
+        .filter((part) => part !== '');
     }
   };
 
@@ -233,11 +240,13 @@ const SuggestionList = (props: Props) => {
                   ? renderItemText(item.extra, inputRef.current?.input?.value)
                   : undefined
               }
-              renderTooltip={(label, extra) => (
+              renderTooltip={() => (
                 <FileTooltipRender
-                  label={label}
+                  fullPath={renderItemText(
+                    [item.extra ?? '', item.label].join('/'),
+                    inputRef.current?.input?.value,
+                  )}
                   icon={item.icon}
-                  extra={extra}
                 />
               )}
               maxWidth={260}
