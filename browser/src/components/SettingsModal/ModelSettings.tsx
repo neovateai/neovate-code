@@ -1,15 +1,15 @@
 import { InfoCircleOutlined } from '@ant-design/icons';
-import { Input, Select, Switch, Tooltip } from 'antd';
-import React, { useState } from 'react';
+import { Select, Switch, Tooltip } from 'antd';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';
 import type { AppSettings } from '@/types/settings';
+import PluginInput from './PluginInput';
 
 const ModelSettings: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { settings } = useSnapshot(state);
-  const [pluginsText, setPluginsText] = useState('');
 
   const currentSettings =
     settings.currentScope === 'global'
@@ -19,11 +19,6 @@ const ModelSettings: React.FC = () => {
   const currentPlugins = Array.isArray(currentSettings.plugins)
     ? currentSettings.plugins
     : [];
-
-  // Update text area when current plugins change
-  React.useEffect(() => {
-    setPluginsText(currentPlugins.join('\n'));
-  }, [currentPlugins]);
 
   const onSettingChange = async (
     key: keyof AppSettings,
@@ -41,13 +36,7 @@ const ModelSettings: React.FC = () => {
     }
   };
 
-  const onPluginsChange = async (value: string) => {
-    setPluginsText(value);
-    const pluginsList = value
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
-
+  const onPluginsChange = async (pluginsList: string[]) => {
     try {
       await actions.updateSettingValue('plugins', pluginsList);
     } catch (error) {
@@ -248,12 +237,10 @@ const ModelSettings: React.FC = () => {
         <h3 className="text-sm font-medium text-gray-900 mb-4">
           {t('settings.plugins.title')}
         </h3>
-        <Input.TextArea
-          value={pluginsText}
-          onChange={(e) => onPluginsChange(e.target.value)}
+        <PluginInput
+          value={currentPlugins}
+          onChange={onPluginsChange}
           placeholder={t('settings.plugins.placeholder')}
-          rows={4}
-          className="resize-none"
         />
       </div>
     </div>
