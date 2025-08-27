@@ -164,8 +164,8 @@
   "mcp": {
     "management": "MCP 管理",
     "services": "MCP 服务",
-    "addServer": "添加 MCP 服务器",
-    "serverName": "MCP 服务器名称",
+    "addServer": "添加 MCP",
+    "serverName": "MCP 名称",
     "serverNamePlaceholder": "my-mcp-server",
     "transportType": "传输类型",
     "command": "命令",
@@ -197,12 +197,8 @@
     "noConfiguration": "无 MCP 配置",
     "clickToStart": "点击\"添加服务器\"开始配置",
     "noServicesAvailable": "无可用服务",
-    "editApiKey": "编辑 {{name}} 的 API 密钥",
-    "apiKeyPlaceholder": "输入您的 API 密钥",
-    "apiKeyDescription": "此 API 密钥将用于配置 {{name}} 服务。",
     "playwrightDescription": "浏览器自动化和测试",
     "figmaDescription": "Figma 设计集成",
-    "figmaApiKeyLabel": "Figma API 密钥",
     "mcpManagementTitle": "MCP 管理",
     "mcpServicesTitle": "MCP 服务",
     "globalScope": "全局",
@@ -213,7 +209,7 @@
     "added": "已将 {{name}} 添加到项目",
     "addedMultiple": "成功添加了 {{count}} 个服务器",
     "addedSingle": "添加成功",
-    "apiKeyUpdated": "API 密钥更新成功",
+
     "alreadyEnabled": "{{name}} 已经启用",
     "noCachedConfig": "未找到 {{name}} ({{scope}}) 的缓存配置",
     "loadFailed": "加载 MCP 服务器失败",
@@ -221,7 +217,7 @@
     "addFailed": "添加 {{name}} 失败",
     "updateFailed": "更新 {{name}} 失败",
     "configNotFound": "未找到 {{name}} 的配置",
-    "apiKeyRequired": "需要 API 密钥",
+
     "jsonFormatError": "JSON 格式错误或添加失败",
     "addFormError": "添加失败",
     "invalidJson": "无效的 JSON 格式",
@@ -233,7 +229,9 @@
     "noServersFound": "在 mcpServers 对象中未找到服务器",
     "actions": "操作",
     "edit": "编辑",
-    "delete": "删除"
+    "delete": "删除",
+    "continueAdd": "继续添加",
+    "jsonSupported": "json支持的格式有什么什么"
   },
   "settings": {
     "title": "设置",

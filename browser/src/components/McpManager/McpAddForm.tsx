@@ -1,25 +1,22 @@
-import { PlusOutlined } from '@ant-design/icons';
 import {
-  Divider,
+  DownOutlined,
+  PlusOutlined,
+  QuestionCircleOutlined,
+} from '@ant-design/icons';
+import {
+  Button,
   Form,
   Input,
   Modal,
   Radio,
   Select,
-  Space,
   Typography,
   message,
 } from 'antd';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { addMCPServer } from '@/api/mcpService';
-import {
-  MCP_DEFAULTS,
-  getJsonExample,
-  getSimpleJsonExample,
-  getSingleServerExample,
-  getSseJsonExample,
-} from '@/constants/mcp';
+import { MCP_DEFAULTS } from '@/constants/mcp';
 import type {
   FormValues,
   JsonConfigFormat,
@@ -179,62 +176,111 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
   return (
     <Modal
       title={
-        <Space>
-          <PlusOutlined />
-          {t('mcp.addServer')}
-        </Space>
+        <div className={styles.modalHeader}>
+          <span className={styles.headerTitle}>{t('mcp.addServer')}</span>
+        </div>
       }
       open={visible}
       onCancel={handleCancel}
-      onOk={form.submit}
-      okText={t('mcp.addServer')}
-      cancelText={t('common.cancel')}
-      width={700}
-      className="[&_.ant-modal-body]:px-6 [&_.ant-modal-body]:py-5"
+      footer={[
+        <Button
+          key="cancel"
+          onClick={handleCancel}
+          className={styles.cancelButton}
+        >
+          {t('common.cancel')}
+        </Button>,
+        <Button
+          key="ok"
+          type="primary"
+          onClick={form.submit}
+          className={styles.confirmButton}
+        >
+          {t('common.confirm')}
+        </Button>,
+      ]}
+      width={640}
+      className={styles.addFormModal}
+      destroyOnClose
+      maskClosable={false}
     >
-      <Form
-        form={form}
-        onFinish={handleAdd}
-        layout="vertical"
-        {...containerEventHandlers}
-      >
-        <div className={styles.formRow}>
-          <div className={styles.formColumn}>
-            <Text strong className={styles.formLabel}>
-              {t('mcp.scope')}
-            </Text>
-            <Radio.Group
-              value={addScope}
-              onChange={(e) =>
-                onScopeChange(e.target.value as 'global' | 'project')
-              }
-              className="w-full"
-            >
-              <Radio value="project">{t('mcp.project')}</Radio>
-              <Radio value="global">{t('mcp.global')}</Radio>
-            </Radio.Group>
+      <div className={styles.modalBody} {...containerEventHandlers}>
+        <Form
+          form={form}
+          onFinish={handleAdd}
+          layout="vertical"
+          className={styles.form}
+        >
+          {/* 设定范围和输入模式 */}
+          <div className={styles.settingsRow}>
+            <div className={styles.settingGroup}>
+              <div className={styles.settingHeader}>
+                <Text className={styles.settingLabel}>{t('mcp.scope')}</Text>
+                <QuestionCircleOutlined className={styles.questionIcon} />
+              </div>
+              <Radio.Group
+                value={addScope}
+                onChange={(e) =>
+                  onScopeChange(e.target.value as 'global' | 'project')
+                }
+                className={styles.radioGroup}
+              >
+                <Radio value="project" className={styles.radioOption}>
+                  {t('mcp.project')}
+                </Radio>
+                <Radio value="global" className={styles.radioOption}>
+                  {t('mcp.global')}
+                </Radio>
+              </Radio.Group>
+            </div>
+            <div className={styles.settingGroup}>
+              <div className={styles.settingHeader}>
+                <Text className={styles.settingLabel}>
+                  {t('mcp.inputMode')}
+                </Text>
+              </div>
+              <Radio.Group
+                value={inputMode}
+                onChange={(e) =>
+                  onInputModeChange(e.target.value as 'json' | 'form')
+                }
+                className={styles.radioGroup}
+              >
+                <Radio value="json" className={styles.radioOption}>
+                  JSON
+                </Radio>
+                <Radio value="form" className={styles.radioOption}>
+                  {t('mcp.form')}
+                </Radio>
+              </Radio.Group>
+            </div>
           </div>
-          <div className={styles.formColumn}>
-            <Text strong className={styles.formLabel}>
-              {t('mcp.inputMode')}
-            </Text>
-            <Radio.Group
-              value={inputMode}
-              onChange={(e) =>
-                onInputModeChange(e.target.value as 'json' | 'form')
-              }
-              className="w-full"
-            >
-              <Radio value="json">{t('mcp.json')}</Radio>
-              <Radio value="form">{t('mcp.form')}</Radio>
-            </Radio.Group>
+
+          {/* 配置表单内容 */}
+          <div className={styles.configSection}>
+            {inputMode === 'json' ? <McpJsonForm /> : <McpFormFields />}
           </div>
-        </div>
 
-        <Divider className="my-4" />
+          {/* MCP 展示区域 */}
+          <div className={styles.mcpPreviewSection}>
+            <div className={styles.mcpPreviewHeader}>
+              <span className={styles.mcpLabel}>MCP</span>
+              <DownOutlined className={styles.collapseIcon} />
+            </div>
+          </div>
 
-        {inputMode === 'json' ? <McpJsonForm /> : <McpFormFields />}
-      </Form>
+          {/* 继续添加按钮 */}
+          <div className={styles.continueSection}>
+            <Button
+              type="default"
+              icon={<PlusOutlined />}
+              className={styles.continueButton}
+            >
+              {t('mcp.continueAdd')}
+            </Button>
+          </div>
+        </Form>
+      </div>
     </Modal>
   );
 };
@@ -244,113 +290,80 @@ const McpJsonForm: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <Form.Item
-      name="jsonConfig"
-      label={<Text strong>{t('mcp.configuration')}</Text>}
-      rules={[
-        {
-          required: true,
-          message: t('mcp.configurationPlaceholder'),
-        },
-        {
-          validator: async (_, value) => {
-            if (value) {
-              try {
-                const parsed = JSON.parse(value);
+    <div className={styles.jsonFormContainer}>
+      <div className={styles.jsonFormHeader}>
+        <Text className={styles.settingLabel}>{t('mcp.configuration')}</Text>
+      </div>
+      <Form.Item
+        name="jsonConfig"
+        rules={[
+          {
+            required: true,
+            message: t('mcp.configurationPlaceholder'),
+          },
+          {
+            validator: async (_, value) => {
+              if (value) {
+                try {
+                  const parsed = JSON.parse(value);
 
-                // Validate supported formats
-                if (parsed.mcpServers) {
-                  // Format 1: { "mcpServers": { ... } }
-                  if (
-                    typeof parsed.mcpServers !== 'object' ||
-                    Object.keys(parsed.mcpServers).length === 0
-                  ) {
-                    throw new Error(t('mcp.mcpServersEmpty'));
-                  }
-                } else {
-                  const keys = Object.keys(parsed);
-                  if (keys.length === 0) {
-                    throw new Error(t('mcp.configurationEmpty'));
-                  }
-
-                  // Check if it's a single service configuration (contains name field)
-                  if (keys.includes('name')) {
-                    if (!parsed.command && !parsed.url) {
-                      throw new Error(t('mcp.commandOrUrlRequired'));
+                  // Validate supported formats
+                  if (parsed.mcpServers) {
+                    // Format 1: { "mcpServers": { ... } }
+                    if (
+                      typeof parsed.mcpServers !== 'object' ||
+                      Object.keys(parsed.mcpServers).length === 0
+                    ) {
+                      throw new Error(t('mcp.mcpServersEmpty'));
                     }
                   } else {
-                    // Check if it's service mapping format
-                    for (const [name, config] of Object.entries(parsed)) {
-                      if (typeof config !== 'object') {
-                        throw new Error(t('mcp.serverConfigObject', { name }));
+                    const keys = Object.keys(parsed);
+                    if (keys.length === 0) {
+                      throw new Error(t('mcp.configurationEmpty'));
+                    }
+
+                    // Check if it's a single service configuration (contains name field)
+                    if (keys.includes('name')) {
+                      if (!parsed.command && !parsed.url) {
+                        throw new Error(t('mcp.commandOrUrlRequired'));
                       }
-                      const serverConfig = config as McpServerConfig;
-                      if (!serverConfig.command && !serverConfig.url) {
-                        throw new Error(t('mcp.serverCommandOrUrl', { name }));
+                    } else {
+                      // Check if it's service mapping format
+                      for (const [name, config] of Object.entries(parsed)) {
+                        if (typeof config !== 'object') {
+                          throw new Error(
+                            t('mcp.serverConfigObject', { name }),
+                          );
+                        }
+                        const serverConfig = config as McpServerConfig;
+                        if (!serverConfig.command && !serverConfig.url) {
+                          throw new Error(
+                            t('mcp.serverCommandOrUrl', { name }),
+                          );
+                        }
                       }
                     }
                   }
+                } catch (error) {
+                  if (error instanceof SyntaxError) {
+                    throw new Error(t('mcp.invalidJson'));
+                  }
+                  throw error;
                 }
-              } catch (error) {
-                if (error instanceof SyntaxError) {
-                  throw new Error(t('mcp.invalidJson'));
-                }
-                throw error;
               }
-            }
+            },
           },
-        },
-      ]}
-    >
-      <div>
+        ]}
+      >
         <Input.TextArea
-          rows={10}
-          placeholder={getJsonExample()}
-          className="font-mono text-sm leading-relaxed"
+          rows={6}
+          placeholder={t('mcp.configurationPlaceholder')}
+          className={styles.jsonTextArea}
           {...modalEventHandlers}
         />
-        <div className={styles.formatSection}>
-          <details>
-            <summary className={styles.formatSummary}>
-              {t('mcp.viewFormats')}
-            </summary>
-            <div className={styles.formatContainer}>
-              <div className={styles.formatExample}>
-                <Text strong className={styles.formatTitle}>
-                  {t('mcp.formatComplete')}
-                </Text>
-                <pre className={styles.formatCode}>{getJsonExample()}</pre>
-              </div>
-
-              <div className={styles.formatExample}>
-                <Text strong className={styles.formatTitle}>
-                  {t('mcp.formatDirect')}
-                </Text>
-                <pre className={styles.formatCode}>
-                  {getSimpleJsonExample()}
-                </pre>
-              </div>
-
-              <div className={styles.formatExample}>
-                <Text strong className={styles.formatTitle}>
-                  {t('mcp.formatSingle')}
-                </Text>
-                <pre className={styles.formatCode}>
-                  {getSingleServerExample()}
-                </pre>
-              </div>
-
-              <div className={styles.formatExample}>
-                <Text strong className={styles.formatTitle}>
-                  {t('mcp.formatSSE')}
-                </Text>
-                <pre className={styles.formatCode}>{getSseJsonExample()}</pre>
-              </div>
-            </div>
-          </details>
-        </div>
-      </div>
-    </Form.Item>
+      </Form.Item>
+      <div className={styles.jsonDescription}>{t('mcp.jsonSupported')}</div>
+    </div>
   );
 };
 
@@ -359,96 +372,141 @@ const McpFormFields: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <>
-      <Form.Item
-        name="name"
-        label={<Text strong>{t('mcp.serverName')}</Text>}
-        rules={[
-          {
-            required: true,
-            message: t('mcp.configurationPlaceholder'),
-          },
-        ]}
-      >
-        <Input
-          placeholder={t('mcp.serverNamePlaceholder')}
-          {...modalEventHandlers}
-        />
-      </Form.Item>
+    <div className={styles.formFieldsContainer}>
+      {/* 第一行：服务器名称和传输类型 */}
+      <div className={styles.formFieldsRow}>
+        <div className={styles.formField}>
+          <div className={styles.fieldLabel}>
+            <Text className={styles.settingLabel}>{t('mcp.serverName')}</Text>
+            <span className={styles.requiredMark}>*</span>
+          </div>
+          <Form.Item
+            name="name"
+            rules={[
+              {
+                required: true,
+                message: t('mcp.configurationPlaceholder'),
+              },
+            ]}
+          >
+            <Input
+              placeholder={t('mcp.serverNamePlaceholder')}
+              className={styles.formInput}
+              {...modalEventHandlers}
+            />
+          </Form.Item>
+        </div>
+        <div className={styles.formField}>
+          <div className={styles.fieldLabel}>
+            <Text className={styles.settingLabel}>
+              {t('mcp.transportType')}
+            </Text>
+          </div>
+          <Form.Item
+            name="transport"
+            initialValue={MCP_DEFAULTS.TRANSPORT_TYPE}
+          >
+            <Select className={styles.formSelect}>
+              <Select.Option value="stdio">STDIO</Select.Option>
+              <Select.Option value="sse">SSE</Select.Option>
+            </Select>
+          </Form.Item>
+        </div>
+      </div>
 
-      <Form.Item
-        name="transport"
-        label={<Text strong>{t('mcp.transportType')}</Text>}
-        initialValue={MCP_DEFAULTS.TRANSPORT_TYPE}
-      >
-        <Select>
-          <Select.Option value="stdio">STDIO</Select.Option>
-          <Select.Option value="sse">SSE</Select.Option>
-        </Select>
-      </Form.Item>
+      {/* 第二行：命令和参数 */}
+      <div className={styles.formFieldsRow}>
+        <Form.Item
+          noStyle
+          shouldUpdate={(prev, curr) => prev.transport !== curr.transport}
+        >
+          {({ getFieldValue }) => {
+            return getFieldValue('transport') === 'sse' ? (
+              <div className={styles.formField}>
+                <div className={styles.fieldLabel}>
+                  <Text className={styles.settingLabel}>{t('mcp.url')}</Text>
+                  <span className={styles.requiredMark}>*</span>
+                </div>
+                <Form.Item
+                  name="url"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('mcp.configurationPlaceholder'),
+                    },
+                  ]}
+                >
+                  <Input
+                    placeholder={t('mcp.urlPlaceholder')}
+                    className={styles.formInput}
+                    {...modalEventHandlers}
+                  />
+                </Form.Item>
+              </div>
+            ) : (
+              <>
+                <div className={styles.formField}>
+                  <div className={styles.fieldLabel}>
+                    <Text className={styles.settingLabel}>
+                      {t('mcp.command')}
+                    </Text>
+                    <span className={styles.requiredMark}>*</span>
+                  </div>
+                  <Form.Item
+                    name="command"
+                    rules={[
+                      {
+                        required: true,
+                        message: t('mcp.configurationPlaceholder'),
+                      },
+                    ]}
+                  >
+                    <Input
+                      placeholder={t('mcp.commandPlaceholder')}
+                      className={styles.formInput}
+                      {...modalEventHandlers}
+                    />
+                  </Form.Item>
+                </div>
+                <div className={styles.formField}>
+                  <div className={styles.fieldLabel}>
+                    <Text className={styles.settingLabel}>
+                      {t('mcp.arguments')}
+                    </Text>
+                  </div>
+                  <Form.Item name="args">
+                    <Input
+                      placeholder={t('mcp.argumentsPlaceholder')}
+                      className={styles.formInput}
+                      {...modalEventHandlers}
+                    />
+                  </Form.Item>
+                </div>
+              </>
+            );
+          }}
+        </Form.Item>
+      </div>
 
-      <Form.Item
-        noStyle
-        shouldUpdate={(prev, curr) => prev.transport !== curr.transport}
-      >
-        {({ getFieldValue }) => {
-          return getFieldValue('transport') === 'sse' ? (
-            <Form.Item
-              name="url"
-              label={<Text strong>{t('mcp.url')}</Text>}
-              rules={[
-                {
-                  required: true,
-                  message: t('mcp.configurationPlaceholder'),
-                },
-              ]}
-            >
-              <Input
-                placeholder={t('mcp.urlPlaceholder')}
-                {...modalEventHandlers}
-              />
-            </Form.Item>
-          ) : (
-            <>
-              <Form.Item
-                name="command"
-                label={<Text strong>{t('mcp.command')}</Text>}
-                rules={[
-                  {
-                    required: true,
-                    message: t('mcp.configurationPlaceholder'),
-                  },
-                ]}
-              >
-                <Input
-                  placeholder={t('mcp.commandPlaceholder')}
-                  {...modalEventHandlers}
-                />
-              </Form.Item>
-              <Form.Item
-                name="args"
-                label={<Text strong>{t('mcp.arguments')}</Text>}
-              >
-                <Input
-                  placeholder={t('mcp.argumentsPlaceholder')}
-                  {...modalEventHandlers}
-                />
-              </Form.Item>
-              <Form.Item
-                name="env"
-                label={<Text strong>{t('mcp.environmentVariables')}</Text>}
-              >
-                <Input.TextArea
-                  placeholder={t('mcp.environmentVariablesPlaceholder')}
-                  rows={3}
-                  {...modalEventHandlers}
-                />
-              </Form.Item>
-            </>
-          );
-        }}
-      </Form.Item>
-    </>
+      {/* 第三行：环境变量 */}
+      <div className={styles.formFieldsRow}>
+        <div className={styles.formFieldFull}>
+          <div className={styles.fieldLabel}>
+            <Text className={styles.settingLabel}>
+              {t('mcp.environmentVariables')}
+            </Text>
+          </div>
+          <Form.Item name="env">
+            <Input.TextArea
+              placeholder={t('mcp.environmentVariablesPlaceholder')}
+              rows={3}
+              className={styles.formTextArea}
+              {...modalEventHandlers}
+            />
+          </Form.Item>
+        </div>
+      </div>
+    </div>
   );
 };
 

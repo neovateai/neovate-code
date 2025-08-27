@@ -197,12 +197,8 @@
     "noConfiguration": "No MCP configuration",
     "clickToStart": "Click \"Add Server\" to start configuring",
     "noServicesAvailable": "No services available",
-    "editApiKey": "Edit API Key for {{name}}",
-    "apiKeyPlaceholder": "Enter your API key",
-    "apiKeyDescription": "This API key will be used to configure the {{name}} service.",
     "playwrightDescription": "Browser automation and testing",
     "figmaDescription": "Figma design integration",
-    "figmaApiKeyLabel": "Figma API Key",
     "mcpManagementTitle": "MCP Management",
     "mcpServicesTitle": "MCP Services",
     "globalScope": "Global",
@@ -213,7 +209,7 @@
     "added": "Added {{name}} to project",
     "addedMultiple": "Added {{count}} server(s) successfully",
     "addedSingle": "Added successfully",
-    "apiKeyUpdated": "API key updated successfully",
+
     "alreadyEnabled": "{{name}} is already enabled",
     "noCachedConfig": "No cached configuration found for {{name}} ({{scope}})",
     "loadFailed": "Failed to load MCP servers",
@@ -233,7 +229,9 @@
     "noServersFound": "No servers found in mcpServers object",
     "actions": "Actions",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "continueAdd": "Continue Adding",
+    "jsonSupported": "Supported JSON formats include various structures"
   },
   "settings": {
     "title": "Settings",
