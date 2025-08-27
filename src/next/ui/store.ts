@@ -44,6 +44,7 @@ interface AppState {
   theme: Theme;
   model: string;
   sessionId: string | null;
+  initialPrompt: string | null;
 
   status: AppStatus;
   error: string | null;
@@ -62,6 +63,8 @@ type InitializeOpts = {
   bridge: UIBridge;
   cwd: string;
   initialPrompt: string;
+  sessionId: string | undefined;
+  messages: Message[];
 };
 
 interface AppActions {
@@ -108,14 +111,19 @@ export const useAppStore = create<AppStore>()(
           productName: response.data.productName,
           version: response.data.version,
           model: response.data.model,
+          sessionId: opts.sessionId,
+          messages: opts.messages,
+          initialPrompt: opts.initialPrompt,
           // theme: 'light',
         });
         bridge.onEvent('message', (data) => {
           get().addMessage(data.message);
         });
-        if (opts.initialPrompt) {
-          await get().send(opts.initialPrompt);
-        }
+        setImmediate(async () => {
+          if (opts.initialPrompt) {
+            await get().send(opts.initialPrompt);
+          }
+        });
       },
 
       // TODO: support aborting

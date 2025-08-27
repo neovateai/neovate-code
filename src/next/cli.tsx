@@ -8,10 +8,13 @@ import yargsParser from 'yargs-parser';
 import { PRODUCT_NAME } from '../constants';
 import { type Plugin, PluginHookType } from '../plugin';
 import { clearTracing } from '../tracing';
+import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
+import { Paths } from './paths';
 import { Project } from './project';
+import { loadSessionMessages } from './session';
 import {
   SlashCommandManager,
   isSlashCommand,
@@ -28,16 +31,16 @@ type Argv = {
   mcp: boolean;
   quiet: boolean;
   // string
-  appendSystemPrompt: boolean;
-  cwd: string;
-  language: string;
-  model: string;
-  outputFormat: string;
-  outputStyle: string;
-  planModel: string;
-  resume: string;
-  smallModel: string;
-  systemPrompt: string;
+  appendSystemPrompt?: boolean;
+  cwd?: string;
+  language?: string;
+  model?: string;
+  outputFormat?: string;
+  outputStyle?: string;
+  planModel?: string;
+  resume?: string;
+  smallModel?: string;
+  systemPrompt?: string;
   // array
   plugin: string[];
 };
@@ -170,10 +173,24 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
   nodeBridge.messageBus.setTransport(nodeTransport);
 
   // Initialize the Zustand store with the UIBridge
+  const cwd = argv.cwd || process.cwd();
+  const messages = (() => {
+    if (!argv.resume) {
+      return [];
+    }
+    const paths = new Paths({
+      productName: contextCreateOpts.productName,
+      cwd,
+    });
+    const logPath = paths.getSessionLogPath(argv.resume);
+    return loadSessionMessages({ logPath });
+  })();
   await useAppStore.getState().initialize({
     bridge: uiBridge,
-    cwd: argv.cwd || process.cwd(),
+    cwd,
     initialPrompt: argv._[0],
+    sessionId: argv.resume || randomUUID(),
+    messages,
   });
 
   render(<App />, {

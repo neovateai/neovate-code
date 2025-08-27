@@ -24,22 +24,7 @@ export class Session {
     });
   }
   static resume(opts: { id: SessionId; logPath: string }) {
-    assert(fs.existsSync(opts.logPath), `log file not found: ${opts.logPath}`);
-    const messages = (() => {
-      try {
-        const content = fs.readFileSync(opts.logPath, 'utf-8');
-        const messages = content
-          .split('\n')
-          .filter(Boolean)
-          .map((line) => JSON.parse(line))
-          .filter((message) => message.type === 'message');
-        return messages;
-      } catch (e: any) {
-        throw new Error(
-          `Failed to read log file: ${opts.logPath}: ${e.message}`,
-        );
-      }
-    })();
+    const messages = loadSessionMessages({ logPath: opts.logPath });
     const history = new History({
       messages,
     });
@@ -47,5 +32,22 @@ export class Session {
       id: opts.id,
       history,
     });
+  }
+}
+
+export function loadSessionMessages(opts: { logPath: string }) {
+  if (!fs.existsSync(opts.logPath)) {
+    return [];
+  }
+  try {
+    const content = fs.readFileSync(opts.logPath, 'utf-8');
+    const messages = content
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line))
+      .filter((message) => message.type === 'message');
+    return messages;
+  } catch (e: any) {
+    throw new Error(`Failed to read log file: ${opts.logPath}: ${e.message}`);
   }
 }
