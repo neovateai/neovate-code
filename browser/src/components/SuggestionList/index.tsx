@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';
-import AutoTooltip from './AutoTooltip';
+import SmartText from './SmartText';
 
 export type SuggestionItem = {
   label: React.ReactNode;
@@ -225,26 +225,18 @@ const SuggestionList = (props: Props) => {
         <div className="flex justify-between items-center w-full px-3.5 py-1.5">
           <div className="flex gap-1 items-center h-5">
             <div>{item.icon}</div>
-            <AutoTooltip
-              maxWidth={160}
-              className="text-sm text-[#110C22]"
+            <SmartText
+              label={renderItemText(item.label, inputRef.current?.input?.value)}
+              extra={
+                item.extra
+                  ? renderItemText(item.extra, inputRef.current?.input?.value)
+                  : undefined
+              }
+              maxWidth={260}
               forceShowTip={isSelected}
-              placement="left"
-            >
-              {renderItemText(item.label, inputRef.current?.input?.value)}
-            </AutoTooltip>
+              placement="top"
+            />
           </div>
-          {item.extra && (
-            <AutoTooltip
-              maxWidth={120}
-              ellipsisAtStart
-              className="text-xs text-gray-500"
-              forceShowTip={isSelected}
-              placement="right"
-            >
-              {renderItemText(item.extra, inputRef.current?.input?.value)}
-            </AutoTooltip>
-          )}
           {isFirstLevel && <ArrowRightOutlined />}
           {!isFirstLevel && isSecondSeleted && (
             <Icon component={CheckOutlined} className="text-[#7357FF]!" />
