@@ -12,6 +12,7 @@ import {
   ReadRender,
   WriteRender,
 } from '../ToolRender';
+import TodoRender from '../ToolRender/TodoRender';
 
 const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
   message,
@@ -44,6 +45,9 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
       return <EditRender message={message} />;
     case 'write':
       return <WriteRender message={message} />;
+    case 'todoRead':
+    case 'todoWrite':
+      return <TodoRender message={message} />;
   }
 
   // 控制结果展开/收起的状态，默认收起
@@ -92,6 +96,9 @@ const AssistantToolMessage: React.FC<{ message: ToolMessage }> = ({
         return '📁';
       case 'glob':
         return '🎯';
+      case 'todoRead':
+      case 'todoWrite':
+        return '📄';
       default:
         return '🔧';
     }
