@@ -20,11 +20,8 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
 
   const fileSuggestions = useMemo(() => {
     return fileList.map((file) => {
-      const label = file.type === 'file' ? file.name : file.path;
-      const extra =
-        file.type === 'file'
-          ? file.path.split('/').slice(0, -1).join('/')
-          : null;
+      const label = file.name;
+      const extra = file.path.split('/').slice(0, -1).join('/');
 
       return {
         label: label,

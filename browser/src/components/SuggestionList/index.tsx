@@ -226,7 +226,7 @@ const SuggestionList = (props: Props) => {
           <div className="flex gap-1 items-center h-5">
             <div>{item.icon}</div>
             <AutoTooltip
-              maxWidth={120}
+              maxWidth={160}
               className="text-sm text-[#110C22]"
               forceShowTip={isSelected}
               placement="left"
@@ -236,7 +236,7 @@ const SuggestionList = (props: Props) => {
           </div>
           {item.extra && (
             <AutoTooltip
-              maxWidth={80}
+              maxWidth={120}
               ellipsisAtStart
               className="text-xs text-gray-500"
               forceShowTip={isSelected}
