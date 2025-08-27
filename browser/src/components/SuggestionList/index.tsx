@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';
+import FileTooltipRender from './FileTooltipRender';
 import SmartText from './SmartText';
 
 export type SuggestionItem = {
@@ -232,9 +233,16 @@ const SuggestionList = (props: Props) => {
                   ? renderItemText(item.extra, inputRef.current?.input?.value)
                   : undefined
               }
+              renderTooltip={(label, extra) => (
+                <FileTooltipRender
+                  label={label}
+                  icon={item.icon}
+                  extra={extra}
+                />
+              )}
               maxWidth={260}
               forceShowTip={isSelected}
-              placement="top"
+              placement="right"
             />
           </div>
           {isFirstLevel && <ArrowRightOutlined />}

@@ -9,6 +9,10 @@ interface Props {
   extraClassName?: string;
   forceShowTip?: boolean;
   placement?: GetProps<typeof Tooltip>['placement'];
+  renderTooltip?: (
+    label: React.ReactNode,
+    extra?: React.ReactNode,
+  ) => React.ReactNode;
 }
 
 const SmartText = (props: Props) => {
@@ -20,6 +24,7 @@ const SmartText = (props: Props) => {
     extraClassName = 'text-xs text-gray-500',
     forceShowTip = false,
     placement = 'top',
+    renderTooltip,
   } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -74,8 +79,8 @@ const SmartText = (props: Props) => {
         labelEl.style.maxWidth = `${availableWidth}px`;
         labelEl.style.overflow = 'hidden';
         labelEl.style.textOverflow = 'ellipsis';
-        newTooltipContent = label;
-        newShowTooltip = true;
+        newTooltipContent = renderTooltip ? renderTooltip(label) : null;
+        newShowTooltip = !!renderTooltip;
       }
     } else {
       // Both label and extra exist
@@ -91,13 +96,8 @@ const SmartText = (props: Props) => {
         labelEl.style.maxWidth = `${availableWidth}px`;
         labelEl.style.overflow = 'hidden';
         labelEl.style.textOverflow = 'ellipsis';
-        newTooltipContent = (
-          <div>
-            <div>{label}</div>
-            <div className="text-gray-500 text-xs mt-1">{extra}</div>
-          </div>
-        );
-        newShowTooltip = true;
+        newTooltipContent = renderTooltip ? renderTooltip(label, extra) : null;
+        newShowTooltip = !!renderTooltip;
       } else {
         // Label fits, but not enough space for both
         const remainingWidth = availableWidth - labelWidth - gap;
@@ -120,23 +120,17 @@ const SmartText = (props: Props) => {
               extraEl.style.direction = 'rtl';
               extraEl.style.textAlign = 'right';
             }
-            newTooltipContent = (
-              <div>
-                <div>{label}</div>
-                <div className="text-gray-500 text-xs mt-1">{extra}</div>
-              </div>
-            );
-            newShowTooltip = true;
+            newTooltipContent = renderTooltip
+              ? renderTooltip(label, extra)
+              : null;
+            newShowTooltip = !!renderTooltip;
           } else {
             // Not enough space for meaningful extra, hide it
             newDisplayState.showExtra = false;
-            newTooltipContent = (
-              <div>
-                <div>{label}</div>
-                <div className="text-gray-500 text-xs mt-1">{extra}</div>
-              </div>
-            );
-            newShowTooltip = true;
+            newTooltipContent = renderTooltip
+              ? renderTooltip(label, extra)
+              : null;
+            newShowTooltip = !!renderTooltip;
           }
         }
       }
@@ -153,7 +147,7 @@ const SmartText = (props: Props) => {
       open={showTooltip && forceShowTip}
       placement={placement}
       classNames={{
-        body: 'text-black!',
+        body: 'text-black! w-fit',
       }}
       color="#fff"
     >
