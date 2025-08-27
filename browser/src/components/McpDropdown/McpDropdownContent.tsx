@@ -16,7 +16,6 @@ interface McpDropdownContentProps {
     enabled: boolean,
     scope: string,
   ) => void;
-  onEditApiKey: (server: McpServer) => void;
   onQuickAdd: (service: PresetMcpService) => void;
   onOpenManager: () => void;
 }
@@ -24,7 +23,6 @@ const McpDropdownContent: React.FC<McpDropdownContentProps> = ({
   mcpServers,
   presetMcpServices,
   onToggleService,
-  onEditApiKey,
   onQuickAdd,
   onOpenManager,
 }) => {
@@ -50,7 +48,6 @@ const McpDropdownContent: React.FC<McpDropdownContentProps> = ({
             key={server.key}
             server={server}
             onToggle={onToggleService}
-            onEdit={onEditApiKey}
           />
         ))}
 

@@ -26,26 +26,3 @@
   font-size: 14px;
   font-weight: 400;
 }
-
-/* Edit button */
-.editButton {
-  padding: 4px;
-  width: 24px;
-  height: 24px;
-  min-width: 0;
-  color: #bcbdc0;
-  background: transparent;
-  border: none;
-  transition: color 0.2s;
-}
-
-.editButton:hover {
-  color: #7357ff;
-  background: transparent;
-}
-
-.editButton:focus,
-.editButton:active {
-  outline: none;
-  box-shadow: none;
-}

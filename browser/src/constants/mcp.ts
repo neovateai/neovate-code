@@ -17,17 +17,8 @@ export const MCP_DEFAULTS = {
   INPUT_MODE: 'json' as const,
 } as const;
 
-// Figma API key related constants
-export const FIGMA_CONFIG = {
-  API_KEY_ARG: '--figma-api-key',
-  DEFAULT_API_KEY: 'YOUR-KEY',
-} as const;
-
 // Preset MCP services configuration
-export const PRESET_MCP_SERVICES: Omit<
-  PresetMcpService,
-  'description' | 'apiKeyLabel' | 'apiKeyPlaceholder'
->[] = [
+export const PRESET_MCP_SERVICES: Omit<PresetMcpService, 'description'>[] = [
   {
     key: 'playwright',
     name: '@playwright mcp',
@@ -40,14 +31,13 @@ export const PRESET_MCP_SERVICES: Omit<
   {
     key: 'figma',
     name: 'Framelink Figma MCP',
-    requiresApiKey: true,
     config: {
       name: 'Framelink Figma MCP',
       command: 'npx',
       args: [
         '-y',
         'figma-developer-mcp',
-        `${FIGMA_CONFIG.API_KEY_ARG}=${FIGMA_CONFIG.DEFAULT_API_KEY}`,
+        '--figma-api-key=YOUR-KEY',
         '--stdio',
       ],
     },
@@ -81,8 +71,6 @@ export const getPresetMcpServicesWithTranslations = (
   {
     ...PRESET_MCP_SERVICES[1],
     description: t('mcp.figmaDescription'),
-    apiKeyLabel: t('mcp.figmaApiKeyLabel'),
-    apiKeyPlaceholder: t('mcp.apiKeyPlaceholder'),
   },
 ];
 

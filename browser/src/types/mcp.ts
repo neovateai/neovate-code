@@ -39,9 +39,6 @@ export interface PresetMcpService {
   key: string;
   name: string;
   description: string;
-  requiresApiKey?: boolean;
-  apiKeyLabel?: string;
-  apiKeyPlaceholder?: string;
   config: {
     name: string;
     command: string;

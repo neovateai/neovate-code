@@ -9,7 +9,6 @@ import {
 } from '@/api/mcpService';
 import McpManager from '@/components/McpManager';
 import {
-  FIGMA_CONFIG,
   MCP_KEY_PREFIXES,
   MCP_STORAGE_KEYS,
   getPresetMcpServicesWithTranslations,
@@ -21,7 +20,6 @@ import type {
   McpServerConfig,
   PresetMcpService,
 } from '@/types/mcp';
-import McpApiKeyModal from './McpApiKeyModal';
 import styles from './McpDropdown.module.css';
 import McpDropdownContent from './McpDropdownContent';
 
@@ -38,18 +36,6 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     dropdownOpen,
     { setTrue: setDropdownTrue, setFalse: setDropdownFalse },
   ] = useBoolean(false);
-  const [
-    editApiKeyModalOpen,
-    { setTrue: openEditApiKeyModal, setFalse: closeEditApiKeyModal },
-  ] = useBoolean(false);
-  // Modal state
-  const [modalState, setModalState] = useSetState<{
-    editingService: McpServer | null;
-    editApiKey: string;
-  }>({
-    editingService: null,
-    editApiKey: '',
-  });
 
   const [mcpServers, setMcpServers] = useState<McpServer[]>([]);
 
@@ -220,57 +206,6 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
     }
   };
 
-  const handleEditApiKey = (server: McpServer) => {
-    const currentKey =
-      server.config.args
-        ?.find((arg: string) => arg.includes(FIGMA_CONFIG.API_KEY_ARG))
-        ?.split('=')[1] || '';
-
-    setModalState({
-      editingService: server,
-      editApiKey: currentKey === FIGMA_CONFIG.DEFAULT_API_KEY ? '' : currentKey,
-    });
-    openEditApiKeyModal();
-  };
-
-  const handleSaveApiKey = async () => {
-    if (!modalState.editApiKey.trim()) {
-      message.error(t('mcp.apiKeyRequired'));
-      return;
-    }
-
-    if (!modalState.editingService) {
-      message.error('No service selected');
-      return;
-    }
-
-    try {
-      const updatedArgs = (modalState.editingService.config.args || []).map(
-        (arg: string) =>
-          arg.includes(FIGMA_CONFIG.API_KEY_ARG)
-            ? `${FIGMA_CONFIG.API_KEY_ARG}=${modalState.editApiKey.trim()}`
-            : arg,
-      );
-
-      await updateMCPServer(modalState.editingService.name, {
-        args: updatedArgs,
-        global: modalState.editingService.scope === 'global',
-      });
-
-      message.success(t('mcp.apiKeyUpdated'));
-      loadMcpServers();
-      closeEditApiKeyModal();
-      setModalState({ editingService: null, editApiKey: '' });
-    } catch (error) {
-      message.error(t('mcp.updateFailed'));
-    }
-  };
-
-  const handleCancelApiKeyEdit = () => {
-    closeEditApiKeyModal();
-    setModalState({ editingService: null, editApiKey: '' });
-  };
-
   const handleQuickAdd = async (service: PresetMcpService) => {
     try {
       await addMCPServer({ ...service.config, global: false });
@@ -316,7 +251,6 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
             mcpServers={mcpServers}
             presetMcpServices={presetMcpServices}
             onToggleService={handleToggleEnabled}
-            onEditApiKey={handleEditApiKey}
             onQuickAdd={handleQuickAdd}
             onOpenManager={toggleMcpManager}
           />
@@ -354,15 +288,6 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
           toggleMcpManager();
           loadMcpServers();
         }}
-      />
-
-      <McpApiKeyModal
-        visible={editApiKeyModalOpen}
-        editingService={modalState.editingService}
-        apiKey={modalState.editApiKey}
-        onSave={handleSaveApiKey}
-        onCancel={handleCancelApiKeyEdit}
-        onApiKeyChange={(value) => setModalState({ editApiKey: value })}
       />
     </>
   );
