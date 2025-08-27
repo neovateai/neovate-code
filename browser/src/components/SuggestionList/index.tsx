@@ -1,7 +1,13 @@
 import { LeftOutlined } from '@ant-design/icons';
 import { Button, Input, type InputRef, List, Popover } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ContextItem } from '@/types/context';
 import AutoTooltip from './AutoTooltip';
@@ -29,6 +35,7 @@ interface Props {
   ) => void;
   /** Return value will override the default second-level list */
   onSearch?: (firstKey: string, text: string) => SuggestionItem[] | void;
+  onLostFocus?: () => void;
   loading?: boolean;
   offset?: { left: number; top: number };
 }
@@ -44,6 +51,9 @@ const useStyles = createStyles(({ css, token }) => {
       &:hover {
         background-color: ${token.controlItemBgHover};
       }
+    `,
+    listItemSelected: css`
+      background-color: ${token.controlItemBgActive} !important;
     `,
     listItemLabel: css`
       font-weight: 600;
@@ -84,6 +94,7 @@ const useStyles = createStyles(({ css, token }) => {
       border: 1px solid ${token.colorBorder};
       padding: 4px;
       width: fit-content;
+      outline: none;
     `,
   };
 });
@@ -99,6 +110,7 @@ const SuggestionList = (props: Props) => {
     className,
     loading,
     offset,
+    onLostFocus,
   } = props;
 
   const { t } = useTranslation();
@@ -106,8 +118,10 @@ const SuggestionList = (props: Props) => {
 
   const [selectedFirstKey, setSelectedFirstKey] = useState<string>();
   const [searchResults, setSearchResults] = useState<SuggestionItem[]>();
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const inputRef = useRef<InputRef>(null);
   const popupRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const firstLevelList = useMemo(() => items, [items]);
 
@@ -121,13 +135,76 @@ const SuggestionList = (props: Props) => {
     }
   }, [items, searchResults, selectedFirstKey]);
 
-  const clearSearch = (targetFirstKey: string) => {
-    if (inputRef.current?.input) {
-      inputRef.current.input.value = '';
-    }
-    setSearchResults(undefined);
-    onSearch?.(targetFirstKey, '');
-  };
+  const clearSearch = useCallback(
+    (targetFirstKey: string) => {
+      if (inputRef.current?.input) {
+        inputRef.current.input.value = '';
+      }
+      setSearchResults(undefined);
+      onSearch?.(targetFirstKey, '');
+    },
+    [onSearch],
+  );
+
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      const currentList = selectedFirstKey ? secondLevelList : firstLevelList;
+
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault();
+          setSelectedIndex((prev) =>
+            prev < currentList.length - 1 ? prev + 1 : 0,
+          );
+          break;
+        case 'ArrowUp':
+          event.preventDefault();
+          setSelectedIndex((prev) =>
+            prev > 0 ? prev - 1 : currentList.length - 1,
+          );
+          break;
+        case 'Enter':
+          event.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < currentList.length) {
+            const selectedItem = currentList[selectedIndex];
+            if (selectedFirstKey) {
+              onSelect?.(
+                selectedFirstKey,
+                selectedItem.value,
+                selectedItem.contextItem,
+              );
+              setSelectedFirstKey(undefined);
+              onOpenChange?.(false);
+              onLostFocus?.();
+            } else {
+              clearSearch(selectedItem.value);
+              setSelectedFirstKey(selectedItem.value);
+            }
+          }
+          break;
+        case 'Escape':
+          event.preventDefault();
+          if (selectedFirstKey) {
+            setSelectedFirstKey(undefined);
+          } else {
+            onOpenChange?.(false);
+            onLostFocus?.();
+          }
+          break;
+      }
+    },
+    [
+      selectedFirstKey,
+      secondLevelList,
+      firstLevelList,
+      selectedIndex,
+      onSelect,
+      onOpenChange,
+      clearSearch,
+      onLostFocus,
+    ],
+  );
 
   const renderItemText = (
     text: React.ReactNode,
@@ -150,15 +227,20 @@ const SuggestionList = (props: Props) => {
     }
   };
 
-  const renderItem = (item: SuggestionItem) => {
+  const renderItem = (item: SuggestionItem, index: number) => {
+    const isSelected = selectedIndex === index;
     return (
       <List.Item
-        className={styles.listItem}
+        className={`${styles.listItem} ${isSelected ? styles.listItemSelected : ''}`}
         key={item.value}
+        data-index={index}
+        onMouseEnter={() => setSelectedIndex(index)}
         onClick={() => {
           if (selectedFirstKey) {
             onSelect?.(selectedFirstKey, item.value, item.contextItem);
             setSelectedFirstKey(undefined);
+            onOpenChange?.(false);
+            onLostFocus?.();
           } else {
             clearSearch(item.value);
             setSelectedFirstKey(item.value);
@@ -180,15 +262,25 @@ const SuggestionList = (props: Props) => {
     );
   };
 
+  const handleBackClick = useCallback(() => setSelectedFirstKey(undefined), []);
+
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (selectedFirstKey) {
+        const searchResults = onSearch?.(selectedFirstKey, e.target.value);
+        setSearchResults(searchResults || undefined);
+      }
+    },
+    [onSearch, selectedFirstKey],
+  );
+
   const ListHeader = useMemo(() => {
     if (selectedFirstKey) {
       return (
         <div className={styles.listHeader}>
           <Button
             icon={<LeftOutlined />}
-            onClick={() => {
-              setSelectedFirstKey(undefined);
-            }}
+            onClick={handleBackClick}
             type="text"
           />
           <Input
@@ -196,29 +288,38 @@ const SuggestionList = (props: Props) => {
             className={styles.listInput}
             variant="underlined"
             autoFocus
-            onChange={(e) => {
-              const searchResults = onSearch?.(
-                selectedFirstKey,
-                e.target.value,
-              );
-              if (searchResults) {
-                setSearchResults(searchResults);
-              } else {
-                setSearchResults(undefined);
-              }
-            }}
+            onChange={handleInputChange}
             placeholder={t('common.placeholder')}
           />
         </div>
       );
-    } else {
-      return null;
     }
-  }, [onSearch, selectedFirstKey]);
+    return null;
+  }, [selectedFirstKey, handleBackClick, handleInputChange, t]);
 
-  // auto close popup when lost focus
+  // Combined effect for popup state management
+  useEffect(() => {
+    if (open) {
+      // Focus popup container when it opens
+      if (popupRef.current) {
+        popupRef.current.focus();
+      }
+
+      // Focus input when displaying second level list
+      if (selectedFirstKey && inputRef.current) {
+        inputRef.current.focus();
+      }
+
+      // Set default selection (first item)
+      const currentList = selectedFirstKey ? secondLevelList : firstLevelList;
+      setSelectedIndex(currentList.length > 0 ? 0 : -1);
+    }
+  }, [open, selectedFirstKey, firstLevelList, secondLevelList]);
+
+  // Handle click outside to close popup
   useEffect(() => {
     if (!open) return;
+
     function handleClickOutside(event: MouseEvent) {
       if (
         popupRef.current &&
@@ -227,16 +328,44 @@ const SuggestionList = (props: Props) => {
         if (selectedFirstKey) {
           clearSearch(selectedFirstKey);
         }
-
         setSelectedFirstKey(undefined);
+        setSelectedIndex(-1);
         onOpenChange?.(false);
+        onLostFocus?.();
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [open, onOpenChange]);
+  }, [open, onOpenChange, selectedFirstKey, onLostFocus]);
+
+  // Scroll selected item into view
+  useEffect(() => {
+    if (selectedIndex >= 0 && listRef.current) {
+      const selectedItem = listRef.current.querySelector(
+        `[data-index="${selectedIndex}"]`,
+      ) as HTMLElement;
+
+      if (selectedItem) {
+        const listContainer =
+          listRef.current.querySelector('.ant-list') || listRef.current;
+        const containerRect = listContainer.getBoundingClientRect();
+        const itemRect = selectedItem.getBoundingClientRect();
+        const isAbove = itemRect.top < containerRect.top;
+        const isBelow = itemRect.bottom > containerRect.bottom;
+
+        if (isAbove || isBelow) {
+          selectedItem.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'nearest',
+          });
+        }
+      }
+    }
+  }, [selectedIndex]);
 
   const offsetStyles = useMemo(() => {
     if (offset) {
@@ -255,10 +384,17 @@ const SuggestionList = (props: Props) => {
       open={open}
       onOpenChange={onOpenChange}
       placement="topLeft"
+      destroyOnHidden // must be set to true to get focus when each time the popup is opened
       content={() => (
-        <div className={styles.popup} ref={popupRef}>
+        <div
+          className={styles.popup}
+          ref={popupRef}
+          tabIndex={-1}
+          onKeyDown={handleKeyDown}
+        >
           {ListHeader}
           <List
+            ref={listRef}
             className={styles.list}
             locale={{
               emptyText: t('common.empty'),
