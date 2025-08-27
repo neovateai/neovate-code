@@ -14,7 +14,6 @@ const debug = createDebug('takumi:utils:compact');
 export async function generateSummaryMessage(opts: {
   history: AgentInputItem[];
   model: string;
-  language?: string;
   modelProvider: ModelProvider;
 }) {
   const messages = normalizeMessagesForAPI(opts.history).concat([
@@ -26,7 +25,6 @@ export async function generateSummaryMessage(opts: {
 
   const agent = createCompactAgent({
     model: opts.model,
-    language: opts.language ?? 'English',
   });
   const runner = new Runner({
     modelProvider: opts.modelProvider,
@@ -37,7 +35,14 @@ export async function generateSummaryMessage(opts: {
   if (typeof summary !== 'string') {
     throw new Error('Summary is not a string');
   }
-  const usage = result.state.toJSON().lastModelResponse?.usage;
+
+  // Safely access usage with fallback
+  const usage = result.rawResponses?.[0]?.usage || {
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens: 0,
+  };
+
   return { summary, usage };
 }
 

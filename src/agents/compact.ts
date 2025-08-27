@@ -1,9 +1,6 @@
 import { Agent } from '@openai/agents';
 
-export function createCompactAgent(options: {
-  model: string;
-  language: string;
-}) {
+export function createCompactAgent(options: { model: string }) {
   return new Agent({
     name: 'compact',
     instructions: async () => {

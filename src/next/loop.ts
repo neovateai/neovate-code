@@ -1,4 +1,5 @@
 import { Agent, Runner, type SystemMessageItem } from '@openai/agents';
+import createDebug from 'debug';
 import type { Tools } from '../tool';
 import { parseMessage } from '../utils/parse-message';
 import { randomUUID } from '../utils/randomUUID';
@@ -6,6 +7,8 @@ import { At } from './at';
 import { History, type NormalizedMessage, type OnMessage } from './history';
 import type { ModelInfo } from './model';
 import { Usage } from './usage';
+
+const debug = createDebug('takumi:loop');
 
 const DEFAULT_MAX_TURNS = 50;
 
@@ -49,6 +52,7 @@ type RunLoopOpts = {
   maxTurns?: number;
   signal?: AbortSignal;
   llmsContexts?: string[];
+  autoCompact?: boolean;
   onTextDelta?: (text: string) => Promise<void>;
   onText?: (text: string) => Promise<void>;
   onReasoning?: (text: string) => Promise<void>;
@@ -60,7 +64,6 @@ type RunLoopOpts = {
 };
 
 // TODO: support retry
-// TODO: compress
 export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   const startTime = Date.now();
   let turnsCount = 0;
@@ -103,8 +106,14 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         },
       };
     }
-    // TODO: compress
-    // await history.compress();
+    if (opts.autoCompact) {
+      // TODO resume need usage
+      const compressed = await history.compress(opts.model, totalUsage);
+      if (compressed.compressed) {
+        debug('history compressed', compressed);
+      }
+    }
+
     const runner = new Runner({
       modelProvider: {
         getModel() {

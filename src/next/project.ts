@@ -108,6 +108,7 @@ export class Project {
     jsonlLogger.onMessage({
       message: userMessage,
     });
+
     const input =
       this.session.history.messages.length > 0
         ? [...this.session.history.messages, userMessage]
@@ -120,6 +121,7 @@ export class Project {
       cwd: this.context.cwd,
       systemPrompt,
       llmsContexts: llmsContext.messages,
+      autoCompact: this.context.config.autoCompact,
       onMessage: async (message) => {
         const normalizedMessage = {
           ...message,

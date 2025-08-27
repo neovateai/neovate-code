@@ -262,7 +262,6 @@ export class Service {
     const { summary, usage } = await generateSummaryMessage({
       history: this.history,
       model: this.modelId,
-      language: this.context.config.language,
       modelProvider: this.opts.context.getModelProvider(),
     });
 
