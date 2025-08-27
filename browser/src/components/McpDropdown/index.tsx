@@ -16,8 +16,8 @@ import type {
   McpServerConfig,
   PresetMcpService,
 } from '@/types/mcp';
-import styles from './McpDropdown.module.css';
 import McpDropdownContent from './McpDropdownContent';
+import styles from './index.module.css';
 
 const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
   const { t } = useTranslation();

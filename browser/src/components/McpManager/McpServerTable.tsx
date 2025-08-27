@@ -2,7 +2,7 @@ import { Space, Switch, Table, Tag, Tooltip, Typography } from 'antd';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { McpManagerServer } from '@/types/mcp';
-import styles from './McpManager.module.css';
+import styles from './index.module.css';
 
 const { Text } = Typography;
 

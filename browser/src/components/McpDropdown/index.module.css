@@ -1,3 +1,5 @@
+/* McpDropdown - Consolidated CSS Module */
+
 /* Dropdown container */
 .dropdownContainer {
   background: #ffffff;
@@ -124,4 +126,77 @@
   font-size: 14px;
   font-weight: 400;
   font-style: italic;
+}
+
+/* Switch base styles */
+.switchBase {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* Enabled state */
+.switchEnabled {
+  composes: switchBase;
+  background-color: #7357ff;
+}
+
+/* Disabled state */
+.switchDisabled {
+  composes: switchBase;
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Disabled state with "Off" text */
+.switchDisabledWithText {
+  composes: switchBase;
+  background-color: #ebebeb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Switch knob base styles */
+.knobBase {
+  position: absolute;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0px 2px 8px 0px rgba(37, 41, 49, 0.1);
+}
+
+/* Enabled state knob */
+.knobEnabled {
+  composes: knobBase;
+  background-color: #ffffff;
+  transform: translateX(16px);
+}
+
+/* Disabled state knob */
+.knobDisabled {
+  composes: knobBase;
+  background-color: #ffffff;
+  transform: translateX(2px);
+}
+
+/* Disabled state knob with text */
+.knobDisabledWithText {
+  composes: knobBase;
+  background-color: #bcbdc0;
+  transform: translateX(2px);
+}
+
+/* "Off" text */
+.offText {
+  color: #bcbdc0;
+  font-size: 12px;
+  font-weight: 400;
+  position: absolute;
+  left: 18px;
+  line-height: 1;
 }

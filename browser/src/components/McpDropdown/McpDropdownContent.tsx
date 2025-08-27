@@ -4,9 +4,9 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { MCP_KEY_PREFIXES } from '@/constants/mcp';
 import type { McpServer, PresetMcpService } from '@/types/mcp';
-import styles from './McpDropdown.module.css';
 import McpServiceItem from './McpServiceItem';
 import McpToggleSwitch from './McpToggleSwitch';
+import styles from './index.module.css';
 
 interface McpDropdownContentProps {
   mcpServers: McpServer[];

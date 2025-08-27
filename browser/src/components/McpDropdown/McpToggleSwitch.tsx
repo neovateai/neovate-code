@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from './McpToggleSwitch.module.css';
+import styles from './index.module.css';
 
 interface McpToggleSwitchProps {
   enabled: boolean;

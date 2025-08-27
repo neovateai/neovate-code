@@ -1,7 +1,7 @@
 import React from 'react';
 import type { McpServer } from '@/types/mcp';
-import styles from './McpServiceItem.module.css';
 import McpToggleSwitch from './McpToggleSwitch';
+import styles from './index.module.css';
 
 /**
  * Create McpServiceItem sub-component to handle the display and interaction of a single MCP service item

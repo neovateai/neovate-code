@@ -23,7 +23,7 @@ import type {
   McpServerConfig,
 } from '@/types/mcp';
 import { containerEventHandlers, modalEventHandlers } from '@/utils/eventUtils';
-import styles from './McpManager.module.css';
+import styles from './index.module.css';
 
 const { Text } = Typography;
 
