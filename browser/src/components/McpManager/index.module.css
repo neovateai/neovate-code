@@ -1,8 +1,4 @@
-/* Main modal styles - Based on Figma design */
-.modal {
-  /* Override default modal styles */
-}
-
+/* McpManager - Consolidated CSS Module */
 .modal :global(.ant-modal-content) {
   background: #ffffff;
   border-radius: 20px;
@@ -94,75 +90,6 @@
   margin-top: 4px;
 }
 
-/* Form container */
-.formContainer {
-  width: 100%;
-}
-
-.formRow {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.formColumn {
-  flex: 1;
-}
-
-.formLabel {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-/* JSON format section */
-.formatSection {
-  margin-top: 12px;
-}
-
-.formatSummary {
-  cursor: pointer;
-  color: #1890ff;
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-
-.formatContainer {
-  margin-top: 8px;
-  max-height: 256px;
-  overflow-y: auto;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  padding: 12px;
-}
-
-.formatExample {
-  margin-bottom: 16px;
-}
-
-.formatTitle {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.formatCode {
-  background: #f5f5f5;
-  padding: 12px;
-  font-size: 12px;
-  border-radius: 6px;
-  margin: 4px 0;
-  border: 1px solid #d9d9d9;
-}
-
-/* Status styles */
-.statusEnabled {
-  opacity: 1;
-}
-
-.statusDisabled {
-  opacity: 0.6;
-}
-
 .serviceName {
   color: #252931;
   font-family: 'PingFang SC';
@@ -188,19 +115,6 @@
   border-radius: 4px;
   display: inline-block;
   max-width: 100%;
-}
-
-.truncatedConfig {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  max-width: 220px;
-}
-
-.disabledText {
-  font-size: 12px;
-  font-style: italic;
 }
 
 /* Footer button styles - Based on Figma design */
@@ -352,15 +266,7 @@
   color: #4c3dd4;
 }
 
-.truncatedConfig:hover {
-  background: #e6f7ff;
-}
-
 /* Add Form Modal Styles - Based on Figma Design */
-.addFormModal {
-  /* Override default modal styles */
-}
-
 .addFormModal :global(.ant-modal-content) {
   background: #ffffff;
   border-radius: 20px;
@@ -414,12 +320,6 @@
   display: flex;
   align-items: center;
   gap: 2px;
-}
-
-.headerIcon {
-  width: 16px;
-  height: 16px;
-  color: #666f8d;
 }
 
 .headerTitle {

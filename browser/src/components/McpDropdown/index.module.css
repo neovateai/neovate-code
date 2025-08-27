@@ -1,5 +1,3 @@
-/* McpDropdown - Consolidated CSS Module */
-
 /* Dropdown container */
 .dropdownContainer {
   background: #ffffff;
@@ -128,39 +126,44 @@
   font-style: italic;
 }
 
-/* Switch base styles */
-.switchBase {
+/* Switch enabled state */
+.switchEnabled {
   position: relative;
   width: 34px;
   height: 18px;
   border-radius: 50px;
   cursor: pointer;
   transition: background-color 0.2s;
-}
-
-/* Enabled state */
-.switchEnabled {
-  composes: switchBase;
   background-color: #7357ff;
 }
 
-/* Disabled state */
+/* Switch disabled state */
 .switchDisabled {
-  composes: switchBase;
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.2s;
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-/* Disabled state with "Off" text */
+/* Switch disabled state with "Off" text */
 .switchDisabledWithText {
-  composes: switchBase;
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.2s;
   background-color: #ebebeb;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Switch knob base styles */
-.knobBase {
+/* Knob enabled state */
+.knobEnabled {
   position: absolute;
   top: 2px;
   width: 14px;
@@ -168,25 +171,32 @@
   border-radius: 50%;
   transition: transform 0.2s;
   box-shadow: 0px 2px 8px 0px rgba(37, 41, 49, 0.1);
-}
-
-/* Enabled state knob */
-.knobEnabled {
-  composes: knobBase;
   background-color: #ffffff;
   transform: translateX(16px);
 }
 
-/* Disabled state knob */
+/* Knob disabled state */
 .knobDisabled {
-  composes: knobBase;
+  position: absolute;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0px 2px 8px 0px rgba(37, 41, 49, 0.1);
   background-color: #ffffff;
   transform: translateX(2px);
 }
 
-/* Disabled state knob with text */
+/* Knob disabled state with text */
 .knobDisabledWithText {
-  composes: knobBase;
+  position: absolute;
+  top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0px 2px 8px 0px rgba(37, 41, 49, 0.1);
   background-color: #bcbdc0;
   transform: translateX(2px);
 }
