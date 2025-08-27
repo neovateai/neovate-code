@@ -95,7 +95,8 @@
       "fileSizeLimited": "文件大小超出{{limit}}限制",
       "dragFileHere": "拖拽文件到这里上传",
       "supportTypeDesc": "支持上传图片、文本文件"
-    }
+    },
+    "filesAndFolders": "文件和目录"
   },
   "menu": {
     "rename": "重命名",

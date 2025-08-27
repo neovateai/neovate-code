@@ -222,8 +222,8 @@ const SuggestionList = (props: Props) => {
           }
         }}
       >
-        <div className="flex justify-between items-center w-full px-3.5 py-2">
-          <div className="flex gap-1 items-center">
+        <div className="flex justify-between items-center w-full px-3.5 py-1.5">
+          <div className="flex gap-1 items-center h-5">
             <div>{item.icon}</div>
             <AutoTooltip maxWidth={120} className="text-sm text-[#110C22]">
               {renderItemText(item.label, inputRef.current?.input?.value)}
