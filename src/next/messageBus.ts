@@ -172,8 +172,8 @@ type PendingRequest = {
   resolve: (result: any) => void;
   reject: (error: Error) => void;
 };
-type MessageHandler = (data: any) => Promise<any>;
-type EventHandler = (data: any) => void;
+export type MessageHandler = (data: any) => Promise<any>;
+export type EventHandler = (data: any) => void;
 
 export class MessageBus extends EventEmitter {
   private transport?: MessageTransport;

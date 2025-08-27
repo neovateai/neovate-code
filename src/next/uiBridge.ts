@@ -1,4 +1,4 @@
-import { MessageBus } from './messageBus';
+import { type EventHandler, MessageBus } from './messageBus';
 
 export class UIBridge {
   messageBus: MessageBus;
@@ -6,8 +6,14 @@ export class UIBridge {
     this.messageBus = new MessageBus();
     new UIHandlerRegistry(this.messageBus);
   }
-  request(method: string, params: any) {
-    return this.messageBus.request(method, params);
+  request(method: string, params: any, options: { timeout?: number } = {}) {
+    return this.messageBus.request(method, params, options);
+  }
+  emitEvent(event: string, data: any) {
+    return this.messageBus.emitEvent(event, data);
+  }
+  onEvent(event: string, handler: EventHandler) {
+    return this.messageBus.onEvent(event, handler);
   }
 }
 

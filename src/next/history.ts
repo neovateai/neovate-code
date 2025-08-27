@@ -49,7 +49,11 @@ type ToolResultPart = {
   result: any;
   isError?: boolean;
 };
-type Message = SystemMessage | UserMessage | AssistantMessage | ToolMessage;
+export type Message =
+  | SystemMessage
+  | UserMessage
+  | AssistantMessage
+  | ToolMessage;
 export type NormalizedMessage = Message & {
   type: 'message';
   timestamp: string;

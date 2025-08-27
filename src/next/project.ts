@@ -26,7 +26,13 @@ export class Project {
       : Session.create();
     this.context = opts.context;
   }
-  async send(message: string, opts: { model?: string } = {}) {
+  async send(
+    message: string,
+    opts: {
+      model?: string;
+      onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
+    } = {},
+  ) {
     const outputFormat = new OutputFormat({
       format: this.context.config.outputFormat!,
       quiet: this.context.config.quiet,
@@ -108,6 +114,9 @@ export class Project {
     jsonlLogger.onMessage({
       message: userMessage,
     });
+    await opts.onMessage?.({
+      message: userMessage,
+    });
     const input =
       this.session.history.messages.length > 0
         ? [...this.session.history.messages, userMessage]
@@ -129,6 +138,9 @@ export class Project {
           message: normalizedMessage,
         });
         jsonlLogger.onMessage({
+          message: normalizedMessage,
+        });
+        await opts.onMessage?.({
           message: normalizedMessage,
         });
       },

@@ -2,6 +2,7 @@ import assert from 'assert';
 import fs from 'fs';
 import { render } from 'ink';
 import path from 'path';
+import React from 'react';
 import { fileURLToPath } from 'url';
 import yargsParser from 'yargs-parser';
 import { PRODUCT_NAME } from '../constants';
@@ -158,15 +159,21 @@ async function runInQuietMode(argv: Argv, context: Context) {
   }
 }
 
-async function runInInteractiveMode(argv: Argv, context: Context) {
+async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
   const uiBridge = new UIBridge();
-  const nodeBridge = new NodeBridge();
+  const nodeBridge = new NodeBridge({
+    contextCreateOpts,
+  });
   const [uiTransport, nodeTransport] = DirectTransport.createPair();
   uiBridge.messageBus.setTransport(uiTransport);
   nodeBridge.messageBus.setTransport(nodeTransport);
 
   // Initialize the Zustand store with the UIBridge
-  useAppStore.getState().setUIBridge(uiBridge);
+  await useAppStore.getState().initialize({
+    bridge: uiBridge,
+    cwd: argv.cwd || process.cwd(),
+    initialPrompt: argv._[0],
+  });
 
   render(<App />, {
     patchConsole: false,
@@ -189,8 +196,7 @@ export async function runNeovate(opts: {
     printHelp(opts.productName.toLowerCase());
     return;
   }
-  const context = await Context.create({
-    cwd: argv.cwd || process.cwd(),
+  const contextCreateOpts = {
     productName: opts.productName,
     version: opts.version,
     argvConfig: {
@@ -206,12 +212,16 @@ export async function runNeovate(opts: {
       outputStyle: argv.outputStyle,
     },
     plugins: opts.plugins,
-  });
+  };
   // TODO: support other commands
   if (argv.quiet) {
+    const context = await Context.create({
+      cwd: argv.cwd || process.cwd(),
+      ...contextCreateOpts,
+    });
     await runInQuietMode(argv, context);
   } else {
-    await runInInteractiveMode(argv, context);
+    await runInInteractiveMode(argv, contextCreateOpts);
   }
 }
 
