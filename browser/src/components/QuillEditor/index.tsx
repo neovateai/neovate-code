@@ -8,6 +8,7 @@ import {
   useImperativeHandle,
   useLayoutEffect,
   useRef,
+  useState,
 } from 'react';
 import ContextBlot from './ContextBlot';
 import { QuillContext } from './QuillContext';
@@ -24,38 +25,48 @@ interface IQuillEditorRef extends TextAreaRef {}
 
 Quill.register(ContextBlot);
 
-const useStyles = createStyles(({ css }) => {
-  return {
-    editor: css`
-      .ql-editor {
-        ::before {
-          color: #8d8a95 !important;
-          font-style: normal !important;
-          font-size: 14px;
-          line-height: 22px;
-        }
+const useStyles = createStyles(
+  ({ css }, { isCompositing }: { isCompositing: boolean }) => {
+    return {
+      editor: css`
+        .ql-editor {
+          position: relative;
+          p {
+            font-size: 14px;
+            line-height: 22px;
+          }
 
-        p {
-          font-size: 14px;
-          line-height: 22px;
+          .takumi-context {
+            color: #7357ff;
+            background-color: #eeebff;
+            padding: 0 2px;
+            user-select: none;
+          }
         }
+      `,
 
-        .takumi-context {
-          color: #7357ff;
-          background-color: #eeebff;
-          padding: 0 2px;
-          user-select: none;
+      blank: css`
+        .ql-blank {
+          ::before {
+            color: #8d8a95 !important;
+            font-style: normal !important;
+            font-size: 14px;
+            line-height: 22px;
+            display: var(--placeholder-display, block);
+            opacity: ${isCompositing ? 0 : 1} !important;
+          }
         }
-      }
-    `,
-  };
-});
+      `,
+    };
+  },
+);
 
 const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
   const { onChange, onSelect, onPaste, placeholder } = props;
   const editorRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<Quill>(null);
   const oldContentsRef = useRef<Delta>(new Delta());
+  const [isCompositing, setIsCompositing] = useState(false);
 
   const {
     onInputAt,
@@ -69,7 +80,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
   const onKeyDownRef = useRef(onKeyDown);
   onKeyDownRef.current = onKeyDown;
 
-  const { styles } = useStyles();
+  const { styles } = useStyles({ isCompositing });
 
   useImperativeHandle(ref, () => {
     return {
@@ -156,9 +167,11 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
   return (
     <div
       ref={editorRef}
-      className={`w-full text-sm ${styles.editor}`}
+      className={`w-full text-sm ${styles.editor} ${styles.blank}`}
       onMouseDown={(e) => e.stopPropagation()}
       onMouseUp={(e) => e.stopPropagation()}
+      onCompositionStart={() => setIsCompositing(true)}
+      onCompositionEnd={() => setIsCompositing(false)}
       // @ts-expect-error
       onPaste={onPaste}
     />
