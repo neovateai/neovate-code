@@ -1,4 +1,4 @@
-import { ApiOutlined, PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import { useSetState, useToggle } from 'ahooks';
 import { Button, Modal, Space } from 'antd';
 import React, { useEffect } from 'react';
@@ -47,25 +47,24 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
 
   return (
     <Modal
-      title={
-        <Space>
-          <ApiOutlined />
-          {t('mcp.mcpManagementTitle')}
-          <Button
-            type="primary"
-            size="small"
-            icon={<PlusOutlined />}
-            onClick={toggleAddForm}
-            className="rounded-md ml-3"
-          >
-            {t('mcp.addServer')}
-          </Button>
-        </Space>
-      }
+      title={<Space>{t('mcp.mcpManagementTitle')}</Space>}
       open={visible}
       onCancel={onClose}
-      width={900}
-      footer={null}
+      width={640}
+      footer={[
+        <Button key="cancel" onClick={onClose} className="mr-2">
+          {t('common.cancel')}
+        </Button>,
+        <Button
+          key="add"
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={toggleAddForm}
+          className="mcp-add-button"
+        >
+          {t('mcp.addServer')}
+        </Button>,
+      ]}
       className={styles.modal}
     >
       <Space

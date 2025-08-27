@@ -1,4 +1,4 @@
-import { Checkbox, Table, Tag, Typography } from 'antd';
+import { Switch, Table, Tag, Tooltip, Typography } from 'antd';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { McpManagerServer } from '@/types/mcp';
@@ -25,38 +25,27 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
 
   const columns = [
     {
-      title: t('mcp.status'),
-      key: 'status',
-      width: 80,
-      render: (record: McpManagerServer) => (
-        <Checkbox
-          checked={record.installed}
-          onChange={(e) => {
-            e.stopPropagation();
-            onToggleService(record.name, e.target.checked, record.scope);
-          }}
-          className={
-            record.installed ? styles.statusEnabled : styles.statusDisabled
-          }
-        />
-      ),
-    },
-    {
       title: t('mcp.name'),
       dataIndex: 'name',
       key: 'name',
-      width: 180,
-      render: (name: string, record: McpManagerServer) => (
-        <Text
-          strong
-          className={
-            record.installed
-              ? styles.serviceNameEnabled
-              : styles.serviceNameDisabled
-          }
-        >
-          {name}
-        </Text>
+      width: 200,
+      render: (name: string) => (
+        <Text className={styles.serviceName}>{name}</Text>
+      ),
+    },
+    {
+      title: t('mcp.status'),
+      key: 'status',
+      width: 100,
+      render: (record: McpManagerServer) => (
+        <Switch
+          checked={record.installed}
+          onChange={(checked) => {
+            onToggleService(record.name, checked, record.scope);
+          }}
+          size="small"
+          className={styles.switchStyle}
+        />
       ),
     },
     {
@@ -68,7 +57,6 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
         const isGlobal = scope === 'global';
         return (
           <Tag
-            color={isGlobal ? 'blue' : 'green'}
             className={`m-0 font-medium ${
               record.installed ? styles.tagEnabled : styles.tagDisabled
             }`}
@@ -85,7 +73,6 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
       width: 80,
       render: (type: string, record: McpManagerServer) => (
         <Tag
-          color={type === 'sse' ? 'purple' : 'blue'}
           className={`m-0 ${record.installed ? styles.tagEnabled : styles.tagDisabled}`}
         >
           {type?.toUpperCase() || 'STDIO'}
@@ -95,29 +82,41 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
     {
       title: t('mcp.config'),
       key: 'command',
+      width: 260,
       render: (record: McpManagerServer) => {
-        if (!record.installed) {
+        let configText = '';
+        let displayText = '';
+
+        if (record.type === 'sse') {
+          configText = record.url || '';
+          displayText =
+            configText.length > 30
+              ? `${configText.substring(0, 30)}...`
+              : configText;
+        } else {
+          configText =
+            `${record.command || ''} ${(record.args || []).join(' ')}`.trim();
+          displayText =
+            configText.length > 30
+              ? `${configText.substring(0, 30)}...`
+              : configText;
+        }
+
+        if (configText.length > 30) {
           return (
-            <Text type="secondary" className={styles.disabledText}>
-              {t('mcp.disabledStatus')}
-            </Text>
+            <Tooltip
+              title={configText}
+              placement="topLeft"
+              overlayStyle={{ maxWidth: 360 }}
+            >
+              <Text className={`${styles.configCode}`}>
+                {displayText || '-'}
+              </Text>
+            </Tooltip>
           );
         }
 
-        if (record.type === 'sse') {
-          return (
-            <Text code className={styles.configCode}>
-              {record.url}
-            </Text>
-          );
-        }
-        const commandText =
-          `${record.command || ''} ${(record.args || []).join(' ')}`.trim();
-        return (
-          <Text code className={styles.configCode}>
-            {commandText || '-'}
-          </Text>
-        );
+        return <Text className={styles.configCode}>{displayText || '-'}</Text>;
       },
     },
   ];
