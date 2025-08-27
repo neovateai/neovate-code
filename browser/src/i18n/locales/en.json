@@ -230,7 +230,10 @@
     "commandOrUrlRequired": "Single server config must have command or url field",
     "serverConfigObject": "Server \"{{name}}\" configuration must be an object",
     "serverCommandOrUrl": "Server \"{{name}}\" must have command or url field",
-    "noServersFound": "No servers found in mcpServers object"
+    "noServersFound": "No servers found in mcpServers object",
+    "actions": "Actions",
+    "edit": "Edit",
+    "delete": "Delete"
   },
   "settings": {
     "title": "Settings",

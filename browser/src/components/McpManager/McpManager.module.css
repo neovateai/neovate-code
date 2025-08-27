@@ -9,8 +9,8 @@
   box-shadow: 0 0 43.3px 13px rgba(100, 99, 119, 0.12);
   border: none;
   overflow: hidden;
-  width: 640px !important;
-  max-width: 640px !important;
+  width: 740px !important;
+  max-width: 740px !important;
   padding: 0;
 }
 
@@ -329,4 +329,28 @@
 
 .modal :global(.ant-switch-checked .ant-switch-handle) {
   left: calc(100% - 14px);
+}
+
+/* Action link styling */
+.actionLink {
+  color: #7357ff;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  font-family: 'PingFang SC', sans-serif;
+}
+
+.actionLink:hover {
+  color: #5d47e6;
+  text-decoration: none;
+}
+
+.actionLink:active {
+  color: #4c3dd4;
+}
+
+.truncatedConfig:hover {
+  background: #e6f7ff;
 }

@@ -1,4 +1,4 @@
-import { Switch, Table, Tag, Tooltip, Typography } from 'antd';
+import { Space, Switch, Table, Tag, Tooltip, Typography } from 'antd';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { McpManagerServer } from '@/types/mcp';
@@ -118,6 +118,35 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
 
         return <Text className={styles.configCode}>{displayText || '-'}</Text>;
       },
+    },
+    {
+      title: t('mcp.actions'),
+      key: 'actions',
+      width: 120,
+      render: (record: McpManagerServer) => (
+        <Space size={16}>
+          <span
+            className={styles.actionLink}
+            onClick={(e) => {
+              e.stopPropagation();
+              // TODO: Implement edit logic
+              console.log('Edit service:', record.name);
+            }}
+          >
+            {t('mcp.edit')}
+          </span>
+          <span
+            className={styles.actionLink}
+            onClick={(e) => {
+              e.stopPropagation();
+              // TODO: Implement delete logic
+              console.log('Delete service:', record.name);
+            }}
+          >
+            {t('mcp.delete')}
+          </span>
+        </Space>
+      ),
     },
   ];
 

@@ -230,7 +230,10 @@
     "commandOrUrlRequired": "单个服务器配置必须有 command 或 url 字段",
     "serverConfigObject": "服务器\"{{name}}\"配置必须是对象",
     "serverCommandOrUrl": "服务器\"{{name}}\"必须有 command 或 url 字段",
-    "noServersFound": "在 mcpServers 对象中未找到服务器"
+    "noServersFound": "在 mcpServers 对象中未找到服务器",
+    "actions": "操作",
+    "edit": "编辑",
+    "delete": "删除"
   },
   "settings": {
     "title": "设置",
