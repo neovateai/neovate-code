@@ -1,11 +1,10 @@
 import { ApiOutlined } from '@ant-design/icons';
-import { Button } from 'antd';
+import { Button, Switch } from 'antd';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { MCP_KEY_PREFIXES } from '@/constants/mcp';
 import type { McpDropdownContentProps } from '@/types/mcp';
 import McpServiceItem from './McpServiceItem';
-import McpToggleSwitch from './McpToggleSwitch';
 import styles from './index.module.css';
 
 const McpDropdownContent: React.FC<McpDropdownContentProps> = ({
@@ -63,11 +62,11 @@ const McpDropdownContent: React.FC<McpDropdownContentProps> = ({
             <div className={styles.serviceInfo}>
               <span className={styles.serviceName}>{service.name}</span>
             </div>
-            <McpToggleSwitch
-              enabled={false}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
+            <Switch
+              checked={false}
+              size="small"
+              className={styles.mcpSwitch}
+              onChange={() => {
                 onQuickAdd(service);
               }}
             />

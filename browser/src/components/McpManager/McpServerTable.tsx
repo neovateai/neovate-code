@@ -34,7 +34,7 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
             onToggleService(record.name, checked, record.scope);
           }}
           size="small"
-          className={styles.switchStyle}
+          className={styles.mcpSwitch}
         />
       ),
     },

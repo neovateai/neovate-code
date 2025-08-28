@@ -197,13 +197,6 @@ export interface McpServiceItemProps {
   onToggle: (serverName: string, enabled: boolean, scope: string) => void;
 }
 
-export interface McpToggleSwitchProps {
-  enabled: boolean;
-  disabled?: boolean;
-  showOffText?: boolean;
-  onClick?: (e: React.MouseEvent) => void;
-}
-
 export interface McpServerTableProps {
   servers: McpManagerServer[];
   loading: boolean;
