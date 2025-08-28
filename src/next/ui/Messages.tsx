@@ -1,5 +1,6 @@
 import { Box, Static, Text } from 'ink';
 import React from 'react';
+import { TOOL_NAME } from '../../constants';
 import type {
   AssistantMessage,
   NormalizedMessage,
@@ -9,6 +10,7 @@ import type {
   UserMessage,
 } from '../history';
 import { Markdown } from './Markdown';
+import { TodoList, TodoRead } from './Todo';
 import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 
@@ -121,9 +123,15 @@ function Assistant({
   if (typeof message.content === 'string') {
     return <AssistantText text={message.content} productName={productName} />;
   }
+  // Don't render parts after tool use
+  // Only ONE tool use is allowed
+  let hasToolUse = false;
   return (
     <>
       {message.content.map((part, index) => {
+        if (hasToolUse) {
+          return null;
+        }
         if (part.type === 'text') {
           return (
             <AssistantText
@@ -134,6 +142,7 @@ function Assistant({
           );
         }
         if (part.type === 'tool_use') {
+          hasToolUse = true;
           return <ToolUse key={index} part={part} />;
         }
         if (part.type === 'reasoning') {
@@ -162,34 +171,40 @@ function Thinking({ text }: { text: string }) {
   );
 }
 
-function ToolResultPart({ part }: { part: ToolResultPart }) {
-  const result = part.result;
+function ToolResultItem({ part }: { part: ToolResultPart }) {
+  const { result, name, input } = part;
   if (!result.success && result.error) {
+    return <Text color={UI_COLORS.ERROR}>{result.error}</Text>;
+  }
+  if (name === TOOL_NAME.TODO_WRITE) {
     return (
-      <Box flexDirection="column">
-        <Text color={UI_COLORS.ERROR}>{result.error}</Text>
-      </Box>
+      <TodoList
+        oldTodos={result.data.oldTodos}
+        newTodos={result.data.newTodos}
+        verbose={false}
+      />
     );
   }
-  return <Text>{JSON.stringify(result)}</Text>;
+  if (name === TOOL_NAME.TODO_READ) {
+    return <TodoRead todos={result.data} />;
+  }
+  const text = (result.success && result.message) || JSON.stringify(result);
+  return <Text color={UI_COLORS.TOOL_RESULT}>↳ {text}</Text>;
 }
 
 function ToolResult({ message }: { message: ToolMessage }) {
+  if (message.content.length === 0) {
+    return null;
+  }
+  let part = message.content[0];
   return (
-    <>
-      {message.content.map((part, index) => {
-        return (
-          <Box
-            key={index}
-            flexDirection="column"
-            marginTop={SPACING.MESSAGE_MARGIN_TOP_TOOL_RESULT}
-            marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
-          >
-            <ToolResultPart key={index} part={part} />
-          </Box>
-        );
-      })}
-    </>
+    <Box
+      flexDirection="column"
+      marginTop={SPACING.MESSAGE_MARGIN_TOP_TOOL_RESULT}
+      marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
+    >
+      <ToolResultItem part={part} />
+    </Box>
   );
 }
 
