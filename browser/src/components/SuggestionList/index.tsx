@@ -89,14 +89,17 @@ const SuggestionList = (props: Props) => {
     [attachedContexts],
   );
 
-  const isSecondItemSelected = (val: string) => {
-    return (
-      selectedFirstKey &&
-      selectedContextMap?.[selectedFirstKey]?.some(
-        (secondItem) => secondItem.value === val,
-      )
-    );
-  };
+  const isSecondItemSelected = useCallback(
+    (val: string) => {
+      return (
+        selectedFirstKey &&
+        selectedContextMap?.[selectedFirstKey]?.some(
+          (secondItem) => secondItem.value === val,
+        )
+      );
+    },
+    [selectedFirstKey, selectedContextMap],
+  );
 
   const clearSearch = useCallback(
     (targetFirstKey: string) => {
