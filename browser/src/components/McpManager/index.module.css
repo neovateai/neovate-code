@@ -266,6 +266,16 @@
   color: #4c3dd4;
 }
 
+.actionDisabled {
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
+  opacity: 0.5;
+}
+
+.actionDisabled:hover {
+  color: #9ca3af !important;
+}
+
 /* Add Form Modal Styles - Based on Figma Design */
 .addFormModal :global(.ant-modal-content) {
   background: #ffffff;

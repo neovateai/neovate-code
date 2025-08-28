@@ -230,6 +230,10 @@
     "actions": "Actions",
     "edit": "Edit",
     "delete": "Delete",
+    "deleteConfirmTitle": "Confirm Delete",
+    "deleteConfirmContent": "Are you sure you want to delete service \"{{name}}\"? This action will permanently remove the service configuration and cannot be undone.",
+    "deleteSuccess": "Successfully deleted service \"{{name}}\"",
+    "deleteError": "Failed to delete service, please try again",
     "continueAdd": "Continue Adding",
     "jsonSupported": "Supported JSON formats include various structures"
   },

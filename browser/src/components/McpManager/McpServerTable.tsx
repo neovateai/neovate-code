@@ -1,6 +1,16 @@
-import { Space, Switch, Table, Tag, Tooltip, Typography } from 'antd';
-import React from 'react';
+import {
+  Modal,
+  Space,
+  Switch,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+  message,
+} from 'antd';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { removeMCPServer } from '@/api/mcpService';
 import type { McpManagerServer, McpServerTableProps } from '@/types/mcp';
 import styles from './index.module.css';
 
@@ -10,8 +20,54 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
   servers,
   loading,
   onToggleService,
+  onDeleteSuccess,
+  onDeleteLocal,
 }) => {
   const { t } = useTranslation();
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [serverToDelete, setServerToDelete] = useState<McpManagerServer | null>(
+    null,
+  );
+
+  const handleDeleteServer = (server: McpManagerServer) => {
+    setServerToDelete(server);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!serverToDelete) return;
+
+    try {
+      setDeleteLoading(true);
+
+      // 只有已安装（启用）的服务才需要调用后端 API 删除
+      if (serverToDelete.installed) {
+        await removeMCPServer(
+          serverToDelete.name,
+          serverToDelete.scope === 'global',
+        );
+      } else {
+        // 未安装的服务只需要从本地存储中删除
+        onDeleteLocal?.(serverToDelete.name, serverToDelete.scope);
+      }
+
+      message.success(t('mcp.deleteSuccess', { name: serverToDelete.name }));
+      onDeleteSuccess?.();
+      setDeleteModalOpen(false);
+      setServerToDelete(null);
+    } catch (error) {
+      console.error('Delete server failed:', error);
+      message.error(t('mcp.deleteError'));
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModalOpen(false);
+    setServerToDelete(null);
+  };
 
   const columns = [
     {
@@ -126,11 +182,13 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
             {t('mcp.edit')}
           </span>
           <span
-            className={styles.actionLink}
+            className={`${styles.actionLink} ${deleteLoading ? styles.actionDisabled : ''}`}
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
-              // TODO: Implement delete logic
-              console.log('Delete service:', record.name);
+              if (!deleteLoading) {
+                handleDeleteServer(record);
+              }
             }}
           >
             {t('mcp.delete')}
@@ -160,6 +218,23 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
           ),
         }}
       />
+
+      <Modal
+        title={t('mcp.deleteConfirmTitle')}
+        open={deleteModalOpen}
+        onOk={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        okText={t('mcp.delete')}
+        cancelText={t('common.cancel')}
+        okType="danger"
+        confirmLoading={deleteLoading}
+        centered
+        maskClosable={false}
+      >
+        <p>
+          {t('mcp.deleteConfirmContent', { name: serverToDelete?.name || '' })}
+        </p>
+      </Modal>
     </div>
   );
 };

@@ -351,6 +351,42 @@ export const useMcpServerLoader = (
     [loadMcpServers, t],
   );
 
+  // Delete local service from browser storage
+  const handleDeleteLocal = useCallback(
+    (serverName: string, scope: string) => {
+      // Remove from known services
+      const newKnownServices = new Set(allKnownServices);
+      newKnownServices.delete(serverName);
+      updateKnownServices(newKnownServices);
+
+      // Remove from cached configs
+      const newConfigs = new Map(serviceConfigs);
+      const globalKey = `${MCP_KEY_PREFIXES.GLOBAL}-${serverName}`;
+      const projectKey = `${MCP_KEY_PREFIXES.PROJECT}-${serverName}`;
+
+      if (scope === 'global') {
+        newConfigs.delete(globalKey);
+      } else {
+        newConfigs.delete(projectKey);
+      }
+
+      updateServiceConfigs(newConfigs);
+
+      // Remove from manager servers state
+      setManagerServers((prev) =>
+        prev.filter(
+          (server) => !(server.name === serverName && server.scope === scope),
+        ),
+      );
+    },
+    [
+      allKnownServices,
+      serviceConfigs,
+      updateKnownServices,
+      updateServiceConfigs,
+    ],
+  );
+
   return {
     loading,
     mcpServers,
@@ -360,5 +396,6 @@ export const useMcpServerLoader = (
     managerServers,
     loadServers,
     handleToggleService,
+    handleDeleteLocal,
   };
 };

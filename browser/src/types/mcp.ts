@@ -151,6 +151,7 @@ export interface UseMcpServerLoaderReturn {
     enabled: boolean,
     scope: string,
   ) => Promise<void>;
+  handleDeleteLocal: (serverName: string, scope: string) => void;
 }
 
 export interface UseMcpServicesOptions {
@@ -205,6 +206,8 @@ export interface McpServerTableProps {
     enabled: boolean,
     scope: string,
   ) => void;
+  onDeleteSuccess?: () => void;
+  onDeleteLocal?: (serverName: string, scope: string) => void;
 }
 
 export interface McpAddFormProps {

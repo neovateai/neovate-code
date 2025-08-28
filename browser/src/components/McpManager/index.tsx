@@ -30,6 +30,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     loading,
     loadServers,
     handleToggleService,
+    handleDeleteLocal,
   } = useMcpServerLoader();
 
   useEffect(() => {
@@ -76,6 +77,8 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           servers={servers}
           loading={loading}
           onToggleService={handleToggleService}
+          onDeleteSuccess={loadServers}
+          onDeleteLocal={handleDeleteLocal}
         />
 
         <McpAddForm
