@@ -166,7 +166,6 @@ const ModelSettings: React.FC = () => {
                 { value: 'English', label: 'English' },
                 { value: 'Chinese', label: '简体中文' },
               ]}
-              placeholder="简体中文"
               allowClear
               className="w-full"
             />
@@ -187,15 +186,42 @@ const ModelSettings: React.FC = () => {
               options={[
                 {
                   value: 'suggest',
-                  label: t('settings.behavior.approvalModeLabels.suggest'),
+                  label: (
+                    <Tooltip
+                      title={t('settings.behavior.approvalModeLabels.suggest')}
+                      placement="right"
+                    >
+                      <div className={styles.tooltipContainer}>
+                        {t('settings.behavior.approvalModeLabels.suggest')}
+                      </div>
+                    </Tooltip>
+                  ),
                 },
                 {
                   value: 'auto-edit',
-                  label: t('settings.behavior.approvalModeLabels.autoEdit'),
+                  label: (
+                    <Tooltip
+                      title={t('settings.behavior.approvalModeLabels.autoEdit')}
+                      placement="right"
+                    >
+                      <div className={styles.tooltipContainer}>
+                        {t('settings.behavior.approvalModeLabels.autoEdit')}
+                      </div>
+                    </Tooltip>
+                  ),
                 },
                 {
                   value: 'full-auto',
-                  label: t('settings.behavior.approvalModeLabels.fullAuto'),
+                  label: (
+                    <Tooltip
+                      title={t('settings.behavior.approvalModeLabels.fullAuto')}
+                      placement="right"
+                    >
+                      <div className={styles.tooltipContainer}>
+                        {t('settings.behavior.approvalModeLabels.fullAuto')}
+                      </div>
+                    </Tooltip>
+                  ),
                 },
               ]}
               placeholder={t('settings.behavior.approvalModeLabels.suggest')}
