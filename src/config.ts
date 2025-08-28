@@ -212,6 +212,9 @@ export class ConfigManager {
       if (BOOLEAN_CONFIG_KEYS.includes(key)) {
         newValue = value === 'true';
       }
+      if (ARRAY_CONFIG_KEYS.includes(key)) {
+        newValue = JSON.parse(value);
+      }
       if (OBJECT_CONFIG_KEYS.includes(key)) {
         newValue = JSON.parse(value);
       }
