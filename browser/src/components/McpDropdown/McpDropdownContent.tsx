@@ -1,6 +1,6 @@
 import { ApiOutlined } from '@ant-design/icons';
 import { Button, Switch } from 'antd';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MCP_KEY_PREFIXES } from '@/constants/mcp';
 import type { McpDropdownContentProps } from '@/types/mcp';
@@ -16,22 +16,33 @@ const McpDropdownContent: React.FC<McpDropdownContentProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const installedServers = mcpServers.filter((server) => server.installed);
-  const disabledServers = mcpServers.filter((server) => !server.installed);
-  const availablePresets = presetMcpServices.filter(
-    (service) =>
-      !mcpServers.some((server) => server.name === service.config.name),
-  );
+  const { installedServers, disabledServers, availablePresets, hasNoServices } =
+    useMemo(() => {
+      const installed = mcpServers.filter((server) => server.installed);
+      const disabled = mcpServers.filter((server) => !server.installed);
+      const availablePresets = presetMcpServices.filter(
+        (service) =>
+          !mcpServers.some((server) => server.name === service.config.name),
+      );
+      const hasNoServices =
+        mcpServers.length === 0 && presetMcpServices.length === 0;
 
-  const hasNoServices =
-    mcpServers.length === 0 && presetMcpServices.length === 0;
+      return {
+        installedServers: installed,
+        disabledServers: disabled,
+        availablePresets,
+        hasNoServices,
+      };
+    }, [mcpServers, presetMcpServices]);
+
+  const handlePresetClick = (service: any) => {
+    onQuickAdd(service);
+  };
 
   return (
     <div className={styles.dropdownContainer}>
-      {/* MCP service list */}
       <div className={styles.serviceList}>
-        {/* Installed services */}
-        {installedServers.map((server) => (
+        {[...installedServers, ...disabledServers].map((server) => (
           <McpServiceItem
             key={server.key}
             server={server}
@@ -39,25 +50,11 @@ const McpDropdownContent: React.FC<McpDropdownContentProps> = ({
           />
         ))}
 
-        {/* Disabled services */}
-        {disabledServers.map((server) => (
-          <McpServiceItem
-            key={server.key}
-            server={server}
-            onToggle={onToggleService}
-          />
-        ))}
-
-        {/* Preset services */}
         {availablePresets.map((service) => (
           <div
             key={`${MCP_KEY_PREFIXES.PRESET}-${service.key}`}
             className={styles.serviceItem}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onQuickAdd(service);
-            }}
+            onClick={handlePresetClick.bind(null, service)}
           >
             <div className={styles.serviceInfo}>
               <span className={styles.serviceName}>{service.name}</span>
@@ -66,14 +63,11 @@ const McpDropdownContent: React.FC<McpDropdownContentProps> = ({
               checked={false}
               size="small"
               className={styles.mcpSwitch}
-              onChange={() => {
-                onQuickAdd(service);
-              }}
+              onChange={handlePresetClick.bind(null, service)}
             />
           </div>
         ))}
 
-        {/* No services message */}
         {hasNoServices && (
           <div className={styles.noServices}>
             {t('mcp.noServicesAvailable')}
@@ -81,7 +75,6 @@ const McpDropdownContent: React.FC<McpDropdownContentProps> = ({
         )}
       </div>
 
-      {/* MCP management button */}
       <div className={styles.manageButtonContainer}>
         <Button className={styles.manageButton} onClick={onOpenManager}>
           <ApiOutlined />
