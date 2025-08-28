@@ -41,16 +41,16 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
     try {
       setDeleteLoading(true);
 
-      // 只有已安装（启用）的服务才需要调用后端 API 删除
+      // 如果服务已启用，先调用 API 关闭服务
       if (serverToDelete.installed) {
         await removeMCPServer(
           serverToDelete.name,
           serverToDelete.scope === 'global',
         );
-      } else {
-        // 未安装的服务只需要从本地存储中删除
-        onDeleteLocal?.(serverToDelete.name, serverToDelete.scope);
       }
+
+      // 无论是否启用，都要从本地存储中彻底删除
+      onDeleteLocal?.(serverToDelete.name, serverToDelete.scope);
 
       message.success(t('mcp.deleteSuccess', { name: serverToDelete.name }));
       onDeleteSuccess?.();
