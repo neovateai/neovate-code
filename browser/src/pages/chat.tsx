@@ -35,21 +35,6 @@ const useStyles = createStyles(({ css }) => {
         visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       overflow: hidden;
       min-width: 0;
-
-      .ant-bubble-footer {
-        width: 100%;
-        margin-top: 8px;
-      }
-
-      .ant-bubble-content {
-        min-height: 0px;
-      }
-
-      .ant-btn-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
     `,
   };
 });

@@ -275,6 +275,9 @@ importers:
       monaco-editor:
         specifier: ^0.52.2
         version: 0.52.2
+      quill:
+        specifier: ^2.0.3
+        version: 2.0.3
       rc-util:
         specifier: ^5.44.4
         version: 5.44.4(react-dom@19.1.1)(react@19.1.1)

@@ -1,7 +1,6 @@
 import { Bubble } from '@ant-design/x';
-import { type GetProp, Spin } from 'antd';
-import { createStyles } from 'antd-style';
-import AssistantAvatar from '@/components/AssistantAvatar';
+import { type GetProp } from 'antd';
+import { Skeleton } from 'antd';
 import AssistantFooter from '@/components/AssistantFooter';
 import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
@@ -10,32 +9,10 @@ import { UserMessage, UserMessageFooter } from '@/components/UserMessage';
 import Welcome from '@/components/Welcome';
 import { useChatState } from '@/hooks/provider';
 import type { UIMessage, UIUserMessage } from '@/types/message';
-
-const useStyle = createStyles(({ token, css }) => {
-  return {
-    chat: css`
-      height: 100%;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      padding-block: ${token.paddingLG}px;
-      gap: 16px;
-      flex: 1;
-    `,
-    chatList: css`
-      flex: 1;
-      overflow: auto;
-
-      .ant-bubble-footer {
-        width: 100%;
-      }
-    `,
-  };
-});
+import styles from './index.module.css';
 
 const ChatContent: React.FC = () => {
   const { messages, status } = useChatState();
-  const { styles } = useStyle();
 
   const items = messages?.map((message, index) => {
     const isLastMessage = index === messages.length - 1;
@@ -66,16 +43,14 @@ const ChatContent: React.FC = () => {
     },
     assistant: {
       placement: 'start',
-      avatar: <AssistantAvatar />,
-      variant: 'outlined',
+      variant: 'borderless',
       messageRender(message) {
         return <AssistantMessage message={message} />;
       },
       loadingRender() {
         return (
-          <div className="flex items-center space-x-3">
-            <Spin size="small" />
-            <span className="text-sm text-gray-500 pl-2">Thinking...</span>
+          <div className={styles.skeletonContainer}>
+            <Skeleton active paragraph={{ rows: 2 }} title={false} />
           </div>
         );
       },
@@ -90,10 +65,7 @@ const ChatContent: React.FC = () => {
         {items?.length ? (
           <Bubble.List
             items={items}
-            style={{
-              height: '100%',
-              paddingInline: 'calc(calc(100% - 700px) /2)',
-            }}
+            className={styles.bubbleList}
             roles={roles}
           />
         ) : (

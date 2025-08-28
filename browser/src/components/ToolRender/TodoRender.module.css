@@ -1,0 +1,23 @@
+/* TodoList related styles moved to components/TodoList/index.module.css */
+
+.errorContainer {
+  font-size: 14px;
+  color: #dc2626;
+  padding: 0.75rem;
+}
+
+.errorDetail {
+  margin-top: 0.5rem;
+  font-size: 12px;
+}
+
+.errorContainer {
+  font-size: 14px;
+  color: #dc2626;
+  padding: 0.75rem;
+}
+
+.errorDetail {
+  margin-top: 0.5rem;
+  font-size: 12px;
+}
