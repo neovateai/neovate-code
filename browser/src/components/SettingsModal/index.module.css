@@ -14,19 +14,11 @@
   border-color: #7357ff;
 }
 
-.radioGroup :global(.ant-radio-wrapper) {
-  color: #110c22;
-  font-size: 14px;
-  font-family: 'PingFang SC', sans-serif;
-  font-weight: 400;
-  line-height: 1.4285714285714286em;
-}
-
 .radioGroup :global(.ant-radio-wrapper):hover {
   color: #110c22;
 }
 
-/* Switch Styles - Based on Figma Design */
+/* Switch Styles */
 .quietSwitch {
   width: 48px;
   height: 28px;
@@ -42,11 +34,7 @@
   top: 3px;
   left: 3px;
   background-color: #ffffff;
-  box-shadow: none;
-  border: none;
   border-radius: 50%;
-  transform: none;
-  transition: left 0.2s ease-in-out;
 }
 
 .quietSwitch :global(.ant-switch-handle::before) {
@@ -59,43 +47,24 @@
 
 .quietSwitch:global(.ant-switch-checked) :global(.ant-switch-handle) {
   left: calc(48px - 22px - 3px);
-  background-color: #ffffff;
 }
 
 .quietSwitch:global(.ant-switch-checked):hover {
   background-color: #7357ff !important;
 }
 
-.quietSwitch:global(.ant-switch-checked):focus {
-  background-color: #7357ff;
-  box-shadow: 0 0 0 2px rgba(115, 87, 255, 0.2);
-}
-
-.quietSwitch:hover {
-  background-color: rgba(0, 0, 0, 0.12);
-}
-
 .quietSwitch:global(.ant-switch-checked):hover {
   background-color: #7357ff;
 }
 
-.quietSwitch :global(.ant-switch-inner) {
-  display: none;
-}
-
-.quietSwitch:global(.ant-switch):focus {
+.quietSwitch:global(.ant-switch):hover {
   box-shadow: none;
   outline: none;
+  background-color: #eaeaea;
 }
 
 .quietSwitch:global(.ant-switch):focus-visible {
   box-shadow: 0 0 0 2px rgba(115, 87, 255, 0.2);
-}
-
-.switchContainer {
-  height: 32px;
-  display: flex;
-  align-items: center;
 }
 
 /* Button Styles */
@@ -116,9 +85,9 @@
 
 .saveButton:hover,
 .saveButton:focus {
-  background-color: #110c22;
-  color: #ffffff;
-  border-color: transparent;
+  background-color: #110c22 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
 }
 
 /* Model Settings Styles */
@@ -137,11 +106,18 @@
 .pluginContainer {
   width: 100%;
   min-height: 102px;
+  max-height: 102px;
   padding: 1px;
-  background-color: white;
   border: 1px solid #dcdde0;
   border-radius: 4px;
   cursor: text;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.pluginContainer::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
 }
 
 .pluginTagsArea {
@@ -170,13 +146,6 @@
   line-height: 16px;
 }
 
-.deleteIcon {
-  width: 8px;
-  height: 8px;
-  filter: invert(47%) sepia(6%) saturate(347%) hue-rotate(182deg)
-    brightness(95%) contrast(87%);
-}
-
 .inputWrapper {
   display: flex;
   align-items: center;
@@ -189,9 +158,6 @@
   position: absolute;
   opacity: 0;
   pointer-events: none;
-  font-size: 14px;
-  font-family: 'PingFang SC';
-  line-height: 20px;
   white-space: pre;
 }
 
