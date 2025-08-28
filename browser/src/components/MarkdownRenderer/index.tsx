@@ -44,16 +44,17 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
         const isCopied = copiedCode === codeString;
 
         return (
-          <div className="relative group">
+          <div className={styles.codeContainer}>
             <button
               onClick={() => copyToClipboard(codeString)}
-              className="absolute right-2 top-2 z-10 p-1.5  rounded bg-gray-700 hover:bg-gray-600 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center"
+              className={`${styles.copyButton} ${isCopied ? styles.copied : ''}`}
               title={t('markdown.copyCode')}
+              aria-label={t('markdown.copyCode')}
             >
               {isCopied ? (
-                <CheckOutlined className="text-green-400" />
+                <CheckOutlined style={{ fontSize: '12px' }} />
               ) : (
-                <CopyOutlined />
+                <CopyOutlined style={{ fontSize: '12px' }} />
               )}
             </button>
             <SyntaxHighlighter
@@ -61,7 +62,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
               language={language}
               PreTag={Fragment}
               wrapLines={false}
-              customStyle={{ margin: 0, padding: '1rem' }}
+              customStyle={{
+                margin: 0,
+                padding: '16px',
+                fontSize: '13px',
+                lineHeight: '1.5',
+                borderRadius: '8px',
+              }}
             >
               {codeString}
             </SyntaxHighlighter>
@@ -75,6 +82,29 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
         </code>
       );
     },
+
+    // 自定义表格渲染
+    table({ children, ...props }) {
+      return (
+        <div style={{ overflowX: 'auto', margin: '16px 0' }}>
+          <table {...props}>{children}</table>
+        </div>
+      );
+    },
+
+    // 自定义引用块渲染
+    blockquote({ children, ...props }) {
+      return <blockquote {...props}>{children}</blockquote>;
+    },
+
+    // 自定义链接渲染
+    a({ href, children, ...props }) {
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+          {children}
+        </a>
+      );
+    },
   };
 
   // 处理markdown格式时，存在的```markdown```，需要去掉
@@ -85,9 +115,11 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   return (
     <div className={styles.markdownRenderer}>
       <ReactMarkdown
-        className="prose"
+        className="prose prose-slate max-w-none"
         remarkPlugins={[remarkGfm]}
         components={components}
+        skipHtml={false}
+        urlTransform={(url) => url}
       >
         {processedContent}
       </ReactMarkdown>
