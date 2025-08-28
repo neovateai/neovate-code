@@ -31,6 +31,7 @@ export class Project {
     opts: {
       model?: string;
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
+      signal?: AbortSignal;
     } = {},
   ) {
     const outputFormat = new OutputFormat({
@@ -118,7 +119,7 @@ export class Project {
       ...userMessage,
       sessionId: this.session.id,
     };
-    jsonlLogger.onMessage({
+    jsonlLogger.addMessage({
       message: userMessageWithSessionId,
     });
     await opts.onMessage?.({
@@ -128,7 +129,6 @@ export class Project {
       this.session.history.messages.length > 0
         ? [...this.session.history.messages, userMessage]
         : [userMessage];
-    // TODO: signal
     const result = await runLoop({
       input,
       model,
@@ -136,6 +136,7 @@ export class Project {
       cwd: this.context.cwd,
       systemPrompt,
       llmsContexts: llmsContext.messages,
+      signal: opts.signal,
       onMessage: async (message) => {
         const normalizedMessage = {
           ...message,
@@ -144,7 +145,7 @@ export class Project {
         outputFormat.onMessage({
           message: normalizedMessage,
         });
-        jsonlLogger.onMessage({
+        jsonlLogger.addMessage({
           message: normalizedMessage,
         });
         await opts.onMessage?.({

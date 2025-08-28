@@ -205,7 +205,7 @@ function RenderDiffContent(
 
   if (displayableLines.length === 0) {
     return (
-      <Box borderStyle="round" borderColor="gray" padding={1}>
+      <Box padding={1}>
         <Text dimColor>No changes detected.</Text>
       </Box>
     );
@@ -371,12 +371,7 @@ export function DiffViewer({
 
   if (diffLines.length === 0) {
     return (
-      <Box
-        borderStyle="round"
-        borderColor="gray"
-        paddingX={1}
-        flexDirection="column"
-      >
+      <Box paddingX={1} flexDirection="column">
         {fileName && (
           <Box paddingX={1}>
             <Text bold color="cyan">
@@ -384,7 +379,7 @@ export function DiffViewer({
             </Text>
           </Box>
         )}
-        <Box paddingX={1} justifyContent="center">
+        <Box paddingX={1}>
           <Text dimColor>No changes detected</Text>
         </Box>
       </Box>

@@ -12,6 +12,7 @@ export const UI_COLORS = {
   WARNING: 'yellow',
   INFO: 'gray',
   CHAT_BORDER: 'gray',
+  CANCELED: 'red',
 } as const;
 
 export const SPACING = {

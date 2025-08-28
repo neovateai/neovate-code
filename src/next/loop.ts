@@ -135,6 +135,9 @@ ${opts.tools.getToolsPrompt()}
     });
     const result = await runner.run(agent, agentInput, {
       stream: true,
+      // why comment out this?
+      // will cause ReadStream lock issue and crash
+      // signal: opts.signal,
     });
 
     let text = '';

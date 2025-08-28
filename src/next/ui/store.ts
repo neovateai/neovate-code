@@ -37,6 +37,15 @@ const APP_STATUS_MESSAGES = {
   cancelled: 'Cancelled',
 };
 
+function isExecuting(status: AppStatus) {
+  return (
+    status === 'processing' ||
+    status === 'planning' ||
+    status === 'tool_executing' ||
+    status === 'compacting'
+  );
+}
+
 interface AppState {
   bridge: UIBridge;
 
@@ -80,6 +89,7 @@ interface AppActions {
   addMessage: (message: Message) => void;
   log: (log: string) => void;
   setExitMessage: (exitMessage: string | null) => void;
+  cancel: () => Promise<void>;
 }
 
 type AppStore = AppState & AppActions;
@@ -156,12 +166,19 @@ export const useAppStore = create<AppStore>()(
       },
 
       cancel: async () => {
-        const { bridge, cwd, sessionId } = get();
-        await bridge.request('cancel', {
+        const { bridge, cwd, sessionId, status } = get();
+        if (!isExecuting(status)) {
+          return;
+        }
+        const response = await bridge.request('cancel', {
           cwd,
           sessionId,
         });
-        set({ status: 'cancelled' });
+        const message = response.data.message;
+        if (message) {
+          get().addMessage(message);
+        }
+        set({ status: 'idle' });
       },
 
       addMessage: (message) => {
@@ -170,10 +187,7 @@ export const useAppStore = create<AppStore>()(
 
       log: (log: string) => {
         set({
-          logs: [
-            ...get().logs,
-            `[${new Date().toISOString()}] ${log}`,
-          ],
+          logs: [...get().logs, `[${new Date().toISOString()}] ${log}`],
         });
       },
 

@@ -8,7 +8,7 @@ import { useTerminalSize } from './useTerminalSize';
 
 export function ChatInput() {
   const { inputState, handlers } = useInputHandlers();
-  const { log, setExitMessage } = useAppStore();
+  const { log, setExitMessage, cancel } = useAppStore();
   const { columns } = useTerminalSize();
   return (
     <Box flexDirection="column" marginTop={SPACING.MESSAGE_MARGIN_TOP}>
@@ -42,7 +42,9 @@ export function ChatInput() {
             log('onMessage' + text);
           }}
           onEscape={() => {
-            log('onEscape');
+            cancel().catch((e) => {
+              log('cancel error: ' + e.message);
+            });
           }}
           onImagePaste={(image) => {}}
           onPaste={(text) => {

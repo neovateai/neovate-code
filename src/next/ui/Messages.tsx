@@ -63,6 +63,7 @@ function User({ message }: { message: UserMessage }) {
     typeof message.content === 'string'
       ? message.content
       : message.content.map((part) => part.text).join('');
+  const isCanceled = text === '[Request interrupted by user]';
   return (
     <Box
       flexDirection="column"
@@ -72,7 +73,11 @@ function User({ message }: { message: UserMessage }) {
       <Text bold color={UI_COLORS.USER}>
         user
       </Text>
-      <Text>{text}</Text>
+      {isCanceled ? (
+        <Text color={UI_COLORS.CANCELED}>User canceled the request</Text>
+      ) : (
+        <Text>{text}</Text>
+      )}
     </Box>
   );
 }

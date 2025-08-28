@@ -1,4 +1,5 @@
 import { Context } from './context';
+import { JsonlLogger } from './jsonl';
 import { MessageBus } from './messageBus';
 import { Project } from './project';
 
@@ -20,6 +21,7 @@ class NodeHandlerRegistry {
   private messageBus: MessageBus;
   private contextCreateOpts: any;
   private contexts = new Map<string, Context>();
+  private abortControllers = new Map<string, AbortController>();
   constructor(messageBus: MessageBus, contextCreateOpts: any) {
     this.messageBus = messageBus;
     this.contextCreateOpts = contextCreateOpts;
@@ -67,13 +69,44 @@ class NodeHandlerRegistry {
           sessionId,
           context,
         });
-        return await project.send(message, {
+        const abortController = new AbortController();
+        const key = `${cwd}/${sessionId}`;
+        this.abortControllers.set(key, abortController);
+        const result = await project.send(message, {
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {
               message: opts.message,
             });
           },
+          signal: abortController.signal,
         });
+        this.abortControllers.delete(key);
+        return result;
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'cancel',
+      async (data: { cwd: string; sessionId: string }) => {
+        const { cwd, sessionId } = data;
+        const key = `${cwd}/${sessionId}`;
+        const abortController = this.abortControllers.get(key);
+        abortController?.abort();
+        this.abortControllers.delete(key);
+        const context = await this.getContext(cwd);
+        const jsonlLogger = new JsonlLogger({
+          filePath: context.paths.getSessionLogPath(sessionId),
+        });
+        const message = jsonlLogger.addUserMessage(
+          '[Request interrupted by user]',
+          sessionId,
+        );
+        return {
+          success: true,
+          data: {
+            message,
+          },
+        };
       },
     );
   }
