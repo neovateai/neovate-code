@@ -272,7 +272,7 @@ const SuggestionList = (props: Props) => {
                 }
               }}
               maxWidth={260}
-              forceShowTip={isSelected}
+              showTip={isSelected}
               placement="right"
             />
           </div>
