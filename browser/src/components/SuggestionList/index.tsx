@@ -15,6 +15,7 @@ import React, {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
+import { ContextType } from '@/constants/context';
 import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';
 import FileTooltipRender from './FileTooltipRender';
@@ -243,15 +244,22 @@ const SuggestionList = (props: Props) => {
                   ? renderItemText(item.extra, inputRef.current?.input?.value)
                   : undefined
               }
-              renderTooltip={() => (
-                <FileTooltipRender
-                  fullPath={renderItemText(
-                    [item.extra ?? '', item.label].join('/'),
-                    inputRef.current?.input?.value,
-                  )}
-                  icon={item.icon}
-                />
-              )}
+              renderTooltip={() => {
+                switch (selectedFirstKey) {
+                  case ContextType.FILE:
+                    return (
+                      <FileTooltipRender
+                        fullPath={renderItemText(
+                          [item.extra ?? '', item.label].join('/'),
+                          inputRef.current?.input?.value,
+                        )}
+                        icon={item.icon}
+                      />
+                    );
+                  default:
+                    return null;
+                }
+              }}
               maxWidth={260}
               forceShowTip={isSelected}
               placement="right"
