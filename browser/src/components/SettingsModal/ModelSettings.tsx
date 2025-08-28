@@ -6,6 +6,7 @@ import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';
 import type { AppSettings } from '@/types/settings';
 import PluginInput from './PluginInput';
+import styles from './index.module.css';
 
 const ModelSettings: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -221,11 +222,11 @@ const ModelSettings: React.FC = () => {
                 <InfoCircleOutlined className="text-gray-500 text-xs" />
               </Tooltip>
             </div>
-            <div className="flex items-center h-8">
+            <div className={styles.switchContainer}>
               <Switch
                 checked={currentSettings.quiet}
                 onChange={(checked) => onSettingChange('quiet', checked)}
-                size="small"
+                className={styles.quietSwitch}
               />
             </div>
           </div>
