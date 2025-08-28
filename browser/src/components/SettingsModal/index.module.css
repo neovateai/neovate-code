@@ -97,3 +97,152 @@
   display: flex;
   align-items: center;
 }
+
+/* Button Styles */
+.cancelButton {
+  border-radius: 26px !important;
+  padding: 6px 16px !important;
+  height: auto !important;
+}
+
+.saveButton {
+  border-radius: 26px !important;
+  padding: 6px 16px !important;
+  height: auto !important;
+  background-color: #110c22 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+.saveButton:hover,
+.saveButton:focus {
+  background-color: #110c22 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+/* Model Settings Styles */
+.tooltipContainer {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.questionIcon {
+  color: #85878a;
+}
+
+/* Plugin Input Styles */
+.pluginContainer {
+  width: 100%;
+  min-height: 102px;
+  padding: 1px;
+  background-color: white;
+  border: 1px solid #dcdde0;
+  border-radius: 4px;
+  cursor: text;
+}
+
+.pluginTagsArea {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: flex-start;
+  padding: 4px;
+}
+
+.pluginTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid #eeeff0;
+  border-radius: 2px;
+  font-size: 12px;
+  color: #252931;
+  font-weight: normal;
+  font-family: 'PingFang SC';
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.pluginTagText {
+  line-height: 16px;
+}
+
+.deleteIcon {
+  width: 8px;
+  height: 8px;
+  filter: invert(47%) sepia(6%) saturate(347%) hue-rotate(182deg)
+    brightness(95%) contrast(87%);
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  min-width: 120px;
+}
+
+.measureSpan {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  font-size: 14px;
+  font-family: 'PingFang SC';
+  line-height: 20px;
+  white-space: pre;
+}
+
+.pluginInput {
+  background: transparent;
+  outline: none;
+  border: none;
+  font-size: 14px;
+  color: #110c22;
+  width: 100%;
+  font-family: 'PingFang SC';
+  line-height: 20px;
+  caret-color: transparent;
+}
+
+.pluginInput::placeholder {
+  color: #aaabaf;
+}
+
+.blinkingCursor {
+  position: absolute;
+  width: 1px;
+  height: 16px;
+  background-color: #110c22;
+  pointer-events: none;
+  animation: blink 1s infinite;
+  top: 2px;
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Settings Scope Switch Styles */
+.scopeRadioGroup {
+  gap: 16px;
+}
+
+.scopeDescription {
+  color: #898b8f;
+  opacity: 0.8;
+}
+
+/* Modal Content Styles */
+.modalContent {
+  padding-top: 16px;
+}

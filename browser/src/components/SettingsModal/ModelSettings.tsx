@@ -1,4 +1,4 @@
-import { InfoCircleOutlined } from '@ant-design/icons';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import { Select, Switch, Tooltip } from 'antd';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -52,16 +52,7 @@ const ModelSettings: React.FC = () => {
         value: model.key,
         label: (
           <Tooltip title={displayText} placement="right">
-            <div
-              style={{
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxWidth: '100%',
-              }}
-            >
-              {displayText}
-            </div>
+            <div className={styles.tooltipContainer}>{displayText}</div>
           </Tooltip>
         ),
       };
@@ -94,7 +85,7 @@ const ModelSettings: React.FC = () => {
                 {t('settings.model.main')}
               </span>
               <Tooltip title={t('settings.model.mainTooltip')}>
-                <InfoCircleOutlined className="text-gray-500 text-xs" />
+                <QuestionCircleOutlined className={styles.questionIcon} />
               </Tooltip>
             </div>
             <Select
@@ -115,7 +106,7 @@ const ModelSettings: React.FC = () => {
                 {t('settings.model.small')}
               </span>
               <Tooltip title={t('settings.model.smallTooltip')}>
-                <InfoCircleOutlined className="text-gray-500 text-xs" />
+                <QuestionCircleOutlined className={styles.questionIcon} />
               </Tooltip>
             </div>
             <Select
@@ -136,7 +127,7 @@ const ModelSettings: React.FC = () => {
                 {t('settings.model.plan')}
               </span>
               <Tooltip title={t('settings.model.planTooltip')}>
-                <InfoCircleOutlined className="text-gray-500 text-xs" />
+                <QuestionCircleOutlined className={styles.questionIcon} />
               </Tooltip>
             </div>
             <Select
@@ -165,7 +156,7 @@ const ModelSettings: React.FC = () => {
                 {t('settings.behavior.language')}
               </span>
               <Tooltip title={t('settings.behavior.languageTooltip')}>
-                <InfoCircleOutlined className="text-gray-500 text-xs" />
+                <QuestionCircleOutlined className={styles.questionIcon} />
               </Tooltip>
             </div>
             <Select
@@ -187,7 +178,7 @@ const ModelSettings: React.FC = () => {
                 {t('settings.behavior.approvalMode')}
               </span>
               <Tooltip title={t('settings.behavior.approvalModeTooltip')}>
-                <InfoCircleOutlined className="text-gray-500 text-xs" />
+                <QuestionCircleOutlined className={styles.questionIcon} />
               </Tooltip>
             </div>
             <Select
@@ -207,7 +198,7 @@ const ModelSettings: React.FC = () => {
                   label: t('settings.behavior.approvalModeLabels.fullAuto'),
                 },
               ]}
-              placeholder="default"
+              placeholder={t('settings.behavior.approvalModeLabels.suggest')}
               allowClear
               className="w-full"
             />
@@ -219,7 +210,7 @@ const ModelSettings: React.FC = () => {
                 {t('settings.behavior.quiet')}
               </span>
               <Tooltip title={t('settings.behavior.quietTooltip')}>
-                <InfoCircleOutlined className="text-gray-500 text-xs" />
+                <QuestionCircleOutlined className={styles.questionIcon} />
               </Tooltip>
             </div>
             <div className={styles.switchContainer}>

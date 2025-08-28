@@ -1,5 +1,6 @@
 import React, { type KeyboardEvent, useRef, useState } from 'react';
 import deleteIcon from '@/icons/delete-icon.svg';
+import styles from './index.module.css';
 
 interface PluginInputProps {
   value: string[];
@@ -85,23 +86,13 @@ const PluginInput: React.FC<PluginInputProps> = ({
   return (
     <div className="relative">
       {/* Main container */}
-      <div
-        className="w-full min-h-[102px] p-1 bg-white border border-[#DCDDE0] rounded cursor-text"
-        onClick={handleContainerClick}
-      >
+      <div className={styles.pluginContainer} onClick={handleContainerClick}>
         {/* Plugin tags and input area */}
-        <div className="flex flex-wrap gap-1 items-start p-1">
+        <div className={styles.pluginTagsArea}>
           {/* Existing plugin tags */}
           {value.map((plugin, index) => (
-            <div
-              key={index}
-              className="inline-flex items-center gap-1 px-1.5 py-1 border border-[#EEEFF0] rounded-sm text-xs text-[#252931] font-normal"
-              style={{
-                fontFamily: 'PingFang SC',
-                backgroundColor: 'rgba(0, 0, 0, 0.08)',
-              }}
-            >
-              <span className="leading-4">{plugin}</span>
+            <div key={index} className={styles.pluginTag}>
+              <span className={styles.pluginTagText}>{plugin}</span>
               <button
                 type="button"
                 onClick={(e) => {
@@ -112,32 +103,16 @@ const PluginInput: React.FC<PluginInputProps> = ({
                 <img
                   src={deleteIcon}
                   alt="删除"
-                  className="w-2 h-2"
-                  style={{
-                    filter:
-                      'invert(47%) sepia(6%) saturate(347%) hue-rotate(182deg) brightness(95%) contrast(87%)',
-                  }}
+                  className={styles.deleteIcon}
                 />
               </button>
             </div>
           ))}
 
           {/* Input field and cursor */}
-          <div
-            className="flex items-center relative flex-1"
-            style={{ minWidth: '120px' }}
-          >
+          <div className={styles.inputWrapper}>
             {/* 隐藏的测量元素 */}
-            <span
-              ref={measureRef}
-              className="absolute opacity-0 pointer-events-none text-sm"
-              style={{
-                fontFamily: 'PingFang SC',
-                fontSize: '14px',
-                lineHeight: '20px',
-                whiteSpace: 'pre',
-              }}
-            >
+            <span ref={measureRef} className={styles.measureSpan}>
               {inputValue}
             </span>
 
@@ -149,41 +124,22 @@ const PluginInput: React.FC<PluginInputProps> = ({
               onKeyDown={handleKeyDown}
               onFocus={handleFocus}
               onBlur={handleBlur}
-              className="bg-transparent outline-none border-none text-sm text-[#110C22] placeholder-[#AAABAF] w-full"
-              style={{
-                fontFamily: 'PingFang SC',
-                fontSize: '14px',
-                lineHeight: '20px',
-                caretColor: 'transparent', // 隐藏原生光标
-              }}
+              className={styles.pluginInput}
               placeholder={value.length === 0 && !isTyping ? placeholder : ''}
             />
 
             {/* Blinking cursor when typing */}
             {isTyping && (
               <div
-                className="absolute w-px h-4 bg-[#110C22] pointer-events-none"
+                className={styles.blinkingCursor}
                 style={{
-                  animation: 'blink 1s infinite',
                   left: `${cursorPosition}px`,
-                  top: '2px', // 向下移动一点与tag对齐
                 }}
               />
             )}
           </div>
         </div>
       </div>
-
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-          @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
-          }
-        `,
-        }}
-      />
     </div>
   );
 };

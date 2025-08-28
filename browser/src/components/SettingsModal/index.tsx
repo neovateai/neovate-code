@@ -5,6 +5,7 @@ import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';
 import ModelSettings from './ModelSettings';
 import SettingsScopeSwitch from './SettingsScopeSwitch';
+import styles from './index.module.css';
 
 const { Text } = Typography;
 
@@ -43,7 +44,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
       <Text type="secondary">{t('settings.loading')}</Text>
     </div>
   ) : (
-    <>
+    <div className={styles.modalContent}>
       {/* Main Content */}
       <div className="space-y-6 mb-6">
         {/* Scope Switch */}
@@ -59,37 +60,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
       <div className="flex justify-end gap-2 pt-4">
         <Button
           onClick={handleCancel}
-          className="rounded-full border border-gray-300 bg-white text-gray-900 hover:bg-gray-50"
-          style={{ borderRadius: '26px', padding: '6px 16px', height: 'auto' }}
+          className={`rounded-full border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 ${styles.cancelButton}`}
         >
           {t('common.cancel')}
         </Button>
         <Button
           onClick={handleSave}
-          className="rounded-full border-0"
-          style={{
-            borderRadius: '26px',
-            padding: '6px 16px',
-            height: 'auto',
-            backgroundColor: '#110C22',
-            color: '#FFFFFF',
-            borderColor: 'transparent',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#110C22';
-            e.currentTarget.style.color = '#FFFFFF';
-            e.currentTarget.style.borderColor = 'transparent';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#110C22';
-            e.currentTarget.style.color = '#FFFFFF';
-            e.currentTarget.style.borderColor = 'transparent';
-          }}
+          className={`rounded-full border-0 ${styles.saveButton}`}
         >
           {t('common.save')}
         </Button>
       </div>
-    </>
+    </div>
   );
 
   return (
