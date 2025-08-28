@@ -1,8 +1,9 @@
 import { useBoolean, useToggle } from 'ahooks';
-import { Button, Dropdown, message } from 'antd';
+import { Dropdown, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { addMCPServer, removeMCPServer } from '@/api/mcpService';
+import { SenderButton } from '@/components/ChatSender/SenderComponent/SenderButton';
 import McpManager from '@/components/McpManager';
 import {
   MCP_KEY_PREFIXES,
@@ -252,30 +253,13 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
           />
         )}
       >
-        {loading || mcpLoading ? (
-          <Button
-            className={styles.triggerButton}
-            title={t('mcp.mcpManagementTitle')}
-            loading={true}
-          >
-            MCP
-          </Button>
-        ) : (
-          <div
-            className={styles.triggerButton}
-            title={t('mcp.mcpManagementTitle')}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                // Dropdown automatically handles click events
-              }
-            }}
-          >
-            MCP
-          </div>
-        )}
+        <SenderButton
+          className={styles.triggerButton}
+          title={t('mcp.mcpManagementTitle')}
+          disabled={loading || mcpLoading}
+        >
+          MCP
+        </SenderButton>
       </Dropdown>
 
       <McpManager
