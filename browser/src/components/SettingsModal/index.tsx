@@ -19,11 +19,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
   const { settings } = useSnapshot(state);
 
   useEffect(() => {
-    if (open && !settings.loaded) {
+    if (open) {
       // 每次打开弹窗都重新加载设置以确保显示最新配置
       actions.loadSettings();
     }
-  }, [open, settings.loaded]);
+  }, [open]);
 
   const handleSave = async () => {
     try {
