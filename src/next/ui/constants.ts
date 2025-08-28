@@ -1,3 +1,5 @@
+import path from 'path';
+
 export const UI_COLORS = {
   USER: 'blueBright',
   ASSISTANT: 'magentaBright',
@@ -20,3 +22,40 @@ export const SPACING = {
   MESSAGE_MARGIN_LEFT_USER: 0,
 } as const;
 
+export const TOOL_NAMES = {
+  READ: 'read',
+  BASH: 'bash',
+  EDIT: 'edit',
+  WRITE: 'write',
+  FETCH: 'fetch',
+  GLOB: 'glob',
+  GREP: 'grep',
+  LS: 'ls',
+} as const;
+
+export const TOOL_DESCRIPTION_EXTRACTORS = {
+  [TOOL_NAMES.READ]: (args: any, cwd: string) =>
+    !args.file_path
+      ? 'No file path provided'
+      : path.relative(cwd, args.file_path),
+  [TOOL_NAMES.BASH]: (args: any, cwd: string) => {
+    if (!args.command || typeof args.command !== 'string') {
+      return 'No command provided';
+    }
+    const command = args.command.trim();
+    return command.length > 100 ? command.substring(0, 97) + '...' : command;
+  },
+  [TOOL_NAMES.EDIT]: (args: any, cwd: string) =>
+    !args.file_path
+      ? 'No file path provided'
+      : path.relative(cwd, args.file_path),
+  [TOOL_NAMES.WRITE]: (args: any, cwd: string) =>
+    !args.file_path
+      ? 'No file path provided'
+      : path.relative(cwd, args.file_path),
+  [TOOL_NAMES.FETCH]: (args: any, cwd: string) => args.url,
+  [TOOL_NAMES.GLOB]: (args: any, cwd: string) => args.pattern,
+  [TOOL_NAMES.GREP]: (args: any, cwd: string) => args.pattern,
+  [TOOL_NAMES.LS]: (args: any, cwd: string) =>
+    args.dir_path ? path.relative(cwd, args.dir_path) : '.',
+} as const;

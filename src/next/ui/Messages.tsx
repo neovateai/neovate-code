@@ -11,7 +11,7 @@ import type {
 } from '../history';
 import { Markdown } from './Markdown';
 import { TodoList, TodoRead } from './Todo';
-import { SPACING, UI_COLORS } from './constants';
+import { SPACING, TOOL_DESCRIPTION_EXTRACTORS, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 
 export function Messages() {
@@ -98,17 +98,24 @@ function AssistantText({
 }
 
 function ToolUse({ part }: { part: ToolUsePart }) {
+  const { cwd } = useAppStore();
+  const { name, input } = part;
+  const extractor =
+    TOOL_DESCRIPTION_EXTRACTORS[
+      name as keyof typeof TOOL_DESCRIPTION_EXTRACTORS
+    ];
+  const description = extractor ? extractor(input, cwd) : '';
   return (
     <Box
       marginTop={SPACING.MESSAGE_MARGIN_TOP}
       marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
     >
       <Text bold color={UI_COLORS.TOOL}>
-        {part.name}
+        {name}
       </Text>
-      <Text color={UI_COLORS.TOOL_DESCRIPTION}>
-        ({JSON.stringify(part.input)})
-      </Text>
+      {description && (
+        <Text color={UI_COLORS.TOOL_DESCRIPTION}>({description})</Text>
+      )}
     </Box>
   );
 }
