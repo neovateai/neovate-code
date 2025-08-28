@@ -99,6 +99,12 @@
     "filesAndFolders": "Files & Folders",
     "slashCommands": "Slash Commands"
   },
+  "suggestion": {
+    "navigate": "navigate",
+    "select": "select",
+    "close": "close",
+    "back": "back"
+  },
   "menu": {
     "rename": "Rename",
     "delete": "Delete"

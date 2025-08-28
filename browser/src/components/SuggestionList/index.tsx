@@ -319,6 +319,21 @@ const SuggestionList = (props: Props) => {
     return null;
   }, [selectedFirstKey, handleBackClick, handleInputChange, t]);
 
+  const ListFooter = useMemo(() => {
+    return (
+      <div className="px-3.5 pt-1.5 border-t border-[#eeeff0] text-xs text-gray-500 select-none">
+        <div className="flex items-center gap-3 justify-end">
+          <span>↑↓ {t('suggestion.navigate')}</span>
+          <span>Enter {t('suggestion.select')}</span>
+          <span>
+            Esc{' '}
+            {selectedFirstKey ? t('suggestion.back') : t('suggestion.close')}
+          </span>
+        </div>
+      </div>
+    );
+  }, [selectedFirstKey, t]);
+
   // Combined effect for popup state management
   useEffect(() => {
     if (open) {
@@ -430,6 +445,7 @@ const SuggestionList = (props: Props) => {
             dataSource={selectedFirstKey ? secondLevelList : firstLevelList}
             renderItem={renderItem}
           />
+          {ListFooter}
         </div>
       )}
       trigger={[]}
