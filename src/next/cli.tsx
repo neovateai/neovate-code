@@ -121,16 +121,7 @@ async function runInQuietMode(argv: Argv, context: Context) {
     if (isSlashCommand(input)) {
       const parsed = parseSlashCommand(input);
       if (parsed) {
-        const pluginSlashCommands = await context.apply({
-          hook: 'command',
-          args: [],
-          type: PluginHookType.SeriesMerge,
-        });
-        const slashCommandManager = new SlashCommandManager({
-          productName: context.productName,
-          paths: context.paths,
-          slashCommands: pluginSlashCommands,
-        });
+        const slashCommandManager = await SlashCommandManager.create(context);
         const command = slashCommandManager.get(parsed.command);
         if (command) {
           // TODO: support other slash command types

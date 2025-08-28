@@ -1,10 +1,12 @@
 import path from 'path';
+import { PluginHookType } from '../plugin';
 import { createBuiltinCommands } from '../slash-commands/builtin';
 import {
   CommandSource,
   type PromptCommand,
   type SlashCommand,
 } from '../slash-commands/types';
+import type { Context } from './context';
 import {
   type NormalizedMarkdownFile,
   loadPolishedMarkdownFiles,
@@ -51,6 +53,19 @@ export class SlashCommandManager {
       commands.set(command.command.name, command);
     });
     this.commands = commands;
+  }
+
+  static async create(context: Context) {
+    const pluginSlashCommands = await context.apply({
+      hook: 'command',
+      args: [],
+      type: PluginHookType.SeriesMerge,
+    });
+    return new SlashCommandManager({
+      productName: context.productName,
+      paths: context.paths,
+      slashCommands: pluginSlashCommands,
+    });
   }
 
   get(name: string): SlashCommand | undefined {
