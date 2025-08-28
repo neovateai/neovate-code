@@ -5,7 +5,7 @@ import Icon, {
 } from '@ant-design/icons';
 import { Input, type InputRef, List, Popover } from 'antd';
 import { cx } from 'antd-style';
-import { groupBy } from 'lodash-es';
+import { groupBy, throttle } from 'lodash-es';
 import React, {
   useCallback,
   useEffect,
@@ -66,6 +66,8 @@ const SuggestionList = (props: Props) => {
 
   const [selectedFirstKey, setSelectedFirstKey] = useState<string>();
   const [searchResults, setSearchResults] = useState<SuggestionItem[]>();
+  const [listPointerEvents, setListPointerEvents] =
+    useState<React.CSSProperties['pointerEvents']>('auto');
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const inputRef = useRef<InputRef>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -113,6 +115,13 @@ const SuggestionList = (props: Props) => {
     [onSearch],
   );
 
+  const handleMouseMove = useCallback(
+    throttle(() => {
+      setListPointerEvents('auto');
+    }, 300),
+    [],
+  );
+
   // Handle keyboard navigation
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
@@ -121,12 +130,14 @@ const SuggestionList = (props: Props) => {
       switch (event.key) {
         case 'ArrowDown':
           event.preventDefault();
+          setListPointerEvents('none');
           setSelectedIndex((prev) =>
             prev < currentList.length - 1 ? prev + 1 : 0,
           );
           break;
         case 'ArrowUp':
           event.preventDefault();
+          setListPointerEvents('none');
           setSelectedIndex((prev) =>
             prev > 0 ? prev - 1 : currentList.length - 1,
           );
@@ -369,7 +380,7 @@ const SuggestionList = (props: Props) => {
 
         if (isAbove || isBelow) {
           selectedItem.scrollIntoView({
-            behavior: 'smooth',
+            behavior: 'auto',
             block: 'nearest',
             inline: 'nearest',
           });
@@ -402,6 +413,7 @@ const SuggestionList = (props: Props) => {
           ref={popupRef}
           tabIndex={-1}
           onKeyDown={handleKeyDown}
+          onMouseMove={handleMouseMove}
         >
           {ListHeader}
           <List
@@ -409,6 +421,9 @@ const SuggestionList = (props: Props) => {
             ref={listRef}
             locale={{
               emptyText: t('common.empty'),
+            }}
+            style={{
+              pointerEvents: listPointerEvents,
             }}
             split={false}
             loading={loading}
