@@ -1,12 +1,6 @@
 import React from 'react';
+import type { McpToggleSwitchProps } from '@/types/mcp';
 import styles from './index.module.css';
-
-interface McpToggleSwitchProps {
-  enabled: boolean;
-  disabled?: boolean;
-  showOffText?: boolean;
-  onClick?: (e: React.MouseEvent) => void;
-}
 
 const McpToggleSwitch: React.FC<McpToggleSwitchProps> = ({
   enabled,

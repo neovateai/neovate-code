@@ -1,15 +1,11 @@
 import React from 'react';
-import type { McpServer } from '@/types/mcp';
+import type { McpServiceItemProps } from '@/types/mcp';
 import McpToggleSwitch from './McpToggleSwitch';
 import styles from './index.module.css';
 
 /**
  * Create McpServiceItem sub-component to handle the display and interaction of a single MCP service item
  */
-interface McpServiceItemProps {
-  server: McpServer;
-  onToggle: (serverName: string, enabled: boolean, scope: string) => void;
-}
 
 const McpServiceItem: React.FC<McpServiceItemProps> = ({
   server,

@@ -7,6 +7,11 @@ import { MCP_KEY_PREFIXES } from '@/constants/mcp';
 import { useMcpServices } from '@/hooks/useMcpServices';
 import type { McpManagerServer, McpServerConfig } from '@/types/mcp';
 
+/**
+ * @deprecated Use useMcpServerLoader instead
+ * This hook is deprecated and will be removed in a future version.
+ * Please migrate to useMcpServerLoader which provides unified MCP server management.
+ */
 export const useMcpServerManager = () => {
   const { t } = useTranslation();
   const [loading, { setTrue: setLoadingTrue, setFalse: setLoadingFalse }] =

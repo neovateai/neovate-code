@@ -1,20 +1,10 @@
 import { Space, Switch, Table, Tag, Tooltip, Typography } from 'antd';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { McpManagerServer } from '@/types/mcp';
+import type { McpServerTableProps } from '@/types/mcp';
 import styles from './index.module.css';
 
 const { Text } = Typography;
-
-interface McpServerTableProps {
-  servers: McpManagerServer[];
-  loading: boolean;
-  onToggleService: (
-    serverName: string,
-    enabled: boolean,
-    scope: string,
-  ) => void;
-}
 
 const McpServerTable: React.FC<McpServerTableProps> = ({
   servers,

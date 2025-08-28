@@ -3,22 +3,11 @@ import { Button } from 'antd';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { MCP_KEY_PREFIXES } from '@/constants/mcp';
-import type { McpServer, PresetMcpService } from '@/types/mcp';
+import type { McpDropdownContentProps } from '@/types/mcp';
 import McpServiceItem from './McpServiceItem';
 import McpToggleSwitch from './McpToggleSwitch';
 import styles from './index.module.css';
 
-interface McpDropdownContentProps {
-  mcpServers: McpServer[];
-  presetMcpServices: PresetMcpService[];
-  onToggleService: (
-    serverName: string,
-    enabled: boolean,
-    scope: string,
-  ) => void;
-  onQuickAdd: (service: PresetMcpService) => void;
-  onOpenManager: () => void;
-}
 const McpDropdownContent: React.FC<McpDropdownContentProps> = ({
   mcpServers,
   presetMcpServices,

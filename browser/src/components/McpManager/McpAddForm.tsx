@@ -20,22 +20,13 @@ import { MCP_DEFAULTS } from '@/constants/mcp';
 import type {
   FormValues,
   JsonConfigFormat,
+  McpAddFormProps,
   McpServerConfig,
 } from '@/types/mcp';
 import { containerEventHandlers, modalEventHandlers } from '@/utils/eventUtils';
 import styles from './index.module.css';
 
 const { Text } = Typography;
-
-interface McpAddFormProps {
-  visible: boolean;
-  inputMode: 'json' | 'form';
-  addScope: 'global' | 'project';
-  onCancel: () => void;
-  onSuccess: () => void;
-  onInputModeChange: (mode: 'json' | 'form') => void;
-  onScopeChange: (scope: 'global' | 'project') => void;
-}
 
 const McpAddForm: React.FC<McpAddFormProps> = ({
   visible,

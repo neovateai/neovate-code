@@ -122,3 +122,104 @@ export interface UpdateMcpServerRequest {
   env?: string;
   global?: boolean;
 }
+
+// Hook types
+export interface UseMcpServerLoaderOptions {
+  onLoadError?: (error: Error) => void;
+  onToggleError?: (error: Error, serverName: string) => void;
+}
+
+export interface UseMcpServerLoaderReturn {
+  // Common state
+  loading: boolean;
+
+  // For McpDropdown
+  mcpServers: McpServer[];
+  loadMcpServers: () => Promise<void>;
+  handleToggleEnabled: (
+    serverName: string,
+    enabled: boolean,
+    scope: string,
+  ) => Promise<void>;
+  handleQuickAdd: (service: PresetMcpService) => Promise<void>;
+
+  // For McpManager
+  managerServers: McpManagerServer[];
+  loadServers: () => Promise<void>;
+  handleToggleService: (
+    serverName: string,
+    enabled: boolean,
+    scope: string,
+  ) => Promise<void>;
+}
+
+export interface UseMcpServicesOptions {
+  onLoadError?: (error: Error) => void;
+  onToggleError?: (error: Error, serverName: string) => void;
+}
+
+export interface UseMcpServicesReturn {
+  allKnownServices: Set<string>;
+  serviceConfigs: Map<string, McpServerConfig>;
+  updateKnownServices: (newServices: Set<string>) => void;
+  updateServiceConfigs: (newConfigs: Map<string, McpServerConfig>) => void;
+  loadMcpData: () => Promise<{
+    globalServers: Record<string, unknown>;
+    projectServers: Record<string, unknown>;
+  }>;
+  handleToggleService: (
+    serverName: string,
+    enabled: boolean,
+    scope: string,
+    onSuccess?: () => void | Promise<void>,
+  ) => Promise<void>;
+  initializeFromLocalStorage: () => {
+    knownServices: Set<string>;
+    configs: Map<string, McpServerConfig>;
+  };
+}
+
+// Component Props types
+export interface McpDropdownContentProps {
+  mcpServers: McpServer[];
+  presetMcpServices: PresetMcpService[];
+  onToggleService: (
+    serverName: string,
+    enabled: boolean,
+    scope: string,
+  ) => void;
+  onQuickAdd: (service: PresetMcpService) => void;
+  onOpenManager: () => void;
+}
+
+export interface McpServiceItemProps {
+  server: McpServer;
+  onToggle: (serverName: string, enabled: boolean, scope: string) => void;
+}
+
+export interface McpToggleSwitchProps {
+  enabled: boolean;
+  disabled?: boolean;
+  showOffText?: boolean;
+  onClick?: (e: React.MouseEvent) => void;
+}
+
+export interface McpServerTableProps {
+  servers: McpManagerServer[];
+  loading: boolean;
+  onToggleService: (
+    serverName: string,
+    enabled: boolean,
+    scope: string,
+  ) => void;
+}
+
+export interface McpAddFormProps {
+  visible: boolean;
+  inputMode: 'json' | 'form';
+  addScope: 'global' | 'project';
+  onCancel: () => void;
+  onSuccess: () => void;
+  onInputModeChange: (mode: 'json' | 'form') => void;
+  onScopeChange: (scope: 'global' | 'project') => void;
+}

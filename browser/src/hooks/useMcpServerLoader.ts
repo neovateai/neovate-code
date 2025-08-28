@@ -9,37 +9,10 @@ import type {
   McpServer,
   McpServerConfig,
   PresetMcpService,
+  UseMcpServerLoaderOptions,
+  UseMcpServerLoaderReturn,
 } from '@/types/mcp';
 import { useMcpServices } from './useMcpServices';
-
-interface UseMcpServerLoaderOptions {
-  onLoadError?: (error: Error) => void;
-  onToggleError?: (error: Error, serverName: string) => void;
-}
-
-interface UseMcpServerLoaderReturn {
-  // Common state
-  loading: boolean;
-
-  // For McpDropdown
-  mcpServers: McpServer[];
-  loadMcpServers: () => Promise<void>;
-  handleToggleEnabled: (
-    serverName: string,
-    enabled: boolean,
-    scope: string,
-  ) => Promise<void>;
-  handleQuickAdd: (service: PresetMcpService) => Promise<void>;
-
-  // For McpManager
-  managerServers: McpManagerServer[];
-  loadServers: () => Promise<void>;
-  handleToggleService: (
-    serverName: string,
-    enabled: boolean,
-    scope: string,
-  ) => Promise<void>;
-}
 
 export const useMcpServerLoader = (
   options: UseMcpServerLoaderOptions = {},

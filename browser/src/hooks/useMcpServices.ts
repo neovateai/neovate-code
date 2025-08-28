@@ -3,33 +3,11 @@ import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { addMCPServer, getMCPServers, removeMCPServer } from '@/api/mcpService';
 import { MCP_STORAGE_KEYS } from '@/constants/mcp';
-import type { McpServerConfig } from '@/types/mcp';
-
-interface UseMcpServicesOptions {
-  onLoadError?: (error: Error) => void;
-  onToggleError?: (error: Error, serverName: string) => void;
-}
-
-interface UseMcpServicesReturn {
-  allKnownServices: Set<string>;
-  serviceConfigs: Map<string, McpServerConfig>;
-  updateKnownServices: (newServices: Set<string>) => void;
-  updateServiceConfigs: (newConfigs: Map<string, McpServerConfig>) => void;
-  loadMcpData: () => Promise<{
-    globalServers: Record<string, unknown>;
-    projectServers: Record<string, unknown>;
-  }>;
-  handleToggleService: (
-    serverName: string,
-    enabled: boolean,
-    scope: string,
-    onSuccess?: () => void | Promise<void>,
-  ) => Promise<void>;
-  initializeFromLocalStorage: () => {
-    knownServices: Set<string>;
-    configs: Map<string, McpServerConfig>;
-  };
-}
+import type {
+  McpServerConfig,
+  UseMcpServicesOptions,
+  UseMcpServicesReturn,
+} from '@/types/mcp';
 
 export const useMcpServices = (
   options: UseMcpServicesOptions = {},
