@@ -390,7 +390,7 @@ const SuggestionList = (props: Props) => {
       destroyOnHidden // must be set to true to get focus when each time the popup is opened
       content={() => (
         <div
-          className="rounded-[10px] border border-[#eeeff0] bg-white py-2"
+          className="rounded-[10px] border border-[#eeeff0] bg-white py-2 outline-none"
           ref={popupRef}
           tabIndex={-1}
           onKeyDown={handleKeyDown}
