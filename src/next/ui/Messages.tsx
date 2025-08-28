@@ -1,6 +1,6 @@
 import { Box, Static, Text } from 'ink';
 import React from 'react';
-import { TOOL_NAME } from '../../constants';
+import { CANCELED_MESSAGE_TEXT, TOOL_NAME } from '../../constants';
 import type {
   AssistantMessage,
   NormalizedMessage,
@@ -9,6 +9,11 @@ import type {
   ToolUsePart,
   UserMessage,
 } from '../history';
+import {
+  getMessageText,
+  isCanceledMessage,
+  isToolResultMessage,
+} from '../message';
 import { DiffViewer } from './DiffViewer';
 import { Markdown } from './Markdown';
 import { TodoList, TodoRead } from './Todo';
@@ -59,11 +64,8 @@ function Header() {
 }
 
 function User({ message }: { message: UserMessage }) {
-  const text =
-    typeof message.content === 'string'
-      ? message.content
-      : message.content.map((part) => part.text).join('');
-  const isCanceled = text === '[Request interrupted by user]';
+  const text = getMessageText(message);
+  const isCanceled = isCanceledMessage(message);
   return (
     <Box
       flexDirection="column"
@@ -252,10 +254,7 @@ type MessageProps = {
 
 function Message({ message, productName }: MessageProps) {
   if (message.role === 'user') {
-    const isToolResult =
-      Array.isArray(message.content) &&
-      message.content.length > 0 &&
-      message.content[0]?.type === 'tool_result';
+    const isToolResult = isToolResultMessage(message);
     if (isToolResult) {
       return <ToolResult key={message.uuid} message={message as ToolMessage} />;
     } else {

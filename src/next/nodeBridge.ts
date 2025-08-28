@@ -1,3 +1,4 @@
+import { CANCELED_MESSAGE_TEXT } from '../constants';
 import { Context } from './context';
 import { JsonlLogger } from './jsonl';
 import { MessageBus } from './messageBus';
@@ -98,7 +99,7 @@ class NodeHandlerRegistry {
           filePath: context.paths.getSessionLogPath(sessionId),
         });
         const message = jsonlLogger.addUserMessage(
-          '[Request interrupted by user]',
+          CANCELED_MESSAGE_TEXT,
           sessionId,
         );
         return {

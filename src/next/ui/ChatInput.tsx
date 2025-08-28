@@ -8,7 +8,7 @@ import { useTerminalSize } from './useTerminalSize';
 
 export function ChatInput() {
   const { inputState, handlers } = useInputHandlers();
-  const { log, setExitMessage, cancel } = useAppStore();
+  const { log, setExitMessage, cancel, setHistoryIndex } = useAppStore();
   const { columns } = useTerminalSize();
   return (
     <Box flexDirection="column" marginTop={SPACING.MESSAGE_MARGIN_TOP}>
@@ -25,15 +25,9 @@ export function ChatInput() {
           value={inputState.state.value}
           placeholder={''}
           onChange={handlers.handleChange}
-          onHistoryUp={() => {
-            log('onHistoryUp');
-          }}
-          onHistoryDown={() => {
-            log('onHistoryDown');
-          }}
-          onHistoryReset={() => {
-            log('onHistoryReset');
-          }}
+          onHistoryUp={handlers.handleHistoryUp}
+          onHistoryDown={handlers.handleHistoryDown}
+          onHistoryReset={handlers.handleHistoryReset}
           onExit={() => process.exit(0)}
           onExitMessage={(show, key) => {
             setExitMessage(show ? `Press ${key} again to exit` : null);

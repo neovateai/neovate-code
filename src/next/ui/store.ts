@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { CANCELED_MESSAGE_TEXT } from '../../constants';
 import type { Message } from '../history';
 import type { LoopResult } from '../loop';
 import type { UIBridge } from '../uiBridge';
@@ -80,6 +81,7 @@ type InitializeOpts = {
   initialPrompt: string;
   sessionId: string | undefined;
   messages: Message[];
+  history: string[];
   logFile: string;
 };
 
@@ -90,6 +92,8 @@ interface AppActions {
   log: (log: string) => void;
   setExitMessage: (exitMessage: string | null) => void;
   cancel: () => Promise<void>;
+  setDraftInput: (draftInput: string) => void;
+  setHistoryIndex: (historyIndex: number | null) => void;
 }
 
 type AppStore = AppState & AppActions;
@@ -114,6 +118,7 @@ export const useAppStore = create<AppStore>()(
       queuedMessages: [],
       draftInput: '',
       history: [],
+      historyIndex: null,
       sessionId: null,
       logs: [],
 
@@ -134,12 +139,14 @@ export const useAppStore = create<AppStore>()(
           model: response.data.model,
           sessionId: opts.sessionId,
           messages: opts.messages,
+          history: opts.history,
           initialPrompt: opts.initialPrompt,
           logFile: opts.logFile,
           // theme: 'light',
         });
         bridge.onEvent('message', (data) => {
-          get().addMessage(data.message);
+          const message = data.message as Message;
+          get().addMessage(message);
         });
         setImmediate(async () => {
           if (opts.initialPrompt) {
@@ -152,7 +159,11 @@ export const useAppStore = create<AppStore>()(
       // TODO: support queued messages
       send: async (message) => {
         const { bridge, cwd, sessionId } = get();
-        set({ status: 'processing' });
+        set({
+          status: 'processing',
+          history: [...get().history, message],
+          historyIndex: null,
+        });
         const response: LoopResult = await bridge.request('send', {
           message,
           cwd,
@@ -193,6 +204,14 @@ export const useAppStore = create<AppStore>()(
 
       setExitMessage: (exitMessage: string | null) => {
         set({ exitMessage });
+      },
+
+      setDraftInput: (draftInput: string) => {
+        set({ draftInput });
+      },
+
+      setHistoryIndex: (historyIndex: number | null) => {
+        set({ historyIndex });
       },
     }),
     { name: 'app-store' },

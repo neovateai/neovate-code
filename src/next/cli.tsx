@@ -10,6 +10,7 @@ import { type Plugin, PluginHookType } from '../plugin';
 import { clearTracing } from '../tracing';
 import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
+import { getMessageText, isUserTextMessage } from './message';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
 import { Paths } from './paths';
@@ -178,12 +179,14 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
     productName: contextCreateOpts.productName,
     cwd,
   });
-  const messages = (() => {
+  const [messages, history] = (() => {
     if (!argv.resume) {
-      return [];
+      return [[], []];
     }
     const logPath = paths.getSessionLogPath(argv.resume);
-    return loadSessionMessages({ logPath });
+    const messages = loadSessionMessages({ logPath });
+    const history = messages.filter(isUserTextMessage).map(getMessageText);
+    return [messages, history];
   })();
   const sessionId = argv.resume || randomUUID();
   await useAppStore.getState().initialize({
@@ -191,8 +194,10 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
     cwd,
     initialPrompt: argv._[0],
     sessionId,
-    messages,
     logFile: paths.getSessionLogPath(sessionId),
+    // TODO: should move to nodeBridge
+    messages,
+    history,
   });
 
   render(<App />, {
