@@ -1,4 +1,4 @@
-import { FileSearchOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { debounce } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,6 +39,11 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     });
   }, [fileList]);
 
+  const slashCommandSuggestions = useMemo(() => {
+    // TODO: commands list
+    return [];
+  }, []);
+
   const defaultSuggestions = useMemo(() => {
     return [
       {
@@ -47,8 +52,14 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
         icon: <FileSearchOutlined />,
         children: fileSuggestions,
       },
+      {
+        label: t('context.slashCommands'),
+        value: ContextType.SLASH_COMMAND,
+        icon: <AppstoreOutlined />,
+        children: slashCommandSuggestions,
+      },
     ] as SuggestionItem[];
-  }, [fileSuggestions, t]);
+  }, [fileSuggestions, slashCommandSuggestions, t]);
 
   const searchFunctionMap: { [key in ContextType]?: (text: string) => void } = {
     [ContextType.FILE]: (text) =>

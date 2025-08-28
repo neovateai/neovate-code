@@ -96,7 +96,8 @@
       "dragFileHere": "Drag file here to upload",
       "supportTypeDesc": "Support pictures and text files"
     },
-    "filesAndFolders": "Files & Folders"
+    "filesAndFolders": "Files & Folders",
+    "slashCommands": "Slash Commands"
   },
   "menu": {
     "rename": "Rename",
