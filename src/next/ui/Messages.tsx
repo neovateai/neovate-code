@@ -9,6 +9,7 @@ import type {
   ToolUsePart,
   UserMessage,
 } from '../history';
+import { DiffViewer } from './DiffViewer';
 import { Markdown } from './Markdown';
 import { TodoList, TodoRead } from './Todo';
 import { SPACING, TOOL_DESCRIPTION_EXTRACTORS, UI_COLORS } from './constants';
@@ -189,6 +190,30 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
         oldTodos={result.data.oldTodos}
         newTodos={result.data.newTodos}
         verbose={false}
+      />
+    );
+  }
+  if (name === 'edit') {
+    const originalContent = input.old_string;
+    const newContent = input.new_string;
+    const fileName = result.data.relativeFilePath;
+    return (
+      <DiffViewer
+        originalContent={originalContent}
+        newContent={newContent}
+        fileName={fileName}
+      />
+    );
+  }
+  if (name === 'write') {
+    const fileName = result.data.relativeFilePath;
+    const originalContent = result.data.oldContent || '';
+    const newContent = result.data.content;
+    return (
+      <DiffViewer
+        originalContent={originalContent}
+        newContent={newContent}
+        fileName={fileName}
       />
     );
   }

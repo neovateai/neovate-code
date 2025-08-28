@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { IMAGE_EXTENSIONS } from '../constants';
 import { Context } from '../context';
 import { type EnhancedTool, enhanceTool } from '../tool';
+import type { ReadToolResult } from './type';
 
 type ImageMediaType =
   | 'image/jpeg'
@@ -108,7 +109,11 @@ Usage:
             `The number of lines to read. Only provide if the file is too large to read at once`,
           ),
       }),
-      execute: async ({ file_path, offset, limit }) => {
+      execute: async ({
+        file_path,
+        offset,
+        limit,
+      }): Promise<ReadToolResult> => {
         try {
           // Validate parameters
           if (offset !== undefined && offset !== null && offset < 1) {

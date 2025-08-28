@@ -7,6 +7,7 @@ import { TOOL_NAME } from '../constants';
 import { Context } from '../context';
 import { enhanceTool } from '../tool';
 import { randomUUID } from '../utils/randomUUID';
+import type { TodoReadToolResult, TodoWriteToolResult } from './type';
 
 const TODO_WRITE_PROMPT = `
 Use this tool to create and manage a structured task list for your current coding session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
@@ -246,7 +247,7 @@ export function createTodoTool(opts: { context: Context }) {
     parameters: z.object({
       todos: TodoListSchema.describe('The updated todo list'),
     }),
-    async execute({ todos }) {
+    async execute({ todos }): Promise<TodoWriteToolResult> {
       try {
         const oldTodos = await readTodos();
         const newTodos = todos;
@@ -274,7 +275,7 @@ export function createTodoTool(opts: { context: Context }) {
     name: TOOL_NAME.TODO_READ,
     description: TODO_READ_PROMPT,
     parameters: z.object({}).passthrough(),
-    async execute() {
+    async execute(): Promise<TodoReadToolResult> {
       try {
         const todos = await readTodos();
         return {

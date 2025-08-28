@@ -397,4 +397,3 @@ export function DiffViewer({
 
   return RenderDiffContent(diffLines, fileName, maxHeight, terminalWidth);
 }
-

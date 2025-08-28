@@ -2,6 +2,7 @@ import { Agent, Runner, tool } from '@openai/agents';
 import TurndownService from 'turndown';
 import { z } from 'zod';
 import { Context } from '../context';
+import type { FetchToolResult } from './type';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5min
 const urlCache = new Map();
@@ -19,7 +20,7 @@ Remembers:
       url: z.string().describe('The url to fetch content from'),
       prompt: z.string().describe('The prompt to run on the fetched content'),
     }),
-    execute: async ({ url, prompt }) => {
+    execute: async ({ url, prompt }): Promise<FetchToolResult> => {
       try {
         const startTime = Date.now();
         const key = `${url}-${prompt}`;

@@ -9,6 +9,7 @@ import { Context } from '../context';
 import { type ApprovalContext, type EnhancedTool, enhanceTool } from '../tool';
 import { getErrorMessage } from '../utils/error';
 import { shellExecute } from '../utils/shell-execution';
+import type { BashToolResult } from './type';
 
 const debug = createDebug('takumi:tools:bash');
 
@@ -118,7 +119,7 @@ async function executeCommand(
   command: string,
   timeout: number,
   cwd: string,
-): Promise<any> {
+): Promise<BashToolResult> {
   const actualTimeout = Math.min(timeout, MAX_TIMEOUT);
 
   const validationError = validateCommand(command);
@@ -126,6 +127,7 @@ async function executeCommand(
     return {
       success: false,
       error: validationError,
+      // @ts-ignore
       command,
     };
   }

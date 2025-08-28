@@ -9,6 +9,7 @@ import {
   listDirectory,
   printTree,
 } from '../utils/list';
+import type { LsToolResult } from './type';
 
 export function createLSTool(opts: { cwd: string; productName: string }) {
   return tool({
@@ -17,7 +18,7 @@ export function createLSTool(opts: { cwd: string; productName: string }) {
     parameters: z.object({
       dir_path: z.string().describe('The path to the directory to list.'),
     }),
-    execute: async ({ dir_path }) => {
+    execute: async ({ dir_path }): Promise<LsToolResult> => {
       const fullFilePath = path.isAbsolute(dir_path)
         ? dir_path
         : path.resolve(opts.cwd, dir_path);

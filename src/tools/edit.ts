@@ -4,6 +4,7 @@ import path from 'path';
 import { z } from 'zod';
 import { Context } from '../context';
 import { applyEdit } from '../utils/applyEdit';
+import type { EditToolResult } from './type';
 
 export function createEditTool(opts: { context: Context }) {
   return tool({
@@ -25,12 +26,17 @@ Usage:
         .string()
         .describe('The text to replace the old_string with'),
     }),
-    execute: async ({ file_path, old_string, new_string }) => {
+    execute: async ({
+      file_path,
+      old_string,
+      new_string,
+    }): Promise<EditToolResult> => {
       try {
         const cwd = opts.context.cwd;
         const fullFilePath = path.isAbsolute(file_path)
           ? file_path
           : path.resolve(cwd, file_path);
+        const relativeFilePath = path.relative(cwd, fullFilePath);
         const { patch, updatedFile } = applyEdit(
           cwd,
           fullFilePath,
@@ -44,7 +50,7 @@ Usage:
         return {
           success: true,
           message: `File ${file_path} successfully edited.`,
-          data: { filePath: file_path },
+          data: { filePath: file_path, relativeFilePath },
         };
       } catch (e) {
         return {

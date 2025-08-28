@@ -4,6 +4,7 @@ import path from 'path';
 import { z } from 'zod';
 import { Context } from '../context';
 import { ripGrep } from '../utils/ripgrep';
+import type { GrepToolResult } from './type';
 
 export function createGrepTool(opts: { context: Context }) {
   return tool({
@@ -22,7 +23,11 @@ export function createGrepTool(opts: { context: Context }) {
         .nullable()
         .describe('The file pattern to include in the search'),
     }),
-    execute: async ({ pattern, search_path, include }) => {
+    execute: async ({
+      pattern,
+      search_path,
+      include,
+    }): Promise<GrepToolResult> => {
       try {
         const start = Date.now();
         const args = ['-li', pattern];

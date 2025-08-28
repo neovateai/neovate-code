@@ -2,6 +2,7 @@ import { tool } from '@openai/agents';
 import { glob } from 'glob';
 import { z } from 'zod';
 import { Context } from '../context';
+import type { GlobToolResult } from './type';
 
 const LIMIT = 100;
 
@@ -23,7 +24,7 @@ Glob
         .nullable()
         .describe('The directory to search in'),
     }),
-    execute: async ({ pattern, path }) => {
+    execute: async ({ pattern, path }): Promise<GlobToolResult> => {
       try {
         const start = Date.now();
         const paths = await glob([pattern], {

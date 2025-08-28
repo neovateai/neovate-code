@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import { Context } from '../context';
+import type { WriteToolResult } from './type';
 
 export function createWriteTool(opts: { context: Context }) {
   return tool({
@@ -12,7 +13,7 @@ export function createWriteTool(opts: { context: Context }) {
       file_path: z.string(),
       content: z.string(),
     }),
-    execute: async ({ file_path, content }) => {
+    execute: async ({ file_path, content }): Promise<WriteToolResult> => {
       try {
         const fullFilePath = path.isAbsolute(file_path)
           ? file_path
@@ -31,6 +32,7 @@ export function createWriteTool(opts: { context: Context }) {
           message: `File successfully written to ${file_path}`,
           data: {
             filePath: file_path,
+            relativeFilePath: path.relative(opts.context.cwd, fullFilePath),
             oldContent,
             content,
             type: oldFileExists ? 'replace' : 'add',
