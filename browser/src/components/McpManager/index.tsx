@@ -4,7 +4,7 @@ import { Button, Modal } from 'antd';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MCP_DEFAULTS } from '@/constants/mcp';
-import { useMcpServerManager } from '@/hooks/useMcpServerManager';
+import { useMcpServerLoader } from '@/hooks/useMcpServerLoader';
 import type { McpManagerProps } from '@/types/mcp';
 import { containerEventHandlers } from '@/utils/eventUtils';
 import McpAddForm from './McpAddForm';
@@ -24,9 +24,13 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     addScope: MCP_DEFAULTS.SCOPE,
   });
 
-  // Use custom hook for server management
-  const { servers, loading, loadServers, handleToggleService } =
-    useMcpServerManager();
+  // Use unified hook for server management
+  const {
+    managerServers: servers,
+    loading,
+    loadServers,
+    handleToggleService,
+  } = useMcpServerLoader();
 
   useEffect(() => {
     if (visible) {
