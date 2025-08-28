@@ -20,7 +20,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
 
   useEffect(() => {
     if (open) {
-      // 每次打开弹窗都重新加载设置以确保显示最新配置
+      // Reload settings every time modal opens to ensure latest configuration is displayed
       actions.loadSettings();
     }
   }, [open]);

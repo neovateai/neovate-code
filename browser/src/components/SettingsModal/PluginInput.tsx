@@ -11,7 +11,7 @@ interface PluginInputProps {
 const PluginInput: React.FC<PluginInputProps> = ({
   value = [],
   onChange,
-  placeholder = '请输入插件名称或路径',
+  placeholder = 'Enter plugin name or path',
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -33,7 +33,7 @@ const PluginInput: React.FC<PluginInputProps> = ({
         onChange([...value, newPlugin]);
       }
       setInputValue('');
-      setCursorPosition(0); // 重置光标位置
+      setCursorPosition(0); // Reset cursor position
     } else if (e.key === 'Backspace' && !inputValue && value.length > 0) {
       // Delete last plugin when backspace is pressed and input is empty
       e.preventDefault();
@@ -44,7 +44,7 @@ const PluginInput: React.FC<PluginInputProps> = ({
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
-    // 更新光标位置
+    // Update cursor position
     requestAnimationFrame(() => {
       if (measureRef.current) {
         setCursorPosition(measureRef.current.offsetWidth);
@@ -61,7 +61,7 @@ const PluginInput: React.FC<PluginInputProps> = ({
   // Handle input focus
   const handleFocus = () => {
     setIsTyping(true);
-    // 更新光标位置
+    // Update cursor position
     requestAnimationFrame(() => {
       if (measureRef.current) {
         setCursorPosition(measureRef.current.offsetWidth);
@@ -102,7 +102,7 @@ const PluginInput: React.FC<PluginInputProps> = ({
               >
                 <img
                   src={deleteIcon}
-                  alt="删除"
+                  alt="Delete"
                   className={styles.deleteIcon}
                 />
               </button>
@@ -111,7 +111,7 @@ const PluginInput: React.FC<PluginInputProps> = ({
 
           {/* Input field and cursor */}
           <div className={styles.inputWrapper}>
-            {/* 隐藏的测量元素 */}
+            {/* Hidden measurement element */}
             <span ref={measureRef} className={styles.measureSpan}>
               {inputValue}
             </span>
