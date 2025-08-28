@@ -15,7 +15,7 @@ type TextPart = {
   text: string;
 };
 type UserContent = string | Array<TextPart>;
-type ToolCallPart = {
+export type ToolUsePart = {
   type: 'tool_use';
   id: string;
   name: string;
@@ -25,8 +25,8 @@ type ReasoningPart = {
   type: 'reasoning';
   text: string;
 };
-type AssistantContent = string | Array<TextPart | ReasoningPart | ToolCallPart>;
-type AssistantMessage = {
+type AssistantContent = string | Array<TextPart | ReasoningPart | ToolUsePart>;
+export type AssistantMessage = {
   role: 'assistant';
   content: AssistantContent;
   text: string;
@@ -36,12 +36,12 @@ export type UserMessage = {
   role: 'user';
   content: UserContent;
 };
-type ToolMessage = {
+export type ToolMessage = {
   role: 'user';
   content: ToolContent;
 };
 type ToolContent = Array<ToolResultPart>;
-type ToolResultPart = {
+export type ToolResultPart = {
   type: 'tool_result';
   id: string;
   name: string;
@@ -78,11 +78,11 @@ export class History {
   async addMessage(message: Message): Promise<void> {
     const lastMessage = this.messages[this.messages.length - 1];
     const normalizedMessage: NormalizedMessage = {
+      parentUuid: lastMessage?.uuid || null,
+      uuid: randomUUID(),
       ...message,
       type: 'message',
       timestamp: new Date().toISOString(),
-      uuid: randomUUID(),
-      parentUuid: lastMessage?.uuid || null,
     };
     this.messages.push(normalizedMessage);
     await this.onMessage?.(normalizedMessage);

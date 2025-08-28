@@ -174,28 +174,30 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
 
   // Initialize the Zustand store with the UIBridge
   const cwd = argv.cwd || process.cwd();
+  const paths = new Paths({
+    productName: contextCreateOpts.productName,
+    cwd,
+  });
   const messages = (() => {
     if (!argv.resume) {
       return [];
     }
-    const paths = new Paths({
-      productName: contextCreateOpts.productName,
-      cwd,
-    });
     const logPath = paths.getSessionLogPath(argv.resume);
     return loadSessionMessages({ logPath });
   })();
+  const sessionId = argv.resume || randomUUID();
   await useAppStore.getState().initialize({
     bridge: uiBridge,
     cwd,
     initialPrompt: argv._[0],
-    sessionId: argv.resume || randomUUID(),
+    sessionId,
     messages,
+    logFile: paths.getSessionLogPath(sessionId),
   });
 
   render(<App />, {
     patchConsole: false,
-    exitOnCtrlC: true,
+    exitOnCtrlC: false,
   });
   const exit = () => {
     process.exit(0);

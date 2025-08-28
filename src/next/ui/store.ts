@@ -21,9 +21,11 @@ type AppStatus =
   | 'tool_approving'
   // | 'tool_approved'
   | 'tool_executing'
+  | 'compacting'
   | 'failed'
   | 'cancelled'
-  | 'slash_command';
+  | 'slash_command_executing'
+  | 'help';
 
 const APP_STATUS_MESSAGES = {
   processing: 'Processing...',
@@ -45,6 +47,7 @@ interface AppState {
   model: string;
   sessionId: string | null;
   initialPrompt: string | null;
+  logFile: string;
 
   status: AppStatus;
   error: string | null;
@@ -57,6 +60,9 @@ interface AppState {
   draftInput: string;
   history: string[];
   historyIndex: number | null;
+
+  logs: string[];
+  exitMessage: string | null;
 }
 
 type InitializeOpts = {
@@ -65,12 +71,15 @@ type InitializeOpts = {
   initialPrompt: string;
   sessionId: string | undefined;
   messages: Message[];
+  logFile: string;
 };
 
 interface AppActions {
   initialize: (opts: InitializeOpts) => Promise<void>;
   send: (message: string) => Promise<void>;
   addMessage: (message: Message) => void;
+  log: (log: string) => void;
+  setExitMessage: (exitMessage: string | null) => void;
 }
 
 type AppStore = AppState & AppActions;
@@ -84,6 +93,7 @@ export const useAppStore = create<AppStore>()(
       productName: null,
       version: null,
       initialPrompt: null,
+      logFile: null,
       theme: 'light',
       model: null,
       status: 'idle',
@@ -95,6 +105,7 @@ export const useAppStore = create<AppStore>()(
       draftInput: '',
       history: [],
       sessionId: null,
+      logs: [],
 
       // Actions
       initialize: async (opts) => {
@@ -114,6 +125,7 @@ export const useAppStore = create<AppStore>()(
           sessionId: opts.sessionId,
           messages: opts.messages,
           initialPrompt: opts.initialPrompt,
+          logFile: opts.logFile,
           // theme: 'light',
         });
         bridge.onEvent('message', (data) => {
@@ -154,6 +166,19 @@ export const useAppStore = create<AppStore>()(
 
       addMessage: (message) => {
         set({ messages: [...get().messages, message] });
+      },
+
+      log: (log: string) => {
+        set({
+          logs: [
+            ...get().logs,
+            `[${new Date().toISOString()}] ${log}`,
+          ],
+        });
+      },
+
+      setExitMessage: (exitMessage: string | null) => {
+        set({ exitMessage });
       },
     }),
     { name: 'app-store' },

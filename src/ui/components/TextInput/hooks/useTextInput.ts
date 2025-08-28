@@ -4,9 +4,7 @@ import { Cursor } from '../utils/Cursor';
 import {
   CLIPBOARD_ERROR_MESSAGE,
   getImageFromClipboard,
-  getImageFromClipboardLegacy,
-  isImagePath,
-  processImageFromPath,
+  getImageFromClipboardLegacy
 } from '../utils/imagePaste';
 import { useDoublePress } from './useDoublePress';
 

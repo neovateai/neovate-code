@@ -1,7 +1,6 @@
-import assert from 'assert';
 import fs from 'fs';
 import { randomUUID } from '../utils/randomUUID';
-import { History } from './history';
+import { History, type NormalizedMessage } from './history';
 import { Usage } from './usage';
 
 export type SessionId = string;
@@ -35,7 +34,29 @@ export class Session {
   }
 }
 
-export function loadSessionMessages(opts: { logPath: string }) {
+export function filterMessages(
+  messages: NormalizedMessage[],
+): NormalizedMessage[] {
+  messages = messages.filter((message) => {
+    const isMessage = message.type === 'message';
+    return isMessage;
+  });
+  let latestNullParentUuidIndex = -1;
+  messages.forEach((message, index) => {
+    if (message.parentUuid === null) {
+      latestNullParentUuidIndex = index;
+    }
+  });
+  if (latestNullParentUuidIndex !== -1) {
+    return messages.slice(latestNullParentUuidIndex);
+  } else {
+    return [];
+  }
+}
+
+export function loadSessionMessages(opts: {
+  logPath: string;
+}): NormalizedMessage[] {
   if (!fs.existsSync(opts.logPath)) {
     return [];
   }
@@ -44,9 +65,8 @@ export function loadSessionMessages(opts: { logPath: string }) {
     const messages = content
       .split('\n')
       .filter(Boolean)
-      .map((line) => JSON.parse(line))
-      .filter((message) => message.type === 'message');
-    return messages;
+      .map((line) => JSON.parse(line));
+    return filterMessages(messages);
   } catch (e: any) {
     throw new Error(`Failed to read log file: ${opts.logPath}: ${e.message}`);
   }

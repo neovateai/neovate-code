@@ -14,7 +14,8 @@ export class JsonlLogger {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      fs.appendFileSync(this.filePath, JSON.stringify(opts.message) + '\n');
+      const message = opts.message;
+      fs.appendFileSync(this.filePath, JSON.stringify(message) + '\n');
     } catch (e) {}
   }
 }

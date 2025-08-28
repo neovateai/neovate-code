@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 
-export const DOUBLE_PRESS_TIMEOUT_MS = 2000;
+export const DOUBLE_PRESS_TIMEOUT_MS = 1000;
 
 export function useDoublePress(
   setPending: (pending: boolean) => void,

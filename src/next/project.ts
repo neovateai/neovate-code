@@ -103,16 +103,23 @@ export class Project {
       model,
       cwd: this.context.cwd,
     });
+    const lastMessageUuid =
+      this.session.history.messages[this.session.history.messages.length - 1]
+        ?.uuid;
     const userMessage: NormalizedMessage = {
+      parentUuid: lastMessageUuid || null,
+      uuid: randomUUID(),
       role: 'user',
       content: message,
       type: 'message',
       timestamp: new Date().toISOString(),
-      uuid: randomUUID(),
-      parentUuid: null,
+    };
+    const userMessageWithSessionId = {
+      ...userMessage,
+      sessionId: this.session.id,
     };
     jsonlLogger.onMessage({
-      message: userMessage,
+      message: userMessageWithSessionId,
     });
     await opts.onMessage?.({
       message: userMessage,
