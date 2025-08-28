@@ -6,11 +6,11 @@ export function createUserMessage(
   parentUuid: string | null,
 ): NormalizedMessage {
   return {
+    parentUuid,
+    uuid: randomUUID(),
     role: 'user',
     content,
     type: 'message',
     timestamp: new Date().toISOString(),
-    uuid: randomUUID(),
-    parentUuid,
   };
 }
