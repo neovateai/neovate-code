@@ -98,8 +98,9 @@ const SmartText = (props: Props) => {
       title={renderTooltip?.(label, extra)}
       open={hasTip && showTip}
       placement={placement}
+      arrow={false}
       classNames={{
-        body: 'text-black! w-fit',
+        body: 'text-black! w-fit relative left-12',
       }}
       color="#fff"
     >
