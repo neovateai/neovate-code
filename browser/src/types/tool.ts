@@ -7,8 +7,8 @@ export interface IFetchToolResult {
 }
 
 export interface IBashToolResult {
-  stdout?: string;
-  stderr?: string;
+  success?: boolean;
+  message?: string;
 }
 
 export interface IGlobToolResult {
