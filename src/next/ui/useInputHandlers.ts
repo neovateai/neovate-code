@@ -25,9 +25,10 @@ export function useInputHandlers() {
 
   const handleChange = useCallback(
     (val: string) => {
+      setHistoryIndex(null);
       inputState.setValue(val);
     },
-    [inputState],
+    [inputState, setHistoryIndex],
   );
 
   const handleHistoryUp = useCallback(() => {
