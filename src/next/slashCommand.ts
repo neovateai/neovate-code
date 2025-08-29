@@ -77,6 +77,12 @@ export class SlashCommandManager {
     return Array.from(this.commands.values());
   }
 
+  getCommandsBySource(source: CommandSource): CommandEntry[] {
+    return Array.from(this.commands.values()).filter(
+      (entry) => entry.source === source,
+    );
+  }
+
   hasCommand(name: string): boolean {
     return this.commands.has(name);
   }
@@ -150,9 +156,10 @@ function isFilePath(input: string): boolean {
   return input.startsWith('/') && input.indexOf('/', 1) !== -1;
 }
 
-export function parseSlashCommand(
-  input: string,
-): { command: string; args: string } | null {
+export function parseSlashCommand(input: string): {
+  command: string;
+  args: string;
+} {
   const trimmed = input.trim();
   const spaceIndex = trimmed.indexOf(' ');
   if (spaceIndex === -1) {

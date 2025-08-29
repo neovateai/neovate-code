@@ -1,3 +1,4 @@
+import { SlashCommandManager } from '../../next/slashCommand';
 import { CommandSource, type LocalCommand } from '../types';
 
 export const helpCommand: LocalCommand = {
@@ -5,22 +6,25 @@ export const helpCommand: LocalCommand = {
   name: 'help',
   description: 'Show available slash commands',
   async call(args: string, context) {
-    const commands = context.slashCommands.getAll();
+    const slashCommandManager = await SlashCommandManager.create(
+      context as any,
+    );
+    const commands = slashCommandManager.getAll();
     if (commands.length === 0) {
       return 'No commands available.';
     }
 
     // Categorize commands by source
-    const builtinCommands = context.slashCommands.getCommandsBySource(
+    const builtinCommands = slashCommandManager.getCommandsBySource(
       CommandSource.Builtin,
     );
-    const userCommands = context.slashCommands.getCommandsBySource(
+    const userCommands = slashCommandManager.getCommandsBySource(
       CommandSource.User,
     );
-    const projectCommands = context.slashCommands.getCommandsBySource(
+    const projectCommands = slashCommandManager.getCommandsBySource(
       CommandSource.Project,
     );
-    const pluginCommands = context.slashCommands.getCommandsBySource(
+    const pluginCommands = slashCommandManager.getCommandsBySource(
       CommandSource.Plugin,
     );
 
@@ -30,7 +34,7 @@ export const helpCommand: LocalCommand = {
     if (builtinCommands.length > 0) {
       result += '📦 Built-in Commands:\n';
       builtinCommands.forEach((cmd) => {
-        result += `  /${cmd.name} - ${cmd.description}\n`;
+        result += `  /${cmd.command.name} - ${cmd.command.description}\n`;
       });
       result += '\n';
     }
@@ -39,7 +43,7 @@ export const helpCommand: LocalCommand = {
     if (userCommands.length > 0) {
       result += '👤 User Commands (from ~/.takumi/commands/):\n';
       userCommands.forEach((cmd) => {
-        result += `  /${cmd.name} - ${cmd.description}\n`;
+        result += `  /${cmd.command.name} - ${cmd.command.description}\n`;
       });
       result += '\n';
     }
@@ -48,7 +52,7 @@ export const helpCommand: LocalCommand = {
     if (projectCommands.length > 0) {
       result += '📁 Project Commands (from .takumi/commands/):\n';
       projectCommands.forEach((cmd) => {
-        result += `  /${cmd.name} - ${cmd.description}\n`;
+        result += `  /${cmd.command.name} - ${cmd.command.description}\n`;
       });
       result += '\n';
     }
@@ -57,7 +61,7 @@ export const helpCommand: LocalCommand = {
     if (pluginCommands.length > 0) {
       result += '🔌 Plugin Commands:\n';
       pluginCommands.forEach((cmd) => {
-        result += `  /${cmd.name} - ${cmd.description}\n`;
+        result += `  /${cmd.command.name} - ${cmd.command.description}\n`;
       });
       result += '\n';
     }

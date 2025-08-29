@@ -66,6 +66,9 @@ function Header() {
 function User({ message }: { message: UserMessage }) {
   const text = getMessageText(message);
   const isCanceled = isCanceledMessage(message);
+  if (message.hidden) {
+    return null;
+  }
   return (
     <Box
       flexDirection="column"

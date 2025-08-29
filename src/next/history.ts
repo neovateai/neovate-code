@@ -35,6 +35,8 @@ export type AssistantMessage = {
 export type UserMessage = {
   role: 'user';
   content: UserContent;
+  history?: string | null;
+  hidden?: boolean;
 };
 export type ToolMessage = {
   role: 'user';
@@ -105,6 +107,8 @@ export class History {
             if (part.type === 'tool_result') {
               const text = `[${part.name} for ${safeStringify(part.input)}] result: \n<function_results>\n${safeStringify(part.result)}\n</function_results>`;
               return { type: 'input_text', text };
+            } else if (part.type === 'text') {
+              return { type: 'input_text', text: part.text };
             } else {
               return part;
             }

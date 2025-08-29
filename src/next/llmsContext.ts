@@ -11,7 +11,6 @@ import { getLlmsRules } from './rules';
 
 export type LlmsContextCreateOpts = {
   context: Context;
-  userPrompt: string;
 };
 
 export class LlmsContext {

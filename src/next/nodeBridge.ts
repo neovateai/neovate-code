@@ -1,5 +1,7 @@
 import { CANCELED_MESSAGE_TEXT } from '../constants';
+import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
+import type { Message, UserMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { MessageBus } from './messageBus';
 import { Project } from './project';
@@ -61,7 +63,7 @@ class NodeHandlerRegistry {
     this.messageBus.registerHandler(
       'send',
       async (data: {
-        message: string;
+        message: string | null;
         cwd: string;
         sessionId: string | undefined;
       }) => {
@@ -72,7 +74,7 @@ class NodeHandlerRegistry {
           context,
         });
         const abortController = new AbortController();
-        const key = `${cwd}/${sessionId}`;
+        const key = buildSignalKey(cwd, project.session.id);
         this.abortControllers.set(key, abortController);
         const result = await project.send(message, {
           onMessage: async (opts) => {
@@ -91,7 +93,7 @@ class NodeHandlerRegistry {
       'cancel',
       async (data: { cwd: string; sessionId: string }) => {
         const { cwd, sessionId } = data;
-        const key = `${cwd}/${sessionId}`;
+        const key = buildSignalKey(cwd, sessionId);
         const abortController = this.abortControllers.get(key);
         abortController?.abort();
         this.abortControllers.delete(key);
@@ -99,15 +101,40 @@ class NodeHandlerRegistry {
         const jsonlLogger = new JsonlLogger({
           filePath: context.paths.getSessionLogPath(sessionId),
         });
-        const message = jsonlLogger.addUserMessage(
-          CANCELED_MESSAGE_TEXT,
-          sessionId,
-        );
+        await this.messageBus.emitEvent('message', {
+          message: jsonlLogger.addUserMessage(CANCELED_MESSAGE_TEXT, sessionId),
+        });
         return {
           success: true,
-          data: {
-            message,
-          },
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'addMessages',
+      async (data: { cwd: string; sessionId: string; messages: Message[] }) => {
+        const { cwd, sessionId, messages } = data;
+        const context = await this.getContext(cwd);
+        const jsonlLogger = new JsonlLogger({
+          filePath: context.paths.getSessionLogPath(sessionId),
+        });
+        for (const message of messages) {
+          const normalizedMessage = {
+            parentUuid: jsonlLogger.getLatestUuid(),
+            uuid: randomUUID(),
+            ...message,
+            type: 'message' as const,
+            timestamp: new Date().toISOString(),
+            sessionId,
+          };
+          await this.messageBus.emitEvent('message', {
+            message: jsonlLogger.addMessage({
+              message: normalizedMessage,
+            }),
+          });
+        }
+        return {
+          success: true,
         };
       },
     );
@@ -142,5 +169,105 @@ class NodeHandlerRegistry {
         };
       },
     );
+
+    this.messageBus.registerHandler(
+      'executeSlashCommand',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        command: string;
+        args: string;
+      }) => {
+        const { cwd, sessionId, command, args } = data;
+        const context = await this.getContext(cwd);
+        const slashCommandManager = await SlashCommandManager.create(context);
+        const commandEntry = slashCommandManager.get(command);
+        if (!commandEntry) {
+          return {
+            success: true,
+            data: {
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    { type: 'text', text: `Command ${command} not found` },
+                  ],
+                  history: null,
+                },
+              ],
+            },
+          };
+        }
+        const type = commandEntry.command.type;
+        if (type === 'local') {
+          const result = await commandEntry.command.call(args, context as any);
+          return {
+            success: true,
+            data: {
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    {
+                      type: 'text',
+                      text: result,
+                    },
+                  ],
+                },
+              ],
+            },
+          };
+        } else if (type === 'prompt') {
+          const messages = (await commandEntry.command.getPromptForCommand(
+            args,
+          )) as Message[];
+          for (const message of messages) {
+            if (message.role === 'user') {
+              (message as UserMessage).history = null;
+              (message as UserMessage).hidden = true;
+            }
+            if (
+              message.role === 'user' &&
+              typeof message.content === 'string'
+            ) {
+              message.content = [
+                {
+                  type: 'text',
+                  text: message.content,
+                },
+              ];
+            }
+          }
+          return {
+            success: true,
+            data: {
+              messages,
+            },
+          };
+        } else {
+          return {
+            success: true,
+            data: {
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    {
+                      type: 'text',
+                      text: `Unknown slash command type: ${type}`,
+                    },
+                  ],
+                  history: null,
+                },
+              ],
+            },
+          };
+        }
+      },
+    );
   }
+}
+
+function buildSignalKey(cwd: string, sessionId: string) {
+  return `${cwd}/${sessionId}`;
 }

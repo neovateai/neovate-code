@@ -17,7 +17,6 @@ export class Project {
   session: Session;
   context: Context;
   constructor(opts: { sessionId?: SessionId; context: Context }) {
-    // TODO: resume session
     this.session = opts.sessionId
       ? Session.resume({
           id: opts.sessionId,
@@ -27,7 +26,7 @@ export class Project {
     this.context = opts.context;
   }
   async send(
-    message: string,
+    message: string | null,
     opts: {
       model?: string;
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
@@ -41,16 +40,18 @@ export class Project {
     const jsonlLogger = new JsonlLogger({
       filePath: this.context.paths.getSessionLogPath(this.session.id),
     });
-    await this.context.apply({
-      hook: 'userPrompt',
-      args: [
-        {
-          text: message,
-          sessionId: this.session.id,
-        },
-      ],
-      type: PluginHookType.Series,
-    });
+    if (message !== null) {
+      await this.context.apply({
+        hook: 'userPrompt',
+        args: [
+          {
+            text: message,
+            sessionId: this.session.id,
+          },
+        ],
+        type: PluginHookType.Series,
+      });
+    }
     const hookedProviders = await this.context.apply({
       hook: 'provider',
       args: [],
@@ -95,42 +96,47 @@ export class Project {
     });
     const llmsContext = await LlmsContext.create({
       context: this.context,
-      userPrompt: message,
     });
-    outputFormat.onInit({
-      text: message,
-      sessionId: this.session.id,
-      tools,
-      model,
-      cwd: this.context.cwd,
-    });
-    const lastMessageUuid =
-      this.session.history.messages[this.session.history.messages.length - 1]
-        ?.uuid;
-    const userMessage: NormalizedMessage = {
-      parentUuid: lastMessageUuid || null,
-      uuid: randomUUID(),
-      role: 'user',
-      content: message,
-      type: 'message',
-      timestamp: new Date().toISOString(),
-    };
-    const userMessageWithSessionId = {
-      ...userMessage,
-      sessionId: this.session.id,
-    };
-    jsonlLogger.addMessage({
-      message: userMessageWithSessionId,
-    });
-    await opts.onMessage?.({
-      message: userMessage,
-    });
+    if (message !== null) {
+      outputFormat.onInit({
+        text: message,
+        sessionId: this.session.id,
+        tools,
+        model,
+        cwd: this.context.cwd,
+      });
+    }
+    let userMessage: NormalizedMessage | null = null;
+    if (message !== null) {
+      const lastMessageUuid =
+        this.session.history.messages[this.session.history.messages.length - 1]
+          ?.uuid;
+      userMessage = {
+        parentUuid: lastMessageUuid || null,
+        uuid: randomUUID(),
+        role: 'user',
+        content: message,
+        type: 'message',
+        timestamp: new Date().toISOString(),
+      };
+      const userMessageWithSessionId = {
+        ...userMessage,
+        sessionId: this.session.id,
+      };
+      jsonlLogger.addMessage({
+        message: userMessageWithSessionId,
+      });
+      await opts.onMessage?.({
+        message: userMessage,
+      });
+    }
     const input =
       this.session.history.messages.length > 0
         ? [...this.session.history.messages, userMessage]
         : [userMessage];
+    const filteredInput = input.filter((message) => message !== null);
     const result = await runLoop({
-      input,
+      input: filteredInput,
       model,
       tools: new Tools(tools),
       cwd: this.context.cwd,
@@ -165,7 +171,7 @@ export class Project {
           type: PluginHookType.Series,
         });
       },
-      onReasoning: async (text) => console.log(text),
+      onReasoning: async (text) => {},
       onToolUse: async (toolUse) => {
         await this.context.apply({
           hook: 'toolUse',

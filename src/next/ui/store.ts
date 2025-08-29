@@ -4,6 +4,7 @@ import { devtools } from 'zustand/middleware';
 import { CANCELED_MESSAGE_TEXT } from '../../constants';
 import type { Message } from '../history';
 import type { LoopResult } from '../loop';
+import { isSlashCommand, parseSlashCommand } from '../slashCommand';
 import type { UIBridge } from '../uiBridge';
 
 type QueuedMessage = {
@@ -155,24 +156,87 @@ export const useAppStore = create<AppStore>()(
         });
       },
 
-      // TODO: support aborting
       // TODO: support queued messages
       send: async (message) => {
         const { bridge, cwd, sessionId } = get();
+
         set({
-          status: 'processing',
           history: [...get().history, message],
           historyIndex: null,
         });
-        const response: LoopResult = await bridge.request('send', {
-          message,
-          cwd,
-          sessionId,
-        });
-        if (response.success) {
-          set({ status: 'idle' });
+
+        // slash command
+        if (isSlashCommand(message)) {
+          const parsed = parseSlashCommand(message);
+          const result = await bridge.request('getSlashCommand', {
+            cwd,
+            command: parsed.command,
+          });
+          const commandeEntry = result.data?.commandEntry;
+          if (commandeEntry) {
+            const userMessage: Message = {
+              role: 'user',
+              content: message,
+            };
+            await bridge.request('addMessages', {
+              cwd,
+              sessionId,
+              messages: [userMessage],
+            });
+            const command = commandeEntry.command;
+            const type = command.type;
+            const isLocal = type === 'local';
+            const isLocalJSX = type === 'local-jsx';
+            const isPrompt = type === 'prompt';
+            // TODO: save local type command's messages to history
+            if (isLocal || isPrompt) {
+              const result = await bridge.request('executeSlashCommand', {
+                cwd,
+                sessionId,
+                command: parsed.command,
+                args: parsed.args,
+              });
+              if (result.success) {
+                const messages = result.data.messages;
+                await bridge.request('addMessages', {
+                  cwd,
+                  sessionId,
+                  messages,
+                });
+              }
+              if (isPrompt) {
+                await sendMessage(null);
+              }
+            } else if (commandeEntry.command.type === 'prompt') {
+            } else if (commandeEntry.command.type === 'local-jsx') {
+            } else {
+              throw new Error(
+                `Unknown slash command type: ${commandeEntry.command.type}`,
+              );
+            }
+            // set({ status: 'slash_command_executing' });
+          } else {
+            // TODO: handle unknown slash command
+          }
+          return;
         } else {
-          set({ status: 'failed', error: response.error.message });
+          await sendMessage(message);
+        }
+
+        async function sendMessage(message: string | null) {
+          set({
+            status: 'processing',
+          });
+          const response: LoopResult = await bridge.request('send', {
+            message,
+            cwd,
+            sessionId,
+          });
+          if (response.success) {
+            set({ status: 'idle' });
+          } else {
+            set({ status: 'failed', error: response.error.message });
+          }
         }
       },
 
@@ -181,14 +245,10 @@ export const useAppStore = create<AppStore>()(
         if (!isExecuting(status)) {
           return;
         }
-        const response = await bridge.request('cancel', {
+        await bridge.request('cancel', {
           cwd,
           sessionId,
         });
-        const message = response.data.message;
-        if (message) {
-          get().addMessage(message);
-        }
         set({ status: 'idle' });
       },
 

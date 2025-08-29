@@ -120,26 +120,24 @@ async function runInQuietMode(argv: Argv, context: Context) {
     let model;
     if (isSlashCommand(input)) {
       const parsed = parseSlashCommand(input);
-      if (parsed) {
-        const slashCommandManager = await SlashCommandManager.create(context);
-        const commandEntry = slashCommandManager.get(parsed.command);
-        if (commandEntry) {
-          const { command } = commandEntry;
-          // TODO: support other slash command types
-          if (command.type === 'prompt') {
-            const prompt = await command.getPromptForCommand(parsed.args);
-            assert(prompt, `Prompt is required for ${parsed.command}`);
-            assert(
-              prompt.length === 1,
-              `Only one prompt is supported for ${parsed.command} in quiet mode`,
-            );
-            input = prompt?.[0]?.content;
-            if (command.model) {
-              model = command.model;
-            }
-          } else {
-            throw new Error(`Unsupported slash command: ${parsed.command}`);
+      const slashCommandManager = await SlashCommandManager.create(context);
+      const commandEntry = slashCommandManager.get(parsed.command);
+      if (commandEntry) {
+        const { command } = commandEntry;
+        // TODO: support other slash command types
+        if (command.type === 'prompt') {
+          const prompt = await command.getPromptForCommand(parsed.args);
+          assert(prompt, `Prompt is required for ${parsed.command}`);
+          assert(
+            prompt.length === 1,
+            `Only one prompt is supported for ${parsed.command} in quiet mode`,
+          );
+          input = prompt?.[0]?.content;
+          if (command.model) {
+            model = command.model;
           }
+        } else {
+          throw new Error(`Unsupported slash command: ${parsed.command}`);
         }
       }
     }

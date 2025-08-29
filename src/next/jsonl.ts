@@ -11,7 +11,7 @@ export class JsonlLogger {
     this.lastUuid = this.getLatestUuid();
   }
 
-  private getLatestUuid() {
+  getLatestUuid() {
     if (!fs.existsSync(this.filePath)) {
       return null;
     }
@@ -22,17 +22,15 @@ export class JsonlLogger {
     return message.uuid || null;
   }
 
-  addMessage(opts: { message: NormalizedMessage }) {
-    try {
-      const dir = path.dirname(this.filePath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      const message = opts.message;
-      fs.appendFileSync(this.filePath, JSON.stringify(message) + '\n');
-      this.lastUuid = message.uuid;
-      return message;
-    } catch (e) {}
+  addMessage(opts: { message: NormalizedMessage & { sessionId: string } }) {
+    const dir = path.dirname(this.filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const message = opts.message;
+    fs.appendFileSync(this.filePath, JSON.stringify(message) + '\n');
+    this.lastUuid = message.uuid;
+    return message;
   }
 
   addUserMessage(content: string, sessionId: string) {
