@@ -95,7 +95,15 @@
       "fileSizeLimited": "File size should be smaller than {{limit}}",
       "dragFileHere": "Drag file here to upload",
       "supportTypeDesc": "Support pictures and text files"
-    }
+    },
+    "filesAndFolders": "Files & Folders",
+    "slashCommands": "Slash Commands"
+  },
+  "suggestion": {
+    "navigate": "navigate",
+    "select": "select",
+    "close": "close",
+    "back": "back"
   },
   "menu": {
     "rename": "Rename",

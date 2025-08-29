@@ -1,6 +1,11 @@
-import { LeftOutlined } from '@ant-design/icons';
-import { Button, Input, type InputRef, List, Popover } from 'antd';
-import { createStyles } from 'antd-style';
+import Icon, {
+  ArrowRightOutlined,
+  CheckOutlined,
+  LeftOutlined,
+} from '@ant-design/icons';
+import { Input, type InputRef, List, Popover } from 'antd';
+import { cx } from 'antd-style';
+import { groupBy, throttle } from 'lodash-es';
 import React, {
   useCallback,
   useEffect,
@@ -9,8 +14,12 @@ import React, {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSnapshot } from 'valtio';
+import { ContextType } from '@/constants/context';
+import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';
-import AutoTooltip from './AutoTooltip';
+import FileTooltipRender from './FileTooltipRender';
+import SmartText from './SmartText';
 
 export type SuggestionItem = {
   label: React.ReactNode;
@@ -27,7 +36,6 @@ interface Props {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   items: SuggestionItem[];
-  virtual?: boolean;
   onSelect?: (
     firstKey: string,
     itemValue: string,
@@ -39,65 +47,6 @@ interface Props {
   loading?: boolean;
   offset?: { left: number; top: number };
 }
-
-const useStyles = createStyles(({ css, token }) => {
-  return {
-    listItem: css`
-      min-width: 200px;
-      height: 40px;
-      user-select: none;
-      cursor: pointer;
-
-      &:hover {
-        background-color: ${token.controlItemBgHover};
-      }
-    `,
-    listItemSelected: css`
-      background-color: ${token.controlItemBgActive} !important;
-    `,
-    listItemLabel: css`
-      font-weight: 600;
-    `,
-    listItemLabelSearch: css`
-      color: #ff0000;
-    `,
-    listItemContent: css`
-      padding: 0 ${token.paddingSM}px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      column-gap: 12px;
-    `,
-    listItemContentMain: css`
-      display: flex;
-      align-items: center;
-      column-gap: 12px;
-    `,
-    listHeader: css`
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 4px 0;
-    `,
-    listInput: css`
-      margin: 0 4px;
-    `,
-    list: css`
-      max-height: 500px;
-      overflow-y: auto;
-      width: 400px;
-    `,
-    popup: css`
-      background-color: ${token.colorBgElevated};
-      border-radius: ${token.borderRadius}px;
-      border: 1px solid ${token.colorBorder};
-      padding: 4px;
-      width: fit-content;
-      outline: none;
-    `,
-  };
-});
 
 const SuggestionList = (props: Props) => {
   const {
@@ -114,10 +63,11 @@ const SuggestionList = (props: Props) => {
   } = props;
 
   const { t } = useTranslation();
-  const { styles } = useStyles();
 
   const [selectedFirstKey, setSelectedFirstKey] = useState<string>();
   const [searchResults, setSearchResults] = useState<SuggestionItem[]>();
+  const [listPointerEvents, setListPointerEvents] =
+    useState<React.CSSProperties['pointerEvents']>('auto');
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const inputRef = useRef<InputRef>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -135,6 +85,25 @@ const SuggestionList = (props: Props) => {
     }
   }, [items, searchResults, selectedFirstKey]);
 
+  const { attachedContexts } = useSnapshot(context.state);
+
+  const selectedContextMap = useMemo(
+    () => groupBy(attachedContexts, 'type'),
+    [attachedContexts],
+  );
+
+  const isSecondItemSelected = useCallback(
+    (val: string) => {
+      return (
+        selectedFirstKey &&
+        selectedContextMap?.[selectedFirstKey]?.some(
+          (secondItem) => secondItem.value === val,
+        )
+      );
+    },
+    [selectedFirstKey, selectedContextMap],
+  );
+
   const clearSearch = useCallback(
     (targetFirstKey: string) => {
       if (inputRef.current?.input) {
@@ -146,6 +115,13 @@ const SuggestionList = (props: Props) => {
     [onSearch],
   );
 
+  const handleMouseMove = useCallback(
+    throttle(() => {
+      setListPointerEvents('auto');
+    }, 300),
+    [],
+  );
+
   // Handle keyboard navigation
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
@@ -154,12 +130,14 @@ const SuggestionList = (props: Props) => {
       switch (event.key) {
         case 'ArrowDown':
           event.preventDefault();
+          setListPointerEvents('none');
           setSelectedIndex((prev) =>
             prev < currentList.length - 1 ? prev + 1 : 0,
           );
           break;
         case 'ArrowUp':
           event.preventDefault();
+          setListPointerEvents('none');
           setSelectedIndex((prev) =>
             prev > 0 ? prev - 1 : currentList.length - 1,
           );
@@ -169,14 +147,16 @@ const SuggestionList = (props: Props) => {
           if (selectedIndex >= 0 && selectedIndex < currentList.length) {
             const selectedItem = currentList[selectedIndex];
             if (selectedFirstKey) {
-              onSelect?.(
-                selectedFirstKey,
-                selectedItem.value,
-                selectedItem.contextItem,
-              );
-              setSelectedFirstKey(undefined);
-              onOpenChange?.(false);
-              onLostFocus?.();
+              if (!isSecondItemSelected(selectedItem.value)) {
+                onSelect?.(
+                  selectedFirstKey,
+                  selectedItem.value,
+                  selectedItem.contextItem,
+                );
+                setSelectedFirstKey(undefined);
+                onOpenChange?.(false);
+                onLostFocus?.();
+              }
             } else {
               clearSearch(selectedItem.value);
               setSelectedFirstKey(selectedItem.value);
@@ -213,50 +193,93 @@ const SuggestionList = (props: Props) => {
     if (!searchText || typeof text !== 'string') {
       return text;
     } else {
-      const normalTexts = text.split(searchText);
-      const renderedTexts = [
-        normalTexts[0],
-        ...normalTexts.slice(1).map((text, index) => (
-          <React.Fragment key={index}>
-            <span className={styles.listItemLabelSearch}>{searchText}</span>
-            {text}
-          </React.Fragment>
-        )),
-      ];
-      return renderedTexts;
+      const searchRegex = new RegExp(
+        `(${searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
+        'gi',
+      );
+      const parts = text.split(searchRegex);
+
+      return parts
+        .map((part, index) => {
+          if (part.toLowerCase() === searchText.toLowerCase()) {
+            return (
+              <span key={index} className="text-[#7357FF]">
+                {part}
+              </span>
+            );
+          }
+          return part;
+        })
+        .filter((part) => part !== '');
     }
   };
 
   const renderItem = (item: SuggestionItem, index: number) => {
     const isSelected = selectedIndex === index;
+    const isFirstLevel = !selectedFirstKey;
+    const isSecondSeleted = isSecondItemSelected(item.value);
+
     return (
       <List.Item
-        className={`${styles.listItem} ${isSelected ? styles.listItemSelected : ''}`}
+        className={cx('p-0! select-none', {
+          'bg-[#F5F6F7]': isSelected,
+          'cursor-pointer': !isSecondSeleted,
+          'cursor-not-allowed': !!isSecondSeleted,
+        })}
         key={item.value}
         data-index={index}
         onMouseEnter={() => setSelectedIndex(index)}
-        onClick={() => {
+        onClick={(e) => {
           if (selectedFirstKey) {
-            onSelect?.(selectedFirstKey, item.value, item.contextItem);
-            setSelectedFirstKey(undefined);
-            onOpenChange?.(false);
-            onLostFocus?.();
+            if (isSecondSeleted) {
+              e.preventDefault();
+            } else {
+              onSelect?.(selectedFirstKey, item.value, item.contextItem);
+              setSelectedFirstKey(undefined);
+              onOpenChange?.(false);
+              onLostFocus?.();
+            }
           } else {
             clearSearch(item.value);
             setSelectedFirstKey(item.value);
           }
         }}
       >
-        <div className={styles.listItemContent}>
-          <div className={styles.listItemContentMain}>
+        <div className="flex justify-between items-center w-full px-3.5 py-1.5">
+          <div className="flex gap-1 items-center h-5">
             <div>{item.icon}</div>
-            <AutoTooltip maxWidth={300} className={styles.listItemLabel}>
-              {renderItemText(item.label, inputRef.current?.input?.value)}
-            </AutoTooltip>
+            <SmartText
+              label={renderItemText(item.label, inputRef.current?.input?.value)}
+              extra={
+                item.extra
+                  ? renderItemText(item.extra, inputRef.current?.input?.value)
+                  : undefined
+              }
+              renderTooltip={() => {
+                switch (selectedFirstKey) {
+                  case ContextType.FILE:
+                    return (
+                      <FileTooltipRender
+                        fullPath={renderItemText(
+                          [item.extra ?? '', item.label].join('/'),
+                          inputRef.current?.input?.value,
+                        )}
+                        icon={item.icon}
+                      />
+                    );
+                  default:
+                    return null;
+                }
+              }}
+              maxWidth={260}
+              showTip={isSelected}
+              placement="right"
+            />
           </div>
-          <AutoTooltip maxWidth={300}>
-            {renderItemText(item.extra, inputRef.current?.input?.value)}
-          </AutoTooltip>
+          {isFirstLevel && <ArrowRightOutlined />}
+          {!isFirstLevel && isSecondSeleted && (
+            <Icon component={CheckOutlined} className="text-[#7357FF]!" />
+          )}
         </div>
       </List.Item>
     );
@@ -277,16 +300,15 @@ const SuggestionList = (props: Props) => {
   const ListHeader = useMemo(() => {
     if (selectedFirstKey) {
       return (
-        <div className={styles.listHeader}>
-          <Button
-            icon={<LeftOutlined />}
+        <div className="flex items-center justify-between h-5.5 pb-1 px-3.5 w-full">
+          <Icon
+            component={LeftOutlined}
+            className="text-xs"
             onClick={handleBackClick}
-            type="text"
           />
           <Input
             ref={inputRef}
-            className={styles.listInput}
-            variant="underlined"
+            variant="borderless"
             autoFocus
             onChange={handleInputChange}
             placeholder={t('common.placeholder')}
@@ -296,6 +318,29 @@ const SuggestionList = (props: Props) => {
     }
     return null;
   }, [selectedFirstKey, handleBackClick, handleInputChange, t]);
+
+  const ListFooter = useMemo(() => {
+    return (
+      <div className="px-3.5 pt-1.5 border-t border-[#eeeff0] text-xs text-gray-500 select-none">
+        <div className="flex items-center gap-3 justify-end">
+          <div className="flex items-center gap-1">
+            <div>↑↓</div>
+            <div>{t('suggestion.navigate')}</div>
+          </div>
+          <div className="flex items-center gap-1">
+            <div>Enter</div>
+            <div>{t('suggestion.select')}</div>
+          </div>
+          <div className="flex items-center gap-1">
+            <div>Esc</div>
+            <div>
+              {selectedFirstKey ? t('suggestion.back') : t('suggestion.close')}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }, [selectedFirstKey, t]);
 
   // Combined effect for popup state management
   useEffect(() => {
@@ -358,7 +403,7 @@ const SuggestionList = (props: Props) => {
 
         if (isAbove || isBelow) {
           selectedItem.scrollIntoView({
-            behavior: 'smooth',
+            behavior: 'auto',
             block: 'nearest',
             inline: 'nearest',
           });
@@ -387,23 +432,28 @@ const SuggestionList = (props: Props) => {
       destroyOnHidden // must be set to true to get focus when each time the popup is opened
       content={() => (
         <div
-          className={styles.popup}
+          className="rounded-[10px] border border-[#eeeff0] bg-white py-2 outline-none"
           ref={popupRef}
           tabIndex={-1}
           onKeyDown={handleKeyDown}
+          onMouseMove={handleMouseMove}
         >
           {ListHeader}
           <List
+            className="w-85 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent hover:scrollbar-thumb-gray-400/60 scrollbar-thumb-rounded-full"
             ref={listRef}
-            className={styles.list}
             locale={{
               emptyText: t('common.empty'),
+            }}
+            style={{
+              pointerEvents: listPointerEvents,
             }}
             split={false}
             loading={loading}
             dataSource={selectedFirstKey ? secondLevelList : firstLevelList}
             renderItem={renderItem}
           />
+          {ListFooter}
         </div>
       )}
       trigger={[]}
