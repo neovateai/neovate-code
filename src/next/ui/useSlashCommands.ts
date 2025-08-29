@@ -3,7 +3,7 @@ import type { CommandEntry } from '../slashCommand';
 import { useAppStore } from './store';
 
 export function useSlashCommands(input: string) {
-  const { bridge, cwd } = useAppStore();
+  const { bridge, cwd, log } = useAppStore();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [slashCommands, setSlashCommands] = useState<CommandEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,10 +23,13 @@ export function useSlashCommands(input: string) {
 
   useEffect(() => {
     if (input !== '/') return;
+    const start = Date.now();
     setIsLoading(true);
     bridge.request('getSlashCommands', { cwd }).then((res) => {
       setSlashCommands(res.data.slashCommands);
       setIsLoading(false);
+      const end = Date.now();
+      log(`getSlashCommands took ${end - start}ms`);
     });
   }, [bridge, cwd, input]);
 
