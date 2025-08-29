@@ -1,6 +1,6 @@
 import { createStyles } from 'antd-style';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import { codeToHtml } from 'shiki';
+import { useShiki } from '@/components/CodeRenderer/useShiki';
 import type {
   CodeNormalViewerMetaInfo,
   CodeNormalViewerMode,
@@ -91,6 +91,7 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
     charCount: 0,
   });
   const [highlightedCode, setHighlightedCode] = useState<string>('');
+  const { codeToHtml, isReady } = useShiki();
   const { styles } = useStyle({ mode: item.mode, maxHeight });
 
   useImperativeHandle(ref, () => {
@@ -117,15 +118,18 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
       charCount: item.code.length,
     });
 
-    // Highlight code with shiki
-    const highlightCode = async () => {
+    // Highlight code with shiki hook
+    const highlightCode = () => {
+      if (!isReady || !codeToHtml) return;
+
       try {
-        const html = await codeToHtml(item.code, {
+        const html = codeToHtml(item.code, {
           lang: item.language || 'text',
-          theme: 'material-theme-lighter',
+          theme: 'snazzy-light',
           transformers: [
             {
-              line(node, line) {
+              name: 'add-data-line',
+              line(node: any, line: number) {
                 node.properties['data-line'] = line;
               },
             },
@@ -139,7 +143,7 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
     };
 
     highlightCode();
-  }, [item.code, item.language]);
+  }, [item.code, item.language, codeToHtml, isReady]);
 
   return (
     <div className={styles.container}>

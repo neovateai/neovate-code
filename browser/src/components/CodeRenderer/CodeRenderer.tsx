@@ -1,4 +1,11 @@
 import { CheckOutlined, CopyOutlined } from '@ant-design/icons';
+import {
+  transformerMetaHighlight,
+  transformerNotationDiff,
+  transformerNotationFocus,
+  transformerNotationHighlight,
+  transformerNotationWordHighlight,
+} from '@shikijs/transformers';
 import { Button, Tooltip, message } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useEffect, useState } from 'react';
@@ -127,6 +134,41 @@ const useStyles = createStyles(({ css }) => ({
         display: block;
       }
     }
+
+    /* Diff notation styles for [!code ++] and [!code --] */
+    .line.diff.add {
+      background-color: #f0f9ff !important;
+      border-left: 3px solid #22c55e;
+    }
+
+    .line.diff.remove {
+      background-color: #fef2f2 !important;
+      border-left: 3px solid #ef4444;
+    }
+
+    /* Alternative: for lines without line numbers */
+    .diff.add {
+      background-color: #f0f9ff !important;
+      border-left: 3px solid #22c55e;
+    }
+
+    .diff.remove {
+      background-color: #fef2f2 !important;
+      border-left: 3px solid #ef4444;
+    }
+
+    /* Ensure diff styles work for regular shiki output */
+    pre.has-diff .line.add,
+    pre.has-diff span.add {
+      background-color: #f0f9ff;
+      border-left: 3px solid #22c55e;
+    }
+
+    pre.has-diff .line.remove,
+    pre.has-diff span.remove {
+      background-color: #fef2f2;
+      border-left: 3px solid #ef4444;
+    }
   `,
 
   lineWrapper: css`
@@ -239,7 +281,7 @@ export const CodeRenderer: React.FC<CodeRendererProps> = ({
 }) => {
   const { t } = useTranslation();
   const { writeText } = useClipboard();
-  const { highlight, isReady, error } = useShiki();
+  const { codeToHtml, isReady, error } = useShiki();
   const { styles, cx } = useStyles();
 
   const [highlightedHtml, setHighlightedHtml] = useState<string | null>(null);
@@ -250,13 +292,55 @@ export const CodeRenderer: React.FC<CodeRendererProps> = ({
 
   // Highlight code when ready
   useEffect(() => {
-    if (!isReady) return;
+    if (!isReady || !codeToHtml) return;
 
     const highlightCode = async () => {
       try {
-        const html = await highlight(code, detectedLanguage, {
-          showLineNumbers,
-          theme,
+        // 构建 transformers 数组
+        const transformers = [
+          // 官方 transformers - 支持代码注释语法
+          transformerNotationDiff(), // 支持 [!code-diff] 语法
+          transformerNotationHighlight(), // 支持 [!code-highlight] 语法
+          transformerNotationFocus(), // 支持 [!code-focus] 语法
+          transformerNotationWordHighlight(), // 支持单词高亮
+          transformerMetaHighlight(), // 支持元数据高亮
+        ];
+
+        // 自定义行号 transformer
+        if (showLineNumbers) {
+          transformers.push({
+            name: 'custom-line-numbers',
+            pre(node: any) {
+              // 给 pre 元素添加行号类
+              this.addClassToHast(node, 'shiki-line-numbers');
+            },
+            line(node: any, line: number) {
+              // 在每行前添加行号元素
+              const lineNumberElement = {
+                type: 'element' as const,
+                tagName: 'span',
+                properties: {
+                  class: 'line-number',
+                  'data-line': line,
+                  'aria-hidden': 'true',
+                },
+                children: [
+                  {
+                    type: 'text' as const,
+                    value: String(line).padStart(3, ' '),
+                  },
+                ],
+              };
+
+              node.children.unshift(lineNumberElement);
+            },
+          });
+        }
+
+        const html = await codeToHtml(code, {
+          lang: detectedLanguage || 'plaintext',
+          theme: theme || 'snazzy-light',
+          transformers,
         });
         setHighlightedHtml(html);
       } catch (err) {
@@ -266,7 +350,7 @@ export const CodeRenderer: React.FC<CodeRendererProps> = ({
     };
 
     highlightCode();
-  }, [code, detectedLanguage, highlight, isReady, showLineNumbers, theme]);
+  }, [code, detectedLanguage, codeToHtml, isReady, showLineNumbers, theme]);
 
   // Copy functionality
   const handleCopy = async () => {
