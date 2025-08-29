@@ -6,7 +6,6 @@ import { z } from 'zod';
 import { TOOL_NAME } from '../constants';
 import { Context } from '../context';
 import { enhanceTool } from '../tool';
-import { randomUUID } from '../utils/randomUUID';
 import type { TodoReadToolResult, TodoWriteToolResult } from './type';
 
 const TODO_WRITE_PROMPT = `
@@ -219,10 +218,8 @@ async function saveTodos(todos: TodoList, filePath: string) {
   await writeFile(filePath, JSON.stringify(todos, null, 2));
 }
 
-export function createTodoTool(opts: { context: Context }) {
-  const uuid = randomUUID().replace(/-/g, '');
-
-  const { context } = opts;
+export function createTodoTool(opts: { context: Context; sessionId: string }) {
+  const { context, sessionId } = opts;
 
   function ensureTodoDirectory() {
     const todoDir = path.join(context.paths.globalConfigDir, 'todos');
@@ -234,7 +231,7 @@ export function createTodoTool(opts: { context: Context }) {
 
   function getTodoFilePath() {
     const todoDir = ensureTodoDirectory();
-    return path.join(todoDir, `${uuid}.json`);
+    return path.join(todoDir, `${sessionId}.json`);
   }
 
   async function readTodos() {

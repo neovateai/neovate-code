@@ -71,6 +71,7 @@ export class Project {
     );
     let tools = await resolveTools({
       context: this.context,
+      sessionId: this.session.id,
     });
     tools = await this.context.apply({
       hook: 'tool',
