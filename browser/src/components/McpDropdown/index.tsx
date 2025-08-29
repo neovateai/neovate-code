@@ -11,7 +11,6 @@ import {
 import { useMcpServerLoader } from '@/hooks/useMcpServerLoader';
 import type { McpDropdownProps } from '@/types/mcp';
 import McpDropdownContent from './McpDropdownContent';
-import styles from './index.module.css';
 
 const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
   const { t } = useTranslation();
@@ -74,7 +73,6 @@ const McpDropdown: React.FC<McpDropdownProps> = ({ loading = false }) => {
         )}
       >
         <SenderButton
-          className={styles.triggerButton}
           title={t('mcp.mcpManagementTitle')}
           disabled={loading || mcpLoading}
         >
