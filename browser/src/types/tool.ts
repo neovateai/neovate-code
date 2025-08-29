@@ -22,6 +22,21 @@ export interface IGrepToolResult {
 }
 
 export interface IReadToolResult {
-  totalLines?: number;
-  content?: string;
+  success?: boolean;
+  message?: string;
+  data?: {
+    type?: string;
+    filePath?: string;
+    content?: string;
+    totalLines?: number;
+    offset?: number;
+    limit?: number;
+    actualLinesRead?: number;
+  };
+}
+
+export interface IReadToolArgs {
+  file_path: string;
+  offset?: number | null;
+  limit?: number | null;
 }

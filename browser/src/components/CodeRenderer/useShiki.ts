@@ -39,6 +39,8 @@ export function useShiki(): UseShikiReturn {
             'markdown',
             'css',
             'html',
+            'xml',
+            'yaml',
             'text',
             'plaintext',
           ],
