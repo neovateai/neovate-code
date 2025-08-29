@@ -1,3 +1,5 @@
+import React from 'react';
+import { useAppStore } from '../../next/ui/store';
 import { type LocalJSXCommand } from '../types';
 
 export const clearCommand: LocalJSXCommand = {
@@ -5,16 +7,13 @@ export const clearCommand: LocalJSXCommand = {
   name: 'clear',
   description: 'Clear the chat messages',
   async call(onDone) {
-    const React = await import('react');
-    const { useAppContext } = await import('../../ui/hooks');
-
     return React.createElement(() => {
-      const { services } = useAppContext();
+      const { clear } = useAppStore();
 
       React.useEffect(() => {
-        services.service.clear();
-        services.planService.clear();
-        onDone('Messages cleared.');
+        clear().then(({ sessionId }: any) => {
+          onDone(`Messages cleared, new session id: ${sessionId}`);
+        });
       }, []);
 
       return null;

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { CANCELED_MESSAGE_TEXT } from '../../constants';
+import { randomUUID } from '../../utils/randomUUID';
 import type { Message } from '../history';
 import type { LoopResult } from '../loop';
 import {
@@ -97,6 +98,7 @@ interface AppActions {
   log: (log: string) => void;
   setExitMessage: (exitMessage: string | null) => void;
   cancel: () => Promise<void>;
+  clear: () => Promise<void>;
   setDraftInput: (draftInput: string) => void;
   setHistoryIndex: (historyIndex: number | null) => void;
 }
@@ -277,6 +279,19 @@ export const useAppStore = create<AppStore>()(
           sessionId,
         });
         set({ status: 'idle' });
+      },
+
+      clear: async () => {
+        const sessionId = randomUUID();
+        set({
+          messages: [],
+          history: [],
+          historyIndex: null,
+          sessionId,
+        });
+        return {
+          sessionId,
+        };
       },
 
       addMessage: (message) => {
