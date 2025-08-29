@@ -7,7 +7,7 @@
   overflow: hidden;
   width: 640px !important;
   max-width: 640px !important;
-  height: 600px !important;
+  height: 635px !important;
   padding: 0;
 }
 
@@ -32,7 +32,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  height: 500px;
+  height: 535px;
   overflow: hidden;
 }
 
@@ -71,30 +71,30 @@
 
 /* Table container */
 .tableContainer {
-  background: #ffffff;
-  border-radius: 12px;
-  overflow: hidden;
+  /* background: #ffffff; */
+  /* border-radius: 12px; */
+  /* overflow: hidden; */
   /* border: 1px solid #e5e7eb; */
-  width: 100%;
+  /* width: 100%; */
+  /* flex: 1; */
+  /* display: flex; */
+  /* flex-direction: column; */
+  /* height: 100%; */
+}
+
+/* .tableContainer :global(.ant-table-wrapper) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
-}
+} */
 
-.tableContainer :global(.ant-table-wrapper) {
+/* .tableContainer :global(.ant-table) {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.tableContainer :global(.ant-table) {
-  flex: 1;
-}
+} */
 
 .tableContainer :global(.ant-table-tbody) {
-  overflow-y: auto;
-  max-height: 300px;
+  /* overflow-y: auto; */
+  /* max-height: 300px; */
 }
 
 /* Pagination container */
@@ -125,12 +125,17 @@
 }
 
 .serviceName {
+  display: inline-block;
   color: #252931;
   font-family: 'PingFang SC';
   font-size: 12px;
   font-style: normal;
   font-weight: 400;
-  line-height: 16px /* 133.333% */;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
 }
 
 /* Tag styles */
@@ -148,7 +153,10 @@
   padding: 2px 6px;
   border-radius: 4px;
   display: inline-block;
-  max-width: 100%;
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Footer button styles - Based on Figma design */

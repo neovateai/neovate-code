@@ -32,7 +32,7 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
     null,
   );
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 5;
+  const pageSize = 7;
 
   const handleDeleteServer = (server: McpManagerServer) => {
     setServerToDelete(server);
@@ -78,9 +78,11 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
       title: t('mcp.name'),
       dataIndex: 'name',
       key: 'name',
-      width: 200,
+      width: 120,
       render: (name: string) => (
-        <Text className={styles.serviceName}>{name}</Text>
+        <Tooltip title={name} placement="topLeft">
+          <Text className={styles.serviceName}>{name}</Text>
+        </Tooltip>
       ),
     },
     {
@@ -132,41 +134,22 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
     {
       title: t('mcp.config'),
       key: 'command',
-      width: 260,
+      width: 150,
       render: (record: McpManagerServer) => {
         let configText = '';
-        let displayText = '';
 
         if (record.type === 'sse') {
           configText = record.url || '';
-          displayText =
-            configText.length > 30
-              ? `${configText.substring(0, 30)}...`
-              : configText;
         } else {
           configText =
             `${record.command || ''} ${(record.args || []).join(' ')}`.trim();
-          displayText =
-            configText.length > 30
-              ? `${configText.substring(0, 30)}...`
-              : configText;
         }
 
-        if (configText.length > 30) {
-          return (
-            <Tooltip
-              title={configText}
-              placement="topLeft"
-              overlayStyle={{ maxWidth: 360 }}
-            >
-              <Text className={`${styles.configCode}`}>
-                {displayText || '-'}
-              </Text>
-            </Tooltip>
-          );
-        }
-
-        return <Text className={styles.configCode}>{displayText || '-'}</Text>;
+        return (
+          <Tooltip title={configText || '-'} placement="topLeft">
+            <Text className={styles.configCode}>{configText || '-'}</Text>
+          </Tooltip>
+        );
       },
     },
     {
