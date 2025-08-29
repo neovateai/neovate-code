@@ -20,6 +20,7 @@ export type ToolUsePart = {
   id: string;
   name: string;
   input: Record<string, any>;
+  isError?: boolean;
 };
 type ReasoningPart = {
   type: 'reasoning';

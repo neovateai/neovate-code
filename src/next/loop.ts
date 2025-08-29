@@ -2,18 +2,14 @@ import { Agent, Runner, type SystemMessageItem } from '@openai/agents';
 import type { Tools } from '../tool';
 import { parseMessage } from '../utils/parse-message';
 import { randomUUID } from '../utils/randomUUID';
+import { type ToolUse, generateEnhancedErrorMessage } from '../utils/tools';
 import { At } from './at';
 import { History, type NormalizedMessage, type OnMessage } from './history';
 import type { ModelInfo } from './model';
 import { Usage } from './usage';
 
 const DEFAULT_MAX_TURNS = 50;
-
-export type ToolUse = {
-  name: string;
-  params: Record<string, any>;
-  callId: string;
-};
+const DEFAULT_MAX_VALIDATION_FAILURES = 3;
 
 export type ToolUseResult = {
   toolUse: ToolUse;
@@ -34,7 +30,12 @@ export type LoopResult =
   | {
       success: false;
       error: {
-        type: 'tool_denied' | 'max_turns_exceeded' | 'api_error' | 'canceled';
+        type:
+          | 'tool_denied'
+          | 'max_turns_exceeded'
+          | 'api_error'
+          | 'canceled'
+          | 'validation_failures_exceeded';
         message: string;
         details?: Record<string, any>;
       };
@@ -65,6 +66,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   const startTime = Date.now();
   let turnsCount = 0;
   let toolCallsCount = 0;
+  let validationFailureCount = 0;
   let finalText = '';
   let lastUsage = Usage.empty();
   const totalUsage = Usage.empty();
@@ -238,15 +240,31 @@ ${opts.tools.getToolsPrompt()}
       await opts.onText?.(parsed[0].content);
       finalText = parsed[0].content;
     }
-    parsed.forEach((item) => {
+
+    // Validate tool parameters before adding message
+    let validationErrorMessage = '';
+
+    for (const item of parsed) {
       if (item.type === 'tool_use') {
         const callId = randomUUID();
         item.callId = callId;
+
+        const validation = opts.tools.validateToolUse(item.name, item.params);
+        if (!validation.success) {
+          validationErrorMessage = generateEnhancedErrorMessage(
+            item as ToolUse,
+            validation.error!,
+            opts.tools.tools[item.name],
+          );
+          break;
+        }
       }
-    });
+    }
+
     opts.onTurn?.({
       usage: lastUsage,
     });
+
     const model = `${opts.model.provider.id}/${opts.model.model.id}`;
     await history.addMessage({
       role: 'assistant',
@@ -262,14 +280,57 @@ ${opts.tools.getToolsPrompt()}
             id: item.callId!,
             name: item.name,
             input: item.params,
+            isError: !!validationErrorMessage,
           };
         }
       }),
       text,
       model,
     });
+
     const toolUse = parsed.find((item) => item.type === 'tool_use') as ToolUse;
     if (toolUse) {
+      // If validation fails, don't render tool use, just add error message and continue the loop
+      if (validationErrorMessage) {
+        validationFailureCount++;
+
+        if (validationFailureCount >= DEFAULT_MAX_VALIDATION_FAILURES) {
+          return {
+            success: false,
+            error: {
+              type: 'validation_failures_exceeded',
+              message: `Maximum validation failures (${DEFAULT_MAX_VALIDATION_FAILURES}) exceeded. The model is consistently providing invalid tool parameters.`,
+              details: {
+                validationFailureCount,
+                lastValidationError: validationErrorMessage,
+                toolUse,
+                turnsCount,
+                history,
+                usage: totalUsage,
+              },
+            },
+          };
+        }
+
+        await history.addMessage({
+          role: 'user',
+          content: [
+            {
+              type: 'tool_result',
+              id: toolUse.callId,
+              name: toolUse.name,
+              input: toolUse.params,
+              result: {
+                success: false,
+                uiMessage: `Tool validation failed (attempt ${validationFailureCount}/${DEFAULT_MAX_VALIDATION_FAILURES})`,
+                error: validationErrorMessage,
+              },
+              isError: true,
+            },
+          ],
+        });
+        continue;
+      }
       await opts.onToolUse?.(toolUse as ToolUse);
       const approved = opts.onToolApprove
         ? await opts.onToolApprove(toolUse as ToolUse)

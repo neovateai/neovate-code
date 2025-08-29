@@ -107,7 +107,21 @@ function AssistantText({
 
 function ToolUse({ part }: { part: ToolUsePart }) {
   const { cwd } = useAppStore();
-  const { name, input } = part;
+  const { name, input, isError } = part;
+
+  if (isError) {
+    return (
+      <Box
+        marginTop={SPACING.MESSAGE_MARGIN_TOP}
+        marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
+      >
+        <Text bold color={UI_COLORS.ERROR}>
+          {name}
+        </Text>
+      </Box>
+    );
+  }
+
   const extractor =
     TOOL_DESCRIPTION_EXTRACTORS[
       name as keyof typeof TOOL_DESCRIPTION_EXTRACTORS
@@ -189,7 +203,11 @@ function Thinking({ text }: { text: string }) {
 function ToolResultItem({ part }: { part: ToolResultPart }) {
   const { result, name, input } = part;
   if (!result.success && result.error) {
-    return <Text color={UI_COLORS.ERROR}>{result.error}</Text>;
+    return (
+      <Text color={UI_COLORS.ERROR}>
+        {result.uiMessage ? result.uiMessage : result.error}
+      </Text>
+    );
   }
   if (name === TOOL_NAME.TODO_WRITE) {
     return (
@@ -227,7 +245,10 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
   if (name === TOOL_NAME.TODO_READ) {
     return <TodoRead todos={result.data} />;
   }
-  const text = (result.success && result.message) || JSON.stringify(result);
+  const text =
+    result.uiMessage ||
+    (result.success && result.message) ||
+    JSON.stringify(result);
   return <Text color={UI_COLORS.TOOL_RESULT}>↳ {text}</Text>;
 }
 

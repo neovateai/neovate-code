@@ -1,6 +1,20 @@
 import { type FunctionTool, type Tool } from '@openai/agents';
 import { validateToolParams } from './utils/tools';
 
+export interface ToolValidationResult {
+  success: boolean;
+  error?: {
+    type: 'tool_not_found' | 'invalid_parameters' | 'schema_validation_failed';
+    message: string;
+    details?: {
+      toolName: string;
+      providedParams: Record<string, any>;
+      validationErrors?: string[];
+      expectedSchema?: any;
+    };
+  };
+}
+
 export type ApprovalContext = {
   toolName: string;
   params: Record<string, any>;
@@ -51,13 +65,6 @@ export class Tools {
       };
     }
     if (tool.type === 'function') {
-      const result = validateToolParams(tool.originalParameters, args);
-      if (!result.success) {
-        return {
-          success: false,
-          error: `Invalid tool parameters: ${result.error}`,
-        };
-      }
       return await tool.invoke(runContext, args);
     } else {
       return {
@@ -110,6 +117,47 @@ export class Tools {
       default:
         return true; // Default to requiring approval
     }
+  }
+
+  validateToolUse(
+    toolName: string,
+    args: Record<string, any>,
+  ): ToolValidationResult {
+    const tool = this.tools[toolName];
+
+    if (!tool) {
+      return {
+        success: false,
+        error: {
+          type: 'tool_not_found',
+          message: `Tool '${toolName}' not found`,
+          details: {
+            toolName,
+            providedParams: args,
+          },
+        },
+      };
+    }
+
+    if (tool.type === 'function') {
+      const result = validateToolParams(tool.originalParameters, args);
+      if (!result.success) {
+        return {
+          success: false,
+          error: {
+            type: 'schema_validation_failed',
+            message: `Parameter validation failed for tool '${toolName}': ${result.error}`,
+            details: {
+              toolName,
+              providedParams: args,
+              validationErrors: [String(result.error)],
+            },
+          },
+        };
+      }
+    }
+
+    return { success: true };
   }
 
   private inferToolCategory(
