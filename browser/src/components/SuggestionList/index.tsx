@@ -102,6 +102,11 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       }
     }, [items, searchResults, selectedFirstKey]);
 
+    const currentList = useMemo(
+      () => (selectedFirstKey ? secondLevelList : firstLevelList),
+      [firstLevelList, selectedFirstKey, secondLevelList],
+    );
+
     const { attachedContexts } = useSnapshot(context.state);
 
     const selectedContextMap = useMemo(
@@ -142,7 +147,6 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
     // Handle keyboard navigation
     const handleKeyDown = useCallback(
       (event: React.KeyboardEvent) => {
-        const currentList = selectedFirstKey ? secondLevelList : firstLevelList;
         switch (event.key) {
           case 'ArrowDown':
             event.preventDefault();
@@ -191,9 +195,8 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
         }
       },
       [
+        currentList,
         selectedFirstKey,
-        secondLevelList,
-        firstLevelList,
         selectedIndex,
         onSelect,
         onOpenChange,
@@ -333,7 +336,14 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
               className="text-xs"
               onClick={handleBackClick}
             />
-            {!searchControl && (
+            {searchControl ? (
+              <div className="w-full ml-2">
+                {
+                  firstLevelList.find((item) => item.value === selectedFirstKey)
+                    ?.label
+                }
+              </div>
+            ) : (
               <Input
                 ref={inputRef}
                 variant="borderless"
@@ -348,6 +358,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       return null;
     }, [
       selectedFirstKey,
+      firstLevelList,
       handleBackClick,
       handleInputChange,
       t,
@@ -396,16 +407,9 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
         }
 
         // Set default selection (first item)
-        const currentList = selectedFirstKey ? secondLevelList : firstLevelList;
         setSelectedIndex(currentList.length > 0 ? 0 : -1);
       }
-    }, [
-      open,
-      selectedFirstKey,
-      firstLevelList,
-      secondLevelList,
-      searchControl?.onSearchStart,
-    ]);
+    }, [open, selectedFirstKey, currentList, searchControl?.onSearchStart]);
 
     useEffect(() => {
       if (searchControl?.searchText) {
@@ -417,7 +421,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
           setSearchResults(searchResults || undefined);
         }
       }
-    }, [searchControl?.searchText]);
+    }, [searchControl?.searchText, selectedFirstKey]);
 
     // Handle click outside to close popup
     useEffect(() => {
@@ -508,7 +512,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
               }}
               split={false}
               loading={loading}
-              dataSource={selectedFirstKey ? secondLevelList : firstLevelList}
+              dataSource={currentList}
               renderItem={renderItem}
             />
             {ListFooter}
