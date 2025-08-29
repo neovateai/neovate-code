@@ -6,7 +6,7 @@ import type { NormalizedMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { LlmsContext } from './llmsContext';
 import { runLoop } from './loop';
-import { modelAlias, providers, resolveModel } from './model';
+import { resolveModelWithContext } from './model';
 import { OutputFormat } from './outputFormat';
 import { OutputStyleManager } from './outputStyle';
 import { Session, type SessionId } from './session';
@@ -52,22 +52,9 @@ export class Project {
         type: PluginHookType.Series,
       });
     }
-    const hookedProviders = await this.context.apply({
-      hook: 'provider',
-      args: [],
-      memo: providers,
-      type: PluginHookType.SeriesLast,
-    });
-    const hookedModelAlias = await this.context.apply({
-      hook: 'modelAlias',
-      args: [],
-      memo: modelAlias,
-      type: PluginHookType.SeriesLast,
-    });
-    const model = resolveModel(
-      opts.model || this.context.config.model,
-      hookedProviders,
-      hookedModelAlias,
+    const model = await resolveModelWithContext(
+      opts.model || null,
+      this.context,
     );
     let tools = await resolveTools({
       context: this.context,

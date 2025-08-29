@@ -4,8 +4,10 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createXai } from '@ai-sdk/xai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import assert from 'assert';
+import { PluginHookType } from '../plugin';
 import { aisdk } from '../utils/ai-sdk';
 import type { AiSdkModel } from '../utils/ai-sdk';
+import type { Context } from './context';
 
 export interface ModelModalities {
   input: ('text' | 'image' | 'audio' | 'video' | 'pdf')[];
@@ -599,6 +601,29 @@ export type ModelInfo = {
   model: Omit<Model, 'cost'>;
   aisdk: AiSdkModel;
 };
+
+export async function resolveModelWithContext(
+  name: string | null,
+  context: Context,
+) {
+  const hookedProviders = await context.apply({
+    hook: 'provider',
+    args: [],
+    memo: providers,
+    type: PluginHookType.SeriesLast,
+  });
+  const hookedModelAlias = await context.apply({
+    hook: 'modelAlias',
+    args: [],
+    memo: modelAlias,
+    type: PluginHookType.SeriesLast,
+  });
+  return resolveModel(
+    name || context.config.model,
+    hookedProviders,
+    hookedModelAlias,
+  );
+}
 
 export function resolveModel(
   name: string,

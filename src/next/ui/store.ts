@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { CANCELED_MESSAGE_TEXT } from '../../constants';
 import { randomUUID } from '../../utils/randomUUID';
 import type { Message } from '../history';
 import type { LoopResult } from '../loop';
@@ -61,6 +60,7 @@ interface AppState {
   version: string;
   theme: Theme;
   model: string;
+  modelContextLimit: number;
   sessionId: string | null;
   initialPrompt: string | null;
   logFile: string;
@@ -117,6 +117,7 @@ export const useAppStore = create<AppStore>()(
       logFile: null,
       theme: 'light',
       model: null,
+      modelContextLimit: null,
       status: 'idle',
       error: null,
       slashCommandJSX: null,
@@ -144,6 +145,7 @@ export const useAppStore = create<AppStore>()(
           productName: response.data.productName,
           version: response.data.version,
           model: response.data.model,
+          modelContextLimit: response.data.modelContextLimit,
           sessionId: opts.sessionId,
           messages: opts.messages,
           history: opts.history,

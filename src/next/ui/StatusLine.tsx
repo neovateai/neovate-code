@@ -14,7 +14,8 @@ function HelpHint() {
 }
 
 function StatusContent() {
-  const { cwd, model, status, exitMessage, messages } = useAppStore();
+  const { cwd, model, modelContextLimit, status, exitMessage, messages } =
+    useAppStore();
   const tokenUsed = useMemo(() => {
     return messages.reduce((acc, message) => {
       if (message.role === 'assistant') {
@@ -37,13 +38,18 @@ function StatusContent() {
     const outputTokens = lastAssistantMessage?.usage?.output_tokens ?? 0;
     return inputTokens + outputTokens;
   }, [messages]);
+  const contextLeftPercentage = useMemo(() => {
+    return Math.round(
+      ((modelContextLimit - lastAssistantTokenUsed) / modelContextLimit) * 100,
+    );
+  }, [lastAssistantTokenUsed, modelContextLimit]);
   const folderName = path.basename(cwd);
   if (status === 'help') return <HelpHint />;
   if (exitMessage) return <Text color="gray">{exitMessage}</Text>;
   return (
     <Text color="gray">
       📁 {folderName} | 🤖 {model} | 💬 {tokenUsed} tokens used | 💬{' '}
-      {lastAssistantTokenUsed} tokens used in last message
+      {contextLeftPercentage}% context left
     </Text>
   );
 }

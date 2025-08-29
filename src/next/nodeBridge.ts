@@ -6,6 +6,7 @@ import { Context } from './context';
 import type { Message, UserMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { MessageBus } from './messageBus';
+import { resolveModelWithContext } from './model';
 import { OutputStyleManager } from './outputStyle';
 import { Project } from './project';
 import { SlashCommandManager } from './slashCommand';
@@ -52,12 +53,16 @@ class NodeHandlerRegistry {
       'initialize',
       async (data: { cwd: string }) => {
         const context = await this.getContext(data.cwd);
+        const modelInfo = await resolveModelWithContext(null, context);
+        const model = `${modelInfo.provider.id}/${modelInfo.model.id}`;
+        const modelContextLimit = modelInfo.model.limit.context;
         return {
           success: true,
           data: {
             productName: context.productName,
             version: context.version,
-            model: context.config.model,
+            model,
+            modelContextLimit,
           },
         };
       },
