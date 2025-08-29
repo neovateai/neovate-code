@@ -126,7 +126,9 @@ const ChatSender: React.FC = () => {
             }
           },
           onNativeKeyDown: (e) => {
-            suggestionListRef.current?.triggerKeyDown(e);
+            if (searchingInEditor) {
+              suggestionListRef.current?.triggerKeyDown(e);
+            }
           },
           onChange: (text, delta) => {
             // rich text will auto add '\n' at the end

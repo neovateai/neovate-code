@@ -73,7 +73,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     const targetFunction = searchFunctionMap[type];
 
     targetFunction?.(text);
-  }, 500);
+  }, 200);
 
   return {
     defaultSuggestions,
