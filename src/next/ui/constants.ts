@@ -61,3 +61,16 @@ export const TOOL_DESCRIPTION_EXTRACTORS = {
   [TOOL_NAMES.LS]: (args: any, cwd: string) =>
     args.dir_path ? path.relative(cwd, args.dir_path) : '.',
 } as const;
+
+export const ANIMATION_CONFIG = {
+  TEXT_GRADIENT_SPEED: 100,
+  GRADIENT_COLORS: {
+    BASE: 'gray',
+    HIGHLIGHT: 'whiteBright',
+    FADE_LEVELS: ['white', 'blackBright', 'black'] as const,
+  },
+  SPEED_LIMITS: {
+    MIN: 50,
+    MAX: 200,
+  },
+} as const;
