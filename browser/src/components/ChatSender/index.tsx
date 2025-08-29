@@ -129,7 +129,7 @@ const ChatSender: React.FC = () => {
           }}
           items={defaultSuggestions}
           onSearch={(type, text) => {
-            return handleSearch(type as ContextType, text);
+            handleSearch(type as ContextType, text);
           }}
           onSelect={(_type, _itemValue, contextItem) => {
             setOpenPopup(false);
@@ -160,6 +160,7 @@ const ChatSender: React.FC = () => {
           }}
           onLostFocus={() => quill.current?.focus()}
           offset={{ top: (bounds?.top ?? -50) + 50, left: bounds?.left ?? 0 }}
+          searchControl={{}}
         >
           <Sender
             className={styles.sender}

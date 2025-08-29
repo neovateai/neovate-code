@@ -41,8 +41,7 @@ interface Props {
     itemValue: string,
     contextItem?: ContextItem,
   ) => void;
-  /** Return value will override the default second-level list */
-  onSearch?: (firstKey: string, text: string) => SuggestionItem[] | void;
+  onSearch?: (firstKey: string, text: string) => void;
   onLostFocus?: () => void;
   loading?: boolean;
   offset?: { left: number; top: number };
