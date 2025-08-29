@@ -1,7 +1,9 @@
 import { Box, Text } from 'ink';
 import React, { useMemo } from 'react';
-import { SPACING } from './constants';
+import { GradientText } from './GradientText';
+import { ANIMATION_CONFIG, SPACING } from './constants';
 import { useAppStore } from './store';
+import { useTextGradientAnimation } from './useTextGradientAnimation';
 
 export function ActivityIndicator() {
   const { status, error } = useAppStore();
@@ -17,10 +19,20 @@ export function ActivityIndicator() {
     return 'gray';
   }, [status]);
 
+  const highlightIndex = useTextGradientAnimation(
+    text,
+    status === 'processing',
+  );
+
   if (status === 'idle') return null;
+
   return (
     <Box flexDirection="row" marginTop={SPACING.ACTIVITY_INDICATOR_MARGIN_TOP}>
-      <Text color={color}>{text}</Text>
+      {status === 'processing' ? (
+        <GradientText text={text} highlightIndex={highlightIndex} />
+      ) : (
+        <Text color={color}>{text}</Text>
+      )}
     </Box>
   );
 }
