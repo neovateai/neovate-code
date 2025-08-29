@@ -1,4 +1,5 @@
 import { Box, Text } from 'ink';
+import path from 'path';
 import React from 'react';
 import { useAppStore } from './store';
 
@@ -14,11 +15,12 @@ function HelpHint() {
 
 function StatusContent() {
   const { cwd, model, status, exitMessage } = useAppStore();
+  const folderName = path.basename(cwd);
   if (status === 'help') return <HelpHint />;
   if (exitMessage) return <Text color="gray">{exitMessage}</Text>;
   return (
     <Text color="gray">
-      📁 {cwd} | 🤖 {model}
+      📁 {folderName} | 🤖 {model}
     </Text>
   );
 }
