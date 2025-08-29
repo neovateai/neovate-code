@@ -177,6 +177,7 @@
     "environmentVariables": "Environment Variables (JSON)",
     "environmentVariablesPlaceholder": "{\"API_KEY\": \"your-key\", \"DEBUG\": \"true\"}",
     "scope": "Scope",
+    "scopeTooltip": "Project: Use only in current project; Global: Use in all projects",
     "inputMode": "Input Mode",
     "project": "Project",
     "global": "Global",
@@ -235,7 +236,10 @@
     "deleteSuccess": "Successfully deleted service \"{{name}}\"",
     "deleteError": "Failed to delete service, please try again",
     "continueAdd": "Continue Adding",
-    "jsonSupported": "Supported JSON formats include various structures"
+    "jsonSupported": "Supported JSON formats include various structures",
+    "editServer": "Edit MCP Server",
+    "editSuccess": "Successfully edited service \"{{name}}\"",
+    "editFailed": "Failed to edit service, please try again"
   },
   "settings": {
     "title": "Settings",

@@ -151,6 +151,19 @@ export interface UseMcpServerLoaderReturn {
     enabled: boolean,
     scope: string,
   ) => Promise<void>;
+  handleEditServer: (
+    originalName: string,
+    originalScope: string,
+    newConfig: {
+      name: string;
+      command?: string;
+      args?: string[];
+      url?: string;
+      transport?: string;
+      env?: string;
+      global?: boolean;
+    },
+  ) => Promise<void>;
   handleDeleteLocal: (serverName: string, scope: string) => void;
 }
 
@@ -208,12 +221,39 @@ export interface McpServerTableProps {
   ) => void;
   onDeleteSuccess?: () => void;
   onDeleteLocal?: (serverName: string, scope: string) => void;
+  onEditServer?: (server: McpManagerServer) => void;
 }
 
 export interface McpAddFormProps {
   visible: boolean;
   inputMode: 'json' | 'form';
   addScope: 'global' | 'project';
+  onCancel: () => void;
+  onSuccess: () => void;
+  onInputModeChange: (mode: 'json' | 'form') => void;
+  onScopeChange: (scope: 'global' | 'project') => void;
+  editMode?: boolean;
+  editingServer?: McpManagerServer;
+  onEditServer?: (
+    originalName: string,
+    originalScope: string,
+    newConfig: {
+      name: string;
+      command?: string;
+      args?: string[];
+      url?: string;
+      transport?: string;
+      env?: string;
+      global?: boolean;
+    },
+  ) => Promise<void>;
+}
+
+export interface McpEditFormProps {
+  visible: boolean;
+  inputMode: 'json' | 'form';
+  editScope: 'global' | 'project';
+  editingServer: McpManagerServer;
   onCancel: () => void;
   onSuccess: () => void;
   onInputModeChange: (mode: 'json' | 'form') => void;

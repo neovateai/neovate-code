@@ -10,10 +10,11 @@ import {
   Modal,
   Radio,
   Select,
+  Tooltip,
   Typography,
   message,
 } from 'antd';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { addMCPServer } from '@/api/mcpService';
 import { MCP_DEFAULTS } from '@/constants/mcp';
@@ -36,12 +37,60 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
   onSuccess,
   onInputModeChange,
   onScopeChange,
+  editMode = false,
+  editingServer,
+  onEditServer,
 }) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
 
-  const handleAdd = async (values: FormValues) => {
+  // Pre-fill form when in edit mode
+  useEffect(() => {
+    if (editMode && editingServer && visible) {
+      const envString = editingServer.env
+        ? typeof editingServer.env === 'string'
+          ? editingServer.env
+          : JSON.stringify(editingServer.env, null, 2)
+        : undefined;
+
+      form.setFieldsValue({
+        name: editingServer.name,
+        transport: editingServer.type || 'stdio',
+        command: editingServer.command,
+        args: editingServer.args?.join(' '),
+        url: editingServer.url,
+        env: envString,
+      });
+    } else if (!editMode) {
+      // Reset form when switching to add mode
+      form.resetFields();
+    }
+  }, [editMode, editingServer, visible, form]);
+
+  const handleSubmit = async (values: FormValues) => {
     try {
+      // In edit mode, only form input is supported, not JSON
+      if (editMode) {
+        if (!editingServer || !values.name || !onEditServer) {
+          throw new Error('Server information is required for editing');
+        }
+
+        await onEditServer(editingServer.name, editingServer.scope, {
+          name: values.name,
+          command: values.command,
+          url: values.url,
+          transport: values.transport,
+          env: values.env,
+          global: addScope === 'global',
+          args: values.args ? values.args.split(' ').filter(Boolean) : [],
+        });
+
+        message.success(t('mcp.editSuccess', { name: values.name }));
+        form.resetFields();
+        onSuccess();
+        return;
+      }
+
       if (inputMode === 'json') {
         const jsonConfig = JSON.parse(values.jsonConfig!) as JsonConfigFormat;
 
@@ -152,10 +201,15 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
       form.resetFields();
       onSuccess();
     } catch (error) {
-      message.error(
-        inputMode === 'json' ? t('mcp.jsonFormatError') : t('mcp.addFailed'),
-      );
-      console.error('Add server error:', error);
+      if (editMode) {
+        message.error(t('mcp.editFailed'));
+        console.error('Edit server error:', error);
+      } else {
+        message.error(
+          inputMode === 'json' ? t('mcp.jsonFormatError') : t('mcp.addFailed'),
+        );
+        console.error('Add server error:', error);
+      }
     }
   };
 
@@ -168,7 +222,9 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
     <Modal
       title={
         <div className={styles.modalHeader}>
-          <span className={styles.headerTitle}>{t('mcp.addServer')}</span>
+          <span className={styles.headerTitle}>
+            {editMode ? t('mcp.editServer') : t('mcp.addServer')}
+          </span>
         </div>
       }
       open={visible}
@@ -198,16 +254,18 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
       <div className={styles.modalBody} {...containerEventHandlers}>
         <Form
           form={form}
-          onFinish={handleAdd}
+          onFinish={handleSubmit}
           layout="vertical"
           className={styles.form}
         >
-          {/* 设定范围和输入模式 */}
+          {/* Scope and input mode settings */}
           <div className={styles.settingsRow}>
             <div className={styles.settingGroup}>
               <div className={styles.settingHeader}>
                 <Text className={styles.settingLabel}>{t('mcp.scope')}</Text>
-                <QuestionCircleOutlined className={styles.questionIcon} />
+                <Tooltip title={t('mcp.scopeTooltip')}>
+                  <QuestionCircleOutlined className={styles.questionIcon} />
+                </Tooltip>
               </div>
               <Radio.Group
                 value={addScope}
@@ -224,52 +282,62 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
                 </Radio>
               </Radio.Group>
             </div>
-            <div className={styles.settingGroup}>
-              <div className={styles.settingHeader}>
-                <Text className={styles.settingLabel}>
-                  {t('mcp.inputMode')}
-                </Text>
+            {!editMode && (
+              <div className={styles.settingGroup}>
+                <div className={styles.settingHeader}>
+                  <Text className={styles.settingLabel}>
+                    {t('mcp.inputMode')}
+                  </Text>
+                </div>
+                <Radio.Group
+                  value={inputMode}
+                  onChange={(e) =>
+                    onInputModeChange(e.target.value as 'json' | 'form')
+                  }
+                  className={styles.radioGroup}
+                >
+                  <Radio value="json" className={styles.radioOption}>
+                    JSON
+                  </Radio>
+                  <Radio value="form" className={styles.radioOption}>
+                    {t('mcp.form')}
+                  </Radio>
+                </Radio.Group>
               </div>
-              <Radio.Group
-                value={inputMode}
-                onChange={(e) =>
-                  onInputModeChange(e.target.value as 'json' | 'form')
-                }
-                className={styles.radioGroup}
-              >
-                <Radio value="json" className={styles.radioOption}>
-                  JSON
-                </Radio>
-                <Radio value="form" className={styles.radioOption}>
-                  {t('mcp.form')}
-                </Radio>
-              </Radio.Group>
-            </div>
+            )}
           </div>
 
-          {/* 配置表单内容 */}
+          {/* Configuration form content */}
           <div className={styles.configSection}>
-            {inputMode === 'json' ? <McpJsonForm /> : <McpFormFields />}
+            {editMode || inputMode === 'form' ? (
+              <McpFormFields editMode={editMode} />
+            ) : (
+              <McpJsonForm />
+            )}
           </div>
 
-          {/* MCP 展示区域 */}
-          <div className={styles.mcpPreviewSection}>
-            <div className={styles.mcpPreviewHeader}>
-              <span className={styles.mcpLabel}>MCP</span>
-              <DownOutlined className={styles.collapseIcon} />
+          {/* MCP preview section - only shown in add mode */}
+          {!editMode && (
+            <div className={styles.mcpPreviewSection}>
+              <div className={styles.mcpPreviewHeader}>
+                <span className={styles.mcpLabel}>MCP</span>
+                <DownOutlined className={styles.collapseIcon} />
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* 继续添加按钮 */}
-          <div className={styles.continueSection}>
-            <Button
-              type="default"
-              icon={<PlusOutlined />}
-              className={styles.continueButton}
-            >
-              {t('mcp.continueAdd')}
-            </Button>
-          </div>
+          {/* Continue add button - only shown in add mode */}
+          {!editMode && (
+            <div className={styles.continueSection}>
+              <Button
+                type="default"
+                icon={<PlusOutlined />}
+                className={styles.continueButton}
+              >
+                {t('mcp.continueAdd')}
+              </Button>
+            </div>
+          )}
         </Form>
       </div>
     </Modal>
@@ -359,12 +427,14 @@ const McpJsonForm: React.FC = () => {
 };
 
 // Form fields for manual input
-const McpFormFields: React.FC = () => {
+const McpFormFields: React.FC<{ editMode?: boolean }> = ({
+  editMode = false,
+}) => {
   const { t } = useTranslation();
 
   return (
     <div className={styles.formFieldsContainer}>
-      {/* 第一行：服务器名称和传输类型 */}
+      {/* First row: Server name and transport type */}
       <div className={styles.formFieldsRow}>
         <div className={styles.formField}>
           <div className={styles.fieldLabel}>
@@ -397,7 +467,7 @@ const McpFormFields: React.FC = () => {
             name="transport"
             initialValue={MCP_DEFAULTS.TRANSPORT_TYPE}
           >
-            <Select className={styles.formSelect}>
+            <Select className={styles.formSelect} disabled={editMode}>
               <Select.Option value="stdio">STDIO</Select.Option>
               <Select.Option value="sse">SSE</Select.Option>
             </Select>
@@ -405,7 +475,7 @@ const McpFormFields: React.FC = () => {
         </div>
       </div>
 
-      {/* 第二行：命令和参数 */}
+      {/* Second row: Command and arguments */}
       <div className={styles.formFieldsRow}>
         <Form.Item
           noStyle
@@ -430,6 +500,7 @@ const McpFormFields: React.FC = () => {
                   <Input
                     placeholder={t('mcp.urlPlaceholder')}
                     className={styles.formInput}
+                    disabled={editMode}
                     {...modalEventHandlers}
                   />
                 </Form.Item>
@@ -455,6 +526,7 @@ const McpFormFields: React.FC = () => {
                     <Input
                       placeholder={t('mcp.commandPlaceholder')}
                       className={styles.formInput}
+                      disabled={editMode}
                       {...modalEventHandlers}
                     />
                   </Form.Item>
@@ -479,7 +551,7 @@ const McpFormFields: React.FC = () => {
         </Form.Item>
       </div>
 
-      {/* 第三行：环境变量 */}
+      {/* Third row: Environment variables */}
       <div className={styles.formFieldsRow}>
         <div className={styles.formFieldFull}>
           <div className={styles.fieldLabel}>
@@ -492,6 +564,7 @@ const McpFormFields: React.FC = () => {
               placeholder={t('mcp.environmentVariablesPlaceholder')}
               rows={3}
               className={styles.formTextArea}
+              disabled={editMode}
               {...modalEventHandlers}
             />
           </Form.Item>

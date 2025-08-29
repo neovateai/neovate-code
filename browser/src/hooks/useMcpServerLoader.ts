@@ -2,7 +2,7 @@ import { useBoolean } from 'ahooks';
 import { message } from 'antd';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { addMCPServer } from '@/api/mcpService';
+import { addMCPServer, updateMCPServerWithName } from '@/api/mcpService';
 import { MCP_KEY_PREFIXES } from '@/constants/mcp';
 import type {
   McpManagerServer,
@@ -351,6 +351,105 @@ export const useMcpServerLoader = (
     [loadMcpServers, t],
   );
 
+  // Handle edit server - properly update local state after edit
+  const handleEditServer = useCallback(
+    async (
+      originalName: string,
+      originalScope: string,
+      newConfig: {
+        name: string;
+        command?: string;
+        args?: string[];
+        url?: string;
+        transport?: string;
+        env?: string;
+        global?: boolean;
+      },
+    ) => {
+      try {
+        // Find the server in current state to check if it's installed
+        const server = managerServers.find(
+          (s) => s.name === originalName && s.scope === originalScope,
+        );
+
+        // Only call API if the server is currently installed/enabled
+        if (server?.installed) {
+          await updateMCPServerWithName(originalName, newConfig);
+        }
+
+        // Update local cache after successful edit
+        const newConfigs = new Map(serviceConfigs);
+        const oldKey = `${originalScope}-${originalName}`;
+        const newKey = `${newConfig.global ? 'global' : 'project'}-${newConfig.name}`;
+
+        // Remove old config if name or scope changed
+        if (oldKey !== newKey) {
+          newConfigs.delete(oldKey);
+
+          // Update known services if name changed
+          if (originalName !== newConfig.name) {
+            const newKnownServices = new Set(allKnownServices);
+            newKnownServices.delete(originalName);
+            newKnownServices.add(newConfig.name);
+            updateKnownServices(newKnownServices);
+          }
+        }
+
+        // Add new/updated config
+        const serverConfig: McpServerConfig = {
+          command: newConfig.command,
+          args: newConfig.args,
+          url: newConfig.url,
+          type: newConfig.transport as 'sse' | 'stdio',
+          env: newConfig.env ? JSON.parse(newConfig.env) : undefined,
+          scope: newConfig.global ? 'global' : 'project',
+        };
+        newConfigs.set(newKey, serverConfig);
+        updateServiceConfigs(newConfigs);
+
+        // Update local state immediately for disabled servers
+        if (!server?.installed) {
+          setManagerServers((prev) => {
+            const newServers = prev.filter(
+              (s) => !(s.name === originalName && s.scope === originalScope),
+            );
+
+            // Add updated server
+            const updatedServer = {
+              key: newKey,
+              name: newConfig.name,
+              scope: newConfig.global
+                ? ('global' as const)
+                : ('project' as const),
+              command: newConfig.command,
+              args: newConfig.args || [],
+              url: newConfig.url,
+              type: newConfig.transport as 'sse' | 'stdio',
+              env: newConfig.env ? JSON.parse(newConfig.env) : undefined,
+              installed: false,
+            };
+
+            return [...newServers, updatedServer];
+          });
+        } else {
+          // For enabled servers, reload from server to get fresh data
+          await loadServers();
+        }
+      } catch (error) {
+        console.error('Failed to edit server:', error);
+        throw error;
+      }
+    },
+    [
+      managerServers,
+      serviceConfigs,
+      allKnownServices,
+      updateKnownServices,
+      updateServiceConfigs,
+      loadServers,
+    ],
+  );
+
   // Delete local service from browser storage
   const handleDeleteLocal = useCallback(
     (serverName: string, scope: string) => {
@@ -396,6 +495,7 @@ export const useMcpServerLoader = (
     managerServers,
     loadServers,
     handleToggleService,
+    handleEditServer,
     handleDeleteLocal,
   };
 };

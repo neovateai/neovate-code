@@ -177,6 +177,7 @@
     "environmentVariables": "环境变量 (JSON)",
     "environmentVariablesPlaceholder": "{\"API_KEY\": \"your-key\", \"DEBUG\": \"true\"}",
     "scope": "作用域",
+    "scopeTooltip": "项目：仅在当前项目中使用；全局：在所有项目中使用",
     "inputMode": "输入模式",
     "project": "项目",
     "global": "全局",
@@ -235,7 +236,10 @@
     "deleteSuccess": "已成功删除服务 \"{{name}}\"",
     "deleteError": "删除服务失败，请重试",
     "continueAdd": "继续添加",
-    "jsonSupported": "json支持的格式有什么什么"
+    "jsonSupported": "json支持的格式有什么什么",
+    "editServer": "编辑 MCP",
+    "editSuccess": "已成功编辑服务 \"{{name}}\"",
+    "editFailed": "编辑服务失败，请重试"
   },
   "settings": {
     "title": "设置",

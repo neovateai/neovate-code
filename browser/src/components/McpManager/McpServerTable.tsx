@@ -22,6 +22,7 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
   onToggleService,
   onDeleteSuccess,
   onDeleteLocal,
+  onEditServer,
 }) => {
   const { t } = useTranslation();
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -175,8 +176,7 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
             className={styles.actionLink}
             onClick={(e) => {
               e.stopPropagation();
-              // TODO: Implement edit logic
-              console.log('Edit service:', record.name);
+              onEditServer?.(record);
             }}
           >
             {t('mcp.edit')}
