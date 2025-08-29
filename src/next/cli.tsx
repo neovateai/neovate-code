@@ -31,8 +31,9 @@ type Argv = {
   help: boolean;
   mcp: boolean;
   quiet: boolean;
+  continue?: boolean;
   // string
-  appendSystemPrompt?: boolean;
+  appendSystemPrompt?: string;
   cwd?: string;
   language?: string;
   model?: string;
@@ -47,18 +48,19 @@ type Argv = {
 };
 
 function parseArgs(argv: any) {
-  return yargsParser(argv, {
+  const args = yargsParser(argv, {
     alias: {
       model: 'm',
       help: 'h',
       resume: 'r',
       quiet: 'q',
+      continue: 'c',
     },
     default: {
       mcp: true,
     },
     array: ['plugin'],
-    boolean: ['help', 'mcp', 'quiet'],
+    boolean: ['help', 'mcp', 'quiet', 'continue'],
     string: [
       'appendSystemPrompt',
       'cwd',
@@ -72,6 +74,10 @@ function parseArgs(argv: any) {
       'systemPrompt',
     ],
   }) as Argv;
+  if (args.resume && args.continue) {
+    throw new Error('Cannot use --resume and --continue at the same time');
+  }
+  return args;
 }
 
 function printHelp(p: string) {
@@ -141,9 +147,13 @@ async function runInQuietMode(argv: Argv, context: Context) {
         }
       }
     }
+    let sessionId = argv.resume;
+    if (argv.continue) {
+      sessionId = context.paths.getLatestSessionId();
+    }
     const project = new Project({
       context,
-      sessionId: argv.resume,
+      sessionId,
     });
     await project.send(input, { model });
     process.exit(0);
@@ -178,7 +188,15 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
     const history = messages.filter(isUserTextMessage).map(getMessageHistory);
     return [messages, history];
   })();
-  const sessionId = argv.resume || randomUUID();
+  const sessionId = (() => {
+    if (argv.resume) {
+      return argv.resume;
+    }
+    if (argv.continue) {
+      return paths.getLatestSessionId();
+    }
+    return randomUUID();
+  })();
   await useAppStore.getState().initialize({
     bridge: uiBridge,
     cwd,

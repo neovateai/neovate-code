@@ -1,3 +1,4 @@
+import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { formatPath } from '../ui/utils/path-utils';
@@ -20,5 +21,22 @@ export class Paths {
 
   getSessionLogPath(sessionId: string) {
     return path.join(this.globalProjectDir, `${sessionId}.jsonl`);
+  }
+
+  getLatestSessionId() {
+    const jsonlFileTimeStamps = fs
+      .readdirSync(this.globalProjectDir)
+      .filter((file) => file.endsWith('.jsonl'))
+      .map((file) => {
+        const stats = fs.statSync(path.join(this.globalProjectDir, file));
+        return {
+          timestamp: stats.mtime.getTime(),
+          sessionId: path.basename(file, '.jsonl'),
+        };
+      });
+    const latestSession = jsonlFileTimeStamps.sort(
+      (a, b) => b.timestamp - a.timestamp,
+    )[0];
+    return latestSession.sessionId;
   }
 }
