@@ -14,7 +14,7 @@ import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
 import QuillEditor, { KeyCode } from '../QuillEditor';
 import { QuillContext } from '../QuillEditor/QuillContext';
-import SuggestionList from '../SuggestionList';
+import SuggestionList, { type ISuggestionListRef } from '../SuggestionList';
 import SenderFooter from './SenderFooter';
 import SenderHeader from './SenderHeader';
 
@@ -58,6 +58,7 @@ const ChatSender: React.FC = () => {
   const [atIndex, setAtIndex] = useState<number>();
   const [bounds, setBounds] = useState<Bounds>();
   const quill = useRef<Quill>(null);
+  const suggestionListRef = useRef<ISuggestionListRef>(null);
 
   const { isPasting, handlePaste, contextHolder } = useChatPaste();
 
@@ -92,9 +93,15 @@ const ChatSender: React.FC = () => {
       <QuillContext
         value={{
           onInputAt: (inputing, index, bounds) => {
-            setOpenPopup(inputing);
-            setBounds(bounds);
-            setAtIndex(index);
+            // setOpenPopup(inputing);
+            // setBounds(bounds);
+            // setAtIndex(index);
+
+            if (inputing) {
+              setOpenPopup(true);
+              setBounds(bounds);
+              setAtIndex(index);
+            }
           },
           onQuillLoad: (quillInstance) => {
             quillInstance.focus();
@@ -109,6 +116,9 @@ const ChatSender: React.FC = () => {
               handleEnterPress();
             }
           },
+          onNativeKeyDown: (e) => {
+            suggestionListRef.current?.triggerKeyDown(e);
+          },
           onChange: (text, delta) => {
             // rich text will auto add '\n' at the end
             setInputText(text.trimEnd());
@@ -121,6 +131,7 @@ const ChatSender: React.FC = () => {
         }}
       >
         <SuggestionList
+          ref={suggestionListRef}
           loading={suggestionLoading}
           className={styles.suggestion}
           open={openPopup}

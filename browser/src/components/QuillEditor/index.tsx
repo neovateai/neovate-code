@@ -73,6 +73,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
     onQuillLoad,
     onKeyDown,
     onDeleteContexts,
+    onNativeKeyDown,
     onChange: onQuillChange,
     readonly,
   } = useContext(QuillContext);
@@ -172,6 +173,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
       onMouseUp={(e) => e.stopPropagation()}
       onCompositionStart={() => setIsCompositing(true)}
       onCompositionEnd={() => setIsCompositing(false)}
+      onKeyDown={onNativeKeyDown}
       // @ts-expect-error
       onPaste={onPaste}
     />
