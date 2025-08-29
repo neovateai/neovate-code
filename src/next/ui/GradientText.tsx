@@ -1,6 +1,6 @@
 import { Text } from 'ink';
 import React, { useMemo } from 'react';
-import { ANIMATION_CONFIG } from './constants';
+import { UI_COLORS } from './constants';
 
 interface GradientTextProps {
   text: string;
@@ -16,15 +16,16 @@ function getColorByDistance(
 ): string {
   if (distance === 0) return highlightColor;
 
-  const fadeLevel = ANIMATION_CONFIG.GRADIENT_COLORS.FADE_LEVELS[distance - 1];
+  const fadeLevel =
+    UI_COLORS.ACTIVITY_INDICATOR_GRADIENT.FADE_LEVELS[distance - 1];
   return fadeLevel || baseColor;
 }
 
 export function GradientText({
   text,
   highlightIndex,
-  baseColor = ANIMATION_CONFIG.GRADIENT_COLORS.BASE,
-  highlightColor = ANIMATION_CONFIG.GRADIENT_COLORS.HIGHLIGHT,
+  baseColor = UI_COLORS.ACTIVITY_INDICATOR_GRADIENT.BASE,
+  highlightColor = UI_COLORS.ACTIVITY_INDICATOR_GRADIENT.HIGHLIGHT,
 }: GradientTextProps) {
   const renderedText = useMemo(() => {
     if (!text) return null;

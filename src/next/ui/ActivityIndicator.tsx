@@ -1,7 +1,7 @@
 import { Box, Text } from 'ink';
 import React, { useMemo } from 'react';
 import { GradientText } from './GradientText';
-import { SPACING } from './constants';
+import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 import { useTextGradientAnimation } from './useTextGradientAnimation';
 
@@ -32,7 +32,9 @@ export function ActivityIndicator() {
         <Box>
           <GradientText text={text} highlightIndex={highlightIndex} />
           <Box marginLeft={1}>
-            <Text color="gray">(Esc to cancel)</Text>
+            <Text color={UI_COLORS.ACTIVITY_INDICATOR_TEXT}>
+              (Esc to cancel)
+            </Text>
           </Box>
         </Box>
       ) : (

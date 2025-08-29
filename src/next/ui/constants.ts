@@ -13,6 +13,12 @@ export const UI_COLORS = {
   INFO: 'gray',
   CHAT_BORDER: 'gray',
   CANCELED: 'red',
+  ACTIVITY_INDICATOR_TEXT: 'gray',
+  ACTIVITY_INDICATOR_GRADIENT: {
+    BASE: 'gray',
+    HIGHLIGHT: 'whiteBright',
+    FADE_LEVELS: ['white', 'gray', 'blackBright', 'black'] as const,
+  },
 } as const;
 
 export const SPACING = {
