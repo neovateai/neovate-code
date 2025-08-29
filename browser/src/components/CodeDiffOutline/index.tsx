@@ -31,6 +31,7 @@ const useStyles = createStyles(
         overflow: hidden;
         transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         max-height: ${isExpanded ? '500px' : '0'};
+        overflow-y: scroll;
       `,
       innerContainer: css`
         width: 100%;
