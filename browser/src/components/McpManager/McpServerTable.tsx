@@ -1,5 +1,6 @@
 import {
   Modal,
+  Pagination,
   Space,
   Switch,
   Table,
@@ -30,6 +31,8 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
   const [serverToDelete, setServerToDelete] = useState<McpManagerServer | null>(
     null,
   );
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
 
   const handleDeleteServer = (server: McpManagerServer) => {
     setServerToDelete(server);
@@ -198,11 +201,15 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
     },
   ];
 
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedServers = servers.slice(startIndex, endIndex);
+
   return (
     <div className={styles.tableContainer}>
       <Table
         columns={columns}
-        dataSource={servers}
+        dataSource={paginatedServers}
         loading={loading}
         size="middle"
         pagination={false}
@@ -218,6 +225,20 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
           ),
         }}
       />
+
+      {servers.length > 0 && (
+        <div className={styles.paginationContainer}>
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            size="small"
+            total={servers.length}
+            onChange={(page) => {
+              setCurrentPage(page);
+            }}
+          />
+        </div>
+      )}
 
       <Modal
         title={t('mcp.deleteConfirmTitle')}
