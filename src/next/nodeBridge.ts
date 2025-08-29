@@ -1,5 +1,6 @@
 import { ConfigManager } from '../config';
 import { CANCELED_MESSAGE_TEXT } from '../constants';
+import { PluginHookType } from '../plugin';
 import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
 import type { Message, UserMessage } from './history';
@@ -137,6 +138,40 @@ class NodeHandlerRegistry {
         }
         return {
           success: true,
+        };
+      },
+    );
+
+    //////////////////////////////////////////////
+    // status
+    this.messageBus.registerHandler(
+      'getStatus',
+      async (data: { cwd: string; sessionId: string }) => {
+        const { cwd, sessionId } = data;
+        const context = await this.getContext(cwd);
+        const memo = {
+          [`${context.productName}`]: {
+            description: `v${context.version}`,
+            items: [context.paths.getSessionLogPath(sessionId)],
+          },
+          'Working Directory': {
+            items: [cwd],
+          },
+          Model: {
+            items: [context.config.model],
+          },
+        };
+        const status = await context.apply({
+          hook: 'status',
+          args: [],
+          memo,
+          type: PluginHookType.SeriesMerge,
+        });
+        return {
+          success: true,
+          data: {
+            status,
+          },
         };
       },
     );
