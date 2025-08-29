@@ -12,6 +12,7 @@ import { Context } from './context';
 
 type ResolveToolsOpts = {
   context: Context;
+  sessionId: string;
 };
 
 type ToolCategory = 'read' | 'write' | 'network';
@@ -20,6 +21,7 @@ type ToolRiskLevel = 'low' | 'medium' | 'high';
 // TODO: remove context from here and createXXXTool
 export async function resolveTools(opts: ResolveToolsOpts) {
   const context = opts.context as any;
+  const sessionId = opts.sessionId;
   const readonlyTools = [
     createReadTool({ context }),
     enhanceTool(
@@ -54,7 +56,10 @@ export async function resolveTools(opts: ResolveToolsOpts) {
     createBashTool({ context }),
   ];
 
-  const { todoWriteTool, todoReadTool } = createTodoTool({ context });
+  const { todoWriteTool, todoReadTool } = createTodoTool({
+    context,
+    sessionId,
+  });
   const todoTools = context.config.todo ? [todoReadTool, todoWriteTool] : [];
 
   // TODO: mcp tools
