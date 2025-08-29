@@ -39,10 +39,11 @@ export const CONTEXT_AVAILABLE_FILE_TYPES: ContextFileType[] = [
     extName: '.gif',
     mime: 'image/gif',
   },
-  {
-    extName: '.svg',
-    mime: 'image/svg+xml',
-  },
+  // disable svg because claude doesn't support it
+  // {
+  //   extName: '.svg',
+  //   mime: 'image/svg+xml',
+  // },
   {
     extName: '.webp',
     mime: 'image/webp',
