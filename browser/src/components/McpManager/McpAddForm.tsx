@@ -467,7 +467,7 @@ const McpFormFields: React.FC<{ editMode?: boolean }> = ({
             name="transport"
             initialValue={MCP_DEFAULTS.TRANSPORT_TYPE}
           >
-            <Select className={styles.formSelect} disabled={editMode}>
+            <Select disabled={editMode}>
               <Select.Option value="stdio">STDIO</Select.Option>
               <Select.Option value="sse">SSE</Select.Option>
             </Select>

@@ -671,23 +671,6 @@
   font-family: 'PingFang SC', sans-serif;
 }
 
-.formSelect {
-  height: 32px;
-  background: #ffffff;
-  border: 1px solid #dcdde0;
-  border-radius: 4px;
-  color: #110c22;
-  font-size: 14px;
-  font-weight: 400;
-  font-family: 'PingFang SC', sans-serif;
-}
-
-.formSelect:focus,
-.formSelect:hover {
-  border-color: #7357ff;
-  box-shadow: none;
-}
-
 .formTextArea {
   background: #ffffff;
   border: 1px solid #dcdde0;
@@ -700,28 +683,9 @@
   resize: vertical;
 }
 
-.formTextArea:focus,
-.formTextArea:hover {
-  border-color: #7357ff;
-  box-shadow: none;
-}
-
-.formTextArea::placeholder {
-  color: #aaabaf;
-  font-size: 14px;
-  font-weight: 400;
-  font-family: 'PingFang SC', sans-serif;
-}
-
 /* Override Ant Design form item margins */
 .addFormModal :global(.ant-form-item) {
   margin-bottom: 0;
-}
-
-.addFormModal :global(.ant-form-item-explain-error) {
-  font-size: 12px;
-  color: #ff4050;
-  margin-top: 4px;
 }
 
 .addFormModal :global(.ant-select-selector) {
