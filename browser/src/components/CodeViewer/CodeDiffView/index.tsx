@@ -2,7 +2,7 @@ import { transformerNotationDiff } from '@shikijs/transformers';
 import { createStyles } from 'antd-style';
 import diff from 'fast-diff';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import { codeToHtml } from 'shiki';
+import { useShiki } from '@/components/CodeRenderer/useShiki';
 import useEditAll from '@/hooks/useEditAll';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffToolbar from '../DiffToolbar';
@@ -180,6 +180,7 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
   const { styles } = useStyle({ maxHeight });
   const { acceptAll, rejectAll } = useEditAll(item.path);
   const [diffHighlighted, setDiffHighlighted] = useState<string>('');
+  const { codeToHtml, isReady } = useShiki();
 
   useImperativeHandle(ref, () => {
     return {
@@ -200,6 +201,8 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
 
   useEffect(() => {
     const highlightCode = async () => {
+      if (!isReady || !codeToHtml) return;
+
       try {
         console.log('Highlighting code...');
 
@@ -211,9 +214,11 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
 
         console.log('Unified Diff:', unifiedDiff);
 
-        const diffHtml = await codeToHtml(unifiedDiff, {
+        console.log('highlightCode Item', item);
+
+        const diffHtml = codeToHtml(unifiedDiff, {
           lang: item.language || 'text',
-          theme: 'material-theme-lighter',
+          theme: 'snazzy-light',
           transformers: [transformerNotationDiff()],
         });
 
