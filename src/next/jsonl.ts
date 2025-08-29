@@ -18,6 +18,9 @@ export class JsonlLogger {
     const file = fs.readFileSync(this.filePath, 'utf8');
     const lines = file.split('\n').filter(Boolean);
     const lastLine = lines[lines.length - 1];
+    if (!lastLine) {
+      return null;
+    }
     const message = JSON.parse(lastLine);
     return message.uuid || null;
   }
