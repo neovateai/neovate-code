@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useAppStore } from './store';
 import { useInputState } from './useInputState';
+import { useSlashCommands } from './useSlashCommands';
 
 export function useInputHandlers() {
   const {
@@ -13,15 +14,40 @@ export function useInputHandlers() {
     setHistoryIndex,
   } = useAppStore();
   const inputState = useInputState();
+  const slashCommands = useSlashCommands(inputState.state.value);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     const value = inputState.state.value.trim();
     if (value === '') return;
+
+    // slash command
+    if (slashCommands.suggestions.length > 0) {
+      const completedCommand = slashCommands.getCompletedCommand();
+      inputState.reset();
+      await send(completedCommand);
+      return;
+    }
+
     // TODO: pasted text
     // TODO: image paste
     inputState.setValue('');
-    send(value);
-  }, [inputState, send]);
+    await send(value);
+  }, [inputState, send, slashCommands]);
+
+  const handleTabPress = useCallback(
+    (isShiftTab: boolean) => {
+      // 1. slash command
+      if (slashCommands.suggestions.length > 0 && !isShiftTab) {
+        const completedCommand = slashCommands.getCompletedCommand();
+        inputState.setValue(completedCommand);
+        inputState.setCursorPosition(completedCommand.length);
+        return;
+      }
+      // 2. file suggestions
+      // 3. switch mode
+    },
+    [slashCommands],
+  );
 
   const handleChange = useCallback(
     (val: string) => {
@@ -33,6 +59,12 @@ export function useInputHandlers() {
 
   const handleHistoryUp = useCallback(() => {
     // 1. auto suggest
+    // 1.1 slash command suggestions
+    if (slashCommands.suggestions.length > 0) {
+      slashCommands.navigatePrevious();
+      return;
+    }
+    // 1.2 file suggestions
     // 2. queued message
     // 3. history
     if (history.length > 0) {
@@ -50,10 +82,16 @@ export function useInputHandlers() {
       inputState.setCursorPosition(0);
       setHistoryIndex(nextHistoryIndex);
     }
-  }, [inputState, history, historyIndex, setDraftInput]);
+  }, [inputState, history, historyIndex, setDraftInput, slashCommands]);
 
   const handleHistoryDown = useCallback(() => {
     // 1. auto suggest
+    // 1.1 slash command suggestions
+    if (slashCommands.suggestions.length > 0) {
+      slashCommands.navigateNext();
+      return;
+    }
+    // 1.2 file suggestions
 
     // 2. history
     if (historyIndex !== null) {
@@ -68,7 +106,14 @@ export function useInputHandlers() {
       inputState.setValue(value);
       inputState.setCursorPosition(value.length);
     }
-  }, [inputState, history, historyIndex, draftInput, setHistoryIndex]);
+  }, [
+    inputState,
+    history,
+    historyIndex,
+    draftInput,
+    setHistoryIndex,
+    slashCommands,
+  ]);
 
   const handleHistoryReset = useCallback(() => {
     setHistoryIndex(null);
@@ -78,10 +123,12 @@ export function useInputHandlers() {
     inputState,
     handlers: {
       handleSubmit,
+      handleTabPress,
       handleChange,
       handleHistoryUp,
       handleHistoryDown,
       handleHistoryReset,
     },
+    slashCommands,
   };
 }

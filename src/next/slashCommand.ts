@@ -19,7 +19,7 @@ export type SlashCommandManagerOpts = {
   slashCommands: SlashCommand[];
 };
 
-type CommandEntry = {
+export type CommandEntry = {
   command: SlashCommand;
   source: CommandSource;
 };
@@ -68,13 +68,13 @@ export class SlashCommandManager {
     });
   }
 
-  get(name: string): SlashCommand | undefined {
+  get(name: string): CommandEntry | undefined {
     const entry = this.commands.get(name);
-    return entry?.command;
+    return entry;
   }
 
-  getAll(): SlashCommand[] {
-    return Array.from(this.commands.values()).map((entry) => entry.command);
+  getAll(): CommandEntry[] {
+    return Array.from(this.commands.values());
   }
 
   hasCommand(name: string): boolean {

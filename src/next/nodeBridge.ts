@@ -3,6 +3,7 @@ import { Context } from './context';
 import { JsonlLogger } from './jsonl';
 import { MessageBus } from './messageBus';
 import { Project } from './project';
+import { SlashCommandManager } from './slashCommand';
 
 type NodeBridgeOpts = {
   contextCreateOpts: any;
@@ -106,6 +107,37 @@ class NodeHandlerRegistry {
           success: true,
           data: {
             message,
+          },
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'getSlashCommands',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const slashCommandManager = await SlashCommandManager.create(context);
+        return {
+          success: true,
+          data: {
+            slashCommands: slashCommandManager.getAll(),
+          },
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'getSlashCommand',
+      async (data: { cwd: string; command: string }) => {
+        const { cwd, command } = data;
+        const context = await this.getContext(cwd);
+        const slashCommandManager = await SlashCommandManager.create(context);
+        const commandEntry = slashCommandManager.get(command);
+        return {
+          success: true,
+          data: {
+            commandEntry,
           },
         };
       },

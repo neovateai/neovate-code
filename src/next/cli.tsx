@@ -122,8 +122,9 @@ async function runInQuietMode(argv: Argv, context: Context) {
       const parsed = parseSlashCommand(input);
       if (parsed) {
         const slashCommandManager = await SlashCommandManager.create(context);
-        const command = slashCommandManager.get(parsed.command);
-        if (command) {
+        const commandEntry = slashCommandManager.get(parsed.command);
+        if (commandEntry) {
+          const { command } = commandEntry;
           // TODO: support other slash command types
           if (command.type === 'prompt') {
             const prompt = await command.getPromptForCommand(parsed.args);

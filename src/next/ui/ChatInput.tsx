@@ -1,13 +1,14 @@
 import { Box, Text } from 'ink';
 import React from 'react';
 import TextInput from '../../ui/components/TextInput';
+import { Suggestion, SuggestionItem } from './Suggestion';
 import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 import { useInputHandlers } from './useInputHandlers';
 import { useTerminalSize } from './useTerminalSize';
 
 export function ChatInput() {
-  const { inputState, handlers } = useInputHandlers();
+  const { inputState, handlers, slashCommands } = useInputHandlers();
   const { log, setExitMessage, cancel } = useAppStore();
   const { columns } = useTerminalSize();
   return (
@@ -47,15 +48,34 @@ export function ChatInput() {
           onSubmit={handlers.handleSubmit}
           cursorOffset={inputState.state.cursorPosition ?? 0}
           onChangeCursorOffset={inputState.setCursorPosition}
-          disableCursorMovementForUpDownKeys={false}
-          onTabPress={() => {
-            log('onTabPress');
-          }}
+          disableCursorMovementForUpDownKeys={
+            slashCommands.suggestions.length > 0
+          }
+          onTabPress={handlers.handleTabPress}
           columns={columns - 6}
           isDimmed={false}
         />
         <Text>{Math.random()}</Text>
       </Box>
+      <Suggestion
+        suggestions={slashCommands.suggestions}
+        selectedIndex={slashCommands.selectedIndex}
+        maxVisible={10}
+      >
+        {(suggestion, isSelected, visibleSuggestions) => {
+          const maxNameLength = Math.max(
+            ...visibleSuggestions.map((s) => s.command.name.length),
+          );
+          return (
+            <SuggestionItem
+              name={`/${suggestion.command.name}`}
+              description={suggestion.command.description}
+              isSelected={isSelected}
+              firstColumnWidth={maxNameLength + 4}
+            />
+          );
+        }}
+      </Suggestion>
     </Box>
   );
 }
