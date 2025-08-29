@@ -24,6 +24,10 @@ function StatusContent() {
 }
 
 export function StatusLine() {
+  const { slashCommandJSX } = useAppStore();
+  if (slashCommandJSX) {
+    return null;
+  }
   return (
     <Box flexDirection="row" paddingX={2} paddingY={0.5}>
       <StatusContent />

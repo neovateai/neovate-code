@@ -5,7 +5,7 @@ export const helpCommand: LocalCommand = {
   type: 'local',
   name: 'help',
   description: 'Show available slash commands',
-  async call(args: string, context) {
+  async call(_args: string, context) {
     const slashCommandManager = await SlashCommandManager.create(
       context as any,
     );

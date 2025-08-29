@@ -1,8 +1,7 @@
 import { Box, Text, useInput } from 'ink';
 import pc from 'picocolors';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ConfigManager } from '../../config';
-import { useAppContext } from '../../ui/AppContext';
+import { useAppStore } from '../../next/ui/store';
 import PaginatedSelectInput from '../../ui/components/PaginatedSelectInput';
 import { type LocalJSXCommand } from '../types';
 
@@ -11,14 +10,14 @@ interface OutputStyleSelectProps {
   onSelect: (styleName: string) => void;
 }
 
-let updatedOutputStyle: string | null = null;
-
 const OutputStyleSelect: React.FC<OutputStyleSelectProps> = ({
   onExit,
   onSelect,
 }) => {
-  const { services } = useAppContext();
-  const context = services.context;
+  const [currentOutputStyle, setCurrentOutputStyle] = useState<string | null>(
+    null,
+  );
+  const { bridge, cwd } = useAppStore();
   const [selectItems, setSelectItems] = useState<
     {
       label: string;
@@ -26,30 +25,25 @@ const OutputStyleSelect: React.FC<OutputStyleSelectProps> = ({
     }[]
   >([]);
 
-  const currentOutputStyle = useMemo(() => {
-    return context.outputStyleManager.getOutputStyle(
-      updatedOutputStyle || services.context.config.outputStyle || 'Default',
-    );
-  }, [context]);
-
   useEffect(() => {
-    const allOutputStyles = context.outputStyleManager.getAllOutputStyles();
-    const items = allOutputStyles.map((style) => ({
-      label: `${style.name} → ${pc.gray(`(${style.description})`)}`,
-      value: style.name,
-    }));
-    setSelectItems(items);
-  }, [context]);
+    bridge.request('getOutputStyles', { cwd }).then((result) => {
+      setCurrentOutputStyle(result.data.currentOutputStyle);
+      setSelectItems(
+        result.data.outputStyles.map((style: any) => ({
+          label: `${style.name} → ${pc.gray(`(${style.description})`)}`,
+          value: style.name,
+        })),
+      );
+    });
+  }, [cwd]);
 
   const initialIndex = useMemo(() => {
-    return selectItems.findIndex(
-      (item) => item.value === currentOutputStyle.name,
-    );
-  }, [selectItems, currentOutputStyle.name]);
+    return selectItems.findIndex((item) => item.value === currentOutputStyle);
+  }, [selectItems, currentOutputStyle]);
 
   useInput((_: string, key) => {
     if (key.escape) {
-      onExit(currentOutputStyle.name);
+      onExit(currentOutputStyle || '');
     }
   });
 
@@ -68,7 +62,7 @@ const OutputStyleSelect: React.FC<OutputStyleSelectProps> = ({
         <Text color="gray">
           current output style:{' '}
           <Text bold color="cyan">
-            {currentOutputStyle.name}
+            {currentOutputStyle}
           </Text>
         </Text>
       </Box>
@@ -78,16 +72,16 @@ const OutputStyleSelect: React.FC<OutputStyleSelectProps> = ({
           initialIndex={initialIndex >= 0 ? initialIndex : 0}
           itemsPerPage={10}
           onSelect={(item) => {
-            updatedOutputStyle = item.value;
-            const configManager = new ConfigManager(
-              context.cwd,
-              context.productName,
-              {},
-            );
-            configManager.setConfig(false, 'outputStyle', item.value);
-            services.context.config.outputStyle = item.value;
-            services.service.setupAgent();
-            onSelect(item.value);
+            bridge
+              .request('setConfig', {
+                cwd,
+                isGlobal: false,
+                key: 'outputStyle',
+                value: item.value,
+              })
+              .then(() => {
+                onSelect(item.value);
+              });
           }}
         />
       </Box>

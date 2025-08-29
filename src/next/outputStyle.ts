@@ -6,7 +6,9 @@ import {
   defaultOutputStyle,
   getBuiltinOutputStyles,
 } from '../output-style/builtin';
+import { PluginHookType } from '../plugin';
 import { kebabToTitleCase } from '../utils/string';
+import type { Context } from './context';
 import type { Paths } from './paths';
 
 export type OutputStyleOpts = {
@@ -43,6 +45,19 @@ export class OutputStyleManager {
   outputStyles: OutputStyle[] = [];
   constructor(opts: OutputStyleManagerOpts) {
     this.outputStyles = [...this.load(opts.paths), ...opts.outputStyles];
+  }
+
+  static async create(context: Context) {
+    const outputStyles = await context.apply({
+      hook: 'outputStyle',
+      args: [],
+      memo: [],
+      type: PluginHookType.SeriesMerge,
+    });
+    return new OutputStyleManager({
+      paths: context.paths,
+      outputStyles,
+    });
   }
 
   load(paths: Paths): OutputStyle[] {

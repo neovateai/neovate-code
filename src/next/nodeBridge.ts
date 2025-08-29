@@ -1,9 +1,11 @@
+import { ConfigManager } from '../config';
 import { CANCELED_MESSAGE_TEXT } from '../constants';
 import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
 import type { Message, UserMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { MessageBus } from './messageBus';
+import { OutputStyleManager } from './outputStyle';
 import { Project } from './project';
 import { SlashCommandManager } from './slashCommand';
 
@@ -138,6 +140,53 @@ class NodeHandlerRegistry {
         };
       },
     );
+
+    //////////////////////////////////////////////
+    // config
+    this.messageBus.registerHandler(
+      'setConfig',
+      async (data: {
+        cwd: string;
+        isGlobal: boolean;
+        key: string;
+        value: string;
+      }) => {
+        const { cwd, key, value, isGlobal } = data;
+        const context = await this.getContext(cwd);
+        const configManager = new ConfigManager(cwd, context.productName, {});
+        configManager.setConfig(isGlobal, key, value);
+        if (this.contexts.has(cwd)) {
+          this.contexts.delete(cwd);
+        }
+        return {
+          success: true,
+        };
+      },
+    );
+
+    //////////////////////////////////////////////
+    // output style
+    this.messageBus.registerHandler(
+      'getOutputStyles',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const outputStyleManager = await OutputStyleManager.create(context);
+        return {
+          success: true,
+          data: {
+            outputStyles: outputStyleManager.outputStyles.map((style) => ({
+              name: style.name,
+              description: style.description,
+            })),
+            currentOutputStyle: context.config.outputStyle,
+          },
+        };
+      },
+    );
+
+    //////////////////////////////////////////////
+    // slash command
 
     this.messageBus.registerHandler(
       'getSlashCommands',

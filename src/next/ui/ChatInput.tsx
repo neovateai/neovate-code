@@ -9,8 +9,11 @@ import { useTerminalSize } from './useTerminalSize';
 
 export function ChatInput() {
   const { inputState, handlers, slashCommands } = useInputHandlers();
-  const { log, setExitMessage, cancel } = useAppStore();
+  const { log, setExitMessage, cancel, slashCommandJSX } = useAppStore();
   const { columns } = useTerminalSize();
+  if (slashCommandJSX) {
+    return null;
+  }
   return (
     <Box flexDirection="column" marginTop={SPACING.MESSAGE_MARGIN_TOP}>
       <Box
