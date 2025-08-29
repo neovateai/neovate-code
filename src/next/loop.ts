@@ -267,6 +267,10 @@ ${opts.tools.getToolsPrompt()}
       }),
       text,
       model,
+      usage: {
+        input_tokens: lastUsage.promptTokens,
+        output_tokens: lastUsage.completionTokens,
+      },
     });
     const toolUse = parsed.find((item) => item.type === 'tool_use') as ToolUse;
     if (toolUse) {
