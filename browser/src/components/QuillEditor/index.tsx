@@ -5,6 +5,7 @@ import 'quill/dist/quill.core.css';
 import {
   forwardRef,
   useContext,
+  useEffect,
   useImperativeHandle,
   useLayoutEffect,
   useRef,
@@ -14,10 +15,17 @@ import ContextBlot from './ContextBlot';
 import { QuillContext } from './QuillContext';
 import { makeChangeEvent, makeSelectEvent } from './events';
 import {
+  getDeletedLength,
+  getInsertText,
   getRemovedTakumiContexts,
   getTextWithTakumiContext,
   isInsertingAt,
 } from './utils';
+
+interface ISearchInfo {
+  atPosition: number;
+  length: number;
+}
 
 interface IQuillEditorProps extends TextAreaProps {}
 
@@ -68,12 +76,17 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
   const oldContentsRef = useRef<Delta>(new Delta());
   const [isCompositing, setIsCompositing] = useState(false);
 
+  const searchInfoRef = useRef<ISearchInfo>(null);
+
   const {
     onInputAt,
     onQuillLoad,
     onKeyDown,
     onDeleteContexts,
     onNativeKeyDown,
+    onExitSearch,
+    onSearch,
+    searchingAtIndex,
     onChange: onQuillChange,
     readonly,
   } = useContext(QuillContext);
@@ -93,6 +106,18 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
       },
     };
   });
+
+  useEffect(() => {
+    if (typeof searchingAtIndex === 'number') {
+      searchInfoRef.current = {
+        atPosition: searchingAtIndex,
+        length: 0,
+      };
+    } else {
+      searchInfoRef.current = null;
+      onExitSearch?.();
+    }
+  }, [searchingAtIndex]);
 
   useLayoutEffect(() => {
     if (editorRef.current && !quillRef.current) {
@@ -117,6 +142,8 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
       });
 
       quillInstance.on('selection-change', (range, _oldRange, _source) => {
+        // when selection change, exit search mode
+        onExitSearch?.();
         if (range) {
           onSelect?.(
             makeSelectEvent(
@@ -136,6 +163,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
 
             if (selection) {
               const bounds = quillInstance.getBounds(selection.index);
+
               onInputAt?.(true, selection?.index, bounds ?? undefined);
             }
           } else {
@@ -143,6 +171,26 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
           }
 
           const currentContents = quillInstance.getContents();
+
+          if (searchInfoRef.current) {
+            const insertText = getInsertText(delta);
+            if (typeof insertText === 'string') {
+              searchInfoRef.current.length += insertText.length;
+            }
+            const deletedLength = getDeletedLength(delta);
+            if (typeof deletedLength === 'number') {
+              searchInfoRef.current.length -= deletedLength;
+              if (searchInfoRef.current.length < 0) {
+                onExitSearch?.();
+              }
+            }
+            const searchText = quillInstance.getText({
+              index: Math.max(searchInfoRef.current.atPosition, 1), // skip the @
+              length: searchInfoRef.current.length,
+            });
+
+            onSearch?.(searchText);
+          }
 
           const removedTakumiContexts = getRemovedTakumiContexts(
             oldContentsRef.current,

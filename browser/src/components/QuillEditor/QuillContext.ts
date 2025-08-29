@@ -17,6 +17,10 @@ interface QuillContextType {
   /** call this function when editor value change */
   onChange?: (value: string, delta: Delta) => void;
 
+  searchingAtIndex?: number;
+  onSearch?: (text: string) => void;
+  onExitSearch?: () => void;
+
   readonly?: boolean;
 }
 

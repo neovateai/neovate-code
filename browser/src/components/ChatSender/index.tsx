@@ -57,6 +57,8 @@ const ChatSender: React.FC = () => {
   const [inputText, setInputText] = useState<string>('');
   const [atIndex, setAtIndex] = useState<number>();
   const [bounds, setBounds] = useState<Bounds>();
+  const [searchingInEditor, setSearchingInEditor] = useState(false);
+  const [searchText, setSearchText] = useState<string>();
   const quill = useRef<Quill>(null);
   const suggestionListRef = useRef<ISuggestionListRef>(null);
 
@@ -103,6 +105,13 @@ const ChatSender: React.FC = () => {
               setAtIndex(index);
             }
           },
+          searchingAtIndex: searchingInEditor ? atIndex : undefined,
+          onExitSearch: () => {
+            setSearchText(undefined);
+            setOpenPopup(false);
+            setSearchingInEditor(false);
+          },
+          onSearch: (text) => setSearchText(text),
           onQuillLoad: (quillInstance) => {
             quillInstance.focus();
             quill.current = quillInstance;
@@ -144,6 +153,7 @@ const ChatSender: React.FC = () => {
           }}
           onSelect={(_type, _itemValue, contextItem) => {
             setOpenPopup(false);
+            setSearchingInEditor(false);
             if (contextItem) {
               context.actions.addContext(contextItem);
 
@@ -151,7 +161,10 @@ const ChatSender: React.FC = () => {
                 const delIndex = Math.max(0, atIndex - 1);
 
                 // delete the @
-                quill.current?.deleteText(delIndex, 1);
+                quill.current?.deleteText(
+                  delIndex,
+                  (searchText?.length ?? 0) + 1,
+                );
 
                 // insert the context
                 quill.current?.insertEmbed(
@@ -166,12 +179,21 @@ const ChatSender: React.FC = () => {
 
                 // insert a space
                 quill.current?.insertText(delIndex + 1, ' ');
+
+                // set the selection
+                quill.current?.setSelection(delIndex + 2, 0, 'user');
               }
             }
           }}
           onLostFocus={() => quill.current?.focus()}
           offset={{ top: (bounds?.top ?? -50) + 50, left: bounds?.left ?? 0 }}
-          searchControl={{}}
+          searchControl={{
+            searchText,
+            onSearchStart: () => {
+              quill.current?.focus();
+              setSearchingInEditor(true);
+            },
+          }}
         >
           <Sender
             className={styles.sender}

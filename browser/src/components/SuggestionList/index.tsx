@@ -34,6 +34,7 @@ export type SuggestionItem = {
 
 interface SearchControlConfig {
   searchText?: string;
+  onSearchStart?: () => void;
 }
 
 interface ISuggestionListProps {
@@ -85,6 +86,9 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
     const inputRef = useRef<InputRef>(null);
     const popupRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
+
+    const searchText =
+      inputRef.current?.input?.value ?? searchControl?.searchText;
 
     const firstLevelList = useMemo(() => items, [items]);
 
@@ -269,13 +273,10 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
             <div className="flex gap-1 items-center h-5">
               <div>{item.icon}</div>
               <SmartText
-                label={renderItemText(
-                  item.label,
-                  inputRef.current?.input?.value,
-                )}
+                label={renderItemText(item.label, searchText)}
                 extra={
                   item.extra
-                    ? renderItemText(item.extra, inputRef.current?.input?.value)
+                    ? renderItemText(item.extra, searchText)
                     : undefined
                 }
                 renderTooltip={() => {
@@ -285,7 +286,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
                         <FileTooltipRender
                           fullPath={renderItemText(
                             [item.extra ?? '', item.label].join('/'),
-                            inputRef.current?.input?.value,
+                            searchText,
                           )}
                           icon={item.icon}
                         />
@@ -388,7 +389,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
 
         if (selectedFirstKey) {
           if (searchControl) {
-            onLostFocus?.();
+            searchControl.onSearchStart?.();
           } else {
             inputRef.current?.focus();
           }
@@ -403,7 +404,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       selectedFirstKey,
       firstLevelList,
       secondLevelList,
-      searchControl,
+      searchControl?.onSearchStart,
     ]);
 
     useEffect(() => {
@@ -416,7 +417,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
           setSearchResults(searchResults || undefined);
         }
       }
-    }, [searchControl]);
+    }, [searchControl?.searchText]);
 
     // Handle click outside to close popup
     useEffect(() => {
