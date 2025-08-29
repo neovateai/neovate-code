@@ -213,6 +213,7 @@ class NodeHandlerRegistry {
                       text: result,
                     },
                   ],
+                  history: null,
                 },
               ],
             },

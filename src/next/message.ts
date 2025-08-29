@@ -1,6 +1,6 @@
 import { CANCELED_MESSAGE_TEXT } from '../constants';
 import { randomUUID } from '../utils/randomUUID';
-import type { Message, NormalizedMessage } from './history';
+import type { Message, NormalizedMessage, UserMessage } from './history';
 
 export function createUserMessage(
   content: string,
@@ -37,6 +37,7 @@ export function isCanceledMessage(message: Message) {
 export function isUserTextMessage(message: Message) {
   return (
     message.role === 'user' &&
+    (message as UserMessage).history !== null &&
     !isToolResultMessage(message) &&
     !isCanceledMessage(message)
   );
@@ -49,4 +50,8 @@ export function getMessageText(message: Message) {
         .filter((c) => c.type === 'text')
         .map((c) => c.text)
         .join('');
+}
+
+export function getMessageHistory(message: Message) {
+  return (message as UserMessage).history || getMessageText(message);
 }

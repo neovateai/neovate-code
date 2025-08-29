@@ -6,11 +6,11 @@ import React from 'react';
 import { fileURLToPath } from 'url';
 import yargsParser from 'yargs-parser';
 import { PRODUCT_NAME } from '../constants';
-import { type Plugin, PluginHookType } from '../plugin';
+import { type Plugin } from '../plugin';
 import { clearTracing } from '../tracing';
 import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
-import { getMessageText, isUserTextMessage } from './message';
+import { getMessageHistory, isUserTextMessage } from './message';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
 import { Paths } from './paths';
@@ -175,7 +175,7 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
     }
     const logPath = paths.getSessionLogPath(argv.resume);
     const messages = loadSessionMessages({ logPath });
-    const history = messages.filter(isUserTextMessage).map(getMessageText);
+    const history = messages.filter(isUserTextMessage).map(getMessageHistory);
     return [messages, history];
   })();
   const sessionId = argv.resume || randomUUID();

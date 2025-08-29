@@ -4,8 +4,7 @@ export const exitCommand: LocalCommand = {
   type: 'local',
   name: 'exit',
   description: 'Exit the application',
-  async call(args: string, context) {
-    await context.destroy();
+  async call() {
     setTimeout(() => {
       process.exit(0);
     }, 100);

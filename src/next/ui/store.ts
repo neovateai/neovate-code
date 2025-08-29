@@ -4,7 +4,11 @@ import { devtools } from 'zustand/middleware';
 import { CANCELED_MESSAGE_TEXT } from '../../constants';
 import type { Message } from '../history';
 import type { LoopResult } from '../loop';
-import { isSlashCommand, parseSlashCommand } from '../slashCommand';
+import {
+  type CommandEntry,
+  isSlashCommand,
+  parseSlashCommand,
+} from '../slashCommand';
 import type { UIBridge } from '../uiBridge';
 
 type QueuedMessage = {
@@ -172,7 +176,7 @@ export const useAppStore = create<AppStore>()(
             cwd,
             command: parsed.command,
           });
-          const commandeEntry = result.data?.commandEntry;
+          const commandeEntry = result.data?.commandEntry as CommandEntry;
           if (commandeEntry) {
             const userMessage: Message = {
               role: 'user',
@@ -207,8 +211,31 @@ export const useAppStore = create<AppStore>()(
               if (isPrompt) {
                 await sendMessage(null);
               }
-            } else if (commandeEntry.command.type === 'prompt') {
-            } else if (commandeEntry.command.type === 'local-jsx') {
+            } else if (isLocalJSX) {
+              const jsx = await command.call(async (result: string) => {
+                set({
+                  slashCommandJSX: null,
+                });
+                await bridge.request('addMessages', {
+                  cwd,
+                  sessionId,
+                  messages: [
+                    {
+                      role: 'user',
+                      content: [
+                        {
+                          type: 'text',
+                          text: result,
+                        },
+                      ],
+                      history: null,
+                    },
+                  ],
+                });
+              }, {} as any);
+              set({
+                slashCommandJSX: jsx,
+              });
             } else {
               throw new Error(
                 `Unknown slash command type: ${commandeEntry.command.type}`,
