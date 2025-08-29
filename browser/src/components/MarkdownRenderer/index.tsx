@@ -1,13 +1,14 @@
-import { CheckOutlined, CopyOutlined } from '@ant-design/icons';
+import { CheckOutlined, CodeOutlined } from '@ant-design/icons';
 import { message } from 'antd';
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
+import { useShiki } from '@/components/CodeRenderer';
+import MessageWrapper from '@/components/MessageWrapper';
 import { useClipboard } from '@/hooks/useClipboard';
+import CopyIcon from '@/icons/copy.svg?react';
 import styles from './index.module.css';
 
 interface MarkdownRendererProps {
@@ -17,17 +18,22 @@ interface MarkdownRendererProps {
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   const { t } = useTranslation();
   const { writeText } = useClipboard();
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const { codeToHtml, isReady } = useShiki();
+  const [isCopySuccess, setIsCopySuccess] = useState(false);
+
+  if (!isReady || !codeToHtml) {
+    return <div>Loading syntax highlighter...</div>;
+  }
 
   const copyToClipboard = async (code: string) => {
     try {
       await writeText(code);
-      setCopiedCode(code);
+      setIsCopySuccess(true);
       message.success(t('markdown.copySuccess'));
 
       // 2秒后重置复制状态
       setTimeout(() => {
-        setCopiedCode(null);
+        setIsCopySuccess(false);
       }, 2000);
     } catch (err) {
       message.error(t('markdown.copyFailed'));
@@ -40,39 +46,27 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
       const language = match ? match[1] : '';
       const codeString = String(children).replace(/\n$/, '');
 
-      if (language) {
-        const isCopied = copiedCode === codeString;
+      const highlightedCode = codeToHtml(codeString, {
+        lang: language,
+        theme: 'snazzy-light',
+      });
 
+      if (language) {
         return (
-          <div className={styles.codeContainer}>
-            <button
-              onClick={() => copyToClipboard(codeString)}
-              className={`${styles.copyButton} ${isCopied ? styles.copied : ''}`}
-              title={t('markdown.copyCode')}
-              aria-label={t('markdown.copyCode')}
-            >
-              {isCopied ? (
-                <CheckOutlined style={{ fontSize: '12px' }} />
-              ) : (
-                <CopyOutlined style={{ fontSize: '12px' }} />
-              )}
-            </button>
-            <SyntaxHighlighter
-              style={tomorrow}
-              language={language}
-              PreTag={Fragment}
-              wrapLines={false}
-              customStyle={{
-                margin: 0,
-                padding: '16px',
-                fontSize: '13px',
-                lineHeight: '1.5',
-                borderRadius: '8px',
-              }}
-            >
-              {codeString}
-            </SyntaxHighlighter>
-          </div>
+          <MessageWrapper
+            title={language}
+            icon={<CodeOutlined />}
+            defaultExpanded={true}
+            actions={[
+              {
+                key: 'copy',
+                icon: isCopySuccess ? <CheckOutlined /> : <CopyIcon />,
+                onClick: () => copyToClipboard(codeString),
+              },
+            ]}
+          >
+            <div dangerouslySetInnerHTML={{ __html: highlightedCode }} />
+          </MessageWrapper>
         );
       }
 

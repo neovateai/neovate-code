@@ -4,6 +4,13 @@
   min-width: 789px;
 }
 
+.markdownRenderer :global(.prose pre) {
+  padding: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+}
+
 .markdownRenderer :global(.prose) {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
