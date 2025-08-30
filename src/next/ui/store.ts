@@ -74,6 +74,7 @@ interface AppState {
   approvalMode: ApprovalMode;
 
   planResult: string | null;
+  processingStartTime: number | null;
 
   messages: Message[];
   currentMessage: Message | null;
@@ -145,6 +146,8 @@ export const useAppStore = create<AppStore>()(
       historyIndex: null,
       sessionId: null,
       logs: [],
+      planResult: null,
+      processingStartTime: null,
 
       // Actions
       initialize: async (opts) => {
@@ -287,6 +290,7 @@ export const useAppStore = create<AppStore>()(
       }) => {
         set({
           status: 'processing',
+          processingStartTime: Date.now(),
         });
         const { bridge, cwd, sessionId } = get();
         const response: LoopResult = await bridge.request('send', {
@@ -296,9 +300,13 @@ export const useAppStore = create<AppStore>()(
           planMode: opts.planMode,
         });
         if (response.success) {
-          set({ status: 'idle' });
+          set({ status: 'idle', processingStartTime: null });
         } else {
-          set({ status: 'failed', error: response.error.message });
+          set({
+            status: 'failed',
+            error: response.error.message,
+            processingStartTime: null,
+          });
         }
         return response;
       },
@@ -312,7 +320,7 @@ export const useAppStore = create<AppStore>()(
           cwd,
           sessionId,
         });
-        set({ status: 'idle' });
+        set({ status: 'idle', processingStartTime: null });
       },
 
       clear: async () => {

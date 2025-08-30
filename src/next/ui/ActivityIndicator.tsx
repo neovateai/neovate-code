@@ -1,18 +1,19 @@
 import { Box, Text } from 'ink';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { GradientText } from './GradientText';
 import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 import { useTextGradientAnimation } from './useTextGradientAnimation';
 
 export function ActivityIndicator() {
-  const { error, status, planResult } = useAppStore();
+  const { error, status, planResult, processingStartTime } = useAppStore();
+  const [seconds, setSeconds] = useState(0);
 
   const text = useMemo(() => {
     if (status === 'processing') return 'Processing...';
     if (status === 'failed') return `Failed: ${error}`;
     return `Unknown status: ${status}`;
-  }, [status, error]);
+  }, [status, error, seconds]);
 
   const color = useMemo(() => {
     if (status === 'failed') return 'red';
@@ -24,6 +25,20 @@ export function ActivityIndicator() {
     status === 'processing',
   );
 
+  useEffect(() => {
+    if (status === 'processing' && processingStartTime) {
+      const updateSeconds = () => {
+        const elapsed = Math.floor((Date.now() - processingStartTime) / 1000);
+        setSeconds(elapsed);
+      };
+      updateSeconds();
+      const interval = setInterval(updateSeconds, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setSeconds(0);
+    }
+  }, [status, processingStartTime]);
+
   if (status === 'idle') return null;
   if (planResult) return null;
 
@@ -34,7 +49,7 @@ export function ActivityIndicator() {
           <GradientText text={text} highlightIndex={highlightIndex} />
           <Box marginLeft={1}>
             <Text color={UI_COLORS.ACTIVITY_INDICATOR_TEXT}>
-              (Esc to cancel)
+              (Esc to cancel, {seconds}s)
             </Text>
           </Box>
         </Box>
