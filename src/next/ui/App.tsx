@@ -1,8 +1,10 @@
-import { Box } from 'ink';
-import React from 'react';
+import { Box, Text } from 'ink';
+import SelectInput from 'ink-select-input';
+import React, { useCallback } from 'react';
 import { ActivityIndicator } from './ActivityIndicator';
 import { ChatInput } from './ChatInput';
 import { Logs } from './Logs';
+import { Markdown } from './Markdown';
 import { Messages } from './Messages';
 import { ModeIndicator } from './ModeIndicator';
 import { StatusLine } from './StatusLine';
@@ -14,11 +16,64 @@ function SlashCommandJSX() {
   return <Box>{slashCommandJSX}</Box>;
 }
 
+function PlanResult() {
+  const { planResult, approvePlan, denyPlan } = useAppStore();
+  const onSelect = useCallback(
+    (approved: boolean) => {
+      if (approved) {
+        approvePlan(planResult ?? '');
+      } else {
+        denyPlan();
+      }
+    },
+    [planResult, approvePlan, denyPlan],
+  );
+  // if (!planResult.success) return null;
+  // @ts-ignore
+  const text = planResult;
+  if (!planResult) return null;
+  return (
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor="gray"
+      padding={1}
+    >
+      <Text bold>Here is the plan:</Text>
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor="gray"
+        padding={1}
+      >
+        <Markdown>{text ?? ''}</Markdown>
+      </Box>
+      <Box marginY={1}>
+        <Text bold>Do you want to proceed?</Text>
+      </Box>
+      <SelectInput
+        items={[
+          {
+            label: 'Yes',
+            value: true,
+          },
+          {
+            label: 'No, I want to edit the plan',
+            value: false,
+          },
+        ]}
+        onSelect={(item: any) => onSelect(item.value)}
+      />
+    </Box>
+  );
+}
+
 export function App() {
   const { forceRerender, forceUpdate } = useTerminalRefresh();
   return (
     <Box flexDirection="column" key={forceRerender}>
       <Messages />
+      <PlanResult />
       <ActivityIndicator />
       <ModeIndicator />
       <ChatInput />

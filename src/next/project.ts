@@ -1,5 +1,5 @@
 import { PluginHookType } from '../plugin';
-import { Tools } from '../tool';
+import { type EnhancedTool, Tools } from '../tool';
 import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
 import type { NormalizedMessage } from './history';
@@ -9,6 +9,7 @@ import { runLoop } from './loop';
 import { resolveModelWithContext } from './model';
 import { OutputFormat } from './outputFormat';
 import { OutputStyleManager } from './outputStyle';
+import { generatePlanSystemPrompt } from './planSystemPrompt';
 import { Session, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
 import { resolveTools } from './tool';
@@ -33,6 +34,77 @@ export class Project {
       signal?: AbortSignal;
     } = {},
   ) {
+    let tools = await resolveTools({
+      context: this.context,
+      sessionId: this.session.id,
+      write: true,
+      todo: true,
+    });
+    tools = await this.context.apply({
+      hook: 'tool',
+      args: [],
+      memo: tools,
+      type: PluginHookType.SeriesMerge,
+    });
+    const outputStyleManager = await OutputStyleManager.create(this.context);
+    const outputStyle = outputStyleManager.getOutputStyle(
+      this.context.config.outputStyle,
+    );
+    const systemPrompt = generateSystemPrompt({
+      todo: this.context.config.todo!,
+      productName: this.context.productName,
+      language: this.context.config.language,
+      outputStyle,
+    });
+    return this.sendWithSystemPromptAndTools(message, {
+      ...opts,
+      tools,
+      systemPrompt,
+    });
+  }
+
+  async plan(
+    message: string | null,
+    opts: {
+      model?: string;
+      onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
+      signal?: AbortSignal;
+    } = {},
+  ) {
+    let tools = await resolveTools({
+      context: this.context,
+      sessionId: this.session.id,
+      write: false,
+      todo: false,
+    });
+    tools = await this.context.apply({
+      hook: 'tool',
+      args: [],
+      memo: tools,
+      type: PluginHookType.SeriesMerge,
+    });
+    const systemPrompt = generatePlanSystemPrompt({
+      todo: this.context.config.todo!,
+      productName: this.context.productName,
+      language: this.context.config.language,
+    });
+    return this.sendWithSystemPromptAndTools(message, {
+      ...opts,
+      tools,
+      systemPrompt,
+    });
+  }
+  private async sendWithSystemPromptAndTools(
+    message: string | null,
+    opts: {
+      model?: string;
+      onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
+      signal?: AbortSignal;
+      tools?: EnhancedTool[];
+      systemPrompt?: string;
+    } = {},
+  ) {
+    const tools = opts.tools || [];
     const outputFormat = new OutputFormat({
       format: this.context.config.outputFormat!,
       quiet: this.context.config.quiet,
@@ -56,26 +128,6 @@ export class Project {
       opts.model || null,
       this.context,
     );
-    let tools = await resolveTools({
-      context: this.context,
-      sessionId: this.session.id,
-    });
-    tools = await this.context.apply({
-      hook: 'tool',
-      args: [],
-      memo: tools,
-      type: PluginHookType.SeriesMerge,
-    });
-    const outputStyleManager = await OutputStyleManager.create(this.context);
-    const outputStyle = outputStyleManager.getOutputStyle(
-      this.context.config.outputStyle,
-    );
-    const systemPrompt = generateSystemPrompt({
-      todo: this.context.config.todo!,
-      productName: this.context.productName,
-      language: this.context.config.language,
-      outputStyle,
-    });
     const llmsContext = await LlmsContext.create({
       context: this.context,
     });
@@ -122,7 +174,7 @@ export class Project {
       model,
       tools: new Tools(tools),
       cwd: this.context.cwd,
-      systemPrompt,
+      systemPrompt: opts.systemPrompt,
       llmsContexts: llmsContext.messages,
       signal: opts.signal,
       onMessage: async (message) => {

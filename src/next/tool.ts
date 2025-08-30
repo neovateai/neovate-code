@@ -13,6 +13,8 @@ import { Context } from './context';
 type ResolveToolsOpts = {
   context: Context;
   sessionId: string;
+  write?: boolean;
+  todo?: boolean;
 };
 
 type ToolCategory = 'read' | 'write' | 'network';
@@ -44,23 +46,28 @@ export async function resolveTools(opts: ResolveToolsOpts) {
       riskLevel: 'medium',
     }),
   ];
-  const writeTools = [
-    enhanceTool(createWriteTool({ context }), {
-      category: 'write',
-      riskLevel: 'medium',
-    }),
-    enhanceTool(createEditTool({ context }), {
-      category: 'write',
-      riskLevel: 'medium',
-    }),
-    createBashTool({ context }),
-  ];
+  const writeTools = opts.write
+    ? [
+        enhanceTool(createWriteTool({ context }), {
+          category: 'write',
+          riskLevel: 'medium',
+        }),
+        enhanceTool(createEditTool({ context }), {
+          category: 'write',
+          riskLevel: 'medium',
+        }),
+        createBashTool({ context }),
+      ]
+    : [];
 
-  const { todoWriteTool, todoReadTool } = createTodoTool({
-    context,
-    sessionId,
-  });
-  const todoTools = context.config.todo ? [todoReadTool, todoWriteTool] : [];
+  const todoTools = (() => {
+    if (!opts.todo) return [];
+    const { todoWriteTool, todoReadTool } = createTodoTool({
+      context,
+      sessionId,
+    });
+    return [todoReadTool, todoWriteTool];
+  })();
 
   // TODO: mcp tools
 

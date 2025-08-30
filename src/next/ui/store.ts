@@ -73,6 +73,8 @@ interface AppState {
   bashMode: boolean;
   approvalMode: ApprovalMode;
 
+  planResult: string | null;
+
   messages: Message[];
   currentMessage: Message | null;
   queuedMessages: QueuedMessage[];
@@ -98,6 +100,10 @@ type InitializeOpts = {
 interface AppActions {
   initialize: (opts: InitializeOpts) => Promise<void>;
   send: (message: string) => Promise<void>;
+  sendMessage: (opts: {
+    message: string | null;
+    planMode?: boolean;
+  }) => Promise<LoopResult>;
   addMessage: (message: Message) => void;
   log: (log: string) => void;
   setExitMessage: (exitMessage: string | null) => void;
@@ -105,6 +111,9 @@ interface AppActions {
   clear: () => Promise<void>;
   setDraftInput: (draftInput: string) => void;
   setHistoryIndex: (historyIndex: number | null) => void;
+  togglePlanMode: () => void;
+  approvePlan: (planResult: string) => void;
+  denyPlan: () => void;
 }
 
 type AppStore = AppState & AppActions;
@@ -176,7 +185,7 @@ export const useAppStore = create<AppStore>()(
 
       // TODO: support queued messages
       send: async (message) => {
-        const { bridge, cwd, sessionId } = get();
+        const { bridge, cwd, sessionId, planMode } = get();
 
         set({
           history: [...get().history, message],
@@ -223,7 +232,7 @@ export const useAppStore = create<AppStore>()(
                 });
               }
               if (isPrompt) {
-                await sendMessage(null);
+                await get().sendMessage({ message: null });
               }
             } else if (isLocalJSX) {
               const jsx = await command.call(async (result: string) => {
@@ -261,24 +270,37 @@ export const useAppStore = create<AppStore>()(
           }
           return;
         } else {
-          await sendMessage(message);
-        }
-
-        async function sendMessage(message: string | null) {
-          set({
-            status: 'processing',
-          });
-          const response: LoopResult = await bridge.request('send', {
-            message,
-            cwd,
-            sessionId,
-          });
-          if (response.success) {
-            set({ status: 'idle' });
+          const result = await get().sendMessage({ message, planMode });
+          if (planMode && result.success) {
+            set({
+              planResult: result.data.text,
+            });
           } else {
-            set({ status: 'failed', error: response.error.message });
+            // TODO
           }
         }
+      },
+
+      sendMessage: async (opts: {
+        message: string | null;
+        planMode?: boolean;
+      }) => {
+        set({
+          status: 'processing',
+        });
+        const { bridge, cwd, sessionId } = get();
+        const response: LoopResult = await bridge.request('send', {
+          message: opts.message,
+          cwd,
+          sessionId,
+          planMode: opts.planMode,
+        });
+        if (response.success) {
+          set({ status: 'idle' });
+        } else {
+          set({ status: 'failed', error: response.error.message });
+        }
+        return response;
       },
 
       cancel: async () => {
@@ -326,6 +348,31 @@ export const useAppStore = create<AppStore>()(
 
       setHistoryIndex: (historyIndex: number | null) => {
         set({ historyIndex });
+      },
+
+      togglePlanMode: () => {
+        set({ planMode: !get().planMode });
+      },
+
+      approvePlan: (planResult: string) => {
+        set({ planResult: null, planMode: false });
+        const bridge = get().bridge;
+        bridge.request('addMessages', {
+          cwd: get().cwd,
+          sessionId: get().sessionId,
+          messages: [
+            {
+              role: 'user',
+              content: [{ type: 'text', text: planResult }],
+              history: null,
+            },
+          ],
+        });
+        get().sendMessage({ message: null });
+      },
+
+      denyPlan: () => {
+        set({ planResult: null });
       },
     }),
     { name: 'app-store' },

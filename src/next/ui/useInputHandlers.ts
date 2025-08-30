@@ -12,6 +12,7 @@ export function useInputHandlers() {
     draftInput,
     setDraftInput,
     setHistoryIndex,
+    togglePlanMode,
   } = useAppStore();
   const inputState = useInputState();
   const slashCommands = useSlashCommands(inputState.state.value);
@@ -45,6 +46,9 @@ export function useInputHandlers() {
       }
       // 2. file suggestions
       // 3. switch mode
+      if (isShiftTab) {
+        togglePlanMode(true);
+      }
     },
     [slashCommands],
   );

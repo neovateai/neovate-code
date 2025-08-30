@@ -6,7 +6,7 @@ import { useAppStore } from './store';
 import { useTextGradientAnimation } from './useTextGradientAnimation';
 
 export function ActivityIndicator() {
-  const { error, status } = useAppStore();
+  const { error, status, planResult } = useAppStore();
 
   const text = useMemo(() => {
     if (status === 'processing') return 'Processing...';
@@ -25,6 +25,7 @@ export function ActivityIndicator() {
   );
 
   if (status === 'idle') return null;
+  if (planResult) return null;
 
   return (
     <Box flexDirection="row" marginTop={SPACING.ACTIVITY_INDICATOR_MARGIN_TOP}>

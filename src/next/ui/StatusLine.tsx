@@ -55,8 +55,11 @@ function StatusContent() {
 }
 
 export function StatusLine() {
-  const { slashCommandJSX } = useAppStore();
+  const { slashCommandJSX, planResult } = useAppStore();
   if (slashCommandJSX) {
+    return null;
+  }
+  if (planResult) {
     return null;
   }
   return (

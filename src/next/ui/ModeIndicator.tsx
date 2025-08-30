@@ -1,11 +1,14 @@
 import { Box, Text } from 'ink';
 import React from 'react';
-import { UI_COLORS } from './constants';
+import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 
 export function ModeIndicator() {
-  const { planMode, bashMode, approvalMode, slashCommandJSX } = useAppStore();
+  const { planMode, bashMode, planResult, slashCommandJSX } = useAppStore();
   if (slashCommandJSX) {
+    return null;
+  }
+  if (planResult) {
     return null;
   }
   const text = planMode ? (
@@ -28,7 +31,11 @@ export function ModeIndicator() {
     <Text> </Text>
   );
   return (
-    <Box flexDirection="row" gap={1}>
+    <Box
+      flexDirection="row"
+      gap={1}
+      marginTop={SPACING.MODE_INDICATOR_MARGIN_TOP}
+    >
       <Box flexGrow={1} />
       <Box>{text}</Box>
     </Box>

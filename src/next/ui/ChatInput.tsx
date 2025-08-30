@@ -9,9 +9,13 @@ import { useTerminalSize } from './useTerminalSize';
 
 export function ChatInput() {
   const { inputState, handlers, slashCommands } = useInputHandlers();
-  const { log, setExitMessage, cancel, slashCommandJSX } = useAppStore();
+  const { log, setExitMessage, planResult, cancel, slashCommandJSX } =
+    useAppStore();
   const { columns } = useTerminalSize();
   if (slashCommandJSX) {
+    return null;
+  }
+  if (planResult) {
     return null;
   }
   return (
