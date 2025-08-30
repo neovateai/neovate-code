@@ -1,5 +1,6 @@
 import { Box, Text } from 'ink';
 import React from 'react';
+import { UI_COLORS } from './constants';
 import { useAppStore } from './store';
 
 export function ModeIndicator() {
@@ -9,13 +10,19 @@ export function ModeIndicator() {
   }
   const text = planMode ? (
     <>
-      <Text color="greenBright">plan mode</Text>
-      <Text color="gray"> (shift + tab to toggle)</Text>
+      <Text color={UI_COLORS.MODE_INDICATOR_TEXT}>plan mode</Text>
+      <Text color={UI_COLORS.MODE_INDICATOR_DESCRIPTION}>
+        {' '}
+        (shift + tab to toggle)
+      </Text>
     </>
   ) : bashMode ? (
     <>
-      <Text color="magentaBright">bash mode</Text>
-      <Text color="gray"> (esc to disable)</Text>
+      <Text color={UI_COLORS.MODE_INDICATOR_TEXT}>bash mode</Text>
+      <Text color={UI_COLORS.MODE_INDICATOR_DESCRIPTION}>
+        {' '}
+        (esc to disable)
+      </Text>
     </>
   ) : (
     <Text> </Text>
