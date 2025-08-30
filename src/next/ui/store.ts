@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import type { ApprovalMode } from '../../config';
 import { randomUUID } from '../../utils/randomUUID';
 import type { Message } from '../history';
 import type { LoopResult } from '../loop';
@@ -68,6 +69,9 @@ interface AppState {
   status: AppStatus;
   error: string | null;
   slashCommandJSX: ReactNode | null;
+  planMode: boolean;
+  bashMode: boolean;
+  approvalMode: ApprovalMode;
 
   messages: Message[];
   currentMessage: Message | null;
@@ -121,6 +125,9 @@ export const useAppStore = create<AppStore>()(
       status: 'idle',
       error: null,
       slashCommandJSX: null,
+      planMode: false,
+      bashMode: false,
+      approvalMode: 'default',
       messages: [],
       currentMessage: null,
       queuedMessages: [],
@@ -151,6 +158,9 @@ export const useAppStore = create<AppStore>()(
           history: opts.history,
           initialPrompt: opts.initialPrompt,
           logFile: opts.logFile,
+          planMode: false,
+          bashMode: false,
+          approvalMode: response.data.approvalMode,
           // theme: 'light',
         });
         bridge.onEvent('message', (data) => {

@@ -63,6 +63,7 @@ class NodeHandlerRegistry {
             version: context.version,
             model,
             modelContextLimit,
+            approvalMode: context.config.approvalMode,
           },
         };
       },

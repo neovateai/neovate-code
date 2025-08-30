@@ -12,6 +12,7 @@ export const UI_COLORS = {
   WARNING: 'yellow',
   INFO: 'gray',
   CHAT_BORDER: 'gray',
+  CHAT_ARROW: 'white',
   CANCELED: 'red',
   ACTIVITY_INDICATOR_TEXT: 'gray',
   ACTIVITY_INDICATOR_GRADIENT: {
@@ -22,7 +23,7 @@ export const UI_COLORS = {
 } as const;
 
 export const SPACING = {
-  CHAT_INPUT_MARGIN_TOP: 1,
+  CHAT_INPUT_MARGIN_TOP: 0,
   ACTIVITY_INDICATOR_MARGIN_TOP: 1,
   MESSAGE_MARGIN_TOP: 1,
   MESSAGE_MARGIN_TOP_TOOL_RESULT: 0,

@@ -4,6 +4,7 @@ import { ActivityIndicator } from './ActivityIndicator';
 import { ChatInput } from './ChatInput';
 import { Logs } from './Logs';
 import { Messages } from './Messages';
+import { ModeIndicator } from './ModeIndicator';
 import { StatusLine } from './StatusLine';
 import { useAppStore } from './store';
 import { useTerminalRefresh } from './useTerminalRefresh';
@@ -19,9 +20,10 @@ export function App() {
     <Box flexDirection="column" key={forceRerender}>
       <Messages />
       <ActivityIndicator />
-      <SlashCommandJSX />
+      <ModeIndicator />
       <ChatInput />
       <StatusLine />
+      <SlashCommandJSX />
       <Logs />
     </Box>
   );

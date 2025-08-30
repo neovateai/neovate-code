@@ -6,7 +6,7 @@ import { useAppStore } from './store';
 import { useTextGradientAnimation } from './useTextGradientAnimation';
 
 export function ActivityIndicator() {
-  const { status, error } = useAppStore();
+  const { error, status } = useAppStore();
 
   const text = useMemo(() => {
     if (status === 'processing') return 'Processing...';

@@ -15,15 +15,15 @@ export function ChatInput() {
     return null;
   }
   return (
-    <Box flexDirection="column" marginTop={SPACING.MESSAGE_MARGIN_TOP}>
+    <Box flexDirection="column" marginTop={SPACING.CHAT_INPUT_MARGIN_TOP}>
       <Box
         borderStyle="round"
-        borderColor={UI_COLORS.CHAT_BORDER as any}
+        borderColor={UI_COLORS.CHAT_BORDER}
         paddingX={1}
         flexDirection="row"
         gap={1}
       >
-        <Text color="white">&gt;</Text>
+        <Text color={UI_COLORS.CHAT_ARROW}>&gt;</Text>
         <TextInput
           multiline
           value={inputState.state.value}
