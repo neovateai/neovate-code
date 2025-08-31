@@ -5,7 +5,7 @@ import path from 'path';
 import React from 'react';
 import { fileURLToPath } from 'url';
 import yargsParser from 'yargs-parser';
-import { PRODUCT_NAME } from '../constants';
+import { PRODUCT_ASCII_ART, PRODUCT_NAME } from '../constants';
 import { type Plugin } from '../plugin';
 import { clearTracing } from '../tracing';
 import { randomUUID } from '../utils/randomUUID';
@@ -222,6 +222,7 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
 
 export async function runNeovate(opts: {
   productName: string;
+  productASCIIArt?: string;
   version: string;
   plugins: Plugin[];
 }) {
@@ -233,6 +234,7 @@ export async function runNeovate(opts: {
   }
   const contextCreateOpts = {
     productName: opts.productName,
+    productASCIIArt: opts.productASCIIArt,
     version: opts.version,
     argvConfig: {
       model: argv.model,
@@ -266,6 +268,7 @@ const pkg = JSON.parse(
 );
 runNeovate({
   productName: PRODUCT_NAME,
+  productASCIIArt: PRODUCT_ASCII_ART.trim(),
   version: pkg.version,
   plugins: [],
 }).catch((e) => {

@@ -60,6 +60,7 @@ class NodeHandlerRegistry {
           success: true,
           data: {
             productName: context.productName,
+            productASCIIArt: context.productASCIIArt,
             version: context.version,
             model,
             modelContextLimit,

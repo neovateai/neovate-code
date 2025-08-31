@@ -14,6 +14,7 @@ import { Paths } from './paths';
 type ContextOpts = {
   cwd: string;
   productName: string;
+  productASCIIArt?: string;
   version: string;
   config: Config;
   pluginManager: PluginManager;
@@ -24,6 +25,7 @@ type ContextOpts = {
 type ContextCreateOpts = {
   cwd: string;
   productName: string;
+  productASCIIArt?: string;
   version: string;
   argvConfig: Record<string, any>;
   plugins: (string | Plugin)[];
@@ -32,6 +34,7 @@ type ContextCreateOpts = {
 export class Context {
   cwd: string;
   productName: string;
+  productASCIIArt?: string;
   version: string;
   config: Config;
   paths: Paths;
@@ -41,6 +44,7 @@ export class Context {
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName;
+    this.productASCIIArt = opts.productASCIIArt;
     this.version = opts.version;
     this.config = opts.config;
     this.paths = opts.paths;
@@ -64,7 +68,7 @@ export class Context {
   }
 
   static async create(opts: ContextCreateOpts) {
-    const { cwd, version } = opts;
+    const { cwd, version, productASCIIArt } = opts;
     const productName = opts.productName.toLowerCase();
     const paths = new Paths({
       productName,
@@ -122,6 +126,7 @@ export class Context {
     return new Context({
       cwd,
       productName,
+      productASCIIArt,
       version,
       pluginManager,
       argvConfig,

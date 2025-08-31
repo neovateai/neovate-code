@@ -55,10 +55,55 @@ function AppInfo() {
   );
 }
 
+function ProductASCIIArt() {
+  const { productASCIIArt } = useAppStore();
+  if (!productASCIIArt) return null;
+  return (
+    <Box>
+      <Text color={UI_COLORS.PRODUCT_ASCII_ART}>{productASCIIArt}</Text>
+    </Box>
+  );
+}
+
+function ProductInfo() {
+  const { productName, version } = useAppStore();
+  return (
+    <Box marginTop={1}>
+      <Text bold color={UI_COLORS.PRODUCT_NAME}>
+        {productName.toUpperCase()}
+      </Text>
+      <Text color={UI_COLORS.PRODUCT_VERSION}> v{version}</Text>
+    </Box>
+  );
+}
+
+function GettingStartedTips() {
+  const { productName } = useAppStore();
+  return (
+    <Box flexDirection="column" marginTop={1}>
+      <Text>Tips to getting started:</Text>
+      <Text>1. Input a task</Text>
+      <Text>
+        2. <Text bold>/init</Text> to create a {productName.toUpperCase()}.md
+        file
+      </Text>
+      <Text>
+        3. <Text bold>shift + tab</Text> to swith to plan mode
+      </Text>
+      <Text>
+        4. <Text bold>/help</Text> for more information
+      </Text>
+    </Box>
+  );
+}
+
 function Header() {
   return (
-    <Box flexDirection="column">
-      <AppInfo />
+    <Box flexDirection="column" paddingY={1}>
+      <ProductASCIIArt />
+      <ProductInfo />
+      <GettingStartedTips />
+      {/* <AppInfo /> */}
     </Box>
   );
 }

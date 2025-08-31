@@ -1,4 +1,8 @@
 export const PRODUCT_NAME = 'NEOVATE';
+export const PRODUCT_ASCII_ART = `
+█▄ █ █▀▀ █▀█ █ █ ▄▀█ ▀█▀ █▀▀
+█ ▀█ ██▄ █▄█ ▀▄▀ █▀█  █  ██▄
+`;
 export const DEFAULT_OUTPUT_STYLE_NAME = 'Default';
 export const IMAGE_EXTENSIONS = new Set([
   '.png',

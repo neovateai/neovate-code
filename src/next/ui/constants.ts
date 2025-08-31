@@ -1,6 +1,9 @@
 import path from 'path';
 
 export const UI_COLORS = {
+  PRODUCT_ASCII_ART: 'cyan',
+  PRODUCT_NAME: 'cyanBright',
+  PRODUCT_VERSION: 'gray',
   USER: 'blueBright',
   ASSISTANT: 'magentaBright',
   SYSTEM: 'redBright',

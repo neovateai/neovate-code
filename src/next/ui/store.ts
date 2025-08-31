@@ -58,6 +58,7 @@ interface AppState {
 
   cwd: string;
   productName: string;
+  productASCIIArt: string;
   version: string;
   theme: Theme;
   model: string;
@@ -126,6 +127,7 @@ export const useAppStore = create<AppStore>()(
       bridge: null,
       cwd: null,
       productName: null,
+      productASCIIArt: null,
       version: null,
       initialPrompt: null,
       logFile: null,
@@ -162,6 +164,7 @@ export const useAppStore = create<AppStore>()(
           bridge,
           cwd: opts.cwd,
           productName: response.data.productName,
+          productASCIIArt: response.data.productASCIIArt,
           version: response.data.version,
           model: response.data.model,
           modelContextLimit: response.data.modelContextLimit,
