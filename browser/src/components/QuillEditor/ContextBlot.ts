@@ -7,6 +7,18 @@ export interface ContextBlotData {
   text: string;
   /** the value of the blot */
   value: string;
+  /**
+   * how to translate the blot to prompt
+   *
+   * if not provided, will use value
+   */
+  translateToPrompt?: (value: string, text: string) => string;
+  /**
+   * the prefix to display before the text
+   *
+   * @default '@'
+   */
+  prefix?: string;
 }
 
 class ContextBlot extends Embed {
@@ -20,7 +32,7 @@ class ContextBlot extends Embed {
       return node;
     }
 
-    node.innerHTML = `@${data.text}`;
+    node.innerHTML = `${data.prefix ?? '@'}${data.text}`;
     node.className = 'takumi-context';
 
     node.setAttribute('contenteditable', 'false');

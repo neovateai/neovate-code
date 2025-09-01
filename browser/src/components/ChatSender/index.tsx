@@ -13,6 +13,7 @@ import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/sender';
 import QuillEditor, { KeyCode } from '../QuillEditor';
+import type { ContextBlotData } from '../QuillEditor/ContextBlot';
 import { QuillContext } from '../QuillEditor/QuillContext';
 import SuggestionList, { type ISuggestionListRef } from '../SuggestionList';
 import SenderFooter from './SenderFooter';
@@ -171,11 +172,19 @@ const ChatSender: React.FC = () => {
                   {
                     text: contextItem.displayText,
                     value: contextItem.value,
-                  },
+                    prefix:
+                      contextItem.type === ContextType.SLASH_COMMAND
+                        ? '/'
+                        : '@',
+                    translateToPrompt: (value, _text) =>
+                      contextItem.type === ContextType.SLASH_COMMAND
+                        ? ' '
+                        : value,
+                  } as ContextBlotData,
                   'user',
                 );
 
-                // insert a space
+                // insert a space to get focus
                 quill.current?.insertText(delIndex + 1, ' ');
 
                 // set the selection
