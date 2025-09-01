@@ -14,6 +14,14 @@ function HelpHint() {
   );
 }
 
+function getMoodEmoji(percentage: number): string {
+  if (percentage >= 80) return '😎';
+  if (percentage >= 60) return '😊';
+  if (percentage >= 40) return '🤔';
+  if (percentage >= 20) return '😟';
+  return '😱';
+}
+
 function StatusContent() {
   const { cwd, model, modelContextLimit, status, exitMessage, messages } =
     useAppStore();
@@ -49,8 +57,9 @@ function StatusContent() {
   if (exitMessage) return <Text color="gray">{exitMessage}</Text>;
   return (
     <Text color="gray">
-      📁 {folderName} | 🤖 {model} | 💬 {tokenUsed} tokens used | 💬{' '}
-      {contextLeftPercentage}% context left
+      📁 {folderName} | 🤖 {model} | 🍖 {tokenUsed} tokens used |{' '}
+      {getMoodEmoji(contextLeftPercentage)} {contextLeftPercentage}% context
+      left
     </Text>
   );
 }
