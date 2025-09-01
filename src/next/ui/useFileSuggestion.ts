@@ -106,8 +106,7 @@ export function useFileSuggestion(inputState: InputState) {
     });
   }, [paths, hasQuery, query]);
   useEffect(() => {
-    // only load paths when @ is supplied
-    if (hasQuery && query === '') {
+    if (hasQuery) {
       loadPaths();
     }
   }, [hasQuery, query, loadPaths]);
