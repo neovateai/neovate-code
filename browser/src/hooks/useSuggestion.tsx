@@ -1,6 +1,7 @@
-import { ArrowRightOutlined, FileSearchOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { debounce } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import DevFileIcon from '@/components/DevFileIcon';
 import type { SuggestionItem } from '@/components/SuggestionList';
@@ -11,17 +12,16 @@ import { storeValueToContextItem } from '@/utils/context';
 export const useSuggestion = (selectedValues?: readonly string[]) => {
   const { fileList, loading } = useSnapshot(state);
 
+  const { t } = useTranslation();
+
   useEffect(() => {
     actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
   }, []);
 
   const fileSuggestions = useMemo(() => {
     return fileList.map((file) => {
-      const label = file.type === 'file' ? file.name : file.path;
-      const extra =
-        file.type === 'file'
-          ? file.path.split('/').slice(0, -1).join('/')
-          : null;
+      const label = file.name;
+      const extra = file.path.split('/').slice(0, -1).join('/');
 
       return {
         label: label,
@@ -39,17 +39,27 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     });
   }, [fileList]);
 
+  const slashCommandSuggestions = useMemo(() => {
+    // TODO: commands list
+    return [];
+  }, []);
+
   const defaultSuggestions = useMemo(() => {
     return [
       {
-        label: 'Files & Folders',
+        label: t('context.filesAndFolders'),
         value: ContextType.FILE,
         icon: <FileSearchOutlined />,
-        extra: <ArrowRightOutlined />,
         children: fileSuggestions,
       },
+      {
+        label: t('context.slashCommands'),
+        value: ContextType.SLASH_COMMAND,
+        icon: <AppstoreOutlined />,
+        children: slashCommandSuggestions,
+      },
     ] as SuggestionItem[];
-  }, [fileSuggestions]);
+  }, [fileSuggestions, slashCommandSuggestions, t]);
 
   const searchFunctionMap: { [key in ContextType]?: (text: string) => void } = {
     [ContextType.FILE]: (text) =>

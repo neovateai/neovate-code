@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @plugin "@tailwindcss/typography";
+@plugin 'tailwind-scrollbar';
 
 /* 隐藏滚动条 */
 .hide-scrollbar {
