@@ -26,6 +26,7 @@ import type {
   McpServerConfig,
 } from '@/types/mcp';
 import { containerEventHandlers, modalEventHandlers } from '@/utils/eventUtils';
+import { McpJsonEditor } from './McpJsonEditor';
 import styles from './index.module.css';
 
 const { Text } = Typography;
@@ -545,15 +546,11 @@ const McpJsonConfigFields: React.FC<{
       <div className={styles.jsonFormHeader}>
         <Text className={styles.settingLabel}>{t('mcp.configuration')}</Text>
       </div>
-      <Input.TextArea
-        rows={6}
-        placeholder={t('mcp.configurationPlaceholder')}
-        className={styles.jsonTextArea}
+      <McpJsonEditor
         value={config.jsonConfig}
-        onChange={(e) =>
-          onUpdateConfig(config.id, 'jsonConfig', e.target.value)
-        }
-        {...modalEventHandlers}
+        onChange={(value) => onUpdateConfig(config.id, 'jsonConfig', value)}
+        placeholder={t('mcp.configurationPlaceholder')}
+        height="200px"
       />
     </div>
   );
@@ -665,13 +662,11 @@ const McpFormConfigFields: React.FC<{
               {t('mcp.environmentVariables')}
             </Text>
           </div>
-          <Input.TextArea
-            placeholder={t('mcp.environmentVariablesPlaceholder')}
-            rows={3}
-            className={styles.formTextArea}
+          <McpJsonEditor
             value={config.env}
-            onChange={(e) => onUpdateConfig(config.id, 'env', e.target.value)}
-            {...modalEventHandlers}
+            onChange={(value) => onUpdateConfig(config.id, 'env', value)}
+            placeholder={t('mcp.environmentVariablesPlaceholder')}
+            height="120px"
           />
         </div>
       </div>
@@ -720,7 +715,7 @@ const McpFormFields: React.FC<{ editMode?: boolean }> = ({
             name="transport"
             initialValue={MCP_DEFAULTS.TRANSPORT_TYPE}
           >
-            <Select disabled={editMode}>
+            <Select>
               <Select.Option value="stdio">STDIO</Select.Option>
               <Select.Option value="sse">SSE</Select.Option>
             </Select>
@@ -753,7 +748,6 @@ const McpFormFields: React.FC<{ editMode?: boolean }> = ({
                   <Input
                     placeholder={t('mcp.urlPlaceholder')}
                     className={styles.formInput}
-                    disabled={editMode}
                     {...modalEventHandlers}
                   />
                 </Form.Item>
@@ -779,7 +773,6 @@ const McpFormFields: React.FC<{ editMode?: boolean }> = ({
                     <Input
                       placeholder={t('mcp.commandPlaceholder')}
                       className={styles.formInput}
-                      disabled={editMode}
                       {...modalEventHandlers}
                     />
                   </Form.Item>
@@ -813,12 +806,9 @@ const McpFormFields: React.FC<{ editMode?: boolean }> = ({
             </Text>
           </div>
           <Form.Item name="env">
-            <Input.TextArea
+            <McpJsonEditor
               placeholder={t('mcp.environmentVariablesPlaceholder')}
-              rows={3}
-              className={styles.formTextArea}
-              disabled={editMode}
-              {...modalEventHandlers}
+              height="120px"
             />
           </Form.Item>
         </div>

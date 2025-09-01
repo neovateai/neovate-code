@@ -839,3 +839,36 @@
   white-space: normal;
   margin-top: 4px;
 }
+
+/* JSON Editor Styles */
+.jsonEditor {
+  width: 100%;
+  border: 1px solid #dcdde0;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.jsonEditor:hover {
+  border-color: #7357ff;
+}
+
+.jsonEditorError {
+  border-color: #ff4d4f !important;
+}
+
+.jsonEditorErrorMessage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #fff2f0;
+  border-top: 1px solid #ffccc7;
+  color: #ff4d4f;
+  font-size: 12px;
+  font-family: 'PingFang SC', sans-serif;
+}
+
+.errorIcon {
+  font-size: 14px;
+}
