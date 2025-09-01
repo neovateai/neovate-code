@@ -9,6 +9,8 @@ import { CONTEXT_MAX_POPUP_ITEM_COUNT, ContextType } from '@/constants/context';
 import { actions, state } from '@/state/suggestion';
 import { storeValueToContextItem } from '@/utils/context';
 
+const SUGGESTION_SEARCH_DEBOUNCE_TIME = 200;
+
 export const useSuggestion = (selectedValues?: readonly string[]) => {
   const { fileList, loading } = useSnapshot(state);
 
@@ -73,7 +75,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     const targetFunction = searchFunctionMap[type];
 
     targetFunction?.(text);
-  }, 200);
+  }, SUGGESTION_SEARCH_DEBOUNCE_TIME);
 
   return {
     defaultSuggestions,
