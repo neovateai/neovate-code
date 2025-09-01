@@ -44,6 +44,12 @@ export const PRESET_MCP_SERVICES: Omit<PresetMcpService, 'description'>[] = [
   },
 ];
 
+// Preset service names for identification
+export const PRESET_SERVICE_NAMES = new Set([
+  '@playwright mcp',
+  'Framelink Figma MCP',
+]);
+
 // MCP service key prefixes
 export const MCP_KEY_PREFIXES = {
   GLOBAL: 'global',

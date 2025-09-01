@@ -167,18 +167,20 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
           >
             {t('mcp.edit')}
           </span>
-          <span
-            className={`${styles.actionLink} ${deleteLoading ? styles.actionDisabled : ''}`}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (!deleteLoading) {
-                handleDeleteServer(record);
-              }
-            }}
-          >
-            {t('mcp.delete')}
-          </span>
+          <Tooltip title={record.isPreset ? t('mcp.presetCannotDelete') : ''}>
+            <span
+              className={`${styles.actionLink} ${deleteLoading || record.isPreset ? styles.actionDisabled : ''}`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!deleteLoading && !record.isPreset) {
+                  handleDeleteServer(record);
+                }
+              }}
+            >
+              {t('mcp.delete')}
+            </span>
+          </Tooltip>
         </Space>
       ),
     },

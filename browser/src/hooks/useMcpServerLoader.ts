@@ -3,7 +3,7 @@ import { message } from 'antd';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { addMCPServer, updateMCPServerWithName } from '@/api/mcpService';
-import { MCP_KEY_PREFIXES } from '@/constants/mcp';
+import { MCP_KEY_PREFIXES, PRESET_SERVICE_NAMES } from '@/constants/mcp';
 import type {
   McpManagerServer,
   McpServer,
@@ -156,6 +156,7 @@ export const useMcpServerLoader = (
           type: serverConfig.type || (serverConfig.url ? 'sse' : 'stdio'),
           env: serverConfig.env,
           installed: true,
+          isPreset: PRESET_SERVICE_NAMES.has(name),
         });
       });
 
@@ -172,6 +173,7 @@ export const useMcpServerLoader = (
           type: serverConfig.type || (serverConfig.url ? 'sse' : 'stdio'),
           env: serverConfig.env,
           installed: true,
+          isPreset: PRESET_SERVICE_NAMES.has(name),
         });
       });
 
@@ -229,6 +231,7 @@ export const useMcpServerLoader = (
             type: globalCachedConfig.type || 'stdio',
             env: globalCachedConfig.env || {},
             installed: false,
+            isPreset: PRESET_SERVICE_NAMES.has(serviceName),
           });
         }
 
@@ -243,6 +246,7 @@ export const useMcpServerLoader = (
             type: projectCachedConfig.type || 'stdio',
             env: projectCachedConfig.env || {},
             installed: false,
+            isPreset: PRESET_SERVICE_NAMES.has(serviceName),
           });
         }
       });
@@ -427,6 +431,7 @@ export const useMcpServerLoader = (
               type: newConfig.transport as 'sse' | 'stdio',
               env: newConfig.env ? JSON.parse(newConfig.env) : undefined,
               installed: false,
+              isPreset: PRESET_SERVICE_NAMES.has(newConfig.name),
             };
 
             return [...newServers, updatedServer];
@@ -453,6 +458,12 @@ export const useMcpServerLoader = (
   // Delete local service from browser storage
   const handleDeleteLocal = useCallback(
     (serverName: string, scope: string) => {
+      // Prevent deletion of preset services
+      if (PRESET_SERVICE_NAMES.has(serverName)) {
+        console.warn(`Cannot delete preset service: ${serverName}`);
+        return;
+      }
+
       // Remove from known services
       const newKnownServices = new Set(allKnownServices);
       newKnownServices.delete(serverName);

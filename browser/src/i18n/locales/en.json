@@ -239,7 +239,8 @@
     "jsonSupported": "Supported JSON formats include various structures",
     "editServer": "Edit MCP Server",
     "editSuccess": "Successfully edited service \"{{name}}\"",
-    "editFailed": "Failed to edit service, please try again"
+    "editFailed": "Failed to edit service, please try again",
+    "presetCannotDelete": "Preset MCP cannot be deleted"
   },
   "settings": {
     "title": "Settings",

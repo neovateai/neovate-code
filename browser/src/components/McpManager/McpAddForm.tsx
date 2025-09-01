@@ -421,7 +421,6 @@ const McpJsonForm: React.FC = () => {
           {...modalEventHandlers}
         />
       </Form.Item>
-      <div className={styles.jsonDescription}>{t('mcp.jsonSupported')}</div>
     </div>
   );
 };

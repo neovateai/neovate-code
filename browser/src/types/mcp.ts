@@ -32,6 +32,7 @@ export interface McpManagerServer {
   type?: 'sse' | 'stdio';
   env?: Record<string, string>;
   installed: boolean;
+  isPreset?: boolean;
 }
 
 // Preset MCP service configuration
