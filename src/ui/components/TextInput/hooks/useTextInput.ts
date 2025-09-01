@@ -4,7 +4,7 @@ import { Cursor } from '../utils/Cursor';
 import {
   CLIPBOARD_ERROR_MESSAGE,
   getImageFromClipboard,
-  getImageFromClipboardLegacy
+  getImageFromClipboardLegacy,
 } from '../utils/imagePaste';
 import { useDoublePress } from './useDoublePress';
 
@@ -140,7 +140,7 @@ export function useTextInput({
       return cursor;
     }
     // When input is not empty, delete forward like iPython
-    return cursor.del();
+    return cursor.forwardDelete();
   }
 
   async function tryImagePaste() {

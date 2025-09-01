@@ -156,11 +156,19 @@ export class Cursor {
   }
 
   del(): Cursor {
-    // Delete key should delete the character before the cursor (backspace behavior)
+    // Delete key should delete the character before the cursor (same as backspace)
     if (this.isAtStart()) {
       return this;
     }
     return this.left().modifyText(this);
+  }
+
+  forwardDelete(): Cursor {
+    // Ctrl+D should delete the character at the cursor position (forward delete)
+    if (this.isAtEnd()) {
+      return this;
+    }
+    return this.modifyText(this.right());
   }
 
   backspace(): Cursor {
