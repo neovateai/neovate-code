@@ -7,6 +7,7 @@ import { createInitCommand } from './init';
 import { createMcpCommand } from './mcp';
 import { createModelCommand } from './model';
 import { createOutputStyleCommand } from './output-style';
+import { createResumeCommand } from './resume';
 import { createReviewCommand } from './review';
 import { statusCommand } from './status';
 
@@ -26,6 +27,7 @@ export function createBuiltinCommands(opts: {
     createMcpCommand(opts),
     createModelCommand(),
     createOutputStyleCommand(),
+    createResumeCommand(),
     createReviewCommand(),
     compactCommand,
     statusCommand,
