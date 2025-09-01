@@ -2,6 +2,7 @@ import { Box, Text } from 'ink';
 import path from 'path';
 import React, { useMemo } from 'react';
 import { useAppStore } from './store';
+import { useInputHandlers } from './useInputHandlers';
 
 function HelpHint() {
   const { status } = useAppStore();
@@ -56,6 +57,13 @@ function StatusContent() {
 
 export function StatusLine() {
   const { slashCommandJSX, planResult } = useAppStore();
+  const { slashCommands, fileSuggestion } = useInputHandlers();
+  if (
+    slashCommands.suggestions.length > 0 ||
+    fileSuggestion.matchedPaths.length > 0
+  ) {
+    return null;
+  }
   if (slashCommandJSX) {
     return null;
   }

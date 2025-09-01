@@ -75,9 +75,7 @@ export function App() {
       <Messages />
       <PlanResult />
       <ActivityIndicator />
-      <ModeIndicator />
       <ChatInput />
-      <StatusLine />
       <SlashCommandJSX />
       <Logs />
     </Box>

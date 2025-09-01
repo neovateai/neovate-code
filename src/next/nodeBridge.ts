@@ -1,6 +1,7 @@
 import { ConfigManager } from '../config';
 import { CANCELED_MESSAGE_TEXT } from '../constants';
 import { PluginHookType } from '../plugin';
+import { listDirectory } from '../utils/list';
 import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
 import type { Message, UserMessage } from './history';
@@ -357,6 +358,28 @@ class NodeHandlerRegistry {
             },
           };
         }
+      },
+    );
+
+    //////////////////////////////////////////////
+    // utils
+
+    this.messageBus.registerHandler(
+      'getPaths',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const result = listDirectory(
+          context.cwd,
+          context.cwd,
+          context.productName,
+        );
+        return {
+          success: true,
+          data: {
+            paths: result,
+          },
+        };
       },
     );
   }
