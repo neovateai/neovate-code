@@ -102,7 +102,7 @@ export function useFileSuggestion(inputState: InputState) {
     if (!hasQuery) return [];
     if (query === '') return paths;
     return paths.filter((path) => {
-      return path.toLowerCase().includes(query);
+      return path.toLowerCase().includes(query.toLowerCase());
     });
   }, [paths, hasQuery, query]);
   useEffect(() => {
