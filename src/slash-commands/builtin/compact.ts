@@ -1,7 +1,6 @@
 import createDebug from 'debug';
 import React, { useEffect } from 'react';
-import { useAppContext } from '../../ui/hooks';
-import { generateSummaryMessage } from '../../utils/compact';
+import { useAppStore } from '../../next/ui/store';
 import { type LocalJSXCommand } from '../types';
 
 const debug = createDebug('takumi:slash-commands:compact');
@@ -12,19 +11,39 @@ export const compactCommand: LocalJSXCommand = {
   description: `Clear conversation history but keep a summary in context.`,
   async call(onDone) {
     return React.createElement(() => {
-      const { services, state } = useAppContext();
-      const isPlan = state.currentMode === 'plan';
-      const service = isPlan ? services.planService : services.service;
-      if (service.history.length === 0) {
-        debug('skipping compacting, history length is 0');
+      const { bridge, messages, cwd, sessionId, log } = useAppStore();
+      if (messages.length === 0) {
         onDone('No messages to compact');
         return;
       }
-
       useEffect(() => {
+        log('use effect...');
         const run = async () => {
           try {
-            await service.compact();
+            log('compacting...');
+            const result = await bridge.request('compact', {
+              cwd,
+              messages,
+              sessionId,
+            });
+            log('compacted' + JSON.stringify(result));
+            await bridge.request('addMessages', {
+              cwd,
+              sessionId,
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    {
+                      type: 'text',
+                      text: result.data.summary,
+                    },
+                  ],
+                  parentUuid: null,
+                },
+              ],
+            });
+            log('added messages');
             onDone('Chat history compressed successfully');
           } catch (error) {
             debug('error compacting', error);

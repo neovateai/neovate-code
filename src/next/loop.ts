@@ -117,7 +117,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       model: opts.model.model.id,
       instructions: `
 ${opts.systemPrompt || ''}
-${opts.tools.getToolsPrompt()}
+${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
       `,
     });
     const llmsContexts = opts.llmsContexts || [];

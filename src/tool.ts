@@ -42,6 +42,10 @@ export class Tools {
     );
   }
 
+  length() {
+    return Object.keys(this.tools).length;
+  }
+
   async invoke(toolName: string, args: string, runContext: any) {
     const tool = this.tools[toolName];
     if (!tool) {

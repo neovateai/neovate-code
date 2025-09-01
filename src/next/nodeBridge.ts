@@ -3,8 +3,9 @@ import { CANCELED_MESSAGE_TEXT } from '../constants';
 import { PluginHookType } from '../plugin';
 import { listDirectory } from '../utils/list';
 import { randomUUID } from '../utils/randomUUID';
+import { compact } from './compact';
 import { Context } from './context';
-import type { Message, UserMessage } from './history';
+import type { Message, NormalizedMessage, UserMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { MessageBus } from './messageBus';
 import { resolveModelWithContext } from './model';
@@ -133,7 +134,8 @@ class NodeHandlerRegistry {
         });
         for (const message of messages) {
           const normalizedMessage = {
-            parentUuid: jsonlLogger.getLatestUuid(),
+            // @ts-ignore
+            parentUuid: message.parentUuid ?? jsonlLogger.getLatestUuid(),
             uuid: randomUUID(),
             ...message,
             type: 'message' as const,
@@ -378,6 +380,29 @@ class NodeHandlerRegistry {
           success: true,
           data: {
             paths: result,
+          },
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'compact',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        messages: NormalizedMessage[];
+      }) => {
+        const { cwd, messages } = data;
+        const context = await this.getContext(cwd);
+        const modelInfo = await resolveModelWithContext(null, context);
+        const summary = await compact({
+          messages,
+          model: modelInfo,
+        });
+        return {
+          success: true,
+          data: {
+            summary,
           },
         };
       },
