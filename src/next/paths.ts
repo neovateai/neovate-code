@@ -52,7 +52,7 @@ export class Paths {
         const stats = fs.statSync(filePath);
         const sessionId = path.basename(file, '.jsonl');
 
-        // 读取消息数量和摘要
+        // Read message count and summary
         let messageCount = 0;
         let summary = '';
         try {
@@ -60,7 +60,7 @@ export class Paths {
           const lines = content.split('\n').filter(Boolean);
           messageCount = lines.length;
 
-          // 尝试提取第一条用户消息作为摘要
+          // try to extract first user message as summary
           if (lines.length > 0) {
             try {
               const firstMessage = JSON.parse(lines[0]);
@@ -73,12 +73,10 @@ export class Paths {
                     ? firstMessage.content.slice(0, 50) + '...'
                     : firstMessage.content;
               }
-            } catch (e) {
-              // 解析失败，保持空摘要
-            }
+            } catch (e) {}
           }
         } catch (e) {
-          // 忽略读取错误，消息数为0
+          // ignore read error, message count is 0
         }
 
         return {
@@ -90,7 +88,7 @@ export class Paths {
         };
       })
       .sort((a, b) => b.modified.getTime() - a.modified.getTime())
-      .slice(0, 50); // 限制最多50条
+      .slice(0, 50);
 
     return jsonlFiles;
   }

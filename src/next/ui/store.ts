@@ -402,7 +402,6 @@ export const useAppStore = create<AppStore>()(
           .filter(isUserTextMessage)
           .map(getMessageHistory);
 
-        // 完全重置状态到初始状态，然后加载会话数据
         set({
           sessionId,
           logFile,
