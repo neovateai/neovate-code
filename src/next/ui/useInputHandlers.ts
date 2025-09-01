@@ -33,13 +33,13 @@ export function useInputHandlers() {
     if (fileSuggestion.matchedPaths.length > 0) {
       const val = inputState.state.value;
       const beforeAt = val.substring(0, fileSuggestion.startIndex);
-      const afterAt = val.substring(
-        fileSuggestion.startIndex + fileSuggestion.fullMatch.length,
-      );
+      const afterAt = val
+        .substring(fileSuggestion.startIndex + fileSuggestion.fullMatch.length)
+        .trim();
       const file = fileSuggestion.getSelected();
-      const newValue = `${beforeAt}@${file} ${afterAt}`;
+      const newValue = `${beforeAt}@${file} ${afterAt}`.trim();
       inputState.setValue(newValue);
-      inputState.setCursorPosition(newValue.length);
+      inputState.setCursorPosition(`${beforeAt}@${file} `.length);
       return;
     }
     // TODO: pasted text
@@ -63,13 +63,15 @@ export function useInputHandlers() {
       if (fileSuggestion.matchedPaths.length > 0) {
         const val = inputState.state.value;
         const beforeAt = val.substring(0, fileSuggestion.startIndex);
-        const afterAt = val.substring(
-          fileSuggestion.startIndex + fileSuggestion.fullMatch.length,
-        );
+        const afterAt = val
+          .substring(
+            fileSuggestion.startIndex + fileSuggestion.fullMatch.length,
+          )
+          .trim();
         const file = fileSuggestion.getSelected();
-        const newValue = `${beforeAt}@${file} ${afterAt}`;
+        const newValue = `${beforeAt}@${file} ${afterAt}`.trim();
         inputState.setValue(newValue);
-        inputState.setCursorPosition(newValue.length);
+        inputState.setCursorPosition(`${beforeAt}@${file} `.length);
         return;
       }
       // 3. switch mode

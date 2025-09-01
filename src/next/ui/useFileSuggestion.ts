@@ -29,10 +29,49 @@ export function usePaths() {
 }
 
 function useMatchedPaths(inputState: InputState) {
-  // TODO: improve this using state.cursorPosition
-  const atMatches = [...inputState.value.matchAll(/(?:^|\s)(@[^\s]*)$/g)];
-  const lastAtMatch = atMatches[atMatches.length - 1];
-  if (!lastAtMatch) {
+  const { value, cursorPosition } = inputState;
+
+  // Find all @ mentions in the text (not just at the end)
+  const atMatches = [...value.matchAll(/(?:^|\s)(@[^\s]*)/g)];
+
+  // If no cursor position, fallback to last match
+  if (cursorPosition === undefined) {
+    const lastAtMatch = atMatches[atMatches.length - 1];
+    if (!lastAtMatch) {
+      return {
+        hasQuery: false,
+        fullMatch: '',
+        query: '',
+        startIndex: -1,
+      };
+    }
+    const fullMatch = lastAtMatch[1];
+    const query = fullMatch.slice(1);
+    const startIndex =
+      lastAtMatch.index! + (lastAtMatch[0].length - fullMatch.length);
+    return {
+      hasQuery: true,
+      fullMatch,
+      query,
+      startIndex,
+    };
+  }
+
+  // Find the @ mention that the cursor is in or just after
+  let targetMatch = null;
+  for (const match of atMatches) {
+    const fullMatch = match[1];
+    const matchStartIndex = match.index! + (match[0].length - fullMatch.length);
+    const matchEndIndex = matchStartIndex + fullMatch.length;
+
+    // Check if cursor is within or just after this @ mention
+    if (cursorPosition >= matchStartIndex && cursorPosition <= matchEndIndex) {
+      targetMatch = match;
+      break;
+    }
+  }
+
+  if (!targetMatch) {
     return {
       hasQuery: false,
       fullMatch: '',
@@ -40,10 +79,12 @@ function useMatchedPaths(inputState: InputState) {
       startIndex: -1,
     };
   }
-  const fullMatch = lastAtMatch[1];
+
+  const fullMatch = targetMatch[1];
   const query = fullMatch.slice(1);
   const startIndex =
-    lastAtMatch.index! + (lastAtMatch[0].length - fullMatch.length);
+    targetMatch.index! + (targetMatch[0].length - fullMatch.length);
+
   return {
     hasQuery: true,
     fullMatch,
