@@ -327,7 +327,7 @@
   overflow: hidden;
   width: 640px !important;
   max-width: 640px !important;
-  min-height: 500px;
+  height: 635px !important;
   padding: 0;
 }
 
@@ -341,6 +341,28 @@
 .addFormModal :global(.ant-modal-body) {
   padding: 0;
   background: #ffffff;
+  height: 535px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e0e0e0 transparent;
+}
+
+.addFormModal :global(.ant-modal-body)::-webkit-scrollbar {
+  width: 6px;
+}
+
+.addFormModal :global(.ant-modal-body)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.addFormModal :global(.ant-modal-body)::-webkit-scrollbar-thumb {
+  background-color: #e0e0e0;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.addFormModal :global(.ant-modal-body)::-webkit-scrollbar-thumb:hover {
+  background-color: #c0c0c0;
 }
 
 .addFormModal :global(.ant-modal-close) {
@@ -385,10 +407,37 @@
 /* Modal Body */
 .modalBody {
   padding: 24px;
+  height: calc(100% - 48px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: #e0e0e0 transparent;
+}
+
+.modalBody::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modalBody::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modalBody::-webkit-scrollbar-thumb {
+  background-color: #e0e0e0;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.modalBody::-webkit-scrollbar-thumb:hover {
+  background-color: #c0c0c0;
 }
 
 .form {
   width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Settings Row - 设定描述和输入模式 */
@@ -616,6 +665,28 @@
 /* Form Fields Styles - Based on Figma Design */
 .formFieldsContainer {
   width: 100%;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e0e0e0 transparent;
+}
+
+.formFieldsContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.formFieldsContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.formFieldsContainer::-webkit-scrollbar-thumb {
+  background-color: #e0e0e0;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.formFieldsContainer::-webkit-scrollbar-thumb:hover {
+  background-color: #c0c0c0;
 }
 
 .formFieldsRow {
