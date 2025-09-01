@@ -11,7 +11,7 @@ import { storeValueToContextItem } from '@/utils/context';
 
 const SUGGESTION_SEARCH_DEBOUNCE_TIME = 200;
 
-export const useSuggestion = (selectedValues?: readonly string[]) => {
+export const useSuggestion = () => {
   const { fileList, slashCommandList, loading } = useSnapshot(state);
 
   const { t } = useTranslation();
@@ -37,7 +37,6 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
             fileExt={file.path.split('.').pop() ?? ''}
           />
         ),
-        disabled: selectedValues?.includes(file.path),
         extra,
         contextItem: storeValueToContextItem(file, ContextType.FILE),
       } as SuggestionItem;
