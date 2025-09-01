@@ -1,6 +1,6 @@
 import {
-  Modal,
   Pagination,
+  Popconfirm,
   Space,
   Switch,
   Table,
@@ -27,50 +27,29 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
 }) => {
   const { t } = useTranslation();
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [serverToDelete, setServerToDelete] = useState<McpManagerServer | null>(
-    null,
-  );
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 7;
 
-  const handleDeleteServer = (server: McpManagerServer) => {
-    setServerToDelete(server);
-    setDeleteModalOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!serverToDelete) return;
-
+  const handleConfirmDelete = async (server: McpManagerServer) => {
     try {
       setDeleteLoading(true);
 
       // 如果服务已启用，先调用 API 关闭服务
-      if (serverToDelete.installed) {
-        await removeMCPServer(
-          serverToDelete.name,
-          serverToDelete.scope === 'global',
-        );
+      if (server.installed) {
+        await removeMCPServer(server.name, server.scope === 'global');
       }
 
       // 无论是否启用，都要从本地存储中彻底删除
-      onDeleteLocal?.(serverToDelete.name, serverToDelete.scope);
+      onDeleteLocal?.(server.name, server.scope);
 
-      message.success(t('mcp.deleteSuccess', { name: serverToDelete.name }));
+      message.success(t('mcp.deleteSuccess', { name: server.name }));
       onDeleteSuccess?.();
-      setDeleteModalOpen(false);
-      setServerToDelete(null);
     } catch (error) {
       console.error('Delete server failed:', error);
       message.error(t('mcp.deleteError'));
     } finally {
       setDeleteLoading(false);
     }
-  };
-
-  const handleCancelDelete = () => {
-    setDeleteModalOpen(false);
-    setServerToDelete(null);
   };
 
   const columns = [
@@ -168,18 +147,25 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
             {t('mcp.edit')}
           </span>
           <Tooltip title={record.isPreset ? t('mcp.presetCannotDelete') : ''}>
-            <span
-              className={`${styles.actionLink} ${deleteLoading || record.isPreset ? styles.actionDisabled : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!deleteLoading && !record.isPreset) {
-                  handleDeleteServer(record);
-                }
-              }}
+            <Popconfirm
+              title={t('mcp.deleteConfirmTitle')}
+              description={t('mcp.deleteConfirmContent', { name: record.name })}
+              onConfirm={() => handleConfirmDelete(record)}
+              okText={t('mcp.delete')}
+              cancelText={t('common.cancel')}
+              okType="danger"
+              disabled={deleteLoading || record.isPreset}
             >
-              {t('mcp.delete')}
-            </span>
+              <span
+                className={`${styles.actionLink} ${deleteLoading || record.isPreset ? styles.actionDisabled : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                {t('mcp.delete')}
+              </span>
+            </Popconfirm>
           </Tooltip>
         </Space>
       ),
@@ -211,7 +197,7 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
         }}
       />
 
-      {servers.length > 0 && (
+      {servers.length > pageSize && (
         <div className={styles.paginationContainer}>
           <Pagination
             current={currentPage}
@@ -224,23 +210,6 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
           />
         </div>
       )}
-
-      <Modal
-        title={t('mcp.deleteConfirmTitle')}
-        open={deleteModalOpen}
-        onOk={handleConfirmDelete}
-        onCancel={handleCancelDelete}
-        okText={t('mcp.delete')}
-        cancelText={t('common.cancel')}
-        okType="danger"
-        confirmLoading={deleteLoading}
-        centered
-        maskClosable={false}
-      >
-        <p>
-          {t('mcp.deleteConfirmContent', { name: serverToDelete?.name || '' })}
-        </p>
-      </Modal>
     </div>
   );
 };

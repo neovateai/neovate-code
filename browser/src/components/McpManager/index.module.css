@@ -812,3 +812,30 @@
 .configContentSection {
   margin-top: 16px;
 }
+
+/* Popconfirm styles for better text wrapping */
+.modal :global(.ant-popover-inner) {
+  max-width: 280px;
+}
+
+.modal :global(.ant-popover-message) {
+  margin-bottom: 8px;
+}
+
+.modal :global(.ant-popover-message-title) {
+  font-size: 14px;
+  font-weight: 500;
+  color: #262626;
+  line-height: 1.4;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+.modal :global(.ant-popconfirm-description) {
+  font-size: 12px;
+  color: #595959;
+  line-height: 1.4;
+  word-wrap: break-word;
+  white-space: normal;
+  margin-top: 4px;
+}
