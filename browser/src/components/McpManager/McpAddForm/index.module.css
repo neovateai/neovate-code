@@ -257,6 +257,7 @@
 .continueSection {
   display: flex;
   justify-content: flex-start;
+  margin-top: 16px;
 }
 
 .continueButton {
