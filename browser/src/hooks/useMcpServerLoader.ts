@@ -378,7 +378,17 @@ export const useMcpServerLoader = (
 
         // Only call API if the server is currently installed/enabled
         if (server?.installed) {
-          await updateMCPServerWithName(originalName, newConfig);
+          // If scope changed, need to handle removal from old scope and addition to new scope
+          const newScope = newConfig.global ? 'global' : 'project';
+          if (originalScope !== newScope) {
+            // Remove from original scope first
+            await baseHandleToggleService(originalName, false, originalScope);
+            // Add to new scope
+            await addMCPServer(newConfig);
+          } else {
+            // Same scope, use regular update
+            await updateMCPServerWithName(originalName, newConfig);
+          }
         }
 
         // Update local cache after successful edit
@@ -452,6 +462,7 @@ export const useMcpServerLoader = (
       updateKnownServices,
       updateServiceConfigs,
       loadServers,
+      baseHandleToggleService,
     ],
   );
 
