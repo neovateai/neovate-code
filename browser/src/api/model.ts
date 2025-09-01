@@ -10,6 +10,13 @@ export interface ImageItem {
   mime: string;
 }
 
+export interface SlashCommandItem {
+  name: string;
+  description: string;
+  path: string;
+  type: 'project' | 'global';
+}
+
 export interface ApiResponse<T = any> {
   success: boolean;
   data: T;

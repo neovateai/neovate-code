@@ -15,10 +15,12 @@ import React, {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
+import type { SlashCommandItem } from '@/api/model';
 import { ContextType } from '@/constants/context';
 import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';
 import FileTooltipRender from './FileTooltipRender';
+import SlashCommandTooltipRender from './SlashCommandTooltipRender';
 import SmartText from './SmartText';
 
 export type SuggestionItem = {
@@ -266,6 +268,12 @@ const SuggestionList = (props: Props) => {
                         )}
                         icon={item.icon}
                       />
+                    );
+                  case ContextType.SLASH_COMMAND:
+                    return (
+                      item.contextItem && (
+                        <SlashCommandTooltipRender description={item.extra} />
+                      )
                     );
                   default:
                     return null;

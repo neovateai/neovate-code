@@ -103,7 +103,11 @@
     "navigate": "导航",
     "select": "选择",
     "close": "关闭",
-    "back": "返回"
+    "back": "返回",
+    "slashCommandPrefix": {
+      "global": "全局",
+      "project": "项目"
+    }
   },
   "menu": {
     "rename": "重命名",

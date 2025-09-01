@@ -10,12 +10,15 @@ import { actions, state } from '@/state/suggestion';
 import { storeValueToContextItem } from '@/utils/context';
 
 export const useSuggestion = (selectedValues?: readonly string[]) => {
-  const { fileList, loading } = useSnapshot(state);
+  const { fileList, slashCommandList, loading } = useSnapshot(state);
 
   const { t } = useTranslation();
 
   useEffect(() => {
-    actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
+    (async () => {
+      await actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
+      await actions.getSlashCommandList();
+    })();
   }, []);
 
   const fileSuggestions = useMemo(() => {
@@ -24,7 +27,7 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
       const extra = file.path.split('/').slice(0, -1).join('/');
 
       return {
-        label: label,
+        label,
         value: file.path,
         icon: (
           <DevFileIcon
@@ -40,9 +43,19 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
   }, [fileList]);
 
   const slashCommandSuggestions = useMemo(() => {
-    // TODO: commands list
-    return [];
-  }, []);
+    return slashCommandList.map((cmd) => {
+      const label = `${cmd.type === 'global' ? t('suggestion.slashCommandPrefix.global') : t('suggestion.slashCommandPrefix.project')}:/${cmd.name}`;
+      const extra = cmd.description;
+
+      return {
+        label,
+        value: cmd.path,
+        icon: <AppstoreOutlined />,
+        extra,
+        contextItem: storeValueToContextItem(cmd, ContextType.SLASH_COMMAND),
+      };
+    });
+  }, [slashCommandList, t]);
 
   const defaultSuggestions = useMemo(() => {
     return [
@@ -65,6 +78,10 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     [ContextType.FILE]: (text) =>
       actions.getFileList({
         maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT,
+        searchString: text,
+      }),
+    [ContextType.SLASH_COMMAND]: (text) =>
+      actions.getSlashCommandList({
         searchString: text,
       }),
   };
