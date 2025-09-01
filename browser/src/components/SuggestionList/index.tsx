@@ -31,6 +31,7 @@ export type SuggestionItem = {
   children?: SuggestionItem[];
   extra?: React.ReactNode;
   contextItem?: ContextItem;
+  disabled?: boolean;
 };
 
 interface SearchControlConfig {
@@ -247,29 +248,31 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       const isFirstLevel = !selectedFirstKey;
       const isSecondSeleted = isSecondItemSelected(item.value);
 
+      const isDisabled = !!item.disabled;
+
       return (
         <List.Item
           className={cx('p-0! select-none', {
             'bg-[#F5F6F7]': isSelected,
-            'cursor-pointer': !isSecondSeleted,
-            'cursor-not-allowed': !!isSecondSeleted,
+            'cursor-pointer': !isDisabled,
+            'cursor-not-allowed': isDisabled,
           })}
           key={item.value}
           data-index={index}
           onMouseEnter={() => setSelectedIndex(index)}
           onClick={(e) => {
-            if (selectedFirstKey) {
-              if (isSecondSeleted) {
-                e.preventDefault();
-              } else {
+            if (isDisabled) {
+              e.preventDefault();
+            } else {
+              if (selectedFirstKey) {
                 onSelect?.(selectedFirstKey, item.value, item.contextItem);
                 setSelectedFirstKey(undefined);
                 onOpenChange?.(false);
                 onLostFocus?.();
+              } else {
+                clearSearch(item.value);
+                setSelectedFirstKey(item.value);
               }
-            } else {
-              clearSearch(item.value);
-              setSelectedFirstKey(item.value);
             }
           }}
         >
