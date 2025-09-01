@@ -2,6 +2,13 @@ import { differenceBy } from 'lodash-es';
 import type { Delta } from 'quill';
 import type { ContextBlotData } from './ContextBlot';
 
+function getTakumiContextBlotPrompt(blotData: ContextBlotData) {
+  return (
+    blotData.translateToPrompt?.(blotData.value, blotData.text) ||
+    blotData.value
+  );
+}
+
 /** DO NOT USE QUILL's `getText`, it won't work with takumi-context.*/
 export function getTextWithTakumiContext(contents: Delta) {
   return contents.ops
@@ -16,7 +23,9 @@ export function getTextWithTakumiContext(contents: Delta) {
     .map((op) => {
       return typeof op.insert === 'string'
         ? op.insert
-        : (op.insert!['takumi-context'] as ContextBlotData).value;
+        : getTakumiContextBlotPrompt(
+            op.insert!['takumi-context'] as ContextBlotData,
+          );
     })
     .join('');
 }
