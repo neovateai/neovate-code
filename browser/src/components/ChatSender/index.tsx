@@ -95,10 +95,6 @@ const ChatSender: React.FC = () => {
       <QuillContext
         value={{
           onInputAt: (inputing, index, bounds) => {
-            // setOpenPopup(inputing);
-            // setBounds(bounds);
-            // setAtIndex(index);
-
             if (inputing) {
               setOpenPopup(true);
               setBounds(bounds);
