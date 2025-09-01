@@ -153,128 +153,52 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
         return;
       }
 
-      if (inputMode === 'json') {
-        console.log('Raw JSON input:', values.jsonConfig);
-        const jsonConfig = JSON.parse(values.jsonConfig!) as JsonConfigFormat;
-        console.log('Parsed JSON config:', jsonConfig);
+      // Handle multiple configurations
+      let addedCount = 0;
+      for (const config of mcpConfigs) {
+        if (config.inputMode === 'json' && config.jsonConfig) {
+          // Handle JSON configuration
+          const jsonConfig = JSON.parse(config.jsonConfig) as JsonConfigFormat;
 
-        // Support two formats:
-        // 1. { "mcpServers": { "name": { config } } }
-        // 2. { "name": { config } } or direct configuration object
-
-        if (jsonConfig.mcpServers) {
-          // Format 1: Complete mcpServers wrapper
-          const servers = jsonConfig.mcpServers;
-          const serverNames = Object.keys(servers);
-
-          if (serverNames.length === 0) {
-            throw new Error(t('mcp.noServersFound'));
-          }
-
-          // Add all servers
-          for (const [name, config] of Object.entries(servers)) {
-            const serverConfig = config as McpServerConfig;
-            console.log('Adding server:', name, 'with config:', serverConfig);
-            const requestPayload = {
-              name,
-              command: serverConfig.command,
-              args: serverConfig.args,
-              url: serverConfig.url,
-              transport: serverConfig.type,
-              env: serverConfig.env
-                ? JSON.stringify(serverConfig.env)
-                : undefined,
-              global: addScope === 'global',
-            };
-            console.log('Request payload:', requestPayload);
-            await addMCPServer(requestPayload);
-          }
-
-          messageApi.success(
-            t('mcp.addedMultiple', { count: serverNames.length }),
-          );
-        } else {
-          // Format 2: Direct service configuration or service name mapping
-          const keys = Object.keys(jsonConfig);
-
-          if (
-            keys.includes('name') ||
-            keys.includes('command') ||
-            keys.includes('url')
-          ) {
-            // Direct configuration object (contains name field)
-            if (jsonConfig.name) {
-              console.log(
-                'Adding single server with direct config:',
-                jsonConfig,
-              );
-              const requestPayload = {
-                name: jsonConfig.name,
-                command: jsonConfig.command,
-                args: jsonConfig.args,
-                url: jsonConfig.url,
-                transport: jsonConfig.transport,
-                env: jsonConfig.env
-                  ? JSON.stringify(jsonConfig.env)
+          if (jsonConfig.mcpServers) {
+            const servers = jsonConfig.mcpServers;
+            for (const [name, serverConfig] of Object.entries(servers)) {
+              await addMCPServer({
+                name,
+                command: (serverConfig as McpServerConfig).command,
+                args: (serverConfig as McpServerConfig).args,
+                url: (serverConfig as McpServerConfig).url,
+                transport: (serverConfig as McpServerConfig).type,
+                env: (serverConfig as McpServerConfig).env
+                  ? JSON.stringify((serverConfig as McpServerConfig).env)
                   : undefined,
-                global: addScope === 'global',
-              };
-              console.log('Request payload:', requestPayload);
-              await addMCPServer(requestPayload);
-              messageApi.success(t('mcp.added', { name: jsonConfig.name }));
-            } else {
-              throw new Error('Name is required');
+                global: config.scope === 'global',
+              });
+              addedCount++;
             }
           } else {
-            // Format 2: Service name mapping { "name": { config } }
-            const serverNames = Object.keys(jsonConfig);
-
-            if (serverNames.length === 0) {
-              throw new Error(t('mcp.noServersFound'));
-            }
-
-            // Add all servers
-            for (const [name, config] of Object.entries(jsonConfig)) {
-              const serverConfig = config as McpServerConfig;
-              console.log(
-                'Adding server from name mapping:',
-                name,
-                'with config:',
-                serverConfig,
-              );
-              const requestPayload = {
-                name,
-                command: serverConfig.command,
-                args: serverConfig.args,
-                url: serverConfig.url,
-                transport: serverConfig.type,
-                env: serverConfig.env
-                  ? JSON.stringify(serverConfig.env)
-                  : undefined,
-                global: addScope === 'global',
-              };
-              console.log('Request payload:', requestPayload);
-              await addMCPServer(requestPayload);
-            }
-
-            messageApi.success(
-              t('mcp.addedMultiple', { count: serverNames.length }),
-            );
-          }
-        }
-      } else {
-        // Handle multiple configurations
-        let addedCount = 0;
-        for (const config of mcpConfigs) {
-          if (config.inputMode === 'json' && config.jsonConfig) {
-            // Handle JSON configuration
-            const jsonConfig = JSON.parse(
-              config.jsonConfig,
-            ) as JsonConfigFormat;
-
-            if (jsonConfig.mcpServers) {
-              const servers = jsonConfig.mcpServers;
-              for (const [name, serverConfig] of Object.entries(servers)) {
+            const keys = Object.keys(jsonConfig);
+            if (
+              keys.includes('name') ||
+              keys.includes('command') ||
+              keys.includes('url')
+            ) {
+              if (jsonConfig.name) {
+                await addMCPServer({
+                  name: jsonConfig.name,
+                  command: jsonConfig.command,
+                  args: jsonConfig.args,
+                  url: jsonConfig.url,
+                  transport: jsonConfig.transport,
+                  env: jsonConfig.env
+                    ? JSON.stringify(jsonConfig.env)
+                    : undefined,
+                  global: config.scope === 'global',
+                });
+                addedCount++;
+              }
+            } else {
+              for (const [name, serverConfig] of Object.entries(jsonConfig)) {
                 await addMCPServer({
                   name,
                   command: (serverConfig as McpServerConfig).command,
@@ -288,68 +212,31 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
                 });
                 addedCount++;
               }
-            } else {
-              const keys = Object.keys(jsonConfig);
-              if (
-                keys.includes('name') ||
-                keys.includes('command') ||
-                keys.includes('url')
-              ) {
-                if (jsonConfig.name) {
-                  await addMCPServer({
-                    name: jsonConfig.name,
-                    command: jsonConfig.command,
-                    args: jsonConfig.args,
-                    url: jsonConfig.url,
-                    transport: jsonConfig.transport,
-                    env: jsonConfig.env
-                      ? JSON.stringify(jsonConfig.env)
-                      : undefined,
-                    global: config.scope === 'global',
-                  });
-                  addedCount++;
-                }
-              } else {
-                for (const [name, serverConfig] of Object.entries(jsonConfig)) {
-                  await addMCPServer({
-                    name,
-                    command: (serverConfig as McpServerConfig).command,
-                    args: (serverConfig as McpServerConfig).args,
-                    url: (serverConfig as McpServerConfig).url,
-                    transport: (serverConfig as McpServerConfig).type,
-                    env: (serverConfig as McpServerConfig).env
-                      ? JSON.stringify((serverConfig as McpServerConfig).env)
-                      : undefined,
-                    global: config.scope === 'global',
-                  });
-                  addedCount++;
-                }
-              }
             }
-          } else if (config.inputMode === 'form' && config.name.trim()) {
-            // Handle form configuration
-            await addMCPServer({
-              name: config.name,
-              command: config.command,
-              url: config.url,
-              transport: config.transport,
-              env: config.env,
-              global: config.scope === 'global',
-              args: config.args ? config.args.split(' ').filter(Boolean) : [],
-            });
-            addedCount++;
           }
+        } else if (config.inputMode === 'form' && config.name.trim()) {
+          // Handle form configuration
+          await addMCPServer({
+            name: config.name,
+            command: config.command,
+            url: config.url,
+            transport: config.transport,
+            env: config.env,
+            global: config.scope === 'global',
+            args: config.args ? config.args.split(' ').filter(Boolean) : [],
+          });
+          addedCount++;
         }
+      }
 
-        if (addedCount > 0) {
-          messageApi.success(
-            addedCount === 1
-              ? t('mcp.addedSingle')
-              : t('mcp.addedMultiple', { count: addedCount }),
-          );
-        } else {
-          throw new Error('At least one server configuration is required');
-        }
+      if (addedCount > 0) {
+        messageApi.success(
+          addedCount === 1
+            ? t('mcp.addedSingle')
+            : t('mcp.addedMultiple', { count: addedCount }),
+        );
+      } else {
+        throw new Error('At least one server configuration is required');
       }
 
       form.resetFields();
