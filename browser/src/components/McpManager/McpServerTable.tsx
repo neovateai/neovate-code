@@ -180,7 +180,7 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
   return (
     <>
       {contextHolder}
-      <div className={styles.tableContainer}>
+      <div>
         <Table
           columns={columns}
           dataSource={paginatedServers}

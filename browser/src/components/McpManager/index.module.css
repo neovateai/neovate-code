@@ -69,34 +69,6 @@
   margin: 0;
 }
 
-/* Table container */
-.tableContainer {
-  /* background: #ffffff; */
-  /* border-radius: 12px; */
-  /* overflow: hidden; */
-  /* border: 1px solid #e5e7eb; */
-  /* width: 100%; */
-  /* flex: 1; */
-  /* display: flex; */
-  /* flex-direction: column; */
-  /* height: 100%; */
-}
-
-/* .tableContainer :global(.ant-table-wrapper) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-} */
-
-/* .tableContainer :global(.ant-table) {
-  flex: 1;
-} */
-
-.tableContainer :global(.ant-table-tbody) {
-  /* overflow-y: auto; */
-  /* max-height: 300px; */
-}
-
 /* Pagination container */
 .paginationContainer {
   display: flex;
@@ -248,44 +220,6 @@
   border-color: #110c22 !important;
   color: #ffffff !important;
   box-shadow: none !important;
-}
-
-/* Switch component styling */
-.switchStyle {
-  background-color: rgba(0, 0, 0, 0.25);
-}
-
-.switchStyle.ant-switch-checked {
-  background-color: #7357ff;
-}
-
-.modal :global(.ant-switch) {
-  background-color: rgba(0, 0, 0, 0.25);
-  border: none;
-  min-width: 28px;
-  height: 16px;
-}
-
-.modal :global(.ant-switch-checked) {
-  background-color: #7357ff;
-}
-
-.modal :global(.ant-switch:focus) {
-  box-shadow: none;
-}
-
-.modal :global(.ant-switch-handle) {
-  width: 12px;
-  height: 12px;
-  top: 2px;
-}
-
-.modal :global(.ant-switch-handle::before) {
-  border-radius: 6px;
-}
-
-.modal :global(.ant-switch-checked .ant-switch-handle) {
-  left: calc(100% - 14px);
 }
 
 /* Action link styling */
