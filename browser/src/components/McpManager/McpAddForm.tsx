@@ -18,11 +18,12 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { addMCPServer } from '@/api/mcpService';
 import MessageWrapper from '@/components/MessageWrapper';
-import { MCP_DEFAULTS } from '@/constants/mcp';
+import { MCP_DEFAULTS, createDefaultMcpConfig } from '@/constants/mcp';
 import type {
   FormValues,
   JsonConfigFormat,
   McpAddFormProps,
+  McpConfigItem,
   McpServerConfig,
 } from '@/types/mcp';
 import { containerEventHandlers, modalEventHandlers } from '@/utils/eventUtils';
@@ -30,19 +31,6 @@ import { McpJsonEditor } from './McpJsonEditor';
 import styles from './index.module.css';
 
 const { Text } = Typography;
-
-interface McpConfigItem {
-  id: string;
-  scope: 'global' | 'project';
-  inputMode: 'json' | 'form';
-  name: string;
-  transport: string;
-  command?: string;
-  args?: string;
-  url?: string;
-  env?: string;
-  jsonConfig?: string;
-}
 
 const McpAddForm: React.FC<McpAddFormProps> = ({
   visible,
@@ -59,18 +47,7 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
   const [mcpConfigs, setMcpConfigs] = useState<McpConfigItem[]>([
-    {
-      id: '1',
-      scope: 'project',
-      inputMode: 'json',
-      name: '',
-      transport: MCP_DEFAULTS.TRANSPORT_TYPE,
-      command: '',
-      args: '',
-      url: '',
-      env: '',
-      jsonConfig: '',
-    },
+    { ...createDefaultMcpConfig(), id: '1' },
   ]);
 
   // Pre-fill form when in edit mode
@@ -97,18 +74,7 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
   }, [editMode, editingServer, visible, form]);
 
   const addNewConfig = () => {
-    const newConfig: McpConfigItem = {
-      id: Date.now().toString(),
-      scope: 'project',
-      inputMode: 'json',
-      name: '',
-      transport: MCP_DEFAULTS.TRANSPORT_TYPE,
-      command: '',
-      args: '',
-      url: '',
-      env: '',
-      jsonConfig: '',
-    };
+    const newConfig = createDefaultMcpConfig();
     setMcpConfigs([...mcpConfigs, newConfig]);
   };
 
@@ -237,29 +203,16 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
             : t('mcp.addedMultiple', { count: addedCount }),
         );
       } else {
-        throw new Error('At least one server configuration is required');
+        throw new Error(t('mcp.atLeastOneServerRequired'));
       }
 
       form.resetFields();
-      setMcpConfigs([
-        {
-          id: '1',
-          scope: 'project',
-          inputMode: 'json',
-          name: '',
-          transport: MCP_DEFAULTS.TRANSPORT_TYPE,
-          command: '',
-          args: '',
-          url: '',
-          env: '',
-          jsonConfig: '',
-        },
-      ]);
+      setMcpConfigs([{ ...createDefaultMcpConfig(), id: '1' }]);
       onSuccess();
     } catch (error) {
       console.error('MCP operation error:', error);
 
-      // 提取具体的错误信息
+      // Extract specific error message
       let errorMessage = '';
       if (error && typeof error === 'object') {
         if ('error' in error && typeof error.error === 'string') {
@@ -283,20 +236,7 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
 
   const handleCancel = () => {
     form.resetFields();
-    setMcpConfigs([
-      {
-        id: '1',
-        scope: 'project',
-        inputMode: 'json',
-        name: '',
-        transport: MCP_DEFAULTS.TRANSPORT_TYPE,
-        command: '',
-        args: '',
-        url: '',
-        env: '',
-        jsonConfig: '',
-      },
-    ]);
+    setMcpConfigs([{ ...createDefaultMcpConfig(), id: '1' }]);
     onCancel();
   };
 
@@ -549,7 +489,6 @@ const McpJsonConfigFields: React.FC<{
       <McpJsonEditor
         value={config.jsonConfig}
         onChange={(value) => onUpdateConfig(config.id, 'jsonConfig', value)}
-        placeholder={t('mcp.configurationPlaceholder')}
         height="200px"
       />
     </div>
@@ -665,7 +604,6 @@ const McpFormConfigFields: React.FC<{
           <McpJsonEditor
             value={config.env}
             onChange={(value) => onUpdateConfig(config.id, 'env', value)}
-            placeholder={t('mcp.environmentVariablesPlaceholder')}
             height="120px"
           />
         </div>
@@ -806,10 +744,7 @@ const McpFormFields: React.FC<{ editMode?: boolean }> = ({
             </Text>
           </div>
           <Form.Item name="env">
-            <McpJsonEditor
-              placeholder={t('mcp.environmentVariablesPlaceholder')}
-              height="120px"
-            />
+            <McpJsonEditor height="120px" />
           </Form.Item>
         </div>
       </div>

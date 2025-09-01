@@ -1,29 +1,23 @@
 import { Editor } from '@monaco-editor/react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { McpJsonEditorProps } from '@/types/mcp';
 import styles from './index.module.css';
-
-interface McpJsonEditorProps {
-  value?: string;
-  onChange?: (value: string) => void;
-  placeholder?: string;
-  height?: string;
-  disabled?: boolean;
-}
 
 export const McpJsonEditor: React.FC<McpJsonEditorProps> = ({
   value = '',
   onChange,
-  placeholder = '请输入MCP配置JSON',
   height = '200px',
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const [isValid, setIsValid] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleChange = (val: string | undefined) => {
     const newValue = val || '';
 
-    // 验证JSON格式
+    // Validate JSON format
     try {
       if (newValue.trim()) {
         JSON.parse(newValue);
@@ -32,29 +26,24 @@ export const McpJsonEditor: React.FC<McpJsonEditorProps> = ({
       setErrorMessage('');
     } catch (error) {
       setIsValid(false);
-      setErrorMessage(error instanceof Error ? error.message : 'JSON格式错误');
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : t('mcp.jsonFormatErrorMessage'),
+      );
     }
 
     onChange?.(newValue);
   };
 
   const handleEditorMount = (editor: any) => {
-    // 根据placeholder判断是否为环境变量编辑器
-    const isEnvEditor =
-      placeholder?.includes('环境变量') || placeholder?.includes('environment');
-
-    // 设置默认空对象
+    // Set default empty object
     if (!value.trim() && !disabled) {
       const emptyJson = {};
       const jsonString = JSON.stringify(emptyJson, null, 2);
       editor.setValue(jsonString);
       handleChange(jsonString);
     }
-
-    // 自动格式化
-    setTimeout(() => {
-      editor.getAction('editor.action.formatDocument')?.run();
-    }, 100);
   };
 
   return (

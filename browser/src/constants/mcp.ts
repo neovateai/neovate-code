@@ -1,4 +1,4 @@
-import type { PresetMcpService } from '@/types/mcp';
+import type { McpConfigItem, PresetMcpService } from '@/types/mcp';
 
 /**
  * MCP (Message Control Protocol) related constants
@@ -150,3 +150,17 @@ export const getSseJsonExample = () => {
     2,
   );
 };
+
+// Create default MCP configuration item
+export const createDefaultMcpConfig = (): McpConfigItem => ({
+  id: Date.now().toString(),
+  scope: 'project',
+  inputMode: 'json',
+  name: '',
+  transport: MCP_DEFAULTS.TRANSPORT_TYPE,
+  command: '',
+  args: '',
+  url: '',
+  env: '',
+  jsonConfig: '',
+});

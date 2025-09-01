@@ -260,3 +260,26 @@ export interface McpEditFormProps {
   onInputModeChange: (mode: 'json' | 'form') => void;
   onScopeChange: (scope: 'global' | 'project') => void;
 }
+
+// MCP configuration item for add form
+export interface McpConfigItem {
+  id: string;
+  scope: 'global' | 'project';
+  inputMode: 'json' | 'form';
+  name: string;
+  transport: string;
+  command?: string;
+  args?: string;
+  url?: string;
+  env?: string;
+  jsonConfig?: string;
+}
+
+// MCP JSON Editor component props
+export interface McpJsonEditorProps {
+  value?: string;
+  onChange?: (value: string) => void;
+  placeholder?: string;
+  height?: string;
+  disabled?: boolean;
+}

@@ -118,7 +118,7 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
           onScopeChange={(scope) => setFormState({ addScope: scope })}
         />
 
-        {/* 编辑表单 */}
+        {/* Edit form */}
         <McpAddForm
           visible={showEditForm}
           inputMode={formState.inputMode}

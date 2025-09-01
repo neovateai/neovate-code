@@ -240,7 +240,9 @@
     "editServer": "Edit MCP Server",
     "editSuccess": "Successfully edited MCP service \"{{name}}\"",
     "editFailed": "Failed to edit MCP service, please try again",
-    "presetCannotDelete": "Preset MCP cannot be deleted"
+    "presetCannotDelete": "Preset MCP cannot be deleted",
+    "jsonFormatErrorMessage": "JSON format error",
+    "atLeastOneServerRequired": "At least one server configuration is required"
   },
   "settings": {
     "title": "Settings",
