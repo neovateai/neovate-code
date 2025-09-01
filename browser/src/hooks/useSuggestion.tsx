@@ -6,11 +6,13 @@ import { useSnapshot } from 'valtio';
 import DevFileIcon from '@/components/DevFileIcon';
 import type { SuggestionItem } from '@/components/SuggestionList';
 import { CONTEXT_MAX_POPUP_ITEM_COUNT, ContextType } from '@/constants/context';
+import * as context from '@/state/context';
 import { actions, state } from '@/state/suggestion';
 import { storeValueToContextItem } from '@/utils/context';
 
 export const useSuggestion = () => {
   const { fileList, slashCommandList, loading } = useSnapshot(state);
+  const { contexts } = useSnapshot(context.state);
 
   const { t } = useTranslation();
 
@@ -25,6 +27,9 @@ export const useSuggestion = () => {
     return fileList.map((file) => {
       const label = file.name;
       const extra = file.path.split('/').slice(0, -1).join('/');
+      const disabled = contexts.files.some(
+        (selectedFile) => selectedFile.path === file.path,
+      );
 
       return {
         label,
@@ -35,26 +40,30 @@ export const useSuggestion = () => {
             fileExt={file.path.split('.').pop() ?? ''}
           />
         ),
+        disabled,
         extra,
         contextItem: storeValueToContextItem(file, ContextType.FILE),
       } as SuggestionItem;
     });
-  }, [fileList]);
+  }, [fileList, contexts]);
 
   const slashCommandSuggestions = useMemo(() => {
     return slashCommandList.map((cmd) => {
       const label = `${cmd.type === 'global' ? t('suggestion.slashCommandPrefix.global') : t('suggestion.slashCommandPrefix.project')}:/${cmd.name}`;
       const extra = cmd.description;
+      // only allow one slash command
+      const disabled = contexts.slashCommands.length > 0;
 
       return {
         label,
         value: cmd.path,
         icon: <AppstoreOutlined />,
         extra,
+        disabled,
         contextItem: storeValueToContextItem(cmd, ContextType.SLASH_COMMAND),
       };
     });
-  }, [slashCommandList, t]);
+  }, [slashCommandList, t, contexts]);
 
   const defaultSuggestions = useMemo(() => {
     return [
@@ -69,9 +78,11 @@ export const useSuggestion = () => {
         value: ContextType.SLASH_COMMAND,
         icon: <AppstoreOutlined />,
         children: slashCommandSuggestions,
+        // only allow one slash command
+        disabled: contexts.slashCommands.length > 0,
       },
     ] as SuggestionItem[];
-  }, [fileSuggestions, slashCommandSuggestions, t]);
+  }, [fileSuggestions, slashCommandSuggestions, t, contexts]);
 
   const searchFunctionMap: { [key in ContextType]?: (text: string) => void } = {
     [ContextType.FILE]: (text) =>

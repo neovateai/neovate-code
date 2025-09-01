@@ -12,8 +12,6 @@ interface ContextState {
 
   attachedContexts: ContextItem[];
 
-  contextsSelectedValues: string[];
-
   loading: boolean;
 }
 
@@ -21,10 +19,6 @@ export const state = proxy<ContextState>({
   loading: false,
 
   attachedContexts: [],
-
-  get contextsSelectedValues() {
-    return this.attachedContexts.map((item: ContextItem) => item.displayText);
-  },
 
   get contexts() {
     const files = this.attachedContexts
