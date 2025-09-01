@@ -34,6 +34,7 @@
   align-items: center;
   gap: 8px;
   flex: 1;
+  min-width: 0;
 }
 
 /* Service name */
@@ -41,6 +42,31 @@
   color: #110c22;
   font-size: 14px;
   font-weight: 400;
+  flex-shrink: 0;
+}
+
+/* Scope tag styles */
+.scopeTag {
+  margin: 0 !important;
+  padding: 0 6px !important;
+  height: 18px !important;
+  line-height: 16px !important;
+  font-size: 10px !important;
+  font-weight: 400 !important;
+  border-radius: 2px !important;
+  border: none !important;
+  color: #666f8d !important;
+  background: #f5f6fa !important;
+  font-family: 'PingFang SC', sans-serif !important;
+}
+
+.scopeTagEnabled {
+  color: #4c3dd4 !important;
+  background: #f0f0ff !important;
+}
+
+.scopeTagDisabled {
+  opacity: 0.6;
 }
 
 /* MCP management button container */

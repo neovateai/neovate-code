@@ -1,5 +1,6 @@
-import { Switch } from 'antd';
+import { Switch, Tag } from 'antd';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { McpServiceItemProps } from '@/types/mcp';
 import styles from './index.module.css';
 
@@ -11,11 +12,20 @@ const McpServiceItem: React.FC<McpServiceItemProps> = ({
   server,
   onToggle,
 }) => {
+  const { t } = useTranslation();
+  const isGlobal = server.scope === 'global';
+
   return (
     <div className={styles.serviceItem}>
-      {/* Service name */}
+      {/* Service name and scope */}
       <div className={styles.serviceInfo}>
         <span className={styles.serviceName}>{server.name}</span>
+        <Tag
+          className={`${styles.scopeTag} ${server.installed ? styles.scopeTagEnabled : styles.scopeTagDisabled}`}
+          size="small"
+        >
+          {isGlobal ? t('mcp.globalScope') : t('mcp.projectScope')}
+        </Tag>
       </div>
 
       {/* Toggle switch component */}
