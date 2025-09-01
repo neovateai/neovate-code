@@ -15,7 +15,7 @@ import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
 import { Paths } from './paths';
 import { Project } from './project';
-import { loadSessionMessages } from './session';
+import { Session, loadSessionMessages } from './session';
 import {
   SlashCommandManager,
   isSlashCommand,
@@ -196,7 +196,7 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
     if (argv.continue) {
       return paths.getLatestSessionId();
     }
-    return randomUUID();
+    return Session.createSessionId();
   })();
   await useAppStore.getState().initialize({
     bridge: uiBridge,

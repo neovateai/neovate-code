@@ -5,6 +5,7 @@ import type { ApprovalMode } from '../../config';
 import { randomUUID } from '../../utils/randomUUID';
 import type { Message } from '../history';
 import type { LoopResult } from '../loop';
+import { Session } from '../session';
 import {
   type CommandEntry,
   isSlashCommand,
@@ -327,7 +328,7 @@ export const useAppStore = create<AppStore>()(
       },
 
       clear: async () => {
-        const sessionId = randomUUID();
+        const sessionId = Session.createSessionId();
         set({
           messages: [],
           history: [],

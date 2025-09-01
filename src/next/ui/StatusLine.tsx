@@ -23,8 +23,15 @@ function getMoodEmoji(percentage: number): string {
 }
 
 function StatusContent() {
-  const { cwd, model, modelContextLimit, status, exitMessage, messages } =
-    useAppStore();
+  const {
+    cwd,
+    model,
+    modelContextLimit,
+    status,
+    exitMessage,
+    messages,
+    sessionId,
+  } = useAppStore();
   const tokenUsed = useMemo(() => {
     return messages.reduce((acc, message) => {
       if (message.role === 'assistant') {
@@ -59,7 +66,7 @@ function StatusContent() {
     <Text color="gray">
       📁 {folderName} | 🤖 {model} | 🍖 {tokenUsed} tokens used |{' '}
       {getMoodEmoji(contextLeftPercentage)} {contextLeftPercentage}% context
-      left
+      left | 🆔 {sessionId || 'N/A'}
     </Text>
   );
 }

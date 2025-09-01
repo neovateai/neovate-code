@@ -19,8 +19,11 @@ export class Session {
   }
   static create() {
     return new Session({
-      id: randomUUID(),
+      id: Session.createSessionId(),
     });
+  }
+  static createSessionId() {
+    return randomUUID().slice(0, 8);
   }
   static resume(opts: { id: SessionId; logPath: string }) {
     const messages = loadSessionMessages({ logPath: opts.logPath });
