@@ -1,6 +1,5 @@
 import {
   DeleteOutlined,
-  DownOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
 } from '@ant-design/icons';
@@ -50,7 +49,6 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
   addScope,
   onCancel,
   onSuccess,
-  onInputModeChange,
   onScopeChange,
   editMode = false,
   editingServer,
@@ -58,6 +56,7 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
 }) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
+  const [messageApi, contextHolder] = message.useMessage();
   const [mcpConfigs, setMcpConfigs] = useState<McpConfigItem[]>([
     {
       id: '1',
@@ -148,14 +147,16 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
           args: values.args ? values.args.split(' ').filter(Boolean) : [],
         });
 
-        message.success(t('mcp.editSuccess', { name: values.name }));
+        messageApi.success(t('mcp.editSuccess', { name: values.name }));
         form.resetFields();
         onSuccess();
         return;
       }
 
       if (inputMode === 'json') {
+        console.log('Raw JSON input:', values.jsonConfig);
         const jsonConfig = JSON.parse(values.jsonConfig!) as JsonConfigFormat;
+        console.log('Parsed JSON config:', jsonConfig);
 
         // Support two formats:
         // 1. { "mcpServers": { "name": { config } } }
@@ -173,7 +174,8 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
           // Add all servers
           for (const [name, config] of Object.entries(servers)) {
             const serverConfig = config as McpServerConfig;
-            await addMCPServer({
+            console.log('Adding server:', name, 'with config:', serverConfig);
+            const requestPayload = {
               name,
               command: serverConfig.command,
               args: serverConfig.args,
@@ -183,10 +185,12 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
                 ? JSON.stringify(serverConfig.env)
                 : undefined,
               global: addScope === 'global',
-            });
+            };
+            console.log('Request payload:', requestPayload);
+            await addMCPServer(requestPayload);
           }
 
-          message.success(
+          messageApi.success(
             t('mcp.addedMultiple', { count: serverNames.length }),
           );
         } else {
@@ -200,7 +204,11 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
           ) {
             // Direct configuration object (contains name field)
             if (jsonConfig.name) {
-              await addMCPServer({
+              console.log(
+                'Adding single server with direct config:',
+                jsonConfig,
+              );
+              const requestPayload = {
                 name: jsonConfig.name,
                 command: jsonConfig.command,
                 args: jsonConfig.args,
@@ -210,8 +218,10 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
                   ? JSON.stringify(jsonConfig.env)
                   : undefined,
                 global: addScope === 'global',
-              });
-              message.success(t('mcp.added', { name: jsonConfig.name }));
+              };
+              console.log('Request payload:', requestPayload);
+              await addMCPServer(requestPayload);
+              messageApi.success(t('mcp.added', { name: jsonConfig.name }));
             } else {
               throw new Error('Name is required');
             }
@@ -226,7 +236,13 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
             // Add all servers
             for (const [name, config] of Object.entries(jsonConfig)) {
               const serverConfig = config as McpServerConfig;
-              await addMCPServer({
+              console.log(
+                'Adding server from name mapping:',
+                name,
+                'with config:',
+                serverConfig,
+              );
+              const requestPayload = {
                 name,
                 command: serverConfig.command,
                 args: serverConfig.args,
@@ -236,10 +252,12 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
                   ? JSON.stringify(serverConfig.env)
                   : undefined,
                 global: addScope === 'global',
-              });
+              };
+              console.log('Request payload:', requestPayload);
+              await addMCPServer(requestPayload);
             }
 
-            message.success(
+            messageApi.success(
               t('mcp.addedMultiple', { count: serverNames.length }),
             );
           }
@@ -324,7 +342,7 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
         }
 
         if (addedCount > 0) {
-          message.success(
+          messageApi.success(
             addedCount === 1
               ? t('mcp.addedSingle')
               : t('mcp.addedMultiple', { count: addedCount }),
@@ -351,14 +369,26 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
       ]);
       onSuccess();
     } catch (error) {
+      console.error('MCP operation error:', error);
+
+      // 提取具体的错误信息
+      let errorMessage = '';
+      if (error && typeof error === 'object') {
+        if ('error' in error && typeof error.error === 'string') {
+          errorMessage = error.error;
+        } else if ('message' in error && typeof error.message === 'string') {
+          errorMessage = error.message;
+        } else if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+      }
+
       if (editMode) {
-        message.error(t('mcp.editFailed'));
-        console.error('Edit server error:', error);
+        messageApi.error(errorMessage || t('mcp.editFailed'));
       } else {
-        message.error(
-          inputMode === 'json' ? t('mcp.jsonFormatError') : t('mcp.addFailed'),
-        );
-        console.error('Add server error:', error);
+        const defaultMessage =
+          inputMode === 'json' ? t('mcp.jsonFormatError') : t('mcp.addFailed');
+        messageApi.error(errorMessage || defaultMessage);
       }
     }
   };
@@ -383,186 +413,108 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
   };
 
   return (
-    <Modal
-      title={
-        <div className={styles.modalHeader}>
-          <span className={styles.headerTitle}>
-            {editMode ? t('mcp.editServer') : t('mcp.addServer')}
-          </span>
-        </div>
-      }
-      open={visible}
-      onCancel={handleCancel}
-      footer={[
-        <Button
-          key="cancel"
-          onClick={handleCancel}
-          className={styles.cancelButton}
-        >
-          {t('common.cancel')}
-        </Button>,
-        <Button
-          key="ok"
-          type="primary"
-          onClick={form.submit}
-          className={styles.confirmButton}
-        >
-          {t('common.confirm')}
-        </Button>,
-      ]}
-      width={640}
-      className={styles.addFormModal}
-      destroyOnClose
-      maskClosable={false}
-    >
-      <div className={styles.modalBody} {...containerEventHandlers}>
-        <Form
-          form={form}
-          onFinish={handleSubmit}
-          layout="vertical"
-          className={styles.form}
-        >
-          {/* Configuration form content */}
-          <div className={styles.configSection}>
-            {editMode ? (
-              <>
-                {/* Scope and input mode settings for edit mode */}
-                <div className={styles.settingsRow}>
-                  <div className={styles.settingGroup}>
-                    <div className={styles.settingHeader}>
-                      <Text className={styles.settingLabel}>
-                        {t('mcp.scope')}
-                      </Text>
-                      <Tooltip title={t('mcp.scopeTooltip')}>
-                        <QuestionCircleOutlined
-                          className={styles.questionIcon}
-                        />
-                      </Tooltip>
-                    </div>
-                    <Radio.Group
-                      value={addScope}
-                      onChange={(e) =>
-                        onScopeChange(e.target.value as 'global' | 'project')
-                      }
-                      className={styles.radioGroup}
-                    >
-                      <Radio value="project" className={styles.radioOption}>
-                        {t('mcp.project')}
-                      </Radio>
-                      <Radio value="global" className={styles.radioOption}>
-                        {t('mcp.global')}
-                      </Radio>
-                    </Radio.Group>
-                  </div>
-                </div>
-                <McpFormFields editMode={editMode} />
-              </>
-            ) : (
-              <McpMultipleFormFields
-                configs={mcpConfigs}
-                onUpdateConfig={updateConfig}
-                onRemoveConfig={removeConfig}
-              />
-            )}
+    <>
+      {contextHolder}
+      <Modal
+        title={
+          <div className={styles.modalHeader}>
+            <span className={styles.headerTitle}>
+              {editMode ? t('mcp.editServer') : t('mcp.addServer')}
+            </span>
           </div>
-
-          {/* Continue add button - only shown in add mode */}
-          {!editMode && (
-            <div className={styles.continueSection}>
-              <Button
-                type="default"
-                icon={<PlusOutlined />}
-                className={styles.continueButton}
-                onClick={addNewConfig}
-              >
-                {t('mcp.continueAdd')}
-              </Button>
-            </div>
-          )}
-        </Form>
-      </div>
-    </Modal>
-  );
-};
-
-// JSON configuration form
-const McpJsonForm: React.FC = () => {
-  const { t } = useTranslation();
-
-  return (
-    <div className={styles.jsonFormContainer}>
-      <div className={styles.jsonFormHeader}>
-        <Text className={styles.settingLabel}>{t('mcp.configuration')}</Text>
-      </div>
-      <Form.Item
-        name="jsonConfig"
-        rules={[
-          {
-            required: true,
-            message: t('mcp.configurationPlaceholder'),
-          },
-          {
-            validator: async (_, value) => {
-              if (value) {
-                try {
-                  const parsed = JSON.parse(value);
-
-                  // Validate supported formats
-                  if (parsed.mcpServers) {
-                    // Format 1: { "mcpServers": { ... } }
-                    if (
-                      typeof parsed.mcpServers !== 'object' ||
-                      Object.keys(parsed.mcpServers).length === 0
-                    ) {
-                      throw new Error(t('mcp.mcpServersEmpty'));
-                    }
-                  } else {
-                    const keys = Object.keys(parsed);
-                    if (keys.length === 0) {
-                      throw new Error(t('mcp.configurationEmpty'));
-                    }
-
-                    // Check if it's a single service configuration (contains name field)
-                    if (keys.includes('name')) {
-                      if (!parsed.command && !parsed.url) {
-                        throw new Error(t('mcp.commandOrUrlRequired'));
-                      }
-                    } else {
-                      // Check if it's service mapping format
-                      for (const [name, config] of Object.entries(parsed)) {
-                        if (typeof config !== 'object') {
-                          throw new Error(
-                            t('mcp.serverConfigObject', { name }),
-                          );
-                        }
-                        const serverConfig = config as McpServerConfig;
-                        if (!serverConfig.command && !serverConfig.url) {
-                          throw new Error(
-                            t('mcp.serverCommandOrUrl', { name }),
-                          );
-                        }
-                      }
-                    }
-                  }
-                } catch (error) {
-                  if (error instanceof SyntaxError) {
-                    throw new Error(t('mcp.invalidJson'));
-                  }
-                  throw error;
-                }
-              }
-            },
-          },
+        }
+        open={visible}
+        onCancel={handleCancel}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={handleCancel}
+            className={styles.cancelButton}
+          >
+            {t('common.cancel')}
+          </Button>,
+          <Button
+            key="ok"
+            type="primary"
+            onClick={form.submit}
+            className={styles.confirmButton}
+          >
+            {t('common.confirm')}
+          </Button>,
         ]}
+        width={640}
+        className={styles.addFormModal}
+        destroyOnClose
+        maskClosable={false}
       >
-        <Input.TextArea
-          rows={6}
-          placeholder={t('mcp.configurationPlaceholder')}
-          className={styles.jsonTextArea}
-          {...modalEventHandlers}
-        />
-      </Form.Item>
-    </div>
+        <div className={styles.modalBody} {...containerEventHandlers}>
+          <Form
+            form={form}
+            onFinish={handleSubmit}
+            layout="vertical"
+            className={styles.form}
+          >
+            {/* Configuration form content */}
+            <div className={styles.configSection}>
+              {editMode ? (
+                <>
+                  {/* Scope and input mode settings for edit mode */}
+                  <div className={styles.settingsRow}>
+                    <div className={styles.settingGroup}>
+                      <div className={styles.settingHeader}>
+                        <Text className={styles.settingLabel}>
+                          {t('mcp.scope')}
+                        </Text>
+                        <Tooltip title={t('mcp.scopeTooltip')}>
+                          <QuestionCircleOutlined
+                            className={styles.questionIcon}
+                          />
+                        </Tooltip>
+                      </div>
+                      <Radio.Group
+                        value={addScope}
+                        onChange={(e) =>
+                          onScopeChange(e.target.value as 'global' | 'project')
+                        }
+                        className={styles.radioGroup}
+                      >
+                        <Radio value="project" className={styles.radioOption}>
+                          {t('mcp.project')}
+                        </Radio>
+                        <Radio value="global" className={styles.radioOption}>
+                          {t('mcp.global')}
+                        </Radio>
+                      </Radio.Group>
+                    </div>
+                  </div>
+                  <McpFormFields editMode={editMode} />
+                </>
+              ) : (
+                <McpMultipleFormFields
+                  configs={mcpConfigs}
+                  onUpdateConfig={updateConfig}
+                  onRemoveConfig={removeConfig}
+                />
+              )}
+            </div>
+
+            {/* Continue add button - only shown in add mode */}
+            {!editMode && (
+              <div className={styles.continueSection}>
+                <Button
+                  type="default"
+                  icon={<PlusOutlined />}
+                  className={styles.continueButton}
+                  onClick={addNewConfig}
+                >
+                  {t('mcp.continueAdd')}
+                </Button>
+              </div>
+            )}
+          </Form>
+        </div>
+      </Modal>
+    </>
   );
 };
 
@@ -576,8 +528,6 @@ const McpMultipleFormFields: React.FC<{
   ) => void;
   onRemoveConfig: (id: string) => void;
 }> = ({ configs, onUpdateConfig, onRemoveConfig }) => {
-  const { t } = useTranslation();
-
   return (
     <div className={styles.multipleFormContainer}>
       {configs.map((config, index) => (

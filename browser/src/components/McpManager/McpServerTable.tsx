@@ -26,6 +26,7 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
   onEditServer,
 }) => {
   const { t } = useTranslation();
+  const [messageApi, contextHolder] = message.useMessage();
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 7;
@@ -42,11 +43,11 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
       // 无论是否启用，都要从本地存储中彻底删除
       onDeleteLocal?.(server.name, server.scope);
 
-      message.success(t('mcp.deleteSuccess', { name: server.name }));
+      messageApi.success(t('mcp.deleteSuccess', { name: server.name }));
       onDeleteSuccess?.();
     } catch (error) {
       console.error('Delete server failed:', error);
-      message.error(t('mcp.deleteError'));
+      messageApi.error(t('mcp.deleteError'));
     } finally {
       setDeleteLoading(false);
     }
@@ -177,40 +178,43 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
   const paginatedServers = servers.slice(startIndex, endIndex);
 
   return (
-    <div className={styles.tableContainer}>
-      <Table
-        columns={columns}
-        dataSource={paginatedServers}
-        loading={loading}
-        size="middle"
-        pagination={false}
-        locale={{
-          emptyText: (
-            <div className={styles.emptyState}>
-              <Text type="secondary">{t('mcp.noConfiguration')}</Text>
-              <br />
-              <Text type="secondary" className={styles.emptyStateSubtitle}>
-                {t('mcp.clickToStart')}
-              </Text>
-            </div>
-          ),
-        }}
-      />
+    <>
+      {contextHolder}
+      <div className={styles.tableContainer}>
+        <Table
+          columns={columns}
+          dataSource={paginatedServers}
+          loading={loading}
+          size="middle"
+          pagination={false}
+          locale={{
+            emptyText: (
+              <div className={styles.emptyState}>
+                <Text type="secondary">{t('mcp.noConfiguration')}</Text>
+                <br />
+                <Text type="secondary" className={styles.emptyStateSubtitle}>
+                  {t('mcp.clickToStart')}
+                </Text>
+              </div>
+            ),
+          }}
+        />
 
-      {servers.length > pageSize && (
-        <div className={styles.paginationContainer}>
-          <Pagination
-            current={currentPage}
-            pageSize={pageSize}
-            size="small"
-            total={servers.length}
-            onChange={(page) => {
-              setCurrentPage(page);
-            }}
-          />
-        </div>
-      )}
-    </div>
+        {servers.length > pageSize && (
+          <div className={styles.paginationContainer}>
+            <Pagination
+              current={currentPage}
+              pageSize={pageSize}
+              size="small"
+              total={servers.length}
+              onChange={(page) => {
+                setCurrentPage(page);
+              }}
+            />
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 

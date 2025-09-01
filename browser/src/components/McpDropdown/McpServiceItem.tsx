@@ -22,7 +22,6 @@ const McpServiceItem: React.FC<McpServiceItemProps> = ({
         <span className={styles.serviceName}>{server.name}</span>
         <Tag
           className={`${styles.scopeTag} ${server.installed ? styles.scopeTagEnabled : styles.scopeTagDisabled}`}
-          size="small"
         >
           {isGlobal ? t('mcp.globalScope') : t('mcp.projectScope')}
         </Tag>
