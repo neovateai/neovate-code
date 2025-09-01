@@ -368,13 +368,14 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'getPaths',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
+      async (data: { cwd: string; maxFiles?: number }) => {
+        const { cwd, maxFiles = 6000 } = data;
         const context = await this.getContext(cwd);
         const result = listDirectory(
           context.cwd,
           context.cwd,
           context.productName,
+          maxFiles,
         );
         return {
           success: true,

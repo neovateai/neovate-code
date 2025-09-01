@@ -9,11 +9,12 @@ export function listDirectory(
   initialPath: string,
   cwd: string,
   productName: string = 'takumi',
+  maxFiles: number = MAX_FILES,
 ) {
   const results: string[] = [];
   const queue = [initialPath];
   while (queue.length > 0) {
-    if (results.length > MAX_FILES) {
+    if (results.length > maxFiles) {
       return results;
     }
     const path = queue.shift()!;
@@ -50,7 +51,7 @@ export function listDirectory(
           continue;
         }
         results.push(relative(cwd, childPath));
-        if (results.length > MAX_FILES) {
+        if (results.length > maxFiles) {
           return results;
         }
       }

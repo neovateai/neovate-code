@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppStore } from './store';
 import type { InputState } from './useInputState';
 
@@ -7,7 +7,7 @@ export function usePaths() {
   const [isLoading, setIsLoading] = useState(false);
   const [paths, setPaths] = useState<string[]>([]);
   const [lastLoadTime, setLastLoadTime] = useState(0);
-  const loadPaths = () => {
+  const loadPaths = useCallback(() => {
     setIsLoading(true);
     // TODO: improve this
     // Now it's load only once
@@ -20,7 +20,7 @@ export function usePaths() {
       setIsLoading(false);
       setLastLoadTime(Date.now());
     });
-  };
+  }, [bridge, cwd]);
   return {
     paths,
     isLoading,
