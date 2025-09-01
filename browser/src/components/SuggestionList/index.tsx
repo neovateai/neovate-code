@@ -15,7 +15,6 @@ import React, {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
-import type { SlashCommandItem } from '@/api/model';
 import { ContextType } from '@/constants/context';
 import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';

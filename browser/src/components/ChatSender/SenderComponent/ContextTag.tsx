@@ -1,4 +1,4 @@
-import Icon, { CloseCircleFilled } from '@ant-design/icons';
+import Icon, { AppstoreOutlined, CloseCircleFilled } from '@ant-design/icons';
 import { Popover } from 'antd';
 import { cx } from 'antd-style';
 import { useState } from 'react';
@@ -35,6 +35,8 @@ function renderIcon(type?: ContextType, context?: ContextStoreValue) {
       const fileExt = (context as FileItem).name.split('.').pop() ?? '';
       const isFolder = (context as FileItem).type === 'directory';
       return <DevFileIcon fileExt={fileExt} isFolder={isFolder} />;
+    case ContextType.SLASH_COMMAND:
+      return <AppstoreOutlined />;
   }
 }
 

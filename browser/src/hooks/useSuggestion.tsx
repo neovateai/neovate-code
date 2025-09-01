@@ -9,7 +9,7 @@ import { CONTEXT_MAX_POPUP_ITEM_COUNT, ContextType } from '@/constants/context';
 import { actions, state } from '@/state/suggestion';
 import { storeValueToContextItem } from '@/utils/context';
 
-export const useSuggestion = (selectedValues?: readonly string[]) => {
+export const useSuggestion = () => {
   const { fileList, slashCommandList, loading } = useSnapshot(state);
 
   const { t } = useTranslation();
@@ -35,7 +35,6 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
             fileExt={file.path.split('.').pop() ?? ''}
           />
         ),
-        disabled: selectedValues?.includes(file.path),
         extra,
         contextItem: storeValueToContextItem(file, ContextType.FILE),
       } as SuggestionItem;
