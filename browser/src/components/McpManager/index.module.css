@@ -790,3 +790,25 @@
   font-weight: 400 !important;
   font-family: 'PingFang SC', sans-serif !important;
 }
+
+/* Multiple Form Container */
+.multipleFormContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Single Form Container */
+.singleFormContainer {
+  width: 100%;
+}
+
+.formSelect {
+  width: 100%;
+}
+
+/* Config Content Section */
+.configContentSection {
+  margin-top: 16px;
+}
