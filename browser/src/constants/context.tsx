@@ -9,20 +9,6 @@ export enum ContextType {
 }
 
 export const CONTEXT_AVAILABLE_FILE_TYPES: ContextFileType[] = [
-  // Text & Applications
-  {
-    extName: '.txt',
-    mime: 'text/plain',
-  },
-  {
-    extName: '.md',
-    mime: 'text/markdown',
-  },
-  {
-    extName: '.json',
-    mime: 'application/json',
-  },
-  // Images
   {
     extName: '.png',
     mime: 'image/png',
@@ -38,10 +24,6 @@ export const CONTEXT_AVAILABLE_FILE_TYPES: ContextFileType[] = [
   {
     extName: '.gif',
     mime: 'image/gif',
-  },
-  {
-    extName: '.svg',
-    mime: 'image/svg+xml',
   },
   {
     extName: '.webp',
