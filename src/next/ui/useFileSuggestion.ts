@@ -9,7 +9,9 @@ export function usePaths() {
   const [lastLoadTime, setLastLoadTime] = useState(0);
   const loadPaths = () => {
     setIsLoading(true);
-    if (Date.now() - lastLoadTime < 600000000) {
+    // TODO: improve this
+    // Now it's load only once
+    if (Date.now() - lastLoadTime < 600000000000) {
       setIsLoading(false);
       return;
     }
