@@ -1,8 +1,6 @@
-import { randomUUID } from '../utils/randomUUID';
 import type { NormalizedMessage } from './history';
-import { runLoop } from './loop';
-import type { ModelInfo } from './model';
-import { Tools } from './tool';
+import { type ModelInfo } from './model';
+import { query } from './query';
 
 type CompactOptions = {
   messages: NormalizedMessage[];
@@ -10,26 +8,11 @@ type CompactOptions = {
 };
 
 export async function compact(opts: CompactOptions) {
-  const messages: NormalizedMessage[] = [
-    ...opts.messages,
-    {
-      role: 'user',
-      content: COMPACT_USER_PROMPT,
-      type: 'message',
-      timestamp: new Date().toISOString(),
-      uuid: randomUUID(),
-      parentUuid: null,
-    },
-  ];
-  const result = await runLoop({
-    input: messages,
-    model: opts.model,
-    tools: new Tools([]),
-    cwd: '',
+  const result = await query({
+    messages: opts.messages,
+    userPrompt: COMPACT_USER_PROMPT,
     systemPrompt: COMPACT_SYSTEM_PROMPT,
-    onMessage: async (message) => {
-      // console.log(message);
-    },
+    model: opts.model,
   });
   if (result.success) {
     return result.data.text;

@@ -3,6 +3,7 @@ import path from 'path';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { Context } from './context';
+import { resolveModelWithContext } from './model';
 import { createBashTool } from './tools/bash';
 import { createEditTool } from './tools/edit';
 import { createFetchTool } from './tools/fetch';
@@ -23,12 +24,16 @@ type ResolveToolsOpts = {
 export async function resolveTools(opts: ResolveToolsOpts) {
   const { cwd, productName, paths } = opts.context;
   const sessionId = opts.sessionId;
+  const model = await resolveModelWithContext(
+    opts.context.config.model,
+    opts.context,
+  );
   const readonlyTools = [
     createReadTool({ cwd, productName }),
     createLSTool({ cwd, productName }),
     createGlobTool({ cwd }),
     createGrepTool({ cwd }),
-    // createFetchTool({ cwd }),
+    createFetchTool({ model }),
   ];
   const writeTools = opts.write
     ? [
