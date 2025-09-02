@@ -66,7 +66,6 @@ export const actions = {
       console.error('Failed to load settings:', error);
       state.settings.loading = false;
       state.settings.loaded = false;
-      // 不要重新抛出错误，让组件能够继续显示
     }
   },
 
