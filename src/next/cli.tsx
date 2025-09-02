@@ -171,7 +171,10 @@ async function runInQuietMode(argv: Argv, context: Context) {
 }
 
 async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
-  const uiBridge = new UIBridge();
+  const appStore = useAppStore.getState();
+  const uiBridge = new UIBridge({
+    appStore,
+  });
   const nodeBridge = new NodeBridge({
     contextCreateOpts,
   });
@@ -203,7 +206,7 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
     }
     return Session.createSessionId();
   })();
-  await useAppStore.getState().initialize({
+  await appStore.initialize({
     bridge: uiBridge,
     cwd,
     initialPrompt: argv._[0],

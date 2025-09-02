@@ -1,8 +1,11 @@
 import { type EventHandler, MessageBus } from './messageBus';
+import type { AppStore } from './ui/store';
 
 export class UIBridge {
+  appStore: AppStore;
   messageBus: MessageBus;
-  constructor() {
+  constructor(opts: { appStore: AppStore }) {
+    this.appStore = opts.appStore;
     this.messageBus = new MessageBus();
     new UIHandlerRegistry(this.messageBus);
   }

@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../../config';
-import { randomUUID } from '../../utils/randomUUID';
 import type { Message } from '../history';
 import type { LoopResult } from '../loop';
 import { Session } from '../session';
@@ -119,7 +118,7 @@ interface AppActions {
   denyPlan: () => void;
 }
 
-type AppStore = AppState & AppActions;
+export type AppStore = AppState & AppActions;
 
 export const useAppStore = create<AppStore>()(
   devtools(
