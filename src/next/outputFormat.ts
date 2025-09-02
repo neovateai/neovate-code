@@ -1,4 +1,4 @@
-import type { EnhancedTool } from '../tool';
+import type { Tool } from './createTool';
 import type { LoopResult } from './loop';
 import type { ModelInfo } from './model';
 
@@ -22,7 +22,7 @@ export class OutputFormat {
     text: string;
     sessionId: string;
     cwd: string;
-    tools: EnhancedTool[];
+    tools: Tool[];
     model: ModelInfo;
   }) {
     if (!this.quiet) {

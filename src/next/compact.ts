@@ -1,8 +1,8 @@
-import { Tools } from '../tool';
 import { randomUUID } from '../utils/randomUUID';
 import type { NormalizedMessage } from './history';
 import { runLoop } from './loop';
 import type { ModelInfo } from './model';
+import { Tools } from './tool';
 
 type CompactOptions = {
   messages: NormalizedMessage[];

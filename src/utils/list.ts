@@ -1,5 +1,6 @@
 import fs from 'fs';
 import { basename, join, relative, sep } from 'path';
+import { PRODUCT_NAME } from '../constants';
 import { isIgnored } from './ignore';
 
 export const MAX_FILES = 1000;
@@ -8,7 +9,7 @@ export const TRUNCATED_MESSAGE = `There are more than ${MAX_FILES} files in the 
 export function listDirectory(
   initialPath: string,
   cwd: string,
-  productName: string = 'takumi',
+  productName: string = PRODUCT_NAME,
   maxFiles: number = MAX_FILES,
 ) {
   const results: string[] = [];
@@ -69,7 +70,7 @@ function skip(path: string) {
 
 export function listRootDirectory(
   rootPath: string,
-  productName: string = 'takumi',
+  productName: string = PRODUCT_NAME,
 ): string[] {
   const results: string[] = [];
   try {

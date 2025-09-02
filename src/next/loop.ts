@@ -1,10 +1,10 @@
 import { Agent, Runner, type SystemMessageItem } from '@openai/agents';
-import type { Tools } from '../tool';
 import { parseMessage } from '../utils/parse-message';
 import { randomUUID } from '../utils/randomUUID';
 import { At } from './at';
 import { History, type NormalizedMessage, type OnMessage } from './history';
 import type { ModelInfo } from './model';
+import type { Tools } from './tool';
 import { Usage } from './usage';
 
 const DEFAULT_MAX_TURNS = 50;

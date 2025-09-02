@@ -1,7 +1,7 @@
 import { PluginHookType } from '../plugin';
-import { type EnhancedTool, Tools } from '../tool';
 import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
+import type { Tool } from './createTool';
 import type { NormalizedMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { LlmsContext } from './llmsContext';
@@ -12,7 +12,7 @@ import { OutputStyleManager } from './outputStyle';
 import { generatePlanSystemPrompt } from './planSystemPrompt';
 import { Session, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
-import { resolveTools } from './tool';
+import { Tools, resolveTools } from './tool';
 
 export class Project {
   session: Session;
@@ -100,7 +100,7 @@ export class Project {
       model?: string;
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
       signal?: AbortSignal;
-      tools?: EnhancedTool[];
+      tools?: Tool[];
       systemPrompt?: string;
     } = {},
   ) {

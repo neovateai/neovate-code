@@ -1,7 +1,7 @@
-import { Agent, Runner, tool } from '@openai/agents';
+import { Agent, Runner } from '@openai/agents';
 import TurndownService from 'turndown';
 import { z } from 'zod';
-import { Context } from '../context';
+import { createTool } from '../createTool';
 import type { FetchToolResult } from './type';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5min
@@ -9,7 +9,7 @@ const urlCache = new Map();
 const MAX_CONTENT_LENGTH = 15000; // 15k
 
 export function createFetchTool(opts: { context: Context }) {
-  return tool({
+  return createTool({
     name: 'fetch',
     description: `
 Fetch content from url.
@@ -114,6 +114,9 @@ Provide a concise response based only on the content above. In your response:
           error: e instanceof Error ? e.message : 'Unknown error',
         };
       }
+    },
+    approval: {
+      category: 'network',
     },
   });
 }

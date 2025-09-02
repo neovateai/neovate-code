@@ -121,6 +121,11 @@ Commands:
 
 async function runInQuietMode(argv: Argv, context: Context) {
   try {
+    const exit = () => {
+      process.exit(0);
+    };
+    process.on('SIGINT', exit);
+    process.on('SIGTERM', exit);
     const prompt = argv._[0];
     assert(prompt, 'Prompt is required in quiet mode');
     let input = prompt as string;
