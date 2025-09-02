@@ -1,14 +1,9 @@
 import assert from 'assert';
-import fs from 'fs';
 import { render } from 'ink';
-import path from 'path';
 import React from 'react';
-import { fileURLToPath } from 'url';
 import yargsParser from 'yargs-parser';
-import { PRODUCT_ASCII_ART, PRODUCT_NAME } from '../constants';
 import { type Plugin } from '../plugin';
 import { clearTracing } from '../tracing';
-import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
 import { getMessageHistory, isUserTextMessage } from './message';
 import { DirectTransport } from './messageBus';
@@ -122,7 +117,7 @@ Commands:
   );
 }
 
-async function runInQuietMode(argv: Argv, context: Context) {
+async function runQuiet(argv: Argv, context: Context) {
   try {
     const exit = () => {
       process.exit(0);
@@ -176,7 +171,7 @@ async function runInQuietMode(argv: Argv, context: Context) {
   }
 }
 
-async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
+async function runInteractive(argv: Argv, contextCreateOpts: any) {
   const appStore = useAppStore.getState();
   const uiBridge = new UIBridge({
     appStore,
@@ -221,7 +216,7 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
     history,
   });
 
-  render(<App />, {
+  render(React.createElement(App), {
     patchConsole: false,
     exitOnCtrlC: false,
   });
@@ -269,21 +264,8 @@ export async function runNeovate(opts: {
       cwd: argv.cwd || process.cwd(),
       ...contextCreateOpts,
     });
-    await runInQuietMode(argv, context);
+    await runQuiet(argv, context);
   } else {
-    await runInInteractiveMode(argv, contextCreateOpts);
+    await runInteractive(argv, contextCreateOpts);
   }
 }
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const pkg = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf-8'),
-);
-runNeovate({
-  productName: PRODUCT_NAME,
-  productASCIIArt: PRODUCT_ASCII_ART.trim(),
-  version: pkg.version,
-  plugins: [],
-}).catch((e) => {
-  console.error(e);
-});
