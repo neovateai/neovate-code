@@ -34,6 +34,7 @@ type Argv = {
   continue?: boolean;
   // string
   appendSystemPrompt?: string;
+  approvalMode?: string;
   cwd?: string;
   language?: string;
   model?: string;
@@ -63,6 +64,7 @@ function parseArgs(argv: any) {
     boolean: ['help', 'mcp', 'quiet', 'continue'],
     string: [
       'appendSystemPrompt',
+      'approvalMode',
       'cwd',
       'language',
       'model',
@@ -102,6 +104,7 @@ Options:
   --system-prompt <prompt>      Custom system prompt for code agent
   --output-format <format>      Output format, text, stream-json, json
   --output-style <style>        Output style
+  --approval-mode <mode>        Tool approval mode
   -q, --quiet                   Quiet mode, non interactive
   --no-mcp                      Disable MCP servers
 
@@ -161,7 +164,10 @@ async function runInQuietMode(argv: Argv, context: Context) {
       context,
       sessionId,
     });
-    await project.send(input, { model });
+    await project.send(input, {
+      model,
+      onToolApprove: () => Promise.resolve(true),
+    });
     process.exit(0);
   } catch (e: any) {
     console.error(`Error: ${e.message}`);
@@ -255,6 +261,7 @@ export async function runNeovate(opts: {
       appendSystemPrompt: argv.appendSystemPrompt,
       language: argv.language,
       outputStyle: argv.outputStyle,
+      approvalMode: argv.approvalMode,
     },
     plugins: opts.plugins,
   };

@@ -68,11 +68,15 @@ export class Tools {
     );
   }
 
+  get(toolName: string) {
+    return this.tools[toolName];
+  }
+
   length() {
     return Object.keys(this.tools).length;
   }
 
-  async invoke(toolName: string, args: string, runContext: any) {
+  async invoke(toolName: string, args: string) {
     const tool = this.tools[toolName];
     if (!tool) {
       return {
@@ -197,9 +201,11 @@ type ApprovalContext = {
   context: any;
 };
 
+export type ApprovalCategory = 'read' | 'write' | 'command' | 'network';
+
 type ToolApprovalInfo = {
   needsApproval?: (context: ApprovalContext) => Promise<boolean> | boolean;
-  category?: 'read' | 'write' | 'command' | 'network';
+  category?: ApprovalCategory;
 };
 
 export function createTool<TSchema extends z.ZodTypeAny>(config: {

@@ -12,8 +12,14 @@ import { useTerminalSize } from './useTerminalSize';
 export function ChatInput() {
   const { inputState, handlers, slashCommands, fileSuggestion } =
     useInputHandlers();
-  const { log, setExitMessage, planResult, cancel, slashCommandJSX } =
-    useAppStore();
+  const {
+    log,
+    setExitMessage,
+    planResult,
+    cancel,
+    slashCommandJSX,
+    approvalModal,
+  } = useAppStore();
   const { columns } = useTerminalSize();
   const showSuggestions =
     slashCommands.suggestions.length > 0 ||
@@ -22,6 +28,9 @@ export function ChatInput() {
     return null;
   }
   if (planResult) {
+    return null;
+  }
+  if (approvalModal) {
     return null;
   }
   return (
