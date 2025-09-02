@@ -2,6 +2,12 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../../config';
+import { randomUUID } from '../../utils/randomUUID';
+import { clearTerminal } from '../../utils/terminal';
+import type { Message } from '../history';
+import type { LoopResult } from '../loop';
+import { getMessageHistory, isUserTextMessage } from '../message';
+import { loadSessionMessages } from '../session';
 import type { Message } from '../history';
 import type { LoopResult, ToolUse } from '../loop';
 import { Session } from '../session';
@@ -136,6 +142,7 @@ interface AppActions {
   togglePlanMode: () => void;
   approvePlan: (planResult: string) => void;
   denyPlan: () => void;
+  resumeSession: (sessionId: string, logFile: string) => Promise<void>;
   setModel: (model: string) => void;
   approveToolUse: ({
     toolUse,
@@ -211,6 +218,10 @@ export const useAppStore = create<AppStore>()(
         bridge.onEvent('message', (data) => {
           const message = data.message as Message;
           get().addMessage(message);
+        });
+        bridge.onEvent('sessionChanged', (data) => {
+          const { sessionId, logFile } = data;
+          get().resumeSession(sessionId, logFile);
         });
         setImmediate(async () => {
           if (opts.initialPrompt) {
@@ -439,6 +450,35 @@ export const useAppStore = create<AppStore>()(
 
       denyPlan: () => {
         set({ planResult: null });
+      },
+
+      resumeSession: async (sessionId: string, logFile: string) => {
+        await clearTerminal();
+
+        const messages = loadSessionMessages({ logPath: logFile });
+        const history = messages
+          .filter(isUserTextMessage)
+          .map(getMessageHistory);
+
+        set({
+          sessionId,
+          logFile,
+          messages,
+          history,
+          historyIndex: null,
+          status: 'idle',
+          error: null,
+          slashCommandJSX: null,
+          currentMessage: null,
+          queuedMessages: [],
+          draftInput: '',
+          logs: [],
+          exitMessage: null,
+          planResult: null,
+          processingStartTime: null,
+          planMode: false,
+          bashMode: false,
+        });
       },
 
       setModel: async (model: string) => {

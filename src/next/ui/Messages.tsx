@@ -21,10 +21,10 @@ import { SPACING, TOOL_DESCRIPTION_EXTRACTORS, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 
 export function Messages() {
-  const { messages, productName } = useAppStore();
+  const { messages, productName, sessionId } = useAppStore();
   return (
     <Box flexDirection="column">
-      <Static items={['header', ...messages] as any[]}>
+      <Static key={sessionId} items={['header', ...messages] as any[]}>
         {(item, index) => {
           if (item === 'header') {
             return <Header key={'header'} />;

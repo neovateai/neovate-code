@@ -258,6 +258,38 @@ class NodeHandlerRegistry {
     );
 
     //////////////////////////////////////////////
+    // sessions
+    this.messageBus.registerHandler(
+      'getAllSessions',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const sessions = context.paths.getAllSessions();
+        return {
+          success: true,
+          data: {
+            sessions,
+          },
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'resumeSession',
+      async (data: { cwd: string; sessionId: string }) => {
+        const { cwd, sessionId } = data;
+        const context = await this.getContext(cwd);
+        // Notify UI to update session information
+        await this.messageBus.emitEvent('sessionChanged', {
+          sessionId,
+          logFile: context.paths.getSessionLogPath(sessionId),
+        });
+        return {
+          success: true,
+        };
+      },
+    );
+
     // models
     this.messageBus.registerHandler(
       'getModels',
