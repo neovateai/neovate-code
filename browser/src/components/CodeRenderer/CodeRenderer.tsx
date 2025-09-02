@@ -8,7 +8,10 @@ import React, {
   useState,
 } from 'react';
 import './lineNumbers.module.css';
-import { customDiffTransformer } from './transformers';
+import {
+  createLineNumberTransformer,
+  customDiffTransformer,
+} from './transformers';
 import { useShiki } from './useShiki';
 import { inferLanguage } from './utils';
 
@@ -81,7 +84,7 @@ const useStyles = createStyles(({ css }) => ({
       font-family:
         'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro',
         'Consolas', monospace;
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.4;
       letter-spacing: 0;
       display: block;
@@ -94,8 +97,21 @@ const useStyles = createStyles(({ css }) => ({
     /* 确保 Shiki 生成的所有元素背景都透明 */
     .code-renderer-container .shiki,
     .code-renderer-container .shiki pre,
-    .code-renderer-container .shiki code {
-      background: transparent;
+    .code-renderer-container .shiki code,
+    .shiki,
+    .shiki pre,
+    .shiki code,
+    .shiki .line,
+    .shiki span {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+
+    /* 强制覆盖任何内联样式的背景色 */
+    .code-renderer-container [style*='background'],
+    .shiki [style*='background'] {
+      background: transparent !important;
+      background-color: transparent !important;
     }
 
     .shiki-line-numbers {
@@ -149,26 +165,26 @@ const useStyles = createStyles(({ css }) => ({
     .line.diff.add {
       background-color: #dafbe1 !important;
       width: 100%;
-      display: block;
+      display: inline-block;
     }
 
     .line.diff.remove {
       background-color: #ffeaea !important;
       width: 100%;
-      display: block;
+      display: inline-block;
     }
 
     /* Alternative: for lines without line numbers */
     .diff.add {
       background-color: #dafbe1 !important;
       width: 100%;
-      display: block;
+      display: inline-block;
     }
 
     .diff.remove {
       background-color: #ffeaea !important;
       width: 100%;
-      display: block;
+      display: inline-block;
     }
 
     /* 确保带行号的 diff 样式占满全行 */
@@ -184,30 +200,30 @@ const useStyles = createStyles(({ css }) => ({
       padding-right: 1em !important;
     }
 
+    .shiki-with-line-numbers .line-number {
+      margin-right: 1em !important;
+      padding-right: 0.5em !important;
+      color: #666f8d;
+      font-family: 'PingFang HK';
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 400;
+      line-height: 130% /* 15.6px */;
+      letter-spacing: -0.24px;
+      text-align: right;
+    }
+
     /* 确保行号区域也有背景色和间距 */
     .shiki-with-line-numbers .line.diff.add .line-number {
       background-color: #ccffd8 !important;
       border-right-color: #28a745 !important;
       color: #22863a !important;
-      margin-right: 1em !important;
-      padding-right: 0.5em !important;
     }
 
     .shiki-with-line-numbers .line.diff.remove .line-number {
       background-color: #ffdce0 !important;
       border-right-color: #d73a49 !important;
       color: #cb2431 !important;
-      margin-right: 1em !important;
-      padding-right: 0.5em !important;
-    }
-
-    /* 确保代码内容区域有左边距 */
-    .shiki-with-line-numbers .line.diff.add > span:not(.line-number) {
-      padding-left: 0.5em !important;
-    }
-
-    .shiki-with-line-numbers .line.diff.remove > span:not(.line-number) {
-      padding-left: 0.5em !important;
     }
 
     /* Ensure diff styles work for regular shiki output */
@@ -223,98 +239,24 @@ const useStyles = createStyles(({ css }) => ({
       border-left: 3px solid #ef4444;
     }
   `,
-
-  lineWrapper: css`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
-    min-height: 36px;
-    border-radius: 4px;
-
-    &:hover {
-      background: #fff6f5;
-    }
-
-    &.highlighted {
-      background: #fff6f5;
-    }
-  `,
-
-  lineNumber: css`
-    min-width: 18px;
-    color: #666f8d;
-    font-size: 12px;
-    text-align: right;
-    user-select: none;
-  `,
-
-  indentWrapper: css`
-    display: flex;
-    align-items: center;
-  `,
-
-  indentDot: css`
-    width: 16px;
-    height: 16px;
-    background: transparent;
-    border-radius: 2px;
-    margin-right: 2px;
-  `,
-
-  codeText: css`
-    flex: 1;
-    font-size: 12px;
-    white-space: pre-wrap;
-    word-break: break-all;
-  `,
-
-  addedLine: css`
-    background: #f6fff0;
-  `,
-
-  deletedLine: css`
-    background: #fff6f5;
-  `,
-
-  copyButton: css`
-    color: #666f8d;
-    border: none;
-    background: transparent;
-
-    &:hover {
-      color: #110c22;
-      background: rgba(17, 12, 34, 0.05);
-    }
-  `,
 }));
 
 interface CodeRendererProps {
   code: string;
   language?: string;
   filename?: string;
-  showCopy?: boolean;
   showLineNumbers?: boolean;
   maxHeight?: number;
   className?: string;
   style?: React.CSSProperties;
   theme?: string;
-  diffStats?: {
-    added: number;
-    deleted: number;
-  };
-  highlightedLines?: number[];
-  showIndentation?: boolean;
   diffLines?: {
     added: number[];
     deleted: number[];
   };
-  variant?: 'default' | 'minimal';
   mode?: 'normal' | 'diff';
   originalCode?: string;
   modifiedCode?: string;
-  onAcceptAll?: () => void;
-  onRejectAll?: () => void;
 }
 
 export interface CodeRendererRef {
@@ -398,22 +340,15 @@ export const CodeRenderer = forwardRef<CodeRendererRef, CodeRendererProps>(
       code,
       language,
       filename,
-      showCopy = false,
       showLineNumbers = false,
       maxHeight,
       className,
       style,
       theme,
-      diffStats,
-      highlightedLines = [],
-      showIndentation = false,
       diffLines,
-      variant = 'default',
       mode = 'normal',
       originalCode,
       modifiedCode,
-      onAcceptAll,
-      onRejectAll,
       ...props
     },
     ref,
@@ -457,10 +392,15 @@ export const CodeRenderer = forwardRef<CodeRendererRef, CodeRendererProps>(
           let html: string;
 
           // 构建 transformers 数组
-          const transformers = [
-            customDiffTransformer(),
-            // createLineNumberTransformer(),
-          ];
+          const transformers: any[] = [customDiffTransformer()];
+
+          // 根据需要添加行号 transformer
+          if (showLineNumbers) {
+            const lineNumberTransformer = createLineNumberTransformer({
+              startLine: 1,
+            });
+            transformers.push(lineNumberTransformer);
+          }
 
           html = codeToHtml(codeToRender, {
             lang: detectedLanguage || 'plaintext',
@@ -468,7 +408,14 @@ export const CodeRenderer = forwardRef<CodeRendererRef, CodeRendererProps>(
             transformers,
           });
 
-          setHighlightedHtml(html);
+          // 移除所有背景色样式
+          const cleanHtml = html
+            .replace(/background-color:[^;"]*;?/gi, '')
+            .replace(/background:[^;"]*;?/gi, '')
+            .replace(/style="\s*"/gi, '')
+            .replace(/style='\s*'/gi, '');
+
+          setHighlightedHtml(cleanHtml);
         } catch (err) {
           console.warn('Failed to highlight code:', err);
           setHighlightedHtml(null);
@@ -476,38 +423,14 @@ export const CodeRenderer = forwardRef<CodeRendererRef, CodeRendererProps>(
       };
 
       highlightCode();
-    }, [codeToRender, detectedLanguage, codeToHtml, isReady, theme]);
-
-    const codeLines = codeToRender.split('\n');
-
-    const renderCodeLine = (line: string, lineNumber: number) => {
-      const isAdded = diffLines?.added.includes(lineNumber + 1);
-      const isDeleted = diffLines?.deleted.includes(lineNumber + 1);
-      const indentLevel = line.match(/^\s*/)?.[0].length || 0;
-      return (
-        <div
-          key={lineNumber}
-          className={cx(styles.lineWrapper, {
-            [styles.addedLine]: isAdded,
-            [styles.deletedLine]: isDeleted,
-          })}
-        >
-          {showLineNumbers && (
-            <div className={styles.lineNumber}>{lineNumber + 1}</div>
-          )}
-
-          {showIndentation && indentLevel > 0 && (
-            <div className={styles.indentWrapper}>
-              {Array.from({ length: Math.floor(indentLevel / 2) }, (_, i) => (
-                <div key={i} className={styles.indentDot} />
-              ))}
-            </div>
-          )}
-
-          <div className={styles.codeText}>{line || ' '}</div>
-        </div>
-      );
-    };
+    }, [
+      codeToRender,
+      detectedLanguage,
+      codeToHtml,
+      isReady,
+      theme,
+      showLineNumbers,
+    ]);
 
     return (
       <div
@@ -523,10 +446,8 @@ export const CodeRenderer = forwardRef<CodeRendererRef, CodeRendererProps>(
               : { flex: 1 }
           }
         >
-          {highlightedHtml && !error ? (
+          {highlightedHtml && !error && (
             <div dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
-          ) : (
-            <div>{codeLines.map(renderCodeLine)}</div>
           )}
         </div>
       </div>

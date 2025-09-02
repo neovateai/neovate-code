@@ -71,7 +71,6 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
           filename={item.title}
           mode="normal"
           showLineNumbers={true}
-          showCopy={false}
           maxHeight={maxHeight}
           theme="snazzy-light"
         />
