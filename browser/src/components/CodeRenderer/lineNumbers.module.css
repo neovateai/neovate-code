@@ -20,49 +20,55 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  width: 3.5em;
-  min-width: 3.5em;
-  height: 1.5em;
-  margin-right: 8px;
-  padding: 0 0.75em 0 0.5em;
+  width: 4em;
+  min-width: 4em;
+  height: auto;
+  margin-right: 12px;
+  padding: 0 8px 0 4px;
   color: #656d76;
-  background-color: transparent;
-  border-right: 1px solid #d0d7de;
-  font-size: 12px;
+  background-color: #f6f8fa;
+  border-right: 2px solid #d0d7de;
+  font-size: 11px;
   font-style: normal;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.4;
-  letter-spacing: 0;
+  letter-spacing: 0.5px;
   font-family:
     'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro',
     'Consolas', monospace;
   text-align: right;
+  direction: ltr;
+  unicode-bidi: embed;
   user-select: none;
   flex-shrink: 0;
   position: sticky;
   left: 0;
-  z-index: 1;
-  transition: all 0.15s ease;
+  z-index: 2;
+  transition: all 0.2s ease;
+  border-radius: 0 3px 3px 0;
 }
 
 /* 代码内容区域 */
 .shiki-with-line-numbers .line > span:not(.line-number) {
   flex: 1;
   min-width: 0;
-  padding-left: 0.5em;
+  padding-left: 8px;
   white-space: pre;
   overflow: visible;
+  line-height: 1.4;
 }
 
 /* 鼠标悬停效果 */
 .shiki-with-line-numbers .line:hover {
-  background-color: rgba(0, 0, 0, 0.03);
+  background-color: rgba(0, 0, 0, 0.02);
 }
 
 .shiki-with-line-numbers .line:hover .line-number {
-  background-color: rgba(240, 242, 245, 0.3);
-  color: #2c2c2c;
-  border-right-color: rgba(225, 232, 237, 0.8);
+  background-color: #e6edf3;
+  color: #24292f;
+  border-right-color: #0969da;
+  transform: translateX(-1px);
+  box-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Diff 样式支持 */
@@ -86,16 +92,20 @@
   background-color: #ccffd8;
   border-right-color: #28a745;
   color: #22863a;
-  margin-right: 8px;
-  padding-right: 0.5em;
+  margin-right: 12px;
+  padding: 0 8px 0 4px;
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 #28a745;
 }
 
 .shiki-with-line-numbers .line.diff.remove .line-number {
   background-color: #ffdce0;
   border-right-color: #d73a49;
   color: #cb2431;
-  margin-right: 8px;
-  padding-right: 0.5em;
+  margin-right: 12px;
+  padding: 0 8px 0 4px;
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 #d73a49;
 }
 
 /* 高亮行样式 */
@@ -123,29 +133,52 @@
 /* 响应式设计 */
 @media (max-width: 768px) {
   .shiki-with-line-numbers .line-number {
-    width: 2.5em;
-    min-width: 2.5em;
-    padding: 0 0.5em 0 0.25em;
-    font-size: 0.75em;
+    width: 3em;
+    min-width: 3em;
+    padding: 0 6px 0 2px;
+    font-size: 10px;
+    margin-right: 8px;
+    text-align: right;
+    justify-content: flex-end;
+  }
+
+  .shiki-with-line-numbers .line > span:not(.line-number) {
+    padding-left: 6px;
   }
 }
 
 /* 暗色主题支持 */
 @media (prefers-color-scheme: dark) {
   .shiki-with-line-numbers .line-number {
-    color: #9ca3af;
-    background-color: transparent;
-    border-right-color: rgba(55, 65, 81, 0.6);
+    color: #8b949e;
+    background-color: #161b22;
+    border-right-color: #30363d;
   }
 
   .shiki-with-line-numbers .line:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.03);
   }
 
   .shiki-with-line-numbers .line:hover .line-number {
-    background-color: rgba(55, 65, 81, 0.3);
-    color: #f3f4f6;
-    border-right-color: rgba(55, 65, 81, 0.8);
+    background-color: #21262d;
+    color: #f0f6fc;
+    border-right-color: #58a6ff;
+    transform: translateX(-1px);
+    box-shadow: 1px 0 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .shiki-with-line-numbers .line.diff.add .line-number {
+    background-color: #033a16;
+    border-right-color: #238636;
+    color: #3fb950;
+    box-shadow: inset 2px 0 0 #238636;
+  }
+
+  .shiki-with-line-numbers .line.diff.remove .line-number {
+    background-color: #67060c;
+    border-right-color: #da3633;
+    color: #f85149;
+    box-shadow: inset 2px 0 0 #da3633;
   }
 }
 

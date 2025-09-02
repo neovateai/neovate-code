@@ -14,47 +14,59 @@ export const customDiffTransformer = () => {
     preprocess(code: string) {
       return code;
     },
-    postprocess(html: string) {
+    line(node: any, _line: number) {
       try {
-        // Find all lines in the HTML and process them
-        const lines = html.split('\n');
-        const processedLines = lines.map((line) => {
-          // Look for our diff markers and add classes
-          if (line.includes(DIFF_MARKERS.REMOVE)) {
-            // Remove the marker and add diff classes
-            const cleanLine = line.replace(
-              new RegExp(
-                ` ${DIFF_MARKERS.REMOVE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
-                'g',
-              ),
-              '',
-            );
-            return cleanLine.replace(
-              '<span class="line">',
-              '<span class="line diff remove">',
-            );
+        // Recursively get all text content from the line
+        const getTextContent = (n: any): string => {
+          if (n.type === 'text') {
+            return n.value || '';
           }
-          if (line.includes(DIFF_MARKERS.ADD)) {
-            // Remove the marker and add diff classes
-            const cleanLine = line.replace(
-              new RegExp(
-                ` ${DIFF_MARKERS.ADD.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
-                'g',
-              ),
-              '',
-            );
-            return cleanLine.replace(
-              '<span class="line">',
-              '<span class="line diff add">',
-            );
+          if (n.children) {
+            return n.children.map(getTextContent).join('');
           }
-          return line;
-        });
+          return '';
+        };
 
-        return processedLines.join('\n');
+        // Recursively remove markers from all text nodes
+        const removeMarkers = (n: any, marker: string) => {
+          if (n.type === 'text' && n.value) {
+            n.value = n.value.replace(
+              new RegExp(
+                ` ${marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
+                'g',
+              ),
+              '',
+            );
+          }
+          if (n.children) {
+            n.children.forEach((child: any) => removeMarkers(child, marker));
+          }
+        };
+
+        const lineText = getTextContent(node);
+
+        // Check for diff markers and add classes to the line node
+        if (lineText.includes(DIFF_MARKERS.REMOVE)) {
+          // Add diff remove class
+          const currentClass = node.properties?.class || '';
+          node.properties = node.properties || {};
+          node.properties.class = `${currentClass} diff remove`.trim();
+
+          // Remove the marker from all text nodes recursively
+          removeMarkers(node, DIFF_MARKERS.REMOVE);
+        }
+
+        if (lineText.includes(DIFF_MARKERS.ADD)) {
+          // Add diff add class
+          const currentClass = node.properties?.class || '';
+          node.properties = node.properties || {};
+          node.properties.class = `${currentClass} diff add`.trim();
+
+          // Remove the marker from all text nodes recursively
+          removeMarkers(node, DIFF_MARKERS.ADD);
+        }
       } catch (error) {
-        console.error('Error in diff transformer:', error);
-        return html; // Return original HTML on error
+        console.error('Error in diff transformer line:', error);
       }
     },
   };

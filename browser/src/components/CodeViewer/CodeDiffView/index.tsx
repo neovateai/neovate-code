@@ -70,10 +70,9 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
           language={item.language}
           filename={item.path}
           mode="diff"
-          showCopy={false}
           maxHeight={maxHeight}
           theme="snazzy-light"
-          variant="minimal"
+          showLineNumbers={true}
         />
       </div>
     </div>
