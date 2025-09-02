@@ -12,6 +12,7 @@ import {
 } from '../slashCommand';
 import type { ApprovalCategory } from '../tool';
 import type { UIBridge } from '../uiBridge';
+import { Upgrade, type UpgradeOptions } from '../upgrade';
 
 type QueuedMessage = {
   id: string;
@@ -100,6 +101,11 @@ interface AppState {
     category?: ApprovalCategory;
     resolve: (result: ApprovalResult) => Promise<void>;
   } | null;
+
+  upgrade: {
+    text: string;
+    type?: 'success' | 'error';
+  } | null;
 }
 
 type InitializeOpts = {
@@ -110,6 +116,7 @@ type InitializeOpts = {
   messages: Message[];
   history: string[];
   logFile: string;
+  upgrade?: UpgradeOptions;
 };
 
 interface AppActions {
@@ -170,6 +177,8 @@ export const useAppStore = create<AppStore>()(
       logs: [],
       planResult: null,
       processingStartTime: null,
+      approvalModal: null,
+      upgrade: null,
 
       // Actions
       initialize: async (opts) => {
@@ -204,7 +213,30 @@ export const useAppStore = create<AppStore>()(
         });
         setImmediate(async () => {
           if (opts.initialPrompt) {
-            await get().send(opts.initialPrompt);
+            get().send(opts.initialPrompt);
+          }
+          // Upgrade
+          if (opts.upgrade) {
+            const upgrade = new Upgrade(opts.upgrade);
+            const result = await upgrade.check();
+            if (result.hasUpdate && result.tarballUrl) {
+              set({
+                upgrade: {
+                  text: `v${result.latestVersion} available,\nupgrading...`,
+                },
+              });
+              try {
+                await upgrade.upgrade({ tarballUrl: result.tarballUrl });
+                set({
+                  upgrade: {
+                    text: `Upgraded to v${result.latestVersion}`,
+                    type: 'success',
+                  },
+                });
+              } catch (error) {
+                set({ upgrade: { text: `Failed to upgrade`, type: 'error' } });
+              }
+            }
           }
         });
       },

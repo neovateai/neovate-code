@@ -205,6 +205,9 @@ importers:
       strip-ansi:
         specifier: ^7.1.0
         version: 7.1.0
+      tar:
+        specifier: ^7.4.3
+        version: 7.4.3
       tsx:
         specifier: ^4.20.3
         version: 4.20.3

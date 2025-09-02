@@ -1,6 +1,6 @@
-import { compact } from './compact';
-import type { NormalizedMessage } from './history';
-import { modelAlias, providers, resolveModel } from './model';
+import { compact } from '../src/next/compact';
+import type { NormalizedMessage } from '../src/next/history';
+import { modelAlias, providers, resolveModel } from '../src/next/model';
 
 async function compactTest() {
   const messages = [

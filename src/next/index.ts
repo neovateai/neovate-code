@@ -19,6 +19,7 @@ import {
 import { App } from './ui/App';
 import { useAppStore } from './ui/store';
 import { UIBridge } from './uiBridge';
+import type { UpgradeOptions } from './upgrade';
 
 type Argv = {
   _: string[];
@@ -171,7 +172,11 @@ async function runQuiet(argv: Argv, context: Context) {
   }
 }
 
-async function runInteractive(argv: Argv, contextCreateOpts: any) {
+async function runInteractive(
+  argv: Argv,
+  contextCreateOpts: any,
+  upgrade?: UpgradeOptions,
+) {
   const appStore = useAppStore.getState();
   const uiBridge = new UIBridge({
     appStore,
@@ -214,6 +219,7 @@ async function runInteractive(argv: Argv, contextCreateOpts: any) {
     // TODO: should move to nodeBridge
     messages,
     history,
+    upgrade,
   });
 
   render(React.createElement(App), {
@@ -232,6 +238,7 @@ export async function runNeovate(opts: {
   productASCIIArt?: string;
   version: string;
   plugins: Plugin[];
+  upgrade?: UpgradeOptions;
 }) {
   clearTracing();
   const argv = parseArgs(process.argv.slice(2));
@@ -266,6 +273,13 @@ export async function runNeovate(opts: {
     });
     await runQuiet(argv, context);
   } else {
-    await runInteractive(argv, contextCreateOpts);
+    let upgrade = opts.upgrade;
+    if (process.env.NEOVATE_SELF_UPDATE === 'none') {
+      upgrade = undefined;
+    }
+    if (upgrade && !upgrade.installDir.includes('node_modules')) {
+      upgrade = undefined;
+    }
+    await runInteractive(argv, contextCreateOpts, opts.upgrade);
   }
 }

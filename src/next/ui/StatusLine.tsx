@@ -1,4 +1,4 @@
-import { Box, Text } from 'ink';
+import { Box, Spacer, Text } from 'ink';
 import path from 'path';
 import React, { useMemo } from 'react';
 import { useAppStore } from './store';
@@ -22,7 +22,7 @@ function getMoodEmoji(percentage: number): string {
   return '😱';
 }
 
-function StatusContent() {
+function StatusMain() {
   const {
     cwd,
     model,
@@ -64,15 +64,41 @@ function StatusContent() {
   if (status === 'help') return <HelpHint />;
   if (exitMessage) return <Text color="gray">{exitMessage}</Text>;
   return (
-    <Text color="gray">
-      📁 {folderName} | 🤖 {model} | 🍖 {tokenUsed} tokens used |{' '}
-      {getMoodEmoji(contextLeftPercentage)} {contextLeftPercentage}% context
-      left | ✅{' '}
-      <Text color={approvalMode === 'yolo' ? 'red' : 'gray'}>
-        {approvalMode}
-      </Text>{' '}
-      | 🆔 {sessionId || 'N/A'}
-    </Text>
+    <Box>
+      <Text color="gray">
+        📁 {folderName} | 🤖 {model} | 🍖 {tokenUsed} tokens used |{' '}
+        {getMoodEmoji(contextLeftPercentage)} {contextLeftPercentage}% context
+        left | ✅{' '}
+        <Text color={approvalMode === 'yolo' ? 'red' : 'gray'}>
+          {approvalMode}
+        </Text>{' '}
+        | 🆔 {sessionId || 'N/A'}
+      </Text>
+    </Box>
+  );
+}
+
+function StatusSide() {
+  return (
+    <Box width={40}>
+      <UpgradeHint />
+    </Box>
+  );
+}
+
+function UpgradeHint() {
+  const { upgrade } = useAppStore();
+  const color = React.useMemo(() => {
+    if (upgrade?.type === 'success') return 'green';
+    if (upgrade?.type === 'error') return 'red';
+    return 'gray';
+  }, [upgrade]);
+  if (!upgrade) return null;
+  return (
+    <Box width={40}>
+      <Spacer />
+      <Text color={color}>{upgrade.text}</Text>
+    </Box>
   );
 }
 
@@ -92,8 +118,10 @@ export function StatusLine() {
     return null;
   }
   return (
-    <Box flexDirection="row" paddingX={2} paddingY={0.5}>
-      <StatusContent />
+    <Box flexDirection="row" paddingX={2} paddingY={0}>
+      <StatusMain />
+      <Box flexGrow={1} />
+      <StatusSide />
     </Box>
   );
 }
