@@ -19,7 +19,7 @@ interface ResumeSelectProps {
 }
 
 const ResumeSelect: React.FC<ResumeSelectProps> = ({ onExit, onSelect }) => {
-  const { bridge, cwd } = useAppStore();
+  const { bridge, cwd, resumeSession } = useAppStore();
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -132,15 +132,16 @@ const ResumeSelect: React.FC<ResumeSelectProps> = ({ onExit, onSelect }) => {
           items={selectItems}
           initialIndex={0}
           itemsPerPage={10}
-          onSelect={(item) => {
-            bridge
-              .request('resumeSession', {
-                cwd,
-                sessionId: item.value,
-              })
-              .then(() => {
-                onSelect(item.value);
-              });
+          onSelect={async (item) => {
+            const result = await bridge.request('resumeSession', {
+              cwd,
+              sessionId: item.value,
+            });
+            if (result.success) {
+              const { sessionId, logFile } = result.data;
+              await resumeSession(sessionId, logFile);
+              onSelect(item.value);
+            }
           }}
         />
       </Box>

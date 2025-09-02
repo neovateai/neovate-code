@@ -2,14 +2,11 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../../config';
-import { randomUUID } from '../../utils/randomUUID';
 import { clearTerminal } from '../../utils/terminal';
 import type { Message } from '../history';
-import type { LoopResult } from '../loop';
+import type { LoopResult, ToolUse } from '../loop';
 import { getMessageHistory, isUserTextMessage } from '../message';
 import { loadSessionMessages } from '../session';
-import type { Message } from '../history';
-import type { LoopResult, ToolUse } from '../loop';
 import { Session } from '../session';
 import {
   type CommandEntry,
@@ -218,10 +215,6 @@ export const useAppStore = create<AppStore>()(
         bridge.onEvent('message', (data) => {
           const message = data.message as Message;
           get().addMessage(message);
-        });
-        bridge.onEvent('sessionChanged', (data) => {
-          const { sessionId, logFile } = data;
-          get().resumeSession(sessionId, logFile);
         });
         setImmediate(async () => {
           if (opts.initialPrompt) {
