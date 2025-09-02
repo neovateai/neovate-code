@@ -125,6 +125,7 @@ interface AppActions {
   sendMessage: (opts: {
     message: string | null;
     planMode?: boolean;
+    model?: string;
   }) => Promise<LoopResult>;
   addMessage: (message: Message) => void;
   log: (log: string) => void;
@@ -136,6 +137,7 @@ interface AppActions {
   togglePlanMode: () => void;
   approvePlan: (planResult: string) => void;
   denyPlan: () => void;
+  setModel: (model: string) => void;
   approveToolUse: ({
     toolUse,
     category,
@@ -328,6 +330,7 @@ export const useAppStore = create<AppStore>()(
           }
           return;
         } else {
+          // Use store's current model for regular message sending
           const result = await get().sendMessage({ message, planMode });
           if (planMode && result.success) {
             set({
@@ -342,17 +345,22 @@ export const useAppStore = create<AppStore>()(
       sendMessage: async (opts: {
         message: string | null;
         planMode?: boolean;
+        model?: string;
       }) => {
         set({
           status: 'processing',
           processingStartTime: Date.now(),
         });
-        const { bridge, cwd, sessionId } = get();
+        const { bridge, cwd, sessionId, model: storeModel } = get();
+        // Priority: explicitly passed model > store model
+        // This allows temporary model overrides while preserving store state
+        const selectedModel = opts.model ?? storeModel;
         const response: LoopResult = await bridge.request('send', {
           message: opts.message,
           cwd,
           sessionId,
           planMode: opts.planMode,
+          model: selectedModel,
         });
         if (response.success) {
           set({ status: 'idle', processingStartTime: null });
@@ -431,6 +439,7 @@ export const useAppStore = create<AppStore>()(
             },
           ],
         });
+        // Use store's model for plan approval - no need to pass explicitly
         get().sendMessage({ message: null });
       },
 
@@ -438,6 +447,18 @@ export const useAppStore = create<AppStore>()(
         set({ planResult: null });
       },
 
+      setModel: async (model: string) => {
+        const { bridge, cwd } = get();
+
+        await bridge.request('setConfig', {
+          cwd: cwd,
+          key: 'model',
+          value: model,
+          isGlobal: true,
+        });
+
+        set({ model });
+      },
       approveToolUse: ({
         toolUse,
         category,
