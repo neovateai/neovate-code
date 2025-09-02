@@ -125,7 +125,6 @@ interface AppActions {
   sendMessage: (opts: {
     message: string | null;
     planMode?: boolean;
-    model?: string;
   }) => Promise<LoopResult>;
   addMessage: (message: Message) => void;
   log: (log: string) => void;
@@ -345,22 +344,17 @@ export const useAppStore = create<AppStore>()(
       sendMessage: async (opts: {
         message: string | null;
         planMode?: boolean;
-        model?: string;
       }) => {
         set({
           status: 'processing',
           processingStartTime: Date.now(),
         });
-        const { bridge, cwd, sessionId, model: storeModel } = get();
-        // Priority: explicitly passed model > store model
-        // This allows temporary model overrides while preserving store state
-        const selectedModel = opts.model ?? storeModel;
+        const { bridge, cwd, sessionId } = get();
         const response: LoopResult = await bridge.request('send', {
           message: opts.message,
           cwd,
           sessionId,
           planMode: opts.planMode,
-          model: selectedModel,
         });
         if (response.success) {
           set({ status: 'idle', processingStartTime: null });
@@ -449,14 +443,13 @@ export const useAppStore = create<AppStore>()(
 
       setModel: async (model: string) => {
         const { bridge, cwd } = get();
-
         await bridge.request('setConfig', {
           cwd: cwd,
           key: 'model',
           value: model,
           isGlobal: true,
         });
-
+        await bridge.request('clearContext', {});
         set({ model });
       },
       approveToolUse: ({

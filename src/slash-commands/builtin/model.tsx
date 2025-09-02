@@ -85,7 +85,7 @@ export function createModelCommand(): LocalJSXCommand {
               onDone(`Kept model as ${model}`);
             }}
             onSelect={(model) => {
-              onDone(`Model changed to ${model}`);
+              onDone(`Model changed to ${model} globally`);
             }}
           />
         );

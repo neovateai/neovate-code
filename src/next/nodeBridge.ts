@@ -58,6 +58,14 @@ class NodeHandlerRegistry {
     return context;
   }
 
+  private async clearContext(cwd?: string) {
+    if (cwd) {
+      this.contexts.delete(cwd);
+    } else {
+      this.contexts.clear();
+    }
+  }
+
   private registerHandlers() {
     this.messageBus.registerHandler(
       'initialize',
@@ -521,6 +529,16 @@ class NodeHandlerRegistry {
         });
         sessionConfigManager.config.history.push(history);
         sessionConfigManager.write();
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'clearContext',
+      async (data: { cwd?: string }) => {
+        await this.clearContext(data.cwd);
         return {
           success: true,
         };
