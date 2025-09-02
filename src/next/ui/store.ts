@@ -8,18 +8,29 @@ import type { Message } from '../history';
 import type { LoopResult } from '../loop';
 import { getMessageHistory, isUserTextMessage } from '../message';
 import { loadSessionMessages } from '../session';
+import type { Message } from '../history';
+import type { LoopResult, ToolUse } from '../loop';
+import { Session } from '../session';
 import {
   type CommandEntry,
   isSlashCommand,
   parseSlashCommand,
 } from '../slashCommand';
+import type { ApprovalCategory } from '../tool';
 import type { UIBridge } from '../uiBridge';
+import { Upgrade, type UpgradeOptions } from '../upgrade';
 
 type QueuedMessage = {
   id: string;
   content: string;
   timestamp: number;
 };
+
+export type ApprovalResult =
+  | 'approve_once'
+  | 'approve_always_edit'
+  | 'approve_always_tool'
+  | 'deny';
 
 type Theme = 'light' | 'dark';
 type AppStatus =
@@ -90,6 +101,17 @@ interface AppState {
 
   logs: string[];
   exitMessage: string | null;
+
+  approvalModal: {
+    toolUse: ToolUse;
+    category?: ApprovalCategory;
+    resolve: (result: ApprovalResult) => Promise<void>;
+  } | null;
+
+  upgrade: {
+    text: string;
+    type?: 'success' | 'error';
+  } | null;
 }
 
 type InitializeOpts = {
@@ -100,6 +122,7 @@ type InitializeOpts = {
   messages: Message[];
   history: string[];
   logFile: string;
+  upgrade?: UpgradeOptions;
 };
 
 interface AppActions {
@@ -120,9 +143,17 @@ interface AppActions {
   approvePlan: (planResult: string) => void;
   denyPlan: () => void;
   resumeSession: (sessionId: string, logFile: string) => Promise<void>;
+  setModel: (model: string) => void;
+  approveToolUse: ({
+    toolUse,
+    category,
+  }: {
+    toolUse: ToolUse;
+    category?: ApprovalCategory;
+  }) => Promise<ApprovalResult>;
 }
 
-type AppStore = AppState & AppActions;
+export type AppStore = AppState & AppActions;
 
 export const useAppStore = create<AppStore>()(
   devtools(
@@ -154,6 +185,8 @@ export const useAppStore = create<AppStore>()(
       logs: [],
       planResult: null,
       processingStartTime: null,
+      approvalModal: null,
+      upgrade: null,
 
       // Actions
       initialize: async (opts) => {
@@ -192,7 +225,30 @@ export const useAppStore = create<AppStore>()(
         });
         setImmediate(async () => {
           if (opts.initialPrompt) {
-            await get().send(opts.initialPrompt);
+            get().send(opts.initialPrompt);
+          }
+          // Upgrade
+          if (opts.upgrade) {
+            const upgrade = new Upgrade(opts.upgrade);
+            const result = await upgrade.check();
+            if (result.hasUpdate && result.tarballUrl) {
+              set({
+                upgrade: {
+                  text: `v${result.latestVersion} available,\nupgrading...`,
+                },
+              });
+              try {
+                await upgrade.upgrade({ tarballUrl: result.tarballUrl });
+                set({
+                  upgrade: {
+                    text: `Upgraded to v${result.latestVersion}`,
+                    type: 'success',
+                  },
+                });
+              } catch (error) {
+                set({ upgrade: { text: `Failed to upgrade`, type: 'error' } });
+              }
+            }
           }
         });
       },
@@ -284,6 +340,7 @@ export const useAppStore = create<AppStore>()(
           }
           return;
         } else {
+          // Use store's current model for regular message sending
           const result = await get().sendMessage({ message, planMode });
           if (planMode && result.success) {
             set({
@@ -335,7 +392,7 @@ export const useAppStore = create<AppStore>()(
       },
 
       clear: async () => {
-        const sessionId = randomUUID();
+        const sessionId = Session.createSessionId();
         set({
           messages: [],
           history: [],
@@ -387,6 +444,7 @@ export const useAppStore = create<AppStore>()(
             },
           ],
         });
+        // Use store's model for plan approval - no need to pass explicitly
         get().sendMessage({ message: null });
       },
 
@@ -420,6 +478,53 @@ export const useAppStore = create<AppStore>()(
           processingStartTime: null,
           planMode: false,
           bashMode: false,
+        });
+      },
+
+      setModel: async (model: string) => {
+        const { bridge, cwd } = get();
+        await bridge.request('setConfig', {
+          cwd: cwd,
+          key: 'model',
+          value: model,
+          isGlobal: true,
+        });
+        await bridge.request('clearContext', {});
+        set({ model });
+      },
+      approveToolUse: ({
+        toolUse,
+        category,
+      }: {
+        toolUse: ToolUse;
+        category?: ApprovalCategory;
+      }) => {
+        const { bridge, cwd, sessionId } = get();
+        return new Promise<boolean>((resolve) => {
+          set({
+            approvalModal: {
+              toolUse,
+              category,
+              resolve: async (result: ApprovalResult) => {
+                set({ approvalModal: null });
+                const isApproved = result !== 'deny';
+                if (result === 'approve_always_edit') {
+                  await bridge.request('sessionConfig.setApprovalMode', {
+                    cwd,
+                    sessionId,
+                    approvalMode: 'autoEdit',
+                  });
+                } else if (result === 'approve_always_tool') {
+                  await bridge.request('sessionConfig.addApprovalTools', {
+                    cwd,
+                    sessionId,
+                    approvalTool: toolUse.name,
+                  });
+                }
+                resolve(isApproved);
+              },
+            },
+          });
         });
       },
     }),

@@ -1,10 +1,10 @@
 import { Agent, Runner, type SystemMessageItem } from '@openai/agents';
-import type { Tools } from '../tool';
 import { parseMessage } from '../utils/parse-message';
 import { randomUUID } from '../utils/randomUUID';
 import { At } from './at';
 import { History, type NormalizedMessage, type OnMessage } from './history';
 import type { ModelInfo } from './model';
+import type { Tools } from './tool';
 import { Usage } from './usage';
 
 const DEFAULT_MAX_TURNS = 50;
@@ -117,7 +117,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       model: opts.model.model.id,
       instructions: `
 ${opts.systemPrompt || ''}
-${opts.tools.getToolsPrompt()}
+${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
       `,
     });
     const llmsContexts = opts.llmsContexts || [];

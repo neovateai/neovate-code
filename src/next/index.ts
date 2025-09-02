@@ -1,21 +1,16 @@
 import assert from 'assert';
-import fs from 'fs';
 import { render } from 'ink';
-import path from 'path';
 import React from 'react';
-import { fileURLToPath } from 'url';
 import yargsParser from 'yargs-parser';
-import { PRODUCT_ASCII_ART, PRODUCT_NAME } from '../constants';
 import { type Plugin } from '../plugin';
 import { clearTracing } from '../tracing';
-import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
 import { getMessageHistory, isUserTextMessage } from './message';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
 import { Paths } from './paths';
 import { Project } from './project';
-import { loadSessionMessages } from './session';
+import { Session, loadSessionMessages } from './session';
 import {
   SlashCommandManager,
   isSlashCommand,
@@ -24,6 +19,7 @@ import {
 import { App } from './ui/App';
 import { useAppStore } from './ui/store';
 import { UIBridge } from './uiBridge';
+import type { UpgradeOptions } from './upgrade';
 
 type Argv = {
   _: string[];
@@ -34,6 +30,7 @@ type Argv = {
   continue?: boolean;
   // string
   appendSystemPrompt?: string;
+  approvalMode?: string;
   cwd?: string;
   language?: string;
   model?: string;
@@ -63,6 +60,7 @@ function parseArgs(argv: any) {
     boolean: ['help', 'mcp', 'quiet', 'continue'],
     string: [
       'appendSystemPrompt',
+      'approvalMode',
       'cwd',
       'language',
       'model',
@@ -102,6 +100,7 @@ Options:
   --system-prompt <prompt>      Custom system prompt for code agent
   --output-format <format>      Output format, text, stream-json, json
   --output-style <style>        Output style
+  --approval-mode <mode>        Tool approval mode
   -q, --quiet                   Quiet mode, non interactive
   --no-mcp                      Disable MCP servers
 
@@ -119,11 +118,16 @@ Commands:
   );
 }
 
-async function runInQuietMode(argv: Argv, context: Context) {
+async function runQuiet(argv: Argv, context: Context) {
   try {
+    const exit = () => {
+      process.exit(0);
+    };
+    process.on('SIGINT', exit);
+    process.on('SIGTERM', exit);
     const prompt = argv._[0];
     assert(prompt, 'Prompt is required in quiet mode');
-    let input = prompt as string;
+    let input = String(prompt) as string;
     let model;
     if (isSlashCommand(input)) {
       const parsed = parseSlashCommand(input);
@@ -156,7 +160,10 @@ async function runInQuietMode(argv: Argv, context: Context) {
       context,
       sessionId,
     });
-    await project.send(input, { model });
+    await project.send(input, {
+      model,
+      onToolApprove: () => Promise.resolve(true),
+    });
     process.exit(0);
   } catch (e: any) {
     console.error(`Error: ${e.message}`);
@@ -165,8 +172,15 @@ async function runInQuietMode(argv: Argv, context: Context) {
   }
 }
 
-async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
-  const uiBridge = new UIBridge();
+async function runInteractive(
+  argv: Argv,
+  contextCreateOpts: any,
+  upgrade?: UpgradeOptions,
+) {
+  const appStore = useAppStore.getState();
+  const uiBridge = new UIBridge({
+    appStore,
+  });
   const nodeBridge = new NodeBridge({
     contextCreateOpts,
   });
@@ -180,15 +194,6 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
     productName: contextCreateOpts.productName,
     cwd,
   });
-  const [messages, history] = (() => {
-    if (!argv.resume) {
-      return [[], []];
-    }
-    const logPath = paths.getSessionLogPath(argv.resume);
-    const messages = loadSessionMessages({ logPath });
-    const history = messages.filter(isUserTextMessage).map(getMessageHistory);
-    return [messages, history];
-  })();
   const sessionId = (() => {
     if (argv.resume) {
       return argv.resume;
@@ -196,20 +201,28 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
     if (argv.continue) {
       return paths.getLatestSessionId();
     }
-    return randomUUID();
+    return Session.createSessionId();
   })();
-  await useAppStore.getState().initialize({
+  const [messages, history] = (() => {
+    const logPath = paths.getSessionLogPath(sessionId);
+    const messages = loadSessionMessages({ logPath });
+    const history = messages.filter(isUserTextMessage).map(getMessageHistory);
+    return [messages, history];
+  })();
+  const initialPrompt = String(argv._[0] || '');
+  await appStore.initialize({
     bridge: uiBridge,
     cwd,
-    initialPrompt: argv._[0],
+    initialPrompt,
     sessionId,
     logFile: paths.getSessionLogPath(sessionId),
     // TODO: should move to nodeBridge
     messages,
     history,
+    upgrade,
   });
 
-  render(<App />, {
+  render(React.createElement(App), {
     patchConsole: false,
     exitOnCtrlC: false,
   });
@@ -225,6 +238,7 @@ export async function runNeovate(opts: {
   productASCIIArt?: string;
   version: string;
   plugins: Plugin[];
+  upgrade?: UpgradeOptions;
 }) {
   clearTracing();
   const argv = parseArgs(process.argv.slice(2));
@@ -247,6 +261,7 @@ export async function runNeovate(opts: {
       appendSystemPrompt: argv.appendSystemPrompt,
       language: argv.language,
       outputStyle: argv.outputStyle,
+      approvalMode: argv.approvalMode,
     },
     plugins: opts.plugins,
   };
@@ -256,21 +271,15 @@ export async function runNeovate(opts: {
       cwd: argv.cwd || process.cwd(),
       ...contextCreateOpts,
     });
-    await runInQuietMode(argv, context);
+    await runQuiet(argv, context);
   } else {
-    await runInInteractiveMode(argv, contextCreateOpts);
+    let upgrade = opts.upgrade;
+    if (process.env.NEOVATE_SELF_UPDATE === 'none') {
+      upgrade = undefined;
+    }
+    if (upgrade && !upgrade.installDir.includes('node_modules')) {
+      upgrade = undefined;
+    }
+    await runInteractive(argv, contextCreateOpts, opts.upgrade);
   }
 }
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const pkg = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf-8'),
-);
-runNeovate({
-  productName: PRODUCT_NAME,
-  productASCIIArt: PRODUCT_ASCII_ART.trim(),
-  version: pkg.version,
-  plugins: [],
-}).catch((e) => {
-  console.error(e);
-});

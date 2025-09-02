@@ -235,9 +235,9 @@ function Thinking({ text }: { text: string }) {
 }
 
 function ToolResultItem({ part }: { part: ToolResultPart }) {
-  const { result, name, input } = part;
-  if (!result.success && result.error) {
-    return <Text color={UI_COLORS.ERROR}>{result.error}</Text>;
+  const { result, name, input, isError } = part;
+  if (!result.success && (result.error || isError)) {
+    return <Text color={UI_COLORS.ERROR}>{result.error || result}</Text>;
   }
   if (name === TOOL_NAME.TODO_WRITE) {
     return (

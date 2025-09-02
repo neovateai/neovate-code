@@ -1,6 +1,8 @@
 import { Box, Text } from 'ink';
 import React from 'react';
 import TextInput from '../../ui/components/TextInput';
+import { ModeIndicator } from './ModeIndicator';
+import { StatusLine } from './StatusLine';
 import { Suggestion, SuggestionItem } from './Suggestion';
 import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
@@ -8,18 +10,32 @@ import { useInputHandlers } from './useInputHandlers';
 import { useTerminalSize } from './useTerminalSize';
 
 export function ChatInput() {
-  const { inputState, handlers, slashCommands } = useInputHandlers();
-  const { log, setExitMessage, planResult, cancel, slashCommandJSX } =
-    useAppStore();
+  const { inputState, handlers, slashCommands, fileSuggestion } =
+    useInputHandlers();
+  const {
+    log,
+    setExitMessage,
+    planResult,
+    cancel,
+    slashCommandJSX,
+    approvalModal,
+  } = useAppStore();
   const { columns } = useTerminalSize();
+  const showSuggestions =
+    slashCommands.suggestions.length > 0 ||
+    fileSuggestion.matchedPaths.length > 0;
   if (slashCommandJSX) {
     return null;
   }
   if (planResult) {
     return null;
   }
+  if (approvalModal) {
+    return null;
+  }
   return (
     <Box flexDirection="column" marginTop={SPACING.CHAT_INPUT_MARGIN_TOP}>
+      <ModeIndicator />
       <Box
         borderStyle="round"
         borderColor={UI_COLORS.CHAT_BORDER}
@@ -55,15 +71,14 @@ export function ChatInput() {
           onSubmit={handlers.handleSubmit}
           cursorOffset={inputState.state.cursorPosition ?? 0}
           onChangeCursorOffset={inputState.setCursorPosition}
-          disableCursorMovementForUpDownKeys={
-            slashCommands.suggestions.length > 0
-          }
+          disableCursorMovementForUpDownKeys={showSuggestions}
           onTabPress={handlers.handleTabPress}
           columns={columns - 6}
           isDimmed={false}
         />
         <Text>{Math.random()}</Text>
       </Box>
+      {!showSuggestions && <StatusLine />}
       <Suggestion
         suggestions={slashCommands.suggestions}
         selectedIndex={slashCommands.selectedIndex}
@@ -77,6 +92,25 @@ export function ChatInput() {
             <SuggestionItem
               name={`/${suggestion.command.name}`}
               description={suggestion.command.description}
+              isSelected={isSelected}
+              firstColumnWidth={maxNameLength + 4}
+            />
+          );
+        }}
+      </Suggestion>
+      <Suggestion
+        suggestions={fileSuggestion.matchedPaths}
+        selectedIndex={fileSuggestion.selectedIndex}
+        maxVisible={10}
+      >
+        {(suggestion, isSelected, visibleSuggestions) => {
+          const maxNameLength = Math.max(
+            ...visibleSuggestions.map((s) => s.length),
+          );
+          return (
+            <SuggestionItem
+              name={suggestion}
+              description={''}
               isSelected={isSelected}
               firstColumnWidth={maxNameLength + 4}
             />

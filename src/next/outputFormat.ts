@@ -1,6 +1,6 @@
-import type { EnhancedTool } from '../tool';
 import type { LoopResult } from './loop';
 import type { ModelInfo } from './model';
+import type { Tool } from './tool';
 
 type Format = 'text' | 'stream-json' | 'json';
 
@@ -22,7 +22,7 @@ export class OutputFormat {
     text: string;
     sessionId: string;
     cwd: string;
-    tools: EnhancedTool[];
+    tools: Tool[];
     model: ModelInfo;
   }) {
     if (!this.quiet) {

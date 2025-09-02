@@ -1,15 +1,25 @@
-import { ConfigManager } from '../config';
+import { type ApprovalMode, ConfigManager } from '../config';
 import { CANCELED_MESSAGE_TEXT } from '../constants';
 import { PluginHookType } from '../plugin';
+import { listDirectory } from '../utils/list';
 import { randomUUID } from '../utils/randomUUID';
+import { compact } from './compact';
 import { Context } from './context';
-import type { Message, UserMessage } from './history';
+import type { Message, NormalizedMessage, UserMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { MessageBus } from './messageBus';
-import { resolveModelWithContext } from './model';
+import {
+  type Model,
+  type Provider,
+  providers,
+  resolveModelWithContext,
+} from './model';
 import { OutputStyleManager } from './outputStyle';
 import { Project } from './project';
+import { SessionConfigManager } from './session';
 import { SlashCommandManager } from './slashCommand';
+
+type ModelData = Omit<Model, 'id' | 'cost'>;
 
 type NodeBridgeOpts = {
   contextCreateOpts: any;
@@ -48,6 +58,14 @@ class NodeHandlerRegistry {
     return context;
   }
 
+  private async clearContext(cwd?: string) {
+    if (cwd) {
+      this.contexts.delete(cwd);
+    } else {
+      this.contexts.clear();
+    }
+  }
+
   private registerHandlers() {
     this.messageBus.registerHandler(
       'initialize',
@@ -77,8 +95,9 @@ class NodeHandlerRegistry {
         cwd: string;
         sessionId: string | undefined;
         planMode: boolean;
+        model?: string;
       }) => {
-        const { message, cwd, sessionId } = data;
+        const { message, cwd, sessionId, model } = data;
         const context = await this.getContext(cwd);
         const project = new Project({
           sessionId,
@@ -89,10 +108,18 @@ class NodeHandlerRegistry {
         this.abortControllers.set(key, abortController);
         const fn = data.planMode ? project.plan : project.send;
         const result = await fn.call(project, message, {
+          model,
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {
               message: opts.message,
             });
+          },
+          onToolApprove: async ({ toolUse, category }: any) => {
+            const result = await this.messageBus.request('toolApproval', {
+              toolUse,
+              category,
+            });
+            return result.approved;
           },
           signal: abortController.signal,
         });
@@ -132,7 +159,8 @@ class NodeHandlerRegistry {
         });
         for (const message of messages) {
           const normalizedMessage = {
-            parentUuid: jsonlLogger.getLatestUuid(),
+            // @ts-ignore
+            parentUuid: message.parentUuid ?? jsonlLogger.getLatestUuid(),
             uuid: randomUUID(),
             ...message,
             type: 'message' as const,
@@ -258,6 +286,48 @@ class NodeHandlerRegistry {
         });
         return {
           success: true,
+        };
+      },
+    );
+
+    // models
+    this.messageBus.registerHandler(
+      'getModels',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const hookedProviders = await context.apply({
+          hook: 'provider',
+          args: [],
+          memo: providers,
+          type: PluginHookType.SeriesLast,
+        });
+        const currentModelInfo = await resolveModelWithContext(null, context);
+        const currentModel = `${currentModelInfo.provider.id}/${currentModelInfo.model.id}`;
+
+        const groupedModels = Object.values(
+          hookedProviders as Record<string, Provider>,
+        ).map((provider) => ({
+          provider: provider.name,
+          providerId: provider.id,
+          models: Object.entries(provider.models).map(([modelId, model]) => ({
+            name: (model as ModelData).name,
+            modelId: modelId,
+            value: `${provider.id}/${modelId}`,
+          })),
+        }));
+
+        return {
+          success: true,
+          data: {
+            groupedModels,
+            currentModel,
+            currentModelInfo: {
+              providerName: currentModelInfo.provider.name,
+              modelName: currentModelInfo.model.name,
+              modelId: currentModelInfo.model.id,
+            },
+          },
         };
       },
     );
@@ -390,6 +460,120 @@ class NodeHandlerRegistry {
             },
           };
         }
+      },
+    );
+
+    //////////////////////////////////////////////
+    // utils
+
+    this.messageBus.registerHandler(
+      'getPaths',
+      async (data: { cwd: string; maxFiles?: number }) => {
+        const { cwd, maxFiles = 6000 } = data;
+        const context = await this.getContext(cwd);
+        const result = listDirectory(
+          context.cwd,
+          context.cwd,
+          context.productName,
+          maxFiles,
+        );
+        return {
+          success: true,
+          data: {
+            paths: result,
+          },
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'compact',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        messages: NormalizedMessage[];
+      }) => {
+        const { cwd, messages } = data;
+        const context = await this.getContext(cwd);
+        const modelInfo = await resolveModelWithContext(null, context);
+        const summary = await compact({
+          messages,
+          model: modelInfo,
+        });
+        return {
+          success: true,
+          data: {
+            summary,
+          },
+        };
+      },
+    );
+
+    //////////////////////////////////////////////
+    // session config
+    this.messageBus.registerHandler(
+      'sessionConfig.setApprovalMode',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        approvalMode: ApprovalMode;
+      }) => {
+        const { cwd, sessionId, approvalMode } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        sessionConfigManager.config.approvalMode = approvalMode;
+        sessionConfigManager.write();
+        return {
+          success: true,
+        };
+      },
+    );
+    this.messageBus.registerHandler(
+      'sessionConfig.addApprovalTools',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        approvalTool: string;
+      }) => {
+        const { cwd, sessionId, approvalTool } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        if (!sessionConfigManager.config.approvalTools.includes(approvalTool)) {
+          sessionConfigManager.config.approvalTools.push(approvalTool);
+          sessionConfigManager.write();
+        }
+        return {
+          success: true,
+        };
+      },
+    );
+    this.messageBus.registerHandler(
+      'sessionConfig.addHistory',
+      async (data: { cwd: string; sessionId: string; history: string }) => {
+        const { cwd, sessionId, history } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        sessionConfigManager.config.history.push(history);
+        sessionConfigManager.write();
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'clearContext',
+      async (data: { cwd?: string }) => {
+        await this.clearContext(data.cwd);
+        return {
+          success: true,
+        };
       },
     );
   }

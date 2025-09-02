@@ -1,7 +1,8 @@
-import { Box, Text } from 'ink';
+import { Box, Spacer, Text } from 'ink';
 import path from 'path';
 import React, { useMemo } from 'react';
 import { useAppStore } from './store';
+import { useInputHandlers } from './useInputHandlers';
 
 function HelpHint() {
   const { status } = useAppStore();
@@ -13,9 +14,25 @@ function HelpHint() {
   );
 }
 
-function StatusContent() {
-  const { cwd, model, modelContextLimit, status, exitMessage, messages } =
-    useAppStore();
+function getMoodEmoji(percentage: number): string {
+  if (percentage >= 80) return '😎';
+  if (percentage >= 60) return '😊';
+  if (percentage >= 40) return '🤔';
+  if (percentage >= 20) return '😟';
+  return '😱';
+}
+
+function StatusMain() {
+  const {
+    cwd,
+    model,
+    modelContextLimit,
+    status,
+    exitMessage,
+    messages,
+    sessionId,
+    approvalMode,
+  } = useAppStore();
   const tokenUsed = useMemo(() => {
     return messages.reduce((acc, message) => {
       if (message.role === 'assistant') {
@@ -47,15 +64,53 @@ function StatusContent() {
   if (status === 'help') return <HelpHint />;
   if (exitMessage) return <Text color="gray">{exitMessage}</Text>;
   return (
-    <Text color="gray">
-      📁 {folderName} | 🤖 {model} | 💬 {tokenUsed} tokens used | 💬{' '}
-      {contextLeftPercentage}% context left
-    </Text>
+    <Box>
+      <Text color="gray">
+        📁 {folderName} | 🤖 {model} | 🍖 {tokenUsed} tokens used |{' '}
+        {getMoodEmoji(contextLeftPercentage)} {contextLeftPercentage}% context
+        left | ✅{' '}
+        <Text color={approvalMode === 'yolo' ? 'red' : 'gray'}>
+          {approvalMode}
+        </Text>{' '}
+        | 🆔 {sessionId || 'N/A'}
+      </Text>
+    </Box>
+  );
+}
+
+function StatusSide() {
+  return (
+    <Box width={40}>
+      <UpgradeHint />
+    </Box>
+  );
+}
+
+function UpgradeHint() {
+  const { upgrade } = useAppStore();
+  const color = React.useMemo(() => {
+    if (upgrade?.type === 'success') return 'green';
+    if (upgrade?.type === 'error') return 'red';
+    return 'gray';
+  }, [upgrade]);
+  if (!upgrade) return null;
+  return (
+    <Box width={40}>
+      <Spacer />
+      <Text color={color}>{upgrade.text}</Text>
+    </Box>
   );
 }
 
 export function StatusLine() {
   const { slashCommandJSX, planResult } = useAppStore();
+  const { slashCommands, fileSuggestion } = useInputHandlers();
+  if (
+    slashCommands.suggestions.length > 0 ||
+    fileSuggestion.matchedPaths.length > 0
+  ) {
+    return null;
+  }
   if (slashCommandJSX) {
     return null;
   }
@@ -63,8 +118,10 @@ export function StatusLine() {
     return null;
   }
   return (
-    <Box flexDirection="row" paddingX={2} paddingY={0.5}>
-      <StatusContent />
+    <Box flexDirection="row" paddingX={2} paddingY={0}>
+      <StatusMain />
+      <Box flexGrow={1} />
+      <StatusSide />
     </Box>
   );
 }

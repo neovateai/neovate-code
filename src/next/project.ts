@@ -1,18 +1,18 @@
 import { PluginHookType } from '../plugin';
-import { type EnhancedTool, Tools } from '../tool';
 import { randomUUID } from '../utils/randomUUID';
 import { Context } from './context';
 import type { NormalizedMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { LlmsContext } from './llmsContext';
-import { runLoop } from './loop';
+import { type ToolUse, runLoop } from './loop';
 import { resolveModelWithContext } from './model';
 import { OutputFormat } from './outputFormat';
 import { OutputStyleManager } from './outputStyle';
 import { generatePlanSystemPrompt } from './planSystemPrompt';
-import { Session, type SessionId } from './session';
+import { Session, SessionConfigManager, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
-import { resolveTools } from './tool';
+import type { ApprovalCategory, Tool } from './tool';
+import { Tools, resolveTools } from './tool';
 
 export class Project {
   session: Session;
@@ -26,11 +26,13 @@ export class Project {
       : Session.create();
     this.context = opts.context;
   }
+
   async send(
     message: string | null,
     opts: {
       model?: string;
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
+      onToolApprove?: (opts: { toolUse: ToolUse }) => Promise<boolean>;
       signal?: AbortSignal;
     } = {},
   ) {
@@ -92,15 +94,21 @@ export class Project {
       ...opts,
       tools,
       systemPrompt,
+      onToolApprove: () => Promise.resolve(true),
     });
   }
+
   private async sendWithSystemPromptAndTools(
     message: string | null,
     opts: {
       model?: string;
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
+      onToolApprove?: (opts: {
+        toolUse: ToolUse;
+        category?: ApprovalCategory;
+      }) => Promise<boolean>;
       signal?: AbortSignal;
-      tools?: EnhancedTool[];
+      tools?: Tool[];
       systemPrompt?: string;
     } = {},
   ) {
@@ -169,10 +177,11 @@ export class Project {
         ? [...this.session.history.messages, userMessage]
         : [userMessage];
     const filteredInput = input.filter((message) => message !== null);
+    const toolsManager = new Tools(tools);
     const result = await runLoop({
       input: filteredInput,
       model,
-      tools: new Tools(tools),
+      tools: toolsManager,
       cwd: this.context.cwd,
       systemPrompt: opts.systemPrompt,
       llmsContexts: llmsContext.messages,
@@ -233,8 +242,57 @@ export class Project {
         });
       },
       onTurn: async () => {},
-      onToolApprove: async () => {
-        return true;
+      onToolApprove: async (toolUse) => {
+        // TODO: if quiet return true
+        // 1. if yolo return true
+        const approvalMode = this.context.config.approvalMode;
+        if (approvalMode === 'yolo') {
+          return true;
+        }
+        // 2. if category is read return true
+        const tool = toolsManager.get(toolUse.name);
+        if (!tool) {
+          throw new Error(`Tool ${toolUse.name} not found`);
+        }
+        if (tool.approval?.category === 'read') {
+          return true;
+        }
+        // 3. run tool should approve if true return true
+        const needsApproval = tool.approval?.needsApproval;
+        if (needsApproval) {
+          const shouldApprove = await needsApproval({
+            toolName: toolUse.name,
+            params: toolUse.params,
+            approvalMode: this.context.config.approvalMode,
+            context: this.context,
+          });
+          if (shouldApprove) {
+            return true;
+          }
+        }
+        // 4. if category is edit check autoEdit config (including session config)
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: this.context.paths.getSessionLogPath(this.session.id),
+        });
+        if (tool.approval?.category === 'write') {
+          if (
+            sessionConfigManager.config.approvalMode === 'autoEdit' ||
+            approvalMode === 'autoEdit'
+          ) {
+            return true;
+          }
+        }
+        // 5. check session config's approvalTools config
+        if (sessionConfigManager.config.approvalTools.includes(toolUse.name)) {
+          return true;
+        }
+        // 6. request user approval
+        return (
+          (await opts.onToolApprove?.({
+            toolUse,
+            category: tool.approval?.category,
+          })) ?? false
+        );
       },
     });
     outputFormat.onEnd({
