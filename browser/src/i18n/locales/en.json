@@ -288,7 +288,9 @@
       "empty": "No plugins configured",
       "effective": "Current effective plugins",
       "none": "None"
-    }
+    },
+    "saveSuccess": "Settings saved successfully",
+    "saveError": "Failed to save settings"
   },
   "toolRenders": {
     "read": {

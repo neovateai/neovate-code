@@ -1,4 +1,4 @@
-import { Button, Modal, Spin, Typography } from 'antd';
+import { Button, Modal, Spin, Typography, message } from 'antd';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
@@ -17,6 +17,7 @@ interface SettingsModalProps {
 const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
   const { t } = useTranslation();
   const { settings } = useSnapshot(state);
+  const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
     if (open) {
@@ -27,10 +28,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
 
   const handleSave = async () => {
     try {
-      // Save settings logic would go here
+      messageApi.success(t('settings.saveSuccess'));
       onClose();
     } catch (error) {
       console.error('Failed to save settings:', error);
+      messageApi.error(t('settings.saveError'));
     }
   };
 
@@ -75,18 +77,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
   );
 
   return (
-    <Modal
-      title={t('settings.title')}
-      open={open}
-      onCancel={handleCancel}
-      footer={null}
-      width={880}
-      centered
-      destroyOnClose
-      className="[&_.ant-modal-body]:max-h-[70vh] [&_.ant-modal-body]:overflow-y-auto [&_.ant-modal-body]:p-6"
-    >
-      {modalContent}
-    </Modal>
+    <>
+      {contextHolder}
+      <Modal
+        title={t('settings.title')}
+        open={open}
+        onCancel={handleCancel}
+        footer={null}
+        width={880}
+        centered
+        destroyOnClose
+        className="[&_.ant-modal-body]:max-h-[70vh] [&_.ant-modal-body]:overflow-y-auto [&_.ant-modal-body]:p-6"
+      >
+        {modalContent}
+      </Modal>
+    </>
   );
 };
 

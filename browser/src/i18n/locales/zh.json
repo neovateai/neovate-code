@@ -288,7 +288,9 @@
       "empty": "暂未配置任何插件",
       "effective": "当前有效插件",
       "none": "无"
-    }
+    },
+    "saveSuccess": "设置保存成功",
+    "saveError": "设置保存失败"
   },
   "toolRenders": {
     "read": {
