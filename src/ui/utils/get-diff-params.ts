@@ -6,12 +6,12 @@ interface CommonParams {
 }
 
 export interface EditParams extends CommonParams {
-  old_string: string;
-  new_string: string;
+  old_string?: string;
+  new_string?: string;
 }
 
 export interface WriteParams extends CommonParams {
-  content: string;
+  content?: string;
 }
 
 interface DiffResult {
@@ -53,7 +53,7 @@ export function getDiffParams(
   const relativeFilePath = getRelativePath(file_path, cwd);
 
   if (toolName === 'edit') {
-    const { old_string, new_string } = params as EditParams;
+    const { old_string = '', new_string = '' } = params as EditParams;
     return {
       originalContent: old_string,
       newContent: new_string,
@@ -65,13 +65,13 @@ export function getDiffParams(
       const writeResult = result as WriteResult;
       return {
         originalContent: writeResult.data.oldContent || '',
-        newContent: writeResult.data.content,
+        newContent: writeResult.data.content || '',
         fileName: relativeFilePath,
       };
     }
 
     // approve 确认
-    const { content, file_path } = params as WriteParams;
+    const { content = '', file_path } = params as WriteParams;
     const fullFilePath = path.isAbsolute(file_path)
       ? file_path
       : path.resolve(cwd, file_path);
