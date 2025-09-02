@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @plugin "@tailwindcss/typography";
+@source "../node_modules/streamdown/dist/index.js";
 
 /* 隐藏滚动条 */
 .hide-scrollbar {
