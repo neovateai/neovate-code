@@ -11,8 +11,15 @@ interface QuillContextType {
   onDeleteContexts?: (contextValues: string[]) => void;
   /** call this function when keyboard key down in editor */
   onKeyDown?: (code: number) => void;
+  /** native keyboard handler */
+  onNativeKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void;
+
   /** call this function when editor value change */
   onChange?: (value: string, delta: Delta) => void;
+
+  searchingAtIndex?: number;
+  onSearch?: (text: string) => void;
+  onExitSearch?: () => void;
 
   readonly?: boolean;
 }

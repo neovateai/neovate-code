@@ -46,7 +46,22 @@ export function getRemovedTakumiContexts(
   return differenceBy(oldContexts, newContexts, 'value');
 }
 
-export function isInsertingAt(delta: Delta) {
+export function getInsertText(delta: Delta) {
+  if (!delta.ops.length) {
+    return undefined;
+  }
   const last = delta.ops[delta.ops.length - 1];
-  return last.insert === '@';
+  return last.insert;
+}
+
+export function getDeletedLength(delta: Delta) {
+  if (!delta.ops.length) {
+    return undefined;
+  }
+  const last = delta.ops[delta.ops.length - 1];
+  return last.delete;
+}
+
+export function isInsertingAt(delta: Delta) {
+  return getInsertText(delta) === '@';
 }
