@@ -415,7 +415,16 @@ export const useAppStore = create<AppStore>()(
         set({ planResult: null });
       },
 
-      setModel: (model: string) => {
+      setModel: async (model: string) => {
+        const { bridge, cwd } = get();
+
+        await bridge.request('setConfig', {
+          cwd: cwd,
+          key: 'model',
+          value: model,
+          isGlobal: true,
+        });
+
         set({ model });
       },
       approveToolUse: ({
