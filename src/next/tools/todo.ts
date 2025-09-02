@@ -1,10 +1,9 @@
-import { tool } from '@openai/agents';
 import fs from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
 import { TOOL_NAME } from '../../constants';
-import { createTool } from '../createTool';
+import { createTool } from '../tool';
 import type { TodoReadToolResult, TodoWriteToolResult } from './type';
 
 const TODO_WRITE_PROMPT = `

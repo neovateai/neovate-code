@@ -1,6 +1,6 @@
 import { glob } from 'glob';
 import { z } from 'zod';
-import { createTool } from '../createTool';
+import { createTool } from '../tool';
 import type { GlobToolResult } from './type';
 
 const LIMIT = 100;

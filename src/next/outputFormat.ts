@@ -1,6 +1,6 @@
-import type { Tool } from './createTool';
 import type { LoopResult } from './loop';
 import type { ModelInfo } from './model';
+import type { Tool } from './tool';
 
 type Format = 'text' | 'stream-json' | 'json';
 

@@ -7,7 +7,7 @@ import {
   listDirectory,
   printTree,
 } from '../../utils/list';
-import { createTool } from '../createTool';
+import { createTool } from '../tool';
 import type { LsToolResult } from './type';
 
 export function createLSTool(opts: { cwd: string; productName: string }) {

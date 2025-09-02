@@ -6,7 +6,7 @@ import path from 'path';
 import { z } from 'zod';
 import { getErrorMessage } from '../../utils/error';
 import { shellExecute } from '../../utils/shell-execution';
-import { type Tool, createTool } from '../createTool';
+import { createTool } from '../tool';
 import type { BashToolResult } from './type';
 
 const debug = createDebug('takumi:tools:bash');
@@ -238,7 +238,7 @@ async function executeCommand(
   };
 }
 
-export function createBashTool(opts: { cwd: string }): Tool {
+export function createBashTool(opts: { cwd: string }) {
   return createTool({
     name: 'bash',
     description:

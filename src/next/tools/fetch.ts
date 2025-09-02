@@ -1,7 +1,7 @@
 import { Agent, Runner } from '@openai/agents';
 import TurndownService from 'turndown';
 import { z } from 'zod';
-import { createTool } from '../createTool';
+import { createTool } from '../tool';
 import type { FetchToolResult } from './type';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5min
