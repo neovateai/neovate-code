@@ -1,9 +1,8 @@
 import { createStyles } from 'antd-style';
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import { useShiki } from '@/components/CodeRenderer/useShiki';
+import { forwardRef, useEffect, useState } from 'react';
+import { CodeRenderer } from '@/components/CodeRenderer/CodeRenderer';
 import type {
   CodeNormalViewerMetaInfo,
-  CodeNormalViewerMode,
   CodeNormalViewerTabItem,
 } from '@/types/codeViewer';
 import NormalToolbar from '../NormalToolbar';
@@ -20,10 +19,7 @@ export interface CodeNormalViewRef {
 }
 
 const useStyle = createStyles(
-  (
-    { css },
-    { mode, maxHeight }: { mode?: CodeNormalViewerMode; maxHeight?: number },
-  ) => {
+  ({ css }, { maxHeight }: { maxHeight?: number }) => {
     return {
       container: css`
         height: 100%;
@@ -39,45 +35,9 @@ const useStyle = createStyles(
       editor: css`
         height: 100%;
         flex: 1;
-        overflow: auto;
-        position: relative;
-
-        overflow-y: auto;
-        overflow-x: auto;
-
-        > div {
-          height: 100%;
-          overflow: visible;
-        }
-
-        pre {
-          margin: 0 !important;
-          padding: 12px 16px !important;
-          background: transparent !important;
-          overflow: visible !important;
-          min-height: fit-content;
-          height: auto !important;
-          max-height: none !important;
-        }
-
-        code {
-          font-family:
-            'Source Code Pro', 'Consolas', 'Monaco', monospace !important;
-          font-size: 12px !important;
-          line-height: 1.3 !important;
-          letter-spacing: -0.02em !important;
-          display: block !important;
-          white-space: pre !important;
-          overflow: visible !important;
-        }
-      `,
-      linesDecorations: css`
-        background-color: ${mode === 'new' ? '#e6ffed' : '#ffeef0'};
-      `,
-      linesDecorationsGutter: css`
-        width: 3px !important;
-        margin-left: 3px;
-        background-color: ${mode === 'new' ? '#2cbe4e' : '#cb2431'};
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
       `,
     };
   },
@@ -90,26 +50,7 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
     lineCount: 0,
     charCount: 0,
   });
-  const [highlightedCode, setHighlightedCode] = useState<string>('');
-  const { codeToHtml, isReady } = useShiki();
-  const { styles } = useStyle({ mode: item.mode, maxHeight });
-
-  useImperativeHandle(ref, () => {
-    return {
-      jumpToLine(lineCount) {
-        // Simple scroll to line implementation
-        const container = document.querySelector('.shiki-container');
-        if (container) {
-          const lineElement = container.querySelector(
-            `[data-line="${lineCount}"]`,
-          );
-          if (lineElement) {
-            lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }
-      },
-    };
-  });
+  const { styles } = useStyle({ maxHeight });
 
   useEffect(() => {
     const lines = item.code.split('\n');
@@ -117,39 +58,23 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
       lineCount: lines.length,
       charCount: item.code.length,
     });
-
-    // Highlight code with shiki hook
-    const highlightCode = () => {
-      if (!isReady || !codeToHtml) return;
-
-      try {
-        const html = codeToHtml(item.code, {
-          lang: item.language || 'text',
-          theme: 'snazzy-light',
-          transformers: [
-            {
-              name: 'add-data-line',
-              line(node: any, line: number) {
-                node.properties['data-line'] = line;
-              },
-            },
-          ],
-        });
-        setHighlightedCode(html);
-      } catch (error) {
-        console.error('Failed to highlight code:', error);
-        setHighlightedCode(`<pre><code>${item.code}</code></pre>`);
-      }
-    };
-
-    highlightCode();
-  }, [item.code, item.language, codeToHtml, isReady]);
+  }, [item.code]);
 
   return (
     <div className={styles.container}>
       {!hideToolbar && <NormalToolbar normalMetaInfo={metaInfo} item={item} />}
-      <div className={`${styles.editor} shiki-container`}>
-        <div dangerouslySetInnerHTML={{ __html: highlightedCode }} />
+      <div className={styles.editor}>
+        <CodeRenderer
+          ref={ref}
+          code={item.code}
+          language={item.language}
+          filename={item.title}
+          mode="normal"
+          showLineNumbers={true}
+          showCopy={false}
+          maxHeight={maxHeight}
+          theme="snazzy-light"
+        />
       </div>
     </div>
   );

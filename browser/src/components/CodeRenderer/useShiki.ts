@@ -1,6 +1,62 @@
 import { useEffect, useState } from 'react';
 import { type Highlighter, createHighlighter } from 'shiki';
 
+const SUPPORTED_LANGUAGES = [
+  // Web technologies
+  'javascript',
+  'typescript',
+  'jsx',
+  'tsx',
+  'html',
+  'css',
+  'vue',
+  'svelte',
+
+  // Stylesheets
+  'scss',
+  'sass',
+  'less',
+
+  // Backend languages
+  'python',
+  'java',
+  'go',
+  'rust',
+  'php',
+  'ruby',
+  'csharp',
+  'cpp',
+  'c',
+
+  // Mobile development
+  'swift',
+  'kotlin',
+  'dart',
+
+  // Scripting & Shell
+  'bash',
+  'shell',
+  'powershell',
+
+  // Data formats
+  'json',
+  'yaml',
+  'xml',
+  'toml',
+
+  // Query & API
+  'sql',
+  'graphql',
+
+  // Config & Deployment
+  'dockerfile',
+
+  // Documentation
+  'markdown',
+  'text',
+  'plaintext',
+] as const;
+
 interface UseShikiReturn {
   codeToHtml: Highlighter['codeToHtml'] | null;
   isReady: boolean;
@@ -28,20 +84,7 @@ export function useShiki(): UseShikiReturn {
 
         const highlighter = await createHighlighter({
           themes: ['snazzy-light'],
-          langs: [
-            'javascript',
-            'typescript',
-            'jsx',
-            'tsx',
-            'python',
-            'bash',
-            'json',
-            'markdown',
-            'css',
-            'html',
-            'text',
-            'plaintext',
-          ],
+          langs: [...SUPPORTED_LANGUAGES],
         });
 
         if (mounted) {
