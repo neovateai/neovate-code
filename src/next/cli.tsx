@@ -194,15 +194,6 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
     productName: contextCreateOpts.productName,
     cwd,
   });
-  const [messages, history] = (() => {
-    if (!argv.resume) {
-      return [[], []];
-    }
-    const logPath = paths.getSessionLogPath(argv.resume);
-    const messages = loadSessionMessages({ logPath });
-    const history = messages.filter(isUserTextMessage).map(getMessageHistory);
-    return [messages, history];
-  })();
   const sessionId = (() => {
     if (argv.resume) {
       return argv.resume;
@@ -211,6 +202,12 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
       return paths.getLatestSessionId();
     }
     return Session.createSessionId();
+  })();
+  const [messages, history] = (() => {
+    const logPath = paths.getSessionLogPath(sessionId);
+    const messages = loadSessionMessages({ logPath });
+    const history = messages.filter(isUserTextMessage).map(getMessageHistory);
+    return [messages, history];
   })();
   await appStore.initialize({
     bridge: uiBridge,
