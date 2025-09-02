@@ -8,10 +8,17 @@ import { Context } from './context';
 import type { Message, NormalizedMessage, UserMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { MessageBus } from './messageBus';
-import { resolveModelWithContext } from './model';
+import {
+  type Model,
+  type Provider,
+  providers,
+  resolveModelWithContext,
+} from './model';
 import { OutputStyleManager } from './outputStyle';
 import { Project } from './project';
 import { SlashCommandManager } from './slashCommand';
+
+type ModelData = Omit<Model, 'id' | 'cost'>;
 
 type NodeBridgeOpts = {
   contextCreateOpts: any;
@@ -79,8 +86,9 @@ class NodeHandlerRegistry {
         cwd: string;
         sessionId: string | undefined;
         planMode: boolean;
+        model?: string;
       }) => {
-        const { message, cwd, sessionId } = data;
+        const { message, cwd, sessionId, model } = data;
         const context = await this.getContext(cwd);
         const project = new Project({
           sessionId,
@@ -91,6 +99,7 @@ class NodeHandlerRegistry {
         this.abortControllers.set(key, abortController);
         const fn = data.planMode ? project.plan : project.send;
         const result = await fn.call(project, message, {
+          model,
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {
               message: opts.message,
@@ -227,6 +236,49 @@ class NodeHandlerRegistry {
               description: style.description,
             })),
             currentOutputStyle: context.config.outputStyle,
+          },
+        };
+      },
+    );
+
+    //////////////////////////////////////////////
+    // models
+    this.messageBus.registerHandler(
+      'getModels',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const hookedProviders = await context.apply({
+          hook: 'provider',
+          args: [],
+          memo: providers,
+          type: PluginHookType.SeriesLast,
+        });
+        const currentModelInfo = await resolveModelWithContext(null, context);
+        const currentModel = `${currentModelInfo.provider.id}/${currentModelInfo.model.id}`;
+
+        const groupedModels = Object.values(
+          hookedProviders as Record<string, Provider>,
+        ).map((provider) => ({
+          provider: provider.name,
+          providerId: provider.id,
+          models: Object.entries(provider.models).map(([modelId, model]) => ({
+            name: (model as ModelData).name,
+            modelId: modelId,
+            value: `${provider.id}/${modelId}`,
+          })),
+        }));
+
+        return {
+          success: true,
+          data: {
+            groupedModels,
+            currentModel,
+            currentModelInfo: {
+              providerName: currentModelInfo.provider.name,
+              modelName: currentModelInfo.model.name,
+              modelId: currentModelInfo.model.id,
+            },
           },
         };
       },

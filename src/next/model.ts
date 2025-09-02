@@ -42,7 +42,7 @@ export interface Model {
   limit: ModelLimit;
 }
 
-interface Provider {
+export interface Provider {
   id: string;
   env: string[];
   name: string;
