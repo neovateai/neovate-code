@@ -131,7 +131,7 @@ async function runInQuietMode(argv: Argv, context: Context) {
     process.on('SIGTERM', exit);
     const prompt = argv._[0];
     assert(prompt, 'Prompt is required in quiet mode');
-    let input = prompt as string;
+    let input = String(prompt) as string;
     let model;
     if (isSlashCommand(input)) {
       const parsed = parseSlashCommand(input);
@@ -209,10 +209,11 @@ async function runInInteractiveMode(argv: Argv, contextCreateOpts: any) {
     const history = messages.filter(isUserTextMessage).map(getMessageHistory);
     return [messages, history];
   })();
+  const initialPrompt = String(argv._[0] || '');
   await appStore.initialize({
     bridge: uiBridge,
     cwd,
-    initialPrompt: argv._[0],
+    initialPrompt,
     sessionId,
     logFile: paths.getSessionLogPath(sessionId),
     // TODO: should move to nodeBridge
