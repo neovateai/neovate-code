@@ -65,7 +65,7 @@ export const actions = {
     } catch (error) {
       console.error('Failed to load settings:', error);
       state.settings.loading = false;
-      throw error;
+      state.settings.loaded = false;
     }
   },
 
