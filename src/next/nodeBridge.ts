@@ -1,4 +1,4 @@
-import { ConfigManager } from '../config';
+import { type ApprovalMode, ConfigManager } from '../config';
 import { CANCELED_MESSAGE_TEXT } from '../constants';
 import { PluginHookType } from '../plugin';
 import { listDirectory } from '../utils/list';
@@ -16,6 +16,7 @@ import {
 } from './model';
 import { OutputStyleManager } from './outputStyle';
 import { Project } from './project';
+import { SessionConfigManager } from './session';
 import { SlashCommandManager } from './slashCommand';
 
 type ModelData = Omit<Model, 'id' | 'cost'>;
@@ -104,6 +105,13 @@ class NodeHandlerRegistry {
             await this.messageBus.emitEvent('message', {
               message: opts.message,
             });
+          },
+          onToolApprove: async ({ toolUse, category }: any) => {
+            const result = await this.messageBus.request('toolApproval', {
+              toolUse,
+              category,
+            });
+            return result.approved;
           },
           signal: abortController.signal,
         });
@@ -457,6 +465,64 @@ class NodeHandlerRegistry {
           data: {
             summary,
           },
+        };
+      },
+    );
+
+    //////////////////////////////////////////////
+    // session config
+    this.messageBus.registerHandler(
+      'sessionConfig.setApprovalMode',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        approvalMode: ApprovalMode;
+      }) => {
+        const { cwd, sessionId, approvalMode } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        sessionConfigManager.config.approvalMode = approvalMode;
+        sessionConfigManager.write();
+        return {
+          success: true,
+        };
+      },
+    );
+    this.messageBus.registerHandler(
+      'sessionConfig.addApprovalTools',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        approvalTool: string;
+      }) => {
+        const { cwd, sessionId, approvalTool } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        if (!sessionConfigManager.config.approvalTools.includes(approvalTool)) {
+          sessionConfigManager.config.approvalTools.push(approvalTool);
+          sessionConfigManager.write();
+        }
+        return {
+          success: true,
+        };
+      },
+    );
+    this.messageBus.registerHandler(
+      'sessionConfig.addHistory',
+      async (data: { cwd: string; sessionId: string; history: string }) => {
+        const { cwd, sessionId, history } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        sessionConfigManager.config.history.push(history);
+        sessionConfigManager.write();
+        return {
+          success: true,
         };
       },
     );

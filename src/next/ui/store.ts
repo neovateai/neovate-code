@@ -3,13 +3,14 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../../config';
 import type { Message } from '../history';
-import type { LoopResult } from '../loop';
+import type { LoopResult, ToolUse } from '../loop';
 import { Session } from '../session';
 import {
   type CommandEntry,
   isSlashCommand,
   parseSlashCommand,
 } from '../slashCommand';
+import type { ApprovalCategory } from '../tool';
 import type { UIBridge } from '../uiBridge';
 
 type QueuedMessage = {
@@ -17,6 +18,12 @@ type QueuedMessage = {
   content: string;
   timestamp: number;
 };
+
+export type ApprovalResult =
+  | 'approve_once'
+  | 'approve_always_edit'
+  | 'approve_always_tool'
+  | 'deny';
 
 type Theme = 'light' | 'dark';
 type AppStatus =
@@ -87,6 +94,12 @@ interface AppState {
 
   logs: string[];
   exitMessage: string | null;
+
+  approvalModal: {
+    toolUse: ToolUse;
+    category?: ApprovalCategory;
+    resolve: (result: ApprovalResult) => Promise<void>;
+  } | null;
 }
 
 type InitializeOpts = {
@@ -118,6 +131,13 @@ interface AppActions {
   approvePlan: (planResult: string) => void;
   denyPlan: () => void;
   setModel: (model: string) => void;
+  approveToolUse: ({
+    toolUse,
+    category,
+  }: {
+    toolUse: ToolUse;
+    category?: ApprovalCategory;
+  }) => Promise<ApprovalResult>;
 }
 
 export type AppStore = AppState & AppActions;
@@ -397,6 +417,41 @@ export const useAppStore = create<AppStore>()(
 
       setModel: (model: string) => {
         set({ model });
+      },
+      approveToolUse: ({
+        toolUse,
+        category,
+      }: {
+        toolUse: ToolUse;
+        category?: ApprovalCategory;
+      }) => {
+        const { bridge, cwd, sessionId } = get();
+        return new Promise<boolean>((resolve) => {
+          set({
+            approvalModal: {
+              toolUse,
+              category,
+              resolve: async (result: ApprovalResult) => {
+                set({ approvalModal: null });
+                const isApproved = result !== 'deny';
+                if (result === 'approve_always_edit') {
+                  await bridge.request('sessionConfig.setApprovalMode', {
+                    cwd,
+                    sessionId,
+                    approvalMode: 'autoEdit',
+                  });
+                } else if (result === 'approve_always_tool') {
+                  await bridge.request('sessionConfig.addApprovalTools', {
+                    cwd,
+                    sessionId,
+                    approvalTool: toolUse.name,
+                  });
+                }
+                resolve(isApproved);
+              },
+            },
+          });
+        });
       },
     }),
     { name: 'app-store' },

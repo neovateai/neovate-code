@@ -2,12 +2,11 @@ import { Box, Text } from 'ink';
 import SelectInput from 'ink-select-input';
 import React, { useCallback } from 'react';
 import { ActivityIndicator } from './ActivityIndicator';
+import { ApprovalModal } from './ApprovalModal';
 import { ChatInput } from './ChatInput';
 import { Logs } from './Logs';
 import { Markdown } from './Markdown';
 import { Messages } from './Messages';
-import { ModeIndicator } from './ModeIndicator';
-import { StatusLine } from './StatusLine';
 import { useAppStore } from './store';
 import { useTerminalRefresh } from './useTerminalRefresh';
 
@@ -77,6 +76,7 @@ export function App() {
       <ActivityIndicator />
       <ChatInput />
       <SlashCommandJSX />
+      <ApprovalModal />
       <Logs />
     </Box>
   );

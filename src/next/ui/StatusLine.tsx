@@ -31,6 +31,7 @@ function StatusContent() {
     exitMessage,
     messages,
     sessionId,
+    approvalMode,
   } = useAppStore();
   const tokenUsed = useMemo(() => {
     return messages.reduce((acc, message) => {
@@ -66,7 +67,11 @@ function StatusContent() {
     <Text color="gray">
       📁 {folderName} | 🤖 {model} | 🍖 {tokenUsed} tokens used |{' '}
       {getMoodEmoji(contextLeftPercentage)} {contextLeftPercentage}% context
-      left | 🆔 {sessionId || 'N/A'}
+      left | ✅{' '}
+      <Text color={approvalMode === 'yolo' ? 'red' : 'gray'}>
+        {approvalMode}
+      </Text>{' '}
+      | 🆔 {sessionId || 'N/A'}
     </Text>
   );
 }

@@ -1,6 +1,6 @@
 import yargsParser from 'yargs-parser';
 import { type RunCliOpts } from '..';
-import { type Config, ConfigManager } from '../config';
+import { ConfigManager } from '../config';
 
 function printHelp(p: string) {
   console.log(
