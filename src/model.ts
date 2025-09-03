@@ -562,6 +562,7 @@ export const providers: ProvidersMap = {
         createOpenAI({
           baseURL: provider.api,
           apiKey: process.env[provider.env[0]],
+          // include usage information in streaming mode
           compatibility: 'strict',
         })(name),
       );
