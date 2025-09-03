@@ -4,7 +4,7 @@ import React, { useCallback } from 'react';
 import { ActivityIndicator } from './ActivityIndicator';
 import { ApprovalModal } from './ApprovalModal';
 import { ChatInput } from './ChatInput';
-import { Logs } from './Logs';
+import { Debug } from './Debug';
 import { Markdown } from './Markdown';
 import { Messages } from './Messages';
 import { useAppStore } from './store';
@@ -27,9 +27,6 @@ function PlanResult() {
     },
     [planResult, approvePlan, denyPlan],
   );
-  // if (!planResult.success) return null;
-  // @ts-ignore
-  const text = planResult;
   if (!planResult) return null;
   return (
     <Box
@@ -45,7 +42,7 @@ function PlanResult() {
         borderColor="gray"
         padding={1}
       >
-        <Markdown>{text ?? ''}</Markdown>
+        <Markdown>{planResult ?? ''}</Markdown>
       </Box>
       <Box marginY={1}>
         <Text bold>Do you want to proceed?</Text>
@@ -77,7 +74,7 @@ export function App() {
       <ChatInput />
       <SlashCommandJSX />
       <ApprovalModal />
-      <Logs />
+      <Debug />
     </Box>
   );
 }

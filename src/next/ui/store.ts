@@ -447,12 +447,10 @@ export const useAppStore = create<AppStore>()(
 
       resumeSession: async (sessionId: string, logFile: string) => {
         await clearTerminal();
-
         const messages = loadSessionMessages({ logPath: logFile });
         const history = messages
           .filter(isUserTextMessage)
           .map(getMessageHistory);
-
         set({
           sessionId,
           logFile,
