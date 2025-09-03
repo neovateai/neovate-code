@@ -114,9 +114,8 @@ export function StatusLine() {
     return null;
   }
   return (
-    <Box flexDirection="row" paddingX={2} paddingY={0}>
+    <Box flexDirection="column" paddingX={2} paddingY={0}>
       <StatusMain />
-      <Box flexGrow={1} />
       <StatusSide />
     </Box>
   );
