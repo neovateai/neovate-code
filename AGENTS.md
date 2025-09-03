@@ -1,113 +1,121 @@
-# TAKUMI.md
+# AGENTS.md
 
-This file provides guidance to TAKUMI when working with code in this repository.
+This file provides guidance to CODE AGENT when working with code in this repository.
 
-## Development Commands
+## Project Overview
 
-### Build/Compilation
-- `pnpm build` - Full build process (CLI, index, types, browser, post-build)
-- `pnpm build:cli` - Build CLI using Bun
-- `pnpm build:index` - Build index using Bun
-- `pnpm build:type` - Generate TypeScript declarations
-- `pnpm build:dts` - Build declaration files with API extractor
-- `pnpm build:browser` - Build browser package
-- `pnpm build:post` - Run post-build script
+Takumi is a coding agent CLI to enhance development workflow. It's a TypeScript-based tool that provides AI-powered coding assistance through a command-line interface with support for multiple LLM providers and Model Context Protocol (MCP) servers.
 
-### Testing
-- `pnpm test` - Run all tests with Vitest
-- `pnpm test:watch` - Run tests in watch mode
+## Development Commandst
 
-### Linting/Formatting
-- `pnpm format` - Format code with Prettier
-- `pnpm format:check` - Check formatting with Prettier
-- `pnpm typecheck` - Run TypeScript type checking
-- `pnpm ci` - Run typecheck, format check, and tests (CI command)
+### Core Commands
+- **Development**: `tsx ./src/cli.ts` - Run the CLI in development mode
+- **Build**: `npm run build` - Full build (requires Bun 1.2.7)
+  - CLI build: `bun build src/cli.ts --external react-devtools-core --minify --outfile dist/cli.mjs --target=node`
+  - Index build: `bun build src/index.ts --external react-devtools-core --minify --outfile dist/index.mjs --target=node`
+  - Type definitions: `npm run build:dts`
+- **Testing**: 
+  - `npm test` or `vitest run` - Run all tests
+  - `npm run test:watch` or `vitest` - Watch mode for test development
+  - Tests are located in `src/**/*.test.ts` files
+- **Type Checking**: `npm run typecheck` - Run TypeScript type checking
+- **Formatting**: 
+  - `npm run format` or `prettier --write .` - Format all files
+  - `npm run format:check` - Check formatting without changes
+- **CI Pipeline**: `npm run ci` - Runs typecheck, format:check, and tests
 
-### Development
-- `pnpm dev` - Run CLI in development mode with tsx
-- `pnpm build:browser` + `pnpm --filter @takumi/browser dev` - Run browser dev server
+### VSCode Extension
+- `npm run extension:build` - Build the VSCode extension
+- `npm run extension:dev` - Development mode for extension
+- `npm run extension:package` - Package the extension
 
-### Package Management
-- `pnpm install` - Install dependencies
-- `pnpm prepare` - Setup Husky git hooks
+## Architecture
 
-### Release
-- `pnpm release` - Release new version (patch)
-- `pnpm release:minor` - Release new version (minor)
-- `pnpm release:major` - Release new version (major)
+### Core Structure
+The codebase follows a modular architecture with clear separation of concerns:
 
-## Code Architecture & Patterns
+1. **CLI Entry Point** (`src/cli.ts`): Main entry point that initializes the product with configuration
+2. **Main App** (`src/index.ts`): Core application logic, handles argument parsing, session management, and UI rendering
+3. **Context System** (`src/context.ts`): Central context management for dependency injection across the application
+4. **Plugin System** (`src/plugin.ts`): Extensible plugin architecture for adding custom functionality
+5. **UI Layer** (`src/ui/`): React-based terminal UI components using Ink framework
 
-### Project Structure
-- Monorepo with main package and `@takumi/browser` package
-- Main package is a CLI tool with both terminal and browser interfaces
-- Core logic in `src/` directory
-- Browser UI in `browser/` directory
-- Plugin system for extensibility
-- MCP (Model Context Protocol) integration for external tools
+### Key Components
 
-### Key Architectural Patterns
-- Plugin system with lifecycle hooks (config, context, toolUse, query, etc.)
-- Slash commands system with built-in commands (review, status, init, etc.)
-- MCP integration for external tool support
-- Agent-based architecture with different agent types (code, plan, shell, etc.)
-- Context management for codebase awareness
+- **Tools** (`src/tools/`): Implementation of various tools (bash, edit, read, write, grep, glob, fetch, todo) that the agent can use
+- **MCP Support** (`src/mcp.ts`): Model Context Protocol integration for connecting to external AI services
+- **Slash Commands** (`src/slash-commands/`): Built-in commands accessible via slash notation
+- **Session Management** (`src/session.ts`): Handles session persistence and resumption
+- **Message Bus** (`src/messageBus.ts`): Event-driven communication between components
+- **Server Mode** (`src/server/`): HTTP server mode for browser-based UI
 
-### Data Flow
-- User input → CLI/Browser → Context processing → Agent processing → Tool execution → Response
-- Plugin hooks at various stages to modify behavior
-- MCP tools can be integrated and used by agents
+### Tool System
+Tools are resolved dynamically based on context and permissions:
+- Read-only tools: read, ls, glob, grep, fetch
+- Write tools: write, edit, bash (conditionally enabled)
+- Todo tools: todo read/write (session-specific storage)
 
 ### Configuration
-- Configuration in `src/config.ts`
-- Environment variables for API keys
-- Plugin configuration through plugin system
+- Uses environment variables for API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
+- Supports multiple LLM providers through AI SDK
+- MCP servers can be configured with stdio, SSE, or HTTP transports
+- Global config stored in platform-specific directories
 
-### Key Abstractions
-- `Context` - Codebase context and state management
-- `Plugin` - Extensibility system with lifecycle hooks
-- `MCPManager` - Model Context Protocol integration
-- `Agent` - Different agent types for specific tasks
-- `SlashCommand` - Command system for special operations
+## Code Style Guidelines
 
-### Plugin System
-- Plugins can hook into various lifecycle events
-- Hook types: first, series, seriesMerge, seriesLast, parallel
-- Plugins can modify config, context, tools, models, and more
+### TypeScript Configuration
+- Target: ES2020
+- Module: ESNext with bundler resolution
+- Strict mode enabled
+- JSX: react-jsx
+- Verbatim module syntax
 
-### Build Strategy
-- TypeScript compilation with Bun for main package
-- Vite + TypeScript for browser package
-- API Extractor for declaration file generation
-- Separate build processes for CLI and browser components
+### Formatting (Prettier)
+- Print width: 80 characters
+- Single quotes for strings
+- Trailing commas: all
+- Import sorting via @trivago/prettier-plugin-sort-imports:
+  1. Node built-ins (`^node:`)
+  2. External packages (`^@?\w`)
+  3. Internal aliases (`^@/`)
+  4. Relative imports (`^[./]`)
 
-## Technology Stack & Dependencies
+### Best Practices
+- Use `pathe` instead of `path` for Windows compatibility
+- Files must end with a newline
+- PascalCase for types/interfaces/classes
+- camelCase for variables/functions
+- Use `type` over `interface` where possible
+- Suffix tool classes with 'Tool'
+- Use zod for runtime type validation
+- Prefer throwing errors over returning null/undefined
+- Use async/await for promises
 
-### Core Frameworks/Libraries
-- TypeScript (primary language)
-- Bun (build tool and runtime for main package)
-- Vite (build tool for browser package)
-- React (UI framework for browser interface)
-- Fastify (HTTP server)
-- Ink (Terminal UI for CLI)
-- AI SDK providers (OpenAI, Anthropic, Google, etc.)
+## Package Management
+- Uses pnpm as package manager (10.13.1)
+- Node.js version: 22.11.0 (managed via Volta)
+- Minimum Node.js requirement: 18+
 
-### Development Dependencies
-- Vitest (testing framework)
-- Prettier (code formatting)
-- TypeScript (type checking)
-- API Extractor (declaration file generation)
-- Husky (git hooks)
-- tsx (TypeScript execution)
+## Testing
+- Test framework: Vitest
+- Test timeout: 30 seconds
+- Tests use Node environment
+- Test files pattern: `src/**/*.test.ts`
 
-### Special Tooling
-- Ripgrep (fast text search)
-- MCP (Model Context Protocol) integration
-- Custom plugin system
-- Slash command system
-- Built-in AI agents for specific tasks
+## Release Process
+- `npm run release` - Patch release with git tag and GitHub release
+- `npm run release:minor` - Minor version release
+- `npm run release:major` - Major version release
+- Uses utools for release management
+- Automatic changelog generation
+
+## Important Notes
+- The project requires Bun 1.2.7 specifically for building
+- MCP servers provide extensible tool capabilities
+- Session data and todos are stored in the global config directory
+- The CLI supports both interactive and quiet (non-interactive) modes
+- VSCode extension is maintained in `vscode-extension/` directory
 
 ## IMPORTANT
 
 Ignore `browser` directory unless user ask you to include it.
-
