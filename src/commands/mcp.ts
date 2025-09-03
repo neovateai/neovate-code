@@ -88,7 +88,7 @@ export async function runMCP(context: Context) {
 
   // add
   if (command === 'add') {
-    // takumi add mcp-server <name> -- npx abc --global -e API_KEY=123
+    // neovate add mcp-server <name> -- npx abc --global -e API_KEY=123
     const key = argv._[1] as string | undefined;
     const value = argv._[2] as string | undefined;
     if (!key || !value) {

@@ -41,7 +41,7 @@ export const helpCommand: LocalCommand = {
 
     // User commands
     if (userCommands.length > 0) {
-      result += '👤 User Commands (from ~/.takumi/commands/):\n';
+      result += '👤 User Commands:\n';
       userCommands.forEach((cmd) => {
         result += `  /${cmd.command.name} - ${cmd.command.description}\n`;
       });
@@ -50,7 +50,7 @@ export const helpCommand: LocalCommand = {
 
     // Project commands
     if (projectCommands.length > 0) {
-      result += '📁 Project Commands (from .takumi/commands/):\n';
+      result += '📁 Project Commands:\n';
       projectCommands.forEach((cmd) => {
         result += `  /${cmd.command.name} - ${cmd.command.description}\n`;
       });

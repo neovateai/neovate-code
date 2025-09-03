@@ -8,7 +8,7 @@ import { join } from 'path';
 import { WebSocketServer } from 'ws';
 import { type LogEntry } from './jsonl';
 
-const debug = createDebug('takumi:project');
+const debug = createDebug('neovate:project');
 
 // TypeScript interfaces matching Rust structs
 export interface ProjectSummary {

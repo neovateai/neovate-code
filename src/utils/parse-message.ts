@@ -1,7 +1,7 @@
 import createDebug from 'debug';
 import { jsonrepair } from 'jsonrepair';
 
-const debug = createDebug('takumi:utils:parse-message');
+const debug = createDebug('neovate:utils:parse-message');
 
 interface TextContent {
   type: 'text';

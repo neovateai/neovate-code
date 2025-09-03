@@ -14,7 +14,7 @@ import { setupTracing } from '../tracing';
 import * as logger from '../utils/logger';
 import { randomUUID } from '../utils/randomUUID';
 
-const debug = createDebug('takumi:commands:server');
+const debug = createDebug('neovate:commands:server');
 
 function printHelp(p: string) {
   console.log(

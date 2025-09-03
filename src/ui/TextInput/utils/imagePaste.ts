@@ -78,11 +78,11 @@ export function detectImageFormat(base64Image: string): string {
 function getPlatformCommands() {
   const platform = process.platform;
   const tempPathMapping = {
-    darwin: '/tmp/takumi_cli_latest_screenshot.png',
-    linux: '/tmp/takumi_cli_latest_screenshot.png',
+    darwin: '/tmp/neovate_cli_latest_screenshot.png',
+    linux: '/tmp/neovate_cli_latest_screenshot.png',
     win32: process.env.TEMP
-      ? `${process.env.TEMP}\\takumi_cli_latest_screenshot.png`
-      : 'C:\\Temp\\takumi_cli_latest_screenshot.png',
+      ? `${process.env.TEMP}\\neovate_cli_latest_screenshot.png`
+      : 'C:\\Temp\\neovate_cli_latest_screenshot.png',
   };
 
   const commandMapping = {
@@ -249,7 +249,7 @@ export function getImageFromClipboardLegacy(): string | null {
     return null;
   }
 
-  const tempPath = `/tmp/takumi_cli_screenshot_${Date.now()}.png`;
+  const tempPath = `/tmp/neovate_cli_screenshot_${Date.now()}.png`;
 
   try {
     // 1. First check if clipboard has image data

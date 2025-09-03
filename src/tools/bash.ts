@@ -9,7 +9,7 @@ import { getErrorMessage } from '../utils/error';
 import { shellExecute } from '../utils/shell-execution';
 import type { BashToolResult } from './type';
 
-const debug = createDebug('takumi:tools:bash');
+const debug = createDebug('neovate:tools:bash');
 
 const BANNED_COMMANDS = [
   'alias',
