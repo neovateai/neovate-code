@@ -92,6 +92,13 @@ interface AppState {
   history: string[];
   historyIndex: number | null;
 
+  // Input state fields
+  inputValue: string;
+  inputCursorPosition: number | undefined;
+  inputShowExitWarning: boolean;
+  inputCtrlCPressed: boolean;
+  inputError: string | null;
+
   logs: string[];
   exitMessage: string | null;
   debugMode: boolean;
@@ -149,6 +156,14 @@ interface AppActions {
   clearQueue: () => void;
   processQueuedMessages: () => Promise<void>;
   toggleDebugMode: () => void;
+
+  // Input state actions
+  setInputValue: (value: string) => void;
+  setInputCursorPosition: (position: number | undefined) => void;
+  setInputShowExitWarning: (show: boolean) => void;
+  setInputCtrlCPressed: (pressed: boolean) => void;
+  setInputError: (error: string | null) => void;
+  resetInput: () => void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -186,6 +201,13 @@ export const useAppStore = create<AppStore>()(
       processingStartTime: null,
       approvalModal: null,
       upgrade: null,
+
+      // Input state
+      inputValue: '',
+      inputCursorPosition: undefined,
+      inputShowExitWarning: false,
+      inputCtrlCPressed: false,
+      inputError: null,
 
       // Actions
       initialize: async (opts) => {
@@ -441,6 +463,12 @@ export const useAppStore = create<AppStore>()(
           history: [],
           historyIndex: null,
           sessionId,
+          // Also reset input state when clearing
+          inputValue: '',
+          inputCursorPosition: undefined,
+          inputShowExitWarning: false,
+          inputCtrlCPressed: false,
+          inputError: null,
         });
         return {
           sessionId,
@@ -519,6 +547,12 @@ export const useAppStore = create<AppStore>()(
           processingStartTime: null,
           planMode: false,
           bashMode: false,
+          // Reset input state when resuming
+          inputValue: '',
+          inputCursorPosition: undefined,
+          inputShowExitWarning: false,
+          inputCtrlCPressed: false,
+          inputError: null,
         });
       },
 
@@ -592,6 +626,37 @@ export const useAppStore = create<AppStore>()(
             get().log(`Failed to open log file: ${error.message}`),
           );
         }
+      },
+
+      // Input state actions
+      setInputValue: (value: string) => {
+        set({ inputValue: value });
+      },
+
+      setInputCursorPosition: (position: number | undefined) => {
+        set({ inputCursorPosition: position });
+      },
+
+      setInputShowExitWarning: (show: boolean) => {
+        set({ inputShowExitWarning: show });
+      },
+
+      setInputCtrlCPressed: (pressed: boolean) => {
+        set({ inputCtrlCPressed: pressed });
+      },
+
+      setInputError: (error: string | null) => {
+        set({ inputError: error });
+      },
+
+      resetInput: () => {
+        set({
+          inputValue: '',
+          inputCursorPosition: undefined,
+          inputShowExitWarning: false,
+          inputCtrlCPressed: false,
+          inputError: null,
+        });
       },
     }),
     { name: 'app-store' },
