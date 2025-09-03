@@ -227,7 +227,7 @@ async function runInteractive(
   });
 
   render(React.createElement(App), {
-    patchConsole: false,
+    patchConsole: true,
     exitOnCtrlC: false,
   });
   const exit = () => {

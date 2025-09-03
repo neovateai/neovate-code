@@ -19,7 +19,6 @@ export function createLSTool(opts: { cwd: string; productName: string }) {
     }),
     execute: async (params): Promise<LsToolResult> => {
       const { dir_path } = params;
-      console.log('==========params', typeof params, params, dir_path);
       const fullFilePath = path.isAbsolute(dir_path)
         ? dir_path
         : path.resolve(opts.cwd, dir_path);
