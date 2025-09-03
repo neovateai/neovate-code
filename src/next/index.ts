@@ -96,7 +96,7 @@ Options:
   --system-prompt <prompt>      Custom system prompt for code agent
   --output-format <format>      Output format, text, stream-json, json
   --output-style <style>        Output style
-  --approval-mode <mode>        Tool approval mode
+  --approval-mode <mode>        Tool approval mode, default, autoEdit, yolo
   -q, --quiet                   Quiet mode, non interactive
   --no-mcp                      Disable MCP servers
 
