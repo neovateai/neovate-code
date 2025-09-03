@@ -25,7 +25,6 @@ export type CommitConfig = {
 
 export type Config = {
   model: string;
-  smallModel: string;
   planModel: string;
   language: string;
   quiet: boolean;
@@ -60,7 +59,6 @@ const DEFAULT_CONFIG: Partial<Config> = {
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
   'model',
-  'smallModel',
   'planModel',
   'systemPrompt',
   'todo',
@@ -103,7 +101,6 @@ export class ConfigManager {
       this.argvConfig,
       defu(this.projectConfig, defu(this.globalConfig, DEFAULT_CONFIG)),
     ) as Config;
-    config.smallModel = config.smallModel || config.model;
     config.planModel = config.planModel || config.model;
     return config;
   }

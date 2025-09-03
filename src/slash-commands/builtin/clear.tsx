@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppStore } from '../../next/ui/store';
+import { useAppStore } from '../../ui/store';
 import { type LocalJSXCommand } from '../types';
 
 export const clearCommand: LocalJSXCommand = {

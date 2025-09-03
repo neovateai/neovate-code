@@ -8,7 +8,7 @@ import { loadIgnorePatterns } from '../context/context-files';
 import { type CreateServerOpts } from '../types';
 import { type FileItem, type FileListRequest } from '../types/files';
 
-const debug = createDebug('takumi:server:files');
+const debug = createDebug('neovate:server:files');
 
 const FileListRequestSchema = Type.Object({
   directory: Type.Optional(Type.String()),

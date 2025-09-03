@@ -1,13 +1,12 @@
-import { tool } from '@openai/agents';
 import { glob } from 'glob';
 import { z } from 'zod';
-import { Context } from '../context';
+import { createTool } from '../tool';
 import type { GlobToolResult } from './type';
 
 const LIMIT = 100;
 
-export function createGlobTool(opts: { context: Context }) {
-  return tool({
+export function createGlobTool(opts: { cwd: string }) {
+  return createTool({
     name: 'glob',
     description: `
 Glob
@@ -28,7 +27,7 @@ Glob
       try {
         const start = Date.now();
         const paths = await glob([pattern], {
-          cwd: path ?? opts.context.cwd,
+          cwd: path ?? opts.cwd,
           nocase: true,
           nodir: true,
           stat: true,
@@ -60,6 +59,9 @@ Glob
           error: e instanceof Error ? e.message : 'Unknown error',
         };
       }
+    },
+    approval: {
+      category: 'read',
     },
   });
 }

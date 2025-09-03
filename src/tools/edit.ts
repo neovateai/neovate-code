@@ -1,13 +1,12 @@
-import { tool } from '@openai/agents';
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import { Context } from '../context';
+import { createTool } from '../tool';
 import { applyEdit } from '../utils/applyEdit';
 import type { EditToolResult } from './type';
 
-export function createEditTool(opts: { context: Context }) {
-  return tool({
+export function createEditTool(opts: { cwd: string }) {
+  return createTool({
     name: 'edit',
     description: `
 Edit files in the local filesystem.
@@ -32,7 +31,7 @@ Usage:
       new_string,
     }): Promise<EditToolResult> => {
       try {
-        const cwd = opts.context.cwd;
+        const cwd = opts.cwd;
         const fullFilePath = path.isAbsolute(file_path)
           ? file_path
           : path.resolve(cwd, file_path);
@@ -58,6 +57,9 @@ Usage:
           error: e instanceof Error ? e.message : 'Unknown error',
         };
       }
+    },
+    approval: {
+      category: 'write',
     },
   });
 }

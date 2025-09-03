@@ -1,7 +1,7 @@
 import { Box, Text, useInput } from 'ink';
 import React, { useEffect, useState } from 'react';
-import PaginatedSelectInput from '../../next/ui/PaginatedSelectInput';
-import { useAppStore } from '../../next/ui/store';
+import PaginatedSelectInput from '../../ui/PaginatedSelectInput';
+import { useAppStore } from '../../ui/store';
 import { type LocalJSXCommand } from '../types';
 
 interface SessionInfo {

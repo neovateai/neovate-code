@@ -1,9 +1,3 @@
-import {
-  type ModelProvider,
-  Runner,
-  setTraceProcessors,
-  withTrace,
-} from '@openai/agents';
 import * as p from '@umijs/clack-prompts';
 import {
   type ExecSyncOptionsWithStringEncoding,
@@ -12,24 +6,20 @@ import {
 import clipboardy from 'clipboardy';
 import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
-import { type RunCliOpts } from '..';
-import { createBranchAgent } from '../agents/branch';
-import { createCommitAgent } from '../agents/commit';
 import { Context } from '../context';
+import { query } from '../query';
 import * as logger from '../utils/logger';
 
 interface GenerateCommitMessageOpts {
   prompt: string;
-  model: string;
   language?: string;
-  modelProvider: ModelProvider;
+  context: Context;
 }
 
 interface GenerateBranchNameOpts {
   commitMessage: string;
-  model: string;
   language?: string;
-  modelProvider: ModelProvider;
+  context: Context;
 }
 
 /**
@@ -41,15 +31,13 @@ function escapeShellArg(arg: string): string {
 }
 
 async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
-  const agent = createCommitAgent({
-    model: opts.model,
-    language: opts.language ?? 'English',
+  const language = opts.language ?? 'English';
+  const result = await query({
+    userPrompt: opts.prompt,
+    systemPrompt: createCommitSystemPrompt(language),
+    context: opts.context,
   });
-  const runner = new Runner({
-    modelProvider: opts.modelProvider,
-  });
-  const result = await runner.run(agent, opts.prompt);
-  const message = result.finalOutput;
+  const message = result.success ? result.data.text : null;
   if (typeof message !== 'string') {
     throw new Error('Commit message is not a string');
   }
@@ -57,15 +45,12 @@ async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
 }
 
 async function generateBranchName(opts: GenerateBranchNameOpts) {
-  const agent = createBranchAgent({
-    model: opts.model,
-    language: opts.language ?? 'English',
+  const result = await query({
+    userPrompt: opts.commitMessage,
+    systemPrompt: createBranchSystemPrompt(),
+    context: opts.context,
   });
-  const runner = new Runner({
-    modelProvider: opts.modelProvider,
-  });
-  const result = await runner.run(agent, opts.commitMessage);
-  const branchName = result.finalOutput;
+  const branchName = result.success ? result.data.text : null;
   if (typeof branchName !== 'string') {
     throw new Error('Branch name is not a string');
   }
@@ -106,218 +91,195 @@ Examples:
   );
 }
 
-export async function runCommit(opts: RunCliOpts) {
-  setTraceProcessors([]);
-  const traceName = `${opts.productName}-commit`;
-  return await withTrace(traceName, async () => {
-    const argv = yargsParser(process.argv.slice(2), {
-      alias: {
-        stage: 's',
-        commit: 'c',
-        noVerify: 'n',
-        interactive: 'i',
-        model: 'm',
-        help: 'h',
-      },
-      boolean: [
-        'stage',
-        'push',
-        'commit',
-        'noVerify',
-        'copy',
-        'interactive',
-        'followStyle',
-        'help',
-        'ai',
-        'checkout',
-      ],
-      string: ['model', 'language'],
-    });
+export async function runCommit(context: Context) {
+  const argv = yargsParser(process.argv.slice(2), {
+    alias: {
+      stage: 's',
+      commit: 'c',
+      noVerify: 'n',
+      interactive: 'i',
+      model: 'm',
+      help: 'h',
+    },
+    boolean: [
+      'stage',
+      'push',
+      'commit',
+      'noVerify',
+      'copy',
+      'interactive',
+      'followStyle',
+      'help',
+      'ai',
+      'checkout',
+    ],
+    string: ['model', 'language'],
+  });
 
-    // help
-    if (argv.help) {
-      printHelp(opts.productName.toLowerCase());
-      return;
-    }
+  // help
+  if (argv.help) {
+    printHelp(context.productName.toLowerCase());
+    return;
+  }
 
-    logger.logIntro({
-      productName: opts.productName,
-      version: opts.version,
-    });
-    if (!argv.interactive && !argv.commit && !argv.copy) {
-      argv.interactive = true;
-    }
+  logger.logIntro({
+    productName: context.productName,
+    version: context.version,
+  });
+  if (!argv.interactive && !argv.commit && !argv.copy) {
+    argv.interactive = true;
+  }
+  try {
+    execSync('git --version', { stdio: 'ignore' });
+  } catch (error: any) {
+    throw new Error(
+      'Git is not installed or not available in PATH. Please install Git and try again.',
+    );
+  }
+
+  try {
+    execSync('git rev-parse --git-dir', { stdio: 'ignore' });
+  } catch (error: any) {
+    throw new Error(
+      'Not a Git repository. Please run this command from inside a Git repository.',
+    );
+  }
+
+  try {
+    execSync('git config user.name', { stdio: 'ignore' });
+  } catch (error: any) {
+    throw new Error(
+      'Git user name is not configured. Please run: git config --global user.name "Your Name"',
+    );
+  }
+
+  try {
+    execSync('git config user.email', { stdio: 'ignore' });
+  } catch (error: any) {
+    throw new Error(
+      'Git user email is not configured. Please run: git config --global user.email "your.email@example.com"',
+    );
+  }
+  let hasChanged = false;
+  try {
+    hasChanged =
+      execSync('git status --porcelain').toString().trim().length > 0;
+  } catch (error: any) {
+    throw new Error(
+      'Failed to check repository status. Please ensure the repository is not corrupted.',
+    );
+  }
+
+  if (!hasChanged) {
+    throw new Error('No changes to commit');
+  }
+
+  if (argv.stage) {
     try {
-      execSync('git --version', { stdio: 'ignore' });
+      execSync('git add .', { stdio: 'inherit' });
     } catch (error: any) {
-      throw new Error(
-        'Git is not installed or not available in PATH. Please install Git and try again.',
-      );
-    }
-
-    try {
-      execSync('git rev-parse --git-dir', { stdio: 'ignore' });
-    } catch (error: any) {
-      throw new Error(
-        'Not a Git repository. Please run this command from inside a Git repository.',
-      );
-    }
-
-    try {
-      execSync('git config user.name', { stdio: 'ignore' });
-    } catch (error: any) {
-      throw new Error(
-        'Git user name is not configured. Please run: git config --global user.name "Your Name"',
-      );
-    }
-
-    try {
-      execSync('git config user.email', { stdio: 'ignore' });
-    } catch (error: any) {
-      throw new Error(
-        'Git user email is not configured. Please run: git config --global user.email "your.email@example.com"',
-      );
-    }
-    let hasChanged = false;
-    try {
-      hasChanged =
-        execSync('git status --porcelain').toString().trim().length > 0;
-    } catch (error: any) {
-      throw new Error(
-        'Failed to check repository status. Please ensure the repository is not corrupted.',
-      );
-    }
-
-    if (!hasChanged) {
-      throw new Error('No changes to commit');
-    }
-
-    if (argv.stage) {
-      try {
-        execSync('git add .', { stdio: 'inherit' });
-      } catch (error: any) {
-        const errorMessage =
-          error.stderr?.toString() || error.message || 'Unknown error';
-        if (errorMessage.includes('fatal: pathspec')) {
-          throw new Error(
-            'Failed to stage files: Invalid file path or pattern',
-          );
-        }
-        throw new Error(`Failed to stage files: ${errorMessage}`);
+      const errorMessage =
+        error.stderr?.toString() || error.message || 'Unknown error';
+      if (errorMessage.includes('fatal: pathspec')) {
+        throw new Error('Failed to stage files: Invalid file path or pattern');
       }
+      throw new Error(`Failed to stage files: ${errorMessage}`);
     }
+  }
 
-    const diff = await getStagedDiff();
-    if (diff.length === 0) {
-      throw new Error(
-        'No staged changes to commit. Use -s flag to stage all changes or manually stage files with git add.',
-      );
-    }
+  const diff = await getStagedDiff();
+  if (diff.length === 0) {
+    throw new Error(
+      'No staged changes to commit. Use -s flag to stage all changes or manually stage files with git add.',
+    );
+  }
 
-    let repoStyle = '';
-    if (argv.followStyle) {
-      try {
-        const recentCommits = execSync(
-          'git log -n 10 --pretty=format:"%s"',
-        ).toString();
-        repoStyle = `
+  let repoStyle = '';
+  if (argv.followStyle) {
+    try {
+      const recentCommits = execSync(
+        'git log -n 10 --pretty=format:"%s"',
+      ).toString();
+      repoStyle = `
 # Recent commits in this repository:
 ${recentCommits}
 Please follow a similar style for this commit message while still adhering to the structure guidelines.
 `;
-      } catch (error) {
-        logger.logError({
-          error:
-            'Could not analyze repository commit style. Using default style.',
-        });
-      }
+    } catch (error) {
+      logger.logError({
+        error:
+          'Could not analyze repository commit style. Using default style.',
+      });
     }
+  }
 
-    const context = await Context.create({
-      productName: opts.productName,
-      version: opts.version,
-      cwd: process.cwd(),
-      argvConfig: {
-        model: argv.model,
-        plugins: argv.plugin,
-        language: argv.language,
-      },
-      plugins: opts.plugins,
-    });
-    await context.destroy();
-
-    // Generate the commit message
-    const model = context.config.model;
-    logger.logInfo(`Using model: ${model}`);
-    let message = '';
-    let attempts = 0;
-    const maxAttempts = 3;
-    while (attempts < maxAttempts) {
-      try {
-        const stop = logger.spinThink({ productName: opts.productName });
-        message = await generateCommitMessage({
-          prompt: `
+  // Generate the commit message
+  const model = context.config.model;
+  logger.logInfo(`Using model: ${model}`);
+  let message = '';
+  let attempts = 0;
+  const maxAttempts = 3;
+  while (attempts < maxAttempts) {
+    try {
+      const stop = logger.spinThink({ productName: context.productName });
+      message = await generateCommitMessage({
+        prompt: `
 # Diffs:
 ${diff}
 ${repoStyle}
-        `,
-          model,
-          language: context.config.commit?.language ?? context.config.language,
-          modelProvider: context.getModelProvider(),
-        });
-        stop();
-        checkCommitMessage(message, argv.ai);
-        break;
-      } catch (error: any) {
-        attempts++;
-        if (attempts >= maxAttempts) {
-          throw error;
-        }
-      }
-    }
-
-    // Add [AI] suffix if --ai flag is used
-    const finalMessage = argv.ai ? `${message} [AI]` : message;
-
-    logger.logResult(`Generated commit message: ${pc.cyan(finalMessage)}`);
-
-    // Handle checkout before commit operations
-    if (argv.checkout) {
-      const stop = logger.spinThink({ productName: opts.productName });
-      const branchName = await generateBranchName({
-        commitMessage: finalMessage,
-        model,
+      `,
+        context,
         language: context.config.commit?.language ?? context.config.language,
-        modelProvider: context.getModelProvider(),
       });
       stop();
-      await checkoutNewBranch(branchName);
+      checkCommitMessage(message, argv.ai);
+      break;
+    } catch (error: any) {
+      attempts++;
+      if (attempts >= maxAttempts) {
+        throw error;
+      }
     }
+  }
 
-    // Check if interactive mode is needed
-    const isNonInteractiveParam =
-      argv.stage || argv.commit || argv.noVerify || argv.copy || argv.checkout;
-    if (argv.interactive && !isNonInteractiveParam) {
-      await handleInteractiveMode(finalMessage, {
-        model,
-        language: context.config.commit?.language ?? context.config.language,
-        modelProvider: context.getModelProvider(),
-        productName: opts.productName,
-      });
-    } else {
-      // Non-interactive mode logic
-      if (argv.commit || argv.checkout) {
-        await commitChanges(finalMessage, argv.noVerify);
-        if (argv.push) {
-          await pushChanges();
-        }
-      }
-      if (argv.copy) {
-        copyToClipboard(finalMessage);
+  // Add [AI] suffix if --ai flag is used
+  const finalMessage = argv.ai ? `${message} [AI]` : message;
+
+  logger.logResult(`Generated commit message: ${pc.cyan(finalMessage)}`);
+
+  // Handle checkout before commit operations
+  if (argv.checkout) {
+    const stop = logger.spinThink({ productName: context.productName });
+    const branchName = await generateBranchName({
+      commitMessage: finalMessage,
+      language: context.config.commit?.language ?? context.config.language,
+      context,
+    });
+    stop();
+    await checkoutNewBranch(branchName);
+  }
+
+  // Check if interactive mode is needed
+  const isNonInteractiveParam =
+    argv.stage || argv.commit || argv.noVerify || argv.copy || argv.checkout;
+  if (argv.interactive && !isNonInteractiveParam) {
+    await handleInteractiveMode(finalMessage, {
+      context,
+      language: context.config.commit?.language ?? context.config.language,
+    });
+  } else {
+    // Non-interactive mode logic
+    if (argv.commit || argv.checkout) {
+      await commitChanges(finalMessage, argv.noVerify);
+      if (argv.push) {
+        await pushChanges();
       }
     }
-    process.exit(0);
-  });
+    if (argv.copy) {
+      copyToClipboard(finalMessage);
+    }
+  }
+  process.exit(0);
 }
 
 function copyToClipboard(message: string) {
@@ -536,10 +498,8 @@ async function pushChanges() {
 async function handleInteractiveMode(
   message: string,
   config?: {
-    model: string;
+    context: Context;
     language: string;
-    modelProvider: ModelProvider;
-    productName: string;
   },
 ) {
   // Ask user what to do next
@@ -593,12 +553,13 @@ async function handleInteractiveMode(
       // Generate branch name and let user preview/edit it
       let suggestedBranchName = 'feature-branch';
       if (config) {
-        const stop = logger.spinThink({ productName: config.productName });
+        const stop = logger.spinThink({
+          productName: config.context.productName,
+        });
         suggestedBranchName = await generateBranchName({
           commitMessage: message,
-          model: config.model,
           language: config.language,
-          modelProvider: config.modelProvider,
+          context: config.context,
         });
         stop();
       }
@@ -736,4 +697,83 @@ async function getStagedDiff() {
 
     throw new Error(`Failed to get staged diff: ${errorMessage}`);
   }
+}
+
+function createCommitSystemPrompt(language: string) {
+  return `
+You are an expert software engineer that generates concise, one-line Git commit messages based on the provided diffs.
+
+Review the provided context and diffs which are about to be committed to a git repo.
+Review the diffs carefully.
+Generate a one-line commit message for those changes.
+The commit message should be structured as follows: <type>: <description>
+Use these for <type>: fix, feat, build, chore, ci, docs, style, refactor, perf, test
+Use ${language} to generate the commit message.
+
+Ensure the commit message:
+- Starts with the appropriate prefix.
+- Is in the imperative mood (e.g., \"add feature\" not \"added feature\" or \"adding feature\").
+- Does not exceed 72 characters.
+
+Reply only with the one-line commit message, without any additional text, explanations, \
+or line breaks.
+
+## Guidelines
+
+- Use present tense, like "add feature" instead of "added feature"
+- Do not capitalize the first letter
+- Do not end with a period
+- Keep it concise and direct, describing the change content
+- Please do not overthink, directly generate commit text that follows the specification
+- Must strictly adhere to the above standards, without adding any personal explanations or suggestions
+  `;
+}
+
+function createBranchSystemPrompt() {
+  return `
+You are an expert software engineer that generates meaningful Git branch names based on commit messages and code changes.
+
+Review the provided commit message and generate a clean, descriptive Git branch name.
+
+## Branch Naming Rules
+
+1. **Format**: Use conventional format when applicable:
+   - For conventional commits: \`<type>/<description>\` (e.g., "feat/user-authentication", "fix/memory-leak")
+   - For regular commits: \`<description>\` (e.g., "update-documentation", "refactor-api")
+
+2. **Character Rules**:
+   - Use only lowercase letters, numbers, and hyphens
+   - No spaces, special characters, or underscores
+   - Replace spaces with hyphens
+   - Maximum 50 characters
+   - No leading or trailing hyphens
+
+3. **Content Guidelines**:
+   - Be descriptive but concise
+   - Focus on the main feature/change being implemented
+   - Remove unnecessary words like "the", "a", "an"
+   - Use present tense verbs when applicable
+
+## Examples
+
+Input: "feat: add user authentication system"
+Output: feat/add-user-authentication
+
+Input: "fix: resolve memory leak in data processing"
+Output: fix/resolve-memory-leak
+
+Input: "Update API documentation for new endpoints"
+Output: update-api-documentation
+
+Input: "refactor: simplify database connection logic"
+Output: refactor/simplify-database-connection
+
+Input: "Add support for dark mode theme"
+Output: add-dark-mode-support
+
+## Instructions
+
+Generate ONLY the branch name, without any additional text, explanations, or formatting.
+The branch name should be clean, professional, and follow Git best practices.
+  `;
 }

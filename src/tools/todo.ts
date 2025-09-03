@@ -1,11 +1,9 @@
-import { tool } from '@openai/agents';
 import fs from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
 import { TOOL_NAME } from '../constants';
-import { Context } from '../context';
-import { enhanceTool } from '../tool';
+import { createTool } from '../tool';
 import type { TodoReadToolResult, TodoWriteToolResult } from './type';
 
 const TODO_WRITE_PROMPT = `
@@ -218,11 +216,9 @@ async function saveTodos(todos: TodoList, filePath: string) {
   await writeFile(filePath, JSON.stringify(todos, null, 2));
 }
 
-export function createTodoTool(opts: { context: Context; sessionId: string }) {
-  const { context, sessionId } = opts;
-
+export function createTodoTool(opts: { filePath: string }) {
   function ensureTodoDirectory() {
-    const todoDir = path.join(context.paths.globalConfigDir, 'todos');
+    const todoDir = path.dirname(opts.filePath);
     if (!fs.existsSync(todoDir)) {
       fs.mkdirSync(todoDir, { recursive: true });
     }
@@ -230,15 +226,15 @@ export function createTodoTool(opts: { context: Context; sessionId: string }) {
   }
 
   function getTodoFilePath() {
-    const todoDir = ensureTodoDirectory();
-    return path.join(todoDir, `${sessionId}.json`);
+    ensureTodoDirectory();
+    return opts.filePath;
   }
 
   async function readTodos() {
     return await loadTodosFromFile(getTodoFilePath());
   }
 
-  const todoWriteTool = tool({
+  const todoWriteTool = createTool({
     name: TOOL_NAME.TODO_WRITE,
     description: TODO_WRITE_PROMPT,
     parameters: z.object({
@@ -266,9 +262,12 @@ export function createTodoTool(opts: { context: Context; sessionId: string }) {
         };
       }
     },
+    approval: {
+      category: 'read',
+    },
   });
 
-  const todoReadTool = tool({
+  const todoReadTool = createTool({
     name: TOOL_NAME.TODO_READ,
     description: TODO_READ_PROMPT,
     parameters: z.object({}).passthrough(),
@@ -293,22 +292,13 @@ export function createTodoTool(opts: { context: Context; sessionId: string }) {
         };
       }
     },
+    approval: {
+      category: 'read',
+    },
   });
 
   return {
-    todoWriteTool: enhanceTool(todoWriteTool, {
-      category: 'write',
-      riskLevel: 'low',
-      needsApproval: () => {
-        return false;
-      },
-    }),
-    todoReadTool: enhanceTool(todoReadTool, {
-      category: 'read',
-      riskLevel: 'low',
-      needsApproval: () => {
-        return false;
-      },
-    }),
+    todoWriteTool,
+    todoReadTool,
   };
 }

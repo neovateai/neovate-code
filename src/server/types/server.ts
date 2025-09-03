@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { type ModelProvider } from '@openai/agents';
 import { Context } from '../../context';
 import { Service } from '../../service';

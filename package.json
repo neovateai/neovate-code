@@ -1,5 +1,5 @@
 {
-  "name": "takumi",
+  "name": "@neovate/code",
   "version": "0.8.2",
   "type": "module",
   "files": [
@@ -10,27 +10,27 @@
   "types": "./dist/index.d.ts",
   "source": "./src/index.ts",
   "bin": {
-    "takumi": "./dist/cli.mjs"
+    "neovate": "./dist/cli.mjs"
   },
   "scripts": {
-    "dev": "tsx ./src/cli.ts",
+    "dev": "bun ./src/cli.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build:type": "tsc --project tsconfig.json --emitDeclarationOnly --declarationDir dist-dts",
     "build:cli": "bun build src/cli.ts --external react-devtools-core --minify --outfile dist/cli.mjs --target=node",
     "build:index": "bun build src/index.ts --external react-devtools-core --minify --outfile dist/index.mjs --target=node",
     "build:dts": "npm run build:type && api-extractor run --local --verbose",
-    "build:browser": "pnpm --filter @takumi/browser build",
+    "build:browser": "pnpm --filter @neovate/browser build",
     "build:check": "bun --version | grep -q '^1\\.2\\.7$' || (echo 'Error: Bun version must be 1.2.7' && exit 1)",
-    "build:post": "tsx scripts/post-build.ts",
+    "build:post": "bun scripts/post-build.ts",
     "build:logfiles": "cp -r logfiles dist/logfiles",
     "build": "npm run build:check && rm -rf dist dist-dts && npm run build:cli && npm run build:index && npm run build:dts && npm run build:browser && npm run build:logfiles && npm run build:post",
     "ci": "npm run typecheck && npm run format:check && npm run test",
-    "extension:build": "pnpm --filter takumi-assistant build",
-    "extension:dev": "pnpm --filter takumi-assistant dev",
+    "extension:build": "pnpm --filter neovate-assistant build",
+    "extension:dev": "pnpm --filter neovate-assistant dev",
     "extension:publish": "cd vscode-extension && npm run publish && cd ..",
-    "extension:package": "pnpm --filter takumi-assistant package",
-    "extension:bump": "pnpm --filter takumi-assistant bump",
+    "extension:package": "pnpm --filter neovate-assistant package",
+    "extension:bump": "pnpm --filter neovate-assistant bump",
     "release": "npm run ci && utools release --git-tag --github-release --changelog",
     "release:minor": "npm run ci && utools release --git-tag --github-release --changelog --bump minor",
     "release:major": "npm run ci && utools release --git-tag --github-release --changelog --bump major",
@@ -42,8 +42,7 @@
   },
   "keywords": [
     "cli",
-    "takumi",
-    "takumi-cli",
+    "neovate",
     "ai",
     "coding-agent",
     "agent"
@@ -119,7 +118,6 @@
     "spawn-rx": "^5.1.2",
     "strip-ansi": "^7.1.0",
     "tar": "^7.4.3",
-    "tsx": "^4.20.3",
     "turndown": "^7.2.0",
     "type-fest": "^4.41.0",
     "typescript": "^5.9.2",
@@ -146,6 +144,6 @@
       "vendor"
     ],
     "needReinstall": false,
-    "changelogUrl": "https://github.com/umijs/takumi/blob/master/CHANGELOG.md"
+    "changelogUrl": "https://github.com/neovateai/code/blob/master/CHANGELOG.md"
   }
 }

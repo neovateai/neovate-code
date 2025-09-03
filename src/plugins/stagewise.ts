@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   type AgentServer,
   AgentStateType,
@@ -9,7 +10,7 @@ import { type Plugin } from '../plugin';
 import { Service } from '../service';
 import { relativeToHome } from '../utils/path';
 
-const debug = createDebug('takumi:plugins:stagewise');
+const debug = createDebug('neovate:plugins:stagewise');
 
 type CreateStagewisePluginOpts = {};
 

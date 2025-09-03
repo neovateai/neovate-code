@@ -211,9 +211,6 @@ importers:
       tar:
         specifier: ^7.4.3
         version: 7.4.3
-      tsx:
-        specifier: ^4.20.3
-        version: 4.20.3
       turndown:
         specifier: ^7.2.0
         version: 7.2.0

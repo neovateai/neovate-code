@@ -1,6 +1,6 @@
 import yargsParser from 'yargs-parser';
-import { type RunCliOpts } from '..';
 import { ConfigManager } from '../config';
+import { type Context } from '../context';
 
 function printHelp(p: string) {
   console.log(
@@ -42,8 +42,8 @@ Examples:
   );
 }
 
-export async function runMCP(opts: RunCliOpts) {
-  const productName = opts.productName!;
+export async function runMCP(context: Context) {
+  const productName = context.productName;
   const argv = yargsParser(process.argv.slice(3), {
     alias: {
       help: 'h',
@@ -88,7 +88,7 @@ export async function runMCP(opts: RunCliOpts) {
 
   // add
   if (command === 'add') {
-    // takumi add mcp-server <name> -- npx abc --global -e API_KEY=123
+    // neovate add mcp-server <name> -- npx abc --global -e API_KEY=123
     const key = argv._[1] as string | undefined;
     const value = argv._[2] as string | undefined;
     if (!key || !value) {

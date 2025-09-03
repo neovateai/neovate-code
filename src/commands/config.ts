@@ -1,6 +1,6 @@
 import yargsParser from 'yargs-parser';
-import { type RunCliOpts } from '..';
 import { ConfigManager } from '../config';
+import type { Context } from '../context';
 
 function printHelp(p: string) {
   console.log(
@@ -44,8 +44,8 @@ Examples:
   );
 }
 
-export async function runConfig(opts: RunCliOpts) {
-  const productName = opts.productName!;
+export async function runConfig(context: Context) {
+  const productName = context.productName;
   const argv = yargsParser(process.argv.slice(3), {
     alias: {
       help: 'h',

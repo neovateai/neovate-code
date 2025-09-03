@@ -2,7 +2,7 @@ import { type PromptCommand } from '../types';
 
 export function createInitCommand(opts: { productName: string }) {
   const productName = opts.productName;
-  const ruleFile = `${productName.toUpperCase()}.md`;
+  const ruleFile = 'AGENTS.md';
   return {
     type: 'prompt',
     name: 'init',

@@ -1,13 +1,11 @@
-# Takumi
+# Neovate
 
-[![](https://badgen.net/npm/v/takumi)](https://www.npmjs.com/package/takumi)
-[![](https://badgen.net/npm/dm/takumi)](https://www.npmjs.com/package/takumi)
-[![](https://github.com/umijs/takumi/actions/workflows/ci.yml/badge.svg)](https://github.com/umijs/takumi/actions/workflows/ci.yml)
-[![](https://badgen.net/npm/license/takumi)](https://www.npmjs.com/package/takumi)
+[![](https://badgen.net/npm/v/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
+[![](https://badgen.net/npm/dm/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
+[![](https://github.com/neovateai/code/actions/workflows/ci.yml/badge.svg)](https://github.com/neovateai/code/actions/workflows/ci.yml)
+[![](https://badgen.net/npm/license/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
 
-Pronounced `/tɑːˈkuːmi/`, a coding agent to enhance your development workflow.
-
-![](https://cdn.jsdelivr.net/gh/sorrycc-bot/image-2025-04@main/uPic/takumi-20250618-1.gif)
+A coding agent to enhance your development workflow.
 
 ## Getting Started
 
@@ -16,7 +14,7 @@ Pronounced `/tɑːˈkuːmi/`, a coding agent to enhance your development workflo
 1. **Install the CLI globally.** Use npm or other package managers.
 
 ```bash
-$ npm install -g takumi
+$ npm install -g @neovate/code
 ```
 
 2. **Set up the API keys.** Configure one or more API keys for the LLMs providers.
@@ -31,10 +29,10 @@ $ export AIHUBMIX_API_KEY="sk-..."
 $ export OPENROUTER_API_KEY="sk-..."
 ```
 
-You are now ready to use Takumi.
+You are now ready to use Neovate.
 
 ```bash
-$ takumi
+$ neovate
 > explain this codebase to me
 ```
 

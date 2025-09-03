@@ -1,27 +1,42 @@
 import path from 'path';
 
-// Status-related constants
-export const APP_STATUS = {
-  IDLE: 'idle',
-  PROCESSING: 'processing',
-  AWAITING_USER_INPUT: 'awaiting_user_input',
-  TOOL_APPROVED: 'tool_approved',
-  TOOL_EXECUTING: 'tool_executing',
-  COMPLETED: 'completed',
-  FAILED: 'failed',
-  CANCELLED: 'cancelled',
+export const UI_COLORS = {
+  PRODUCT_ASCII_ART: 'cyan',
+  PRODUCT_NAME: 'cyanBright',
+  PRODUCT_VERSION: 'gray',
+  USER: 'blueBright',
+  ASSISTANT: 'magentaBright',
+  SYSTEM: 'redBright',
+  TOOL: 'greenBright',
+  TOOL_DESCRIPTION: 'green',
+  TOOL_RESULT: 'gray',
+  ERROR: 'red',
+  SUCCESS: 'green',
+  WARNING: 'yellow',
+  INFO: 'gray',
+  CHAT_BORDER: 'gray',
+  CHAT_ARROW: 'white',
+  CANCELED: 'red',
+  ACTIVITY_INDICATOR_TEXT: 'gray',
+  ACTIVITY_INDICATOR_GRADIENT: {
+    BASE: 'gray',
+    HIGHLIGHT: 'whiteBright',
+    FADE_LEVELS: ['white', 'gray', 'blackBright', 'black'] as const,
+  },
+  MODE_INDICATOR_TEXT: 'magentaBright',
+  MODE_INDICATOR_DESCRIPTION: 'gray',
 } as const;
 
-// Status messages
-export const STATUS_MESSAGES = {
-  [APP_STATUS.TOOL_APPROVED]: 'Tool approved, starting execution...',
-  [APP_STATUS.TOOL_EXECUTING]: 'Executing tool...',
-  [APP_STATUS.PROCESSING]: 'Processing...',
-  [APP_STATUS.PROCESSING + '_plan']: 'Planning...',
-  [APP_STATUS.CANCELLED]: 'Query cancelled',
+export const SPACING = {
+  CHAT_INPUT_MARGIN_TOP: 1,
+  ACTIVITY_INDICATOR_MARGIN_TOP: 1,
+  MODE_INDICATOR_MARGIN_TOP: 0,
+  MESSAGE_MARGIN_TOP: 1,
+  MESSAGE_MARGIN_TOP_TOOL_RESULT: 0,
+  MESSAGE_MARGIN_LEFT: 4,
+  MESSAGE_MARGIN_LEFT_USER: 0,
 } as const;
 
-// Tool names and configurations
 export const TOOL_NAMES = {
   READ: 'read',
   BASH: 'bash',
@@ -33,7 +48,6 @@ export const TOOL_NAMES = {
   LS: 'ls',
 } as const;
 
-// Tool description extractors
 export const TOOL_DESCRIPTION_EXTRACTORS = {
   [TOOL_NAMES.READ]: (args: any, cwd: string) =>
     !args.file_path
@@ -61,103 +75,15 @@ export const TOOL_DESCRIPTION_EXTRACTORS = {
     args.dir_path ? path.relative(cwd, args.dir_path) : '.',
 } as const;
 
-// Message types
-export const MESSAGE_TYPES = {
-  TEXT: 'text',
-  THINKING: 'thinking',
-  TOOL_CALL: 'tool-call',
-  TOOL_RESULT: 'tool-result',
-} as const;
-
-// Message roles
-export const MESSAGE_ROLES = {
-  USER: 'user',
-  ASSISTANT: 'assistant',
-  SYSTEM: 'system',
-  TOOL: 'tool',
-} as const;
-
-// UI colors
-export const UI_COLORS = {
-  USER: 'blueBright',
-  ASSISTANT: 'magentaBright',
-  SYSTEM: 'redBright',
-  TOOL: 'greenBright',
-  TOOL_RESULT: 'gray',
-  ERROR: 'red',
-  SUCCESS: 'green',
-  WARNING: 'yellow',
-  INFO: 'gray',
-} as const;
-
-// Border colors for different states
-export const BORDER_COLORS = {
-  DEFAULT: 'blueBright',
-  PROCESSING: 'gray',
-  ERROR: 'redBright',
-  WARNING: 'yellow',
-} as const;
-
-// Approval options
-export const APPROVAL_OPTIONS = [
-  {
-    label: 'Yes (once)',
-    value: 'approve_once',
+export const ANIMATION_CONFIG = {
+  TEXT_GRADIENT_SPEED: 150,
+  GRADIENT_COLORS: {
+    BASE: 'gray',
+    HIGHLIGHT: 'whiteBright',
+    FADE_LEVELS: ['white', 'gray', 'blackBright', 'black'] as const,
   },
-  {
-    label: 'Yes (always for this command)',
-    value: 'approve_always',
+  SPEED_LIMITS: {
+    MIN: 50,
+    MAX: 200,
   },
-  {
-    label: 'Yes (always for tool)',
-    value: 'approve_always_tool',
-  },
-  {
-    label: 'No',
-    value: 'deny',
-  },
-] as const;
-
-// Edit approval options (for edit tool specifically)
-export const EDIT_APPROVAL_OPTIONS = [
-  {
-    label: 'Yes (once)',
-    value: 'approve_once',
-  },
-  {
-    label: 'Yes (always for this command)',
-    value: 'approve_always',
-  },
-  {
-    label: 'Yes (always for tool)',
-    value: 'approve_always_tool',
-  },
-  {
-    label: 'Modify with external editor',
-    value: 'modify_with_editor',
-  },
-  {
-    label: 'No',
-    value: 'deny',
-  },
-] as const;
-
-// Plan modal options
-export const PLAN_OPTIONS = [
-  {
-    label: 'Yes',
-    value: true,
-  },
-  {
-    label: 'No, I want to edit the plan',
-    value: false,
-  },
-] as const;
-
-// Default spacing values
-export const SPACING = {
-  MESSAGE_MARGIN_TOP: 1,
-  MESSAGE_MARGIN_LEFT: 4,
-  TOOL_MESSAGE_MARGIN_TOP: 0,
-  USER_MESSAGE_MARGIN_LEFT: 0,
 } as const;

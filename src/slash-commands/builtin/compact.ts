@@ -1,9 +1,9 @@
 import createDebug from 'debug';
 import React, { useEffect } from 'react';
-import { useAppStore } from '../../next/ui/store';
+import { useAppStore } from '../../ui/store';
 import { type LocalJSXCommand } from '../types';
 
-const debug = createDebug('takumi:slash-commands:compact');
+const debug = createDebug('neovate:slash-commands:compact');
 
 export const compactCommand: LocalJSXCommand = {
   type: 'local-jsx',

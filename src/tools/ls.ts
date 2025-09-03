@@ -1,7 +1,6 @@
-import { tool } from '@openai/agents';
 import path from 'path';
 import { z } from 'zod';
-import { Context } from '../context';
+import { createTool } from '../tool';
 import {
   MAX_FILES,
   TRUNCATED_MESSAGE,
@@ -12,13 +11,14 @@ import {
 import type { LsToolResult } from './type';
 
 export function createLSTool(opts: { cwd: string; productName: string }) {
-  return tool({
+  return createTool({
     name: 'ls',
     description: 'Lists files and directories in a given path.',
     parameters: z.object({
       dir_path: z.string().describe('The path to the directory to list.'),
     }),
-    execute: async ({ dir_path }): Promise<LsToolResult> => {
+    execute: async (params): Promise<LsToolResult> => {
+      const { dir_path } = params;
       const fullFilePath = path.isAbsolute(dir_path)
         ? dir_path
         : path.resolve(opts.cwd, dir_path);
@@ -43,6 +43,9 @@ export function createLSTool(opts: { cwd: string; productName: string }) {
           data: assistantData,
         };
       }
+    },
+    approval: {
+      category: 'read',
     },
   });
 }
