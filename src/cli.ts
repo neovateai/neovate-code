@@ -7,7 +7,7 @@ import { runNeovate } from './next';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf-8'),
+  fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8'),
 );
 const installDir = path.resolve(__dirname, '../');
 runNeovate({

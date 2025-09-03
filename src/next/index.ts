@@ -262,7 +262,39 @@ export async function runNeovate(opts: {
     },
     plugins: opts.plugins,
   };
+
   // TODO: support other commands
+  // sub commands
+  const validCommands = ['config', 'commit', 'mcp', 'run', 'log', 'server'];
+  const command = argv._[0];
+  if (validCommands.includes(command)) {
+    const context = await Context.create({
+      cwd: argv.cwd || process.cwd(),
+      ...contextCreateOpts,
+    });
+    switch (command) {
+      case 'config':
+        const { runConfig } = await import('../commands/config');
+        await runConfig(context);
+        break;
+      case 'mcp':
+        const { runMCP } = await import('../commands/mcp');
+        await runMCP(context);
+        break;
+      case 'run':
+        const { runRun } = await import('../commands/run');
+        await runRun(context);
+        break;
+      case 'commit':
+        const { runCommit } = await import('../commands/commit');
+        await runCommit(context);
+        break;
+      default:
+        throw new Error(`Unsupported command: ${command}`);
+    }
+    return;
+  }
+
   if (argv.quiet) {
     const context = await Context.create({
       cwd: argv.cwd || process.cwd(),

@@ -259,15 +259,4 @@ export async function runLog(opts: RunCliOpts) {
     debug('Received SIGQUIT, shutting down...');
     gracefulShutdown();
   });
-
-  // Force exit after timeout if graceful shutdown fails
-  // const forceExitTimeout = setTimeout(() => {
-  //   debug('Force exiting after timeout');
-  //   process.exit(1);
-  // }, 5000);
-
-  // Clear timeout if process exits normally
-  // process.on('exit', () => {
-  //   clearTimeout(forceExitTimeout);
-  // });
 }

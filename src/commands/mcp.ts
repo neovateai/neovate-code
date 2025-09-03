@@ -1,6 +1,6 @@
 import yargsParser from 'yargs-parser';
-import { type RunCliOpts } from '..';
 import { ConfigManager } from '../config';
+import { type Context } from '../next/context';
 
 function printHelp(p: string) {
   console.log(
@@ -42,8 +42,8 @@ Examples:
   );
 }
 
-export async function runMCP(opts: RunCliOpts) {
-  const productName = opts.productName!;
+export async function runMCP(context: Context) {
+  const productName = context.productName;
   const argv = yargsParser(process.argv.slice(3), {
     alias: {
       help: 'h',
