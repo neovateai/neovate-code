@@ -92,6 +92,7 @@ export class Project {
     });
     return this.sendWithSystemPromptAndTools(message, {
       ...opts,
+      model: opts.model || this.context.config.planModel,
       tools,
       systemPrompt,
       onToolApprove: () => Promise.resolve(true),
