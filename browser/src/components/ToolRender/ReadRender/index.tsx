@@ -1,6 +1,6 @@
 import { CheckOutlined } from '@ant-design/icons';
 import { useEffect, useState } from 'react';
-import { useShiki } from '@/components/CodeRenderer';
+import CodeRenderer from '@/components/CodeRenderer';
 import MessageWrapper from '@/components/MessageWrapper';
 import { useClipboard } from '@/hooks/useClipboard';
 import CopyIcon from '@/icons/copy.svg?react';
@@ -16,7 +16,6 @@ export default function ReadRender({ message }: { message?: ToolMessage }) {
   };
 
   const { writeText } = useClipboard();
-  const { codeToHtml, isReady, error } = useShiki();
   const [isCopySuccess, setIsCopySuccess] = useState(false);
 
   const file_path = args?.file_path;
@@ -37,19 +36,6 @@ export default function ReadRender({ message }: { message?: ToolMessage }) {
     }
   }, [isCopySuccess]);
 
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
-
-  if (!isReady || !codeToHtml) {
-    return <div>Loading syntax highlighter...</div>;
-  }
-
-  const highlightedCode = codeToHtml(code, {
-    lang: language,
-    theme: 'snazzy-light',
-  });
-
   return (
     <MessageWrapper
       title={file_path}
@@ -65,7 +51,12 @@ export default function ReadRender({ message }: { message?: ToolMessage }) {
         },
       ]}
     >
-      <div dangerouslySetInnerHTML={{ __html: highlightedCode }} />{' '}
+      <CodeRenderer
+        code={code}
+        language={language}
+        filename={file_path}
+        showLineNumbers={true}
+      />
     </MessageWrapper>
   );
 }
