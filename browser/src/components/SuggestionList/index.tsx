@@ -20,10 +20,10 @@ import { useSnapshot } from 'valtio';
 import { ContextType } from '@/constants/context';
 import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';
-import FileTooltipRender from './FileTooltipRender';
 import ListFooter from './ListFooter';
-import SlashCommandTooltipRender from './SlashCommandTooltipRender';
 import SmartText from './SmartText';
+import FileTooltipRender from './TooltipRender/FileTooltipRender';
+import SlashCommandTooltipRender from './TooltipRender/SlashCommandTooltipRender';
 
 export type SuggestionItem = {
   label: React.ReactNode;
