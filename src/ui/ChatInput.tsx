@@ -39,9 +39,9 @@ export function ChatInput() {
     }
     return '';
   }, [currentTip, queuedMessages]);
-  // if (slashCommandJSX) {
-  //   return null;
-  // }
+  if (slashCommandJSX) {
+    return null;
+  }
   if (planResult) {
     return null;
   }

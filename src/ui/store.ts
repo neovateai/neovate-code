@@ -41,26 +41,22 @@ type AppStatus =
   | 'help'
   | 'exit';
 
-export const APP_STATUS_MESSAGES = {
+const APP_STATUS_MESSAGES = {
   processing: 'Processing...',
   planning: 'Planning...',
   plan_approving: 'Waiting for plan approval...',
   tool_approving: 'Waiting for tool approval...',
   tool_executing: 'Executing tool...',
-  compacting: 'Compacting...',
-  slash_command_executing: 'Executing command...',
   failed: 'Failed',
   cancelled: 'Cancelled',
-  help: 'Help',
-} as const;
+};
 
-export function isExecuting(status: AppStatus) {
+function isExecuting(status: AppStatus) {
   return (
     status === 'processing' ||
     status === 'planning' ||
     status === 'tool_executing' ||
-    status === 'compacting' ||
-    status === 'slash_command_executing'
+    status === 'compacting'
   );
 }
 
@@ -159,7 +155,6 @@ interface AppActions {
   addToQueue: (message: string) => void;
   clearQueue: () => void;
   processQueuedMessages: () => Promise<void>;
-  checkAndProcessQueue: () => void;
   toggleDebugMode: () => void;
   setStatus: (status: AppStatus) => void;
 
@@ -348,19 +343,10 @@ export const useAppStore = create<AppStore>()(
               if (isPrompt) {
                 await get().sendMessage({ message: null });
               }
-
-              // Check for queued messages after slash command execution
-              get().checkAndProcessQueue();
             } else if (isLocalJSX) {
-              set({
-                status: 'slash_command_executing',
-                processingStartTime: Date.now(),
-              });
               const jsx = await command.call(async (result: string) => {
                 set({
                   slashCommandJSX: null,
-                  status: 'idle',
-                  processingStartTime: null,
                 });
                 await bridge.request('addMessages', {
                   cwd,
@@ -378,9 +364,6 @@ export const useAppStore = create<AppStore>()(
                     },
                   ],
                 });
-
-                // Check for queued messages after JSX slash command execution
-                get().checkAndProcessQueue();
               }, {} as any);
               set({
                 slashCommandJSX: jsx,
@@ -434,7 +417,11 @@ export const useAppStore = create<AppStore>()(
             }
 
             // Check for queued messages
-            get().checkAndProcessQueue();
+            if (get().queuedMessages.length > 0) {
+              setTimeout(() => {
+                get().processQueuedMessages();
+              }, 100);
+            }
           }
         }
       },
@@ -639,14 +626,6 @@ export const useAppStore = create<AppStore>()(
         // Send all queued messages as a single joined message
         const joinedMessage = queued.join('\n');
         await get().send(joinedMessage);
-      },
-      checkAndProcessQueue: () => {
-        // Check for queued messages and process them with a delay
-        if (get().queuedMessages.length > 0) {
-          setTimeout(() => {
-            get().processQueuedMessages();
-          }, 100);
-        }
       },
 
       toggleDebugMode: () => {
