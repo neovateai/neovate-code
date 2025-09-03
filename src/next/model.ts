@@ -182,6 +182,19 @@ export const models: ModelMap = {
     open_weights: false,
     limit: { context: 256000, output: 64000 },
   },
+  'grok-code-fast-1': {
+    name: 'Grok Code Fast 1',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-08',
+    release_date: '2025-08-20',
+    last_updated: '2025-08-20',
+    modalities: { input: ['text', 'image'], output: ['text'] },
+    open_weights: false,
+    limit: { context: 256000, output: 32000 },
+  },
   'claude-3-5-sonnet-20241022': {
     name: 'Claude Sonnet 3.5 v2',
     attachment: true,
@@ -433,6 +446,7 @@ export const providers: ProvidersMap = {
     doc: 'https://xai.com/docs/models',
     models: {
       'grok-4': models['grok-4'],
+      'grok-code-fast-1': models['grok-code-fast-1'],
     },
     createModel(name, provider) {
       return aisdk(
@@ -509,6 +523,7 @@ export const providers: ProvidersMap = {
       'openai/o4-mini': models['o4-mini'],
       'moonshotai/kimi-k2': models['kimi-k2'],
       'qwen/qwen3-coder': models['qwen3-coder-480b-a35b-instruct'],
+      'x-ai/grok-code-fast-1': models['grok-code-fast-1'],
     },
     createModel(name, provider) {
       return aisdk(
@@ -566,6 +581,7 @@ export const modelAlias = {
   flash: 'google/gemini-2.5-flash',
   gemini: 'google/gemini-2.5-pro',
   grok: 'xai/grok-4',
+  'grok-code': 'xai/grok-code-fast-1',
   sonnet: 'anthropic/claude-sonnet-4-20250514',
   'sonnet-3.5': 'anthropic/claude-3-5-sonnet-20241022',
   'sonnet-3.7': 'anthropic/claude-3-7-sonnet-20250219',
