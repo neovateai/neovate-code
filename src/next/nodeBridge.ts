@@ -16,6 +16,7 @@ import {
 } from './model';
 import { OutputStyleManager } from './outputStyle';
 import { Project } from './project';
+import { query } from './query';
 import { SessionConfigManager } from './session';
 import { SlashCommandManager } from './slashCommand';
 
@@ -464,6 +465,24 @@ class NodeHandlerRegistry {
 
     //////////////////////////////////////////////
     // utils
+
+    this.messageBus.registerHandler(
+      'query',
+      async (data: {
+        userPrompt: string;
+        cwd: string;
+        systemPrompt?: string;
+      }) => {
+        const { userPrompt, cwd, systemPrompt } = data;
+        const context = await this.getContext(cwd);
+        const result = await query({
+          userPrompt,
+          context,
+          systemPrompt,
+        });
+        return result;
+      },
+    );
 
     this.messageBus.registerHandler(
       'getPaths',
