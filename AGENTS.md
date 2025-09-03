@@ -9,7 +9,7 @@ Takumi is a coding agent CLI to enhance development workflow. It's a TypeScript-
 ## Development Commandst
 
 ### Core Commands
-- **Development**: `tsx ./src/cli.ts` - Run the CLI in development mode
+- **Development**: `bun ./src/cli.ts` - Run the CLI in development mode
 - **Build**: `npm run build` - Full build (requires Bun 1.2.7)
   - CLI build: `bun build src/cli.ts --external react-devtools-core --minify --outfile dist/cli.mjs --target=node`
   - Index build: `bun build src/index.ts --external react-devtools-core --minify --outfile dist/index.mjs --target=node`
