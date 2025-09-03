@@ -171,6 +171,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       [],
     );
 
+    // FIXME: disabled状态禁用对于一级菜单未适配
     // Handle keyboard navigation
     const handleKeyDown = useCallback(
       (event: React.KeyboardEvent) => {
@@ -193,6 +194,11 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
             event.preventDefault();
             if (selectedIndex >= 0 && selectedIndex < currentList.length) {
               const selectedItem = currentList[selectedIndex];
+
+              if (!!selectedItem.disabled) {
+                break;
+              }
+
               if (selectedFirstKey) {
                 if (!isSecondItemSelected(selectedItem.value)) {
                   onSelect?.(

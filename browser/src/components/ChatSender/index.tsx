@@ -90,7 +90,6 @@ const ChatSender: React.FC = () => {
       handleSubmit();
     }
   };
-  console.log(prompt);
 
   return (
     <Spin spinning={isPasting}>
