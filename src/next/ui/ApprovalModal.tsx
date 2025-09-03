@@ -70,12 +70,11 @@ export function ApprovalModal() {
 
 function ApprovalModalContent() {
   const { approvalModal, cwd } = useAppStore();
-  const approval = approvalModal!;
 
   const selectOptions = useMemo(() => {
     const options = [
       { label: 'Yes (once)', value: 'approve_once' },
-      ...(approval.category === 'write'
+      ...(approvalModal!.category === 'write'
         ? [
             {
               label: `Yes, allow all edits during this session`,
@@ -84,7 +83,7 @@ function ApprovalModalContent() {
           ]
         : []),
       {
-        label: `Yes, allow ${approval.toolUse.name} during this session`,
+        label: `Yes, allow ${approvalModal!.toolUse.name} during this session`,
         value: 'approve_always_tool',
       },
       { label: 'No, and suggest changes (esc)', value: 'deny' },
@@ -93,17 +92,17 @@ function ApprovalModalContent() {
       value: option.value,
     }));
     return options;
-  }, [approval]);
+  }, [approvalModal]);
 
   useInput((input, key) => {
     const inputNum = parseInt(input, 10);
     if (key.escape) {
-      approval.resolve('deny');
+      approvalModal!.resolve('deny');
     } else if (inputNum >= 1 && inputNum <= selectOptions.length) {
       const value = selectOptions[parseInt(input) - 1].value as ApprovalResult;
-      approval.resolve(value);
+      approvalModal!.resolve(value);
     } else if (key.ctrl && input === 'c') {
-      approval.resolve('deny');
+      approvalModal!.resolve('deny');
     }
   });
 
@@ -118,7 +117,7 @@ function ApprovalModalContent() {
         Tool Approval Required
       </Text>
 
-      <ToolPreview toolUse={approval.toolUse} cwd={cwd} />
+      <ToolPreview toolUse={approvalModal!.toolUse} cwd={cwd} />
 
       <Box marginY={1}>
         <Text bold>Approval Options:</Text>
@@ -126,7 +125,9 @@ function ApprovalModalContent() {
 
       <SelectInput
         items={selectOptions}
-        onSelect={(item) => approval.resolve(item.value as ApprovalResult)}
+        onSelect={(item) =>
+          approvalModal!.resolve(item.value as ApprovalResult)
+        }
       />
     </Box>
   );
