@@ -17,12 +17,6 @@ import type { ApprovalCategory } from '../tool';
 import type { UIBridge } from '../uiBridge';
 import { Upgrade, type UpgradeOptions } from '../upgrade';
 
-type QueuedMessage = {
-  id: string;
-  content: string;
-  timestamp: number;
-};
-
 export type ApprovalResult =
   | 'approve_once'
   | 'approve_always_edit'
@@ -90,7 +84,7 @@ interface AppState {
 
   messages: Message[];
   currentMessage: Message | null;
-  queuedMessages: QueuedMessage[];
+  queuedMessages: string[];
 
   draftInput: string;
   history: string[];
@@ -148,6 +142,9 @@ interface AppActions {
     toolUse: ToolUse;
     category?: ApprovalCategory;
   }) => Promise<ApprovalResult>;
+  addToQueue: (message: string) => void;
+  clearQueue: () => void;
+  processQueuedMessages: () => Promise<void>;
 }
 
 export type AppStore = AppState & AppActions;
@@ -246,10 +243,16 @@ export const useAppStore = create<AppStore>()(
         });
       },
 
-      // TODO: support queued messages
       send: async (message) => {
-        const { bridge, cwd, sessionId, planMode } = get();
+        const { bridge, cwd, sessionId, planMode, status } = get();
 
+        // Check if processing, queue the message
+        if (isExecuting(status)) {
+          get().addToQueue(message);
+          return;
+        }
+
+        // Only add to history when actually sending
         set({
           history: [...get().history, message],
           historyIndex: null,
@@ -339,8 +342,12 @@ export const useAppStore = create<AppStore>()(
             set({
               planResult: result.data.text,
             });
-          } else {
-            // TODO
+          }
+          // After processing, check for queued messages
+          if (result.success && get().queuedMessages.length > 0) {
+            setTimeout(() => {
+              get().processQueuedMessages();
+            }, 100);
           }
         }
       },
@@ -517,6 +524,21 @@ export const useAppStore = create<AppStore>()(
             },
           });
         });
+      },
+      addToQueue: (message: string) => {
+        set({ queuedMessages: [...get().queuedMessages, message] });
+      },
+      clearQueue: () => {
+        set({ queuedMessages: [] });
+      },
+      processQueuedMessages: async () => {
+        const queued = get().queuedMessages;
+        if (queued.length === 0) return;
+
+        get().clearQueue();
+        // Send all queued messages as a single joined message
+        const joinedMessage = queued.join('\n');
+        await get().send(joinedMessage);
       },
     }),
     { name: 'app-store' },

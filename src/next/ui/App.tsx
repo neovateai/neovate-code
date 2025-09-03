@@ -7,6 +7,7 @@ import { ChatInput } from './ChatInput';
 import { Debug } from './Debug';
 import { Markdown } from './Markdown';
 import { Messages } from './Messages';
+import { QueueDisplay } from './QueueDisplay';
 import { useAppStore } from './store';
 import { useTerminalRefresh } from './useTerminalRefresh';
 
@@ -71,6 +72,7 @@ export function App() {
       <Messages />
       <PlanResult />
       <ActivityIndicator />
+      <QueueDisplay />
       <ChatInput />
       <SlashCommandJSX />
       <ApprovalModal />

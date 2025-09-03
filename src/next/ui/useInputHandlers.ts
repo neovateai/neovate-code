@@ -14,6 +14,7 @@ export function useInputHandlers() {
     setDraftInput,
     setHistoryIndex,
     togglePlanMode,
+    clearQueue,
   } = useAppStore();
   const inputState = useInputState();
   const slashCommands = useSlashCommands(inputState.state.value);
@@ -102,7 +103,15 @@ export function useInputHandlers() {
       fileSuggestion.navigatePrevious();
       return;
     }
-    // 2. queued message
+    // 2. queued message (handled before history)
+    const { queuedMessages } = useAppStore.getState();
+    if (historyIndex === null && queuedMessages.length > 0) {
+      const queuedText = queuedMessages.join('\n');
+      clearQueue();
+      inputState.setValue(queuedText);
+      inputState.setCursorPosition(0);
+      return;
+    }
     // 3. history
     if (history.length > 0) {
       let nextHistoryIndex = null;
