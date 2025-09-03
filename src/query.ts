@@ -1,10 +1,10 @@
 import assert from 'assert';
-import { randomUUID } from '../utils/randomUUID';
 import type { Context } from './context';
 import type { NormalizedMessage } from './history';
 import { runLoop } from './loop';
 import { type ModelInfo, resolveModelWithContext } from './model';
 import { Tools } from './tool';
+import { randomUUID } from './utils/randomUUID';
 
 export async function query(opts: {
   userPrompt: string;

@@ -4,7 +4,7 @@ import type {
   SystemMessageItem,
   UserMessageItem,
 } from '@openai/agents';
-import { randomUUID } from '../utils/randomUUID';
+import { randomUUID } from './utils/randomUUID';
 
 type SystemMessage = {
   role: 'system';

@@ -1,9 +1,6 @@
-import { type ApprovalMode, ConfigManager } from '../config';
-import { CANCELED_MESSAGE_TEXT } from '../constants';
-import { PluginHookType } from '../plugin';
-import { listDirectory } from '../utils/list';
-import { randomUUID } from '../utils/randomUUID';
 import { compact } from './compact';
+import { type ApprovalMode, ConfigManager } from './config';
+import { CANCELED_MESSAGE_TEXT } from './constants';
 import { Context } from './context';
 import type { Message, NormalizedMessage, UserMessage } from './history';
 import { JsonlLogger } from './jsonl';
@@ -15,10 +12,13 @@ import {
   resolveModelWithContext,
 } from './model';
 import { OutputStyleManager } from './outputStyle';
+import { PluginHookType } from './plugin';
 import { Project } from './project';
 import { query } from './query';
 import { SessionConfigManager } from './session';
 import { SlashCommandManager } from './slashCommand';
+import { listDirectory } from './utils/list';
+import { randomUUID } from './utils/randomUUID';
 
 type ModelData = Omit<Model, 'id' | 'cost'>;
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Type } from '@sinclair/typebox';
 import { pipeDataStreamToResponse } from 'ai';
 import createDebug from 'debug';

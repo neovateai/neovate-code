@@ -2,14 +2,14 @@ import fm from 'front-matter';
 import fs from 'fs';
 import { glob } from 'glob';
 import path from 'path';
+import type { Context } from './context';
 import {
   defaultOutputStyle,
   getBuiltinOutputStyles,
-} from '../output-style/builtin';
-import { PluginHookType } from '../plugin';
-import { kebabToTitleCase } from '../utils/string';
-import type { Context } from './context';
+} from './output-style/builtin';
 import type { Paths } from './paths';
+import { PluginHookType } from './plugin';
+import { kebabToTitleCase } from './utils/string';
 
 export type OutputStyleOpts = {
   name: string;

@@ -3,8 +3,8 @@ import assert from 'assert';
 import { execSync } from 'child_process';
 import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
-import { Context } from '../next/context';
-import { query } from '../next/query';
+import { Context } from '../context';
+import { query } from '../query';
 import * as logger from '../utils/logger';
 
 async function executeShell(

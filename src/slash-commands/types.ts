@@ -1,4 +1,4 @@
-import { Context } from '../next/context';
+import { Context } from '../context';
 
 export enum CommandSource {
   Builtin = 'builtin',

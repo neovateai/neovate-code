@@ -1,8 +1,8 @@
 import { Box, Text, useInput } from 'ink';
 import pc from 'picocolors';
 import React, { useEffect, useMemo, useState } from 'react';
-import PaginatedGroupSelectInput from '../../next/ui/PaginatedGroupSelectInput';
-import { useAppStore } from '../../next/ui/store';
+import PaginatedGroupSelectInput from '../../ui/PaginatedGroupSelectInput';
+import { useAppStore } from '../../ui/store';
 import { type LocalJSXCommand } from '../types';
 
 interface ModelSelectProps {

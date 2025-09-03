@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import type { ApprovalMode } from '../config';
-import { randomUUID } from '../utils/randomUUID';
+import type { ApprovalMode } from './config';
 import { History, type NormalizedMessage } from './history';
 import { Usage } from './usage';
+import { randomUUID } from './utils/randomUUID';
 
 export type SessionId = string;
 

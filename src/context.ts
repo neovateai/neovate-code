@@ -2,14 +2,14 @@ import fs from 'fs';
 import { createJiti } from 'jiti';
 import path from 'path';
 import resolve from 'resolve';
-import { type Config, ConfigManager } from '../config';
+import { type Config, ConfigManager } from './config';
+import { Paths } from './paths';
 import {
   type Plugin,
   type PluginApplyOpts,
   PluginHookType,
   PluginManager,
-} from '../plugin';
-import { Paths } from './paths';
+} from './plugin';
 
 type ContextOpts = {
   cwd: string;

@@ -1,6 +1,6 @@
 import yargsParser from 'yargs-parser';
 import { ConfigManager } from '../config';
-import { type Context } from '../next/context';
+import { type Context } from '../context';
 
 function printHelp(p: string) {
   console.log(

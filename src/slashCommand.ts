@@ -1,17 +1,17 @@
 import path from 'path';
-import { PluginHookType } from '../plugin';
-import { createBuiltinCommands } from '../slash-commands/builtin';
-import {
-  CommandSource,
-  type PromptCommand,
-  type SlashCommand,
-} from '../slash-commands/types';
 import type { Context } from './context';
 import {
   type NormalizedMarkdownFile,
   loadPolishedMarkdownFiles,
 } from './outputStyle';
 import type { Paths } from './paths';
+import { PluginHookType } from './plugin';
+import { createBuiltinCommands } from './slash-commands/builtin';
+import {
+  CommandSource,
+  type PromptCommand,
+  type SlashCommand,
+} from './slash-commands/types';
 
 export type SlashCommandManagerOpts = {
   paths: Paths;

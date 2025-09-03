@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { listDirectory } from '../../utils/list';
+import { listDirectory } from '../utils/list';
 import { useAppStore } from './store';
 
 // Random selection utility - selects one item from array

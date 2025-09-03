@@ -1,13 +1,13 @@
 import path from 'path';
 import { z } from 'zod';
+import { createTool } from '../tool';
 import {
   MAX_FILES,
   TRUNCATED_MESSAGE,
   createFileTree,
   listDirectory,
   printTree,
-} from '../../utils/list';
-import { createTool } from '../tool';
+} from '../utils/list';
 import type { LsToolResult } from './type';
 
 export function createLSTool(opts: { cwd: string; productName: string }) {

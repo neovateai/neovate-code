@@ -4,9 +4,9 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { z } from 'zod';
-import { getErrorMessage } from '../../utils/error';
-import { shellExecute } from '../../utils/shell-execution';
 import { createTool } from '../tool';
+import { getErrorMessage } from '../utils/error';
+import { shellExecute } from '../utils/shell-execution';
 import type { BashToolResult } from './type';
 
 const debug = createDebug('takumi:tools:bash');

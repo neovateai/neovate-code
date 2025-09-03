@@ -1,6 +1,6 @@
 import { debounce } from 'lodash-es';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { clearTerminal } from '../../utils/terminal';
+import { clearTerminal } from '../utils/terminal';
 
 const DEBOUNCE_TIME = 200;
 const WIDTH_THRESHOLD = 3;

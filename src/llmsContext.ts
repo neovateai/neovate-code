@@ -1,12 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import { platform } from 'process';
-import { PluginHookType } from '../plugin';
-import { getGitStatus, getLlmGitStatus } from '../utils/git';
-import { isProjectDirectory } from '../utils/project';
 import { Context } from './context';
+import { PluginHookType } from './plugin';
 import { getLlmsRules } from './rules';
 import { createLSTool } from './tools/ls';
+import { getGitStatus, getLlmGitStatus } from './utils/git';
+import { isProjectDirectory } from './utils/project';
 
 export type LlmsContextCreateOpts = {
   context: Context;

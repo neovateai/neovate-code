@@ -2,7 +2,7 @@ import fs from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
-import { TOOL_NAME } from '../../constants';
+import { TOOL_NAME } from '../constants';
 import { createTool } from '../tool';
 import type { TodoReadToolResult, TodoWriteToolResult } from './type';
 

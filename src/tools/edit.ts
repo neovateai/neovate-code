@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import { applyEdit } from '../../utils/applyEdit';
 import { createTool } from '../tool';
+import { applyEdit } from '../utils/applyEdit';
 import type { EditToolResult } from './type';
 
 export function createEditTool(opts: { cwd: string }) {

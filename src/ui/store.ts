@@ -2,9 +2,7 @@ import open from 'open';
 import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { ApprovalMode } from '../../config';
-import { setTerminalTitle } from '../../utils/setTerminalTitle';
-import { clearTerminal } from '../../utils/terminal';
+import type { ApprovalMode } from '../config';
 import type { Message } from '../history';
 import type { LoopResult, ToolUse } from '../loop';
 import { SessionConfigManager, loadSessionMessages } from '../session';
@@ -17,6 +15,8 @@ import {
 import type { ApprovalCategory } from '../tool';
 import type { UIBridge } from '../uiBridge';
 import { Upgrade, type UpgradeOptions } from '../upgrade';
+import { setTerminalTitle } from '../utils/setTerminalTitle';
+import { clearTerminal } from '../utils/terminal';
 
 export type ApprovalResult =
   | 'approve_once'

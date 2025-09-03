@@ -1,6 +1,6 @@
-import { CANCELED_MESSAGE_TEXT } from '../constants';
-import { randomUUID } from '../utils/randomUUID';
+import { CANCELED_MESSAGE_TEXT } from './constants';
 import type { Message, NormalizedMessage } from './history';
+import { randomUUID } from './utils/randomUUID';
 
 export function createUserMessage(
   content: string,

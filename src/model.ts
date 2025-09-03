@@ -4,10 +4,10 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createXai } from '@ai-sdk/xai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import assert from 'assert';
-import { PluginHookType } from '../plugin';
-import { aisdk } from '../utils/ai-sdk';
-import type { AiSdkModel } from '../utils/ai-sdk';
 import type { Context } from './context';
+import { PluginHookType } from './plugin';
+import { aisdk } from './utils/ai-sdk';
+import type { AiSdkModel } from './utils/ai-sdk';
 
 export interface ModelModalities {
   input: ('text' | 'image' | 'audio' | 'video' | 'pdf')[];

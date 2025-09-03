@@ -1,6 +1,6 @@
 import { Box, Static, Text } from 'ink';
 import React from 'react';
-import { CANCELED_MESSAGE_TEXT, TOOL_NAME } from '../../constants';
+import { CANCELED_MESSAGE_TEXT, TOOL_NAME } from '../constants';
 import type {
   AssistantMessage,
   NormalizedMessage,

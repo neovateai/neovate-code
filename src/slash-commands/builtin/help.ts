@@ -1,4 +1,4 @@
-import { SlashCommandManager } from '../../next/slashCommand';
+import { SlashCommandManager } from '../../slashCommand';
 import { CommandSource, type LocalCommand } from '../types';
 
 export const helpCommand: LocalCommand = {

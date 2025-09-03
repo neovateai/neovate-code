@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import { randomUUID } from '../utils/randomUUID';
+import { randomUUID } from './utils/randomUUID';
 
 type MessageId = string;
 type BaseMessage = {

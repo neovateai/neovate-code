@@ -1,4 +1,4 @@
-import { TOOL_NAME } from '../constants';
+import { TOOL_NAME } from './constants';
 import type { OutputStyle } from './outputStyle';
 
 function getTasksPrompt(opts: { todo: boolean; productName: string }) {

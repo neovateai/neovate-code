@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import { ripGrep } from '../../utils/ripgrep';
 import { createTool } from '../tool';
+import { ripGrep } from '../utils/ripgrep';
 import type { GrepToolResult } from './type';
 
 export function createGrepTool(opts: { cwd: string }) {

@@ -2,8 +2,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { runNeovate } from '.';
 import { PRODUCT_ASCII_ART, PRODUCT_NAME } from './constants';
-import { runNeovate } from './next';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(

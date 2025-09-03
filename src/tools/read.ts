@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import { IMAGE_EXTENSIONS } from '../../constants';
+import { IMAGE_EXTENSIONS } from '../constants';
 import { createTool } from '../tool';
 import type { ReadToolResult } from './type';
 
