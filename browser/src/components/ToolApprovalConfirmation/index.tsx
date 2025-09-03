@@ -7,6 +7,9 @@ import {
 import { Spin, Tooltip } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
+import BashIcon from '@/icons/bash.svg?react';
+import EditIcon from '@/icons/edit.svg?react';
+import SearchIcon from '@/icons/search.svg?react';
 import { toolApprovalActions, toolApprovalState } from '@/state/toolApproval';
 import type { ToolApprovalRequestMessage } from '@/types/message';
 import MessageWrapper from '../MessageWrapper';
@@ -29,44 +32,50 @@ export default function ToolApprovalConfirmation({
     return null;
   }
 
-  // 格式化工具参数描述
+  // 格式化工具参数描述，实际上只有fetch，bash，edit会有审批
   const getToolDescription = (
     toolName: string,
     params: Record<string, any>,
   ) => {
     switch (toolName) {
       case 'read':
-        return t('toolApproval.toolDescriptions.read', {
-          filePath: params.file_path,
-        });
+        return params.file_path;
       case 'bash':
-        return t('toolApproval.toolDescriptions.bash', {
-          command: params.command,
-        });
+        return (
+          <div className="flex items-center gap-2">
+            <BashIcon />
+            {params.command}
+          </div>
+        );
       case 'edit':
-        return t('toolApproval.toolDescriptions.edit', {
-          filePath: params.file_path,
-        });
+        return (
+          <div className="flex items-center gap-2">
+            <EditIcon />
+            {params.file_path}
+          </div>
+        );
       case 'write':
-        return t('toolApproval.toolDescriptions.write', {
-          filePath: params.file_path,
-        });
+        return (
+          <div className="flex items-center gap-2">
+            <EditIcon />
+            {params.file_path}
+          </div>
+        );
       case 'fetch':
-        return t('toolApproval.toolDescriptions.fetch', { url: params.url });
+        return (
+          <div className="flex items-center gap-2">
+            <SearchIcon />
+            {params.url}
+          </div>
+        );
       case 'glob':
-        return t('toolApproval.toolDescriptions.glob', {
-          pattern: params.pattern,
-        });
+        return params.pattern;
       case 'grep':
-        return t('toolApproval.toolDescriptions.grep', {
-          pattern: params.pattern,
-        });
+        return params.pattern;
       case 'ls':
-        return t('toolApproval.toolDescriptions.ls', {
-          dirPath: params.dir_path,
-        });
+        return params.dir_path;
       default:
-        return t('toolApproval.toolDescriptions.default', { toolName });
+        return toolName;
     }
   };
 
