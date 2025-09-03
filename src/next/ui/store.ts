@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../../config';
+import { setTerminalTitle } from '../../utils/setTerminalTitle';
 import { clearTerminal } from '../../utils/terminal';
 import type { Message } from '../history';
 import type { LoopResult, ToolUse } from '../loop';
@@ -343,11 +344,42 @@ export const useAppStore = create<AppStore>()(
               planResult: result.data.text,
             });
           }
-          // After processing, check for queued messages
-          if (result.success && get().queuedMessages.length > 0) {
-            setTimeout(() => {
-              get().processQueuedMessages();
-            }, 100);
+
+          // Update terminal title after successful send
+          if (result.success) {
+            try {
+              const queryResult = await bridge.request('query', {
+                cwd,
+                systemPrompt:
+                  "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with one fields: 'title' (string). Only include these fields, no other text.",
+                userPrompt: message,
+              });
+
+              if (queryResult.success && queryResult.data?.text) {
+                try {
+                  const response = JSON.parse(queryResult.data.text);
+                  if (response && response.title) {
+                    setTerminalTitle(response.title);
+                    await bridge.request('sessionConfig.setSummary', {
+                      cwd,
+                      sessionId,
+                      summary: response.title,
+                    });
+                  }
+                } catch (parseError) {
+                  get().log(String(parseError));
+                }
+              }
+            } catch (error) {
+              get().log(String(error));
+            }
+
+            // Check for queued messages
+            if (get().queuedMessages.length > 0) {
+              setTimeout(() => {
+                get().processQueuedMessages();
+              }, 100);
+            }
           }
         }
       },

@@ -283,7 +283,6 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
         const toolResult = await opts.tools.invoke(
           toolUse.name,
           JSON.stringify(toolUse.params),
-          {},
         );
         // const formattedToolUse = formatToolUse(toolUse, toolResult);
         const toolUseResult = {
