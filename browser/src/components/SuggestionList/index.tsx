@@ -21,6 +21,7 @@ import { ContextType } from '@/constants/context';
 import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';
 import FileTooltipRender from './FileTooltipRender';
+import ListFooter from './ListFooter';
 import SlashCommandTooltipRender from './SlashCommandTooltipRender';
 import SmartText from './SmartText';
 
@@ -61,6 +62,31 @@ interface ISuggestionListProps {
 export interface ISuggestionListRef {
   triggerKeyDown: (event: React.KeyboardEvent) => void;
 }
+
+const renderItemText = (text: React.ReactNode, searchText?: string | null) => {
+  if (!searchText || typeof text !== 'string') {
+    return text;
+  } else {
+    const searchRegex = new RegExp(
+      `(${searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
+      'gi',
+    );
+    const parts = text.split(searchRegex);
+
+    return parts
+      .map((part, index) => {
+        if (part.toLowerCase() === searchText.toLowerCase()) {
+          return (
+            <span key={index} className="text-[#7357FF]">
+              {part}
+            </span>
+          );
+        }
+        return part;
+      })
+      .filter((part) => part !== '');
+  }
+};
 
 const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
   (props, ref) => {
@@ -215,34 +241,6 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       };
     });
 
-    const renderItemText = (
-      text: React.ReactNode,
-      searchText?: string | null,
-    ) => {
-      if (!searchText || typeof text !== 'string') {
-        return text;
-      } else {
-        const searchRegex = new RegExp(
-          `(${searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
-          'gi',
-        );
-        const parts = text.split(searchRegex);
-
-        return parts
-          .map((part, index) => {
-            if (part.toLowerCase() === searchText.toLowerCase()) {
-              return (
-                <span key={index} className="text-[#7357FF]">
-                  {part}
-                </span>
-              );
-            }
-            return part;
-          })
-          .filter((part) => part !== '');
-      }
-    };
-
     const renderItem = (item: SuggestionItem, index: number) => {
       const isSelected = selectedIndex === index;
       const isFirstLevel = !selectedFirstKey;
@@ -375,31 +373,6 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       searchControl,
     ]);
 
-    const ListFooter = useMemo(() => {
-      return (
-        <div className="px-3.5 pt-1.5 border-t border-[#eeeff0] text-xs text-gray-500 select-none">
-          <div className="flex items-center gap-3 justify-end">
-            <div className="flex items-center gap-1">
-              <div>↑↓</div>
-              <div>{t('suggestion.navigate')}</div>
-            </div>
-            <div className="flex items-center gap-1">
-              <div>Enter</div>
-              <div>{t('suggestion.select')}</div>
-            </div>
-            <div className="flex items-center gap-1">
-              <div>Esc</div>
-              <div>
-                {selectedFirstKey
-                  ? t('suggestion.back')
-                  : t('suggestion.close')}
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }, [selectedFirstKey, t]);
-
     // Combined effect for popup state management
     useEffect(() => {
       if (open) {
@@ -525,7 +498,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
               dataSource={currentList}
               renderItem={renderItem}
             />
-            {ListFooter}
+            <ListFooter selectedFirstKey={selectedFirstKey} />
           </div>
         )}
         trigger={[]}
