@@ -3,10 +3,7 @@ import type { Delta } from 'quill';
 import type { ContextBlotData } from './ContextBlot';
 
 function getTakumiContextBlotPrompt(blotData: ContextBlotData) {
-  return (
-    blotData.translateToPrompt?.(blotData.value, blotData.text) ||
-    blotData.value
-  );
+  return blotData.prompt || blotData.value;
 }
 
 /** DO NOT USE QUILL's `getText`, it won't work with takumi-context.*/

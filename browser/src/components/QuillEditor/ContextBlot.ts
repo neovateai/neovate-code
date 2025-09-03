@@ -7,12 +7,8 @@ export interface ContextBlotData {
   text: string;
   /** the value of the blot */
   value: string;
-  /**
-   * how to translate the blot to prompt
-   *
-   * if not provided, will use value
-   */
-  translateToPrompt?: (value: string, text: string) => string;
+  /** the text when translate blot to prompt, if not provided, use value */
+  prompt?: string;
   /**
    * the prefix to display before the text
    *
@@ -39,6 +35,7 @@ class ContextBlot extends Embed {
 
     node.dataset.value = data.value;
     node.dataset.text = data.text;
+    node.dataset.prefix = data.prefix ?? '@';
 
     return node;
   }

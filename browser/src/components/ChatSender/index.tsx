@@ -176,10 +176,9 @@ const ChatSender: React.FC = () => {
                       contextItem.type === ContextType.SLASH_COMMAND
                         ? '/'
                         : '@',
-                    translateToPrompt: (value, _text) =>
-                      contextItem.type === ContextType.SLASH_COMMAND
-                        ? ' '
-                        : value,
+                    // command blot won't have prompt
+                    prompt:
+                      contextItem.type === ContextType.SLASH_COMMAND && ' ',
                   } as ContextBlotData,
                   'user',
                 );
