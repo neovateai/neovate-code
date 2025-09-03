@@ -91,7 +91,7 @@ export function ChatInput() {
         />
         <DebugRandomNumber />
       </Box>
-      {!showSuggestions && <StatusLine />}
+      <StatusLine />
       <Suggestion
         suggestions={slashCommands.suggestions}
         selectedIndex={slashCommands.selectedIndex}

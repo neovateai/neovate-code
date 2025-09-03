@@ -79,11 +79,7 @@ function StatusMain() {
 }
 
 function StatusSide() {
-  return (
-    <Box width={40}>
-      <UpgradeHint />
-    </Box>
-  );
+  return <UpgradeHint />;
 }
 
 function UpgradeHint() {
