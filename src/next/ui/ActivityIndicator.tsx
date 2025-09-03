@@ -41,6 +41,7 @@ export function ActivityIndicator() {
   }, [status, processingStartTime]);
 
   if (status === 'idle') return null;
+  if (status === 'exit') return null;
   if (planResult) return null;
   if (approvalModal) return null;
 

@@ -39,7 +39,8 @@ type AppStatus =
   | 'failed'
   | 'cancelled'
   | 'slash_command_executing'
-  | 'help';
+  | 'help'
+  | 'exit';
 
 const APP_STATUS_MESSAGES = {
   processing: 'Processing...',
@@ -156,6 +157,7 @@ interface AppActions {
   clearQueue: () => void;
   processQueuedMessages: () => Promise<void>;
   toggleDebugMode: () => void;
+  setStatus: (status: AppStatus) => void;
 
   // Input state actions
   setInputValue: (value: string) => void;
@@ -626,6 +628,10 @@ export const useAppStore = create<AppStore>()(
             get().log(`Failed to open log file: ${error.message}`),
           );
         }
+      },
+
+      setStatus: (status: AppStatus) => {
+        set({ status });
       },
 
       // Input state actions

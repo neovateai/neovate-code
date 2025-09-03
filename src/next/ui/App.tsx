@@ -5,6 +5,7 @@ import { ActivityIndicator } from './ActivityIndicator';
 import { ApprovalModal } from './ApprovalModal';
 import { ChatInput } from './ChatInput';
 import { Debug } from './Debug';
+import { ExitHint } from './ExitHint';
 import { Markdown } from './Markdown';
 import { Messages } from './Messages';
 import { QueueDisplay } from './QueueDisplay';
@@ -76,6 +77,7 @@ export function App() {
       <ChatInput />
       <SlashCommandJSX />
       <ApprovalModal />
+      <ExitHint />
       <Debug />
     </Box>
   );

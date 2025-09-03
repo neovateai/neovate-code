@@ -23,6 +23,8 @@ export function ChatInput() {
     slashCommandJSX,
     approvalModal,
     queuedMessages,
+    status,
+    setStatus,
   } = useAppStore();
   const { columns } = useTerminalSize();
   const showSuggestions =
@@ -30,7 +32,7 @@ export function ChatInput() {
     fileSuggestion.matchedPaths.length > 0;
   const placeholderText = useMemo(() => {
     if (queuedMessages.length > 0) {
-      return 'press up to edit queued messages';
+      return 'Press up to edit queued messages';
     }
     if (currentTip) {
       return currentTip;
@@ -44,6 +46,9 @@ export function ChatInput() {
     return null;
   }
   if (approvalModal) {
+    return null;
+  }
+  if (status === 'exit') {
     return null;
   }
   return (
@@ -65,7 +70,12 @@ export function ChatInput() {
           onHistoryUp={handlers.handleHistoryUp}
           onHistoryDown={handlers.handleHistoryDown}
           onHistoryReset={handlers.handleHistoryReset}
-          onExit={() => process.exit(0)}
+          onExit={() => {
+            setStatus('exit');
+            setTimeout(() => {
+              process.exit(0);
+            }, 100);
+          }}
           onExitMessage={(show, key) => {
             setExitMessage(show ? `Press ${key} again to exit` : null);
           }}
