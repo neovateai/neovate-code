@@ -20,7 +20,13 @@ export class Paths {
   }
 
   getSessionLogPath(sessionId: string) {
-    return path.join(this.globalProjectDir, `${sessionId}.jsonl`);
+    if (path.isAbsolute(sessionId)) {
+      return sessionId;
+    } else if (sessionId.startsWith('.') || sessionId.endsWith('.jsonl')) {
+      return path.join(process.cwd(), sessionId);
+    } else {
+      return path.join(this.globalProjectDir, `${sessionId}.jsonl`);
+    }
   }
 
   getLatestSessionId() {
