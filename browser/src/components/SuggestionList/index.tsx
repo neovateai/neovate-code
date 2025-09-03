@@ -22,8 +22,7 @@ import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';
 import ListFooter from './ListFooter';
 import SmartText from './SmartText';
-import FileTooltipRender from './TooltipRender/FileTooltipRender';
-import SlashCommandTooltipRender from './TooltipRender/SlashCommandTooltipRender';
+import TooltipRender from './TooltipRender';
 
 export type SuggestionItem = {
   label: React.ReactNode;
@@ -288,7 +287,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
                   switch (selectedFirstKey) {
                     case ContextType.FILE:
                       return (
-                        <FileTooltipRender
+                        <TooltipRender.File
                           fullPath={renderItemText(
                             [item.extra ?? '', item.label].join('/'),
                             searchText,
@@ -299,7 +298,9 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
                     case ContextType.SLASH_COMMAND:
                       return (
                         item.contextItem && (
-                          <SlashCommandTooltipRender description={item.extra} />
+                          <TooltipRender.SlashCommand
+                            description={item.extra}
+                          />
                         )
                       );
                     default:
