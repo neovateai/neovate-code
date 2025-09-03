@@ -4,8 +4,3 @@ export interface OutputStyle {
   isCodingRelated: boolean;
   prompt: string;
 }
-
-export interface OutputStyleLoaderOptions {
-  outputStylesDir: string;
-  postfix?: string;
-}

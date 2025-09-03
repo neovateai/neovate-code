@@ -22,7 +22,7 @@ type ContextOpts = {
   argvConfig: Record<string, any>;
 };
 
-type ContextCreateOpts = {
+export type ContextCreateOpts = {
   cwd: string;
   productName: string;
   productASCIIArt?: string;

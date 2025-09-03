@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { type TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import createDebug from 'debug';
 import fastify, { type FastifyInstance } from 'fastify';

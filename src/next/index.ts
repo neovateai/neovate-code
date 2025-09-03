@@ -1,9 +1,9 @@
+import { setTraceProcessors } from '@openai/agents';
 import assert from 'assert';
 import { render } from 'ink';
 import React from 'react';
 import yargsParser from 'yargs-parser';
 import { type Plugin } from '../plugin';
-import { clearTracing } from '../tracing';
 import { Context } from './context';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
@@ -19,6 +19,12 @@ import { App } from './ui/App';
 import { useAppStore } from './ui/store';
 import { UIBridge } from './uiBridge';
 import type { UpgradeOptions } from './upgrade';
+
+export type { Plugin, Context };
+
+// ref:
+// https://github.com/yargs/yargs-parser/blob/6d69295/lib/index.ts#L19
+process.env.YARGS_MIN_NODE_VERSION = '18';
 
 type Argv = {
   _: string[];
@@ -238,7 +244,8 @@ export async function runNeovate(opts: {
   plugins: Plugin[];
   upgrade?: UpgradeOptions;
 }) {
-  clearTracing();
+  // clear tracing
+  setTraceProcessors([]);
   const argv = parseArgs(process.argv.slice(2));
   if (argv.help) {
     printHelp(opts.productName.toLowerCase());

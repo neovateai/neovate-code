@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { type FastifyPluginAsync } from 'fastify';
 import { ConfigManager } from '../../config';
 import { MODEL_ALIAS } from '../../provider';

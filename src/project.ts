@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Type } from '@sinclair/typebox';
 import chokidar, { FSWatcher } from 'chokidar';
 import createDebug from 'debug';

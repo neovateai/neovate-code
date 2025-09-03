@@ -1,13 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import { platform } from 'process';
-import type { LSToolResult } from '../context-contributor';
 import { PluginHookType } from '../plugin';
-import { createLSTool } from '../tools/ls';
 import { getGitStatus, getLlmGitStatus } from '../utils/git';
 import { isProjectDirectory } from '../utils/project';
 import { Context } from './context';
 import { getLlmsRules } from './rules';
+import { createLSTool } from './tools/ls';
 
 export type LlmsContextCreateOpts = {
   context: Context;
@@ -35,10 +34,7 @@ export class LlmsContext {
         cwd: opts.context.cwd,
         productName: opts.context.productName,
       });
-      const result = (await LSTool.invoke(
-        null as any,
-        JSON.stringify({ dir_path: '.' }),
-      )) as unknown as LSToolResult;
+      const result = (await LSTool.execute({ dir_path: '.' })) as any;
       if (result.success) {
         llmsContext.directoryStructure = `
 ${result.message}

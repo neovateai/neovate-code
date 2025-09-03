@@ -1,9 +1,8 @@
 import { type AgentInputItem } from '@openai/agents';
 import defu from 'defu';
 import { type Config } from './config';
-import { Context, type CreateContextOpts } from './context';
+import { Context, type ContextCreateOpts } from './next/context';
 import { type MessageContent } from './utils/parse-message';
-import { type UsageData } from './utils/usage';
 
 export enum PluginHookType {
   First = 'first',
@@ -103,7 +102,7 @@ export class PluginManager {
 // >;
 type PluginContext = Context;
 
-type TempPluginContext = CreateContextOpts & {
+type TempPluginContext = ContextCreateOpts & {
   pluginManager: PluginManager;
   config: Config;
   apply: (opts: PluginApplyOpts) => Promise<any> | any;
@@ -179,7 +178,7 @@ export type Plugin = {
       parsed: MessageContent[];
       input: AgentInputItem[];
       model: string;
-      usage: UsageData;
+      usage: any;
       sessionId: string;
     },
   ) => Promise<any> | any;

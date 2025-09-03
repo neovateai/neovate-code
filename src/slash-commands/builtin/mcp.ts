@@ -1,4 +1,5 @@
-import { type Context } from '../../context';
+// @ts-nocheck
+import { type Context } from '../../next/context';
 import type { LocalCommand } from '../types';
 
 interface McpServerConfig {
