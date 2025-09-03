@@ -5,12 +5,11 @@ import yargsParser from 'yargs-parser';
 import { type Plugin } from '../plugin';
 import { clearTracing } from '../tracing';
 import { Context } from './context';
-import { getMessageHistory, isUserTextMessage } from './message';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
 import { Paths } from './paths';
 import { Project } from './project';
-import { Session, loadSessionMessages } from './session';
+import { Session, SessionConfigManager, loadSessionMessages } from './session';
 import {
   SlashCommandManager,
   isSlashCommand,
@@ -206,7 +205,9 @@ async function runInteractive(
   const [messages, history] = (() => {
     const logPath = paths.getSessionLogPath(sessionId);
     const messages = loadSessionMessages({ logPath });
-    const history = messages.filter(isUserTextMessage).map(getMessageHistory);
+    // Get history from session config
+    const sessionConfigManager = new SessionConfigManager({ logPath });
+    const history = sessionConfigManager.config.history || [];
     return [messages, history];
   })();
   const initialPrompt = String(argv._[0] || '');

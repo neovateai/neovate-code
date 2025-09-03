@@ -7,8 +7,7 @@ import { setTerminalTitle } from '../../utils/setTerminalTitle';
 import { clearTerminal } from '../../utils/terminal';
 import type { Message } from '../history';
 import type { LoopResult, ToolUse } from '../loop';
-import { getMessageHistory, isUserTextMessage } from '../message';
-import { loadSessionMessages } from '../session';
+import { SessionConfigManager, loadSessionMessages } from '../session';
 import { Session } from '../session';
 import {
   type CommandEntry,
@@ -289,9 +288,17 @@ export const useAppStore = create<AppStore>()(
         }
 
         // Only add to history when actually sending
+        const newHistory = [...get().history, message];
         set({
-          history: [...get().history, message],
+          history: newHistory,
           historyIndex: null,
+        });
+
+        // Save history to session config
+        await bridge.request('sessionConfig.addHistory', {
+          cwd,
+          sessionId,
+          history: message,
         });
 
         // slash command
@@ -528,9 +535,10 @@ export const useAppStore = create<AppStore>()(
       resumeSession: async (sessionId: string, logFile: string) => {
         await clearTerminal();
         const messages = loadSessionMessages({ logPath: logFile });
-        const history = messages
-          .filter(isUserTextMessage)
-          .map(getMessageHistory);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: logFile,
+        });
+        const history = sessionConfigManager.config.history || [];
         set({
           sessionId,
           logFile,

@@ -403,7 +403,6 @@ class NodeHandlerRegistry {
                   content: [
                     { type: 'text', text: `Command ${command} not found` },
                   ],
-                  history: null,
                 },
               ],
             },
@@ -424,7 +423,6 @@ class NodeHandlerRegistry {
                       text: result,
                     },
                   ],
-                  history: null,
                 },
               ],
             },
@@ -435,7 +433,6 @@ class NodeHandlerRegistry {
           )) as Message[];
           for (const message of messages) {
             if (message.role === 'user') {
-              (message as UserMessage).history = null;
               (message as UserMessage).hidden = true;
             }
             if (
@@ -469,7 +466,6 @@ class NodeHandlerRegistry {
                       text: `Unknown slash command type: ${type}`,
                     },
                   ],
-                  history: null,
                 },
               ],
             },

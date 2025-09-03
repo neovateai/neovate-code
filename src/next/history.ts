@@ -41,7 +41,6 @@ export type AssistantMessage = {
 export type UserMessage = {
   role: 'user';
   content: UserContent;
-  history?: string | null;
   hidden?: boolean;
 };
 export type ToolMessage = {
