@@ -107,9 +107,9 @@ export function StatusLine() {
   ) {
     return null;
   }
-  if (slashCommandJSX) {
-    return null;
-  }
+  // if (slashCommandJSX) {
+  //   return null;
+  // }
   if (planResult) {
     return null;
   }
