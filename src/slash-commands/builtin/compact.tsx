@@ -1,5 +1,5 @@
 import createDebug from 'debug';
-import { Box, Text } from 'ink';
+import { Box } from 'ink';
 import React, { useEffect } from 'react';
 import { GradientText } from '../../ui/GradientText';
 import { useAppStore } from '../../ui/store';
