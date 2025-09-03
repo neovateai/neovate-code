@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink';
-import React from 'react';
+import React, { useMemo } from 'react';
 import TextInput from '../../ui/components/TextInput';
 import { DebugRandomNumber } from './Debug';
 import { ModeIndicator } from './ModeIndicator';
@@ -9,10 +9,12 @@ import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 import { useInputHandlers } from './useInputHandlers';
 import { useTerminalSize } from './useTerminalSize';
+import { useTryTips } from './useTryTips';
 
 export function ChatInput() {
   const { inputState, handlers, slashCommands, fileSuggestion } =
     useInputHandlers();
+  const { currentTip } = useTryTips();
   const {
     log,
     setExitMessage,
@@ -20,11 +22,21 @@ export function ChatInput() {
     cancel,
     slashCommandJSX,
     approvalModal,
+    queuedMessages,
   } = useAppStore();
   const { columns } = useTerminalSize();
   const showSuggestions =
     slashCommands.suggestions.length > 0 ||
     fileSuggestion.matchedPaths.length > 0;
+  const placeholderText = useMemo(() => {
+    if (queuedMessages.length > 0) {
+      return 'press up to edit queued messages';
+    }
+    if (currentTip) {
+      return currentTip;
+    }
+    return '';
+  }, [currentTip, queuedMessages]);
   if (slashCommandJSX) {
     return null;
   }
@@ -48,7 +60,7 @@ export function ChatInput() {
         <TextInput
           multiline
           value={inputState.state.value}
-          placeholder={''}
+          placeholder={placeholderText}
           onChange={handlers.handleChange}
           onHistoryUp={handlers.handleHistoryUp}
           onHistoryDown={handlers.handleHistoryDown}
