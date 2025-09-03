@@ -13,7 +13,7 @@
     "takumi": "./dist/cli.mjs"
   },
   "scripts": {
-    "dev": "tsx ./src/cli.ts",
+    "dev": "bun ./src/cli.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build:type": "tsc --project tsconfig.json --emitDeclarationOnly --declarationDir dist-dts",
@@ -22,7 +22,7 @@
     "build:dts": "npm run build:type && api-extractor run --local --verbose",
     "build:browser": "pnpm --filter @takumi/browser build",
     "build:check": "bun --version | grep -q '^1\\.2\\.7$' || (echo 'Error: Bun version must be 1.2.7' && exit 1)",
-    "build:post": "tsx scripts/post-build.ts",
+    "build:post": "bun scripts/post-build.ts",
     "build:logfiles": "cp -r logfiles dist/logfiles",
     "build": "npm run build:check && rm -rf dist dist-dts && npm run build:cli && npm run build:index && npm run build:dts && npm run build:browser && npm run build:logfiles && npm run build:post",
     "ci": "npm run typecheck && npm run format:check && npm run test",
@@ -119,7 +119,6 @@
     "spawn-rx": "^5.1.2",
     "strip-ansi": "^7.1.0",
     "tar": "^7.4.3",
-    "tsx": "^4.20.3",
     "turndown": "^7.2.0",
     "type-fest": "^4.41.0",
     "typescript": "^5.9.2",
