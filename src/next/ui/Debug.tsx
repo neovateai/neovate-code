@@ -1,22 +1,23 @@
 import { Box, Text, useInput } from 'ink';
-import open from 'open';
 import React, { useState } from 'react';
 import { useAppStore } from './store';
 
-export function Debug() {
-  const { log, logFile } = useAppStore();
-  const [debugMode, setDebugMode] = useState(false);
-  const [lastKeyPress, setLastKeyPress] = useState<number>(0);
+export function DebugRandomNumber() {
+  const { debugMode } = useAppStore();
+  if (!debugMode) return null;
+  return <Text>{Math.random()}</Text>;
+}
 
-  useInput(async (input, key) => {
+export function Debug() {
+  const { log, debugMode, toggleDebugMode } = useAppStore();
+  const [lastKeyPress, setLastKeyPress] = useState(0);
+
+  useInput((input, key) => {
     if (input === 'l' && (key.meta || key.ctrl)) {
       const now = Date.now();
       if (now - lastKeyPress < 1000) {
-        setDebugMode(!debugMode);
+        toggleDebugMode();
         log('Debug mode toggled');
-        if (!debugMode) {
-          await open(logFile);
-        }
         setLastKeyPress(0);
       } else {
         setLastKeyPress(now);

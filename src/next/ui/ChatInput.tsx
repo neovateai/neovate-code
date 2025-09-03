@@ -1,6 +1,7 @@
 import { Box, Text } from 'ink';
 import React from 'react';
 import TextInput from '../../ui/components/TextInput';
+import { DebugRandomNumber } from './Debug';
 import { ModeIndicator } from './ModeIndicator';
 import { StatusLine } from './StatusLine';
 import { Suggestion, SuggestionItem } from './Suggestion';
@@ -76,7 +77,7 @@ export function ChatInput() {
           columns={columns - 6}
           isDimmed={false}
         />
-        <Text>{Math.random()}</Text>
+        <DebugRandomNumber />
       </Box>
       {!showSuggestions && <StatusLine />}
       <Suggestion

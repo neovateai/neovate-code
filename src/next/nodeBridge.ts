@@ -70,11 +70,25 @@ class NodeHandlerRegistry {
   private registerHandlers() {
     this.messageBus.registerHandler(
       'initialize',
-      async (data: { cwd: string }) => {
+      async (data: { cwd: string; sessionId?: string }) => {
         const context = await this.getContext(data.cwd);
         const modelInfo = await resolveModelWithContext(null, context);
         const model = `${modelInfo.provider.id}/${modelInfo.model.id}`;
         const modelContextLimit = modelInfo.model.limit.context;
+
+        // Get session config if sessionId is provided
+        let sessionSummary: string | undefined;
+        if (data.sessionId) {
+          try {
+            const sessionConfigManager = new SessionConfigManager({
+              logPath: context.paths.getSessionLogPath(data.sessionId),
+            });
+            sessionSummary = sessionConfigManager.config.summary;
+          } catch (error) {
+            // Silently ignore if session config not available
+          }
+        }
+
         return {
           success: true,
           data: {
@@ -84,6 +98,7 @@ class NodeHandlerRegistry {
             model,
             modelContextLimit,
             approvalMode: context.config.approvalMode,
+            sessionSummary,
           },
         };
       },

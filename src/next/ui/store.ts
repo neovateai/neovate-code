@@ -1,3 +1,4 @@
+import open from 'open';
 import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -93,6 +94,7 @@ interface AppState {
 
   logs: string[];
   exitMessage: string | null;
+  debugMode: boolean;
 
   approvalModal: {
     toolUse: ToolUse;
@@ -146,6 +148,7 @@ interface AppActions {
   addToQueue: (message: string) => void;
   clearQueue: () => void;
   processQueuedMessages: () => Promise<void>;
+  toggleDebugMode: () => void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -178,6 +181,7 @@ export const useAppStore = create<AppStore>()(
       historyIndex: null,
       sessionId: null,
       logs: [],
+      debugMode: false,
       planResult: null,
       processingStartTime: null,
       approvalModal: null,
@@ -188,6 +192,7 @@ export const useAppStore = create<AppStore>()(
         const { bridge } = opts;
         const response = await bridge.request('initialize', {
           cwd: opts.cwd,
+          sessionId: opts.sessionId,
         });
         if (!response.success) {
           throw new Error(response.error.message);
@@ -210,6 +215,12 @@ export const useAppStore = create<AppStore>()(
           approvalMode: response.data.approvalMode,
           // theme: 'light',
         });
+
+        // Set terminal title from session config if available
+        if (response.data.sessionSummary) {
+          setTerminalTitle(response.data.sessionSummary);
+        }
+
         bridge.onEvent('message', (data) => {
           const message = data.message as Message;
           get().addMessage(message);
@@ -571,6 +582,16 @@ export const useAppStore = create<AppStore>()(
         // Send all queued messages as a single joined message
         const joinedMessage = queued.join('\n');
         await get().send(joinedMessage);
+      },
+
+      toggleDebugMode: () => {
+        const newDebugMode = !get().debugMode;
+        set({ debugMode: newDebugMode });
+        if (newDebugMode) {
+          open(get().logFile).catch((error) =>
+            get().log(`Failed to open log file: ${error.message}`),
+          );
+        }
       },
     }),
     { name: 'app-store' },
