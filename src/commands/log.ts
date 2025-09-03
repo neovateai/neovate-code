@@ -9,7 +9,7 @@ import portfinder from 'portfinder';
 import { fileURLToPath } from 'url';
 import yargsParser from 'yargs-parser';
 import { type RunCliOpts } from '..';
-import projectRoute from '../project';
+import projectRoute from '../logProject';
 import * as logger from '../utils/logger';
 
 const debug = createDebug('takumi:commands:log');
