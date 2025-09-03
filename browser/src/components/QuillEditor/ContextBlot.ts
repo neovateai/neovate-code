@@ -35,7 +35,8 @@ class ContextBlot extends Embed {
 
     node.dataset.value = data.value;
     node.dataset.text = data.text;
-    node.dataset.prefix = data.prefix ?? '@';
+    node.dataset.prefix = data.prefix;
+    node.dataset.prompt = data.prompt;
 
     return node;
   }
