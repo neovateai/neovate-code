@@ -90,6 +90,7 @@ const ChatSender: React.FC = () => {
       handleSubmit();
     }
   };
+  console.log(prompt);
 
   return (
     <Spin spinning={isPasting}>
@@ -176,9 +177,10 @@ const ChatSender: React.FC = () => {
                       contextItem.type === ContextType.SLASH_COMMAND
                         ? '/'
                         : '@',
-                    // command blot won't have prompt
                     prompt:
-                      contextItem.type === ContextType.SLASH_COMMAND && ' ',
+                      contextItem.type === ContextType.SLASH_COMMAND
+                        ? '' // command blot won't have prompt
+                        : undefined,
                   } as ContextBlotData,
                   'user',
                 );
