@@ -565,6 +565,21 @@ class NodeHandlerRegistry {
         };
       },
     );
+    this.messageBus.registerHandler(
+      'sessionConfig.setSummary',
+      async (data: { cwd: string; sessionId: string; summary: string }) => {
+        const { cwd, sessionId, summary } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        sessionConfigManager.config.summary = summary;
+        sessionConfigManager.write();
+        return {
+          success: true,
+        };
+      },
+    );
 
     this.messageBus.registerHandler(
       'clearContext',

@@ -1,4 +1,4 @@
-import { models, providers } from './model';
+import { models, providers } from '../src/next/model';
 
 function testModelReferences() {
   const errors: string[] = [];
@@ -8,7 +8,7 @@ function testModelReferences() {
 
     for (const [modelKey, modelRef] of Object.entries(provider.models)) {
       // Find which model from the models object this references
-      let foundModel = null;
+      let foundModel: string | null = null;
 
       for (const [globalModelId, globalModel] of Object.entries(models)) {
         if (modelRef === globalModel) {

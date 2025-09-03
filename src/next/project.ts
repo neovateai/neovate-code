@@ -260,13 +260,13 @@ export class Project {
         // 3. run tool should approve if true return true
         const needsApproval = tool.approval?.needsApproval;
         if (needsApproval) {
-          const shouldApprove = await needsApproval({
+          const needsApprovalResult = await needsApproval({
             toolName: toolUse.name,
             params: toolUse.params,
             approvalMode: this.context.config.approvalMode,
             context: this.context,
           });
-          if (shouldApprove) {
+          if (!needsApprovalResult) {
             return true;
           }
         }

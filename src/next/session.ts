@@ -47,6 +47,7 @@ type SessionConfig = {
   approvalMode?: ApprovalMode;
   approvalTools: string[];
   history: string[];
+  summary?: string;
 };
 
 const DEFAULT_SESSION_CONFIG: SessionConfig = {
