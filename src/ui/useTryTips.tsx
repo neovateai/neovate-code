@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { listDirectory } from '../utils/list';
+import { isProjectDirectory } from '../utils/project';
 import { useAppStore } from './store';
 
 // Random selection utility - selects one item from array
@@ -47,16 +48,6 @@ function getFileType(filename: string): string {
 function generateSuggestions(exampleFile?: string): string[] {
   const file = exampleFile || '<filepath>';
   const fileType = exampleFile ? getFileType(exampleFile) : 'general';
-
-  // Project-specific suggestions for Takumi
-  const projectSuggestions = [
-    'create a new plugin for handling...',
-    'add a slash command that...',
-    'implement MCP tool integration for...',
-    'create an agent for processing...',
-    'add error handling to the CLI workflow',
-    'optimize the plugin loading system',
-  ];
 
   // File-type specific suggestions
   const fileTypeSuggestions: Record<string, string[]> = {
@@ -107,7 +98,6 @@ function generateSuggestions(exampleFile?: string): string[] {
 
   // Combine all suggestions
   const allSuggestions = [
-    // ...projectSuggestions,
     ...(fileTypeSuggestions[fileType] || fileTypeSuggestions.general),
     ...workflowSuggestions,
   ];
@@ -124,6 +114,10 @@ export function useTryTips() {
 
   useEffect(() => {
     if (!shouldShowTips) {
+      setCurrentTip(null);
+      return;
+    }
+    if (!isProjectDirectory(cwd)) {
       setCurrentTip(null);
       return;
     }
