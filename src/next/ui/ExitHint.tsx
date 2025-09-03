@@ -1,5 +1,4 @@
 import { Box, Text } from 'ink';
-import path from 'path';
 import React, { useMemo } from 'react';
 import { useAppStore } from './store';
 
@@ -22,8 +21,6 @@ export function ExitHint() {
   }, [messages]);
 
   if (status !== 'exit') return null;
-
-  const folderName = path.basename(cwd);
 
   return (
     <Box flexDirection="column" marginTop={1}>
