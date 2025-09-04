@@ -7,7 +7,7 @@ type CompactOptions = {
   model: ModelInfo;
 };
 
-export async function compact(opts: CompactOptions) {
+export async function compact(opts: CompactOptions): Promise<string> {
   const result = await query({
     messages: opts.messages,
     userPrompt: COMPACT_USER_PROMPT,

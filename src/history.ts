@@ -4,6 +4,11 @@ import type {
   SystemMessageItem,
   UserMessageItem,
 } from '@openai/agents';
+import createDebug from 'debug';
+import { compact } from './compact';
+import { MIN_TOKEN_THRESHOLD } from './constants';
+import type { ModelInfo } from './model';
+import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
 
 type SystemMessage = {
@@ -73,6 +78,8 @@ export type HistoryOpts = {
   messages: NormalizedMessage[];
   onMessage?: OnMessage;
 };
+
+const debug = createDebug('neovate:history');
 
 export class History {
   messages: NormalizedMessage[];
@@ -145,7 +152,118 @@ export class History {
     });
   }
 
-  async compress() {}
+  async #compact(model: ModelInfo) {
+    try {
+      const summary = await compact({
+        messages: this.messages,
+        model,
+      });
+
+      if (!summary || summary.trim().length === 0) {
+        throw new Error('Generated summary is empty');
+      }
+
+      debug('Generated summary:', summary);
+
+      const backup = [...this.messages];
+
+      try {
+        this.messages = this.messages.slice(0, 2);
+
+        await this.addMessage({
+          role: 'user',
+          content: summary,
+        });
+      } catch (addMessageError) {
+        this.messages = backup;
+        throw addMessageError;
+      }
+
+      debug('Compacted summary successfully added');
+      return summary;
+    } catch (error) {
+      debug('Compact failed:', error);
+      throw new Error(
+        `History compaction failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  #calculateCompressThreshold(model: ModelInfo): number {
+    const { context: contextLimit, output: outputLimit } = model.model.limit;
+
+    const COMPRESSION_RESERVE_TOKENS = {
+      MINI_CONTEXT: 10_000,
+      SMALL_CONTEXT: 27_000,
+      MEDIUM_CONTEXT: 30_000,
+      LARGE_CONTEXT: 40_000,
+    };
+
+    const COMPRESSION_RATIO = 0.9;
+    const COMPRESSION_RATIO_SMALL_CONTEXT = 0.8;
+
+    let maxAllowedSize = contextLimit;
+    switch (contextLimit) {
+      case 32768:
+        maxAllowedSize = contextLimit - COMPRESSION_RESERVE_TOKENS.MINI_CONTEXT;
+        break;
+      case 65536:
+        maxAllowedSize =
+          contextLimit - COMPRESSION_RESERVE_TOKENS.SMALL_CONTEXT;
+        break;
+      case 131072:
+        maxAllowedSize =
+          contextLimit - COMPRESSION_RESERVE_TOKENS.MEDIUM_CONTEXT;
+        break;
+      case 200000:
+        maxAllowedSize =
+          contextLimit - COMPRESSION_RESERVE_TOKENS.LARGE_CONTEXT;
+        break;
+      default:
+        maxAllowedSize = Math.max(
+          contextLimit - COMPRESSION_RESERVE_TOKENS.LARGE_CONTEXT,
+          contextLimit * COMPRESSION_RATIO_SMALL_CONTEXT,
+        );
+        break;
+    }
+
+    const effectiveOutputLimit = Math.min(outputLimit, 32_000);
+
+    return Math.max(
+      (contextLimit - effectiveOutputLimit) * COMPRESSION_RATIO,
+      maxAllowedSize,
+    );
+  }
+
+  async compress(model: ModelInfo, usage: Usage) {
+    if (this.messages.length === 0) {
+      return { compressed: false };
+    }
+
+    if (usage.totalTokens < MIN_TOKEN_THRESHOLD) {
+      debug("usage.totalTokens < MIN_TOKEN_THRESHOLD, don't compress");
+      return { compressed: false };
+    }
+
+    const compressThreshold = this.#calculateCompressThreshold(model);
+
+    debug(
+      `[compress] ${model.model.id} compressThreshold:${compressThreshold} usage:${usage.totalTokens}`,
+    );
+
+    if (usage.totalTokens >= compressThreshold) {
+      debug('compressing...');
+      const summary = await this.#compact(model);
+      debug('compressed', summary);
+
+      return {
+        compressed: true,
+        summary,
+      };
+    }
+
+    return { compressed: false };
+  }
 }
 
 function safeStringify(

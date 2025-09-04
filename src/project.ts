@@ -187,6 +187,7 @@ export class Project {
       systemPrompt: opts.systemPrompt,
       llmsContexts: llmsContext.messages,
       signal: opts.signal,
+      autoCompact: this.context.config.autoCompact,
       onMessage: async (message) => {
         const normalizedMessage = {
           ...message,
