@@ -23,7 +23,7 @@ export interface MCPConfig {
   headers?: Record<string, string>;
 }
 
-const debug = createDebug('takumi:mcp');
+const debug = createDebug('neovate:mcp');
 
 type MCP = MCPServerStdio | MCPServerStreamableHttp | MCPServerSSE;
 

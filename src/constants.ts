@@ -1,5 +1,9 @@
-export const PRODUCT_NAME = 'TAKUMI';
-
+export const PRODUCT_NAME = 'NEOVATE';
+export const PRODUCT_ASCII_ART = `
+█▄ █ █▀▀ █▀█ █ █ ▄▀█ ▀█▀ █▀▀
+█ ▀█ ██▄ █▄█ ▀▄▀ █▀█  █  ██▄
+`;
+export const DEFAULT_OUTPUT_STYLE_NAME = 'Default';
 export const IMAGE_EXTENSIONS = new Set([
   '.png',
   '.jpg',
@@ -11,7 +15,9 @@ export const IMAGE_EXTENSIONS = new Set([
   '.tiff',
   '.tif',
 ]);
+export const CANCELED_MESSAGE_TEXT = '[Request interrupted by user]';
 
+// TODO: remove this
 // todo-write will be converted to todo_write causing tool name mismatch
 export enum TOOL_NAME {
   TODO_WRITE = 'todoWrite',

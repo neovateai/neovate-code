@@ -3,7 +3,7 @@ import { type Plugin } from '../../plugin';
 import { getFileContext } from '../context/context-files';
 import { ContextType } from '../types/completions';
 
-const debug = createDebug('takumi:server:plugins:context');
+const debug = createDebug('neovate:server:plugins:context');
 
 let files: string[] = [];
 

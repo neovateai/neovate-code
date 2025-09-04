@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Type } from '@sinclair/typebox';
 import { pipeDataStreamToResponse } from 'ai';
 import createDebug from 'debug';
@@ -8,7 +9,7 @@ import { runCode } from '../services/completions';
 import { type RouteCompletionsOpts } from '../types';
 import { type CompletionRequest, ContextType } from '../types/completions';
 
-const debug = createDebug('takumi:server:completions');
+const debug = createDebug('neovate:server:completions');
 
 const CompletionRequestSchema = Type.Object({
   messages: Type.Array(

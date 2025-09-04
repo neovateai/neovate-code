@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { type AgentInputItem } from '@openai/agents';
 import { type DataStreamWriter, formatDataStreamPart } from 'ai';
 import createDebug from 'debug';

@@ -2,7 +2,7 @@ import { type LanguageModelV1Message } from '@ai-sdk/provider';
 import { UserError } from '@openai/agents';
 import createDebug from 'debug';
 
-const debug = createDebug('takumi:utils:merge-consecutive-system-messages');
+const debug = createDebug('neovate:utils:merge-consecutive-system-messages');
 
 /**
  * @internal

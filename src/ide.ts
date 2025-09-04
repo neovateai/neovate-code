@@ -94,7 +94,7 @@ interface WSMessage {
   result?: unknown;
 }
 
-const debug = createDebug('takumi:ide');
+const debug = createDebug('neovate:ide');
 
 export class IDE {
   ws: WebSocket | null;

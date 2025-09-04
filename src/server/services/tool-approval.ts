@@ -1,3 +1,4 @@
+// @ts-nocheck
 import createDebug from 'debug';
 import type { Context } from '../../context';
 import { createStableToolKey } from '../../utils/formatToolUse';

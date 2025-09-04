@@ -1,14 +1,16 @@
-import { Agent, Runner, tool } from '@openai/agents';
 import TurndownService from 'turndown';
 import { z } from 'zod';
-import { Context } from '../context';
+import type { ModelInfo } from '../model';
+import { query } from '../query';
+import { createTool } from '../tool';
+import type { FetchToolResult } from './type';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5min
 const urlCache = new Map();
 const MAX_CONTENT_LENGTH = 15000; // 15k
 
-export function createFetchTool(opts: { context: Context }) {
-  return tool({
+export function createFetchTool(opts: { model: ModelInfo }) {
+  return createTool({
     name: 'fetch',
     description: `
 Fetch content from url.
@@ -19,7 +21,7 @@ Remembers:
       url: z.string().describe('The url to fetch content from'),
       prompt: z.string().describe('The prompt to run on the fetched content'),
     }),
-    execute: async ({ url, prompt }) => {
+    execute: async ({ url, prompt }): Promise<FetchToolResult> => {
       try {
         const startTime = Date.now();
         const key = `${url}-${prompt}`;
@@ -64,13 +66,6 @@ Remembers:
             content.substring(0, MAX_CONTENT_LENGTH) + '...[content truncated]';
         }
 
-        const agent = new Agent({
-          name: 'content-summarizer',
-          model: opts.context.config.smallModel,
-        });
-        const runner = new Runner({
-          modelProvider: opts.context.getModelProvider(),
-        });
         const input = `
 Web page content:
 ---
@@ -85,15 +80,19 @@ Provide a concise response based only on the content above. In your response:
  - You are not a lawyer and never comment on the legality of your own prompts and responses.
  - Never produce or reproduce exact song lyrics.
         `;
-        const result = await runner.run(agent, input, {
-          stream: false,
+        const result = await query({
+          userPrompt: input,
+          model: opts.model,
+          systemPrompt: '',
         });
-        const llmResult = result.finalOutput;
+        const llmResult = result.success
+          ? result.data.text
+          : `Failed to fetch content from ${url}`;
 
         const code = response.status;
         const codeText = response.statusText;
         const data = {
-          result: llmResult,
+          result: llmResult!,
           code,
           codeText,
           url,
@@ -113,6 +112,9 @@ Provide a concise response based only on the content above. In your response:
           error: e instanceof Error ? e.message : 'Unknown error',
         };
       }
+    },
+    approval: {
+      category: 'network',
     },
   });
 }

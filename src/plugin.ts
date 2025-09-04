@@ -1,9 +1,8 @@
 import { type AgentInputItem } from '@openai/agents';
 import defu from 'defu';
 import { type Config } from './config';
-import { Context, type CreateContextOpts } from './context';
+import { Context, type ContextCreateOpts } from './context';
 import { type MessageContent } from './utils/parse-message';
-import { type UsageData } from './utils/usage';
 
 export enum PluginHookType {
   First = 'first',
@@ -103,7 +102,7 @@ export class PluginManager {
 // >;
 type PluginContext = Context;
 
-type TempPluginContext = CreateContextOpts & {
+type TempPluginContext = ContextCreateOpts & {
   pluginManager: PluginManager;
   config: Config;
   apply: (opts: PluginApplyOpts) => Promise<any> | any;
@@ -161,13 +160,17 @@ export type Plugin = {
   ) => Promise<any> | any;
   userPrompt?: (
     this: PluginContext,
-    opts: { text: string },
+    opts: { text: string; sessionId: string },
   ) => Promise<any> | any;
   systemPrompt?: (
     this: PluginContext,
     memo: string[],
     opts: { prompt: string | undefined },
   ) => Promise<string> | string;
+  text?: (
+    this: PluginContext,
+    opts: { text: string; sessionId: string },
+  ) => Promise<any> | any;
   query?: (
     this: PluginContext,
     opts: {
@@ -175,7 +178,8 @@ export type Plugin = {
       parsed: MessageContent[];
       input: AgentInputItem[];
       model: string;
-      usage: UsageData;
+      usage: any;
+      sessionId: string;
     },
   ) => Promise<any> | any;
   conversation?: (
@@ -221,21 +225,28 @@ export type Plugin = {
     },
   ) => Promise<any> | any;
   command?: (this: PluginContext) => Promise<any[]> | any[];
+  outputStyle?: (this: PluginContext) => Promise<any> | any;
   argvConfig?: (this: PluginContext) => Promise<any> | any;
   modelInfo?: (this: PluginContext) => Promise<any> | any;
   status?: (this: PluginContext) => Promise<Status> | Status;
   tool?: (this: PluginContext, opts: { agentType: AgentType }) => Promise<any>;
   toolUse?: (
     this: PluginContext,
-    opts: { callId: string; name: string; params: any },
+    opts: { toolUse: any; sessionId: string },
   ) => Promise<any> | any;
   toolUseResult?: (
     this: PluginContext,
-    result: any,
-    opts: { callId: string; name: string; params: any },
+    // result: any,
+    opts: {
+      toolUse: any;
+      result: any;
+      sessionId: string;
+    },
   ) => Promise<any> | any;
   modelList?: (
     this: PluginContext,
     models: ModelInfo[],
   ) => Promise<ModelInfo[]> | ModelInfo[];
+  provider?: (this: PluginContext) => Promise<any> | any;
+  modelAlias?: (this: PluginContext) => Promise<any> | any;
 };
