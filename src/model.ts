@@ -557,7 +557,16 @@ export const providers: ProvidersMap = {
       'kimi-k2-0711-preview': models['kimi-k2'],
       'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
     },
-    createModel: defaultModelCreator,
+    createModel(name, provider) {
+      return aisdk(
+        createOpenAI({
+          baseURL: provider.api,
+          apiKey: process.env[provider.env[0]],
+          // include usage information in streaming mode
+          compatibility: 'strict',
+        })(name),
+      );
+    },
   },
   groq: {
     id: 'groq',
