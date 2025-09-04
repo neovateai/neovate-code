@@ -12,7 +12,7 @@ const pkg = JSON.parse(
 const installDir = path.resolve(__dirname, '../');
 runNeovate({
   productName: PRODUCT_NAME,
-  productASCIIArt: PRODUCT_ASCII_ART.trim(),
+  productASCIIArt: PRODUCT_ASCII_ART,
   version: pkg.version,
   plugins: [],
   upgrade: {
