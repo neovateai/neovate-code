@@ -163,23 +163,16 @@ export class History {
         throw new Error('Generated summary is empty');
       }
 
+      this.onMessage?.({
+        role: 'user',
+        content: [{ type: 'text', text: summary }],
+        type: 'message',
+        timestamp: new Date().toISOString(),
+        uuid: randomUUID(),
+        parentUuid: null,
+      });
+
       debug('Generated summary:', summary);
-
-      const backup = [...this.messages];
-
-      try {
-        this.messages = this.messages.slice(0, 2);
-
-        await this.addMessage({
-          role: 'user',
-          content: summary,
-        });
-      } catch (addMessageError) {
-        this.messages = backup;
-        throw addMessageError;
-      }
-
-      debug('Compacted summary successfully added');
       return summary;
     } catch (error) {
       debug('Compact failed:', error);
