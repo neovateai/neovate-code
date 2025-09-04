@@ -20,6 +20,14 @@ import { useAppStore } from './ui/store';
 import { UIBridge } from './uiBridge';
 import type { UpgradeOptions } from './upgrade';
 
+export { Agent, Runner, tool as _tool } from '@openai/agents';
+export { default as _picocolors } from 'picocolors';
+export { createTool as _createTool } from './tool';
+export { z as _zod } from 'zod';
+export { ConfigManager as _ConfigManager } from './config';
+export { aisdk as _aisdk } from './utils/ai-sdk';
+export { createOpenAI as _createOpenAI } from '@ai-sdk/openai';
+
 export type { Plugin, Context };
 
 // ref:
