@@ -1,3 +1,4 @@
+import { CloseOutlined, RedoOutlined } from '@ant-design/icons';
 import { Spin, Tooltip } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
@@ -85,7 +86,12 @@ export default function ToolApprovalConfirmation({
     toolApprovalActions.approveToolUse(false);
   };
 
+  const onRetry = () => {
+    toolApprovalActions.retrySubmit();
+  };
+
   const isSubmitting = snap.submitting;
+  const hasError = !!snap.submitError;
 
   const iconWrapper = (icon: React.ReactNode, tooltip: string) => {
     return (
@@ -94,6 +100,31 @@ export default function ToolApprovalConfirmation({
       </Tooltip>
     );
   };
+
+  if (hasError) {
+    return (
+      <MessageWrapper
+        title={
+          <div className="flex items-center gap-2">
+            <CloseOutlined style={{ color: '#ff4d4f' }} />
+            <span>{t('toolApproval.submitFailed')}</span>
+          </div>
+        }
+        actions={[
+          {
+            key: 'retry',
+            icon: iconWrapper(
+              <RedoOutlined />,
+              t('toolApproval.retry', '重试'),
+            ),
+            onClick: onRetry,
+          },
+        ]}
+      >
+        <div className="text-sm text-gray-500">{snap.submitError}</div>
+      </MessageWrapper>
+    );
+  }
 
   return (
     <MessageWrapper
