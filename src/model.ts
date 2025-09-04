@@ -668,7 +668,7 @@ export async function resolveModelWithContext(
     hookedModelAlias,
   );
   return {
-    hookedProviders,
+    providers: hookedProviders,
     modelAlias,
     model,
   };
