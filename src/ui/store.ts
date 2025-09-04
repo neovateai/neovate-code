@@ -414,11 +414,12 @@ export const useAppStore = create<AppStore>()(
                     });
                   }
                 } catch (parseError) {
-                  get().log(String(parseError));
+                  get().log('Parse query result error: ' + String(parseError));
+                  get().log('Query result: ' + queryResult.data.text);
                 }
               }
             } catch (error) {
-              get().log(String(error));
+              get().log('Query error: ' + String(error));
             }
 
             // Check for queued messages
