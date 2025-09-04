@@ -43,6 +43,7 @@ export default function WriteRender({ message }: { message?: ToolMessage }) {
         editStatus,
       }}
       state={state}
+      normalViewerMode="new"
     />
   );
 }

@@ -188,6 +188,10 @@ export const fileChangesActions = {
     return fileChangesState.files[path]?.edits.reduce((content, edit) => {
       // 如果没有accept或reject过，则认为edit是有效的，需要应用
       if (!edit.editStatus) {
+        // 如果old_string为空，则认为edit是新增的，需要应用
+        if (edit.old_string === '') {
+          return edit.new_string;
+        }
         return content.replace(edit.old_string, edit.new_string);
       }
       if (edit.editStatus === 'accept') {

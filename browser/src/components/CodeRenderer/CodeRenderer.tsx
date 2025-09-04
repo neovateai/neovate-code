@@ -1,5 +1,5 @@
 import { createStyles } from 'antd-style';
-import diff from 'fast-diff';
+import { structuredPatch } from 'diff';
 import React, {
   forwardRef,
   useEffect,
@@ -7,7 +7,6 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import './lineNumbers.module.css';
 import {
   createLineNumberTransformer,
   customDiffTransformer,
@@ -88,10 +87,12 @@ const useStyles = createStyles(({ css }) => ({
       line-height: 1.4;
       letter-spacing: 0;
       display: block;
-      white-space: pre;
+      white-space: pre-wrap;
       overflow: visible;
       background: transparent;
       color: #24292f;
+      word-break: break-all;
+      overflow-wrap: break-word;
     }
 
     /* 确保 Shiki 生成的所有元素背景都透明 */
@@ -112,53 +113,6 @@ const useStyles = createStyles(({ css }) => ({
     .shiki [style*='background'] {
       background: transparent !important;
       background-color: transparent !important;
-    }
-
-    .shiki-line-numbers {
-      overflow: visible;
-
-      pre {
-        display: flex;
-        flex-direction: column;
-        padding: 0;
-        min-height: fit-content;
-      }
-
-      .line {
-        display: flex;
-        align-items: flex-start;
-        min-height: 1.5em;
-        white-space: nowrap;
-        padding: 0 16px;
-      }
-
-      .line-number {
-        display: inline-block;
-        width: 3em;
-        text-align: right;
-        margin-right: 1em;
-        padding-right: 0.5em;
-        padding-top: 0;
-        padding-bottom: 0;
-        color: #666f8d;
-        border-right: 1px solid #e1e8ed;
-        user-select: none;
-        font-size: 11px;
-        line-height: 1.3;
-        background-color: #f8f9fa;
-        flex-shrink: 0;
-        position: sticky;
-        left: 0;
-        z-index: 1;
-      }
-
-      code {
-        flex: 1;
-        padding-left: 0;
-        min-width: 0;
-        overflow: visible;
-        display: block;
-      }
     }
 
     /* Diff notation styles for [!code ++] and [!code --] */
@@ -187,41 +141,30 @@ const useStyles = createStyles(({ css }) => ({
       display: inline-block;
     }
 
-    /* 确保带行号的 diff 样式占满全行 */
-    .shiki-with-line-numbers .line.diff.add {
-      background-color: #dafbe1 !important;
-      margin: 0 !important;
-      padding-right: 1em !important;
-    }
-
-    .shiki-with-line-numbers .line.diff.remove {
-      background-color: #ffeaea !important;
-      margin: 0 !important;
-      padding-right: 1em !important;
-    }
-
     .shiki-with-line-numbers .line-number {
-      margin-right: 1em !important;
-      padding-right: 0.5em !important;
       color: #666f8d;
-      font-family: 'PingFang HK';
+      font-family: 'PingFang SC';
       font-size: 12px;
       font-style: normal;
       font-weight: 400;
-      line-height: 130% /* 15.6px */;
       letter-spacing: -0.24px;
-      text-align: right;
+      text-align: left;
+      height: 100%;
+      display: inline-block;
+      width: 32px;
+      min-width: 32px;
+      flex-shrink: 0;
+      margin-right: 8px;
+      user-select: none;
     }
 
     /* 确保行号区域也有背景色和间距 */
     .shiki-with-line-numbers .line.diff.add .line-number {
-      background-color: #ccffd8 !important;
       border-right-color: #28a745 !important;
       color: #22863a !important;
     }
 
     .shiki-with-line-numbers .line.diff.remove .line-number {
-      background-color: #ffdce0 !important;
       border-right-color: #d73a49 !important;
       color: #cb2431 !important;
     }
@@ -272,21 +215,7 @@ const DIFF_MARKERS = {
 const CONTAINER_SELECTORS =
   '.code-renderer-container, .diff-code-container, .shiki-container';
 
-// Helper function to process diff operations
-const processDiffOperation = (operation: number, text: string): string[] => {
-  const lines = text.split('\n');
-  const filteredLines = lines.filter((line, index) => {
-    return index < lines.length - 1 || line !== '';
-  });
-
-  return filteredLines.map((line) => {
-    if (operation === diff.DELETE) return `${line} ${DIFF_MARKERS.REMOVE}`;
-    if (operation === diff.INSERT) return `${line} ${DIFF_MARKERS.ADD}`;
-    return line;
-  });
-};
-
-// Helper function to create unified diff with notation using fast-diff
+// Helper function to create unified diff with notation using structured patch
 const createUnifiedDiff = (
   originalCode: string,
   modifiedCode: string,
@@ -312,15 +241,49 @@ const createUnifiedDiff = (
       return originalCode;
     }
 
-    const originalText = originalCode;
-    const modifiedText = modifiedCode;
-    const diffs = diff(originalText, modifiedText);
+    // Use structuredPatch for better block-level diff
+    const patch = structuredPatch(
+      'original',
+      'modified',
+      originalCode,
+      modifiedCode,
+      undefined,
+      undefined,
+      { context: 1000 }, // Large context to avoid splitting
+    );
+
+    // Check if there are no actual differences
+    if (!patch.hunks || patch.hunks.length === 0) {
+      console.log('No differences found, returning original code');
+      return originalCode;
+    }
+
+    // Check if all lines are unchanged (no + or - prefixes)
+    const hasActualChanges = patch.hunks.some((hunk) =>
+      hunk.lines.some((line) => line[0] === '+' || line[0] === '-'),
+    );
+
+    if (!hasActualChanges) {
+      console.log('No actual changes found, returning original code');
+      return originalCode;
+    }
 
     const result: string[] = [];
 
-    for (const [operation, text] of diffs) {
-      const processedLines = processDiffOperation(operation, text);
-      result.push(...processedLines);
+    // Process hunks (diff blocks)
+    for (const hunk of patch.hunks) {
+      for (const line of hunk.lines) {
+        const lineContent = line.substring(1); // Remove +/- prefix
+        const prefix = line[0];
+
+        if (prefix === '-') {
+          result.push(`${lineContent} ${DIFF_MARKERS.REMOVE}`);
+        } else if (prefix === '+') {
+          result.push(`${lineContent} ${DIFF_MARKERS.ADD}`);
+        } else {
+          result.push(lineContent); // Unchanged line
+        }
+      }
     }
 
     return result.join('\n');

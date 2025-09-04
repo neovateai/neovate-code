@@ -68,6 +68,7 @@ const CodeViewer = () => {
   const { styles } = useStyle();
 
   const items = useMemo<TabsProps['items']>(() => {
+    console.log('codeViewerTabItems', codeViewerTabItems);
     return codeViewerTabItems.map((item) => ({
       key: item.id,
       label: item.title,
