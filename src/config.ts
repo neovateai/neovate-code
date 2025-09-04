@@ -212,8 +212,23 @@ export class ConfigManager {
       if (BOOLEAN_CONFIG_KEYS.includes(key)) {
         newValue = value === 'true';
       }
+      if (ARRAY_CONFIG_KEYS.includes(key)) {
+        try {
+          newValue = JSON.parse(value);
+        } catch (error) {
+          throw new Error(
+            `Invalid JSON for array config key '${key}': ${error}`,
+          );
+        }
+      }
       if (OBJECT_CONFIG_KEYS.includes(key)) {
-        newValue = JSON.parse(value);
+        try {
+          newValue = JSON.parse(value);
+        } catch (error) {
+          throw new Error(
+            `Invalid JSON for object config key '${key}': ${error}`,
+          );
+        }
       }
       (config[key as keyof Config] as any) = newValue;
     }

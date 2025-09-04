@@ -1,6 +1,6 @@
 export interface MessageWrapperProps {
   // === Basic Configuration ===
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
 
   // === Header Content Configuration ===

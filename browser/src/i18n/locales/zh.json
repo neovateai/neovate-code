@@ -95,7 +95,15 @@
       "fileSizeLimited": "文件大小超出{{limit}}限制",
       "dragFileHere": "拖拽文件到这里上传",
       "supportTypeDesc": "支持上传图片、文本文件"
-    }
+    },
+    "filesAndFolders": "文件和目录",
+    "slashCommands": "指令"
+  },
+  "suggestion": {
+    "navigate": "导航",
+    "select": "选择",
+    "close": "关闭",
+    "back": "返回"
   },
   "menu": {
     "rename": "重命名",
@@ -280,15 +288,17 @@
     },
     "plugins": {
       "title": "插件配置",
-      "tooltip": "配置项目使用的插件",
-      "placeholder": "输入插件名称或路径",
+      "tooltip": "输入插件名称或插件路径，添加多个插件时每输入一个按Enter键即可",
+      "placeholder": "输入插件名称或插件路径，添加多个插件时每输入一个按Enter键即可",
       "add": "添加",
       "delete": "删除插件",
       "deleteConfirm": "确定要删除插件 \"{{plugin}}\" 吗？",
       "empty": "暂未配置任何插件",
       "effective": "当前有效插件",
       "none": "无"
-    }
+    },
+    "saveSuccess": "设置保存成功",
+    "saveError": "设置保存失败"
   },
   "toolRenders": {
     "read": {

@@ -95,7 +95,15 @@
       "fileSizeLimited": "File size should be smaller than {{limit}}",
       "dragFileHere": "Drag file here to upload",
       "supportTypeDesc": "Support pictures and text files"
-    }
+    },
+    "filesAndFolders": "Files & Folders",
+    "slashCommands": "Slash Commands"
+  },
+  "suggestion": {
+    "navigate": "navigate",
+    "select": "select",
+    "close": "close",
+    "back": "back"
   },
   "menu": {
     "rename": "Rename",
@@ -280,15 +288,17 @@
     },
     "plugins": {
       "title": "Plugin Configuration",
-      "tooltip": "Configure plugins used by the project",
-      "placeholder": "Enter plugin name or path",
+      "tooltip": "Enter plugin name or path, press Enter after each plugin when adding multiple",
+      "placeholder": "Enter plugin name or path, press Enter after each plugin when adding multiple",
       "add": "Add",
       "delete": "Delete Plugin",
       "deleteConfirm": "Are you sure you want to delete plugin \"{{plugin}}\"?",
       "empty": "No plugins configured",
       "effective": "Current effective plugins",
       "none": "None"
-    }
+    },
+    "saveSuccess": "Settings saved successfully",
+    "saveError": "Failed to save settings"
   },
   "toolRenders": {
     "read": {

@@ -37,6 +37,7 @@
     "react-syntax-highlighter": "^15.5.0",
     "remark-gfm": "^4.0.1",
     "shiki": "^3.11.0",
+    "streamdown": "^1.1.6",
     "swr": "^2.3.3",
     "valtio": "^2.1.5"
   },
@@ -51,6 +52,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vitejs/plugin-react": "^4.5.2",
     "globals": "^16.0.0",
+    "tailwind-scrollbar": "^4.0.2",
     "tailwindcss": "^4.1.10",
     "typescript": "~5.8.3",
     "vite": "^6.3.5",
