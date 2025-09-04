@@ -20,6 +20,11 @@ import { useAppStore } from './ui/store';
 import { UIBridge } from './uiBridge';
 import type { UpgradeOptions } from './upgrade';
 
+export { createTool } from './tool';
+export { z as _zod } from 'zod';
+export { ConfigManager as _ConfigManager } from './config';
+export { query as _query } from './query';
+
 export type { Plugin, Context };
 
 // ref:

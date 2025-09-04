@@ -230,6 +230,7 @@ export type Plugin = {
   ) => Promise<any> | any;
   provider?: (
     this: PluginContext,
+    providers: any,
     opts: {
       models: ModelMap;
       defaultModelCreator: any;
@@ -237,5 +238,5 @@ export type Plugin = {
       aisdk: any;
     },
   ) => Promise<any> | any;
-  modelAlias?: (this: PluginContext) => Promise<any> | any;
+  modelAlias?: (this: PluginContext, modelAlias: any) => Promise<any> | any;
 };
