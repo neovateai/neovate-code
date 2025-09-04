@@ -5,6 +5,7 @@ import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
 import type { Message } from '../history';
 import type { LoopResult, ToolUse } from '../loop';
+import { Paths } from '../paths';
 import { SessionConfigManager, loadSessionMessages } from '../session';
 import { Session } from '../session';
 import {
@@ -473,11 +474,16 @@ export const useAppStore = create<AppStore>()(
 
       clear: async () => {
         const sessionId = Session.createSessionId();
+        const paths = new Paths({
+          productName: get().productName,
+          cwd: get().cwd,
+        });
         set({
           messages: [],
           history: [],
           historyIndex: null,
           sessionId,
+          logFile: paths.getSessionLogPath(sessionId),
           // Also reset input state when clearing
           inputValue: '',
           inputCursorPosition: undefined,
