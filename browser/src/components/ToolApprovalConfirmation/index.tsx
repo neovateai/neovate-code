@@ -1,14 +1,12 @@
-import {
-  CheckOutlined,
-  CloseOutlined,
-  DoubleRightOutlined,
-  ToolOutlined,
-} from '@ant-design/icons';
 import { Spin, Tooltip } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
+import AlwaysCommandIcon from '@/icons/alwaysCommand.svg?react';
+import AlwaysToolIcon from '@/icons/alwaysTool.svg?react';
+import ApproveOnceIcon from '@/icons/approveOnce.svg?react';
 import BashIcon from '@/icons/bash.svg?react';
 import EditIcon from '@/icons/edit.svg?react';
+import RejectOnceIcon from '@/icons/rejectOnce.svg?react';
 import SearchIcon from '@/icons/search.svg?react';
 import { toolApprovalActions, toolApprovalState } from '@/state/toolApproval';
 import type { ToolApprovalRequestMessage } from '@/types/message';
@@ -107,7 +105,7 @@ export default function ToolApprovalConfirmation({
         {
           key: 'always',
           icon: iconWrapper(
-            <DoubleRightOutlined />,
+            <AlwaysCommandIcon />,
             t('toolApproval.approveAlways', '允许此命令'),
           ),
           onClick: () => onApprove('always'),
@@ -115,7 +113,7 @@ export default function ToolApprovalConfirmation({
         {
           key: 'always_tool',
           icon: iconWrapper(
-            <ToolOutlined />,
+            <AlwaysToolIcon />,
             t('toolApproval.approveAlwaysTool', `允许 ${message.toolName}`, {
               toolName: message.toolName,
             }),
@@ -125,14 +123,14 @@ export default function ToolApprovalConfirmation({
         {
           key: 'once',
           icon: iconWrapper(
-            <CheckOutlined />,
+            <ApproveOnceIcon />,
             t('toolApproval.approveOnce', '允许一次'),
           ),
           onClick: () => onApprove('once'),
         },
         {
           key: 'deny',
-          icon: iconWrapper(<CloseOutlined />, t('toolApproval.deny', '拒绝')),
+          icon: iconWrapper(<RejectOnceIcon />, t('toolApproval.deny', '拒绝')),
           onClick: onDeny,
         },
       ]}
