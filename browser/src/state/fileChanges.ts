@@ -192,7 +192,10 @@ export const fileChangesActions = {
         if (edit.old_string === '') {
           return edit.new_string;
         }
-        return content.replace(edit.old_string, edit.new_string);
+        // 应用编辑并标记为已应用
+        const result = content.replace(edit.old_string, () => edit.new_string);
+
+        return result;
       }
       if (edit.editStatus === 'accept') {
         // `accept` 意味着 content 已经被更新

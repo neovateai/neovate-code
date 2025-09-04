@@ -11,6 +11,7 @@ import {
   createLineNumberTransformer,
   customDiffTransformer,
 } from './transformers';
+import { DIFF_MARKERS } from './transformers/diffTransformer';
 import { useShiki } from './useShiki';
 import { inferLanguage } from './utils';
 
@@ -117,26 +118,26 @@ const useStyles = createStyles(({ css }) => ({
 
     /* Diff notation styles for [!code ++] and [!code --] */
     .line.diff.add {
-      background-color: #dafbe1 !important;
+      background-color: #f6fff0 !important;
       width: 100%;
       display: inline-block;
     }
 
     .line.diff.remove {
-      background-color: #ffeaea !important;
+      background-color: #fff6f5 !important;
       width: 100%;
       display: inline-block;
     }
 
     /* Alternative: for lines without line numbers */
     .diff.add {
-      background-color: #dafbe1 !important;
+      background-color: #f6fff0 !important;
       width: 100%;
       display: inline-block;
     }
 
     .diff.remove {
-      background-color: #ffeaea !important;
+      background-color: #fff6f5 !important;
       width: 100%;
       display: inline-block;
     }
@@ -156,30 +157,16 @@ const useStyles = createStyles(({ css }) => ({
       flex-shrink: 0;
       margin-right: 8px;
       user-select: none;
+      padding-left: 10px;
     }
 
     /* 确保行号区域也有背景色和间距 */
     .shiki-with-line-numbers .line.diff.add .line-number {
       border-right-color: #28a745 !important;
-      color: #22863a !important;
     }
 
     .shiki-with-line-numbers .line.diff.remove .line-number {
       border-right-color: #d73a49 !important;
-      color: #cb2431 !important;
-    }
-
-    /* Ensure diff styles work for regular shiki output */
-    pre.has-diff .line.add,
-    pre.has-diff span.add {
-      background-color: #f0f9ff;
-      border-left: 3px solid #22c55e;
-    }
-
-    pre.has-diff .line.remove,
-    pre.has-diff span.remove {
-      background-color: #fef2f2;
-      border-left: 3px solid #ef4444;
     }
   `,
 }));
@@ -205,12 +192,6 @@ interface CodeRendererProps {
 export interface CodeRendererRef {
   jumpToLine: (lineCount: number) => void;
 }
-
-// Constants for better maintainability
-const DIFF_MARKERS = {
-  ADD: '// [!code ++]',
-  REMOVE: '// [!code --]',
-} as const;
 
 const CONTAINER_SELECTORS =
   '.code-renderer-container, .diff-code-container, .shiki-container';
@@ -273,6 +254,11 @@ const createUnifiedDiff = (
     // Process hunks (diff blocks)
     for (const hunk of patch.hunks) {
       for (const line of hunk.lines) {
+        // Skip lines starting with \ (like "\No newline at end of file")
+        if (line.startsWith('\\')) {
+          continue;
+        }
+
         const lineContent = line.substring(1); // Remove +/- prefix
         const prefix = line[0];
 

@@ -1,5 +1,5 @@
 // Constants for diff markers
-const DIFF_MARKERS = {
+export const DIFF_MARKERS = {
   ADD: '// [!code ++]',
   REMOVE: '// [!code --]',
 } as const;
@@ -30,9 +30,10 @@ export const customDiffTransformer = () => {
         // Recursively remove markers from all text nodes
         const removeMarkers = (n: any, marker: string) => {
           if (n.type === 'text' && n.value) {
+            // Improved regex: match marker with optional whitespace at line end
             n.value = n.value.replace(
               new RegExp(
-                ` ${marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
+                `\\s*${marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`,
                 'g',
               ),
               '',
