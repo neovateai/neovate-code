@@ -234,6 +234,7 @@ export type Plugin = {
       models: ModelMap;
       defaultModelCreator: any;
       createOpenAI: any;
+      aisdk: any;
     },
   ) => Promise<any> | any;
   modelAlias?: (this: PluginContext) => Promise<any> | any;

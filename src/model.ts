@@ -679,6 +679,7 @@ export async function resolveModelWithContext(
         models,
         defaultModelCreator,
         createOpenAI,
+        aisdk,
       },
     ],
     memo: providers,
