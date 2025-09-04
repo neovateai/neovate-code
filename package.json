@@ -139,6 +139,9 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "upgear": {
     "files": [
       "vendor"
