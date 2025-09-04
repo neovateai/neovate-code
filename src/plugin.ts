@@ -129,11 +129,6 @@ type Status = Record<
   }
 >;
 
-type ModelInfo = {
-  label: string;
-  value: string;
-};
-
 export type Plugin = {
   enforce?: Enforce;
   name?: string;
@@ -195,16 +190,6 @@ export type Plugin = {
   ) => Promise<any> | any;
   destroy?: (this: PluginContext) => Promise<any> | any;
   env?: (this: PluginContext) => Record<string, string>;
-  model?: (
-    this: PluginContext,
-    opts: {
-      modelName: string;
-      aisdk: any;
-      createOpenAI: any;
-      createDeepSeek: any;
-      createAnthropic: any;
-    },
-  ) => Promise<any> | any;
   serverAppData?: (
     this: PluginContext,
     opts: { context: any; cwd: string },
@@ -228,7 +213,6 @@ export type Plugin = {
   command?: (this: PluginContext) => Promise<any[]> | any[];
   outputStyle?: (this: PluginContext) => Promise<any> | any;
   argvConfig?: (this: PluginContext) => Promise<any> | any;
-  modelInfo?: (this: PluginContext) => Promise<any> | any;
   status?: (this: PluginContext) => Promise<Status> | Status;
   tool?: (this: PluginContext, opts: { agentType: AgentType }) => Promise<any>;
   toolUse?: (
@@ -244,10 +228,6 @@ export type Plugin = {
       sessionId: string;
     },
   ) => Promise<any> | any;
-  modelList?: (
-    this: PluginContext,
-    models: ModelInfo[],
-  ) => Promise<ModelInfo[]> | ModelInfo[];
   provider?: (
     this: PluginContext,
     opts: {

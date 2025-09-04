@@ -316,6 +316,14 @@ export async function runNeovate(opts: {
     if (upgrade && !upgrade.installDir.includes('node_modules')) {
       upgrade = undefined;
     }
+    if (
+      upgrade?.version.includes('-beta.') ||
+      upgrade?.version.includes('-alpha.') ||
+      upgrade?.version.includes('-rc.') ||
+      upgrade?.version.includes('-canary.')
+    ) {
+      upgrade = undefined;
+    }
     await runInteractive(argv, contextCreateOpts, upgrade);
   }
 }
