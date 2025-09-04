@@ -259,7 +259,7 @@ export const useAppStore = create<AppStore>()(
             if (result.hasUpdate && result.tarballUrl) {
               set({
                 upgrade: {
-                  text: `v${result.latestVersion} available,\nupgrading...`,
+                  text: `v${result.latestVersion} available, upgrading...`,
                 },
               });
               try {
@@ -271,7 +271,12 @@ export const useAppStore = create<AppStore>()(
                   },
                 });
               } catch (error) {
-                set({ upgrade: { text: `Failed to upgrade`, type: 'error' } });
+                set({
+                  upgrade: {
+                    text: `Failed to upgrade: ${String(error)}`,
+                    type: 'error',
+                  },
+                });
               }
             }
           }

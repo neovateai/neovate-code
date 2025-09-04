@@ -316,6 +316,6 @@ export async function runNeovate(opts: {
     if (upgrade && !upgrade.installDir.includes('node_modules')) {
       upgrade = undefined;
     }
-    await runInteractive(argv, contextCreateOpts, opts.upgrade);
+    await runInteractive(argv, contextCreateOpts, upgrade);
   }
 }

@@ -93,8 +93,14 @@ export class Upgrade extends EventEmitter {
   async upgrade(opts: { tarballUrl: string }): Promise<void> {
     const tempDir = os.tmpdir();
     const timestamp = Date.now();
-    const tarballPath = path.join(tempDir, `${this.name}-${timestamp}.tgz`);
-    const extractDir = path.join(tempDir, `${this.name}-${timestamp}-extract`);
+    const tarballPath = path.join(
+      tempDir,
+      `${this.name.replace('/', '-')}-${timestamp}.tgz`,
+    );
+    const extractDir = path.join(
+      tempDir,
+      `${this.name.replace('/', '-')}-${timestamp}-extract`,
+    );
     // Download tarball
     this.emit('status', { type: 'downloading', tarballUrl: opts.tarballUrl });
     const downloadResponse = await fetch(opts.tarballUrl, {
@@ -127,8 +133,7 @@ export class Upgrade extends EventEmitter {
       const sourcePath = path.join(sourceBase, file);
       const destPath = path.join(this.installDir, file);
       if (!fs.existsSync(sourcePath)) {
-        console.warn(`Source file not found: ${sourcePath}`);
-        continue;
+        throw new Error(`Source file not found: ${sourcePath}`);
       }
       // Create destination directory if needed
       const destDir = path.dirname(destPath);

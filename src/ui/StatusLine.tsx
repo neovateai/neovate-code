@@ -91,8 +91,7 @@ function UpgradeHint() {
   }, [upgrade]);
   if (!upgrade) return null;
   return (
-    <Box width={40}>
-      <Spacer />
+    <Box>
       <Text color={color}>{upgrade.text}</Text>
     </Box>
   );
