@@ -133,7 +133,7 @@ export class Project {
         type: PluginHookType.Series,
       });
     }
-    const model = await resolveModelWithContext(
+    const { model } = await resolveModelWithContext(
       opts.model || null,
       this.context,
     );

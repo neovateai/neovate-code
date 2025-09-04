@@ -518,17 +518,21 @@ export const useAppStore = create<AppStore>()(
       approvePlan: (planResult: string) => {
         set({ planResult: null, planMode: false });
         const bridge = get().bridge;
-        bridge.request('addMessages', {
-          cwd: get().cwd,
-          sessionId: get().sessionId,
-          messages: [
-            {
-              role: 'user',
-              content: [{ type: 'text', text: planResult }],
-              history: null,
-            },
-          ],
-        });
+        bridge
+          .request('addMessages', {
+            cwd: get().cwd,
+            sessionId: get().sessionId,
+            messages: [
+              {
+                role: 'user',
+                content: [{ type: 'text', text: planResult }],
+                history: null,
+              },
+            ],
+          })
+          .catch((error) => {
+            console.error('Failed to add messages:', error);
+          });
         // Use store's model for plan approval - no need to pass explicitly
         get().sendMessage({ message: null });
       },

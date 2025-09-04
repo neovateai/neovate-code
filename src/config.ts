@@ -51,7 +51,6 @@ const DEFAULT_CONFIG: Partial<Config> = {
   approvalMode: 'default',
   plugins: [],
   mcpServers: {},
-  model: 'flash',
   todo: true,
   autoCompact: true,
   outputFormat: 'text',

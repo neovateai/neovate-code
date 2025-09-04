@@ -15,11 +15,17 @@ export function usePaths() {
       setIsLoading(false);
       return;
     }
-    bridge.request('getPaths', { cwd }).then((res) => {
-      setPaths(res.data.paths);
-      setIsLoading(false);
-      setLastLoadTime(Date.now());
-    });
+    bridge
+      .request('getPaths', { cwd })
+      .then((res) => {
+        setPaths(res.data.paths);
+        setIsLoading(false);
+        setLastLoadTime(Date.now());
+      })
+      .catch((error) => {
+        console.error('Failed to get paths:', error);
+        setIsLoading(false);
+      });
   }, [bridge, cwd]);
   return {
     paths,

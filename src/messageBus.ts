@@ -233,6 +233,14 @@ export class MessageBus extends EventEmitter {
       await this.transport.send(requestMessage);
       return await promise;
     } catch (error) {
+      // Clean up pending request if send fails or promise rejects
+      const pending = this.pendingRequests.get(id);
+      if (pending) {
+        if (pending.timeout) {
+          clearTimeout(pending.timeout);
+        }
+        this.pendingRequests.delete(id);
+      }
       throw error;
     }
   }
@@ -333,7 +341,24 @@ export class MessageBus extends EventEmitter {
     }
     this.pendingRequests.delete(id);
     if (error) {
-      pending.reject(new Error(error));
+      // Create a more informative error
+      const errorMessage =
+        typeof error === 'object' && error.message
+          ? error.message
+          : typeof error === 'string'
+            ? error
+            : 'Request failed';
+
+      const err = new Error(errorMessage);
+      // Attach the full error details
+      (err as any).details = error.details
+        ? Array.isArray(error.details)
+          ? error.details.join('\n')
+          : JSON.stringify(error.details)
+        : error;
+      (err as any).method = pending.method;
+
+      pending.reject(err);
     } else {
       pending.resolve(result);
     }

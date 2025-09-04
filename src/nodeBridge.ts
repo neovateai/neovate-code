@@ -72,7 +72,7 @@ class NodeHandlerRegistry {
       'initialize',
       async (data: { cwd: string; sessionId?: string }) => {
         const context = await this.getContext(data.cwd);
-        const modelInfo = await resolveModelWithContext(null, context);
+        const modelInfo = (await resolveModelWithContext(null, context)).model;
         const model = `${modelInfo.provider.id}/${modelInfo.model.id}`;
         const modelContextLimit = modelInfo.model.limit.context;
 
@@ -311,17 +311,13 @@ class NodeHandlerRegistry {
       async (data: { cwd: string }) => {
         const { cwd } = data;
         const context = await this.getContext(cwd);
-        const hookedProviders = await context.apply({
-          hook: 'provider',
-          args: [],
-          memo: providers,
-          type: PluginHookType.SeriesLast,
-        });
-        const currentModelInfo = await resolveModelWithContext(null, context);
-        const currentModel = `${currentModelInfo.provider.id}/${currentModelInfo.model.id}`;
-
+        const { providers, model } = await resolveModelWithContext(
+          null,
+          context,
+        );
+        const currentModel = `${model.provider.id}/${model.model.id}`;
         const groupedModels = Object.values(
-          hookedProviders as Record<string, Provider>,
+          providers as Record<string, Provider>,
         ).map((provider) => ({
           provider: provider.name,
           providerId: provider.id,
@@ -331,16 +327,15 @@ class NodeHandlerRegistry {
             value: `${provider.id}/${modelId}`,
           })),
         }));
-
         return {
           success: true,
           data: {
             groupedModels,
             currentModel,
             currentModelInfo: {
-              providerName: currentModelInfo.provider.name,
-              modelName: currentModelInfo.model.name,
-              modelId: currentModelInfo.model.id,
+              providerName: model.provider.name,
+              modelName: model.model.name,
+              modelId: model.model.id,
             },
           },
         };
@@ -524,7 +519,7 @@ class NodeHandlerRegistry {
       }) => {
         const { cwd, messages } = data;
         const context = await this.getContext(cwd);
-        const modelInfo = await resolveModelWithContext(null, context);
+        const modelInfo = (await resolveModelWithContext(null, context)).model;
         const summary = await compact({
           messages,
           model: modelInfo,

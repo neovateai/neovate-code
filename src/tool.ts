@@ -24,7 +24,7 @@ type ResolveToolsOpts = {
 export async function resolveTools(opts: ResolveToolsOpts) {
   const { cwd, productName, paths } = opts.context;
   const sessionId = opts.sessionId;
-  const model = await resolveModelWithContext(
+  const { model } = await resolveModelWithContext(
     opts.context.config.model,
     opts.context,
   );

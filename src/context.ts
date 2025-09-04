@@ -107,7 +107,7 @@ export class Context {
     };
     const resolvedConfig = await apply({
       hook: 'config',
-      args: [{ config: initialConfig }],
+      args: [{ config: initialConfig, argvConfig: opts.argvConfig }],
       memo: initialConfig,
       type: PluginHookType.SeriesMerge,
     });

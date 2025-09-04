@@ -2,6 +2,7 @@ import { type AgentInputItem } from '@openai/agents';
 import defu from 'defu';
 import { type Config } from './config';
 import { Context, type ContextCreateOpts } from './context';
+import type { ModelMap } from './model';
 import { type MessageContent } from './utils/parse-message';
 
 export enum PluginHookType {
@@ -138,7 +139,7 @@ export type Plugin = {
   name?: string;
   config?: (
     this: TempPluginContext,
-    opts: { config: Config },
+    opts: { config: Config; argvConfig: Record<string, any> },
   ) => any | Promise<any>;
   configResolved?: (
     this: TempPluginContext,
@@ -247,6 +248,13 @@ export type Plugin = {
     this: PluginContext,
     models: ModelInfo[],
   ) => Promise<ModelInfo[]> | ModelInfo[];
-  provider?: (this: PluginContext) => Promise<any> | any;
+  provider?: (
+    this: PluginContext,
+    opts: {
+      models: ModelMap;
+      defaultModelCreator: any;
+      createOpenAI: any;
+    },
+  ) => Promise<any> | any;
   modelAlias?: (this: PluginContext) => Promise<any> | any;
 };

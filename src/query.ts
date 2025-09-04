@@ -26,7 +26,7 @@ export async function query(opts: {
     },
   ];
   assert(opts.model || opts.context, 'model or context is required');
-  const model =
+  const { model } =
     opts.model || (await resolveModelWithContext(null, opts.context!));
   return await runLoop({
     input: messages,

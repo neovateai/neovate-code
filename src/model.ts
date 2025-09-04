@@ -53,7 +53,7 @@ export interface Provider {
 }
 
 type ProvidersMap = Record<string, Provider>;
-type ModelMap = Record<string, Omit<Model, 'id' | 'cost'>>;
+export type ModelMap = Record<string, Omit<Model, 'id' | 'cost'>>;
 
 export const models: ModelMap = {
   'deepseek-v3-0324': {
@@ -120,6 +120,19 @@ export const models: ModelMap = {
     modalities: { input: ['text'], output: ['text'] },
     open_weights: true,
     limit: { context: 262144, output: 66536 },
+  },
+  'qwen3-235b-a22b-07-25': {
+    name: 'Qwen3 235B A22B Instruct 2507',
+    attachment: false,
+    reasoning: false,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-04',
+    release_date: '2025-04-28',
+    last_updated: '2025-07-21',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 262144, output: 131072 },
   },
   'gemini-2.5-flash': {
     name: 'Gemini 2.5 Flash',
@@ -387,7 +400,7 @@ export const defaultModelCreator = (name: string, provider: Provider) => {
   return aisdk(
     createOpenAI({
       baseURL: provider.api,
-      apiKey: process.env[provider.env[0]],
+      apiKey: provider.env[0] ? process.env[provider.env[0]] : '',
     })(name),
   );
 };
@@ -633,7 +646,13 @@ export async function resolveModelWithContext(
 ) {
   const hookedProviders = await context.apply({
     hook: 'provider',
-    args: [],
+    args: [
+      {
+        models,
+        defaultModelCreator,
+        createOpenAI,
+      },
+    ],
     memo: providers,
     type: PluginHookType.SeriesLast,
   });
@@ -643,11 +662,16 @@ export async function resolveModelWithContext(
     memo: modelAlias,
     type: PluginHookType.SeriesLast,
   });
-  return resolveModel(
+  const model = resolveModel(
     name || context.config.model,
     hookedProviders,
     hookedModelAlias,
   );
+  return {
+    hookedProviders,
+    modelAlias,
+    model,
+  };
 }
 
 export function resolveModel(
