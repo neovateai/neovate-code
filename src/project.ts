@@ -136,15 +136,15 @@ export class Project {
       filePath: this.context.paths.getSessionLogPath(this.session.id),
     });
     if (message !== null) {
-      await this.context.apply({
+      message = await this.context.apply({
         hook: 'userPrompt',
+        memo: message,
         args: [
           {
-            text: message,
             sessionId: this.session.id,
           },
         ],
-        type: PluginHookType.Series,
+        type: PluginHookType.SeriesLast,
       });
     }
     const { model } = await resolveModelWithContext(

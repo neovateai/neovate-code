@@ -4,9 +4,10 @@ import defu from 'defu';
 import { type Config } from './config';
 import { Context, type ContextCreateOpts } from './context';
 import type { LoopResult, ToolUse } from './loop';
-import type { ModelMap, Provider, ProvidersMap } from './model';
+import type { ModelAlias, ModelMap, Provider, ProvidersMap } from './model';
 import type { OutputStyle } from './outputStyle';
 import type { SlashCommand } from './slash-commands/types';
+import type { Tool } from './tool';
 import type { Usage } from './usage';
 import { type MessageContent } from './utils/parse-message';
 
@@ -137,12 +138,11 @@ export type Plugin = {
   config?: (
     this: TempPluginContext,
     opts: { config: Config; argvConfig: Record<string, any> },
-  ) => any | Promise<any>;
+  ) => Partial<Config> | Promise<Partial<Config>>;
   slashCommand?: (
     this: PluginContext,
   ) => Promise<SlashCommand[]> | SlashCommand[];
   outputStyle?: (this: PluginContext) => Promise<OutputStyle[]> | OutputStyle[];
-  argvConfig?: (this: PluginContext) => Promise<any> | any;
   provider?: (
     this: PluginContext,
     providers: ProvidersMap,
@@ -154,8 +154,11 @@ export type Plugin = {
       ) => LanguageModelV1;
       createOpenAI: (options: any) => OpenAIProvider;
     },
-  ) => Promise<any> | any;
-  modelAlias?: (this: PluginContext, modelAlias: any) => Promise<any> | any;
+  ) => Promise<ProvidersMap> | ProvidersMap;
+  modelAlias?: (
+    this: PluginContext,
+    modelAlias: ModelAlias,
+  ) => Promise<ModelAlias> | ModelAlias;
 
   // workflow
   // NOTICE: initialized may be called multiple times when it's runned
@@ -166,7 +169,7 @@ export type Plugin = {
       cwd: string;
       quiet: boolean;
     },
-  ) => Promise<any> | any;
+  ) => Promise<void> | void;
 
   // session
   context?: (
@@ -175,18 +178,19 @@ export type Plugin = {
       userPrompt: string | null;
       sessionId: string;
     },
-  ) => Promise<any> | any;
+  ) => Promise<Record<string, string> | {}> | Record<string, string> | {};
   env?: (
     this: PluginContext,
     opts: {
       userPrompt: string | null;
       sessionId: string;
     },
-  ) => Record<string, string>;
+  ) => Promise<Record<string, string> | {}> | Record<string, string> | {};
   userPrompt?: (
     this: PluginContext,
-    opts: { text: string; sessionId: string },
-  ) => Promise<any> | any;
+    userPrompt: string,
+    opts: { sessionId: string },
+  ) => Promise<string> | string;
   systemPrompt?: (
     this: PluginContext,
     systemPrompt: string,
@@ -195,7 +199,7 @@ export type Plugin = {
   tool?: (
     this: PluginContext,
     opts: { isPlan?: boolean; sessionId: string },
-  ) => Promise<any>;
+  ) => Promise<Tool[]> | Tool[];
   toolUse?: (
     this: PluginContext,
     toolUse: ProvidersMap,
@@ -218,7 +222,7 @@ export type Plugin = {
       endTime: Date;
       sessionId: string;
     },
-  ) => Promise<any> | any;
+  ) => Promise<void> | void;
   conversation?: (
     this: PluginContext,
     opts: {

@@ -20,7 +20,7 @@ export const contextPlugin: Plugin = {
 
   async context() {
     if (files.length === 0) {
-      return;
+      return {};
     }
     const browserFiles = await getFileContext(files);
 

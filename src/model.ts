@@ -628,7 +628,8 @@ export const providers: ProvidersMap = {
 };
 
 // value format: provider/model
-export const modelAlias = {
+export type ModelAlias = Record<string, string>;
+export const modelAlias: ModelAlias = {
   deepseek: 'deepseek/deepseek-chat',
   r1: 'deepseek/deepseek-reasoner',
   '41': 'openai/gpt-4.1',
