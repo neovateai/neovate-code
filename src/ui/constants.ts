@@ -15,7 +15,8 @@ export const UI_COLORS = {
   WARNING: 'yellow',
   INFO: 'gray',
   CHAT_BORDER: 'gray',
-  CHAT_ARROW: 'white',
+  CHAT_ARROW: 'gray',
+  CHAT_ARROW_ACTIVE: 'white',
   CANCELED: 'red',
   ACTIVITY_INDICATOR_TEXT: 'gray',
   ACTIVITY_INDICATOR_GRADIENT: {
