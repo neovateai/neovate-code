@@ -1,4 +1,5 @@
-import { type AgentInputItem, OpenAIProvider } from '@openai/agents';
+import type { OpenAIProvider } from '@ai-sdk/openai';
+import { type AgentInputItem } from '@openai/agents';
 import type { LanguageModelV1 } from '@openrouter/ai-sdk-provider';
 import defu from 'defu';
 import { type Config } from './config';
