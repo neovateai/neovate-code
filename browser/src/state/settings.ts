@@ -62,6 +62,7 @@ export const actions = {
       state.settings.availablePlugins = pluginsResponse.data || [];
       state.settings.loading = false;
       state.settings.loaded = true;
+      state.settings.hasUnsavedChanges = false;
     } catch (error) {
       console.error('Failed to load settings:', error);
       state.settings.loading = false;
@@ -69,17 +70,16 @@ export const actions = {
     }
   },
 
-  // Update setting value (save directly)
-  updateSettingValue: async (
+  // Update setting value (local only, no API call)
+  updateSettingValue: (
     key: keyof AppSettings,
     value: AppSettings[keyof AppSettings],
   ) => {
     const { currentScope } = state.settings;
 
-    // Update local state
+    // Update local state only
     if (currentScope === 'global') {
-      if (value === null || value === undefined) {
-        // If value is empty, remove the field
+      if (value === null || value === undefined || value === '') {
         const { [key]: removed, ...rest } = state.settings.globalSettings;
         state.settings.globalSettings = rest;
       } else {
@@ -89,8 +89,7 @@ export const actions = {
         };
       }
     } else {
-      if (value === null || value === undefined) {
-        // If value is empty, remove the field
+      if (value === null || value === undefined || value === '') {
         const { [key]: removed, ...rest } = state.settings.projectSettings;
         state.settings.projectSettings = rest;
       } else {
@@ -101,23 +100,47 @@ export const actions = {
       }
     }
 
-    // Save directly to server
+    // Mark as having unsaved changes
+    state.settings.hasUnsavedChanges = true;
+  },
+
+  // Save current settings to server
+  saveAllSettings: async () => {
+    const { currentScope } = state.settings;
+    const settingsToSave =
+      currentScope === 'global'
+        ? state.settings.globalSettings
+        : state.settings.projectSettings;
+
     try {
-      if (value === null || value === undefined) {
-        // Remove setting item
+      // Get current server settings first
+      const currentServerSettings = await getSettings(currentScope);
+      const serverSettings = currentServerSettings.data || {};
+
+      // Find keys to delete (exist on server but not in local)
+      const keysToDelete = Object.keys(serverSettings).filter(
+        (key) => !(key in settingsToSave),
+      );
+
+      // Delete missing settings
+      for (const key of keysToDelete) {
         await removeSetting(currentScope, key);
-      } else {
-        // Use single setting update instead of batch update
-        await setSetting(currentScope, key, value);
       }
 
-      // Reload effective settings
-      const effectiveResponse = await getEffectiveSettings();
-      state.settings.effectiveSettings =
-        effectiveResponse.data || state.settings.effectiveSettings;
+      // Save existing settings
+      for (const [key, value] of Object.entries(settingsToSave)) {
+        if (value === null || value === undefined || value === '') {
+          await removeSetting(currentScope, key);
+        } else {
+          await setSetting(currentScope, key, value);
+        }
+      }
+
+      // Reload settings to ensure state sync
+      await actions.loadSettings();
     } catch (error) {
       console.error('Failed to save settings:', error);
-      // If save fails, consider rolling back local state
+      throw error;
     }
   },
 
