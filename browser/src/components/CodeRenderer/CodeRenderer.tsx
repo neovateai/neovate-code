@@ -8,6 +8,10 @@ import React, {
   useState,
 } from 'react';
 import {
+  type SupportedLanguage,
+  isLanguageSupported,
+} from '@/constants/languages';
+import {
   createLineNumberTransformer,
   customDiffTransformer,
 } from './transformers';
@@ -66,7 +70,7 @@ const useStyles = createStyles(({ css }) => ({
     overflow: auto;
     max-height: inherit;
 
-    /* 确保垂直滚动正常工作 */
+    /* Ensure vertical scrolling works properly */
     &[style*='max-height'] {
       overflow-y: auto;
       overflow-x: auto;
@@ -96,7 +100,7 @@ const useStyles = createStyles(({ css }) => ({
       overflow-wrap: break-word;
     }
 
-    /* 确保 Shiki 生成的所有元素背景都透明 */
+    /* Ensure all Shiki-generated elements have transparent backgrounds */
     .code-renderer-container .shiki,
     .code-renderer-container .shiki pre,
     .code-renderer-container .shiki code,
@@ -109,7 +113,7 @@ const useStyles = createStyles(({ css }) => ({
       background-color: transparent !important;
     }
 
-    /* 强制覆盖任何内联样式的背景色 */
+    /* Force override any inline style background colors */
     .code-renderer-container [style*='background'],
     .shiki [style*='background'] {
       background: transparent !important;
@@ -160,7 +164,7 @@ const useStyles = createStyles(({ css }) => ({
       padding-left: 10px;
     }
 
-    /* 确保行号区域也有背景色和间距 */
+    /* Ensure line number area also has background color and spacing */
     .shiki-with-line-numbers .line.diff.add .line-number {
       border-right-color: #28a745 !important;
     }
@@ -204,21 +208,14 @@ const createUnifiedDiff = (
   try {
     // Input validation
     if (!originalCode && !modifiedCode) {
-      console.warn('createUnifiedDiff: Both codes are empty');
       return '';
     }
 
     if (!originalCode) {
-      console.warn(
-        'createUnifiedDiff: Original code is empty, returning modified code',
-      );
       return modifiedCode;
     }
 
     if (!modifiedCode) {
-      console.warn(
-        'createUnifiedDiff: Modified code is empty, returning original code',
-      );
       return originalCode;
     }
 
@@ -235,7 +232,6 @@ const createUnifiedDiff = (
 
     // Check if there are no actual differences
     if (!patch.hunks || patch.hunks.length === 0) {
-      console.log('No differences found, returning original code');
       return originalCode;
     }
 
@@ -245,7 +241,6 @@ const createUnifiedDiff = (
     );
 
     if (!hasActualChanges) {
-      console.log('No actual changes found, returning original code');
       return originalCode;
     }
 
@@ -340,10 +335,10 @@ export const CodeRenderer = forwardRef<CodeRendererRef, CodeRendererProps>(
         try {
           let html: string;
 
-          // 构建 transformers 数组
+          // Build transformers array
           const transformers: any[] = [customDiffTransformer()];
 
-          // 根据需要添加行号 transformer
+          // Add line number transformer if needed
           if (showLineNumbers) {
             const lineNumberTransformer = createLineNumberTransformer({
               startLine: 1,
@@ -351,13 +346,19 @@ export const CodeRenderer = forwardRef<CodeRendererRef, CodeRendererProps>(
             transformers.push(lineNumberTransformer);
           }
 
+          // Ensure we always have a safe language for Shiki
+          const safeLanguage: SupportedLanguage =
+            detectedLanguage && isLanguageSupported(detectedLanguage)
+              ? detectedLanguage
+              : 'plaintext';
+
           html = codeToHtml(codeToRender, {
-            lang: detectedLanguage || 'plaintext',
+            lang: safeLanguage,
             theme: theme || 'snazzy-light',
             transformers,
           });
 
-          // 移除所有背景色样式
+          // Remove all background color styles
           const cleanHtml = html
             .replace(/background-color:[^;"]*;?/gi, '')
             .replace(/background:[^;"]*;?/gi, '')
@@ -366,7 +367,6 @@ export const CodeRenderer = forwardRef<CodeRendererRef, CodeRendererProps>(
 
           setHighlightedHtml(cleanHtml);
         } catch (err) {
-          console.warn('Failed to highlight code:', err);
           setHighlightedHtml(null);
         }
       };
