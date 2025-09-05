@@ -2,7 +2,10 @@ import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createXai } from '@ai-sdk/xai';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import {
+  type LanguageModelV1,
+  createOpenRouter,
+} from '@openrouter/ai-sdk-provider';
 import assert from 'assert';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
@@ -49,7 +52,7 @@ export interface Provider {
   api?: string;
   doc: string;
   models: Record<string, Omit<Model, 'id' | 'cost'>>;
-  createModel(name: string, provider: Provider): AiSdkModel;
+  createModel(name: string, provider: Provider): LanguageModelV1;
 }
 
 type ProvidersMap = Record<string, Provider>;
@@ -436,12 +439,10 @@ export const models: ModelMap = {
 
 export const defaultModelCreator = (name: string, provider: Provider) => {
   assert(provider.api, `Provider ${provider.id} must have an api`);
-  return aisdk(
-    createOpenAI({
-      baseURL: provider.api,
-      apiKey: provider.env[0] ? process.env[provider.env[0]] : '',
-    })(name),
-  );
+  return createOpenAI({
+    baseURL: provider.api,
+    apiKey: provider.env[0] ? process.env[provider.env[0]] : '',
+  })(name);
 };
 
 export const providers: ProvidersMap = {
@@ -476,7 +477,7 @@ export const providers: ProvidersMap = {
       const google = createGoogleGenerativeAI({
         apiKey: process.env[provider.env[0]] || process.env[provider.env[1]],
       });
-      return aisdk(google(name));
+      return google(name);
     },
   },
   deepseek: {
@@ -501,11 +502,9 @@ export const providers: ProvidersMap = {
       'grok-code-fast-1': models['grok-code-fast-1'],
     },
     createModel(name, provider) {
-      return aisdk(
-        createXai({
-          apiKey: process.env[provider.env[0]],
-        })(name),
-      );
+      return createXai({
+        apiKey: process.env[provider.env[0]],
+      })(name);
     },
   },
   anthropic: {
@@ -521,11 +520,9 @@ export const providers: ProvidersMap = {
       'claude-3-5-sonnet-20241022': models['claude-3-5-sonnet-20241022'],
     },
     createModel(name, provider) {
-      return aisdk(
-        createAnthropic({
-          apiKey: process.env[provider.env[0]],
-        })(name),
-      );
+      return createAnthropic({
+        apiKey: process.env[provider.env[0]],
+      })(name);
     },
   },
   aihubmix: {
@@ -581,11 +578,9 @@ export const providers: ProvidersMap = {
       'x-ai/grok-code-fast-1': models['grok-code-fast-1'],
     },
     createModel(name, provider) {
-      return aisdk(
-        createOpenRouter({
-          apiKey: process.env[provider.env[0]] || process.env[provider.env[1]],
-        })(name),
-      );
+      return createOpenRouter({
+        apiKey: process.env[provider.env[0]] || process.env[provider.env[1]],
+      })(name);
     },
   },
   iflow: {
@@ -613,14 +608,12 @@ export const providers: ProvidersMap = {
       'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
     },
     createModel(name, provider) {
-      return aisdk(
-        createOpenAI({
-          baseURL: provider.api,
-          apiKey: process.env[provider.env[0]],
-          // include usage information in streaming mode
-          compatibility: 'strict',
-        })(name),
-      );
+      return createOpenAI({
+        baseURL: provider.api,
+        apiKey: process.env[provider.env[0]],
+        // include usage information in streaming mode
+        compatibility: 'strict',
+      })(name);
     },
   },
   groq: {
@@ -739,6 +732,6 @@ export function resolveModel(
   return {
     provider,
     model,
-    aisdk: provider.createModel(modelId, provider),
+    aisdk: aisdk(provider.createModel(modelId, provider)),
   };
 }
