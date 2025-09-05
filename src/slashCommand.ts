@@ -59,6 +59,7 @@ export class SlashCommandManager {
     const pluginSlashCommands = await context.apply({
       hook: 'command',
       args: [],
+      memo: [],
       type: PluginHookType.SeriesMerge,
     });
     return new SlashCommandManager({
