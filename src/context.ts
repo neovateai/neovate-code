@@ -60,11 +60,11 @@ export class Context {
   }
 
   async destroy() {
-    await this.apply({
-      hook: 'destroy',
-      args: [],
-      type: PluginHookType.Parallel,
-    });
+    // await this.apply({
+    //   hook: 'destroy',
+    //   args: [],
+    //   type: PluginHookType.Parallel,
+    // });
   }
 
   static async create(opts: ContextCreateOpts) {
@@ -112,24 +112,13 @@ export class Context {
       type: PluginHookType.SeriesMerge,
     });
     tempContext.config = resolvedConfig;
-    await apply({
-      hook: 'configResolved',
-      args: [{ resolvedConfig }],
-      type: PluginHookType.Series,
-    });
-    const argvConfig = await apply({
-      hook: 'argvConfig',
-      args: [{}],
-      memo: { ...opts.argvConfig },
-      type: PluginHookType.SeriesMerge,
-    });
     return new Context({
       cwd,
       productName,
       productASCIIArt,
       version,
       pluginManager,
-      argvConfig,
+      argvConfig: opts.argvConfig,
       config: resolvedConfig,
       paths,
     });

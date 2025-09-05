@@ -57,7 +57,7 @@ export class SlashCommandManager {
 
   static async create(context: Context) {
     const pluginSlashCommands = await context.apply({
-      hook: 'command',
+      hook: 'slashCommand',
       args: [],
       memo: [],
       type: PluginHookType.SeriesMerge,

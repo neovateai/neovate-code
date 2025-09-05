@@ -10,6 +10,8 @@ import { isProjectDirectory } from './utils/project';
 
 export type LlmsContextCreateOpts = {
   context: Context;
+  sessionId: string;
+  userPrompt: string | null;
 };
 
 export class LlmsContext {
@@ -61,7 +63,12 @@ ${result.data}
 
     llmsContext = await opts.context.apply({
       hook: 'context',
-      args: [],
+      args: [
+        {
+          sessionId: opts.sessionId,
+          userPrompt: opts.userPrompt,
+        },
+      ],
       memo: llmsContext,
       type: PluginHookType.SeriesMerge,
     });
@@ -81,7 +88,12 @@ ${Object.entries(llmsContext)
     };
     llmsEnv = await opts.context.apply({
       hook: 'env',
-      args: [],
+      args: [
+        {
+          sessionId: opts.sessionId,
+          userPrompt: opts.userPrompt,
+        },
+      ],
       memo: llmsEnv,
       type: PluginHookType.SeriesMerge,
     });

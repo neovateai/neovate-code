@@ -5,12 +5,7 @@ import { Context } from './context';
 import type { Message, NormalizedMessage, UserMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { MessageBus } from './messageBus';
-import {
-  type Model,
-  type Provider,
-  providers,
-  resolveModelWithContext,
-} from './model';
+import { type Model, type Provider, resolveModelWithContext } from './model';
 import { OutputStyleManager } from './outputStyle';
 import { PluginHookType } from './plugin';
 import { Project } from './project';
@@ -72,6 +67,11 @@ class NodeHandlerRegistry {
       'initialize',
       async (data: { cwd: string; sessionId?: string }) => {
         const context = await this.getContext(data.cwd);
+        await context.apply({
+          hook: 'initialized',
+          args: [{ cwd: data.cwd, quiet: false }],
+          type: PluginHookType.Series,
+        });
         const modelInfo = (await resolveModelWithContext(null, context)).model;
         const model = `${modelInfo.provider.id}/${modelInfo.model.id}`;
         const modelContextLimit = modelInfo.model.limit.context;

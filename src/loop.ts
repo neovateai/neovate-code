@@ -52,9 +52,17 @@ type RunLoopOpts = {
   onTextDelta?: (text: string) => Promise<void>;
   onText?: (text: string) => Promise<void>;
   onReasoning?: (text: string) => Promise<void>;
-  onToolUse?: (toolUse: ToolUse) => Promise<void>;
-  onToolUseResult?: (toolUseResult: ToolUseResult) => Promise<void>;
-  onTurn?: (turn: { usage: Usage }) => Promise<void>;
+  onToolUse?: (toolUse: ToolUse) => Promise<ToolUse>;
+  onToolResult?: (
+    toolUse: ToolUse,
+    toolResult: any,
+    approved: boolean,
+  ) => Promise<any>;
+  onTurn?: (turn: {
+    usage: Usage;
+    startTime: Date;
+    endTime: Date;
+  }) => Promise<void>;
   onToolApprove?: (toolUse: ToolUse) => Promise<boolean>;
   onMessage?: OnMessage;
 };
@@ -87,6 +95,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   const maxTurns = opts.maxTurns ?? DEFAULT_MAX_TURNS;
 
   while (true) {
+    const startTime = new Date();
     turnsCount++;
     lastUsage.reset();
     if (turnsCount > maxTurns) {
@@ -244,8 +253,11 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
         item.callId = callId;
       }
     });
+    const endTime = new Date();
     opts.onTurn?.({
       usage: lastUsage,
+      startTime,
+      endTime,
     });
     const model = `${opts.model.provider.id}/${opts.model.model.id}`;
     await history.addMessage({
@@ -272,24 +284,23 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
         output_tokens: lastUsage.completionTokens,
       },
     });
-    const toolUse = parsed.find((item) => item.type === 'tool_use') as ToolUse;
+    let toolUse = parsed.find((item) => item.type === 'tool_use') as ToolUse;
     if (toolUse) {
-      await opts.onToolUse?.(toolUse as ToolUse);
+      if (opts.onToolUse) {
+        toolUse = await opts.onToolUse(toolUse as ToolUse);
+      }
       const approved = opts.onToolApprove
         ? await opts.onToolApprove(toolUse as ToolUse)
         : true;
       if (approved) {
         toolCallsCount++;
-        const toolResult = await opts.tools.invoke(
+        let toolResult = await opts.tools.invoke(
           toolUse.name,
           JSON.stringify(toolUse.params),
         );
-        // const formattedToolUse = formatToolUse(toolUse, toolResult);
-        const toolUseResult = {
-          toolUse,
-          result: toolResult,
-          approved,
-        };
+        if (opts.onToolResult) {
+          toolResult = await opts.onToolResult(toolUse, toolResult, approved);
+        }
         await history.addMessage({
           role: 'user',
           content: [
@@ -304,9 +315,11 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
             },
           ],
         });
-        await opts.onToolUseResult?.(toolUseResult);
       } else {
-        const deniedResult = 'Tool execution was denied by user.';
+        let toolResult = 'Tool execution was denied by user.';
+        if (opts.onToolResult) {
+          toolResult = await opts.onToolResult(toolUse, toolResult, approved);
+        }
         await history.addMessage({
           role: 'user',
           content: [
@@ -315,7 +328,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
               id: toolUse.callId,
               name: toolUse.name,
               input: toolUse.params,
-              result: deniedResult,
+              result: toolResult,
               isError: true,
             },
           ],
@@ -324,7 +337,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
           success: false,
           error: {
             type: 'tool_denied',
-            message: deniedResult,
+            message: toolResult,
             details: {
               toolUse,
               history,

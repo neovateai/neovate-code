@@ -7,7 +7,7 @@ import { Context } from './context';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
 import { Paths } from './paths';
-import { type Plugin } from './plugin';
+import { type Plugin, PluginHookType } from './plugin';
 import { Project } from './project';
 import { Session, SessionConfigManager, loadSessionMessages } from './session';
 import {
@@ -308,9 +308,15 @@ export async function runNeovate(opts: {
   }
 
   if (argv.quiet) {
+    const cwd = argv.cwd || process.cwd();
     const context = await Context.create({
-      cwd: argv.cwd || process.cwd(),
+      cwd,
       ...contextCreateOpts,
+    });
+    await context.apply({
+      hook: 'initialized',
+      args: [{ cwd, quiet: true }],
+      type: PluginHookType.Series,
     });
     await runQuiet(argv, context);
   } else {

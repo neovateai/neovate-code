@@ -55,7 +55,7 @@ export interface Provider {
   createModel(name: string, provider: Provider): LanguageModelV1;
 }
 
-type ProvidersMap = Record<string, Provider>;
+export type ProvidersMap = Record<string, Provider>;
 export type ModelMap = Record<string, Omit<Model, 'id' | 'cost'>>;
 
 export const models: ModelMap = {
