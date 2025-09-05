@@ -2,6 +2,27 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
+interface LogConfig {
+  approvalMode?: string;
+  approvalTools: string[];
+  history: string[];
+  summary?: string;
+}
+
+interface ConfigLogEntry {
+  type: 'config';
+  config: LogConfig;
+}
+
+interface MessageLogEntry {
+  type: 'message';
+  role: string;
+  content: string | any[];
+  [key: string]: any;
+}
+
+type LogEntry = ConfigLogEntry | MessageLogEntry;
+
 export class Paths {
   globalConfigDir: string;
   globalProjectDir: string;
@@ -65,20 +86,18 @@ export class Paths {
           const lines = content.split('\n').filter(Boolean);
           messageCount = lines.length;
 
-          // try to extract first user message as summary
+          // Extract summary: prioritize config.summary, fallback to first user message
           if (lines.length > 0) {
             try {
-              const firstMessage = JSON.parse(lines[0]);
-              if (
-                firstMessage.role === 'user' &&
-                typeof firstMessage.content === 'string'
-              ) {
-                summary =
-                  firstMessage.content.length > 50
-                    ? firstMessage.content.slice(0, 50) + '...'
-                    : firstMessage.content;
+              const firstEntry: LogEntry = JSON.parse(lines[0]);
+              if (firstEntry.type === 'config' && firstEntry.config.summary) {
+                summary = firstEntry.config.summary;
+              } else {
+                summary = extractFirstUserMessageSummary(lines);
               }
-            } catch (e) {}
+            } catch (e) {
+              summary = extractFirstUserMessageSummary(lines);
+            }
           }
         } catch (e) {
           // ignore read error, message count is 0
@@ -97,6 +116,30 @@ export class Paths {
 
     return jsonlFiles;
   }
+}
+
+/**
+ * 从日志行中提取第一个用户消息作为摘要
+ */
+function extractFirstUserMessageSummary(lines: string[]): string {
+  for (const line of lines) {
+    try {
+      const entry: LogEntry = JSON.parse(line);
+      if (
+        entry.type === 'message' &&
+        'role' in entry &&
+        entry.role === 'user' &&
+        typeof entry.content === 'string'
+      ) {
+        return entry.content.length > 50
+          ? entry.content.slice(0, 50) + '...'
+          : entry.content;
+      }
+    } catch (e) {
+      continue;
+    }
+  }
+  return '';
 }
 
 function formatPath(from: string) {
