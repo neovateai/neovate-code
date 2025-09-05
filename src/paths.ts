@@ -118,9 +118,6 @@ export class Paths {
   }
 }
 
-/**
- * 从日志行中提取第一个用户消息作为摘要
- */
 function extractFirstUserMessageSummary(lines: string[]): string {
   for (const line of lines) {
     try {
