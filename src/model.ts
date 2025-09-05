@@ -133,7 +133,6 @@ export const models: ModelMap = {
     modalities: { input: ['text'], output: ['text'] },
     open_weights: true,
     limit: { context: 262144, output: 16384 },
-    cost: { input: 0.6, output: 2.5 },
   },
   'qwen3-coder-480b-a35b-instruct': {
     name: 'Qwen3-Coder-480B-A35B-Instruct',
