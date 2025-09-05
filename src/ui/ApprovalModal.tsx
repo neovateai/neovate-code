@@ -3,7 +3,7 @@ import { Box, Text } from 'ink';
 import { useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import path from 'path';
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import type { ToolUse as ToolUseType } from '../loop';
 import { DiffViewer } from './DiffViewer';
 import { UI_COLORS } from './constants';
