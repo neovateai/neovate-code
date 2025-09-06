@@ -244,7 +244,7 @@ export class Project {
             },
           ],
           memo: toolResult,
-          type: PluginHookType.Series,
+          type: PluginHookType.SeriesLast,
         });
       },
       onTurn: async (turn: {
