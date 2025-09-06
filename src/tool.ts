@@ -1,3 +1,4 @@
+import { type JsonObjectSchema } from '@openai/agents-core/types';
 import { isZodObject } from '@openai/agents/utils';
 import path from 'path';
 import { z } from 'zod';
@@ -51,9 +52,14 @@ export async function resolveTools(opts: ResolveToolsOpts) {
     return [todoReadTool, todoWriteTool];
   })();
 
-  // TODO: mcp tools
+  // MCP tools integration
+  const mcpTools = await getMcpTools(opts.context);
 
-  return [...readonlyTools, ...writeTools, ...todoTools];
+  // Merge all tools and handle name conflicts
+  const allTools = [...readonlyTools, ...writeTools, ...todoTools, ...mcpTools];
+
+  // TODO deduplicate tools
+  return allTools;
 }
 
 export class Tools {
@@ -108,7 +114,9 @@ export class Tools {
     const availableTools = `
   ${Object.entries(this.tools)
     .map(([key, tool]) => {
-      const schema = zodToJsonSchema(tool.parameters);
+      const schema = isZodObject(tool.parameters)
+        ? zodToJsonSchema(tool.parameters)
+        : tool.parameters;
       return `
 <tool>
 <name>${key}</name>
@@ -156,6 +164,22 @@ Always adhere to this format for the tool use to ensure proper parsing and execu
 ${availableTools}
     `;
   }
+
+  getToolsInfo(): Array<{ name: string; source: string; description: string }> {
+    return Object.values(this.tools).map((tool) => ({
+      name: tool.name,
+      source: getToolSource(tool),
+      description: tool.description,
+    }));
+  }
+
+  getMcpTools(): Tool[] {
+    return Object.values(this.tools).filter(isMcpTool);
+  }
+
+  getBuiltinTools(): Tool[] {
+    return Object.values(this.tools).filter((tool) => !isMcpTool(tool));
+  }
 }
 
 function validateToolParams(schema: z.ZodObject<any>, params: string) {
@@ -189,9 +213,15 @@ function validateToolParams(schema: z.ZodObject<any>, params: string) {
 export interface Tool<T = any> {
   name: string;
   description: string;
-  parameters: z.ZodSchema<T>;
   execute: (params: T) => Promise<any> | any;
   approval?: ToolApprovalInfo;
+  metadata?: ToolMetadata;
+  parameters: z.ZodSchema<T>;
+}
+
+export interface ToolMetadata {
+  source: 'builtin' | 'mcp';
+  mcpServerName?: string;
 }
 
 type ApprovalContext = {
@@ -214,6 +244,7 @@ export function createTool<TSchema extends z.ZodTypeAny>(config: {
   parameters: TSchema;
   execute: (params: z.infer<TSchema>) => Promise<any> | any;
   approval?: ToolApprovalInfo;
+  metadata?: Partial<ToolMetadata>;
 }): Tool<z.infer<TSchema>> {
   return {
     name: config.name,
@@ -221,5 +252,38 @@ export function createTool<TSchema extends z.ZodTypeAny>(config: {
     parameters: config.parameters,
     execute: config.execute,
     approval: config.approval,
+    metadata: {
+      source: 'builtin',
+      ...config.metadata,
+    },
   };
+}
+
+function isMcpTool(tool: Tool): boolean {
+  return tool.metadata?.source === 'mcp';
+}
+
+export async function getMcpTools(context: Context): Promise<Tool[]> {
+  try {
+    const mcpManager = context.getMcpManager();
+    if (!mcpManager) {
+      return [];
+    }
+
+    await mcpManager.initAsync();
+
+    // Get all tools from MCP servers
+    const allMcpTools = await mcpManager.getAllTools();
+    return allMcpTools;
+  } catch (error) {
+    console.warn('Failed to load MCP tools:', error);
+    return [];
+  }
+}
+
+function getToolSource(tool: Tool): string {
+  if (tool.metadata?.source === 'mcp') {
+    return `mcp:${tool.metadata.mcpServerName || 'unknown'}`;
+  }
+  return 'builtin';
 }

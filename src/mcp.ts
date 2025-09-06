@@ -1,13 +1,14 @@
 import {
+  type Tool as AgentTool,
   type FunctionTool,
   type MCPServer,
   MCPServerSSE,
   MCPServerStdio,
   MCPServerStreamableHttp,
-  type Tool,
   mcpToFunctionTool,
 } from '@openai/agents';
 import createDebug from 'debug';
+import type { Tool } from './tool';
 
 export interface MCPConfig {
   type?: 'stdio' | 'sse' | 'http';
@@ -38,7 +39,7 @@ interface ServerState {
   server?: MCP;
   status: MCPServerStatus;
   error?: string;
-  tools?: Tool[];
+  tools?: AgentTool[];
   retryCount: number;
   isTemporaryError?: boolean;
 }
@@ -217,16 +218,6 @@ export class MCPManager {
     return this.getAllMcpTools(connectedServers);
   }
 
-  getAvailableTools(): Tool[] {
-    const tools: Tool[] = [];
-    for (const serverState of this.servers.values()) {
-      if (serverState.status === 'connected' && serverState.tools) {
-        tools.push(...serverState.tools);
-      }
-    }
-    return tools;
-  }
-
   async getTools(keys: string[]): Promise<Tool[]> {
     const servers = keys
       .map((key) => this.servers.get(key))
@@ -316,12 +307,11 @@ export class MCPManager {
     await this._connectServer(serverName, config);
   }
 
-  async getAllMcpTools<TContext = UnknownContext>(
+  async getAllMcpTools(
     mcpServers: MCPServer[],
     convertSchemasToStrict: boolean = false,
-  ): Promise<Tool<TContext>[]> {
-    // @see https://github.com/openai/openai-agents-js/issues/295
-    const allTools: Tool<TContext>[] = [];
+  ): Promise<Tool[]> {
+    const allTools: Tool[] = [];
     const toolNames = new Set<string>();
     for (const server of mcpServers) {
       const serverTools = await this.getFunctionToolsFromServer(
@@ -337,7 +327,7 @@ export class MCPManager {
       }
       for (const t of serverTools) {
         toolNames.add(t.name);
-        allTools.push(t);
+        allTools.push(this.#convertMcpToolToLocal(t, server.name));
       }
     }
     return allTools;
@@ -402,6 +392,41 @@ export class MCPManager {
 
     // Default to temporary for unknown errors (safer for retries)
     return true;
+  }
+
+  #convertMcpToolToLocal(mcpTool: FunctionTool, serverName: string): Tool {
+    return {
+      name: mcpTool.name,
+      description: mcpTool.description,
+      parameters: mcpTool.originalParameters ?? mcpTool.parameters,
+      execute: async (params) => {
+        try {
+          // FunctionTool.invoke expects (runContext, input)
+          // We'll pass null as runContext since we don't have a full run context
+          const result = await mcpTool.invoke(
+            null as any,
+            JSON.stringify(params || {}),
+          );
+          return {
+            success: true,
+            data: result,
+            message: `Tool ${mcpTool.name} executed successfully, ${params ? `parameters: ${JSON.stringify(params)}` : ''}`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
+      approval: {
+        category: 'network',
+      },
+      metadata: {
+        source: 'mcp',
+        mcpServerName: serverName,
+      },
+    };
   }
 }
 
