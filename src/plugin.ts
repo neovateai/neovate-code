@@ -203,7 +203,7 @@ export type Plugin = {
   ) => Promise<Tool[]> | Tool[];
   toolUse?: (
     this: PluginContext,
-    toolUse: ProvidersMap,
+    toolUse: ToolUse,
     opts: { sessionId: string },
   ) => Promise<ToolUse> | ToolUse;
   toolResult?: (
