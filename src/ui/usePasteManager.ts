@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
+import { useAppStore } from './store';
 
 export interface PasteResult {
   success: boolean;
@@ -14,10 +15,7 @@ function getPastedTextPrompt(text: string, pasteId: string): string {
 }
 
 export function usePasteManager() {
-  const [pastedTextMap, setPastedTextMap] = useState<Map<string, string>>(
-    new Map(),
-  );
-  const [isPasting, setIsPasting] = useState(false);
+  const { pastedTextMap, setPastedTextMap } = useAppStore();
   const pasteCounterRef = useRef(0);
 
   const generatePasteId = useCallback((): string => {
@@ -27,8 +25,6 @@ export function usePasteManager() {
   const handleTextPaste = useCallback(
     async (rawText: string): Promise<PasteResult & { prompt?: string }> => {
       try {
-        setIsPasting(true);
-
         // Clean up the text
         const text = rawText.trim();
         if (!text) {
@@ -39,10 +35,9 @@ export function usePasteManager() {
         const pasteId = generatePasteId();
 
         // Store the full text
-        setPastedTextMap((prev) => {
-          const newMap = new Map(prev);
-          newMap.set(pasteId, text);
-          return newMap;
+        await setPastedTextMap({
+          ...pastedTextMap,
+          [pasteId]: text,
         });
 
         // Generate the prompt placeholder
@@ -59,31 +54,30 @@ export function usePasteManager() {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
         };
-      } finally {
-        setIsPasting(false);
       }
     },
-    [generatePasteId],
+    [generatePasteId, pastedTextMap, setPastedTextMap],
   );
 
   const getPastedText = useCallback(
     (pasteId: string): string | undefined => {
-      return pastedTextMap.get(pasteId);
+      return pastedTextMap[pasteId];
     },
     [pastedTextMap],
   );
 
-  const clearPastedText = useCallback((pasteId: string) => {
-    setPastedTextMap((prev) => {
-      const newMap = new Map(prev);
-      newMap.delete(pasteId);
-      return newMap;
-    });
-  }, []);
+  const clearPastedText = useCallback(
+    async (pasteId: string) => {
+      const newMap = { ...pastedTextMap };
+      delete newMap[pasteId];
+      await setPastedTextMap(newMap);
+    },
+    [pastedTextMap, setPastedTextMap],
+  );
 
-  const clearAllPastedText = useCallback(() => {
-    setPastedTextMap(new Map());
-  }, []);
+  const clearAllPastedText = useCallback(async () => {
+    await setPastedTextMap({});
+  }, [setPastedTextMap]);
 
   // Extract pasted text references from a message
   const extractPastedTextReferences = useCallback(
@@ -119,7 +113,6 @@ export function usePasteManager() {
 
   return {
     pastedTextMap,
-    isPasting,
     handleTextPaste,
     getPastedText,
     clearPastedText,

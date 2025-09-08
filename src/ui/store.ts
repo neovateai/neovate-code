@@ -101,7 +101,7 @@ interface AppState {
   inputError: string | null;
 
   // Pasted text storage
-  pastedTextMap: Map<string, string>;
+  pastedTextMap: Record<string, string>;
 
   logs: string[];
   exitMessage: string | null;
@@ -169,7 +169,7 @@ interface AppActions {
   setInputCtrlCPressed: (pressed: boolean) => void;
   setInputError: (error: string | null) => void;
   resetInput: () => void;
-  setPastedTextMap: (map: Map<string, string>) => void;
+  setPastedTextMap: (map: Record<string, string>) => Promise<void>;
 }
 
 export type AppStore = AppState & AppActions;
@@ -214,7 +214,7 @@ export const useAppStore = create<AppStore>()(
       inputShowExitWarning: false,
       inputCtrlCPressed: false,
       inputError: null,
-      pastedTextMap: new Map(),
+      pastedTextMap: {},
 
       // Actions
       initialize: async (opts) => {
@@ -242,6 +242,7 @@ export const useAppStore = create<AppStore>()(
           planMode: false,
           bashMode: false,
           approvalMode: response.data.approvalMode,
+          pastedTextMap: response.data.pastedTextMap || {},
           // theme: 'light',
         });
 
@@ -290,7 +291,8 @@ export const useAppStore = create<AppStore>()(
       },
 
       send: async (message) => {
-        const { bridge, cwd, sessionId, planMode, status } = get();
+        const { bridge, cwd, sessionId, planMode, status, pastedTextMap } =
+          get();
 
         // Check if processing, queue the message
         if (isExecuting(status)) {
@@ -298,7 +300,26 @@ export const useAppStore = create<AppStore>()(
           return;
         }
 
-        // Save history to session config
+        // Expand pasted text references before processing
+        let expandedMessage = message;
+        const pastedTextRegex = /\[Pasted text (#\d+) \d+ lines\]/g;
+        const matches = [...message.matchAll(pastedTextRegex)];
+        for (const match of matches) {
+          const pasteId = match[1];
+          const pastedContent = pastedTextMap[pasteId];
+          if (pastedContent) {
+            const placeholder = new RegExp(
+              `\\[Pasted text ${pasteId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} \\d+ lines\\]`,
+              'g',
+            );
+            expandedMessage = expandedMessage.replace(
+              placeholder,
+              pastedContent,
+            );
+          }
+        }
+
+        // Save history to session config (save the original message with placeholders)
         if (!isSlashCommand(message)) {
           const newHistory = [...get().history, message];
           set({
@@ -312,9 +333,9 @@ export const useAppStore = create<AppStore>()(
           });
         }
 
-        // slash command
-        if (isSlashCommand(message)) {
-          const parsed = parseSlashCommand(message);
+        // slash command - use expanded message for processing
+        if (isSlashCommand(expandedMessage)) {
+          const parsed = parseSlashCommand(expandedMessage);
           const result = await bridge.request('getSlashCommand', {
             cwd,
             command: parsed.command,
@@ -323,7 +344,7 @@ export const useAppStore = create<AppStore>()(
           if (commandeEntry) {
             const userMessage: Message = {
               role: 'user',
-              content: message,
+              content: message, // Use original message with placeholders for display
             };
             const command = commandeEntry.command;
             const type = command.type;
@@ -404,8 +425,11 @@ export const useAppStore = create<AppStore>()(
           }
           return;
         } else {
-          // Use store's current model for regular message sending
-          const result = await get().sendMessage({ message, planMode });
+          // Use store's current model for regular message sending with expanded message
+          const result = await get().sendMessage({
+            message: expandedMessage,
+            planMode,
+          });
           if (planMode && result.success) {
             set({
               planResult: result.data.text,
@@ -509,6 +533,7 @@ export const useAppStore = create<AppStore>()(
           inputShowExitWarning: false,
           inputCtrlCPressed: false,
           inputError: null,
+          pastedTextMap: {},
         });
         return {
           sessionId,
@@ -574,6 +599,7 @@ export const useAppStore = create<AppStore>()(
           logPath: logFile,
         });
         const history = sessionConfigManager.config.history || [];
+        const pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
         set({
           sessionId,
           logFile,
@@ -598,6 +624,7 @@ export const useAppStore = create<AppStore>()(
           inputShowExitWarning: false,
           inputCtrlCPressed: false,
           inputError: null,
+          pastedTextMap,
         });
       },
 
@@ -708,8 +735,17 @@ export const useAppStore = create<AppStore>()(
         });
       },
 
-      setPastedTextMap: (map: Map<string, string>) => {
+      setPastedTextMap: async (map: Record<string, string>) => {
+        const { bridge, cwd, sessionId } = get();
         set({ pastedTextMap: map });
+        // Save to session config
+        if (sessionId) {
+          await bridge.request('sessionConfig.setPastedTextMap', {
+            cwd,
+            sessionId,
+            pastedTextMap: map,
+          });
+        }
       },
     }),
     { name: 'app-store' },

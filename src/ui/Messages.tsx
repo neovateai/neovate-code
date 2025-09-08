@@ -109,7 +109,7 @@ function Header() {
 }
 
 function User({ message }: { message: UserMessage }) {
-  const text = getMessageText(message);
+  const text = getMessageText(message).replace(/\r/g, '\n');
   const isCanceled = isCanceledMessage(message);
   if (message.hidden) {
     return null;

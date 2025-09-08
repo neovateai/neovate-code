@@ -78,12 +78,14 @@ class NodeHandlerRegistry {
 
         // Get session config if sessionId is provided
         let sessionSummary: string | undefined;
+        let pastedTextMap: Record<string, string> = {};
         if (data.sessionId) {
           try {
             const sessionConfigManager = new SessionConfigManager({
               logPath: context.paths.getSessionLogPath(data.sessionId),
             });
             sessionSummary = sessionConfigManager.config.summary;
+            pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
           } catch (error) {
             // Silently ignore if session config not available
           }
@@ -99,6 +101,7 @@ class NodeHandlerRegistry {
             modelContextLimit,
             approvalMode: context.config.approvalMode,
             sessionSummary,
+            pastedTextMap,
           },
         };
       },
@@ -599,6 +602,26 @@ class NodeHandlerRegistry {
           logPath: context.paths.getSessionLogPath(sessionId),
         });
         sessionConfigManager.config.summary = summary;
+        sessionConfigManager.write();
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'sessionConfig.setPastedTextMap',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        pastedTextMap: Record<string, string>;
+      }) => {
+        const { cwd, sessionId, pastedTextMap } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        sessionConfigManager.config.pastedTextMap = pastedTextMap;
         sessionConfigManager.write();
         return {
           success: true,

@@ -48,12 +48,14 @@ export type SessionConfig = {
   approvalTools: string[];
   history: string[];
   summary?: string;
+  pastedTextMap?: Record<string, string>;
 };
 
 const DEFAULT_SESSION_CONFIG: SessionConfig = {
   approvalMode: 'default',
   approvalTools: [],
   history: [],
+  pastedTextMap: {},
 };
 
 export class SessionConfigManager {

@@ -16,7 +16,6 @@ export function useInputHandlers() {
     setHistoryIndex,
     togglePlanMode,
     clearQueue,
-    setPastedTextMap,
   } = useAppStore();
   const inputState = useInputState();
   const slashCommands = useSlashCommands(inputState.state.value);
@@ -46,12 +45,10 @@ export function useInputHandlers() {
       inputState.setCursorPosition(`${beforeAt}@${file} `.length);
       return;
     }
-    // 3. expand pasted text references before sending
-    const expandedValue = pasteManager.expandPastedText(value);
-    // 4. submit
+    // 3. submit (pasted text expansion is handled in store.send)
     inputState.setValue('');
-    await send(expandedValue);
-  }, [inputState, send, slashCommands]);
+    await send(value);
+  }, [inputState, send, slashCommands, fileSuggestion]);
 
   const handleTabPress = useCallback(
     (isShiftTab: boolean) => {
@@ -83,7 +80,7 @@ export function useInputHandlers() {
         togglePlanMode();
       }
     },
-    [slashCommands],
+    [slashCommands, fileSuggestion, inputState, togglePlanMode],
   );
 
   const handleChange = useCallback(
@@ -131,7 +128,16 @@ export function useInputHandlers() {
       inputState.setCursorPosition(0);
       setHistoryIndex(nextHistoryIndex);
     }
-  }, [inputState, history, historyIndex, setDraftInput, slashCommands]);
+  }, [
+    inputState,
+    history,
+    historyIndex,
+    setDraftInput,
+    slashCommands,
+    fileSuggestion,
+    clearQueue,
+    log,
+  ]);
 
   const handleHistoryDown = useCallback(() => {
     // 1. auto suggest
@@ -165,6 +171,7 @@ export function useInputHandlers() {
     draftInput,
     setHistoryIndex,
     slashCommands,
+    fileSuggestion,
   ]);
 
   const handleHistoryReset = useCallback(() => {
@@ -175,13 +182,11 @@ export function useInputHandlers() {
     async (text: string) => {
       const result = await pasteManager.handleTextPaste(text);
       if (result.success && result.prompt) {
-        // Update the pasted text map in the store
-        setPastedTextMap(pasteManager.pastedTextMap);
         return { prompt: result.prompt };
       }
       return {};
     },
-    [pasteManager, setPastedTextMap],
+    [pasteManager],
   );
 
   return {
