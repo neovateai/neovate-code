@@ -668,6 +668,37 @@ class NodeHandlerRegistry {
       },
     );
 
+    // MCP reconnection functionality
+    this.messageBus.registerHandler(
+      'reconnectMcpServer',
+      async (data: { cwd: string; serverName: string }) => {
+        const { cwd, serverName } = data;
+        try {
+          const context = await this.getContext(cwd);
+          const mcpManager = context.mcpManager;
+
+          if (!mcpManager) {
+            return {
+              success: false,
+              error: 'No MCP manager available',
+            };
+          }
+
+          await mcpManager.retryConnection(serverName);
+
+          return {
+            success: true,
+            message: `Successfully initiated reconnection for ${serverName}`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
+    );
+
     this.messageBus.registerHandler(
       'clearContext',
       async (data: { cwd?: string }) => {

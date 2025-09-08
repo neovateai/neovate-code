@@ -293,6 +293,9 @@ export class MCPManager {
       throw new Error(`Server ${serverName} state not found`);
     }
 
+    // Log reconnection attempt
+    debug(`Attempting to reconnect MCP server: ${serverName}`);
+
     // Close existing connection if any
     if (serverState.server) {
       try {
@@ -306,8 +309,17 @@ export class MCPManager {
     serverState.server = undefined;
     serverState.tools = undefined;
     serverState.error = undefined;
+    serverState.status = 'connecting';
 
     await this._connectServer(serverName, config);
+
+    // Verify reconnection result
+    const newState = this.servers.get(serverName);
+    if (newState?.status !== 'connected') {
+      throw new Error(newState?.error || 'Reconnection failed');
+    }
+
+    debug(`Successfully reconnected MCP server: ${serverName}`);
   }
 
   async getAllMcpTools(

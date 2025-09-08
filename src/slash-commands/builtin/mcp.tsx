@@ -35,6 +35,7 @@ const McpManagerComponent: React.FC<McpManagerProps> = ({ onExit }) => {
   const [servers, setServers] = useState<McpServerStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reconnecting, setReconnecting] = useState<string | null>(null);
   const [mcpStatus, setMcpStatus] = useState<{
     isReady: boolean;
     isLoading: boolean;
@@ -51,7 +52,7 @@ const McpManagerComponent: React.FC<McpManagerProps> = ({ onExit }) => {
       if (result.success) {
         const data = result.data;
 
-        // 转换服务器状态数据
+        // Convert server status data
         const serverList: McpServerStatus[] = Object.entries(
           data.servers || {},
         ).map(([name, serverInfo]: [string, any]) => ({
@@ -122,8 +123,32 @@ const McpManagerComponent: React.FC<McpManagerProps> = ({ onExit }) => {
     if (key.return && servers.length > 0) {
       const server = servers[selectedIndex];
       if (server.status === 'failed' || server.status === 'disconnected') {
-        // Add reconnect logic here
-        onExit(`Attempting to reconnect ${server.name}...`);
+        setReconnecting(server.name);
+
+        (async () => {
+          try {
+            const result = await bridge.request('reconnectMcpServer', {
+              cwd,
+              serverName: server.name,
+            });
+
+            if (result.success) {
+              // Reload server status to show latest state
+              await loadServers();
+              onExit(`✅ Successfully reconnected to ${server.name}`);
+            } else {
+              onExit(
+                `❌ Failed to reconnect to ${server.name}: ${result.error}`,
+              );
+            }
+          } catch (error) {
+            onExit(
+              `❌ Reconnection error: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          } finally {
+            setReconnecting(null);
+          }
+        })();
       }
     }
   });
@@ -146,6 +171,16 @@ const McpManagerComponent: React.FC<McpManagerProps> = ({ onExit }) => {
   };
 
   const getStatusText = (server: McpServerStatus) => {
+    // Show reconnection status
+    if (reconnecting === server.name) {
+      return (
+        <Text>
+          <Spinner type="dots" />
+          <Text color="yellow"> reconnecting...</Text>
+        </Text>
+      );
+    }
+
     switch (server.status) {
       case 'connected':
         return <Text color="green">connected · {server.toolCount} tools</Text>;
@@ -166,11 +201,16 @@ const McpManagerComponent: React.FC<McpManagerProps> = ({ onExit }) => {
       case 'failed':
         return (
           <Text color="red">
-            failed · {server.error || 'Unknown error'} · Enter to retry
+            failed · {server.error || 'Unknown error'} ·{' '}
+            <Text color="cyan">Enter</Text> to retry
           </Text>
         );
       case 'disconnected':
-        return <Text color="red">disconnected · Enter to reconnect</Text>;
+        return (
+          <Text color="red">
+            disconnected · <Text color="cyan">Enter</Text> to reconnect
+          </Text>
+        );
       default:
         return <Text color="gray">unknown</Text>;
     }
