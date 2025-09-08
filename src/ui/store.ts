@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
-import type { Message } from '../history';
+import type { AssistantMessage, Message, UserMessage } from '../history';
 import type { LoopResult, ToolUse } from '../loop';
 import { Paths } from '../paths';
 import { SessionConfigManager, loadSessionMessages } from '../session';
@@ -381,7 +381,11 @@ export const useAppStore = create<AppStore>()(
             }
             // set({ status: 'slash_command_executing' });
           } else {
-            // TODO: handle unknown slash command
+            const userMessage: UserMessage = {
+              role: 'user',
+              content: `Unknown slash command: ${parsed.command}`,
+            };
+            get().addMessage(userMessage);
           }
           return;
         } else {
