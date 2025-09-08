@@ -116,6 +116,7 @@ export class Tools {
     const availableTools = `
   ${Object.entries(this.tools)
     .map(([key, tool]) => {
+      // parameters of mcp tools is not zod object
       const schema = isZodObject(tool.parameters)
         ? zodToJsonSchema(tool.parameters)
         : tool.parameters;
