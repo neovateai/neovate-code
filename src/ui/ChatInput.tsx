@@ -12,8 +12,14 @@ import { useTerminalSize } from './useTerminalSize';
 import { useTryTips } from './useTryTips';
 
 export function ChatInput() {
-  const { inputState, handlers, slashCommands, fileSuggestion } =
-    useInputHandlers();
+  const {
+    inputState,
+    handlers,
+    slashCommands,
+    fileSuggestion,
+    pasteManager,
+    imageManager,
+  } = useInputHandlers();
   const { currentTip } = useTryTips();
   const {
     log,
@@ -39,6 +45,8 @@ export function ChatInput() {
     }
     return '';
   }, [currentTip, queuedMessages]);
+
+  const errorMessage = inputState.state.error || imageManager.imagePasteMessage;
   if (slashCommandJSX) {
     return null;
   }
@@ -54,6 +62,11 @@ export function ChatInput() {
   return (
     <Box flexDirection="column" marginTop={SPACING.CHAT_INPUT_MARGIN_TOP}>
       <ModeIndicator />
+      {errorMessage && (
+        <Box marginBottom={1}>
+          <Text color="red">{errorMessage}</Text>
+        </Box>
+      )}
       <Box
         borderStyle="round"
         borderColor={UI_COLORS.CHAT_BORDER}
@@ -95,10 +108,8 @@ export function ChatInput() {
               log('cancel error: ' + e.message);
             });
           }}
-          onImagePaste={(image) => {}}
-          onPaste={(text) => {
-            log('onPaste' + text);
-          }}
+          onImagePaste={handlers.handleImagePaste}
+          onPaste={handlers.handleTextPaste}
           onSubmit={handlers.handleSubmit}
           cursorOffset={inputState.state.cursorPosition ?? 0}
           onChangeCursorOffset={inputState.setCursorPosition}

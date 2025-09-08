@@ -88,3 +88,29 @@ export const ANIMATION_CONFIG = {
     MAX: 200,
   },
 } as const;
+
+export const PASTE_CONFIG = {
+  TIMEOUT_MS: 100,
+  RAPID_INPUT_THRESHOLD_MS: 150,
+  LARGE_INPUT_THRESHOLD: 100,
+  MAX_PASTE_SIZE: 1024 * 1024,
+  MAX_PASTE_ITEMS: 20,
+  IMAGE_PASTE_MESSAGE_TIMEOUT_MS: 3000,
+  PASTE_STATE_TIMEOUT_MS: 500,
+} as const;
+
+export const IMAGE_CONFIG = {
+  MAX_IMAGES: 5,
+  PLACEHOLDER_PREFIX: '[Image ',
+  PLACEHOLDER_SUFFIX: ']',
+} as const;
+
+export const ERROR_MESSAGES = {
+  PASTE_TOO_LARGE:
+    'Pasted content too large (max 1MB), please reduce content and try again',
+  PASTE_FAILED: 'Paste operation failed, please try again',
+  IMAGE_PASTE_FAILED: 'Image paste failed, please try again',
+  MAX_IMAGES_EXCEEDED: (maxImages: number) =>
+    `Maximum ${maxImages} images allowed`,
+  UNKNOWN_PASTE_ERROR: 'Unknown paste error',
+} as const;

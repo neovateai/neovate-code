@@ -1,7 +1,10 @@
 import { useCallback } from 'react';
+import { ERROR_MESSAGES } from './constants';
 import { useAppStore } from './store';
 import { useFileSuggestion } from './useFileSuggestion';
+import { useImagePaste } from './useImagePaste';
 import { useInputState } from './useInputState';
+import { usePasteManager } from './usePasteManager';
 import { useSlashCommands } from './useSlashCommands';
 
 export function useInputHandlers() {
@@ -19,14 +22,24 @@ export function useInputHandlers() {
   const inputState = useInputState();
   const slashCommands = useSlashCommands(inputState.state.value);
   const fileSuggestion = useFileSuggestion(inputState.state);
+  const pasteManager = usePasteManager();
+  const imageManager = useImagePaste();
 
   const handleSubmit = useCallback(async () => {
     const value = inputState.state.value.trim();
     if (value === '') return;
+
+    // Handle all pasted text replacements before submission
+    let finalValue = pasteManager.processFinalValue(value);
+    // Handle image placeholder replacement - remove placeholders from text but keep image data
+    finalValue = imageManager.replaceImagePlaceholders(finalValue);
+
     // 1. slash command
     if (slashCommands.suggestions.length > 0) {
       const completedCommand = slashCommands.getCompletedCommand();
       inputState.reset();
+      pasteManager.clearPastedText();
+      imageManager.clearImages();
       await send(completedCommand);
       return;
     }
@@ -43,12 +56,22 @@ export function useInputHandlers() {
       inputState.setCursorPosition(`${beforeAt}@${file} `.length);
       return;
     }
-    // TODO: pasted text
-    // TODO: image paste
     // 3. submit
     inputState.setValue('');
-    await send(value);
-  }, [inputState, send, slashCommands]);
+    pasteManager.clearPastedText();
+    const imageData = imageManager.getImageData();
+    imageManager.clearImages();
+    // TODO: Update send function to support image data
+    // For now, send only the final text value
+    await send(finalValue);
+  }, [
+    inputState,
+    send,
+    slashCommands,
+    fileSuggestion,
+    pasteManager,
+    imageManager,
+  ]);
 
   const handleTabPress = useCallback(
     (isShiftTab: boolean) => {
@@ -87,8 +110,12 @@ export function useInputHandlers() {
     (val: string) => {
       setHistoryIndex(null);
       inputState.setValue(val);
+      // Sync image state
+      if (imageManager.pastedImages.length > 0) {
+        imageManager.updateImagesFromValue(val);
+      }
     },
-    [inputState, setHistoryIndex],
+    [inputState, setHistoryIndex, imageManager],
   );
 
   const handleHistoryUp = useCallback(() => {
@@ -127,8 +154,18 @@ export function useInputHandlers() {
       inputState.setValue(value);
       inputState.setCursorPosition(0);
       setHistoryIndex(nextHistoryIndex);
+      pasteManager.clearPastedText();
+      imageManager.clearImages();
     }
-  }, [inputState, history, historyIndex, setDraftInput, slashCommands]);
+  }, [
+    inputState,
+    history,
+    historyIndex,
+    setDraftInput,
+    slashCommands,
+    pasteManager,
+    imageManager,
+  ]);
 
   const handleHistoryDown = useCallback(() => {
     // 1. auto suggest
@@ -154,6 +191,8 @@ export function useInputHandlers() {
       }
       inputState.setValue(value);
       inputState.setCursorPosition(value.length);
+      pasteManager.clearPastedText();
+      imageManager.clearImages();
     }
   }, [
     inputState,
@@ -162,11 +201,55 @@ export function useInputHandlers() {
     draftInput,
     setHistoryIndex,
     slashCommands,
+    pasteManager,
+    imageManager,
   ]);
 
   const handleHistoryReset = useCallback(() => {
     setHistoryIndex(null);
   }, [setHistoryIndex]);
+
+  const handleTextPaste = useCallback(
+    async (rawText: string) => {
+      const result = await pasteManager.handleTextPaste(rawText);
+      if (!result.success) {
+        inputState.setError(result.error || ERROR_MESSAGES.PASTE_FAILED);
+        return;
+      }
+
+      log(`Text paste successful: ${result.pasteId}`);
+
+      if (result.pasteId && result.prompt) {
+        const currentCursorPos =
+          inputState.state.cursorPosition ?? inputState.state.value.length;
+        const newValue =
+          inputState.state.value.slice(0, currentCursorPos) +
+          result.prompt +
+          inputState.state.value.slice(currentCursorPos);
+
+        inputState.setValue(newValue);
+        inputState.setCursorPosition(currentCursorPos + result.prompt.length);
+      }
+    },
+    [pasteManager, inputState],
+  );
+
+  const handleImagePaste = useCallback(
+    (image: string) => {
+      const placeholder = imageManager.handleImagePaste(image);
+      if (placeholder) {
+        const currentCursorPos =
+          inputState.state.cursorPosition ?? inputState.state.value.length;
+        const newValue =
+          inputState.state.value.slice(0, currentCursorPos) +
+          placeholder +
+          inputState.state.value.slice(currentCursorPos);
+        inputState.setValue(newValue);
+        inputState.setCursorPosition(currentCursorPos + placeholder.length);
+      }
+    },
+    [imageManager, inputState],
+  );
 
   return {
     inputState,
@@ -177,8 +260,12 @@ export function useInputHandlers() {
       handleHistoryUp,
       handleHistoryDown,
       handleHistoryReset,
+      handleTextPaste,
+      handleImagePaste,
     },
     slashCommands,
     fileSuggestion,
+    pasteManager,
+    imageManager,
   };
 }
