@@ -24,12 +24,7 @@ export class At {
 
   getContent() {
     const prompt = this.userPrompt || '';
-    const ats = prompt
-      .split(' ')
-      .filter((p) => {
-        return p.startsWith('@') && p !== '@codebase';
-      })
-      .map((p) => p.slice(1));
+    const ats = this.extractAtPaths(prompt);
     const files: string[] = [];
     for (const at of ats) {
       const filePath = path.resolve(this.cwd, at);
@@ -48,6 +43,24 @@ export class At {
       return this.renderFilesToXml(files);
     }
     return null;
+  }
+
+  private extractAtPaths(prompt: string): string[] {
+    const paths: string[] = [];
+    const regex = /@("[^"]+"|(?:[^\\ ]|\\ )+)/g;
+    let match;
+    while ((match = regex.exec(prompt)) !== null) {
+      let path = match[1];
+      // Remove quotes if present
+      if (path.startsWith('"') && path.endsWith('"')) {
+        path = path.slice(1, -1);
+      } else {
+        // Unescape spaces
+        path = path.replace(/\\ /g, ' ');
+      }
+      paths.push(path);
+    }
+    return paths;
   }
 
   renderFilesToXml(files: string[]): string {

@@ -37,8 +37,10 @@ export function usePaths() {
 function useMatchedPaths(inputState: InputState) {
   const { value, cursorPosition } = inputState;
 
-  // Find all @ mentions in the text (not just at the end)
-  const atMatches = [...value.matchAll(/(?:^|\s)(@[^\s]*)/g)];
+  // Find all @ mentions in the text (including quoted paths and escaped spaces)
+  const atMatches = [
+    ...value.matchAll(/(?:^|\s)(@(?:"[^"]*"|(?:[^\\ ]|\\ )*))/g),
+  ];
 
   // If no cursor position, fallback to last match
   if (cursorPosition === undefined) {
@@ -52,7 +54,18 @@ function useMatchedPaths(inputState: InputState) {
       };
     }
     const fullMatch = lastAtMatch[1];
-    const query = fullMatch.slice(1);
+    let query = fullMatch.slice(1);
+    // Process query for matching
+    if (query.startsWith('"')) {
+      // Remove quotes
+      query = query.slice(1);
+      if (query.endsWith('"')) {
+        query = query.slice(0, -1);
+      }
+    } else {
+      // Unescape spaces
+      query = query.replace(/\\ /g, ' ');
+    }
     const startIndex =
       lastAtMatch.index! + (lastAtMatch[0].length - fullMatch.length);
     return {
@@ -87,7 +100,18 @@ function useMatchedPaths(inputState: InputState) {
   }
 
   const fullMatch = targetMatch[1];
-  const query = fullMatch.slice(1);
+  let query = fullMatch.slice(1);
+  // Process query for matching
+  if (query.startsWith('"')) {
+    // Remove quotes
+    query = query.slice(1);
+    if (query.endsWith('"')) {
+      query = query.slice(0, -1);
+    }
+  } else {
+    // Unescape spaces
+    query = query.replace(/\\ /g, ' ');
+  }
   const startIndex =
     targetMatch.index! + (targetMatch[0].length - fullMatch.length);
 
@@ -131,7 +155,12 @@ export function useFileSuggestion(inputState: InputState) {
   };
   const getSelected = () => {
     if (matchedPaths.length === 0) return '';
-    return matchedPaths[selectedIndex];
+    const selected = matchedPaths[selectedIndex];
+    // Wrap in quotes if the path contains spaces
+    if (selected.includes(' ')) {
+      return `"${selected}"`;
+    }
+    return selected;
   };
   return {
     matchedPaths,
