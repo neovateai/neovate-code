@@ -1,17 +1,11 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-
-interface LogConfig {
-  approvalMode?: string;
-  approvalTools: string[];
-  history: string[];
-  summary?: string;
-}
+import type { SessionConfig } from './session';
 
 interface ConfigLogEntry {
   type: 'config';
-  config: LogConfig;
+  config: SessionConfig;
 }
 
 interface MessageLogEntry {

@@ -43,7 +43,7 @@ export class Session {
   }
 }
 
-type SessionConfig = {
+export type SessionConfig = {
   approvalMode?: ApprovalMode;
   approvalTools: string[];
   history: string[];
