@@ -275,7 +275,8 @@ export class Project {
         // 2. if category is read return true
         const tool = toolsManager.get(toolUse.name);
         if (!tool) {
-          throw new Error(`Tool ${toolUse.name} not found`);
+          // Let the tool invoke handle the `tool not found` error
+          return true;
         }
         if (tool.approval?.category === 'read') {
           return true;
