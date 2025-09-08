@@ -9,7 +9,8 @@ import EditIcon from '@/icons/edit.svg?react';
 import { fileChangesActions } from '@/state/fileChanges';
 import type { ToolMessage } from '@/types/message';
 
-export default function EditRender({ message }: { message?: ToolMessage }) {
+// write tool认为都是新增的
+export default function WriteRender({ message }: { message?: ToolMessage }) {
   if (!message) {
     return null;
   }
@@ -17,20 +18,23 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
   const { writeText } = useClipboard();
   const [isCopySuccess, setIsCopySuccess] = useState(false);
 
-  const { file_path, old_string, new_string } = args as {
+  const { file_path, content } = args as {
     file_path: string;
-    old_string: string;
-    new_string: string;
+    content: string;
   };
 
   useEffect(() => {
-    fileChangesActions.initFileState(file_path, [
-      { toolCallId, old_string, new_string },
+    fileChangesActions.initNewFileState(file_path, content, [
+      {
+        toolCallId,
+        old_string: '',
+        new_string: content,
+      },
     ]);
-  }, [file_path, toolCallId, old_string, new_string]);
+  }, [file_path, content, toolCallId]);
 
   const handleCopy = () => {
-    writeText(new_string);
+    writeText(content);
     setIsCopySuccess(true);
   };
 
@@ -63,9 +67,9 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
     >
       <CodeRenderer
         mode="diff"
-        originalCode={old_string}
-        modifiedCode={new_string}
-        code={new_string}
+        originalCode=""
+        modifiedCode={content}
+        code={content}
         filename={file_path}
         showLineNumbers={true}
       />
