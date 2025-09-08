@@ -606,6 +606,99 @@ class NodeHandlerRegistry {
       },
     );
 
+    //////////////////////////////////////////////
+    // MCP status
+    this.messageBus.registerHandler(
+      'getMcpStatus',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const mcpManager = context.mcpManager;
+
+        interface ServerData {
+          status: string;
+          error?: string;
+          toolCount: number;
+          tools: string[];
+        }
+
+        const configuredServers = context.config.mcpServers || {};
+        const allServerStatus = await mcpManager.getAllServerStatus();
+        const servers: Record<string, ServerData> = {};
+
+        // Get detailed status for each configured server
+        for (const serverName of mcpManager.getServerNames()) {
+          const serverStatus = allServerStatus[serverName];
+          let tools: string[] = [];
+
+          if (serverStatus && serverStatus.status === 'connected') {
+            try {
+              const serverTools = await mcpManager.getTools([serverName]);
+              tools = serverTools.map((tool) => tool.name);
+            } catch (err) {
+              console.warn(
+                `Failed to fetch tools for server ${serverName}:`,
+                err,
+              );
+            }
+          }
+
+          servers[serverName] = {
+            status: serverStatus?.status || 'disconnected',
+            error: serverStatus?.error,
+            toolCount: serverStatus?.toolCount || 0,
+            tools,
+          };
+        }
+
+        // Get config paths
+        const configManager = new ConfigManager(cwd, context.productName, {});
+
+        return {
+          success: true,
+          data: {
+            servers,
+            configs: configuredServers,
+            globalConfigPath: configManager.globalConfigPath,
+            projectConfigPath: configManager.projectConfigPath,
+            isReady: mcpManager.isReady(),
+            isLoading: mcpManager.isLoading(),
+          },
+        };
+      },
+    );
+
+    // MCP reconnection functionality
+    this.messageBus.registerHandler(
+      'reconnectMcpServer',
+      async (data: { cwd: string; serverName: string }) => {
+        const { cwd, serverName } = data;
+        try {
+          const context = await this.getContext(cwd);
+          const mcpManager = context.mcpManager;
+
+          if (!mcpManager) {
+            return {
+              success: false,
+              error: 'No MCP manager available',
+            };
+          }
+
+          await mcpManager.retryConnection(serverName);
+
+          return {
+            success: true,
+            message: `Successfully initiated reconnection for ${serverName}`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
+    );
+
     this.messageBus.registerHandler(
       'clearContext',
       async (data: { cwd?: string }) => {

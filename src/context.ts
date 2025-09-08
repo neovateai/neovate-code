@@ -3,6 +3,7 @@ import { createJiti } from 'jiti';
 import path from 'path';
 import resolve from 'resolve';
 import { type Config, ConfigManager } from './config';
+import { MCPManager } from './mcp';
 import { Paths } from './paths';
 import {
   type Plugin,
@@ -20,6 +21,7 @@ type ContextOpts = {
   pluginManager: PluginManager;
   paths: Paths;
   argvConfig: Record<string, any>;
+  mcpManager: MCPManager;
 };
 
 export type ContextCreateOpts = {
@@ -40,6 +42,7 @@ export class Context {
   paths: Paths;
   #pluginManager: PluginManager;
   #argvConfig: Record<string, any>;
+  mcpManager: MCPManager;
 
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
@@ -48,6 +51,7 @@ export class Context {
     this.version = opts.version;
     this.config = opts.config;
     this.paths = opts.paths;
+    this.mcpManager = opts.mcpManager;
     this.#pluginManager = opts.pluginManager;
     this.#argvConfig = opts.argvConfig;
   }
@@ -60,6 +64,7 @@ export class Context {
   }
 
   async destroy() {
+    await this.mcpManager.destroy();
     // await this.apply({
     //   hook: 'destroy',
     //   args: [],
@@ -112,6 +117,9 @@ export class Context {
       type: PluginHookType.SeriesMerge,
     });
     tempContext.config = resolvedConfig;
+    const mcpManager = MCPManager.create(resolvedConfig.mcpServers || {});
+    // init mcp manager but don't wait for it
+    mcpManager.initAsync();
     return new Context({
       cwd,
       productName,
@@ -121,6 +129,7 @@ export class Context {
       argvConfig: opts.argvConfig,
       config: resolvedConfig,
       paths,
+      mcpManager,
     });
   }
 }

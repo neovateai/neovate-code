@@ -1,13 +1,14 @@
 import {
+  type Tool as AgentTool,
   type FunctionTool,
   type MCPServer,
   MCPServerSSE,
   MCPServerStdio,
   MCPServerStreamableHttp,
-  type Tool,
   mcpToFunctionTool,
 } from '@openai/agents';
 import createDebug from 'debug';
+import type { Tool } from './tool';
 
 export interface MCPConfig {
   type?: 'stdio' | 'sse' | 'http';
@@ -38,7 +39,7 @@ interface ServerState {
   server?: MCP;
   status: MCPServerStatus;
   error?: string;
-  tools?: Tool[];
+  tools?: AgentTool[];
   retryCount: number;
   isTemporaryError?: boolean;
 }
@@ -75,7 +76,6 @@ export class MCPManager {
     if (this.initPromise) {
       return this.initPromise;
     }
-
     // Double-check locking pattern for thread safety
     if (this.initLock) {
       // Wait for lock to be released and check if initialization completed
@@ -86,16 +86,13 @@ export class MCPManager {
         return;
       }
     }
-
     // Acquire lock
     this.initLock = true;
-
     try {
       // Check again in case another thread completed initialization
       if (this.isInitialized) {
         return;
       }
-
       this.initPromise = this._performInit();
       await this.initPromise;
     } finally {
@@ -138,6 +135,7 @@ export class MCPManager {
           env.PATH = process.env.PATH || '';
         }
         server = new MCPServerStdio({
+          name: key,
           command: config.command!,
           args: config.args,
           env,
@@ -149,12 +147,14 @@ export class MCPManager {
           : {};
         if (config.type === 'sse') {
           server = new MCPServerSSE({
+            name: key,
             url: config.url!,
             timeout: config.timeout,
             ...requestInit,
           });
         } else {
           server = new MCPServerStreamableHttp({
+            name: key,
             url: config.url!,
             timeout: config.timeout,
             ...requestInit,
@@ -217,16 +217,6 @@ export class MCPManager {
     return this.getAllMcpTools(connectedServers);
   }
 
-  getAvailableTools(): Tool[] {
-    const tools: Tool[] = [];
-    for (const serverState of this.servers.values()) {
-      if (serverState.status === 'connected' && serverState.tools) {
-        tools.push(...serverState.tools);
-      }
-    }
-    return tools;
-  }
-
   async getTools(keys: string[]): Promise<Tool[]> {
     const servers = keys
       .map((key) => this.servers.get(key))
@@ -262,10 +252,14 @@ export class MCPManager {
     return this.servers.get(name)?.error;
   }
 
-  getAllServerStatus(): Record<
-    string,
-    { status: MCPServerStatus; error?: string; toolCount: number }
+  async getAllServerStatus(): Promise<
+    Record<
+      string,
+      { status: MCPServerStatus; error?: string; toolCount: number }
+    >
   > {
+    await this.initAsync();
+
     const result: Record<
       string,
       { status: MCPServerStatus; error?: string; toolCount: number }
@@ -299,6 +293,9 @@ export class MCPManager {
       throw new Error(`Server ${serverName} state not found`);
     }
 
+    // Log reconnection attempt
+    debug(`Attempting to reconnect MCP server: ${serverName}`);
+
     // Close existing connection if any
     if (serverState.server) {
       try {
@@ -312,16 +309,24 @@ export class MCPManager {
     serverState.server = undefined;
     serverState.tools = undefined;
     serverState.error = undefined;
+    serverState.status = 'connecting';
 
     await this._connectServer(serverName, config);
+
+    // Verify reconnection result
+    const newState = this.servers.get(serverName);
+    if (newState?.status !== 'connected') {
+      throw new Error(newState?.error || 'Reconnection failed');
+    }
+
+    debug(`Successfully reconnected MCP server: ${serverName}`);
   }
 
-  async getAllMcpTools<TContext = UnknownContext>(
+  async getAllMcpTools(
     mcpServers: MCPServer[],
     convertSchemasToStrict: boolean = false,
-  ): Promise<Tool<TContext>[]> {
-    // @see https://github.com/openai/openai-agents-js/issues/295
-    const allTools: Tool<TContext>[] = [];
+  ): Promise<Tool[]> {
+    const allTools: Tool[] = [];
     const toolNames = new Set<string>();
     for (const server of mcpServers) {
       const serverTools = await this.getFunctionToolsFromServer(
@@ -337,7 +342,7 @@ export class MCPManager {
       }
       for (const t of serverTools) {
         toolNames.add(t.name);
-        allTools.push(t);
+        allTools.push(this.#convertMcpToolToLocal(t, server.name));
       }
     }
     return allTools;
@@ -402,6 +407,37 @@ export class MCPManager {
 
     // Default to temporary for unknown errors (safer for retries)
     return true;
+  }
+
+  #convertMcpToolToLocal(mcpTool: FunctionTool, serverName: string): Tool {
+    return {
+      name: `mcp__${serverName}__${mcpTool.name}`,
+      description: mcpTool.description,
+      parameters: mcpTool.originalParameters ?? mcpTool.parameters,
+      execute: async (params) => {
+        try {
+          // FunctionTool.invoke expects (runContext, input)
+          // We'll pass null as runContext since we don't have a full run context
+          const result = await mcpTool.invoke(
+            null as any,
+            JSON.stringify(params || {}),
+          );
+          return {
+            success: true,
+            data: result,
+            message: `Tool ${mcpTool.name} executed successfully, ${params ? `parameters: ${JSON.stringify(params)}` : ''}`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
+      approval: {
+        category: 'network',
+      },
+    };
   }
 }
 
