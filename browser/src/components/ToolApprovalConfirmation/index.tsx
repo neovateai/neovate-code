@@ -2,20 +2,14 @@ import { CloseOutlined, RedoOutlined } from '@ant-design/icons';
 import { Button, Spin, Tooltip } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
-import AlwaysCommandIcon from '@/icons/alwaysCommand.svg?react';
-import AlwaysToolIcon from '@/icons/alwaysTool.svg?react';
-import ApproveOnceIcon from '@/icons/approveOnce.svg?react';
 import ApproveToolIcon from '@/icons/approveTool.svg?react';
 import BashIcon from '@/icons/bash.svg?react';
 import EditIcon from '@/icons/edit.svg?react';
-import RejectOnceIcon from '@/icons/rejectOnce.svg?react';
 import SearchIcon from '@/icons/search.svg?react';
 import { toolApprovalActions, toolApprovalState } from '@/state/toolApproval';
 import type { ToolApprovalRequestMessage } from '@/types/message';
 import MessageWrapper from '../MessageWrapper';
 import styles from './index.module.css';
-
-const prefixCls = 'tool-approval-confirmation';
 
 interface ToolApprovalConfirmationProps {
   message: ToolApprovalRequestMessage;
