@@ -162,7 +162,7 @@ export function createResumeCommand(): LocalJSXCommand {
               onDone('Session resume cancelled');
             }}
             onSelect={(sessionId) => {
-              onDone(`Resuming session ${sessionId}`);
+              onDone(`Session resumed to ${sessionId}`);
             }}
           />
         );
