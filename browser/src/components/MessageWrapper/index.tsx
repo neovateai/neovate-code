@@ -1,3 +1,4 @@
+import { Button } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ExpandArrowIcon from '@/icons/expand-arrow.svg?react';
@@ -49,6 +50,7 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
   showGradientMask = true,
   actions = [],
   onActionClick,
+  footers = [],
 }) => {
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
@@ -254,6 +256,21 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
               )}
             </div>
           )}
+
+      {/* Bottom action buttons */}
+      {footers && footers.length > 0 && (
+        <div className={styles.footerContainer}>
+          {footers.map((footer) => (
+            <Button
+              key={footer.key}
+              variant="outlined"
+              className={styles.footerButton}
+            >
+              {footer.text}
+            </Button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

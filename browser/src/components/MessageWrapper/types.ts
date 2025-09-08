@@ -25,6 +25,15 @@ export interface MessageWrapperProps {
   // === Top Right Action Buttons ===
   actions?: ActionButtonProps[];
   onActionClick?: (actionKey: string) => void;
+
+  // === Bottom Action Buttons ===
+  footers?: FooterButtonProps[];
+}
+
+export interface FooterButtonProps {
+  key: string;
+  text: string;
+  onClick?: () => void;
 }
 
 export interface ActionButtonProps {

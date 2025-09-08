@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import CodeRenderer from '@/components/CodeRenderer';
+import MessageWrapper from '@/components/MessageWrapper';
+import EditIcon from '@/icons/edit.svg?react';
 import { fileChangesActions } from '@/state/fileChanges';
 import type { ToolMessage } from '@/types/message';
 
@@ -21,13 +23,33 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
   }, [file_path, toolCallId, old_string, new_string]);
 
   return (
-    <CodeRenderer
-      mode="diff"
-      originalCode={old_string}
-      modifiedCode={new_string}
-      code={new_string}
-      filename={file_path}
-      showLineNumbers={true}
-    />
+    <MessageWrapper
+      title={file_path}
+      icon={<EditIcon />}
+      showExpandIcon={false}
+      expandable={false}
+      defaultExpanded={true}
+      footers={[
+        {
+          key: 'apply',
+          text: '接受',
+          onClick: () => {},
+        },
+        {
+          key: 'reject',
+          text: '拒绝',
+          onClick: () => {},
+        },
+      ]}
+    >
+      <CodeRenderer
+        mode="diff"
+        originalCode={old_string}
+        modifiedCode={new_string}
+        code={new_string}
+        filename={file_path}
+        showLineNumbers={true}
+      />
+    </MessageWrapper>
   );
 }
