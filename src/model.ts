@@ -767,7 +767,10 @@ export function resolveModel(
   }
   const [providerStr, ...modelNameArr] = name.split('/');
   const provider = providers[providerStr];
-  assert(provider, `Provider ${providerStr} not found`);
+  assert(
+    provider,
+    `Provider ${providerStr} not found, valid providers: ${Object.keys(providers).join(', ')}`,
+  );
   const modelId = modelNameArr.join('/');
   const model = provider.models[modelId] as Model;
   assert(
