@@ -11,9 +11,6 @@ export function createLineNumberTransformer(
 
   // Validate startLine
   const validStartLine = Math.max(1, Math.floor(startLine));
-  if (validStartLine !== startLine) {
-    console.warn(`Invalid startLine ${startLine}, using ${validStartLine}`);
-  }
 
   return {
     name: 'line-number-transformer',

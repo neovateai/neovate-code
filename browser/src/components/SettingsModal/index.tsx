@@ -28,8 +28,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
 
   const handleSave = async () => {
     try {
-      messageApi.success(t('settings.saveSuccess'));
+      // Close modal first for better user experience
       onClose();
+
+      // Save settings in background
+      await actions.saveAllSettings();
+      messageApi.success(t('settings.saveSuccess'));
     } catch (error) {
       console.error('Failed to save settings:', error);
       messageApi.error(t('settings.saveError'));
@@ -37,6 +41,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
   };
 
   const handleCancel = () => {
+    // Reload settings if there are unsaved changes
+    if (settings.hasUnsavedChanges) {
+      actions.loadSettings();
+    }
     onClose();
   };
 
@@ -59,19 +67,33 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
       </div>
 
       {/* Footer Buttons */}
-      <div className="flex justify-end gap-2 pt-4">
-        <Button
-          onClick={handleCancel}
-          className={`rounded-full border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 ${styles.cancelButton}`}
-        >
-          {t('common.cancel')}
-        </Button>
-        <Button
-          onClick={handleSave}
-          className={`rounded-full border-0 ${styles.saveButton}`}
-        >
-          {t('common.save')}
-        </Button>
+      <div className="flex justify-between items-center pt-4">
+        {/* Unsaved changes indicator */}
+        <div className="flex items-center gap-2">
+          {settings.hasUnsavedChanges && (
+            <div className="flex items-center gap-1 text-orange-600">
+              <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+              <Text className="text-sm">{t('settings.unsavedChanges')}</Text>
+            </div>
+          )}
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-2">
+          <Button
+            onClick={handleCancel}
+            className={`rounded-full border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 ${styles.cancelButton}`}
+          >
+            {t('common.cancel')}
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={!settings.hasUnsavedChanges}
+            className={`rounded-full border-0 ${styles.saveButton} ${!settings.hasUnsavedChanges ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {t('common.save')}
+          </Button>
+        </div>
       </div>
     </div>
   );

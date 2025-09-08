@@ -11,7 +11,7 @@ export interface FileEdit {
   toolCallId: string;
   old_string: string;
   new_string: string;
-  /** 表示该edit的状态，undefined时表示未修改 */
+  /** Represents the status of this edit, undefined means unmodified */
   editStatus?: CodeViewerEditStatus;
 }
 
@@ -25,7 +25,7 @@ interface FileChangesStore {
   files: Record<string, FileState | undefined>;
 }
 
-// 因为edit tool会直接修改本地文件，所以需要根据edits计算出原始内容
+// Since edit tool modifies local files directly, need to calculate original content from edits
 const calculateOriginalContent = (finalContent: string, edits: FileEdit[]) => {
   return edits.reduceRight(
     (content, edit) => content.replace(edit.new_string, edit.old_string),
@@ -38,7 +38,7 @@ export const fileChangesState = proxy<FileChangesStore>({
 });
 
 export const fileChangesActions = {
-  // 修改本地file内容
+  // Modify local file content
   writeFileContent: async (path: string, newCode: string) => {
     const fileState = fileChangesState.files[path];
     if (fileState) {
@@ -47,7 +47,7 @@ export const fileChangesActions = {
     }
   },
 
-  // 更新fileState
+  // Update fileState
   updateFileState: async (
     path: string,
     fileStateFn: (prevFileState: FileState) => FileState,
@@ -144,7 +144,7 @@ export const fileChangesActions = {
     }
   },
 
-  // 初始化新文件的state，content为文件内容；不需要read因为本地没有这个文件
+  // Initialize new file state, content is file content; no need to read since file doesn't exist locally
   initNewFileState: async (
     path: string,
     content: string,
@@ -157,7 +157,7 @@ export const fileChangesActions = {
     });
   },
 
-  // 初始化fileState, push edits
+  // Initialize fileState, push edits
   initFileState: async (path: string, edits: FileEdit[]) => {
     const fileState = fileChangesState.files[path];
     if (!fileState) {
@@ -174,24 +174,31 @@ export const fileChangesActions = {
         });
       }
     } else {
-      // 因为存在多个edit render call，所以content可能初始化过了
+      // Since there are multiple edit render calls, content might already be initialized
       fileState.edits.push(...edits);
     }
   },
 
-  // 读取对应path文件中的所有edits，并应用这些edits，得到最终内容
+  // Read all edits in the corresponding path file and apply these edits to get the final content
   getFinalContent: (path: string) => {
     const fileState = fileChangesState.files[path];
     if (!fileState) {
       return '';
     }
     return fileChangesState.files[path]?.edits.reduce((content, edit) => {
-      // 如果没有accept或reject过，则认为edit是有效的，需要应用
+      // If not accepted or rejected, consider the edit as valid and needs to be applied
       if (!edit.editStatus) {
-        return content.replace(edit.old_string, edit.new_string);
+        // If old_string is empty, consider the edit as new addition and needs to be applied
+        if (edit.old_string === '') {
+          return edit.new_string;
+        }
+        // Apply edit and mark as applied
+        const result = content.replace(edit.old_string, () => edit.new_string);
+
+        return result;
       }
       if (edit.editStatus === 'accept') {
-        // `accept` 意味着 content 已经被更新
+        // `accept` means content has already been updated
         return content;
       }
       return content;

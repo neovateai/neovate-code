@@ -70,7 +70,7 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
           language={item.language}
           filename={item.title}
           mode="normal"
-          showLineNumbers={true}
+          showLineNumbers={false}
           maxHeight={maxHeight}
           theme="snazzy-light"
         />
