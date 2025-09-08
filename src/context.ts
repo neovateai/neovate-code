@@ -3,6 +3,7 @@ import { createJiti } from 'jiti';
 import path from 'path';
 import resolve from 'resolve';
 import { type Config, ConfigManager } from './config';
+import { MCPManager } from './mcp';
 import { Paths } from './paths';
 import {
   type Plugin,
@@ -20,6 +21,7 @@ type ContextOpts = {
   pluginManager: PluginManager;
   paths: Paths;
   argvConfig: Record<string, any>;
+  mcpManager: MCPManager;
 };
 
 export type ContextCreateOpts = {
@@ -40,6 +42,7 @@ export class Context {
   paths: Paths;
   #pluginManager: PluginManager;
   #argvConfig: Record<string, any>;
+  mcpManager: MCPManager;
 
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
@@ -48,6 +51,7 @@ export class Context {
     this.version = opts.version;
     this.config = opts.config;
     this.paths = opts.paths;
+    this.mcpManager = opts.mcpManager;
     this.#pluginManager = opts.pluginManager;
     this.#argvConfig = opts.argvConfig;
   }
@@ -60,11 +64,12 @@ export class Context {
   }
 
   async destroy() {
-    await this.apply({
-      hook: 'destroy',
-      args: [],
-      type: PluginHookType.Parallel,
-    });
+    await this.mcpManager.destroy();
+    // await this.apply({
+    //   hook: 'destroy',
+    //   args: [],
+    //   type: PluginHookType.Parallel,
+    // });
   }
 
   static async create(opts: ContextCreateOpts) {
@@ -107,31 +112,24 @@ export class Context {
     };
     const resolvedConfig = await apply({
       hook: 'config',
-      args: [{ config: initialConfig }],
+      args: [{ config: initialConfig, argvConfig: opts.argvConfig }],
       memo: initialConfig,
       type: PluginHookType.SeriesMerge,
     });
     tempContext.config = resolvedConfig;
-    await apply({
-      hook: 'configResolved',
-      args: [{ resolvedConfig }],
-      type: PluginHookType.Series,
-    });
-    const argvConfig = await apply({
-      hook: 'argvConfig',
-      args: [{}],
-      memo: { ...opts.argvConfig },
-      type: PluginHookType.SeriesMerge,
-    });
+    const mcpManager = MCPManager.create(resolvedConfig.mcpServers || {});
+    // init mcp manager but don't wait for it
+    mcpManager.initAsync();
     return new Context({
       cwd,
       productName,
       productASCIIArt,
       version,
       pluginManager,
-      argvConfig,
+      argvConfig: opts.argvConfig,
       config: resolvedConfig,
       paths,
+      mcpManager,
     });
   }
 }

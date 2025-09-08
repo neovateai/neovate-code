@@ -12,6 +12,7 @@ import { Session, SessionConfigManager, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
 import type { ApprovalCategory, Tool } from './tool';
 import { Tools, resolveTools } from './tool';
+import type { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
 
 export class Project {
@@ -44,7 +45,7 @@ export class Project {
     });
     tools = await this.context.apply({
       hook: 'tool',
-      args: [],
+      args: [{ sessionId: this.session.id }],
       memo: tools,
       type: PluginHookType.SeriesMerge,
     });
@@ -52,11 +53,17 @@ export class Project {
     const outputStyle = outputStyleManager.getOutputStyle(
       this.context.config.outputStyle,
     );
-    const systemPrompt = generateSystemPrompt({
+    let systemPrompt = generateSystemPrompt({
       todo: this.context.config.todo!,
       productName: this.context.productName,
       language: this.context.config.language,
       outputStyle,
+    });
+    systemPrompt = await this.context.apply({
+      hook: 'systemPrompt',
+      args: [{ sessionId: this.session.id }],
+      memo: systemPrompt,
+      type: PluginHookType.SeriesLast,
     });
     return this.sendWithSystemPromptAndTools(message, {
       ...opts,
@@ -81,14 +88,20 @@ export class Project {
     });
     tools = await this.context.apply({
       hook: 'tool',
-      args: [],
+      args: [{ isPlan: true, sessionId: this.session.id }],
       memo: tools,
       type: PluginHookType.SeriesMerge,
     });
-    const systemPrompt = generatePlanSystemPrompt({
+    let systemPrompt = generatePlanSystemPrompt({
       todo: this.context.config.todo!,
       productName: this.context.productName,
       language: this.context.config.language,
+    });
+    systemPrompt = await this.context.apply({
+      hook: 'systemPrompt',
+      args: [{ isPlan: true, sessionId: this.session.id }],
+      memo: systemPrompt,
+      type: PluginHookType.SeriesLast,
     });
     return this.sendWithSystemPromptAndTools(message, {
       ...opts,
@@ -113,6 +126,7 @@ export class Project {
       systemPrompt?: string;
     } = {},
   ) {
+    let startTime = new Date();
     const tools = opts.tools || [];
     const outputFormat = new OutputFormat({
       format: this.context.config.outputFormat!,
@@ -122,23 +136,25 @@ export class Project {
       filePath: this.context.paths.getSessionLogPath(this.session.id),
     });
     if (message !== null) {
-      await this.context.apply({
+      message = await this.context.apply({
         hook: 'userPrompt',
+        memo: message,
         args: [
           {
-            text: message,
             sessionId: this.session.id,
           },
         ],
-        type: PluginHookType.Series,
+        type: PluginHookType.SeriesLast,
       });
     }
-    const model = await resolveModelWithContext(
+    const { model } = await resolveModelWithContext(
       opts.model || null,
       this.context,
     );
     const llmsContext = await LlmsContext.create({
       context: this.context,
+      sessionId: this.session.id,
+      userPrompt: message,
     });
     if (message !== null) {
       outputFormat.onInit({
@@ -204,46 +220,52 @@ export class Project {
         });
       },
       onTextDelta: async () => {},
-      onText: async (text) => {
-        await this.context.apply({
-          hook: 'text',
-          args: [
-            {
-              text,
-              sessionId: this.session.id,
-            },
-          ],
-          type: PluginHookType.Series,
-        });
-      },
+      onText: async (text) => {},
       onReasoning: async (text) => {},
       onToolUse: async (toolUse) => {
-        await this.context.apply({
+        return await this.context.apply({
           hook: 'toolUse',
           args: [
             {
-              toolUse,
               sessionId: this.session.id,
             },
           ],
-          type: PluginHookType.Series,
+          memo: toolUse,
+          type: PluginHookType.SeriesLast,
         });
       },
-      onToolUseResult: async (toolUseResult) => {
-        const { toolUse, result } = toolUseResult;
-        await this.context.apply({
-          hook: 'toolUseResult',
+      onToolResult: async (toolUse, toolResult, approved) => {
+        return await this.context.apply({
+          hook: 'toolResult',
           args: [
             {
               toolUse,
-              result,
+              approved,
+              sessionId: this.session.id,
+            },
+          ],
+          memo: toolResult,
+          type: PluginHookType.SeriesLast,
+        });
+      },
+      onTurn: async (turn: {
+        usage: Usage;
+        startTime: Date;
+        endTime: Date;
+      }) => {
+        await this.context.apply({
+          hook: 'query',
+          args: [
+            {
+              startTime: turn.startTime,
+              endTime: turn.endTime,
+              usage: turn.usage,
               sessionId: this.session.id,
             },
           ],
           type: PluginHookType.Series,
         });
       },
-      onTurn: async () => {},
       onToolApprove: async (toolUse) => {
         // TODO: if quiet return true
         // 1. if yolo return true
@@ -254,7 +276,8 @@ export class Project {
         // 2. if category is read return true
         const tool = toolsManager.get(toolUse.name);
         if (!tool) {
-          throw new Error(`Tool ${toolUse.name} not found`);
+          // Let the tool invoke handle the `tool not found` error
+          return true;
         }
         if (tool.approval?.category === 'read') {
           return true;
@@ -296,6 +319,20 @@ export class Project {
           })) ?? false
         );
       },
+    });
+    const endTime = new Date();
+    await this.context.apply({
+      hook: 'conversation',
+      args: [
+        {
+          userPrompt: message,
+          result,
+          startTime,
+          endTime,
+          sessionId: this.session.id,
+        },
+      ],
+      type: PluginHookType.Series,
     });
     outputFormat.onEnd({
       result,

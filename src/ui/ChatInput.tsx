@@ -61,7 +61,15 @@ export function ChatInput() {
         flexDirection="row"
         gap={1}
       >
-        <Text color={UI_COLORS.CHAT_ARROW}>&gt;</Text>
+        <Text
+          color={
+            inputState.state.value
+              ? UI_COLORS.CHAT_ARROW_ACTIVE
+              : UI_COLORS.CHAT_ARROW
+          }
+        >
+          &gt;
+        </Text>
         <TextInput
           multiline
           value={inputState.state.value}

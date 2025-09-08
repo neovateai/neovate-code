@@ -2,7 +2,10 @@ import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createXai } from '@ai-sdk/xai';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import {
+  type LanguageModelV1,
+  createOpenRouter,
+} from '@openrouter/ai-sdk-provider';
 import assert from 'assert';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
@@ -49,11 +52,11 @@ export interface Provider {
   api?: string;
   doc: string;
   models: Record<string, Omit<Model, 'id' | 'cost'>>;
-  createModel(name: string, provider: Provider): AiSdkModel;
+  createModel(name: string, provider: Provider): LanguageModelV1;
 }
 
-type ProvidersMap = Record<string, Provider>;
-type ModelMap = Record<string, Omit<Model, 'id' | 'cost'>>;
+export type ProvidersMap = Record<string, Provider>;
+export type ModelMap = Record<string, Omit<Model, 'id' | 'cost'>>;
 
 export const models: ModelMap = {
   'deepseek-v3-0324': {
@@ -68,6 +71,19 @@ export const models: ModelMap = {
     modalities: { input: ['text'], output: ['text'] },
     open_weights: true,
     limit: { context: 128000, output: 8192 },
+  },
+  'deepseek-v3-1': {
+    name: 'DeepSeek-V3.1',
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-07',
+    release_date: '2025-08-21',
+    last_updated: '2025-08-21',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 163840, output: 163840 },
   },
   'deepseek-r1-0528': {
     name: 'DeepSeek-R1-0528',
@@ -108,6 +124,19 @@ export const models: ModelMap = {
     open_weights: true,
     limit: { context: 131072, output: 16384 },
   },
+  'kimi-k2-0905': {
+    name: 'Kimi K2 Instruct 0905',
+    attachment: false,
+    reasoning: false,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2024-10',
+    release_date: '2025-09-05',
+    last_updated: '2025-09-05',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 262144, output: 16384 },
+  },
   'qwen3-coder-480b-a35b-instruct': {
     name: 'Qwen3-Coder-480B-A35B-Instruct',
     attachment: false,
@@ -120,6 +149,32 @@ export const models: ModelMap = {
     modalities: { input: ['text'], output: ['text'] },
     open_weights: true,
     limit: { context: 262144, output: 66536 },
+  },
+  'qwen3-235b-a22b-07-25': {
+    name: 'Qwen3 235B A22B Instruct 2507',
+    attachment: false,
+    reasoning: false,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-04',
+    release_date: '2025-04-28',
+    last_updated: '2025-07-21',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 262144, output: 131072 },
+  },
+  'qwen3-max': {
+    name: 'Qwen3 Max',
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-09',
+    release_date: '2025-09-05',
+    last_updated: '2025-09-05',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: false,
+    limit: { context: 262144, output: 32768 },
   },
   'gemini-2.5-flash': {
     name: 'Gemini 2.5 Flash',
@@ -246,6 +301,19 @@ export const models: ModelMap = {
     modalities: { input: ['text', 'image'], output: ['text'] },
     open_weights: false,
     limit: { context: 200000, output: 32000 },
+  },
+  'gpt-oss-120b': {
+    name: 'GPT OSS 120B',
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-08',
+    release_date: '2025-08-05',
+    last_updated: '2025-08-05',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 131072, output: 32768 },
   },
   'gpt-5': {
     name: 'GPT-5',
@@ -380,16 +448,40 @@ export const models: ModelMap = {
     open_weights: true,
     limit: { context: 131072, output: 98304 },
   },
+  'sonoma-dusk-alpha': {
+    name: 'Sonoma Dusk Alpha',
+    attachment: true,
+    reasoning: false,
+    temperature: false,
+    tool_call: true,
+    knowledge: '2024-09',
+    release_date: '2024-09-05',
+    last_updated: '2024-09-05',
+    modalities: { input: ['text', 'image'], output: ['text'] },
+    open_weights: false,
+    limit: { context: 2000000, output: 2000000 },
+  },
+  'sonoma-sky-alpha': {
+    name: 'Sonoma Sky Alpha',
+    attachment: true,
+    reasoning: false,
+    temperature: false,
+    tool_call: true,
+    knowledge: '2024-09',
+    release_date: '2024-09-05',
+    last_updated: '2024-09-05',
+    modalities: { input: ['text', 'image'], output: ['text'] },
+    open_weights: false,
+    limit: { context: 2000000, output: 2000000 },
+  },
 };
 
 export const defaultModelCreator = (name: string, provider: Provider) => {
   assert(provider.api, `Provider ${provider.id} must have an api`);
-  return aisdk(
-    createOpenAI({
-      baseURL: provider.api,
-      apiKey: process.env[provider.env[0]],
-    })(name),
-  );
+  return createOpenAI({
+    baseURL: provider.api,
+    apiKey: provider.env[0] ? process.env[provider.env[0]] : '',
+  })(name);
 };
 
 export const providers: ProvidersMap = {
@@ -424,7 +516,7 @@ export const providers: ProvidersMap = {
       const google = createGoogleGenerativeAI({
         apiKey: process.env[provider.env[0]] || process.env[provider.env[1]],
       });
-      return aisdk(google(name));
+      return google(name);
     },
   },
   deepseek: {
@@ -449,11 +541,9 @@ export const providers: ProvidersMap = {
       'grok-code-fast-1': models['grok-code-fast-1'],
     },
     createModel(name, provider) {
-      return aisdk(
-        createXai({
-          apiKey: process.env[provider.env[0]],
-        })(name),
-      );
+      return createXai({
+        apiKey: process.env[provider.env[0]],
+      })(name);
     },
   },
   anthropic: {
@@ -469,11 +559,9 @@ export const providers: ProvidersMap = {
       'claude-3-5-sonnet-20241022': models['claude-3-5-sonnet-20241022'],
     },
     createModel(name, provider) {
-      return aisdk(
-        createAnthropic({
-          apiKey: process.env[provider.env[0]],
-        })(name),
-      );
+      return createAnthropic({
+        apiKey: process.env[provider.env[0]],
+      })(name);
     },
   },
   aihubmix: {
@@ -514,6 +602,7 @@ export const providers: ProvidersMap = {
       'anthropic/claude-sonnet-4': models['claude-4-sonnet'],
       'deepseek/deepseek-r1-0528': models['deepseek-r1-0528'],
       'deepseek/deepseek-chat-v3-0324': models['deepseek-v3-0324'],
+      'deepseek/deepseek-chat-v3.1': models['deepseek-v3-1'],
       'openai/gpt-4.1': models['gpt-4.1'],
       'openai/gpt-4': models['gpt-4'],
       'openai/gpt-4o': models['gpt-4o'],
@@ -521,16 +610,19 @@ export const providers: ProvidersMap = {
       'openai/o3-pro': models['o3-pro'],
       'openai/o3-mini': models['o3-mini'],
       'openai/o4-mini': models['o4-mini'],
+      'openai/gpt-oss-120b': models['gpt-oss-120b'],
       'moonshotai/kimi-k2': models['kimi-k2'],
+      'moonshotai/kimi-k2-0905': models['kimi-k2-0905'],
       'qwen/qwen3-coder': models['qwen3-coder-480b-a35b-instruct'],
+      'qwen/qwen3-max': models['qwen3-max'],
       'x-ai/grok-code-fast-1': models['grok-code-fast-1'],
+      'openrouter/sonoma-dusk-alpha': models['sonoma-dusk-alpha'],
+      'openrouter/sonoma-sky-alpha': models['sonoma-sky-alpha'],
     },
     createModel(name, provider) {
-      return aisdk(
-        createOpenRouter({
-          apiKey: process.env[provider.env[0]] || process.env[provider.env[1]],
-        })(name),
-      );
+      return createOpenRouter({
+        apiKey: process.env[provider.env[0]] || process.env[provider.env[1]],
+      })(name);
     },
   },
   iflow: {
@@ -540,10 +632,14 @@ export const providers: ProvidersMap = {
     api: 'https://apis.iflow.cn/v1/',
     doc: 'https://iflow.cn/',
     models: {
-      'Qwen3-Coder': models['qwen3-coder-480b-a35b-instruct'],
-      'KIMI-K2': models['kimi-k2'],
-      'DeepSeek-V3': models['deepseek-v3-0324'],
-      'DeepSeek-R1': models['deepseek-r1-0528'],
+      'qwen3-coder': models['qwen3-coder-480b-a35b-instruct'],
+      'kimi-k2': models['kimi-k2'],
+      'kimi-k2-0905': models['kimi-k2-0905'],
+      'deepseek-v3': models['deepseek-v3-0324'],
+      'deepseek-v3.1': models['deepseek-v3-1'],
+      'deepseek-r1': models['deepseek-r1-0528'],
+      'glm-4.5': models['glm-4.5'],
+      'qwen3-max-preview': models['qwen3-max'],
     },
     createModel: defaultModelCreator,
   },
@@ -558,14 +654,12 @@ export const providers: ProvidersMap = {
       'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
     },
     createModel(name, provider) {
-      return aisdk(
-        createOpenAI({
-          baseURL: provider.api,
-          apiKey: process.env[provider.env[0]],
-          // include usage information in streaming mode why? https://platform.moonshot.cn/docs/guide/migrating-from-openai-to-kimi#stream-模式下的-usage-值
-          compatibility: 'strict',
-        })(name),
-      );
+      return createOpenAI({
+        baseURL: provider.api,
+        apiKey: process.env[provider.env[0]],
+        // include usage information in streaming mode why? https://platform.moonshot.cn/docs/guide/migrating-from-openai-to-kimi#stream-模式下的-usage-值
+        compatibility: 'strict',
+      })(name);
     },
   },
   groq: {
@@ -580,7 +674,8 @@ export const providers: ProvidersMap = {
 };
 
 // value format: provider/model
-export const modelAlias = {
+export type ModelAlias = Record<string, string>;
+export const modelAlias: ModelAlias = {
   deepseek: 'deepseek/deepseek-chat',
   r1: 'deepseek/deepseek-reasoner',
   '41': 'openai/gpt-4.1',
@@ -633,7 +728,13 @@ export async function resolveModelWithContext(
 ) {
   const hookedProviders = await context.apply({
     hook: 'provider',
-    args: [],
+    args: [
+      {
+        models,
+        defaultModelCreator,
+        createOpenAI,
+      },
+    ],
     memo: providers,
     type: PluginHookType.SeriesLast,
   });
@@ -643,11 +744,16 @@ export async function resolveModelWithContext(
     memo: modelAlias,
     type: PluginHookType.SeriesLast,
   });
-  return resolveModel(
+  const model = resolveModel(
     name || context.config.model,
     hookedProviders,
     hookedModelAlias,
   );
+  return {
+    providers: hookedProviders,
+    modelAlias,
+    model,
+  };
 }
 
 export function resolveModel(
@@ -661,7 +767,10 @@ export function resolveModel(
   }
   const [providerStr, ...modelNameArr] = name.split('/');
   const provider = providers[providerStr];
-  assert(provider, `Provider ${providerStr} not found`);
+  assert(
+    provider,
+    `Provider ${providerStr} not found, valid providers: ${Object.keys(providers).join(', ')}`,
+  );
   const modelId = modelNameArr.join('/');
   const model = provider.models[modelId] as Model;
   assert(
@@ -672,6 +781,6 @@ export function resolveModel(
   return {
     provider,
     model,
-    aisdk: provider.createModel(modelId, provider),
+    aisdk: aisdk(provider.createModel(modelId, provider)),
   };
 }

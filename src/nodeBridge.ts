@@ -5,12 +5,7 @@ import { Context } from './context';
 import type { Message, NormalizedMessage, UserMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { MessageBus } from './messageBus';
-import {
-  type Model,
-  type Provider,
-  providers,
-  resolveModelWithContext,
-} from './model';
+import { type Model, type Provider, resolveModelWithContext } from './model';
 import { OutputStyleManager } from './outputStyle';
 import { PluginHookType } from './plugin';
 import { Project } from './project';
@@ -72,7 +67,12 @@ class NodeHandlerRegistry {
       'initialize',
       async (data: { cwd: string; sessionId?: string }) => {
         const context = await this.getContext(data.cwd);
-        const modelInfo = await resolveModelWithContext(null, context);
+        await context.apply({
+          hook: 'initialized',
+          args: [{ cwd: data.cwd, quiet: false }],
+          type: PluginHookType.Series,
+        });
+        const modelInfo = (await resolveModelWithContext(null, context)).model;
         const model = `${modelInfo.provider.id}/${modelInfo.model.id}`;
         const modelContextLimit = modelInfo.model.limit.context;
 
@@ -311,17 +311,13 @@ class NodeHandlerRegistry {
       async (data: { cwd: string }) => {
         const { cwd } = data;
         const context = await this.getContext(cwd);
-        const hookedProviders = await context.apply({
-          hook: 'provider',
-          args: [],
-          memo: providers,
-          type: PluginHookType.SeriesLast,
-        });
-        const currentModelInfo = await resolveModelWithContext(null, context);
-        const currentModel = `${currentModelInfo.provider.id}/${currentModelInfo.model.id}`;
-
+        const { providers, model } = await resolveModelWithContext(
+          null,
+          context,
+        );
+        const currentModel = `${model.provider.id}/${model.model.id}`;
         const groupedModels = Object.values(
-          hookedProviders as Record<string, Provider>,
+          providers as Record<string, Provider>,
         ).map((provider) => ({
           provider: provider.name,
           providerId: provider.id,
@@ -331,16 +327,15 @@ class NodeHandlerRegistry {
             value: `${provider.id}/${modelId}`,
           })),
         }));
-
         return {
           success: true,
           data: {
             groupedModels,
             currentModel,
             currentModelInfo: {
-              providerName: currentModelInfo.provider.name,
-              modelName: currentModelInfo.model.name,
-              modelId: currentModelInfo.model.id,
+              providerName: model.provider.name,
+              modelName: model.model.name,
+              modelId: model.model.id,
             },
           },
         };
@@ -524,7 +519,7 @@ class NodeHandlerRegistry {
       }) => {
         const { cwd, messages } = data;
         const context = await this.getContext(cwd);
-        const modelInfo = await resolveModelWithContext(null, context);
+        const modelInfo = (await resolveModelWithContext(null, context)).model;
         const summary = await compact({
           messages,
           model: modelInfo,
@@ -608,6 +603,99 @@ class NodeHandlerRegistry {
         return {
           success: true,
         };
+      },
+    );
+
+    //////////////////////////////////////////////
+    // MCP status
+    this.messageBus.registerHandler(
+      'getMcpStatus',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const mcpManager = context.mcpManager;
+
+        interface ServerData {
+          status: string;
+          error?: string;
+          toolCount: number;
+          tools: string[];
+        }
+
+        const configuredServers = context.config.mcpServers || {};
+        const allServerStatus = await mcpManager.getAllServerStatus();
+        const servers: Record<string, ServerData> = {};
+
+        // Get detailed status for each configured server
+        for (const serverName of mcpManager.getServerNames()) {
+          const serverStatus = allServerStatus[serverName];
+          let tools: string[] = [];
+
+          if (serverStatus && serverStatus.status === 'connected') {
+            try {
+              const serverTools = await mcpManager.getTools([serverName]);
+              tools = serverTools.map((tool) => tool.name);
+            } catch (err) {
+              console.warn(
+                `Failed to fetch tools for server ${serverName}:`,
+                err,
+              );
+            }
+          }
+
+          servers[serverName] = {
+            status: serverStatus?.status || 'disconnected',
+            error: serverStatus?.error,
+            toolCount: serverStatus?.toolCount || 0,
+            tools,
+          };
+        }
+
+        // Get config paths
+        const configManager = new ConfigManager(cwd, context.productName, {});
+
+        return {
+          success: true,
+          data: {
+            servers,
+            configs: configuredServers,
+            globalConfigPath: configManager.globalConfigPath,
+            projectConfigPath: configManager.projectConfigPath,
+            isReady: mcpManager.isReady(),
+            isLoading: mcpManager.isLoading(),
+          },
+        };
+      },
+    );
+
+    // MCP reconnection functionality
+    this.messageBus.registerHandler(
+      'reconnectMcpServer',
+      async (data: { cwd: string; serverName: string }) => {
+        const { cwd, serverName } = data;
+        try {
+          const context = await this.getContext(cwd);
+          const mcpManager = context.mcpManager;
+
+          if (!mcpManager) {
+            return {
+              success: false,
+              error: 'No MCP manager available',
+            };
+          }
+
+          await mcpManager.retryConnection(serverName);
+
+          return {
+            success: true,
+            message: `Successfully initiated reconnection for ${serverName}`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
       },
     );
 

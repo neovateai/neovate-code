@@ -9,7 +9,7 @@ let files: string[] = [];
 
 export const contextPlugin: Plugin = {
   name: 'browser-context-plugin',
-  serverRouteCompletions({ attachedContexts = [] }) {
+  _serverRouteCompletions({ attachedContexts = [] }) {
     debug('serverRouteCompletions', attachedContexts);
     if (attachedContexts.length > 0) {
       files = attachedContexts
@@ -20,7 +20,7 @@ export const contextPlugin: Plugin = {
 
   async context() {
     if (files.length === 0) {
-      return;
+      return {};
     }
     const browserFiles = await getFileContext(files);
 

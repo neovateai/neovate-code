@@ -1,7 +1,15 @@
+import type { OpenAIProvider } from '@ai-sdk/openai';
 import { type AgentInputItem } from '@openai/agents';
+import type { LanguageModelV1 } from '@openrouter/ai-sdk-provider';
 import defu from 'defu';
 import { type Config } from './config';
 import { Context, type ContextCreateOpts } from './context';
+import type { LoopResult, ToolUse } from './loop';
+import type { ModelAlias, ModelMap, Provider, ProvidersMap } from './model';
+import type { OutputStyle } from './outputStyle';
+import type { SlashCommand } from './slash-commands/types';
+import type { Tool } from './tool';
+import type { Usage } from './usage';
 import { type MessageContent } from './utils/parse-message';
 
 export enum PluginHookType {
@@ -96,10 +104,6 @@ export class PluginManager {
   }
 }
 
-// type PluginContext = Omit<
-//   Context,
-//   'destroy' | 'getModelProvider' | 'buildSystemPrompts' | 'addHistory'
-// >;
 type PluginContext = Context;
 
 type TempPluginContext = ContextCreateOpts & {
@@ -108,7 +112,6 @@ type TempPluginContext = ContextCreateOpts & {
   apply: (opts: PluginApplyOpts) => Promise<any> | any;
 };
 
-type AgentType = 'code' | 'plan';
 type Enforce = 'pre' | 'post';
 
 export type GeneralInfo = Record<
@@ -128,91 +131,124 @@ type Status = Record<
   }
 >;
 
-type ModelInfo = {
-  label: string;
-  value: string;
-};
-
 export type Plugin = {
   enforce?: Enforce;
   name?: string;
+
+  // initialize
   config?: (
     this: TempPluginContext,
-    opts: { config: Config },
-  ) => any | Promise<any>;
-  configResolved?: (
-    this: TempPluginContext,
-    opts: { resolvedConfig: any },
-  ) => Promise<any> | any;
-  generalInfo?: (this: TempPluginContext) => GeneralInfo | Promise<GeneralInfo>;
-  cliStart?: (this: PluginContext) => Promise<any> | any;
-  cliEnd?: (
+    opts: { config: Config; argvConfig: Record<string, any> },
+  ) => Partial<Config> | Promise<Partial<Config>>;
+  slashCommand?: (
     this: PluginContext,
-    opts: { startTime: number; endTime: number; error?: any },
-  ) => Promise<any> | any;
-  contextStart?: (
+  ) => Promise<SlashCommand[]> | SlashCommand[];
+  outputStyle?: (this: PluginContext) => Promise<OutputStyle[]> | OutputStyle[];
+  provider?: (
     this: PluginContext,
-    opts: { prompt: string },
-  ) => Promise<any> | any;
+    providers: ProvidersMap,
+    opts: {
+      models: ModelMap;
+      defaultModelCreator: (
+        name: string,
+        provider: Provider,
+      ) => LanguageModelV1;
+      createOpenAI: (options: any) => OpenAIProvider;
+    },
+  ) => Promise<ProvidersMap> | ProvidersMap;
+  modelAlias?: (
+    this: PluginContext,
+    modelAlias: ModelAlias,
+  ) => Promise<ModelAlias> | ModelAlias;
+
+  // workflow
+  // NOTICE: initialized may be called multiple times when it's runned
+  // for different file paths
+  initialized?: (
+    this: PluginContext,
+    opts: {
+      cwd: string;
+      quiet: boolean;
+    },
+  ) => Promise<void> | void;
+
+  // session
   context?: (
     this: PluginContext,
-    opts: { prompt: string },
-  ) => Promise<any> | any;
+    opts: {
+      userPrompt: string | null;
+      sessionId: string;
+    },
+  ) => Promise<Record<string, string> | {}> | Record<string, string> | {};
+  env?: (
+    this: PluginContext,
+    opts: {
+      userPrompt: string | null;
+      sessionId: string;
+    },
+  ) => Promise<Record<string, string> | {}> | Record<string, string> | {};
   userPrompt?: (
     this: PluginContext,
-    opts: { text: string; sessionId: string },
-  ) => Promise<any> | any;
+    userPrompt: string,
+    opts: { sessionId: string },
+  ) => Promise<string> | string;
   systemPrompt?: (
     this: PluginContext,
-    memo: string[],
-    opts: { prompt: string | undefined },
+    systemPrompt: string,
+    opts: { isPlan?: boolean; sessionId: string },
   ) => Promise<string> | string;
-  text?: (
+  tool?: (
     this: PluginContext,
-    opts: { text: string; sessionId: string },
+    opts: { isPlan?: boolean; sessionId: string },
+  ) => Promise<Tool[]> | Tool[];
+  toolUse?: (
+    this: PluginContext,
+    toolUse: ToolUse,
+    opts: { sessionId: string },
+  ) => Promise<ToolUse> | ToolUse;
+  toolResult?: (
+    this: PluginContext,
+    toolResult: any,
+    opts: {
+      toolUse: ToolUse;
+      approved: boolean;
+      sessionId: string;
+    },
   ) => Promise<any> | any;
   query?: (
     this: PluginContext,
     opts: {
-      text: string;
-      parsed: MessageContent[];
-      input: AgentInputItem[];
-      model: string;
-      usage: any;
+      usage: Usage;
+      startTime: Date;
+      endTime: Date;
       sessionId: string;
     },
-  ) => Promise<any> | any;
+  ) => Promise<void> | void;
   conversation?: (
     this: PluginContext,
     opts: {
-      prompt: string;
-      finalText: string;
-      history: AgentInputItem[];
-      startTime: number;
-      endTime: number;
+      userPrompt: string | null;
+      result: LoopResult;
+      startTime: Date;
+      endTime: Date;
+      sessionId: string;
     },
-  ) => Promise<any> | any;
-  destroy?: (this: PluginContext) => Promise<any> | any;
-  env?: (this: PluginContext) => Record<string, string>;
-  model?: (
-    this: PluginContext,
-    opts: {
-      modelName: string;
-      aisdk: any;
-      createOpenAI: any;
-      createDeepSeek: any;
-      createAnthropic: any;
-    },
-  ) => Promise<any> | any;
-  serverAppData?: (
+  ) => Promise<void> | void;
+
+  // slash commands
+  // /status
+  status?: (this: PluginContext) => Promise<Status> | Status;
+
+  // server
+  _serverAppData?: (
     this: PluginContext,
     opts: { context: any; cwd: string },
   ) => Promise<any> | any;
-  serverRoutes?: (
+  _serverRoutes?: (
     this: PluginContext,
     opts: { app: any; prefix: string; opts: any },
   ) => Promise<any> | any;
-  serverRouteCompletions?: (
+  _serverRouteCompletions?: (
     this: PluginContext,
     opts: {
       message: {
@@ -224,29 +260,4 @@ export type Plugin = {
       attachedContexts: any[];
     },
   ) => Promise<any> | any;
-  command?: (this: PluginContext) => Promise<any[]> | any[];
-  outputStyle?: (this: PluginContext) => Promise<any> | any;
-  argvConfig?: (this: PluginContext) => Promise<any> | any;
-  modelInfo?: (this: PluginContext) => Promise<any> | any;
-  status?: (this: PluginContext) => Promise<Status> | Status;
-  tool?: (this: PluginContext, opts: { agentType: AgentType }) => Promise<any>;
-  toolUse?: (
-    this: PluginContext,
-    opts: { toolUse: any; sessionId: string },
-  ) => Promise<any> | any;
-  toolUseResult?: (
-    this: PluginContext,
-    // result: any,
-    opts: {
-      toolUse: any;
-      result: any;
-      sessionId: string;
-    },
-  ) => Promise<any> | any;
-  modelList?: (
-    this: PluginContext,
-    models: ModelInfo[],
-  ) => Promise<ModelInfo[]> | ModelInfo[];
-  provider?: (this: PluginContext) => Promise<any> | any;
-  modelAlias?: (this: PluginContext) => Promise<any> | any;
 };

@@ -1,6 +1,6 @@
 {
   "name": "@neovate/code",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "type": "module",
   "files": [
     "dist",
@@ -147,6 +147,6 @@
       "vendor"
     ],
     "needReinstall": false,
-    "changelogUrl": "https://github.com/neovateai/code/blob/master/CHANGELOG.md"
+    "changelogUrl": "https://github.com/neovateai/neovate-code/blob/master/CHANGELOG.md"
   }
 }

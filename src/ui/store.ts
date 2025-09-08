@@ -3,8 +3,9 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
-import type { Message } from '../history';
+import type { Message, UserMessage } from '../history';
 import type { LoopResult, ToolUse } from '../loop';
+import { Paths } from '../paths';
 import { SessionConfigManager, loadSessionMessages } from '../session';
 import { Session } from '../session';
 import {
@@ -292,19 +293,19 @@ export const useAppStore = create<AppStore>()(
           return;
         }
 
-        // Only add to history when actually sending
-        const newHistory = [...get().history, message];
-        set({
-          history: newHistory,
-          historyIndex: null,
-        });
-
         // Save history to session config
-        await bridge.request('sessionConfig.addHistory', {
-          cwd,
-          sessionId,
-          history: message,
-        });
+        if (!isSlashCommand(message)) {
+          const newHistory = [...get().history, message];
+          set({
+            history: newHistory,
+            historyIndex: null,
+          });
+          await bridge.request('sessionConfig.addHistory', {
+            cwd,
+            sessionId,
+            history: message,
+          });
+        }
 
         // slash command
         if (isSlashCommand(message)) {
@@ -319,16 +320,22 @@ export const useAppStore = create<AppStore>()(
               role: 'user',
               content: message,
             };
-            await bridge.request('addMessages', {
-              cwd,
-              sessionId,
-              messages: [userMessage],
-            });
             const command = commandeEntry.command;
             const type = command.type;
             const isLocal = type === 'local';
             const isLocalJSX = type === 'local-jsx';
             const isPrompt = type === 'prompt';
+            if (isPrompt) {
+              await bridge.request('addMessages', {
+                cwd,
+                sessionId,
+                messages: [userMessage],
+              });
+            } else {
+              set({
+                messages: [...get().messages, userMessage],
+              });
+            }
             // TODO: save local type command's messages to history
             if (isLocal || isPrompt) {
               const result = await bridge.request('executeSlashCommand', {
@@ -339,11 +346,17 @@ export const useAppStore = create<AppStore>()(
               });
               if (result.success) {
                 const messages = result.data.messages;
-                await bridge.request('addMessages', {
-                  cwd,
-                  sessionId,
-                  messages,
-                });
+                if (isPrompt) {
+                  await bridge.request('addMessages', {
+                    cwd,
+                    sessionId,
+                    messages,
+                  });
+                } else {
+                  set({
+                    messages: [...get().messages, ...messages],
+                  });
+                }
               }
               if (isPrompt) {
                 await get().sendMessage({ message: null });
@@ -353,10 +366,9 @@ export const useAppStore = create<AppStore>()(
                 set({
                   slashCommandJSX: null,
                 });
-                await bridge.request('addMessages', {
-                  cwd,
-                  sessionId,
+                set({
                   messages: [
+                    ...get().messages,
                     {
                       role: 'user',
                       content: [
@@ -365,7 +377,6 @@ export const useAppStore = create<AppStore>()(
                           text: result,
                         },
                       ],
-                      history: null,
                     },
                   ],
                 });
@@ -380,7 +391,11 @@ export const useAppStore = create<AppStore>()(
             }
             // set({ status: 'slash_command_executing' });
           } else {
-            // TODO: handle unknown slash command
+            const userMessage: UserMessage = {
+              role: 'user',
+              content: `Unknown slash command: ${parsed.command}`,
+            };
+            get().addMessage(userMessage);
           }
           return;
         } else {
@@ -414,11 +429,12 @@ export const useAppStore = create<AppStore>()(
                     });
                   }
                 } catch (parseError) {
-                  get().log(String(parseError));
+                  get().log('Parse query result error: ' + String(parseError));
+                  get().log('Query result: ' + queryResult.data.text);
                 }
               }
             } catch (error) {
-              get().log(String(error));
+              get().log('Query error: ' + String(error));
             }
 
             // Check for queued messages
@@ -472,11 +488,16 @@ export const useAppStore = create<AppStore>()(
 
       clear: async () => {
         const sessionId = Session.createSessionId();
+        const paths = new Paths({
+          productName: get().productName,
+          cwd: get().cwd,
+        });
         set({
           messages: [],
           history: [],
           historyIndex: null,
           sessionId,
+          logFile: paths.getSessionLogPath(sessionId),
           // Also reset input state when clearing
           inputValue: '',
           inputCursorPosition: undefined,
@@ -518,17 +539,21 @@ export const useAppStore = create<AppStore>()(
       approvePlan: (planResult: string) => {
         set({ planResult: null, planMode: false });
         const bridge = get().bridge;
-        bridge.request('addMessages', {
-          cwd: get().cwd,
-          sessionId: get().sessionId,
-          messages: [
-            {
-              role: 'user',
-              content: [{ type: 'text', text: planResult }],
-              history: null,
-            },
-          ],
-        });
+        bridge
+          .request('addMessages', {
+            cwd: get().cwd,
+            sessionId: get().sessionId,
+            messages: [
+              {
+                role: 'user',
+                content: [{ type: 'text', text: planResult }],
+                history: null,
+              },
+            ],
+          })
+          .catch((error) => {
+            console.error('Failed to add messages:', error);
+          });
         // Use store's model for plan approval - no need to pass explicitly
         get().sendMessage({ message: null });
       },

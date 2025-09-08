@@ -1,3 +1,25 @@
+## 0.9.0
+
+`2025-09-04`
+
+- feat: add deepseek-v3-1 model and provider mapping by [@sorrycc](https://github.com/sorrycc)
+- feat: set logFile path using Paths when clearing store by [@sorrycc](https://github.com/sorrycc)
+- fix: improve error logging messages by [@sorrycc](https://github.com/sorrycc)
+- feat: add gpt-oss-120b model and update providers map by [@sorrycc](https://github.com/sorrycc)
+- fix: correctly extract model from resolved context by [@sorrycc](https://github.com/sorrycc)
+- refactor: remove unused model-related types and plugin methods by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename hookedProviders to providers in model resolution by [@sorrycc](https://github.com/sorrycc)
+- feat: add qwen3 model and improve error handling in message bus by [@sorrycc](https://github.com/sorrycc)
+- refactor: move product ASCII art trimming to constants definition by [@sorrycc](https://github.com/sorrycc)
+- fix: improve upgrade handling and error messaging by [@sorrycc](https://github.com/sorrycc)
+- build: add publishConfig to make package public by [@sorrycc](https://github.com/sorrycc)
+- refact: 202508 by @chencheng (云谦) in [#178](https://github.com/umijs/takumi/pull/178)
+- fix: make diff params optional with default empty string values [AI] by [@阿平](https://github.com/阿平) in [#181](https://github.com/umijs/takumi/pull/181)
+- feat: add async initialization and status tracking for MCP servers [AI] by [@阿平](https://github.com/阿平) in [#171](https://github.com/umijs/takumi/pull/171)
+- feat: add tool parameter validation using zod schema by [@阿平](https://github.com/阿平) in [#166](https://github.com/umijs/takumi/pull/166)
+- feat: add abort controller for cancellable queries [AI] by [@阿平](https://github.com/阿平) in [#167](https://github.com/umijs/takumi/pull/167)
+
+
 ## 0.8.2
 
 `2025-08-18`

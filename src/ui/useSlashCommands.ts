@@ -25,12 +25,18 @@ export function useSlashCommands(input: string) {
     if (input !== '/') return;
     const start = Date.now();
     setIsLoading(true);
-    bridge.request('getSlashCommands', { cwd }).then((res) => {
-      setSlashCommands(res.data.slashCommands);
-      setIsLoading(false);
-      const end = Date.now();
-      log(`getSlashCommands took ${end - start}ms`);
-    });
+    bridge
+      .request('getSlashCommands', { cwd })
+      .then((res) => {
+        setSlashCommands(res.data.slashCommands);
+        setIsLoading(false);
+        const end = Date.now();
+        log(`getSlashCommands took ${end - start}ms`);
+      })
+      .catch((error) => {
+        console.error('Failed to get slash commands:', error);
+        setIsLoading(false);
+      });
   }, [bridge, cwd, input]);
 
   useEffect(() => {

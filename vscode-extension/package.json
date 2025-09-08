@@ -6,7 +6,7 @@
   "publisher": "sorrycc",
   "repository": {
     "type": "git",
-    "url": "https://github.com/neovateai/code/tree/master/vscode-extension"
+    "url": "https://github.com/neovateai/neovate-code/tree/master/vscode-extension"
   },
   "engines": {
     "vscode": "^1.99.0"

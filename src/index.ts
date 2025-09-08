@@ -7,7 +7,7 @@ import { Context } from './context';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
 import { Paths } from './paths';
-import { type Plugin } from './plugin';
+import { type Plugin, PluginHookType } from './plugin';
 import { Project } from './project';
 import { Session, SessionConfigManager, loadSessionMessages } from './session';
 import {
@@ -19,6 +19,11 @@ import { App } from './ui/App';
 import { useAppStore } from './ui/store';
 import { UIBridge } from './uiBridge';
 import type { UpgradeOptions } from './upgrade';
+
+export { createTool } from './tool';
+export { z as _zod } from 'zod';
+export { ConfigManager as _ConfigManager } from './config';
+export { query as _query } from './query';
 
 export type { Plugin, Context };
 
@@ -303,9 +308,15 @@ export async function runNeovate(opts: {
   }
 
   if (argv.quiet) {
+    const cwd = argv.cwd || process.cwd();
     const context = await Context.create({
-      cwd: argv.cwd || process.cwd(),
+      cwd,
       ...contextCreateOpts,
+    });
+    await context.apply({
+      hook: 'initialized',
+      args: [{ cwd, quiet: true }],
+      type: PluginHookType.Series,
     });
     await runQuiet(argv, context);
   } else {
@@ -314,6 +325,14 @@ export async function runNeovate(opts: {
       upgrade = undefined;
     }
     if (upgrade && !upgrade.installDir.includes('node_modules')) {
+      upgrade = undefined;
+    }
+    if (
+      upgrade?.version.includes('-beta.') ||
+      upgrade?.version.includes('-alpha.') ||
+      upgrade?.version.includes('-rc.') ||
+      upgrade?.version.includes('-canary.')
+    ) {
       upgrade = undefined;
     }
     await runInteractive(argv, contextCreateOpts, upgrade);

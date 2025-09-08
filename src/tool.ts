@@ -24,7 +24,7 @@ type ResolveToolsOpts = {
 export async function resolveTools(opts: ResolveToolsOpts) {
   const { cwd, productName, paths } = opts.context;
   const sessionId = opts.sessionId;
-  const model = await resolveModelWithContext(
+  const { model } = await resolveModelWithContext(
     opts.context.config.model,
     opts.context,
   );
@@ -42,7 +42,6 @@ export async function resolveTools(opts: ResolveToolsOpts) {
         createBashTool({ cwd }),
       ]
     : [];
-
   const todoTools = (() => {
     if (!opts.todo) return [];
     const { todoWriteTool, todoReadTool } = createTodoTool({
@@ -50,10 +49,19 @@ export async function resolveTools(opts: ResolveToolsOpts) {
     });
     return [todoReadTool, todoWriteTool];
   })();
+  const mcpTools = await getMcpTools(opts.context);
+  return [...readonlyTools, ...writeTools, ...todoTools, ...mcpTools];
+}
 
-  // TODO: mcp tools
-
-  return [...readonlyTools, ...writeTools, ...todoTools];
+async function getMcpTools(context: Context): Promise<Tool[]> {
+  try {
+    const mcpManager = context.mcpManager;
+    await mcpManager.initAsync();
+    return await mcpManager.getAllTools();
+  } catch (error) {
+    console.warn('Failed to load MCP tools:', error);
+    return [];
+  }
 }
 
 export class Tools {
@@ -108,7 +116,10 @@ export class Tools {
     const availableTools = `
   ${Object.entries(this.tools)
     .map(([key, tool]) => {
-      const schema = zodToJsonSchema(tool.parameters);
+      // parameters of mcp tools is not zod object
+      const schema = isZodObject(tool.parameters)
+        ? zodToJsonSchema(tool.parameters)
+        : tool.parameters;
       return `
 <tool>
 <name>${key}</name>
@@ -189,9 +200,9 @@ function validateToolParams(schema: z.ZodObject<any>, params: string) {
 export interface Tool<T = any> {
   name: string;
   description: string;
-  parameters: z.ZodSchema<T>;
   execute: (params: T) => Promise<any> | any;
   approval?: ToolApprovalInfo;
+  parameters: z.ZodSchema<T>;
 }
 
 type ApprovalContext = {
