@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useAppStore } from './store';
 import { useFileSuggestion } from './useFileSuggestion';
+import { useImagePasteManager } from './useImagePasteManager';
 import { useInputState } from './useInputState';
 import { usePasteManager } from './usePasteManager';
 import { useSlashCommands } from './useSlashCommands';
@@ -21,6 +22,7 @@ export function useInputHandlers() {
   const slashCommands = useSlashCommands(inputState.state.value);
   const fileSuggestion = useFileSuggestion(inputState.state);
   const pasteManager = usePasteManager();
+  const imageManager = useImagePasteManager();
 
   const handleSubmit = useCallback(async () => {
     const value = inputState.state.value.trim();
@@ -189,6 +191,17 @@ export function useInputHandlers() {
     [pasteManager],
   );
 
+  const handleImagePaste = useCallback(
+    async (base64Data: string) => {
+      const result = await imageManager.handleImagePaste(base64Data);
+      if (result.success && result.prompt) {
+        return { prompt: result.prompt };
+      }
+      return {};
+    },
+    [imageManager],
+  );
+
   return {
     inputState,
     handlers: {
@@ -199,9 +212,11 @@ export function useInputHandlers() {
       handleHistoryDown,
       handleHistoryReset,
       handlePaste,
+      handleImagePaste,
     },
     slashCommands,
     fileSuggestion,
     pasteManager,
+    imageManager,
   };
 }

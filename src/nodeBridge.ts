@@ -79,6 +79,7 @@ class NodeHandlerRegistry {
         // Get session config if sessionId is provided
         let sessionSummary: string | undefined;
         let pastedTextMap: Record<string, string> = {};
+        let pastedImageMap: Record<string, string> = {};
         if (data.sessionId) {
           try {
             const sessionConfigManager = new SessionConfigManager({
@@ -86,6 +87,7 @@ class NodeHandlerRegistry {
             });
             sessionSummary = sessionConfigManager.config.summary;
             pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
+            pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
           } catch (error) {
             // Silently ignore if session config not available
           }
@@ -102,6 +104,7 @@ class NodeHandlerRegistry {
             approvalMode: context.config.approvalMode,
             sessionSummary,
             pastedTextMap,
+            pastedImageMap,
           },
         };
       },
@@ -115,8 +118,9 @@ class NodeHandlerRegistry {
         sessionId: string | undefined;
         planMode: boolean;
         model?: string;
+        images?: string[];
       }) => {
-        const { message, cwd, sessionId, model } = data;
+        const { message, cwd, sessionId, model, images } = data;
         const context = await this.getContext(cwd);
         const project = new Project({
           sessionId,
@@ -125,8 +129,10 @@ class NodeHandlerRegistry {
         const abortController = new AbortController();
         const key = buildSignalKey(cwd, project.session.id);
         this.abortControllers.set(key, abortController);
+
         const fn = data.planMode ? project.plan : project.send;
         const result = await fn.call(project, message, {
+          images,
           model,
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {
@@ -622,6 +628,26 @@ class NodeHandlerRegistry {
           logPath: context.paths.getSessionLogPath(sessionId),
         });
         sessionConfigManager.config.pastedTextMap = pastedTextMap;
+        sessionConfigManager.write();
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'sessionConfig.setPastedImageMap',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        pastedImageMap: Record<string, string>;
+      }) => {
+        const { cwd, sessionId, pastedImageMap } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        sessionConfigManager.config.pastedImageMap = pastedImageMap;
         sessionConfigManager.write();
         return {
           success: true,

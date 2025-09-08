@@ -103,6 +103,9 @@ interface AppState {
   // Pasted text storage
   pastedTextMap: Record<string, string>;
 
+  // Pasted image storage
+  pastedImageMap: Record<string, string>;
+
   logs: string[];
   exitMessage: string | null;
   debugMode: boolean;
@@ -132,10 +135,11 @@ type InitializeOpts = {
 
 interface AppActions {
   initialize: (opts: InitializeOpts) => Promise<void>;
-  send: (message: string) => Promise<void>;
+  send: (message: string, images?: string[] | null) => Promise<void>;
   sendMessage: (opts: {
     message: string | null;
     planMode?: boolean;
+    images?: string[] | null;
   }) => Promise<LoopResult>;
   addMessage: (message: Message) => void;
   log: (log: string) => void;
@@ -170,6 +174,7 @@ interface AppActions {
   setInputError: (error: string | null) => void;
   resetInput: () => void;
   setPastedTextMap: (map: Record<string, string>) => Promise<void>;
+  setPastedImageMap: (map: Record<string, string>) => Promise<void>;
 }
 
 export type AppStore = AppState & AppActions;
@@ -215,6 +220,7 @@ export const useAppStore = create<AppStore>()(
       inputCtrlCPressed: false,
       inputError: null,
       pastedTextMap: {},
+      pastedImageMap: {},
 
       // Actions
       initialize: async (opts) => {
@@ -243,6 +249,7 @@ export const useAppStore = create<AppStore>()(
           bashMode: false,
           approvalMode: response.data.approvalMode,
           pastedTextMap: response.data.pastedTextMap || {},
+          pastedImageMap: response.data.pastedImageMap || {},
           // theme: 'light',
         });
 
@@ -290,9 +297,16 @@ export const useAppStore = create<AppStore>()(
         });
       },
 
-      send: async (message) => {
-        const { bridge, cwd, sessionId, planMode, status, pastedTextMap } =
-          get();
+      send: async (message, images?: string[] | null) => {
+        const {
+          bridge,
+          cwd,
+          sessionId,
+          planMode,
+          status,
+          pastedTextMap,
+          pastedImageMap,
+        } = get();
 
         // Check if processing, queue the message
         if (isExecuting(status)) {
@@ -317,6 +331,31 @@ export const useAppStore = create<AppStore>()(
               pastedContent.replace(/\r/g, '\n'),
             );
           }
+        }
+
+        // Expand pasted image references and collect image data
+        let finalImages = images || [];
+        const pastedImageRegex = /\[Image (#\d+)\]/g;
+        const imageMatches = [...message.matchAll(pastedImageRegex)];
+        const extractedImages: string[] = [];
+
+        for (const match of imageMatches) {
+          const imageId = match[1];
+          const imageData = pastedImageMap[imageId];
+          if (imageData) {
+            extractedImages.push(imageData);
+            // Remove the placeholder from the message
+            const placeholder = new RegExp(
+              `\\[Image ${imageId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`,
+              'g',
+            );
+            expandedMessage = expandedMessage.replace(placeholder, '').trim();
+          }
+        }
+
+        // Combine original images with extracted images
+        if (extractedImages.length > 0) {
+          finalImages = [...finalImages, ...extractedImages];
         }
 
         // Save history to session config (save the original message with placeholders)
@@ -425,10 +464,11 @@ export const useAppStore = create<AppStore>()(
           }
           return;
         } else {
-          // Use store's current model for regular message sending with expanded message
+          // Use store's current model for regular message sending
           const result = await get().sendMessage({
             message: expandedMessage,
             planMode,
+            images: finalImages,
           });
           if (planMode && result.success) {
             set({
@@ -479,17 +519,20 @@ export const useAppStore = create<AppStore>()(
       sendMessage: async (opts: {
         message: string | null;
         planMode?: boolean;
+        images?: string[];
       }) => {
         set({
           status: 'processing',
           processingStartTime: Date.now(),
         });
         const { bridge, cwd, sessionId } = get();
+
         const response: LoopResult = await bridge.request('send', {
           message: opts.message,
           cwd,
           sessionId,
           planMode: opts.planMode,
+          images: opts.images,
         });
         if (response.success) {
           set({ status: 'idle', processingStartTime: null });
@@ -534,6 +577,7 @@ export const useAppStore = create<AppStore>()(
           inputCtrlCPressed: false,
           inputError: null,
           pastedTextMap: {},
+          pastedImageMap: {},
         });
         return {
           sessionId,
@@ -600,6 +644,7 @@ export const useAppStore = create<AppStore>()(
         });
         const history = sessionConfigManager.config.history || [];
         const pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
+        const pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
         set({
           sessionId,
           logFile,
@@ -625,6 +670,7 @@ export const useAppStore = create<AppStore>()(
           inputCtrlCPressed: false,
           inputError: null,
           pastedTextMap,
+          pastedImageMap,
         });
       },
 
@@ -744,6 +790,19 @@ export const useAppStore = create<AppStore>()(
             cwd,
             sessionId,
             pastedTextMap: map,
+          });
+        }
+      },
+
+      setPastedImageMap: async (map: Record<string, string>) => {
+        const { bridge, cwd, sessionId } = get();
+        set({ pastedImageMap: map });
+        // Save to session config
+        if (sessionId) {
+          await bridge.request('sessionConfig.setPastedImageMap', {
+            cwd,
+            sessionId,
+            pastedImageMap: map,
           });
         }
       },

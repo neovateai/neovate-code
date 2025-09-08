@@ -98,3 +98,19 @@ export const PASTE_CONFIG = {
   IMAGE_PASTE_MESSAGE_TIMEOUT_MS: 3000,
   PASTE_STATE_TIMEOUT_MS: 500,
 } as const;
+
+export const IMAGE_CONFIG = {
+  MAX_IMAGES: 5,
+  PLACEHOLDER_PREFIX: '[Image ',
+  PLACEHOLDER_SUFFIX: ']',
+} as const;
+
+export const ERROR_MESSAGES = {
+  PASTE_TOO_LARGE:
+    'Pasted content too large (max 1MB), please reduce content and try again',
+  PASTE_FAILED: 'Paste operation failed, please try again',
+  IMAGE_PASTE_FAILED: 'Image paste failed, please try again',
+  MAX_IMAGES_EXCEEDED: (maxImages: number) =>
+    `Maximum ${maxImages} images allowed`,
+  UNKNOWN_PASTE_ERROR: 'Unknown paste error',
+} as const;
