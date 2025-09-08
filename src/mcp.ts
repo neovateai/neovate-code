@@ -253,10 +253,14 @@ export class MCPManager {
     return this.servers.get(name)?.error;
   }
 
-  getAllServerStatus(): Record<
-    string,
-    { status: MCPServerStatus; error?: string; toolCount: number }
+  async getAllServerStatus(): Promise<
+    Record<
+      string,
+      { status: MCPServerStatus; error?: string; toolCount: number }
+    >
   > {
+    await this.initAsync();
+
     const result: Record<
       string,
       { status: MCPServerStatus; error?: string; toolCount: number }
