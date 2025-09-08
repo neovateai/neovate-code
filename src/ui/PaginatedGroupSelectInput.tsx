@@ -216,6 +216,7 @@ const useSelectionLogic = (
   startIndex: number,
   itemsPerPage: number,
   initialValue?: string,
+  onPageChange?: (page: number) => void,
 ): SelectionLogicReturn => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const globalSelectedIndex = startIndex + selectedIndex;
@@ -242,17 +243,20 @@ const useSelectionLogic = (
       if (targetIndex >= 0) {
         const { targetPage, targetIndexInPage } = navigateToItem(targetIndex);
         setSelectedIndex(targetIndexInPage);
+        onPageChange?.(targetPage);
       }
     } else {
       const firstModelIndex = flatItems.findIndex(
         (item) => !item.isHeader && !item.isSeparator,
       );
       if (firstModelIndex >= 0) {
-        const { targetIndexInPage } = navigateToItem(firstModelIndex);
+        const { targetPage, targetIndexInPage } =
+          navigateToItem(firstModelIndex);
         setSelectedIndex(targetIndexInPage);
+        onPageChange?.(targetPage);
       }
     }
-  }, [initialValue, itemsPerPage, flatItems.length]);
+  }, [initialValue, itemsPerPage, flatItems.length, onPageChange]);
 
   return {
     selectedIndex,
@@ -603,6 +607,7 @@ const PaginatedGroupSelectInput: React.FC<PaginatedGroupSelectInputProps> = ({
     paginationLogic.startIndex,
     itemsPerPage,
     initialValue,
+    paginationLogic.setCurrentPage,
   );
 
   useKeyboardNavigation(
