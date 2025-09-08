@@ -298,7 +298,8 @@
       "none": "无"
     },
     "saveSuccess": "设置保存成功",
-    "saveError": "设置保存失败"
+    "saveError": "设置保存失败",
+    "unsavedChanges": "有未保存的更改"
   },
   "toolRenders": {
     "read": {

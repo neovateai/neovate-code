@@ -298,7 +298,8 @@
       "none": "None"
     },
     "saveSuccess": "Settings saved successfully",
-    "saveError": "Failed to save settings"
+    "saveError": "Failed to save settings",
+    "unsavedChanges": "Unsaved changes"
   },
   "toolRenders": {
     "read": {
