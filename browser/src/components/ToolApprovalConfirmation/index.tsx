@@ -1,10 +1,11 @@
 import { CloseOutlined, RedoOutlined } from '@ant-design/icons';
-import { Spin, Tooltip } from 'antd';
+import { Button, Spin, Tooltip } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import AlwaysCommandIcon from '@/icons/alwaysCommand.svg?react';
 import AlwaysToolIcon from '@/icons/alwaysTool.svg?react';
 import ApproveOnceIcon from '@/icons/approveOnce.svg?react';
+import ApproveToolIcon from '@/icons/approveTool.svg?react';
 import BashIcon from '@/icons/bash.svg?react';
 import EditIcon from '@/icons/edit.svg?react';
 import RejectOnceIcon from '@/icons/rejectOnce.svg?react';
@@ -12,6 +13,9 @@ import SearchIcon from '@/icons/search.svg?react';
 import { toolApprovalActions, toolApprovalState } from '@/state/toolApproval';
 import type { ToolApprovalRequestMessage } from '@/types/message';
 import MessageWrapper from '../MessageWrapper';
+import styles from './index.module.css';
+
+const prefixCls = 'tool-approval-confirmation';
 
 interface ToolApprovalConfirmationProps {
   message: ToolApprovalRequestMessage;
@@ -127,44 +131,40 @@ export default function ToolApprovalConfirmation({
   }
 
   return (
-    <MessageWrapper
-      title={getToolDescription(message.toolName, message.args)}
-      expandable={false}
-      showExpandIcon={false}
-      defaultExpanded={false}
-      actions={[
-        {
-          key: 'always',
-          icon: iconWrapper(
-            <AlwaysCommandIcon />,
-            t('toolApproval.approveAlways', '允许此命令'),
-          ),
-          onClick: () => onApprove('always'),
-        },
-        {
-          key: 'always_tool',
-          icon: iconWrapper(
-            <AlwaysToolIcon />,
-            t('toolApproval.approveAlwaysTool', `允许 ${message.toolName}`, {
-              toolName: message.toolName,
-            }),
-          ),
-          onClick: () => onApprove('always_tool'),
-        },
-        {
-          key: 'once',
-          icon: iconWrapper(
-            <ApproveOnceIcon />,
-            t('toolApproval.approveOnce', '允许一次'),
-          ),
-          onClick: () => onApprove('once'),
-        },
-        {
-          key: 'deny',
-          icon: iconWrapper(<RejectOnceIcon />, t('toolApproval.deny', '拒绝')),
-          onClick: onDeny,
-        },
-      ]}
-    />
+    <div className={styles.container}>
+      <MessageWrapper
+        title={getToolDescription(message.toolName, message.args)}
+        expandable={false}
+        showExpandIcon={false}
+        defaultExpanded={false}
+      />
+      <div className={styles.actions}>
+        <Button
+          className={styles.actionButton}
+          icon={<ApproveToolIcon />}
+          variant="outlined"
+          onClick={() => onApprove('once')}
+        >
+          {t('toolApproval.approveOnce', '本次允许')}
+        </Button>
+        <Button
+          className={styles.actionButton}
+          variant="outlined"
+          onClick={() => onApprove('always_tool')}
+        >
+          {t('toolApproval.approveAlwaysTool', '永久允许{{toolName}}', {
+            toolName: message.toolName,
+          })}
+        </Button>
+        <Button
+          className={styles.actionButton}
+          color="danger"
+          variant="outlined"
+          onClick={() => onDeny()}
+        >
+          {t('toolApproval.deny', '本次拒绝')}
+        </Button>
+      </div>
+    </div>
   );
 }
