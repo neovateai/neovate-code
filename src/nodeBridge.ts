@@ -613,14 +613,7 @@ class NodeHandlerRegistry {
       async (data: { cwd: string }) => {
         const { cwd } = data;
         const context = await this.getContext(cwd);
-        const mcpManager = context.getMcpManager();
-
-        if (!mcpManager) {
-          return {
-            success: false,
-            error: 'No MCP servers configured',
-          };
-        }
+        const mcpManager = context.mcpManager;
 
         interface ServerData {
           status: string;

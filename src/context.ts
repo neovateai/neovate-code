@@ -21,7 +21,7 @@ type ContextOpts = {
   pluginManager: PluginManager;
   paths: Paths;
   argvConfig: Record<string, any>;
-  mcpManager?: MCPManager;
+  mcpManager: MCPManager;
 };
 
 export type ContextCreateOpts = {
@@ -42,7 +42,7 @@ export class Context {
   paths: Paths;
   #pluginManager: PluginManager;
   #argvConfig: Record<string, any>;
-  #mcpManager?: MCPManager;
+  mcpManager: MCPManager;
 
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
@@ -51,9 +51,9 @@ export class Context {
     this.version = opts.version;
     this.config = opts.config;
     this.paths = opts.paths;
+    this.mcpManager = opts.mcpManager;
     this.#pluginManager = opts.pluginManager;
     this.#argvConfig = opts.argvConfig;
-    this.#mcpManager = opts.mcpManager;
   }
 
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {
@@ -63,12 +63,8 @@ export class Context {
     });
   }
 
-  getMcpManager(): MCPManager | undefined {
-    return this.#mcpManager;
-  }
-
   async destroy() {
-    await this.#mcpManager?.destroy();
+    await this.mcpManager.destroy();
     // await this.apply({
     //   hook: 'destroy',
     //   args: [],
@@ -121,10 +117,9 @@ export class Context {
       type: PluginHookType.SeriesMerge,
     });
     tempContext.config = resolvedConfig;
-
-    // Create MCP manager
     const mcpManager = MCPManager.create(resolvedConfig.mcpServers || {});
-
+    // init mcp manager but don't wait for it
+    mcpManager.initAsync();
     return new Context({
       cwd,
       productName,

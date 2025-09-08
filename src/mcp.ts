@@ -76,7 +76,6 @@ export class MCPManager {
     if (this.initPromise) {
       return this.initPromise;
     }
-
     // Double-check locking pattern for thread safety
     if (this.initLock) {
       // Wait for lock to be released and check if initialization completed
@@ -87,16 +86,13 @@ export class MCPManager {
         return;
       }
     }
-
     // Acquire lock
     this.initLock = true;
-
     try {
       // Check again in case another thread completed initialization
       if (this.isInitialized) {
         return;
       }
-
       this.initPromise = this._performInit();
       await this.initPromise;
     } finally {
@@ -139,6 +135,7 @@ export class MCPManager {
           env.PATH = process.env.PATH || '';
         }
         server = new MCPServerStdio({
+          name: key,
           command: config.command!,
           args: config.args,
           env,
@@ -150,12 +147,14 @@ export class MCPManager {
           : {};
         if (config.type === 'sse') {
           server = new MCPServerSSE({
+            name: key,
             url: config.url!,
             timeout: config.timeout,
             ...requestInit,
           });
         } else {
           server = new MCPServerStreamableHttp({
+            name: key,
             url: config.url!,
             timeout: config.timeout,
             ...requestInit,
@@ -400,7 +399,7 @@ export class MCPManager {
 
   #convertMcpToolToLocal(mcpTool: FunctionTool, serverName: string): Tool {
     return {
-      name: mcpTool.name,
+      name: `mcp__${serverName}__${mcpTool.name}`,
       description: mcpTool.description,
       parameters: mcpTool.originalParameters ?? mcpTool.parameters,
       execute: async (params) => {
@@ -425,10 +424,6 @@ export class MCPManager {
       },
       approval: {
         category: 'network',
-      },
-      metadata: {
-        source: 'mcp',
-        mcpServerName: serverName,
       },
     };
   }
