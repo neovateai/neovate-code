@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useAppStore } from './store';
 import { useFileSuggestion } from './useFileSuggestion';
 import { useInputState } from './useInputState';
+import { usePasteManager } from './usePasteManager';
 import { useSlashCommands } from './useSlashCommands';
 
 export function useInputHandlers() {
@@ -15,10 +16,12 @@ export function useInputHandlers() {
     setHistoryIndex,
     togglePlanMode,
     clearQueue,
+    setPastedTextMap,
   } = useAppStore();
   const inputState = useInputState();
   const slashCommands = useSlashCommands(inputState.state.value);
   const fileSuggestion = useFileSuggestion(inputState.state);
+  const pasteManager = usePasteManager();
 
   const handleSubmit = useCallback(async () => {
     const value = inputState.state.value.trim();
@@ -43,11 +46,11 @@ export function useInputHandlers() {
       inputState.setCursorPosition(`${beforeAt}@${file} `.length);
       return;
     }
-    // TODO: pasted text
-    // TODO: image paste
-    // 3. submit
+    // 3. expand pasted text references before sending
+    const expandedValue = pasteManager.expandPastedText(value);
+    // 4. submit
     inputState.setValue('');
-    await send(value);
+    await send(expandedValue);
   }, [inputState, send, slashCommands]);
 
   const handleTabPress = useCallback(
@@ -168,6 +171,19 @@ export function useInputHandlers() {
     setHistoryIndex(null);
   }, [setHistoryIndex]);
 
+  const handlePaste = useCallback(
+    async (text: string) => {
+      const result = await pasteManager.handleTextPaste(text);
+      if (result.success && result.prompt) {
+        // Update the pasted text map in the store
+        setPastedTextMap(pasteManager.pastedTextMap);
+        return { prompt: result.prompt };
+      }
+      return {};
+    },
+    [pasteManager, setPastedTextMap],
+  );
+
   return {
     inputState,
     handlers: {
@@ -177,8 +193,10 @@ export function useInputHandlers() {
       handleHistoryUp,
       handleHistoryDown,
       handleHistoryReset,
+      handlePaste,
     },
     slashCommands,
     fileSuggestion,
+    pasteManager,
   };
 }

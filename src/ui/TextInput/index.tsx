@@ -101,7 +101,7 @@ export type Props = {
   /**
    * Optional callback when a large text (over 800 chars) is pasted
    */
-  readonly onPaste?: (text: string) => void;
+  readonly onPaste?: (text: string) => Promise<{ prompt?: string }> | void;
 
   /**
    * Whether the input is dimmed and non-interactive
@@ -222,17 +222,28 @@ export default function TextInput({
               onImagePaste(imageResult.base64);
             } else {
               // Not a valid image path, treat as regular text
-              onPaste?.(pastedText);
+              const result = await onPaste?.(pastedText);
+              if (result?.prompt) {
+                onChange(originalValue + result.prompt);
+              }
             }
           } catch (error) {
             // Error processing image, treat as regular text
             console.error('Failed to process image path:', error);
-            onPaste?.(pastedText);
+            const result = await onPaste?.(pastedText);
+            if (result?.prompt) {
+              onChange(originalValue + result.prompt);
+            }
           }
         })();
       } else {
-        // Regular text paste processing - call synchronously to prevent loss
-        onPaste?.(pastedText);
+        // Regular text paste processing
+        (async () => {
+          const result = await onPaste?.(pastedText);
+          if (result?.prompt) {
+            onChange(originalValue + result.prompt);
+          }
+        })();
       }
     }, 300); // 增加超时时间从100ms到300ms，提高大量文本粘贴的可靠性
 

@@ -100,6 +100,9 @@ interface AppState {
   inputCtrlCPressed: boolean;
   inputError: string | null;
 
+  // Pasted text storage
+  pastedTextMap: Map<string, string>;
+
   logs: string[];
   exitMessage: string | null;
   debugMode: boolean;
@@ -166,6 +169,7 @@ interface AppActions {
   setInputCtrlCPressed: (pressed: boolean) => void;
   setInputError: (error: string | null) => void;
   resetInput: () => void;
+  setPastedTextMap: (map: Map<string, string>) => void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -210,6 +214,7 @@ export const useAppStore = create<AppStore>()(
       inputShowExitWarning: false,
       inputCtrlCPressed: false,
       inputError: null,
+      pastedTextMap: new Map(),
 
       // Actions
       initialize: async (opts) => {
@@ -701,6 +706,10 @@ export const useAppStore = create<AppStore>()(
           inputCtrlCPressed: false,
           inputError: null,
         });
+      },
+
+      setPastedTextMap: (map: Map<string, string>) => {
+        set({ pastedTextMap: map });
       },
     }),
     { name: 'app-store' },
