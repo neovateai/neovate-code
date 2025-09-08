@@ -129,10 +129,11 @@ type InitializeOpts = {
 
 interface AppActions {
   initialize: (opts: InitializeOpts) => Promise<void>;
-  send: (message: string) => Promise<void>;
+  send: (message: string, images?: string[] | null) => Promise<void>;
   sendMessage: (opts: {
     message: string | null;
     planMode?: boolean;
+    images?: string[] | null;
   }) => Promise<LoopResult>;
   addMessage: (message: Message) => void;
   log: (log: string) => void;
@@ -284,7 +285,7 @@ export const useAppStore = create<AppStore>()(
         });
       },
 
-      send: async (message) => {
+      send: async (message, images?: string[] | null) => {
         const { bridge, cwd, sessionId, planMode, status } = get();
 
         // Check if processing, queue the message
@@ -400,7 +401,7 @@ export const useAppStore = create<AppStore>()(
           return;
         } else {
           // Use store's current model for regular message sending
-          const result = await get().sendMessage({ message, planMode });
+          const result = await get().sendMessage({ message, planMode, images });
           if (planMode && result.success) {
             set({
               planResult: result.data.text,
@@ -450,17 +451,20 @@ export const useAppStore = create<AppStore>()(
       sendMessage: async (opts: {
         message: string | null;
         planMode?: boolean;
+        images?: string[];
       }) => {
         set({
           status: 'processing',
           processingStartTime: Date.now(),
         });
         const { bridge, cwd, sessionId } = get();
+
         const response: LoopResult = await bridge.request('send', {
           message: opts.message,
           cwd,
           sessionId,
           planMode: opts.planMode,
+          images: opts.images,
         });
         if (response.success) {
           set({ status: 'idle', processingStartTime: null });

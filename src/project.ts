@@ -12,6 +12,7 @@ import { Session, SessionConfigManager, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
 import type { ApprovalCategory, Tool } from './tool';
 import { Tools, resolveTools } from './tool';
+import { detectImageFormat } from './ui/utils/imageFormat';
 import type { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
 
@@ -35,6 +36,7 @@ export class Project {
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
       onToolApprove?: (opts: { toolUse: ToolUse }) => Promise<boolean>;
       signal?: AbortSignal;
+      images?: string[];
     } = {},
   ) {
     let tools = await resolveTools({
@@ -78,6 +80,7 @@ export class Project {
       model?: string;
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
       signal?: AbortSignal;
+      images?: string[];
     } = {},
   ) {
     let tools = await resolveTools({
@@ -124,6 +127,7 @@ export class Project {
       signal?: AbortSignal;
       tools?: Tool[];
       systemPrompt?: string;
+      images?: string[];
     } = {},
   ) {
     let startTime = new Date();
@@ -170,11 +174,35 @@ export class Project {
       const lastMessageUuid =
         this.session.history.messages[this.session.history.messages.length - 1]
           ?.uuid;
+
+      // Build multimodal content if images are provided
+      let content;
+      if (opts.images && opts.images.length > 0) {
+        content = [
+          {
+            type: 'text' as const,
+            text: message,
+          },
+        ];
+
+        // Add images to content array
+        opts.images.forEach((imageBase64) => {
+          const imageFormat = detectImageFormat(imageBase64);
+          content.push({
+            type: 'input_image' as const,
+            image: `data:image/${imageFormat};base64,${imageBase64}`,
+            providerData: { mime_type: `image/${imageFormat}` },
+          });
+        });
+      } else {
+        content = message;
+      }
+
       userMessage = {
         parentUuid: lastMessageUuid || null,
         uuid: randomUUID(),
         role: 'user',
-        content: message,
+        content,
         type: 'message',
         timestamp: new Date().toISOString(),
       };

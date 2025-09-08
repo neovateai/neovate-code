@@ -112,8 +112,9 @@ class NodeHandlerRegistry {
         sessionId: string | undefined;
         planMode: boolean;
         model?: string;
+        images?: string[];
       }) => {
-        const { message, cwd, sessionId, model } = data;
+        const { message, cwd, sessionId, model, images } = data;
         const context = await this.getContext(cwd);
         const project = new Project({
           sessionId,
@@ -122,8 +123,10 @@ class NodeHandlerRegistry {
         const abortController = new AbortController();
         const key = buildSignalKey(cwd, project.session.id);
         this.abortControllers.set(key, abortController);
+
         const fn = data.planMode ? project.plan : project.send;
         const result = await fn.call(project, message, {
+          images,
           model,
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {

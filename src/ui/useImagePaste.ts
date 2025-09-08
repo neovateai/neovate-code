@@ -26,7 +26,7 @@ export function useImagePaste() {
     }
 
     const imageId = `img_${Date.now()}_${crypto.randomUUID()}`;
-    const placeholder = `${IMAGE_CONFIG.PLACEHOLDER_PREFIX}${pastedImages.length + 1}${IMAGE_CONFIG.PLACEHOLDER_SUFFIX}`;
+    const placeholder = `${IMAGE_CONFIG.PLACEHOLDER_PREFIX}#${pastedImages.length + 1}${IMAGE_CONFIG.PLACEHOLDER_SUFFIX}`;
 
     setPastedImages((prev) => [
       ...prev,

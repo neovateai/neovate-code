@@ -32,7 +32,7 @@ export function useInputHandlers() {
     // Handle all pasted text replacements before submission
     let finalValue = pasteManager.processFinalValue(value);
     // Handle image placeholder replacement - remove placeholders from text but keep image data
-    finalValue = imageManager.replaceImagePlaceholders(finalValue);
+    // finalValue = imageManager.replaceImagePlaceholders(finalValue);
 
     // 1. slash command
     if (slashCommands.suggestions.length > 0) {
@@ -61,9 +61,8 @@ export function useInputHandlers() {
     pasteManager.clearPastedText();
     const imageData = imageManager.getImageData();
     imageManager.clearImages();
-    // TODO: Update send function to support image data
-    // For now, send only the final text value
-    await send(finalValue);
+    // Send message with image data if available
+    await send(finalValue, imageData);
   }, [
     inputState,
     send,
