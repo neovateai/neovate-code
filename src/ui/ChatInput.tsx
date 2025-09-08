@@ -96,9 +96,7 @@ export function ChatInput() {
             });
           }}
           onImagePaste={(image) => {}}
-          onPaste={(text) => {
-            log('onPaste' + text);
-          }}
+          onPaste={handlers.handlePaste}
           onSubmit={handlers.handleSubmit}
           cursorOffset={inputState.state.cursorPosition ?? 0}
           onChangeCursorOffset={inputState.setCursorPosition}
