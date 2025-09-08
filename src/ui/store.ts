@@ -314,7 +314,7 @@ export const useAppStore = create<AppStore>()(
             );
             expandedMessage = expandedMessage.replace(
               placeholder,
-              pastedContent,
+              pastedContent.replace(/\r/g, '\n'),
             );
           }
         }
