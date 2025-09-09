@@ -23,6 +23,7 @@ export enum TOOL_NAME {
   TODO_WRITE = 'todoWrite',
   TODO_READ = 'todoRead',
   BASH = 'bash',
+  READ = 'read',
 }
 
 // Reserve 20% buffer for small models
