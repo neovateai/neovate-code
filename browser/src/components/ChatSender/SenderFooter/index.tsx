@@ -3,6 +3,7 @@ import McpDropdown from '@/components/McpDropdown';
 import { useChatState } from '@/hooks/provider';
 import SenderAttachments from '../SenderAttachments';
 import ModeSelect from './ModeSelect';
+import ModelSelect from './ModelSelect';
 
 type ActionsComponents = {
   SendButton: React.ComponentType<ButtonProps>;
@@ -24,7 +25,7 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
     <Flex justify="space-between" align="center">
       <Flex gap="small" align="center">
         <ModeSelect />
-        <Divider type="vertical" />
+        <ModelSelect />
       </Flex>
       <Flex align="center">
         <McpDropdown />
