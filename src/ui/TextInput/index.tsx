@@ -254,7 +254,6 @@ export default function TextInput({
           try {
             const imageResult = await processImageFromPath(mergedInput);
             if (imageResult) {
-              // Successfully loaded image from path, generate prompt and update text
               const imagePromptResult = await onImagePaste(imageResult.base64);
               if (imagePromptResult?.prompt) {
                 const { newValue, newCursorOffset } = insertTextAtCursor(
@@ -262,9 +261,7 @@ export default function TextInput({
                   originalValue,
                   cursorOffset,
                 );
-                // If onImagePaste returns a prompt, append it to current value
                 onChange(newValue);
-                // Update cursor position to end of new content
                 onChangeCursorOffset(newCursorOffset);
               }
             } else {
