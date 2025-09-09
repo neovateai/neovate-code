@@ -490,7 +490,9 @@ export const models: ModelMap = {
 };
 
 export const defaultModelCreator = (name: string, provider: Provider) => {
-  assert(provider.api, `Provider ${provider.id} must have an api`);
+  if (provider.id !== 'openai') {
+    assert(provider.api, `Provider ${provider.id} must have an api`);
+  }
   return createOpenAI({
     baseURL: provider.api,
     apiKey: provider.env[0] ? process.env[provider.env[0]] : '',
