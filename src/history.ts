@@ -82,11 +82,11 @@ export class History {
     this.onMessage = opts.onMessage;
   }
 
-  async addMessage(message: Message): Promise<void> {
+  async addMessage(message: Message, uuid?: string): Promise<void> {
     const lastMessage = this.messages[this.messages.length - 1];
     const normalizedMessage: NormalizedMessage = {
       parentUuid: lastMessage?.uuid || null,
-      uuid: randomUUID(),
+      uuid: uuid || randomUUID(),
       ...message,
       type: 'message',
       timestamp: new Date().toISOString(),

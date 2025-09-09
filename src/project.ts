@@ -34,6 +34,8 @@ export class Project {
       model?: string;
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
       onToolApprove?: (opts: { toolUse: ToolUse }) => Promise<boolean>;
+      onTextDelta?: (text: string) => Promise<void>;
+      onChunk?: (chunk: any) => Promise<void>;
       signal?: AbortSignal;
     } = {},
   ) {
@@ -77,6 +79,8 @@ export class Project {
     opts: {
       model?: string;
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
+      onTextDelta?: (text: string) => Promise<void>;
+      onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
     } = {},
   ) {
@@ -121,6 +125,8 @@ export class Project {
         toolUse: ToolUse;
         category?: ApprovalCategory;
       }) => Promise<boolean>;
+      onTextDelta?: (text: string) => Promise<void>;
+      onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
       tools?: Tool[];
       systemPrompt?: string;
@@ -218,7 +224,12 @@ export class Project {
           message: normalizedMessage,
         });
       },
-      onTextDelta: async () => {},
+      onTextDelta: async (text) => {
+        await opts.onTextDelta?.(text);
+      },
+      onChunk: async (chunk, requestId) => {
+        await opts.onChunk?.(chunk, requestId);
+      },
       onText: async (text) => {},
       onReasoning: async (text) => {},
       onToolUse: async (toolUse) => {

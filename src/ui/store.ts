@@ -18,6 +18,7 @@ import type { UIBridge } from '../uiBridge';
 import { Upgrade, type UpgradeOptions } from '../upgrade';
 import { setTerminalTitle } from '../utils/setTerminalTitle';
 import { clearTerminal } from '../utils/terminal';
+import { countTokens } from '../utils/tokenCounter';
 
 export type ApprovalResult =
   | 'approve_once'
@@ -84,6 +85,7 @@ interface AppState {
 
   planResult: string | null;
   processingStartTime: number | null;
+  processingTokens: number;
 
   messages: Message[];
   currentMessage: Message | null;
@@ -205,6 +207,7 @@ export const useAppStore = create<AppStore>()(
       debugMode: false,
       planResult: null,
       processingStartTime: null,
+      processingTokens: 0,
       approvalModal: null,
       upgrade: null,
 
@@ -254,6 +257,24 @@ export const useAppStore = create<AppStore>()(
         bridge.onEvent('message', (data) => {
           const message = data.message as Message;
           get().addMessage(message);
+        });
+        bridge.onEvent('chunk', (data) => {
+          // Match sessionId and cwd
+          if (data.sessionId === get().sessionId && data.cwd === get().cwd) {
+            const chunk = data.chunk;
+
+            // Collect tokens from text-delta and reasoning events
+            if (
+              chunk.type === 'raw_model_stream_event' &&
+              chunk.data?.type === 'model' &&
+              (chunk.data.event?.type === 'text-delta' ||
+                chunk.data.event?.type === 'reasoning')
+            ) {
+              const textDelta = chunk.data.event.textDelta || '';
+              const tokenCount = countTokens(textDelta);
+              set({ processingTokens: get().processingTokens + tokenCount });
+            }
+          }
         });
         setImmediate(async () => {
           if (opts.initialPrompt) {
@@ -483,6 +504,7 @@ export const useAppStore = create<AppStore>()(
         set({
           status: 'processing',
           processingStartTime: Date.now(),
+          processingTokens: 0,
         });
         const { bridge, cwd, sessionId } = get();
         const response: LoopResult = await bridge.request('send', {
@@ -492,12 +514,17 @@ export const useAppStore = create<AppStore>()(
           planMode: opts.planMode,
         });
         if (response.success) {
-          set({ status: 'idle', processingStartTime: null });
+          set({
+            status: 'idle',
+            processingStartTime: null,
+            processingTokens: 0,
+          });
         } else {
           set({
             status: 'failed',
             error: response.error.message,
             processingStartTime: null,
+            processingTokens: 0,
           });
         }
         return response;
@@ -512,7 +539,7 @@ export const useAppStore = create<AppStore>()(
           cwd,
           sessionId,
         });
-        set({ status: 'idle', processingStartTime: null });
+        set({ status: 'idle', processingStartTime: null, processingTokens: 0 });
       },
 
       clear: async () => {
@@ -534,6 +561,7 @@ export const useAppStore = create<AppStore>()(
           inputCtrlCPressed: false,
           inputError: null,
           pastedTextMap: {},
+          processingTokens: 0,
         });
         return {
           sessionId,
@@ -616,6 +644,7 @@ export const useAppStore = create<AppStore>()(
           exitMessage: null,
           planResult: null,
           processingStartTime: null,
+          processingTokens: 0,
           planMode: false,
           bashMode: false,
           // Reset input state when resuming

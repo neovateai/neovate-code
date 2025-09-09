@@ -133,6 +133,19 @@ class NodeHandlerRegistry {
               message: opts.message,
             });
           },
+          onTextDelta: async (text) => {
+            await this.messageBus.emitEvent('textDelta', {
+              text,
+            });
+          },
+          onChunk: async (chunk, requestId) => {
+            await this.messageBus.emitEvent('chunk', {
+              chunk,
+              requestId,
+              sessionId,
+              cwd,
+            });
+          },
           onToolApprove: async ({ toolUse, category }: any) => {
             const result = await this.messageBus.request('toolApproval', {
               toolUse,
