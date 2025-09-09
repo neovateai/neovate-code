@@ -60,11 +60,11 @@ export function itemsToLanguageV1Messages(
         continue;
       }
 
-      const isGeminiModel =
-        model.modelId.includes('gemini') &&
-        model.provider === 'google.generative-ai';
-
       if (role === 'user') {
+        const isGeminiModel =
+          model.modelId.includes('gemini') &&
+          model.provider === 'google.generative-ai';
+
         messages.push({
           role,
           content:
