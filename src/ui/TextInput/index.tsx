@@ -7,6 +7,21 @@ import { darkTheme } from './constant';
 import { useTextInput } from './hooks/useTextInput';
 import { isImagePath, processImageFromPath } from './utils/imagePaste';
 
+// Helper function to insert text at cursor position
+function insertTextAtCursor(
+  text: string,
+  originalValue: string,
+  cursorOffset: number,
+): { newValue: string; newCursorOffset: number } {
+  const safeOffset = Math.max(0, Math.min(cursorOffset, originalValue.length));
+  const beforeCursor = originalValue.slice(0, safeOffset);
+  const afterCursor = originalValue.slice(safeOffset);
+  return {
+    newValue: beforeCursor + text + afterCursor,
+    newCursorOffset: safeOffset + text.length,
+  };
+}
+
 export type Props = {
   /**
    * Optional callback for handling history navigation on up arrow at start of input
@@ -243,9 +258,13 @@ export default function TextInput({
               // Not a valid image path, treat as regular text
               const result = await onPaste?.(mergedInput);
               if (result?.prompt) {
-                const newValue = originalValue + result.prompt;
+                const { newValue, newCursorOffset } = insertTextAtCursor(
+                  result.prompt,
+                  originalValue,
+                  cursorOffset,
+                );
                 onChange(newValue);
-                onChangeCursorOffset(newValue.length);
+                onChangeCursorOffset(newCursorOffset);
               }
             }
           } catch (error) {
@@ -253,9 +272,13 @@ export default function TextInput({
             console.error('Failed to process image path:', error);
             const result = await onPaste?.(mergedInput);
             if (result?.prompt) {
-              const newValue = originalValue + result.prompt;
+              const { newValue, newCursorOffset } = insertTextAtCursor(
+                result.prompt,
+                originalValue,
+                cursorOffset,
+              );
               onChange(newValue);
-              onChangeCursorOffset(newValue.length);
+              onChangeCursorOffset(newCursorOffset);
             }
           }
         })();
@@ -268,9 +291,13 @@ export default function TextInput({
           (async () => {
             const result = await onPaste?.(mergedInput);
             if (result?.prompt) {
-              const newValue = originalValue + result.prompt;
+              const { newValue, newCursorOffset } = insertTextAtCursor(
+                result.prompt,
+                originalValue,
+                cursorOffset,
+              );
               onChange(newValue);
-              onChangeCursorOffset(newValue.length);
+              onChangeCursorOffset(newCursorOffset);
             }
           })();
         } else {
