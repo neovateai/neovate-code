@@ -243,7 +243,9 @@ export default function TextInput({
               // Not a valid image path, treat as regular text
               const result = await onPaste?.(mergedInput);
               if (result?.prompt) {
-                onChange(originalValue + result.prompt);
+                const newValue = originalValue + result.prompt;
+                onChange(newValue);
+                onChangeCursorOffset(newValue.length);
               }
             }
           } catch (error) {
@@ -251,7 +253,9 @@ export default function TextInput({
             console.error('Failed to process image path:', error);
             const result = await onPaste?.(mergedInput);
             if (result?.prompt) {
-              onChange(originalValue + result.prompt);
+              const newValue = originalValue + result.prompt;
+              onChange(newValue);
+              onChangeCursorOffset(newValue.length);
             }
           }
         })();
@@ -264,7 +268,9 @@ export default function TextInput({
           (async () => {
             const result = await onPaste?.(mergedInput);
             if (result?.prompt) {
-              onChange(originalValue + result.prompt);
+              const newValue = originalValue + result.prompt;
+              onChange(newValue);
+              onChangeCursorOffset(newValue.length);
             }
           })();
         } else {
