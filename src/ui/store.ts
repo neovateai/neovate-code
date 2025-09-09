@@ -319,7 +319,7 @@ export const useAppStore = create<AppStore>()(
         });
       },
 
-      send: async (message, images?: string[] | null) => {
+      send: async (message) => {
         const {
           bridge,
           cwd,
@@ -356,7 +356,7 @@ export const useAppStore = create<AppStore>()(
         }
 
         // Expand pasted image references and collect image data
-        let finalImages = images || [];
+        let finalImages: string[] = [];
         const pastedImageRegex = /\[Image (#\d+)\]/g;
         const imageMatches = [...message.matchAll(pastedImageRegex)];
         const extractedImages: string[] = [];
@@ -377,7 +377,7 @@ export const useAppStore = create<AppStore>()(
 
         // Combine original images with extracted images
         if (extractedImages.length > 0) {
-          finalImages = [...finalImages, ...extractedImages];
+          finalImages = [...extractedImages];
         }
 
         // Save history to session config (save the original message with placeholders)
