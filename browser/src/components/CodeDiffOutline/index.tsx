@@ -5,8 +5,10 @@ import {
 } from '@ant-design/icons';
 import { createStyles } from 'antd-style';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { useClipboard } from '@/hooks/useClipboard';
+import ApproveToolIcon from '@/icons/approveTool.svg?react';
 import CopyIcon from '@/icons/copy.svg?react';
 import * as codeViewer from '@/state/codeViewer';
 import * as fileChanges from '@/state/fileChanges';
@@ -61,6 +63,7 @@ const CodeDiffOutline = (props: Props) => {
   const { path, loading, normalViewerMode, edit, state } = props;
   const { writeText } = useClipboard();
   const [isCopySuccess, setIsCopySuccess] = useState(false);
+  const { t } = useTranslation();
 
   const { editStatus, old_string: oldString, new_string: newString } = edit;
 
@@ -145,9 +148,9 @@ const CodeDiffOutline = (props: Props) => {
     return null;
   }
 
-  const handleAccept = () => {
+  const handleAccept = (approveType: 'once' | 'always' | 'always_tool') => {
     fileChanges.fileChangesActions.acceptEdit(path, edit, normalViewerMode);
-    toolApprovalActions.approveToolUse(true, 'once');
+    toolApprovalActions.approveToolUse(true, approveType);
   };
 
   const handleReject = () => {
@@ -251,14 +254,23 @@ const CodeDiffOutline = (props: Props) => {
   if (hasDiff && !editStatus) {
     footers.push(
       {
-        key: 'reject',
-        text: '拒绝',
-        onClick: handleReject,
+        key: 'accept',
+        text: t('toolApproval.approveOnce', '本次允许'),
+        onClick: () => handleAccept('once'),
+        icon: <ApproveToolIcon />,
       },
       {
         key: 'accept',
-        text: '接受',
-        onClick: handleAccept,
+        text: t('toolApproval.approveAlwaysTool', '永久允许{{toolName}}', {
+          toolName: 'edit',
+        }),
+        onClick: () => handleAccept('always'),
+      },
+      {
+        key: 'reject',
+        text: t('toolApproval.deny', '拒绝'),
+        onClick: handleReject,
+        color: 'danger',
       },
     );
   }

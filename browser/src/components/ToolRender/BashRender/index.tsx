@@ -5,7 +5,6 @@ import MessageWrapper from '@/components/MessageWrapper';
 import { useClipboard } from '@/hooks/useClipboard';
 import BashIcon from '@/icons/bash.svg?react';
 import CopyIcon from '@/icons/copy.svg?react';
-import ExpandIcon from '@/icons/expand.svg?react';
 import type { ToolMessage } from '@/types/message';
 import type { IBashToolResult } from '@/types/tool';
 
@@ -45,18 +44,11 @@ export default function BashRender({ message }: { message?: ToolMessage }) {
           icon: isCopySuccess ? <CheckOutlined /> : <CopyIcon />,
           onClick: handleCopy,
         },
-        {
-          key: 'expand',
-          icon: <ExpandIcon />,
-          onClick: () => {},
-        },
       ]}
     >
       {stdout ? (
         <CodeRenderer code={stdout} language="bash" showLineNumbers={false} />
-      ) : (
-        <div>无输出</div>
-      )}
+      ) : null}
     </MessageWrapper>
   );
 }

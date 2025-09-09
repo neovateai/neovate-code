@@ -265,6 +265,9 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
               key={footer.key}
               variant="outlined"
               className={styles.footerButton}
+              onClick={footer.onClick}
+              color={footer.color}
+              icon={footer.icon}
             >
               {footer.text}
             </Button>

@@ -33,6 +33,25 @@ export interface MessageWrapperProps {
 export interface FooterButtonProps {
   key: string;
   text: string;
+  icon?: React.ReactNode;
+  color?:
+    | 'default'
+    | 'primary'
+    | 'danger'
+    | 'blue'
+    | 'purple'
+    | 'cyan'
+    | 'green'
+    | 'magenta'
+    | 'pink'
+    | 'red'
+    | 'orange'
+    | 'yellow'
+    | 'volcano'
+    | 'geekblue'
+    | 'lime'
+    | 'gold'
+    | undefined;
   onClick?: () => void;
 }
 
