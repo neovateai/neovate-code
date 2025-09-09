@@ -3,24 +3,12 @@ import { At } from './at';
 import { History, type OnMessage } from './history';
 import type { NormalizedMessage } from './message';
 import type { ModelInfo } from './model';
-import type { Tools } from './tool';
+import type { ToolUse, Tools } from './tool';
 import { Usage } from './usage';
 import { parseMessage } from './utils/parse-message';
 import { randomUUID } from './utils/randomUUID';
 
 const DEFAULT_MAX_TURNS = 50;
-
-export type ToolUse = {
-  name: string;
-  params: Record<string, any>;
-  callId: string;
-};
-
-export type ToolUseResult = {
-  toolUse: ToolUse;
-  result: any;
-  approved: boolean;
-};
 
 export type LoopResult =
   | {

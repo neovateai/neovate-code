@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
-import type { LoopResult, ToolUse } from '../loop';
+import type { LoopResult } from '../loop';
 import type { Message, UserMessage } from '../message';
 import { Paths } from '../paths';
 import { SessionConfigManager, loadSessionMessages } from '../session';
@@ -13,6 +13,7 @@ import {
   isSlashCommand,
   parseSlashCommand,
 } from '../slashCommand';
+import type { ToolUse } from '../tool';
 import type { ApprovalCategory } from '../tool';
 import type { UIBridge } from '../uiBridge';
 import { Upgrade, type UpgradeOptions } from '../upgrade';

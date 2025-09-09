@@ -1,7 +1,7 @@
 import { Context } from './context';
 import { JsonlLogger } from './jsonl';
 import { LlmsContext } from './llmsContext';
-import { type ToolUse, runLoop } from './loop';
+import { runLoop } from './loop';
 import type { NormalizedMessage } from './message';
 import { resolveModelWithContext } from './model';
 import { OutputFormat } from './outputFormat';
@@ -10,6 +10,7 @@ import { generatePlanSystemPrompt } from './planSystemPrompt';
 import { PluginHookType } from './plugin';
 import { Session, SessionConfigManager, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
+import type { ToolUse } from './tool';
 import type { ApprovalCategory, Tool } from './tool';
 import { Tools, resolveTools } from './tool';
 import type { Usage } from './usage';
