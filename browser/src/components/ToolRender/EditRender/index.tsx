@@ -1,21 +1,15 @@
-import { CheckOutlined } from '@ant-design/icons';
-import { useEffect } from 'react';
-import { useState } from 'react';
-import CodeRenderer from '@/components/CodeRenderer';
-import MessageWrapper from '@/components/MessageWrapper';
-import { useClipboard } from '@/hooks/useClipboard';
-import CopyIcon from '@/icons/copy.svg?react';
-import EditIcon from '@/icons/edit.svg?react';
-import { fileChangesActions } from '@/state/fileChanges';
+import { useEffect, useMemo } from 'react';
+import { useSnapshot } from 'valtio';
+import CodeDiffOutline from '@/components/CodeDiffOutline';
+import { fileChangesActions, fileChangesState } from '@/state/fileChanges';
 import type { ToolMessage } from '@/types/message';
 
 export default function EditRender({ message }: { message?: ToolMessage }) {
   if (!message) {
     return null;
   }
-  const { toolCallId, args } = message;
-  const { writeText } = useClipboard();
-  const [isCopySuccess, setIsCopySuccess] = useState(false);
+  const { toolCallId, args, state } = message;
+  const { files } = useSnapshot(fileChangesState);
 
   const { file_path, old_string, new_string } = args as {
     file_path: string;
@@ -29,46 +23,22 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
     ]);
   }, [file_path, toolCallId, old_string, new_string]);
 
-  const handleCopy = () => {
-    writeText(new_string);
-    setIsCopySuccess(true);
-  };
+  const editStatus = useMemo(() => {
+    return files[file_path]?.edits.find(
+      (edit) => edit.toolCallId === toolCallId,
+    )?.editStatus;
+  }, [files, file_path, toolCallId]);
 
   return (
-    <MessageWrapper
-      title={file_path}
-      icon={<EditIcon />}
-      showExpandIcon={false}
-      expandable={false}
-      defaultExpanded={true}
-      actions={[
-        {
-          key: 'copy',
-          icon: isCopySuccess ? <CheckOutlined /> : <CopyIcon />,
-          onClick: handleCopy,
-        },
-      ]}
-      footers={[
-        {
-          key: 'apply',
-          text: '接受',
-          onClick: () => {},
-        },
-        {
-          key: 'reject',
-          text: '拒绝',
-          onClick: () => {},
-        },
-      ]}
-    >
-      <CodeRenderer
-        mode="diff"
-        originalCode={old_string}
-        modifiedCode={new_string}
-        code={new_string}
-        filename={file_path}
-        showLineNumbers={true}
-      />
-    </MessageWrapper>
+    <CodeDiffOutline
+      path={file_path}
+      edit={{
+        toolCallId,
+        old_string,
+        new_string,
+        editStatus,
+      }}
+      state={state}
+    />
   );
 }
