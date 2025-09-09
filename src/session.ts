@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import type { ApprovalMode } from './config';
-import { History, type NormalizedMessage } from './history';
+import { History } from './history';
+import type { NormalizedMessage } from './message';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
 

@@ -1,6 +1,7 @@
 import { Agent, Runner, type SystemMessageItem } from '@openai/agents';
 import { At } from './at';
-import { History, type NormalizedMessage, type OnMessage } from './history';
+import { History, type OnMessage } from './history';
+import type { NormalizedMessage } from './message';
 import type { ModelInfo } from './model';
 import type { Tools } from './tool';
 import { Usage } from './usage';

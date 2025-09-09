@@ -1,8 +1,8 @@
 import { Context } from './context';
-import type { NormalizedMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { LlmsContext } from './llmsContext';
 import { type ToolUse, runLoop } from './loop';
+import type { NormalizedMessage } from './message';
 import { resolveModelWithContext } from './model';
 import { OutputFormat } from './outputFormat';
 import { OutputStyleManager } from './outputStyle';

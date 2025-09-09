@@ -1,6 +1,69 @@
 import { CANCELED_MESSAGE_TEXT } from './constants';
-import type { Message, NormalizedMessage } from './history';
 import { randomUUID } from './utils/randomUUID';
+
+export type SystemMessage = {
+  role: 'system';
+  content: string;
+};
+export type TextPart = {
+  type: 'text';
+  text: string;
+};
+export type UserContent = string | Array<TextPart>;
+export type ToolUsePart = {
+  type: 'tool_use';
+  id: string;
+  name: string;
+  input: Record<string, any>;
+};
+export type ReasoningPart = {
+  type: 'reasoning';
+  text: string;
+};
+export type AssistantContent =
+  | string
+  | Array<TextPart | ReasoningPart | ToolUsePart>;
+export type AssistantMessage = {
+  role: 'assistant';
+  content: AssistantContent;
+  text: string;
+  model: string;
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
+    cache_read_input_tokens?: number;
+    cache_creation_input_tokens?: number;
+  };
+};
+export type UserMessage = {
+  role: 'user';
+  content: UserContent;
+  hidden?: boolean;
+};
+export type ToolMessage = {
+  role: 'user';
+  content: ToolContent;
+};
+export type ToolContent = Array<ToolResultPart>;
+export type ToolResultPart = {
+  type: 'tool_result';
+  id: string;
+  name: string;
+  input: Record<string, any>;
+  result: any;
+  isError?: boolean;
+};
+export type Message =
+  | SystemMessage
+  | UserMessage
+  | AssistantMessage
+  | ToolMessage;
+export type NormalizedMessage = Message & {
+  type: 'message';
+  timestamp: string;
+  uuid: string;
+  parentUuid: string | null;
+};
 
 export function createUserMessage(
   content: string,
