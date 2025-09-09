@@ -284,9 +284,20 @@ export default function TextInput({
         })();
       } else {
         // Process as regular paste if it meets paste criteria
-        // Either large total content or multiple chunks indicating paste behavior
+        // Multiple conditions to detect paste behavior:
+        // 1. Large total content
+        // 2. Multiple chunks indicating paste behavior
+        // 3. Content with multiple lines (common in code/text paste)
+        // 4. Medium-sized content with multiple chunks (lower threshold for multi-chunk)
+        const hasMultipleLines = mergedInput.includes('\n');
+        const isMediumSizeMultiChunk =
+          totalLength > PASTE_CONFIG.MEDIUM_SIZE_MULTI_CHUNK_THRESHOLD &&
+          chunks.length > 1;
         const isPastePattern =
-          totalLength > PASTE_CONFIG.LARGE_INPUT_THRESHOLD || chunks.length > 2;
+          totalLength > PASTE_CONFIG.LARGE_INPUT_THRESHOLD ||
+          chunks.length > 2 ||
+          hasMultipleLines ||
+          isMediumSizeMultiChunk;
         if (isPastePattern) {
           (async () => {
             const result = await onPaste?.(mergedInput);
@@ -332,7 +343,12 @@ export default function TextInput({
     // 2. Image path format
     // 3. Rapid consecutive inputs
     // 4. Already collecting chunks (continuation of paste)
+    // 5. Input with multiple lines (common in paste operations)
+    // 6. Medium-sized input (likely copy-paste even if not huge)
     const isLargeInput = input.length > PASTE_CONFIG.LARGE_INPUT_THRESHOLD;
+    const hasNewlines = input.includes('\n');
+    const isMediumInput =
+      input.length > PASTE_CONFIG.MEDIUM_INPUT_SIZE_THRESHOLD;
     const isRapidSequence =
       timeSinceFirst < PASTE_CONFIG.RAPID_INPUT_THRESHOLD_MS &&
       currentState.chunks.length > 0;
@@ -344,6 +360,8 @@ export default function TextInput({
     const isPasteCandidate =
       onPaste &&
       (isLargeInput ||
+        hasNewlines ||
+        isMediumInput ||
         isImageFormat ||
         isRapidSequence ||
         isNewRapidInput ||
