@@ -90,13 +90,24 @@ function matchSlashCommands(
   slashCommands: CommandEntry[],
 ): CommandEntry[] {
   const lowerPrefix = prefix.toLowerCase();
-  return slashCommands.filter((command) => {
-    const nameMatch = command.command.name
-      .toLowerCase()
-      .startsWith(lowerPrefix);
-    const descriptionMatch = command.command.description
-      .toLowerCase()
-      .includes(lowerPrefix);
-    return nameMatch || descriptionMatch;
-  });
+  return (
+    slashCommands
+      .filter((command) => {
+        const nameMatch = command.command.name
+          .toLowerCase()
+          .startsWith(lowerPrefix);
+        const descriptionMatch = command.command.description
+          .toLowerCase()
+          .includes(lowerPrefix);
+        return nameMatch || descriptionMatch;
+      })
+      // name matches should come first
+      .sort((a, b) => {
+        const aNameMatch = a.command.name.toLowerCase().startsWith(lowerPrefix);
+        const bNameMatch = b.command.name.toLowerCase().startsWith(lowerPrefix);
+        if (aNameMatch && !bNameMatch) return -1;
+        if (!aNameMatch && bNameMatch) return 1;
+        return 0;
+      })
+  );
 }
