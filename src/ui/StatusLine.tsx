@@ -73,11 +73,11 @@ function StatusMain() {
   return (
     <Box>
       <Text color="gray">
-        [{model}] | 📁{folderName} | 🪙 {(tokenUsed / 1000).toFixed(1)}K |{' '}
+        [{model}] | 📁 {folderName} | 🪙 {(tokenUsed / 1000).toFixed(1)}K |{' '}
         <Text color={getContextLeftColor(contextLeftPercentage)}>
           {contextLeftPercentage}%
         </Text>{' '}
-        {approval}| 🆔{sessionId || 'N/A'}
+        {approval}| 🆔 {sessionId || 'N/A'}
       </Text>
     </Box>
   );
