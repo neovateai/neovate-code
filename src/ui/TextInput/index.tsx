@@ -283,21 +283,10 @@ export default function TextInput({
           }
         })();
       } else {
-        // Process as regular paste if it meets paste criteria
-        // Multiple conditions to detect paste behavior:
-        // 1. Large total content
-        // 2. Multiple chunks indicating paste behavior
-        // 3. Content with multiple lines (common in code/text paste)
-        // 4. Medium-sized content with multiple chunks (lower threshold for multi-chunk)
         const hasMultipleLines = mergedInput.includes('\n');
-        const isMediumSizeMultiChunk =
-          totalLength > PASTE_CONFIG.MEDIUM_SIZE_MULTI_CHUNK_THRESHOLD &&
-          chunks.length > 1;
         const isPastePattern =
-          totalLength > PASTE_CONFIG.LARGE_INPUT_THRESHOLD ||
-          chunks.length > 2 ||
-          hasMultipleLines ||
-          isMediumSizeMultiChunk;
+          totalLength > PASTE_CONFIG.LARGE_INPUT_THRESHOLD || hasMultipleLines;
+
         if (isPastePattern) {
           (async () => {
             const result = await onPaste?.(mergedInput);
@@ -316,6 +305,13 @@ export default function TextInput({
           chunks.forEach((chunk) =>
             onInput(chunk, { name: '' } as unknown as Key),
           );
+          const { newValue, newCursorOffset } = insertTextAtCursor(
+            mergedInput,
+            originalValue,
+            cursorOffset,
+          );
+          onChange(newValue);
+          onChangeCursorOffset(newCursorOffset);
         }
       }
     }, PASTE_CONFIG.TIMEOUT_MS);
