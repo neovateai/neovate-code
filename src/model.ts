@@ -759,11 +759,10 @@ export async function resolveModelWithContext(
     memo: modelAlias,
     type: PluginHookType.SeriesLast,
   });
-  const model = resolveModel(
-    name || context.config.model,
-    hookedProviders,
-    hookedModelAlias,
-  );
+  const modelName = name || context.config.model;
+  const model = modelName
+    ? resolveModel(modelName, hookedProviders, hookedModelAlias)
+    : null;
   return {
     providers: hookedProviders,
     modelAlias,

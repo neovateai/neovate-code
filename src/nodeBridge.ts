@@ -72,9 +72,17 @@ class NodeHandlerRegistry {
           args: [{ cwd: data.cwd, quiet: false }],
           type: PluginHookType.Series,
         });
-        const modelInfo = (await resolveModelWithContext(null, context)).model;
-        const model = `${modelInfo.provider.id}/${modelInfo.model.id}`;
-        const modelContextLimit = modelInfo.model.limit.context;
+        const [model, modelContextLimit, providers] = await (async () => {
+          const { model, providers } = await resolveModelWithContext(
+            null,
+            context,
+          );
+          const modelId = model
+            ? `${model.provider.id}/${model.model.id}`
+            : null;
+          const modelContextLimit = model ? model.model.limit.context : null;
+          return [modelId, modelContextLimit, providers];
+        })();
 
         // Get session config if sessionId is provided
         let sessionSummary: string | undefined;
@@ -99,6 +107,7 @@ class NodeHandlerRegistry {
             version: context.version,
             model,
             modelContextLimit,
+            providers,
             approvalMode: context.config.approvalMode,
             sessionSummary,
             pastedTextMap,
@@ -331,7 +340,17 @@ class NodeHandlerRegistry {
           null,
           context,
         );
-        const currentModel = `${model.provider.id}/${model.model.id}`;
+        const currentModel = model
+          ? `${model.provider.id}/${model.model.id}`
+          : null;
+        const currentModelInfo = model
+          ? {
+              providerName: model.provider.name,
+              modelName: model.model.name,
+              modelId: model.model.id,
+              modelContextLimit: model.model.limit.context,
+            }
+          : null;
         const groupedModels = Object.values(
           providers as Record<string, Provider>,
         ).map((provider) => ({
@@ -348,12 +367,7 @@ class NodeHandlerRegistry {
           data: {
             groupedModels,
             currentModel,
-            currentModelInfo: {
-              providerName: model.provider.name,
-              modelName: model.model.name,
-              modelId: model.model.id,
-              modelContextLimit: model.model.limit.context,
-            },
+            currentModelInfo,
           },
         };
       },
@@ -536,10 +550,10 @@ class NodeHandlerRegistry {
       }) => {
         const { cwd, messages } = data;
         const context = await this.getContext(cwd);
-        const modelInfo = (await resolveModelWithContext(null, context)).model;
+        const model = (await resolveModelWithContext(null, context)).model!;
         const summary = await compact({
           messages,
-          model: modelInfo,
+          model,
         });
         return {
           success: true,

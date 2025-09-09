@@ -5,6 +5,7 @@ import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
 import type { LoopResult } from '../loop';
 import type { Message, UserMessage } from '../message';
+import type { ProvidersMap } from '../model';
 import { Paths } from '../paths';
 import { SessionConfigManager, loadSessionMessages } from '../session';
 import { Session } from '../session';
@@ -73,6 +74,7 @@ interface AppState {
   theme: Theme;
   model: string | null;
   modelContextLimit: number;
+  providers: ProvidersMap;
   sessionId: string | null;
   initialPrompt: string | null;
   logFile: string;
@@ -191,6 +193,7 @@ export const useAppStore = create<AppStore>()(
       theme: 'light',
       model: null,
       modelContextLimit: null,
+      providers: {},
       status: 'idle',
       error: null,
       slashCommandJSX: null,
@@ -238,6 +241,7 @@ export const useAppStore = create<AppStore>()(
           version: response.data.version,
           model: response.data.model,
           modelContextLimit: response.data.modelContextLimit,
+          providers: response.data.providers,
           sessionId: opts.sessionId,
           messages: opts.messages,
           history: opts.history,

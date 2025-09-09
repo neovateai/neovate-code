@@ -8,6 +8,7 @@ import { Debug } from './Debug';
 import { ExitHint } from './ExitHint';
 import { Markdown } from './Markdown';
 import { Messages } from './Messages';
+import { OnBoarding } from './OnBoarding';
 import { QueueDisplay } from './QueueDisplay';
 import { useAppStore } from './store';
 import { useTerminalRefresh } from './useTerminalRefresh';
@@ -67,7 +68,11 @@ function PlanResult() {
 }
 
 export function App() {
+  const { model } = useAppStore();
   const { forceRerender, forceUpdate } = useTerminalRefresh();
+  if (!model) {
+    return <OnBoarding />;
+  }
   return (
     <Box flexDirection="column" key={forceRerender}>
       <Messages />
