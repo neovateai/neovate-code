@@ -9,7 +9,14 @@ export type TextPart = {
   type: 'text';
   text: string;
 };
-export type UserContent = string | Array<TextPart>;
+
+type ImagePart = {
+  type: 'input_image';
+  image: string;
+  providerData?: { mime_type: string };
+};
+
+export type UserContent = string | Array<TextPart | ImagePart>;
 export type ToolUsePart = {
   type: 'tool_use';
   id: string;
