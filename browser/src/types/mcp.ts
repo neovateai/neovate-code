@@ -32,6 +32,7 @@ export interface McpManagerServer {
   type?: 'sse' | 'stdio';
   env?: Record<string, string>;
   installed: boolean;
+  isPreset?: boolean;
 }
 
 // Preset MCP service configuration
@@ -39,9 +40,6 @@ export interface PresetMcpService {
   key: string;
   name: string;
   description: string;
-  requiresApiKey?: boolean;
-  apiKeyLabel?: string;
-  apiKeyPlaceholder?: string;
   config: {
     name: string;
     command: string;
@@ -124,4 +122,164 @@ export interface UpdateMcpServerRequest {
   transport?: string;
   env?: string;
   global?: boolean;
+}
+
+// Hook types
+export interface UseMcpServerLoaderOptions {
+  onLoadError?: (error: Error) => void;
+  onToggleError?: (error: Error, serverName: string) => void;
+}
+
+export interface UseMcpServerLoaderReturn {
+  // Common state
+  loading: boolean;
+
+  // For McpDropdown
+  mcpServers: McpServer[];
+  loadMcpServers: () => Promise<void>;
+  handleToggleEnabled: (
+    serverName: string,
+    enabled: boolean,
+    scope: string,
+  ) => Promise<void>;
+  handleQuickAdd: (service: PresetMcpService) => Promise<void>;
+
+  // For McpManager
+  managerServers: McpManagerServer[];
+  loadServers: () => Promise<void>;
+  handleToggleService: (
+    serverName: string,
+    enabled: boolean,
+    scope: string,
+  ) => Promise<void>;
+  handleEditServer: (
+    originalName: string,
+    originalScope: string,
+    newConfig: {
+      name: string;
+      command?: string;
+      args?: string[];
+      url?: string;
+      transport?: string;
+      env?: string;
+      global?: boolean;
+    },
+  ) => Promise<void>;
+  handleDeleteLocal: (serverName: string, scope: string) => void;
+}
+
+export interface UseMcpServicesOptions {
+  onLoadError?: (error: Error) => void;
+  onToggleError?: (error: Error, serverName: string) => void;
+}
+
+export interface UseMcpServicesReturn {
+  allKnownServices: Set<string>;
+  serviceConfigs: Map<string, McpServerConfig>;
+  updateKnownServices: (newServices: Set<string>) => void;
+  updateServiceConfigs: (newConfigs: Map<string, McpServerConfig>) => void;
+  loadMcpData: () => Promise<{
+    globalServers: Record<string, unknown>;
+    projectServers: Record<string, unknown>;
+  }>;
+  handleToggleService: (
+    serverName: string,
+    enabled: boolean,
+    scope: string,
+    onSuccess?: () => void | Promise<void>,
+  ) => Promise<void>;
+  initializeFromLocalStorage: () => {
+    knownServices: Set<string>;
+    configs: Map<string, McpServerConfig>;
+  };
+}
+
+// Component Props types
+export interface McpDropdownContentProps {
+  mcpServers: McpServer[];
+  presetMcpServices: PresetMcpService[];
+  onToggleService: (
+    serverName: string,
+    enabled: boolean,
+    scope: string,
+  ) => void;
+  onQuickAdd: (service: PresetMcpService) => void;
+  onOpenManager: () => void;
+}
+
+export interface McpServiceItemProps {
+  server: McpServer;
+  onToggle: (serverName: string, enabled: boolean, scope: string) => void;
+}
+
+export interface McpServerTableProps {
+  servers: McpManagerServer[];
+  loading: boolean;
+  onToggleService: (
+    serverName: string,
+    enabled: boolean,
+    scope: string,
+  ) => void;
+  onDeleteSuccess?: () => void;
+  onDeleteLocal?: (serverName: string, scope: string) => void;
+  onEditServer?: (server: McpManagerServer) => void;
+}
+
+export interface McpAddFormProps {
+  visible: boolean;
+  inputMode: 'json' | 'form';
+  addScope: 'global' | 'project';
+  onCancel: () => void;
+  onSuccess: () => void;
+  onInputModeChange: (mode: 'json' | 'form') => void;
+  onScopeChange: (scope: 'global' | 'project') => void;
+  editMode?: boolean;
+  editingServer?: McpManagerServer;
+  onEditServer?: (
+    originalName: string,
+    originalScope: string,
+    newConfig: {
+      name: string;
+      command?: string;
+      args?: string[];
+      url?: string;
+      transport?: string;
+      env?: string;
+      global?: boolean;
+    },
+  ) => Promise<void>;
+}
+
+export interface McpEditFormProps {
+  visible: boolean;
+  inputMode: 'json' | 'form';
+  editScope: 'global' | 'project';
+  editingServer: McpManagerServer;
+  onCancel: () => void;
+  onSuccess: () => void;
+  onInputModeChange: (mode: 'json' | 'form') => void;
+  onScopeChange: (scope: 'global' | 'project') => void;
+}
+
+// MCP configuration item for add form
+export interface McpConfigItem {
+  id: string;
+  scope: 'global' | 'project';
+  inputMode: 'json' | 'form';
+  name: string;
+  transport: string;
+  command?: string;
+  args?: string;
+  url?: string;
+  env?: string;
+  jsonConfig?: string;
+}
+
+// MCP JSON Editor component props
+export interface McpJsonEditorProps {
+  value?: string;
+  onChange?: (value: string) => void;
+  placeholder?: string;
+  height?: string;
+  disabled?: boolean;
 }

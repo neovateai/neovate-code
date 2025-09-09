@@ -1,4 +1,4 @@
-import type { PresetMcpService } from '@/types/mcp';
+import type { McpConfigItem, PresetMcpService } from '@/types/mcp';
 
 /**
  * MCP (Message Control Protocol) related constants
@@ -17,17 +17,8 @@ export const MCP_DEFAULTS = {
   INPUT_MODE: 'json' as const,
 } as const;
 
-// Figma API key related constants
-export const FIGMA_CONFIG = {
-  API_KEY_ARG: '--figma-api-key',
-  DEFAULT_API_KEY: 'YOUR-KEY',
-} as const;
-
 // Preset MCP services configuration
-export const PRESET_MCP_SERVICES: Omit<
-  PresetMcpService,
-  'description' | 'apiKeyLabel' | 'apiKeyPlaceholder'
->[] = [
+export const PRESET_MCP_SERVICES: Omit<PresetMcpService, 'description'>[] = [
   {
     key: 'playwright',
     name: '@playwright mcp',
@@ -40,19 +31,24 @@ export const PRESET_MCP_SERVICES: Omit<
   {
     key: 'figma',
     name: 'Framelink Figma MCP',
-    requiresApiKey: true,
     config: {
       name: 'Framelink Figma MCP',
       command: 'npx',
       args: [
         '-y',
         'figma-developer-mcp',
-        `${FIGMA_CONFIG.API_KEY_ARG}=${FIGMA_CONFIG.DEFAULT_API_KEY}`,
+        '--figma-api-key=YOUR-KEY',
         '--stdio',
       ],
     },
   },
 ];
+
+// Preset service names for identification
+export const PRESET_SERVICE_NAMES = new Set([
+  '@playwright mcp',
+  'Framelink Figma MCP',
+]);
 
 // MCP service key prefixes
 export const MCP_KEY_PREFIXES = {
@@ -81,8 +77,6 @@ export const getPresetMcpServicesWithTranslations = (
   {
     ...PRESET_MCP_SERVICES[1],
     description: t('mcp.figmaDescription'),
-    apiKeyLabel: t('mcp.figmaApiKeyLabel'),
-    apiKeyPlaceholder: t('mcp.apiKeyPlaceholder'),
   },
 ];
 
@@ -156,3 +150,17 @@ export const getSseJsonExample = () => {
     2,
   );
 };
+
+// Create default MCP configuration item
+export const createDefaultMcpConfig = (): McpConfigItem => ({
+  id: Date.now().toString(),
+  scope: 'project',
+  inputMode: 'json',
+  name: '',
+  transport: MCP_DEFAULTS.TRANSPORT_TYPE,
+  command: '',
+  args: '',
+  url: '',
+  env: '',
+  jsonConfig: '',
+});
