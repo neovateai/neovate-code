@@ -349,7 +349,7 @@ export const useAppStore = create<AppStore>()(
               `\\[Image ${imageId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`,
               'g',
             );
-            expandedMessage = expandedMessage.replace(placeholder, '').trim();
+            // expandedMessage = expandedMessage.replace(placeholder, '').trim();
           }
         }
 

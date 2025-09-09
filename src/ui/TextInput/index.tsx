@@ -243,13 +243,19 @@ export default function TextInput({
               const imagePromptResult = await onImagePaste(imageResult.base64);
               if (imagePromptResult?.prompt) {
                 // If onImagePaste returns a prompt, append it to current value
-                onChange(originalValue + imagePromptResult.prompt);
+                const newValue = originalValue + imagePromptResult.prompt;
+                onChange(newValue);
+                // Update cursor position to end of new content
+                onChangeCursorOffset(newValue.length);
               }
             } else {
               // Not a valid image path, treat as regular text
               const result = await onPaste?.(mergedInput);
               if (result?.prompt) {
-                onChange(originalValue + result.prompt);
+                const newValue = originalValue + result.prompt;
+                onChange(newValue);
+                // Update cursor position to end of new content
+                onChangeCursorOffset(newValue.length);
               }
             }
           } catch (error) {
@@ -257,7 +263,10 @@ export default function TextInput({
             console.error('Failed to process image path:', error);
             const result = await onPaste?.(mergedInput);
             if (result?.prompt) {
-              onChange(originalValue + result.prompt);
+              const newValue = originalValue + result.prompt;
+              onChange(newValue);
+              // Update cursor position to end of new content
+              onChangeCursorOffset(newValue.length);
             }
           }
         })();
@@ -270,7 +279,10 @@ export default function TextInput({
           (async () => {
             const result = await onPaste?.(mergedInput);
             if (result?.prompt) {
-              onChange(originalValue + result.prompt);
+              const newValue = originalValue + result.prompt;
+              onChange(newValue);
+              // Update cursor position to end of new content
+              onChangeCursorOffset(newValue.length);
             }
           })();
         } else {
