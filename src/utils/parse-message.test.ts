@@ -155,8 +155,7 @@ Let me also check the time.
         type: 'tool_use',
         name: 'weather',
         params: {
-          _error: 'Incomplete JSON',
-          _raw: '{"city": "Tok',
+          city: 'Tok',
         },
         partial: true,
       });
@@ -319,7 +318,6 @@ Based on the weather data, it looks like a great day!`;
 {"file_path": "src/ui/constants.ts", "old_string": "1"}}
 </arguments>
 </use_tool>`;
-
       const result = parseMessage(input);
 
       expect(result).toHaveLength(1);
@@ -327,6 +325,58 @@ Based on the weather data, it looks like a great day!`;
         type: 'tool_use',
         name: 'edit',
         params: { file_path: 'src/ui/constants.ts', old_string: '1' },
+        partial: false,
+      });
+    });
+
+    it('处理 json 末尾包含特殊换行符', () => {
+      const input = `\n\n<use_tool>\n<tool_name>write</tool_name>\n<arguments>\n{\"file_path\": \"src/ui/components/ContentBox.tsx\", \"content\": \"import React from 'react';\\nconst hello = 'world';\n\"}\\n</arguments>\n</use_tool>`;
+
+      const result = parseMessage(input);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        type: 'tool_use',
+        name: 'write',
+        params: {
+          file_path: 'src/ui/components/ContentBox.tsx',
+          content: "import React from 'react';\nconst hello = 'world';\n",
+        },
+        partial: false,
+      });
+    });
+
+    it('处理 use_tool 完整但是 arguments 未闭合的情况', () => {
+      const input = `<use_tool>
+      <tool_name>edit</tool_name>
+      <arguments>
+      {"file_path": "src/ui/constants.ts", "old_string": "1"}
+      </use_tool>`;
+      const result = parseMessage(input);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        type: 'tool_use',
+        name: 'edit',
+        params: { file_path: 'src/ui/constants.ts', old_string: '1' },
+        partial: true,
+      });
+    });
+
+    it('当 jsonrepair 无法修复时，应该回退', () => {
+      const input = `<use_tool>
+<tool_name>test_tool</tool_name>
+<arguments>
+{{"demo":"This is not JSON at all""
+</arguments>
+</use_tool>`;
+      const result = parseMessage(input);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        type: 'tool_use',
+        name: 'test_tool',
+        params: {
+          _error: 'Invalid or incomplete JSON',
+          _raw: '{{"demo":"This is not JSON at all""',
+        },
         partial: false,
       });
     });

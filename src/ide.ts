@@ -3,8 +3,8 @@ import path from 'path';
 import { fileURLToPath, resolve } from 'url';
 import WebSocket from 'ws';
 import {
-  InstallationResult,
-  PlatformInfo,
+  type InstallationResult,
+  type PlatformInfo,
   attemptInstallation,
   isExtensionInstalled,
 } from './utils/ide';
@@ -94,7 +94,7 @@ interface WSMessage {
   result?: unknown;
 }
 
-const debug = createDebug('takumi:ide');
+const debug = createDebug('neovate:ide');
 
 export class IDE {
   ws: WebSocket | null;
@@ -194,7 +194,15 @@ export class IDE {
       };
 
       debug('Sending request:', message);
-      this.ws!.send(JSON.stringify(message));
+
+      // Check WebSocket connection status
+      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        debug('WebSocket is not open, readyState:', this.ws?.readyState);
+        this.pendingRequests.delete(id);
+        return;
+      }
+
+      this.ws.send(JSON.stringify(message));
 
       // 超时处理
       setTimeout(() => {

@@ -59,11 +59,6 @@ export const fileChangesActions = {
     }
     const nextFileState = fileStateFn(prevFileState);
     fileChangesState.files[path] = nextFileState;
-    // 更新后，将最终内容写入文件
-    const finalContent = fileChangesActions.getFinalContent(path);
-    if (finalContent) {
-      await editFile(path, finalContent);
-    }
 
     const originalCode = nextFileState.content;
     const modifiedCode = fileChangesActions.getFinalContent(path) || '';

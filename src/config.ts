@@ -19,9 +19,12 @@ type McpServerConfig = McpStdioServerConfig | McpSSEServerConfig;
 
 export type ApprovalMode = 'default' | 'autoEdit' | 'yolo';
 
+export type CommitConfig = {
+  language: string;
+};
+
 export type Config = {
   model: string;
-  smallModel: string;
   planModel: string;
   language: string;
   quiet: boolean;
@@ -29,6 +32,17 @@ export type Config = {
   plugins: string[];
   mcpServers: Record<string, McpServerConfig>;
   systemPrompt?: string;
+  todo?: boolean;
+  /**
+   * Controls whether automatic conversation compression is enabled.
+   * When set to false, conversation history will accumulate and context limit will be exceeded.
+   *
+   * @default true
+   */
+  autoCompact?: boolean;
+  commit?: CommitConfig;
+  outputStyle?: string;
+  outputFormat?: 'text' | 'stream-json' | 'json';
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -37,18 +51,23 @@ const DEFAULT_CONFIG: Partial<Config> = {
   approvalMode: 'default',
   plugins: [],
   mcpServers: {},
-  model: 'flash',
+  todo: true,
+  autoCompact: true,
+  outputFormat: 'text',
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
   'model',
-  'smallModel',
   'planModel',
   'systemPrompt',
+  'todo',
+  'autoCompact',
+  'commit',
+  'outputStyle',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
-const OBJECT_CONFIG_KEYS = ['mcpServers'];
-const BOOLEAN_CONFIG_KEYS = ['quiet'];
+const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit'];
+const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact'];
 
 export class ConfigManager {
   globalConfig: Partial<Config>;
@@ -81,7 +100,6 @@ export class ConfigManager {
       this.argvConfig,
       defu(this.projectConfig, defu(this.globalConfig, DEFAULT_CONFIG)),
     ) as Config;
-    config.smallModel = config.smallModel || config.model;
     config.planModel = config.planModel || config.model;
     return config;
   }
@@ -110,7 +128,7 @@ export class ConfigManager {
     const configPath = global ? this.globalConfigPath : this.projectConfigPath;
     if (ARRAY_CONFIG_KEYS.includes(key)) {
       (config[key as keyof Config] as any) = [
-        ...(config[key as keyof Config] as string[]),
+        ...((config[key as keyof Config] as string[]) || []),
         ...values,
       ];
     } else if (OBJECT_CONFIG_KEYS.includes(key)) {
@@ -122,20 +140,82 @@ export class ConfigManager {
     saveConfig(configPath, config, DEFAULT_CONFIG);
   }
 
-  setConfig(global: boolean, key: string, value: string) {
-    if (!VALID_CONFIG_KEYS.includes(key)) {
-      throw new Error(`Invalid config key: ${key}`);
+  getConfig(global: boolean, key: string): any {
+    const config = global ? this.globalConfig : this.projectConfig;
+
+    if (!key.includes('.')) {
+      return config[key as keyof Config];
     }
+
+    const keys = key.split('.');
+    const rootKey = keys[0];
+
+    if (!VALID_CONFIG_KEYS.includes(rootKey)) {
+      throw new Error(`Invalid config key: ${rootKey}`);
+    }
+
+    let current: any = config[rootKey as keyof Config];
+    for (let i = 1; i < keys.length; i++) {
+      if (current === undefined || current === null) {
+        return undefined;
+      }
+      current = current[keys[i]];
+    }
+
+    return current;
+  }
+
+  setConfig(global: boolean, key: string, value: string) {
     const config = global ? this.globalConfig : this.projectConfig;
     const configPath = global ? this.globalConfigPath : this.projectConfigPath;
-    let newValue: any = value;
-    if (BOOLEAN_CONFIG_KEYS.includes(key)) {
-      newValue = value === 'true';
+
+    if (key.includes('.')) {
+      // Handle dot notation for nested keys
+      const keys = key.split('.');
+      const rootKey = keys[0];
+
+      if (!VALID_CONFIG_KEYS.includes(rootKey)) {
+        throw new Error(`Invalid config key: ${rootKey}`);
+      }
+
+      if (!OBJECT_CONFIG_KEYS.includes(rootKey)) {
+        throw new Error(
+          `Config key '${rootKey}' does not support nested properties`,
+        );
+      }
+
+      // Initialize the root object if it doesn't exist
+      if (!config[rootKey as keyof Config]) {
+        (config[rootKey as keyof Config] as any) = {};
+      }
+
+      // Navigate to the nested property and set the value
+      let current: any = config[rootKey as keyof Config];
+      for (let i = 1; i < keys.length - 1; i++) {
+        if (!current[keys[i]]) {
+          current[keys[i]] = {};
+        }
+        current = current[keys[i]];
+      }
+
+      const lastKey = keys[keys.length - 1];
+      current[lastKey] = value;
+    } else {
+      // Handle flat keys
+      if (!VALID_CONFIG_KEYS.includes(key)) {
+        throw new Error(`Invalid config key: ${key}`);
+      }
+
+      let newValue: any = value;
+      if (BOOLEAN_CONFIG_KEYS.includes(key)) {
+        newValue = value === 'true';
+      }
+      if (OBJECT_CONFIG_KEYS.includes(key)) {
+        newValue = JSON.parse(value);
+      }
+      (config[key as keyof Config] as any) = newValue;
     }
-    if (OBJECT_CONFIG_KEYS.includes(key)) {
-      newValue = JSON.parse(value);
-    }
-    (config[key as keyof Config] as any) = newValue;
+
     saveConfig(configPath, config, DEFAULT_CONFIG);
   }
 

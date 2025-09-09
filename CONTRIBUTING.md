@@ -22,6 +22,12 @@ It's recommended to use [Volta](https://volta.sh/) to manage the node and pnpm v
 export VOLTA_FEATURE_PNPM=1
 ```
 
+Make sure the bun's version is 1.2.7 before run build.
+
+```bash
+$ curl -fsSL https://bun.sh/install | bash -s "bun-v1.2.7"
+```
+
 Install and build the CLI.
 
 ```bash
@@ -38,7 +44,7 @@ $ pnpm dev
 Tips: Add `t` alias to the `src/cli.ts` file to make it easier to run the CLI.
 
 ```bash
-$ alias t="/path/to/takumi/node_modules/.bin/tsx /path/to/takumi/src/cli.ts"
+$ alias t="bun /path/to/neovate/src/cli.ts"
 $ t
 ```
 
@@ -47,9 +53,9 @@ $ t
 Choose one of the following methods to debug the CLI:
 
 1. Press `⌘+⇧+D` to open the debug view, then select `Debug cli`.
-2. Add `DEBUG=takumi*` prefix to the command to print the debug logs.
+2. Add `DEBUG=neovate*` prefix to the command to print the debug logs.
 3. Add `-q` to the command to print the quiet logs.
-4. Open session files under `~/.takumi/sessions/` directory to check the logs.
+4. Open session files under `~/.neovate/projects/` directory to check the logs.
 
 ## Release
 

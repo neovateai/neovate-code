@@ -170,6 +170,7 @@ const ChatSender: React.FC = () => {
             allowSpeech
             actions={false}
             components={{
+              // @ts-ignore
               input: LexicalTextArea,
             }}
             placeholder={t('chat.inputPlaceholder')}

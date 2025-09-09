@@ -1,17 +1,18 @@
-import { AgentInputItem } from '@openai/agents';
-import { DataStreamWriter, formatDataStreamPart } from 'ai';
+// @ts-nocheck
+import { type AgentInputItem } from '@openai/agents';
+import { type DataStreamWriter, formatDataStreamPart } from 'ai';
 import createDebug from 'debug';
 import { isReasoningModel } from '../../provider';
 import { query } from '../../query';
 import { Service } from '../../service';
 import { delay } from '../../utils/delay';
 import {
-  AttachmentItem,
-  ContextItem,
+  type AttachmentItem,
+  type ContextItem,
   ContextType,
-  ImageItem,
+  type ImageItem,
 } from '../types/completions';
-import { CreateServerOpts } from '../types/server';
+import { type CreateServerOpts } from '../types/server';
 import { getToolApprovalService } from './tool-approval';
 
 const debug = createDebug('takumi:server:completions');
@@ -22,6 +23,7 @@ interface RunCompletionOpts extends CreateServerOpts {
   planService: Service;
   mode: string;
   attachedContexts: ContextItem[];
+  abortSignal?: AbortSignal;
 }
 
 function isImageContext(context: ContextItem): context is ContextItem & {
@@ -115,7 +117,7 @@ function convertUserPromptToAgentInput(
 }
 
 export async function runCode(opts: RunCompletionOpts) {
-  const { dataStream, mode, attachedContexts } = opts;
+  const { dataStream, mode, attachedContexts, abortSignal } = opts;
   try {
     const input: AgentInputItem[] = convertUserPromptToAgentInput(
       opts.prompt,
@@ -133,6 +135,7 @@ export async function runCode(opts: RunCompletionOpts) {
       input,
       service,
       thinking: isReasoningModel(service.context.config.model),
+      onCancelCheck: () => abortSignal?.aborted ?? false,
       onTextDelta(text) {
         debug(`Text delta: ${text}`);
         dataStream.writeMessageAnnotation({

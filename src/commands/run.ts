@@ -1,12 +1,10 @@
-import { Runner, setTraceProcessors, withTrace } from '@openai/agents';
 import * as p from '@umijs/clack-prompts';
 import assert from 'assert';
 import { execSync } from 'child_process';
 import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
-import { RunCliOpts } from '..';
-import { createShellAgent } from '../agents/shell';
 import { Context } from '../context';
+import { query } from '../query';
 import * as logger from '../utils/logger';
 
 async function executeShell(
@@ -57,134 +55,146 @@ Examples:
   );
 }
 
-export async function runRun(opts: RunCliOpts) {
-  setTraceProcessors([]);
-  const traceName = `${opts.productName}-run`;
-  return await withTrace(traceName, async () => {
-    const argv = yargsParser(process.argv.slice(2), {
-      alias: {
-        model: 'm',
-        help: 'h',
-        yes: 'y',
-      },
-      boolean: ['help', 'yes'],
-      string: ['model'],
-    });
+export async function runRun(context: Context) {
+  const argv = yargsParser(process.argv.slice(2), {
+    alias: {
+      model: 'm',
+      help: 'h',
+      yes: 'y',
+    },
+    boolean: ['help', 'yes'],
+    string: ['model'],
+  });
 
-    if (argv.help) {
-      printHelp(opts.productName.toLowerCase());
-      return;
-    }
+  if (argv.help) {
+    printHelp(context.productName.toLowerCase());
+    return;
+  }
 
-    logger.logIntro({
-      productName: opts.productName,
-      version: opts.version,
-    });
+  logger.logIntro({
+    productName: context.productName,
+    version: context.version,
+  });
 
-    let prompt = argv._[1] as string;
-    if (!prompt || prompt.trim() === '') {
-      prompt = await logger.getUserInput();
-    } else {
-      logger.logUserInput({ input: prompt });
-    }
+  let prompt = argv._[1] as string;
+  if (!prompt || prompt.trim() === '') {
+    prompt = await logger.getUserInput();
+  } else {
+    logger.logUserInput({ input: prompt });
+  }
 
-    // Use AI to convert natural language to shell command
-    logger.logAction({
-      message: `AI is converting natural language to shell command...`,
-    });
+  // Use AI to convert natural language to shell command
+  logger.logAction({
+    message: `AI is converting natural language to shell command...`,
+  });
 
-    const context = await Context.create({
-      productName: opts.productName,
-      version: opts.version,
-      cwd: process.cwd(),
-      argvConfig: {
-        model: argv.model,
-        plugins: argv.plugin,
-      },
-      plugins: opts.plugins,
-    });
-    await context.destroy();
+  const result = await query({
+    userPrompt: prompt,
+    systemPrompt: SHELL_COMMAND_SYSTEM_PROMPT,
+    context,
+  });
+  let command = result.success ? result.data.text : null;
+  assert(command, 'Command is not a string');
 
-    const agent = createShellAgent({
-      model: context.config.model,
-    });
-    const runner = new Runner({
-      modelProvider: context.getModelProvider(),
-    });
-    const result = await runner.run(agent, prompt);
-    let command = result.finalOutput;
-    assert(command, 'Command is not a string');
-
-    // Display the generated command and request confirmation
-    logger.logInfo(
-      `
+  // Display the generated command and request confirmation
+  logger.logInfo(
+    `
 ${pc.bold(pc.blueBright('AI generated shell command:'))}
 ${command}
-  `.trim(),
-    );
+`.trim(),
+  );
 
-    // If --yes mode is enabled, execute the command without confirmation
-    if (argv.yes) {
-      const result = await executeShell(command, process.cwd());
+  // If --yes mode is enabled, execute the command without confirmation
+  if (argv.yes) {
+    const result = await executeShell(command, process.cwd());
 
-      if (!result.success) {
-        logger.logError({
-          error: `Command execution failed: ${result.output}`,
-        });
-      }
-      return;
+    if (!result.success) {
+      logger.logError({
+        error: `Command execution failed: ${result.output}`,
+      });
     }
+    return;
+  }
 
-    // Default behavior: request confirmation
-    const execution = await p.select({
-      message: 'Confirm execution',
-      options: [
-        { value: 'execute', label: 'Execute' },
-        { value: 'edit', label: 'Edit' },
-        { value: 'cancel', label: 'Cancel' },
-      ],
+  // Default behavior: request confirmation
+  const execution = await p.select({
+    message: 'Confirm execution',
+    options: [
+      { value: 'execute', label: 'Execute' },
+      { value: 'edit', label: 'Edit' },
+      { value: 'cancel', label: 'Cancel' },
+    ],
+  });
+
+  if (logger.isCancel(execution)) {
+    logger.logInfo('Command execution cancelled');
+    return;
+  }
+
+  if (execution === 'edit') {
+    const editedCommand = await logger.getUserInput({
+      message: 'Edit command',
+      defaultValue: command,
     });
 
-    if (logger.isCancel(execution)) {
+    if (editedCommand) {
+      command = editedCommand;
+    }
+
+    const confirmExecution = await logger.confirm({
+      message: `Execute command: ${pc.reset(pc.gray(command))}`,
+      active: pc.green('Execute'),
+      inactive: pc.red('Cancel'),
+    });
+
+    if (!confirmExecution || logger.isCancel(confirmExecution)) {
       logger.logInfo('Command execution cancelled');
       return;
     }
+  }
 
-    if (execution === 'edit') {
-      const editedCommand = await logger.getUserInput({
-        message: 'Edit command',
-        defaultValue: command,
-      });
+  if (execution === 'cancel') {
+    logger.logInfo('Command execution cancelled');
+    return;
+  }
 
-      if (editedCommand) {
-        command = editedCommand;
-      }
+  const executeResult = await executeShell(command, process.cwd());
 
-      const confirmExecution = await logger.confirm({
-        message: `Execute command: ${pc.reset(pc.gray(command))}`,
-        active: pc.green('Execute'),
-        inactive: pc.red('Cancel'),
-      });
-
-      if (!confirmExecution || logger.isCancel(confirmExecution)) {
-        logger.logInfo('Command execution cancelled');
-        return;
-      }
-    }
-
-    if (execution === 'cancel') {
-      logger.logInfo('Command execution cancelled');
-      return;
-    }
-
-    const executeResult = await executeShell(command, process.cwd());
-
-    if (executeResult.success) {
-      logger.logOutro();
-    } else {
-      logger.logError({
-        error: `Command execution failed: ${executeResult.output}`,
-      });
-    }
-  });
+  if (executeResult.success) {
+    logger.logOutro();
+  } else {
+    logger.logError({
+      error: `Command execution failed: ${executeResult.output}`,
+    });
+  }
 }
+
+const SHELL_COMMAND_SYSTEM_PROMPT = `
+You are a tool that converts natural language instructions into shell commands.
+Your task is to transform user's natural language requests into precise and effective shell commands.
+
+Please follow these rules:
+1. Output only the shell command, without explanations or additional content
+2. If the user directly provides a shell command, return that command as is
+3. If the user describes a task in natural language, convert it to the most appropriate shell command
+4. Avoid using potentially dangerous commands (such as rm -rf /)
+5. Provide complete commands, avoiding placeholders
+6. Reply with only one command, don't provide multiple options or explanations
+7. When no suitable command can be found, return the recommended command directly
+
+Examples:
+User: "List all files in the current directory"
+Reply: "ls -la"
+
+User: "Create a new directory named test"
+Reply: "mkdir test"
+
+User: "Find all log files containing 'error'"
+Reply: "find . -name '*.log' -exec grep -l 'error' {} \\;"
+
+User: "ls -la" (user directly provided a command)
+Reply: "ls -la"
+
+User: "I want to compress all images in the current directory"
+Reply: "find . -type f \( -iname \"*.jpg\" -o -iname \"*.jpeg\" -o -iname \"*.png\" \) -exec mogrify -quality 85% {} \\;"
+`;

@@ -1,17 +1,18 @@
-import { tool } from '@openai/agents';
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import { Context } from '../context';
+import { createTool } from '../tool';
 import { applyEdit } from '../utils/applyEdit';
+import type { EditToolResult } from './type';
 
-export function createEditTool(opts: { context: Context }) {
-  return tool({
+export function createEditTool(opts: { cwd: string }) {
+  return createTool({
     name: 'edit',
     description: `
 Edit files in the local filesystem.
-Remembers:
-- Use the read tool to understand the file's contents before using this tool.
+Usage:
+- You must use your read tool at least once in the conversation before editing. This tool will error if you attempt an edit without reading the file.
+- When editing text from Read tool output, ensure you preserve the exact indentation (tabs/spaces) as it appears AFTER the line number prefix. The line number prefix format is: spaces + line number + tab. Everything after that tab is the actual file content to match. Never include any part of the line number prefix in the old_string or new_string.
 - For moving or renaming files, you should generally use the Bash tool with the 'mv' command instead.
 - For larger edits, use the Write tool to overwrite files.
 - For file creation, use the Write tool.
@@ -24,12 +25,17 @@ Remembers:
         .string()
         .describe('The text to replace the old_string with'),
     }),
-    execute: async ({ file_path, old_string, new_string }) => {
+    execute: async ({
+      file_path,
+      old_string,
+      new_string,
+    }): Promise<EditToolResult> => {
       try {
-        const cwd = opts.context.cwd;
+        const cwd = opts.cwd;
         const fullFilePath = path.isAbsolute(file_path)
           ? file_path
           : path.resolve(cwd, file_path);
+        const relativeFilePath = path.relative(cwd, fullFilePath);
         const { patch, updatedFile } = applyEdit(
           cwd,
           fullFilePath,
@@ -43,7 +49,7 @@ Remembers:
         return {
           success: true,
           message: `File ${file_path} successfully edited.`,
-          data: { filePath: file_path },
+          data: { filePath: file_path, relativeFilePath },
         };
       } catch (e) {
         return {
@@ -51,6 +57,9 @@ Remembers:
           error: e instanceof Error ? e.message : 'Unknown error',
         };
       }
+    },
+    approval: {
+      category: 'write',
     },
   });
 }

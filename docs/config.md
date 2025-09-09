@@ -167,8 +167,54 @@ A list of plugins to extend Takumi's functionality.
 
 Configuration for Model Context Protocol (MCP) servers, which can provide additional tools to the agent. This setting is best managed via the `takumi mcp` command.
 
--   **Type**: `Record<string, object>`
+-   **Type**: `Record<string, MCPConfig>`
 -   **Default**: `{}`
--   **Example**: `takumi mcp add my-server npx @example/mcp-server`
+
+#### MCP Server Configuration
+
+Each MCP server can be configured with the following options:
+
+-   **`command`**: Command to run for stdio-based MCP servers
+-   **`args`**: Arguments to pass to the command
+-   **`url`**: URL for HTTP/SSE-based MCP servers
+-   **`type`**: Transport type, only needed to specify 'sse' for SSE servers (optional)
+-   **`env`**: Environment variables to pass to the command
+-   **`disable`**: Whether to disable the server
+-   **`timeout`**: Timeout for tool calls in milliseconds
+
+#### Adding MCP Servers
+
+Takumi automatically determines the appropriate transport type based on your configuration:
+
+```bash
+# Add a stdio-based MCP server
+takumi mcp add my-server npx @example/mcp-server
+
+# Add an HTTP-based MCP server (default for URLs)
+takumi mcp add my-http http://localhost:3000
+
+# Add an SSE-based MCP server (specify --sse flag)
+takumi mcp add --sse my-sse http://localhost:3000
+
+# Add a server with environment variables
+takumi mcp add -e '{"API_KEY":"123"}' my-server npx @example/mcp-server
+```
+
+#### Managing MCP Servers
+
+```bash
+# List all MCP servers
+takumi mcp list
+
+# Get configuration for a specific server
+takumi mcp get my-server
+
+# Remove an MCP server
+takumi mcp remove my-server
+
+# Disable/enable an MCP server
+takumi mcp disable my-server
+takumi mcp enable my-server
+```
 
 For more details, run `takumi mcp help`.

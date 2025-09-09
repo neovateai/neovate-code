@@ -29,10 +29,10 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
-          bun-version: latest
+          bun-version: 1.2.7
 
       - name: Build project
-        run: npm run build
+        run: pnpm build
 
       - name: Type check
         run: pnpm typecheck

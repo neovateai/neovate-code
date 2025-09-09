@@ -1,7 +1,7 @@
 import createDebug from 'debug';
 import { jsonrepair } from 'jsonrepair';
 
-const debug = createDebug('takumi:utils:parse-message');
+const debug = createDebug('neovate:utils:parse-message');
 
 interface TextContent {
   type: 'text';
@@ -13,10 +13,11 @@ interface ToolUse {
   type: 'tool_use';
   name: string;
   params: Partial<Record<string, string>>;
+  callId?: string;
   partial: boolean;
 }
 
-type MessageContent = TextContent | ToolUse;
+export type MessageContent = TextContent | ToolUse;
 
 export function parseMessage(text: string): MessageContent[] {
   const contentBlocks: MessageContent[] = [];
@@ -58,13 +59,17 @@ export function parseMessage(text: string): MessageContent[] {
         if (currentParamName === 'tool_name') {
           currentToolUse.name = value.trim();
         } else if (currentParamName === 'arguments') {
-          const jsonString = value.trim();
+          let jsonString = value.trim();
           try {
             // 尝试解析JSON字符串
             // 如果jsonString为空，解析会失败，所以我们给一个默认的空对象
             currentToolUse.params = jsonString ? JSON.parse(jsonString) : {};
           } catch (e) {
             try {
+              // 仅移除最后一个 }\\n 导致的 json 解析失败，避免修改 json 内部的换行符
+              if (jsonString.endsWith('}\\n')) {
+                jsonString = jsonString.replace(/}\\n$/, '}');
+              }
               // 尝试用 jsonrepair 修复
               const repairedJsonString = jsonrepair(jsonString);
               currentToolUse.params = JSON.parse(repairedJsonString);
@@ -174,15 +179,27 @@ export function parseMessage(text: string): MessageContent[] {
       if (currentParamName === 'tool_name') {
         currentToolUse.name = value.trim();
       } else if (currentParamName === 'arguments') {
-        const jsonString = value.trim();
+        let jsonString = value.trim();
+        // 处理 arguments 未闭合的情况
+        if (jsonString.endsWith('</use_tool>')) {
+          jsonString = jsonString.replace(/<\/use_tool>$/, '');
+        }
         try {
           // 再次尝试解析，很可能会失败，但以防万一是个完整的JSON
           currentToolUse.params = jsonString ? JSON.parse(jsonString) : {};
         } catch (e) {
-          currentToolUse.params = {
-            _error: 'Incomplete JSON',
-            _raw: jsonString,
-          };
+          try {
+            // 尝试使用 jsonrepair 修复
+            const repairedJsonString = jsonrepair(jsonString);
+            currentToolUse.params = JSON.parse(repairedJsonString);
+          } catch (e) {
+            debug('currentParamName jsonrepair failed', e);
+            // 如果修复失败，则返回错误
+            currentToolUse.params = {
+              _error: 'Incomplete JSON',
+              _raw: jsonString,
+            };
+          }
         }
       }
     }

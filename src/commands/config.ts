@@ -1,6 +1,6 @@
 import yargsParser from 'yargs-parser';
-import { RunCliOpts } from '..';
-import { Config, ConfigManager } from '../config';
+import { ConfigManager } from '../config';
+import type { Context } from '../context';
 
 function printHelp(p: string) {
   console.log(
@@ -44,8 +44,8 @@ Examples:
   );
 }
 
-export async function runConfig(opts: RunCliOpts) {
-  const productName = opts.productName!;
+export async function runConfig(context: Context) {
+  const productName = context.productName;
   const argv = yargsParser(process.argv.slice(3), {
     alias: {
       help: 'h',
@@ -69,15 +69,17 @@ export async function runConfig(opts: RunCliOpts) {
 
   // get
   if (command === 'get') {
-    const key = argv._[1];
+    const key = argv._[1] as string;
     if (!key) {
       console.error('Missing key');
       return;
     }
-    if (argv.global) {
-      console.log(configManager.globalConfig[key as keyof Config]);
-    } else {
-      console.log(configManager.projectConfig[key as keyof Config]);
+    try {
+      const value = configManager.getConfig(argv.global, key);
+      console.log(value);
+    } catch (error: any) {
+      console.error(error.message);
+      return;
     }
   }
 
@@ -89,8 +91,13 @@ export async function runConfig(opts: RunCliOpts) {
       console.error('Missing key or value');
       return;
     }
-    configManager.setConfig(argv.global, key, value);
-    console.log(`Set ${key} = ${value} to ${configPath}`);
+    try {
+      configManager.setConfig(argv.global, key, value);
+      console.log(`Set ${key} = ${value} to ${configPath}`);
+    } catch (error: any) {
+      console.error(error.message);
+      return;
+    }
   }
 
   // remove

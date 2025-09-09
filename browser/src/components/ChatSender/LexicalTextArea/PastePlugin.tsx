@@ -2,28 +2,10 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { message } from 'antd';
 import { PASTE_COMMAND } from 'lexical';
 import { memo, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ContextType } from '@/constants/context';
 import * as context from '@/state/context';
-import { imageUrlToBase64 } from '@/utils/context';
-
-// 根据图片 src 猜测 mime 类型
-function guessImageMime(src: string): string {
-  if (src.startsWith('data:')) {
-    const match = src.match(/^data:(image\/[a-zA-Z0-9.+-]+)[;,]/);
-    if (match) return match[1];
-  } else if (src.endsWith('.jpg') || src.endsWith('.jpeg')) {
-    return 'image/jpeg';
-  } else if (src.endsWith('.png')) {
-    return 'image/png';
-  } else if (src.endsWith('.gif')) {
-    return 'image/gif';
-  } else if (src.endsWith('.webp')) {
-    return 'image/webp';
-  } else if (src.endsWith('.svg')) {
-    return 'image/svg+xml';
-  }
-  return 'image/png';
-}
+import { guessImageMime, imageUrlToBase64 } from '@/utils/context';
 
 const PastePlugin = ({
   onPastingImage,
@@ -33,6 +15,8 @@ const PastePlugin = ({
   const [editor] = useLexicalComposerContext();
 
   const [messageInstance, messageContextHolder] = message.useMessage();
+
+  const { t } = useTranslation();
 
   const handleImage = useCallback(
     (item: DataTransferItem) => {
@@ -142,7 +126,7 @@ const PastePlugin = ({
         }
         // 其他类型
         else {
-          const errorMsg = `Unsupported file type: ${item.type}`;
+          const errorMsg = t('context.unsupportedType', { type: item.type });
           messageInstance.error(errorMsg);
           console.error(errorMsg);
           return true;

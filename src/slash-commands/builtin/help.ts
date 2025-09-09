@@ -1,29 +1,31 @@
-import { LocalCommand } from '../types';
+import { SlashCommandManager } from '../../slashCommand';
+import { CommandSource, type LocalCommand } from '../types';
 
 export const helpCommand: LocalCommand = {
   type: 'local',
   name: 'help',
   description: 'Show available slash commands',
-  async call(args: string, context) {
-    const commands = context.slashCommands.getAll();
+  async call(_args: string, context) {
+    const slashCommandManager = await SlashCommandManager.create(
+      context as any,
+    );
+    const commands = slashCommandManager.getAll();
     if (commands.length === 0) {
       return 'No commands available.';
     }
 
-    // Categorize commands
-    const builtinCommands = commands.filter(
-      (cmd) =>
-        !cmd.name.includes(':') && ['clear', 'exit', 'help'].includes(cmd.name),
+    // Categorize commands by source
+    const builtinCommands = slashCommandManager.getCommandsBySource(
+      CommandSource.Builtin,
     );
-
-    const userCommands = commands.filter((cmd) => cmd.name.startsWith('user:'));
-    const projectCommands = commands.filter((cmd) =>
-      cmd.name.startsWith('project:'),
+    const userCommands = slashCommandManager.getCommandsBySource(
+      CommandSource.User,
     );
-    const pluginCommands = commands.filter(
-      (cmd) =>
-        !cmd.name.includes(':') &&
-        !['clear', 'exit', 'help'].includes(cmd.name),
+    const projectCommands = slashCommandManager.getCommandsBySource(
+      CommandSource.Project,
+    );
+    const pluginCommands = slashCommandManager.getCommandsBySource(
+      CommandSource.Plugin,
     );
 
     let result = 'Available slash commands:\n\n';
@@ -32,25 +34,25 @@ export const helpCommand: LocalCommand = {
     if (builtinCommands.length > 0) {
       result += '📦 Built-in Commands:\n';
       builtinCommands.forEach((cmd) => {
-        result += `  /${cmd.name} - ${cmd.description}\n`;
+        result += `  /${cmd.command.name} - ${cmd.command.description}\n`;
       });
       result += '\n';
     }
 
     // User commands
     if (userCommands.length > 0) {
-      result += '👤 User Commands (from ~/.takumi/commands/):\n';
+      result += '👤 User Commands:\n';
       userCommands.forEach((cmd) => {
-        result += `  /${cmd.name} - ${cmd.description}\n`;
+        result += `  /${cmd.command.name} - ${cmd.command.description}\n`;
       });
       result += '\n';
     }
 
     // Project commands
     if (projectCommands.length > 0) {
-      result += '📁 Project Commands (from .takumi/commands/):\n';
+      result += '📁 Project Commands:\n';
       projectCommands.forEach((cmd) => {
-        result += `  /${cmd.name} - ${cmd.description}\n`;
+        result += `  /${cmd.command.name} - ${cmd.command.description}\n`;
       });
       result += '\n';
     }
@@ -59,7 +61,7 @@ export const helpCommand: LocalCommand = {
     if (pluginCommands.length > 0) {
       result += '🔌 Plugin Commands:\n';
       pluginCommands.forEach((cmd) => {
-        result += `  /${cmd.name} - ${cmd.description}\n`;
+        result += `  /${cmd.command.name} - ${cmd.command.description}\n`;
       });
       result += '\n';
     }

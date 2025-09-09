@@ -1,12 +1,12 @@
-import { tool } from '@openai/agents';
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import { Context } from '../context';
+import { createTool } from '../tool';
 import { ripGrep } from '../utils/ripgrep';
+import type { GrepToolResult } from './type';
 
-export function createGrepTool(opts: { context: Context }) {
-  return tool({
+export function createGrepTool(opts: { cwd: string }) {
+  return createTool({
     name: 'grep',
     description: `Search for a pattern in a file or directory.`,
     parameters: z.object({
@@ -22,7 +22,11 @@ export function createGrepTool(opts: { context: Context }) {
         .nullable()
         .describe('The file pattern to include in the search'),
     }),
-    execute: async ({ pattern, search_path, include }) => {
+    execute: async ({
+      pattern,
+      search_path,
+      include,
+    }): Promise<GrepToolResult> => {
       try {
         const start = Date.now();
         const args = ['-li', pattern];
@@ -32,8 +36,8 @@ export function createGrepTool(opts: { context: Context }) {
         const absolutePath = search_path
           ? path.isAbsolute(search_path)
             ? search_path
-            : path.resolve(opts.context.cwd, search_path)
-          : opts.context.cwd;
+            : path.resolve(opts.cwd, search_path)
+          : opts.cwd;
         const results = await ripGrep(args, absolutePath);
         const stats = await Promise.all(results.map((_) => fs.statSync(_)));
         const matches = results
@@ -67,6 +71,9 @@ export function createGrepTool(opts: { context: Context }) {
           error: e instanceof Error ? e.message : 'Unknown error',
         };
       }
+    },
+    approval: {
+      category: 'read',
     },
   });
 }

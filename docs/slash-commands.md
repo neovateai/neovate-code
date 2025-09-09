@@ -41,6 +41,38 @@ Clears the chat history.
 
 Custom slash commands are registered through plugins using the `command` hook. Each command must specify its type, name, description, and implementation.
 
+### File-based Commands
+
+You can also create commands using Markdown files with frontmatter. Place `.md` files in:
+- `~/.takumi/commands/` for global user commands (prefix: `user:`)
+- `.takumi/commands/` for project-specific commands (prefix: `project:`)
+
+Example command file (`~/.takumi/commands/explain-code.md`):
+
+```markdown
+---
+description: "Explain code structure and functionality"
+model: "gpt-4o"
+---
+
+Please analyze the following code and provide a detailed explanation of:
+1. What the code does
+2. How it works
+3. Key patterns and techniques used
+4. Potential improvements
+
+Code to analyze: $ARGUMENTS
+```
+
+**Frontmatter options:**
+- `description`: Command description shown in `/help`
+- `model`: Specific model to use for this command (optional)
+
+**Template variables:**
+- `$ARGUMENTS`: Replaced with arguments passed to the command
+
+**Usage:** `/user:explain-code src/utils.ts`
+
 ### Local Commands
 
 Local commands execute immediately and return a text result:
@@ -145,6 +177,7 @@ export const aiPlugin = {
         description: 'Explain a concept or code',
         argNames: ['concept'],
         progressMessage: 'Generating explanation...',
+        model: 'gpt-4o', // Optional: specify model for this command
         async getPromptForCommand(args) {
           if (!args.trim()) {
             throw new Error('Please provide something to explain');
@@ -191,6 +224,7 @@ export const aiPlugin = {
 - Return an array of message objects with `role` and `content`
 - Use `progressMessage` to show status while AI processes the prompt
 - `argNames` is optional but helps with documentation
+- `model` is optional - specify a particular model for this command to override the global default
 - Thrown errors will be displayed to the user
 
 **Usage:** `/explain React hooks` or `/review src/utils.ts`
