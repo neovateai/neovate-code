@@ -69,7 +69,7 @@ const CodeDiffOutline = (props: Props) => {
 
   const { files } = useSnapshot(fileChanges.fileChangesState);
 
-  // 修改文件使用
+  // Used for file modification
   const file = useMemo(() => files[path], [files, path]);
 
   const code = useMemo(() => {
@@ -94,12 +94,12 @@ const CodeDiffOutline = (props: Props) => {
     };
   }, [file, oldString, newString]);
 
-  // 展示使用
+  // Used for display
   const [earlyFile, setEarlyFile] = useState<typeof file>();
 
   useEffect(() => {
     if (!earlyFile && file) {
-      // 记录file的最初状态
+      // Record the initial state of file
       setEarlyFile(file);
     }
   }, [file]);
@@ -171,7 +171,7 @@ const CodeDiffOutline = (props: Props) => {
     codeViewer.actions.setVisible(true);
   };
 
-  // 构建状态信息
+  // Build status information
   const renderStatusContent = () => {
     if (!hasDiff || editStatus) return null;
 
@@ -235,7 +235,7 @@ const CodeDiffOutline = (props: Props) => {
     setIsCopySuccess(true);
   };
 
-  // 构建操作按钮
+  // Build action buttons
   const actions = [
     {
       key: 'copy',
@@ -249,7 +249,7 @@ const CodeDiffOutline = (props: Props) => {
     },
   ];
 
-  // 构建底部按钮
+  // Build footer buttons
   const footers = [];
   if (hasDiff && !editStatus) {
     footers.push(
@@ -262,7 +262,7 @@ const CodeDiffOutline = (props: Props) => {
       {
         key: 'accept',
         text: t('toolApproval.approveAlwaysTool', '永久允许{{toolName}}', {
-          toolName: 'edit',
+          toolName: 'edit' as const,
         }),
         onClick: () => handleAccept('always'),
       },
@@ -270,7 +270,7 @@ const CodeDiffOutline = (props: Props) => {
         key: 'reject',
         text: t('toolApproval.deny', '拒绝'),
         onClick: handleReject,
-        color: 'danger',
+        color: 'danger' as const,
       },
     );
   }
