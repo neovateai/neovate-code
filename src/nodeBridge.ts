@@ -2,8 +2,8 @@ import { compact } from './compact';
 import { type ApprovalMode, ConfigManager } from './config';
 import { CANCELED_MESSAGE_TEXT } from './constants';
 import { Context } from './context';
-import type { Message, NormalizedMessage, UserMessage } from './history';
 import { JsonlLogger } from './jsonl';
+import type { Message, NormalizedMessage, UserMessage } from './message';
 import { MessageBus } from './messageBus';
 import { type Model, type Provider, resolveModelWithContext } from './model';
 import { OutputStyleManager } from './outputStyle';
@@ -137,6 +137,19 @@ class NodeHandlerRegistry {
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {
               message: opts.message,
+            });
+          },
+          onTextDelta: async (text) => {
+            await this.messageBus.emitEvent('textDelta', {
+              text,
+            });
+          },
+          onChunk: async (chunk, requestId) => {
+            await this.messageBus.emitEvent('chunk', {
+              chunk,
+              requestId,
+              sessionId,
+              cwd,
             });
           },
           onToolApprove: async ({ toolUse, category }: any) => {

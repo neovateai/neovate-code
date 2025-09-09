@@ -1,8 +1,8 @@
 import { Context } from './context';
-import type { NormalizedMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { LlmsContext } from './llmsContext';
-import { type ToolUse, runLoop } from './loop';
+import { runLoop } from './loop';
+import type { NormalizedMessage } from './message';
 import { resolveModelWithContext } from './model';
 import { OutputFormat } from './outputFormat';
 import { OutputStyleManager } from './outputStyle';
@@ -10,6 +10,7 @@ import { generatePlanSystemPrompt } from './planSystemPrompt';
 import { PluginHookType } from './plugin';
 import { Session, SessionConfigManager, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
+import type { ToolUse } from './tool';
 import type { ApprovalCategory, Tool } from './tool';
 import { Tools, resolveTools } from './tool';
 import { detectImageFormat } from './ui/TextInput/utils/imagePaste';
@@ -35,6 +36,8 @@ export class Project {
       model?: string;
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
       onToolApprove?: (opts: { toolUse: ToolUse }) => Promise<boolean>;
+      onTextDelta?: (text: string) => Promise<void>;
+      onChunk?: (chunk: any) => Promise<void>;
       signal?: AbortSignal;
       images?: string[];
     } = {},
@@ -79,6 +82,8 @@ export class Project {
     opts: {
       model?: string;
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
+      onTextDelta?: (text: string) => Promise<void>;
+      onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
       images?: string[];
     } = {},
@@ -124,6 +129,8 @@ export class Project {
         toolUse: ToolUse;
         category?: ApprovalCategory;
       }) => Promise<boolean>;
+      onTextDelta?: (text: string) => Promise<void>;
+      onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
       tools?: Tool[];
       systemPrompt?: string;
@@ -246,7 +253,12 @@ export class Project {
           message: normalizedMessage,
         });
       },
-      onTextDelta: async () => {},
+      onTextDelta: async (text) => {
+        await opts.onTextDelta?.(text);
+      },
+      onChunk: async (chunk, requestId) => {
+        await opts.onChunk?.(chunk, requestId);
+      },
       onText: async (text) => {},
       onReasoning: async (text) => {},
       onToolUse: async (toolUse) => {

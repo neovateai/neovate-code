@@ -60,7 +60,7 @@ export class At {
       }
       paths.push(path);
     }
-    return paths;
+    return [...new Set(paths)];
   }
 
   renderFilesToXml(files: string[]): string {

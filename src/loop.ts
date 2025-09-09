@@ -1,25 +1,14 @@
 import { Agent, Runner, type SystemMessageItem } from '@openai/agents';
 import { At } from './at';
-import { History, type NormalizedMessage, type OnMessage } from './history';
+import { History, type OnMessage } from './history';
+import type { NormalizedMessage } from './message';
 import type { ModelInfo } from './model';
-import type { Tools } from './tool';
+import type { ToolUse, Tools } from './tool';
 import { Usage } from './usage';
 import { parseMessage } from './utils/parse-message';
 import { randomUUID } from './utils/randomUUID';
 
 const DEFAULT_MAX_TURNS = 50;
-
-export type ToolUse = {
-  name: string;
-  params: Record<string, any>;
-  callId: string;
-};
-
-export type ToolUseResult = {
-  toolUse: ToolUse;
-  result: any;
-  approved: boolean;
-};
 
 export type LoopResult =
   | {
@@ -52,6 +41,7 @@ type RunLoopOpts = {
   onTextDelta?: (text: string) => Promise<void>;
   onText?: (text: string) => Promise<void>;
   onReasoning?: (text: string) => Promise<void>;
+  onChunk?: (chunk: any, requestId: string) => Promise<void>;
   onToolUse?: (toolUse: ToolUse) => Promise<ToolUse>;
   onToolResult?: (
     toolUse: ToolUse,
@@ -142,6 +132,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
       input: agentInput,
       cwd: opts.cwd,
     });
+    const requestId = randomUUID();
     const result = await runner.run(agent, agentInput, {
       stream: true,
       // why comment out this?
@@ -165,6 +156,9 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
             },
           };
         }
+
+        // Call onChunk for all chunks
+        await opts.onChunk?.(chunk, requestId);
 
         if (
           chunk.type === 'raw_model_stream_event' &&
@@ -260,30 +254,33 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
       endTime,
     });
     const model = `${opts.model.provider.id}/${opts.model.model.id}`;
-    await history.addMessage({
-      role: 'assistant',
-      content: parsed.map((item) => {
-        if (item.type === 'text') {
-          return {
-            type: 'text',
-            text: item.content,
-          };
-        } else {
-          return {
-            type: 'tool_use',
-            id: item.callId!,
-            name: item.name,
-            input: item.params,
-          };
-        }
-      }),
-      text,
-      model,
-      usage: {
-        input_tokens: lastUsage.promptTokens,
-        output_tokens: lastUsage.completionTokens,
+    await history.addMessage(
+      {
+        role: 'assistant',
+        content: parsed.map((item) => {
+          if (item.type === 'text') {
+            return {
+              type: 'text',
+              text: item.content,
+            };
+          } else {
+            return {
+              type: 'tool_use',
+              id: item.callId!,
+              name: item.name,
+              input: item.params,
+            };
+          }
+        }),
+        text,
+        model,
+        usage: {
+          input_tokens: lastUsage.promptTokens,
+          output_tokens: lastUsage.completionTokens,
+        },
       },
-    });
+      requestId,
+    );
     let toolUse = parsed.find((item) => item.type === 'tool_use') as ToolUse;
     if (toolUse) {
       if (opts.onToolUse) {

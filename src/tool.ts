@@ -197,6 +197,18 @@ function validateToolParams(schema: z.ZodObject<any>, params: string) {
   }
 }
 
+export type ToolUse = {
+  name: string;
+  params: Record<string, any>;
+  callId: string;
+};
+
+export type ToolUseResult = {
+  toolUse: ToolUse;
+  result: any;
+  approved: boolean;
+};
+
 export interface Tool<T = any> {
   name: string;
   description: string;

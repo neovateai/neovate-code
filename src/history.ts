@@ -4,75 +4,16 @@ import type {
   SystemMessageItem,
   UserMessageItem,
 } from '@openai/agents';
+import type {
+  AssistantMessage,
+  Message,
+  NormalizedMessage,
+  ToolMessage,
+  ToolResultPart,
+  ToolUsePart,
+  UserMessage,
+} from './message';
 import { randomUUID } from './utils/randomUUID';
-
-type SystemMessage = {
-  role: 'system';
-  content: string;
-};
-type TextPart = {
-  type: 'text';
-  text: string;
-};
-type ImagePart = {
-  type: 'input_image';
-  image: string;
-  providerData?: { mime_type: string };
-};
-
-type UserContent = string | Array<TextPart | ImagePart>;
-export type ToolUsePart = {
-  type: 'tool_use';
-  id: string;
-  name: string;
-  input: Record<string, any>;
-};
-type ReasoningPart = {
-  type: 'reasoning';
-  text: string;
-};
-type AssistantContent = string | Array<TextPart | ReasoningPart | ToolUsePart>;
-export type AssistantMessage = {
-  role: 'assistant';
-  content: AssistantContent;
-  text: string;
-  model: string;
-  usage: {
-    input_tokens: number;
-    output_tokens: number;
-    cache_read_input_tokens?: number;
-    cache_creation_input_tokens?: number;
-  };
-};
-export type UserMessage = {
-  role: 'user';
-  content: UserContent;
-  hidden?: boolean;
-};
-export type ToolMessage = {
-  role: 'user';
-  content: ToolContent;
-};
-type ToolContent = Array<ToolResultPart>;
-export type ToolResultPart = {
-  type: 'tool_result';
-  id: string;
-  name: string;
-  input: Record<string, any>;
-  result: any;
-  isError?: boolean;
-};
-export type Message =
-  | SystemMessage
-  | UserMessage
-  | AssistantMessage
-  | ToolMessage;
-export type NormalizedMessage = Message & {
-  type: 'message';
-  timestamp: string;
-  uuid: string;
-  parentUuid: string | null;
-};
 
 export type OnMessage = (message: NormalizedMessage) => Promise<void>;
 export type HistoryOpts = {
@@ -88,11 +29,11 @@ export class History {
     this.onMessage = opts.onMessage;
   }
 
-  async addMessage(message: Message): Promise<void> {
+  async addMessage(message: Message, uuid?: string): Promise<void> {
     const lastMessage = this.messages[this.messages.length - 1];
     const normalizedMessage: NormalizedMessage = {
       parentUuid: lastMessage?.uuid || null,
-      uuid: randomUUID(),
+      uuid: uuid || randomUUID(),
       ...message,
       type: 'message',
       timestamp: new Date().toISOString(),

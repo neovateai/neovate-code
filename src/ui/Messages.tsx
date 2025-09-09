@@ -1,14 +1,14 @@
 import { Box, Static, Text } from 'ink';
 import React from 'react';
 import { CANCELED_MESSAGE_TEXT, TOOL_NAME } from '../constants';
+import type { NormalizedMessage } from '../message';
 import type {
   AssistantMessage,
-  NormalizedMessage,
   ToolMessage,
   ToolResultPart,
   ToolUsePart,
   UserMessage,
-} from '../history';
+} from '../message';
 import {
   getMessageText,
   isCanceledMessage,

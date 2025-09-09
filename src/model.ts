@@ -32,6 +32,7 @@ interface ModelLimit {
 export interface Model {
   id: string;
   name: string;
+  shortName?: string;
   attachment: boolean;
   reasoning: boolean;
   temperature: boolean;
@@ -61,6 +62,7 @@ export type ModelMap = Record<string, Omit<Model, 'id' | 'cost'>>;
 export const models: ModelMap = {
   'deepseek-v3-0324': {
     name: 'DeepSeek-V3-0324',
+    shortName: 'DeepSeek V3',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -74,6 +76,7 @@ export const models: ModelMap = {
   },
   'deepseek-v3-1': {
     name: 'DeepSeek-V3.1',
+    shortName: 'DeepSeek V3.1',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -87,6 +90,7 @@ export const models: ModelMap = {
   },
   'deepseek-r1-0528': {
     name: 'DeepSeek-R1-0528',
+    shortName: 'DeepSeek R1',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -126,6 +130,7 @@ export const models: ModelMap = {
   },
   'kimi-k2-0905': {
     name: 'Kimi K2 Instruct 0905',
+    shortName: 'Kimi K2 0905',
     attachment: false,
     reasoning: false,
     temperature: true,
@@ -139,6 +144,7 @@ export const models: ModelMap = {
   },
   'qwen3-coder-480b-a35b-instruct': {
     name: 'Qwen3-Coder-480B-A35B-Instruct',
+    shortName: 'Qwen3 Coder',
     attachment: false,
     reasoning: false,
     temperature: true,
@@ -152,6 +158,7 @@ export const models: ModelMap = {
   },
   'qwen3-235b-a22b-07-25': {
     name: 'Qwen3 235B A22B Instruct 2507',
+    shortName: 'Qwen3',
     attachment: false,
     reasoning: false,
     temperature: true,
@@ -194,6 +201,7 @@ export const models: ModelMap = {
   },
   'gemini-2.5-flash-lite-preview-06-17': {
     name: 'Gemini 2.5 Flash Lite Preview 06-17',
+    shortName: 'Gemini 2.5 Flash Lite',
     attachment: true,
     reasoning: true,
     temperature: true,
@@ -252,6 +260,7 @@ export const models: ModelMap = {
   },
   'claude-3-5-sonnet-20241022': {
     name: 'Claude Sonnet 3.5 v2',
+    shortName: 'Sonnet 3.5',
     attachment: true,
     reasoning: false,
     temperature: true,
@@ -265,6 +274,7 @@ export const models: ModelMap = {
   },
   'claude-3-7-sonnet': {
     name: 'Claude Sonnet 3.7',
+    shortName: 'Sonnet 3.7',
     attachment: true,
     reasoning: true,
     temperature: true,
@@ -278,6 +288,7 @@ export const models: ModelMap = {
   },
   'claude-4-sonnet': {
     name: 'Claude Sonnet 4',
+    shortName: 'Sonnet 4',
     attachment: true,
     reasoning: true,
     temperature: true,
@@ -291,6 +302,7 @@ export const models: ModelMap = {
   },
   'claude-4-opus': {
     name: 'Claude Opus 4',
+    shortName: 'Opus 4',
     attachment: true,
     reasoning: true,
     temperature: true,
@@ -304,6 +316,7 @@ export const models: ModelMap = {
   },
   'gpt-oss-120b': {
     name: 'GPT OSS 120B',
+    shortName: 'GPT OSS',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -436,7 +449,7 @@ export const models: ModelMap = {
     limit: { context: 200000, output: 100000 },
   },
   'glm-4.5': {
-    name: 'GLM-4.5',
+    name: 'GLM 4.5',
     attachment: false,
     reasoning: true,
     temperature: true,
