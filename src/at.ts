@@ -112,14 +112,13 @@ export class At {
   }): AgentInputItem[] {
     const reversedInput = [...opts.input].reverse();
     const lastUserMessage = reversedInput.find((item) => {
-      // @ts-ignore
-      return item.role === 'user';
+      return 'role' in item && item.role === 'user';
     }) as UserMessageItem;
     if (lastUserMessage) {
       let userPrompt = lastUserMessage.content;
       if (Array.isArray(userPrompt)) {
-        // @ts-ignore
-        userPrompt = userPrompt[0].text as string;
+        userPrompt =
+          userPrompt[0]?.type === 'input_text' ? userPrompt[0].text : '';
       }
       const at = new At({
         userPrompt,
@@ -127,7 +126,13 @@ export class At {
       });
       const content = at.getContent();
       if (content) {
-        lastUserMessage.content += `\n\n${content}`;
+        if (Array.isArray(lastUserMessage.content)) {
+          if (lastUserMessage.content[0]?.type === 'input_text') {
+            lastUserMessage.content[0].text += `\n\n${content}`;
+          }
+        } else {
+          lastUserMessage.content += `\n\n${content}`;
+        }
         const input = reversedInput.reverse();
         return input;
       }
