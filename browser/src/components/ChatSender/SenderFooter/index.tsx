@@ -26,9 +26,9 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
       <Flex gap="small" align="center">
         <ModeSelect />
         <ModelSelect />
+        <McpDropdown />
       </Flex>
       <Flex align="center">
-        <McpDropdown />
         <SenderAttachments />
         <Divider type="vertical" />
         {isProcessing ? (
