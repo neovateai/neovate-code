@@ -352,6 +352,7 @@ class NodeHandlerRegistry {
               providerName: model.provider.name,
               modelName: model.model.name,
               modelId: model.model.id,
+              modelContextLimit: model.model.limit.context,
             },
           },
         };

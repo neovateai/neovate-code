@@ -71,7 +71,7 @@ interface AppState {
   productASCIIArt: string;
   version: string;
   theme: Theme;
-  model: string;
+  model: string | null;
   modelContextLimit: number;
   sessionId: string | null;
   initialPrompt: string | null;
@@ -667,7 +667,15 @@ export const useAppStore = create<AppStore>()(
           isGlobal: true,
         });
         await bridge.request('clearContext', {});
-        set({ model });
+        // Get the modelContextLimit for the selected model
+        const modelsResponse = await bridge.request('getModels', { cwd });
+        if (modelsResponse.success) {
+          set({
+            model,
+            modelContextLimit:
+              modelsResponse.data.currentModelInfo.modelContextLimit,
+          });
+        }
       },
       approveToolUse: ({
         toolUse,
