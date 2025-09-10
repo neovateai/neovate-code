@@ -5,6 +5,7 @@ import type {
   UserMessageItem,
 } from '@openai/agents';
 import type { Message, NormalizedMessage } from './message';
+import type { ToolResult } from './tool';
 import { randomUUID } from './utils/randomUUID';
 
 export type OnMessage = (message: NormalizedMessage) => Promise<void>;
@@ -47,14 +48,35 @@ export class History {
               },
             ];
           }
-          content = content.map((part: any) => {
+          content = content.flatMap((part: any) => {
             if (part.type === 'tool_result') {
-              const text = `[${part.name} for ${safeStringify(part.input)}] result: \n<function_results>\n${safeStringify(part.result)}\n</function_results>`;
-              return { type: 'input_text', text };
+              const result = part.result as ToolResult;
+              const llmContent = result.llmContent;
+              const formatText = (text: string) => {
+                return {
+                  type: 'input_text',
+                  text: `[${part.name} for ${safeStringify(part.input)}] result: \n<function_results>\n${safeStringify(text)}\n</function_results>`,
+                };
+              };
+              if (typeof llmContent === 'string') {
+                return formatText(llmContent);
+              } else {
+                return llmContent.map((part) => {
+                  if (part.type === 'text') {
+                    return formatText(part.text);
+                  } else {
+                    return {
+                      type: 'input_image',
+                      image: part.data,
+                      providerData: { mime_type: part.mimeType },
+                    };
+                  }
+                });
+              }
             } else if (part.type === 'text') {
-              return { type: 'input_text', text: part.text };
+              return [{ type: 'input_text', text: part.text }];
             } else {
-              return part;
+              return [part];
             }
           });
           return content;

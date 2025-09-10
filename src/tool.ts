@@ -212,7 +212,7 @@ export type ToolUseResult = {
 export interface Tool<T = any> {
   name: string;
   description: string;
-  execute: (params: T) => Promise<any> | any;
+  execute: (params: T) => Promise<ToolResult<any>> | ToolResult<any>;
   approval?: ToolApprovalInfo;
   parameters: z.ZodSchema<T>;
 }

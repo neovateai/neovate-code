@@ -422,15 +422,18 @@ export class MCPManager {
             null as any,
             JSON.stringify(params || {}),
           );
+          let returnDisplay = result;
+          let llmContent = `Tool ${mcpTool.name} executed successfully, ${params ? `parameters: ${JSON.stringify(params)}` : ''}`;
+          // ref: https://modelcontextprotocol.io/specification/2025-06-18/server/tools#data-types
+          // TODO
           return {
-            success: true,
-            data: result,
-            message: `Tool ${mcpTool.name} executed successfully, ${params ? `parameters: ${JSON.stringify(params)}` : ''}`,
+            returnDisplay,
+            llmContent,
           };
         } catch (error) {
           return {
-            success: false,
-            error: error instanceof Error ? error.message : String(error),
+            isError: true,
+            llmContent: error instanceof Error ? error.message : String(error),
           };
         }
       },

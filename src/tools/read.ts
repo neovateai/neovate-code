@@ -31,20 +31,17 @@ function getImageMimeType(ext: string): ImageMediaType {
   return mimeTypes[ext] || 'image/jpeg';
 }
 
-function createImageResponse(buffer: Buffer, ext: string) {
+function createImageResponse(buffer: Buffer, ext: string): ReadToolResult {
   const mimeType = getImageMimeType(ext);
+  const base64 = buffer.toString('base64');
+  const data = `data:${mimeType};base64,${base64}`;
   return {
-    success: true,
-    message: 'Read image file successfully.',
-    data: {
-      type: 'image',
-      mimeType,
-      content: buffer.toString('base64'),
-    },
+    llmContent: [{ type: 'image', data, mimeType }],
+    returnDisplay: 'Read image file successfully.',
   };
 }
 
-async function processImage(filePath: string): Promise<any> {
+async function processImage(filePath: string): Promise<ReadToolResult> {
   try {
     const stats = fs.statSync(filePath);
     const ext = path.extname(filePath).toLowerCase();
