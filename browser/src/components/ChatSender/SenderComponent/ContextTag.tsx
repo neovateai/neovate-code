@@ -1,8 +1,8 @@
 import Icon, { AppstoreOutlined, CloseCircleFilled } from '@ant-design/icons';
 import { Popover } from 'antd';
 import { cx } from 'antd-style';
-import { useState } from 'react';
-import type { FileItem } from '@/api/model';
+import { useMemo, useState } from 'react';
+import type { FileItem, ImageItem } from '@/api/model';
 import DevFileIcon from '@/components/DevFileIcon';
 import { ContextType } from '@/constants/context';
 import type { ContextStoreValue } from '@/types/context';
@@ -16,8 +16,6 @@ interface Props {
   onClick?: (val: string) => void;
   /** Tag content */
   label: string;
-  /** Tag image */
-  image?: string;
   /** Tag value, must be unique */
   value: string;
 
@@ -26,33 +24,49 @@ interface Props {
   contextType?: ContextType;
 }
 
-function renderIcon(type?: ContextType, context?: ContextStoreValue) {
-  if (!context || !type) {
-    return null;
-  }
-  switch (type) {
-    case ContextType.FILE:
-      const fileExt = (context as FileItem).name.split('.').pop() ?? '';
-      const isFolder = (context as FileItem).type === 'directory';
-      return <DevFileIcon fileExt={fileExt} isFolder={isFolder} />;
-    case ContextType.SLASH_COMMAND:
-      return <AppstoreOutlined />;
-  }
-}
-
 export const SenderContextTag = (props: Props) => {
-  const {
-    closeable,
-    onClose,
-    onClick,
-    label,
-    image,
-    value,
-    context,
-    contextType,
-  } = props;
+  const { closeable, onClose, onClick, label, value, context, contextType } =
+    props;
 
   const [hover, setHover] = useState(false);
+
+  const icon = useMemo(() => {
+    if (!context || !contextType) {
+      return null;
+    }
+    switch (contextType) {
+      case ContextType.FILE:
+        const fileExt = (context as FileItem).name.split('.').pop() ?? '';
+        const isFolder = (context as FileItem).type === 'directory';
+        return <DevFileIcon fileExt={fileExt} isFolder={isFolder} />;
+      case ContextType.SLASH_COMMAND:
+        return <AppstoreOutlined />;
+      case ContextType.IMAGE:
+        const imageSrc = (context as ImageItem).src;
+        return (
+          <img
+            src={imageSrc}
+            width={30}
+            height={20}
+            className="rounded-2xl h-5 w-7.5"
+          />
+        );
+      default:
+        return null;
+    }
+  }, [context, contextType]);
+
+  const popoverContent = useMemo(() => {
+    switch (contextType) {
+      case ContextType.IMAGE:
+        const imageSrc = (context as ImageItem).src;
+        return <img src={imageSrc} className="max-w-xl max-h-120" />;
+      case ContextType.FILE:
+        return (context as FileItem).path;
+      default:
+        return null;
+    }
+  }, [contextType, context]);
 
   return (
     <div
@@ -71,22 +85,9 @@ export const SenderContextTag = (props: Props) => {
           <Icon component={() => <CloseCircleFilled />} />
         </div>
       )}
-      <Popover
-        title={image && <img src={image} className="max-w-xl max-h-120" />}
-      >
+      <Popover content={popoverContent}>
         <div className="flex items-center gap-1 rounded-[50px] py-2 px-3 bg-[#F7F8FA] text-[#110C22] text-xs select-none">
-          <div>
-            {image ? (
-              <img
-                src={image}
-                width={30}
-                height={20}
-                className="rounded-2xl h-5 w-7.5"
-              />
-            ) : (
-              renderIcon(contextType, context)
-            )}
-          </div>
+          <div>{icon}</div>
           <div>{label}</div>
         </div>
       </Popover>

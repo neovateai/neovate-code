@@ -2,8 +2,6 @@ import { Sender } from '@ant-design/x';
 import { Flex, Spin } from 'antd';
 import React, { useCallback, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
-import type { ImageItem } from '@/api/model';
-import { ContextType } from '@/constants/context';
 import * as context from '@/state/context';
 import AddContext from '../AddContext';
 import SenderComponent from '../SenderComponent';
@@ -23,11 +21,6 @@ const SenderHeader: React.FC = () => {
         label={contextItem.displayText}
         value={contextItem.value}
         onClose={handleRemoveContext}
-        image={
-          contextItem.type === ContextType.IMAGE
-            ? (contextItem.context as ImageItem).src
-            : undefined
-        }
         context={contextItem.context}
         contextType={contextItem.type}
       />
