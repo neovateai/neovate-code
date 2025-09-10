@@ -4,15 +4,7 @@ import type {
   SystemMessageItem,
   UserMessageItem,
 } from '@openai/agents';
-import type {
-  AssistantMessage,
-  Message,
-  NormalizedMessage,
-  ToolMessage,
-  ToolResultPart,
-  ToolUsePart,
-  UserMessage,
-} from './message';
+import type { Message, NormalizedMessage } from './message';
 import { randomUUID } from './utils/randomUUID';
 
 export type OnMessage = (message: NormalizedMessage) => Promise<void>;

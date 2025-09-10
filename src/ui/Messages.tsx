@@ -235,15 +235,19 @@ function Thinking({ text }: { text: string }) {
 }
 
 function ToolResultItem({ part }: { part: ToolResultPart }) {
-  const { result, name, input, isError } = part;
-  if (!result.success && (result.error || isError)) {
-    return <Text color={UI_COLORS.ERROR}>{result.error || result}</Text>;
+  const { result, name, input } = part;
+  if (result.isError) {
+    return (
+      <Text color={UI_COLORS.ERROR}>
+        {result.returnDisplay || result.llmContent}
+      </Text>
+    );
   }
   if (name === TOOL_NAME.TODO_WRITE) {
     return (
       <TodoList
-        oldTodos={result.data.oldTodos}
-        newTodos={result.data.newTodos}
+        oldTodos={result.returnDisplay.oldTodos}
+        newTodos={result.returnDisplay.newTodos}
         verbose={false}
       />
     );
@@ -251,7 +255,7 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
   if (name === 'edit') {
     const originalContent = input.old_string;
     const newContent = input.new_string;
-    const fileName = result.data.relativeFilePath;
+    const fileName = result.returnDisplay.relativeFilePath;
     return (
       <DiffViewer
         originalContent={originalContent}
@@ -261,9 +265,9 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
     );
   }
   if (name === 'write') {
-    const fileName = result.data.relativeFilePath;
-    const originalContent = result.data.oldContent || '';
-    const newContent = result.data.content;
+    const fileName = result.returnDisplay.relativeFilePath;
+    const originalContent = result.returnDisplay.oldContent || '';
+    const newContent = result.returnDisplay.content;
     return (
       <DiffViewer
         originalContent={originalContent}
@@ -273,9 +277,12 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
     );
   }
   if (name === TOOL_NAME.TODO_READ) {
-    return <TodoRead todos={result.data} />;
+    return <TodoRead todos={result.returnDisplay} />;
   }
-  const text = (result.success && result.message) || JSON.stringify(result);
+  let text = result.returnDisplay || result.llmContent;
+  if (typeof text !== 'string') {
+    text = JSON.stringify(text);
+  }
   return <Text color={UI_COLORS.TOOL_RESULT}>↳ {text}</Text>;
 }
 

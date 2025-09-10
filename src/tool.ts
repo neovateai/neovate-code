@@ -3,6 +3,7 @@ import path from 'path';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { Context } from './context';
+import type { ImagePart, TextPart } from './message';
 import { resolveModelWithContext } from './model';
 import { createBashTool } from './tools/bash';
 import { createEditTool } from './tools/edit';
@@ -83,20 +84,20 @@ export class Tools {
     return Object.keys(this.tools).length;
   }
 
-  async invoke(toolName: string, args: string) {
+  async invoke(toolName: string, args: string): Promise<ToolResult> {
     const tool = this.tools[toolName];
     if (!tool) {
       return {
-        success: false,
-        error: `Tool ${toolName} not found`,
+        llmContent: `Tool ${toolName} not found`,
+        isError: true,
       };
     }
     // @ts-ignore
     const result = validateToolParams(tool.parameters, args);
     if (!result.success) {
       return {
-        success: false,
-        error: `Invalid tool parameters: ${result.error}`,
+        llmContent: `Invalid tool parameters: ${result.error}`,
+        isError: true,
       };
     }
     let argsObj: any;
@@ -104,8 +105,8 @@ export class Tools {
       argsObj = JSON.parse(args);
     } catch (error) {
       return {
-        success: false,
-        error: `Invalid tool parameters: ${error}`,
+        llmContent: `Invalid tool parameters: ${error}`,
+        isError: true,
       };
     }
     return await tool.execute(argsObj);
@@ -230,11 +231,19 @@ type ToolApprovalInfo = {
   category?: ApprovalCategory;
 };
 
+export type ToolResult<T = string> = {
+  llmContent: string | (TextPart | ImagePart)[];
+  returnDisplay?: string | T;
+  isError?: boolean;
+};
+
 export function createTool<TSchema extends z.ZodTypeAny>(config: {
   name: string;
   description: string;
   parameters: TSchema;
-  execute: (params: z.infer<TSchema>) => Promise<any> | any;
+  execute: (
+    params: z.infer<TSchema>,
+  ) => Promise<ToolResult<any>> | ToolResult<any>;
   approval?: ToolApprovalInfo;
 }): Tool<z.infer<TSchema>> {
   return {

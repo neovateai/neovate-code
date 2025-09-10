@@ -57,9 +57,8 @@ export function createGrepTool(opts: { cwd: string }) {
           .map((_) => _[0]);
         const durationMs = Date.now() - start;
         return {
-          success: true,
-          message: `Found ${matches.length} files in ${durationMs}ms.`,
-          data: {
+          llmContent: `Found ${matches.length} files in ${durationMs}ms.`,
+          returnDisplay: {
             filenames: matches,
             durationMs,
             numFiles: matches.length,
@@ -67,8 +66,8 @@ export function createGrepTool(opts: { cwd: string }) {
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
     },

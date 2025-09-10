@@ -44,9 +44,8 @@ Glob
           ? `Found ${filenames.length} files in ${Date.now() - start}ms, truncating to ${LIMIT}.`
           : `Found ${filenames.length} files in ${Date.now() - start}ms.`;
         return {
-          success: true,
-          message,
-          data: {
+          llmContent: message,
+          returnDisplay: {
             filenames,
             durationMs: Date.now() - start,
             numFiles: filenames.length,
@@ -55,8 +54,8 @@ Glob
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
     },

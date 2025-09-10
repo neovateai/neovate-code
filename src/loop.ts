@@ -3,7 +3,7 @@ import { At } from './at';
 import { History, type OnMessage } from './history';
 import type { NormalizedMessage } from './message';
 import type { ModelInfo } from './model';
-import type { ToolUse, Tools } from './tool';
+import type { ToolResult, ToolUse, Tools } from './tool';
 import { Usage } from './usage';
 import { parseMessage } from './utils/parse-message';
 import { randomUUID } from './utils/randomUUID';
@@ -45,9 +45,9 @@ type RunLoopOpts = {
   onToolUse?: (toolUse: ToolUse) => Promise<ToolUse>;
   onToolResult?: (
     toolUse: ToolUse,
-    toolResult: any,
+    toolResult: ToolResult,
     approved: boolean,
-  ) => Promise<any>;
+  ) => Promise<ToolResult>;
   onTurn?: (turn: {
     usage: Usage;
     startTime: Date;
@@ -307,13 +307,15 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
               name: toolUse.name,
               input: toolUse.params,
               result: toolResult,
-              // TODO: more isError cases
-              isError: !approved,
             },
           ],
         });
       } else {
-        let toolResult = 'Tool execution was denied by user.';
+        const message = 'Error: Tool execution was denied by user.';
+        let toolResult: ToolResult = {
+          llmContent: message,
+          isError: true,
+        };
         if (opts.onToolResult) {
           toolResult = await opts.onToolResult(toolUse, toolResult, approved);
         }
@@ -326,7 +328,6 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
               name: toolUse.name,
               input: toolUse.params,
               result: toolResult,
-              isError: true,
             },
           ],
         });
@@ -334,7 +335,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
           success: false,
           error: {
             type: 'tool_denied',
-            message: toolResult,
+            message,
             details: {
               toolUse,
               history,

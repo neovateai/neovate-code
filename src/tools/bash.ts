@@ -123,10 +123,8 @@ async function executeCommand(
   const validationError = validateCommand(command);
   if (validationError) {
     return {
-      success: false,
-      error: validationError,
-      // @ts-ignore
-      command,
+      isError: true,
+      llmContent: validationError,
     };
   }
 
@@ -232,9 +230,8 @@ async function executeCommand(
   }
 
   return {
-    success: true,
-    message,
-    data: llmContent,
+    llmContent: message,
+    returnDisplay: llmContent,
   };
 }
 
@@ -280,20 +277,19 @@ cd /foo/bar && pytest tests
       try {
         if (!command) {
           return {
-            success: false,
-            error: 'Command cannot be empty.',
+            llmContent: 'Error: Command cannot be empty.',
+            isError: true,
           };
         }
-        const result = await executeCommand(
+        return await executeCommand(
           command,
           timeout || DEFAULT_TIMEOUT,
           opts.cwd,
         );
-        return result;
       } catch (e) {
         return {
-          success: false,
-          error:
+          isError: true,
+          llmContent:
             e instanceof Error
               ? `Command execution failed: ${getErrorMessage(e)}`
               : 'Command execution failed.',

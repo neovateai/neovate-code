@@ -28,9 +28,8 @@ Remembers:
         const cached = urlCache.get(key);
         if (cached && cached.durationMs < CACHE_TTL_MS) {
           return {
-            success: true,
-            message: `Successfully fetched content from ${url} (cached)`,
-            data: {
+            llmContent: `Successfully fetched content from ${url} (cached)`,
+            returnDisplay: {
               ...cached,
               cached: true,
               durationMs: Date.now() - startTime,
@@ -102,14 +101,13 @@ Provide a concise response based only on the content above. In your response:
         };
         urlCache.set(key, data);
         return {
-          success: true,
-          message: `Successfully fetched content from ${url}`,
-          data,
+          llmContent: `Successfully fetched content from ${url}`,
+          returnDisplay: data,
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
     },

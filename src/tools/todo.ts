@@ -247,15 +247,14 @@ export function createTodoTool(opts: { filePath: string }) {
         await saveTodos(newTodos, getTodoFilePath());
 
         return {
-          success: true,
-          data: { oldTodos, newTodos },
-          message:
+          llmContent:
             'Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable',
+          returnDisplay: { oldTodos, newTodos },
         };
       } catch (error) {
         return {
-          success: false,
-          error:
+          isError: true,
+          llmContent:
             error instanceof Error
               ? `Failed to write todos: ${error.message}`
               : 'Unknown error',
@@ -275,17 +274,16 @@ export function createTodoTool(opts: { filePath: string }) {
       try {
         const todos = await readTodos();
         return {
-          success: true,
-          data: todos,
-          message:
+          llmContent:
             todos.length === 0
               ? 'Todo list is empty'
               : `Found ${todos.length} todos`,
+          returnDisplay: todos,
         };
       } catch (error) {
         return {
-          success: false,
-          error:
+          isError: true,
+          llmContent:
             error instanceof Error
               ? `Failed to read todos: ${error.message}`
               : 'Unknown error',

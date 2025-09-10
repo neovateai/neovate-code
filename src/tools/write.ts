@@ -27,9 +27,8 @@ export function createWriteTool(opts: { cwd: string }) {
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(fullFilePath, format(content));
         return {
-          success: true,
-          message: `File successfully written to ${file_path}`,
-          data: {
+          llmContent: `File successfully written to ${file_path}`,
+          returnDisplay: {
             filePath: file_path,
             relativeFilePath: path.relative(opts.cwd, fullFilePath),
             oldContent,
@@ -39,8 +38,8 @@ export function createWriteTool(opts: { cwd: string }) {
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
     },

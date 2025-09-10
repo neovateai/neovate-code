@@ -47,14 +47,13 @@ Usage:
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(fullFilePath, updatedFile, 'utf-8');
         return {
-          success: true,
-          message: `File ${file_path} successfully edited.`,
-          data: { filePath: file_path, relativeFilePath },
+          llmContent: `File ${file_path} successfully edited.`,
+          returnDisplay: { filePath: file_path, relativeFilePath },
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
     },

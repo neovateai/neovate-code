@@ -1,19 +1,7 @@
+import type { ToolResult } from '../tool';
 import type { TodoItem } from './todo';
 
-type BaseToolResult<T> = BaseToolSuccessResult<T> | BaseToolErrorResult;
-
-type BaseToolSuccessResult<T> = {
-  success: true;
-  message: string;
-  data: T;
-};
-
-type BaseToolErrorResult = {
-  success: false;
-  error: string;
-};
-
-export type WriteToolResult = BaseToolResult<{
+export type WriteToolResult = ToolResult<{
   filePath: string;
   relativeFilePath: string;
   oldContent: string | null;
@@ -21,19 +9,19 @@ export type WriteToolResult = BaseToolResult<{
   type: 'replace' | 'add';
 }>;
 
-export type EditToolResult = BaseToolResult<{
+export type EditToolResult = ToolResult<{
   filePath: string;
   relativeFilePath: string;
 }>;
 
-export type TodoReadToolResult = BaseToolResult<TodoItem[]>;
+export type TodoReadToolResult = ToolResult<TodoItem[]>;
 
-export type TodoWriteToolResult = BaseToolResult<{
+export type TodoWriteToolResult = ToolResult<{
   oldTodos: TodoItem[];
   newTodos: TodoItem[];
 }>;
 
-export type ReadToolResult = BaseToolResult<
+export type ReadToolResult = ToolResult<
   | {
       type: 'image';
       mimeType: string;
@@ -50,22 +38,22 @@ export type ReadToolResult = BaseToolResult<
     }
 >;
 
-export type LsToolResult = BaseToolResult<string>;
+export type LsToolResult = ToolResult<string>;
 
-export type GrepToolResult = BaseToolResult<{
+export type GrepToolResult = ToolResult<{
   filenames: string[];
   durationMs: number;
   numFiles: number;
 }>;
 
-export type GlobToolResult = BaseToolResult<{
+export type GlobToolResult = ToolResult<{
   filenames: string[];
   durationMs: number;
   numFiles: number;
   truncated: boolean;
 }>;
 
-export type FetchToolResult = BaseToolResult<{
+export type FetchToolResult = ToolResult<{
   result: string;
   code: number;
   codeText: string;
@@ -75,4 +63,4 @@ export type FetchToolResult = BaseToolResult<{
   durationMs: number;
 }>;
 
-export type BashToolResult = BaseToolResult<string>;
+export type BashToolResult = ToolResult<string>;

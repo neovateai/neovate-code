@@ -1,4 +1,5 @@
 import { CANCELED_MESSAGE_TEXT } from './constants';
+import type { ToolResult } from './tool';
 import { randomUUID } from './utils/randomUUID';
 
 export type SystemMessage = {
@@ -8,6 +9,17 @@ export type SystemMessage = {
 export type TextPart = {
   type: 'text';
   text: string;
+};
+export type ImagePart = {
+  type: 'image';
+  data: string;
+  mimeType: string;
+};
+export type FilePart = {
+  type: 'file';
+  filename?: string;
+  data: string;
+  mimeType: string;
 };
 export type UserContent = string | Array<TextPart>;
 export type ToolUsePart = {
@@ -50,8 +62,7 @@ export type ToolResultPart = {
   id: string;
   name: string;
   input: Record<string, any>;
-  result: any;
-  isError?: boolean;
+  result: ToolResult<any>;
 };
 export type Message =
   | SystemMessage

@@ -164,12 +164,11 @@ Usage:
         const actualLinesRead = selectedLines.length;
 
         return {
-          success: true,
-          message:
+          llmContent:
             offset !== undefined || limit !== undefined
               ? `Read ${actualLinesRead} lines (from line ${startLine + 1} to ${endLine}).`
               : `Read ${actualLinesRead} lines.`,
-          data: {
+          returnDisplay: {
             type: 'text',
             filePath: file_path,
             content: processedContent,
@@ -181,8 +180,8 @@ Usage:
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
     },
