@@ -30,7 +30,7 @@
     "help": "Help"
   },
   "welcome": {
-    "title": "I'm Takumi, your development partner",
+    "title": "I'm {{productName}}, your development partner",
     "capabilitiesTitle": "My Capabilities",
     "introduceCapability": "Please introduce the features of {{capability}}",
     "llmSupport": {
@@ -42,7 +42,7 @@
       "description": "Intelligently understand and edit project files, supporting multiple programming languages"
     },
     "codebaseNavigation": {
-      "title": "Codebase Navigation",
+      "title": "Codebase",
       "description": "Smart navigation of project structure, quick analysis and search"
     },
     "planMode": {
