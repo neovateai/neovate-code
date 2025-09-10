@@ -19,7 +19,7 @@ import CodeDiffView from '../CodeViewer/CodeDiffView';
 import CodeNormalView from '../CodeViewer/CodeNormalView';
 import DiffStatBlocks from '../CodeViewer/DiffStatBlocks';
 import DevFileIcon from '../DevFileIcon';
-import MessageWrapper, { MessageWrapperStatus } from '../MessageWrapper';
+import MessageWrapper from '../MessageWrapper';
 
 interface Props {
   readonly path: string;
@@ -55,6 +55,12 @@ const useStyles = createStyles(({ css }) => {
       display: flex;
       align-items: center;
       gap: 8px;
+    `,
+    title: css`
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 320px;
     `,
   };
 });
@@ -279,18 +285,11 @@ const CodeDiffOutline = (props: Props) => {
     <MessageWrapper
       title={
         <div className={styles.titleContainer}>
-          <div>{path}</div>
+          <div className={styles.title}>{path}</div>
           <div>{renderStatusContent()}</div>
         </div>
       }
       icon={<DevFileIcon size={16} fileExt={path.split('.').pop() || ''} />}
-      status={
-        editStatus === 'accept'
-          ? MessageWrapperStatus.Completed
-          : editStatus === 'reject'
-            ? MessageWrapperStatus.Cancelled
-            : undefined
-      }
       statusIcon={
         editStatus === 'accept' ? (
           <CheckOutlined />
