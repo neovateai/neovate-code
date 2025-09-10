@@ -193,3 +193,32 @@
 .contentWrapper {
   position: relative;
 }
+
+/* Footer styles */
+.footerContainer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.footerButton {
+  padding: 6px 22.5px;
+  border: solid 1px #f0f2f5;
+  border-radius: 40px;
+  font-family: PingFang SC;
+  font-weight: 400;
+  font-style: Regular;
+  font-size: 12px;
+  line-height: 130%;
+  letter-spacing: 0%;
+  text-align: center;
+
+  margin-bottom: 16px;
+  margin-right: 12px;
+  margin-top: 7px;
+}
+
+.footerButton:last-child {
+  margin-right: 16px;
+}

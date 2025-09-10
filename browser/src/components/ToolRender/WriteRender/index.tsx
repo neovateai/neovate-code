@@ -1,27 +1,26 @@
 import { useEffect, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
+import CodeDiffOutline from '@/components/CodeDiffOutline';
 import { fileChangesActions, fileChangesState } from '@/state/fileChanges';
 import type { ToolMessage } from '@/types/message';
-import CodeDiffOutline from '../CodeDiffOutline';
 
-export default function EditRender({ message }: { message?: ToolMessage }) {
+export default function WriteRender({ message }: { message?: ToolMessage }) {
   if (!message) {
     return null;
   }
   const { toolCallId, args, state } = message;
-  const { file_path, old_string, new_string } = args as {
+  const { files } = useSnapshot(fileChangesState);
+
+  const { file_path, content } = args as {
     file_path: string;
-    old_string: string;
-    new_string: string;
+    content: string;
   };
 
   useEffect(() => {
     fileChangesActions.initFileState(file_path, [
-      { toolCallId, old_string, new_string },
+      { toolCallId, old_string: '', new_string: content },
     ]);
-  }, [file_path, toolCallId, old_string, new_string]);
-
-  const { files } = useSnapshot(fileChangesState);
+  }, [file_path, toolCallId, content]);
 
   const editStatus = useMemo(() => {
     return files[file_path]?.edits.find(
@@ -34,8 +33,8 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
       path={file_path}
       edit={{
         toolCallId,
-        old_string,
-        new_string,
+        old_string: '',
+        new_string: content,
         editStatus,
       }}
       state={state}

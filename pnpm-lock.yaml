@@ -293,10 +293,10 @@ importers:
         specifier: ^5.44.4
         version: 5.44.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       react:
-        specifier: ^19.1.0
+        specifier: ^19.1.1
         version: 19.1.1
       react-dom:
-        specifier: ^19.1.0
+        specifier: ^19.1.1
         version: 19.1.1(react@19.1.1)
       react-i18next:
         specifier: ^15.5.3
