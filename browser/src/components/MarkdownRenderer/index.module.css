@@ -127,6 +127,7 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: transparent !important;
 }
 
 /* 链接样式 */
@@ -177,13 +178,25 @@
 }
 
 /* Streamdown 代码块样式覆盖 */
+.markdownRenderer :global([data-code-block-container='true']) {
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Streamdown 代码块样式覆盖 */
 .markdownRenderer :global([data-streamdown='code-block']) {
   border: none !important;
   padding: 0 !important;
 }
 
+/* Streamdown 代码块样式覆盖 */
+.markdownRenderer :global([data-code-block-header='true']) {
+  border: none !important;
+  padding: 0 !important;
+}
+
 /* Streamdown Mermaid 图表块样式覆盖 */
-.markdownRenderer :global([data-streamdown='mermaid-block']) {
+.markdownRenderer :global([data-code-block-container='true']) {
   border: none !important;
 }
 
