@@ -336,6 +336,13 @@
       "title": "待办列表",
       "noTodos": "暂无待办事项",
       "operationFailed": "待办操作失败"
+    },
+    "error": {
+      "file": {
+        "title": "文件读取错误",
+        "pathEmpty": "文件路径为空",
+        "contentEmpty": "文件内容为空"
+      }
     }
   },
   "senderFooterBoard": {
