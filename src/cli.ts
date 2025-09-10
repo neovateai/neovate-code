@@ -5,10 +5,6 @@ import { fileURLToPath } from 'url';
 import { runNeovate } from '.';
 import { PRODUCT_ASCII_ART, PRODUCT_NAME } from './constants';
 
-// ref:
-// https://github.com/yargs/yargs-parser/blob/6d69295/lib/index.ts#L19
-process.env.YARGS_MIN_NODE_VERSION = '18';
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
   fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8'),
