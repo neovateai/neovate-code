@@ -482,6 +482,14 @@
   gap: 16px;
 }
 
+/* Custom MessageWrapper for MCP Config Items */
+.mcpMessageWrapper {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* Single Form Container */
 .singleFormContainer {
   width: 100%;

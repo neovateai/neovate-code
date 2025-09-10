@@ -41,6 +41,7 @@ export const McpConfigItem: React.FC<McpConfigItemProps> = ({
       title={`MCP ${index + 1}`}
       defaultExpanded={true}
       maxHeight={400}
+      className={styles.mcpMessageWrapper}
       actions={
         canDelete
           ? [
