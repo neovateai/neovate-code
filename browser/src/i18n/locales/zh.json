@@ -30,7 +30,7 @@
     "help": "帮助"
   },
   "welcome": {
-    "title": "我是Neovate，开发任务交给我",
+    "title": "我是{{productName}}，开发任务交给我",
     "capabilitiesTitle": "我的能力",
     "introduceCapability": "请介绍一下{{capability}}的功能",
     "llmSupport": {
