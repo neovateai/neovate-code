@@ -36,7 +36,7 @@ export class Project {
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
       onToolApprove?: (opts: { toolUse: ToolUse }) => Promise<boolean>;
       onTextDelta?: (text: string) => Promise<void>;
-      onChunk?: (chunk: any) => Promise<void>;
+      onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
     } = {},
   ) {
