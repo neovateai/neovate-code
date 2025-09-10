@@ -17,7 +17,6 @@ const useStyles = createStyles(({ css }) => ({
   messageBox: css`
     background: #f6f8fb;
     border-radius: 10px;
-    padding: 12px;
     max-width: 600px;
     width: fit-content;
 
@@ -43,6 +42,19 @@ const useStyles = createStyles(({ css }) => ({
       line-height: 1.5em !important;
     }
   `,
+  textWrapper: css`
+    padding: 12px 15px;
+    font-family:
+      'PingFang SC',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
+    font-size: 14px;
+    line-height: 1.5em;
+    color: #110c22;
+  `,
 }));
 
 const UserMessage = (props: UserMessageProps) => {
@@ -64,7 +76,7 @@ const UserMessage = (props: UserMessageProps) => {
             <QuillEditor />
           </QuillContext>
         ) : (
-          content
+          <div className={styles.textWrapper}>{content}</div>
         )}
       </div>
     </div>
