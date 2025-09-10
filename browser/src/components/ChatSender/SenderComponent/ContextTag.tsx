@@ -48,7 +48,8 @@ export const SenderContextTag = (props: Props) => {
             src={imageSrc}
             width={30}
             height={20}
-            className="rounded-2xl h-5 w-7.5"
+            className="rounded-2xl h-5 w-7.5 select-none pointer-events-none"
+            draggable={false}
           />
         );
       default:
@@ -60,7 +61,13 @@ export const SenderContextTag = (props: Props) => {
     switch (contextType) {
       case ContextType.IMAGE:
         const imageSrc = (context as ImageItem).src;
-        return <img src={imageSrc} className="max-w-xl max-h-120" />;
+        return (
+          <img
+            src={imageSrc}
+            className="max-w-xl max-h-120 select-none pointer-events-none"
+            draggable={false}
+          />
+        );
       case ContextType.FILE:
         return (context as FileItem).path;
       default:
@@ -86,7 +93,7 @@ export const SenderContextTag = (props: Props) => {
         </div>
       )}
       <Popover content={popoverContent}>
-        <div className="flex items-center gap-1 rounded-[50px] py-2 px-3 bg-[#F7F8FA] text-[#110C22] text-xs select-none">
+        <div className="flex items-center gap-1 rounded-[50px] py-2 px-3 bg-[#F7F8FA] text-[#110C22] text-xs select-none h-full">
           <div>{icon}</div>
           <div>{label}</div>
         </div>
