@@ -7,6 +7,14 @@ export interface ContextBlotData {
   text: string;
   /** the value of the blot */
   value: string;
+  /** the text when translate blot to prompt, if not provided, use value */
+  prompt?: string;
+  /**
+   * the prefix to display before the text
+   *
+   * @default '@'
+   */
+  prefix?: string;
 }
 
 class ContextBlot extends Embed {
@@ -20,14 +28,19 @@ class ContextBlot extends Embed {
       return node;
     }
 
-    node.innerHTML = `@${data.text}`;
+    node.innerHTML = `${data.prefix ?? '@'}${data.text}`;
     node.className = 'takumi-context';
 
     node.setAttribute('contenteditable', 'false');
 
     node.dataset.value = data.value;
     node.dataset.text = data.text;
-
+    if (data.prefix) {
+      node.dataset.prefix = data.prefix;
+    }
+    if (typeof data.prompt === 'string') {
+      node.dataset.prompt = data.prompt;
+    }
     return node;
   }
 

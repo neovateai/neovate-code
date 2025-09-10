@@ -103,7 +103,11 @@
     "navigate": "navigate",
     "select": "select",
     "close": "close",
-    "back": "back"
+    "back": "back",
+    "slashCommandPrefix": {
+      "global": "Global",
+      "project": "Project"
+    }
   },
   "menu": {
     "rename": "Rename",

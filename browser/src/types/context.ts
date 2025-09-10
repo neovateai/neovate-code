@@ -1,10 +1,7 @@
-import type { UploadFile } from 'antd';
-import type { FileItem, ImageItem } from '@/api/model';
+import type { FileItem, ImageItem, SlashCommandItem } from '@/api/model';
 import type { ContextType } from '@/constants/context';
 
-type AttachmentItem = UploadFile;
-
-export type ContextStoreValue = FileItem | ImageItem | AttachmentItem;
+export type ContextStoreValue = FileItem | ImageItem | SlashCommandItem;
 
 export interface ContextItem {
   type: ContextType;

@@ -8,9 +8,7 @@ import * as context from '@/state/context';
 import SenderComponent from '../SenderComponent';
 
 const AddContext = () => {
-  const { attachedContexts, contextsSelectedValues } = useSnapshot(
-    context.state,
-  );
+  const { attachedContexts } = useSnapshot(context.state);
   const [openPopup, setOpenPopup] = useState(false);
 
   const { t } = useTranslation();
@@ -19,7 +17,7 @@ const AddContext = () => {
     defaultSuggestions,
     handleSearch,
     loading: suggestionLoading,
-  } = useSuggestion(contextsSelectedValues);
+  } = useSuggestion();
 
   return (
     <SuggestionList
