@@ -9,18 +9,19 @@ const useResizeHandleStyles = createStyles(({ css }) => ({
     background: #e5e5e5;
     cursor: col-resize;
     position: relative;
+    transform-origin: center;
     transition:
-      width 0.2s ease,
+      transform 0.2s ease,
       background 0.2s ease;
 
     &:hover {
       background: #7357ff;
-      width: 3px;
+      transform: scaleX(3);
     }
 
     &:active {
       background: #7357ff;
-      width: 3px;
+      transform: scaleX(3);
     }
   `,
 }));
@@ -69,9 +70,9 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
         const rightWidthPercent =
           ((containerWidth - mouseX) / containerWidth) * 100;
 
-        // Boundary constraints: right panel 20% - 80%
+        // Boundary constraints: right panel 20% - dynamic max based on screen size
         const minRight = 20;
-        const maxRight = 80;
+        const maxRight = layout.actions.calculateRightPanelWidth();
         const clampedRightPercent = Math.max(
           minRight,
           Math.min(maxRight, rightWidthPercent),
