@@ -1,6 +1,6 @@
-import { Box, Text, useInput } from 'ink';
+import { Box, Text } from 'ink';
 import pc from 'picocolors';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PaginatedGroupSelectInput from '../../ui/PaginatedGroupSelectInput';
 import { useAppStore } from '../../ui/store';
 import { type LocalJSXCommand } from '../types';
@@ -16,7 +16,10 @@ interface GroupedData {
   models: { name: string; modelId: string; value: string }[];
 }
 
-const ModelSelect: React.FC<ModelSelectProps> = ({ onExit, onSelect }) => {
+export const ModelSelect: React.FC<ModelSelectProps> = ({
+  onExit,
+  onSelect,
+}) => {
   const { bridge, cwd, setModel } = useAppStore();
   const [currentModel, setCurrentModel] = useState<string>('');
   const [currentModelInfo, setCurrentModelInfo] = useState<{
@@ -28,8 +31,10 @@ const ModelSelect: React.FC<ModelSelectProps> = ({ onExit, onSelect }) => {
 
   useEffect(() => {
     bridge.request('getModels', { cwd }).then((result) => {
-      setCurrentModel(result.data.currentModel);
-      setCurrentModelInfo(result.data.currentModelInfo);
+      if (result.data.currentModel) {
+        setCurrentModel(result.data.currentModel);
+        setCurrentModelInfo(result.data.currentModelInfo);
+      }
       setGroupedModels(result.data.groupedModels);
     });
   }, [cwd]);

@@ -2,7 +2,7 @@
 
 [![](https://badgen.net/npm/v/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
 [![](https://badgen.net/npm/dm/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
-[![](https://github.com/neovateai/neovate-code/actions/workflows/ci.yml/badge.svg)](https://github.com/neovateai/neovate-code/actions/workflows/ci.yml)
+[![](https://github.com/neovateai/neovate-code/actions/workflows/test.yml/badge.svg)](https://github.com/neovateai/neovate-code/actions/workflows/test.yml)
 [![](https://badgen.net/npm/license/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
 
 A coding agent to enhance your development workflow.

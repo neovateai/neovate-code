@@ -1,3 +1,15 @@
+## 0.10.1
+
+`2025-09-09`
+
+- refactor: remove ts-ignore comments and add proper type guards by [@阿平](https://github.com/阿平) in [#227](https://github.com/umijs/takumi/pull/227)
+- feat: add onboarding flow for model configuration and improve model resolution logic by [@sorrycc](https://github.com/sorrycc)
+- feat: include model context limit in model selection and state by [@sorrycc](https://github.com/sorrycc)
+- refactor: simplify text interpolation in ActivityIndicator by [@阿平](https://github.com/阿平) in [#225](https://github.com/umijs/takumi/pull/225)
+- refactor: update defaultModelCreator and clean unused imports by [@sorrycc](https://github.com/sorrycc)
+- refactor: replace tiktoken with gpt-tokenizer and add tests [AI] by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.10.0
 
 `2025-09-09`

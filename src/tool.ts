@@ -24,10 +24,9 @@ type ResolveToolsOpts = {
 export async function resolveTools(opts: ResolveToolsOpts) {
   const { cwd, productName, paths } = opts.context;
   const sessionId = opts.sessionId;
-  const { model } = await resolveModelWithContext(
-    opts.context.config.model,
-    opts.context,
-  );
+  const model = (
+    await resolveModelWithContext(opts.context.config.model, opts.context)
+  ).model!;
   const readonlyTools = [
     createReadTool({ cwd, productName }),
     createLSTool({ cwd, productName }),
