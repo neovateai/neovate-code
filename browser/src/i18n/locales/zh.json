@@ -30,7 +30,7 @@
     "help": "帮助"
   },
   "welcome": {
-    "title": "我是Takumi，开发任务交给我",
+    "title": "我是Neovate，开发任务交给我",
     "capabilitiesTitle": "我的能力",
     "introduceCapability": "请介绍一下{{capability}}的功能",
     "llmSupport": {
@@ -51,18 +51,18 @@
     }
   },
   "chat": {
-    "welcomeTitle": "你好，我是 Takumi",
+    "welcomeTitle": "你好，我是 Neovate",
     "welcomeDescription": "我是您的 AI 编程助手，专注于提升开发工作流程。我能帮助您编写代码、优化性能、生成测试、分析架构，以及执行各种开发任务～",
     "quickStart": "快速开始",
-    "capabilities": "Takumi 能力",
-    "greeting": "你好，我是 Takumi，你的 AI 编程助手！有什么可以帮助您的？",
+    "capabilities": "Neovate 能力",
+    "greeting": "你好，我是 Neovate，你的 AI 编程助手！有什么可以帮助您的？",
     "analyzeProject": "帮我分析这个项目的代码结构和架构",
     "optimizeCode": "优化代码性能并重构这个函数",
     "generateTests": "生成单元测试用例和测试文档",
     "fixBugs": "修复 Bug 并提供解决方案",
     "askQuestions": "提问、编辑文件或运行命令",
     "beSpecific": "具体描述需求以获得最佳结果",
-    "createTakumiMd": "创建 TAKUMI.md 文件来自定义与 Takumi 的交互",
+    "createTakumiMd": "创建 Neovate.md 文件来自定义与 Neovate 的交互",
     "llmSupport": "LLM 支持",
     "llmSupportDesc": "支持多种 LLM 提供商，包括 OpenAI、Claude、Gemini 等",
     "fileOperations": "文件操作",

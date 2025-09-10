@@ -1,3 +1,4 @@
 {
-  "plugins": ["./.takumi/plugin.js"]
+  "plugins": ["./.takumi/plugin.js"],
+  "language": "Chinese"
 }
