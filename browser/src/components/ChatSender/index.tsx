@@ -144,6 +144,9 @@ const ChatSender: React.FC = () => {
           open={openPopup}
           onOpenChange={(open) => {
             setOpenPopup(open);
+            if (!open) {
+              setSearchingInEditor(false);
+            }
           }}
           items={defaultSuggestions}
           onSearch={(type, text) => {
