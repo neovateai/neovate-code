@@ -4,6 +4,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { z } from 'zod';
+import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
 import { getErrorMessage } from '../utils/error';
 import { shellExecute } from '../utils/shell-execution';
@@ -237,7 +238,7 @@ async function executeCommand(
 
 export function createBashTool(opts: { cwd: string }) {
   return createTool({
-    name: 'bash',
+    name: TOOL_NAMES.BASH,
     description:
       `Run shell commands in the terminal, ensuring proper handling and security measures.
 

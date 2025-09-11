@@ -1,6 +1,6 @@
 import { Box, Static, Text } from 'ink';
 import React from 'react';
-import { CANCELED_MESSAGE_TEXT, TOOL_NAME } from '../constants';
+import { CANCELED_MESSAGE_TEXT, TOOL_NAMES } from '../constants';
 import type { NormalizedMessage } from '../message';
 import type {
   AssistantMessage,
@@ -243,7 +243,7 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
       </Text>
     );
   }
-  if (name === TOOL_NAME.TODO_WRITE) {
+  if (name === TOOL_NAMES.TODO_WRITE) {
     return (
       <TodoList
         oldTodos={result.returnDisplay.oldTodos}
@@ -276,7 +276,7 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
       />
     );
   }
-  if (name === TOOL_NAME.TODO_READ) {
+  if (name === TOOL_NAMES.TODO_READ) {
     return <TodoRead todos={result.returnDisplay} />;
   }
   let text = result.returnDisplay || result.llmContent;

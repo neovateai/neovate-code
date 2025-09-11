@@ -2,7 +2,7 @@ import fs from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
-import { TOOL_NAME } from '../constants';
+import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
 import type { TodoReadToolResult, TodoWriteToolResult } from './type';
 
@@ -235,7 +235,7 @@ export function createTodoTool(opts: { filePath: string }) {
   }
 
   const todoWriteTool = createTool({
-    name: TOOL_NAME.TODO_WRITE,
+    name: TOOL_NAMES.TODO_WRITE,
     description: TODO_WRITE_PROMPT,
     parameters: z.object({
       todos: TodoListSchema.describe('The updated todo list'),
@@ -267,7 +267,7 @@ export function createTodoTool(opts: { filePath: string }) {
   });
 
   const todoReadTool = createTool({
-    name: TOOL_NAME.TODO_READ,
+    name: TOOL_NAMES.TODO_READ,
     description: TODO_READ_PROMPT,
     parameters: z.object({}).passthrough(),
     async execute(): Promise<TodoReadToolResult> {

@@ -19,7 +19,7 @@ export const CANCELED_MESSAGE_TEXT = '[Request interrupted by user]';
 
 // TODO: remove this
 // todo-write will be converted to todo_write causing tool name mismatch
-export enum TOOL_NAME {
+export enum TOOL_NAMES {
   TODO_WRITE = 'todoWrite',
   TODO_READ = 'todoRead',
   BASH = 'bash',
