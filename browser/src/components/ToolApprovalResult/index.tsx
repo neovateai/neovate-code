@@ -10,6 +10,10 @@ interface ToolApprovalResultProps {
 export default function ToolApprovalResult({
   message,
 }: ToolApprovalResultProps) {
+  if (message.toolName === 'edit' || message.toolName === 'write') {
+    return null;
+  }
+
   return (
     <MessageWrapper
       title={

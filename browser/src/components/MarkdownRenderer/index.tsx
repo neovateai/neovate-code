@@ -32,7 +32,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   return (
     <div className={styles.markdownRenderer}>
       <Streamdown
-        className="prose prose-slate max-w-none"
+        className="max-w-none prose"
         remarkPlugins={[remarkGfm]}
         components={components}
         skipHtml={false}

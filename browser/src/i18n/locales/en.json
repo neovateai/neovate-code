@@ -336,6 +336,13 @@
       "title": "Todos",
       "noTodos": "No todos found",
       "operationFailed": "Todo operation failed"
+    },
+    "error": {
+      "file": {
+        "title": "File read error",
+        "pathEmpty": "File path is empty",
+        "contentEmpty": "File content is empty"
+      }
     }
   },
   "senderFooterBoard": {
