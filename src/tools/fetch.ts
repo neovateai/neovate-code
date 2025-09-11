@@ -22,6 +22,12 @@ Remembers:
       url: z.string().describe('The url to fetch content from'),
       prompt: z.string().describe('The prompt to run on the fetched content'),
     }),
+    getDescription: ({ params }) => {
+      if (!params.url || typeof params.url !== 'string') {
+        return 'No URL provided';
+      }
+      return params.url;
+    },
     execute: async ({ url, prompt }): Promise<FetchToolResult> => {
       try {
         const startTime = Date.now();

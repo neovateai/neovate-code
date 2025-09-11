@@ -17,7 +17,7 @@ import {
 import { DiffViewer } from './DiffViewer';
 import { Markdown } from './Markdown';
 import { TodoList, TodoRead } from './Todo';
-import { SPACING, TOOL_DESCRIPTION_EXTRACTORS, UI_COLORS } from './constants';
+import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 
 export function Messages() {
@@ -34,23 +34,6 @@ export function Messages() {
           );
         }}
       </Static>
-    </Box>
-  );
-}
-
-function AppInfo() {
-  const { model, productName, version, cwd, sessionId, logFile, messages } =
-    useAppStore();
-  return (
-    <Box flexDirection="column" borderStyle="round" borderColor="gray">
-      <Text>{Math.random()}</Text>
-      <Text>Model: {model}</Text>
-      <Text>Product Name: {productName}</Text>
-      <Text>Version: {version}</Text>
-      <Text>CWD: {cwd}</Text>
-      <Text>Session ID: {sessionId}</Text>
-      <Text>Log File: {logFile}</Text>
-      <Text>Messages: {messages.length}</Text>
     </Box>
   );
 }
@@ -103,7 +86,6 @@ function Header() {
       <ProductASCIIArt />
       <ProductInfo />
       <GettingStartedTips />
-      {/* <AppInfo /> */}
     </Box>
   );
 }
@@ -154,20 +136,15 @@ function AssistantText({
 }
 
 function ToolUse({ part }: { part: ToolUsePart }) {
-  const { cwd } = useAppStore();
-  const { name, input } = part;
-  const extractor =
-    TOOL_DESCRIPTION_EXTRACTORS[
-      name as keyof typeof TOOL_DESCRIPTION_EXTRACTORS
-    ];
-  const description = extractor ? extractor(input, cwd) : '';
+  const { name, displayName } = part;
+  const description = part.description;
   return (
     <Box
       marginTop={SPACING.MESSAGE_MARGIN_TOP}
       marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
     >
       <Text bold color={UI_COLORS.TOOL}>
-        {name}
+        {displayName || name}
       </Text>
       {description && (
         <Text color={UI_COLORS.TOOL_DESCRIPTION}>({description})</Text>

@@ -27,6 +27,8 @@ export type ToolUsePart = {
   id: string;
   name: string;
   input: Record<string, any>;
+  displayName?: string;
+  description?: string;
 };
 export type ReasoningPart = {
   type: 'reasoning';

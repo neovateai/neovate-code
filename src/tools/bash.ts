@@ -274,6 +274,13 @@ cd /foo/bar && pytest tests
         .nullable()
         .describe(`Optional timeout in milliseconds (max ${MAX_TIMEOUT})`),
     }),
+    getDescription: ({ params }) => {
+      if (!params.command || typeof params.command !== 'string') {
+        return 'No command provided';
+      }
+      const command = params.command.trim();
+      return command.length > 100 ? command.substring(0, 97) + '...' : command;
+    },
     execute: async ({ command, timeout = DEFAULT_TIMEOUT }) => {
       try {
         if (!command) {

@@ -104,6 +104,12 @@ Usage:
           `The number of lines to read. Only provide if the file is too large to read at once`,
         ),
     }),
+    getDescription: ({ params, cwd }) => {
+      if (!params.file_path || typeof params.file_path !== 'string') {
+        return 'No file path provided';
+      }
+      return path.relative(cwd, params.file_path);
+    },
     execute: async ({ file_path, offset, limit }): Promise<ReadToolResult> => {
       try {
         // Validate parameters

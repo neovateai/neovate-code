@@ -17,6 +17,12 @@ export function createLSTool(opts: { cwd: string; productName: string }) {
     parameters: z.object({
       dir_path: z.string().describe('The path to the directory to list.'),
     }),
+    getDescription: ({ params }) => {
+      if (!params.dir_path || typeof params.dir_path !== 'string') {
+        return '.';
+      }
+      return path.relative(opts.cwd, params.dir_path);
+    },
     execute: async (params): Promise<LsToolResult> => {
       const { dir_path } = params;
       const fullFilePath = path.isAbsolute(dir_path)

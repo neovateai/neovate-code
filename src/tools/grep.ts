@@ -23,6 +23,12 @@ export function createGrepTool(opts: { cwd: string }) {
         .nullable()
         .describe('The file pattern to include in the search'),
     }),
+    getDescription: ({ params }) => {
+      if (!params.pattern || typeof params.pattern !== 'string') {
+        return 'No pattern provided';
+      }
+      return params.pattern;
+    },
     execute: async ({
       pattern,
       search_path,

@@ -24,6 +24,12 @@ Glob
         .nullable()
         .describe('The directory to search in'),
     }),
+    getDescription: ({ params }) => {
+      if (!params.pattern || typeof params.pattern !== 'string') {
+        return 'No pattern provided';
+      }
+      return params.pattern;
+    },
     execute: async ({ pattern, path }): Promise<GlobToolResult> => {
       try {
         const start = Date.now();

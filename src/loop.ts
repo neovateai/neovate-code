@@ -1,7 +1,7 @@
 import { Agent, Runner, type SystemMessageItem } from '@openai/agents';
 import { At } from './at';
 import { History, type OnMessage } from './history';
-import type { NormalizedMessage } from './message';
+import type { NormalizedMessage, ToolUsePart } from './message';
 import type { ModelInfo } from './model';
 import type { ToolResult, ToolUse, Tools } from './tool';
 import { Usage } from './usage';
@@ -264,12 +264,25 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
               text: item.content,
             };
           } else {
-            return {
+            const tool = opts.tools.get(item.name);
+            const description = tool?.getDescription?.({
+              params: item.params,
+              cwd: opts.cwd,
+            });
+            const displayName = tool?.displayName;
+            const toolUse: ToolUsePart = {
               type: 'tool_use',
               id: item.callId!,
               name: item.name,
               input: item.params,
             };
+            if (description) {
+              toolUse.description = description;
+            }
+            if (displayName) {
+              toolUse.displayName = displayName;
+            }
+            return toolUse;
           }
         }),
         text,

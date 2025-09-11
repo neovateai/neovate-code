@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import { createTool } from '../tool';
-import { safeStringify } from '../utils/safeStringify';
 import type { WriteToolResult } from './type';
 
 export function createWriteTool(opts: { cwd: string }) {
@@ -13,6 +12,12 @@ export function createWriteTool(opts: { cwd: string }) {
       file_path: z.string(),
       content: z.string(),
     }),
+    getDescription: ({ params, cwd }) => {
+      if (!params.file_path || typeof params.file_path !== 'string') {
+        return 'No file path provided';
+      }
+      return path.relative(cwd, params.file_path);
+    },
     execute: async ({ file_path, content }): Promise<WriteToolResult> => {
       try {
         const fullFilePath = path.isAbsolute(file_path)

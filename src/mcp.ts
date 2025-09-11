@@ -415,6 +415,9 @@ export class MCPManager {
     return {
       name: `mcp__${serverName}__${mcpTool.name}`,
       description: mcpTool.description,
+      getDescription: ({ params }) => {
+        return JSON.stringify(params);
+      },
       parameters: mcpTool.originalParameters ?? mcpTool.parameters,
       execute: async (params) => {
         try {
