@@ -226,9 +226,6 @@ importers:
       typescript:
         specifier: ^5.9.2
         version: 5.9.2
-      upgear:
-        specifier: ^0.0.3
-        version: 0.0.3
       valtio:
         specifier: ^2.1.5
         version: 2.1.5(@types/react@19.1.10)(react@19.1.1)
@@ -2844,9 +2841,6 @@ packages:
 
   '@types/sarif@2.1.7':
     resolution: {integrity: sha512-kRz0VEkJqWLf1LLVN4pT1cg1Z9wAuvI6L97V3m2f5B76Tg8d413ddvLBPTEHAZJlnn4XSvu0FkZtViCQGVyrXQ==}
-
-  '@types/semver@7.7.0':
-    resolution: {integrity: sha512-k107IF4+Xr7UHjwDc7Cfd6PRQfbdkiRabXGRjo07b4WyPahFBZCZ1sE+BNxYIJPPg73UkfOsVOLwqVc/6ETrIA==}
 
   '@types/tinycolor2@1.4.6':
     resolution: {integrity: sha512-iEN8J0BoMnsWBqjVbWH/c0G0Hh7O21lpR2/+PrvAVgWdzL7eexIFm4JN/Wn10PTcmNdtS6U67r499mlWMXOxNw==}
@@ -6835,9 +6829,6 @@ packages:
     peerDependencies:
       browserslist: '>= 4.21.0'
 
-  upgear@0.0.3:
-    resolution: {integrity: sha512-VhrgvrCRJHtR3TH+4H8XC5VUOCqQohPJ7nRFSZHg5tflIwPu6Frf+7ytQxjyry0leinYoYkDrU12WV+mGtk4lg==}
-
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
 
@@ -9827,8 +9818,6 @@ snapshots:
   '@types/resolve@1.20.6': {}
 
   '@types/sarif@2.1.7': {}
-
-  '@types/semver@7.7.0': {}
 
   '@types/tinycolor2@1.4.6': {}
 
@@ -14597,13 +14586,6 @@ snapshots:
       browserslist: 4.25.0
       escalade: 3.2.0
       picocolors: 1.1.1
-
-  upgear@0.0.3:
-    dependencies:
-      '@types/semver': 7.7.0
-      pathe: 2.0.3
-      semver: 7.7.2
-      tar: 7.4.3
 
   uri-js@4.4.1:
     dependencies:
