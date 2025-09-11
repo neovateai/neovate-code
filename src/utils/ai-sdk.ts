@@ -61,10 +61,6 @@ export function itemsToLanguageV1Messages(
       }
 
       if (role === 'user') {
-        const isGeminiModel =
-          model.modelId.includes('gemini') &&
-          model.provider === 'google.generative-ai';
-
         messages.push({
           role,
           content:
@@ -74,22 +70,22 @@ export function itemsToLanguageV1Messages(
                   if (c.type === 'input_text') {
                     return { type: 'text', text: c.text };
                   }
-                  if (c.type === 'input_image' && isGeminiModel) {
-                    if (typeof c.image !== 'string') {
-                      throw new UserError('Image data must be a string');
-                    }
-
-                    const image = removeImagePrefix(c.image as string);
-                    return {
-                      type: 'file',
-                      mimeType:
-                        (c.providerData?.mimeType as string) || 'image/jpeg',
-                      data: image,
-                    };
-                  }
                   if (c.type === 'input_image') {
-                    const url = new URL(c.image as string);
-                    return { type: 'image', image: url };
+                    const isGeminiModel =
+                      model.modelId.includes('gemini') &&
+                      model.provider === 'google.generative-ai';
+                    if (isGeminiModel && typeof c.image === 'string') {
+                      const image = removeImagePrefix(c.image);
+                      return {
+                        type: 'file',
+                        mimeType:
+                          (c.providerData?.mimeType as string) || 'image/jpeg',
+                        data: image,
+                      };
+                    } else {
+                      const url = new URL(c.image as string);
+                      return { type: 'image', image: url };
+                    }
                   }
                   if (c.type === 'input_file') {
                     if (typeof c.file !== 'string') {

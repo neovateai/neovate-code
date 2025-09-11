@@ -15,18 +15,12 @@ const IMAGE_PREFIX_REGEX = /^data:image\/[^;]+;base64,/;
  * ```
  */
 export function removeImagePrefix(dataUrl: string): string {
-  if (typeof dataUrl !== 'string') {
-    throw new TypeError('Expected dataUrl to be a string');
-  }
-
   if (!dataUrl.startsWith('data:image/')) {
     return dataUrl;
   }
-
   const match = dataUrl.match(IMAGE_PREFIX_REGEX);
   if (!match) {
     return dataUrl;
   }
-
   return dataUrl.slice(match[0].length);
 }
