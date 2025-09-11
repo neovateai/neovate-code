@@ -275,10 +275,16 @@ export async function runNeovate(opts: {
     plugins: opts.plugins,
   };
 
-  // TODO: support other commands
   // sub commands
-  const validCommands = ['config', 'commit', 'mcp', 'run', 'log', 'server'];
   const command = argv._[0];
+  if (command === 'servernext') {
+    const { runServerNext } = await import('./commands/servernext/server');
+    await runServerNext({
+      contextCreateOpts,
+    });
+    return;
+  }
+  const validCommands = ['config', 'commit', 'mcp', 'run', 'log', 'server'];
   if (validCommands.includes(command)) {
     const context = await Context.create({
       cwd: argv.cwd || process.cwd(),

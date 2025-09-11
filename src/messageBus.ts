@@ -1,35 +1,35 @@
 import EventEmitter from 'events';
 import { randomUUID } from './utils/randomUUID';
 
-type MessageId = string;
-type BaseMessage = {
+export type MessageId = string;
+export type BaseMessage = {
   id: MessageId;
   timestamp: number;
 };
-type RequestMessage = BaseMessage & {
+export type RequestMessage = BaseMessage & {
   type: 'request';
   method: string;
   params: any;
 };
-type ResponseMessage = BaseMessage & {
+export type ResponseMessage = BaseMessage & {
   type: 'response';
   result?: any;
   error?: any;
 };
-type EventMessage = BaseMessage & {
+export type EventMessage = BaseMessage & {
   type: 'event';
   event: string;
   data: any;
 };
-type Message = RequestMessage | ResponseMessage | EventMessage;
-type ConnectionState =
+export type Message = RequestMessage | ResponseMessage | EventMessage;
+export type ConnectionState =
   | 'disconnected'
   | 'connecting'
   | 'connected'
   | 'reconnecting'
   | 'error'
   | 'closed';
-interface MessageTransport {
+export interface MessageTransport {
   send: (message: Message) => Promise<void>;
   onMessage: (handler: (message: Message) => void) => void;
   onError: (handler: (error: Error) => void) => void;
