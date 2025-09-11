@@ -17,8 +17,6 @@ export default function EditRender({ message }: { message?: ToolMessage }) {
     new_string: string;
   };
 
-  console.log('EditRender', file_path, old_string, new_string);
-
   useEffect(() => {
     fileChangesActions.initFileState(file_path, [
       { toolCallId, old_string, new_string },
