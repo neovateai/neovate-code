@@ -18,7 +18,7 @@
   max-width: none;
 }
 
-/* 标题样式 */
+/* Heading styles */
 .markdownRenderer :global(.prose h1) {
   font-size: 24px;
   font-weight: 600;
@@ -53,13 +53,13 @@
   margin: 12px 0 6px;
 }
 
-/* 段落样式 */
+/* Paragraph styles */
 .markdownRenderer :global(.prose p) {
   margin: 8px 0;
   line-height: 1.7;
 }
 
-/* 列表样式 */
+/* List styles */
 .markdownRenderer :global(.prose ul),
 .markdownRenderer :global(.prose ol) {
   margin: 8px 0;
@@ -75,7 +75,7 @@
   color: #4a5568;
 }
 
-/* 引用样式 */
+/* Blockquote styles */
 .markdownRenderer :global(.prose blockquote) {
   margin: 16px 0;
   padding: 12px 16px;
@@ -90,7 +90,7 @@
   margin: 0;
 }
 
-/* 表格样式 */
+/* Table styles */
 .markdownRenderer :global(.prose table) {
   width: 100%;
   border-collapse: collapse;
@@ -121,7 +121,7 @@
   background: #f8fafc;
 }
 
-/* 代码块样式 */
+/* Code block styles */
 .markdownRenderer :global(.prose pre) {
   margin: 16px 0;
   border-radius: 8px;
@@ -130,7 +130,7 @@
   background: transparent !important;
 }
 
-/* 链接样式 */
+/* Link styles */
 .markdownRenderer :global(.prose a) {
   color: #3182ce;
   text-decoration: none;
@@ -143,7 +143,7 @@
   border-bottom-color: #3182ce;
 }
 
-/* 分割线样式 */
+/* Divider styles */
 .markdownRenderer :global(.prose hr) {
   margin: 24px 0;
   border: none;
@@ -151,7 +151,7 @@
   background: linear-gradient(90deg, transparent, #cbd5e0, transparent);
 }
 
-/* 图片样式 */
+/* Image styles */
 .markdownRenderer :global(.prose img) {
   max-width: 100%;
   height: auto;
@@ -160,7 +160,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* 强调文本样式 */
+/* Emphasis text styles */
 .markdownRenderer :global(.prose strong) {
   font-weight: 600;
   color: #1a202c;
@@ -171,36 +171,36 @@
   color: #4a5568;
 }
 
-/* 删除线样式 */
+/* Strikethrough styles */
 .markdownRenderer :global(.prose del) {
   text-decoration: line-through;
   color: #a0aec0;
 }
 
-/* Streamdown 代码块样式覆盖 */
+/* Streamdown code block style overrides */
 .markdownRenderer :global([data-code-block-container='true']) {
   border: none !important;
   padding: 0 !important;
 }
 
-/* Streamdown 代码块样式覆盖 */
+/* Streamdown code block style overrides */
 .markdownRenderer :global([data-streamdown='code-block']) {
   border: none !important;
   padding: 0 !important;
 }
 
-/* Streamdown 代码块样式覆盖 */
+/* Streamdown code block style overrides */
 .markdownRenderer :global([data-code-block-header='true']) {
   border: none !important;
   padding: 0 !important;
 }
 
-/* Streamdown Mermaid 图表块样式覆盖 */
+/* Streamdown Mermaid diagram block style overrides */
 .markdownRenderer :global([data-code-block-container='true']) {
   border: none !important;
 }
 
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 768px) {
   .markdownRenderer :global(.prose) {
     font-size: 14px;
