@@ -471,7 +471,7 @@ export function convertMcpResultToLlmContent(
     return isTextPart(part) || isImagePart(part);
   };
   if (typeof llmContent === 'object') {
-    llmContent = JSON.stringify(llmContent);
+    // llmContent = JSON.stringify(llmContent);
     if (isPart(llmContent as object)) {
       llmContent = [llmContent];
     } else {
