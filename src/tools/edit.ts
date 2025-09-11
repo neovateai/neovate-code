@@ -3,6 +3,7 @@ import path from 'path';
 import { z } from 'zod';
 import { createTool } from '../tool';
 import { applyEdit } from '../utils/applyEdit';
+import { safeStringify } from '../utils/safeStringify';
 import type { EditToolResult } from './type';
 
 export function createEditTool(opts: { cwd: string }) {

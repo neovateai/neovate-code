@@ -3,6 +3,7 @@ import path from 'path';
 import { z } from 'zod';
 import { createTool } from '../tool';
 import { ripGrep } from '../utils/ripgrep';
+import { safeStringify } from '../utils/safeStringify';
 import type { GrepToolResult } from './type';
 
 export function createGrepTool(opts: { cwd: string }) {
@@ -57,12 +58,12 @@ export function createGrepTool(opts: { cwd: string }) {
           .map((_) => _[0]);
         const durationMs = Date.now() - start;
         return {
-          llmContent: `Found ${matches.length} files in ${durationMs}ms.`,
-          returnDisplay: {
+          returnDisplay: `Found ${matches.length} files in ${durationMs}ms.`,
+          llmContent: safeStringify({
             filenames: matches,
             durationMs,
             numFiles: matches.length,
-          },
+          }),
         };
       } catch (e) {
         return {

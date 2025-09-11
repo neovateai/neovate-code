@@ -1,6 +1,6 @@
 import { Box, Static, Text } from 'ink';
 import React from 'react';
-import { CANCELED_MESSAGE_TEXT, TOOL_NAMES } from '../constants';
+import { TOOL_NAMES } from '../constants';
 import type { NormalizedMessage } from '../message';
 import type {
   AssistantMessage,
@@ -252,6 +252,9 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
       />
     );
   }
+  if (name === TOOL_NAMES.TODO_READ) {
+    return <TodoRead todos={result.returnDisplay} />;
+  }
   if (name === 'edit') {
     const originalContent = input.old_string;
     const newContent = input.new_string;
@@ -275,9 +278,6 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
         fileName={fileName}
       />
     );
-  }
-  if (name === TOOL_NAMES.TODO_READ) {
-    return <TodoRead todos={result.returnDisplay} />;
   }
   let text = result.returnDisplay || result.llmContent;
   if (typeof text !== 'string') {

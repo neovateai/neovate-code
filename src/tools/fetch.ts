@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { ModelInfo } from '../model';
 import { query } from '../query';
 import { createTool } from '../tool';
+import { safeStringify } from '../utils/safeStringify';
 import type { FetchToolResult } from './type';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5min
@@ -28,12 +29,12 @@ Remembers:
         const cached = urlCache.get(key);
         if (cached && cached.durationMs < CACHE_TTL_MS) {
           return {
-            llmContent: `Successfully fetched content from ${url} (cached)`,
-            returnDisplay: {
+            returnDisplay: `Successfully fetched content from ${url} (cached)`,
+            llmContent: safeStringify({
               ...cached,
               cached: true,
               durationMs: Date.now() - startTime,
-            },
+            }),
           };
         }
 
@@ -101,8 +102,8 @@ Provide a concise response based only on the content above. In your response:
         };
         urlCache.set(key, data);
         return {
-          llmContent: `Successfully fetched content from ${url}`,
-          returnDisplay: data,
+          llmContent: safeStringify(data),
+          returnDisplay: `Successfully fetched content from ${url}`,
         };
       } catch (e) {
         return {

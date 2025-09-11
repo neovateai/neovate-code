@@ -231,8 +231,8 @@ async function executeCommand(
   }
 
   return {
-    llmContent: message,
-    returnDisplay: llmContent,
+    llmContent,
+    returnDisplay: message,
   };
 }
 

@@ -56,7 +56,7 @@ export class History {
               const formatText = (text: string) => {
                 return {
                   type: 'input_text',
-                  text: `[${part.name} for ${safeStringify(part.input)}] result: \n<function_results>\n${safeStringify(text)}\n</function_results>`,
+                  text: `[${part.name} for ${safeStringify(part.input)}] result: \n<function_results>\n${text}\n</function_results>`,
                 };
               };
               if (typeof llmContent === 'string') {

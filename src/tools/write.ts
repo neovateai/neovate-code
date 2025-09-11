@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import { createTool } from '../tool';
+import { safeStringify } from '../utils/safeStringify';
 import type { WriteToolResult } from './type';
 
 export function createWriteTool(opts: { cwd: string }) {

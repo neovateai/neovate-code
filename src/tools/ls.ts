@@ -31,14 +31,14 @@ export function createLSTool(opts: { cwd: string; productName: string }) {
       const userTree = printTree(opts.cwd, tree);
       if (result.length < MAX_FILES) {
         return {
-          llmContent: `Listed ${result.length} files/directories`,
-          returnDisplay: userTree,
+          returnDisplay: `Listed ${result.length} files/directories`,
+          llmContent: userTree,
         };
       } else {
         const assistantData = `${TRUNCATED_MESSAGE}${userTree}`;
         return {
-          llmContent: `Listed ${result.length} files/directories (truncated)`,
-          returnDisplay: assistantData,
+          returnDisplay: `Listed ${result.length} files/directories (truncated)`,
+          llmContent: assistantData,
         };
       }
     },

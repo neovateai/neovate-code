@@ -1,6 +1,7 @@
 import { glob } from 'glob';
 import { z } from 'zod';
 import { createTool } from '../tool';
+import { safeStringify } from '../utils/safeStringify';
 import type { GlobToolResult } from './type';
 
 const LIMIT = 100;
@@ -44,13 +45,13 @@ Glob
           ? `Found ${filenames.length} files in ${Date.now() - start}ms, truncating to ${LIMIT}.`
           : `Found ${filenames.length} files in ${Date.now() - start}ms.`;
         return {
-          llmContent: message,
-          returnDisplay: {
+          returnDisplay: message,
+          llmContent: safeStringify({
             filenames,
             durationMs: Date.now() - start,
             numFiles: filenames.length,
             truncated,
-          },
+          }),
         };
       } catch (e) {
         return {

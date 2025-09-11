@@ -212,6 +212,7 @@ export type ToolUseResult = {
 export interface Tool<T = any> {
   name: string;
   description: string;
+  getDescription?: () => string;
   execute: (params: T) => Promise<ToolResult<any>> | ToolResult<any>;
   approval?: ToolApprovalInfo;
   parameters: z.ZodSchema<T>;
@@ -245,10 +246,12 @@ export function createTool<TSchema extends z.ZodTypeAny>(config: {
     params: z.infer<TSchema>,
   ) => Promise<ToolResult<any>> | ToolResult<any>;
   approval?: ToolApprovalInfo;
+  getDescription?: () => string;
 }): Tool<z.infer<TSchema>> {
   return {
     name: config.name,
     description: config.description,
+    getDescription: config.getDescription,
     parameters: config.parameters,
     execute: config.execute,
     approval: config.approval,

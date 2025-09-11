@@ -488,7 +488,7 @@ export function convertMcpResultToLlmContent(
       llmContent = safeStringify(llmContent);
     }
   } else if (typeof llmContent === 'string') {
-    llmContent = llmContent;
+    // keep llmContent as string
   } else {
     llmContent = String(llmContent);
   }

@@ -3,6 +3,7 @@ import path from 'path';
 import { z } from 'zod';
 import { IMAGE_EXTENSIONS } from '../constants';
 import { createTool } from '../tool';
+import { safeStringify } from '../utils/safeStringify';
 import type { ReadToolResult } from './type';
 
 type ImageMediaType =
@@ -161,11 +162,11 @@ Usage:
         const actualLinesRead = selectedLines.length;
 
         return {
-          llmContent:
+          returnDisplay:
             offset !== undefined || limit !== undefined
               ? `Read ${actualLinesRead} lines (from line ${startLine + 1} to ${endLine}).`
               : `Read ${actualLinesRead} lines.`,
-          returnDisplay: {
+          llmContent: safeStringify({
             type: 'text',
             filePath: file_path,
             content: processedContent,
@@ -173,7 +174,7 @@ Usage:
             offset: startLine + 1, // Convert back to 1-based
             limit: actualLimit,
             actualLinesRead,
-          },
+          }),
         };
       } catch (e) {
         return {
