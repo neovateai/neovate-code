@@ -8,7 +8,6 @@ import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
 import { getErrorMessage } from '../utils/error';
 import { shellExecute } from '../utils/shell-execution';
-import type { BashToolResult } from './type';
 
 const debug = createDebug('neovate:tools:bash');
 
@@ -114,11 +113,7 @@ function validateCommand(command: string): string | null {
   return null;
 }
 
-async function executeCommand(
-  command: string,
-  timeout: number,
-  cwd: string,
-): Promise<BashToolResult> {
+async function executeCommand(command: string, timeout: number, cwd: string) {
   const actualTimeout = Math.min(timeout, MAX_TIMEOUT);
 
   const validationError = validateCommand(command);

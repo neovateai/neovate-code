@@ -2,7 +2,6 @@ import { glob } from 'glob';
 import { z } from 'zod';
 import { createTool } from '../tool';
 import { safeStringify } from '../utils/safeStringify';
-import type { GlobToolResult } from './type';
 
 const LIMIT = 100;
 
@@ -30,7 +29,7 @@ Glob
       }
       return params.pattern;
     },
-    execute: async ({ pattern, path }): Promise<GlobToolResult> => {
+    execute: async ({ pattern, path }) => {
       try {
         const start = Date.now();
         const paths = await glob([pattern], {

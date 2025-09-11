@@ -64,7 +64,7 @@ export type ToolResultPart = {
   id: string;
   name: string;
   input: Record<string, any>;
-  result: ToolResult<any>;
+  result: ToolResult;
 };
 export type Message =
   | SystemMessage

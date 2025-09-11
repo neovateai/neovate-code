@@ -8,7 +8,6 @@ import {
   listDirectory,
   printTree,
 } from '../utils/list';
-import type { LsToolResult } from './type';
 
 export function createLSTool(opts: { cwd: string; productName: string }) {
   return createTool({
@@ -23,7 +22,7 @@ export function createLSTool(opts: { cwd: string; productName: string }) {
       }
       return path.relative(opts.cwd, params.dir_path);
     },
-    execute: async (params): Promise<LsToolResult> => {
+    execute: async (params) => {
       const { dir_path } = params;
       const fullFilePath = path.isAbsolute(dir_path)
         ? dir_path

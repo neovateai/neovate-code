@@ -4,7 +4,6 @@ import path from 'path';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
-import type { TodoReadToolResult, TodoWriteToolResult } from './type';
 
 const TODO_WRITE_PROMPT = `
 Use this tool to create and manage a structured task list for your current coding session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
@@ -240,7 +239,7 @@ export function createTodoTool(opts: { filePath: string }) {
     parameters: z.object({
       todos: TodoListSchema.describe('The updated todo list'),
     }),
-    async execute({ todos }): Promise<TodoWriteToolResult> {
+    async execute({ todos }) {
       try {
         const oldTodos = await readTodos();
         const newTodos = todos;
@@ -249,7 +248,7 @@ export function createTodoTool(opts: { filePath: string }) {
         return {
           llmContent:
             'Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable',
-          returnDisplay: { oldTodos, newTodos },
+          returnDisplay: { type: 'todo_write', oldTodos, newTodos },
         };
       } catch (error) {
         return {
@@ -270,7 +269,7 @@ export function createTodoTool(opts: { filePath: string }) {
     name: TOOL_NAMES.TODO_READ,
     description: TODO_READ_PROMPT,
     parameters: z.object({}).passthrough(),
-    async execute(): Promise<TodoReadToolResult> {
+    async execute() {
       try {
         const todos = await readTodos();
         return {
@@ -278,7 +277,7 @@ export function createTodoTool(opts: { filePath: string }) {
             todos.length === 0
               ? 'Todo list is empty'
               : `Found ${todos.length} todos`,
-          returnDisplay: todos,
+          returnDisplay: { type: 'todo_read', todos },
         };
       } catch (error) {
         return {

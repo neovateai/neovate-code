@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { createTool } from '../tool';
 import { ripGrep } from '../utils/ripgrep';
 import { safeStringify } from '../utils/safeStringify';
-import type { GrepToolResult } from './type';
 
 export function createGrepTool(opts: { cwd: string }) {
   return createTool({
@@ -29,11 +28,7 @@ export function createGrepTool(opts: { cwd: string }) {
       }
       return params.pattern;
     },
-    execute: async ({
-      pattern,
-      search_path,
-      include,
-    }): Promise<GrepToolResult> => {
+    execute: async ({ pattern, search_path, include }) => {
       try {
         const start = Date.now();
         const args = ['-li', pattern];

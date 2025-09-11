@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import { createTool } from '../tool';
-import type { WriteToolResult } from './type';
 
 export function createWriteTool(opts: { cwd: string }) {
   return createTool({
@@ -18,7 +17,7 @@ export function createWriteTool(opts: { cwd: string }) {
       }
       return path.relative(cwd, params.file_path);
     },
-    execute: async ({ file_path, content }): Promise<WriteToolResult> => {
+    execute: async ({ file_path, content }) => {
       try {
         const fullFilePath = path.isAbsolute(file_path)
           ? file_path
@@ -26,7 +25,7 @@ export function createWriteTool(opts: { cwd: string }) {
         const oldFileExists = fs.existsSync(fullFilePath);
         const oldContent = oldFileExists
           ? fs.readFileSync(fullFilePath, 'utf-8')
-          : null;
+          : '';
         // TODO: backup old content
         // TODO: let user know if they want to write to a file that already exists
         const dir = path.dirname(fullFilePath);
@@ -35,11 +34,12 @@ export function createWriteTool(opts: { cwd: string }) {
         return {
           llmContent: `File successfully written to ${file_path}`,
           returnDisplay: {
-            filePath: file_path,
-            relativeFilePath: path.relative(opts.cwd, fullFilePath),
-            oldContent,
-            content,
-            type: oldFileExists ? 'replace' : 'add',
+            type: 'diff_viewer',
+            filePath: path.relative(opts.cwd, fullFilePath),
+            absoluteFilePath: fullFilePath,
+            originalContent: oldContent,
+            newContent: { inputKey: 'content' },
+            writeType: oldFileExists ? 'replace' : 'add',
           },
         };
       } catch (e) {

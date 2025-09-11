@@ -4,7 +4,6 @@ import type { ModelInfo } from '../model';
 import { query } from '../query';
 import { createTool } from '../tool';
 import { safeStringify } from '../utils/safeStringify';
-import type { FetchToolResult } from './type';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5min
 const urlCache = new Map();
@@ -28,7 +27,7 @@ Remembers:
       }
       return params.url;
     },
-    execute: async ({ url, prompt }): Promise<FetchToolResult> => {
+    execute: async ({ url, prompt }) => {
       try {
         const startTime = Date.now();
         const key = `${url}-${prompt}`;

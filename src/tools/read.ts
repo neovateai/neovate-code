@@ -2,9 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import { IMAGE_EXTENSIONS } from '../constants';
-import { createTool } from '../tool';
+import { type ToolResult, createTool } from '../tool';
 import { safeStringify } from '../utils/safeStringify';
-import type { ReadToolResult } from './type';
 
 type ImageMediaType =
   | 'image/jpeg'
@@ -32,7 +31,7 @@ function getImageMimeType(ext: string): ImageMediaType {
   return mimeTypes[ext] || 'image/jpeg';
 }
 
-function createImageResponse(buffer: Buffer, ext: string): ReadToolResult {
+function createImageResponse(buffer: Buffer, ext: string): ToolResult {
   const mimeType = getImageMimeType(ext);
   const base64 = buffer.toString('base64');
   const data = `data:${mimeType};base64,${base64}`;
@@ -42,7 +41,7 @@ function createImageResponse(buffer: Buffer, ext: string): ReadToolResult {
   };
 }
 
-async function processImage(filePath: string): Promise<ReadToolResult> {
+async function processImage(filePath: string): Promise<ToolResult> {
   try {
     const stats = fs.statSync(filePath);
     const ext = path.extname(filePath).toLowerCase();
@@ -110,7 +109,7 @@ Usage:
       }
       return path.relative(cwd, params.file_path);
     },
-    execute: async ({ file_path, offset, limit }): Promise<ReadToolResult> => {
+    execute: async ({ file_path, offset, limit }) => {
       try {
         // Validate parameters
         if (offset !== undefined && offset !== null && offset < 1) {

@@ -1,6 +1,5 @@
 import { Box, Static, Text } from 'ink';
 import React from 'react';
-import { TOOL_NAMES } from '../constants';
 import type { NormalizedMessage } from '../message';
 import type {
   AssistantMessage,
@@ -212,50 +211,53 @@ function Thinking({ text }: { text: string }) {
 }
 
 function ToolResultItem({ part }: { part: ToolResultPart }) {
-  const { result, name, input } = part;
+  const { result, input } = part;
   if (result.isError) {
-    return (
-      <Text color={UI_COLORS.ERROR}>
-        {result.returnDisplay || result.llmContent}
-      </Text>
-    );
+    let text = result.returnDisplay || result.llmContent;
+    if (typeof text !== 'string') {
+      text = JSON.stringify(text);
+    }
+    return <Text color={UI_COLORS.ERROR}>{text}</Text>;
   }
-  if (name === TOOL_NAMES.TODO_WRITE) {
-    return (
-      <TodoList
-        oldTodos={result.returnDisplay.oldTodos}
-        newTodos={result.returnDisplay.newTodos}
-        verbose={false}
-      />
-    );
+
+  const returnDisplayTypes = ['diff_viewer', 'todo_read', 'todo_write'];
+  if (
+    typeof result.returnDisplay === 'object' &&
+    returnDisplayTypes.includes(result.returnDisplay.type)
+  ) {
+    switch (result.returnDisplay.type) {
+      case 'diff_viewer':
+        const { originalContent, newContent, filePath } = result.returnDisplay;
+        const originalContentValue =
+          typeof originalContent === 'string'
+            ? originalContent
+            : input[originalContent.inputKey];
+        const newContentValue =
+          typeof newContent === 'string'
+            ? newContent
+            : input[newContent.inputKey];
+        return (
+          <DiffViewer
+            originalContent={originalContentValue}
+            newContent={newContentValue}
+            fileName={filePath}
+          />
+        );
+      case 'todo_read':
+        return <TodoRead todos={result.returnDisplay.todos} />;
+      case 'todo_write':
+        return (
+          <TodoList
+            oldTodos={result.returnDisplay.oldTodos}
+            newTodos={result.returnDisplay.newTodos}
+            verbose={false}
+          />
+        );
+      default:
+        break;
+    }
   }
-  if (name === TOOL_NAMES.TODO_READ) {
-    return <TodoRead todos={result.returnDisplay} />;
-  }
-  if (name === 'edit') {
-    const originalContent = input.old_string;
-    const newContent = input.new_string;
-    const fileName = result.returnDisplay.relativeFilePath;
-    return (
-      <DiffViewer
-        originalContent={originalContent}
-        newContent={newContent}
-        fileName={fileName}
-      />
-    );
-  }
-  if (name === 'write') {
-    const fileName = result.returnDisplay.relativeFilePath;
-    const originalContent = result.returnDisplay.oldContent || '';
-    const newContent = result.returnDisplay.content;
-    return (
-      <DiffViewer
-        originalContent={originalContent}
-        newContent={newContent}
-        fileName={fileName}
-      />
-    );
-  }
+
   let text = result.returnDisplay || result.llmContent;
   if (typeof text !== 'string') {
     text = JSON.stringify(text);

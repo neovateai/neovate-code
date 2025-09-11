@@ -3,8 +3,6 @@ import path from 'path';
 import { z } from 'zod';
 import { createTool } from '../tool';
 import { applyEdit } from '../utils/applyEdit';
-import { safeStringify } from '../utils/safeStringify';
-import type { EditToolResult } from './type';
 
 export function createEditTool(opts: { cwd: string }) {
   return createTool({
@@ -32,11 +30,7 @@ Usage:
       }
       return path.relative(cwd, params.file_path);
     },
-    execute: async ({
-      file_path,
-      old_string,
-      new_string,
-    }): Promise<EditToolResult> => {
+    execute: async ({ file_path, old_string, new_string }) => {
       try {
         const cwd = opts.cwd;
         const fullFilePath = path.isAbsolute(file_path)
@@ -55,7 +49,13 @@ Usage:
         fs.writeFileSync(fullFilePath, updatedFile, 'utf-8');
         return {
           llmContent: `File ${file_path} successfully edited.`,
-          returnDisplay: { filePath: file_path, relativeFilePath },
+          returnDisplay: {
+            type: 'diff_viewer',
+            filePath: relativeFilePath,
+            originalContent: { inputKey: 'old_string' },
+            newContent: { inputKey: 'new_string' },
+            absoluteFilePath: fullFilePath,
+          },
         };
       } catch (e) {
         return {

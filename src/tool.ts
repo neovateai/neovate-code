@@ -12,7 +12,7 @@ import { createGlobTool } from './tools/glob';
 import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
-import { createTodoTool } from './tools/todo';
+import { type TodoItem, createTodoTool } from './tools/todo';
 import { createWriteTool } from './tools/write';
 
 type ResolveToolsOpts = {
@@ -214,7 +214,7 @@ export interface Tool<T = any> {
   description: string;
   getDescription?: ({ params, cwd }: { params: T; cwd: string }) => string;
   displayName?: string;
-  execute: (params: T) => Promise<ToolResult<any>> | ToolResult<any>;
+  execute: (params: T) => Promise<ToolResult> | ToolResult;
   approval?: ToolApprovalInfo;
   parameters: z.ZodSchema<T>;
 }
@@ -233,9 +233,32 @@ type ToolApprovalInfo = {
   category?: ApprovalCategory;
 };
 
-export type ToolResult<T = string> = {
+type TodoReadReturnDisplay = {
+  type: 'todo_read';
+  todos: TodoItem[];
+};
+
+type TodoWriteReturnDisplay = {
+  type: 'todo_write';
+  oldTodos: TodoItem[];
+  newTodos: TodoItem[];
+};
+
+type DiffViewerReturnDisplay = {
+  type: 'diff_viewer';
+  originalContent: string | { inputKey: string };
+  newContent: string | { inputKey: string };
+  filePath: string;
+  [key: string]: any;
+};
+
+export type ToolResult = {
   llmContent: string | (TextPart | ImagePart)[];
-  returnDisplay?: string | T;
+  returnDisplay?:
+    | string
+    | DiffViewerReturnDisplay
+    | TodoReadReturnDisplay
+    | TodoWriteReturnDisplay;
   isError?: boolean;
 };
 
@@ -243,9 +266,7 @@ export function createTool<TSchema extends z.ZodTypeAny>(config: {
   name: string;
   description: string;
   parameters: TSchema;
-  execute: (
-    params: z.infer<TSchema>,
-  ) => Promise<ToolResult<any>> | ToolResult<any>;
+  execute: (params: z.infer<TSchema>) => Promise<ToolResult> | ToolResult;
   approval?: ToolApprovalInfo;
   getDescription?: ({
     params,
