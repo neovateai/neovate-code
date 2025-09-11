@@ -416,7 +416,7 @@ export class MCPManager {
       name: `mcp__${serverName}__${mcpTool.name}`,
       description: mcpTool.description,
       getDescription: ({ params }) => {
-        return JSON.stringify(params);
+        return formatParamsDescription(params);
       },
       parameters: mcpTool.originalParameters ?? mcpTool.parameters,
       execute: async (params) => {
@@ -449,6 +449,24 @@ export class MCPManager {
 }
 
 type UnknownContext = unknown;
+
+function formatParamsDescription(params: Record<string, any>): string {
+  if (!params || typeof params !== 'object') {
+    return '';
+  }
+
+  const entries = Object.entries(params);
+  if (entries.length === 0) {
+    return '';
+  }
+
+  return entries
+    .filter(([key, value]) => value !== null && value !== undefined)
+    .map(([key, value]) => {
+      return `${key}: ${safeStringify(value)}`;
+    })
+    .join(', ');
+}
 
 export function convertMcpResultToLlmContent(
   result: any,
