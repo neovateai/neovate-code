@@ -2,7 +2,6 @@ import { setTraceProcessors } from '@openai/agents';
 import assert from 'assert';
 import { render } from 'ink';
 import React from 'react';
-import yargsParser from 'yargs-parser';
 import { Context } from './context';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
@@ -53,7 +52,8 @@ type Argv = {
   plugin: string[];
 };
 
-function parseArgs(argv: any) {
+async function parseArgs(argv: any) {
+  const { default: yargsParser } = await import('yargs-parser');
   const args = yargsParser(argv, {
     alias: {
       model: 'm',
@@ -251,7 +251,7 @@ export async function runNeovate(opts: {
 }) {
   // clear tracing
   setTraceProcessors([]);
-  const argv = parseArgs(process.argv.slice(2));
+  const argv = await parseArgs(process.argv.slice(2));
   if (argv.help) {
     printHelp(opts.productName.toLowerCase());
     return;

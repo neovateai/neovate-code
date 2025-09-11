@@ -5,6 +5,7 @@ import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
 import type { LoopResult } from '../loop';
 import type { Message, UserMessage } from '../message';
+import type { ProvidersMap } from '../model';
 import { Paths } from '../paths';
 import { SessionConfigManager, loadSessionMessages } from '../session';
 import { Session } from '../session';
@@ -71,8 +72,9 @@ interface AppState {
   productASCIIArt: string;
   version: string;
   theme: Theme;
-  model: string;
+  model: string | null;
   modelContextLimit: number;
+  providers: ProvidersMap;
   sessionId: string | null;
   initialPrompt: string | null;
   logFile: string;
@@ -196,6 +198,7 @@ export const useAppStore = create<AppStore>()(
       theme: 'light',
       model: null,
       modelContextLimit: null,
+      providers: {},
       status: 'idle',
       error: null,
       slashCommandJSX: null,
@@ -244,6 +247,7 @@ export const useAppStore = create<AppStore>()(
           version: response.data.version,
           model: response.data.model,
           modelContextLimit: response.data.modelContextLimit,
+          providers: response.data.providers,
           sessionId: opts.sessionId,
           messages: opts.messages,
           history: opts.history,
@@ -302,7 +306,7 @@ export const useAppStore = create<AppStore>()(
                 await upgrade.upgrade({ tarballUrl: result.tarballUrl });
                 set({
                   upgrade: {
-                    text: `Upgraded to v${result.latestVersion}`,
+                    text: `Upgraded to v${result.latestVersion}, restart to apply changes.`,
                     type: 'success',
                   },
                 });
@@ -713,7 +717,15 @@ export const useAppStore = create<AppStore>()(
           isGlobal: true,
         });
         await bridge.request('clearContext', {});
-        set({ model });
+        // Get the modelContextLimit for the selected model
+        const modelsResponse = await bridge.request('getModels', { cwd });
+        if (modelsResponse.success) {
+          set({
+            model,
+            modelContextLimit:
+              modelsResponse.data.currentModelInfo.modelContextLimit,
+          });
+        }
       },
       approveToolUse: ({
         toolUse,

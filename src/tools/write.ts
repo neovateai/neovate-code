@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import { createTool } from '../tool';
-import type { WriteToolResult } from './type';
 
 export function createWriteTool(opts: { cwd: string }) {
   return createTool({
@@ -12,7 +11,13 @@ export function createWriteTool(opts: { cwd: string }) {
       file_path: z.string(),
       content: z.string(),
     }),
-    execute: async ({ file_path, content }): Promise<WriteToolResult> => {
+    getDescription: ({ params, cwd }) => {
+      if (!params.file_path || typeof params.file_path !== 'string') {
+        return 'No file path provided';
+      }
+      return path.relative(cwd, params.file_path);
+    },
+    execute: async ({ file_path, content }) => {
       try {
         const fullFilePath = path.isAbsolute(file_path)
           ? file_path
@@ -20,27 +25,27 @@ export function createWriteTool(opts: { cwd: string }) {
         const oldFileExists = fs.existsSync(fullFilePath);
         const oldContent = oldFileExists
           ? fs.readFileSync(fullFilePath, 'utf-8')
-          : null;
+          : '';
         // TODO: backup old content
         // TODO: let user know if they want to write to a file that already exists
         const dir = path.dirname(fullFilePath);
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(fullFilePath, format(content));
         return {
-          success: true,
-          message: `File successfully written to ${file_path}`,
-          data: {
-            filePath: file_path,
-            relativeFilePath: path.relative(opts.cwd, fullFilePath),
-            oldContent,
-            content,
-            type: oldFileExists ? 'replace' : 'add',
+          llmContent: `File successfully written to ${file_path}`,
+          returnDisplay: {
+            type: 'diff_viewer',
+            filePath: path.relative(opts.cwd, fullFilePath),
+            absoluteFilePath: fullFilePath,
+            originalContent: oldContent,
+            newContent: { inputKey: 'content' },
+            writeType: oldFileExists ? 'replace' : 'add',
           },
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
     },

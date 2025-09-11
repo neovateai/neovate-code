@@ -37,7 +37,7 @@ export class Project {
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
       onToolApprove?: (opts: { toolUse: ToolUse }) => Promise<boolean>;
       onTextDelta?: (text: string) => Promise<void>;
-      onChunk?: (chunk: any) => Promise<void>;
+      onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
       images?: string[];
     } = {},
@@ -158,10 +158,9 @@ export class Project {
         type: PluginHookType.SeriesLast,
       });
     }
-    const { model } = await resolveModelWithContext(
-      opts.model || null,
-      this.context,
-    );
+    const model = (
+      await resolveModelWithContext(opts.model || null, this.context)
+    ).model!;
     const llmsContext = await LlmsContext.create({
       context: this.context,
       sessionId: this.session.id,

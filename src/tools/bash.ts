@@ -4,10 +4,10 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { z } from 'zod';
+import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
 import { getErrorMessage } from '../utils/error';
 import { shellExecute } from '../utils/shell-execution';
-import type { BashToolResult } from './type';
 
 const debug = createDebug('neovate:tools:bash');
 
@@ -113,20 +113,14 @@ function validateCommand(command: string): string | null {
   return null;
 }
 
-async function executeCommand(
-  command: string,
-  timeout: number,
-  cwd: string,
-): Promise<BashToolResult> {
+async function executeCommand(command: string, timeout: number, cwd: string) {
   const actualTimeout = Math.min(timeout, MAX_TIMEOUT);
 
   const validationError = validateCommand(command);
   if (validationError) {
     return {
-      success: false,
-      error: validationError,
-      // @ts-ignore
-      command,
+      isError: true,
+      llmContent: validationError,
     };
   }
 
@@ -232,15 +226,14 @@ async function executeCommand(
   }
 
   return {
-    success: true,
-    message,
-    data: llmContent,
+    llmContent,
+    returnDisplay: message,
   };
 }
 
 export function createBashTool(opts: { cwd: string }) {
   return createTool({
-    name: 'bash',
+    name: TOOL_NAMES.BASH,
     description:
       `Run shell commands in the terminal, ensuring proper handling and security measures.
 
@@ -276,24 +269,30 @@ cd /foo/bar && pytest tests
         .nullable()
         .describe(`Optional timeout in milliseconds (max ${MAX_TIMEOUT})`),
     }),
+    getDescription: ({ params }) => {
+      if (!params.command || typeof params.command !== 'string') {
+        return 'No command provided';
+      }
+      const command = params.command.trim();
+      return command.length > 100 ? command.substring(0, 97) + '...' : command;
+    },
     execute: async ({ command, timeout = DEFAULT_TIMEOUT }) => {
       try {
         if (!command) {
           return {
-            success: false,
-            error: 'Command cannot be empty.',
+            llmContent: 'Error: Command cannot be empty.',
+            isError: true,
           };
         }
-        const result = await executeCommand(
+        return await executeCommand(
           command,
           timeout || DEFAULT_TIMEOUT,
           opts.cwd,
         );
-        return result;
       } catch (e) {
         return {
-          success: false,
-          error:
+          isError: true,
+          llmContent:
             e instanceof Error
               ? `Command execution failed: ${getErrorMessage(e)}`
               : 'Command execution failed.',

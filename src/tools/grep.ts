@@ -3,7 +3,7 @@ import path from 'path';
 import { z } from 'zod';
 import { createTool } from '../tool';
 import { ripGrep } from '../utils/ripgrep';
-import type { GrepToolResult } from './type';
+import { safeStringify } from '../utils/safeStringify';
 
 export function createGrepTool(opts: { cwd: string }) {
   return createTool({
@@ -22,11 +22,13 @@ export function createGrepTool(opts: { cwd: string }) {
         .nullable()
         .describe('The file pattern to include in the search'),
     }),
-    execute: async ({
-      pattern,
-      search_path,
-      include,
-    }): Promise<GrepToolResult> => {
+    getDescription: ({ params }) => {
+      if (!params.pattern || typeof params.pattern !== 'string') {
+        return 'No pattern provided';
+      }
+      return params.pattern;
+    },
+    execute: async ({ pattern, search_path, include }) => {
       try {
         const start = Date.now();
         const args = ['-li', pattern];
@@ -57,18 +59,17 @@ export function createGrepTool(opts: { cwd: string }) {
           .map((_) => _[0]);
         const durationMs = Date.now() - start;
         return {
-          success: true,
-          message: `Found ${matches.length} files in ${durationMs}ms.`,
-          data: {
+          returnDisplay: `Found ${matches.length} files in ${durationMs}ms.`,
+          llmContent: safeStringify({
             filenames: matches,
             durationMs,
             numFiles: matches.length,
-          },
+          }),
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
     },

@@ -490,7 +490,9 @@ export const models: ModelMap = {
 };
 
 export const defaultModelCreator = (name: string, provider: Provider) => {
-  assert(provider.api, `Provider ${provider.id} must have an api`);
+  if (provider.id !== 'openai') {
+    assert(provider.api, `Provider ${provider.id} must have an api`);
+  }
   return createOpenAI({
     baseURL: provider.api,
     apiKey: provider.env[0] ? process.env[provider.env[0]] : '',
@@ -757,11 +759,10 @@ export async function resolveModelWithContext(
     memo: modelAlias,
     type: PluginHookType.SeriesLast,
   });
-  const model = resolveModel(
-    name || context.config.model,
-    hookedProviders,
-    hookedModelAlias,
-  );
+  const modelName = name || context.config.model;
+  const model = modelName
+    ? resolveModel(modelName, hookedProviders, hookedModelAlias)
+    : null;
   return {
     providers: hookedProviders,
     modelAlias,
