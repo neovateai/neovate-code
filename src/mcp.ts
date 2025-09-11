@@ -8,7 +8,9 @@ import {
   mcpToFunctionTool,
 } from '@openai/agents';
 import createDebug from 'debug';
+import type { ImagePart, TextPart } from './message';
 import type { Tool } from './tool';
+import { safeStringify } from './utils/safeStringify';
 
 export interface MCPConfig {
   type?: 'stdio' | 'sse' | 'http';
@@ -422,13 +424,12 @@ export class MCPManager {
             null as any,
             JSON.stringify(params || {}),
           );
-          let returnDisplay = result;
-          let llmContent = `Tool ${mcpTool.name} executed successfully, ${params ? `parameters: ${JSON.stringify(params)}` : ''}`;
-          // ref: https://modelcontextprotocol.io/specification/2025-06-18/server/tools#data-types
-          // TODO
+
+          let returnDisplay = `Tool ${mcpTool.name} executed successfully, ${params ? `parameters: ${JSON.stringify(params)}` : ''}`;
+          const llmContent = convertMcpResultToLlmContent(result);
           return {
-            returnDisplay,
             llmContent,
+            returnDisplay,
           };
         } catch (error) {
           return {
@@ -445,3 +446,51 @@ export class MCPManager {
 }
 
 type UnknownContext = unknown;
+
+export function convertMcpResultToLlmContent(
+  result: any,
+): string | (TextPart | ImagePart)[] {
+  // Support mcp spec data types
+  // ref: https://modelcontextprotocol.io/specification/2025-06-18/server/tools#data-types
+  let llmContent: any = result;
+  const isTextPart = (part: object) => {
+    return 'type' in part && part.type === 'text' && 'text' in part;
+  };
+  const isImagePart = (part: object) => {
+    return (
+      'type' in part &&
+      part.type === 'image' &&
+      'data' in part &&
+      'mimeType' in part
+    );
+  };
+  const isPart = (part: object) => {
+    return isTextPart(part) || isImagePart(part);
+  };
+  if (typeof llmContent === 'object') {
+    llmContent = JSON.stringify(llmContent);
+    if (isPart(llmContent as object)) {
+      llmContent = [llmContent];
+    } else {
+      llmContent = safeStringify(llmContent);
+    }
+  } else if (Array.isArray(llmContent)) {
+    const hasPart = llmContent.some((part) => isPart(part));
+    if (hasPart) {
+      llmContent = llmContent.map((part) => {
+        if (isPart(part)) {
+          return part;
+        } else {
+          return { type: 'text', text: safeStringify(part) };
+        }
+      });
+    } else {
+      llmContent = safeStringify(llmContent);
+    }
+  } else if (typeof llmContent === 'string') {
+    llmContent = llmContent;
+  } else {
+    llmContent = String(llmContent);
+  }
+  return llmContent;
+}

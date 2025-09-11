@@ -7,6 +7,7 @@ import type {
 import type { Message, NormalizedMessage } from './message';
 import type { ToolResult } from './tool';
 import { randomUUID } from './utils/randomUUID';
+import { safeStringify } from './utils/safeStringify';
 
 export type OnMessage = (message: NormalizedMessage) => Promise<void>;
 export type HistoryOpts = {
@@ -107,15 +108,4 @@ export class History {
   }
 
   async compress() {}
-}
-
-function safeStringify(
-  obj: any,
-  fallbackMessage = '[Unable to serialize object]',
-): string {
-  try {
-    return JSON.stringify(obj, null, 2);
-  } catch (error) {
-    return fallbackMessage;
-  }
 }
