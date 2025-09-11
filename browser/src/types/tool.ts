@@ -7,8 +7,8 @@ export interface IFetchToolResult {
 }
 
 export interface IBashToolResult {
-  stdout?: string;
-  stderr?: string;
+  success?: boolean;
+  message?: string;
 }
 
 export interface IGlobToolResult {
@@ -22,5 +22,21 @@ export interface IGrepToolResult {
 }
 
 export interface IReadToolResult {
-  totalLines?: number;
+  success?: boolean;
+  message?: string;
+  data?: {
+    type?: string;
+    filePath?: string;
+    content?: string;
+    totalLines?: number;
+    offset?: number;
+    limit?: number;
+    actualLinesRead?: number;
+  };
+}
+
+export interface IReadToolArgs {
+  file_path: string;
+  offset?: number | null;
+  limit?: number | null;
 }

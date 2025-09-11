@@ -141,9 +141,12 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
         readOnly: readonly,
       });
 
-      quillInstance.on('selection-change', (range, _oldRange, _source) => {
+      quillInstance.on('selection-change', (range, oldRange, source) => {
         // when selection change, exit search mode
-        onExitSearch?.();
+        // if focus switched to popup(range === null && oldRange !== null), should keep search mode
+        if (!(range === null && oldRange !== null) && source === 'user') {
+          onExitSearch?.();
+        }
         if (range) {
           onSelect?.(
             makeSelectEvent(
@@ -158,7 +161,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
 
       quillInstance.on('text-change', (delta, _oldContent, source) => {
         if (source === 'user') {
-          if (isInsertingAt(delta)) {
+          if (isInsertingAt(delta) && searchInfoRef.current === null) {
             const selection = quillInstance.getSelection();
 
             if (selection) {

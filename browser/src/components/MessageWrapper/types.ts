@@ -25,6 +25,34 @@ export interface MessageWrapperProps {
   // === Top Right Action Buttons ===
   actions?: ActionButtonProps[];
   onActionClick?: (actionKey: string) => void;
+
+  // === Bottom Action Buttons ===
+  footers?: FooterButtonProps[];
+}
+
+export interface FooterButtonProps {
+  key: string;
+  text: string;
+  icon?: React.ReactNode;
+  color?:
+    | 'default'
+    | 'primary'
+    | 'danger'
+    | 'blue'
+    | 'purple'
+    | 'cyan'
+    | 'green'
+    | 'magenta'
+    | 'pink'
+    | 'red'
+    | 'orange'
+    | 'yellow'
+    | 'volcano'
+    | 'geekblue'
+    | 'lime'
+    | 'gold'
+    | undefined;
+  onClick?: () => void;
 }
 
 export interface ActionButtonProps {

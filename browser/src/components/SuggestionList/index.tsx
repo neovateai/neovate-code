@@ -20,8 +20,9 @@ import { useSnapshot } from 'valtio';
 import { ContextType } from '@/constants/context';
 import * as context from '@/state/context';
 import type { ContextItem } from '@/types/context';
-import FileTooltipRender from './FileTooltipRender';
+import ListFooter from './ListFooter';
 import SmartText from './SmartText';
+import TooltipRender from './TooltipRender';
 
 export type SuggestionItem = {
   label: React.ReactNode;
@@ -30,6 +31,7 @@ export type SuggestionItem = {
   children?: SuggestionItem[];
   extra?: React.ReactNode;
   contextItem?: ContextItem;
+  disabled?: boolean;
 };
 
 interface SearchControlConfig {
@@ -59,6 +61,31 @@ interface ISuggestionListProps {
 export interface ISuggestionListRef {
   triggerKeyDown: (event: React.KeyboardEvent) => void;
 }
+
+const renderItemText = (text: React.ReactNode, searchText?: string | null) => {
+  if (!searchText || typeof text !== 'string') {
+    return text;
+  } else {
+    const searchRegex = new RegExp(
+      `(${searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
+      'gi',
+    );
+    const parts = text.split(searchRegex);
+
+    return parts
+      .map((part, index) => {
+        if (part.toLowerCase() === searchText.toLowerCase()) {
+          return (
+            <span key={index} className="text-[#7357FF]">
+              {part}
+            </span>
+          );
+        }
+        return part;
+      })
+      .filter((part) => part !== '');
+  }
+};
 
 const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
   (props, ref) => {
@@ -144,6 +171,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       [],
     );
 
+    // FIXME: disabled状态禁用对于一级菜单未适配
     // Handle keyboard navigation
     const handleKeyDown = useCallback(
       (event: React.KeyboardEvent) => {
@@ -166,6 +194,11 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
             event.preventDefault();
             if (selectedIndex >= 0 && selectedIndex < currentList.length) {
               const selectedItem = currentList[selectedIndex];
+
+              if (!!selectedItem.disabled) {
+                break;
+              }
+
               if (selectedFirstKey) {
                 if (!isSecondItemSelected(selectedItem.value)) {
                   onSelect?.(
@@ -213,62 +246,36 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       };
     });
 
-    const renderItemText = (
-      text: React.ReactNode,
-      searchText?: string | null,
-    ) => {
-      if (!searchText || typeof text !== 'string') {
-        return text;
-      } else {
-        const searchRegex = new RegExp(
-          `(${searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
-          'gi',
-        );
-        const parts = text.split(searchRegex);
-
-        return parts
-          .map((part, index) => {
-            if (part.toLowerCase() === searchText.toLowerCase()) {
-              return (
-                <span key={index} className="text-[#7357FF]">
-                  {part}
-                </span>
-              );
-            }
-            return part;
-          })
-          .filter((part) => part !== '');
-      }
-    };
-
     const renderItem = (item: SuggestionItem, index: number) => {
       const isSelected = selectedIndex === index;
       const isFirstLevel = !selectedFirstKey;
       const isSecondSeleted = isSecondItemSelected(item.value);
 
+      const isDisabled = !!item.disabled;
+
       return (
         <List.Item
           className={cx('p-0! select-none', {
             'bg-[#F5F6F7]': isSelected,
-            'cursor-pointer': !isSecondSeleted,
-            'cursor-not-allowed': !!isSecondSeleted,
+            'cursor-pointer': !isDisabled,
+            'cursor-not-allowed': isDisabled,
           })}
           key={item.value}
           data-index={index}
           onMouseEnter={() => setSelectedIndex(index)}
           onClick={(e) => {
-            if (selectedFirstKey) {
-              if (isSecondSeleted) {
-                e.preventDefault();
-              } else {
+            if (isDisabled) {
+              e.preventDefault();
+            } else {
+              if (selectedFirstKey) {
                 onSelect?.(selectedFirstKey, item.value, item.contextItem);
                 setSelectedFirstKey(undefined);
                 onOpenChange?.(false);
                 onLostFocus?.();
+              } else {
+                clearSearch(item.value);
+                setSelectedFirstKey(item.value);
               }
-            } else {
-              clearSearch(item.value);
-              setSelectedFirstKey(item.value);
             }
           }}
         >
@@ -286,13 +293,21 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
                   switch (selectedFirstKey) {
                     case ContextType.FILE:
                       return (
-                        <FileTooltipRender
+                        <TooltipRender.File
                           fullPath={renderItemText(
                             [item.extra ?? '', item.label].join('/'),
                             searchText,
                           )}
                           icon={item.icon}
                         />
+                      );
+                    case ContextType.SLASH_COMMAND:
+                      return (
+                        item.contextItem && (
+                          <TooltipRender.SlashCommand
+                            description={item.extra}
+                          />
+                        )
                       );
                     default:
                       return null;
@@ -364,31 +379,6 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       t,
       searchControl,
     ]);
-
-    const ListFooter = useMemo(() => {
-      return (
-        <div className="px-3.5 pt-1.5 border-t border-[#eeeff0] text-xs text-gray-500 select-none">
-          <div className="flex items-center gap-3 justify-end">
-            <div className="flex items-center gap-1">
-              <div>↑↓</div>
-              <div>{t('suggestion.navigate')}</div>
-            </div>
-            <div className="flex items-center gap-1">
-              <div>Enter</div>
-              <div>{t('suggestion.select')}</div>
-            </div>
-            <div className="flex items-center gap-1">
-              <div>Esc</div>
-              <div>
-                {selectedFirstKey
-                  ? t('suggestion.back')
-                  : t('suggestion.close')}
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }, [selectedFirstKey, t]);
 
     // Combined effect for popup state management
     useEffect(() => {
@@ -515,7 +505,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
               dataSource={currentList}
               renderItem={renderItem}
             />
-            {ListFooter}
+            <ListFooter selectedFirstKey={selectedFirstKey} />
           </div>
         )}
         trigger={[]}

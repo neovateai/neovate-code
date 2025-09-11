@@ -1,7 +1,9 @@
 import { Flex, Space } from 'antd';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSnapshot } from 'valtio';
 import { useChatState } from '@/hooks/provider';
+import { state } from '@/state/appData';
 import styles from './index.module.css';
 
 const useWelcomeData = () => {
@@ -55,6 +57,7 @@ const useWelcomeData = () => {
 const Welcome: React.FC = () => {
   const { t } = useTranslation();
   const { DESIGN_GUIDE, handleCapabilityClick } = useWelcomeData();
+  const { appData } = useSnapshot(state);
 
   return (
     <Space direction="vertical" size={16} className={styles.outerContainer}>
@@ -67,7 +70,9 @@ const Welcome: React.FC = () => {
           className={styles.content}
         >
           <Flex align="center" justify="center" className={styles.welcomeTitle}>
-            {t('welcome.title')}
+            {t('welcome.title', {
+              productName: appData?.productName,
+            })}
             <span className={styles.waveEmoji}>👋</span>
           </Flex>
 

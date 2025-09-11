@@ -21,7 +21,7 @@ export default function ToolApprovalConfirmation({
   const { t } = useTranslation();
   const snap = useSnapshot(toolApprovalState);
 
-  // 检查当前消息是否为当前待处理的请求
+  // Check if current message is the current pending request
   if (
     !snap.currentRequest ||
     snap.currentRequest.toolCallId !== message.toolCallId
@@ -29,7 +29,12 @@ export default function ToolApprovalConfirmation({
     return null;
   }
 
-  // 格式化工具参数描述，实际上只有fetch，bash，edit会有审批
+  // Don't show approval confirmation for edit or write tools
+  if (message.toolName === 'edit' || message.toolName === 'write') {
+    return null;
+  }
+
+  // Format tool parameter description, only fetch, bash, edit tools require approval
   const getToolDescription = (
     toolName: string,
     params: Record<string, any>,
