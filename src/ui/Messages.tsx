@@ -133,7 +133,7 @@ function AssistantText({
       marginTop={SPACING.MESSAGE_MARGIN_TOP}
       marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
     >
-      <Text bold color={UI_COLORS.ASSISTANT}>
+      <Text bold color="#FF3070">
         {productName.toLowerCase()}
       </Text>
       <Markdown>{text}</Markdown>
