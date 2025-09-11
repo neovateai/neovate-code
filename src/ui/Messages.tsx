@@ -14,6 +14,7 @@ import {
   isToolResultMessage,
 } from '../message';
 import { DiffViewer } from './DiffViewer';
+import { GradientString } from './GradientString';
 import { Markdown } from './Markdown';
 import { TodoList, TodoRead } from './Todo';
 import { SPACING, UI_COLORS } from './constants';
@@ -42,7 +43,11 @@ function ProductASCIIArt() {
   if (!productASCIIArt) return null;
   return (
     <Box>
-      <Text color={UI_COLORS.PRODUCT_ASCII_ART}>{productASCIIArt}</Text>
+      <GradientString
+        text={productASCIIArt}
+        colors={['#FF3070', '#FF6B9D']}
+        multiline
+      />
     </Box>
   );
 }
@@ -51,9 +56,11 @@ function ProductInfo() {
   const { productName, version } = useAppStore();
   return (
     <Box marginTop={1}>
-      <Text bold color={UI_COLORS.PRODUCT_NAME}>
-        {productName.toUpperCase()}
-      </Text>
+      <GradientString
+        text={productName.toUpperCase()}
+        colors={['#FF3070', '#FF6B9D']}
+        multiline
+      />
       <Text color={UI_COLORS.PRODUCT_VERSION}> v{version}</Text>
     </Box>
   );

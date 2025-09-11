@@ -98,6 +98,7 @@
     "front-matter": "^4.0.2",
     "glob": "^11.0.3",
     "gpt-tokenizer": "^3.0.1",
+    "gradient-string": "^3.0.0",
     "husky": "^9.1.7",
     "ink": "^6.1.0",
     "ink-select-input": "^6.2.0",
