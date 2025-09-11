@@ -1,18 +1,7 @@
 import type { AgentInputItem, UserMessageItem } from '@openai/agents';
 import fs from 'fs';
 import path from 'path';
-
-const IMAGE_EXTENSIONS = new Set([
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.gif',
-  '.bmp',
-  '.webp',
-  '.svg',
-  '.tiff',
-  '.tif',
-]);
+import { IMAGE_EXTENSIONS } from './constants';
 
 export class At {
   private userPrompt: string;
@@ -48,8 +37,8 @@ export class At {
   private extractAtPaths(prompt: string): string[] {
     const paths: string[] = [];
     const regex = /@("[^"]+"|(?:[^\\ ]|\\ )+)/g;
-    let match;
-    while ((match = regex.exec(prompt)) !== null) {
+    let match: RegExpExecArray | null = regex.exec(prompt);
+    while (match !== null) {
       let path = match[1];
       // Remove quotes if present
       if (path.startsWith('"') && path.endsWith('"')) {
@@ -59,6 +48,7 @@ export class At {
         path = path.replace(/\\ /g, ' ');
       }
       paths.push(path);
+      match = regex.exec(prompt);
     }
     return [...new Set(paths)];
   }
@@ -97,7 +87,7 @@ export class At {
             }
           }
         }
-      } catch (error) {
+      } catch {
         // Skip directories that can't be read
         console.warn(`Warning: Could not read directory ${currentPath}`);
       }
