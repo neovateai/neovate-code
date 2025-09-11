@@ -3,7 +3,6 @@ import path from 'path';
 import { z } from 'zod';
 import { createTool } from '../tool';
 import { applyEdit } from '../utils/applyEdit';
-import type { EditToolResult } from './type';
 
 export function createEditTool(opts: { cwd: string }) {
   return createTool({
@@ -25,11 +24,13 @@ Usage:
         .string()
         .describe('The text to replace the old_string with'),
     }),
-    execute: async ({
-      file_path,
-      old_string,
-      new_string,
-    }): Promise<EditToolResult> => {
+    getDescription: ({ params, cwd }) => {
+      if (!params.file_path || typeof params.file_path !== 'string') {
+        return 'No file path provided';
+      }
+      return path.relative(cwd, params.file_path);
+    },
+    execute: async ({ file_path, old_string, new_string }) => {
       try {
         const cwd = opts.cwd;
         const fullFilePath = path.isAbsolute(file_path)
@@ -47,14 +48,19 @@ Usage:
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(fullFilePath, updatedFile, 'utf-8');
         return {
-          success: true,
-          message: `File ${file_path} successfully edited.`,
-          data: { filePath: file_path, relativeFilePath },
+          llmContent: `File ${file_path} successfully edited.`,
+          returnDisplay: {
+            type: 'diff_viewer',
+            filePath: relativeFilePath,
+            originalContent: { inputKey: 'old_string' },
+            newContent: { inputKey: 'new_string' },
+            absoluteFilePath: fullFilePath,
+          },
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
     },

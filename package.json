@@ -98,6 +98,7 @@
     "front-matter": "^4.0.2",
     "glob": "^11.0.3",
     "gpt-tokenizer": "^3.0.1",
+    "gradient-string": "^3.0.0",
     "husky": "^9.1.7",
     "ink": "^6.1.0",
     "ink-select-input": "^6.2.0",
@@ -122,7 +123,6 @@
     "turndown": "^7.2.0",
     "type-fest": "^4.41.0",
     "typescript": "^5.9.2",
-    "upgear": "^0.0.3",
     "valtio": "^2.1.5",
     "vitest": "^3.2.4",
     "wrap-ansi": "^9.0.0",
@@ -142,12 +142,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "upgear": {
-    "files": [
-      "vendor"
-    ],
-    "needReinstall": false,
-    "changelogUrl": "https://github.com/neovateai/neovate-code/blob/master/CHANGELOG.md"
   }
 }

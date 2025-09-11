@@ -299,7 +299,7 @@ export const useAppStore = create<AppStore>()(
                 await upgrade.upgrade({ tarballUrl: result.tarballUrl });
                 set({
                   upgrade: {
-                    text: `Upgraded to v${result.latestVersion}`,
+                    text: `Upgraded to v${result.latestVersion}, restart to apply changes.`,
                     type: 'success',
                   },
                 });

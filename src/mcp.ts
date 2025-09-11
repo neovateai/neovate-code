@@ -8,7 +8,9 @@ import {
   mcpToFunctionTool,
 } from '@openai/agents';
 import createDebug from 'debug';
+import type { ImagePart, TextPart } from './message';
 import type { Tool } from './tool';
+import { safeStringify } from './utils/safeStringify';
 
 export interface MCPConfig {
   type?: 'stdio' | 'sse' | 'http';
@@ -413,6 +415,9 @@ export class MCPManager {
     return {
       name: `mcp__${serverName}__${mcpTool.name}`,
       description: mcpTool.description,
+      getDescription: ({ params }) => {
+        return JSON.stringify(params);
+      },
       parameters: mcpTool.originalParameters ?? mcpTool.parameters,
       execute: async (params) => {
         try {
@@ -422,15 +427,17 @@ export class MCPManager {
             null as any,
             JSON.stringify(params || {}),
           );
+
+          let returnDisplay = `Tool ${mcpTool.name} executed successfully, ${params ? `parameters: ${JSON.stringify(params)}` : ''}`;
+          const llmContent = convertMcpResultToLlmContent(result);
           return {
-            success: true,
-            data: result,
-            message: `Tool ${mcpTool.name} executed successfully, ${params ? `parameters: ${JSON.stringify(params)}` : ''}`,
+            llmContent,
+            returnDisplay,
           };
         } catch (error) {
           return {
-            success: false,
-            error: error instanceof Error ? error.message : String(error),
+            isError: true,
+            llmContent: error instanceof Error ? error.message : String(error),
           };
         }
       },
@@ -442,3 +449,50 @@ export class MCPManager {
 }
 
 type UnknownContext = unknown;
+
+export function convertMcpResultToLlmContent(
+  result: any,
+): string | (TextPart | ImagePart)[] {
+  // Support mcp spec data types
+  // ref: https://modelcontextprotocol.io/specification/2025-06-18/server/tools#data-types
+  let llmContent: any = result;
+  const isTextPart = (part: object) => {
+    return 'type' in part && part.type === 'text' && 'text' in part;
+  };
+  const isImagePart = (part: object) => {
+    return (
+      'type' in part &&
+      part.type === 'image' &&
+      'data' in part &&
+      'mimeType' in part
+    );
+  };
+  const isPart = (part: object) => {
+    return isTextPart(part) || isImagePart(part);
+  };
+  if (typeof llmContent === 'object') {
+    if (isPart(llmContent as object)) {
+      llmContent = [llmContent];
+    } else {
+      llmContent = safeStringify(llmContent);
+    }
+  } else if (Array.isArray(llmContent)) {
+    const hasPart = llmContent.some((part) => isPart(part));
+    if (hasPart) {
+      llmContent = llmContent.map((part) => {
+        if (isPart(part)) {
+          return part;
+        } else {
+          return { type: 'text', text: safeStringify(part) };
+        }
+      });
+    } else {
+      llmContent = safeStringify(llmContent);
+    }
+  } else if (typeof llmContent === 'string') {
+    // keep llmContent as string
+  } else {
+    llmContent = String(llmContent);
+  }
+  return llmContent;
+}
