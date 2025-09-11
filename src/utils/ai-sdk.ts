@@ -75,6 +75,7 @@ export function itemsToLanguageV1Messages(
                       model.modelId.includes('gemini') &&
                       model.provider === 'google.generative-ai';
                     if (isGeminiModel && typeof c.image === 'string') {
+                      // ref https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai#file-inputs
                       const image = removeImagePrefix(c.image);
                       return {
                         type: 'file',
