@@ -15,10 +15,6 @@ patchedDependencies:
 importers:
 
   .:
-    dependencies:
-      express:
-        specifier: ^5.1.0
-        version: 5.1.0
     devDependencies:
       '@ai-sdk/anthropic':
         specifier: ^1.2.12
@@ -146,6 +142,9 @@ importers:
       dotenv:
         specifier: ^17.2.1
         version: 17.2.1
+      express:
+        specifier: ^5.1.0
+        version: 5.1.0
       fastify:
         specifier: ^5.5.0
         version: 5.5.0
