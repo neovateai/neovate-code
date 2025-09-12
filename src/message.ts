@@ -10,18 +10,20 @@ export type TextPart = {
   type: 'text';
   text: string;
 };
+
 export type ImagePart = {
   type: 'image';
   data: string;
   mimeType: string;
 };
+
 export type FilePart = {
   type: 'file';
   filename?: string;
   data: string;
   mimeType: string;
 };
-export type UserContent = string | Array<TextPart>;
+export type UserContent = string | Array<TextPart | ImagePart>;
 export type ToolUsePart = {
   type: 'tool_use';
   id: string;

@@ -2,7 +2,7 @@ import { Context } from './context';
 import { JsonlLogger } from './jsonl';
 import { LlmsContext } from './llmsContext';
 import { runLoop } from './loop';
-import type { NormalizedMessage } from './message';
+import type { ImagePart, NormalizedMessage, UserContent } from './message';
 import { resolveModelWithContext } from './model';
 import { OutputFormat } from './outputFormat';
 import { OutputStyleManager } from './outputStyle';
@@ -38,6 +38,7 @@ export class Project {
       onTextDelta?: (text: string) => Promise<void>;
       onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
+      attachments?: ImagePart[];
     } = {},
   ) {
     let tools = await resolveTools({
@@ -83,6 +84,7 @@ export class Project {
       onTextDelta?: (text: string) => Promise<void>;
       onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
+      attachments?: ImagePart[];
     } = {},
   ) {
     let tools = await resolveTools({
@@ -131,6 +133,7 @@ export class Project {
       signal?: AbortSignal;
       tools?: Tool[];
       systemPrompt?: string;
+      attachments?: ImagePart[];
     } = {},
   ) {
     let startTime = new Date();
@@ -176,11 +179,23 @@ export class Project {
       const lastMessageUuid =
         this.session.history.messages[this.session.history.messages.length - 1]
           ?.uuid;
+
+      let content: UserContent = message;
+      if (opts.attachments?.length) {
+        content = [
+          {
+            type: 'text' as const,
+            text: message,
+          },
+          ...opts.attachments,
+        ];
+      }
+
       userMessage = {
         parentUuid: lastMessageUuid || null,
         uuid: randomUUID(),
         role: 'user',
-        content: message,
+        content,
         type: 'message',
         timestamp: new Date().toISOString(),
       };
