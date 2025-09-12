@@ -50,6 +50,7 @@ export interface Provider {
   id: string;
   env: string[];
   name: string;
+  apiEnv?: string[];
   api?: string;
   doc: string;
   models: Record<string, Omit<Model, 'id' | 'cost'>>;
@@ -489,12 +490,24 @@ export const models: ModelMap = {
   },
 };
 
+function getProviderApi(provider: Provider) {
+  let api = provider.api;
+  for (const env of provider.apiEnv || []) {
+    if (process.env[env]) {
+      api = process.env[env];
+      break;
+    }
+  }
+  return api;
+}
+
 export const defaultModelCreator = (name: string, provider: Provider) => {
   if (provider.id !== 'openai') {
     assert(provider.api, `Provider ${provider.id} must have an api`);
   }
+  const api = getProviderApi(provider);
   return createOpenAI({
-    baseURL: provider.api,
+    baseURL: api,
     apiKey: provider.env[0] ? process.env[provider.env[0]] : '',
   })(name);
 };
@@ -503,6 +516,7 @@ export const providers: ProvidersMap = {
   openai: {
     id: 'openai',
     env: ['OPENAI_API_KEY'],
+    apiEnv: ['OPENAI_API_BASE'],
     name: 'OpenAI',
     doc: 'https://platform.openai.com/docs/models',
     models: {
@@ -520,6 +534,7 @@ export const providers: ProvidersMap = {
   google: {
     id: 'google',
     env: ['GOOGLE_API_KEY', 'GOOGLE_GENERATIVE_AI_API_KEY'],
+    apiEnv: ['GOOGLE_GENERATIVE_AI_API_BASE'],
     name: 'Google',
     doc: 'https://ai.google.dev/gemini-api/docs/pricing',
     models: {
@@ -528,8 +543,10 @@ export const providers: ProvidersMap = {
       'gemini-2.5-pro': models['gemini-2.5-pro'],
     },
     createModel(name, provider) {
+      const api = getProviderApi(provider);
       const google = createGoogleGenerativeAI({
         apiKey: process.env[provider.env[0]] || process.env[provider.env[1]],
+        baseURL: api,
       });
       return google(name);
     },
@@ -539,6 +556,7 @@ export const providers: ProvidersMap = {
     env: ['DEEPSEEK_API_KEY'],
     name: 'DeepSeek',
     api: 'https://api.deepseek.com',
+    apiEnv: ['DEEPSEEK_API_BASE'],
     doc: 'https://platform.deepseek.com/api-docs/pricing',
     models: {
       'deepseek-chat': models['deepseek-v3-0324'],
@@ -556,7 +574,9 @@ export const providers: ProvidersMap = {
       'grok-code-fast-1': models['grok-code-fast-1'],
     },
     createModel(name, provider) {
+      const api = getProviderApi(provider);
       return createXai({
+        baseURL: api,
         apiKey: process.env[provider.env[0]],
       })(name);
     },
@@ -574,8 +594,10 @@ export const providers: ProvidersMap = {
       'claude-3-5-sonnet-20241022': models['claude-3-5-sonnet-20241022'],
     },
     createModel(name, provider) {
+      const api = getProviderApi(provider);
       return createAnthropic({
         apiKey: process.env[provider.env[0]],
+        baseURL: api,
       })(name);
     },
   },
