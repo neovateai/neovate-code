@@ -50,6 +50,7 @@ export type SessionConfig = {
   history: string[];
   summary?: string;
   pastedTextMap?: Record<string, string>;
+  pastedImageMap?: Record<string, string>;
 };
 
 const DEFAULT_SESSION_CONFIG: SessionConfig = {
@@ -57,6 +58,7 @@ const DEFAULT_SESSION_CONFIG: SessionConfig = {
   approvalTools: [],
   history: [],
   pastedTextMap: {},
+  pastedImageMap: {},
 };
 
 export class SessionConfigManager {

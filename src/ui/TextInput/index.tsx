@@ -112,7 +112,9 @@ export type Props = {
   /**
    * Optional callback when an image is pasted
    */
-  readonly onImagePaste?: (base64Image: string) => void;
+  readonly onImagePaste?: (
+    base64Image: string,
+  ) => Promise<{ prompt?: string }> | void;
 
   /**
    * Optional callback when a large text (over 800 chars) is pasted
@@ -252,8 +254,16 @@ export default function TextInput({
           try {
             const imageResult = await processImageFromPath(mergedInput);
             if (imageResult) {
-              // Successfully loaded image from path
-              onImagePaste(imageResult.base64);
+              const imagePromptResult = await onImagePaste(imageResult.base64);
+              if (imagePromptResult?.prompt) {
+                const { newValue, newCursorOffset } = insertTextAtCursor(
+                  imagePromptResult.prompt,
+                  originalValue,
+                  cursorOffset,
+                );
+                onChange(newValue);
+                onChangeCursorOffset(newCursorOffset);
+              }
             } else {
               // Not a valid image path, treat as regular text
               const result = await onPaste?.(mergedInput);
