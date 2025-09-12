@@ -3,7 +3,12 @@ import { type ApprovalMode, ConfigManager } from './config';
 import { CANCELED_MESSAGE_TEXT } from './constants';
 import { Context } from './context';
 import { JsonlLogger } from './jsonl';
-import type { Message, NormalizedMessage, UserMessage } from './message';
+import type {
+  ImagePart,
+  Message,
+  NormalizedMessage,
+  UserMessage,
+} from './message';
 import { MessageBus } from './messageBus';
 import { type Model, type Provider, resolveModelWithContext } from './model';
 import { OutputStyleManager } from './outputStyle';
@@ -127,9 +132,9 @@ class NodeHandlerRegistry {
         sessionId: string | undefined;
         planMode: boolean;
         model?: string;
-        images?: string[];
+        attachments?: ImagePart[];
       }) => {
-        const { message, cwd, sessionId, model, images } = data;
+        const { message, cwd, sessionId, model, attachments } = data;
         const context = await this.getContext(cwd);
         const project = new Project({
           sessionId,
@@ -141,7 +146,7 @@ class NodeHandlerRegistry {
 
         const fn = data.planMode ? project.plan : project.send;
         const result = await fn.call(project, message, {
-          images,
+          attachments,
           model,
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {

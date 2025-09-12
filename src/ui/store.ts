@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
 import type { LoopResult } from '../loop';
-import type { Message, UserMessage } from '../message';
+import type { ImagePart, Message, UserMessage } from '../message';
 import type { ProvidersMap } from '../model';
 import { Paths } from '../paths';
 import { SessionConfigManager, loadSessionMessages } from '../session';
@@ -21,6 +21,7 @@ import { Upgrade, type UpgradeOptions } from '../upgrade';
 import { setTerminalTitle } from '../utils/setTerminalTitle';
 import { clearTerminal } from '../utils/terminal';
 import { countTokens } from '../utils/tokenCounter';
+import { detectImageFormat } from './TextInput/utils/imagePaste';
 
 export type ApprovalResult =
   | 'approve_once'
@@ -140,11 +141,11 @@ type InitializeOpts = {
 
 interface AppActions {
   initialize: (opts: InitializeOpts) => Promise<void>;
-  send: (message: string, images?: string[] | null) => Promise<void>;
+  send: (message: string) => Promise<void>;
   sendMessage: (opts: {
     message: string | null;
     planMode?: boolean;
-    images?: string[] | null;
+    attachments?: ImagePart[];
   }) => Promise<LoopResult>;
   addMessage: (message: Message) => void;
   log: (log: string) => void;
@@ -324,15 +325,8 @@ export const useAppStore = create<AppStore>()(
       },
 
       send: async (message) => {
-        const {
-          bridge,
-          cwd,
-          sessionId,
-          planMode,
-          status,
-          pastedTextMap,
-          pastedImageMap,
-        } = get();
+        const { bridge, cwd, sessionId, planMode, status, pastedTextMap } =
+          get();
 
         // Check if processing, queue the message
         if (isExecuting(status)) {
@@ -357,31 +351,6 @@ export const useAppStore = create<AppStore>()(
               pastedContent.replace(/\r/g, '\n'),
             );
           }
-        }
-
-        // Expand pasted image references and collect image data
-        let finalImages: string[] = [];
-        const pastedImageRegex = /\[Image (#\d+)\]/g;
-        const imageMatches = [...message.matchAll(pastedImageRegex)];
-        const extractedImages: string[] = [];
-
-        for (const match of imageMatches) {
-          const imageId = match[1];
-          const imageData = pastedImageMap[imageId];
-          if (imageData) {
-            extractedImages.push(imageData);
-            // Remove the placeholder from the message
-            const placeholder = new RegExp(
-              `\\[Image ${imageId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`,
-              'g',
-            );
-            // expandedMessage = expandedMessage.replace(placeholder, '').trim();
-          }
-        }
-
-        // Combine original images with extracted images
-        if (extractedImages.length > 0) {
-          finalImages = [...extractedImages];
         }
 
         // Save history to session config (save the original message with placeholders)
@@ -494,7 +463,6 @@ export const useAppStore = create<AppStore>()(
           const result = await get().sendMessage({
             message: expandedMessage,
             planMode,
-            images: finalImages,
           });
           if (planMode && result.success) {
             set({
@@ -545,21 +513,42 @@ export const useAppStore = create<AppStore>()(
       sendMessage: async (opts: {
         message: string | null;
         planMode?: boolean;
-        images?: string[];
+        attachments?: ImagePart[];
       }) => {
         set({
           status: 'processing',
           processingStartTime: Date.now(),
           processingTokens: 0,
         });
-        const { bridge, cwd, sessionId } = get();
+        const { message } = opts;
+        const { bridge, cwd, sessionId, pastedImageMap } = get();
+
+        let attachments = opts.attachments || [];
+        // Handle pasted images
+        if (message && Object.keys(pastedImageMap).length > 0) {
+          const pastedImageRegex = /\[Image (#\d+)\]/g;
+          const imageMatches = [...message.matchAll(pastedImageRegex)];
+
+          for (const match of imageMatches) {
+            const imageId = match[1];
+            const imageData = pastedImageMap[imageId];
+            if (imageData) {
+              const mimeType = detectImageFormat(imageData);
+              attachments.push({
+                type: 'image',
+                data: `data:image/${mimeType};base64,${imageData}`,
+                mimeType: `image/${mimeType}`,
+              });
+            }
+          }
+        }
 
         const response: LoopResult = await bridge.request('send', {
           message: opts.message,
           cwd,
           sessionId,
           planMode: opts.planMode,
-          images: opts.images,
+          attachments,
         });
         if (response.success) {
           set({

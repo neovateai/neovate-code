@@ -76,6 +76,14 @@ export class History {
               }
             } else if (part.type === 'text') {
               return [{ type: 'input_text', text: part.text }];
+            } else if (part.type === 'image') {
+              return [
+                {
+                  type: 'input_image',
+                  image: part.data,
+                  providerData: { mime_type: part.mimeType },
+                },
+              ];
             } else {
               return [part];
             }

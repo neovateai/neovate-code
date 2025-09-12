@@ -2,7 +2,7 @@ import { Context } from './context';
 import { JsonlLogger } from './jsonl';
 import { LlmsContext } from './llmsContext';
 import { runLoop } from './loop';
-import type { NormalizedMessage } from './message';
+import type { ImagePart, NormalizedMessage, UserContent } from './message';
 import { resolveModelWithContext } from './model';
 import { OutputFormat } from './outputFormat';
 import { OutputStyleManager } from './outputStyle';
@@ -13,7 +13,6 @@ import { generateSystemPrompt } from './systemPrompt';
 import type { ToolUse } from './tool';
 import type { ApprovalCategory, Tool } from './tool';
 import { Tools, resolveTools } from './tool';
-import { detectImageFormat } from './ui/TextInput/utils/imagePaste';
 import type { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
 
@@ -39,7 +38,7 @@ export class Project {
       onTextDelta?: (text: string) => Promise<void>;
       onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
-      images?: string[];
+      attachments?: ImagePart[];
     } = {},
   ) {
     let tools = await resolveTools({
@@ -85,7 +84,7 @@ export class Project {
       onTextDelta?: (text: string) => Promise<void>;
       onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
-      images?: string[];
+      attachments?: ImagePart[];
     } = {},
   ) {
     let tools = await resolveTools({
@@ -134,7 +133,7 @@ export class Project {
       signal?: AbortSignal;
       tools?: Tool[];
       systemPrompt?: string;
-      images?: string[];
+      attachments?: ImagePart[];
     } = {},
   ) {
     let startTime = new Date();
@@ -181,27 +180,15 @@ export class Project {
         this.session.history.messages[this.session.history.messages.length - 1]
           ?.uuid;
 
-      // Build multimodal content if images are provided
-      let content;
-      if (opts.images && opts.images.length > 0) {
+      let content: UserContent = message;
+      if (opts.attachments?.length) {
         content = [
           {
             type: 'text' as const,
             text: message,
           },
+          ...opts.attachments,
         ];
-
-        // Add images to content array
-        opts.images.forEach((imageBase64) => {
-          const imageFormat = detectImageFormat(imageBase64);
-          content.push({
-            type: 'input_image' as const,
-            image: `data:image/${imageFormat};base64,${imageBase64}`,
-            providerData: { mime_type: `image/${imageFormat}` },
-          });
-        });
-      } else {
-        content = message;
       }
 
       userMessage = {
