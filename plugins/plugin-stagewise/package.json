@@ -1,0 +1,19 @@
+{
+  "name": "@neovate/plugin-stagewise",
+  "version": "0.0.1",
+  "description": "Stagewise plugin for neovate",
+  "type": "module",
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "source": "src/index.ts",
+  "scripts": {
+    "build": "bun build src/index.ts --minify --outfile dist/index.mjs --target=node"
+  },
+  "dependencies": {
+    "@stagewise/agent-interface": "^0.2.3"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1"
+}

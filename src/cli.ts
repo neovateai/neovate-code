@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { runNeovate } from '.';
 import { PRODUCT_ASCII_ART, PRODUCT_NAME } from './constants';
+import { createStagewisePlugin } from './plugins/stagewise';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
@@ -14,7 +15,7 @@ runNeovate({
   productName: PRODUCT_NAME,
   productASCIIArt: PRODUCT_ASCII_ART,
   version: pkg.version,
-  plugins: [],
+  plugins: [createStagewisePlugin()],
   upgrade: {
     registryBase: 'https://registry.npmjs.org',
     name: pkg.name,

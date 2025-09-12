@@ -2,6 +2,7 @@ packages:
   - browser
   - vscode-extension
   - examples/*
+  - plugins/*
 
 patchedDependencies:
   '@openai/agents-core': patches/@openai__agents-core.patch

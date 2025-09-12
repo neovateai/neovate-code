@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
   type AgentServer,
   AgentStateType,
@@ -7,18 +6,18 @@ import {
 import createDebug from 'debug';
 import { Context } from '../context';
 import { type Plugin } from '../plugin';
-import { Service } from '../service';
+import { Project } from '../project';
 import { relativeToHome } from '../utils/path';
 
 const debug = createDebug('neovate:plugins:stagewise');
 
-type CreateStagewisePluginOpts = {};
-
-export const createStagewisePlugin = (opts: CreateStagewisePluginOpts) => {
+export const createStagewisePlugin = () => {
   let sw: StagewiseAgent | null = null;
+
   return {
     name: 'stagewise',
-    async cliStart() {
+
+    async initialized(this: Context) {
       try {
         sw = new StagewiseAgent({
           context: this,
@@ -29,10 +28,12 @@ export const createStagewisePlugin = (opts: CreateStagewisePluginOpts) => {
         debug('Failed to start Stagewise agent:', error);
       }
     },
+
     async destroy() {
       await sw?.stop();
     },
-    async status() {
+
+    async status(this: Context) {
       const port = sw?.port;
       const status = port ? `Connected, port: ${port}` : 'Disconnected';
       return {
@@ -50,8 +51,8 @@ export interface StagewiseAgentOpts {
 
 export class StagewiseAgent {
   private context: Context;
-  private service?: Service;
   private server: AgentServer | null = null;
+  private activeProjects: Map<string, Project> = new Map();
   public port: number = 0;
 
   constructor(opts: StagewiseAgentOpts) {
@@ -59,12 +60,6 @@ export class StagewiseAgent {
   }
 
   async start() {
-    // Create a separate service for Stagewise with independent chat history
-    this.service = await Service.create({
-      agentType: 'code',
-      context: this.context,
-    });
-
     this.server = await createAgentServer();
 
     this.server.setAgentName(`${this.context.productName} AI Agent`);
@@ -88,6 +83,17 @@ export class StagewiseAgent {
       await this.server.wss.close();
       await this.server.server.close();
     }
+    this.activeProjects.clear();
+  }
+
+  private getOrCreateProject(connectionId: string): Project {
+    if (!this.activeProjects.has(connectionId)) {
+      const project = new Project({
+        context: this.context,
+      });
+      this.activeProjects.set(connectionId, project);
+    }
+    return this.activeProjects.get(connectionId)!;
   }
 
   private async processUserMessage(message: any) {
@@ -116,13 +122,12 @@ export class StagewiseAgent {
       debug('Processing user message:', userText);
 
       const { metadata } = message;
+      const connectionId = message.connectionId || 'default';
 
-      // Build enhanced content with selected elements context
       let enhancedContent = userText;
 
       enhancedContent += `\n\nIMPORTANT: don't need to run test or build to check if the code is working, speed is more important.`;
 
-      // Add current page context
       if (metadata.currentUrl) {
         enhancedContent += `\n\nCurrent page context:`;
         enhancedContent += `\n- URL: ${metadata.currentUrl}`;
@@ -131,7 +136,6 @@ export class StagewiseAgent {
         }
       }
 
-      // Add selected elements context
       if (metadata.selectedElements && metadata.selectedElements.length > 0) {
         enhancedContent += `\n\nSelected elements context (${metadata.selectedElements.length} element(s)):`;
 
@@ -154,7 +158,6 @@ export class StagewiseAgent {
               if (val && val.value && val.value._debugSource) {
                 enhancedContent += `\n- ${property} value debug source: ${val.value._debugSource}`;
               }
-              // Add other useful properties
               if (val && typeof val === 'string' && val.length < 100) {
                 enhancedContent += `\n- ${property}: ${val}`;
               }
@@ -168,18 +171,26 @@ export class StagewiseAgent {
         'Generating response...',
       );
 
-      const { query } = await import('../query');
-      const { isReasoningModel } = await import('../provider');
+      const project = this.getOrCreateProject(connectionId);
 
-      const result = await query({
-        input: [{ role: 'user', content: enhancedContent }],
-        service: this.service!,
-        thinking: isReasoningModel(this.service!.context.config.model),
+      const result = await project.send(enhancedContent, {
+        onToolApprove: () => Promise.resolve(true),
+        onTextDelta: async (text: string) => {
+          this.server!.interface.messaging.set([
+            {
+              type: 'text',
+              text,
+            },
+          ]);
+        },
       });
 
-      let response =
-        result.finalText ||
-        "I processed your request but didn't generate a text response.";
+      let response: string;
+      if (result.success) {
+        response = result.data.text || 'I processed your request successfully.';
+      } else {
+        response = `I encountered an error: ${result.error.message}`;
+      }
 
       this.server!.interface.messaging.set([
         {
