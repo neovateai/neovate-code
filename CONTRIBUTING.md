@@ -48,6 +48,12 @@ $ alias t="bun /path/to/neovate/src/cli.ts"
 $ t
 ```
 
+Before you commit, you need to run the `ready` script to check if the code is ready to be committed.
+
+```bash
+$ pnpm ready
+```
+
 ## Debug
 
 Choose one of the following methods to debug the CLI:

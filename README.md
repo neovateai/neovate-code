@@ -5,7 +5,7 @@
 [![](https://github.com/neovateai/neovate-code/actions/workflows/test.yml/badge.svg)](https://github.com/neovateai/neovate-code/actions/workflows/test.yml)
 [![](https://badgen.net/npm/license/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
 
-A coding agent to enhance your development workflow.
+Neovate, pronounced as `['niːəʊveɪt]`, is a coding agent to enhance your development workflow.
 
 ## Getting Started
 

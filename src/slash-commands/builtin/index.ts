@@ -11,11 +11,6 @@ import { createResumeCommand } from './resume';
 import { createReviewCommand } from './review';
 import { statusCommand } from './status';
 
-export * from './clear';
-export * from './exit';
-export * from './help';
-export * from './mcp';
-
 export function createBuiltinCommands(opts: {
   productName: string;
 }): SlashCommand[] {

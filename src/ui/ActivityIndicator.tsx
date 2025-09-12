@@ -58,7 +58,7 @@ export function ActivityIndicator() {
           <GradientText text={text} highlightIndex={highlightIndex} />
           <Box marginLeft={1}>
             <Text color={UI_COLORS.ACTIVITY_INDICATOR_TEXT}>
-              {`(Esc to cancel${processingTokens > 0 ? `, ${processingTokens} tokens` : ''})`}
+              {`(Esc to cancel${processingTokens > 0 ? `, ↓ ${processingTokens} tokens` : ''})`}
             </Text>
           </Box>
         </Box>
