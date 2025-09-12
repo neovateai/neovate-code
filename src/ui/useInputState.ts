@@ -34,7 +34,7 @@ export function useInputState() {
 
   const setValue = useCallback(
     (value: string) => {
-      setInputValue(value);
+      setInputValue(value || '');
     },
     [setInputValue],
   );
