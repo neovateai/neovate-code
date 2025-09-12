@@ -145,7 +145,6 @@ interface AppActions {
   sendMessage: (opts: {
     message: string | null;
     planMode?: boolean;
-    attachments?: ImagePart[];
   }) => Promise<LoopResult>;
   addMessage: (message: Message) => void;
   log: (log: string) => void;
@@ -513,7 +512,6 @@ export const useAppStore = create<AppStore>()(
       sendMessage: async (opts: {
         message: string | null;
         planMode?: boolean;
-        attachments?: ImagePart[];
       }) => {
         set({
           status: 'processing',
@@ -523,7 +521,7 @@ export const useAppStore = create<AppStore>()(
         const { message } = opts;
         const { bridge, cwd, sessionId, pastedImageMap } = get();
 
-        let attachments = opts.attachments || [];
+        let attachments = [];
         // Handle pasted images
         if (message && Object.keys(pastedImageMap).length > 0) {
           const pastedImageRegex = /\[Image (#\d+)\]/g;
