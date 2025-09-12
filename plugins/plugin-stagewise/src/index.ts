@@ -1,13 +1,11 @@
+import { type Context, type Plugin, _Project as Project } from '@neovate/code';
 import {
   type AgentServer,
   AgentStateType,
   createAgentServer,
 } from '@stagewise/agent-interface/agent';
 import createDebug from 'debug';
-import { Context } from '../context';
-import { type Plugin } from '../plugin';
-import { Project } from '../project';
-import { relativeToHome } from '../utils/path';
+import os from 'os';
 
 const debug = createDebug('neovate:plugins:stagewise');
 
@@ -220,4 +218,8 @@ export class StagewiseAgent {
       this.server!.interface.state.set(AgentStateType.IDLE);
     }
   }
+}
+
+export function relativeToHome(p: string) {
+  return p.replace(os.homedir(), '~');
 }

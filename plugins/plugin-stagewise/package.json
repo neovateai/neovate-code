@@ -7,10 +7,12 @@
   "types": "dist/index.d.ts",
   "source": "src/index.ts",
   "scripts": {
-    "build": "bun build src/index.ts --minify --outfile dist/index.mjs --target=node"
+    "build": "bun build src/index.ts --minify --external @neovate/code  --outfile dist/index.mjs --target=node",
+    "dev": "bun build src/index.ts --watch --external @neovate/code  --outfile dist/index.mjs --target=node"
   },
-  "dependencies": {
-    "@stagewise/agent-interface": "^0.2.3"
+  "devDependencies": {
+    "@stagewise/agent-interface": "^0.2.3",
+    "@neovate/code": "workspace:*"
   },
   "keywords": [],
   "author": "",
