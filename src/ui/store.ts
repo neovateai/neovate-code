@@ -748,7 +748,7 @@ export const useAppStore = create<AppStore>()(
 
       // Input state actions
       setInputValue: (value: string) => {
-        set({ inputValue: value });
+        set({ inputValue: value || '' });
       },
 
       setInputCursorPosition: (position: number | undefined) => {
