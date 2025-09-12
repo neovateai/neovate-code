@@ -2,6 +2,7 @@ import { setTraceProcessors } from '@openai/agents';
 import assert from 'assert';
 import { render } from 'ink';
 import React from 'react';
+import { runServerNext } from './commands/servernext/server';
 import { Context } from './context';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
@@ -278,7 +279,6 @@ export async function runNeovate(opts: {
   // sub commands
   const command = argv._[0];
   if (command === 'servernext') {
-    const { runServerNext } = await import('./commands/servernext/server');
     await runServerNext({
       contextCreateOpts,
     });

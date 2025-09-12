@@ -175,37 +175,3 @@ class WebServer {
 
 // Export the WebServer class
 export { WebServer };
-
-// CLI entry point
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const port = parseInt(process.env.PORT || '3000', 10);
-  const host = process.env.HOST || 'localhost';
-
-  const server = new WebServer({
-    port,
-    host,
-    contextCreateOpts: {
-      // Add any context creation options here
-      // For example: cwd: process.cwd()
-    },
-  });
-
-  // Handle graceful shutdown
-  process.on('SIGINT', async () => {
-    console.log('\n[WebServer] Shutting down...');
-    await server.stop();
-    process.exit(0);
-  });
-
-  process.on('SIGTERM', async () => {
-    console.log('\n[WebServer] Shutting down...');
-    await server.stop();
-    process.exit(0);
-  });
-
-  // Start server
-  server.start().catch((error) => {
-    console.error('[WebServer] Failed to start server:', error);
-    process.exit(1);
-  });
-}
