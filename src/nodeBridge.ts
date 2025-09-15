@@ -609,7 +609,6 @@ class NodeHandlerRegistry {
           });
           return { success: true };
         } catch (error) {
-          console.error('Failed to report slash command execution:', error);
           return { success: false, error: { message: String(error) } };
         }
       },
