@@ -155,7 +155,7 @@ export function useInputHandlers() {
     }
     // 2. history
     if (historyIndex !== null) {
-      let value;
+      let value: string;
       if (historyIndex === history.length - 1) {
         setHistoryIndex(null);
         value = draftInput;
@@ -192,8 +192,8 @@ export function useInputHandlers() {
   );
 
   const handleImagePaste = useCallback(
-    async (base64Data: string) => {
-      const result = await imageManager.handleImagePaste(base64Data);
+    async (base64Data: string, filename?: string) => {
+      const result = await imageManager.handleImagePaste(base64Data, filename);
       if (result.success && result.prompt) {
         return { prompt: result.prompt };
       }

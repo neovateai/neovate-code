@@ -11,8 +11,11 @@ export interface ImagePasteResult {
   imageId?: string;
 }
 
-// Helper function to generate pasted image prompt with unique ID
-function getPastedImagePrompt(imageId: string): string {
+// Helper function to generate pasted image prompt with filename or unique ID
+function getPastedImagePrompt(imageId: string, filename?: string): string {
+  if (filename) {
+    return `[Image: ${filename}]`;
+  }
   return `[Image ${imageId}]`;
 }
 
@@ -27,6 +30,7 @@ export function useImagePasteManager() {
   const handleImagePaste = useCallback(
     async (
       base64Data: string,
+      filename?: string,
     ): Promise<ImagePasteResult & { prompt?: string }> => {
       try {
         // Validate base64 data
@@ -62,7 +66,7 @@ export function useImagePasteManager() {
         }
 
         // Generate the prompt placeholder
-        const prompt = getPastedImagePrompt(imageId);
+        const prompt = getPastedImagePrompt(imageId, filename);
 
         return {
           success: true,
@@ -102,9 +106,10 @@ export function useImagePasteManager() {
 
   // Extract pasted image references from a message
   const extractImageReferences = useCallback((message: string): string[] => {
-    const regex = /\[Image (#\d+)\]/g;
+    // 匹配两种格式: [Image: filename] 和 [Image #x]
+    const regex = /\[Image: ([^\]]+)\]|\[Image (#\d+)\]/g;
     const matches = [...message.matchAll(regex)];
-    return matches.map((match) => match[1]);
+    return matches.map((match) => match[1] || match[2]);
   }, []);
 
   // Replace image placeholders with actual base64 data and return images array
@@ -114,15 +119,26 @@ export function useImagePasteManager() {
       const images: string[] = [];
       const references = extractImageReferences(message);
 
-      for (const imageId of references) {
-        const imageData = getPastedImage(imageId);
+      for (const imageRef of references) {
+        const imageData = getPastedImage(imageRef);
         if (imageData) {
           images.push(imageData);
           // Remove the placeholder from the message
-          const placeholder = new RegExp(
-            `\\[Image ${imageId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`,
-            'g',
-          );
+          // 处理两种格式: [Image: filename] 和 [Image #x]
+          let placeholder: RegExp;
+          if (imageRef.startsWith('#')) {
+            // 格式: [Image #x]
+            placeholder = new RegExp(
+              `\\[Image ${imageRef.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`,
+              'g',
+            );
+          } else {
+            // 格式: [Image: filename]
+            placeholder = new RegExp(
+              `\\[Image: ${imageRef.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`,
+              'g',
+            );
+          }
           expandedMessage = expandedMessage.replace(placeholder, '').trim();
         }
       }

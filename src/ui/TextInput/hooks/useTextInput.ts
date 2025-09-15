@@ -40,7 +40,7 @@ type UseTextInputProps = {
   invert: (text: string) => string;
   themeText: (text: string) => string;
   columns: number;
-  onImagePaste?: (base64Image: string) => void;
+  onImagePaste?: (base64Image: string, filename?: string) => void;
   disableCursorMovementForUpDownKeys?: boolean;
   externalOffset: number;
   onOffsetChange: (offset: number) => void;
@@ -152,7 +152,7 @@ export function useTextInput({
 
       if (imageResult) {
         // Successfully pasted image with enhanced method
-        onImagePaste?.(imageResult.base64);
+        onImagePaste?.(imageResult.base64, 'clipboard-image');
         onMessage?.(true, 'Image pasted successfully');
         setImagePasteErrorTimeout(
           setTimeout(() => {
@@ -183,7 +183,7 @@ export function useTextInput({
       }
 
       // Successfully pasted image with legacy method
-      onImagePaste?.(base64Image);
+      onImagePaste?.(base64Image, 'clipboard-image');
       onMessage?.(true, 'Image pasted successfully');
       setImagePasteErrorTimeout(
         setTimeout(() => {
