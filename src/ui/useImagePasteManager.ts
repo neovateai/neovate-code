@@ -57,6 +57,7 @@ export function useImagePasteManager() {
                 width: 80,
                 preserveAspectRatio: true,
               },
+              filename,
             );
             console.log(`\n${imageDisplay}\n`);
           } catch (error) {

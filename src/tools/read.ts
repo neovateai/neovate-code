@@ -38,6 +38,7 @@ function getImageMimeType(ext: string): ImageMediaType {
 async function createImageResponse(
   buffer: Buffer,
   ext: string,
+  filePath?: string,
 ): Promise<ToolResult> {
   const mimeType = getImageMimeType(ext);
   const base64 = buffer.toString('base64');
@@ -48,10 +49,19 @@ async function createImageResponse(
   // 如果终端支持图片显示，则在终端中显示图片
   if (isImageDisplaySupported()) {
     try {
-      const imageDisplay = await displayImageInTerminal(base64, mimeType, {
-        width: 80,
-        preserveAspectRatio: true,
-      });
+      // 从文件路径中提取文件名
+      const filename = filePath
+        ? filePath.split('/').pop() || 'image'
+        : 'image';
+      const imageDisplay = await displayImageInTerminal(
+        base64,
+        mimeType,
+        {
+          width: 80,
+          preserveAspectRatio: true,
+        },
+        filename,
+      );
       displayMessage = `Read image file successfully.\n\n${imageDisplay}`;
     } catch (error) {
       console.warn('Failed to display image in terminal:', error);
@@ -80,7 +90,7 @@ async function processImage(filePath: string): Promise<ToolResult> {
 
     // If file is within size limit, return as-is
     if (stats.size <= MAX_IMAGE_SIZE) {
-      return await createImageResponse(buffer, ext);
+      return await createImageResponse(buffer, ext, filePath);
     }
 
     // If file is too large, return error with helpful message

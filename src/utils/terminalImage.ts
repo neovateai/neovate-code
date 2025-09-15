@@ -8,6 +8,7 @@ import terminalImage from 'terminal-image';
  * @param base64Image - base64 编码的图片数据（不包含 data:image/... 前缀）
  * @param mimeType - 图片的 MIME 类型，如 'image/png', 'image/jpeg' 等
  * @param options - 显示选项
+ * @param filename - 可选的文件名，用于显示
  * @returns Promise<string> - 返回图片的 ANSI 转义序列字符串
  */
 export async function displayImageInTerminal(
@@ -18,6 +19,7 @@ export async function displayImageInTerminal(
     height?: number;
     preserveAspectRatio?: boolean;
   } = {},
+  filename?: string,
 ): Promise<string> {
   try {
     // 创建临时文件
@@ -35,6 +37,12 @@ export async function displayImageInTerminal(
         height: options.height,
         preserveAspectRatio: options.preserveAspectRatio !== false,
       });
+
+      // 如果有文件名，在图片上方显示文件名
+      if (filename) {
+        const filenameDisplay = `📁 ${filename}\n`;
+        return filenameDisplay + imageString;
+      }
 
       return imageString;
     } finally {
