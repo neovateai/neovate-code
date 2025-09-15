@@ -6,6 +6,7 @@ import { type Config, ConfigManager } from './config';
 import { MCPManager } from './mcp';
 import { Paths } from './paths';
 import {
+  type CommandContextData,
   type Plugin,
   type PluginApplyOpts,
   PluginHookType,
@@ -44,6 +45,8 @@ export class Context {
   #argvConfig: Record<string, any>;
   mcpManager: MCPManager;
 
+  currentCommandContext?: CommandContextData;
+
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName;
@@ -61,6 +64,18 @@ export class Context {
       ...applyOpts,
       pluginContext: this,
     });
+  }
+
+  setCommandContext(context: CommandContextData) {
+    this.currentCommandContext = context;
+  }
+
+  clearCommandContext() {
+    this.currentCommandContext = undefined;
+  }
+
+  getCommandContext(): CommandContextData | undefined {
+    return this.currentCommandContext;
   }
 
   async destroy() {

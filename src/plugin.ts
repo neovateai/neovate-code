@@ -13,6 +13,15 @@ import type { Tool } from './tool';
 import type { Usage } from './usage';
 import { type MessageContent } from './utils/parse-message';
 
+export interface CommandContextData {
+  command: string;
+  commandType: 'local' | 'prompt' | 'local-jsx';
+  commandSource: string;
+  args: string;
+  originalInput: string;
+  startTime: Date;
+}
+
 export enum PluginHookType {
   First = 'first',
   Series = 'series',
@@ -214,6 +223,7 @@ export type Plugin = {
       toolUse: ToolUse;
       approved: boolean;
       sessionId: string;
+      commandContext?: CommandContextData;
     },
   ) => Promise<ToolResult> | ToolResult;
   query?: (
@@ -239,6 +249,24 @@ export type Plugin = {
   // slash commands
   // /status
   status?: (this: PluginContext) => Promise<Status> | Status;
+
+  // slash command execution
+  slashCommandExecution?: (
+    this: PluginContext,
+    opts: {
+      command: string;
+      commandType: 'local' | 'prompt' | 'local-jsx' | 'unknown';
+      commandSource: string;
+      args: string;
+      originalInput: string;
+      startTime: Date;
+      endTime: Date;
+      success: boolean;
+      error?: string;
+      sessionId: string;
+      result?: any;
+    },
+  ) => Promise<void> | void;
 
   // server
   _serverAppData?: (

@@ -426,87 +426,191 @@ class NodeHandlerRegistry {
         command: string;
         args: string;
       }) => {
+        const startTime = new Date();
         const { cwd, sessionId, command, args } = data;
-        const context = await this.getContext(cwd);
-        const slashCommandManager = await SlashCommandManager.create(context);
-        const commandEntry = slashCommandManager.get(command);
-        if (!commandEntry) {
-          return {
-            success: true,
-            data: {
-              messages: [
+
+        try {
+          const context = await this.getContext(cwd);
+          const slashCommandManager = await SlashCommandManager.create(context);
+          const commandEntry = slashCommandManager.get(command);
+
+          if (!commandEntry) {
+            await context.apply({
+              hook: 'slashCommandExecution',
+              args: [
                 {
-                  role: 'user',
-                  content: [
-                    { type: 'text', text: `Command ${command} not found` },
-                  ],
+                  command,
+                  commandType: 'unknown' as const,
+                  commandSource: 'unknown',
+                  args,
+                  originalInput: `/${command} ${args}`,
+                  startTime,
+                  endTime: new Date(),
+                  success: false,
+                  error: 'Command not found',
+                  sessionId,
                 },
               ],
-            },
-          };
-        }
-        const type = commandEntry.command.type;
-        if (type === 'local') {
-          const result = await commandEntry.command.call(args, context as any);
-          return {
-            success: true,
-            data: {
-              messages: [
-                {
-                  role: 'user',
-                  content: [
+              type: PluginHookType.Series,
+            });
+
+            return {
+              success: true,
+              data: {
+                messages: [
+                  {
+                    role: 'user',
+                    content: [
+                      { type: 'text', text: `Command ${command} not found` },
+                    ],
+                  },
+                ],
+              },
+            };
+          }
+
+          context.setCommandContext({
+            command,
+            commandType: commandEntry.command.type,
+            commandSource: commandEntry.source,
+            args,
+            originalInput: `/${command} ${args}`,
+            startTime,
+          });
+
+          const type = commandEntry.command.type;
+          let result: any;
+          let success = true;
+          let error: string | undefined;
+
+          try {
+            if (type === 'local') {
+              const commandResult = await commandEntry.command.call(
+                args,
+                context as any,
+              );
+              result = {
+                messages: [
+                  {
+                    role: 'user',
+                    content: [
+                      {
+                        type: 'text',
+                        text: commandResult,
+                      },
+                    ],
+                  },
+                ],
+              };
+            } else if (type === 'prompt') {
+              const messages = (await commandEntry.command.getPromptForCommand(
+                args,
+              )) as Message[];
+              for (const message of messages) {
+                if (message.role === 'user') {
+                  (message as UserMessage).hidden = true;
+                }
+                if (
+                  message.role === 'user' &&
+                  typeof message.content === 'string'
+                ) {
+                  message.content = [
                     {
                       type: 'text',
-                      text: result,
+                      text: message.content,
                     },
-                  ],
+                  ];
+                }
+              }
+              result = { messages };
+            } else {
+              result = {
+                messages: [
+                  {
+                    role: 'user',
+                    content: [
+                      {
+                        type: 'text',
+                        text: `Unknown slash command type: ${type}`,
+                      },
+                    ],
+                  },
+                ],
+              };
+            }
+          } catch (err) {
+            success = false;
+            error = err instanceof Error ? err.message : String(err);
+            throw err;
+          } finally {
+            await context.apply({
+              hook: 'slashCommandExecution',
+              args: [
+                {
+                  command,
+                  commandType: type,
+                  commandSource: commandEntry.source,
+                  args,
+                  originalInput: `/${command} ${args}`,
+                  startTime,
+                  endTime: new Date(),
+                  success,
+                  error,
+                  sessionId,
+                  result,
                 },
               ],
-            },
-          };
-        } else if (type === 'prompt') {
-          const messages = (await commandEntry.command.getPromptForCommand(
-            args,
-          )) as Message[];
-          for (const message of messages) {
-            if (message.role === 'user') {
-              (message as UserMessage).hidden = true;
-            }
-            if (
-              message.role === 'user' &&
-              typeof message.content === 'string'
-            ) {
-              message.content = [
-                {
-                  type: 'text',
-                  text: message.content,
-                },
-              ];
+              type: PluginHookType.Series,
+            });
+
+            if (type !== 'prompt') {
+              context.clearCommandContext();
             }
           }
+
+          return { success: true, data: result };
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : String(err);
           return {
-            success: true,
-            data: {
-              messages,
-            },
+            success: false,
+            error: { message: errorMessage },
           };
-        } else {
-          return {
-            success: true,
-            data: {
-              messages: [
-                {
-                  role: 'user',
-                  content: [
-                    {
-                      type: 'text',
-                      text: `Unknown slash command type: ${type}`,
-                    },
-                  ],
-                },
-              ],
-            },
-          };
+        }
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'reportSlashCommandExecution',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        command: string;
+        commandType: string;
+        commandSource: string;
+        args: string;
+        originalInput: string;
+        startTime: string;
+        endTime: string;
+        success: boolean;
+        error?: string;
+      }) => {
+        try {
+          const context = await this.getContext(data.cwd);
+          await context.apply({
+            hook: 'slashCommandExecution',
+            args: [
+              {
+                ...data,
+                startTime: new Date(data.startTime),
+                endTime: new Date(data.endTime),
+              },
+            ],
+            type: PluginHookType.Series,
+          });
+          return { success: true };
+        } catch (error) {
+          console.error('Failed to report slash command execution:', error);
+          return { success: false, error: { message: String(error) } };
         }
       },
     );

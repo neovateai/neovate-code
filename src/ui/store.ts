@@ -421,28 +421,59 @@ export const useAppStore = create<AppStore>()(
                 await get().sendMessage({ message: null });
               }
             } else if (isLocalJSX) {
-              const jsx = await command.call(async (result: string) => {
+              const startTime = new Date();
+              let success = true;
+              let error: string | undefined;
+
+              try {
+                const jsx = await command.call(async (result: string) => {
+                  set({
+                    slashCommandJSX: null,
+                  });
+                  set({
+                    messages: [
+                      ...get().messages,
+                      {
+                        role: 'user',
+                        content: [
+                          {
+                            type: 'text',
+                            text: result,
+                          },
+                        ],
+                      },
+                    ],
+                  });
+                }, {} as any);
                 set({
-                  slashCommandJSX: null,
+                  slashCommandJSX: jsx,
                 });
-                set({
-                  messages: [
-                    ...get().messages,
-                    {
-                      role: 'user',
-                      content: [
-                        {
-                          type: 'text',
-                          text: result,
-                        },
-                      ],
-                    },
-                  ],
-                });
-              }, {} as any);
-              set({
-                slashCommandJSX: jsx,
-              });
+              } catch (err) {
+                success = false;
+                error = err instanceof Error ? err.message : String(err);
+                console.error('Local JSX command execution failed:', err);
+              } finally {
+                try {
+                  await bridge.request('reportSlashCommandExecution', {
+                    cwd,
+                    sessionId,
+                    command: parsed.command,
+                    commandType: 'local-jsx',
+                    commandSource: commandeEntry.source,
+                    args: parsed.args,
+                    originalInput: message,
+                    startTime: startTime.toISOString(),
+                    endTime: new Date().toISOString(),
+                    success,
+                    error,
+                  });
+                } catch (reportError) {
+                  console.warn(
+                    'Failed to report slash command execution:',
+                    reportError,
+                  );
+                }
+              }
             } else {
               throw new Error(
                 `Unknown slash command type: ${commandeEntry.command.type}`,

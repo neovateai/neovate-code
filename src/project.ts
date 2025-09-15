@@ -251,8 +251,10 @@ export class Project {
         return await this.context.apply({
           hook: 'toolUse',
           args: [
+            toolUse,
             {
               sessionId: this.session.id,
+              commandContext: this.context.getCommandContext(),
             },
           ],
           memo: toolUse,
@@ -263,10 +265,12 @@ export class Project {
         return await this.context.apply({
           hook: 'toolResult',
           args: [
+            toolResult,
             {
               toolUse,
               approved,
               sessionId: this.session.id,
+              commandContext: this.context.getCommandContext(),
             },
           ],
           memo: toolResult,
@@ -286,6 +290,7 @@ export class Project {
               endTime: turn.endTime,
               usage: turn.usage,
               sessionId: this.session.id,
+              commandContext: this.context.getCommandContext(),
             },
           ],
           type: PluginHookType.Series,
@@ -366,6 +371,9 @@ export class Project {
     if (result.success && result.data.history) {
       this.session.updateHistory(result.data.history);
     }
+
+    this.context.clearCommandContext();
+
     return result;
   }
 }
