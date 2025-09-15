@@ -154,6 +154,8 @@ interface AppActions {
   setDraftInput: (draftInput: string) => void;
   setHistoryIndex: (historyIndex: number | null) => void;
   togglePlanMode: () => void;
+  toggleBashMode: () => void;
+  setBashMode: (bashMode: boolean) => void;
   approvePlan: (planResult: string) => void;
   denyPlan: () => void;
   resumeSession: (sessionId: string, logFile: string) => Promise<void>;
@@ -364,6 +366,47 @@ export const useAppStore = create<AppStore>()(
             sessionId,
             history: message,
           });
+        }
+
+        // bash command - handle ! prefixed commands directly
+        if (expandedMessage.startsWith('!')) {
+          const bashCommand = expandedMessage.slice(1).trim();
+          if (bashCommand) {
+            try {
+              const result = await bridge.request('executeTool', {
+                cwd,
+                command: bashCommand,
+              });
+              if (result.success) {
+                const userMessage: Message = {
+                  role: 'user',
+                  content: bashCommand,
+                };
+                const message: Message = {
+                  role: 'user',
+                  content: [
+                    {
+                      type: 'tool_result',
+                      id: 'bash',
+                      name: 'bash',
+                      input: {
+                        command: bashCommand,
+                      },
+                      result: result.result,
+                    },
+                  ],
+                };
+                await bridge.request('addMessages', {
+                  cwd,
+                  sessionId,
+                  messages: [userMessage, message],
+                });
+              }
+            } catch (error) {
+              get().log('Failed to execute bash command: ' + String(error));
+            }
+            return;
+          }
         }
 
         // slash command - use expanded message for processing
@@ -598,6 +641,8 @@ export const useAppStore = create<AppStore>()(
           pastedTextMap: {},
           pastedImageMap: {},
           processingTokens: 0,
+          planMode: false,
+          bashMode: false,
         });
         return {
           sessionId,
@@ -628,6 +673,14 @@ export const useAppStore = create<AppStore>()(
 
       togglePlanMode: () => {
         set({ planMode: !get().planMode });
+      },
+
+      toggleBashMode: () => {
+        set({ bashMode: !get().bashMode });
+      },
+
+      setBashMode: (bashMode: boolean) => {
+        set({ bashMode });
       },
 
       approvePlan: (planResult: string) => {

@@ -24,6 +24,9 @@ export const UI_COLORS = {
   },
   MODE_INDICATOR_TEXT: 'magentaBright',
   MODE_INDICATOR_DESCRIPTION: 'gray',
+  BASH_BORDER: 'magenta',
+  BASH_PROMPT: 'magenta',
+  BASH_MODE_TEXT: 'magentaBright',
 } as const;
 
 export const SPACING = {
@@ -70,4 +73,10 @@ export const PASTE_CONFIG = {
   MAX_PASTE_ITEMS: 20,
   IMAGE_PASTE_MESSAGE_TIMEOUT_MS: 3000,
   PASTE_STATE_TIMEOUT_MS: 500,
+} as const;
+
+export const BASH_MODE_CONFIG = {
+  TRIGGER_CHAR: '!',
+  AUTO_EXIT_ON_EMPTY: true,
+  PROMPT_CHAR: '!',
 } as const;

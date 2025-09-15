@@ -5,14 +5,14 @@ import { ModeIndicator } from './ModeIndicator';
 import { StatusLine } from './StatusLine';
 import { Suggestion, SuggestionItem } from './Suggestion';
 import TextInput from './TextInput';
-import { SPACING, UI_COLORS } from './constants';
+import { BASH_MODE_CONFIG, SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 import { useInputHandlers } from './useInputHandlers';
 import { useTerminalSize } from './useTerminalSize';
 import { useTryTips } from './useTryTips';
 
 export function ChatInput() {
-  const { inputState, handlers, slashCommands, fileSuggestion } =
+  const { inputState, bashMode, handlers, slashCommands, fileSuggestion } =
     useInputHandlers();
   const { currentTip } = useTryTips();
   const {
@@ -34,11 +34,14 @@ export function ChatInput() {
     if (queuedMessages.length > 0) {
       return 'Press up to edit queued messages';
     }
+    if (bashMode.bashMode) {
+      return 'Enter bash command (esc to exit bash mode)';
+    }
     if (currentTip) {
       return currentTip;
     }
     return '';
-  }, [currentTip, queuedMessages]);
+  }, [currentTip, queuedMessages, bashMode.bashMode]);
   if (slashCommandJSX) {
     return null;
   }
@@ -56,19 +59,23 @@ export function ChatInput() {
       <ModeIndicator />
       <Box
         borderStyle="round"
-        borderColor={UI_COLORS.CHAT_BORDER}
+        borderColor={
+          bashMode.bashMode ? UI_COLORS.BASH_BORDER : UI_COLORS.CHAT_BORDER
+        }
         paddingX={1}
         flexDirection="row"
         gap={1}
       >
         <Text
           color={
-            inputState.state.value
-              ? UI_COLORS.CHAT_ARROW_ACTIVE
-              : UI_COLORS.CHAT_ARROW
+            bashMode.bashMode
+              ? UI_COLORS.BASH_PROMPT
+              : inputState.state.value
+                ? UI_COLORS.CHAT_ARROW_ACTIVE
+                : UI_COLORS.CHAT_ARROW
           }
         >
-          &gt;
+          {bashMode.bashMode ? BASH_MODE_CONFIG.PROMPT_CHAR : '>'}
         </Text>
         <TextInput
           multiline
@@ -91,6 +98,12 @@ export function ChatInput() {
             log('onMessage' + text);
           }}
           onEscape={() => {
+            // Priority 1: Exit bash mode if active
+            if (bashMode.bashMode) {
+              bashMode.exitBashMode();
+              return;
+            }
+            // Priority 2: Cancel operation
             cancel().catch((e) => {
               log('cancel error: ' + e.message);
             });

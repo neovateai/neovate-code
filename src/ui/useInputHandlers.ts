@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useAppStore } from './store';
+import { useBashMode } from './useBashMode';
 import { useFileSuggestion } from './useFileSuggestion';
 import { useImagePasteManager } from './useImagePasteManager';
 import { useInputState } from './useInputState';
@@ -19,6 +20,7 @@ export function useInputHandlers() {
     clearQueue,
   } = useAppStore();
   const inputState = useInputState();
+  const bashMode = useBashMode();
   const slashCommands = useSlashCommands(inputState.state.value);
   const fileSuggestion = useFileSuggestion(inputState.state);
   const pasteManager = usePasteManager();
@@ -48,9 +50,16 @@ export function useInputHandlers() {
       return;
     }
     // 3. submit (pasted text expansion is handled in store.send)
+    const finalValue = bashMode.formatBashCommand(value);
     inputState.setValue('');
-    await send(value);
-  }, [inputState, send, slashCommands, fileSuggestion]);
+
+    // Reset bash mode after submission
+    if (bashMode.bashMode) {
+      bashMode.exitBashMode();
+    }
+
+    await send(finalValue);
+  }, [inputState, send, slashCommands, fileSuggestion, bashMode]);
 
   const handleTabPress = useCallback(
     (isShiftTab: boolean) => {
@@ -88,9 +97,17 @@ export function useInputHandlers() {
   const handleChange = useCallback(
     (val: string) => {
       setHistoryIndex(null);
-      inputState.setValue(val);
+
+      // Handle bash mode auto-detection and switching
+      const bashResult = bashMode.handleBashModeInput(val);
+
+      if (bashResult.modeChanged) {
+        inputState.setValue(bashResult.processedInput);
+      } else {
+        inputState.setValue(val);
+      }
     },
-    [inputState, setHistoryIndex],
+    [inputState, setHistoryIndex, bashMode],
   );
 
   const handleHistoryUp = useCallback(() => {
@@ -204,6 +221,7 @@ export function useInputHandlers() {
 
   return {
     inputState,
+    bashMode,
     handlers: {
       handleSubmit,
       handleTabPress,
