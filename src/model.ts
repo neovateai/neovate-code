@@ -680,6 +680,25 @@ export const providers: ProvidersMap = {
     },
     createModel: defaultModelCreator,
   },
+  moonshotai: {
+    id: 'moonshotai',
+    env: ['MOONSHOT_API_KEY'],
+    name: 'Moonshot',
+    api: 'https://api.moonshot.ai/v1',
+    doc: 'https://platform.moonshot.ai/docs/api/chat',
+    models: {
+      'kimi-k2-0711-preview': models['kimi-k2'],
+      'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
+    },
+    createModel(name, provider) {
+      return createOpenAI({
+        baseURL: provider.api,
+        apiKey: process.env[provider.env[0]],
+        // include usage information in streaming mode
+        compatibility: 'strict',
+      })(name);
+    },
+  },
   'moonshotai-cn': {
     id: 'moonshotai-cn',
     env: ['MOONSHOT_API_KEY'],
