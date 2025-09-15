@@ -1,4 +1,8 @@
 import { useCallback, useRef } from 'react';
+import {
+  displayImageInTerminal,
+  isImageDisplaySupported,
+} from '../utils/terminalImage';
 import { useAppStore } from './store';
 
 export interface ImagePasteResult {
@@ -38,6 +42,24 @@ export function useImagePasteManager() {
           ...pastedImageMap,
           [imageId]: base64Data,
         });
+
+        // 如果终端支持图片显示，则在终端中显示图片
+        if (isImageDisplaySupported()) {
+          try {
+            const imageDisplay = await displayImageInTerminal(
+              base64Data,
+              'image/png',
+              {
+                width: 80,
+                preserveAspectRatio: true,
+              },
+            );
+            console.log(`\n${imageDisplay}\n`);
+          } catch (error) {
+            console.warn('Failed to display image in terminal:', error);
+            // 如果显示失败，仍然继续处理图片粘贴
+          }
+        }
 
         // Generate the prompt placeholder
         const prompt = getPastedImagePrompt(imageId);

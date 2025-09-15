@@ -4,6 +4,10 @@ import { z } from 'zod';
 import { IMAGE_EXTENSIONS } from '../constants';
 import { type ToolResult, createTool } from '../tool';
 import { safeStringify } from '../utils/safeStringify';
+import {
+  displayImageInTerminal,
+  isImageDisplaySupported,
+} from '../utils/terminalImage';
 
 type ImageMediaType =
   | 'image/jpeg'
@@ -31,13 +35,33 @@ function getImageMimeType(ext: string): ImageMediaType {
   return mimeTypes[ext] || 'image/jpeg';
 }
 
-function createImageResponse(buffer: Buffer, ext: string): ToolResult {
+async function createImageResponse(
+  buffer: Buffer,
+  ext: string,
+): Promise<ToolResult> {
   const mimeType = getImageMimeType(ext);
   const base64 = buffer.toString('base64');
   const data = `data:${mimeType};base64,${base64}`;
+
+  let displayMessage = 'Read image file successfully.';
+
+  // 如果终端支持图片显示，则在终端中显示图片
+  if (isImageDisplaySupported()) {
+    try {
+      const imageDisplay = await displayImageInTerminal(base64, mimeType, {
+        width: 80,
+        preserveAspectRatio: true,
+      });
+      displayMessage = `Read image file successfully.\n\n${imageDisplay}`;
+    } catch (error) {
+      console.warn('Failed to display image in terminal:', error);
+      // 如果显示失败，仍然返回成功消息，但不显示图片
+    }
+  }
+
   return {
     llmContent: [{ type: 'image', data, mimeType }],
-    returnDisplay: 'Read image file successfully.',
+    returnDisplay: displayMessage,
   };
 }
 
@@ -56,7 +80,7 @@ async function processImage(filePath: string): Promise<ToolResult> {
 
     // If file is within size limit, return as-is
     if (stats.size <= MAX_IMAGE_SIZE) {
-      return createImageResponse(buffer, ext);
+      return await createImageResponse(buffer, ext);
     }
 
     // If file is too large, return error with helpful message
@@ -121,7 +145,7 @@ Usage:
 
         const ext = path.extname(file_path).toLowerCase();
 
-        let fullFilePath = (() => {
+        const fullFilePath = (() => {
           if (path.isAbsolute(file_path)) {
             return file_path;
           }
