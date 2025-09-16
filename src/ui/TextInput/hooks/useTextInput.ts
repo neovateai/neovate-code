@@ -328,7 +328,7 @@ export function useTextInput({
       if (!cursor.equals(nextCursor)) {
         setOffset(nextCursor.offset);
         if (cursor.text != nextCursor.text) {
-          onChange(nextCursor.text);
+          onChange(nextCursor.text || '');
         }
       }
     }
