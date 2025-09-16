@@ -115,9 +115,9 @@ export class Paths {
 function normalizeSummary(summary: string): string {
   if (!summary) return '';
   return summary
-    .replace(/\r\n|\r|\n/g, ' ') // 替换所有换行符为空格
-    .replace(/\s+/g, ' ') // 合并连续空白字符为单个空格
-    .trim(); // 去除首尾空白
+    .replace(/\r\n|\r|\n/g, ' ') // Replace all line breaks with spaces
+    .replace(/\s+/g, ' ') // Merge consecutive whitespace characters into single space
+    .trim(); // Remove leading and trailing whitespace
 }
 
 function extractFirstUserMessageSummary(lines: string[]): string {
