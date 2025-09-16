@@ -13,18 +13,6 @@ const DEFAULT_MAX_TURNS = 50;
 
 const debug = createDebug('neovate:loop');
 
-export type ToolUse = {
-  name: string;
-  params: Record<string, any>;
-  callId: string;
-};
-
-export type ToolUseResult = {
-  toolUse: ToolUse;
-  result: any;
-  approved: boolean;
-};
-
 export type LoopResult =
   | {
       success: true;
