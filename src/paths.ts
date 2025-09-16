@@ -102,7 +102,7 @@ export class Paths {
           modified: stats.mtime,
           created: stats.birthtime,
           messageCount,
-          summary,
+          summary: normalizeSummary(summary),
         };
       })
       .sort((a, b) => b.modified.getTime() - a.modified.getTime())
@@ -110,6 +110,14 @@ export class Paths {
 
     return jsonlFiles;
   }
+}
+
+function normalizeSummary(summary: string): string {
+  if (!summary) return '';
+  return summary
+    .replace(/\r\n|\r|\n/g, ' ') // 替换所有换行符为空格
+    .replace(/\s+/g, ' ') // 合并连续空白字符为单个空格
+    .trim(); // 去除首尾空白
 }
 
 function extractFirstUserMessageSummary(lines: string[]): string {
