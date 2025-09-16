@@ -81,7 +81,7 @@ export function createModelCommand(): LocalJSXCommand {
   return {
     type: 'local-jsx',
     name: 'model',
-    description: 'Switch or display current model',
+    description: 'Select a model',
     async call(onDone) {
       const ModelComponent = () => {
         return (

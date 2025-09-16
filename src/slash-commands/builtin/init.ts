@@ -6,7 +6,7 @@ export function createInitCommand(opts: { productName: string }) {
   return {
     type: 'prompt',
     name: 'init',
-    description: `Create or improve ${ruleFile} files`,
+    description: `Create or improve the ${ruleFile} file`,
     progressMessage: `Analyzing codebase to create ${ruleFile}...`,
     async getPromptForCommand() {
       return [
