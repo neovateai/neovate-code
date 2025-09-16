@@ -73,7 +73,7 @@ interface AppState {
   version: string;
   theme: Theme;
   model: string | null;
-  sessionModel: string | null;
+
   modelContextLimit: number;
   providers: ProvidersMap;
   sessionId: string | null;
@@ -142,6 +142,7 @@ interface AppActions {
   sendMessage: (opts: {
     message: string | null;
     planMode?: boolean;
+    model?: string;
   }) => Promise<LoopResult>;
   addMessage: (message: Message) => void;
   log: (log: string) => void;
@@ -155,8 +156,7 @@ interface AppActions {
   denyPlan: () => void;
   resumeSession: (sessionId: string, logFile: string) => Promise<void>;
   setModel: (model: string) => void;
-  setSessionModel: (model: string | null) => void;
-  clearSessionModel: () => void;
+
   approveToolUse: ({
     toolUse,
     category,
@@ -195,7 +195,7 @@ export const useAppStore = create<AppStore>()(
       logFile: null,
       theme: 'light',
       model: null,
-      sessionModel: null,
+
       modelContextLimit: null,
       providers: {},
       status: 'idle',
@@ -382,9 +382,6 @@ export const useAppStore = create<AppStore>()(
             const isLocalJSX = type === 'local-jsx';
             const isPrompt = type === 'prompt';
             if (isPrompt) {
-              if (command.model) {
-                get().setSessionModel(command.model);
-              }
               await bridge.request('addMessages', {
                 cwd,
                 sessionId,
@@ -418,7 +415,10 @@ export const useAppStore = create<AppStore>()(
                 }
               }
               if (isPrompt) {
-                await get().sendMessage({ message: null });
+                await get().sendMessage({
+                  message: null,
+                  model: command.model,
+                });
               }
             } else if (isLocalJSX) {
               const jsx = await command.call(async (result: string) => {
@@ -512,19 +512,21 @@ export const useAppStore = create<AppStore>()(
       sendMessage: async (opts: {
         message: string | null;
         planMode?: boolean;
+        model?: string;
       }) => {
         set({
           status: 'processing',
           processingStartTime: Date.now(),
           processingTokens: 0,
         });
-        const { bridge, cwd, sessionId, sessionModel } = get();
+        const { bridge, cwd, sessionId } = get();
+
         const response: LoopResult = await bridge.request('send', {
           message: opts.message,
           cwd,
           sessionId,
           planMode: opts.planMode,
-          model: sessionModel,
+          model: opts.model,
         });
         if (response.success) {
           set({
@@ -540,7 +542,6 @@ export const useAppStore = create<AppStore>()(
             processingTokens: 0,
           });
         }
-        get().clearSessionModel();
         return response;
       },
 
@@ -557,7 +558,6 @@ export const useAppStore = create<AppStore>()(
           status: 'idle',
           processingStartTime: null,
           processingTokens: 0,
-          sessionModel: null,
         });
       },
 
@@ -581,7 +581,6 @@ export const useAppStore = create<AppStore>()(
           inputError: null,
           pastedTextMap: {},
           processingTokens: 0,
-          sessionModel: null,
         });
         return {
           sessionId,
@@ -674,7 +673,6 @@ export const useAppStore = create<AppStore>()(
           inputCtrlCPressed: false,
           inputError: null,
           pastedTextMap,
-          sessionModel: null,
         });
       },
 
@@ -698,13 +696,6 @@ export const useAppStore = create<AppStore>()(
         }
       },
 
-      setSessionModel: (model: string | null) => {
-        set({ sessionModel: model });
-      },
-
-      clearSessionModel: () => {
-        set({ sessionModel: null });
-      },
       approveToolUse: ({
         toolUse,
         category,
