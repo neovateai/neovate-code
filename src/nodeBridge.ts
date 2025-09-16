@@ -796,13 +796,20 @@ class NodeHandlerRegistry {
     this.messageBus.registerHandler(
       'executeTool',
       async ({ command, cwd }: { command: string; cwd: string }) => {
-        const bashTool = createBashTool({ cwd });
-        const result = await bashTool.execute({ command });
+        try {
+          const bashTool = createBashTool({ cwd });
+          const result = await bashTool.execute({ command });
 
-        return {
-          result,
-          success: true,
-        };
+          return {
+            result,
+            success: true,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
       },
     );
   }

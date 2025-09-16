@@ -373,6 +373,11 @@ export const useAppStore = create<AppStore>()(
           const bashCommand = expandedMessage.slice(1).trim();
           if (bashCommand) {
             try {
+              set({
+                status: 'processing',
+                processingStartTime: Date.now(),
+                processingTokens: 0,
+              });
               const result = await bridge.request('executeTool', {
                 cwd,
                 command: bashCommand,
@@ -400,6 +405,18 @@ export const useAppStore = create<AppStore>()(
                   cwd,
                   sessionId,
                   messages: [userMessage, message],
+                });
+                set({
+                  status: 'idle',
+                  processingStartTime: null,
+                  processingTokens: 0,
+                });
+              } else {
+                set({
+                  status: 'failed',
+                  error: result.error,
+                  processingStartTime: null,
+                  processingTokens: 0,
                 });
               }
             } catch (error) {
