@@ -74,7 +74,6 @@ interface AppState {
   version: string;
   theme: Theme;
   model: string | null;
-
   modelContextLimit: number;
   providers: ProvidersMap;
   sessionId: string | null;
@@ -160,7 +159,6 @@ interface AppActions {
   denyPlan: () => void;
   resumeSession: (sessionId: string, logFile: string) => Promise<void>;
   setModel: (model: string) => void;
-
   approveToolUse: ({
     toolUse,
     category,
@@ -200,7 +198,6 @@ export const useAppStore = create<AppStore>()(
       logFile: null,
       theme: 'light',
       model: null,
-
       modelContextLimit: null,
       providers: {},
       status: 'idle',
