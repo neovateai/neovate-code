@@ -107,7 +107,6 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       };
     }
     if (opts.autoCompact) {
-      // TODO resume need usage
       const compressed = await history.compress(opts.model, totalUsage);
       if (compressed.compressed) {
         debug('history compressed', compressed);
