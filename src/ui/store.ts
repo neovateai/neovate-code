@@ -451,7 +451,7 @@ export const useAppStore = create<AppStore>()(
               } catch (err) {
                 success = false;
                 error = err instanceof Error ? err.message : String(err);
-                console.error('Local JSX command execution failed:', err);
+                throw err;
               } finally {
                 try {
                   await bridge.request('reportSlashCommandExecution', {
@@ -468,10 +468,7 @@ export const useAppStore = create<AppStore>()(
                     error,
                   });
                 } catch (reportError) {
-                  console.warn(
-                    'Failed to report slash command execution:',
-                    reportError,
-                  );
+                  throw reportError;
                 }
               }
             } else {
