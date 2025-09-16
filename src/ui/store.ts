@@ -145,6 +145,7 @@ interface AppActions {
   sendMessage: (opts: {
     message: string | null;
     planMode?: boolean;
+    model?: string;
   }) => Promise<LoopResult>;
   addMessage: (message: Message) => void;
   log: (log: string) => void;
@@ -418,7 +419,10 @@ export const useAppStore = create<AppStore>()(
                 }
               }
               if (isPrompt) {
-                await get().sendMessage({ message: null });
+                await get().sendMessage({
+                  message: null,
+                  model: command.model,
+                });
               }
             } else if (isLocalJSX) {
               const jsx = await command.call(async (result: string) => {
@@ -512,6 +516,7 @@ export const useAppStore = create<AppStore>()(
       sendMessage: async (opts: {
         message: string | null;
         planMode?: boolean;
+        model?: string;
       }) => {
         set({
           status: 'processing',
@@ -546,6 +551,7 @@ export const useAppStore = create<AppStore>()(
           cwd,
           sessionId,
           planMode: opts.planMode,
+          model: opts.model,
           attachments,
         });
         if (response.success) {
@@ -574,7 +580,11 @@ export const useAppStore = create<AppStore>()(
           cwd,
           sessionId,
         });
-        set({ status: 'idle', processingStartTime: null, processingTokens: 0 });
+        set({
+          status: 'idle',
+          processingStartTime: null,
+          processingTokens: 0,
+        });
       },
 
       clear: async () => {
@@ -714,6 +724,7 @@ export const useAppStore = create<AppStore>()(
           });
         }
       },
+
       approveToolUse: ({
         toolUse,
         category,
