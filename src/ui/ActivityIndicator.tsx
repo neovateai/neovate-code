@@ -6,8 +6,14 @@ import { useAppStore } from './store';
 import { useTextGradientAnimation } from './useTextGradientAnimation';
 
 export function ActivityIndicator() {
-  const { error, status, planResult, approvalModal, processingStartTime } =
-    useAppStore();
+  const {
+    error,
+    status,
+    planResult,
+    approvalModal,
+    processingStartTime,
+    processingTokens,
+  } = useAppStore();
   const [seconds, setSeconds] = useState(0);
 
   const text = useMemo(() => {
@@ -52,7 +58,7 @@ export function ActivityIndicator() {
           <GradientText text={text} highlightIndex={highlightIndex} />
           <Box marginLeft={1}>
             <Text color={UI_COLORS.ACTIVITY_INDICATOR_TEXT}>
-              (Esc to cancel, {seconds}s)
+              {`(Esc to cancel${processingTokens > 0 ? `, ↓ ${processingTokens} tokens` : ''})`}
             </Text>
           </Box>
         </Box>

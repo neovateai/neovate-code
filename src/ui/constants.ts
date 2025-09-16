@@ -1,5 +1,3 @@
-import path from 'path';
-
 export const UI_COLORS = {
   PRODUCT_ASCII_ART: 'cyan',
   PRODUCT_NAME: 'cyanBright',
@@ -49,33 +47,6 @@ export const TOOL_NAMES = {
   LS: 'ls',
 } as const;
 
-export const TOOL_DESCRIPTION_EXTRACTORS = {
-  [TOOL_NAMES.READ]: (args: any, cwd: string) =>
-    !args.file_path
-      ? 'No file path provided'
-      : path.relative(cwd, args.file_path),
-  [TOOL_NAMES.BASH]: (args: any, cwd: string) => {
-    if (!args.command || typeof args.command !== 'string') {
-      return 'No command provided';
-    }
-    const command = args.command.trim();
-    return command.length > 100 ? command.substring(0, 97) + '...' : command;
-  },
-  [TOOL_NAMES.EDIT]: (args: any, cwd: string) =>
-    !args.file_path
-      ? 'No file path provided'
-      : path.relative(cwd, args.file_path),
-  [TOOL_NAMES.WRITE]: (args: any, cwd: string) =>
-    !args.file_path
-      ? 'No file path provided'
-      : path.relative(cwd, args.file_path),
-  [TOOL_NAMES.FETCH]: (args: any, cwd: string) => args.url,
-  [TOOL_NAMES.GLOB]: (args: any, cwd: string) => args.pattern,
-  [TOOL_NAMES.GREP]: (args: any, cwd: string) => args.pattern,
-  [TOOL_NAMES.LS]: (args: any, cwd: string) =>
-    args.dir_path ? path.relative(cwd, args.dir_path) : '.',
-} as const;
-
 export const ANIMATION_CONFIG = {
   TEXT_GRADIENT_SPEED: 150,
   GRADIENT_COLORS: {
@@ -87,4 +58,16 @@ export const ANIMATION_CONFIG = {
     MIN: 50,
     MAX: 200,
   },
+} as const;
+
+export const PASTE_CONFIG = {
+  TIMEOUT_MS: 100,
+  RAPID_INPUT_THRESHOLD_MS: 150,
+  LARGE_INPUT_THRESHOLD: 100,
+  MEDIUM_SIZE_MULTI_CHUNK_THRESHOLD: 50,
+  MEDIUM_INPUT_SIZE_THRESHOLD: 30,
+  MAX_PASTE_SIZE: 1024 * 1024,
+  MAX_PASTE_ITEMS: 20,
+  IMAGE_PASTE_MESSAGE_TIMEOUT_MS: 3000,
+  PASTE_STATE_TIMEOUT_MS: 500,
 } as const;

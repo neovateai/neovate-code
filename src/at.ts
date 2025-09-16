@@ -1,18 +1,7 @@
 import type { AgentInputItem, UserMessageItem } from '@openai/agents';
 import fs from 'fs';
 import path from 'path';
-
-const IMAGE_EXTENSIONS = new Set([
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.gif',
-  '.bmp',
-  '.webp',
-  '.svg',
-  '.tiff',
-  '.tif',
-]);
+import { IMAGE_EXTENSIONS } from './constants';
 
 export class At {
   private userPrompt: string;
@@ -24,12 +13,7 @@ export class At {
 
   getContent() {
     const prompt = this.userPrompt || '';
-    const ats = prompt
-      .split(' ')
-      .filter((p) => {
-        return p.startsWith('@') && p !== '@codebase';
-      })
-      .map((p) => p.slice(1));
+    const ats = this.extractAtPaths(prompt);
     const files: string[] = [];
     for (const at of ats) {
       const filePath = path.resolve(this.cwd, at);
@@ -48,6 +32,25 @@ export class At {
       return this.renderFilesToXml(files);
     }
     return null;
+  }
+
+  private extractAtPaths(prompt: string): string[] {
+    const paths: string[] = [];
+    const regex = /@("[^"]+"|(?:[^\\ ]|\\ )+)/g;
+    let match: RegExpExecArray | null = regex.exec(prompt);
+    while (match !== null) {
+      let path = match[1];
+      // Remove quotes if present
+      if (path.startsWith('"') && path.endsWith('"')) {
+        path = path.slice(1, -1);
+      } else {
+        // Unescape spaces
+        path = path.replace(/\\ /g, ' ');
+      }
+      paths.push(path);
+      match = regex.exec(prompt);
+    }
+    return [...new Set(paths)];
   }
 
   renderFilesToXml(files: string[]): string {
@@ -84,7 +87,7 @@ export class At {
             }
           }
         }
-      } catch (error) {
+      } catch {
         // Skip directories that can't be read
         console.warn(`Warning: Could not read directory ${currentPath}`);
       }
@@ -99,14 +102,13 @@ export class At {
   }): AgentInputItem[] {
     const reversedInput = [...opts.input].reverse();
     const lastUserMessage = reversedInput.find((item) => {
-      // @ts-ignore
-      return item.role === 'user';
+      return 'role' in item && item.role === 'user';
     }) as UserMessageItem;
     if (lastUserMessage) {
       let userPrompt = lastUserMessage.content;
       if (Array.isArray(userPrompt)) {
-        // @ts-ignore
-        userPrompt = userPrompt[0].text as string;
+        userPrompt =
+          userPrompt[0]?.type === 'input_text' ? userPrompt[0].text : '';
       }
       const at = new At({
         userPrompt,
@@ -114,7 +116,13 @@ export class At {
       });
       const content = at.getContent();
       if (content) {
-        lastUserMessage.content += `\n\n${content}`;
+        if (Array.isArray(lastUserMessage.content)) {
+          if (lastUserMessage.content[0]?.type === 'input_text') {
+            lastUserMessage.content[0].text += `\n\n${content}`;
+          }
+        } else {
+          lastUserMessage.content += `\n\n${content}`;
+        }
         const input = reversedInput.reverse();
         return input;
       }

@@ -4,7 +4,7 @@ import { useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import path from 'path';
 import React, { useMemo } from 'react';
-import type { ToolUse as ToolUseType } from '../loop';
+import type { ToolUse as ToolUseType } from '../tool';
 import { DiffViewer } from './DiffViewer';
 import { UI_COLORS } from './constants';
 import { type ApprovalResult, useAppStore } from './store';

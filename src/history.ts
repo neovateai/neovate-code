@@ -7,71 +7,12 @@ import type {
 import createDebug from 'debug';
 import { compact } from './compact';
 import { MIN_TOKEN_THRESHOLD } from './constants';
+import type { Message, NormalizedMessage } from './message';
 import type { ModelInfo } from './model';
+import type { ToolResult } from './tool';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
-
-type SystemMessage = {
-  role: 'system';
-  content: string;
-};
-type TextPart = {
-  type: 'text';
-  text: string;
-};
-type UserContent = string | Array<TextPart>;
-export type ToolUsePart = {
-  type: 'tool_use';
-  id: string;
-  name: string;
-  input: Record<string, any>;
-};
-type ReasoningPart = {
-  type: 'reasoning';
-  text: string;
-};
-type AssistantContent = string | Array<TextPart | ReasoningPart | ToolUsePart>;
-export type AssistantMessage = {
-  role: 'assistant';
-  content: AssistantContent;
-  text: string;
-  model: string;
-  usage: {
-    input_tokens: number;
-    output_tokens: number;
-    cache_read_input_tokens?: number;
-    cache_creation_input_tokens?: number;
-  };
-};
-export type UserMessage = {
-  role: 'user';
-  content: UserContent;
-  hidden?: boolean;
-};
-export type ToolMessage = {
-  role: 'user';
-  content: ToolContent;
-};
-type ToolContent = Array<ToolResultPart>;
-export type ToolResultPart = {
-  type: 'tool_result';
-  id: string;
-  name: string;
-  input: Record<string, any>;
-  result: any;
-  isError?: boolean;
-};
-export type Message =
-  | SystemMessage
-  | UserMessage
-  | AssistantMessage
-  | ToolMessage;
-export type NormalizedMessage = Message & {
-  type: 'message';
-  timestamp: string;
-  uuid: string;
-  parentUuid: string | null;
-};
+import { safeStringify } from './utils/safeStringify';
 
 export type OnMessage = (message: NormalizedMessage) => Promise<void>;
 export type HistoryOpts = {
@@ -89,11 +30,11 @@ export class History {
     this.onMessage = opts.onMessage;
   }
 
-  async addMessage(message: Message): Promise<void> {
+  async addMessage(message: Message, uuid?: string): Promise<void> {
     const lastMessage = this.messages[this.messages.length - 1];
     const normalizedMessage: NormalizedMessage = {
       parentUuid: lastMessage?.uuid || null,
-      uuid: randomUUID(),
+      uuid: uuid || randomUUID(),
       ...message,
       type: 'message',
       timestamp: new Date().toISOString(),
@@ -115,14 +56,43 @@ export class History {
               },
             ];
           }
-          content = content.map((part: any) => {
+          content = content.flatMap((part: any) => {
             if (part.type === 'tool_result') {
-              const text = `[${part.name} for ${safeStringify(part.input)}] result: \n<function_results>\n${safeStringify(part.result)}\n</function_results>`;
-              return { type: 'input_text', text };
+              const result = part.result as ToolResult;
+              const llmContent = result.llmContent;
+              const formatText = (text: string) => {
+                return {
+                  type: 'input_text',
+                  text: `[${part.name} for ${safeStringify(part.input)}] result: \n<function_results>\n${text}\n</function_results>`,
+                };
+              };
+              if (typeof llmContent === 'string') {
+                return formatText(llmContent);
+              } else {
+                return llmContent.map((part) => {
+                  if (part.type === 'text') {
+                    return formatText(part.text);
+                  } else {
+                    return {
+                      type: 'input_image',
+                      image: part.data,
+                      providerData: { mime_type: part.mimeType },
+                    };
+                  }
+                });
+              }
             } else if (part.type === 'text') {
-              return { type: 'input_text', text: part.text };
+              return [{ type: 'input_text', text: part.text }];
+            } else if (part.type === 'image') {
+              return [
+                {
+                  type: 'input_image',
+                  image: part.data,
+                  providerData: { mime_type: part.mimeType },
+                },
+              ];
             } else {
-              return part;
+              return [part];
             }
           });
           return content;
@@ -256,16 +226,5 @@ export class History {
     }
 
     return { compressed: false };
-  }
-}
-
-function safeStringify(
-  obj: any,
-  fallbackMessage = '[Unable to serialize object]',
-): string {
-  try {
-    return JSON.stringify(obj, null, 2);
-  } catch (error) {
-    return fallbackMessage;
   }
 }

@@ -2,9 +2,8 @@ import fs from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
-import { TOOL_NAME } from '../constants';
+import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
-import type { TodoReadToolResult, TodoWriteToolResult } from './type';
 
 const TODO_WRITE_PROMPT = `
 Use this tool to create and manage a structured task list for your current coding session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
@@ -235,27 +234,26 @@ export function createTodoTool(opts: { filePath: string }) {
   }
 
   const todoWriteTool = createTool({
-    name: TOOL_NAME.TODO_WRITE,
+    name: TOOL_NAMES.TODO_WRITE,
     description: TODO_WRITE_PROMPT,
     parameters: z.object({
       todos: TodoListSchema.describe('The updated todo list'),
     }),
-    async execute({ todos }): Promise<TodoWriteToolResult> {
+    async execute({ todos }) {
       try {
         const oldTodos = await readTodos();
         const newTodos = todos;
         await saveTodos(newTodos, getTodoFilePath());
 
         return {
-          success: true,
-          data: { oldTodos, newTodos },
-          message:
+          llmContent:
             'Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable',
+          returnDisplay: { type: 'todo_write', oldTodos, newTodos },
         };
       } catch (error) {
         return {
-          success: false,
-          error:
+          isError: true,
+          llmContent:
             error instanceof Error
               ? `Failed to write todos: ${error.message}`
               : 'Unknown error',
@@ -268,24 +266,23 @@ export function createTodoTool(opts: { filePath: string }) {
   });
 
   const todoReadTool = createTool({
-    name: TOOL_NAME.TODO_READ,
+    name: TOOL_NAMES.TODO_READ,
     description: TODO_READ_PROMPT,
     parameters: z.object({}).passthrough(),
-    async execute(): Promise<TodoReadToolResult> {
+    async execute() {
       try {
         const todos = await readTodos();
         return {
-          success: true,
-          data: todos,
-          message:
+          llmContent:
             todos.length === 0
               ? 'Todo list is empty'
               : `Found ${todos.length} todos`,
+          returnDisplay: { type: 'todo_read', todos },
         };
       } catch (error) {
         return {
-          success: false,
-          error:
+          isError: true,
+          llmContent:
             error instanceof Error
               ? `Failed to read todos: ${error.message}`
               : 'Unknown error',

@@ -1,8 +1,8 @@
 import { Context } from './context';
-import type { NormalizedMessage } from './history';
 import { JsonlLogger } from './jsonl';
 import { LlmsContext } from './llmsContext';
-import { type ToolUse, runLoop } from './loop';
+import { runLoop } from './loop';
+import type { ImagePart, NormalizedMessage, UserContent } from './message';
 import { resolveModelWithContext } from './model';
 import { OutputFormat } from './outputFormat';
 import { OutputStyleManager } from './outputStyle';
@@ -10,6 +10,7 @@ import { generatePlanSystemPrompt } from './planSystemPrompt';
 import { PluginHookType } from './plugin';
 import { Session, SessionConfigManager, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
+import type { ToolUse } from './tool';
 import type { ApprovalCategory, Tool } from './tool';
 import { Tools, resolveTools } from './tool';
 import type { Usage } from './usage';
@@ -34,7 +35,10 @@ export class Project {
       model?: string;
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
       onToolApprove?: (opts: { toolUse: ToolUse }) => Promise<boolean>;
+      onTextDelta?: (text: string) => Promise<void>;
+      onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
+      attachments?: ImagePart[];
     } = {},
   ) {
     let tools = await resolveTools({
@@ -77,7 +81,10 @@ export class Project {
     opts: {
       model?: string;
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
+      onTextDelta?: (text: string) => Promise<void>;
+      onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
+      attachments?: ImagePart[];
     } = {},
   ) {
     let tools = await resolveTools({
@@ -121,9 +128,12 @@ export class Project {
         toolUse: ToolUse;
         category?: ApprovalCategory;
       }) => Promise<boolean>;
+      onTextDelta?: (text: string) => Promise<void>;
+      onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
       tools?: Tool[];
       systemPrompt?: string;
+      attachments?: ImagePart[];
     } = {},
   ) {
     let startTime = new Date();
@@ -147,10 +157,9 @@ export class Project {
         type: PluginHookType.SeriesLast,
       });
     }
-    const { model } = await resolveModelWithContext(
-      opts.model || null,
-      this.context,
-    );
+    const model = (
+      await resolveModelWithContext(opts.model || null, this.context)
+    ).model!;
     const llmsContext = await LlmsContext.create({
       context: this.context,
       sessionId: this.session.id,
@@ -170,11 +179,23 @@ export class Project {
       const lastMessageUuid =
         this.session.history.messages[this.session.history.messages.length - 1]
           ?.uuid;
+
+      let content: UserContent = message;
+      if (opts.attachments?.length) {
+        content = [
+          {
+            type: 'text' as const,
+            text: message,
+          },
+          ...opts.attachments,
+        ];
+      }
+
       userMessage = {
         parentUuid: lastMessageUuid || null,
         uuid: randomUUID(),
         role: 'user',
-        content: message,
+        content,
         type: 'message',
         timestamp: new Date().toISOString(),
       };
@@ -219,7 +240,12 @@ export class Project {
           message: normalizedMessage,
         });
       },
-      onTextDelta: async () => {},
+      onTextDelta: async (text) => {
+        await opts.onTextDelta?.(text);
+      },
+      onChunk: async (chunk, requestId) => {
+        await opts.onChunk?.(chunk, requestId);
+      },
       onText: async (text) => {},
       onReasoning: async (text) => {},
       onToolUse: async (toolUse) => {

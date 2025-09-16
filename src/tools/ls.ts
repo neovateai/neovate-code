@@ -8,7 +8,6 @@ import {
   listDirectory,
   printTree,
 } from '../utils/list';
-import type { LsToolResult } from './type';
 
 export function createLSTool(opts: { cwd: string; productName: string }) {
   return createTool({
@@ -17,7 +16,13 @@ export function createLSTool(opts: { cwd: string; productName: string }) {
     parameters: z.object({
       dir_path: z.string().describe('The path to the directory to list.'),
     }),
-    execute: async (params): Promise<LsToolResult> => {
+    getDescription: ({ params }) => {
+      if (!params.dir_path || typeof params.dir_path !== 'string') {
+        return '.';
+      }
+      return path.relative(opts.cwd, params.dir_path);
+    },
+    execute: async (params) => {
       const { dir_path } = params;
       const fullFilePath = path.isAbsolute(dir_path)
         ? dir_path
@@ -31,16 +36,14 @@ export function createLSTool(opts: { cwd: string; productName: string }) {
       const userTree = printTree(opts.cwd, tree);
       if (result.length < MAX_FILES) {
         return {
-          success: true,
-          message: `Listed ${result.length} files/directories`,
-          data: userTree,
+          returnDisplay: `Listed ${result.length} files/directories`,
+          llmContent: userTree,
         };
       } else {
         const assistantData = `${TRUNCATED_MESSAGE}${userTree}`;
         return {
-          success: true,
-          message: `Listed ${result.length} files/directories (truncated)`,
-          data: assistantData,
+          returnDisplay: `Listed ${result.length} files/directories (truncated)`,
+          llmContent: assistantData,
         };
       }
     },

@@ -95,10 +95,8 @@ export function ChatInput() {
               log('cancel error: ' + e.message);
             });
           }}
-          onImagePaste={(image) => {}}
-          onPaste={(text) => {
-            log('onPaste' + text);
-          }}
+          onImagePaste={handlers.handleImagePaste}
+          onPaste={handlers.handlePaste}
           onSubmit={handlers.handleSubmit}
           cursorOffset={inputState.state.cursorPosition ?? 0}
           onChangeCursorOffset={inputState.setCursorPosition}

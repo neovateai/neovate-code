@@ -1,6 +1,6 @@
 {
   "name": "@neovate/code",
-  "version": "0.9.0",
+  "version": "0.10.1",
   "type": "module",
   "files": [
     "dist",
@@ -38,7 +38,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "prepare": "husky"
+    "prepare": "husky",
+    "ready": "bun scripts/ready.ts"
   },
   "keywords": [
     "cli",
@@ -72,7 +73,9 @@
     "@sinclair/typebox": "^0.34.38",
     "@stagewise/agent-interface": "^0.2.3",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@types/bun": "^1.2.21",
     "@types/debug": "^4.1.12",
+    "@types/express": "^5.0.3",
     "@types/js-yaml": "^4.0.9",
     "@types/lodash-es": "^4.17.12",
     "@types/marked-terminal": "^6.1.1",
@@ -94,9 +97,12 @@
     "defu": "^6.1.4",
     "diff": "^8.0.2",
     "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "fastify": "^5.5.0",
     "front-matter": "^4.0.2",
     "glob": "^11.0.3",
+    "gpt-tokenizer": "^3.0.1",
+    "gradient-string": "^3.0.0",
     "husky": "^9.1.7",
     "ink": "^6.1.0",
     "ink-select-input": "^6.2.0",
@@ -121,7 +127,6 @@
     "turndown": "^7.2.0",
     "type-fest": "^4.41.0",
     "typescript": "^5.9.2",
-    "upgear": "^0.0.3",
     "valtio": "^2.1.5",
     "vitest": "^3.2.4",
     "wrap-ansi": "^9.0.0",
@@ -141,12 +146,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "upgear": {
-    "files": [
-      "vendor"
-    ],
-    "needReinstall": false,
-    "changelogUrl": "https://github.com/neovateai/neovate-code/blob/master/CHANGELOG.md"
   }
 }

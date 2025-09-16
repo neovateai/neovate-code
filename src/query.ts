@@ -1,7 +1,7 @@
 import assert from 'assert';
 import type { Context } from './context';
-import type { NormalizedMessage } from './history';
 import { runLoop } from './loop';
+import type { NormalizedMessage } from './message';
 import { type ModelInfo, resolveModelWithContext } from './model';
 import { Tools } from './tool';
 import { randomUUID } from './utils/randomUUID';
@@ -27,7 +27,7 @@ export async function query(opts: {
   ];
   assert(opts.model || opts.context, 'model or context is required');
   const model =
-    opts.model || (await resolveModelWithContext(null, opts.context!)).model;
+    opts.model || (await resolveModelWithContext(null, opts.context!)).model!;
   return await runLoop({
     input: messages,
     model,

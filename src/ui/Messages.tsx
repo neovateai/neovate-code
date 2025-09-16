@@ -1,23 +1,23 @@
 import { Box, Static, Text } from 'ink';
 import React from 'react';
-import { CANCELED_MESSAGE_TEXT, TOOL_NAME } from '../constants';
+import type { NormalizedMessage } from '../message';
 import type {
   AssistantMessage,
-  NormalizedMessage,
   ToolMessage,
   ToolResultPart,
   ToolUsePart,
   UserMessage,
-} from '../history';
+} from '../message';
 import {
   getMessageText,
   isCanceledMessage,
   isToolResultMessage,
 } from '../message';
 import { DiffViewer } from './DiffViewer';
+import { GradientString } from './GradientString';
 import { Markdown } from './Markdown';
 import { TodoList, TodoRead } from './Todo';
-import { SPACING, TOOL_DESCRIPTION_EXTRACTORS, UI_COLORS } from './constants';
+import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 
 export function Messages() {
@@ -38,29 +38,16 @@ export function Messages() {
   );
 }
 
-function AppInfo() {
-  const { model, productName, version, cwd, sessionId, logFile, messages } =
-    useAppStore();
-  return (
-    <Box flexDirection="column" borderStyle="round" borderColor="gray">
-      <Text>{Math.random()}</Text>
-      <Text>Model: {model}</Text>
-      <Text>Product Name: {productName}</Text>
-      <Text>Version: {version}</Text>
-      <Text>CWD: {cwd}</Text>
-      <Text>Session ID: {sessionId}</Text>
-      <Text>Log File: {logFile}</Text>
-      <Text>Messages: {messages.length}</Text>
-    </Box>
-  );
-}
-
 function ProductASCIIArt() {
   const { productASCIIArt } = useAppStore();
   if (!productASCIIArt) return null;
   return (
     <Box>
-      <Text color={UI_COLORS.PRODUCT_ASCII_ART}>{productASCIIArt}</Text>
+      <GradientString
+        text={productASCIIArt}
+        colors={['#FF3070', '#FF6B9D']}
+        multiline
+      />
     </Box>
   );
 }
@@ -69,9 +56,11 @@ function ProductInfo() {
   const { productName, version } = useAppStore();
   return (
     <Box marginTop={1}>
-      <Text bold color={UI_COLORS.PRODUCT_NAME}>
-        {productName.toUpperCase()}
-      </Text>
+      <GradientString
+        text={productName.toUpperCase()}
+        colors={['#FF3070', '#FF6B9D']}
+        multiline
+      />
       <Text color={UI_COLORS.PRODUCT_VERSION}> v{version}</Text>
     </Box>
   );
@@ -103,7 +92,6 @@ function Header() {
       <ProductASCIIArt />
       <ProductInfo />
       <GettingStartedTips />
-      {/* <AppInfo /> */}
     </Box>
   );
 }
@@ -145,7 +133,7 @@ function AssistantText({
       marginTop={SPACING.MESSAGE_MARGIN_TOP}
       marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
     >
-      <Text bold color={UI_COLORS.ASSISTANT}>
+      <Text bold color="#FF3070">
         {productName.toLowerCase()}
       </Text>
       <Markdown>{text}</Markdown>
@@ -154,20 +142,15 @@ function AssistantText({
 }
 
 function ToolUse({ part }: { part: ToolUsePart }) {
-  const { cwd } = useAppStore();
-  const { name, input } = part;
-  const extractor =
-    TOOL_DESCRIPTION_EXTRACTORS[
-      name as keyof typeof TOOL_DESCRIPTION_EXTRACTORS
-    ];
-  const description = extractor ? extractor(input, cwd) : '';
+  const { name, displayName } = part;
+  const description = part.description;
   return (
     <Box
       marginTop={SPACING.MESSAGE_MARGIN_TOP}
       marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
     >
       <Text bold color={UI_COLORS.TOOL}>
-        {name}
+        {displayName || name}
       </Text>
       {description && (
         <Text color={UI_COLORS.TOOL_DESCRIPTION}>({description})</Text>
@@ -235,47 +218,57 @@ function Thinking({ text }: { text: string }) {
 }
 
 function ToolResultItem({ part }: { part: ToolResultPart }) {
-  const { result, name, input, isError } = part;
-  if (!result.success && (result.error || isError)) {
-    return <Text color={UI_COLORS.ERROR}>{result.error || result}</Text>;
+  const { result, input } = part;
+  if (result.isError) {
+    let text = result.returnDisplay || result.llmContent;
+    if (typeof text !== 'string') {
+      text = JSON.stringify(text);
+    }
+    return <Text color={UI_COLORS.ERROR}>{text}</Text>;
   }
-  if (name === TOOL_NAME.TODO_WRITE) {
-    return (
-      <TodoList
-        oldTodos={result.data.oldTodos}
-        newTodos={result.data.newTodos}
-        verbose={false}
-      />
-    );
+
+  const returnDisplayTypes = ['diff_viewer', 'todo_read', 'todo_write'];
+  if (
+    typeof result.returnDisplay === 'object' &&
+    returnDisplayTypes.includes(result.returnDisplay.type)
+  ) {
+    switch (result.returnDisplay.type) {
+      case 'diff_viewer':
+        const { originalContent, newContent, filePath } = result.returnDisplay;
+        const originalContentValue =
+          typeof originalContent === 'string'
+            ? originalContent
+            : input[originalContent.inputKey];
+        const newContentValue =
+          typeof newContent === 'string'
+            ? newContent
+            : input[newContent.inputKey];
+        return (
+          <DiffViewer
+            originalContent={originalContentValue}
+            newContent={newContentValue}
+            fileName={filePath}
+          />
+        );
+      case 'todo_read':
+        return <TodoRead todos={result.returnDisplay.todos} />;
+      case 'todo_write':
+        return (
+          <TodoList
+            oldTodos={result.returnDisplay.oldTodos}
+            newTodos={result.returnDisplay.newTodos}
+            verbose={false}
+          />
+        );
+      default:
+        break;
+    }
   }
-  if (name === 'edit') {
-    const originalContent = input.old_string;
-    const newContent = input.new_string;
-    const fileName = result.data.relativeFilePath;
-    return (
-      <DiffViewer
-        originalContent={originalContent}
-        newContent={newContent}
-        fileName={fileName}
-      />
-    );
+
+  let text = result.returnDisplay || result.llmContent;
+  if (typeof text !== 'string') {
+    text = JSON.stringify(text);
   }
-  if (name === 'write') {
-    const fileName = result.data.relativeFilePath;
-    const originalContent = result.data.oldContent || '';
-    const newContent = result.data.content;
-    return (
-      <DiffViewer
-        originalContent={originalContent}
-        newContent={newContent}
-        fileName={fileName}
-      />
-    );
-  }
-  if (name === TOOL_NAME.TODO_READ) {
-    return <TodoRead todos={result.data} />;
-  }
-  const text = (result.success && result.message) || JSON.stringify(result);
   return <Text color={UI_COLORS.TOOL_RESULT}>↳ {text}</Text>;
 }
 

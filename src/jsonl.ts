@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import type { NormalizedMessage } from './history';
+import type { NormalizedMessage } from './message';
 import { createUserMessage } from './message';
 
 export class JsonlLogger {

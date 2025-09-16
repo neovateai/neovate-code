@@ -1,7 +1,9 @@
 import { useCallback } from 'react';
 import { useAppStore } from './store';
 import { useFileSuggestion } from './useFileSuggestion';
+import { useImagePasteManager } from './useImagePasteManager';
 import { useInputState } from './useInputState';
+import { usePasteManager } from './usePasteManager';
 import { useSlashCommands } from './useSlashCommands';
 
 export function useInputHandlers() {
@@ -19,6 +21,8 @@ export function useInputHandlers() {
   const inputState = useInputState();
   const slashCommands = useSlashCommands(inputState.state.value);
   const fileSuggestion = useFileSuggestion(inputState.state);
+  const pasteManager = usePasteManager();
+  const imageManager = useImagePasteManager();
 
   const handleSubmit = useCallback(async () => {
     const value = inputState.state.value.trim();
@@ -43,12 +47,10 @@ export function useInputHandlers() {
       inputState.setCursorPosition(`${beforeAt}@${file} `.length);
       return;
     }
-    // TODO: pasted text
-    // TODO: image paste
-    // 3. submit
+    // 3. submit (pasted text expansion is handled in store.send)
     inputState.setValue('');
     await send(value);
-  }, [inputState, send, slashCommands]);
+  }, [inputState, send, slashCommands, fileSuggestion]);
 
   const handleTabPress = useCallback(
     (isShiftTab: boolean) => {
@@ -80,7 +82,7 @@ export function useInputHandlers() {
         togglePlanMode();
       }
     },
-    [slashCommands],
+    [slashCommands, fileSuggestion, inputState, togglePlanMode],
   );
 
   const handleChange = useCallback(
@@ -128,7 +130,16 @@ export function useInputHandlers() {
       inputState.setCursorPosition(0);
       setHistoryIndex(nextHistoryIndex);
     }
-  }, [inputState, history, historyIndex, setDraftInput, slashCommands]);
+  }, [
+    inputState,
+    history,
+    historyIndex,
+    setDraftInput,
+    slashCommands,
+    fileSuggestion,
+    clearQueue,
+    log,
+  ]);
 
   const handleHistoryDown = useCallback(() => {
     // 1. auto suggest
@@ -162,11 +173,34 @@ export function useInputHandlers() {
     draftInput,
     setHistoryIndex,
     slashCommands,
+    fileSuggestion,
   ]);
 
   const handleHistoryReset = useCallback(() => {
     setHistoryIndex(null);
   }, [setHistoryIndex]);
+
+  const handlePaste = useCallback(
+    async (text: string) => {
+      const result = await pasteManager.handleTextPaste(text);
+      if (result.success && result.prompt) {
+        return { prompt: result.prompt };
+      }
+      return {};
+    },
+    [pasteManager],
+  );
+
+  const handleImagePaste = useCallback(
+    async (base64Data: string) => {
+      const result = await imageManager.handleImagePaste(base64Data);
+      if (result.success && result.prompt) {
+        return { prompt: result.prompt };
+      }
+      return {};
+    },
+    [imageManager],
+  );
 
   return {
     inputState,
@@ -177,8 +211,12 @@ export function useInputHandlers() {
       handleHistoryUp,
       handleHistoryDown,
       handleHistoryReset,
+      handlePaste,
+      handleImagePaste,
     },
     slashCommands,
     fileSuggestion,
+    pasteManager,
+    imageManager,
   };
 }

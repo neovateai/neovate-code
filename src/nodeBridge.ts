@@ -2,8 +2,13 @@ import { compact } from './compact';
 import { type ApprovalMode, ConfigManager } from './config';
 import { CANCELED_MESSAGE_TEXT } from './constants';
 import { Context } from './context';
-import type { Message, NormalizedMessage, UserMessage } from './history';
 import { JsonlLogger } from './jsonl';
+import type {
+  ImagePart,
+  Message,
+  NormalizedMessage,
+  UserMessage,
+} from './message';
 import { MessageBus } from './messageBus';
 import { type Model, type Provider, resolveModelWithContext } from './model';
 import { OutputStyleManager } from './outputStyle';
@@ -72,18 +77,30 @@ class NodeHandlerRegistry {
           args: [{ cwd: data.cwd, quiet: false }],
           type: PluginHookType.Series,
         });
-        const modelInfo = (await resolveModelWithContext(null, context)).model;
-        const model = `${modelInfo.provider.id}/${modelInfo.model.id}`;
-        const modelContextLimit = modelInfo.model.limit.context;
+        const [model, modelContextLimit, providers] = await (async () => {
+          const { model, providers } = await resolveModelWithContext(
+            null,
+            context,
+          );
+          const modelId = model
+            ? `${model.provider.id}/${model.model.id}`
+            : null;
+          const modelContextLimit = model ? model.model.limit.context : null;
+          return [modelId, modelContextLimit, providers];
+        })();
 
         // Get session config if sessionId is provided
         let sessionSummary: string | undefined;
+        let pastedTextMap: Record<string, string> = {};
+        let pastedImageMap: Record<string, string> = {};
         if (data.sessionId) {
           try {
             const sessionConfigManager = new SessionConfigManager({
               logPath: context.paths.getSessionLogPath(data.sessionId),
             });
             sessionSummary = sessionConfigManager.config.summary;
+            pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
+            pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
           } catch (error) {
             // Silently ignore if session config not available
           }
@@ -97,8 +114,11 @@ class NodeHandlerRegistry {
             version: context.version,
             model,
             modelContextLimit,
+            providers,
             approvalMode: context.config.approvalMode,
             sessionSummary,
+            pastedTextMap,
+            pastedImageMap,
           },
         };
       },
@@ -112,8 +132,9 @@ class NodeHandlerRegistry {
         sessionId: string | undefined;
         planMode: boolean;
         model?: string;
+        attachments?: ImagePart[];
       }) => {
-        const { message, cwd, sessionId, model } = data;
+        const { message, cwd, sessionId, model, attachments } = data;
         const context = await this.getContext(cwd);
         const project = new Project({
           sessionId,
@@ -122,12 +143,27 @@ class NodeHandlerRegistry {
         const abortController = new AbortController();
         const key = buildSignalKey(cwd, project.session.id);
         this.abortControllers.set(key, abortController);
+
         const fn = data.planMode ? project.plan : project.send;
         const result = await fn.call(project, message, {
+          attachments,
           model,
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {
               message: opts.message,
+            });
+          },
+          onTextDelta: async (text) => {
+            await this.messageBus.emitEvent('textDelta', {
+              text,
+            });
+          },
+          onChunk: async (chunk, requestId) => {
+            await this.messageBus.emitEvent('chunk', {
+              chunk,
+              requestId,
+              sessionId,
+              cwd,
             });
           },
           onToolApprove: async ({ toolUse, category }: any) => {
@@ -315,7 +351,17 @@ class NodeHandlerRegistry {
           null,
           context,
         );
-        const currentModel = `${model.provider.id}/${model.model.id}`;
+        const currentModel = model
+          ? `${model.provider.id}/${model.model.id}`
+          : null;
+        const currentModelInfo = model
+          ? {
+              providerName: model.provider.name,
+              modelName: model.model.name,
+              modelId: model.model.id,
+              modelContextLimit: model.model.limit.context,
+            }
+          : null;
         const groupedModels = Object.values(
           providers as Record<string, Provider>,
         ).map((provider) => ({
@@ -332,11 +378,7 @@ class NodeHandlerRegistry {
           data: {
             groupedModels,
             currentModel,
-            currentModelInfo: {
-              providerName: model.provider.name,
-              modelName: model.model.name,
-              modelId: model.model.id,
-            },
+            currentModelInfo,
           },
         };
       },
@@ -519,10 +561,10 @@ class NodeHandlerRegistry {
       }) => {
         const { cwd, messages } = data;
         const context = await this.getContext(cwd);
-        const modelInfo = (await resolveModelWithContext(null, context)).model;
+        const model = (await resolveModelWithContext(null, context)).model!;
         const summary = await compact({
           messages,
-          model: modelInfo,
+          model,
         });
         return {
           success: true,
@@ -599,6 +641,46 @@ class NodeHandlerRegistry {
           logPath: context.paths.getSessionLogPath(sessionId),
         });
         sessionConfigManager.config.summary = summary;
+        sessionConfigManager.write();
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'sessionConfig.setPastedTextMap',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        pastedTextMap: Record<string, string>;
+      }) => {
+        const { cwd, sessionId, pastedTextMap } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        sessionConfigManager.config.pastedTextMap = pastedTextMap;
+        sessionConfigManager.write();
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'sessionConfig.setPastedImageMap',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        pastedImageMap: Record<string, string>;
+      }) => {
+        const { cwd, sessionId, pastedImageMap } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        sessionConfigManager.config.pastedImageMap = pastedImageMap;
         sessionConfigManager.write();
         return {
           success: true,

@@ -2,7 +2,7 @@ import { setTraceProcessors } from '@openai/agents';
 import assert from 'assert';
 import { render } from 'ink';
 import React from 'react';
-import yargsParser from 'yargs-parser';
+import { runServerNext } from './commands/servernext/server';
 import { Context } from './context';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
@@ -53,7 +53,8 @@ type Argv = {
   plugin: string[];
 };
 
-function parseArgs(argv: any) {
+async function parseArgs(argv: any) {
+  const { default: yargsParser } = await import('yargs-parser');
   const args = yargsParser(argv, {
     alias: {
       model: 'm',
@@ -251,7 +252,7 @@ export async function runNeovate(opts: {
 }) {
   // clear tracing
   setTraceProcessors([]);
-  const argv = parseArgs(process.argv.slice(2));
+  const argv = await parseArgs(process.argv.slice(2));
   if (argv.help) {
     printHelp(opts.productName.toLowerCase());
     return;
@@ -275,10 +276,15 @@ export async function runNeovate(opts: {
     plugins: opts.plugins,
   };
 
-  // TODO: support other commands
   // sub commands
-  const validCommands = ['config', 'commit', 'mcp', 'run', 'log', 'server'];
   const command = argv._[0];
+  if (command === 'servernext') {
+    await runServerNext({
+      contextCreateOpts,
+    });
+    return;
+  }
+  const validCommands = ['config', 'commit', 'mcp', 'run', 'log', 'server'];
   if (validCommands.includes(command)) {
     const context = await Context.create({
       cwd: argv.cwd || process.cwd(),

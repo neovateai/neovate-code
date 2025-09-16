@@ -1,6 +1,84 @@
 import { CANCELED_MESSAGE_TEXT } from './constants';
-import type { Message, NormalizedMessage } from './history';
+import type { ToolResult } from './tool';
 import { randomUUID } from './utils/randomUUID';
+
+export type SystemMessage = {
+  role: 'system';
+  content: string;
+};
+export type TextPart = {
+  type: 'text';
+  text: string;
+};
+
+export type ImagePart = {
+  type: 'image';
+  data: string;
+  mimeType: string;
+};
+
+export type FilePart = {
+  type: 'file';
+  filename?: string;
+  data: string;
+  mimeType: string;
+};
+export type UserContent = string | Array<TextPart | ImagePart>;
+export type ToolUsePart = {
+  type: 'tool_use';
+  id: string;
+  name: string;
+  input: Record<string, any>;
+  displayName?: string;
+  description?: string;
+};
+export type ReasoningPart = {
+  type: 'reasoning';
+  text: string;
+};
+export type AssistantContent =
+  | string
+  | Array<TextPart | ReasoningPart | ToolUsePart>;
+export type AssistantMessage = {
+  role: 'assistant';
+  content: AssistantContent;
+  text: string;
+  model: string;
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
+    cache_read_input_tokens?: number;
+    cache_creation_input_tokens?: number;
+  };
+};
+export type UserMessage = {
+  role: 'user';
+  content: UserContent;
+  hidden?: boolean;
+};
+export type ToolMessage = {
+  role: 'user';
+  content: ToolContent;
+};
+export type ToolContent = Array<ToolResultPart>;
+export type ToolResultPart = {
+  type: 'tool_result';
+  id: string;
+  name: string;
+  input: Record<string, any>;
+  result: ToolResult;
+};
+export type Message =
+  | SystemMessage
+  | UserMessage
+  | AssistantMessage
+  | ToolMessage;
+export type NormalizedMessage = Message & {
+  type: 'message';
+  timestamp: string;
+  uuid: string;
+  parentUuid: string | null;
+};
 
 export function createUserMessage(
   content: string,

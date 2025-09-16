@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { ModelInfo } from '../model';
 import { query } from '../query';
 import { createTool } from '../tool';
-import type { FetchToolResult } from './type';
+import { safeStringify } from '../utils/safeStringify';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5min
 const urlCache = new Map();
@@ -21,20 +21,25 @@ Remembers:
       url: z.string().describe('The url to fetch content from'),
       prompt: z.string().describe('The prompt to run on the fetched content'),
     }),
-    execute: async ({ url, prompt }): Promise<FetchToolResult> => {
+    getDescription: ({ params }) => {
+      if (!params.url || typeof params.url !== 'string') {
+        return 'No URL provided';
+      }
+      return params.url;
+    },
+    execute: async ({ url, prompt }) => {
       try {
         const startTime = Date.now();
         const key = `${url}-${prompt}`;
         const cached = urlCache.get(key);
         if (cached && cached.durationMs < CACHE_TTL_MS) {
           return {
-            success: true,
-            message: `Successfully fetched content from ${url} (cached)`,
-            data: {
+            returnDisplay: `Successfully fetched content from ${url} (cached)`,
+            llmContent: safeStringify({
               ...cached,
               cached: true,
               durationMs: Date.now() - startTime,
-            },
+            }),
           };
         }
 
@@ -102,14 +107,13 @@ Provide a concise response based only on the content above. In your response:
         };
         urlCache.set(key, data);
         return {
-          success: true,
-          message: `Successfully fetched content from ${url}`,
-          data,
+          llmContent: safeStringify(data),
+          returnDisplay: `Successfully fetched content from ${url}`,
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
     },

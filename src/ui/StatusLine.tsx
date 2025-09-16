@@ -1,4 +1,4 @@
-import { Box, Spacer, Text } from 'ink';
+import { Box, Text } from 'ink';
 import path from 'path';
 import React, { useMemo } from 'react';
 import { useAppStore } from './store';
@@ -14,12 +14,10 @@ function HelpHint() {
   );
 }
 
-function getMoodEmoji(percentage: number): string {
-  if (percentage >= 80) return '😎';
-  if (percentage >= 60) return '😊';
-  if (percentage >= 40) return '🤔';
-  if (percentage >= 20) return '😟';
-  return '😱';
+function getContextLeftColor(percentage: number): string {
+  if (percentage >= 30) return 'green';
+  if (percentage >= 10) return 'yellow';
+  return 'red';
 }
 
 function StatusMain() {
@@ -63,16 +61,23 @@ function StatusMain() {
   const folderName = path.basename(cwd);
   if (status === 'help') return <HelpHint />;
   if (exitMessage) return <Text color="gray">{exitMessage}</Text>;
+  const approval = (() => {
+    if (approvalMode === 'default') return null;
+    const color = approvalMode === 'yolo' ? 'red' : 'magenta';
+    return (
+      <>
+        | <Text color={color}>{approvalMode}</Text>{' '}
+      </>
+    );
+  })();
   return (
     <Box>
       <Text color="gray">
-        📁 {folderName} | 🤖 {model} | 🍖 {tokenUsed} tokens used |{' '}
-        {getMoodEmoji(contextLeftPercentage)} {contextLeftPercentage}% context
-        left | ✅{' '}
-        <Text color={approvalMode === 'yolo' ? 'red' : 'gray'}>
-          {approvalMode}
+        [{model}] | 📁 {folderName} | 🪙 {(tokenUsed / 1000).toFixed(1)}K |{' '}
+        <Text color={getContextLeftColor(contextLeftPercentage)}>
+          {contextLeftPercentage}%
         </Text>{' '}
-        | 🆔 {sessionId || 'N/A'}
+        {approval}| 🆔 {sessionId || 'N/A'}
       </Text>
     </Box>
   );

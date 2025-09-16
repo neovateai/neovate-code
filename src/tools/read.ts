@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import { IMAGE_EXTENSIONS } from '../constants';
-import { createTool } from '../tool';
-import type { ReadToolResult } from './type';
+import { type ToolResult, createTool } from '../tool';
+import { safeStringify } from '../utils/safeStringify';
 
 type ImageMediaType =
   | 'image/jpeg'
@@ -31,20 +31,17 @@ function getImageMimeType(ext: string): ImageMediaType {
   return mimeTypes[ext] || 'image/jpeg';
 }
 
-function createImageResponse(buffer: Buffer, ext: string) {
+function createImageResponse(buffer: Buffer, ext: string): ToolResult {
   const mimeType = getImageMimeType(ext);
+  const base64 = buffer.toString('base64');
+  const data = `data:${mimeType};base64,${base64}`;
   return {
-    success: true,
-    message: 'Read image file successfully.',
-    data: {
-      type: 'image',
-      mimeType,
-      content: buffer.toString('base64'),
-    },
+    llmContent: [{ type: 'image', data, mimeType }],
+    returnDisplay: 'Read image file successfully.',
   };
 }
 
-async function processImage(filePath: string): Promise<any> {
+async function processImage(filePath: string): Promise<ToolResult> {
   try {
     const stats = fs.statSync(filePath);
     const ext = path.extname(filePath).toLowerCase();
@@ -106,7 +103,13 @@ Usage:
           `The number of lines to read. Only provide if the file is too large to read at once`,
         ),
     }),
-    execute: async ({ file_path, offset, limit }): Promise<ReadToolResult> => {
+    getDescription: ({ params, cwd }) => {
+      if (!params.file_path || typeof params.file_path !== 'string') {
+        return 'No file path provided';
+      }
+      return path.relative(cwd, params.file_path);
+    },
+    execute: async ({ file_path, offset, limit }) => {
       try {
         // Validate parameters
         if (offset !== undefined && offset !== null && offset < 1) {
@@ -164,12 +167,11 @@ Usage:
         const actualLinesRead = selectedLines.length;
 
         return {
-          success: true,
-          message:
+          returnDisplay:
             offset !== undefined || limit !== undefined
               ? `Read ${actualLinesRead} lines (from line ${startLine + 1} to ${endLine}).`
               : `Read ${actualLinesRead} lines.`,
-          data: {
+          llmContent: safeStringify({
             type: 'text',
             filePath: file_path,
             content: processedContent,
@@ -177,12 +179,12 @@ Usage:
             offset: startLine + 1, // Convert back to 1-based
             limit: actualLimit,
             actualLinesRead,
-          },
+          }),
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
     },

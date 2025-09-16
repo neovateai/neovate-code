@@ -32,6 +32,7 @@ interface ModelLimit {
 export interface Model {
   id: string;
   name: string;
+  shortName?: string;
   attachment: boolean;
   reasoning: boolean;
   temperature: boolean;
@@ -49,6 +50,7 @@ export interface Provider {
   id: string;
   env: string[];
   name: string;
+  apiEnv?: string[];
   api?: string;
   doc: string;
   models: Record<string, Omit<Model, 'id' | 'cost'>>;
@@ -61,6 +63,7 @@ export type ModelMap = Record<string, Omit<Model, 'id' | 'cost'>>;
 export const models: ModelMap = {
   'deepseek-v3-0324': {
     name: 'DeepSeek-V3-0324',
+    shortName: 'DeepSeek V3',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -74,6 +77,7 @@ export const models: ModelMap = {
   },
   'deepseek-v3-1': {
     name: 'DeepSeek-V3.1',
+    shortName: 'DeepSeek V3.1',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -87,6 +91,7 @@ export const models: ModelMap = {
   },
   'deepseek-r1-0528': {
     name: 'DeepSeek-R1-0528',
+    shortName: 'DeepSeek R1',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -126,6 +131,7 @@ export const models: ModelMap = {
   },
   'kimi-k2-0905': {
     name: 'Kimi K2 Instruct 0905',
+    shortName: 'Kimi K2 0905',
     attachment: false,
     reasoning: false,
     temperature: true,
@@ -139,6 +145,7 @@ export const models: ModelMap = {
   },
   'qwen3-coder-480b-a35b-instruct': {
     name: 'Qwen3-Coder-480B-A35B-Instruct',
+    shortName: 'Qwen3 Coder',
     attachment: false,
     reasoning: false,
     temperature: true,
@@ -152,6 +159,7 @@ export const models: ModelMap = {
   },
   'qwen3-235b-a22b-07-25': {
     name: 'Qwen3 235B A22B Instruct 2507',
+    shortName: 'Qwen3',
     attachment: false,
     reasoning: false,
     temperature: true,
@@ -194,6 +202,7 @@ export const models: ModelMap = {
   },
   'gemini-2.5-flash-lite-preview-06-17': {
     name: 'Gemini 2.5 Flash Lite Preview 06-17',
+    shortName: 'Gemini 2.5 Flash Lite',
     attachment: true,
     reasoning: true,
     temperature: true,
@@ -252,6 +261,7 @@ export const models: ModelMap = {
   },
   'claude-3-5-sonnet-20241022': {
     name: 'Claude Sonnet 3.5 v2',
+    shortName: 'Sonnet 3.5',
     attachment: true,
     reasoning: false,
     temperature: true,
@@ -265,6 +275,7 @@ export const models: ModelMap = {
   },
   'claude-3-7-sonnet': {
     name: 'Claude Sonnet 3.7',
+    shortName: 'Sonnet 3.7',
     attachment: true,
     reasoning: true,
     temperature: true,
@@ -278,6 +289,7 @@ export const models: ModelMap = {
   },
   'claude-4-sonnet': {
     name: 'Claude Sonnet 4',
+    shortName: 'Sonnet 4',
     attachment: true,
     reasoning: true,
     temperature: true,
@@ -291,6 +303,7 @@ export const models: ModelMap = {
   },
   'claude-4-opus': {
     name: 'Claude Opus 4',
+    shortName: 'Opus 4',
     attachment: true,
     reasoning: true,
     temperature: true,
@@ -304,6 +317,7 @@ export const models: ModelMap = {
   },
   'gpt-oss-120b': {
     name: 'GPT OSS 120B',
+    shortName: 'GPT OSS',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -436,7 +450,7 @@ export const models: ModelMap = {
     limit: { context: 200000, output: 100000 },
   },
   'glm-4.5': {
-    name: 'GLM-4.5',
+    name: 'GLM 4.5',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -476,10 +490,24 @@ export const models: ModelMap = {
   },
 };
 
+function getProviderApi(provider: Provider) {
+  let api = provider.api;
+  for (const env of provider.apiEnv || []) {
+    if (process.env[env]) {
+      api = process.env[env];
+      break;
+    }
+  }
+  return api;
+}
+
 export const defaultModelCreator = (name: string, provider: Provider) => {
-  assert(provider.api, `Provider ${provider.id} must have an api`);
+  if (provider.id !== 'openai') {
+    assert(provider.api, `Provider ${provider.id} must have an api`);
+  }
+  const api = getProviderApi(provider);
   return createOpenAI({
-    baseURL: provider.api,
+    baseURL: api,
     apiKey: provider.env[0] ? process.env[provider.env[0]] : '',
   })(name);
 };
@@ -488,6 +516,7 @@ export const providers: ProvidersMap = {
   openai: {
     id: 'openai',
     env: ['OPENAI_API_KEY'],
+    apiEnv: ['OPENAI_API_BASE'],
     name: 'OpenAI',
     doc: 'https://platform.openai.com/docs/models',
     models: {
@@ -505,6 +534,7 @@ export const providers: ProvidersMap = {
   google: {
     id: 'google',
     env: ['GOOGLE_API_KEY', 'GOOGLE_GENERATIVE_AI_API_KEY'],
+    apiEnv: ['GOOGLE_GENERATIVE_AI_API_BASE'],
     name: 'Google',
     doc: 'https://ai.google.dev/gemini-api/docs/pricing',
     models: {
@@ -513,8 +543,10 @@ export const providers: ProvidersMap = {
       'gemini-2.5-pro': models['gemini-2.5-pro'],
     },
     createModel(name, provider) {
+      const api = getProviderApi(provider);
       const google = createGoogleGenerativeAI({
         apiKey: process.env[provider.env[0]] || process.env[provider.env[1]],
+        baseURL: api,
       });
       return google(name);
     },
@@ -524,6 +556,7 @@ export const providers: ProvidersMap = {
     env: ['DEEPSEEK_API_KEY'],
     name: 'DeepSeek',
     api: 'https://api.deepseek.com',
+    apiEnv: ['DEEPSEEK_API_BASE'],
     doc: 'https://platform.deepseek.com/api-docs/pricing',
     models: {
       'deepseek-chat': models['deepseek-v3-0324'],
@@ -541,7 +574,9 @@ export const providers: ProvidersMap = {
       'grok-code-fast-1': models['grok-code-fast-1'],
     },
     createModel(name, provider) {
+      const api = getProviderApi(provider);
       return createXai({
+        baseURL: api,
         apiKey: process.env[provider.env[0]],
       })(name);
     },
@@ -559,8 +594,10 @@ export const providers: ProvidersMap = {
       'claude-3-5-sonnet-20241022': models['claude-3-5-sonnet-20241022'],
     },
     createModel(name, provider) {
+      const api = getProviderApi(provider);
       return createAnthropic({
         apiKey: process.env[provider.env[0]],
+        baseURL: api,
       })(name);
     },
   },
@@ -744,11 +781,10 @@ export async function resolveModelWithContext(
     memo: modelAlias,
     type: PluginHookType.SeriesLast,
   });
-  const model = resolveModel(
-    name || context.config.model,
-    hookedProviders,
-    hookedModelAlias,
-  );
+  const modelName = name || context.config.model;
+  const model = modelName
+    ? resolveModel(modelName, hookedProviders, hookedModelAlias)
+    : null;
   return {
     providers: hookedProviders,
     modelAlias,

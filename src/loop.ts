@@ -1,9 +1,10 @@
 import { Agent, Runner, type SystemMessageItem } from '@openai/agents';
 import createDebug from 'debug';
 import { At } from './at';
-import { History, type NormalizedMessage, type OnMessage } from './history';
+import { History, type OnMessage } from './history';
+import type { NormalizedMessage, ToolUsePart } from './message';
 import type { ModelInfo } from './model';
-import type { Tools } from './tool';
+import type { ToolResult, ToolUse, Tools } from './tool';
 import { Usage } from './usage';
 import { parseMessage } from './utils/parse-message';
 import { randomUUID } from './utils/randomUUID';
@@ -56,12 +57,13 @@ type RunLoopOpts = {
   onTextDelta?: (text: string) => Promise<void>;
   onText?: (text: string) => Promise<void>;
   onReasoning?: (text: string) => Promise<void>;
+  onChunk?: (chunk: any, requestId: string) => Promise<void>;
   onToolUse?: (toolUse: ToolUse) => Promise<ToolUse>;
   onToolResult?: (
     toolUse: ToolUse,
-    toolResult: any,
+    toolResult: ToolResult,
     approved: boolean,
-  ) => Promise<any>;
+  ) => Promise<ToolResult>;
   onTurn?: (turn: {
     usage: Usage;
     startTime: Date;
@@ -151,6 +153,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
       input: agentInput,
       cwd: opts.cwd,
     });
+    const requestId = randomUUID();
     const result = await runner.run(agent, agentInput, {
       stream: true,
       // why comment out this?
@@ -174,6 +177,9 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
             },
           };
         }
+
+        // Call onChunk for all chunks
+        await opts.onChunk?.(chunk, requestId);
 
         if (
           chunk.type === 'raw_model_stream_event' &&
@@ -269,30 +275,46 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
       endTime,
     });
     const model = `${opts.model.provider.id}/${opts.model.model.id}`;
-    await history.addMessage({
-      role: 'assistant',
-      content: parsed.map((item) => {
-        if (item.type === 'text') {
-          return {
-            type: 'text',
-            text: item.content,
-          };
-        } else {
-          return {
-            type: 'tool_use',
-            id: item.callId!,
-            name: item.name,
-            input: item.params,
-          };
-        }
-      }),
-      text,
-      model,
-      usage: {
-        input_tokens: lastUsage.promptTokens,
-        output_tokens: lastUsage.completionTokens,
+    await history.addMessage(
+      {
+        role: 'assistant',
+        content: parsed.map((item) => {
+          if (item.type === 'text') {
+            return {
+              type: 'text',
+              text: item.content,
+            };
+          } else {
+            const tool = opts.tools.get(item.name);
+            const description = tool?.getDescription?.({
+              params: item.params,
+              cwd: opts.cwd,
+            });
+            const displayName = tool?.displayName;
+            const toolUse: ToolUsePart = {
+              type: 'tool_use',
+              id: item.callId!,
+              name: item.name,
+              input: item.params,
+            };
+            if (description) {
+              toolUse.description = description;
+            }
+            if (displayName) {
+              toolUse.displayName = displayName;
+            }
+            return toolUse;
+          }
+        }),
+        text,
+        model,
+        usage: {
+          input_tokens: lastUsage.promptTokens,
+          output_tokens: lastUsage.completionTokens,
+        },
       },
-    });
+      requestId,
+    );
     let toolUse = parsed.find((item) => item.type === 'tool_use') as ToolUse;
     if (toolUse) {
       if (opts.onToolUse) {
@@ -319,13 +341,15 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
               name: toolUse.name,
               input: toolUse.params,
               result: toolResult,
-              // TODO: more isError cases
-              isError: !approved,
             },
           ],
         });
       } else {
-        let toolResult = 'Tool execution was denied by user.';
+        const message = 'Error: Tool execution was denied by user.';
+        let toolResult: ToolResult = {
+          llmContent: message,
+          isError: true,
+        };
         if (opts.onToolResult) {
           toolResult = await opts.onToolResult(toolUse, toolResult, approved);
         }
@@ -338,7 +362,6 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
               name: toolUse.name,
               input: toolUse.params,
               result: toolResult,
-              isError: true,
             },
           ],
         });
@@ -346,7 +369,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
           success: false,
           error: {
             type: 'tool_denied',
-            message: toolResult,
+            message,
             details: {
               toolUse,
               history,

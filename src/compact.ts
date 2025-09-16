@@ -1,4 +1,4 @@
-import type { NormalizedMessage } from './history';
+import type { NormalizedMessage } from './message';
 import { type ModelInfo } from './model';
 import { query } from './query';
 

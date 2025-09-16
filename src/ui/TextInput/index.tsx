@@ -2,9 +2,25 @@ import chalk from 'chalk';
 import { Text, useInput } from 'ink';
 import { type Key } from 'ink';
 import React from 'react';
+import { PASTE_CONFIG } from '../constants';
 import { darkTheme } from './constant';
 import { useTextInput } from './hooks/useTextInput';
 import { isImagePath, processImageFromPath } from './utils/imagePaste';
+
+// Helper function to insert text at cursor position
+function insertTextAtCursor(
+  text: string,
+  originalValue: string,
+  cursorOffset: number,
+): { newValue: string; newCursorOffset: number } {
+  const safeOffset = Math.max(0, Math.min(cursorOffset, originalValue.length));
+  const beforeCursor = originalValue.slice(0, safeOffset);
+  const afterCursor = originalValue.slice(safeOffset);
+  return {
+    newValue: beforeCursor + text + afterCursor,
+    newCursorOffset: safeOffset + text.length,
+  };
+}
 
 export type Props = {
   /**
@@ -96,12 +112,14 @@ export type Props = {
   /**
    * Optional callback when an image is pasted
    */
-  readonly onImagePaste?: (base64Image: string) => void;
+  readonly onImagePaste?: (
+    base64Image: string,
+  ) => Promise<{ prompt?: string }> | void;
 
   /**
    * Optional callback when a large text (over 800 chars) is pasted
    */
-  readonly onPaste?: (text: string) => void;
+  readonly onPaste?: (text: string) => Promise<{ prompt?: string }> | void;
 
   /**
    * Whether the input is dimmed and non-interactive
@@ -178,12 +196,20 @@ export default function TextInput({
     onTabPress,
   });
 
-  // Enhanced paste detection state with image path support
-  // Use ref to avoid state race conditions during fast sequential updates
+  // Enhanced paste detection state for multi-chunk text merging
   const pasteStateRef = React.useRef<{
     chunks: string[];
     timeoutId: ReturnType<typeof setTimeout> | null;
-  }>({ chunks: [], timeoutId: null });
+    firstInputTime: number | null;
+    lastInputTime: number | null;
+    totalLength: number;
+  }>({
+    chunks: [],
+    timeoutId: null,
+    firstInputTime: null,
+    lastInputTime: null,
+    totalLength: 0,
+  });
 
   // Check if text matches image path format
   const isImagePathText = (text: string): boolean => {
@@ -197,8 +223,8 @@ export default function TextInput({
     }
   };
 
-  // Enhanced paste timeout with image path detection
-  const resetPasteTimeout = () => {
+  // Enhanced paste timeout with chunk merging for multi-part pastes
+  const processPendingChunks = () => {
     const currentState = pasteStateRef.current;
     if (currentState.timeoutId) {
       clearTimeout(currentState.timeoutId);
@@ -206,65 +232,172 @@ export default function TextInput({
 
     const timeoutId = setTimeout(() => {
       const chunks = pasteStateRef.current.chunks;
-      const pastedText = chunks.join('');
+      const totalLength = pasteStateRef.current.totalLength;
 
-      // Reset state immediately to prevent data loss
-      pasteStateRef.current = { chunks: [], timeoutId: null };
+      if (chunks.length === 0) return;
 
-      // Check if pasted content might be an image path
-      if (onImagePaste && isImagePathText(pastedText)) {
+      const mergedInput = chunks.join('');
+
+      // Reset state for next input sequence
+      pasteStateRef.current = {
+        chunks: [],
+        timeoutId: null,
+        firstInputTime: null,
+        lastInputTime: null,
+        totalLength: 0,
+      };
+
+      // Check if merged content might be an image path
+      if (onImagePaste && isImagePathText(mergedInput)) {
         // Try to process as image path
         (async () => {
           try {
-            const imageResult = await processImageFromPath(pastedText);
+            const imageResult = await processImageFromPath(mergedInput);
             if (imageResult) {
-              // Successfully loaded image from path
-              onImagePaste(imageResult.base64);
+              const imagePromptResult = await onImagePaste(imageResult.base64);
+              if (imagePromptResult?.prompt) {
+                const { newValue, newCursorOffset } = insertTextAtCursor(
+                  imagePromptResult.prompt,
+                  originalValue,
+                  cursorOffset,
+                );
+                onChange(newValue);
+                onChangeCursorOffset(newCursorOffset);
+              }
             } else {
               // Not a valid image path, treat as regular text
-              onPaste?.(pastedText);
+              const result = await onPaste?.(mergedInput);
+              if (result?.prompt) {
+                const { newValue, newCursorOffset } = insertTextAtCursor(
+                  result.prompt,
+                  originalValue,
+                  cursorOffset,
+                );
+                onChange(newValue);
+                onChangeCursorOffset(newCursorOffset);
+              }
             }
           } catch (error) {
             // Error processing image, treat as regular text
             console.error('Failed to process image path:', error);
-            onPaste?.(pastedText);
+            const result = await onPaste?.(mergedInput);
+            if (result?.prompt) {
+              const { newValue, newCursorOffset } = insertTextAtCursor(
+                result.prompt,
+                originalValue,
+                cursorOffset,
+              );
+              onChange(newValue);
+              onChangeCursorOffset(newCursorOffset);
+            }
           }
         })();
       } else {
-        // Regular text paste processing - call synchronously to prevent loss
-        onPaste?.(pastedText);
+        // Process as regular paste if it meets paste criteria
+        // Multiple conditions to detect paste behavior:
+        // 1. Large total content
+        // 2. Multiple chunks indicating paste behavior
+        // 3. Content with multiple lines (common in code/text paste)
+        // 4. Medium-sized content with multiple chunks (lower threshold for multi-chunk)
+        const hasMultipleLines = mergedInput.includes('\n');
+        const isMediumSizeMultiChunk =
+          totalLength > PASTE_CONFIG.MEDIUM_SIZE_MULTI_CHUNK_THRESHOLD &&
+          chunks.length > 1;
+        const isPastePattern =
+          totalLength > PASTE_CONFIG.LARGE_INPUT_THRESHOLD ||
+          chunks.length > 2 ||
+          hasMultipleLines ||
+          isMediumSizeMultiChunk;
+        if (isPastePattern) {
+          (async () => {
+            const result = await onPaste?.(mergedInput);
+            if (result?.prompt) {
+              const { newValue, newCursorOffset } = insertTextAtCursor(
+                result.prompt,
+                originalValue,
+                cursorOffset,
+              );
+              onChange(newValue);
+              onChangeCursorOffset(newCursorOffset);
+            }
+          })();
+        } else {
+          // Process each chunk as individual input if not paste-like
+          chunks.forEach((chunk) =>
+            onInput(chunk, { name: '' } as unknown as Key),
+          );
+        }
       }
-    }, 300); // 增加超时时间从100ms到300ms，提高大量文本粘贴的可靠性
+    }, PASTE_CONFIG.TIMEOUT_MS);
 
     pasteStateRef.current.timeoutId = timeoutId;
   };
 
   const wrappedOnInput = (input: string, key: Key): void => {
-    // Check if input might be an image path (immediate check for small inputs)
     const isImageFormat = isImagePathText(input);
+    const currentState = pasteStateRef.current;
+    const currentTime = Date.now();
 
-    // Handle pastes (>600 chars) or potential image paths or existing timeout
-    // Lower threshold to catch more paste scenarios
-    // Usually we get one or two input characters at a time. If we
-    // get a bunch, the user has probably pasted.
-    // Unfortunately node batches long pastes, so it's possible
-    // that we would see e.g. 1024 characters and then just a few
-    // more in the next frame that belong with the original paste.
-    // This batching number is not consistent.
-    if (
+    // Initialize timing on first input
+    if (!currentState.firstInputTime) {
+      currentState.firstInputTime = currentTime;
+    }
+    currentState.lastInputTime = currentTime;
+
+    // Calculate time since first input in this sequence
+    const timeSinceFirst =
+      currentTime - (currentState.firstInputTime || currentTime);
+
+    // Detect paste patterns:
+    // 1. Large single input
+    // 2. Image path format
+    // 3. Rapid consecutive inputs
+    // 4. Already collecting chunks (continuation of paste)
+    // 5. Input with multiple lines (common in paste operations)
+    // 6. Medium-sized input (likely copy-paste even if not huge)
+    const isLargeInput = input.length > PASTE_CONFIG.LARGE_INPUT_THRESHOLD;
+    const hasNewlines = input.includes('\n');
+    const isMediumInput =
+      input.length > PASTE_CONFIG.MEDIUM_INPUT_SIZE_THRESHOLD;
+    const isRapidSequence =
+      timeSinceFirst < PASTE_CONFIG.RAPID_INPUT_THRESHOLD_MS &&
+      currentState.chunks.length > 0;
+    const isNewRapidInput =
+      timeSinceFirst < PASTE_CONFIG.RAPID_INPUT_THRESHOLD_MS &&
+      input.length > 10;
+    const isAlreadyCollecting = currentState.timeoutId !== null;
+
+    const isPasteCandidate =
       onPaste &&
-      (input.length > 600 || pasteStateRef.current.timeoutId || isImageFormat)
-    ) {
-      // Use ref to avoid state race conditions
-      pasteStateRef.current.chunks.push(input);
-      resetPasteTimeout();
+      (isLargeInput ||
+        hasNewlines ||
+        isMediumInput ||
+        isImageFormat ||
+        isRapidSequence ||
+        isNewRapidInput ||
+        isAlreadyCollecting);
+
+    if (isPasteCandidate) {
+      // Add to chunks for merging
+      currentState.chunks.push(input);
+      currentState.totalLength += input.length;
+      processPendingChunks();
       return;
     }
 
+    // Reset state for normal single character input
+    if (input.length === 1 && !currentState.timeoutId) {
+      currentState.chunks = [];
+      currentState.firstInputTime = null;
+      currentState.lastInputTime = null;
+      currentState.totalLength = 0;
+    }
+
+    // Process as regular input immediately
     onInput(input, key);
   };
 
-  // Cleanup timeout on unmount
+  // Cleanup timeout on unmount and reset state
   React.useEffect(() => {
     return () => {
       if (pasteStateRef.current.timeoutId) {
