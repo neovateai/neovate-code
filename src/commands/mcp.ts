@@ -120,6 +120,7 @@ export async function runMCP(context: Context) {
       'mcpServers',
       JSON.stringify(mcpServers),
     );
+    console.log(`Added ${key} to ${configPath}`);
   }
 
   // remove
