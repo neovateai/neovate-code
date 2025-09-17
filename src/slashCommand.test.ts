@@ -10,6 +10,9 @@ describe('isSlashCommand', () => {
     expect(isSlashCommand('/help src/demo.md')).toBe(true);
     expect(isSlashCommand('/help /demo/a')).toBe(true);
     expect(isSlashCommand('/help /demo')).toBe(true);
+    expect(isSlashCommand('/help /demo/a.ts')).toBe(true);
+    expect(isSlashCommand('/g:review')).toBe(true);
+    expect(isSlashCommand('/g:review /demo')).toBe(true);
     expect(isSlashCommand('/')).toBe(false);
   });
 
