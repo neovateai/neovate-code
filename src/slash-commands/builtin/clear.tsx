@@ -5,7 +5,7 @@ import { type LocalJSXCommand } from '../types';
 export const clearCommand: LocalJSXCommand = {
   type: 'local-jsx',
   name: 'clear',
-  description: 'Clear the chat messages',
+  description: 'Start a new session',
   async call(onDone) {
     return React.createElement(() => {
       const { clear } = useAppStore();

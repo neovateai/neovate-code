@@ -240,6 +240,8 @@ export type Plugin = {
   // /status
   status?: (this: PluginContext) => Promise<Status> | Status;
 
+  destroy?: (this: PluginContext) => Promise<void> | void;
+
   // server
   _serverAppData?: (
     this: PluginContext,

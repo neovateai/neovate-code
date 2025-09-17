@@ -38,6 +38,7 @@ type Argv = {
   mcp: boolean;
   quiet: boolean;
   continue?: boolean;
+  version: boolean;
   // string
   appendSystemPrompt?: string;
   approvalMode?: string;
@@ -62,12 +63,13 @@ async function parseArgs(argv: any) {
       resume: 'r',
       quiet: 'q',
       continue: 'c',
+      version: 'v',
     },
     default: {
       mcp: true,
     },
     array: ['plugin'],
-    boolean: ['help', 'mcp', 'quiet', 'continue'],
+    boolean: ['help', 'mcp', 'quiet', 'continue', 'version'],
     string: [
       'appendSystemPrompt',
       'approvalMode',
@@ -276,6 +278,10 @@ export async function runNeovate(opts: {
     plugins: opts.plugins,
   };
 
+  if (argv.version) {
+    console.log(opts.version);
+    return;
+  }
   // sub commands
   const command = argv._[0];
   if (command === 'servernext') {

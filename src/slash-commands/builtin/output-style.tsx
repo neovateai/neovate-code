@@ -93,7 +93,7 @@ export function createOutputStyleCommand(): LocalJSXCommand {
   return {
     type: 'local-jsx',
     name: 'output-style',
-    description: 'Switch or display current output style',
+    description: 'Select an output style',
     async call(onDone) {
       const OutputStyleComponent = () => {
         return (
