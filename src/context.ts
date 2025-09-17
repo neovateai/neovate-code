@@ -118,8 +118,6 @@ export class Context {
     });
     tempContext.config = resolvedConfig;
     const mcpManager = MCPManager.create(resolvedConfig.mcpServers || {});
-    // init mcp manager but don't wait for it
-    mcpManager.initAsync();
     return new Context({
       cwd,
       productName,
