@@ -44,7 +44,7 @@ export function usePaths() {
   };
 }
 
-function useMatchedPaths(inputState: InputState): MatchResult {
+function useAtTriggeredPaths(inputState: InputState): MatchResult {
   const { value, cursorPosition } = inputState;
 
   // Find all @ mentions in the text (including quoted paths and escaped spaces)
@@ -211,7 +211,7 @@ export function useFileSuggestion(
   const { paths, isLoading, loadPaths } = usePaths();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const atMatch = useMatchedPaths(inputState);
+  const atMatch = useAtTriggeredPaths(inputState);
   const tabMatch = useTabTriggeredPaths(inputState, forceTabTrigger);
 
   // Prioritize @ trigger over tab trigger
@@ -221,12 +221,9 @@ export function useFileSuggestion(
   const matchedPaths = useMemo(() => {
     if (!hasQuery) return [];
     if (query === '') return paths;
-
-    const filteredPaths = paths.filter((path) => {
+    return paths.filter((path) => {
       return path.toLowerCase().includes(query.toLowerCase());
     });
-
-    return filteredPaths;
   }, [paths, hasQuery, query]);
 
   useEffect(() => {
