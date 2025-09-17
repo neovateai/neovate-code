@@ -1,5 +1,11 @@
+import assert from 'assert';
 import yargsParser from 'yargs-parser';
-import { ConfigManager } from '../config';
+import {
+  ConfigManager,
+  type McpHttpServerConfig,
+  type McpSSEServerConfig,
+  type McpStdioServerConfig,
+} from '../config';
 import { type Context } from '../context';
 
 function printHelp(p: string) {
@@ -51,7 +57,8 @@ export async function runMCP(context: Context) {
       env: 'e',
     },
     boolean: ['help', 'global', 'sse'],
-    string: ['env'],
+    array: ['env', 'header'],
+    string: ['transport'],
   });
   const command = argv._[0];
 
@@ -88,32 +95,69 @@ export async function runMCP(context: Context) {
 
   // add
   if (command === 'add') {
-    // neovate add mcp-server <name> -- npx abc --global -e API_KEY=123
     const key = argv._[1] as string | undefined;
     const value = argv._[2] as string | undefined;
     if (!key || !value) {
       console.error('Missing key or value');
       return;
     }
+    const transport = (argv.transport as string) || 'stdio';
+    assert(
+      transport === 'stdio' || transport === 'sse' || transport === 'http',
+      'Invalid transport, must be stdio, sse, or http',
+    );
     const mcpServers =
       (argv.global
         ? configManager.globalConfig.mcpServers
         : configManager.projectConfig.mcpServers) || {};
-    // Check if value looks like a URL
-    const isUrl = value.startsWith('http://') || value.startsWith('https://');
-
-    if (isUrl) {
+    const isHttpOrSse = transport === 'sse' || transport === 'http';
+    if (isHttpOrSse) {
+      const isUrl =
+        value.startsWith('http://') ||
+        value.startsWith('https://') ||
+        value.startsWith('//');
+      assert(isUrl, 'Value must be a URL for http or sse transport');
+      const headers = (() => {
+        if (argv.header) {
+          return (argv.header as string[]).reduce<Record<string, string>>(
+            (acc, header) => {
+              const [key, value] = header.split(':');
+              acc[key.trim()] = value.trim();
+              return acc;
+            },
+            {},
+          );
+        }
+      })();
       mcpServers[key] = {
         url: value,
-        ...(argv.sse && { type: 'sse' }),
-      };
+        type: transport,
+      } as McpSSEServerConfig | McpHttpServerConfig;
+      if (headers) {
+        mcpServers[key].headers = headers;
+      }
     } else {
       const [command, ...args] = argv._.slice(2) as string[];
+      const env = (() => {
+        if (argv.env) {
+          return (argv.env as string[]).reduce<Record<string, string>>(
+            (acc, env) => {
+              const [key, value] = env.split('=');
+              acc[key] = value;
+              return acc;
+            },
+            {},
+          );
+        }
+      })();
       mcpServers[key] = {
+        type: 'stdio',
         command,
         args,
-        env: argv.env ? JSON.parse(argv.env) : undefined,
-      };
+      } as McpStdioServerConfig;
+      if (env) {
+        mcpServers[key].env = env;
+      }
     }
     configManager.setConfig(
       argv.global,

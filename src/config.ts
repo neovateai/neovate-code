@@ -3,19 +3,29 @@ import fs from 'fs';
 import { homedir } from 'os';
 import path from 'pathe';
 
-type McpStdioServerConfig = {
-  type?: 'stdio';
+export type McpStdioServerConfig = {
+  type: 'stdio';
   command: string;
   args: string[];
   env?: Record<string, string>;
   disable?: boolean;
 };
-type McpSSEServerConfig = {
+export type McpSSEServerConfig = {
   type: 'sse';
   url: string;
   disable?: boolean;
+  headers?: Record<string, string>;
 };
-type McpServerConfig = McpStdioServerConfig | McpSSEServerConfig;
+export type McpHttpServerConfig = {
+  type: 'http';
+  url: string;
+  disable?: boolean;
+  headers?: Record<string, string>;
+};
+type McpServerConfig =
+  | McpStdioServerConfig
+  | McpSSEServerConfig
+  | McpHttpServerConfig;
 
 export type ApprovalMode = 'default' | 'autoEdit' | 'yolo';
 
