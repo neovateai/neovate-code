@@ -2,6 +2,7 @@ import defu from 'defu';
 import fs from 'fs';
 import { homedir } from 'os';
 import path from 'pathe';
+import type { Provider } from './model';
 
 export type McpStdioServerConfig = {
   type: 'stdio';
@@ -33,6 +34,8 @@ export type CommitConfig = {
   language: string;
 };
 
+export type ProviderConfig = Partial<Omit<Provider, 'createModel'>>;
+
 export type Config = {
   model: string;
   planModel: string;
@@ -41,6 +44,7 @@ export type Config = {
   approvalMode: ApprovalMode;
   plugins: string[];
   mcpServers: Record<string, McpServerConfig>;
+  provider?: Record<string, ProviderConfig>;
   systemPrompt?: string;
   todo?: boolean;
   /**
@@ -62,6 +66,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   approvalMode: 'default',
   plugins: [],
   mcpServers: {},
+  provider: {},
   todo: true,
   autoCompact: true,
   outputFormat: 'text',
@@ -77,9 +82,10 @@ const VALID_CONFIG_KEYS = [
   'commit',
   'outputStyle',
   'autoUpdate',
+  'provider',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
-const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit'];
+const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider'];
 const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact', 'autoUpdate'];
 
 export class ConfigManager {
