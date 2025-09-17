@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { createJiti } from 'jiti';
-import path from 'path';
+import path from 'pathe';
 import resolve from 'resolve';
 import { type Config, ConfigManager } from './config';
 import { MCPManager } from './mcp';

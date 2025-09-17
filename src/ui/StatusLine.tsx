@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink';
-import path from 'path';
+import path from 'pathe';
 import React, { useMemo } from 'react';
 import { useAppStore } from './store';
 import { useInputHandlers } from './useInputHandlers';

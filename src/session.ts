@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 import type { ApprovalMode } from './config';
 import { History } from './history';
 import type { NormalizedMessage } from './message';

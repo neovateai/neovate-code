@@ -1,6 +1,6 @@
 import type { AgentInputItem, UserMessageItem } from '@openai/agents';
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 import { IMAGE_EXTENSIONS } from './constants';
 
 const MAX_LINE_LENGTH_TEXT_FILE = 2000;
