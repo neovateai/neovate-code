@@ -33,10 +33,9 @@ export class Usage {
 
   static fromAssistantMessage(message: AssistantMessage): Usage {
     return new Usage({
-      promptTokens: message.usage?.input_tokens ?? 0,
-      completionTokens: message.usage?.output_tokens ?? 0,
-      totalTokens:
-        message.usage?.input_tokens ?? 0 + message.usage?.output_tokens ?? 0,
+      promptTokens: message.usage?.input_tokens,
+      completionTokens: message.usage?.output_tokens,
+      totalTokens: message.usage?.input_tokens + message.usage?.output_tokens,
     });
   }
 
