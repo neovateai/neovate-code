@@ -8,7 +8,10 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -35,9 +38,11 @@ jobs:
         run: pnpm build
 
       - name: Type check
+        if: matrix.os == 'ubuntu-latest'
         run: pnpm typecheck
 
       - name: Check formatting
+        if: matrix.os == 'ubuntu-latest'
         run: pnpm format:check
 
       - name: Run tests
