@@ -61,6 +61,8 @@ class NodeHandlerRegistry {
 
   private async clearContext(cwd?: string) {
     if (cwd) {
+      const context = await this.getContext(cwd);
+      await context.destroy();
       this.contexts.delete(cwd);
     } else {
       this.contexts.clear();
@@ -280,6 +282,7 @@ class NodeHandlerRegistry {
         const configManager = new ConfigManager(cwd, context.productName, {});
         configManager.setConfig(isGlobal, key, value);
         if (this.contexts.has(cwd)) {
+          await context.destroy();
           this.contexts.delete(cwd);
         }
         return {
