@@ -43,6 +43,7 @@ export type Config = {
   commit?: CommitConfig;
   outputStyle?: string;
   outputFormat?: 'text' | 'stream-json' | 'json';
+  autoUpdate?: boolean;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -54,6 +55,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   todo: true,
   autoCompact: true,
   outputFormat: 'text',
+  autoUpdate: true,
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -64,10 +66,11 @@ const VALID_CONFIG_KEYS = [
   'autoCompact',
   'commit',
   'outputStyle',
+  'autoUpdate',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit'];
-const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact'];
+const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact', 'autoUpdate'];
 
 export class ConfigManager {
   globalConfig: Partial<Config>;

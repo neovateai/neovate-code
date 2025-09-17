@@ -295,29 +295,37 @@ export const useAppStore = create<AppStore>()(
           }
           // Upgrade
           if (opts.upgrade) {
-            const upgrade = new Upgrade(opts.upgrade);
-            const result = await upgrade.check();
-            if (result.hasUpdate && result.tarballUrl) {
-              set({
-                upgrade: {
-                  text: `v${result.latestVersion} available, upgrading...`,
-                },
-              });
-              try {
-                await upgrade.upgrade({ tarballUrl: result.tarballUrl });
+            const autoUpdateResponse = await bridge.request('getConfig', {
+              cwd: opts.cwd,
+              isGlobal: true,
+              key: 'autoUpdate',
+            });
+            const autoUpdate = autoUpdateResponse.data.value;
+            if (autoUpdate) {
+              const upgrade = new Upgrade(opts.upgrade);
+              const result = await upgrade.check();
+              if (result.hasUpdate && result.tarballUrl) {
                 set({
                   upgrade: {
-                    text: `Upgraded to v${result.latestVersion}, restart to apply changes.`,
-                    type: 'success',
+                    text: `v${result.latestVersion} available, upgrading...`,
                   },
                 });
-              } catch (error) {
-                set({
-                  upgrade: {
-                    text: `Failed to upgrade: ${String(error)}`,
-                    type: 'error',
-                  },
-                });
+                try {
+                  await upgrade.upgrade({ tarballUrl: result.tarballUrl });
+                  set({
+                    upgrade: {
+                      text: `Upgraded to v${result.latestVersion}, restart to apply changes.`,
+                      type: 'success',
+                    },
+                  });
+                } catch (error) {
+                  set({
+                    upgrade: {
+                      text: `Failed to upgrade: ${String(error)}`,
+                      type: 'error',
+                    },
+                  });
+                }
               }
             }
           }
