@@ -91,10 +91,18 @@ export class ConfigManager {
       `.${lowerProductName}`,
       'config.json',
     );
+    const projectLocalConfigPath = path.join(
+      cwd,
+      `.${lowerProductName}`,
+      'config.local.json',
+    );
     this.globalConfigPath = globalConfigPath;
     this.projectConfigPath = projectConfigPath;
     this.globalConfig = loadConfig(globalConfigPath);
-    this.projectConfig = loadConfig(projectConfigPath);
+    this.projectConfig = defu(
+      loadConfig(projectConfigPath),
+      loadConfig(projectLocalConfigPath),
+    );
     this.argvConfig = argvConfig;
   }
 
