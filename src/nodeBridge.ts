@@ -446,6 +446,20 @@ class NodeHandlerRegistry {
       }) => {
         const { cwd, sessionId, command, args } = data;
         const context = await this.getContext(cwd);
+        context.apply({
+          hook: 'telemetry',
+          args: [
+            {
+              name: 'executeSlashCommand',
+              payload: {
+                command,
+                args,
+                sessionId,
+              },
+            },
+          ],
+          type: PluginHookType.Parallel,
+        });
         const slashCommandManager = await SlashCommandManager.create(context);
         const commandEntry = slashCommandManager.get(command);
         if (!commandEntry) {
