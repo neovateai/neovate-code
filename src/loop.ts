@@ -62,7 +62,6 @@ type RunLoopOpts = {
 };
 
 // TODO: support retry
-// TODO: compress
 export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   const startTime = Date.now();
   let turnsCount = 0;
@@ -91,7 +90,6 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   while (true) {
     const startTime = new Date();
     turnsCount++;
-    lastUsage.reset();
     if (turnsCount > maxTurns) {
       return {
         success: false,
@@ -107,11 +105,12 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       };
     }
     if (opts.autoCompact) {
-      const compressed = await history.compress(opts.model, totalUsage);
+      const compressed = await history.compress(opts.model);
       if (compressed.compressed) {
         debug('history compressed', compressed);
       }
     }
+    lastUsage.reset();
     const runner = new Runner({
       modelProvider: {
         getModel() {

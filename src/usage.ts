@@ -1,3 +1,5 @@
+import type { AssistantMessage } from './message';
+
 export class Usage {
   promptTokens: number;
   completionTokens: number;
@@ -26,6 +28,15 @@ export class Usage {
       promptTokens,
       completionTokens,
       totalTokens,
+    });
+  }
+
+  static fromAssistantMessage(message: AssistantMessage): Usage {
+    return new Usage({
+      promptTokens: message.usage?.input_tokens ?? 0,
+      completionTokens: message.usage?.output_tokens ?? 0,
+      totalTokens:
+        message.usage?.input_tokens ?? 0 + message.usage?.output_tokens ?? 0,
     });
   }
 

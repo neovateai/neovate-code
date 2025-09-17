@@ -7,6 +7,8 @@ type CompactOptions = {
   model: ModelInfo;
 };
 
+export const COMPACT_MESSAGE = `Chat history compacted successfully.`;
+
 export async function compact(opts: CompactOptions): Promise<string> {
   const result = await query({
     messages: opts.messages,

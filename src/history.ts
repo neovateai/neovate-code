@@ -5,7 +5,7 @@ import type {
   UserMessageItem,
 } from '@openai/agents';
 import createDebug from 'debug';
-import { compact } from './compact';
+import { COMPACT_MESSAGE, compact } from './compact';
 import { MIN_TOKEN_THRESHOLD } from './constants';
 import type { Message, NormalizedMessage } from './message';
 import type { ModelInfo } from './model';
@@ -122,49 +122,19 @@ export class History {
     });
   }
 
-  async #compact(model: ModelInfo) {
-    try {
-      const summary = await compact({
-        messages: this.messages,
-        model,
-      });
-
-      if (!summary || summary.trim().length === 0) {
-        throw new Error('Generated summary is empty');
-      }
-
-      this.onMessage?.({
-        role: 'user',
-        content: [{ type: 'text', text: summary }],
-        type: 'message',
-        timestamp: new Date().toISOString(),
-        uuid: randomUUID(),
-        parentUuid: null,
-      });
-
-      debug('Generated summary:', summary);
-      return summary;
-    } catch (error) {
-      debug('Compact failed:', error);
-      throw new Error(
-        `History compaction failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
+  #shouldCompress(model: ModelInfo, usage: Usage): boolean {
+    if (usage.totalTokens < MIN_TOKEN_THRESHOLD) {
+      return false;
     }
-  }
-
-  #calculateCompressThreshold(model: ModelInfo): number {
     const { context: contextLimit, output: outputLimit } = model.model.limit;
-
     const COMPRESSION_RESERVE_TOKENS = {
       MINI_CONTEXT: 10_000,
       SMALL_CONTEXT: 27_000,
       MEDIUM_CONTEXT: 30_000,
       LARGE_CONTEXT: 40_000,
     };
-
     const COMPRESSION_RATIO = 0.9;
     const COMPRESSION_RATIO_SMALL_CONTEXT = 0.8;
-
     let maxAllowedSize = contextLimit;
     switch (contextLimit) {
       case 32768:
@@ -189,42 +159,66 @@ export class History {
         );
         break;
     }
-
     const effectiveOutputLimit = Math.min(outputLimit, 32_000);
-
-    return Math.max(
+    const compressThreshold = Math.max(
       (contextLimit - effectiveOutputLimit) * COMPRESSION_RATIO,
       maxAllowedSize,
     );
-  }
-
-  async compress(model: ModelInfo, usage: Usage) {
-    if (this.messages.length === 0) {
-      return { compressed: false };
-    }
-
-    if (usage.totalTokens < MIN_TOKEN_THRESHOLD) {
-      debug("usage.totalTokens < MIN_TOKEN_THRESHOLD, don't compress");
-      return { compressed: false };
-    }
-
-    const compressThreshold = this.#calculateCompressThreshold(model);
-
     debug(
       `[compress] ${model.model.id} compressThreshold:${compressThreshold} usage:${usage.totalTokens}`,
     );
+    return usage.totalTokens >= compressThreshold;
+  }
 
-    if (usage.totalTokens >= compressThreshold) {
-      debug('compressing...');
-      const summary = await this.#compact(model);
-      debug('compressed', summary);
+  #getLastAssistantUsage(): Usage {
+    for (let i = this.messages.length - 1; i >= 0; i--) {
+      const message = this.messages[i];
+      if (message.role === 'assistant') {
+        return Usage.fromAssistantMessage(message);
+      }
+    }
+    return Usage.empty();
+  }
 
-      return {
-        compressed: true,
-        summary,
-      };
+  async compress(model: ModelInfo) {
+    if (this.messages.length === 0) {
+      return { compressed: false };
+    }
+    const usage = this.#getLastAssistantUsage();
+    const shouldCompress = this.#shouldCompress(model, usage);
+    if (!shouldCompress) {
+      return { compressed: false };
     }
 
-    return { compressed: false };
+    debug('compressing...');
+    let summary: string | null = null;
+    try {
+      summary = await compact({
+        messages: this.messages,
+        model,
+      });
+    } catch (error) {
+      debug('Compact failed:', error);
+      throw new Error(
+        `History compaction failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    if (!summary || summary.trim().length === 0) {
+      throw new Error('Generated summary is empty');
+    }
+    this.onMessage?.({
+      parentUuid: null,
+      uuid: randomUUID(),
+      role: 'user',
+      content: [{ type: 'text', text: summary }],
+      uiContent: COMPACT_MESSAGE,
+      type: 'message',
+      timestamp: new Date().toISOString(),
+    });
+    debug('Generated summary:', summary);
+    return {
+      compressed: true,
+      summary,
+    };
   }
 }
