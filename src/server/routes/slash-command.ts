@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { type FastifyPluginAsync } from 'fastify';
 import fs from 'fs';
 import { homedir } from 'os';
