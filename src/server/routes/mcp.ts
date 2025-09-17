@@ -123,6 +123,7 @@ const mcpRoute: FastifyPluginAsync = async (app) => {
         if (!command) {
           throw new Error('Command is required for stdio transport');
         }
+        // @ts-expect-error
         mcpServers[name] = {
           command,
           args,
@@ -207,6 +208,7 @@ const mcpRoute: FastifyPluginAsync = async (app) => {
           !existingServer.type || existingServer.type === 'stdio'
             ? (existingServer as any)
             : { command: '', args: [], env: undefined };
+        // @ts-expect-error
         mcpServers[name] = {
           command: command || stdioServer.command,
           args: args || stdioServer.args,
