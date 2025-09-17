@@ -1,5 +1,5 @@
 import createDebug from 'debug';
-import path from 'path';
+import path from 'pathe';
 import { fileURLToPath, resolve } from 'url';
 import WebSocket from 'ws';
 import {
@@ -94,7 +94,7 @@ interface WSMessage {
   result?: unknown;
 }
 
-const debug = createDebug('takumi:ide');
+const debug = createDebug('neovate:ide');
 
 export class IDE {
   ws: WebSocket | null;

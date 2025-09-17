@@ -1,12 +1,12 @@
-import { tool } from '@openai/agents';
 import { glob } from 'glob';
 import { z } from 'zod';
-import { Context } from '../context';
+import { createTool } from '../tool';
+import { safeStringify } from '../utils/safeStringify';
 
 const LIMIT = 100;
 
-export function createGlobTool(opts: { context: Context }) {
-  return tool({
+export function createGlobTool(opts: { cwd: string }) {
+  return createTool({
     name: 'glob',
     description: `
 Glob
@@ -23,11 +23,17 @@ Glob
         .nullable()
         .describe('The directory to search in'),
     }),
+    getDescription: ({ params }) => {
+      if (!params.pattern || typeof params.pattern !== 'string') {
+        return 'No pattern provided';
+      }
+      return params.pattern;
+    },
     execute: async ({ pattern, path }) => {
       try {
         const start = Date.now();
         const paths = await glob([pattern], {
-          cwd: path ?? opts.context.cwd,
+          cwd: path ?? opts.cwd,
           nocase: true,
           nodir: true,
           stat: true,
@@ -44,21 +50,23 @@ Glob
           ? `Found ${filenames.length} files in ${Date.now() - start}ms, truncating to ${LIMIT}.`
           : `Found ${filenames.length} files in ${Date.now() - start}ms.`;
         return {
-          success: true,
-          message,
-          data: {
+          returnDisplay: message,
+          llmContent: safeStringify({
             filenames,
             durationMs: Date.now() - start,
             numFiles: filenames.length,
             truncated,
-          },
+          }),
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
+    },
+    approval: {
+      category: 'read',
     },
   });
 }

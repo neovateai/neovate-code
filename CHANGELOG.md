@@ -1,3 +1,160 @@
+## 0.11.0
+
+`2025-09-17`
+
+- feat: add update command to check and apply application updates [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add autoUpdate config and getConfig handler for automatic upgrades [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add file content limits to prevent oversized output by [@阿平](https://github.com/阿平) in [#256](https://github.com/umijs/takumi/pull/256)
+- feat: add tab-triggered file suggestions for word completion by [@阿平](https://github.com/阿平) in [#255](https://github.com/umijs/takumi/pull/255)
+- build: remove bun version check and update build scripts by [@afc163](https://github.com/afc163) in [#250](https://github.com/umijs/takumi/pull/250)
+- feat: implement history compression with token threshold and model limits [AI] by [@阿平](https://github.com/阿平) in [#209](https://github.com/umijs/takumi/pull/209)
+- feat: add destroy hook support for plugin lifecycle management by [@阿平](https://github.com/阿平) in [#254](https://github.com/umijs/takumi/pull/254)
+- feat: normalize summary text by removing line breaks and extra whitespace by [@阿平](https://github.com/阿平) in [#253](https://github.com/umijs/takumi/pull/253)
+- feat(slash-command): add session-specific model support to chat store by [@阿平](https://github.com/阿平) in [#247](https://github.com/umijs/takumi/pull/247)
+- feat: add claude-4.1-opus model and update provider mappings by [@sorrycc](https://github.com/sorrycc)
+- feat: add moonshotai provider with kimi models support by [@sorrycc](https://github.com/sorrycc)
+- feat: add version flag to display version info by [@sorrycc](https://github.com/sorrycc)
+- feat: add image paste support with multimodal content handling [AI] by [@阿平](https://github.com/阿平) in [#223](https://github.com/umijs/takumi/pull/223)
+- fix: handle null text value in useTextInput onChange callback by [@阿平](https://github.com/阿平) in [#246](https://github.com/umijs/takumi/pull/246)
+- feat: allow overriding provider API via environment variables by [@sorrycc](https://github.com/sorrycc)
+- refactor: extract image extensions to constants and improve path extraction logic by [@afc163](https://github.com/afc163) in [#243](https://github.com/umijs/takumi/pull/243)
+- refactor: improve params description formatting for MCP tools by [@阿平](https://github.com/阿平) in [#245](https://github.com/umijs/takumi/pull/245)
+- style: format html and improve code structure in web-client.html by [@sorrycc](https://github.com/sorrycc)
+- feat: add WebSocket server and client implementation by [@sorrycc](https://github.com/sorrycc)
+- style: add ↓ to token count in activity indicator by [@sorrycc](https://github.com/sorrycc)
+- feat: add image prefix removal for gemini model support by [@阿平](https://github.com/阿平) in [#121](https://github.com/umijs/takumi/pull/121)
+- style: update assistant text color to #FF3070 by [@sorrycc](https://github.com/sorrycc)
+- feat: gradient product name by [@afc163](https://github.com/afc163) in [#241](https://github.com/umijs/takumi/pull/241)
+- fix: comment out JSON.stringify conversion for MCP result content by [@阿平](https://github.com/阿平) in [#242](https://github.com/umijs/takumi/pull/242)
+- refactor: standardize tool result types and remove redundant type files by [@sorrycc](https://github.com/sorrycc)
+- feat: add tool description and display name support to message rendering by [@sorrycc](https://github.com/sorrycc)
+- refactor: standardize llmContent and returnDisplay handling across tools by [@sorrycc](https://github.com/sorrycc)
+- refactor: remove outdated TODO comment and fix tool name mismatch by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename TOOL_NAME enum to TOOL_NAMES for consistency by [@sorrycc](https://github.com/sorrycc)
+- feat: add safeStringify utility and support MCP result conversion to LLM content by [@sorrycc](https://github.com/sorrycc)
+- fix: add restart notice after upgrade completion by [@sorrycc](https://github.com/sorrycc)
+- refactor: update tool result handling and image processing logic by [@sorrycc](https://github.com/sorrycc)
+- refactor: standardize tool result types and update related interfaces by [@sorrycc](https://github.com/sorrycc)
+- feat: add requestId parameter to onChunk callback by [@阿平](https://github.com/阿平) in [#235](https://github.com/umijs/takumi/pull/235)
+- fix: set minimum Node.js version to 18 for yargs compatibility by [@阿平](https://github.com/阿平) in [#232](https://github.com/umijs/takumi/pull/232)
+- feat: prioritize name matches in slash command filtering [AI] by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.10.1
+
+`2025-09-09`
+
+- refactor: remove ts-ignore comments and add proper type guards by [@阿平](https://github.com/阿平) in [#227](https://github.com/umijs/takumi/pull/227)
+- feat: add onboarding flow for model configuration and improve model resolution logic by [@sorrycc](https://github.com/sorrycc)
+- feat: include model context limit in model selection and state by [@sorrycc](https://github.com/sorrycc)
+- refactor: simplify text interpolation in ActivityIndicator by [@阿平](https://github.com/阿平) in [#225](https://github.com/umijs/takumi/pull/225)
+- refactor: update defaultModelCreator and clean unused imports by [@sorrycc](https://github.com/sorrycc)
+- refactor: replace tiktoken with gpt-tokenizer and add tests [AI] by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.10.0
+
+`2025-09-09`
+
+- refactor: move ToolUse and ToolUseResult types to tool.ts module [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: move message types from history to message module [AI] by [@sorrycc](https://github.com/sorrycc)
+- fix: deduplicate paths in at class method by [@sorrycc](https://github.com/sorrycc)
+- fix: set cursor position to end after paste operation by [@阿平](https://github.com/阿平) in [#224](https://github.com/umijs/takumi/pull/224)
+- style: add spacing around folder and session id icons by [@sorrycc](https://github.com/sorrycc)
+- feat: add token counting and streaming chunk handling with tiktoken by [@sorrycc](https://github.com/sorrycc)
+- feat: add shortName to models and update status line display by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance @path parsing with quote and space escape support by [@sorrycc](https://github.com/sorrycc)
+- feat: pasted text by @chencheng (云谦) in [#222](https://github.com/umijs/takumi/pull/222)
+- feat: support mcp by [@阿平](https://github.com/阿平) in [#220](https://github.com/umijs/takumi/pull/220)
+- refactor: export SessionConfig and update LogConfig type usage by [@sorrycc](https://github.com/sorrycc)
+- fix: correct session resume message text by [@sorrycc](https://github.com/sorrycc)
+- feat: add config-based summary support for conversation logs [AI] by [@阿平](https://github.com/阿平) in [#215](https://github.com/umijs/takumi/pull/215)
+- fix: prevent slash commands from being added to history by [@sorrycc](https://github.com/sorrycc)
+- feat: add page change callback to selection logic [AI] by [@阿平](https://github.com/阿平) in [#210](https://github.com/umijs/takumi/pull/210)
+- fix: handle tool not found error in project.ts by [@sorrycc](https://github.com/sorrycc)
+- feat: handle unknown slash commands by adding user message to store by [@sorrycc](https://github.com/sorrycc)
+- fix: enhance provider not found error with valid providers list by [@sorrycc](https://github.com/sorrycc)
+- feat: add qwen3-max and sonoma alpha models with provider mappings by [@sorrycc](https://github.com/sorrycc)
+- refactor: split rule names into global and project-specific arrays by [@sorrycc](https://github.com/sorrycc)
+- refactor: update plugin hook type to SeriesLast by [@阿平](https://github.com/阿平) in [#219](https://github.com/umijs/takumi/pull/219)
+- fix: update toolUse parameter type from ProvidersMap to ToolUse by [@阿平](https://github.com/阿平) in [#218](https://github.com/umijs/takumi/pull/218)
+- refactor: reorganize import statements for better clarity by [@阿平](https://github.com/阿平) in [#217](https://github.com/umijs/takumi/pull/217)
+- refactor: update plugin context and model alias types by [@sorrycc](https://github.com/sorrycc)
+- refactor: update plugin hooks and context handling for improved workflow and session management by [@sorrycc](https://github.com/sorrycc)
+- refactor: update plugin types and remove unused import by [@sorrycc](https://github.com/sorrycc)
+- refactor: update model creation and provider interfaces for consistency by [@sorrycc](https://github.com/sorrycc)
+- feat: add active state color for chat arrow by [@sorrycc](https://github.com/sorrycc)
+- refactor: convert exit command to jsx component with app store integration by [@阿平](https://github.com/阿平) in [#216](https://github.com/umijs/takumi/pull/216)
+- refactor: reorder react imports in ApprovalModal.tsx by [@sorrycc](https://github.com/sorrycc)
+- refactor: remove cost field from qwen3-coder-470b model config by [@sorrycc](https://github.com/sorrycc)
+- feat: add kimi-k2-0905 model with updated context limit and cost details [AI] by [@sorrycc](https://github.com/sorrycc)
+- fix: plugin extension slashCommands type exception by [@阿平](https://github.com/阿平) in [#213](https://github.com/umijs/takumi/pull/213)
+- feat: export internal dependencies for plugin development by [@阿平](https://github.com/阿平) in [#212](https://github.com/umijs/takumi/pull/212)
+- feat: add aisdk parameter to plugin resolveModelWithContext by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.9.0
+
+`2025-09-04`
+
+- feat: add deepseek-v3-1 model and provider mapping by [@sorrycc](https://github.com/sorrycc)
+- feat: set logFile path using Paths when clearing store by [@sorrycc](https://github.com/sorrycc)
+- fix: improve error logging messages by [@sorrycc](https://github.com/sorrycc)
+- feat: add gpt-oss-120b model and update providers map by [@sorrycc](https://github.com/sorrycc)
+- fix: correctly extract model from resolved context by [@sorrycc](https://github.com/sorrycc)
+- refactor: remove unused model-related types and plugin methods by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename hookedProviders to providers in model resolution by [@sorrycc](https://github.com/sorrycc)
+- feat: add qwen3 model and improve error handling in message bus by [@sorrycc](https://github.com/sorrycc)
+- refactor: move product ASCII art trimming to constants definition by [@sorrycc](https://github.com/sorrycc)
+- fix: improve upgrade handling and error messaging by [@sorrycc](https://github.com/sorrycc)
+- build: add publishConfig to make package public by [@sorrycc](https://github.com/sorrycc)
+- refact: 202508 by @chencheng (云谦) in [#178](https://github.com/umijs/takumi/pull/178)
+- fix: make diff params optional with default empty string values [AI] by [@阿平](https://github.com/阿平) in [#181](https://github.com/umijs/takumi/pull/181)
+- feat: add async initialization and status tracking for MCP servers [AI] by [@阿平](https://github.com/阿平) in [#171](https://github.com/umijs/takumi/pull/171)
+- feat: add tool parameter validation using zod schema by [@阿平](https://github.com/阿平) in [#166](https://github.com/umijs/takumi/pull/166)
+- feat: add abort controller for cancellable queries [AI] by [@阿平](https://github.com/阿平) in [#167](https://github.com/umijs/takumi/pull/167)
+
+
+## 0.8.2
+
+`2025-08-18`
+
+- fix: handle undefined array config values gracefully by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.8.1
+
+`2025-08-18`
+
+
+## 0.8.0
+
+`2025-08-18`
+
+- refactor: pass config to plugin hook and use context product name by [@sorrycc](https://github.com/sorrycc)
+- feat: add model selection with config persistence and agent setup by [@sorrycc](https://github.com/sorrycc)
+- feat: add output style system with configurable prompt templates and slash command support [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add recursive deep file discovery for nested slash commands [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: implement message queue functionality with auto-execution and UI display [AI] by [@sorrycc](https://github.com/sorrycc)
+- fix: escape shell arguments to prevent command injection vulnerabilities [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add try tips hook and placeholder suggestions to chat input [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add kebabToTitleCase utility and enhance command description resolution with fallback logic [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: implement command source tracking and priority-based registration [AI] by [@sorrycc](https://github.com/sorrycc)
+- fix: add ts-ignore comment for LexicalTextArea component by [@sorrycc](https://github.com/sorrycc)
+- feat: add plugin directory scanning for global and local plugins [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add prompt parameter to conversation hook and extract prompt from input by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename userMessage to userPrompt and restructure plugin hooks by [@sorrycc](https://github.com/sorrycc)
+- dep: update dependencies by [@sorrycc](https://github.com/sorrycc)
+- style: add type imports with verbatimModuleSyntax enabled by [@阿平](https://github.com/阿平) in [#163](https://github.com/umijs/takumi/pull/163)
+- fix: bun compilation error due to circular references by [@阿平](https://github.com/阿平) in [#162](https://github.com/umijs/takumi/pull/162)
+- refactor: simplify image mime type detection by accepting extension directly by [@阿平](https://github.com/阿平) in [#161](https://github.com/umijs/takumi/pull/161)
+- build: add version check for bun before building [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add model override support for file-based slash commands [AI] by [@阿平](https://github.com/阿平) in [#159](https://github.com/umijs/takumi/pull/159)
+- feat: add custom headers support for MCP server configuration by [@阿平](https://github.com/阿平) in [#157](https://github.com/umijs/takumi/pull/157)
+- feat: add model selection command with interactive UI by [@阿平](https://github.com/阿平) in [#156](https://github.com/umijs/takumi/pull/156)
+- feat: add model option to query and service run options by @chencheng (云谦) in [#155](https://github.com/umijs/takumi/pull/155)
+
+
 ## 0.7.1
 
 `2025-08-06`

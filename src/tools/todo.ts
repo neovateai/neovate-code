@@ -1,12 +1,9 @@
-import { tool } from '@openai/agents';
 import fs from 'fs';
 import { readFile, writeFile } from 'fs/promises';
-import path from 'path';
+import path from 'pathe';
 import { z } from 'zod';
-import { TOOL_NAME } from '../constants';
-import { Context } from '../context';
-import { enhanceTool } from '../tool';
-import { randomUUID } from '../utils/randomUUID';
+import { TOOL_NAMES } from '../constants';
+import { createTool } from '../tool';
 
 const TODO_WRITE_PROMPT = `
 Use this tool to create and manage a structured task list for your current coding session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
@@ -218,13 +215,9 @@ async function saveTodos(todos: TodoList, filePath: string) {
   await writeFile(filePath, JSON.stringify(todos, null, 2));
 }
 
-export function createTodoTool(opts: { context: Context }) {
-  const uuid = randomUUID().replace(/-/g, '');
-
-  const { context } = opts;
-
+export function createTodoTool(opts: { filePath: string }) {
   function ensureTodoDirectory() {
-    const todoDir = path.join(context.paths.globalConfigDir, 'todos');
+    const todoDir = path.dirname(opts.filePath);
     if (!fs.existsSync(todoDir)) {
       fs.mkdirSync(todoDir, { recursive: true });
     }
@@ -232,16 +225,16 @@ export function createTodoTool(opts: { context: Context }) {
   }
 
   function getTodoFilePath() {
-    const todoDir = ensureTodoDirectory();
-    return path.join(todoDir, `${uuid}.json`);
+    ensureTodoDirectory();
+    return opts.filePath;
   }
 
   async function readTodos() {
     return await loadTodosFromFile(getTodoFilePath());
   }
 
-  const todoWriteTool = tool({
-    name: TOOL_NAME.TODO_WRITE,
+  const todoWriteTool = createTool({
+    name: TOOL_NAMES.TODO_WRITE,
     description: TODO_WRITE_PROMPT,
     parameters: z.object({
       todos: TodoListSchema.describe('The updated todo list'),
@@ -253,64 +246,56 @@ export function createTodoTool(opts: { context: Context }) {
         await saveTodos(newTodos, getTodoFilePath());
 
         return {
-          success: true,
-          data: { oldTodos, newTodos },
-          message:
+          llmContent:
             'Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable',
+          returnDisplay: { type: 'todo_write', oldTodos, newTodos },
         };
       } catch (error) {
         return {
-          success: false,
-          error:
+          isError: true,
+          llmContent:
             error instanceof Error
               ? `Failed to write todos: ${error.message}`
               : 'Unknown error',
         };
       }
     },
+    approval: {
+      category: 'read',
+    },
   });
 
-  const todoReadTool = tool({
-    name: TOOL_NAME.TODO_READ,
+  const todoReadTool = createTool({
+    name: TOOL_NAMES.TODO_READ,
     description: TODO_READ_PROMPT,
     parameters: z.object({}).passthrough(),
     async execute() {
       try {
         const todos = await readTodos();
         return {
-          success: true,
-          data: todos,
-          message:
+          llmContent:
             todos.length === 0
               ? 'Todo list is empty'
               : `Found ${todos.length} todos`,
+          returnDisplay: { type: 'todo_read', todos },
         };
       } catch (error) {
         return {
-          success: false,
-          error:
+          isError: true,
+          llmContent:
             error instanceof Error
               ? `Failed to read todos: ${error.message}`
               : 'Unknown error',
         };
       }
     },
+    approval: {
+      category: 'read',
+    },
   });
 
   return {
-    todoWriteTool: enhanceTool(todoWriteTool, {
-      category: 'write',
-      riskLevel: 'low',
-      needsApproval: () => {
-        return false;
-      },
-    }),
-    todoReadTool: enhanceTool(todoReadTool, {
-      category: 'read',
-      riskLevel: 'low',
-      needsApproval: () => {
-        return false;
-      },
-    }),
+    todoWriteTool,
+    todoReadTool,
   };
 }

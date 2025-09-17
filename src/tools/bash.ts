@@ -1,16 +1,15 @@
-import { tool } from '@openai/agents';
 import crypto from 'crypto';
 import createDebug from 'debug';
 import fs from 'fs';
 import os from 'os';
-import path from 'path';
+import path from 'pathe';
 import { z } from 'zod';
-import { Context } from '../context';
-import { type ApprovalContext, type EnhancedTool, enhanceTool } from '../tool';
+import { TOOL_NAMES } from '../constants';
+import { createTool } from '../tool';
 import { getErrorMessage } from '../utils/error';
 import { shellExecute } from '../utils/shell-execution';
 
-const debug = createDebug('takumi:tools:bash');
+const debug = createDebug('neovate:tools:bash');
 
 const BANNED_COMMANDS = [
   'alias',
@@ -114,19 +113,14 @@ function validateCommand(command: string): string | null {
   return null;
 }
 
-async function executeCommand(
-  command: string,
-  timeout: number,
-  cwd: string,
-): Promise<any> {
+async function executeCommand(command: string, timeout: number, cwd: string) {
   const actualTimeout = Math.min(timeout, MAX_TIMEOUT);
 
   const validationError = validateCommand(command);
   if (validationError) {
     return {
-      success: false,
-      error: validationError,
-      command,
+      isError: true,
+      llmContent: validationError,
     };
   }
 
@@ -232,18 +226,16 @@ async function executeCommand(
   }
 
   return {
-    success: true,
-    message,
-    data: llmContent,
+    llmContent,
+    returnDisplay: message,
   };
 }
 
-export function createBashTool(opts: { context: Context }): EnhancedTool {
-  return enhanceTool(
-    tool({
-      name: 'bash',
-      description:
-        `Run shell commands in the terminal, ensuring proper handling and security measures.
+export function createBashTool(opts: { cwd: string }) {
+  return createTool({
+    name: TOOL_NAMES.BASH,
+    description:
+      `Run shell commands in the terminal, ensuring proper handling and security measures.
 
 Before using this tool, please follow these steps:
 - Verify that the command is not one of the banned commands: ${BANNED_COMMANDS.join(', ')}.
@@ -269,56 +261,56 @@ cd /foo/bar && pytest tests
 <command>pytest /foo/bar/tests</command>
 </bad-example>
 `.trim(),
-      parameters: z.object({
-        command: z.string().describe('The command to execute'),
-        timeout: z
-          .number()
-          .optional()
-          .nullable()
-          .describe(`Optional timeout in milliseconds (max ${MAX_TIMEOUT})`),
-      }),
-      execute: async ({ command, timeout = DEFAULT_TIMEOUT }) => {
-        try {
-          if (!command) {
-            return {
-              success: false,
-              error: 'Command cannot be empty.',
-            };
-          }
-          const result = await executeCommand(
-            command,
-            timeout || DEFAULT_TIMEOUT,
-            opts.context.cwd,
-          );
-
-          return result;
-        } catch (e) {
+    parameters: z.object({
+      command: z.string().describe('The command to execute'),
+      timeout: z
+        .number()
+        .optional()
+        .nullable()
+        .describe(`Optional timeout in milliseconds (max ${MAX_TIMEOUT})`),
+    }),
+    getDescription: ({ params }) => {
+      if (!params.command || typeof params.command !== 'string') {
+        return 'No command provided';
+      }
+      const command = params.command.trim();
+      return command.length > 100 ? command.substring(0, 97) + '...' : command;
+    },
+    execute: async ({ command, timeout = DEFAULT_TIMEOUT }) => {
+      try {
+        if (!command) {
           return {
-            success: false,
-            error:
-              e instanceof Error
-                ? `Command execution failed: ${getErrorMessage(e)}`
-                : 'Command execution failed.',
+            llmContent: 'Error: Command cannot be empty.',
+            isError: true,
           };
         }
-      },
-    }),
-    {
+        return await executeCommand(
+          command,
+          timeout || DEFAULT_TIMEOUT,
+          opts.cwd,
+        );
+      } catch (e) {
+        return {
+          isError: true,
+          llmContent:
+            e instanceof Error
+              ? `Command execution failed: ${getErrorMessage(e)}`
+              : 'Command execution failed.',
+        };
+      }
+    },
+    approval: {
       category: 'command',
-      riskLevel: 'high',
-      needsApproval: async (context: ApprovalContext) => {
+      needsApproval: async (context) => {
         const { params, approvalMode } = context;
         const command = params.command as string;
-
         if (!command) {
           return false;
         }
-
         // Always require approval for high-risk commands
         if (isHighRiskCommand(command)) {
           return true;
         }
-
         // Check if command is banned (these should never be approved)
         const commandRoot = getCommandRoot(command);
         if (
@@ -327,10 +319,9 @@ cd /foo/bar && pytest tests
         ) {
           return true; // This will be denied by approval system
         }
-
         // For other commands, defer to approval mode settings
         return approvalMode !== 'yolo';
       },
     },
-  );
+  });
 }

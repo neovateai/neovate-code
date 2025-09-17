@@ -1,12 +1,12 @@
-import { tool } from '@openai/agents';
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 import { z } from 'zod';
-import { Context } from '../context';
+import { createTool } from '../tool';
 import { ripGrep } from '../utils/ripgrep';
+import { safeStringify } from '../utils/safeStringify';
 
-export function createGrepTool(opts: { context: Context }) {
-  return tool({
+export function createGrepTool(opts: { cwd: string }) {
+  return createTool({
     name: 'grep',
     description: `Search for a pattern in a file or directory.`,
     parameters: z.object({
@@ -22,6 +22,12 @@ export function createGrepTool(opts: { context: Context }) {
         .nullable()
         .describe('The file pattern to include in the search'),
     }),
+    getDescription: ({ params }) => {
+      if (!params.pattern || typeof params.pattern !== 'string') {
+        return 'No pattern provided';
+      }
+      return params.pattern;
+    },
     execute: async ({ pattern, search_path, include }) => {
       try {
         const start = Date.now();
@@ -32,8 +38,8 @@ export function createGrepTool(opts: { context: Context }) {
         const absolutePath = search_path
           ? path.isAbsolute(search_path)
             ? search_path
-            : path.resolve(opts.context.cwd, search_path)
-          : opts.context.cwd;
+            : path.resolve(opts.cwd, search_path)
+          : opts.cwd;
         const results = await ripGrep(args, absolutePath);
         const stats = await Promise.all(results.map((_) => fs.statSync(_)));
         const matches = results
@@ -53,20 +59,22 @@ export function createGrepTool(opts: { context: Context }) {
           .map((_) => _[0]);
         const durationMs = Date.now() - start;
         return {
-          success: true,
-          message: `Found ${matches.length} files in ${durationMs}ms.`,
-          data: {
+          returnDisplay: `Found ${matches.length} files in ${durationMs}ms.`,
+          llmContent: safeStringify({
             filenames: matches,
             durationMs,
             numFiles: matches.length,
-          },
+          }),
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
+    },
+    approval: {
+      category: 'read',
     },
   });
 }

@@ -1,67 +1,43 @@
-import { Box, Text, useInput } from 'ink';
+import { Box, Text } from 'ink';
 import pc from 'picocolors';
-import React, { useEffect, useMemo, useState } from 'react';
-import { ConfigManager } from '../../config';
-import type { Context } from '../../context';
-import { PluginHookType } from '../../plugin';
-import { MODEL_ALIAS } from '../../provider';
-import { useAppContext } from '../../ui/AppContext';
-import PaginatedSelectInput from '../../ui/components/PaginatedSelectInput';
+import React, { useEffect, useState } from 'react';
+import PaginatedGroupSelectInput from '../../ui/PaginatedGroupSelectInput';
+import { useAppStore } from '../../ui/store';
 import { type LocalJSXCommand } from '../types';
 
 interface ModelSelectProps {
-  context: Context;
   onExit: (model: string) => void;
   onSelect: (model: string) => void;
 }
 
-const DEFAULT_SELECT_ITEMS = Object.entries(MODEL_ALIAS).map(
-  ([key, value]) => ({
-    label: `${key} → ${pc.gray(`(${value})`)}`,
-    value: value,
-  }),
-);
+interface GroupedData {
+  provider: string;
+  providerId: string;
+  models: { name: string; modelId: string; value: string }[];
+}
 
-const ModelSelect: React.FC<ModelSelectProps> = ({
-  context,
+export const ModelSelect: React.FC<ModelSelectProps> = ({
   onExit,
   onSelect,
 }) => {
-  const { services, state, dispatch } = useAppContext();
-  const [selectItems, setSelectItems] = useState<
-    {
-      label: string;
-      value: string;
-    }[]
-  >([]);
+  const { bridge, cwd, setModel } = useAppStore();
+  const [currentModel, setCurrentModel] = useState<string>('');
+  const [currentModelInfo, setCurrentModelInfo] = useState<{
+    providerName: string;
+    modelName: string;
+    modelId: string;
+  } | null>(null);
+  const [groupedModels, setGroupedModels] = useState<GroupedData[]>([]);
 
   useEffect(() => {
-    const fetchModels = async () => {
-      try {
-        const models = await context.apply({
-          hook: 'modelList',
-          args: [],
-          memo: DEFAULT_SELECT_ITEMS,
-          type: PluginHookType.SeriesLast,
-        });
-        setSelectItems(models);
-      } catch (error) {
-        console.warn('Failed to fetch custom models, using defaults:', error);
-        setSelectItems(DEFAULT_SELECT_ITEMS);
+    bridge.request('getModels', { cwd }).then((result) => {
+      if (result.data.currentModel) {
+        setCurrentModel(result.data.currentModel);
+        setCurrentModelInfo(result.data.currentModelInfo);
       }
-    };
-    fetchModels();
-  }, []);
-
-  useInput((_: string, key) => {
-    if (key.escape) {
-      onExit(state.model);
-    }
-  });
-
-  const model = useMemo(() => {
-    return MODEL_ALIAS[state.model] || state.model;
-  }, [state.model]);
+      setGroupedModels(result.data.groupedModels);
+    });
+  }, [cwd]);
 
   return (
     <Box
@@ -78,25 +54,21 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
         <Text color="gray">
           current model:{' '}
           <Text bold color="cyan">
-            {model}
+            {currentModelInfo
+              ? `${currentModelInfo.providerName}/${currentModelInfo.modelName} ${pc.gray(`(${currentModelInfo.modelId})`)}`
+              : currentModel}
           </Text>
         </Text>
       </Box>
       <Box>
-        <PaginatedSelectInput
-          items={selectItems}
-          initialIndex={selectItems.findIndex((item) => item.value === model)}
-          itemsPerPage={10}
+        <PaginatedGroupSelectInput
+          groups={groupedModels}
+          initialValue={currentModel}
+          itemsPerPage={15}
+          enableSearch={true}
+          onCancel={() => onExit(currentModel)}
           onSelect={(item) => {
-            const configManager = new ConfigManager(
-              context.cwd,
-              context.productName,
-              {},
-            );
-            configManager.setConfig(true, 'model', item.value);
-            services.context.config.model = item.value;
-            services.service.setupAgent();
-            dispatch({ type: 'SET_MODEL', payload: item.value });
+            setModel(item.value);
             onSelect(item.value);
           }}
         />
@@ -105,23 +77,20 @@ const ModelSelect: React.FC<ModelSelectProps> = ({
   );
 };
 
-export function createModelCommand(opts: {
-  context: Context;
-}): LocalJSXCommand {
+export function createModelCommand(): LocalJSXCommand {
   return {
     type: 'local-jsx',
     name: 'model',
-    description: 'Switch or display current model',
+    description: 'Select a model',
     async call(onDone) {
       const ModelComponent = () => {
         return (
           <ModelSelect
-            context={opts.context}
             onExit={(model) => {
               onDone(`Kept model as ${model}`);
             }}
             onSelect={(model) => {
-              onDone(`Model changed to ${model}`);
+              onDone(`Model changed to ${model} globally`);
             }}
           />
         );

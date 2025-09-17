@@ -1,10 +1,10 @@
 import createDebug from 'debug';
 import * as fsSync from 'fs';
 import fs from 'fs/promises';
-import path from 'path';
+import path from 'pathe';
 import { logError } from '../../utils/logger';
 
-const debug = createDebug('takumi:server:contextFiles');
+const debug = createDebug('neovate:server:contextFiles');
 
 interface FileContent {
   path: string;

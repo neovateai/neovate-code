@@ -1,20 +1,19 @@
-import { Context } from '../../context';
 import { type PromptCommand } from '../types';
 
-export function createInitCommand(opts: { context: Context }) {
-  const productName = opts.context.productName;
-  const ruleFile = `${productName.toUpperCase()}.md`;
+export function createInitCommand(opts: { productName: string }) {
+  const productName = opts.productName;
+  const ruleFile = 'AGENTS.md';
   return {
     type: 'prompt',
     name: 'init',
-    description: `Create or improve ${ruleFile} files`,
+    description: `Create or improve the ${ruleFile} file`,
     progressMessage: `Analyzing codebase to create ${ruleFile}...`,
     async getPromptForCommand() {
       return [
         {
           role: 'user',
           content: `
-Please analyze this codebase and create a comprehensive ${ruleFile} file that will guide future instances of Claude Code working in this repository.
+Please analyze this codebase and create a comprehensive ${ruleFile} file that will guide future instances of ${productName} working in this repository.
 
 ## ESSENTIAL CONTENT TO INCLUDE
 

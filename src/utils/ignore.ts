@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { join, relative, sep } from 'path';
+import { join, relative, sep } from 'pathe';
 
 interface IgnoreCache {
   mtime: number;
@@ -10,9 +10,6 @@ interface IgnoreCache {
 // Cache for parsed ignore patterns
 const ignoreCache = new Map<string, IgnoreCache>();
 
-/**
- * Reads and parses ignore files (.gitignore and .takumiignore), returning include and exclude patterns
- */
 function parseIgnoreFiles(
   rootPath: string,
   productName: string,
@@ -21,7 +18,7 @@ function parseIgnoreFiles(
   negationPatterns: string[];
 } {
   const gitignorePath = join(rootPath, '.gitignore');
-  const takumiIgnorePath = join(
+  const productIgnorePath = join(
     rootPath,
     `.${productName.toLowerCase()}ignore`,
   );
@@ -31,7 +28,7 @@ function parseIgnoreFiles(
   try {
     // Check modification times for both files
     let gitignoreMtime = 0;
-    let takumiIgnoreMtime = 0;
+    let productIgnoreMtime = 0;
 
     try {
       const gitignoreStats = fs.statSync(gitignorePath);
@@ -41,13 +38,13 @@ function parseIgnoreFiles(
     }
 
     try {
-      const takumiIgnoreStats = fs.statSync(takumiIgnorePath);
-      takumiIgnoreMtime = takumiIgnoreStats.mtimeMs;
+      const productIgnoreStats = fs.statSync(productIgnorePath);
+      productIgnoreMtime = productIgnoreStats.mtimeMs;
     } catch (e) {
       // .takumiignore doesn't exist or can't be read
     }
 
-    const combinedMtime = Math.max(gitignoreMtime, takumiIgnoreMtime);
+    const combinedMtime = Math.max(gitignoreMtime, productIgnoreMtime);
 
     // Check cache first
     const cached = ignoreCache.get(cacheKey);
@@ -74,7 +71,7 @@ function parseIgnoreFiles(
 
     // Parse .takumiignore second (takes precedence)
     try {
-      const takumiIgnoreContent = fs.readFileSync(takumiIgnorePath, 'utf8');
+      const takumiIgnoreContent = fs.readFileSync(productIgnorePath, 'utf8');
       const {
         patterns: takumiPatterns,
         negationPatterns: takumiNegationPatterns,
@@ -191,7 +188,7 @@ function matchesPattern(filePath: string, pattern: string): boolean {
 export function isIgnored(
   filePath: string,
   rootPath: string,
-  productName: string = 'takumi',
+  productName: string = 'neovate',
 ): boolean {
   const { patterns, negationPatterns } = parseIgnoreFiles(
     rootPath,
@@ -239,7 +236,7 @@ export function isIgnored(
 export function isIgnoredByName(
   fileName: string,
   rootPath: string,
-  productName: string = 'takumi',
+  productName: string = 'neovate',
   isDirectory: boolean = false,
 ): boolean {
   // For relative paths within the root directory

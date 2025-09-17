@@ -1,7 +1,7 @@
 {
-  "name": "@takumi/browser",
+  "name": "@neovate/browser",
   "version": "1.0.0",
-  "description": "Takumi Browser Mode - Web interface for AI programming assistant",
+  "description": "Neovate Browser Mode - Web interface for AI programming assistant",
   "main": "dist/index.js",
   "scripts": {
     "dev": "vite",
@@ -60,13 +60,13 @@
     "vite-plugin-svgr": "^4.3.0"
   },
   "keywords": [
-    "takumi",
+    "neovate",
     "ai",
     "browser",
     "web-interface",
     "programming-assistant"
   ],
-  "author": "Takumi Team",
+  "author": "Neovate Team",
   "license": "MIT",
   "volta": {
     "node": "22.11.0",

@@ -1,17 +1,18 @@
+// @ts-nocheck
 import { type TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import createDebug from 'debug';
 import fastify, { type FastifyInstance } from 'fastify';
 import * as fs from 'fs/promises';
 import { homedir } from 'os';
-import path from 'path';
+import path from 'pathe';
 import portfinder from 'portfinder';
 import { fileURLToPath } from 'url';
 import yargsParser from 'yargs-parser';
 import { type RunCliOpts } from '..';
-import projectRoute from '../project';
+import projectRoute from '../logProject';
 import * as logger from '../utils/logger';
 
-const debug = createDebug('takumi:commands:log');
+const debug = createDebug('neovate:commands:log');
 
 function printHelp(p: string) {
   console.log(
@@ -87,7 +88,10 @@ async function createLogServer(opts: {
   // Get path to logfiles directory
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const isLocal = __dirname.endsWith('takumi/src/commands');
+  const isLocal =
+    __dirname.endsWith('takumi/src/commands') ||
+    __dirname.endsWith('neovate/src/commands') ||
+    __dirname.endsWith('code/src/commands');
   const logfilesDir = isLocal
     ? path.resolve(__dirname, '../../logfiles')
     : path.resolve(__dirname, './logfiles');
@@ -259,15 +263,4 @@ export async function runLog(opts: RunCliOpts) {
     debug('Received SIGQUIT, shutting down...');
     gracefulShutdown();
   });
-
-  // Force exit after timeout if graceful shutdown fails
-  // const forceExitTimeout = setTimeout(() => {
-  //   debug('Force exiting after timeout');
-  //   process.exit(1);
-  // }, 5000);
-
-  // Clear timeout if process exits normally
-  // process.on('exit', () => {
-  //   clearTimeout(forceExitTimeout);
-  // });
 }

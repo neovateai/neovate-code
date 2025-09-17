@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { homedir } from 'os';
-import path from 'path';
+import path from 'pathe';
 
 const PROJECT_MARKERS = [
   'package.json',

@@ -2,10 +2,10 @@ import { execSync, spawnSync } from 'child_process';
 import createDebug from 'debug';
 import fs from 'fs';
 
-const debug = createDebug('takumi:utils:ide');
+const debug = createDebug('neovate:utils:ide');
 
 // VS Code Extension ID
-export const vscode_extension_id = 'sorrycc.takumi-assistant';
+export const vscode_extension_id = 'sorrycc.neovate-assistant';
 
 // Platform and terminal detection
 export interface PlatformInfo {

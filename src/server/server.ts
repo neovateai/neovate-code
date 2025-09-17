@@ -1,8 +1,9 @@
+// @ts-nocheck
 import { type TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import createDebug from 'debug';
 import fastify, { type FastifyInstance } from 'fastify';
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 import portfinder from 'portfinder';
 import { PluginHookType } from '../plugin';
 import { Service } from '../service';
@@ -10,10 +11,13 @@ import * as logger from '../utils/logger';
 import config from './config';
 import { type CreateServerOpts, type RunBrowserServerOpts } from './types';
 
-const debug = createDebug('takumi:server:completions');
+const debug = createDebug('neovate:server:completions');
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
-const isLocal = __dirname.endsWith('takumi/src/server');
+const isLocal =
+  __dirname.endsWith('takumi/src/server') ||
+  __dirname.endsWith('neovate/src/server') ||
+  __dirname.endsWith('code/src/server');
 const BROWSER_DIST_PATH = isLocal
   ? path.resolve(__dirname, '../../dist/browser')
   : path.resolve(__dirname, '../dist/browser');

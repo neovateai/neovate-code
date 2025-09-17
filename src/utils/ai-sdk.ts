@@ -27,6 +27,7 @@ import {
 } from '@openai/agents';
 import { isZodObject } from '@openai/agents/utils';
 import { mergeConsecutiveSystemMessages } from './merge-consecutive-system-messages';
+import { removeImagePrefix } from './removeImagePrefix';
 
 /**
  * @internal
@@ -70,8 +71,22 @@ export function itemsToLanguageV1Messages(
                     return { type: 'text', text: c.text };
                   }
                   if (c.type === 'input_image') {
-                    const url = new URL(c.image as string);
-                    return { type: 'image', image: url };
+                    const isGeminiModel =
+                      model.modelId.includes('gemini') &&
+                      model.provider === 'google.generative-ai';
+                    if (isGeminiModel && typeof c.image === 'string') {
+                      // ref https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai#file-inputs
+                      const image = removeImagePrefix(c.image);
+                      return {
+                        type: 'file',
+                        mimeType:
+                          (c.providerData?.mimeType as string) || 'image/jpeg',
+                        data: image,
+                      };
+                    } else {
+                      const url = new URL(c.image as string);
+                      return { type: 'image', image: url };
+                    }
                   }
                   if (c.type === 'input_file') {
                     if (typeof c.file !== 'string') {
@@ -104,16 +119,16 @@ export function itemsToLanguageV1Messages(
         messages.push({
           role,
           content: content
-            .filter((c) => c.type === 'input_text' || c.type === 'output_text')
+            .filter((c) => c.type === 'output_text')
             .map((c) => {
-              if (c.type === 'output_text') {
-                return { type: 'text', text: c.text };
-              }
-              if (c.type === 'input_text') {
-                return { type: 'text', text: c.text };
-              }
-              const exhaustiveCheck = c satisfies never;
-              throw new UserError(`Unknown content type: ${exhaustiveCheck}`);
+              const { providerData: contentProviderData } = c;
+              return {
+                type: 'text',
+                text: c.text,
+                providerMetadata: {
+                  ...(contentProviderData ?? {}),
+                },
+              };
             }),
           providerMetadata: {
             [model.provider]: {

@@ -1,12 +1,12 @@
 {
-  "name": "takumi-assistant",
-  "displayName": "takumi-assistant",
-  "description": "Assistant for takumi.",
+  "name": "neovate-assistant",
+  "displayName": "neovate-assistant",
+  "description": "Assistant for neovate.",
   "version": "0.0.3",
   "publisher": "sorrycc",
   "repository": {
     "type": "git",
-    "url": "https://github.com/umijs/takumi/tree/master/vscode-extension"
+    "url": "https://github.com/neovateai/neovate-code/tree/master/vscode-extension"
   },
   "engines": {
     "vscode": "^1.99.0"

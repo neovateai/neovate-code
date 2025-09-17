@@ -1,12 +1,11 @@
-import { tool } from '@openai/agents';
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 import { z } from 'zod';
-import { Context } from '../context';
+import { createTool } from '../tool';
 import { applyEdit } from '../utils/applyEdit';
 
-export function createEditTool(opts: { context: Context }) {
-  return tool({
+export function createEditTool(opts: { cwd: string }) {
+  return createTool({
     name: 'edit',
     description: `
 Edit files in the local filesystem.
@@ -25,12 +24,19 @@ Usage:
         .string()
         .describe('The text to replace the old_string with'),
     }),
+    getDescription: ({ params, cwd }) => {
+      if (!params.file_path || typeof params.file_path !== 'string') {
+        return 'No file path provided';
+      }
+      return path.relative(cwd, params.file_path);
+    },
     execute: async ({ file_path, old_string, new_string }) => {
       try {
-        const cwd = opts.context.cwd;
+        const cwd = opts.cwd;
         const fullFilePath = path.isAbsolute(file_path)
           ? file_path
           : path.resolve(cwd, file_path);
+        const relativeFilePath = path.relative(cwd, fullFilePath);
         const { patch, updatedFile } = applyEdit(
           cwd,
           fullFilePath,
@@ -42,16 +48,24 @@ Usage:
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(fullFilePath, updatedFile, 'utf-8');
         return {
-          success: true,
-          message: `File ${file_path} successfully edited.`,
-          data: { filePath: file_path },
+          llmContent: `File ${file_path} successfully edited.`,
+          returnDisplay: {
+            type: 'diff_viewer',
+            filePath: relativeFilePath,
+            originalContent: { inputKey: 'old_string' },
+            newContent: { inputKey: 'new_string' },
+            absoluteFilePath: fullFilePath,
+          },
         };
       } catch (e) {
         return {
-          success: false,
-          error: e instanceof Error ? e.message : 'Unknown error',
+          isError: true,
+          llmContent: e instanceof Error ? e.message : 'Unknown error',
         };
       }
+    },
+    approval: {
+      category: 'write',
     },
   });
 }
