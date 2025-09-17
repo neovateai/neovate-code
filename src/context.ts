@@ -65,11 +65,11 @@ export class Context {
 
   async destroy() {
     await this.mcpManager.destroy();
-    // await this.apply({
-    //   hook: 'destroy',
-    //   args: [],
-    //   type: PluginHookType.Parallel,
-    // });
+    await this.apply({
+      hook: 'destroy',
+      args: [],
+      type: PluginHookType.Parallel,
+    });
   }
 
   static async create(opts: ContextCreateOpts) {
