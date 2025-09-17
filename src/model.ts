@@ -720,7 +720,7 @@ export const providers: ProvidersMap = {
   'moonshotai-cn': {
     id: 'moonshotai-cn',
     env: ['MOONSHOT_API_KEY'],
-    name: 'Moonshot',
+    name: 'MoonshotCN',
     api: 'https://api.moonshot.cn/v1',
     doc: 'https://platform.moonshot.cn/docs/api/chat',
     models: {
