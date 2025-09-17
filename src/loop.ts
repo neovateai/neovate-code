@@ -42,6 +42,7 @@ type RunLoopOpts = {
   signal?: AbortSignal;
   llmsContexts?: string[];
   autoCompact?: boolean;
+  productName?: string;
   onTextDelta?: (text: string) => Promise<void>;
   onText?: (text: string) => Promise<void>;
   onReasoning?: (text: string) => Promise<void>;
@@ -138,6 +139,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
     agentInput = At.normalize({
       input: agentInput,
       cwd: opts.cwd,
+      productName: opts.productName,
     });
     const requestId = randomUUID();
     const result = await runner.run(agent, agentInput, {

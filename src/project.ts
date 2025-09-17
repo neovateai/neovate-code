@@ -225,6 +225,7 @@ export class Project {
       llmsContexts: llmsContext.messages,
       signal: opts.signal,
       autoCompact: this.context.config.autoCompact,
+      productName: this.context.productName,
       onMessage: async (message) => {
         const normalizedMessage = {
           ...message,

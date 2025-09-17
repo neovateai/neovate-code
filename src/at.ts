@@ -1,7 +1,8 @@
 import type { AgentInputItem, UserMessageItem } from '@openai/agents';
 import fs from 'fs';
 import path from 'path';
-import { IMAGE_EXTENSIONS } from './constants';
+import { IMAGE_EXTENSIONS, PRODUCT_NAME } from './constants';
+import { isIgnored } from './utils/ignore';
 
 const MAX_LINE_LENGTH_TEXT_FILE = 2000;
 const MAX_LINES_TO_READ = 2000;
@@ -10,9 +11,11 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export class At {
   private userPrompt: string;
   private cwd: string;
-  constructor(opts: { userPrompt: string; cwd: string }) {
+  private productName: string;
+  constructor(opts: { userPrompt: string; cwd: string; productName: string }) {
     this.userPrompt = opts.userPrompt;
     this.cwd = opts.cwd;
+    this.productName = opts.productName;
   }
 
   getContent() {
@@ -96,11 +99,18 @@ export class At {
 
   getAllFilesInDirectory(dirPath: string): string[] {
     const files: string[] = [];
+    const effectiveRootPath = this.cwd;
     const traverse = (currentPath: string) => {
       try {
         const items = fs.readdirSync(currentPath);
         for (const item of items) {
           const itemPath = path.join(currentPath, item);
+
+          // Skip if ignored by gitignore or product-specific ignore file
+          if (isIgnored(itemPath, effectiveRootPath, this.productName)) {
+            continue;
+          }
+
           const stat = fs.statSync(itemPath);
           if (stat.isFile()) {
             files.push(itemPath);
@@ -159,6 +169,7 @@ export class At {
   static normalize(opts: {
     input: AgentInputItem[];
     cwd: string;
+    productName?: string;
   }): AgentInputItem[] {
     const reversedInput = [...opts.input].reverse();
     const lastUserMessage = reversedInput.find((item) => {
@@ -173,6 +184,7 @@ export class At {
       const at = new At({
         userPrompt,
         cwd: opts.cwd,
+        productName: opts.productName || PRODUCT_NAME,
       });
       const content = at.getContent();
       if (content) {
