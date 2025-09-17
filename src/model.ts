@@ -731,7 +731,7 @@ export const providers: ProvidersMap = {
       return createOpenAI({
         baseURL: provider.api,
         apiKey: process.env[provider.env[0]],
-        // include usage information in streaming mode
+        // include usage information in streaming mode why? https://platform.moonshot.cn/docs/guide/migrating-from-openai-to-kimi#stream-模式下的-usage-值
         compatibility: 'strict',
       })(name);
     },

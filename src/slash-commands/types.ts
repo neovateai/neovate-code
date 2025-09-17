@@ -20,7 +20,7 @@ export interface LocalCommand extends BaseSlashCommand {
 export interface LocalJSXCommand extends BaseSlashCommand {
   type: 'local-jsx';
   call(
-    onDone: (result: string) => void,
+    onDone: (result: string | null) => void,
     context: Context,
   ): Promise<React.ReactNode>;
 }
