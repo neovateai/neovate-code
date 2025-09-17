@@ -124,6 +124,7 @@ Commands:
   mcp                           Manage MCP servers
   run                           Run a command
   log                           Start log viewer server
+  update                        Check for and apply updates
     `.trimEnd(),
   );
 }
@@ -255,10 +256,6 @@ export async function runNeovate(opts: {
   // clear tracing
   setTraceProcessors([]);
   const argv = await parseArgs(process.argv.slice(2));
-  if (argv.help) {
-    printHelp(opts.productName.toLowerCase());
-    return;
-  }
   const contextCreateOpts = {
     productName: opts.productName,
     productASCIIArt: opts.productASCIIArt,
@@ -278,10 +275,6 @@ export async function runNeovate(opts: {
     plugins: opts.plugins,
   };
 
-  if (argv.version) {
-    console.log(opts.version);
-    return;
-  }
   // sub commands
   const command = argv._[0];
   if (command === 'servernext') {
@@ -290,7 +283,15 @@ export async function runNeovate(opts: {
     });
     return;
   }
-  const validCommands = ['config', 'commit', 'mcp', 'run', 'log', 'server'];
+  const validCommands = [
+    'config',
+    'commit',
+    'mcp',
+    'run',
+    'log',
+    'server',
+    'update',
+  ];
   if (validCommands.includes(command)) {
     const context = await Context.create({
       cwd: argv.cwd || process.cwd(),
@@ -313,9 +314,22 @@ export async function runNeovate(opts: {
         const { runCommit } = await import('./commands/commit');
         await runCommit(context);
         break;
+      case 'update':
+        const { runUpdate } = await import('./commands/update');
+        await runUpdate(context, opts.upgrade);
+        break;
       default:
         throw new Error(`Unsupported command: ${command}`);
     }
+    return;
+  }
+
+  if (argv.help) {
+    printHelp(opts.productName.toLowerCase());
+    return;
+  }
+  if (argv.version) {
+    console.log(opts.version);
     return;
   }
 
