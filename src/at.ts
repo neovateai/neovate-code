@@ -3,6 +3,10 @@ import fs from 'fs';
 import path from 'path';
 import { IMAGE_EXTENSIONS } from './constants';
 
+const MAX_LINE_LENGTH_TEXT_FILE = 2000;
+const MAX_LINES_TO_READ = 2000;
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 export class At {
   private userPrompt: string;
   private cwd: string;
@@ -54,16 +58,39 @@ export class At {
   }
 
   renderFilesToXml(files: string[]): string {
-    const fileContents = files
+    const processedFiles = files
       .filter((fc) => !IMAGE_EXTENSIONS.has(path.extname(fc).toLowerCase()))
+      .map((fc) => {
+        // Single file size limit cannot exceed 10MB
+        const stat = fs.statSync(fc);
+        if (stat.size > MAX_FILE_SIZE) {
+          return {
+            content: '// File too large to display',
+            metadata: `File size: ${Math.round(stat.size / 1024 / 1024)}MB (skipped)`,
+            file: fc,
+          };
+        }
+        const content = fs.readFileSync(fc, 'utf-8');
+        const result = this.processFileContent(content);
+        return {
+          content: result.content,
+          metadata: result.metadata,
+          file: fc,
+        };
+      });
+
+    const fileContents = processedFiles
       .map(
-        (fc) => `
+        (result) =>
+          `
       <file>
-        <path>${path.relative(this.cwd, fc)}</path>
-        <content><![CDATA[${fs.readFileSync(fc, 'utf-8')}]]></content>
+        <path>${path.relative(this.cwd, result.file)}</path>
+        <metadata>${result.metadata}</metadata>
+        <content><![CDATA[${result.content}]]></content>
       </file>`,
       )
       .join('');
+
     return `<files>This section contains the contents of the repository's files.\n${fileContents}\n</files>`;
   }
 
@@ -94,6 +121,39 @@ export class At {
     };
     traverse(dirPath);
     return files;
+  }
+
+  private truncateLine(line: string): string {
+    if (line.length <= MAX_LINE_LENGTH_TEXT_FILE) {
+      return line;
+    }
+    return line.substring(0, MAX_LINE_LENGTH_TEXT_FILE) + '... [truncated]';
+  }
+
+  private processFileContent(content: string): {
+    content: string;
+    metadata: string;
+  } {
+    const allLines = content.split(/\r?\n/);
+    const totalLines = allLines.length;
+
+    // If file doesn't exceed limit, process all lines
+    if (totalLines <= MAX_LINES_TO_READ) {
+      const processedLines = allLines.map((line) => this.truncateLine(line));
+      return {
+        content: processedLines.join('\n'),
+        metadata: `Complete file (${totalLines} lines)`,
+      };
+    }
+
+    // If file exceeds limit, only read first MAX_LINES_TO_READ lines
+    const selectedLines = allLines.slice(0, MAX_LINES_TO_READ);
+    const truncatedLines = selectedLines.map((line) => this.truncateLine(line));
+
+    return {
+      content: truncatedLines.join('\n'),
+      metadata: `Showing first ${MAX_LINES_TO_READ} lines of ${totalLines} total lines`,
+    };
   }
 
   static normalize(opts: {
