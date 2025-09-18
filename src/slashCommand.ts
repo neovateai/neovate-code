@@ -177,5 +177,9 @@ export function parseSlashCommand(input: string): {
 
 export function isSlashCommand(input: string): boolean {
   const trimmed = input.trim();
-  return trimmed.startsWith('/') && !isFilePath(trimmed);
+  if (!trimmed.startsWith('/')) return false;
+  if (trimmed === '/') return false;
+  const match = trimmed.match(/^\S+/);
+  const commandPart = match ? match[0] : '';
+  return commandPart !== '' && !isFilePath(commandPart);
 }

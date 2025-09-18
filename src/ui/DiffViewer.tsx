@@ -345,9 +345,7 @@ function RenderDiffContent(
           <Box>
             <Text color="gray">
               ... {displayableLines.length - visibleLines.length} more line
-              {displayableLines.length - visibleLines.length === 1
-                ? ''
-                : 's'}{' '}
+              {displayableLines.length - visibleLines.length === 1 ? '' : 's'}{' '}
               hidden ...
             </Text>
           </Box>
