@@ -153,7 +153,7 @@ export function createResumeCommand(): LocalJSXCommand {
   return {
     type: 'local-jsx',
     name: 'resume',
-    description: 'Resume a previous session',
+    description: 'Resume from a specific session',
     async call(onDone) {
       const ResumeComponent = () => {
         return (

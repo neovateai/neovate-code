@@ -37,5 +37,6 @@ export async function query(opts: {
     onMessage: async (message) => {
       await opts.onMessage?.(message);
     },
+    autoCompact: false,
   });
 }

@@ -1,6 +1,6 @@
 {
   "name": "@neovate/code",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "type": "module",
   "files": [
     "dist",
@@ -21,10 +21,9 @@
     "build:index": "bun build src/index.ts --external react-devtools-core --minify --outfile dist/index.mjs --target=node",
     "build:dts": "npm run build:type && api-extractor run --local --verbose",
     "build:browser": "pnpm --filter @neovate/browser build",
-    "build:check": "bun --version | grep -q '^1\\.2\\.7$' || (echo 'Error: Bun version must be 1.2.7' && exit 1)",
     "build:post": "bun scripts/post-build.ts",
     "build:logfiles": "cp -r logfiles dist/logfiles",
-    "build": "npm run build:check && rm -rf dist dist-dts && npm run build:cli && npm run build:index && npm run build:dts && npm run build:browser && npm run build:logfiles && npm run build:post",
+    "build": "rm -rf dist dist-dts && npm run build:cli && npm run build:index && npm run build:dts && npm run build:logfiles && npm run build:post",
     "ci": "npm run typecheck && npm run format:check && npm run test",
     "extension:build": "pnpm --filter neovate-assistant build",
     "extension:dev": "pnpm --filter neovate-assistant dev",
@@ -116,6 +115,7 @@
     "marked-terminal": "^7.3.0",
     "minimatch": "^10.0.1",
     "open": "^10.2.0",
+    "pathe": "^2.0.3",
     "picocolors": "^1.1.1",
     "portfinder": "^1.0.37",
     "prettier": "^3.6.2",

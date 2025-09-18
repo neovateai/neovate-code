@@ -1,5 +1,5 @@
 import { compact } from './compact';
-import { type ApprovalMode, ConfigManager } from './config';
+import { type ApprovalMode, type Config, ConfigManager } from './config';
 import { CANCELED_MESSAGE_TEXT } from './constants';
 import { Context } from './context';
 import { JsonlLogger } from './jsonl';
@@ -56,12 +56,16 @@ class NodeHandlerRegistry {
       cwd,
       ...this.contextCreateOpts,
     });
+    // init mcp manager but don't wait for it
+    context.mcpManager.initAsync();
     this.contexts.set(cwd, context);
     return context;
   }
 
   private async clearContext(cwd?: string) {
     if (cwd) {
+      const context = await this.getContext(cwd);
+      await context.destroy();
       this.contexts.delete(cwd);
     } else {
       this.contexts.clear();
@@ -281,10 +285,26 @@ class NodeHandlerRegistry {
         const configManager = new ConfigManager(cwd, context.productName, {});
         configManager.setConfig(isGlobal, key, value);
         if (this.contexts.has(cwd)) {
+          await context.destroy();
           this.contexts.delete(cwd);
         }
         return {
           success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'getConfig',
+      async (data: { cwd: string; key: string }) => {
+        const { cwd, key } = data;
+        const context = await this.getContext(cwd);
+        const value = context.config[key as keyof Config];
+        return {
+          success: true,
+          data: {
+            value,
+          },
         };
       },
     );

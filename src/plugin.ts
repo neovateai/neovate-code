@@ -172,6 +172,7 @@ export type Plugin = {
       quiet: boolean;
     },
   ) => Promise<void> | void;
+  destroy?: (this: PluginContext) => Promise<void> | void;
 
   // session
   context?: (

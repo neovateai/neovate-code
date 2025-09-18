@@ -1,27 +1,40 @@
 import defu from 'defu';
 import fs from 'fs';
 import { homedir } from 'os';
-import path from 'path';
+import path from 'pathe';
+import type { Provider } from './model';
 
-type McpStdioServerConfig = {
-  type?: 'stdio';
+export type McpStdioServerConfig = {
+  type: 'stdio';
   command: string;
   args: string[];
   env?: Record<string, string>;
   disable?: boolean;
 };
-type McpSSEServerConfig = {
+export type McpSSEServerConfig = {
   type: 'sse';
   url: string;
   disable?: boolean;
+  headers?: Record<string, string>;
 };
-type McpServerConfig = McpStdioServerConfig | McpSSEServerConfig;
+export type McpHttpServerConfig = {
+  type: 'http';
+  url: string;
+  disable?: boolean;
+  headers?: Record<string, string>;
+};
+type McpServerConfig =
+  | McpStdioServerConfig
+  | McpSSEServerConfig
+  | McpHttpServerConfig;
 
 export type ApprovalMode = 'default' | 'autoEdit' | 'yolo';
 
 export type CommitConfig = {
   language: string;
 };
+
+export type ProviderConfig = Partial<Omit<Provider, 'createModel'>>;
 
 export type Config = {
   model: string;
@@ -31,6 +44,7 @@ export type Config = {
   approvalMode: ApprovalMode;
   plugins: string[];
   mcpServers: Record<string, McpServerConfig>;
+  provider?: Record<string, ProviderConfig>;
   systemPrompt?: string;
   todo?: boolean;
   /**
@@ -43,6 +57,7 @@ export type Config = {
   commit?: CommitConfig;
   outputStyle?: string;
   outputFormat?: 'text' | 'stream-json' | 'json';
+  autoUpdate?: boolean;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -51,9 +66,11 @@ const DEFAULT_CONFIG: Partial<Config> = {
   approvalMode: 'default',
   plugins: [],
   mcpServers: {},
+  provider: {},
   todo: true,
   autoCompact: true,
   outputFormat: 'text',
+  autoUpdate: true,
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -64,10 +81,12 @@ const VALID_CONFIG_KEYS = [
   'autoCompact',
   'commit',
   'outputStyle',
+  'autoUpdate',
+  'provider',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
-const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit'];
-const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact'];
+const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider'];
+const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact', 'autoUpdate'];
 
 export class ConfigManager {
   globalConfig: Partial<Config>;
@@ -88,10 +107,18 @@ export class ConfigManager {
       `.${lowerProductName}`,
       'config.json',
     );
+    const projectLocalConfigPath = path.join(
+      cwd,
+      `.${lowerProductName}`,
+      'config.local.json',
+    );
     this.globalConfigPath = globalConfigPath;
     this.projectConfigPath = projectConfigPath;
     this.globalConfig = loadConfig(globalConfigPath);
-    this.projectConfig = loadConfig(projectConfigPath);
+    this.projectConfig = defu(
+      loadConfig(projectConfigPath),
+      loadConfig(projectLocalConfigPath),
+    );
     this.argvConfig = argvConfig;
   }
 

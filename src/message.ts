@@ -78,6 +78,7 @@ export type NormalizedMessage = Message & {
   timestamp: string;
   uuid: string;
   parentUuid: string | null;
+  uiContent?: string;
 };
 
 export function createUserMessage(
@@ -121,6 +122,13 @@ export function isUserTextMessage(message: Message) {
 }
 
 export function getMessageText(message: Message) {
+  if (
+    'uiContent' in message &&
+    message.uiContent &&
+    typeof message.uiContent === 'string'
+  ) {
+    return message.uiContent;
+  }
   return typeof message.content === 'string'
     ? message.content
     : message.content

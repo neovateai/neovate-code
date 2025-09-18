@@ -1,7 +1,7 @@
 import fm from 'front-matter';
 import fs from 'fs';
 import { glob } from 'glob';
-import path from 'path';
+import path from 'pathe';
 import type { Context } from './context';
 import {
   defaultOutputStyle,

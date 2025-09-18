@@ -145,6 +145,7 @@ interface AppActions {
   sendMessage: (opts: {
     message: string | null;
     planMode?: boolean;
+    model?: string;
   }) => Promise<LoopResult>;
   addMessage: (message: Message) => void;
   log: (log: string) => void;
@@ -296,29 +297,37 @@ export const useAppStore = create<AppStore>()(
           }
           // Upgrade
           if (opts.upgrade) {
-            const upgrade = new Upgrade(opts.upgrade);
-            const result = await upgrade.check();
-            if (result.hasUpdate && result.tarballUrl) {
-              set({
-                upgrade: {
-                  text: `v${result.latestVersion} available, upgrading...`,
-                },
-              });
-              try {
-                await upgrade.upgrade({ tarballUrl: result.tarballUrl });
+            const autoUpdateResponse = await bridge.request('getConfig', {
+              cwd: opts.cwd,
+              isGlobal: true,
+              key: 'autoUpdate',
+            });
+            const autoUpdate = autoUpdateResponse.data.value;
+            if (autoUpdate) {
+              const upgrade = new Upgrade(opts.upgrade);
+              const result = await upgrade.check();
+              if (result.hasUpdate && result.tarballUrl) {
                 set({
                   upgrade: {
-                    text: `Upgraded to v${result.latestVersion}, restart to apply changes.`,
-                    type: 'success',
+                    text: `v${result.latestVersion} available, upgrading...`,
                   },
                 });
-              } catch (error) {
-                set({
-                  upgrade: {
-                    text: `Failed to upgrade: ${String(error)}`,
-                    type: 'error',
-                  },
-                });
+                try {
+                  await upgrade.upgrade({ tarballUrl: result.tarballUrl });
+                  set({
+                    upgrade: {
+                      text: `Upgraded to v${result.latestVersion}, restart to apply changes.`,
+                      type: 'success',
+                    },
+                  });
+                } catch (error) {
+                  set({
+                    upgrade: {
+                      text: `Failed to upgrade: ${String(error)}`,
+                      type: 'error',
+                    },
+                  });
+                }
               }
             }
           }
@@ -478,27 +487,32 @@ export const useAppStore = create<AppStore>()(
                 }
               }
               if (isPrompt) {
-                await get().sendMessage({ message: null });
+                await get().sendMessage({
+                  message: null,
+                  model: command.model,
+                });
               }
             } else if (isLocalJSX) {
-              const jsx = await command.call(async (result: string) => {
+              const jsx = await command.call(async (result) => {
                 set({
                   slashCommandJSX: null,
                 });
-                set({
-                  messages: [
-                    ...get().messages,
-                    {
-                      role: 'user',
-                      content: [
-                        {
-                          type: 'text',
-                          text: result,
-                        },
-                      ],
-                    },
-                  ],
-                });
+                if (result) {
+                  set({
+                    messages: [
+                      ...get().messages,
+                      {
+                        role: 'user',
+                        content: [
+                          {
+                            type: 'text',
+                            text: result,
+                          },
+                        ],
+                      },
+                    ],
+                  });
+                }
               }, {} as any);
               set({
                 slashCommandJSX: jsx,
@@ -572,6 +586,7 @@ export const useAppStore = create<AppStore>()(
       sendMessage: async (opts: {
         message: string | null;
         planMode?: boolean;
+        model?: string;
       }) => {
         set({
           status: 'processing',
@@ -606,6 +621,7 @@ export const useAppStore = create<AppStore>()(
           cwd,
           sessionId,
           planMode: opts.planMode,
+          model: opts.model,
           attachments,
         });
         if (response.success) {
@@ -634,7 +650,11 @@ export const useAppStore = create<AppStore>()(
           cwd,
           sessionId,
         });
-        set({ status: 'idle', processingStartTime: null, processingTokens: 0 });
+        set({
+          status: 'idle',
+          processingStartTime: null,
+          processingTokens: 0,
+        });
       },
 
       clear: async () => {
@@ -784,6 +804,7 @@ export const useAppStore = create<AppStore>()(
           });
         }
       },
+
       approveToolUse: ({
         toolUse,
         category,

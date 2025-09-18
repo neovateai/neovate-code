@@ -351,7 +351,7 @@ export function createMcpCommand(_opts: { productName: string }) {
   return {
     type: 'local-jsx',
     name: 'mcp',
-    description: 'Display MCP server status and available tools',
+    description: 'MCP servers management',
     async call(onDone: (result: string) => void) {
       return <McpManagerComponent onExit={onDone} />;
     },

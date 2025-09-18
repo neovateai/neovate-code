@@ -4,7 +4,7 @@ import createDebug from 'debug';
 import fastify, { type FastifyInstance } from 'fastify';
 import * as fs from 'fs/promises';
 import { homedir } from 'os';
-import path from 'path';
+import path from 'pathe';
 import portfinder from 'portfinder';
 import { fileURLToPath } from 'url';
 import yargsParser from 'yargs-parser';

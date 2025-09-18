@@ -1,5 +1,5 @@
 import createDebug from 'debug';
-import path from 'path';
+import path from 'pathe';
 import { fileURLToPath, resolve } from 'url';
 import WebSocket from 'ws';
 import {

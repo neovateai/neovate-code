@@ -1,6 +1,7 @@
 import createDebug from 'debug';
 import { Box } from 'ink';
 import React, { useEffect } from 'react';
+import { COMPACT_MESSAGE } from '../../compact';
 import { GradientText } from '../../ui/GradientText';
 import { useAppStore } from '../../ui/store';
 import { useTextGradientAnimation } from '../../ui/useTextGradientAnimation';
@@ -40,6 +41,7 @@ export const compactCommand: LocalJSXCommand = {
               sessionId,
               messages: [
                 {
+                  parentUuid: null,
                   role: 'user',
                   content: [
                     {
@@ -47,13 +49,13 @@ export const compactCommand: LocalJSXCommand = {
                       text: result.data.summary,
                     },
                   ],
-                  parentUuid: null,
+                  uiContent: COMPACT_MESSAGE,
                 },
               ],
             });
             log('added messages');
             setLoading(false);
-            onDone('Chat history compressed successfully');
+            onDone(null);
           } catch (error) {
             debug('error compacting', error);
             setLoading(false);
