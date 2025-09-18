@@ -100,10 +100,35 @@ export class OutputStyleManager {
     });
   }
 
-  getOutputStyle(name: string | undefined): OutputStyle {
+  // name support
+  // 1) name of builtin and plugin extended output styles
+  // 2) path to a file which defines an output style with markdown with frontmatter
+  // 3) url to a file which defines an output style with markdown with frontmatter (TODO: support)
+  getOutputStyle(name: string | undefined, cwd: string): OutputStyle {
     const defaultOutputStyle = this.getDefaultOutputStyle();
     if (!name) {
       return defaultOutputStyle;
+    }
+    // Check if name is a file path
+    if (path.isAbsolute(name) || name.startsWith('.')) {
+      if (!name.endsWith('.md')) {
+        throw new Error('Output style file must be a .md file');
+      }
+      let filePath = name;
+      if (!path.isAbsolute(name)) {
+        filePath = path.resolve(cwd, name);
+        // Validate against path traversal attacks
+        if (!filePath.startsWith(path.resolve(cwd))) {
+          throw new Error('Path traversal not allowed');
+        }
+      }
+      const file = loadPolishedMarkdownFile(filePath);
+      return new OutputStyle({
+        name: file.name,
+        description: file.description,
+        isCodingRelated: !!file.attributes.isCodingRelated,
+        prompt: file.body,
+      });
     }
     return (
       this.outputStyles.find((style) => style.name === name) ||
@@ -144,25 +169,7 @@ export function loadPolishedMarkdownFiles(
   });
   return files.map((relativePath) => {
     const absPath = path.join(dir, relativePath);
-    const file = loadMarkdownFile(absPath);
-    const name = relativePath.replace(/\.md$/, '').replace(/[/\\]/g, ':');
-    let description = file.attributes.description?.trim();
-    if (!description) {
-      const lines = file.body.split('\n');
-      const firstLine = lines.find((line) => line.trim())?.trim();
-      if (firstLine && /^[a-zA-Z]/.test(firstLine)) {
-        description = firstLine;
-      }
-    }
-    if (!description) {
-      description = kebabToTitleCase(name);
-    }
-    return {
-      ...file,
-      relativePath,
-      name,
-      description,
-    };
+    return loadPolishedMarkdownFile(absPath);
   });
 }
 
@@ -173,5 +180,30 @@ function loadMarkdownFile(path: string): MarkdownFile {
     path,
     attributes,
     body,
+  };
+}
+
+function loadPolishedMarkdownFile(filePath: string): NormalizedMarkdownFile {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Output style file not found: ${filePath}`);
+  }
+  const file = loadMarkdownFile(filePath);
+  const name = path.basename(filePath, '.md');
+  let description = file.attributes.description?.trim();
+  if (!description) {
+    const lines = file.body.split('\n');
+    const firstLine = lines.find((line) => line.trim())?.trim();
+    if (firstLine && /^[a-zA-Z]/.test(firstLine)) {
+      description = firstLine;
+    }
+  }
+  if (!description) {
+    description = kebabToTitleCase(name);
+  }
+  return {
+    ...file,
+    relativePath: filePath,
+    name,
+    description,
   };
 }
