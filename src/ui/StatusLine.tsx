@@ -54,9 +54,13 @@ function StatusMain() {
     return inputTokens + outputTokens;
   }, [messages]);
   const contextLeftPercentage = useMemo(() => {
-    return Math.round(
+    let percentage = Math.round(
       ((modelContextLimit - lastAssistantTokenUsed) / modelContextLimit) * 100,
     );
+    if (isNaN(percentage)) {
+      percentage = 100;
+    }
+    return percentage;
   }, [lastAssistantTokenUsed, modelContextLimit]);
   const folderName = path.basename(cwd);
   if (status === 'help') return <HelpHint />;
@@ -73,7 +77,8 @@ function StatusMain() {
   return (
     <Box>
       <Text color="gray">
-        [{model}] | 📁 {folderName} | 🪙 {(tokenUsed / 1000).toFixed(1)}K |{' '}
+        [{model ? model : <Text color="red">use /model to select a model</Text>}
+        ] | 📁 {folderName} | 🪙 {(tokenUsed / 1000).toFixed(1)}K |{' '}
         <Text color={getContextLeftColor(contextLeftPercentage)}>
           {contextLeftPercentage}%
         </Text>{' '}
