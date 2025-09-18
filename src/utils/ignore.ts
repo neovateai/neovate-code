@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { join, relative, sep } from 'path';
+import { join, relative, sep } from 'pathe';
 
 interface IgnoreCache {
   mtime: number;

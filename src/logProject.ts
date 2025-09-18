@@ -4,7 +4,7 @@ import chokidar, { FSWatcher } from 'chokidar';
 import createDebug from 'debug';
 import { type FastifyPluginAsync } from 'fastify';
 import * as fs from 'fs/promises';
-import { join } from 'path';
+import { join } from 'pathe';
 import { WebSocketServer } from 'ws';
 import { type LogEntry } from './jsonl';
 

@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 import type { NormalizedMessage } from './message';
 import { createUserMessage } from './message';
 

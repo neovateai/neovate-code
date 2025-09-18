@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 
 export function getLlmsRules(opts: {
   cwd: string;

@@ -124,6 +124,7 @@ const mcpRoute: FastifyPluginAsync = async (app) => {
           throw new Error('Command is required for stdio transport');
         }
         mcpServers[name] = {
+          type: 'stdio',
           command,
           args,
           env: env ? JSON.parse(env) : undefined,
@@ -208,6 +209,7 @@ const mcpRoute: FastifyPluginAsync = async (app) => {
             ? (existingServer as any)
             : { command: '', args: [], env: undefined };
         mcpServers[name] = {
+          type: 'stdio',
           command: command || stdioServer.command,
           args: args || stdioServer.args,
           env: env ? JSON.parse(env) : stdioServer.env,

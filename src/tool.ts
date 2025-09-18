@@ -1,5 +1,5 @@
 import { isZodObject } from '@openai/agents/utils';
-import path from 'path';
+import path from 'pathe';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { Context } from './context';

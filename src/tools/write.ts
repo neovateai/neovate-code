@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 import { z } from 'zod';
 import { createTool } from '../tool';
 

@@ -1,27 +1,40 @@
 import defu from 'defu';
 import fs from 'fs';
 import { homedir } from 'os';
-import path from 'path';
+import path from 'pathe';
+import type { Provider } from './model';
 
-type McpStdioServerConfig = {
-  type?: 'stdio';
+export type McpStdioServerConfig = {
+  type: 'stdio';
   command: string;
   args: string[];
   env?: Record<string, string>;
   disable?: boolean;
 };
-type McpSSEServerConfig = {
+export type McpSSEServerConfig = {
   type: 'sse';
   url: string;
   disable?: boolean;
+  headers?: Record<string, string>;
 };
-type McpServerConfig = McpStdioServerConfig | McpSSEServerConfig;
+export type McpHttpServerConfig = {
+  type: 'http';
+  url: string;
+  disable?: boolean;
+  headers?: Record<string, string>;
+};
+type McpServerConfig =
+  | McpStdioServerConfig
+  | McpSSEServerConfig
+  | McpHttpServerConfig;
 
 export type ApprovalMode = 'default' | 'autoEdit' | 'yolo';
 
 export type CommitConfig = {
   language: string;
 };
+
+export type ProviderConfig = Partial<Omit<Provider, 'createModel'>>;
 
 export type Config = {
   model: string;
@@ -31,6 +44,7 @@ export type Config = {
   approvalMode: ApprovalMode;
   plugins: string[];
   mcpServers: Record<string, McpServerConfig>;
+  provider?: Record<string, ProviderConfig>;
   systemPrompt?: string;
   todo?: boolean;
   /**
@@ -52,6 +66,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   approvalMode: 'default',
   plugins: [],
   mcpServers: {},
+  provider: {},
   todo: true,
   autoCompact: true,
   outputFormat: 'text',
@@ -67,9 +82,10 @@ const VALID_CONFIG_KEYS = [
   'commit',
   'outputStyle',
   'autoUpdate',
+  'provider',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
-const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit'];
+const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider'];
 const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact', 'autoUpdate'];
 
 export class ConfigManager {
@@ -91,10 +107,18 @@ export class ConfigManager {
       `.${lowerProductName}`,
       'config.json',
     );
+    const projectLocalConfigPath = path.join(
+      cwd,
+      `.${lowerProductName}`,
+      'config.local.json',
+    );
     this.globalConfigPath = globalConfigPath;
     this.projectConfigPath = projectConfigPath;
     this.globalConfig = loadConfig(globalConfigPath);
-    this.projectConfig = loadConfig(projectConfigPath);
+    this.projectConfig = defu(
+      loadConfig(projectConfigPath),
+      loadConfig(projectLocalConfigPath),
+    );
     this.argvConfig = argvConfig;
   }
 
@@ -108,18 +132,66 @@ export class ConfigManager {
   }
 
   removeConfig(global: boolean, key: string, values?: string[]) {
-    if (!VALID_CONFIG_KEYS.includes(key)) {
-      throw new Error(`Invalid config key: ${key}`);
-    }
     const config = global ? this.globalConfig : this.projectConfig;
     const configPath = global ? this.globalConfigPath : this.projectConfigPath;
-    if (values) {
-      (config[key as keyof Config] as any) = (
-        config[key as keyof Config] as string[]
-      ).filter((v) => !values.includes(v));
+
+    if (key.includes('.')) {
+      // Handle dot notation for nested keys
+      const keys = key.split('.');
+      const rootKey = keys[0];
+
+      if (!VALID_CONFIG_KEYS.includes(rootKey)) {
+        throw new Error(`Invalid config key: ${rootKey}`);
+      }
+
+      if (!OBJECT_CONFIG_KEYS.includes(rootKey)) {
+        throw new Error(
+          `Config key '${rootKey}' does not support nested properties`,
+        );
+      }
+
+      // Navigate to the nested property
+      let current: any = config[rootKey as keyof Config];
+      if (!current) {
+        return; // Nothing to remove
+      }
+
+      // Navigate to the parent of the target property
+      for (let i = 1; i < keys.length - 1; i++) {
+        if (!current[keys[i]]) {
+          return; // Path doesn't exist, nothing to remove
+        }
+        current = current[keys[i]];
+      }
+
+      const lastKey = keys[keys.length - 1];
+
+      if (values) {
+        // Remove specific values from array
+        if (Array.isArray(current[lastKey])) {
+          current[lastKey] = current[lastKey].filter(
+            (v: string) => !values.includes(v),
+          );
+        }
+      } else {
+        // Delete the property
+        delete current[lastKey];
+      }
     } else {
-      delete config[key as keyof Config];
+      // Handle flat keys
+      if (!VALID_CONFIG_KEYS.includes(key)) {
+        throw new Error(`Invalid config key: ${key}`);
+      }
+
+      if (values) {
+        (config[key as keyof Config] as any) = (
+          config[key as keyof Config] as string[]
+        ).filter((v) => !values.includes(v));
+      } else {
+        delete config[key as keyof Config];
+      }
     }
+
     saveConfig(configPath, config, DEFAULT_CONFIG);
   }
 

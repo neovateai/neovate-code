@@ -1,5 +1,5 @@
 import { execFile } from 'child_process';
-import path from 'path';
+import path from 'pathe';
 import { findActualExecutable } from 'spawn-rx';
 import { fileURLToPath, resolve } from 'url';
 
