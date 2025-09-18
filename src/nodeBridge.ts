@@ -864,9 +864,8 @@ class NodeHandlerRegistry {
         cwd: string;
         name: string;
         payload: Record<string, any>;
-        sessionId: string;
       }) => {
-        const { cwd, name, payload, sessionId } = data;
+        const { cwd, name, payload } = data;
         const context = await this.getContext(cwd);
         await context.apply({
           hook: 'telemetry',
@@ -874,7 +873,6 @@ class NodeHandlerRegistry {
             {
               name,
               payload,
-              sessionId,
             },
           ],
           type: PluginHookType.Parallel,
