@@ -302,10 +302,9 @@ export default function TextInput({
         const hasMultipleLines = mergedInput.includes('\n');
         const isMediumSizeMultiChunk =
           totalLength > PASTE_CONFIG.MEDIUM_SIZE_MULTI_CHUNK_THRESHOLD &&
-          chunks.length > 1;
+          chunks.length > 3;
         const isPastePattern =
           totalLength > PASTE_CONFIG.LARGE_INPUT_THRESHOLD ||
-          chunks.length > 2 ||
           hasMultipleLines ||
           isMediumSizeMultiChunk;
         if (isPastePattern) {
@@ -322,10 +321,9 @@ export default function TextInput({
             }
           })();
         } else {
-          // Process each chunk as individual input if not paste-like
-          chunks.forEach((chunk) =>
-            onInput(chunk, { name: '' } as unknown as Key),
-          );
+          onInput(mergedInput.replace(/\r$/, ''), {
+            name: '',
+          } as unknown as Key);
         }
       }
     }, PASTE_CONFIG.TIMEOUT_MS);
@@ -357,8 +355,6 @@ export default function TextInput({
     // 6. Medium-sized input (likely copy-paste even if not huge)
     const isLargeInput = input.length > PASTE_CONFIG.LARGE_INPUT_THRESHOLD;
     const hasNewlines = input.includes('\n');
-    const isMediumInput =
-      input.length > PASTE_CONFIG.MEDIUM_INPUT_SIZE_THRESHOLD;
     const isRapidSequence =
       timeSinceFirst < PASTE_CONFIG.RAPID_INPUT_THRESHOLD_MS &&
       currentState.chunks.length > 0;
@@ -371,7 +367,6 @@ export default function TextInput({
       onPaste &&
       (isLargeInput ||
         hasNewlines ||
-        isMediumInput ||
         isImageFormat ||
         isRapidSequence ||
         isNewRapidInput ||
