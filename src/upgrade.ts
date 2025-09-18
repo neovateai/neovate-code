@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import fs from 'fs';
 import os from 'os';
-import path from 'path';
+import path from 'pathe';
 import { pipeline } from 'stream/promises';
 import * as tar from 'tar';
 

@@ -7,6 +7,9 @@ import {
   createOpenRouter,
 } from '@openrouter/ai-sdk-provider';
 import assert from 'assert';
+import defu from 'defu';
+import { omit } from 'lodash-es';
+import type { ProviderConfig } from './config';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
 import { aisdk } from './utils/ai-sdk';
@@ -53,8 +56,13 @@ export interface Provider {
   apiEnv?: string[];
   api?: string;
   doc: string;
-  models: Record<string, Omit<Model, 'id' | 'cost'>>;
+  models: Record<string, string | Omit<Model, 'id' | 'cost'>>;
   createModel(name: string, provider: Provider): LanguageModelV1;
+  options?: {
+    baseURL?: string;
+    apiKey?: string;
+    headers?: Record<string, string>;
+  };
 }
 
 export type ProvidersMap = Record<string, Provider>;
@@ -503,7 +511,10 @@ export const models: ModelMap = {
   },
 };
 
-function getProviderApi(provider: Provider) {
+function getProviderBaseURL(provider: Provider) {
+  if (provider.options?.baseURL) {
+    return provider.options.baseURL;
+  }
   let api = provider.api;
   for (const env of provider.apiEnv || []) {
     if (process.env[env]) {
@@ -514,14 +525,28 @@ function getProviderApi(provider: Provider) {
   return api;
 }
 
+function getProviderApiKey(provider: Provider) {
+  if (provider.options?.apiKey) {
+    return provider.options.apiKey;
+  }
+  const envs = provider.env;
+  for (const env of envs) {
+    if (process.env[env]) {
+      return process.env[env];
+    }
+  }
+  return '';
+}
+
 export const defaultModelCreator = (name: string, provider: Provider) => {
   if (provider.id !== 'openai') {
     assert(provider.api, `Provider ${provider.id} must have an api`);
   }
-  const api = getProviderApi(provider);
+  const baseURL = getProviderBaseURL(provider);
+  const apiKey = getProviderApiKey(provider);
   return createOpenAI({
-    baseURL: api,
-    apiKey: provider.env[0] ? process.env[provider.env[0]] : '',
+    baseURL,
+    apiKey,
   })(name);
 };
 
@@ -556,7 +581,7 @@ export const providers: ProvidersMap = {
       'gemini-2.5-pro': models['gemini-2.5-pro'],
     },
     createModel(name, provider) {
-      const api = getProviderApi(provider);
+      const api = getProviderBaseURL(provider);
       const google = createGoogleGenerativeAI({
         apiKey: process.env[provider.env[0]] || process.env[provider.env[1]],
         baseURL: api,
@@ -587,7 +612,7 @@ export const providers: ProvidersMap = {
       'grok-code-fast-1': models['grok-code-fast-1'],
     },
     createModel(name, provider) {
-      const api = getProviderApi(provider);
+      const api = getProviderBaseURL(provider);
       return createXai({
         baseURL: api,
         apiKey: process.env[provider.env[0]],
@@ -608,7 +633,7 @@ export const providers: ProvidersMap = {
       'claude-3-5-sonnet-20241022': models['claude-3-5-sonnet-20241022'],
     },
     createModel(name, provider) {
-      const api = getProviderApi(provider);
+      const api = getProviderBaseURL(provider);
       return createAnthropic({
         apiKey: process.env[provider.env[0]],
         baseURL: api,
@@ -720,7 +745,7 @@ export const providers: ProvidersMap = {
   'moonshotai-cn': {
     id: 'moonshotai-cn',
     env: ['MOONSHOT_API_KEY'],
-    name: 'Moonshot',
+    name: 'MoonshotCN',
     api: 'https://api.moonshot.cn/v1',
     doc: 'https://platform.moonshot.cn/docs/api/chat',
     models: {
@@ -774,6 +799,32 @@ export type ModelInfo = {
   aisdk: AiSdkModel;
 };
 
+function mergeConfigProviders(
+  hookedProviders: ProvidersMap,
+  configProviders: Record<string, ProviderConfig>,
+): ProvidersMap {
+  const mergedProviders = { ...hookedProviders };
+  Object.entries(configProviders).forEach(([providerId, config]) => {
+    let provider = mergedProviders[providerId] || {};
+    provider = defu(config, provider) as Provider;
+    if (!provider.createModel) {
+      provider.createModel = defaultModelCreator;
+    }
+    if (provider.models) {
+      for (const modelId in provider.models) {
+        const model = provider.models[modelId];
+        if (typeof model === 'string') {
+          const actualModel = models[model];
+          assert(actualModel, `Model ${model} not exists.`);
+          provider.models[modelId] = actualModel;
+        }
+      }
+    }
+    mergedProviders[providerId] = provider;
+  });
+  return mergedProviders;
+}
+
 export async function resolveModelWithContext(
   name: string | null,
   context: Context,
@@ -790,6 +841,11 @@ export async function resolveModelWithContext(
     memo: providers,
     type: PluginHookType.SeriesLast,
   });
+
+  const finalProviders = context.config.provider
+    ? mergeConfigProviders(hookedProviders, context.config.provider)
+    : hookedProviders;
+
   const hookedModelAlias = await context.apply({
     hook: 'modelAlias',
     args: [],
@@ -798,10 +854,10 @@ export async function resolveModelWithContext(
   });
   const modelName = name || context.config.model;
   const model = modelName
-    ? resolveModel(modelName, hookedProviders, hookedModelAlias)
+    ? resolveModel(modelName, finalProviders, hookedModelAlias)
     : null;
   return {
-    providers: hookedProviders,
+    providers: finalProviders,
     modelAlias,
     model,
   };

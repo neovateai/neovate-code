@@ -32,8 +32,7 @@
     "dev": "node esbuild.js --watch",
     "pretest": "pnpm run build",
     "test": "vscode-test",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "biome:format": "biome format .",
     "package": "vsce package --no-dependencies --out ../vendor/takumi.vsix",
     "publish": "vsce publish --no-dependencies",
     "bump": "npm version patch"

@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 import { platform } from 'process';
 import { Context } from './context';
 import { PluginHookType } from './plugin';

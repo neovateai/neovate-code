@@ -36,11 +36,13 @@ const useStyle = createStyles(
         height: 100%;
         display: flex;
         flex-direction: column;
-        ${maxHeight
-          ? css`
+        ${
+          maxHeight
+            ? css`
               max-height: ${maxHeight}px;
             `
-          : ''}
+            : ''
+        }
       `,
       editor: css`
         height: 100%;

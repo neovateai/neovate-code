@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 import { z } from 'zod';
 import { IMAGE_EXTENSIONS } from '../constants';
 import { type ToolResult, createTool } from '../tool';

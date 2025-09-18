@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 import type { ApprovalMode } from './config';
 import { History } from './history';
 import type { NormalizedMessage } from './message';
@@ -156,7 +156,9 @@ export function loadSessionMessages(opts: {
         return JSON.parse(line);
       } catch (e: any) {
         throw new Error(
-          `Failed to parse line ${index + 1} of log file: ${opts.logPath}: ${e.message}`,
+          `Failed to parse line ${index + 1} of log file: ${opts.logPath}: ${
+            e.message
+          }`,
         );
       }
     });

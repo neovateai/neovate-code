@@ -1,6 +1,6 @@
 import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
-import { basename, extname, isAbsolute } from 'path';
+import { basename, extname, isAbsolute } from 'pathe';
 
 // Error messages for different platforms
 function getClipboardErrorMessage(): string {
