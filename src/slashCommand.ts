@@ -132,12 +132,20 @@ export class SlashCommandManager {
         file.attributes.progressMessage || 'Executing command...',
       getPromptForCommand: async (args) => {
         let prompt = file.body.trim();
-        if (prompt.includes('$ARGUMENTS')) {
+        // Check if prompt contains positional parameters ($1, $2, etc.)
+        const hasPositionalParams = /\$[1-9]\d*/.test(prompt);
+
+        if (hasPositionalParams) {
+          // Replace positional parameters
+          prompt = replaceParameterPlaceholders(prompt, args);
+        } else if (prompt.includes('$ARGUMENTS')) {
+          // Legacy $ARGUMENTS support
           prompt = prompt.replace(/\$ARGUMENTS/g, args || '');
         } else if (args.trim()) {
-          // If no $ARGUMENTS placeholder but args provided, append them
+          // If no placeholders but args provided, append them
           prompt += `\n\nArguments: ${args}`;
         }
+
         return [
           {
             role: 'user',
@@ -173,6 +181,23 @@ export function parseSlashCommand(input: string): {
     command: trimmed.slice(1, spaceIndex),
     args: trimmed.slice(spaceIndex + 1).trim(),
   };
+}
+
+export function replaceParameterPlaceholders(
+  prompt: string,
+  args: string,
+): string {
+  const parsedArgs = args.split(' ');
+  let result = prompt;
+
+  // Replace positional parameters $1, $2, $3, etc.
+  for (let i = 0; i < parsedArgs.length; i++) {
+    const placeholder = `$${i + 1}`;
+    const regex = new RegExp('\\' + placeholder + '\\b', 'g');
+    result = result.replace(regex, parsedArgs[i] || '');
+  }
+
+  return result;
 }
 
 export function isSlashCommand(input: string): boolean {
