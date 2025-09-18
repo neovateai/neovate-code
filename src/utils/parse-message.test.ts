@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseMessage } from './parse-message';
 
+// TODO: refact these test cases
 describe('parseMessage', () => {
   describe('纯文本解析', () => {
     it('应该解析纯文本内容', () => {

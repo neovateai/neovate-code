@@ -27,8 +27,9 @@ export function parseMessage(text: string): MessageContent[] {
   let currentTextContent: TextContent | undefined = undefined;
 
   let currentToolUse: ToolUse | undefined = undefined; // 当前正在解析的工具使用对象
-  // 当前正在解析的参数标签名 ('tool_name' 或 'arguments')
-  let currentParamName: 'tool_name' | 'arguments' | undefined = undefined;
+  // 当前正在解析的参数标签名 ('tool_name', 'arguments' 或 'argument')
+  let currentParamName: 'tool_name' | 'arguments' | 'argument' | undefined =
+    undefined;
   let currentParamValueStart = 0; // 当前参数值的起始索引
 
   // --- 标签常量 ---
@@ -38,13 +39,19 @@ export function parseMessage(text: string): MessageContent[] {
   const TOOL_NAME_CLOSE = '</tool_name>';
   const ARGUMENTS_OPEN = '<arguments>';
   const ARGUMENTS_CLOSE = '</arguments>';
+  const ARGUMENT_OPEN = '<argument>';
+  const ARGUMENT_CLOSE = '</argument>';
 
   const len = text.length;
   for (let i = 0; i < len; i++) {
     // --- 状态1: 正在解析工具的参数内部 (e.g., 在 <tool_name>...</tool_name> 之间) ---
     if (currentToolUse && currentParamName) {
       const closeTag =
-        currentParamName === 'tool_name' ? TOOL_NAME_CLOSE : ARGUMENTS_CLOSE;
+        currentParamName === 'tool_name'
+          ? TOOL_NAME_CLOSE
+          : currentParamName === 'arguments'
+            ? ARGUMENTS_CLOSE
+            : ARGUMENT_CLOSE;
       // 检查当前位置是否是参数的闭合标签
       if (
         i >= closeTag.length - 1 &&
@@ -58,7 +65,10 @@ export function parseMessage(text: string): MessageContent[] {
 
         if (currentParamName === 'tool_name') {
           currentToolUse.name = value.trim();
-        } else if (currentParamName === 'arguments') {
+        } else if (
+          currentParamName === 'arguments' ||
+          currentParamName === 'argument'
+        ) {
           let jsonString = value.trim();
           try {
             // 尝试解析JSON字符串
@@ -108,6 +118,15 @@ export function parseMessage(text: string): MessageContent[] {
         text.startsWith(ARGUMENTS_OPEN, i - ARGUMENTS_OPEN.length + 1)
       ) {
         currentParamName = 'arguments';
+        currentParamValueStart = i + 1;
+        continue;
+      }
+      // 检查是否是 <argument> 的开始
+      if (
+        i >= ARGUMENT_OPEN.length - 1 &&
+        text.startsWith(ARGUMENT_OPEN, i - ARGUMENT_OPEN.length + 1)
+      ) {
+        currentParamName = 'argument';
         currentParamValueStart = i + 1;
         continue;
       }
@@ -178,7 +197,10 @@ export function parseMessage(text: string): MessageContent[] {
       const value = text.slice(currentParamValueStart); // 从参数开始一直到字符串末尾
       if (currentParamName === 'tool_name') {
         currentToolUse.name = value.trim();
-      } else if (currentParamName === 'arguments') {
+      } else if (
+        currentParamName === 'arguments' ||
+        currentParamName === 'argument'
+      ) {
         let jsonString = value.trim();
         // 处理 arguments 未闭合的情况
         if (jsonString.endsWith('</use_tool>')) {
