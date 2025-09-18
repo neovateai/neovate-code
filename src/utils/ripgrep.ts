@@ -1,7 +1,10 @@
 import { execFile } from 'child_process';
+import createDebug from 'debug';
 import path from 'pathe';
 import { findActualExecutable } from 'spawn-rx';
-import { fileURLToPath, resolve } from 'url';
+import { fileURLToPath } from 'url';
+
+const debug = createDebug('neovate:utils:ripgrep');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,7 +45,7 @@ export async function ripGrep(
       },
       (err, stdout) => {
         if (err) {
-          console.error(`[Ripgrep] Error: ${err}`);
+          debug(`[Ripgrep] Error: ${err}`);
           resolve([]);
         } else {
           resolve(stdout.trim().split('\n').filter(Boolean));
