@@ -70,7 +70,6 @@
     "@openai/agents-extensions": "^0.0.16",
     "@openrouter/ai-sdk-provider": "^0.7.5",
     "@sinclair/typebox": "^0.34.38",
-    "@stagewise/agent-interface": "^0.2.3",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@types/bun": "^1.2.21",
     "@types/debug": "^4.1.12",

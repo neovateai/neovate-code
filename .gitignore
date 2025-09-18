@@ -12,3 +12,5 @@
 /CLAUDE.md
 .takumi/todos
 /tmp
+/plugins/*/node_modules
+/plugins/*/dist

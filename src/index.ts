@@ -24,6 +24,7 @@ export { createTool } from './tool';
 export { z as _zod } from 'zod';
 export { ConfigManager as _ConfigManager } from './config';
 export { query as _query } from './query';
+export { Project as _Project } from './project';
 
 export type { Plugin, Context };
 
