@@ -14,6 +14,8 @@ $ export AIHUBMIX_API_KEY="sk-..."
 $ export OPENROUTER_API_KEY="sk-..."
 ```
 
+If you are using VSCode or Cursor, install [Biome extension](https://marketplace.visualstudio.com/items?itemName=biomejs.biome) to format the code.
+
 ## Development
 
 It's recommended to use [Volta](https://volta.sh/) to manage the node and pnpm version. And you need to set the `VOLTA_FEATURE_PNPM` environment variable to enable pnpm support.

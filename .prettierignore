@@ -1,9 +1,0 @@
-node_modules
-dist
-*.d.ts
-compiled
-*.js
-*.md
-*.yaml
-.tnf
-**/routeTree.gen.ts

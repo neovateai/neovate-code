@@ -493,7 +493,7 @@ class NodeHandlerRegistry {
         command: string;
         args: string;
       }) => {
-        const { cwd, sessionId, command, args } = data;
+        const { cwd, command, args } = data;
         const context = await this.getContext(cwd);
         const slashCommandManager = await SlashCommandManager.create(context);
         const commandEntry = slashCommandManager.get(command);
@@ -852,6 +852,31 @@ class NodeHandlerRegistry {
       'clearContext',
       async (data: { cwd?: string }) => {
         await this.clearContext(data.cwd);
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'telemetry',
+      async (data: {
+        cwd: string;
+        name: string;
+        payload: Record<string, any>;
+      }) => {
+        const { cwd, name, payload } = data;
+        const context = await this.getContext(cwd);
+        await context.apply({
+          hook: 'telemetry',
+          args: [
+            {
+              name,
+              payload,
+            },
+          ],
+          type: PluginHookType.Parallel,
+        });
         return {
           success: true,
         };
