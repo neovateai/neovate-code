@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { readFile, writeFile } from 'fs/promises';
-import path from 'path';
+import path from 'pathe';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';

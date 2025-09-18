@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { createJiti } from 'jiti';
-import path from 'path';
+import path from 'pathe';
 import resolve from 'resolve';
 import { type Config, ConfigManager } from './config';
 import { MCPManager } from './mcp';
@@ -65,11 +65,11 @@ export class Context {
 
   async destroy() {
     await this.mcpManager.destroy();
-    // await this.apply({
-    //   hook: 'destroy',
-    //   args: [],
-    //   type: PluginHookType.Parallel,
-    // });
+    await this.apply({
+      hook: 'destroy',
+      args: [],
+      type: PluginHookType.Parallel,
+    });
   }
 
   static async create(opts: ContextCreateOpts) {
@@ -118,8 +118,6 @@ export class Context {
     });
     tempContext.config = resolvedConfig;
     const mcpManager = MCPManager.create(resolvedConfig.mcpServers || {});
-    // init mcp manager but don't wait for it
-    mcpManager.initAsync();
     return new Context({
       cwd,
       productName,

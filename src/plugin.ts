@@ -172,6 +172,7 @@ export type Plugin = {
       quiet: boolean;
     },
   ) => Promise<void> | void;
+  destroy?: (this: PluginContext) => Promise<void> | void;
 
   // session
   context?: (
@@ -239,6 +240,15 @@ export type Plugin = {
   // slash commands
   // /status
   status?: (this: PluginContext) => Promise<Status> | Status;
+
+  // Telemetry hook for collecting usage analytics
+  telemetry?: (
+    this: PluginContext,
+    opts: {
+      name: string;
+      payload: Record<string, any>;
+    },
+  ) => Promise<void> | void;
 
   // server
   _serverAppData?: (

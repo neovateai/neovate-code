@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --no-warnings=ExperimentalWarning
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 import { fileURLToPath } from 'url';
 import { runNeovate } from '.';
 import { PRODUCT_ASCII_ART, PRODUCT_NAME } from './constants';

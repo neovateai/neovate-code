@@ -44,11 +44,13 @@ const useStyle = createStyles(
         padding: 8px 0 8px 8px;
         overflow: hidden;
         transition: width 0.3s ease-in-out;
-        ${codeViewerVisible
-          ? css`
+        ${
+          codeViewerVisible
+            ? css`
               width: 40vw;
             `
-          : ''}
+            : ''
+        }
       `,
     };
   },

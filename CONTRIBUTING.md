@@ -14,18 +14,14 @@ $ export AIHUBMIX_API_KEY="sk-..."
 $ export OPENROUTER_API_KEY="sk-..."
 ```
 
+If you are using VSCode or Cursor, install [Biome extension](https://marketplace.visualstudio.com/items?itemName=biomejs.biome) to format the code.
+
 ## Development
 
 It's recommended to use [Volta](https://volta.sh/) to manage the node and pnpm version. And you need to set the `VOLTA_FEATURE_PNPM` environment variable to enable pnpm support.
 
 ```bash
 export VOLTA_FEATURE_PNPM=1
-```
-
-Make sure the bun's version is 1.2.7 before run build.
-
-```bash
-$ curl -fsSL https://bun.sh/install | bash -s "bun-v1.2.7"
 ```
 
 Install and build the CLI.

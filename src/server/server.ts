@@ -3,7 +3,7 @@ import { type TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import createDebug from 'debug';
 import fastify, { type FastifyInstance } from 'fastify';
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 import portfinder from 'portfinder';
 import { PluginHookType } from '../plugin';
 import { Service } from '../service';

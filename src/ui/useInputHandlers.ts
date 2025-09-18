@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppStore } from './store';
 import { useFileSuggestion } from './useFileSuggestion';
 import { useImagePasteManager } from './useImagePasteManager';
@@ -20,9 +20,48 @@ export function useInputHandlers() {
   } = useAppStore();
   const inputState = useInputState();
   const slashCommands = useSlashCommands(inputState.state.value);
-  const fileSuggestion = useFileSuggestion(inputState.state);
+  const [forceTabTrigger, setForceTabTrigger] = useState(false);
+  const fileSuggestion = useFileSuggestion(inputState.state, forceTabTrigger);
   const pasteManager = usePasteManager();
   const imageManager = useImagePasteManager();
+
+  const resetTabTrigger = useCallback(() => {
+    setForceTabTrigger(false);
+  }, []);
+
+  const applyFileSuggestion = useCallback(() => {
+    const val = inputState.state.value;
+    const beforeMatch = val.substring(0, fileSuggestion.startIndex);
+    const afterMatch = val
+      .substring(fileSuggestion.startIndex + fileSuggestion.fullMatch.length)
+      .trim();
+    const file = fileSuggestion.getSelected();
+
+    // Add @ prefix only for @ trigger type
+    const prefix = fileSuggestion.triggerType === 'at' ? '@' : '';
+    const newValue = `${beforeMatch}${prefix}${file} ${afterMatch}`.trim();
+    const newCursorPos = `${beforeMatch}${prefix}${file} `.length;
+
+    inputState.setValue(newValue);
+    inputState.setCursorPosition(newCursorPos);
+    // Reset tab trigger after selection
+    resetTabTrigger();
+  }, [inputState, fileSuggestion, resetTabTrigger]);
+
+  const canTriggerTabSuggestion = useMemo(
+    () =>
+      slashCommands.suggestions.length === 0 &&
+      fileSuggestion.triggerType !== 'at',
+    [slashCommands.suggestions.length, fileSuggestion.triggerType],
+  );
+
+  // Auto reset tab trigger when input becomes empty or contains @
+  useEffect(() => {
+    const value = inputState.state.value;
+    if (value.trim() === '' || value.includes('@')) {
+      resetTabTrigger();
+    }
+  }, [inputState.state.value, resetTabTrigger]);
 
   const handleSubmit = useCallback(async () => {
     const value = inputState.state.value.trim();
@@ -36,21 +75,21 @@ export function useInputHandlers() {
     }
     // 2. file suggestion
     if (fileSuggestion.matchedPaths.length > 0) {
-      const val = inputState.state.value;
-      const beforeAt = val.substring(0, fileSuggestion.startIndex);
-      const afterAt = val
-        .substring(fileSuggestion.startIndex + fileSuggestion.fullMatch.length)
-        .trim();
-      const file = fileSuggestion.getSelected();
-      const newValue = `${beforeAt}@${file} ${afterAt}`.trim();
-      inputState.setValue(newValue);
-      inputState.setCursorPosition(`${beforeAt}@${file} `.length);
+      applyFileSuggestion();
       return;
     }
     // 3. submit (pasted text expansion is handled in store.send)
     inputState.setValue('');
+    resetTabTrigger();
     await send(value);
-  }, [inputState, send, slashCommands, fileSuggestion]);
+  }, [
+    inputState,
+    send,
+    slashCommands,
+    fileSuggestion,
+    applyFileSuggestion,
+    resetTabTrigger,
+  ]);
 
   const handleTabPress = useCallback(
     (isShiftTab: boolean) => {
@@ -62,27 +101,35 @@ export function useInputHandlers() {
         return;
       }
       // 2. file suggestions
-      // TODO: same handling as handleSubmit
       if (fileSuggestion.matchedPaths.length > 0) {
-        const val = inputState.state.value;
-        const beforeAt = val.substring(0, fileSuggestion.startIndex);
-        const afterAt = val
-          .substring(
-            fileSuggestion.startIndex + fileSuggestion.fullMatch.length,
-          )
-          .trim();
-        const file = fileSuggestion.getSelected();
-        const newValue = `${beforeAt}@${file} ${afterAt}`.trim();
-        inputState.setValue(newValue);
-        inputState.setCursorPosition(`${beforeAt}@${file} `.length);
+        applyFileSuggestion();
         return;
       }
-      // 3. switch mode
+      // 3. Trigger tab file suggestion
+      if (!isShiftTab && inputState.state.value.trim() !== '') {
+        // Only trigger tab suggestion if:
+        // - not in slash command mode
+        // - not in @ file suggestion mode
+        // - has content to suggest from
+        if (canTriggerTabSuggestion) {
+          setForceTabTrigger(true);
+          return;
+        }
+      }
+      // 4. switch mode
       if (isShiftTab) {
         togglePlanMode();
       }
     },
-    [slashCommands, fileSuggestion, inputState, togglePlanMode],
+    [
+      slashCommands,
+      fileSuggestion,
+      inputState,
+      togglePlanMode,
+      setForceTabTrigger,
+      applyFileSuggestion,
+      canTriggerTabSuggestion,
+    ],
   );
 
   const handleChange = useCallback(

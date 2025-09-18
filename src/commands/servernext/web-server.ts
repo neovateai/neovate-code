@@ -1,6 +1,6 @@
 import express from 'express';
 import { createServer } from 'http';
-import path from 'path';
+import path from 'pathe';
 import { fileURLToPath } from 'url';
 import { WebSocketServer } from 'ws';
 import { NodeBridge } from '../../nodeBridge';

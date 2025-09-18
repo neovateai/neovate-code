@@ -1,6 +1,6 @@
 import fs from 'fs';
 import os from 'os';
-import path from 'path';
+import path from 'pathe';
 import type { SessionConfig } from './session';
 
 interface ConfigLogEntry {
@@ -102,7 +102,7 @@ export class Paths {
           modified: stats.mtime,
           created: stats.birthtime,
           messageCount,
-          summary,
+          summary: normalizeSummary(summary),
         };
       })
       .sort((a, b) => b.modified.getTime() - a.modified.getTime())
@@ -110,6 +110,14 @@ export class Paths {
 
     return jsonlFiles;
   }
+}
+
+function normalizeSummary(summary: string): string {
+  if (!summary) return '';
+  return summary
+    .replace(/\r\n|\r|\n/g, ' ') // Replace all line breaks with spaces
+    .replace(/\s+/g, ' ') // Merge consecutive whitespace characters into single space
+    .trim(); // Remove leading and trailing whitespace
 }
 
 function extractFirstUserMessageSummary(lines: string[]): string {

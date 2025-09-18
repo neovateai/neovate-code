@@ -20,9 +20,9 @@ Takumi is a coding agent CLI to enhance development workflow. It's a TypeScript-
   - Tests are located in `src/**/*.test.ts` files
 - **Type Checking**: `npm run typecheck` - Run TypeScript type checking
 - **Formatting**: 
-  - `npm run format` or `prettier --write .` - Format all files
-  - `npm run format:check` - Check formatting without changes
-- **CI Pipeline**: `npm run ci` - Runs typecheck, format:check, and tests
+  - `npm run biome:format` - Check formatting without changes
+  - `npm run biome:format -- --write` - Format all files
+- **CI Pipeline**: `npm run ci` - Runs typecheck, biome:format, and tests
 
 ### VSCode Extension
 - `npm run extension:build` - Build the VSCode extension
@@ -70,15 +70,13 @@ Tools are resolved dynamically based on context and permissions:
 - JSX: react-jsx
 - Verbatim module syntax
 
-### Formatting (Prettier)
+### Formatting (Biome)
 - Print width: 80 characters
 - Single quotes for strings
 - Trailing commas: all
-- Import sorting via @trivago/prettier-plugin-sort-imports:
-  1. Node built-ins (`^node:`)
-  2. External packages (`^@?\w`)
-  3. Internal aliases (`^@/`)
-  4. Relative imports (`^[./]`)
+- Import organization enabled
+- Linting and formatting in one tool
+- Configuration in `biome.json`
 
 ### Best Practices
 - Use `pathe` instead of `path` for Windows compatibility

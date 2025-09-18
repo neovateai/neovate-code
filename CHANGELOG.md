@@ -1,3 +1,45 @@
+## 0.11.0
+
+`2025-09-17`
+
+- feat: add update command to check and apply application updates [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add autoUpdate config and getConfig handler for automatic upgrades [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add file content limits to prevent oversized output by [@阿平](https://github.com/阿平) in [#256](https://github.com/umijs/takumi/pull/256)
+- feat: add tab-triggered file suggestions for word completion by [@阿平](https://github.com/阿平) in [#255](https://github.com/umijs/takumi/pull/255)
+- build: remove bun version check and update build scripts by [@afc163](https://github.com/afc163) in [#250](https://github.com/umijs/takumi/pull/250)
+- feat: implement history compression with token threshold and model limits [AI] by [@阿平](https://github.com/阿平) in [#209](https://github.com/umijs/takumi/pull/209)
+- feat: add destroy hook support for plugin lifecycle management by [@阿平](https://github.com/阿平) in [#254](https://github.com/umijs/takumi/pull/254)
+- feat: normalize summary text by removing line breaks and extra whitespace by [@阿平](https://github.com/阿平) in [#253](https://github.com/umijs/takumi/pull/253)
+- feat(slash-command): add session-specific model support to chat store by [@阿平](https://github.com/阿平) in [#247](https://github.com/umijs/takumi/pull/247)
+- feat: add claude-4.1-opus model and update provider mappings by [@sorrycc](https://github.com/sorrycc)
+- feat: add moonshotai provider with kimi models support by [@sorrycc](https://github.com/sorrycc)
+- feat: add version flag to display version info by [@sorrycc](https://github.com/sorrycc)
+- feat: add image paste support with multimodal content handling [AI] by [@阿平](https://github.com/阿平) in [#223](https://github.com/umijs/takumi/pull/223)
+- fix: handle null text value in useTextInput onChange callback by [@阿平](https://github.com/阿平) in [#246](https://github.com/umijs/takumi/pull/246)
+- feat: allow overriding provider API via environment variables by [@sorrycc](https://github.com/sorrycc)
+- refactor: extract image extensions to constants and improve path extraction logic by [@afc163](https://github.com/afc163) in [#243](https://github.com/umijs/takumi/pull/243)
+- refactor: improve params description formatting for MCP tools by [@阿平](https://github.com/阿平) in [#245](https://github.com/umijs/takumi/pull/245)
+- style: format html and improve code structure in web-client.html by [@sorrycc](https://github.com/sorrycc)
+- feat: add WebSocket server and client implementation by [@sorrycc](https://github.com/sorrycc)
+- style: add ↓ to token count in activity indicator by [@sorrycc](https://github.com/sorrycc)
+- feat: add image prefix removal for gemini model support by [@阿平](https://github.com/阿平) in [#121](https://github.com/umijs/takumi/pull/121)
+- style: update assistant text color to #FF3070 by [@sorrycc](https://github.com/sorrycc)
+- feat: gradient product name by [@afc163](https://github.com/afc163) in [#241](https://github.com/umijs/takumi/pull/241)
+- fix: comment out JSON.stringify conversion for MCP result content by [@阿平](https://github.com/阿平) in [#242](https://github.com/umijs/takumi/pull/242)
+- refactor: standardize tool result types and remove redundant type files by [@sorrycc](https://github.com/sorrycc)
+- feat: add tool description and display name support to message rendering by [@sorrycc](https://github.com/sorrycc)
+- refactor: standardize llmContent and returnDisplay handling across tools by [@sorrycc](https://github.com/sorrycc)
+- refactor: remove outdated TODO comment and fix tool name mismatch by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename TOOL_NAME enum to TOOL_NAMES for consistency by [@sorrycc](https://github.com/sorrycc)
+- feat: add safeStringify utility and support MCP result conversion to LLM content by [@sorrycc](https://github.com/sorrycc)
+- fix: add restart notice after upgrade completion by [@sorrycc](https://github.com/sorrycc)
+- refactor: update tool result handling and image processing logic by [@sorrycc](https://github.com/sorrycc)
+- refactor: standardize tool result types and update related interfaces by [@sorrycc](https://github.com/sorrycc)
+- feat: add requestId parameter to onChunk callback by [@阿平](https://github.com/阿平) in [#235](https://github.com/umijs/takumi/pull/235)
+- fix: set minimum Node.js version to 18 for yargs compatibility by [@阿平](https://github.com/阿平) in [#232](https://github.com/umijs/takumi/pull/232)
+- feat: prioritize name matches in slash command filtering [AI] by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.10.1
 
 `2025-09-09`

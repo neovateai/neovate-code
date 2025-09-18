@@ -8,7 +8,7 @@ async function main() {
   // Step 1: Run full build process
   console.log('📦 Building project...');
   try {
-    await $`npm run build:check && rm -rf dist dist-dts && npm run build:cli && npm run build:index && npm run build:dts && npm run build:post`.quiet();
+    await $`rm -rf dist dist-dts && npm run build:cli && npm run build:index && npm run build:dts && npm run build:post`.quiet();
     console.log('✅ Build completed successfully\n');
   } catch (error) {
     console.error('❌ Build failed:', error);
@@ -28,7 +28,7 @@ async function main() {
   // Step 3: Run format and check for git changes
   console.log('🎨 Running formatter...');
   try {
-    await $`npm run format`.quiet();
+    await $`npm run biome:format -- --write`.quiet();
 
     // Check if there are any unstaged changes (modified but not staged)
     const gitStatus = execSync('git diff --name-only', { encoding: 'utf-8' });

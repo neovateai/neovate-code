@@ -7,6 +7,9 @@ import {
   createOpenRouter,
 } from '@openrouter/ai-sdk-provider';
 import assert from 'assert';
+import defu from 'defu';
+import { omit } from 'lodash-es';
+import type { ProviderConfig } from './config';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
 import { aisdk } from './utils/ai-sdk';
@@ -53,8 +56,13 @@ export interface Provider {
   apiEnv?: string[];
   api?: string;
   doc: string;
-  models: Record<string, Omit<Model, 'id' | 'cost'>>;
+  models: Record<string, string | Omit<Model, 'id' | 'cost'>>;
   createModel(name: string, provider: Provider): LanguageModelV1;
+  options?: {
+    baseURL?: string;
+    apiKey?: string;
+    headers?: Record<string, string>;
+  };
 }
 
 export type ProvidersMap = Record<string, Provider>;
@@ -488,9 +496,25 @@ export const models: ModelMap = {
     open_weights: false,
     limit: { context: 2000000, output: 2000000 },
   },
+  'claude-4.1-opus': {
+    name: 'Claude Opus 4.1',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-03-31',
+    release_date: '2025-08-05',
+    last_updated: '2025-08-05',
+    modalities: { input: ['text', 'image'], output: ['text'] },
+    open_weights: false,
+    limit: { context: 200000, output: 32000 },
+  },
 };
 
-function getProviderApi(provider: Provider) {
+function getProviderBaseURL(provider: Provider) {
+  if (provider.options?.baseURL) {
+    return provider.options.baseURL;
+  }
   let api = provider.api;
   for (const env of provider.apiEnv || []) {
     if (process.env[env]) {
@@ -501,14 +525,28 @@ function getProviderApi(provider: Provider) {
   return api;
 }
 
+function getProviderApiKey(provider: Provider) {
+  if (provider.options?.apiKey) {
+    return provider.options.apiKey;
+  }
+  const envs = provider.env;
+  for (const env of envs) {
+    if (process.env[env]) {
+      return process.env[env];
+    }
+  }
+  return '';
+}
+
 export const defaultModelCreator = (name: string, provider: Provider) => {
   if (provider.id !== 'openai') {
     assert(provider.api, `Provider ${provider.id} must have an api`);
   }
-  const api = getProviderApi(provider);
+  const baseURL = getProviderBaseURL(provider);
+  const apiKey = getProviderApiKey(provider);
   return createOpenAI({
-    baseURL: api,
-    apiKey: provider.env[0] ? process.env[provider.env[0]] : '',
+    baseURL,
+    apiKey,
   })(name);
 };
 
@@ -543,7 +581,7 @@ export const providers: ProvidersMap = {
       'gemini-2.5-pro': models['gemini-2.5-pro'],
     },
     createModel(name, provider) {
-      const api = getProviderApi(provider);
+      const api = getProviderBaseURL(provider);
       const google = createGoogleGenerativeAI({
         apiKey: process.env[provider.env[0]] || process.env[provider.env[1]],
         baseURL: api,
@@ -574,7 +612,7 @@ export const providers: ProvidersMap = {
       'grok-code-fast-1': models['grok-code-fast-1'],
     },
     createModel(name, provider) {
-      const api = getProviderApi(provider);
+      const api = getProviderBaseURL(provider);
       return createXai({
         baseURL: api,
         apiKey: process.env[provider.env[0]],
@@ -588,13 +626,14 @@ export const providers: ProvidersMap = {
     doc: 'https://docs.anthropic.com/en/docs/models',
     models: {
       'claude-opus-4-20250514': models['claude-4-opus'],
+      'claude-opus-4-1-20250805': models['claude-4.1-opus'],
       'claude-sonnet-4-20250514': models['claude-4-sonnet'],
       'claude-3-7-sonnet-20250219': models['claude-3-7-sonnet'],
       'claude-3-7-sonnet-20250219-thinking': models['claude-3-7-sonnet'],
       'claude-3-5-sonnet-20241022': models['claude-3-5-sonnet-20241022'],
     },
     createModel(name, provider) {
-      const api = getProviderApi(provider);
+      const api = getProviderBaseURL(provider);
       return createAnthropic({
         apiKey: process.env[provider.env[0]],
         baseURL: api,
@@ -637,6 +676,8 @@ export const providers: ProvidersMap = {
       'anthropic/claude-3.5-sonnet': models['claude-3-5-sonnet-20241022'],
       'anthropic/claude-3.7-sonnet': models['claude-3-7-sonnet'],
       'anthropic/claude-sonnet-4': models['claude-4-sonnet'],
+      'anthropic/claude-opus-4': models['claude-4-opus'],
+      'anthropic/claude-opus-4.1': models['claude-4.1-opus'],
       'deepseek/deepseek-r1-0528': models['deepseek-r1-0528'],
       'deepseek/deepseek-chat-v3-0324': models['deepseek-v3-0324'],
       'deepseek/deepseek-chat-v3.1': models['deepseek-v3-1'],
@@ -648,6 +689,8 @@ export const providers: ProvidersMap = {
       'openai/o3-mini': models['o3-mini'],
       'openai/o4-mini': models['o4-mini'],
       'openai/gpt-oss-120b': models['gpt-oss-120b'],
+      'openai/gpt-5': models['gpt-5'],
+      'openai/gpt-5-mini': models['gpt-5-mini'],
       'moonshotai/kimi-k2': models['kimi-k2'],
       'moonshotai/kimi-k2-0905': models['kimi-k2-0905'],
       'qwen/qwen3-coder': models['qwen3-coder-480b-a35b-instruct'],
@@ -680,10 +723,29 @@ export const providers: ProvidersMap = {
     },
     createModel: defaultModelCreator,
   },
+  moonshotai: {
+    id: 'moonshotai',
+    env: ['MOONSHOT_API_KEY'],
+    name: 'Moonshot',
+    api: 'https://api.moonshot.ai/v1',
+    doc: 'https://platform.moonshot.ai/docs/api/chat',
+    models: {
+      'kimi-k2-0711-preview': models['kimi-k2'],
+      'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
+    },
+    createModel(name, provider) {
+      return createOpenAI({
+        baseURL: provider.api,
+        apiKey: process.env[provider.env[0]],
+        // include usage information in streaming mode
+        compatibility: 'strict',
+      })(name);
+    },
+  },
   'moonshotai-cn': {
     id: 'moonshotai-cn',
     env: ['MOONSHOT_API_KEY'],
-    name: 'Moonshot',
+    name: 'MoonshotCN',
     api: 'https://api.moonshot.cn/v1',
     doc: 'https://platform.moonshot.cn/docs/api/chat',
     models: {
@@ -694,7 +756,7 @@ export const providers: ProvidersMap = {
       return createOpenAI({
         baseURL: provider.api,
         apiKey: process.env[provider.env[0]],
-        // include usage information in streaming mode
+        // include usage information in streaming mode why? https://platform.moonshot.cn/docs/guide/migrating-from-openai-to-kimi#stream-模式下的-usage-值
         compatibility: 'strict',
       })(name);
     },
@@ -727,30 +789,8 @@ export const modelAlias: ModelAlias = {
   'sonnet-3.5': 'anthropic/claude-3-5-sonnet-20241022',
   'sonnet-3.7': 'anthropic/claude-3-7-sonnet-20250219',
   'sonnet-3.7-thinking': 'anthropic/claude-3-7-sonnet-20250219-thinking',
-  'openrouter/sonnet-3.5': 'openrouter/anthropic/claude-3.5-sonnet',
-  'openrouter/sonnet-3.7': 'openrouter/anthropic/claude-3.7-sonnet',
-  'openrouter/sonnet': 'openrouter/anthropic/claude-sonnet-4',
-  'openrouter/r1': 'openrouter/deepseek/deepseek-r1-0528',
-  'openrouter/deepseek': 'openrouter/deepseek/deepseek-chat-v3-0324',
-  'openrouter/k2': 'openrouter/moonshotai/kimi-k2',
-  'openrouter/q3': 'openrouter/qwen/qwen3-235b-a22b-07-25',
-  'openrouter/q3-coder': 'openrouter/qwen/qwen3-coder',
-  'openrouter/horizon': 'openrouter/openrouter/horizon-beta',
-  'aihubmix/sonnet-3.5': 'aihubmix/claude-3-5-sonnet-20241022',
-  'aihubmix/sonnet-3.7': 'aihubmix/claude-3-7-sonnet-20250219',
-  'aihubmix/sonnet': 'aihubmix/claude-sonnet-4-20250514',
-  'aihubmix/opus': 'aihubmix/claude-opus-4-20250514',
-  'aihubmix/r1': 'aihubmix/DeepSeek-R1',
-  'aihubmix/deepseek': 'aihubmix/DeepSeek-V3',
-  'aihubmix/gemini': 'aihubmix/gemini-2.5-pro',
-  'aihubmix/flash': 'aihubmix/gemini-2.5-flash',
-  'aihubmix/flash-lite': `aihubmix/gemini-2.5-flash-lite`,
   k2: 'moonshotai-cn/kimi-k2-0711-preview',
   'k2-turbo': 'moonshotai-cn/kimi-k2-turbo-preview',
-  'iflow/q3-coder': 'iflow/Qwen3-Coder',
-  'iflow/k2': 'iflow/KIMI-K2',
-  'iflow/r1': 'iflow/DeepSeek-R1',
-  'iflow/deepseek': 'iflow/DeepSeek-V3',
 };
 
 export type ModelInfo = {
@@ -758,6 +798,32 @@ export type ModelInfo = {
   model: Omit<Model, 'cost'>;
   aisdk: AiSdkModel;
 };
+
+function mergeConfigProviders(
+  hookedProviders: ProvidersMap,
+  configProviders: Record<string, ProviderConfig>,
+): ProvidersMap {
+  const mergedProviders = { ...hookedProviders };
+  Object.entries(configProviders).forEach(([providerId, config]) => {
+    let provider = mergedProviders[providerId] || {};
+    provider = defu(config, provider) as Provider;
+    if (!provider.createModel) {
+      provider.createModel = defaultModelCreator;
+    }
+    if (provider.models) {
+      for (const modelId in provider.models) {
+        const model = provider.models[modelId];
+        if (typeof model === 'string') {
+          const actualModel = models[model];
+          assert(actualModel, `Model ${model} not exists.`);
+          provider.models[modelId] = actualModel;
+        }
+      }
+    }
+    mergedProviders[providerId] = provider;
+  });
+  return mergedProviders;
+}
 
 export async function resolveModelWithContext(
   name: string | null,
@@ -775,6 +841,11 @@ export async function resolveModelWithContext(
     memo: providers,
     type: PluginHookType.SeriesLast,
   });
+
+  const finalProviders = context.config.provider
+    ? mergeConfigProviders(hookedProviders, context.config.provider)
+    : hookedProviders;
+
   const hookedModelAlias = await context.apply({
     hook: 'modelAlias',
     args: [],
@@ -783,10 +854,10 @@ export async function resolveModelWithContext(
   });
   const modelName = name || context.config.model;
   const model = modelName
-    ? resolveModel(modelName, hookedProviders, hookedModelAlias)
+    ? resolveModel(modelName, finalProviders, hookedModelAlias)
     : null;
   return {
-    providers: hookedProviders,
+    providers: finalProviders,
     modelAlias,
     model,
   };

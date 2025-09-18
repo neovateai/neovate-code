@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { Box, Text } from 'ink';
 import { useInput } from 'ink';
 import SelectInput from 'ink-select-input';
-import path from 'path';
+import path from 'pathe';
 import React, { useMemo } from 'react';
 import type { ToolUse as ToolUseType } from '../tool';
 import { DiffViewer } from './DiffViewer';
