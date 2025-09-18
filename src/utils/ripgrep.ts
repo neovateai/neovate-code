@@ -3,16 +3,14 @@ import createDebug from 'debug';
 import path from 'pathe';
 import { findActualExecutable } from 'spawn-rx';
 import { fileURLToPath } from 'url';
+import { isLocal } from './isLocal';
 
 const debug = createDebug('neovate:utils:ripgrep');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const isLocal =
-  __dirname.endsWith('neovate/src/utils') ||
-  __dirname.endsWith('code/src/utils');
-const rootDir = isLocal
+const rootDir = isLocal()
   ? path.resolve(__dirname, '../../')
   : path.resolve(__dirname, '../');
 
