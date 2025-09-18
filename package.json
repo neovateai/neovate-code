@@ -14,8 +14,7 @@
   },
   "scripts": {
     "dev": "bun ./src/cli.ts",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "biome:format": "biome format .",
     "build:type": "tsc --project tsconfig.json --emitDeclarationOnly --declarationDir dist-dts",
     "build:cli": "bun build src/cli.ts --external react-devtools-core --minify --outfile dist/cli.mjs --target=node",
     "build:index": "bun build src/index.ts --external react-devtools-core --minify --outfile dist/index.mjs --target=node",
@@ -24,7 +23,7 @@
     "build:post": "bun scripts/post-build.ts",
     "build:logfiles": "cp -r logfiles dist/logfiles",
     "build": "rm -rf dist dist-dts && npm run build:cli && npm run build:index && npm run build:dts && npm run build:logfiles && npm run build:post",
-    "ci": "npm run typecheck && npm run format:check && npm run test",
+    "ci": "npm run typecheck && npm run biome:format && npm run test",
     "extension:build": "pnpm --filter neovate-assistant build",
     "extension:dev": "pnpm --filter neovate-assistant dev",
     "extension:publish": "cd vscode-extension && npm run publish && cd ..",
@@ -59,6 +58,7 @@
     "@ai-sdk/openai": "^1.3.24",
     "@ai-sdk/provider": "^1.1.3",
     "@ai-sdk/xai": "^1.2.18",
+    "@biomejs/biome": "^2.0.0",
     "@fastify/compress": "8.1.0",
     "@fastify/cors": "11.1.0",
     "@fastify/static": "^8.2.0",
@@ -71,7 +71,6 @@
     "@openrouter/ai-sdk-provider": "^0.7.5",
     "@sinclair/typebox": "^0.34.38",
     "@stagewise/agent-interface": "^0.2.3",
-    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@types/bun": "^1.2.21",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.3",
@@ -118,7 +117,6 @@
     "pathe": "^2.0.3",
     "picocolors": "^1.1.1",
     "portfinder": "^1.0.37",
-    "prettier": "^3.6.2",
     "react": "^19.1.1",
     "resolve": "^1.22.10",
     "spawn-rx": "^5.1.2",
@@ -142,7 +140,7 @@
   },
   "packageManager": "pnpm@10.13.1",
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,css,md}": "prettier --write"
+    "*.{js,jsx,ts,tsx,json,css}": "biome format --write"
   },
   "publishConfig": {
     "access": "public"

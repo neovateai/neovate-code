@@ -156,7 +156,9 @@ export function loadSessionMessages(opts: {
         return JSON.parse(line);
       } catch (e: any) {
         throw new Error(
-          `Failed to parse line ${index + 1} of log file: ${opts.logPath}: ${e.message}`,
+          `Failed to parse line ${index + 1} of log file: ${opts.logPath}: ${
+            e.message
+          }`,
         );
       }
     });
