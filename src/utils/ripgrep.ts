@@ -4,14 +4,21 @@ import { findActualExecutable } from 'spawn-rx';
 import { fileURLToPath, resolve } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = resolve(__filename, '../');
+const __dirname = path.dirname(__filename);
+
+const isLocal =
+  __dirname.endsWith('neovate/src/utils') ||
+  __dirname.endsWith('code/src/utils');
+const rootDir = isLocal
+  ? path.resolve(__dirname, '../../')
+  : path.resolve(__dirname, '../');
 
 function ripgrepPath() {
   const { cmd } = findActualExecutable('rg', []);
   if (cmd !== 'rg') {
     return cmd;
   } else {
-    const rgRoot = path.resolve(__dirname, 'vendor', 'ripgrep');
+    const rgRoot = path.resolve(rootDir, 'vendor', 'ripgrep');
     if (process.platform === 'win32') {
       return path.resolve(rgRoot, 'x64-win32', 'rg.exe');
     } else {
@@ -35,6 +42,7 @@ export async function ripGrep(
       },
       (err, stdout) => {
         if (err) {
+          console.error(`[Ripgrep] Error: ${err}`);
           resolve([]);
         } else {
           resolve(stdout.trim().split('\n').filter(Boolean));
