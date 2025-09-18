@@ -2,7 +2,7 @@ import { Box, Text, useInput } from 'ink';
 import React, { useEffect, useState } from 'react';
 import PaginatedSelectInput from '../../ui/PaginatedSelectInput';
 import { useAppStore } from '../../ui/store';
-import { type LocalJSXCommand } from '../types';
+import type { LocalJSXCommand } from '../types';
 
 interface Provider {
   id: string;

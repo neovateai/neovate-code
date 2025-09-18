@@ -493,22 +493,8 @@ class NodeHandlerRegistry {
         command: string;
         args: string;
       }) => {
-        const { cwd, sessionId, command, args } = data;
+        const { cwd, command, args } = data;
         const context = await this.getContext(cwd);
-        context.apply({
-          hook: 'telemetry',
-          args: [
-            {
-              name: 'executeSlashCommand',
-              payload: {
-                command,
-                args,
-                sessionId,
-              },
-            },
-          ],
-          type: PluginHookType.Parallel,
-        });
         const slashCommandManager = await SlashCommandManager.create(context);
         const commandEntry = slashCommandManager.get(command);
         if (!commandEntry) {
@@ -866,6 +852,33 @@ class NodeHandlerRegistry {
       'clearContext',
       async (data: { cwd?: string }) => {
         await this.clearContext(data.cwd);
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'telemetry',
+      async (data: {
+        cwd: string;
+        name: string;
+        payload: Record<string, any>;
+        sessionId: string;
+      }) => {
+        const { cwd, name, payload, sessionId } = data;
+        const context = await this.getContext(cwd);
+        await context.apply({
+          hook: 'telemetry',
+          args: [
+            {
+              name,
+              payload,
+              sessionId,
+            },
+          ],
+          type: PluginHookType.Parallel,
+        });
         return {
           success: true,
         };
