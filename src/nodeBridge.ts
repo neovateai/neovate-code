@@ -294,6 +294,28 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
+      'removeConfig',
+      async (data: {
+        cwd: string;
+        isGlobal: boolean;
+        key: string;
+        values?: string[];
+      }) => {
+        const { cwd, key, isGlobal, values } = data;
+        const context = await this.getContext(cwd);
+        const configManager = new ConfigManager(cwd, context.productName, {});
+        configManager.removeConfig(isGlobal, key, values);
+        if (this.contexts.has(cwd)) {
+          await context.destroy();
+          this.contexts.delete(cwd);
+        }
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
       'getConfig',
       async (data: { cwd: string; key: string }) => {
         const { cwd, key } = data;
@@ -399,6 +421,64 @@ class NodeHandlerRegistry {
             groupedModels,
             currentModel,
             currentModelInfo,
+          },
+        };
+      },
+    );
+
+    // providers for login
+    this.messageBus.registerHandler(
+      'getProviders',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const { providers } = await resolveModelWithContext(null, context);
+
+        const providersWithValidEnvs = Object.values(
+          providers as Record<string, Provider>,
+        ).map((provider) => {
+          // Check environment variables for this provider
+          const validEnvs: string[] = [];
+
+          // Check provider.env (array of required env var names)
+          if (provider.env && Array.isArray(provider.env)) {
+            provider.env.forEach((envVar: string) => {
+              if (process.env[envVar]) {
+                validEnvs.push(envVar);
+              }
+            });
+          }
+
+          // Check provider.apiEnv (array of env var names)
+          if (provider.apiEnv && Array.isArray(provider.apiEnv)) {
+            provider.apiEnv.forEach((envVar: string) => {
+              if (process.env[envVar]) {
+                validEnvs.push(envVar);
+              }
+            });
+          }
+
+          // Check if API key is already configured
+          const hasApiKey = !!(
+            provider.options?.apiKey ||
+            context.config.provider?.[provider.id]?.options?.apiKey
+          );
+
+          return {
+            id: provider.id,
+            name: provider.name,
+            doc: provider.doc,
+            validEnvs,
+            env: provider.env,
+            apiEnv: provider.apiEnv,
+            hasApiKey,
+          };
+        });
+
+        return {
+          success: true,
+          data: {
+            providers: providersWithValidEnvs,
           },
         };
       },

@@ -806,8 +806,7 @@ function mergeConfigProviders(
   const mergedProviders = { ...hookedProviders };
   Object.entries(configProviders).forEach(([providerId, config]) => {
     let provider = mergedProviders[providerId] || {};
-    const configWithoutOptions = omit(config, 'options');
-    provider = defu(configWithoutOptions, provider) as Provider;
+    provider = defu(config, provider) as Provider;
     if (!provider.createModel) {
       provider.createModel = defaultModelCreator;
     }

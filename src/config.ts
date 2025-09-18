@@ -132,18 +132,66 @@ export class ConfigManager {
   }
 
   removeConfig(global: boolean, key: string, values?: string[]) {
-    if (!VALID_CONFIG_KEYS.includes(key)) {
-      throw new Error(`Invalid config key: ${key}`);
-    }
     const config = global ? this.globalConfig : this.projectConfig;
     const configPath = global ? this.globalConfigPath : this.projectConfigPath;
-    if (values) {
-      (config[key as keyof Config] as any) = (
-        config[key as keyof Config] as string[]
-      ).filter((v) => !values.includes(v));
+
+    if (key.includes('.')) {
+      // Handle dot notation for nested keys
+      const keys = key.split('.');
+      const rootKey = keys[0];
+
+      if (!VALID_CONFIG_KEYS.includes(rootKey)) {
+        throw new Error(`Invalid config key: ${rootKey}`);
+      }
+
+      if (!OBJECT_CONFIG_KEYS.includes(rootKey)) {
+        throw new Error(
+          `Config key '${rootKey}' does not support nested properties`,
+        );
+      }
+
+      // Navigate to the nested property
+      let current: any = config[rootKey as keyof Config];
+      if (!current) {
+        return; // Nothing to remove
+      }
+
+      // Navigate to the parent of the target property
+      for (let i = 1; i < keys.length - 1; i++) {
+        if (!current[keys[i]]) {
+          return; // Path doesn't exist, nothing to remove
+        }
+        current = current[keys[i]];
+      }
+
+      const lastKey = keys[keys.length - 1];
+
+      if (values) {
+        // Remove specific values from array
+        if (Array.isArray(current[lastKey])) {
+          current[lastKey] = current[lastKey].filter(
+            (v: string) => !values.includes(v),
+          );
+        }
+      } else {
+        // Delete the property
+        delete current[lastKey];
+      }
     } else {
-      delete config[key as keyof Config];
+      // Handle flat keys
+      if (!VALID_CONFIG_KEYS.includes(key)) {
+        throw new Error(`Invalid config key: ${key}`);
+      }
+
+      if (values) {
+        (config[key as keyof Config] as any) = (
+          config[key as keyof Config] as string[]
+        ).filter((v) => !values.includes(v));
+      } else {
+        delete config[key as keyof Config];
+      }
     }
+
     saveConfig(configPath, config, DEFAULT_CONFIG);
   }
 
