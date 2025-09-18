@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { basename, join, relative, sep } from 'path';
+import { basename, join, relative, sep } from 'pathe';
 import { PRODUCT_NAME } from '../constants';
 import { isIgnored } from './ignore';
 

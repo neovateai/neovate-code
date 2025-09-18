@@ -55,6 +55,8 @@ class NodeHandlerRegistry {
       cwd,
       ...this.contextCreateOpts,
     });
+    // init mcp manager but don't wait for it
+    context.mcpManager.initAsync();
     this.contexts.set(cwd, context);
     return context;
   }

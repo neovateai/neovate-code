@@ -3,7 +3,7 @@ import { withTrace } from '@openai/agents';
 import { format } from 'date-fns';
 import createDebug from 'debug';
 import { homedir } from 'os';
-import path from 'path';
+import path from 'pathe';
 import yargsParser from 'yargs-parser';
 import { type RunCliOpts } from '..';
 import { Context } from '../context';

@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'pathe';
 import type { Context } from './context';
 import {
   type NormalizedMarkdownFile,

@@ -1,6 +1,6 @@
 import type { AgentInputItem, UserMessageItem } from '@openai/agents';
 import fs from 'fs';
-import path from 'path';
+import path from 'pathe';
 import { IMAGE_EXTENSIONS, PRODUCT_NAME } from './constants';
 import { isIgnored } from './utils/ignore';
 

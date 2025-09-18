@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import createDebug from 'debug';
 import fs from 'fs';
 import os from 'os';
-import path from 'path';
+import path from 'pathe';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';

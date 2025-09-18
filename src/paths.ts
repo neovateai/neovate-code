@@ -1,6 +1,6 @@
 import fs from 'fs';
 import os from 'os';
-import path from 'path';
+import path from 'pathe';
 import type { SessionConfig } from './session';
 
 interface ConfigLogEntry {
