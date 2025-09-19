@@ -113,7 +113,7 @@ Options:
   -c, --continue                Continue the latest session
   --system-prompt <prompt>      Custom system prompt for code agent
   --output-format <format>      Output format, text, stream-json, json
-  --output-style <style>        Output style
+  --output-style <style>        Output style (name or path)
   --approval-mode <mode>        Tool approval mode, default, autoEdit, yolo
   -q, --quiet                   Quiet mode, non interactive
   --mcp-config <config>         MCP server configuration (JSON string with "mcpServers" object or file path)

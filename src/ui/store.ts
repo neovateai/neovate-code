@@ -491,33 +491,38 @@ export const useAppStore = create<AppStore>()(
 
           // Update terminal title after successful send
           if (result.success) {
-            try {
-              const queryResult = await bridge.request('query', {
-                cwd,
-                systemPrompt:
-                  "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with one fields: 'title' (string). Only include these fields, no other text.",
-                userPrompt: message,
-              });
+            // don't await this
+            (async () => {
+              try {
+                const queryResult = await bridge.request('query', {
+                  cwd,
+                  systemPrompt:
+                    "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with one fields: 'title' (string). Only include these fields, no other text.",
+                  userPrompt: message,
+                });
 
-              if (queryResult.success && queryResult.data?.text) {
-                try {
-                  const response = JSON.parse(queryResult.data.text);
-                  if (response && response.title) {
-                    setTerminalTitle(response.title);
-                    await bridge.request('sessionConfig.setSummary', {
-                      cwd,
-                      sessionId,
-                      summary: response.title,
-                    });
+                if (queryResult.success && queryResult.data?.text) {
+                  try {
+                    const response = JSON.parse(queryResult.data.text);
+                    if (response && response.title) {
+                      setTerminalTitle(response.title);
+                      await bridge.request('sessionConfig.setSummary', {
+                        cwd,
+                        sessionId,
+                        summary: response.title,
+                      });
+                    }
+                  } catch (parseError) {
+                    get().log(
+                      'Parse query result error: ' + String(parseError),
+                    );
+                    get().log('Query result: ' + queryResult.data.text);
                   }
-                } catch (parseError) {
-                  get().log('Parse query result error: ' + String(parseError));
-                  get().log('Query result: ' + queryResult.data.text);
                 }
+              } catch (error) {
+                get().log('Query error: ' + String(error));
               }
-            } catch (error) {
-              get().log('Query error: ' + String(error));
-            }
+            })();
 
             // Check for queued messages
             if (get().queuedMessages.length > 0) {
