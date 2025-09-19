@@ -37,11 +37,11 @@ export function useSlashCommands(input: string) {
         console.error('Failed to get slash commands:', error);
         setIsLoading(false);
       });
-  }, [bridge, cwd, input]);
+  }, [bridge, cwd, input, log]);
 
   useEffect(() => {
     setSelectedIndex(0);
-  }, [suggestions]);
+  }, []);
 
   const navigateNext = () => {
     if (suggestions.length === 0) return;
@@ -71,7 +71,7 @@ export function useSlashCommands(input: string) {
     if (!selected) return input;
     // Handle slash command suggestions
     const args = input.includes(' ') ? input.split(' ').slice(1).join(' ') : '';
-    return `/${selected.command.name} ${args}`.trim() + ' ';
+    return `${`/${selected.command.name} ${args}`.trim()} `;
   };
 
   return {
@@ -89,7 +89,7 @@ function matchSlashCommands(
   prefix: string,
   slashCommands: CommandEntry[],
 ): CommandEntry[] {
-  const lowerPrefix = prefix.toLowerCase();
+  const lowerPrefix = prefix.toLowerCase().trim();
   return (
     slashCommands
       .filter((command) => {
