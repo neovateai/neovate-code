@@ -548,6 +548,7 @@ export const useAppStore = create<AppStore>()(
         const attachments = [];
         // Handle pasted images
         if (message && Object.keys(pastedImageMap).length > 0) {
+          // 匹配旧格式: [Image #1]
           const pastedImageRegex = /\[Image (#\d+)\]/g;
           const imageMatches = [...message.matchAll(pastedImageRegex)];
 

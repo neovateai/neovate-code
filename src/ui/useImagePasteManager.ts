@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { useAppStore } from './store';
+import { getImageDimensions } from './TextInput/utils/imageDimensions';
 
 export interface ImagePasteResult {
   success: boolean;
@@ -7,9 +8,15 @@ export interface ImagePasteResult {
   imageId?: string;
 }
 
-// Helper function to generate pasted image prompt with unique ID
-function getPastedImagePrompt(imageId: string): string {
-  return `[Image ${imageId}]`;
+// Helper function to generate pasted image prompt with dimensions and filename
+function getPastedImagePrompt(
+  imageId: string,
+  base64Data: string,
+  filename?: string,
+): string {
+  const dimensions = getImageDimensions(base64Data);
+  const displayName = filename || `image_${imageId.replace('#', '')}`;
+  return `[Image ${dimensions.width}X${dimensions.height} ${displayName}]`;
 }
 
 export function useImagePasteManager() {
@@ -23,6 +30,7 @@ export function useImagePasteManager() {
   const handleImagePaste = useCallback(
     async (
       base64Data: string,
+      filename?: string,
     ): Promise<ImagePasteResult & { prompt?: string }> => {
       try {
         // Validate base64 data
@@ -39,8 +47,8 @@ export function useImagePasteManager() {
           [imageId]: base64Data,
         });
 
-        // Generate the prompt placeholder
-        const prompt = getPastedImagePrompt(imageId);
+        // Generate the prompt placeholder with dimensions and filename
+        const prompt = getPastedImagePrompt(imageId, base64Data, filename);
 
         return {
           success: true,
@@ -80,9 +88,16 @@ export function useImagePasteManager() {
 
   // Extract pasted image references from a message
   const extractImageReferences = useCallback((message: string): string[] => {
-    const regex = /\[Image (#\d+)\]/g;
+    // 匹配新格式: [Image 100X100 filename] 或旧格式: [Image #1]
+    const regex = /\[Image (?:(\d+X\d+ \S+)|(#\d+))\]/g;
     const matches = [...message.matchAll(regex)];
-    return matches.map((match) => match[1]);
+    return matches
+      .map((match) => {
+        // 如果是新格式，返回空字符串（因为新格式不包含 ID）
+        // 如果是旧格式，返回 ID
+        return match[2] || '';
+      })
+      .filter((id) => id !== '');
   }, []);
 
   // Replace image placeholders with actual base64 data and return images array
@@ -90,9 +105,13 @@ export function useImagePasteManager() {
     (message: string): { expandedMessage: string; images: string[] } => {
       let expandedMessage = message;
       const images: string[] = [];
-      const references = extractImageReferences(message);
 
-      for (const imageId of references) {
+      // 处理旧格式的图片引用
+      const oldFormatRegex = /\[Image (#\d+)\]/g;
+      const oldMatches = [...message.matchAll(oldFormatRegex)];
+
+      for (const match of oldMatches) {
+        const imageId = match[1];
         const imageData = getPastedImage(imageId);
         if (imageData) {
           images.push(imageData);
@@ -105,9 +124,13 @@ export function useImagePasteManager() {
         }
       }
 
+      // 处理新格式的图片引用 - 新格式不包含实际的图片数据，只是占位符
+      const newFormatRegex = /\[Image \d+X\d+ \S+\]/g;
+      expandedMessage = expandedMessage.replace(newFormatRegex, '').trim();
+
       return { expandedMessage, images };
     },
-    [extractImageReferences, getPastedImage],
+    [getPastedImage],
   );
 
   return {

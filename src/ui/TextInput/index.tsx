@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import { type Key, Text, useInput } from 'ink';
+import { basename } from 'pathe';
 import React from 'react';
 import { PASTE_CONFIG } from '../constants';
 import { darkTheme } from './constant';
@@ -113,6 +114,7 @@ export type Props = {
    */
   readonly onImagePaste?: (
     base64Image: string,
+    filename?: string,
   ) => Promise<{ prompt?: string }> | void;
 
   /**
@@ -253,7 +255,11 @@ export default function TextInput({
           try {
             const imageResult = await processImageFromPath(mergedInput);
             if (imageResult) {
-              const imagePromptResult = await onImagePaste(imageResult.base64);
+              const fileName = basename(imageResult.path);
+              const imagePromptResult = await onImagePaste(
+                imageResult.base64,
+                fileName,
+              );
               if (imagePromptResult?.prompt) {
                 const { newValue, newCursorOffset } = insertTextAtCursor(
                   imagePromptResult.prompt,
@@ -425,7 +431,7 @@ export default function TextInput({
         : chalk.inverse(' ');
   }
 
-  const showPlaceholder = originalValue.length == 0 && placeholder;
+  const showPlaceholder = originalValue.length === 0 && placeholder;
   return (
     <Text wrap="truncate-end" dimColor={isDimmed}>
       {showPlaceholder ? renderedPlaceholder : renderedValue}

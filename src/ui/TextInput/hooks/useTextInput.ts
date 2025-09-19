@@ -40,7 +40,7 @@ type UseTextInputProps = {
   invert: (text: string) => string;
   themeText: (text: string) => string;
   columns: number;
-  onImagePaste?: (base64Image: string) => void;
+  onImagePaste?: (base64Image: string, filename?: string) => void;
   disableCursorMovementForUpDownKeys?: boolean;
   externalOffset: number;
   onOffsetChange: (offset: number) => void;
@@ -304,10 +304,10 @@ export function useTextInput({
     return (input: string) => {
       switch (true) {
         // Home key
-        case input == '\x1b[H' || input == '\x1b[1~':
+        case input === '\x1b[H' || input === '\x1b[1~':
           return cursor.startOfLine();
         // End key
-        case input == '\x1b[F' || input == '\x1b[4~':
+        case input === '\x1b[F' || input === '\x1b[4~':
           return cursor.endOfLine();
         default:
           // Check if input might be an image path and handle accordingly
@@ -327,7 +327,7 @@ export function useTextInput({
     if (nextCursor) {
       if (!cursor.equals(nextCursor)) {
         setOffset(nextCursor.offset);
-        if (cursor.text != nextCursor.text) {
+        if (cursor.text !== nextCursor.text) {
           onChange(nextCursor.text || '');
         }
       }
