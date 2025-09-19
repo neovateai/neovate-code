@@ -1,11 +1,11 @@
 import createDebug from 'debug';
-import { Box } from 'ink';
-import React, { useEffect } from 'react';
+import { Box, Text, useInput } from 'ink';
+import React, { useEffect, useRef } from 'react';
 import { COMPACT_MESSAGE } from '../../compact';
 import { GradientText } from '../../ui/GradientText';
 import { useAppStore } from '../../ui/store';
 import { useTextGradientAnimation } from '../../ui/useTextGradientAnimation';
-import { type LocalJSXCommand } from '../types';
+import type { LocalJSXCommand } from '../types';
 
 const debug = createDebug('neovate:slash-commands:compact');
 
@@ -17,13 +17,26 @@ export const compactCommand: LocalJSXCommand = {
     return React.createElement(() => {
       const { bridge, messages, cwd, sessionId, log } = useAppStore();
       const [loading, setLoading] = React.useState(true);
+      const [cancelled, setCancelled] = React.useState(false);
+      const cancelledRef = useRef(false);
       const compactingText = 'Compacting...';
-      const highlightIndex = useTextGradientAnimation(compactingText, loading);
+      const highlightIndex = useTextGradientAnimation(
+        compactingText,
+        loading && !cancelled,
+      );
 
-      if (messages.length === 0) {
-        onDone('No messages to compact');
-        return;
-      }
+      useInput((input, key) => {
+        if (
+          loading &&
+          !cancelled &&
+          (key.escape || (key.ctrl && input === 'c'))
+        ) {
+          setCancelled(true);
+          cancelledRef.current = true;
+          setLoading(false);
+          onDone('Compacting cancelled');
+        }
+      });
 
       useEffect(() => {
         log('use effect...');
@@ -35,7 +48,12 @@ export const compactCommand: LocalJSXCommand = {
               messages,
               sessionId,
             });
-            log('compacted' + JSON.stringify(result));
+
+            if (cancelledRef.current) {
+              return;
+            }
+
+            log(`compacted${JSON.stringify(result)}`);
             await bridge.request('addMessages', {
               cwd,
               sessionId,
@@ -53,27 +71,42 @@ export const compactCommand: LocalJSXCommand = {
                 },
               ],
             });
+
+            if (cancelledRef.current) {
+              return;
+            }
+
             log('added messages');
             setLoading(false);
             onDone(null);
           } catch (error) {
             debug('error compacting', error);
             setLoading(false);
-            onDone(
-              `Error compacting: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            );
+            if (!cancelledRef.current) {
+              onDone(
+                `Error compacting: ${
+                  error instanceof Error ? error.message : 'Unknown error'
+                }`,
+              );
+            }
           }
         };
         run();
-      }, []);
+      }, [bridge.request, cwd, messages, sessionId, log, onDone]);
 
-      if (loading) {
+      if (messages.length === 0) {
+        onDone('No messages to compact');
+        return;
+      }
+
+      if (loading || cancelled) {
         return (
-          <Box marginTop={1}>
+          <Box marginTop={1} flexDirection="row">
             <GradientText
-              text={compactingText}
-              highlightIndex={highlightIndex}
+              text={cancelled ? 'Cancelled' : compactingText}
+              highlightIndex={cancelled ? -1 : highlightIndex}
             />
+            <Text color="gray">{` (Press Esc or Ctrl-C to cancel)`}</Text>
           </Box>
         );
       }
