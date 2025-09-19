@@ -3,7 +3,7 @@ import pc from 'picocolors';
 import React, { useEffect, useState } from 'react';
 import PaginatedSelectInput from '../../ui/PaginatedSelectInput';
 import { useAppStore } from '../../ui/store';
-import { type LocalJSXCommand } from '../types';
+import type { LocalJSXCommand } from '../types';
 
 interface Provider {
   id: string;
@@ -52,14 +52,18 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
       return;
     }
 
-    // Handle character input (only printable characters)
-    if (input && input.length === 1) {
-      const charCode = input.charCodeAt(0);
-      const isPrintable =
-        (charCode >= 32 && charCode <= 126) || charCode >= 160;
+    // Handle character input (including pasted content)
+    if (input && !key.ctrl && !key.meta) {
+      // Filter out non-printable characters
+      const printableInput = Array.from(input)
+        .filter((char) => {
+          const charCode = char.charCodeAt(0);
+          return (charCode >= 32 && charCode <= 126) || charCode >= 160;
+        })
+        .join('');
 
-      if (isPrintable && !key.ctrl && !key.meta) {
-        setApiKey((prev) => prev + input);
+      if (printableInput) {
+        setApiKey((prev) => prev + printableInput);
       }
     }
   });
