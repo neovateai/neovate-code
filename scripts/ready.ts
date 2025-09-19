@@ -3,6 +3,9 @@ import { $ } from 'bun';
 import { execSync } from 'child_process';
 
 async function main() {
+  const args = process.argv.slice(2);
+  const shouldRunE2E = args.includes('--e2e');
+
   console.log('🚀 Starting ready check...\n');
 
   // Step 1: Run full build process
@@ -25,7 +28,19 @@ async function main() {
     process.exit(1);
   }
 
-  // Step 3: Run format and check for git changes
+  // Step 3: Run e2e tests (only if --e2e flag is provided)
+  if (shouldRunE2E) {
+    console.log('🎭 Running e2e tests...');
+    try {
+      await $`npm run test:e2e`.quiet();
+      console.log('✅ E2E tests passed\n');
+    } catch (error) {
+      console.error('❌ E2E tests failed:', error);
+      process.exit(1);
+    }
+  }
+
+  // Step 4: Run format and check for git changes
   console.log('🎨 Running formatter...');
   try {
     await $`npm run biome:format -- --write`.quiet();
@@ -46,7 +61,7 @@ async function main() {
     process.exit(1);
   }
 
-  // Step 4: Test CLI with JSON output
+  // Step 5: Test CLI with JSON output
   console.log('🔍 Testing CLI...');
   try {
     const result = execSync(

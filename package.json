@@ -35,6 +35,7 @@
     "repomix": "repomix --include \"src,package.json,README.md\"",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "bun scripts/e2e.ts",
     "typecheck": "tsc --noEmit",
     "prepare": "husky",
     "ready": "bun scripts/ready.ts"

@@ -50,6 +50,27 @@ Before you commit, you need to run the `ready` script to check if the code is re
 $ pnpm ready
 ```
 
+## How to run e2e tests
+
+The e2e tests validate the CLI functionality end-to-end using real model interactions.
+
+Before running the e2e tests, you need to configure the model. Set the `E2E_MODEL` environment variable in your `.env` file and ensure you have the appropriate API keys configured for your chosen model.
+
+```bash
+# .env
+E2E_MODEL=provider_id/model_id
+```
+
+Then you can run the e2e tests.
+
+```bash
+$ pnpm test:e2e
+# Run tests for a specific fixture
+$ pnpm test:e2e --only normal
+# Run tests for a specific test
+$ pnpm test:e2e --only normal/basic
+```
+
 ## Debug
 
 Choose one of the following methods to debug the CLI:
