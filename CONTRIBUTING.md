@@ -48,6 +48,8 @@ Before you commit, you need to run the `ready` script to check if the code is re
 
 ```bash
 $ pnpm ready
+# Or include e2e tests
+$ pnpm ready --e2e
 ```
 
 ## How to run e2e tests
