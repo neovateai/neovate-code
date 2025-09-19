@@ -5,6 +5,7 @@ import React from 'react';
 import { runServerNext } from './commands/servernext/server';
 import { Context } from './context';
 import { DirectTransport } from './messageBus';
+import { parseMcpConfig } from './mcp';
 import { NodeBridge } from './nodeBridge';
 import { Paths } from './paths';
 import { type Plugin, PluginHookType } from './plugin';
@@ -52,6 +53,7 @@ type Argv = {
   systemPrompt?: string;
   // array
   plugin: string[];
+  mcpConfig: string[];
 };
 
 async function parseArgs(argv: any) {
@@ -67,14 +69,16 @@ async function parseArgs(argv: any) {
     },
     default: {
       mcp: true,
+      mcpConfig: [],
     },
-    array: ['plugin'],
+    array: ['plugin', 'mcpConfig'],
     boolean: ['help', 'mcp', 'quiet', 'continue', 'version'],
     string: [
       'appendSystemPrompt',
       'approvalMode',
       'cwd',
       'language',
+      'mcpConfig',
       'model',
       'outputFormat',
       'outputStyle',
@@ -112,6 +116,7 @@ Options:
   --output-style <style>        Output style
   --approval-mode <mode>        Tool approval mode, default, autoEdit, yolo
   -q, --quiet                   Quiet mode, non interactive
+  --mcp-config <config>         MCP server configuration (JSON string with "mcpServers" object or file path)
   --no-mcp                      Disable MCP servers
 
 Examples:
@@ -139,7 +144,7 @@ async function runQuiet(argv: Argv, context: Context) {
     const prompt = argv._[0];
     assert(prompt, 'Prompt is required in quiet mode');
     let input = String(prompt) as string;
-    let model;
+    let model: string | undefined;
     if (isSlashCommand(input)) {
       const parsed = parseSlashCommand(input);
       const slashCommandManager = await SlashCommandManager.create(context);
@@ -186,6 +191,7 @@ async function runQuiet(argv: Argv, context: Context) {
 async function runInteractive(
   argv: Argv,
   contextCreateOpts: any,
+  cwd: string,
   upgrade?: UpgradeOptions,
 ) {
   const appStore = useAppStore.getState();
@@ -200,7 +206,6 @@ async function runInteractive(
   nodeBridge.messageBus.setTransport(nodeTransport);
 
   // Initialize the Zustand store with the UIBridge
-  const cwd = argv.cwd || process.cwd();
   const paths = new Paths({
     productName: contextCreateOpts.productName,
     cwd,
@@ -256,6 +261,11 @@ export async function runNeovate(opts: {
   // clear tracing
   setTraceProcessors([]);
   const argv = await parseArgs(process.argv.slice(2));
+  const cwd = argv.cwd || process.cwd();
+
+  // Parse MCP config if provided
+  const mcpServers = parseMcpConfig(argv.mcpConfig || [], cwd);
+
   const contextCreateOpts = {
     productName: opts.productName,
     productASCIIArt: opts.productASCIIArt,
@@ -271,6 +281,7 @@ export async function runNeovate(opts: {
       language: argv.language,
       outputStyle: argv.outputStyle,
       approvalMode: argv.approvalMode,
+      mcpServers,
     },
     plugins: opts.plugins,
   };
@@ -294,30 +305,35 @@ export async function runNeovate(opts: {
   ];
   if (validCommands.includes(command)) {
     const context = await Context.create({
-      cwd: argv.cwd || process.cwd(),
+      cwd,
       ...contextCreateOpts,
     });
     switch (command) {
-      case 'config':
+      case 'config': {
         const { runConfig } = await import('./commands/config');
         await runConfig(context);
         break;
-      case 'mcp':
+      }
+      case 'mcp': {
         const { runMCP } = await import('./commands/mcp');
         await runMCP(context);
         break;
-      case 'run':
+      }
+      case 'run': {
         const { runRun } = await import('./commands/run');
         await runRun(context);
         break;
-      case 'commit':
+      }
+      case 'commit': {
         const { runCommit } = await import('./commands/commit');
         await runCommit(context);
         break;
-      case 'update':
+      }
+      case 'update': {
         const { runUpdate } = await import('./commands/update');
         await runUpdate(context, opts.upgrade);
         break;
+      }
       default:
         throw new Error(`Unsupported command: ${command}`);
     }
@@ -334,7 +350,6 @@ export async function runNeovate(opts: {
   }
 
   if (argv.quiet) {
-    const cwd = argv.cwd || process.cwd();
     const context = await Context.create({
       cwd,
       ...contextCreateOpts,
@@ -361,6 +376,6 @@ export async function runNeovate(opts: {
     ) {
       upgrade = undefined;
     }
-    await runInteractive(argv, contextCreateOpts, upgrade);
+    await runInteractive(argv, contextCreateOpts, cwd, upgrade);
   }
 }
