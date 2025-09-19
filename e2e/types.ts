@@ -5,5 +5,5 @@ export type TaskModule = {
     result: string;
     isError: boolean;
   }) => void;
-  cliArgs: string;
+  cliArgs: string[];
 };

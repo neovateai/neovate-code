@@ -98,6 +98,7 @@
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "fastify": "^5.5.0",
+    "fastmcp": "^3.17.0",
     "front-matter": "^4.0.2",
     "glob": "^11.0.3",
     "gpt-tokenizer": "^3.0.1",

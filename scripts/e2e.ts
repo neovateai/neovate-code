@@ -1,7 +1,7 @@
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
-import { $ } from 'bun';
+import { spawn } from 'child_process';
 import type { TaskModule } from '../e2e/types';
 
 // Color constants for beautiful logging
@@ -144,6 +144,50 @@ function logSubsection(message: string) {
   console.log(`\n${colors.bright}--- ${message} ---${colors.reset}`);
 }
 
+function executeCli(
+  cwd: string,
+  model: string,
+  args: string[],
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const cliArgs = [
+      cliPath,
+      '--cwd',
+      cwd,
+      '-m',
+      model,
+      '-q',
+      '--output-format',
+      'stream-json',
+      ...args,
+    ];
+
+    const child = spawn('bun', cliArgs, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (data) => {
+      process.stdout.write(data.toString());
+      stdout += data.toString();
+    });
+    child.stderr.on('data', (data) => {
+      process.stderr.write(data.toString());
+      stderr += data.toString();
+    });
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve(stdout);
+      } else {
+        reject(new Error(`CLI process exited with code ${code}:\n${stderr}`));
+      }
+    });
+    child.on('error', (err) => {
+      reject(err);
+    });
+  });
+}
+
 async function runTask(task: Task, model: string): Promise<TaskResult> {
   const startTime = Date.now();
 
@@ -167,14 +211,12 @@ async function runTask(task: Task, model: string): Promise<TaskResult> {
     fs.cpSync(task.workspacePath, tmpPath, { recursive: true });
 
     logInfo(
-      `Executing CLI with model ${colors.yellow}${model}${colors.reset} and args: ${colors.dim}${taskModule.cliArgs}${colors.reset}`,
+      `Executing CLI with model ${colors.yellow}${model}${colors.reset} and args: ${colors.dim}${taskModule.cliArgs.join(' ')}${colors.reset}`,
     );
 
-    const result =
-      await $`bun ${cliPath} --cwd ${tmpPath} -m ${model} -q --output-format stream-json ${taskModule.cliArgs}`;
+    const result = await executeCli(tmpPath, model, taskModule.cliArgs);
 
-    const data = result.stdout
-      .toString()
+    const data = result
       .split('\n')
       .filter(Boolean)
       .map((line) => {
