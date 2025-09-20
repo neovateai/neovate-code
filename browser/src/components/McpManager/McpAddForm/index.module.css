@@ -83,7 +83,7 @@
   font-size: 16px;
   font-weight: 500;
   line-height: 22px;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 /* Modal Body */
@@ -144,7 +144,7 @@
   color: #110c22;
   font-size: 14px;
   font-weight: 500;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 .questionIcon {
@@ -162,7 +162,7 @@
   color: #110c22;
   font-size: 14px;
   font-weight: 400;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 /* Radio button styling */
@@ -170,7 +170,7 @@
   color: #110c22;
   font-size: 14px;
   font-weight: 400;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 .addFormModal :global(.ant-radio-inner) {
@@ -205,7 +205,7 @@
   border: 1px solid #dcdde0;
   border-radius: 4px;
   font-size: 14px;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 .jsonTextArea:focus,
@@ -220,7 +220,7 @@
   font-weight: 400;
   margin-top: 8px;
   opacity: 0.8;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 /* MCP Preview Section */
@@ -244,7 +244,7 @@
   color: #252931;
   font-size: 12px;
   font-weight: 500;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 .collapseIcon {
@@ -272,7 +272,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 .continueButton:hover {
@@ -298,7 +298,7 @@
   color: #110c22;
   font-size: 14px;
   font-weight: 400;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 .cancelButton:hover {
@@ -323,7 +323,7 @@
   color: #ffffff;
   font-size: 14px;
   font-weight: 400;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 .confirmButton:hover {
@@ -397,7 +397,7 @@
   color: #ff4050;
   font-size: 14px;
   font-weight: 400;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 .formInput {
@@ -408,7 +408,7 @@
   color: #110c22;
   font-size: 14px;
   font-weight: 400;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
   padding: 6px 12px;
 }
 
@@ -422,7 +422,7 @@
   color: #aaabaf;
   font-size: 14px;
   font-weight: 400;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 .formTextArea {
@@ -432,7 +432,7 @@
   color: #110c22;
   font-size: 14px;
   font-weight: 400;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
   padding: 6px 12px;
   resize: vertical;
 }
@@ -451,7 +451,7 @@
   color: #110c22 !important;
   font-size: 14px !important;
   font-weight: 400 !important;
-  font-family: 'PingFang SC', sans-serif !important;
+  font-family: "PingFang SC", sans-serif !important;
 }
 
 .addFormModal :global(.ant-select-selector:hover) {
@@ -471,7 +471,7 @@
   color: #aaabaf !important;
   font-size: 14px !important;
   font-weight: 400 !important;
-  font-family: 'PingFang SC', sans-serif !important;
+  font-family: "PingFang SC", sans-serif !important;
 }
 
 /* Multiple Form Container */
@@ -530,7 +530,7 @@
   border-top: 1px solid #ffccc7;
   color: #ff4d4f;
   font-size: 12px;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 .errorIcon {

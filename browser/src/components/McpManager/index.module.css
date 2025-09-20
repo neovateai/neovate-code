@@ -23,7 +23,7 @@
   font-size: 16px;
   font-weight: 500;
   line-height: 22px;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 .modal :global(.ant-modal-body) {
@@ -99,7 +99,7 @@
 .serviceName {
   display: inline-block;
   color: #252931;
-  font-family: 'PingFang SC';
+  font-family: "PingFang SC";
   font-size: 12px;
   font-style: normal;
   font-weight: 400;
@@ -142,7 +142,7 @@
   background: #ffffff;
   color: #110c22;
   transition: all 0.2s;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 .modal :global(.ant-btn:hover) {
@@ -230,7 +230,7 @@
   cursor: pointer;
   transition: all 0.2s;
   text-decoration: none;
-  font-family: 'PingFang SC', sans-serif;
+  font-family: "PingFang SC", sans-serif;
 }
 
 .actionLink:hover {

@@ -67,7 +67,9 @@ export const actions = {
 
   getSlashCommandList: async ({
     searchString,
-  }: { searchString?: string } = {}) => {
+  }: {
+    searchString?: string;
+  } = {}) => {
     if (state.loading) {
       return;
     }

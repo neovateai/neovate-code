@@ -138,7 +138,7 @@
   font-size: 12px;
   color: #252931;
   font-weight: normal;
-  font-family: 'PingFang SC';
+  font-family: "PingFang SC";
   background-color: rgba(0, 0, 0, 0.08);
 }
 
@@ -168,7 +168,7 @@
   font-size: 14px;
   color: #110c22;
   width: 100%;
-  font-family: 'PingFang SC';
+  font-family: "PingFang SC";
   line-height: 20px;
   caret-color: transparent;
 }

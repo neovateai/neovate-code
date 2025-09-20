@@ -6,8 +6,8 @@
 
 .markdownRenderer :global(.prose) {
   font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial,
     sans-serif;
   font-weight: 400;
   font-style: normal;
@@ -178,25 +178,25 @@
 }
 
 /* Streamdown code block style overrides */
-.markdownRenderer :global([data-code-block-container='true']) {
+.markdownRenderer :global([data-code-block-container="true"]) {
   border: none !important;
   padding: 0 !important;
 }
 
 /* Streamdown code block style overrides */
-.markdownRenderer :global([data-streamdown='code-block']) {
+.markdownRenderer :global([data-streamdown="code-block"]) {
   border: none !important;
   padding: 0 !important;
 }
 
 /* Streamdown code block style overrides */
-.markdownRenderer :global([data-code-block-header='true']) {
+.markdownRenderer :global([data-code-block-header="true"]) {
   border: none !important;
   padding: 0 !important;
 }
 
 /* Streamdown Mermaid diagram block style overrides */
-.markdownRenderer :global([data-code-block-container='true']) {
+.markdownRenderer :global([data-code-block-container="true"]) {
   border: none !important;
 }
 

@@ -57,11 +57,7 @@
 }
 
 .todoText {
-  font-family:
-    'PingFang SC',
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
+  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 14px;
   line-height: 1.4285714285714286em;
   color: #252931;

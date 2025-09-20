@@ -48,6 +48,9 @@
   "css": {
     "formatter": {
       "enabled": true
+    },
+    "parser": {
+      "cssModules": true
     }
   }
 }
