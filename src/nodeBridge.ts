@@ -10,7 +10,12 @@ import type {
   UserMessage,
 } from './message';
 import { MessageBus } from './messageBus';
-import { type Model, type Provider, resolveModelWithContext } from './model';
+import {
+  type Model,
+  type Provider,
+  type ProvidersMap,
+  resolveModelWithContext,
+} from './model';
 import { OutputStyleManager } from './outputStyle';
 import { PluginHookType } from './plugin';
 import { Project } from './project';
@@ -90,7 +95,11 @@ class NodeHandlerRegistry {
             ? `${model.provider.id}/${model.model.id}`
             : null;
           const modelContextLimit = model ? model.model.limit.context : null;
-          return [modelId, modelContextLimit, providers];
+          return [
+            modelId,
+            modelContextLimit,
+            normalizeProviders(providers, context),
+          ];
         })();
 
         // Get session config if sessionId is provided
@@ -294,6 +303,28 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
+      'removeConfig',
+      async (data: {
+        cwd: string;
+        isGlobal: boolean;
+        key: string;
+        values?: string[];
+      }) => {
+        const { cwd, key, isGlobal, values } = data;
+        const context = await this.getContext(cwd);
+        const configManager = new ConfigManager(cwd, context.productName, {});
+        configManager.removeConfig(isGlobal, key, values);
+        if (this.contexts.has(cwd)) {
+          await context.destroy();
+          this.contexts.delete(cwd);
+        }
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
       'getConfig',
       async (data: { cwd: string; key: string }) => {
         const { cwd, key } = data;
@@ -404,6 +435,22 @@ class NodeHandlerRegistry {
       },
     );
 
+    // providers for login
+    this.messageBus.registerHandler(
+      'getProviders',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const { providers } = await resolveModelWithContext(null, context);
+        return {
+          success: true,
+          data: {
+            providers: normalizeProviders(providers, context),
+          },
+        };
+      },
+    );
+
     //////////////////////////////////////////////
     // slash command
 
@@ -446,7 +493,7 @@ class NodeHandlerRegistry {
         command: string;
         args: string;
       }) => {
-        const { cwd, sessionId, command, args } = data;
+        const { cwd, command, args } = data;
         const context = await this.getContext(cwd);
         const slashCommandManager = await SlashCommandManager.create(context);
         const commandEntry = slashCommandManager.get(command);
@@ -810,9 +857,73 @@ class NodeHandlerRegistry {
         };
       },
     );
+
+    this.messageBus.registerHandler(
+      'telemetry',
+      async (data: {
+        cwd: string;
+        name: string;
+        payload: Record<string, any>;
+      }) => {
+        const { cwd, name, payload } = data;
+        const context = await this.getContext(cwd);
+        await context.apply({
+          hook: 'telemetry',
+          args: [
+            {
+              name,
+              payload,
+            },
+          ],
+          type: PluginHookType.Parallel,
+        });
+        return {
+          success: true,
+        };
+      },
+    );
   }
 }
 
 function buildSignalKey(cwd: string, sessionId: string) {
   return `${cwd}/${sessionId}`;
+}
+
+function normalizeProviders(providers: ProvidersMap, context: Context) {
+  return Object.values(providers as Record<string, Provider>).map(
+    (provider) => {
+      // Check environment variables for this provider
+      const validEnvs: string[] = [];
+      // Check provider.env (array of required env var names)
+      if (provider.env && Array.isArray(provider.env)) {
+        provider.env.forEach((envVar: string) => {
+          if (process.env[envVar]) {
+            validEnvs.push(envVar);
+          }
+        });
+      }
+      // Check provider.apiEnv (array of env var names)
+      if (provider.apiEnv && Array.isArray(provider.apiEnv)) {
+        provider.apiEnv.forEach((envVar: string) => {
+          if (process.env[envVar]) {
+            validEnvs.push(envVar);
+          }
+        });
+      }
+      // Check if API key is already configured
+      const hasApiKey = !!(
+        provider.options?.apiKey ||
+        context.config.provider?.[provider.id]?.options?.apiKey
+      );
+      return {
+        id: provider.id,
+        name: provider.name,
+        doc: provider.doc,
+        env: provider.env,
+        apiEnv: provider.apiEnv,
+        validEnvs,
+        hasApiKey,
+      };
+    },
+  );
 }

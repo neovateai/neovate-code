@@ -8,7 +8,6 @@ import {
 } from '@openrouter/ai-sdk-provider';
 import assert from 'assert';
 import defu from 'defu';
-import { omit } from 'lodash-es';
 import type { ProviderConfig } from './config';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
@@ -581,10 +580,11 @@ export const providers: ProvidersMap = {
       'gemini-2.5-pro': models['gemini-2.5-pro'],
     },
     createModel(name, provider) {
-      const api = getProviderBaseURL(provider);
+      const baseURL = getProviderBaseURL(provider);
+      const apiKey = getProviderApiKey(provider);
       const google = createGoogleGenerativeAI({
-        apiKey: process.env[provider.env[0]] || process.env[provider.env[1]],
-        baseURL: api,
+        apiKey,
+        baseURL,
       });
       return google(name);
     },
@@ -613,9 +613,10 @@ export const providers: ProvidersMap = {
     },
     createModel(name, provider) {
       const api = getProviderBaseURL(provider);
+      const apiKey = getProviderApiKey(provider);
       return createXai({
         baseURL: api,
-        apiKey: process.env[provider.env[0]],
+        apiKey,
       })(name);
     },
   },
@@ -633,10 +634,11 @@ export const providers: ProvidersMap = {
       'claude-3-5-sonnet-20241022': models['claude-3-5-sonnet-20241022'],
     },
     createModel(name, provider) {
-      const api = getProviderBaseURL(provider);
+      const baseURL = getProviderBaseURL(provider);
+      const apiKey = getProviderApiKey(provider);
       return createAnthropic({
-        apiKey: process.env[provider.env[0]],
-        baseURL: api,
+        apiKey,
+        baseURL,
       })(name);
     },
   },
@@ -700,8 +702,11 @@ export const providers: ProvidersMap = {
       'openrouter/sonoma-sky-alpha': models['sonoma-sky-alpha'],
     },
     createModel(name, provider) {
+      const baseURL = getProviderBaseURL(provider);
+      const apiKey = getProviderApiKey(provider);
       return createOpenRouter({
-        apiKey: process.env[provider.env[0]] || process.env[provider.env[1]],
+        apiKey,
+        baseURL,
       })(name);
     },
   },
@@ -734,9 +739,11 @@ export const providers: ProvidersMap = {
       'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
     },
     createModel(name, provider) {
+      const baseURL = getProviderBaseURL(provider);
+      const apiKey = getProviderApiKey(provider);
       return createOpenAI({
-        baseURL: provider.api,
-        apiKey: process.env[provider.env[0]],
+        baseURL,
+        apiKey,
         // include usage information in streaming mode
         compatibility: 'strict',
       })(name);
@@ -753,9 +760,11 @@ export const providers: ProvidersMap = {
       'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
     },
     createModel(name, provider) {
+      const baseURL = getProviderBaseURL(provider);
+      const apiKey = getProviderApiKey(provider);
       return createOpenAI({
-        baseURL: provider.api,
-        apiKey: process.env[provider.env[0]],
+        baseURL,
+        apiKey,
         // include usage information in streaming mode why? https://platform.moonshot.cn/docs/guide/migrating-from-openai-to-kimi#stream-模式下的-usage-值
         compatibility: 'strict',
       })(name);
@@ -806,8 +815,7 @@ function mergeConfigProviders(
   const mergedProviders = { ...hookedProviders };
   Object.entries(configProviders).forEach(([providerId, config]) => {
     let provider = mergedProviders[providerId] || {};
-    const configWithoutOptions = omit(config, 'options');
-    provider = defu(configWithoutOptions, provider) as Provider;
+    provider = defu(config, provider) as Provider;
     if (!provider.createModel) {
       provider.createModel = defaultModelCreator;
     }

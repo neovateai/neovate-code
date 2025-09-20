@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 @plugin "@tailwindcss/typography";
 @source "../node_modules/streamdown/dist/index.js";
 @plugin 'tailwind-scrollbar';

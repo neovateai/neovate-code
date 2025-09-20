@@ -56,6 +56,7 @@ export class Project {
     const outputStyleManager = await OutputStyleManager.create(this.context);
     const outputStyle = outputStyleManager.getOutputStyle(
       this.context.config.outputStyle,
+      this.context.cwd,
     );
     let systemPrompt = generateSystemPrompt({
       todo: this.context.config.todo!,

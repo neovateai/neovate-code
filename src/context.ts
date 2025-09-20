@@ -117,7 +117,11 @@ export class Context {
       type: PluginHookType.SeriesMerge,
     });
     tempContext.config = resolvedConfig;
-    const mcpManager = MCPManager.create(resolvedConfig.mcpServers || {});
+    const mcpServers = {
+      ...(resolvedConfig.mcpServers || {}),
+      ...opts.argvConfig.mcpServers,
+    };
+    const mcpManager = MCPManager.create(mcpServers);
     return new Context({
       cwd,
       productName,

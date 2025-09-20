@@ -1,3 +1,31 @@
+## 0.12.0
+
+`2025-09-19`
+
+- feat: add e2e testing framework with CLI validation by [@sorrycc](https://github.com/sorrycc)
+- feat: improve slash commands filtering and dependency management by [@sorrycc](https://github.com/sorrycc)
+- refactor: replace direct env access with getProviderApiKey helper by [@sorrycc](https://github.com/sorrycc)
+- fix: improve input handling to support pasted content in api key field [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add support for mcp config via cli args and files [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add positional parameter support for slash commands by [@阿平](https://github.com/阿平) in [#266](https://github.com/umijs/takumi/pull/266)
+- feat: support loading output styles from local markdown files with validation [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: support parsing <argument> tag in tool use messages [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: improve ripgrep path resolution and add error logging by [@阿平](https://github.com/阿平) in [#264](https://github.com/umijs/takumi/pull/264)
+- feat: add isLocal utility to detect bun runtime by [@sorrycc](https://github.com/sorrycc)
+- feat: add telemetry hook for tracking slash command execution by [@阿平](https://github.com/阿平) in [#258](https://github.com/umijs/takumi/pull/258)
+- feat: isSlashCommand supports file parameters by [@阿平](https://github.com/阿平) in [#260](https://github.com/umijs/takumi/pull/260)
+- refactor: move provider normalization to function and improve onboarding UI by [@sorrycc](https://github.com/sorrycc)
+- feat: add login and logout slash commands with provider API key management [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add provider config support with options and model resolution by [@sorrycc](https://github.com/sorrycc)
+- feat: update provider name from Moonshot to MoonshotCN by [@阿平](https://github.com/阿平) in [#261](https://github.com/umijs/takumi/pull/261)
+- type: add missing type field for stdio transport in mcp servers by [@afc163](https://github.com/afc163) in [#262](https://github.com/umijs/takumi/pull/262)
+- feat: add http transport and header/env support for mcp servers by [@sorrycc](https://github.com/sorrycc)
+- feat: log server addition to config path by [@sorrycc](https://github.com/sorrycc)
+- refactor: move mcpManager.initAsync to nodeBridge.ts by [@sorrycc](https://github.com/sorrycc)
+- feat: support loading local project config with defu merging by [@sorrycc](https://github.com/sorrycc)
+- build: remove redundant build:browser from build script by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.11.0
 
 `2025-09-17`

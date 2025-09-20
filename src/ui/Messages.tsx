@@ -1,5 +1,6 @@
 import { Box, Static, Text } from 'ink';
-import React from 'react';
+import pc from 'picocolors';
+import React, { useEffect, useState } from 'react';
 import type { NormalizedMessage } from '../message';
 import type {
   AssistantMessage,
@@ -19,6 +20,13 @@ import { Markdown } from './Markdown';
 import { TodoList, TodoRead } from './Todo';
 import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
+
+interface EnrichedProvider {
+  id: string;
+  name: string;
+  validEnvs?: string[];
+  hasApiKey?: boolean;
+}
 
 export function Messages() {
   const { messages, productName, sessionId } = useAppStore();
@@ -86,12 +94,88 @@ function GettingStartedTips() {
   );
 }
 
+function ModelConfigurationWarning() {
+  const { model, providers } = useAppStore();
+  if (model) {
+    return null;
+  }
+
+  return (
+    <Box
+      flexDirection="column"
+      marginTop={1}
+      borderStyle="round"
+      borderColor="yellow"
+      padding={1}
+    >
+      <Text bold color="yellow">
+        ⚠ Model Configuration Required
+      </Text>
+      <Box marginTop={1} flexDirection="column">
+        <Text>
+          You haven't configured a model yet. Here are available providers:
+        </Text>
+      </Box>
+      <Box marginTop={1} flexDirection="column">
+        {Object.values(providers).map((provider) => {
+          const enrichedProvider = provider as unknown as EnrichedProvider;
+          const descriptions: string[] = [];
+
+          // Add valid environment variables info
+          if (
+            enrichedProvider.validEnvs &&
+            enrichedProvider.validEnvs.length > 0
+          ) {
+            descriptions.push(
+              `✓ Envs: ${enrichedProvider.validEnvs.join(', ')}`,
+            );
+          }
+
+          // Add API key status
+          if (enrichedProvider.hasApiKey) {
+            descriptions.push('✓ Logged');
+          }
+
+          const description = descriptions.join(' | ');
+
+          return (
+            <Box key={enrichedProvider.id}>
+              <Text color="cyan">• {enrichedProvider.name}</Text>
+              {description && <Text> → {pc.gray(`(${description})`)}</Text>}
+            </Box>
+          );
+        })}
+      </Box>
+      <Box marginTop={1} flexDirection="column">
+        <Text>Suggested actions:</Text>
+        <Box marginTop={1} flexDirection="column">
+          <Text>
+            •{' '}
+            <Text bold color="cyan">
+              /login
+            </Text>{' '}
+            - Configure API key for a provider
+          </Text>
+          <Text>
+            •{' '}
+            <Text bold color="cyan">
+              /model
+            </Text>{' '}
+            - Select a model to use
+          </Text>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
 function Header() {
   return (
     <Box flexDirection="column" paddingY={1}>
       <ProductASCIIArt />
       <ProductInfo />
       <GettingStartedTips />
+      <ModelConfigurationWarning />
     </Box>
   );
 }
