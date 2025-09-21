@@ -1,3 +1,11 @@
+## 0.12.1
+
+`2025-09-21`
+
+- feat: add grok-4-fast model support [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: update output-style help and make terminal title update non-blocking by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.12.0
 
 `2025-09-19`
