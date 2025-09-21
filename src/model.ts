@@ -266,6 +266,19 @@ export const models: ModelMap = {
     open_weights: false,
     limit: { context: 256000, output: 32000 },
   },
+  'grok-4-fast': {
+    name: 'Grok 4 Fast',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2024-11',
+    release_date: '2025-08-19',
+    last_updated: '2025-08-19',
+    modalities: { input: ['text', 'image'], output: ['text'] },
+    open_weights: false,
+    limit: { context: 2000000, output: 2000000 },
+  },
   'claude-3-5-sonnet-20241022': {
     name: 'Claude Sonnet 3.5 v2',
     shortName: 'Sonnet 3.5',
@@ -609,6 +622,7 @@ export const providers: ProvidersMap = {
     doc: 'https://xai.com/docs/models',
     models: {
       'grok-4': models['grok-4'],
+      'grok-4-fast': models['grok-4-fast'],
       'grok-code-fast-1': models['grok-code-fast-1'],
     },
     createModel(name, provider) {
@@ -698,6 +712,8 @@ export const providers: ProvidersMap = {
       'qwen/qwen3-coder': models['qwen3-coder-480b-a35b-instruct'],
       'qwen/qwen3-max': models['qwen3-max'],
       'x-ai/grok-code-fast-1': models['grok-code-fast-1'],
+      'x-ai/grok-4': models['grok-4'],
+      'x-ai/grok-4-fast:free': models['grok-4-fast'],
       'openrouter/sonoma-dusk-alpha': models['sonoma-dusk-alpha'],
       'openrouter/sonoma-sky-alpha': models['sonoma-sky-alpha'],
     },
