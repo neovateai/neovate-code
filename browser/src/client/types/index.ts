@@ -1,5 +1,4 @@
 export interface ClientConfig {
-  wsUrl: string;
   reconnectInterval?: number;
   maxReconnectInterval?: number;
   defaultTimeout?: number;
