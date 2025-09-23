@@ -1,14 +1,14 @@
 <div align="center">
 <img src="https://mdn.alipayobjects.com/huamei_9rin5s/afts/img/UdphTJIBImUAAAAAQKAAAAgADiB8AQFr/original" alt="Neovate Code" width="160" />
 
-# Neovate
-
 [![](https://badgen.net/npm/v/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
 [![](https://badgen.net/npm/dm/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
 [![](https://github.com/neovateai/neovate-code/actions/workflows/test.yml/badge.svg)](https://github.com/neovateai/neovate-code/actions/workflows/test.yml)
 [![](https://badgen.net/npm/license/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
 
-**Neovate**, pronounced as `['niːəʊveɪt]`, is a **coding agent** to enhance your development workflow. You can use it to generate code, fix bugs, review code, add tests, and more. You can run it in interactive mode or headless mode.
+![](https://mdn.alipayobjects.com/huamei_9rin5s/afts/img/6KdpRbD5RBEAAAAAWSAAAAgADiB8AQFr/original)
+
+**Neovate**, pronounced as `['niːəʊveɪt]`, is a **coding agent** to enhance your development workflow. You can use it to generate code, fix bugs, review code, add tests, and more.
 
 ✨ See more at [neovateai.dev](https://neovateai.dev).
 
