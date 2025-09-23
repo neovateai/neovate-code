@@ -3,6 +3,7 @@ import path from 'pathe';
 import React, { useMemo } from 'react';
 import { useAppStore } from './store';
 import { useInputHandlers } from './useInputHandlers';
+import type { NormalizedMessage } from '../message';
 
 function HelpHint() {
   const { status } = useAppStore();
@@ -45,10 +46,25 @@ function StatusMain() {
     }, 0);
   }, [messages]);
   const lastAssistantTokenUsed = useMemo(() => {
-    const lastAssistantMessage = messages
-      .slice()
-      .reverse()
-      .find((message) => message.role === 'assistant');
+    // Type guard to safely check if message is NormalizedMessage
+    const isNormalizedMessage = (msg: any): msg is NormalizedMessage => {
+      return msg && typeof msg.parentUuid !== 'undefined';
+    };
+
+    // Find the last message with parentUuid === null (start of last conversation turn) support node 18+
+    const lastTurnStartIndex = messages.findLastIndex(
+      (msg) => isNormalizedMessage(msg) && msg.parentUuid === null,
+    );
+
+    // Get messages from the last conversation turn (or all messages if no turn boundary found)
+    const relevantMessages =
+      lastTurnStartIndex >= 0 ? messages.slice(lastTurnStartIndex) : messages;
+
+    // Find the last assistant message in relevant scope
+    const lastAssistantMessage = relevantMessages.findLast(
+      (message) => message.role === 'assistant',
+    );
+
     const inputTokens = lastAssistantMessage?.usage?.input_tokens ?? 0;
     const outputTokens = lastAssistantMessage?.usage?.output_tokens ?? 0;
     return inputTokens + outputTokens;
