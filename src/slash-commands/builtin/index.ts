@@ -1,4 +1,4 @@
-import { type SlashCommand } from '../types';
+import type { SlashCommand } from '../types';
 import { clearCommand } from './clear';
 import { compactCommand } from './compact';
 import { exitCommand } from './exit';

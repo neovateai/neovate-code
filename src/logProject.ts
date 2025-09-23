@@ -1,12 +1,12 @@
 // @ts-nocheck
 import { Type } from '@sinclair/typebox';
-import chokidar, { FSWatcher } from 'chokidar';
+import chokidar, { type FSWatcher } from 'chokidar';
 import createDebug from 'debug';
-import { type FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import * as fs from 'fs/promises';
 import { join } from 'pathe';
 import { WebSocketServer } from 'ws';
-import { type LogEntry } from './jsonl';
+import type { LogEntry } from './jsonl';
 
 const debug = createDebug('neovate:project');
 
@@ -366,8 +366,8 @@ export class FileWatchManager {
     try {
       const relativePath = filePath
         .replace(this.projectsDir, '')
-        .replace(/^[\/\\]/, '');
-      const pathParts = relativePath.split(/[\/\\]/);
+        .replace(/^[/\\]/, '');
+      const pathParts = relativePath.split(/[/\\]/);
 
       if (pathParts.length !== 2 || !pathParts[1].endsWith('.jsonl')) {
         return; // Invalid path structure

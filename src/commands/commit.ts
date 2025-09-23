@@ -6,7 +6,7 @@ import {
 import clipboardy from 'clipboardy';
 import pc from 'picocolors';
 import yargsParser from 'yargs-parser';
-import { Context } from '../context';
+import type { Context } from '../context';
 import { query } from '../query';
 import * as logger from '../utils/logger';
 
@@ -530,7 +530,7 @@ async function handleInteractiveMode(
     case 'commit':
       await commitChanges(message);
       break;
-    case 'push':
+    case 'push': {
       // Ask if pre-commit hooks should be skipped
       const skipHooksResult = await p.confirm({
         message: pc.bold(pc.blueBright('Should pre-commit hooks be skipped?')),
@@ -549,7 +549,8 @@ async function handleInteractiveMode(
       await commitChanges(message, skipHooksResult);
       await pushChanges();
       break;
-    case 'checkout':
+    }
+    case 'checkout': {
       // Generate branch name and let user preview/edit it
       let suggestedBranchName = 'feature-branch';
       if (config) {
@@ -579,7 +580,8 @@ async function handleInteractiveMode(
       await checkoutNewBranch(branchName);
       await commitChanges(message);
       break;
-    case 'edit':
+    }
+    case 'edit': {
       // Ask user to edit the commit message
       const editedMessage = await p.text({
         message: pc.bold(pc.blueBright('Edit the commit message:')),
@@ -594,6 +596,7 @@ async function handleInteractiveMode(
       // Use the edited message again to show the operation options
       await handleInteractiveMode(editedMessage, config);
       break;
+    }
     case 'cancel':
       logger.logAction({ message: 'Operation cancelled' });
       break;
@@ -712,7 +715,7 @@ Use ${language} to generate the commit message.
 
 Ensure the commit message:
 - Starts with the appropriate prefix.
-- Is in the imperative mood (e.g., \"add feature\" not \"added feature\" or \"adding feature\").
+- Is in the imperative mood (e.g., "add feature" not "added feature" or "adding feature").
 - Does not exceed 72 characters.
 
 Reply only with the one-line commit message, without any additional text, explanations, \

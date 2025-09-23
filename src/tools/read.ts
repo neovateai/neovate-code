@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'pathe';
 import { z } from 'zod';
 import { IMAGE_EXTENSIONS } from '../constants';
-import { type ToolResult, createTool } from '../tool';
+import { createTool, type ToolResult } from '../tool';
 import { safeStringify } from '../utils/safeStringify';
 
 type ImageMediaType =
@@ -121,7 +121,7 @@ Usage:
 
         const ext = path.extname(file_path).toLowerCase();
 
-        let fullFilePath = (() => {
+        const fullFilePath = (() => {
           if (path.isAbsolute(file_path)) {
             return file_path;
           }

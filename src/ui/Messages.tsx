@@ -1,9 +1,9 @@
 import { Box, Static, Text } from 'ink';
 import pc from 'picocolors';
 import React, { useEffect, useState } from 'react';
-import type { NormalizedMessage } from '../message';
 import type {
   AssistantMessage,
+  NormalizedMessage,
   ToolMessage,
   ToolResultPart,
   ToolUsePart,
@@ -14,12 +14,12 @@ import {
   isCanceledMessage,
   isToolResultMessage,
 } from '../message';
+import { SPACING, UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
 import { GradientString } from './GradientString';
 import { Markdown } from './Markdown';
-import { TodoList, TodoRead } from './Todo';
-import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
+import { TodoList, TodoRead } from './Todo';
 
 interface EnrichedProvider {
   id: string;
@@ -317,7 +317,7 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
     returnDisplayTypes.includes(result.returnDisplay.type)
   ) {
     switch (result.returnDisplay.type) {
-      case 'diff_viewer':
+      case 'diff_viewer': {
         const { originalContent, newContent, filePath } = result.returnDisplay;
         const originalContentValue =
           typeof originalContent === 'string'
@@ -334,6 +334,7 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
             fileName={filePath}
           />
         );
+      }
       case 'todo_read':
         return <TodoRead todos={result.returnDisplay.todos} />;
       case 'todo_write':
@@ -360,7 +361,7 @@ function ToolResult({ message }: { message: ToolMessage }) {
   if (message.content.length === 0) {
     return null;
   }
-  let part = message.content[0];
+  const part = message.content[0];
   return (
     <Box
       flexDirection="column"

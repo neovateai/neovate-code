@@ -134,9 +134,7 @@ function extractFirstUserMessageSummary(lines: string[]): string {
           ? entry.content.slice(0, 50) + '...'
           : entry.content;
       }
-    } catch (e) {
-      continue;
-    }
+    } catch (e) {}
   }
   return '';
 }

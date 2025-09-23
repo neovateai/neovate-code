@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppStore } from '../../ui/store';
-import { type LocalJSXCommand } from '../types';
+import type { LocalJSXCommand } from '../types';
 
 export const exitCommand: LocalJSXCommand = {
   type: 'local-jsx',

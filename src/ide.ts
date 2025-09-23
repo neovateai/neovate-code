@@ -3,10 +3,10 @@ import path from 'pathe';
 import { fileURLToPath, resolve } from 'url';
 import WebSocket from 'ws';
 import {
-  type InstallationResult,
-  type PlatformInfo,
   attemptInstallation,
+  type InstallationResult,
   isExtensionInstalled,
+  type PlatformInfo,
 } from './utils/ide';
 
 const __filename = fileURLToPath(import.meta.url);

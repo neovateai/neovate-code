@@ -1,12 +1,11 @@
 import { existsSync, readFileSync } from 'fs';
-import { Box, Text } from 'ink';
-import { useInput } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import path from 'pathe';
 import React, { useMemo } from 'react';
 import type { ToolUse as ToolUseType } from '../tool';
-import { DiffViewer } from './DiffViewer';
 import { UI_COLORS } from './constants';
+import { DiffViewer } from './DiffViewer';
 import { type ApprovalResult, useAppStore } from './store';
 
 interface ToolPreviewProps {

@@ -331,7 +331,7 @@ Based on the weather data, it looks like a great day!`;
     });
 
     it('处理 json 末尾包含特殊换行符', () => {
-      const input = `\n\n<use_tool>\n<tool_name>write</tool_name>\n<arguments>\n{\"file_path\": \"src/ui/components/ContentBox.tsx\", \"content\": \"import React from 'react';\\nconst hello = 'world';\n\"}\\n</arguments>\n</use_tool>`;
+      const input = `\n\n<use_tool>\n<tool_name>write</tool_name>\n<arguments>\n{"file_path": "src/ui/components/ContentBox.tsx", "content": "import React from 'react';\\nconst hello = 'world';\n"}\\n</arguments>\n</use_tool>`;
 
       const result = parseMessage(input);
       expect(result).toHaveLength(1);

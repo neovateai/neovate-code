@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import readline from 'readline';
-import { MessageBus } from '../../messageBus';
 import type { MessageHandler } from '../../messageBus';
+import { MessageBus } from '../../messageBus';
 import { WebSocketTransport } from './websocketTransport';
 
 // ANSI color codes for better terminal output

@@ -224,7 +224,7 @@ class NodeHandlerRegistry {
         });
         for (const message of messages) {
           const normalizedMessage = {
-            // @ts-ignore
+            // @ts-expect-error
             parentUuid: message.parentUuid ?? jsonlLogger.getLatestUuid(),
             uuid: randomUUID(),
             ...message,

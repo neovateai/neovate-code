@@ -1,4 +1,4 @@
-import { type OutputStyle } from '../types';
+import type { OutputStyle } from '../types';
 import { defaultOutputStyle } from './default';
 import { explanatoryOutputStyle } from './explanatory';
 import { miaoOutputStyle } from './miao';

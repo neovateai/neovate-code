@@ -1,7 +1,8 @@
 import { Box, Text, useInput } from 'ink';
 import Spinner from 'ink-spinner';
 import pc from 'picocolors';
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '../../ui/store';
 import type { LocalJSXCommand } from '../types';
 

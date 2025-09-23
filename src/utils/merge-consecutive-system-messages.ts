@@ -1,4 +1,4 @@
-import { type LanguageModelV1Message } from '@ai-sdk/provider';
+import type { LanguageModelV1Message } from '@ai-sdk/provider';
 import { UserError } from '@openai/agents';
 import createDebug from 'debug';
 

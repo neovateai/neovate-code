@@ -431,7 +431,7 @@ export class MCPManager {
             JSON.stringify(params || {}),
           );
 
-          let returnDisplay = `Tool ${mcpTool.name} executed successfully, ${params ? `parameters: ${JSON.stringify(params)}` : ''}`;
+          const returnDisplay = `Tool ${mcpTool.name} executed successfully, ${params ? `parameters: ${JSON.stringify(params)}` : ''}`;
           const llmContent = convertMcpResultToLlmContent(result);
           return {
             llmContent,

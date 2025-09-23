@@ -1,6 +1,5 @@
 import { type EventHandler, MessageBus } from './messageBus';
-import type { ToolUse } from './tool';
-import type { ApprovalCategory } from './tool';
+import type { ApprovalCategory, ToolUse } from './tool';
 import type { AppStore } from './ui/store';
 
 export class UIBridge {

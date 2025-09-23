@@ -1,4 +1,4 @@
-import { type PromptCommand } from '../types';
+import type { PromptCommand } from '../types';
 
 export function createInitCommand(opts: { productName: string }) {
   const productName = opts.productName;

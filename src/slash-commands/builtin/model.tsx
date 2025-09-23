@@ -1,9 +1,10 @@
 import { Box, Text } from 'ink';
 import pc from 'picocolors';
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import PaginatedGroupSelectInput from '../../ui/PaginatedGroupSelectInput';
 import { useAppStore } from '../../ui/store';
-import { type LocalJSXCommand } from '../types';
+import type { LocalJSXCommand } from '../types';
 
 interface ModelSelectProps {
   onExit: (model: string) => void;

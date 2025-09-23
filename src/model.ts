@@ -3,16 +3,16 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createXai } from '@ai-sdk/xai';
 import {
-  type LanguageModelV1,
   createOpenRouter,
+  type LanguageModelV1,
 } from '@openrouter/ai-sdk-provider';
 import assert from 'assert';
 import defu from 'defu';
 import type { ProviderConfig } from './config';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
-import { aisdk } from './utils/ai-sdk';
 import type { AiSdkModel } from './utils/ai-sdk';
+import { aisdk } from './utils/ai-sdk';
 
 export interface ModelModalities {
   input: ('text' | 'image' | 'audio' | 'video' | 'pdf')[];

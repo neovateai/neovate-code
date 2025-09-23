@@ -1,5 +1,5 @@
 import * as net from 'net';
-import * as vscode from 'vscode';
+import type * as vscode from 'vscode';
 
 export function findFreePort(startPort: number): Promise<number> {
   console.log('[Utils] findFreePort called with startPort:', startPort);

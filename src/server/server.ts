@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { type TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import createDebug from 'debug';
 import fastify, { type FastifyInstance } from 'fastify';
 import fs from 'fs';
@@ -9,7 +9,7 @@ import { PluginHookType } from '../plugin';
 import { Service } from '../service';
 import * as logger from '../utils/logger';
 import config from './config';
-import { type CreateServerOpts, type RunBrowserServerOpts } from './types';
+import type { CreateServerOpts, RunBrowserServerOpts } from './types';
 
 const debug = createDebug('neovate:server:completions');
 

@@ -1,5 +1,5 @@
 import type { NormalizedMessage } from './message';
-import { type ModelInfo } from './model';
+import type { ModelInfo } from './model';
 import { query } from './query';
 
 type CompactOptions = {
