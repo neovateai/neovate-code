@@ -75,12 +75,15 @@ export class SlashCommandManager {
   }
 
   getAll(): CommandEntry[] {
-    return Array.from(this.commands.values());
+    return Array.from(this.commands.values()).filter((entry) =>
+      this.#isCommandEnabled(entry.command),
+    );
   }
 
   getCommandsBySource(source: CommandSource): CommandEntry[] {
     return Array.from(this.commands.values()).filter(
-      (entry) => entry.source === source,
+      (entry) =>
+        entry.source === source && this.#isCommandEnabled(entry.command),
     );
   }
 
@@ -98,7 +101,12 @@ export class SlashCommandManager {
           .toLowerCase()
           .includes(lowerPrefix);
         return nameMatch || descriptionMatch;
-      });
+      })
+      .filter((command) => this.#isCommandEnabled(command));
+  }
+
+  #isCommandEnabled(command: SlashCommand): boolean {
+    return command.isEnabled !== false;
   }
 
   #loadGlobal(globalConfigDir: string): CommandEntry[] {

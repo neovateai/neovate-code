@@ -10,6 +10,7 @@ export enum CommandSource {
 export interface BaseSlashCommand {
   name: string;
   description: string;
+  isEnabled?: boolean;
 }
 
 export interface LocalCommand extends BaseSlashCommand {
