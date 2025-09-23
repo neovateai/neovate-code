@@ -50,6 +50,14 @@
   "authors": [
     "chencheng <sorrycc@gmail.com> (https://github.com/sorrycc)"
   ],
+  "homepage": "https://neovateai.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neovateai/neovate-code/"
+  },
+  "bugs": {
+    "url": "https://github.com/neovateai/neovate-code/issues"
+  },
   "license": "MIT",
   "description": "A coding agent to enhance your development workflow.",
   "devDependencies": {
