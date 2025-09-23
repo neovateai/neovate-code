@@ -22,6 +22,7 @@ import { Project } from './project';
 import { query } from './query';
 import { SessionConfigManager } from './session';
 import { SlashCommandManager } from './slashCommand';
+import { createBashTool } from './tools/bash';
 import { listDirectory } from './utils/list';
 import { randomUUID } from './utils/randomUUID';
 
@@ -855,6 +856,26 @@ class NodeHandlerRegistry {
         return {
           success: true,
         };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'executeTool',
+      async ({ command, cwd }: { command: string; cwd: string }) => {
+        try {
+          const bashTool = createBashTool({ cwd });
+          const result = await bashTool.execute({ command });
+
+          return {
+            result,
+            success: true,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
       },
     );
 

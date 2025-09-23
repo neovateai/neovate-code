@@ -21,7 +21,7 @@ export function ModeIndicator() {
     </>
   ) : bashMode ? (
     <>
-      <Text color={UI_COLORS.MODE_INDICATOR_TEXT}>bash mode</Text>
+      <Text color={UI_COLORS.BASH_MODE_TEXT}>bash mode</Text>
       <Text color={UI_COLORS.MODE_INDICATOR_DESCRIPTION}>
         {' '}
         (esc to disable)

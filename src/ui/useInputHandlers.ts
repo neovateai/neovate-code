@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppStore } from './store';
+import { useBashMode } from './useBashMode';
 import { useFileSuggestion } from './useFileSuggestion';
 import { useImagePasteManager } from './useImagePasteManager';
 import { useInputState } from './useInputState';
@@ -19,6 +20,7 @@ export function useInputHandlers() {
     clearQueue,
   } = useAppStore();
   const inputState = useInputState();
+  const bashMode = useBashMode();
   const slashCommands = useSlashCommands(inputState.state.value);
   const [forceTabTrigger, setForceTabTrigger] = useState(false);
   const fileSuggestion = useFileSuggestion(inputState.state, forceTabTrigger);
@@ -79,9 +81,16 @@ export function useInputHandlers() {
       return;
     }
     // 3. submit (pasted text expansion is handled in store.send)
+    const finalValue = bashMode.formatBashCommand(value);
     inputState.setValue('');
+
+    // Reset bash mode after submission
+    if (bashMode.bashMode) {
+      bashMode.exitBashMode();
+    }
+
     resetTabTrigger();
-    await send(value);
+    await send(finalValue);
   }, [
     inputState,
     send,
@@ -89,6 +98,7 @@ export function useInputHandlers() {
     fileSuggestion,
     applyFileSuggestion,
     resetTabTrigger,
+    bashMode,
   ]);
 
   const handleTabPress = useCallback(
@@ -135,9 +145,17 @@ export function useInputHandlers() {
   const handleChange = useCallback(
     (val: string) => {
       setHistoryIndex(null);
-      inputState.setValue(val);
+
+      // Handle bash mode auto-detection and switching
+      const bashResult = bashMode.handleBashModeInput(val);
+
+      if (bashResult.modeChanged) {
+        inputState.setValue(bashResult.processedInput);
+      } else {
+        inputState.setValue(val);
+      }
     },
-    [inputState, setHistoryIndex],
+    [inputState, setHistoryIndex, bashMode],
   );
 
   const handleHistoryUp = useCallback(() => {
@@ -251,6 +269,7 @@ export function useInputHandlers() {
 
   return {
     inputState,
+    bashMode,
     handlers: {
       handleSubmit,
       handleTabPress,
