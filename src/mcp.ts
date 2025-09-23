@@ -420,8 +420,8 @@ export class MCPManager {
       getDescription: ({ params }) => {
         return formatParamsDescription(params);
       },
-      // @ts-ignore
-      parameters: mcpTool.originalParameters ?? mcpTool.parameters,
+      // @ts-expect-error mcpTool.parameters is a JsonObjectSchema
+      parameters: mcpTool.parameters,
       execute: async (params) => {
         try {
           // FunctionTool.invoke expects (runContext, input)
