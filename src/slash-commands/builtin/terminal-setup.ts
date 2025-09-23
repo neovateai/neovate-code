@@ -30,6 +30,7 @@ export function createTerminalSetupCommand(): LocalCommand {
           case 'iTerm.app':
             result = await installBindingsForITerm2();
             break;
+          // TODO support Cursor
           case 'vscode':
             result = installBindingsForVSCodeTerminal();
             break;
