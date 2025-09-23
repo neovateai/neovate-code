@@ -108,16 +108,15 @@ Options:
   -h, --help                    Show help
   -m, --model <model>           Specify model to use
   --plan-model <model>          Specify a plan model for some tasks
-  --cwd <path>                  Specify the working directory
   -r, --resume <session-id>     Resume a session
   -c, --continue                Continue the latest session
+  -q, --quiet                   Quiet mode, non interactive
+  --cwd <path>                  Specify the working directory
   --system-prompt <prompt>      Custom system prompt for code agent
   --output-format <format>      Output format, text, stream-json, json
   --output-style <style>        Output style (name or path)
   --approval-mode <mode>        Tool approval mode, default, autoEdit, yolo
-  -q, --quiet                   Quiet mode, non interactive
   --mcp-config <config>         MCP server configuration (JSON string with "mcpServers" object or file path)
-  --no-mcp                      Disable MCP servers
 
 Examples:
   ${p} "Refactor this file to use hooks."
@@ -128,7 +127,6 @@ Commands:
   commit                        Commit changes to the repository
   mcp                           Manage MCP servers
   run                           Run a command
-  log                           Start log viewer server
   update                        Check for and apply updates
     `.trimEnd(),
   );
@@ -294,15 +292,7 @@ export async function runNeovate(opts: {
     });
     return;
   }
-  const validCommands = [
-    'config',
-    'commit',
-    'mcp',
-    'run',
-    'log',
-    'server',
-    'update',
-  ];
+  const validCommands = ['config', 'commit', 'mcp', 'run', 'server', 'update'];
   if (validCommands.includes(command)) {
     const context = await Context.create({
       cwd,
