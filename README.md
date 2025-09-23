@@ -1,6 +1,8 @@
 <div align="center">
 <img src="https://mdn.alipayobjects.com/huamei_9rin5s/afts/img/UdphTJIBImUAAAAAQKAAAAgADiB8AQFr/original" alt="Neovate Code" width="160" />
 
+---
+
 [![](https://badgen.net/npm/v/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
 [![](https://badgen.net/npm/dm/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
 [![](https://github.com/neovateai/neovate-code/actions/workflows/test.yml/badge.svg)](https://github.com/neovateai/neovate-code/actions/workflows/test.yml)
