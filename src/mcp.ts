@@ -420,6 +420,7 @@ export class MCPManager {
       getDescription: ({ params }) => {
         return formatParamsDescription(params);
       },
+      // @ts-ignore
       parameters: mcpTool.originalParameters ?? mcpTool.parameters,
       execute: async (params) => {
         try {
