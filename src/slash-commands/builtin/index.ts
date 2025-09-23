@@ -12,6 +12,7 @@ import { createOutputStyleCommand } from './output-style';
 import { createResumeCommand } from './resume';
 import { createReviewCommand } from './review';
 import { statusCommand } from './status';
+import { createTerminalSetupCommand } from './terminal-setup';
 
 export function createBuiltinCommands(opts: {
   productName: string;
@@ -28,6 +29,7 @@ export function createBuiltinCommands(opts: {
     createOutputStyleCommand(),
     createResumeCommand(),
     createReviewCommand(),
+    createTerminalSetupCommand(),
     compactCommand,
     statusCommand,
   ];
