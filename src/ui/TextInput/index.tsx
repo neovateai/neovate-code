@@ -336,6 +336,16 @@ export default function TextInput({
     const currentState = pasteStateRef.current;
     const currentTime = Date.now();
 
+    // Check if this is a single newline from Shift+Enter or Meta+Enter
+    // These should be processed as regular input, not paste
+    const isSingleNewline = input === '\n' && (key.shift || key.meta);
+
+    if (isSingleNewline) {
+      // Process Shift+Enter or Meta+Enter directly as regular input
+      onInput(input, key);
+      return;
+    }
+
     // Initialize timing on first input
     if (!currentState.firstInputTime) {
       currentState.firstInputTime = currentTime;
@@ -351,10 +361,10 @@ export default function TextInput({
     // 2. Image path format
     // 3. Rapid consecutive inputs
     // 4. Already collecting chunks (continuation of paste)
-    // 5. Input with multiple lines (common in paste operations)
+    // 5. Input with multiple lines (common in paste operations) - but exclude single newlines
     // 6. Medium-sized input (likely copy-paste even if not huge)
     const isLargeInput = input.length > PASTE_CONFIG.LARGE_INPUT_THRESHOLD;
-    const hasNewlines = input.includes('\n');
+    const hasMultipleNewlines = input.includes('\n') && input.length > 1;
     const isRapidSequence =
       timeSinceFirst < PASTE_CONFIG.RAPID_INPUT_THRESHOLD_MS &&
       currentState.chunks.length > 0;
@@ -366,7 +376,7 @@ export default function TextInput({
     const isPasteCandidate =
       onPaste &&
       (isLargeInput ||
-        hasNewlines ||
+        hasMultipleNewlines ||
         isImageFormat ||
         isRapidSequence ||
         isNewRapidInput ||
