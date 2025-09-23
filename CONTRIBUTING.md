@@ -2,17 +2,7 @@
 
 ## Prepare
 
-Setup the API keys for the LLMs providers.
-
-```bash
-$ export OPENAI_API_KEY="sk-..."
-$ export GOOGLE_API_KEY="sk-..."
-$ export ANTHROPIC_API_KEY="sk-..."
-$ export DEEPSEEK_API_KEY="sk-..."
-$ export XAI_API_KEY="sk-..."
-$ export AIHUBMIX_API_KEY="sk-..."
-$ export OPENROUTER_API_KEY="sk-..."
-```
+Setup the API keys for the LLMs providers, use the env variables in your bashrc/zshrc/fishrc files or use `/login` the select a provider and enter the API Key.
 
 If you are using VSCode or Cursor, install [Biome extension](https://marketplace.visualstudio.com/items?itemName=biomejs.biome) to format the code.
 

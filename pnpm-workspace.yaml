@@ -1,8 +1,6 @@
 packages:
-  - browser
   - vscode-extension
   - examples/*
 
 patchedDependencies:
-  '@openai/agents-core': patches/@openai__agents-core.patch
   marked-terminal: patches/marked-terminal.patch

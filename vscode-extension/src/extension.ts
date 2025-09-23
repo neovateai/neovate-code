@@ -56,7 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         const successMessage = `MCP Server started on port ${port}.`;
         console.log('[Extension] Success:', successMessage);
-        vscode.window.showInformationMessage(successMessage);
+        // vscode.window.showInformationMessage(successMessage);
       } catch (error: any) {
         console.error('[Extension] Failed to start MCP server:', error);
         console.error('[Extension] Error stack:', error.stack);
