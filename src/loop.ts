@@ -4,7 +4,7 @@ import { At } from './at';
 import { History, type OnMessage } from './history';
 import type { NormalizedMessage, ToolUsePart } from './message';
 import type { ModelInfo } from './model';
-import type { ToolResult, ToolUse, Tools } from './tool';
+import type { ToolResult, Tools, ToolUse } from './tool';
 import { Usage } from './usage';
 import { parseMessage } from './utils/parse-message';
 import { randomUUID } from './utils/randomUUID';
@@ -172,7 +172,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
           chunk.data.type === 'model'
         ) {
           switch (chunk.data.event.type) {
-            case 'text-delta':
+            case 'text-delta': {
               const textDelta = chunk.data.event.textDelta;
               textBuffer += textDelta;
               text += textDelta;
@@ -188,6 +188,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
                 await pushTextDelta(textDelta, text, opts.onTextDelta);
               }
               break;
+            }
             case 'reasoning':
               await opts.onReasoning?.(chunk.data.event.textDelta);
               break;

@@ -1,6 +1,6 @@
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { Form, Select, Switch, Tooltip, Typography } from 'antd';
-import React from 'react';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';

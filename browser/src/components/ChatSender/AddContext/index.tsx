@@ -4,7 +4,7 @@ import { createStyles } from 'antd-style';
 import { useRef, useState } from 'react';
 import { useSnapshot } from 'valtio';
 import SuggestionList from '@/components/SuggestionList';
-import { ContextType } from '@/constants/context';
+import type { ContextType } from '@/constants/context';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
 

@@ -11,9 +11,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './pages/__root'
-import { Route as SettingsRouteImport } from './pages/settings'
-import { Route as DemoRouteImport } from './pages/demo'
 import { Route as ChatRouteImport } from './pages/chat'
+import { Route as DemoRouteImport } from './pages/demo'
+import { Route as SettingsRouteImport } from './pages/settings'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',

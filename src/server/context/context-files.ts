@@ -321,10 +321,7 @@ export async function getFileContents(opts: {
           candidateFiles.push(currentPath);
         }
       }
-    } catch (error) {
-      // Skip inaccessible paths
-      continue;
-    }
+    } catch (error) {}
   }
 
   const fileContents: Array<FileContent> = [];

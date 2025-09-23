@@ -1,7 +1,8 @@
 import crypto from 'crypto';
 import { createTwoFilesPatch } from 'diff';
 import { Box, Text } from 'ink';
-import React, { useMemo } from 'react';
+import type React from 'react';
+import { useMemo } from 'react';
 
 interface DiffProps {
   originalContent: string;
@@ -296,7 +297,7 @@ function RenderDiffContent(
 
           const lineKey = `diff-line-${index}`;
           let gutterNumStr = '';
-          let color: 'green' | 'red' | undefined = undefined;
+          let color: 'green' | 'red' | undefined;
           let prefixSymbol = ' ';
           let dim = false;
 

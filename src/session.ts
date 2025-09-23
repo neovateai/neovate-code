@@ -82,9 +82,7 @@ export class SessionConfigManager {
           if (parsed.type === 'config') {
             return parsed.config;
           }
-        } catch {
-          continue;
-        }
+        } catch {}
       }
       return DEFAULT_SESSION_CONFIG;
     } catch {

@@ -1,17 +1,16 @@
 import type { OpenAIProvider } from '@ai-sdk/openai';
-import { type AgentInputItem } from '@openai/agents';
+import type { AgentInputItem } from '@openai/agents';
 import type { LanguageModelV1 } from '@openrouter/ai-sdk-provider';
 import defu from 'defu';
-import { type Config } from './config';
-import { Context, type ContextCreateOpts } from './context';
+import type { Config } from './config';
+import type { Context, ContextCreateOpts } from './context';
 import type { LoopResult } from './loop';
 import type { ModelAlias, ModelMap, Provider, ProvidersMap } from './model';
 import type { OutputStyle } from './outputStyle';
 import type { SlashCommand } from './slash-commands/types';
-import type { ToolResult, ToolUse } from './tool';
-import type { Tool } from './tool';
+import type { Tool, ToolResult, ToolUse } from './tool';
 import type { Usage } from './usage';
-import { type MessageContent } from './utils/parse-message';
+import type { MessageContent } from './utils/parse-message';
 
 export enum PluginHookType {
   First = 'first',

@@ -7,15 +7,13 @@ import type { LoopResult } from '../loop';
 import type { ImagePart, Message, UserMessage } from '../message';
 import type { ProvidersMap } from '../model';
 import { Paths } from '../paths';
-import { SessionConfigManager, loadSessionMessages } from '../session';
-import { Session } from '../session';
+import { loadSessionMessages, Session, SessionConfigManager } from '../session';
 import {
   type CommandEntry,
   isSlashCommand,
   parseSlashCommand,
 } from '../slashCommand';
-import type { ToolUse } from '../tool';
-import type { ApprovalCategory } from '../tool';
+import type { ApprovalCategory, ToolUse } from '../tool';
 import type { UIBridge } from '../uiBridge';
 import { Upgrade, type UpgradeOptions } from '../upgrade';
 import { setTerminalTitle } from '../utils/setTerminalTitle';
@@ -547,7 +545,7 @@ export const useAppStore = create<AppStore>()(
         const { message } = opts;
         const { bridge, cwd, sessionId, pastedImageMap } = get();
 
-        let attachments = [];
+        const attachments = [];
         // Handle pasted images
         if (message && Object.keys(pastedImageMap).length > 0) {
           const pastedImageRegex = /\[Image (#\d+)\]/g;

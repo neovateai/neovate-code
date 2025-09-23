@@ -1,8 +1,8 @@
 import path from 'pathe';
 import type { Context } from './context';
 import {
-  type NormalizedMarkdownFile,
   loadPolishedMarkdownFiles,
+  type NormalizedMarkdownFile,
 } from './outputStyle';
 import type { Paths } from './paths';
 import { PluginHookType } from './plugin';

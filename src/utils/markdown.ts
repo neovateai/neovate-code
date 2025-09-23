@@ -1,7 +1,7 @@
 import * as p from '@umijs/clack-prompts';
 import { parse, setOptions } from 'marked';
-import TerminalRenderer, { markedTerminal } from 'marked-terminal';
 import type { TerminalRendererOptions } from 'marked-terminal';
+import TerminalRenderer, { type markedTerminal } from 'marked-terminal';
 import pc from 'picocolors';
 
 interface MarkdownRendererConfig {

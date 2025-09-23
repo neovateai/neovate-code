@@ -24,12 +24,11 @@ export function parseMessage(text: string): MessageContent[] {
 
   // --- 状态变量 ---
   let currentTextContentStart = 0; // 当前文本块的起始索引
-  let currentTextContent: TextContent | undefined = undefined;
+  let currentTextContent: TextContent | undefined;
 
-  let currentToolUse: ToolUse | undefined = undefined; // 当前正在解析的工具使用对象
+  let currentToolUse: ToolUse | undefined; // 当前正在解析的工具使用对象
   // 当前正在解析的参数标签名 ('tool_name', 'arguments' 或 'argument')
-  let currentParamName: 'tool_name' | 'arguments' | 'argument' | undefined =
-    undefined;
+  let currentParamName: 'tool_name' | 'arguments' | 'argument' | undefined;
   let currentParamValueStart = 0; // 当前参数值的起始索引
 
   // --- 标签常量 ---

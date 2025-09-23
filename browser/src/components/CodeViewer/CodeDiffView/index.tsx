@@ -1,6 +1,6 @@
 import { DiffEditor } from '@monaco-editor/react';
 import { createStyles } from 'antd-style';
-import * as monaco from 'monaco-editor';
+import type * as monaco from 'monaco-editor';
 import {
   forwardRef,
   useEffect,

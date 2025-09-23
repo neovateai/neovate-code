@@ -1,6 +1,5 @@
 import chalk from 'chalk';
-import { Text, useInput } from 'ink';
-import { type Key } from 'ink';
+import { type Key, Text, useInput } from 'ink';
 import React from 'react';
 import { PASTE_CONFIG } from '../constants';
 import { darkTheme } from './constant';

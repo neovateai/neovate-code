@@ -54,7 +54,7 @@ const DiffStatBlocks = (props: Props) => {
 
     const totalChangedLines = diffStat.addLines + diffStat.removeLines;
 
-    return new Array().concat(
+    return [].concat(
       Array.from({
         length: parseInt(
           ((diffStat.addLines / totalChangedLines) * 4).toFixed(0),

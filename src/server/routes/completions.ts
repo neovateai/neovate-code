@@ -2,11 +2,11 @@
 import { Type } from '@sinclair/typebox';
 import { pipeDataStreamToResponse } from 'ai';
 import createDebug from 'debug';
-import { type FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { last } from 'lodash-es';
 import { PluginHookType } from '../../plugin';
 import { runCode } from '../services/completions';
-import { type RouteCompletionsOpts } from '../types';
+import type { RouteCompletionsOpts } from '../types';
 import { type CompletionRequest, ContextType } from '../types/completions';
 
 const debug = createDebug('neovate:server:completions');

@@ -1,7 +1,7 @@
-import path from 'path';
-import os from 'os';
-import fs from 'fs';
 import { spawn } from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import type { TaskModule } from '../e2e/types';
 
 // Color constants for beautiful logging

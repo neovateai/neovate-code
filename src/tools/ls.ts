@@ -2,11 +2,11 @@ import path from 'pathe';
 import { z } from 'zod';
 import { createTool } from '../tool';
 import {
-  MAX_FILES,
-  TRUNCATED_MESSAGE,
   createFileTree,
   listDirectory,
+  MAX_FILES,
   printTree,
+  TRUNCATED_MESSAGE,
 } from '../utils/list';
 
 export function createLSTool(opts: { cwd: string; productName: string }) {

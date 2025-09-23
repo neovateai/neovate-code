@@ -1,6 +1,6 @@
 import { ApiOutlined, EditOutlined } from '@ant-design/icons';
 import { useBoolean, useSetState, useToggle } from 'ahooks';
-import { Button, Checkbox, Dropdown, Input, Modal, Space, message } from 'antd';
+import { Button, Checkbox, Dropdown, Input, Modal, message, Space } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -11,10 +11,10 @@ import {
 import McpManager from '@/components/McpManager';
 import {
   FIGMA_CONFIG,
+  getPresetMcpServicesWithTranslations,
   MCP_KEY_PREFIXES,
   MCP_MENU_KEYS,
   MCP_STORAGE_KEYS,
-  getPresetMcpServicesWithTranslations,
 } from '@/constants/mcp';
 import { useMcpServices } from '@/hooks/useMcpServices';
 import type {

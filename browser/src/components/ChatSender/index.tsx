@@ -4,7 +4,7 @@ import { differenceWith } from 'lodash-es';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
-import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
+import { AI_CONTEXT_NODE_CONFIGS, type ContextType } from '@/constants/context';
 import { useChatState } from '@/hooks/provider';
 import { useSuggestion } from '@/hooks/useSuggestion';
 import * as context from '@/state/context';
@@ -170,7 +170,7 @@ const ChatSender: React.FC = () => {
             allowSpeech
             actions={false}
             components={{
-              // @ts-ignore
+              // @ts-expect-error
               input: LexicalTextArea,
             }}
             placeholder={t('chat.inputPlaceholder')}

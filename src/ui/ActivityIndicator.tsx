@@ -1,7 +1,7 @@
 import { Box, Text } from 'ink';
 import React, { useEffect, useMemo, useState } from 'react';
-import { GradientText } from './GradientText';
 import { SPACING, UI_COLORS } from './constants';
+import { GradientText } from './GradientText';
 import { useAppStore } from './store';
 import { useTextGradientAnimation } from './useTextGradientAnimation';
 

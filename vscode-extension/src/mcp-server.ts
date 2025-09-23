@@ -1,5 +1,5 @@
 import * as http from 'http';
-import { WebSocket, WebSocketServer } from 'ws';
+import { type WebSocket, WebSocketServer } from 'ws';
 import * as tools from './tools';
 import { findFreePort } from './utils';
 

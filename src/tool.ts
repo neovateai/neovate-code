@@ -1,8 +1,8 @@
 import { isZodObject } from '@openai/agents/utils';
 import path from 'pathe';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { Context } from './context';
+import type { Context } from './context';
 import type { ImagePart, TextPart } from './message';
 import { resolveModelWithContext } from './model';
 import { createBashTool } from './tools/bash';
@@ -12,7 +12,7 @@ import { createGlobTool } from './tools/glob';
 import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
-import { type TodoItem, createTodoTool } from './tools/todo';
+import { createTodoTool, type TodoItem } from './tools/todo';
 import { createWriteTool } from './tools/write';
 
 type ResolveToolsOpts = {
@@ -92,7 +92,7 @@ export class Tools {
         isError: true,
       };
     }
-    // @ts-ignore
+    // @ts-expect-error
     const result = validateToolParams(tool.parameters, args);
     if (!result.success) {
       return {
@@ -152,7 +152,7 @@ Usage:
 <use_tool>
   <tool_name>tool name here</tool_name>
   <arguments>
-    {"param1": "value1","param2": "value2 \"escaped string\""}
+    {"param1": "value1","param2": "value2 "escaped string""}
   </arguments>
 </use_tool>
 

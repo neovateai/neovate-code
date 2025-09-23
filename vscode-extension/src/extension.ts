@@ -23,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
   console.log('[Extension] memfs file system provider registered successfully');
 
   console.log('[Extension] Registering MCP server start command...');
-  let startServerCommand = vscode.commands.registerCommand(
+  const startServerCommand = vscode.commands.registerCommand(
     'simple-mcp-server.start',
     async () => {
       console.log('[Extension] MCP server start command triggered');

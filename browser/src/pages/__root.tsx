@@ -1,8 +1,8 @@
-import { Outlet, createRootRoute, redirect } from '@tanstack/react-router';
+import { createRootRoute, Outlet, redirect } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { useMount } from 'ahooks';
 import { createStyles } from 'antd-style';
-import React from 'react';
+import type React from 'react';
 import I18nProvider from '@/components/I18nProvider';
 import Sider from '@/components/Sider';
 import { actions } from '@/state/appData';

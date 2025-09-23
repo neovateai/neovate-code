@@ -8,7 +8,7 @@ import {
   $isTextNode,
   type BaseSelection,
   type LexicalNode,
-  TextNode,
+  type TextNode,
 } from 'lexical';
 import { memo, useEffect, useRef, useState } from 'react';
 import type {

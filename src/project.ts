@@ -1,4 +1,4 @@
-import { Context } from './context';
+import type { Context } from './context';
 import { JsonlLogger } from './jsonl';
 import { LlmsContext } from './llmsContext';
 import { runLoop } from './loop';
@@ -10,9 +10,8 @@ import { generatePlanSystemPrompt } from './planSystemPrompt';
 import { PluginHookType } from './plugin';
 import { Session, SessionConfigManager, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
-import type { ToolUse } from './tool';
-import type { ApprovalCategory, Tool } from './tool';
-import { Tools, resolveTools } from './tool';
+import type { ApprovalCategory, Tool, ToolUse } from './tool';
+import { resolveTools, Tools } from './tool';
 import type { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
 
@@ -137,7 +136,7 @@ export class Project {
       attachments?: ImagePart[];
     } = {},
   ) {
-    let startTime = new Date();
+    const startTime = new Date();
     const tools = opts.tools || [];
     const outputFormat = new OutputFormat({
       format: this.context.config.outputFormat!,

@@ -1,5 +1,6 @@
 import { Tooltip } from 'antd';
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import type React from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 interface Props
   extends React.DetailedHTMLProps<

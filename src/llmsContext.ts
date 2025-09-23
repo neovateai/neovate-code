@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'pathe';
 import { platform } from 'process';
-import { Context } from './context';
+import type { Context } from './context';
 import { PluginHookType } from './plugin';
 import { getLlmsRules } from './rules';
 import { createLSTool } from './tools/ls';

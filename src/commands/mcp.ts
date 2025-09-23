@@ -6,7 +6,7 @@ import {
   type McpSSEServerConfig,
   type McpStdioServerConfig,
 } from '../config';
-import { type Context } from '../context';
+import type { Context } from '../context';
 
 function printHelp(p: string) {
   console.log(

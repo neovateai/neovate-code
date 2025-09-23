@@ -1,6 +1,7 @@
 import { Sender } from '@ant-design/x';
 import { Flex, Spin } from 'antd';
-import React, { Fragment, useCallback, useMemo } from 'react';
+import type React from 'react';
+import { Fragment, useCallback, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
 import * as context from '@/state/context';

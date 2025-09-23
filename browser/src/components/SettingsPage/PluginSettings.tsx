@@ -4,7 +4,8 @@ import {
   PlusOutlined,
 } from '@ant-design/icons';
 import { Button, Form, Input, List, Space, Tooltip, Typography } from 'antd';
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/settings';

@@ -8,8 +8,8 @@ import { createStyles } from 'antd-style';
 import classNames from 'classnames';
 import { $createParagraphNode, $getRoot, type LexicalEditor } from 'lexical';
 import React, {
-  type KeyboardEvent,
   forwardRef,
+  type KeyboardEvent,
   memo,
   useContext,
   useImperativeHandle,

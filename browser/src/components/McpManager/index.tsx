@@ -7,23 +7,24 @@ import {
   Form,
   Input,
   Modal,
+  message,
   Radio,
   Select,
   Space,
   Table,
   Tag,
   Typography,
-  message,
 } from 'antd';
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  MCP_DEFAULTS,
-  MCP_KEY_PREFIXES,
   getJsonExample,
   getSimpleJsonExample,
   getSingleServerExample,
   getSseJsonExample,
+  MCP_DEFAULTS,
+  MCP_KEY_PREFIXES,
 } from '@/constants/mcp';
 import { useMcpServices } from '@/hooks/useMcpServices';
 import type {
