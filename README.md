@@ -8,11 +8,11 @@
 [![](https://github.com/neovateai/neovate-code/actions/workflows/test.yml/badge.svg)](https://github.com/neovateai/neovate-code/actions/workflows/test.yml)
 [![](https://badgen.net/npm/license/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
 
-![](https://mdn.alipayobjects.com/huamei_9rin5s/afts/img/6KdpRbD5RBEAAAAAWSAAAAgADiB8AQFr/original)
-
 **Neovate**, pronounced as `['niːəʊveɪt]`, is a **coding agent** to enhance your development workflow. You can use it to generate code, fix bugs, review code, add tests, and more.
 
 ✨ See more at [neovateai.dev](https://neovateai.dev).
+
+![](https://mdn.alipayobjects.com/huamei_9rin5s/afts/img/6KdpRbD5RBEAAAAAWSAAAAgADiB8AQFr/original)
 
 </div>
 
