@@ -46,7 +46,7 @@ function StatusMain() {
     }, 0);
   }, [messages]);
   const lastAssistantTokenUsed = useMemo(() => {
-    // Find the last message with parentUuid === null (start of last conversation turn) support node 18+
+    // Find the last message with parentUuid === null (start of last conversation turn)
     let lastTurnStartIndex = -1;
     for (let i = messages.length - 1; i >= 0; i--) {
       const message = messages[i] as NormalizedMessage;
