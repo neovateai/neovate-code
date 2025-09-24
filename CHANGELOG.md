@@ -1,3 +1,12 @@
+## 0.12.3
+
+`2025-09-24`
+
+- feat: add SiliconFlow and SiliconFlow CN provider support by [@Pan YANG](https://github.com/Pan YANG) in [#279](https://github.com/umijs/takumi/pull/279)
+- feat: add glm-4.5v model and providers by [@sorrycc](https://github.com/sorrycc)
+- feat: add deepseek-v3-1-terminus model and provider mapping by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.12.2
 
 `2025-09-24`
