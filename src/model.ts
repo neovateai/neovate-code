@@ -508,6 +508,19 @@ export const models: ModelMap = {
     open_weights: true,
     limit: { context: 131072, output: 98304 },
   },
+  'glm-4.5v': {
+    name: 'GLM 4.5V',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-04',
+    release_date: '2025-08-11',
+    last_updated: '2025-08-11',
+    modalities: { input: ['text', 'image', 'video'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 64000, output: 16384 },
+  },
   'sonoma-dusk-alpha': {
     name: 'Sonoma Dusk Alpha',
     attachment: true,
@@ -745,6 +758,8 @@ export const providers: ProvidersMap = {
       'x-ai/grok-4-fast:free': models['grok-4-fast'],
       'openrouter/sonoma-dusk-alpha': models['sonoma-dusk-alpha'],
       'openrouter/sonoma-sky-alpha': models['sonoma-sky-alpha'],
+      'z-ai/glm-4.5': models['glm-4.5'],
+      'z-ai/glm-4.5v': models['glm-4.5v'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
