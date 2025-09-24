@@ -658,7 +658,7 @@ export const providers: ProvidersMap = {
   xai: {
     id: 'xai',
     env: ['XAI_API_KEY'],
-    name: 'XAI',
+    name: 'xAI',
     doc: 'https://xai.com/docs/models',
     models: {
       'grok-4': models['grok-4'],
@@ -837,6 +837,44 @@ export const providers: ProvidersMap = {
     api: 'https://api.groq.com/openai/v1',
     doc: 'https://console.groq.com/docs/models',
     models: {},
+    createModel: defaultModelCreator,
+  },
+  siliconflow: {
+    id: 'siliconflow',
+    env: ['SILICONFLOW_API_KEY'],
+    name: 'SiliconFlow',
+    api: 'https://api.siliconflow.com/v1',
+    doc: 'https://docs.siliconflow.com',
+    models: {
+      'Qwen/Qwen3-235B-A22B-Instruct-2507': models['qwen3-235b-a22b-07-25'],
+      'Qwen/Qwen3-Coder-480B-A35B-Instruct':
+        models['qwen3-coder-480b-a35b-instruct'],
+      'moonshotai/Kimi-K2-Instruct-0905': models['kimi-k2-0905'],
+      'moonshotai/Kimi-K2-Instruct': models['kimi-k2'],
+      'deepseek-ai/DeepSeek-R1': models['deepseek-r1-0528'],
+      'deepseek-ai/DeepSeek-V3.1': models['deepseek-v3-1'],
+      'deepseek-ai/DeepSeek-V3': models['deepseek-v3-0324'],
+      'zai-org/GLM-4.5': models['glm-4.5'],
+    },
+    createModel: defaultModelCreator,
+  },
+  'siliconflow-cn': {
+    id: 'siliconflow-cn',
+    env: ['SILICONFLOW_API_KEY'],
+    name: 'SiliconFlow CN',
+    api: 'https://api.siliconflow.cn/v1',
+    doc: 'https://docs.siliconflow.cn',
+    models: {
+      'Qwen/Qwen3-235B-A22B-Instruct-2507': models['qwen3-235b-a22b-07-25'],
+      'Qwen/Qwen3-Coder-480B-A35B-Instruct':
+        models['qwen3-coder-480b-a35b-instruct'],
+      'moonshotai/Kimi-K2-Instruct-0905': models['kimi-k2-0905'],
+      'moonshotai/Kimi-K2-Instruct': models['kimi-k2'],
+      'deepseek-ai/DeepSeek-R1': models['deepseek-r1-0528'],
+      'deepseek-ai/DeepSeek-V3.1': models['deepseek-v3-1'],
+      'deepseek-ai/DeepSeek-V3': models['deepseek-v3-0324'],
+      'zai-org/GLM-4.5': models['glm-4.5'],
+    },
     createModel: defaultModelCreator,
   },
 };
