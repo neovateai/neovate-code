@@ -1,3 +1,21 @@
+## 0.12.2
+
+`2025-09-24`
+
+- feat: add gpt-5-codex model with tool_call and image input support [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: optimize session boundary and assistant message detection by [@阿平](https://github.com/阿平) in [#277](https://github.com/umijs/takumi/pull/277)
+- feat: add abort controller and improve cancellation handling in loop by [@阿平](https://github.com/阿平) in [#278](https://github.com/umijs/takumi/pull/278)
+- feat: improve token calculation for conversation turns by [@阿平](https://github.com/阿平) in [#276](https://github.com/umijs/takumi/pull/276)
+- feat: add terminal-setup command for shift+enter key bindings by [@阿平](https://github.com/阿平) in [#275](https://github.com/umijs/takumi/pull/275)
+- feat: add isEnabled property to slash commands with filtering by [@阿平](https://github.com/阿平) in [#271](https://github.com/umijs/takumi/pull/271)
+- fix: prevent single newlines from shift+enter being treated as paste by [@阿平](https://github.com/阿平) in [#269](https://github.com/umijs/takumi/pull/269)
+- feat: add shorter alias 'neo' for neovate cli command by [@afc163](https://github.com/afc163) in [#273](https://github.com/umijs/takumi/pull/273)
+- Merge pull request #270 from neovateai/chore/update-typescript-comment-remove-fallback by [@阿平](https://github.com/阿平)
+- Update README.md by @chencheng (云谦)
+- refactor: adjust paste detection thresholds and simplify input processing logic by [@阿平](https://github.com/阿平) in [#265](https://github.com/umijs/takumi/pull/265)
+- perf: optimize terminal refresh with async resize handling and timing adjustments by [@阿平](https://github.com/阿平) in [#268](https://github.com/umijs/takumi/pull/268)
+
+
 ## 0.12.1
 
 `2025-09-21`
