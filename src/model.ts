@@ -632,7 +632,7 @@ export const providers: ProvidersMap = {
   xai: {
     id: 'xai',
     env: ['XAI_API_KEY'],
-    name: 'XAI',
+    name: 'xAI',
     doc: 'https://xai.com/docs/models',
     models: {
       'grok-4': models['grok-4'],
