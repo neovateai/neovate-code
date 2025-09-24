@@ -6,10 +6,10 @@
 
 ---
 
-[![](https://badgen.net/npm/v/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
-[![](https://badgen.net/npm/dm/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
+[![](https://img.shields.io/npm/v/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
+[![](https://img.shields.io/npm/dm/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
 [![](https://github.com/neovateai/neovate-code/actions/workflows/test.yml/badge.svg)](https://github.com/neovateai/neovate-code/actions/workflows/test.yml)
-[![](https://badgen.net/npm/license/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
+[![](https://img.shields.io/npm/l/@neovate/code)](https://www.npmjs.com/package/@neovate/code)
 
 **Neovate**, pronounced as `['niːəʊveɪt]`, is a **coding agent** to enhance your development workflow. You can use it to generate code, fix bugs, review code, add tests, and more.
 
