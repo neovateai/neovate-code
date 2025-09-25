@@ -83,7 +83,7 @@ export const models: ModelMap = {
     limit: { context: 128000, output: 8192 },
   },
   'deepseek-v3-1': {
-    name: 'DeepSeek-V3.1',
+    name: 'DeepSeek V3.1',
     shortName: 'DeepSeek V3.1',
     attachment: false,
     reasoning: true,
@@ -164,7 +164,7 @@ export const models: ModelMap = {
     limit: { context: 262144, output: 16384 },
   },
   'qwen3-coder-480b-a35b-instruct': {
-    name: 'Qwen3-Coder-480B-A35B-Instruct',
+    name: 'Qwen3 Coder 480B A35B Instruct',
     shortName: 'Qwen3 Coder',
     attachment: false,
     reasoning: false,
@@ -876,6 +876,25 @@ export const providers: ProvidersMap = {
       'deepseek-ai/DeepSeek-V3.1': models['deepseek-v3-1'],
       'deepseek-ai/DeepSeek-V3': models['deepseek-v3-0324'],
       'zai-org/GLM-4.5': models['glm-4.5'],
+    },
+    createModel: defaultModelCreator,
+  },
+  modelscope: {
+    id: 'modelscope',
+    env: ['MODELSCOPE_API_KEY'],
+    name: 'ModelScope',
+    api: 'https://api-inference.modelscope.cn/v1',
+    doc: 'https://modelscope.cn/docs/model-service/API-Inference/intro',
+    models: {
+      'Qwen/Qwen3-Coder-480B-A35B-Instruct':
+        models['qwen3-coder-480b-a35b-instruct'],
+      'Qwen/Qwen3-235B-A22B-Instruct-2507': models['qwen3-235b-a22b-07-25'],
+      'moonshotai/Kimi-K2-Instruct': models['kimi-k2'],
+      'moonshotai/Kimi-K2-Instruct-0905': models['kimi-k2-0905'],
+      'deepseek-ai/DeepSeek-V3.1-Terminus': models['deepseek-v3-1-terminus'],
+      'deepseek-ai/DeepSeek-V3.1': models['deepseek-v3-1'],
+      'ZhipuAI/GLM-4.5': models['glm-4.5'],
+      'ZhipuAI/GLM-4.5V': models['glm-4.5v'],
     },
     createModel: defaultModelCreator,
   },
