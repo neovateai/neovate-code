@@ -546,28 +546,30 @@ export const useAppStore = create<AppStore>()(
         const { bridge, cwd, sessionId, pastedImageMap } = get();
 
         const attachments = [];
+        let processedMessage = message;
+
         // Handle pasted images
         if (message && Object.keys(pastedImageMap).length > 0) {
-          // 匹配旧格式: [Image #1]
-          const pastedImageRegex = /\[Image (#\d+)\]/g;
-          const imageMatches = [...message.matchAll(pastedImageRegex)];
-
-          for (const match of imageMatches) {
-            const imageId = match[1];
+          // The message contains placeholders like [Image 100X100 filename],
+          // but the actual image data is in pastedImageMap.
+          // We can directly use all images from the map.
+          for (const imageId in pastedImageMap) {
             const imageData = pastedImageMap[imageId];
-            if (imageData) {
-              const mimeType = detectImageFormat(imageData);
-              attachments.push({
-                type: 'image',
-                data: `data:image/${mimeType};base64,${imageData}`,
-                mimeType: `image/${mimeType}`,
-              });
-            }
+            const mimeType = detectImageFormat(imageData);
+            attachments.push({
+              type: 'image',
+              data: `data:image/${mimeType};base64,${imageData}`,
+              mimeType: `image/${mimeType}`,
+            });
           }
+
+          // Remove all image placeholders from the message.
+          const imagePlaceholderRegex = /\[Image \d+X\d+ \S+\]/g;
+          processedMessage = message.replace(imagePlaceholderRegex, '').trim();
         }
 
         const response: LoopResult = await bridge.request('send', {
-          message: opts.message,
+          message: processedMessage || opts.message,
           cwd,
           sessionId,
           planMode: opts.planMode,
