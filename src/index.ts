@@ -4,6 +4,7 @@ import { render } from 'ink';
 import React from 'react';
 import { runServerNext } from './commands/servernext/server';
 import { Context } from './context';
+import { GlobalData } from './globalData';
 import { parseMcpConfig } from './mcp';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
@@ -220,9 +221,10 @@ async function runInteractive(
   const [messages, history] = (() => {
     const logPath = paths.getSessionLogPath(sessionId);
     const messages = loadSessionMessages({ logPath });
-    // Get history from session config
-    const sessionConfigManager = new SessionConfigManager({ logPath });
-    const history = sessionConfigManager.config.history || [];
+    const globalData = new GlobalData({
+      globalDataPath: paths.getGlobalDataPath(),
+    });
+    const history = globalData.getProjectHistory({ cwd });
     return [messages, history];
   })();
   const initialPrompt = String(argv._[0] || '');

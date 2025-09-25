@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
 import type { LoopResult } from '../loop';
-import type { ImagePart, Message, UserMessage } from '../message';
+import type { Message, UserMessage } from '../message';
 import type { ProvidersMap } from '../model';
 import { Paths } from '../paths';
 import { loadSessionMessages, Session, SessionConfigManager } from '../session';
@@ -365,16 +365,15 @@ export const useAppStore = create<AppStore>()(
           }
         }
 
-        // Save history to session config (save the original message with placeholders)
+        // Save history to global data (save the original message with placeholders)
         if (!isSlashCommand(message)) {
           const newHistory = [...get().history, message];
           set({
             history: newHistory,
             historyIndex: null,
           });
-          await bridge.request('sessionConfig.addHistory', {
+          await bridge.request('globalData.addHistory', {
             cwd,
-            sessionId,
             history: message,
           });
         }
@@ -614,8 +613,6 @@ export const useAppStore = create<AppStore>()(
         });
         set({
           messages: [],
-          history: [],
-          historyIndex: null,
           sessionId,
           logFile: paths.getSessionLogPath(sessionId),
           // Also reset input state when clearing

@@ -699,6 +699,26 @@ class NodeHandlerRegistry {
         };
       },
     );
+
+    this.messageBus.registerHandler(
+      'globalData.addHistory',
+      async (data: { cwd: string; history: string }) => {
+        const { cwd, history } = data;
+        const context = await this.getContext(cwd);
+        const { GlobalData } = await import('./globalData');
+        const globalDataPath = context.paths.getGlobalDataPath();
+        const globalData = new GlobalData({
+          globalDataPath,
+        });
+        globalData.addProjectHistory({
+          cwd,
+          history,
+        });
+        return {
+          success: true,
+        };
+      },
+    );
     this.messageBus.registerHandler(
       'sessionConfig.setSummary',
       async (data: { cwd: string; sessionId: string; summary: string }) => {
