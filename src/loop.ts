@@ -345,6 +345,8 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
             },
           ],
         });
+        // Prevent normal turns from being terminated due to exceeding the limit
+        turnsCount--;
       } else {
         const message = 'Error: Tool execution was denied by user.';
         let toolResult: ToolResult = {
