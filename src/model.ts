@@ -658,6 +658,7 @@ export const providers: ProvidersMap = {
   xai: {
     id: 'xai',
     env: ['XAI_API_KEY'],
+    apiEnv: ['XAI_BASE_URL'],
     name: 'xAI',
     doc: 'https://xai.com/docs/models',
     models: {
@@ -677,6 +678,7 @@ export const providers: ProvidersMap = {
   anthropic: {
     id: 'anthropic',
     env: ['ANTHROPIC_API_KEY'],
+    apiEnv: ['ANTHROPIC_API_BASE'],
     name: 'Anthropic',
     doc: 'https://docs.anthropic.com/en/docs/models',
     models: {
@@ -926,6 +928,12 @@ function mergeConfigProviders(
           provider.models[modelId] = actualModel;
         }
       }
+    }
+    if (!provider.id) {
+      provider.id = providerId;
+    }
+    if (!provider.name) {
+      provider.name = providerId;
     }
     mergedProviders[providerId] = provider;
   });
