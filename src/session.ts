@@ -47,7 +47,6 @@ export class Session {
 export type SessionConfig = {
   approvalMode?: ApprovalMode;
   approvalTools: string[];
-  history: string[];
   summary?: string;
   pastedTextMap?: Record<string, string>;
   pastedImageMap?: Record<string, string>;
@@ -56,7 +55,6 @@ export type SessionConfig = {
 const DEFAULT_SESSION_CONFIG: SessionConfig = {
   approvalMode: 'default',
   approvalTools: [],
-  history: [],
   pastedTextMap: {},
   pastedImageMap: {},
 };

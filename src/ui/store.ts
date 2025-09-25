@@ -688,15 +688,12 @@ export const useAppStore = create<AppStore>()(
         const sessionConfigManager = new SessionConfigManager({
           logPath: logFile,
         });
-        const history = sessionConfigManager.config.history || [];
         const pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
         const pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
         set({
           sessionId,
           logFile,
           messages,
-          history,
-          historyIndex: null,
           status: 'idle',
           error: null,
           slashCommandJSX: null,

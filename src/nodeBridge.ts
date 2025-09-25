@@ -684,21 +684,6 @@ class NodeHandlerRegistry {
         };
       },
     );
-    this.messageBus.registerHandler(
-      'sessionConfig.addHistory',
-      async (data: { cwd: string; sessionId: string; history: string }) => {
-        const { cwd, sessionId, history } = data;
-        const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
-        sessionConfigManager.config.history.push(history);
-        sessionConfigManager.write();
-        return {
-          success: true,
-        };
-      },
-    );
 
     this.messageBus.registerHandler(
       'globalData.addHistory',
