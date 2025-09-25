@@ -4,12 +4,17 @@ import { query } from './query';
 
 type CompactOptions = {
   messages: NormalizedMessage[];
-  model: ModelInfo;
+  model: ModelInfo | null;
 };
 
 export const COMPACT_MESSAGE = `Chat history compacted successfully.`;
 
 export async function compact(opts: CompactOptions): Promise<string> {
+  if (!opts.model) {
+    throw new Error(
+      'No model configured. Please run /model to select a model first.',
+    );
+  }
   const result = await query({
     messages: opts.messages,
     userPrompt: COMPACT_USER_PROMPT,
