@@ -742,19 +742,6 @@ export const providers: ProvidersMap = {
       })(name);
     },
   },
-  bigmodel: {
-    id: 'bigmodel',
-    env: ['BIGMODEL_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_API_KEY'],
-    apiEnv: ['BIGMODEL_API_BASE', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_API_BASE'],
-    name: 'BigModel',
-    api: 'https://open.bigmodel.cn/api/coding/paas/v4',
-    doc: 'https://docs.bigmodel.cn/cn/guide/start/model-overview',
-    models: {
-      'glm-4.5': models['glm-4.5'],
-      'glm-4.5-air': models['glm-4.5-air'],
-    },
-    createModel: defaultModelCreator,
-  },
   aihubmix: {
     id: 'aihubmix',
     env: ['AIHUBMIX_API_KEY'],
@@ -966,6 +953,19 @@ export const providers: ProvidersMap = {
       'deepseek-v3-1-terminus': models['deepseek-v3-1-terminus'],
       'doubao-seed-1-6-250615': models['doubao-seed-1.6'],
       'kimi-k2-0905': models['kimi-k2-0905'],
+    },
+    createModel: defaultModelCreator,
+  },
+  bigmodel: {
+    id: 'bigmodel',
+    env: ['BIGMODEL_API_KEY'],
+    apiEnv: ['BIGMODEL_API_BASE'],
+    name: 'BigModel',
+    api: 'https://open.bigmodel.cn/api/coding/paas/v4',
+    doc: 'https://docs.bigmodel.cn/cn/guide/start/model-overview',
+    models: {
+      'glm-4.5': models['glm-4.5'],
+      'glm-4.5-air': models['glm-4.5-air'],
     },
     createModel: defaultModelCreator,
   },
