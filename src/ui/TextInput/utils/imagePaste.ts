@@ -173,7 +173,12 @@ function extractImagePath(text: string): string | null {
 // Process image paste from file path
 export async function processImageFromPath(
   pasteContent: string,
-): Promise<{ base64: string; mediaType: string; path: string } | null> {
+): Promise<{
+  base64: string;
+  mediaType: string;
+  path: string;
+  filename: string;
+} | null> {
   const imagePath = extractImagePath(pasteContent);
   if (!imagePath) return null;
 
@@ -198,8 +203,9 @@ export async function processImageFromPath(
 
   const base64Data = imageData.toString('base64');
   const mediaType = detectImageType(base64Data);
+  const filename = basename(imagePath);
 
-  return { path: imagePath, base64: base64Data, mediaType };
+  return { path: imagePath, base64: base64Data, mediaType, filename };
 }
 
 // Enhanced clipboard image retrieval with cross-platform support

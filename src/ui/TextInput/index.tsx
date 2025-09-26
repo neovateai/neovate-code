@@ -113,6 +113,7 @@ export type Props = {
    */
   readonly onImagePaste?: (
     base64Image: string,
+    filename?: string,
   ) => Promise<{ prompt?: string }> | void;
 
   /**
@@ -253,7 +254,10 @@ export default function TextInput({
           try {
             const imageResult = await processImageFromPath(mergedInput);
             if (imageResult) {
-              const imagePromptResult = await onImagePaste(imageResult.base64);
+              const imagePromptResult = await onImagePaste(
+                imageResult.base64,
+                imageResult.filename,
+              );
               if (imagePromptResult?.prompt) {
                 const { newValue, newCursorOffset } = insertTextAtCursor(
                   imagePromptResult.prompt,
