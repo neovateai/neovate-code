@@ -122,12 +122,23 @@ export class ConfigManager {
     this.argvConfig = argvConfig;
   }
 
+  private sanitizeArgvConfig(argv: Partial<Config>): Partial<Config> {
+    return Object.fromEntries(
+      Object.entries(argv).filter(([, v]) =>
+        typeof v === 'string' ? v.trim().length > 0 : true,
+      ),
+    ) as Partial<Config>;
+  }
+
   get config() {
+    const argv = this.sanitizeArgvConfig(this.argvConfig);
     const config = defu(
-      this.argvConfig,
-      defu(this.projectConfig, defu(this.globalConfig, DEFAULT_CONFIG)),
-    ) as Config;
-    config.planModel = config.planModel || config.model;
+      argv,
+      this.projectConfig,
+      this.globalConfig,
+      DEFAULT_CONFIG,
+    );
+    config.planModel ??= config.model;
     return config;
   }
 
