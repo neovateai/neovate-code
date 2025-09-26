@@ -1,10 +1,10 @@
-import yargsParser from 'yargs-parser';
 import { WebServer } from './web-server';
 
 const DEFAULT_PORT = 7001;
 const DEFAULT_HOST = '127.0.0.1';
 
 export async function runServerNext(opts: { contextCreateOpts: any }) {
+  const { default: yargsParser } = await import('yargs-parser');
   const argv = yargsParser(process.argv.slice(2), {
     alias: {
       port: 'p',

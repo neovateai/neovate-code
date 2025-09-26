@@ -5,7 +5,6 @@ import {
 } from 'child_process';
 import clipboardy from 'clipboardy';
 import pc from 'picocolors';
-import yargsParser from 'yargs-parser';
 import type { Context } from '../context';
 import { query } from '../query';
 import * as logger from '../utils/logger';
@@ -92,6 +91,7 @@ Examples:
 }
 
 export async function runCommit(context: Context) {
+  const { default: yargsParser } = await import('yargs-parser');
   const argv = yargsParser(process.argv.slice(2), {
     alias: {
       stage: 's',

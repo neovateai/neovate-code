@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import createDebug from 'debug';
 import { homedir } from 'os';
 import path from 'pathe';
-import yargsParser from 'yargs-parser';
 import type { RunCliOpts } from '..';
 import { Context } from '../context';
 import { PluginHookType } from '../plugin';
@@ -42,6 +41,7 @@ Examples:
 }
 
 export async function runServer(opts: RunCliOpts) {
+  const { default: yargsParser } = await import('yargs-parser');
   const traceName = `${opts.productName}-server`;
   return await withTrace(traceName, async () => {
     const startTime = Date.now();
