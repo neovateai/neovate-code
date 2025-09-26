@@ -68,20 +68,6 @@ export type ProvidersMap = Record<string, Provider>;
 export type ModelMap = Record<string, Omit<Model, 'id' | 'cost'>>;
 
 export const models: ModelMap = {
-  'deepseek-v3-0324': {
-    name: 'DeepSeek-V3-0324',
-    shortName: 'DeepSeek V3',
-    attachment: false,
-    reasoning: true,
-    temperature: true,
-    tool_call: true,
-    knowledge: '2024-06',
-    release_date: '2025-03-24',
-    last_updated: '2025-03-24',
-    modalities: { input: ['text'], output: ['text'] },
-    open_weights: true,
-    limit: { context: 128000, output: 8192 },
-  },
   'deepseek-v3-1': {
     name: 'DeepSeek V3.1',
     shortName: 'DeepSeek V3.1',
@@ -108,20 +94,6 @@ export const models: ModelMap = {
     modalities: { input: ['text'], output: ['text'] },
     open_weights: true,
     limit: { context: 131072, output: 65536 },
-  },
-  'deepseek-r1-0528': {
-    name: 'DeepSeek-R1-0528',
-    shortName: 'DeepSeek R1',
-    attachment: false,
-    reasoning: true,
-    temperature: true,
-    tool_call: true,
-    knowledge: '2024-06',
-    release_date: '2025-05-28',
-    last_updated: '2025-05-28',
-    modalities: { input: ['text'], output: ['text'] },
-    open_weights: true,
-    limit: { context: 65536, output: 8192 },
   },
   'kimi-k2': {
     name: 'Kimi K2',
@@ -923,8 +895,7 @@ export const providers: ProvidersMap = {
     api: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
     doc: 'https://www.volcengine.com/docs/82379/1330310',
     models: {
-      'deepseek-v3-0324': models['deepseek-v3-0324'],
-      'deepseek-r1-0528': models['deepseek-r1-0528'],
+      'deepseek-ai/DeepSeek-V3.1': models['deepseek-v3-1'],
     },
     createModel: defaultModelCreator,
   },
