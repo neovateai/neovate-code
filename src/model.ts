@@ -220,6 +220,22 @@ export const models: ModelMap = {
     open_weights: false,
     limit: { context: 1048576, output: 65536 },
   },
+  'gemini-2.5-flash-preview-09-2025': {
+    name: 'Gemini 2.5 Flash Preview 2025 09',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-01',
+    release_date: '2025-09-25',
+    last_updated: '2025-09-25',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video', 'pdf'],
+      output: ['text'],
+    },
+    open_weights: false,
+    limit: { context: 1048576, output: 65536 },
+  },
   'gemini-2.5-flash-lite-preview-06-17': {
     name: 'Gemini 2.5 Flash Lite Preview 06-17',
     shortName: 'Gemini 2.5 Flash Lite',
@@ -629,6 +645,8 @@ export const providers: ProvidersMap = {
     doc: 'https://ai.google.dev/gemini-api/docs/pricing',
     models: {
       'gemini-2.5-flash': models['gemini-2.5-flash'],
+      'gemini-2.5-flash-preview-09-2025':
+        models['gemini-2.5-flash-preview-09-2025'],
       'gemini-2.5-flash-lite': models['gemini-2.5-flash-lite-preview-06-17'],
       'gemini-2.5-pro': models['gemini-2.5-pro'],
     },
