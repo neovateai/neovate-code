@@ -916,6 +916,18 @@ export const providers: ProvidersMap = {
     },
     createModel: defaultModelCreator,
   },
+  volcengine: {
+    id: 'volcengine',
+    env: ['VOLCENGINE_API_KEY'],
+    name: 'VolcEngine',
+    api: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+    doc: 'https://www.volcengine.com/docs/82379/1330310',
+    models: {
+      'deepseek-v3-0324': models['deepseek-v3-0324'],
+      'deepseek-r1-0528': models['deepseek-r1-0528'],
+    },
+    createModel: defaultModelCreator,
+  },
 };
 
 // value format: provider/model
