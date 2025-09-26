@@ -28,8 +28,7 @@ export interface LocalJSXCommand extends BaseSlashCommand {
 
 export interface PromptCommand extends BaseSlashCommand {
   type: 'prompt';
-  argNames?: string[];
-  progressMessage: string;
+  progressMessage?: string;
   model?: string;
   getPromptForCommand(
     args: string,
