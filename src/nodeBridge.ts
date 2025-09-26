@@ -628,7 +628,7 @@ class NodeHandlerRegistry {
       }) => {
         const { cwd, messages } = data;
         const context = await this.getContext(cwd);
-        const model = (await resolveModelWithContext(null, context)).model!;
+        const model = (await resolveModelWithContext(null, context)).model;
         const summary = await compact({
           messages,
           model,
