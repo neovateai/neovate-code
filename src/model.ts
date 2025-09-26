@@ -123,7 +123,7 @@ export const models: ModelMap = {
     open_weights: true,
     limit: { context: 65536, output: 8192 },
   },
-  'doubao-seed-1.6':{
+  'doubao-seed-1.6': {
     name: 'Doubao Seed 1.6',
     attachment: false,
     reasoning: true,
