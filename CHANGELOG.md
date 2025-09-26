@@ -1,3 +1,20 @@
+## 0.12.4
+
+`2025-09-26`
+
+- feat: add beep utility function to emit terminal bell sound by [@sorrycc](https://github.com/sorrycc)
+- refactor: make progressMessage optional in PromptCommand by [@sorrycc](https://github.com/sorrycc)
+- refactor: lazy load yargs-parser in command modules by [@阿平](https://github.com/阿平) in [#286](https://github.com/umijs/takumi/pull/286)
+- feat: add gemini 2.5 flash preview 2025 09 model and provider support by [@sorrycc](https://github.com/sorrycc)
+- fix: prevent normal turns from being terminated when tool execution is denied by [@阿平](https://github.com/阿平) in [#284](https://github.com/umijs/takumi/pull/284)
+- feat: clear message history when generating summary by [@阿平](https://github.com/阿平) in [#285](https://github.com/umijs/takumi/pull/285)
+- refactor: remove unused session history tracking and related handlers by [@sorrycc](https://github.com/sorrycc)
+- feat: implement global data storage for project history across sessions [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: make model id comparison case-insensitive by [@阿平](https://github.com/阿平) in [#283](https://github.com/umijs/takumi/pull/283)
+- feat: add apiEnv support and default id/name for providers by [@sorrycc](https://github.com/sorrycc)
+- <|begin_of_box|>docs: update npm badges to use shields.io<|end_of_box|> [AI] by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.12.3
 
 `2025-09-24`
