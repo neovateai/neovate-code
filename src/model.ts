@@ -132,7 +132,7 @@ export const models: ModelMap = {
     knowledge: '2025-01',
     release_date: '2025-06-11',
     last_updated: '2025-09-23',
-    modalities: { input: ['text','image'], output: ['text'] },
+    modalities: { input: ['text', 'image'], output: ['text'] },
     open_weights: true,
     limit: { context: 163840, output: 163840 },
   },
