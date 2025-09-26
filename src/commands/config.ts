@@ -1,4 +1,3 @@
-import yargsParser from 'yargs-parser';
 import { ConfigManager } from '../config';
 import type { Context } from '../context';
 
@@ -45,6 +44,7 @@ Examples:
 }
 
 export async function runConfig(context: Context) {
+  const { default: yargsParser } = await import('yargs-parser');
   const productName = context.productName;
   const argv = yargsParser(process.argv.slice(3), {
     alias: {
