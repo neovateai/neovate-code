@@ -171,9 +171,7 @@ function extractImagePath(text: string): string | null {
 }
 
 // Process image paste from file path
-export async function processImageFromPath(
-  pasteContent: string,
-): Promise<{
+export async function processImageFromPath(pasteContent: string): Promise<{
   base64: string;
   mediaType: string;
   path: string;
