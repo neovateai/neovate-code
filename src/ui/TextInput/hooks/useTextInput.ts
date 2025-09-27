@@ -40,7 +40,7 @@ type UseTextInputProps = {
   invert: (text: string) => string;
   themeText: (text: string) => string;
   columns: number;
-  onImagePaste?: (base64Image: string) => void;
+  onImagePaste?: (base64Image: string, filename?: string) => void;
   disableCursorMovementForUpDownKeys?: boolean;
   externalOffset: number;
   onOffsetChange: (offset: number) => void;
