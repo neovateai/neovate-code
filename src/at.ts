@@ -162,7 +162,11 @@ export class At {
   }): AgentInputItem[] {
     const reversedInput = [...opts.input].reverse();
     const lastUserMessage = reversedInput.find((item) => {
-      return 'role' in item && item.role === 'user';
+      return (
+        'role' in item &&
+        item.role === 'user' &&
+        !('__tool_result_marker' in item)
+      );
     }) as UserMessageItem;
     if (lastUserMessage) {
       let userPrompt = lastUserMessage.content;
