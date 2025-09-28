@@ -64,8 +64,6 @@ export class History {
                 return {
                   type: 'input_text',
                   text: `[${part.name} for ${safeStringify(part.input)}] result: \n<function_results>\n${text}\n</function_results>`,
-                  // Used in src/at.ts to distinguish between user information and tool results
-                  __tool_result_marker: true,
                 };
               };
               if (typeof llmContent === 'string') {
