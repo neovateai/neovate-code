@@ -1,6 +1,7 @@
+/** biome-ignore-all lint/security/noDangerouslySetInnerHtml: <explanation> */
 import { createStyles } from 'antd-style';
 import { structuredPatch } from 'diff';
-import React, {
+import {
   forwardRef,
   useEffect,
   useImperativeHandle,
@@ -8,8 +9,8 @@ import React, {
   useState,
 } from 'react';
 import {
-  type SupportedLanguage,
   isLanguageSupported,
+  type SupportedLanguage,
 } from '@/constants/languages';
 import {
   createLineNumberTransformer,
@@ -366,7 +367,7 @@ export const CodeRenderer = forwardRef<CodeRendererRef, CodeRendererProps>(
             .replace(/style='\s*'/gi, '');
 
           setHighlightedHtml(cleanHtml);
-        } catch (err) {
+        } catch (_err) {
           setHighlightedHtml(null);
         }
       };

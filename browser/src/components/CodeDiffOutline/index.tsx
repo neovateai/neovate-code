@@ -12,7 +12,6 @@ import ApproveToolIcon from '@/icons/approveTool.svg?react';
 import CopyIcon from '@/icons/copy.svg?react';
 import * as codeViewer from '@/state/codeViewer';
 import * as fileChanges from '@/state/fileChanges';
-import { toolApprovalActions } from '@/state/toolApproval';
 import type { CodeNormalViewerMode, DiffStat } from '@/types/codeViewer';
 import { diff, inferFileType } from '@/utils/codeViewer';
 import CodeDiffView from '../CodeViewer/CodeDiffView';
@@ -156,12 +155,14 @@ const CodeDiffOutline = (props: Props) => {
 
   const handleAccept = (approveType: 'once' | 'always' | 'always_tool') => {
     fileChanges.fileChangesActions.acceptEdit(path, edit, normalViewerMode);
-    toolApprovalActions.approveToolUse(true, approveType);
+    // toolApprovalActions.approveToolUse(true, approveType);
+    // TODO: add approval modal
   };
 
   const handleReject = () => {
     fileChanges.fileChangesActions.rejectEdit(path, edit, normalViewerMode);
-    toolApprovalActions.approveToolUse(false, 'once');
+    // toolApprovalActions.approveToolUse(false, 'once');
+    // TODO: add approval modal
   };
 
   const handleShowCodeViewer = () => {

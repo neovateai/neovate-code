@@ -6,7 +6,6 @@ import type {
   MessageHandler,
   PendingRequest,
   RequestMessage,
-  RequestOptions,
   ResponseMessage,
 } from './types';
 
@@ -15,7 +14,6 @@ export class MessageBus {
   private pendingRequests = new Map<string, PendingRequest>();
   private messageHandlers = new Map<string, MessageHandler>();
   private eventHandlers = new Map<string, EventHandler[]>();
-  private defaultTimeout = 30000;
 
   setTransport(transport: WebSocketTransport): void {
     this.transport = transport;
@@ -31,7 +29,6 @@ export class MessageBus {
   async request<T = unknown, R = unknown>(
     method: string,
     params: T,
-    options: RequestOptions = {},
   ): Promise<R> {
     if (!this.transport || !this.transport.isConnected()) {
       throw new Error('Transport is not connected');
@@ -47,21 +44,12 @@ export class MessageBus {
     };
 
     return new Promise<R>((resolve, reject) => {
-      const timeout = options.timeout || this.defaultTimeout;
-
-      const timeoutId = setTimeout(() => {
-        this.pendingRequests.delete(id);
-        reject(new Error(`Request timeout: ${method}`));
-      }, timeout);
-
       this.pendingRequests.set(id, {
         resolve: resolve as (value: unknown) => void,
         reject,
-        timeoutId,
       });
 
       this.transport?.send(message as TransportMessage).catch((error) => {
-        clearTimeout(timeoutId);
         this.pendingRequests.delete(id);
         reject(error);
       });
@@ -85,7 +73,6 @@ export class MessageBus {
   private handleResponse(message: ResponseMessage): void {
     const pending = this.pendingRequests.get(message.id);
     if (pending) {
-      clearTimeout(pending.timeoutId);
       this.pendingRequests.delete(message.id);
 
       if (message.error) {
@@ -161,21 +148,12 @@ export class MessageBus {
     this.messageHandlers.delete(method);
   }
 
-  setDefaultTimeout(timeout: number): void {
-    this.defaultTimeout = timeout;
-  }
-
-  getDefaultTimeout(): number {
-    return this.defaultTimeout;
-  }
-
   getPendingRequestsCount(): number {
     return this.pendingRequests.size;
   }
 
   cancelPendingRequests(): void {
     this.pendingRequests.forEach((pending) => {
-      clearTimeout(pending.timeoutId);
       pending.reject(new Error('Request cancelled'));
     });
     this.pendingRequests.clear();

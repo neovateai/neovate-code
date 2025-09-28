@@ -1,14 +1,12 @@
 import { Flex, Space } from 'antd';
-import React from 'react';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
-import { useChatState } from '@/hooks/provider';
-import { state } from '@/state/appData';
+import { actions, state } from '@/state/chat';
 import styles from './index.module.css';
 
 const useWelcomeData = () => {
   const { t } = useTranslation();
-  const { append } = useChatState();
 
   const DESIGN_GUIDE = {
     capabilities: [
@@ -40,12 +38,11 @@ const useWelcomeData = () => {
   };
 
   const handleCapabilityClick = (capability: any) => {
-    append({
-      role: 'user',
-      content: t('welcome.introduceCapability', {
+    actions.send(
+      t('welcome.introduceCapability', {
         capability: capability.title,
       }),
-    });
+    );
   };
 
   return {
@@ -57,7 +54,7 @@ const useWelcomeData = () => {
 const Welcome: React.FC = () => {
   const { t } = useTranslation();
   const { DESIGN_GUIDE, handleCapabilityClick } = useWelcomeData();
-  const { appData } = useSnapshot(state);
+  const { productName } = useSnapshot(state);
 
   return (
     <Space direction="vertical" size={16} className={styles.outerContainer}>
@@ -71,7 +68,7 @@ const Welcome: React.FC = () => {
         >
           <Flex align="center" justify="center" className={styles.welcomeTitle}>
             {t('welcome.title', {
-              productName: appData?.productName,
+              productName,
             })}
             <span className={styles.waveEmoji}>👋</span>
           </Flex>

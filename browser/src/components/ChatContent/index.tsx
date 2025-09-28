@@ -1,32 +1,32 @@
 import { Bubble } from '@ant-design/x';
-import { type GetProp } from 'antd';
-import { Skeleton } from 'antd';
+import { type GetProp, Skeleton } from 'antd';
+import { useSnapshot } from 'valtio';
 import AssistantFooter from '@/components/AssistantFooter';
 import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
-import MessageProcessor from '@/components/MessageProcessor';
 import { UserMessage, UserMessageFooter } from '@/components/UserMessage';
 import Welcome from '@/components/Welcome';
-import { useChatState } from '@/hooks/provider';
-import type { UIMessage, UIUserMessage } from '@/types/message';
+import { state } from '@/state/chat';
+import type { Message } from '@/types/chat';
 import styles from './index.module.css';
 
 const ChatContent: React.FC = () => {
-  const { messages, status } = useChatState();
+  const { messages, status } = useSnapshot(state);
 
   const items = messages?.map((message, index) => {
     const isLastMessage = index === messages.length - 1;
+    console.log('message', status);
     return {
       ...message,
       content: message,
-      typing: status === 'submitted' ? { step: 20, interval: 150 } : false,
-      loading: status === 'submitted' && isLastMessage,
+      // typing: status === 'processing' ? { step: 20, interval: 150 } : false,
+      // loading: status === 'processing_stream' && isLastMessage,
       footer:
         isLastMessage && message.role === 'assistant'
           ? () => (
-              <AssistantFooter message={message as UIMessage} status={status} />
+              <AssistantFooter message={message as Message} status={status} />
             )
-          : () => <UserMessageFooter message={message as UIUserMessage} />,
+          : () => <UserMessageFooter message={message as Message} />,
     };
   });
 
@@ -59,8 +59,6 @@ const ChatContent: React.FC = () => {
 
   return (
     <div className={styles.chat}>
-      <MessageProcessor messages={messages} />
-
       <div className={styles.chatList}>
         {items?.length ? (
           <Bubble.List

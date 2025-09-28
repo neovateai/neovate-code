@@ -3,11 +3,11 @@ import { Button } from 'antd';
 import { createStyles } from 'antd-style';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { UIUserMessage } from '@/types/message';
+import type { Message } from '@/types/chat';
 import SenderComponent from '../ChatSender/SenderComponent';
 
 interface UserMessageFooterProps {
-  message: UIUserMessage;
+  message: Message;
 }
 
 const useStyle = createStyles(({ css }) => {

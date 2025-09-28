@@ -1,6 +1,6 @@
 import MessageWrapper from '@/components/MessageWrapper';
 import FolderIcon from '@/icons/folder.svg?react';
-import type { ToolMessage } from '@/types/message';
+import type { UIToolPart } from '@/types/chat';
 import InnerList, { type ListItem } from './InnerList';
 
 // Find the node by targetPath in the tree structure
@@ -92,11 +92,9 @@ const parseLsResult = (result: unknown, parentPath: string): ListItem[] => {
   return rootItems;
 };
 
-export default function LsRender({ message }: { message?: ToolMessage }) {
-  if (!message) return null;
-
-  const dirPath = (message.args?.dir_path as string) || '';
-  const items = parseLsResult(message.result?.data, dirPath);
+export default function LsRender({ part }: { part: UIToolPart }) {
+  const dirPath = (part.input?.dir_path as string) || '';
+  const items = parseLsResult(part.result?.llmContent, dirPath);
 
   return (
     <MessageWrapper title={dirPath} icon={<FolderIcon />}>

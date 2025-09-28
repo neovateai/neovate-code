@@ -1,12 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import MessageWrapper from '@/components/MessageWrapper';
 import TodoList, { type TodoItem } from '@/components/TodoList';
 import TodoIcon from '@/icons/todo.svg?react';
-import type { ToolMessage } from '@/types/message';
+import type { UIToolPart } from '@/types/chat';
 import styles from './TodoRender.module.css';
-
-// Todo data type definition is now imported from TodoList component
 
 interface TodoReadResult {
   success: boolean;
@@ -24,25 +22,25 @@ interface TodoWriteResult {
 }
 
 interface TodoRenderProps {
-  message?: ToolMessage;
+  part?: UIToolPart;
 }
 
 // Todo data processing hook
-const useTodoData = (message?: ToolMessage) => {
+const useTodoData = (part?: UIToolPart) => {
   return useMemo(() => {
-    if (!message?.result?.success) {
+    if (!part?.result) {
       return { todos: [], stats: null };
     }
 
     let todos: TodoItem[] = [];
 
-    if (message.toolName === 'todoRead') {
-      const result = message.result as unknown as TodoReadResult;
+    if (part.name === 'todoRead') {
+      const result = part.result as unknown as TodoReadResult;
       if (result.success && Array.isArray(result.data)) {
         todos = result.data;
       }
-    } else if (message.toolName === 'todoWrite') {
-      const result = message.result as unknown as TodoWriteResult;
+    } else if (part.name === 'todoWrite') {
+      const result = part.result as unknown as TodoWriteResult;
       if (
         result.success &&
         result.data?.newTodos &&
@@ -61,18 +59,18 @@ const useTodoData = (message?: ToolMessage) => {
     };
 
     return { todos, stats };
-  }, [message]);
+  }, [part]);
 };
 
-const TodoRender: React.FC<TodoRenderProps> = ({ message }) => {
+const TodoRender: React.FC<TodoRenderProps> = ({ part }) => {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
 
   // Data processing
-  const { todos } = useTodoData(message);
+  const { todos } = useTodoData(part);
 
   // Error handling
-  if (message && !message.result?.success) {
+  if (part && !part.result) {
     return (
       <MessageWrapper
         title={t('toolRenders.todo.title')}
@@ -82,10 +80,8 @@ const TodoRender: React.FC<TodoRenderProps> = ({ message }) => {
       >
         <div className={styles.errorContainer}>
           {String(t('toolRenders.todo.operationFailed'))}
-          {message.result?.error ? (
-            <div className={styles.errorDetail}>
-              {String(message.result.error)}
-            </div>
+          {part.result ? (
+            <div className={styles.errorDetail}>{String(part.result)}</div>
           ) : null}
         </div>
       </MessageWrapper>

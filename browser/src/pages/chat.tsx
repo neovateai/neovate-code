@@ -1,14 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createStyles } from 'antd-style';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useSnapshot } from 'valtio';
 import ChatContent from '@/components/ChatContent';
 import ResizeHandle from '@/components/ChatLayout/ResizeHandle';
 import RightPanel from '@/components/ChatLayout/RightPanel';
 import SidebarExpandButton from '@/components/ChatLayout/SidebarExpandButton';
 import TopRightExpandButton from '@/components/ChatLayout/TopRightExpandButton';
-import ChatProvider from '@/hooks/provider';
+import { actions } from '@/state/chat';
 import * as layout from '@/state/layout';
+import { randomUUID } from '@/utils/randomUUID';
 
 const useStyles = createStyles(({ css }) => {
   return {
@@ -90,11 +91,14 @@ const Chat: React.FC = () => {
 };
 
 const ChatWrapper: React.FC = () => {
-  return (
-    <ChatProvider>
-      <Chat />
-    </ChatProvider>
-  );
+  useEffect(() => {
+    const sessionId = randomUUID();
+    actions.initialize({
+      cwd: '/Users/xierenhong/Downloads/test/hello-takumi',
+      sessionId,
+    });
+  }, []);
+  return <Chat />;
 };
 
 export const Route = createFileRoute('/chat')({

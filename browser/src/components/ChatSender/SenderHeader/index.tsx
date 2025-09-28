@@ -1,6 +1,6 @@
 import { Sender } from '@ant-design/x';
 import { Flex, Spin } from 'antd';
-import React, { useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import * as context from '@/state/context';
 import AddContext from '../AddContext';
@@ -14,10 +14,10 @@ const SenderHeader: React.FC = () => {
   }, []);
 
   const contextTags = useMemo(() => {
-    return attachedContexts.map((contextItem, index) => (
+    return attachedContexts.map((contextItem) => (
       <SenderComponent.ContextTag
         closeable
-        key={index}
+        key={contextItem.value}
         label={contextItem.displayText}
         value={contextItem.value}
         onClose={handleRemoveContext}

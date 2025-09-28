@@ -1,5 +1,5 @@
 import { Button } from 'antd';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ExpandArrowIcon from '@/icons/expand-arrow.svg?react';
 import { STATUS_CONFIG } from './constants';

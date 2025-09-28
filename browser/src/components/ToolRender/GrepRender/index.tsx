@@ -1,12 +1,10 @@
 import MessageWrapper from '@/components/MessageWrapper';
 import SearchIcon from '@/icons/grep-search.svg?react';
 import SuccessIcon from '@/icons/success.svg?react';
-import type { ToolMessage } from '@/types/message';
+import type { UIToolPart } from '@/types/chat';
 
-export default function GrepRender({ message }: { message?: ToolMessage }) {
-  if (!message) return null;
-
-  const { pattern } = message.args as { pattern: string };
+export default function GrepRender({ part }: { part: UIToolPart }) {
+  const { pattern } = part.input as { pattern: string };
 
   return (
     <MessageWrapper

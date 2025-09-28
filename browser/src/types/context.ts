@@ -8,7 +8,6 @@ export interface ContextItem {
   value: string;
   displayText: string;
   context?: ContextStoreValue;
-  [key: string]: any;
 }
 
 export interface ContextFileType {

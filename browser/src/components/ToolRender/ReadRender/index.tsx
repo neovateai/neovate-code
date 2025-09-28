@@ -8,27 +8,31 @@ import CopyIcon from '@/icons/copy.svg?react';
 import ReadFileIcon from '@/icons/readFile.svg?react';
 import * as codeViewer from '@/state/codeViewer';
 import * as fileChanges from '@/state/fileChanges';
-import type { ToolMessage } from '@/types/message';
-import type { IReadToolArgs, IReadToolResult } from '@/types/tool';
+import type { UIToolPart } from '@/types/chat';
+import { jsonSafeParse } from '@/utils/message';
 
-export default function ReadRender({ message }: { message?: ToolMessage }) {
-  if (!message) return null;
-
-  const { args, result } = message as unknown as {
-    args: IReadToolArgs;
-    result: IReadToolResult;
-  };
+export default function ReadRender({ part }: { part: UIToolPart }) {
+  const { input, result } = part;
 
   const { writeText } = useClipboard();
   const [isCopySuccess, setIsCopySuccess] = useState(false);
   const { t } = useTranslation();
 
-  const file_path = args?.file_path;
+  const file_path = input?.file_path;
   const language = useMemo(
-    () => args?.file_path?.split('.').pop() || 'text',
-    [args?.file_path],
+    () => input?.file_path?.split('.').pop() || 'text',
+    [input?.file_path],
   );
-  const code = result?.data?.content || '';
+
+  const content = useMemo(() => {
+    if (typeof result?.llmContent === 'string') {
+      return jsonSafeParse(result?.llmContent);
+    }
+    return null;
+  }, [result?.llmContent]);
+
+  console.log('file_path', content);
+  const code = content?.content || '';
 
   const handleCopy = useCallback(() => {
     if (!code) return;

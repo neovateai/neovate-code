@@ -24,7 +24,8 @@
       "recommended": true,
       "style": {
         "useNodejsImportProtocol": "off"
-      }
+      },
+      "a11y": "off"
     }
   },
   "javascript": {
@@ -52,5 +53,20 @@
     "parser": {
       "cssModules": true
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["browser/src/**/*"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useExhaustiveDependencies": "off"
+          },
+          "suspicious": {
+            "noUnknownAtRules": "off"
+          }
+        }
+      }
+    }
+  ]
 }

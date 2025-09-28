@@ -1,8 +1,9 @@
-import { type TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import fastify, { type FastifyInstance } from 'fastify';
 import path from 'pathe';
 import { fileURLToPath } from 'url';
 import { WebSocketServer } from 'ws';
+import type { ContextCreateOpts } from '../../context';
 import { NodeBridge } from '../../nodeBridge';
 import { WebSocketTransport } from './websocketTransport';
 
@@ -12,7 +13,7 @@ const __dirname = path.dirname(__filename);
 interface WebServerOptions {
   port: number;
   host?: string;
-  contextCreateOpts?: any;
+  contextCreateOpts: ContextCreateOpts;
 }
 
 class WebServer {
@@ -24,7 +25,7 @@ class WebServer {
   >();
   private port: number;
   private host: string;
-  private contextCreateOpts: any;
+  private contextCreateOpts: ContextCreateOpts;
   private isWssRunning = false;
 
   constructor(options: WebServerOptions) {
@@ -47,12 +48,12 @@ class WebServer {
     });
 
     // Serve the web client HTML
-    this.app.get('/', async (request, reply) => {
+    this.app.get('/', async (_request, reply) => {
       return reply.sendFile('web-client.html');
     });
 
     // Health check endpoint
-    this.app.get('/health', async (request, reply) => {
+    this.app.get('/health', async (_request, reply) => {
       return reply.send({
         status: 'ok',
         clients: this.clients.size,
@@ -61,7 +62,7 @@ class WebServer {
     });
 
     // Client info endpoint
-    this.app.get('/clients', async (request, reply) => {
+    this.app.get('/clients', async (_request, reply) => {
       const clientInfo = Array.from(this.clients.entries()).map(
         ([id, client]) => ({
           id,
@@ -81,7 +82,7 @@ class WebServer {
     });
     this.isWssRunning = true;
 
-    this.wss.on('connection', (ws, req) => {
+    this.wss.on('connection', (ws, _req) => {
       const clientId = this.generateClientId();
       console.log(`[WebServer] New client connected: ${clientId}`);
 

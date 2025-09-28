@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { MessageBus, WebSocketTransport } from '../client';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ClientConfig } from '../client';
+import { MessageBus, WebSocketTransport } from '../client';
 
 export interface UseClientOptions {
   config: ClientConfig;
@@ -26,7 +26,7 @@ export const useClient = ({
   const transportRef = useRef<WebSocketTransport | null>(null);
   const messageBusRef = useRef<MessageBus | null>(null);
 
-  const connect = async () => {
+  const connect = useCallback(async () => {
     if (transportRef.current?.isConnected()) {
       return;
     }
@@ -81,7 +81,12 @@ export const useClient = ({
       });
       throw error;
     }
-  };
+  }, [
+    config.reconnectInterval,
+    config.maxReconnectInterval,
+    config.shouldReconnect,
+    config.defaultTimeout,
+  ]);
 
   const disconnect = async () => {
     try {
@@ -137,7 +142,7 @@ export const useClient = ({
     if (autoConnect) {
       connect().catch(console.error);
     }
-  }, [autoConnect]);
+  }, [autoConnect, connect]);
 
   // Update transport state
   useEffect(() => {

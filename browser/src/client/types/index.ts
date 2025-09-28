@@ -1,3 +1,5 @@
+import type { ApprovalMode } from './chat';
+
 export interface ClientConfig {
   reconnectInterval?: number;
   maxReconnectInterval?: number;
@@ -22,6 +24,11 @@ export interface InitializeResult {
     productName: string;
     version: string;
     sessionId: string;
+    model: string;
+    approvalMode: ApprovalMode;
+    sessionSummary: string;
+    pastedTextMap: Record<string, string>;
+    pastedImageMap: Record<string, string>;
   };
 }
 
@@ -83,3 +90,5 @@ export type ClientEventType =
 export interface ClientEventData {
   [key: string]: unknown;
 }
+
+export * from './chat';

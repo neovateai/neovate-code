@@ -5,20 +5,18 @@ import MessageWrapper from '@/components/MessageWrapper';
 import { useClipboard } from '@/hooks/useClipboard';
 import BashIcon from '@/icons/bash.svg?react';
 import CopyIcon from '@/icons/copy.svg?react';
-import type { ToolMessage } from '@/types/message';
-import type { IBashToolResult } from '@/types/tool';
+import type { UIToolPart } from '@/types/chat';
 
-export default function BashRender({ message }: { message?: ToolMessage }) {
-  if (!message) return null;
-  const { args, result } = message;
-  const command = (args?.command as string) || '';
-  const { message: stdout } = (result as IBashToolResult) || {};
+export default function BashRender({ part }: { part: UIToolPart }) {
+  const { input, result } = part;
+  const command = (input?.command as string) || '';
+  const llmContent = result?.llmContent as string;
 
   const { writeText } = useClipboard();
   const [isCopySuccess, setIsCopySuccess] = useState(false);
 
   const handleCopy = () => {
-    writeText(stdout || '');
+    writeText(llmContent || '');
     setIsCopySuccess(true);
   };
 
@@ -37,7 +35,7 @@ export default function BashRender({ message }: { message?: ToolMessage }) {
       icon={<BashIcon />}
       showExpandIcon={false}
       expandable={false}
-      expanded={!!stdout?.length}
+      expanded={!!llmContent?.length}
       actions={[
         {
           key: 'copy',
@@ -46,8 +44,12 @@ export default function BashRender({ message }: { message?: ToolMessage }) {
         },
       ]}
     >
-      {stdout ? (
-        <CodeRenderer code={stdout} language="bash" showLineNumbers={false} />
+      {llmContent ? (
+        <CodeRenderer
+          code={llmContent}
+          language="bash"
+          showLineNumbers={false}
+        />
       ) : null}
     </MessageWrapper>
   );

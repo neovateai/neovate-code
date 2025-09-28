@@ -1,6 +1,7 @@
 import { type ButtonProps, Divider, Flex } from 'antd';
+import { useSnapshot } from 'valtio';
 import McpDropdown from '@/components/McpDropdown';
-import { useChatState } from '@/hooks/provider';
+import { state } from '@/state/chat';
 import SenderAttachments from '../SenderAttachments';
 import ModeSelect from './ModeSelect';
 
@@ -14,11 +15,11 @@ type ActionsComponents = {
 const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
   components,
 }) => {
-  const { status } = useChatState();
+  const { status } = useSnapshot(state);
 
   const { SendButton, LoadingButton } = components;
 
-  const isProcessing = status === 'submitted' || status === 'streaming';
+  const isProcessing = status === 'processing';
 
   return (
     <Flex justify="space-between" align="center">

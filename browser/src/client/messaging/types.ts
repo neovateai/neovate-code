@@ -1,11 +1,6 @@
-export interface RequestOptions {
-  timeout?: number;
-}
-
 export interface PendingRequest {
   resolve: (value: unknown) => void;
   reject: (error: Error) => void;
-  timeoutId: NodeJS.Timeout;
 }
 
 export type EventHandler<T = unknown> = (data: T) => void;

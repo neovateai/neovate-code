@@ -1,4 +1,3 @@
-export { default as CodeRenderer } from './CodeRenderer';
+export { default as CodeRenderer, default } from './CodeRenderer';
 export { useShiki } from './useShiki';
-export { inferLanguage, getLanguageDisplayName } from './utils';
-export { default } from './CodeRenderer';
+export { getLanguageDisplayName, inferLanguage } from './utils';

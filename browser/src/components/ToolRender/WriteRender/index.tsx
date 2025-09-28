@@ -2,42 +2,38 @@ import { useEffect, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import CodeDiffOutline from '@/components/CodeDiffOutline';
 import { fileChangesActions, fileChangesState } from '@/state/fileChanges';
-import type { ToolMessage } from '@/types/message';
+import type { UIToolPart } from '@/types/chat';
 
-export default function WriteRender({ message }: { message?: ToolMessage }) {
-  if (!message) {
-    return null;
-  }
-  const { toolCallId, args, state } = message;
+export default function WriteRender({ part }: { part: UIToolPart }) {
+  const { id, input, state } = part;
   const { files } = useSnapshot(fileChangesState);
 
-  const { file_path, content } = args as {
+  const { file_path, content } = input as {
     file_path: string;
     content: string;
   };
 
   useEffect(() => {
     fileChangesActions.initFileState(file_path, [
-      { toolCallId, old_string: '', new_string: content },
+      { toolCallId: id, old_string: '', new_string: content },
     ]);
-  }, [file_path, toolCallId, content]);
+  }, [file_path, id, content]);
 
   const editStatus = useMemo(() => {
-    return files[file_path]?.edits.find(
-      (edit) => edit.toolCallId === toolCallId,
-    )?.editStatus;
-  }, [files, file_path, toolCallId]);
+    return files[file_path]?.edits.find((edit) => edit.toolCallId === id)
+      ?.editStatus;
+  }, [files, file_path, id]);
 
   return (
     <CodeDiffOutline
       path={file_path}
       edit={{
-        toolCallId,
+        toolCallId: id,
         old_string: '',
         new_string: content,
         editStatus,
       }}
-      state={state}
+      state={state === 'tool_result' ? 'result' : 'call'}
     />
   );
 }

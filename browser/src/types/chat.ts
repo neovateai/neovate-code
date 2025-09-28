@@ -1,0 +1,194 @@
+export type SystemMessage = {
+  role: 'system';
+  content: string;
+};
+
+export type TextPart = {
+  type: 'text';
+  text: string;
+};
+
+export type ImagePart = {
+  type: 'image';
+  data: string;
+  mimeType: string;
+};
+
+export type FilePart = {
+  type: 'file';
+  filename?: string;
+  data: string;
+  mimeType: string;
+};
+
+export type UserContent = string | Array<TextPart | ImagePart | FilePart>;
+
+export type UserMessage = {
+  role: 'user';
+  content: UserContent;
+  hidden?: boolean;
+};
+
+export type ReasoningPart = {
+  type: 'reasoning';
+  text: string;
+};
+
+export type ToolUsePart = {
+  type: 'tool_use';
+  id: string;
+  name: string;
+  input: Record<string, any>;
+  displayName?: string;
+  description?: string;
+};
+
+// assistant message
+export type AssistantContent =
+  | string
+  | Array<TextPart | ReasoningPart | ToolUsePart>;
+
+export type AssistantMessage = {
+  role: 'assistant';
+  uuid: string;
+  parentUuid: string | null;
+  content: AssistantContent;
+  text: string;
+  model: string;
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
+    cache_read_input_tokens?: number;
+    cache_creation_input_tokens?: number;
+  };
+};
+
+//  tool message
+type TodoItem = {
+  id: string;
+  content: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  priority: 'low' | 'medium' | 'high';
+};
+
+type TodoReadReturnDisplay = {
+  type: 'todo_read';
+  todos: TodoItem[];
+};
+
+type TodoWriteReturnDisplay = {
+  type: 'todo_write';
+  oldTodos: TodoItem[];
+  newTodos: TodoItem[];
+};
+
+type DiffViewerReturnDisplay = {
+  type: 'diff_viewer';
+  originalContent: string | { inputKey: string };
+  newContent: string | { inputKey: string };
+  filePath: string;
+  [key: string]: any;
+};
+
+export type ToolResult = {
+  llmContent: string | (TextPart | ImagePart)[];
+  returnDisplay?:
+    | string
+    | DiffViewerReturnDisplay
+    | TodoReadReturnDisplay
+    | TodoWriteReturnDisplay;
+  isError?: boolean;
+};
+
+export type ToolResultPart = {
+  type: 'tool_result';
+  id: string;
+  name: string;
+  input: Record<string, any>;
+  result: ToolResult;
+};
+
+export type ToolResultContent = Array<ToolResultPart>;
+
+export type ToolResultMessage = {
+  role: 'user';
+  content: ToolResultContent;
+};
+
+export type ToolUseMessage = {
+  role: 'user';
+  content: ToolUsePart;
+};
+
+export type Message =
+  | SystemMessage
+  | UserMessage
+  | AssistantMessage
+  | ToolResultMessage;
+
+export type UIToolPart = {
+  type: 'tool';
+  state: 'tool_use' | 'tool_result';
+  id: string;
+  name: string;
+  input: Record<string, any>;
+  // tool_result
+  result?: ToolResult;
+
+  // tool_use
+  displayName?: string;
+  description?: string;
+};
+
+export type UIAssistantContent = Array<TextPart | ReasoningPart | UIToolPart>;
+
+export type UIAssistantMessage = {
+  role: 'assistant';
+  uuid: string;
+  parentUuid: string | null;
+  content: UIAssistantContent;
+  text: string;
+  model: string;
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
+    cache_read_input_tokens?: number;
+    cache_creation_input_tokens?: number;
+  };
+};
+
+export type UIMessage = SystemMessage | UserMessage | UIAssistantMessage;
+
+export type LoopResult =
+  | {
+      success: true;
+      data: Record<string, any>;
+      metadata: {
+        turnsCount: number;
+        toolCallsCount: number;
+        duration: number;
+      };
+    }
+  | {
+      success: false;
+      error: {
+        type: 'tool_denied' | 'max_turns_exceeded' | 'api_error' | 'canceled';
+        message: string;
+        details?: Record<string, any>;
+      };
+    };
+
+// approval
+export type ApprovalResult =
+  | 'approve_once'
+  | 'approve_always_edit'
+  | 'approve_always_tool'
+  | 'deny';
+
+export type ToolUse = {
+  name: string;
+  params: Record<string, any>;
+  callId: string;
+};
+
+export type ApprovalCategory = 'read' | 'write' | 'command' | 'network';

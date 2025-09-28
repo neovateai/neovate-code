@@ -126,11 +126,12 @@ export function useChatPaste() {
       case 'image/svg+xml':
         // Handle images
         return handleImage(item);
-      default:
+      default: {
         const errorMsg = t('context.unsupportedType', { type: item.type });
         messageInstance.error(errorMsg);
         console.error(errorMsg);
         return true;
+      }
     }
   };
 

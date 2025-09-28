@@ -3,7 +3,6 @@
 /** biome-ignore-all lint/a11y/useButtonType: <explanation> */
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { useClient } from '../hooks/useClient';
 import type {
   ClientConfig,
   InitializeParams,
@@ -11,6 +10,7 @@ import type {
   SendMessageParams,
   SendMessageResult,
 } from '../client';
+import { useClient } from '../hooks/useClient';
 
 interface LogEntry {
   timestamp: string;

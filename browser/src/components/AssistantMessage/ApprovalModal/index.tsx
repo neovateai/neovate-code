@@ -1,36 +1,35 @@
+/** biome-ignore-all lint/correctness/useHookAtTopLevel: <explanation> */
 import { CloseOutlined, RedoOutlined } from '@ant-design/icons';
 import { Button, Spin, Tooltip } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
+import MessageWrapper from '@/components/MessageWrapper';
 import ApproveToolIcon from '@/icons/approveTool.svg?react';
 import BashIcon from '@/icons/bash.svg?react';
 import EditIcon from '@/icons/edit.svg?react';
 import SearchIcon from '@/icons/search.svg?react';
-import { toolApprovalActions, toolApprovalState } from '@/state/toolApproval';
-import type { ToolApprovalRequestMessage } from '@/types/message';
-import MessageWrapper from '../MessageWrapper';
+import { state } from '@/state/chat';
+import type { ApprovalResult, ToolUse, UIToolPart } from '@/types/chat';
 import styles from './index.module.css';
 
-interface ToolApprovalConfirmationProps {
-  message: ToolApprovalRequestMessage;
-}
-
-export default function ToolApprovalConfirmation({
-  message,
-}: ToolApprovalConfirmationProps) {
+function ToolApprovalConfirmation({ part }: { part: UIToolPart }) {
   const { t } = useTranslation();
-  const snap = useSnapshot(toolApprovalState);
+  const snap = useSnapshot(state);
 
-  // Check if current message is the current pending request
-  if (
-    !snap.currentRequest ||
-    snap.currentRequest.toolCallId !== message.toolCallId
-  ) {
+  if (!snap.approvalModal) {
     return null;
   }
 
+  if (part.id !== snap.approvalModal.toolUse.callId) {
+    return null;
+  }
+
+  const { name, params } = snap.approvalModal.toolUse;
+
+  console.log('toolUse', snap.approvalModal.toolUse);
+
   // Don't show approval confirmation for edit or write tools
-  if (message.toolName === 'edit' || message.toolName === 'write') {
+  if (name === 'edit' || name === 'write') {
     return null;
   }
 
@@ -81,58 +80,57 @@ export default function ToolApprovalConfirmation({
     }
   };
 
-  const onApprove = (option: 'once' | 'always' | 'always_tool') => {
-    toolApprovalActions.approveToolUse(true, option);
+  const onApprove = (option: ApprovalResult) => {
+    console.log('onApprove', option);
+    snap.approvalModal?.resolve(option);
   };
 
   const onDeny = () => {
-    toolApprovalActions.approveToolUse(false);
+    console.log('onDeny');
+    snap.approvalModal?.resolve('deny');
   };
 
   const onRetry = () => {
-    toolApprovalActions.retrySubmit();
+    console.log('onRetry');
   };
 
-  const isSubmitting = snap.submitting;
-  const hasError = !!snap.submitError;
+  // const iconWrapper = (icon: React.ReactNode, tooltip: string) => {
+  //   return (
+  //     <Tooltip title={tooltip}>
+  //       <Spin spinning={isSubmitting}>{icon}</Spin>
+  //     </Tooltip>
+  //   );
+  // };
 
-  const iconWrapper = (icon: React.ReactNode, tooltip: string) => {
-    return (
-      <Tooltip title={tooltip}>
-        <Spin spinning={isSubmitting}>{icon}</Spin>
-      </Tooltip>
-    );
-  };
-
-  if (hasError) {
-    return (
-      <MessageWrapper
-        title={
-          <div className="flex items-center gap-2">
-            <CloseOutlined style={{ color: '#ff4d4f' }} />
-            <span>{t('toolApproval.submitFailed')}</span>
-          </div>
-        }
-        actions={[
-          {
-            key: 'retry',
-            icon: iconWrapper(
-              <RedoOutlined />,
-              t('toolApproval.retry', '重试'),
-            ),
-            onClick: onRetry,
-          },
-        ]}
-      >
-        <div className="text-sm text-gray-500">{snap.submitError}</div>
-      </MessageWrapper>
-    );
-  }
+  // if (hasError) {
+  //   return (
+  //     <MessageWrapper
+  //       title={
+  //         <div className="flex items-center gap-2">
+  //           <CloseOutlined style={{ color: '#ff4d4f' }} />
+  //           <span>{t('toolApproval.submitFailed')}</span>
+  //         </div>
+  //       }
+  //       actions={[
+  //         {
+  //           key: 'retry',
+  //           icon: iconWrapper(
+  //             <RedoOutlined />,
+  //             t('toolApproval.retry', '重试'),
+  //           ),
+  //           onClick: onRetry,
+  //         },
+  //       ]}
+  //     >
+  //       <div className="text-sm text-gray-500">{snap.submitError}</div>
+  //     </MessageWrapper>
+  //   );
+  // }
 
   return (
     <div className={styles.container}>
       <MessageWrapper
-        title={getToolDescription(message.toolName, message.args)}
+        title={getToolDescription(name, params)}
         expandable={false}
         showExpandIcon={false}
         defaultExpanded={false}
@@ -142,17 +140,28 @@ export default function ToolApprovalConfirmation({
           className={styles.actionButton}
           icon={<ApproveToolIcon />}
           variant="outlined"
-          onClick={() => onApprove('once')}
+          onClick={() => onApprove('approve_once')}
         >
-          {t('toolApproval.approveOnce', '本次允许')}
+          {t('toolApproval.approveOnce')}
         </Button>
+        {snap.approvalModal?.category === 'write' && (
+          <Button
+            className={styles.actionButton}
+            variant="outlined"
+            onClick={() => onApprove('approve_always_edit')}
+          >
+            {t('toolApproval.approveAlwaysEdit', {
+              toolName: name,
+            })}
+          </Button>
+        )}
         <Button
           className={styles.actionButton}
           variant="outlined"
-          onClick={() => onApprove('always_tool')}
+          onClick={() => onApprove('approve_always_tool')}
         >
-          {t('toolApproval.approveAlwaysTool', '永久允许{{toolName}}', {
-            toolName: message.toolName,
+          {t('toolApproval.approveAlwaysTool', {
+            toolName: name,
           })}
         </Button>
         <Button
@@ -161,9 +170,11 @@ export default function ToolApprovalConfirmation({
           variant="outlined"
           onClick={() => onDeny()}
         >
-          {t('toolApproval.deny', '本次拒绝')}
+          {t('toolApproval.deny')}
         </Button>
       </div>
     </div>
   );
 }
+
+export default ToolApprovalConfirmation;

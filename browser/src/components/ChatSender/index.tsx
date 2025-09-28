@@ -1,17 +1,17 @@
 import { Sender } from '@ant-design/x';
 import { Spin } from 'antd';
 import { createStyles } from 'antd-style';
-import type { Bounds } from 'quill';
-import Quill, { Delta } from 'quill';
+import type Quill from 'quill';
+import { type Bounds, Delta } from 'quill';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { ContextType } from '@/constants/context';
-import { useChatState } from '@/hooks/provider';
 import { useChatPaste } from '@/hooks/useChatPaste';
 import { useSuggestion } from '@/hooks/useSuggestion';
+import { actions, state } from '@/state/chat';
 import * as context from '@/state/context';
-import { actions, state } from '@/state/sender';
+import * as sender from '@/state/sender';
 import QuillEditor, { KeyCode } from '../QuillEditor';
 import type { ContextBlotData } from '../QuillEditor/ContextBlot';
 import { QuillContext } from '../QuillEditor/QuillContext';
@@ -51,8 +51,9 @@ const useStyle = createStyles(({ token, css }) => {
 
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
-  const { loading, stop, onQuery } = useChatState();
   const { t } = useTranslation();
+  const { status } = useSnapshot(state);
+  const { prompt, delta } = useSnapshot(sender.state);
 
   const [openPopup, setOpenPopup] = useState(false);
   const [inputText, setInputText] = useState<string>('');
@@ -65,8 +66,6 @@ const ChatSender: React.FC = () => {
 
   const { isPasting, handlePaste, contextHolder } = useChatPaste();
 
-  const { prompt, delta } = useSnapshot(state);
-
   const {
     defaultSuggestions,
     handleSearch,
@@ -74,21 +73,24 @@ const ChatSender: React.FC = () => {
   } = useSuggestion();
 
   const handleSubmit = () => {
-    onQuery({
-      prompt,
-      attachedContexts: context.state.attachedContexts,
-      delta: delta as Delta,
-    });
+    // onQuery({
+    //   prompt,
+    //   attachedContexts: context.state.attachedContexts,
+    //   delta: delta as Delta,
+    // });
+
+    console.log('prompt', prompt, delta);
+    actions.send(sender.state.prompt);
     setInputText('');
-    actions.updatePrompt('');
-    actions.updateDelta(new Delta());
+    sender.actions.updatePrompt('');
+    sender.actions.updateDelta(new Delta());
     quill.current?.setText('\n');
   };
 
   const handleEnterPress = () => {
-    if (!loading && prompt.trim()) {
-      handleSubmit();
-    }
+    // if (!loading && prompt.trim()) {
+    handleSubmit();
+    // }
   };
 
   return (
@@ -130,11 +132,13 @@ const ChatSender: React.FC = () => {
           onChange: (text, delta) => {
             // rich text will auto add '\n' at the end
             setInputText(text.trimEnd());
-            actions.updatePrompt(text.trimEnd());
-            actions.updateDelta(delta);
+            sender.actions.updatePrompt(text.trimEnd());
+            sender.actions.updateDelta(delta);
           },
           onDeleteContexts: (values) => {
-            values.forEach((value) => context.actions.removeContext(value));
+            values.forEach((value) => {
+              context.actions.removeContext(value);
+            });
           },
         }}
       >
@@ -215,15 +219,15 @@ const ChatSender: React.FC = () => {
             onSubmit={handleSubmit}
             onPaste={handlePaste}
             onCancel={() => {
-              stop();
+              console.log('onCancel');
+              // stop();
             }}
             value={inputText}
-            loading={loading}
+            loading={status === 'processing'}
             allowSpeech
             actions={false}
             submitType="enter"
             components={{
-              // @ts-ignore
               input: QuillEditor,
             }}
             placeholder={t('chat.inputPlaceholder')}

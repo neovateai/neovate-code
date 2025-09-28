@@ -4,20 +4,20 @@ import MessageWrapper from '@/components/MessageWrapper';
 import { useClipboard } from '@/hooks/useClipboard';
 import CopyIcon from '@/icons/copy.svg?react';
 import SearchIcon from '@/icons/search.svg?react';
-import type { ToolMessage } from '@/types/message';
+import type { UIToolPart } from '@/types/chat';
 
-export default function FetchRender({ message }: { message?: ToolMessage }) {
-  if (!message) return null;
-
-  const { args, state } = message;
+export default function FetchRender({ part }: { part: UIToolPart }) {
+  const { input, state } = part;
 
   const { writeText } = useClipboard();
 
-  const url = (args?.url as string) || '';
-  const prompt = (args?.prompt as string) || '';
+  console.log('FetchRender', part);
+
+  const url = (input?.url as string) || '';
+  const prompt = (input?.prompt as string) || '';
 
   const actions = useMemo(() => {
-    if (state === 'result') {
+    if (state === 'tool_result') {
       return [
         {
           key: 'success',
