@@ -3,10 +3,12 @@ import type { ApprovalMode, InitializeResult } from '@/client';
 import type {
   ApprovalCategory,
   ApprovalResult,
+  CommandEntry,
   FilePart,
   ImagePart,
   LoopResult,
   Message,
+  NodeBridgeResponse,
   ToolResultPart,
   ToolUse,
   UIAssistantMessage,
@@ -57,6 +59,7 @@ interface ChatActions {
     planMode?: boolean;
     model?: string;
   }): Promise<LoopResult>;
+  getSlashCommands(): Promise<CommandEntry[]>;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -162,7 +165,7 @@ export const actions: ChatActions = {
       state.messages.push(message as UIMessage);
     };
 
-    const handleChunk = (chunk: any) => {
+    const handleChunk = (_chunk: any) => {
       // console.log('handleChunk', JSON.stringify(chunk, null, 2));
       // state.messages.push(chunk);
     };
@@ -251,6 +254,13 @@ export const actions: ChatActions = {
 
   addMessage(message) {
     state.messages.push(message);
+  },
+
+  async getSlashCommands() {
+    const response = (await clientActions.request('getSlashCommands', {
+      cwd: state.cwd,
+    })) as NodeBridgeResponse<{ slashCommands: CommandEntry[] }>;
+    return response.data.slashCommands;
   },
 
   destroy() {

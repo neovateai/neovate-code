@@ -1,11 +1,12 @@
 import { proxy } from 'valtio';
 import { type FileListQueries, getFileList } from '@/api/files';
-import type { FileItem, SlashCommandItem } from '@/api/model';
-import { getSlashCommandList } from '@/api/slashCommand';
+import type { FileItem } from '@/api/model';
+import { actions as chatActions } from '@/state/chat';
+import type { CommandEntry } from '@/types/chat';
 
 interface SuggestionState {
   fileList: FileItem[];
-  slashCommandList: SlashCommandItem[];
+  slashCommandList: CommandEntry[];
   fileMap: Map<string, FileItem>;
   loading: boolean;
 }
@@ -18,9 +19,9 @@ export const state = proxy<SuggestionState>({
 });
 
 const filterSlashCommands = (
-  commands: SlashCommandItem[],
+  commands: CommandEntry[],
   searchString?: string,
-): SlashCommandItem[] => {
+): CommandEntry[] => {
   if (!searchString || !searchString.trim()) {
     return commands;
   }
@@ -28,8 +29,8 @@ const filterSlashCommands = (
   const lowerSearch = searchString.toLowerCase().trim();
   return commands.filter(
     (cmd) =>
-      cmd.name.toLowerCase().includes(lowerSearch) ||
-      cmd.description.toLowerCase().includes(lowerSearch),
+      cmd.command.name.toLowerCase().includes(lowerSearch) ||
+      cmd.command.description.toLowerCase().includes(lowerSearch),
   );
 };
 
@@ -60,7 +61,7 @@ export const actions = {
     return state.fileMap.get(path);
   },
 
-  setSlashCommandList: (value: SlashCommandItem[]) => {
+  setSlashCommandList: (value: CommandEntry[]) => {
     state.slashCommandList = value;
     state.loading = false;
   },
@@ -76,10 +77,9 @@ export const actions = {
 
     state.loading = true;
     try {
-      const response = await getSlashCommandList();
-      const allCommands = response.data.commands || [];
-
-      const filteredCommands = filterSlashCommands(allCommands, searchString);
+      const slashCommands = await chatActions.getSlashCommands();
+      const filteredCommands = filterSlashCommands(slashCommands, searchString);
+      // TODO: 过滤掉 jsx 类型的命令
       actions.setSlashCommandList(filteredCommands);
     } catch (error) {
       state.loading = false;

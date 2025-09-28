@@ -11,20 +11,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './pages/__root'
-import { Route as DemoRouteImport } from './pages/demo'
-import { Route as ClientDemoRouteImport } from './pages/client-demo'
 import { Route as ChatRouteImport } from './pages/chat'
 
-const DemoRoute = DemoRouteImport.update({
-  id: '/demo',
-  path: '/demo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ClientDemoRoute = ClientDemoRouteImport.update({
-  id: '/client-demo',
-  path: '/client-demo',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -33,50 +21,28 @@ const ChatRoute = ChatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/chat': typeof ChatRoute
-  '/client-demo': typeof ClientDemoRoute
-  '/demo': typeof DemoRoute
 }
 export interface FileRoutesByTo {
   '/chat': typeof ChatRoute
-  '/client-demo': typeof ClientDemoRoute
-  '/demo': typeof DemoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/chat': typeof ChatRoute
-  '/client-demo': typeof ClientDemoRoute
-  '/demo': typeof DemoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/chat' | '/client-demo' | '/demo'
+  fullPaths: '/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/chat' | '/client-demo' | '/demo'
-  id: '__root__' | '/chat' | '/client-demo' | '/demo'
+  to: '/chat'
+  id: '__root__' | '/chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   ChatRoute: typeof ChatRoute
-  ClientDemoRoute: typeof ClientDemoRoute
-  DemoRoute: typeof DemoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/demo': {
-      id: '/demo'
-      path: '/demo'
-      fullPath: '/demo'
-      preLoaderRoute: typeof DemoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/client-demo': {
-      id: '/client-demo'
-      path: '/client-demo'
-      fullPath: '/client-demo'
-      preLoaderRoute: typeof ClientDemoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/chat': {
       id: '/chat'
       path: '/chat'
@@ -89,8 +55,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRoute,
-  ClientDemoRoute: ClientDemoRoute,
-  DemoRoute: DemoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

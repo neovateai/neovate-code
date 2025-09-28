@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/correctness/useHookAtTopLevel: <explanation> */
-import { CloseOutlined, RedoOutlined } from '@ant-design/icons';
-import { Button, Spin, Tooltip } from 'antd';
+// import { CloseOutlined, RedoOutlined } from '@ant-design/icons';
+import { Button } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import MessageWrapper from '@/components/MessageWrapper';
@@ -9,7 +9,7 @@ import BashIcon from '@/icons/bash.svg?react';
 import EditIcon from '@/icons/edit.svg?react';
 import SearchIcon from '@/icons/search.svg?react';
 import { state } from '@/state/chat';
-import type { ApprovalResult, ToolUse, UIToolPart } from '@/types/chat';
+import type { ApprovalResult, UIToolPart } from '@/types/chat';
 import styles from './index.module.css';
 
 function ToolApprovalConfirmation({ part }: { part: UIToolPart }) {
@@ -90,9 +90,9 @@ function ToolApprovalConfirmation({ part }: { part: UIToolPart }) {
     snap.approvalModal?.resolve('deny');
   };
 
-  const onRetry = () => {
-    console.log('onRetry');
-  };
+  // const onRetry = () => {
+  //   console.log('onRetry');
+  // };
 
   // const iconWrapper = (icon: React.ReactNode, tooltip: string) => {
   //   return (

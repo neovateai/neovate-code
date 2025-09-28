@@ -7,7 +7,6 @@ export type {
   MessageHandler,
   PendingRequest,
   RequestMessage,
-  RequestOptions,
   ResponseMessage,
 } from './messaging/types';
 export type * from './transport/types';

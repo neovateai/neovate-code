@@ -1,13 +1,10 @@
-import { Outlet, createRootRoute, redirect } from '@tanstack/react-router';
+import { createRootRoute, Outlet, redirect } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import { useMount } from 'ahooks';
 import { createStyles } from 'antd-style';
-import React from 'react';
 import { useSnapshot } from 'valtio';
 import I18nProvider from '@/components/I18nProvider';
 import SettingsModal from '@/components/SettingsModal';
 import Sider from '@/components/Sider';
-import { actions } from '@/state/appData';
 import { uiActions, uiState } from '@/state/ui';
 
 const useStyle = createStyles(({ token, css }) => {
@@ -29,10 +26,6 @@ const useStyle = createStyles(({ token, css }) => {
 const Layout: React.FC = () => {
   const { styles } = useStyle();
   const { settingsModalOpen } = useSnapshot(uiState);
-
-  useMount(() => {
-    actions.getAppData();
-  });
 
   return (
     <I18nProvider>

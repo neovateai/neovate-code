@@ -59,7 +59,7 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
   }, [isCopySuccess]);
 
   if (mode === 'plan' && status === 'idle') {
-    const lastMessage = message;
+    // const lastMessage = message;
     // if (
     //   lastMessage?.type === UIMessageType.Text &&
     //   lastMessage.mode === 'plan'

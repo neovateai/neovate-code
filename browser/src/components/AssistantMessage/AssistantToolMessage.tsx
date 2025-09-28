@@ -20,7 +20,7 @@ const ToolResultItem: React.FC<{ part: UIToolPart }> = ({ part }) => {
     return null;
   }
 
-  const { name, input, result } = part;
+  const { name, result } = part;
   if (result?.isError) {
     return <FailRender part={part} />;
   }

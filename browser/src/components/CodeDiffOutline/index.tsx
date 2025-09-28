@@ -153,7 +153,7 @@ const CodeDiffOutline = (props: Props) => {
     return null;
   }
 
-  const handleAccept = (approveType: 'once' | 'always' | 'always_tool') => {
+  const handleAccept = (_approveType: 'once' | 'always' | 'always_tool') => {
     fileChanges.fileChangesActions.acceptEdit(path, edit, normalViewerMode);
     // toolApprovalActions.approveToolUse(true, approveType);
     // TODO: add approval modal

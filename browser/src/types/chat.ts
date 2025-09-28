@@ -192,3 +192,30 @@ export type ToolUse = {
 };
 
 export type ApprovalCategory = 'read' | 'write' | 'command' | 'network';
+
+// slash command
+export interface SlashCommand {
+  type: 'local' | 'local-jsx' | 'prompt';
+  name: string;
+  description: string;
+  isEnabled?: boolean;
+}
+
+export enum CommandSource {
+  Builtin = 'builtin',
+  User = 'user',
+  Project = 'project',
+  Plugin = 'plugin',
+}
+
+export type CommandEntry = {
+  command: SlashCommand;
+  source: CommandSource;
+};
+
+export type NodeBridgeResponse<T = any> = {
+  success: boolean;
+  data: T;
+  error?: string;
+  message?: string;
+};

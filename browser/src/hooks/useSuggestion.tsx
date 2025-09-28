@@ -6,24 +6,30 @@ import { useSnapshot } from 'valtio';
 import DevFileIcon from '@/components/DevFileIcon';
 import type { SuggestionItem } from '@/components/SuggestionList';
 import { CONTEXT_MAX_POPUP_ITEM_COUNT, ContextType } from '@/constants/context';
+import { state as clientState } from '@/state/client';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/suggestion';
+import { CommandSource } from '@/types/chat';
 import { storeValueToContextItem } from '@/utils/context';
 
 const SUGGESTION_SEARCH_DEBOUNCE_TIME = 200;
 
 export const useSuggestion = () => {
   const { fileList, slashCommandList, loading } = useSnapshot(state);
+  const clientSnap = useSnapshot(clientState);
   const { contexts } = useSnapshot(context.state);
 
   const { t } = useTranslation();
 
   useEffect(() => {
-    (async () => {
-      await actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
-      await actions.getSlashCommandList();
-    })();
+    actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
   }, []);
+
+  useEffect(() => {
+    if (clientSnap.state === 'connected') {
+      actions.getSlashCommandList();
+    }
+  }, [clientSnap.state]);
 
   const fileSuggestions = useMemo(() => {
     return fileList.map((file) => {
@@ -51,16 +57,25 @@ export const useSuggestion = () => {
 
   const slashCommandSuggestions = useMemo(() => {
     return slashCommandList.map((cmd) => {
-      const label = `${cmd.type === 'global' ? t('suggestion.slashCommandPrefix.global') : t('suggestion.slashCommandPrefix.project')}:/${cmd.name}`;
-      const extra = cmd.description;
+      const label = `/${cmd.command.name}`;
+      const prefix = (() => {
+        switch (cmd.source) {
+          case CommandSource.User:
+            return t('suggestion.slashCommandPrefix.global');
+          case CommandSource.Project:
+            return t('suggestion.slashCommandPrefix.project');
+          default:
+            return '';
+        }
+      })();
       // only allow one slash command
       const disabled = contexts.slashCommands.length > 0;
 
       return {
         label,
-        value: cmd.path,
+        value: cmd.command.name,
         icon: <AppstoreOutlined />,
-        extra,
+        extra: `${cmd.command.description} ${prefix ? `(${prefix})` : ''}`,
         disabled,
         contextItem: storeValueToContextItem(cmd, ContextType.SLASH_COMMAND),
       };
