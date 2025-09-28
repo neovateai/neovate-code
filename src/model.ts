@@ -829,6 +829,7 @@ export const providers: ProvidersMap = {
     doc: 'https://platform.moonshot.ai/docs/api/chat',
     models: {
       'kimi-k2-0711-preview': models['kimi-k2'],
+      'kimi-k2-0905-preview': models['kimi-k2-0905'],
       'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
     },
     createModel(name, provider) {
@@ -850,6 +851,7 @@ export const providers: ProvidersMap = {
     doc: 'https://platform.moonshot.cn/docs/api/chat',
     models: {
       'kimi-k2-0711-preview': models['kimi-k2'],
+      'kimi-k2-0905-preview': models['kimi-k2-0905'],
       'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
     },
     createModel(name, provider) {
