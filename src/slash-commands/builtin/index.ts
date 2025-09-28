@@ -16,6 +16,7 @@ import { createTerminalSetupCommand } from './terminal-setup';
 
 export function createBuiltinCommands(opts: {
   productName: string;
+  argvConfig: Record<string, any>;
 }): SlashCommand[] {
   return [
     clearCommand,
@@ -25,7 +26,7 @@ export function createBuiltinCommands(opts: {
     createLoginCommand(),
     createLogoutCommand(),
     createMcpCommand(opts),
-    createModelCommand(),
+    createModelCommand(opts),
     createOutputStyleCommand(),
     createResumeCommand(),
     createReviewCommand(),

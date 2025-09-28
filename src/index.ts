@@ -91,6 +91,9 @@ async function parseArgs(argv: any) {
   if (args.resume && args.continue) {
     throw new Error('Cannot use --resume and --continue at the same time');
   }
+  if (args.model === '') {
+    throw new Error('Model cannot be empty string');
+  }
   return args;
 }
 
