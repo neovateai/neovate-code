@@ -41,7 +41,7 @@ export class Context {
   config: Config;
   paths: Paths;
   #pluginManager: PluginManager;
-  #argvConfig: Record<string, any>;
+  argvConfig: Record<string, any>;
   mcpManager: MCPManager;
 
   constructor(opts: ContextOpts) {
@@ -53,7 +53,7 @@ export class Context {
     this.paths = opts.paths;
     this.mcpManager = opts.mcpManager;
     this.#pluginManager = opts.pluginManager;
-    this.#argvConfig = opts.argvConfig;
+    this.argvConfig = opts.argvConfig;
   }
 
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {

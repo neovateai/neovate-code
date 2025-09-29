@@ -1,4 +1,4 @@
-import { type LanguageModelV1Message } from '@ai-sdk/provider';
+import type { LanguageModelV1Message } from '@ai-sdk/provider';
 import { UserError } from '@openai/agents';
 import createDebug from 'debug';
 
@@ -38,9 +38,9 @@ export function mergeConsecutiveSystemMessages(
   // Determine if system message merging is required based on model provider and ID
   // Currently applies to: Gemini models via OpenAI provider, and Claude models
   const needsMerging =
-    (modelProvider === 'openai.chat' && modelId.includes('gemini')) ||
-    modelId.includes('claude');
-
+    (modelProvider === 'openai.chat' &&
+      modelId.toLowerCase().includes('gemini')) ||
+    modelId.toLowerCase().includes('claude');
   debug(
     'mergeConsecutiveSystemMessages',
     modelProvider,

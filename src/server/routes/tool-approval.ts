@@ -1,6 +1,6 @@
 import { Type } from '@sinclair/typebox';
 import createDebug from 'debug';
-import { type FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { getToolApprovalService } from '../services/tool-approval';
 import type { RouteCompletionsOpts } from '../types';
 

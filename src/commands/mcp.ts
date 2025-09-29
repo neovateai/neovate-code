@@ -1,12 +1,11 @@
 import assert from 'assert';
-import yargsParser from 'yargs-parser';
 import {
   ConfigManager,
   type McpHttpServerConfig,
   type McpSSEServerConfig,
   type McpStdioServerConfig,
 } from '../config';
-import { type Context } from '../context';
+import type { Context } from '../context';
 
 function printHelp(p: string) {
   console.log(
@@ -49,6 +48,7 @@ Examples:
 }
 
 export async function runMCP(context: Context) {
+  const { default: yargsParser } = await import('yargs-parser');
   const productName = context.productName;
   const argv = yargsParser(process.argv.slice(3), {
     alias: {

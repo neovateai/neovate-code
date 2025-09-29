@@ -5,8 +5,8 @@ import {
   createAgentServer,
 } from '@stagewise/agent-interface/agent';
 import createDebug from 'debug';
-import { Context } from '../context';
-import { type Plugin } from '../plugin';
+import type { Context } from '../context';
+import type { Plugin } from '../plugin';
 import { Service } from '../service';
 import { relativeToHome } from '../utils/path';
 
@@ -177,7 +177,7 @@ export class StagewiseAgent {
         thinking: isReasoningModel(this.service!.context.config.model),
       });
 
-      let response =
+      const response =
         result.finalText ||
         "I processed your request but didn't generate a text response.";
 

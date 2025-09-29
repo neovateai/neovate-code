@@ -1,5 +1,5 @@
 import { Type } from '@sinclair/typebox';
-import { type FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { ConfigManager } from '../../config';
 
 const mcpRoute: FastifyPluginAsync = async (app) => {

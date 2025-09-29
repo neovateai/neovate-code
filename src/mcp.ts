@@ -420,7 +420,8 @@ export class MCPManager {
       getDescription: ({ params }) => {
         return formatParamsDescription(params);
       },
-      parameters: mcpTool.originalParameters ?? mcpTool.parameters,
+      // @ts-expect-error mcpTool.parameters is a JsonObjectSchema
+      parameters: mcpTool.parameters,
       execute: async (params) => {
         try {
           // FunctionTool.invoke expects (runContext, input)
@@ -430,7 +431,7 @@ export class MCPManager {
             JSON.stringify(params || {}),
           );
 
-          let returnDisplay = `Tool ${mcpTool.name} executed successfully, ${params ? `parameters: ${JSON.stringify(params)}` : ''}`;
+          const returnDisplay = `Tool ${mcpTool.name} executed successfully, ${params ? `parameters: ${JSON.stringify(params)}` : ''}`;
           const llmContent = convertMcpResultToLlmContent(result);
           return {
             llmContent,

@@ -224,7 +224,7 @@ class NodeHandlerRegistry {
         });
         for (const message of messages) {
           const normalizedMessage = {
-            // @ts-ignore
+            // @ts-expect-error
             parentUuid: message.parentUuid ?? jsonlLogger.getLatestUuid(),
             uuid: randomUUID(),
             ...message,
@@ -684,16 +684,21 @@ class NodeHandlerRegistry {
         };
       },
     );
+
     this.messageBus.registerHandler(
-      'sessionConfig.addHistory',
-      async (data: { cwd: string; sessionId: string; history: string }) => {
-        const { cwd, sessionId, history } = data;
+      'globalData.addHistory',
+      async (data: { cwd: string; history: string }) => {
+        const { cwd, history } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
+        const { GlobalData } = await import('./globalData');
+        const globalDataPath = context.paths.getGlobalDataPath();
+        const globalData = new GlobalData({
+          globalDataPath,
         });
-        sessionConfigManager.config.history.push(history);
-        sessionConfigManager.write();
+        globalData.addProjectHistory({
+          cwd,
+          history,
+        });
         return {
           success: true,
         };

@@ -1,5 +1,4 @@
-import { Box, Text } from 'ink';
-import { useInput } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import React, { useEffect, useState } from 'react';
 import { ModelSelect } from '../slash-commands/builtin/model';
 import { useAppStore } from './store';

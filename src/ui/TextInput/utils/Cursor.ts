@@ -24,7 +24,12 @@ export class Cursor {
     selection: number = 0,
   ): Cursor {
     // make MeasuredText on less than columns width, to account for cursor
-    return new Cursor(new MeasuredText(text, columns - 1), offset, selection);
+    // The reason for replacing \t is that \t causes the cursor to wrap to a new line instead of moving normally
+    return new Cursor(
+      new MeasuredText(text.replace(/\t/g, ' '), columns - 1),
+      offset,
+      selection,
+    );
   }
 
   render(cursorChar: string, mask: string, invert: (text: string) => string) {
@@ -38,7 +43,7 @@ export class Cursor {
           displayText = mask.repeat(lastSixStart) + text.slice(lastSixStart);
         }
         // looking for the line with the cursor
-        if (line != currentLine) return displayText.trimEnd();
+        if (line !== currentLine) return displayText.trimEnd();
 
         return (
           displayText.slice(0, column) +
@@ -59,7 +64,7 @@ export class Cursor {
 
   up(): Cursor {
     const { line, column } = this.getPosition();
-    if (line == 0) {
+    if (line === 0) {
       return new Cursor(this.measuredText, 0, 0);
     }
 
@@ -213,15 +218,15 @@ export class Cursor {
 
   equals(other: Cursor): boolean {
     return (
-      this.offset === other.offset && this.measuredText == other.measuredText
+      this.offset === other.offset && this.measuredText === other.measuredText
     );
   }
 
   public isAtStart(): boolean {
-    return this.offset == 0;
+    return this.offset === 0;
   }
   public isAtEnd(): boolean {
-    return this.offset == this.text.length;
+    return this.offset === this.text.length;
   }
 
   public get text(): string {
@@ -282,7 +287,7 @@ export class MeasuredText {
     for (let i = 0; i < lines.length; i++) {
       const text = lines[i]!;
       const isPrecededByNewline = (startOffset: number) =>
-        i == 0 || (startOffset > 0 && this.text[startOffset - 1] === '\n');
+        i === 0 || (startOffset > 0 && this.text[startOffset - 1] === '\n');
 
       if (text.length === 0) {
         // For blank lines, find the next newline character after the last one

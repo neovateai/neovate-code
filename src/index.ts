@@ -4,27 +4,28 @@ import { render } from 'ink';
 import React from 'react';
 import { runServerNext } from './commands/servernext/server';
 import { Context } from './context';
-import { DirectTransport } from './messageBus';
+import { GlobalData } from './globalData';
 import { parseMcpConfig } from './mcp';
+import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
 import { Paths } from './paths';
 import { type Plugin, PluginHookType } from './plugin';
 import { Project } from './project';
-import { Session, SessionConfigManager, loadSessionMessages } from './session';
+import { loadSessionMessages, Session, SessionConfigManager } from './session';
 import {
-  SlashCommandManager,
   isSlashCommand,
   parseSlashCommand,
+  SlashCommandManager,
 } from './slashCommand';
 import { App } from './ui/App';
 import { useAppStore } from './ui/store';
 import { UIBridge } from './uiBridge';
 import type { UpgradeOptions } from './upgrade';
 
-export { createTool } from './tool';
 export { z as _zod } from 'zod';
 export { ConfigManager as _ConfigManager } from './config';
 export { query as _query } from './query';
+export { createTool } from './tool';
 
 export type { Plugin, Context };
 
@@ -90,6 +91,9 @@ async function parseArgs(argv: any) {
   if (args.resume && args.continue) {
     throw new Error('Cannot use --resume and --continue at the same time');
   }
+  if (args.model === '') {
+    throw new Error('Model cannot be empty string');
+  }
   return args;
 }
 
@@ -108,16 +112,15 @@ Options:
   -h, --help                    Show help
   -m, --model <model>           Specify model to use
   --plan-model <model>          Specify a plan model for some tasks
-  --cwd <path>                  Specify the working directory
   -r, --resume <session-id>     Resume a session
   -c, --continue                Continue the latest session
+  -q, --quiet                   Quiet mode, non interactive
+  --cwd <path>                  Specify the working directory
   --system-prompt <prompt>      Custom system prompt for code agent
   --output-format <format>      Output format, text, stream-json, json
   --output-style <style>        Output style (name or path)
   --approval-mode <mode>        Tool approval mode, default, autoEdit, yolo
-  -q, --quiet                   Quiet mode, non interactive
   --mcp-config <config>         MCP server configuration (JSON string with "mcpServers" object or file path)
-  --no-mcp                      Disable MCP servers
 
 Examples:
   ${p} "Refactor this file to use hooks."
@@ -128,7 +131,6 @@ Commands:
   commit                        Commit changes to the repository
   mcp                           Manage MCP servers
   run                           Run a command
-  log                           Start log viewer server
   update                        Check for and apply updates
     `.trimEnd(),
   );
@@ -222,9 +224,10 @@ async function runInteractive(
   const [messages, history] = (() => {
     const logPath = paths.getSessionLogPath(sessionId);
     const messages = loadSessionMessages({ logPath });
-    // Get history from session config
-    const sessionConfigManager = new SessionConfigManager({ logPath });
-    const history = sessionConfigManager.config.history || [];
+    const globalData = new GlobalData({
+      globalDataPath: paths.getGlobalDataPath(),
+    });
+    const history = globalData.getProjectHistory({ cwd });
     return [messages, history];
   })();
   const initialPrompt = String(argv._[0] || '');
@@ -294,15 +297,7 @@ export async function runNeovate(opts: {
     });
     return;
   }
-  const validCommands = [
-    'config',
-    'commit',
-    'mcp',
-    'run',
-    'log',
-    'server',
-    'update',
-  ];
+  const validCommands = ['config', 'commit', 'mcp', 'run', 'server', 'update'];
   if (validCommands.includes(command)) {
     const context = await Context.create({
       cwd,

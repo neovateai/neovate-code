@@ -1,4 +1,4 @@
-import { type OutputStyle } from '../types';
+import type { OutputStyle } from '../types';
 
 export const explanatoryOutputStyle: OutputStyle = {
   name: 'Explanatory',

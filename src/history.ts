@@ -171,12 +171,33 @@ export class History {
   }
 
   #getLastAssistantUsage(): Usage {
+    let sessionStart = 0;
+    let lastAssistantMessage: NormalizedMessage | null = null;
+
+    // Single pass from end to beginning to find both session boundary and last assistant message
     for (let i = this.messages.length - 1; i >= 0; i--) {
       const message = this.messages[i];
-      if (message.role === 'assistant') {
-        return Usage.fromAssistantMessage(message);
+
+      // Record the last assistant message we encounter
+      if (message.role === 'assistant' && !lastAssistantMessage) {
+        lastAssistantMessage = message;
+      }
+
+      // Find session boundary
+      if (message.parentUuid === null) {
+        sessionStart = i;
+        break;
       }
     }
+
+    // If we found an assistant message and it's within the current session
+    if (lastAssistantMessage) {
+      const assistantIndex = this.messages.indexOf(lastAssistantMessage);
+      if (assistantIndex >= sessionStart) {
+        return Usage.fromAssistantMessage(lastAssistantMessage);
+      }
+    }
+
     return Usage.empty();
   }
 
@@ -206,6 +227,10 @@ export class History {
     if (!summary || summary.trim().length === 0) {
       throw new Error('Generated summary is empty');
     }
+
+    // Clear original messages and replace with summary
+    this.messages = [];
+
     this.onMessage?.({
       parentUuid: null,
       uuid: randomUUID(),

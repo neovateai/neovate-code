@@ -3,16 +3,16 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createXai } from '@ai-sdk/xai';
 import {
-  type LanguageModelV1,
   createOpenRouter,
+  type LanguageModelV1,
 } from '@openrouter/ai-sdk-provider';
 import assert from 'assert';
 import defu from 'defu';
 import type { ProviderConfig } from './config';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
-import { aisdk } from './utils/ai-sdk';
 import type { AiSdkModel } from './utils/ai-sdk';
+import { aisdk } from './utils/ai-sdk';
 
 export interface ModelModalities {
   input: ('text' | 'image' | 'audio' | 'video' | 'pdf')[];
@@ -83,7 +83,7 @@ export const models: ModelMap = {
     limit: { context: 128000, output: 8192 },
   },
   'deepseek-v3-1': {
-    name: 'DeepSeek-V3.1',
+    name: 'DeepSeek V3.1',
     shortName: 'DeepSeek V3.1',
     attachment: false,
     reasoning: true,
@@ -95,6 +95,19 @@ export const models: ModelMap = {
     modalities: { input: ['text'], output: ['text'] },
     open_weights: true,
     limit: { context: 163840, output: 163840 },
+  },
+  'deepseek-v3-1-terminus': {
+    name: 'DeepSeek V3.1 Terminus',
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-07',
+    release_date: '2025-09-22',
+    last_updated: '2025-09-22',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 131072, output: 65536 },
   },
   'deepseek-r1-0528': {
     name: 'DeepSeek-R1-0528',
@@ -109,6 +122,19 @@ export const models: ModelMap = {
     modalities: { input: ['text'], output: ['text'] },
     open_weights: true,
     limit: { context: 65536, output: 8192 },
+  },
+  'doubao-seed-1.6': {
+    name: 'Doubao Seed 1.6',
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-01',
+    release_date: '2025-06-11',
+    last_updated: '2025-09-23',
+    modalities: { input: ['text', 'image'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 163840, output: 163840 },
   },
   'kimi-k2': {
     name: 'Kimi K2',
@@ -151,7 +177,7 @@ export const models: ModelMap = {
     limit: { context: 262144, output: 16384 },
   },
   'qwen3-coder-480b-a35b-instruct': {
-    name: 'Qwen3-Coder-480B-A35B-Instruct',
+    name: 'Qwen3 Coder 480B A35B Instruct',
     shortName: 'Qwen3 Coder',
     attachment: false,
     reasoning: false,
@@ -200,6 +226,22 @@ export const models: ModelMap = {
     knowledge: '2025-01',
     release_date: '2025-03-20',
     last_updated: '2025-06-05',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video', 'pdf'],
+      output: ['text'],
+    },
+    open_weights: false,
+    limit: { context: 1048576, output: 65536 },
+  },
+  'gemini-2.5-flash-preview-09-2025': {
+    name: 'Gemini 2.5 Flash Preview 2025 09',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-01',
+    release_date: '2025-09-25',
+    last_updated: '2025-09-25',
     modalities: {
       input: ['text', 'image', 'audio', 'video', 'pdf'],
       output: ['text'],
@@ -265,6 +307,19 @@ export const models: ModelMap = {
     modalities: { input: ['text', 'image'], output: ['text'] },
     open_weights: false,
     limit: { context: 256000, output: 32000 },
+  },
+  'grok-4-fast': {
+    name: 'Grok 4 Fast',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2024-11',
+    release_date: '2025-08-19',
+    last_updated: '2025-08-19',
+    modalities: { input: ['text', 'image'], output: ['text'] },
+    open_weights: false,
+    limit: { context: 2000000, output: 2000000 },
   },
   'claude-3-5-sonnet-20241022': {
     name: 'Claude Sonnet 3.5 v2',
@@ -364,6 +419,19 @@ export const models: ModelMap = {
     modalities: { input: ['text', 'image'], output: ['text'] },
     open_weights: false,
     limit: { context: 272000, output: 128000 },
+  },
+  'gpt-5-codex': {
+    name: 'GPT-5-Codex',
+    attachment: false,
+    reasoning: true,
+    temperature: false,
+    tool_call: true,
+    knowledge: '2024-09-30',
+    release_date: '2025-09-15',
+    last_updated: '2025-09-15',
+    modalities: { input: ['text', 'image'], output: ['text'] },
+    open_weights: false,
+    limit: { context: 128000, output: 64000 },
   },
   'gpt-4.1': {
     name: 'GPT-4.1',
@@ -469,6 +537,19 @@ export const models: ModelMap = {
     open_weights: true,
     limit: { context: 131072, output: 98304 },
   },
+  'glm-4.5v': {
+    name: 'GLM 4.5V',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-04',
+    release_date: '2025-08-11',
+    last_updated: '2025-08-11',
+    modalities: { input: ['text', 'image', 'video'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 64000, output: 16384 },
+  },
   'sonoma-dusk-alpha': {
     name: 'Sonoma Dusk Alpha',
     attachment: true,
@@ -565,6 +646,7 @@ export const providers: ProvidersMap = {
       'o4-mini': models['o4-mini'],
       'gpt-5': models['gpt-5'],
       'gpt-5-mini': models['gpt-5-mini'],
+      'gpt-5-codex': models['gpt-5-codex'],
     },
     createModel: defaultModelCreator,
   },
@@ -576,6 +658,8 @@ export const providers: ProvidersMap = {
     doc: 'https://ai.google.dev/gemini-api/docs/pricing',
     models: {
       'gemini-2.5-flash': models['gemini-2.5-flash'],
+      'gemini-2.5-flash-preview-09-2025':
+        models['gemini-2.5-flash-preview-09-2025'],
       'gemini-2.5-flash-lite': models['gemini-2.5-flash-lite-preview-06-17'],
       'gemini-2.5-pro': models['gemini-2.5-pro'],
     },
@@ -605,10 +689,12 @@ export const providers: ProvidersMap = {
   xai: {
     id: 'xai',
     env: ['XAI_API_KEY'],
-    name: 'XAI',
+    apiEnv: ['XAI_BASE_URL'],
+    name: 'xAI',
     doc: 'https://xai.com/docs/models',
     models: {
       'grok-4': models['grok-4'],
+      'grok-4-fast': models['grok-4-fast'],
       'grok-code-fast-1': models['grok-code-fast-1'],
     },
     createModel(name, provider) {
@@ -623,6 +709,7 @@ export const providers: ProvidersMap = {
   anthropic: {
     id: 'anthropic',
     env: ['ANTHROPIC_API_KEY'],
+    apiEnv: ['ANTHROPIC_API_BASE'],
     name: 'Anthropic',
     doc: 'https://docs.anthropic.com/en/docs/models',
     models: {
@@ -683,6 +770,7 @@ export const providers: ProvidersMap = {
       'deepseek/deepseek-r1-0528': models['deepseek-r1-0528'],
       'deepseek/deepseek-chat-v3-0324': models['deepseek-v3-0324'],
       'deepseek/deepseek-chat-v3.1': models['deepseek-v3-1'],
+      'deepseek/deepseek-v3.1-terminus': models['deepseek-v3-1-terminus'],
       'openai/gpt-4.1': models['gpt-4.1'],
       'openai/gpt-4': models['gpt-4'],
       'openai/gpt-4o': models['gpt-4o'],
@@ -693,13 +781,18 @@ export const providers: ProvidersMap = {
       'openai/gpt-oss-120b': models['gpt-oss-120b'],
       'openai/gpt-5': models['gpt-5'],
       'openai/gpt-5-mini': models['gpt-5-mini'],
+      'openai/gpt-5-codex': models['gpt-5-codex'],
       'moonshotai/kimi-k2': models['kimi-k2'],
       'moonshotai/kimi-k2-0905': models['kimi-k2-0905'],
       'qwen/qwen3-coder': models['qwen3-coder-480b-a35b-instruct'],
       'qwen/qwen3-max': models['qwen3-max'],
       'x-ai/grok-code-fast-1': models['grok-code-fast-1'],
+      'x-ai/grok-4': models['grok-4'],
+      'x-ai/grok-4-fast:free': models['grok-4-fast'],
       'openrouter/sonoma-dusk-alpha': models['sonoma-dusk-alpha'],
       'openrouter/sonoma-sky-alpha': models['sonoma-sky-alpha'],
+      'z-ai/glm-4.5': models['glm-4.5'],
+      'z-ai/glm-4.5v': models['glm-4.5v'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
@@ -736,6 +829,7 @@ export const providers: ProvidersMap = {
     doc: 'https://platform.moonshot.ai/docs/api/chat',
     models: {
       'kimi-k2-0711-preview': models['kimi-k2'],
+      'kimi-k2-0905-preview': models['kimi-k2-0905'],
       'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
     },
     createModel(name, provider) {
@@ -757,6 +851,7 @@ export const providers: ProvidersMap = {
     doc: 'https://platform.moonshot.cn/docs/api/chat',
     models: {
       'kimi-k2-0711-preview': models['kimi-k2'],
+      'kimi-k2-0905-preview': models['kimi-k2-0905'],
       'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
     },
     createModel(name, provider) {
@@ -777,6 +872,77 @@ export const providers: ProvidersMap = {
     api: 'https://api.groq.com/openai/v1',
     doc: 'https://console.groq.com/docs/models',
     models: {},
+    createModel: defaultModelCreator,
+  },
+  siliconflow: {
+    id: 'siliconflow',
+    env: ['SILICONFLOW_API_KEY'],
+    name: 'SiliconFlow',
+    api: 'https://api.siliconflow.com/v1',
+    doc: 'https://docs.siliconflow.com',
+    models: {
+      'Qwen/Qwen3-235B-A22B-Instruct-2507': models['qwen3-235b-a22b-07-25'],
+      'Qwen/Qwen3-Coder-480B-A35B-Instruct':
+        models['qwen3-coder-480b-a35b-instruct'],
+      'moonshotai/Kimi-K2-Instruct-0905': models['kimi-k2-0905'],
+      'moonshotai/Kimi-K2-Instruct': models['kimi-k2'],
+      'deepseek-ai/DeepSeek-R1': models['deepseek-r1-0528'],
+      'deepseek-ai/DeepSeek-V3.1': models['deepseek-v3-1'],
+      'deepseek-ai/DeepSeek-V3': models['deepseek-v3-0324'],
+      'zai-org/GLM-4.5': models['glm-4.5'],
+    },
+    createModel: defaultModelCreator,
+  },
+  'siliconflow-cn': {
+    id: 'siliconflow-cn',
+    env: ['SILICONFLOW_API_KEY'],
+    name: 'SiliconFlow CN',
+    api: 'https://api.siliconflow.cn/v1',
+    doc: 'https://docs.siliconflow.cn',
+    models: {
+      'Qwen/Qwen3-235B-A22B-Instruct-2507': models['qwen3-235b-a22b-07-25'],
+      'Qwen/Qwen3-Coder-480B-A35B-Instruct':
+        models['qwen3-coder-480b-a35b-instruct'],
+      'moonshotai/Kimi-K2-Instruct-0905': models['kimi-k2-0905'],
+      'moonshotai/Kimi-K2-Instruct': models['kimi-k2'],
+      'deepseek-ai/DeepSeek-R1': models['deepseek-r1-0528'],
+      'deepseek-ai/DeepSeek-V3.1': models['deepseek-v3-1'],
+      'deepseek-ai/DeepSeek-V3': models['deepseek-v3-0324'],
+      'zai-org/GLM-4.5': models['glm-4.5'],
+    },
+    createModel: defaultModelCreator,
+  },
+  modelscope: {
+    id: 'modelscope',
+    env: ['MODELSCOPE_API_KEY'],
+    name: 'ModelScope',
+    api: 'https://api-inference.modelscope.cn/v1',
+    doc: 'https://modelscope.cn/docs/model-service/API-Inference/intro',
+    models: {
+      'Qwen/Qwen3-Coder-480B-A35B-Instruct':
+        models['qwen3-coder-480b-a35b-instruct'],
+      'Qwen/Qwen3-235B-A22B-Instruct-2507': models['qwen3-235b-a22b-07-25'],
+      'moonshotai/Kimi-K2-Instruct': models['kimi-k2'],
+      'moonshotai/Kimi-K2-Instruct-0905': models['kimi-k2-0905'],
+      'deepseek-ai/DeepSeek-V3.1-Terminus': models['deepseek-v3-1-terminus'],
+      'deepseek-ai/DeepSeek-V3.1': models['deepseek-v3-1'],
+      'ZhipuAI/GLM-4.5': models['glm-4.5'],
+      'ZhipuAI/GLM-4.5V': models['glm-4.5v'],
+    },
+    createModel: defaultModelCreator,
+  },
+  volcengine: {
+    id: 'volcengine',
+    env: ['VOLCENGINE_API_KEY'],
+    name: 'VolcEngine',
+    api: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+    doc: 'https://www.volcengine.com/docs/82379/1330310',
+    models: {
+      'deepseek-v3-1-250821': models['deepseek-v3-1'],
+      'deepseek-v3-1-terminus': models['deepseek-v3-1-terminus'],
+      'doubao-seed-1-6-250615': models['doubao-seed-1.6'],
+      'kimi-k2-0905': models['kimi-k2-0905'],
+    },
     createModel: defaultModelCreator,
   },
 };
@@ -828,6 +994,12 @@ function mergeConfigProviders(
           provider.models[modelId] = actualModel;
         }
       }
+    }
+    if (!provider.id) {
+      provider.id = providerId;
+    }
+    if (!provider.name) {
+      provider.name = providerId;
     }
     mergedProviders[providerId] = provider;
   });

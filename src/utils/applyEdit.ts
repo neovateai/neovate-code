@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { isAbsolute, resolve } from 'pathe';
-import { type Config } from '../config';
+import type { Config } from '../config';
 
 function detectFileEncoding(filePath: string): BufferEncoding {
   return 'utf-8';

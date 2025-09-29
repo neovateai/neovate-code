@@ -17,6 +17,10 @@ interface MessageLogEntry {
 
 type LogEntry = ConfigLogEntry | MessageLogEntry;
 
+export function getGlobalDataPath(globalDir: string): string {
+  return path.join(globalDir, 'data.json');
+}
+
 export class Paths {
   globalConfigDir: string;
   globalProjectDir: string;
@@ -110,6 +114,10 @@ export class Paths {
 
     return jsonlFiles;
   }
+
+  getGlobalDataPath() {
+    return path.join(this.globalConfigDir, 'data.json');
+  }
 }
 
 function normalizeSummary(summary: string): string {
@@ -134,9 +142,7 @@ function extractFirstUserMessageSummary(lines: string[]): string {
           ? entry.content.slice(0, 50) + '...'
           : entry.content;
       }
-    } catch (e) {
-      continue;
-    }
+    } catch (e) {}
   }
   return '';
 }

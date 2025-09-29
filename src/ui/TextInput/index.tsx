@@ -1,6 +1,5 @@
 import chalk from 'chalk';
-import { Text, useInput } from 'ink';
-import { type Key } from 'ink';
+import { type Key, Text, useInput } from 'ink';
 import React from 'react';
 import { PASTE_CONFIG } from '../constants';
 import { darkTheme } from './constant';
@@ -302,10 +301,9 @@ export default function TextInput({
         const hasMultipleLines = mergedInput.includes('\n');
         const isMediumSizeMultiChunk =
           totalLength > PASTE_CONFIG.MEDIUM_SIZE_MULTI_CHUNK_THRESHOLD &&
-          chunks.length > 1;
+          chunks.length > 3;
         const isPastePattern =
           totalLength > PASTE_CONFIG.LARGE_INPUT_THRESHOLD ||
-          chunks.length > 2 ||
           hasMultipleLines ||
           isMediumSizeMultiChunk;
         if (isPastePattern) {
@@ -322,10 +320,9 @@ export default function TextInput({
             }
           })();
         } else {
-          // Process each chunk as individual input if not paste-like
-          chunks.forEach((chunk) =>
-            onInput(chunk, { name: '' } as unknown as Key),
-          );
+          onInput(mergedInput.replace(/\r$/, ''), {
+            name: '',
+          } as unknown as Key);
         }
       }
     }, PASTE_CONFIG.TIMEOUT_MS);
@@ -337,6 +334,16 @@ export default function TextInput({
     const isImageFormat = isImagePathText(input);
     const currentState = pasteStateRef.current;
     const currentTime = Date.now();
+
+    // Check if this is a single newline from Shift+Enter or Meta+Enter
+    // These should be processed as regular input, not paste
+    const isSingleNewline = input === '\n' && (key.shift || key.meta);
+
+    if (isSingleNewline) {
+      // Process Shift+Enter or Meta+Enter directly as regular input
+      onInput(input, key);
+      return;
+    }
 
     // Initialize timing on first input
     if (!currentState.firstInputTime) {
@@ -353,12 +360,10 @@ export default function TextInput({
     // 2. Image path format
     // 3. Rapid consecutive inputs
     // 4. Already collecting chunks (continuation of paste)
-    // 5. Input with multiple lines (common in paste operations)
+    // 5. Input with multiple lines (common in paste operations) - but exclude single newlines
     // 6. Medium-sized input (likely copy-paste even if not huge)
     const isLargeInput = input.length > PASTE_CONFIG.LARGE_INPUT_THRESHOLD;
-    const hasNewlines = input.includes('\n');
-    const isMediumInput =
-      input.length > PASTE_CONFIG.MEDIUM_INPUT_SIZE_THRESHOLD;
+    const hasMultipleNewlines = input.includes('\n') && input.length > 1;
     const isRapidSequence =
       timeSinceFirst < PASTE_CONFIG.RAPID_INPUT_THRESHOLD_MS &&
       currentState.chunks.length > 0;
@@ -370,8 +375,7 @@ export default function TextInput({
     const isPasteCandidate =
       onPaste &&
       (isLargeInput ||
-        hasNewlines ||
-        isMediumInput ||
+        hasMultipleNewlines ||
         isImageFormat ||
         isRapidSequence ||
         isNewRapidInput ||

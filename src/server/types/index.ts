@@ -1,7 +1,7 @@
-import { type FastifyReply, type FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 
-export * from './server';
 export * from './app-data';
+export * from './server';
 
 export interface TypedRequest<Body = unknown, Query = unknown, Params = unknown>
   extends FastifyRequest {

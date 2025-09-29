@@ -10,7 +10,7 @@ export type Props = TerminalRendererOptions & {
 };
 
 export function Markdown({ children, ...options }: Props) {
-  // @ts-ignore
+  // @ts-expect-error
   setOptions({ renderer: new TerminalRenderer(options) });
   return <Text>{(parse(children) as string).trim()}</Text>;
 }

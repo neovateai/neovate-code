@@ -1,9 +1,10 @@
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import pc from 'picocolors';
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import PaginatedGroupSelectInput from '../../ui/PaginatedGroupSelectInput';
 import { useAppStore } from '../../ui/store';
-import { type LocalJSXCommand } from '../types';
+import type { LocalJSXCommand } from '../types';
 
 interface ModelSelectProps {
   onExit: (model: string) => void;
@@ -77,12 +78,50 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
   );
 };
 
-export function createModelCommand(): LocalJSXCommand {
+export function createModelCommand(opts: {
+  argvConfig: Record<string, any>;
+}): LocalJSXCommand {
   return {
     type: 'local-jsx',
     name: 'model',
     description: 'Select a model',
     async call(onDone) {
+      const { argvConfig } = opts;
+      if (argvConfig.model) {
+        const ModelHintComponent = () => {
+          useInput((_input, key) => {
+            if (key.return || key.escape) {
+              onDone(`Kept model as ${argvConfig.model}`);
+            }
+          });
+
+          return (
+            <Box
+              borderStyle="round"
+              borderColor="yellow"
+              flexDirection="column"
+              padding={1}
+              width="100%"
+            >
+              <Box marginBottom={1}>
+                <Text bold color="yellow">
+                  Model Command Disabled
+                </Text>
+              </Box>
+              <Box>
+                <Text color="gray">
+                  When -m,--model is supplied, /model won't take effect. Please
+                  remove -m,--model and try again.
+                </Text>
+              </Box>
+              <Box marginTop={1}>
+                <Text color="gray">Press Enter or Esc to continue...</Text>
+              </Box>
+            </Box>
+          );
+        };
+        return <ModelHintComponent />;
+      }
       const ModelComponent = () => {
         return (
           <ModelSelect

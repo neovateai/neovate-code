@@ -1,6 +1,7 @@
 import { Box, Text, useInput } from 'ink';
 import pc from 'picocolors';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import type React from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface GroupedItem {
   name: string;

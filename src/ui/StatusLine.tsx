@@ -3,6 +3,7 @@ import path from 'pathe';
 import React, { useMemo } from 'react';
 import { useAppStore } from './store';
 import { useInputHandlers } from './useInputHandlers';
+import type { NormalizedMessage } from '../message';
 
 function HelpHint() {
   const { status } = useAppStore();
@@ -45,10 +46,33 @@ function StatusMain() {
     }, 0);
   }, [messages]);
   const lastAssistantTokenUsed = useMemo(() => {
-    const lastAssistantMessage = messages
-      .slice()
-      .reverse()
-      .find((message) => message.role === 'assistant');
+    // Find the last message with parentUuid === null (start of last conversation turn)
+    let lastTurnStartIndex = -1;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const message = messages[i] as NormalizedMessage;
+      if (
+        message &&
+        typeof message.parentUuid !== 'undefined' &&
+        message.parentUuid === null
+      ) {
+        lastTurnStartIndex = i;
+        break;
+      }
+    }
+
+    // Get messages from the last conversation turn (or all messages if no turn boundary found)
+    const relevantMessages =
+      lastTurnStartIndex >= 0 ? messages.slice(lastTurnStartIndex) : messages;
+
+    // Find the last assistant message in relevant scope
+    let lastAssistantMessage: any = null;
+    for (let i = relevantMessages.length - 1; i >= 0; i--) {
+      if (relevantMessages[i].role === 'assistant') {
+        lastAssistantMessage = relevantMessages[i];
+        break;
+      }
+    }
+
     const inputTokens = lastAssistantMessage?.usage?.input_tokens ?? 0;
     const outputTokens = lastAssistantMessage?.usage?.output_tokens ?? 0;
     return inputTokens + outputTokens;

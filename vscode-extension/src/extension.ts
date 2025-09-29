@@ -23,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
   console.log('[Extension] memfs file system provider registered successfully');
 
   console.log('[Extension] Registering MCP server start command...');
-  let startServerCommand = vscode.commands.registerCommand(
+  const startServerCommand = vscode.commands.registerCommand(
     'simple-mcp-server.start',
     async () => {
       console.log('[Extension] MCP server start command triggered');
@@ -56,7 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         const successMessage = `MCP Server started on port ${port}.`;
         console.log('[Extension] Success:', successMessage);
-        vscode.window.showInformationMessage(successMessage);
+        // vscode.window.showInformationMessage(successMessage);
       } catch (error: any) {
         console.error('[Extension] Failed to start MCP server:', error);
         console.error('[Extension] Error stack:', error.stack);

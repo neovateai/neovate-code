@@ -4,7 +4,7 @@ function getTerminal() {
     return 'cursor';
   if (process.env.VSCODE_GIT_ASKPASS_MAIN?.includes('/.windsurf-server/bin/'))
     return 'windsurf';
-  let A = process.env.__CFBundleIdentifier?.toLowerCase();
+  const A = process.env.__CFBundleIdentifier?.toLowerCase();
   if (A?.includes('vscodium')) return 'codium';
   if (A?.includes('windsurf')) return 'windsurf';
   if (A?.includes('pycharm')) return 'pycharm';
@@ -48,7 +48,7 @@ function getTerminal() {
   )
     return 'ssh-session';
   if (process.env.TERM) {
-    let B = process.env.TERM;
+    const B = process.env.TERM;
     if (B.includes('alacritty')) return 'alacritty';
     if (B.includes('rxvt')) return 'rxvt';
     if (B.includes('termite')) return 'termite';
@@ -60,7 +60,7 @@ function getTerminal() {
 
 async function getHasInternetAccess() {
   try {
-    let abort = new AbortController(),
+    const abort = new AbortController(),
       timer = setTimeout(() => abort.abort(), 1000);
     return (
       await fetch('http://1.1.1.1', {

@@ -1,5 +1,6 @@
 import { Box, Text } from 'ink';
-import React, { useMemo } from 'react';
+import type React from 'react';
+import { useMemo } from 'react';
 import type { TodoItem as TodoItemType } from '../tools/todo';
 
 // TodoList

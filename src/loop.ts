@@ -4,7 +4,7 @@ import { At } from './at';
 import { History, type OnMessage } from './history';
 import type { NormalizedMessage, ToolUsePart } from './message';
 import type { ModelInfo } from './model';
-import type { ToolResult, ToolUse, Tools } from './tool';
+import type { ToolResult, Tools, ToolUse } from './tool';
 import { Usage } from './usage';
 import { parseMessage } from './utils/parse-message';
 import { randomUUID } from './utils/randomUUID';
@@ -86,10 +86,27 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   });
 
   const maxTurns = opts.maxTurns ?? DEFAULT_MAX_TURNS;
+  const abortController = new AbortController();
+
+  const createCancelError = (): LoopResult => ({
+    success: false,
+    error: {
+      type: 'canceled',
+      message: 'Operation was canceled',
+      details: { turnsCount, history, usage: totalUsage },
+    },
+  });
 
   while (true) {
+    // Must use separate abortController to prevent ReadStream locking
+    if (opts.signal?.aborted && !abortController.signal.aborted) {
+      abortController.abort();
+      return createCancelError();
+    }
+
     const startTime = new Date();
     turnsCount++;
+
     if (turnsCount > maxTurns) {
       return {
         success: false,
@@ -142,9 +159,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
     const requestId = randomUUID();
     const result = await runner.run(agent, agentInput, {
       stream: true,
-      // why comment out this?
-      // will cause ReadStream lock issue and crash
-      // signal: opts.signal,
+      signal: abortController.signal,
     });
 
     let text = '';
@@ -154,14 +169,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
     try {
       for await (const chunk of result.toStream()) {
         if (opts.signal?.aborted) {
-          return {
-            success: false,
-            error: {
-              type: 'canceled',
-              message: 'Operation was canceled',
-              details: {},
-            },
-          };
+          return createCancelError();
         }
 
         // Call onChunk for all chunks
@@ -172,7 +180,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
           chunk.data.type === 'model'
         ) {
           switch (chunk.data.event.type) {
-            case 'text-delta':
+            case 'text-delta': {
               const textDelta = chunk.data.event.textDelta;
               textBuffer += textDelta;
               text += textDelta;
@@ -188,6 +196,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
                 await pushTextDelta(textDelta, text, opts.onTextDelta);
               }
               break;
+            }
             case 'reasoning':
               await opts.onReasoning?.(chunk.data.event.textDelta);
               break;
@@ -219,6 +228,11 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
           },
         },
       };
+    }
+
+    // Exit early if cancellation signal is received
+    if (opts.signal?.aborted) {
+      return createCancelError();
     }
 
     // Handle any remaining buffered content
@@ -254,6 +268,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
         item.callId = callId;
       }
     });
+
     const endTime = new Date();
     opts.onTurn?.({
       usage: lastUsage,
@@ -330,6 +345,8 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
             },
           ],
         });
+        // Prevent normal turns from being terminated due to exceeding the limit
+        turnsCount--;
       } else {
         const message = 'Error: Tool execution was denied by user.';
         let toolResult: ToolResult = {

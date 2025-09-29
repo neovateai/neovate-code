@@ -1,8 +1,8 @@
 import path from 'pathe';
 import type { Context } from './context';
 import {
-  type NormalizedMarkdownFile,
   loadPolishedMarkdownFiles,
+  type NormalizedMarkdownFile,
 } from './outputStyle';
 import type { Paths } from './paths';
 import { PluginHookType } from './plugin';
@@ -17,6 +17,7 @@ export type SlashCommandManagerOpts = {
   paths: Paths;
   productName: string;
   slashCommands: SlashCommand[];
+  argvConfig: Record<string, any>;
 };
 
 export type CommandEntry = {
@@ -30,7 +31,10 @@ export class SlashCommandManager {
     const productName = opts.productName;
     const commands = new Map<string, CommandEntry>();
     // 1. builtin
-    const builtin = createBuiltinCommands({ productName });
+    const builtin = createBuiltinCommands({
+      productName,
+      argvConfig: opts.argvConfig,
+    });
     builtin.forEach((command) => {
       commands.set(command.name, { command, source: CommandSource.Builtin });
     });
@@ -66,6 +70,7 @@ export class SlashCommandManager {
       productName: context.productName,
       paths: context.paths,
       slashCommands: pluginSlashCommands,
+      argvConfig: context.argvConfig,
     });
   }
 
@@ -75,12 +80,15 @@ export class SlashCommandManager {
   }
 
   getAll(): CommandEntry[] {
-    return Array.from(this.commands.values());
+    return Array.from(this.commands.values()).filter((entry) =>
+      this.#isCommandEnabled(entry.command),
+    );
   }
 
   getCommandsBySource(source: CommandSource): CommandEntry[] {
     return Array.from(this.commands.values()).filter(
-      (entry) => entry.source === source,
+      (entry) =>
+        entry.source === source && this.#isCommandEnabled(entry.command),
     );
   }
 
@@ -98,7 +106,12 @@ export class SlashCommandManager {
           .toLowerCase()
           .includes(lowerPrefix);
         return nameMatch || descriptionMatch;
-      });
+      })
+      .filter((command) => this.#isCommandEnabled(command));
+  }
+
+  #isCommandEnabled(command: SlashCommand): boolean {
+    return command.isEnabled !== false;
   }
 
   #loadGlobal(globalConfigDir: string): CommandEntry[] {

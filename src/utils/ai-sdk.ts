@@ -10,19 +10,19 @@ import type {
   LanguageModelV1ToolResultPart,
 } from '@ai-sdk/provider';
 import {
+  createGenerationSpan,
   type Model,
   type ModelRequest,
   type ModelResponse,
+  type protocol,
   type ResponseStreamEvent,
+  resetCurrentSpan,
   type SerializedHandoff,
   type SerializedOutputType,
   type SerializedTool,
+  setCurrentSpan,
   Usage,
   UserError,
-  createGenerationSpan,
-  protocol,
-  resetCurrentSpan,
-  setCurrentSpan,
   withGenerationSpan,
 } from '@openai/agents';
 import { isZodObject } from '@openai/agents/utils';

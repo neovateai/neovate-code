@@ -1,12 +1,9 @@
 // @ts-nocheck
-import { type FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { ConfigManager } from '../../config';
 import { MODEL_ALIAS } from '../../provider';
-import { type CreateServerOpts } from '../types';
-import {
-  type BatchUpdateRequest,
-  type SetSettingRequest,
-} from '../types/settings';
+import type { CreateServerOpts } from '../types';
+import type { BatchUpdateRequest, SetSettingRequest } from '../types/settings';
 
 const settingsRoute: FastifyPluginAsync<CreateServerOpts> = async (
   app,

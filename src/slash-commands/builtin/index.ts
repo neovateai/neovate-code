@@ -1,4 +1,4 @@
-import { type SlashCommand } from '../types';
+import type { SlashCommand } from '../types';
 import { clearCommand } from './clear';
 import { compactCommand } from './compact';
 import { exitCommand } from './exit';
@@ -12,9 +12,11 @@ import { createOutputStyleCommand } from './output-style';
 import { createResumeCommand } from './resume';
 import { createReviewCommand } from './review';
 import { statusCommand } from './status';
+import { createTerminalSetupCommand } from './terminal-setup';
 
 export function createBuiltinCommands(opts: {
   productName: string;
+  argvConfig: Record<string, any>;
 }): SlashCommand[] {
   return [
     clearCommand,
@@ -24,10 +26,11 @@ export function createBuiltinCommands(opts: {
     createLoginCommand(),
     createLogoutCommand(),
     createMcpCommand(opts),
-    createModelCommand(),
+    createModelCommand(opts),
     createOutputStyleCommand(),
     createResumeCommand(),
     createReviewCommand(),
+    createTerminalSetupCommand(),
     compactCommand,
     statusCommand,
   ];

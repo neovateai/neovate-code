@@ -4,18 +4,16 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
 import type { LoopResult } from '../loop';
-import type { ImagePart, Message, UserMessage } from '../message';
+import type { Message, UserMessage } from '../message';
 import type { ProvidersMap } from '../model';
 import { Paths } from '../paths';
-import { SessionConfigManager, loadSessionMessages } from '../session';
-import { Session } from '../session';
+import { loadSessionMessages, Session, SessionConfigManager } from '../session';
 import {
   type CommandEntry,
   isSlashCommand,
   parseSlashCommand,
 } from '../slashCommand';
-import type { ToolUse } from '../tool';
-import type { ApprovalCategory } from '../tool';
+import type { ApprovalCategory, ToolUse } from '../tool';
 import type { UIBridge } from '../uiBridge';
 import { Upgrade, type UpgradeOptions } from '../upgrade';
 import { setTerminalTitle } from '../utils/setTerminalTitle';
@@ -367,16 +365,15 @@ export const useAppStore = create<AppStore>()(
           }
         }
 
-        // Save history to session config (save the original message with placeholders)
+        // Save history to global data (save the original message with placeholders)
         if (!isSlashCommand(message)) {
           const newHistory = [...get().history, message];
           set({
             history: newHistory,
             historyIndex: null,
           });
-          await bridge.request('sessionConfig.addHistory', {
+          await bridge.request('globalData.addHistory', {
             cwd,
-            sessionId,
             history: message,
           });
         }
@@ -547,7 +544,7 @@ export const useAppStore = create<AppStore>()(
         const { message } = opts;
         const { bridge, cwd, sessionId, pastedImageMap } = get();
 
-        let attachments = [];
+        const attachments = [];
         // Handle pasted images
         if (message && Object.keys(pastedImageMap).length > 0) {
           const pastedImageRegex = /\[Image (#\d+)\]/g;
@@ -616,8 +613,6 @@ export const useAppStore = create<AppStore>()(
         });
         set({
           messages: [],
-          history: [],
-          historyIndex: null,
           sessionId,
           logFile: paths.getSessionLogPath(sessionId),
           // Also reset input state when clearing
@@ -693,15 +688,12 @@ export const useAppStore = create<AppStore>()(
         const sessionConfigManager = new SessionConfigManager({
           logPath: logFile,
         });
-        const history = sessionConfigManager.config.history || [];
         const pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
         const pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
         set({
           sessionId,
           logFile,
           messages,
-          history,
-          historyIndex: null,
           status: 'idle',
           error: null,
           slashCommandJSX: null,

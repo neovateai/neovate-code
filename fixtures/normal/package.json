@@ -1,8 +1,0 @@
-{
-  "name": "takumi-test-fixture-normal",
-  "version": "0.0.0",
-  "private": true,
-  "dependencies": {
-    "takumi": "^0.0.31"
-  }
-}

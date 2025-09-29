@@ -1,4 +1,4 @@
-import { Context } from '../context';
+import type { Context } from '../context';
 
 export enum CommandSource {
   Builtin = 'builtin',
@@ -10,6 +10,7 @@ export enum CommandSource {
 export interface BaseSlashCommand {
   name: string;
   description: string;
+  isEnabled?: boolean;
 }
 
 export interface LocalCommand extends BaseSlashCommand {
@@ -27,8 +28,7 @@ export interface LocalJSXCommand extends BaseSlashCommand {
 
 export interface PromptCommand extends BaseSlashCommand {
   type: 'prompt';
-  argNames?: string[];
-  progressMessage: string;
+  progressMessage?: string;
   model?: string;
   getPromptForCommand(
     args: string,

@@ -1,12 +1,12 @@
 import { Box, Text } from 'ink';
 import React, { useMemo } from 'react';
+import { SPACING, UI_COLORS } from './constants';
 import { DebugRandomNumber } from './Debug';
 import { ModeIndicator } from './ModeIndicator';
 import { StatusLine } from './StatusLine';
 import { Suggestion, SuggestionItem } from './Suggestion';
-import TextInput from './TextInput';
-import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
+import TextInput from './TextInput';
 import { useInputHandlers } from './useInputHandlers';
 import { useTerminalSize } from './useTerminalSize';
 import { useTryTips } from './useTryTips';

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { parseMessage } from './parse-message';
 import type { ToolUse } from '../tool';
+import { parseMessage } from './parse-message';
 
 test('compatible <argument>', () => {
   const input = `<use_tool>
