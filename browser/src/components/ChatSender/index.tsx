@@ -219,8 +219,7 @@ const ChatSender: React.FC = () => {
             onSubmit={handleSubmit}
             onPaste={handlePaste}
             onCancel={() => {
-              console.log('onCancel');
-              // stop();
+              actions.cancel();
             }}
             value={inputText}
             loading={status === 'processing'}

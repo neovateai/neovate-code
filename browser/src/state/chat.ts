@@ -32,6 +32,15 @@ export type AppStatus =
   | 'help'
   | 'exit';
 
+function isExecuting(status: AppStatus) {
+  return (
+    status === 'processing' ||
+    status === 'planning' ||
+    status === 'tool_executing' ||
+    status === 'compacting'
+  );
+}
+
 interface ChatState {
   cwd: string | null;
   sessionId: string | null;
@@ -64,6 +73,7 @@ interface ChatActions {
     model?: string;
   }): Promise<LoopResult>;
   getSlashCommands(): Promise<CommandEntry[]>;
+  cancel(): Promise<void>;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -288,6 +298,19 @@ export const actions: ChatActions = {
       cwd: state.cwd,
     })) as NodeBridgeResponse<{ slashCommands: CommandEntry[] }>;
     return response.data.slashCommands;
+  },
+
+  async cancel() {
+    if (!isExecuting(state.status)) {
+      return;
+    }
+    const { cwd, sessionId } = state;
+    await clientActions.request('cancel', {
+      cwd,
+      sessionId,
+    });
+    state.status = 'idle';
+    state.processingTokens = 0;
   },
 
   destroy() {
