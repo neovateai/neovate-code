@@ -13,14 +13,9 @@ import CopyIcon from '@/icons/copy.svg?react';
 import { state as chatState } from '@/state/chat';
 import * as codeViewer from '@/state/codeViewer';
 import type { ApprovalResult } from '@/types/chat';
-import type {
-  CodeNormalViewerMode,
-  CodeViewerEditStatus,
-  DiffStat,
-} from '@/types/codeViewer';
+import type { CodeViewerEditStatus, DiffStat } from '@/types/codeViewer';
 import { diff, inferFileType } from '@/utils/codeViewer';
 import CodeDiffView from '../CodeViewer/CodeDiffView';
-import CodeNormalView from '../CodeViewer/CodeNormalView';
 import DiffStatBlocks from '../CodeViewer/DiffStatBlocks';
 import DevFileIcon from '../DevFileIcon';
 import MessageWrapper from '../MessageWrapper';
@@ -36,8 +31,6 @@ export interface FileEdit {
 interface CodeDiffOutlineProps {
   path: string;
   edit: FileEdit;
-  normalViewerMode?: CodeNormalViewerMode;
-  loading?: boolean;
   state: 'call' | 'result';
 }
 
@@ -78,7 +71,7 @@ const useStyles = createStyles(({ css }) => {
 });
 
 const CodeDiffOutline = (props: CodeDiffOutlineProps) => {
-  const { path, loading, normalViewerMode, edit, state } = props;
+  const { path, edit, state } = props;
   const snap = useSnapshot(chatState);
   const { writeText } = useClipboard();
   const [isCopySuccess, setIsCopySuccess] = useState(false);
@@ -126,9 +119,6 @@ const CodeDiffOutline = (props: CodeDiffOutlineProps) => {
     diff(code.oldContent, code.newContent).then((d) => setDiffStat(d));
   }, [code]);
 
-  const isNormalView = !!normalViewerMode;
-  const isNewFile = normalViewerMode === 'new';
-
   const hasDiff = useMemo(
     () => diffStat?.diffBlockStats && diffStat.diffBlockStats.length > 0,
     [diffStat],
@@ -148,7 +138,6 @@ const CodeDiffOutline = (props: CodeDiffOutlineProps) => {
       // TODO 恢复之前的逻辑
       earlyCode.oldContent,
       earlyCode.newContent,
-      normalViewerMode,
     );
   };
 
@@ -158,52 +147,22 @@ const CodeDiffOutline = (props: CodeDiffOutlineProps) => {
 
     const elements = [];
 
-    if (normalViewerMode) {
-      if (normalViewerMode === 'new') {
-        elements.push(
-          <span key="new" className={styles.add}>
-            (new)
-          </span>,
-        );
-        if (diffStat?.addLines && diffStat.addLines > 0) {
-          elements.push(
-            <span key="addLines" className={styles.add}>
-              +{diffStat.addLines.toLocaleString()}
-            </span>,
-          );
-        }
-      } else if (normalViewerMode === 'deleted') {
-        elements.push(
-          <span key="deleted" className={styles.remove}>
-            (deleted)
-          </span>,
-        );
-        if (diffStat?.removeLines && diffStat.removeLines > 0) {
-          elements.push(
-            <span key="removeLines" className={styles.remove}>
-              -{diffStat.removeLines.toLocaleString()}
-            </span>,
-          );
-        }
-      }
-    } else {
-      if (diffStat?.addLines && diffStat.addLines > 0) {
-        elements.push(
-          <span key="addLines" className={styles.add}>
-            +{diffStat.addLines.toLocaleString()}
-          </span>,
-        );
-      }
-      if (diffStat?.removeLines && diffStat.removeLines > 0) {
-        elements.push(
-          <span key="removeLines" className={styles.remove}>
-            -{diffStat.removeLines.toLocaleString()}
-          </span>,
-        );
-      }
-      if (diffStat) {
-        elements.push(<DiffStatBlocks key="diffStat" diffStat={diffStat} />);
-      }
+    if (diffStat?.addLines && diffStat.addLines > 0) {
+      elements.push(
+        <span key="addLines" className={styles.add}>
+          +{diffStat.addLines.toLocaleString()}
+        </span>,
+      );
+    }
+    if (diffStat?.removeLines && diffStat.removeLines > 0) {
+      elements.push(
+        <span key="removeLines" className={styles.remove}>
+          -{diffStat.removeLines.toLocaleString()}
+        </span>,
+      );
+    }
+    if (diffStat) {
+      elements.push(<DiffStatBlocks key="diffStat" diffStat={diffStat} />);
     }
 
     return elements.length > 0 ? (
@@ -281,42 +240,21 @@ const CodeDiffOutline = (props: CodeDiffOutlineProps) => {
       actions={actions}
       footers={footers}
     >
-      {!loading && (
-        <div className={styles.codeContainer}>
-          {isNormalView ? (
-            <CodeNormalView
-              hideToolbar
-              maxHeight={300}
-              heightFollow="content"
-              item={{
-                language,
-                path,
-                code: isNewFile ? earlyCode.newContent : earlyCode.oldContent,
-                viewType: 'normal',
-                title: path,
-                id: path,
-                mode: normalViewerMode,
-              }}
-            />
-          ) : (
-            <CodeDiffView
-              hideToolBar
-              maxHeight={300}
-              heightFollow="content"
-              item={{
-                language,
-                path,
-                originalCode: earlyCode.oldContent,
-                modifiedCode: earlyCode.newContent,
-                viewType: 'diff',
-                title: path,
-                id: path,
-                diffStat,
-              }}
-            />
-          )}
-        </div>
-      )}
+      <CodeDiffView
+        hideToolBar
+        maxHeight={300}
+        heightFollow="content"
+        item={{
+          language,
+          path,
+          originalCode: earlyCode.oldContent,
+          modifiedCode: earlyCode.newContent,
+          viewType: 'diff',
+          title: path,
+          id: path,
+          diffStat,
+        }}
+      />
     </MessageWrapper>
   );
 };

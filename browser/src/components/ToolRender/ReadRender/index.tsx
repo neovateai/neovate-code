@@ -7,7 +7,6 @@ import { useClipboard } from '@/hooks/useClipboard';
 import CopyIcon from '@/icons/copy.svg?react';
 import ReadFileIcon from '@/icons/readFile.svg?react';
 import * as codeViewer from '@/state/codeViewer';
-import * as fileChanges from '@/state/fileChanges';
 import type { UIToolPart } from '@/types/chat';
 import { jsonSafeParse } from '@/utils/message';
 
@@ -41,13 +40,7 @@ export default function ReadRender({ part }: { part: UIToolPart }) {
 
   const handleShowCodeViewer = useCallback(() => {
     if (!file_path || !code) return;
-    fileChanges.fileChangesActions.updateCodeViewerState(
-      file_path,
-      code,
-      code,
-      'new',
-    );
-    codeViewer.actions.setVisible(true);
+    codeViewer.actions.openCodeViewer(file_path, code, code, 'new');
   }, [file_path, code]);
 
   useEffect(() => {
