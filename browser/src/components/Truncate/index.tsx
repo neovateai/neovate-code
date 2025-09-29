@@ -1,6 +1,6 @@
 import { Tooltip } from 'antd';
 import classNames from 'classnames';
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 interface TruncateProps {
   children: React.ReactNode;

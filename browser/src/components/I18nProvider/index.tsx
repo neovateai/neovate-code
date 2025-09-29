@@ -1,5 +1,5 @@
 import { ConfigProvider, Spin } from 'antd';
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 
 interface I18nProviderProps {
   children: React.ReactNode;

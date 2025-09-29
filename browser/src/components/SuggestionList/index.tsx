@@ -6,7 +6,7 @@ import Icon, {
 import { Input, type InputRef, List, Popover } from 'antd';
 import { cx } from 'antd-style';
 import { groupBy, throttle } from 'lodash-es';
-import React, {
+import {
   forwardRef,
   useCallback,
   useEffect,
@@ -73,10 +73,10 @@ const renderItemText = (text: React.ReactNode, searchText?: string | null) => {
     const parts = text.split(searchRegex);
 
     return parts
-      .map((part, index) => {
+      .map((part) => {
         if (part.toLowerCase() === searchText.toLowerCase()) {
           return (
-            <span key={index} className="text-[#7357FF]">
+            <span key={part} className="text-[#7357FF]">
               {part}
             </span>
           );
@@ -195,7 +195,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
             if (selectedIndex >= 0 && selectedIndex < currentList.length) {
               const selectedItem = currentList[selectedIndex];
 
-              if (!!selectedItem.disabled) {
+              if (selectedItem.disabled) {
                 break;
               }
 

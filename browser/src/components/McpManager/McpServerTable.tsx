@@ -1,4 +1,5 @@
 import {
+  message,
   Pagination,
   Popconfirm,
   Space,
@@ -7,9 +8,8 @@ import {
   Tag,
   Tooltip,
   Typography,
-  message,
 } from 'antd';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { removeMCPServer } from '@/api/mcpService';
 import type { McpManagerServer, McpServerTableProps } from '@/types/mcp';

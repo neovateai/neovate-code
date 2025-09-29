@@ -9,12 +9,10 @@ interface MarkdownRendererProps {
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   const components: Components = {
-    // 自定义引用块渲染
     blockquote({ children, ...props }) {
       return <blockquote {...props}>{children}</blockquote>;
     },
 
-    // 自定义链接渲染
     a({ href, children, ...props }) {
       return (
         <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
@@ -24,7 +22,6 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
     },
   };
 
-  // 处理markdown格式时，存在的```markdown```，需要去掉
   const processedContent = content.includes('```markdown')
     ? content.replace('```markdown', '').replace('```', '')
     : content;

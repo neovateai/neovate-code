@@ -7,9 +7,9 @@ import { MCP_DEFAULTS } from '@/constants/mcp';
 import { useMcpServerLoader } from '@/hooks/useMcpServerLoader';
 import type { McpManagerProps, McpManagerServer } from '@/types/mcp';
 import { containerEventHandlers } from '@/utils/eventUtils';
+import styles from './index.module.css';
 import McpAddForm from './McpAddForm';
 import McpServerTable from './McpServerTable';
-import styles from './index.module.css';
 
 const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
   const { t } = useTranslation();
