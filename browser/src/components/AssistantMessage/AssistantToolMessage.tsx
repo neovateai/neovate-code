@@ -84,6 +84,13 @@ const AssistantToolMessage: React.FC<{
   }, [name]);
 
   const statusInfo = useMemo(() => {
+    if (part.result?.isError) {
+      return {
+        icon: '❌',
+        iconColor: 'text-red-500',
+        statusText: t('tool.status.failed'),
+      };
+    }
     switch (part.state) {
       case 'tool_use':
         return {

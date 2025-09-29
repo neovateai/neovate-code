@@ -30,6 +30,9 @@ export interface InitializeResult {
     pastedTextMap: Record<string, string>;
     pastedImageMap: Record<string, string>;
   };
+  error?: {
+    message: string;
+  };
 }
 
 export interface SendMessageParams {

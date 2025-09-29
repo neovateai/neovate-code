@@ -11,6 +11,7 @@ import RefreshIcon from '@/icons/refresh.svg?react';
 import type { AppStatus } from '@/state/chat';
 import { state } from '@/state/sender';
 import type { Message } from '@/types/chat';
+import ActivityIndicator from '../ActivityIndicator';
 import styles from './index.module.css';
 
 interface AssistantFooterProps {
@@ -95,9 +96,7 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
     return (
       <div className="flex items-center space-x-2 pt-2">
         <Spin size="small" />
-        <span className="text-sm text-gray-500 pl-2 animate-pulse">
-          {t('chat.thinking')}
-        </span>
+        <ActivityIndicator />
       </div>
     );
   }

@@ -134,6 +134,7 @@
     "status": {
       "executing": "Executing",
       "completed": "Completed",
+      "failed": "Failed",
       "unknown": "Unknown"
     },
     "filesFound": "Found {{count}} files",

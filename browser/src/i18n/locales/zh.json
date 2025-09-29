@@ -134,6 +134,7 @@
     "status": {
       "executing": "执行中",
       "completed": "完成",
+      "failed": "失败",
       "unknown": "未知"
     },
     "filesFound": "找到 {{count}} 个文件",

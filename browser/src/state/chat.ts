@@ -15,6 +15,7 @@ import type {
   UIMessage,
 } from '@/types/chat';
 import { isToolResultMessage } from '@/utils/message';
+import { countTokens } from '@/utils/tokenCounter';
 import { actions as clientActions, state as clientState } from './client';
 
 export type AppStatus =
@@ -47,6 +48,9 @@ interface ChatState {
     category: ApprovalCategory;
     resolve: (result: ApprovalResult) => Promise<void>;
   } | null;
+  error: string | null;
+
+  processingTokens: number;
 }
 
 interface ChatActions {
@@ -76,6 +80,8 @@ export const state = proxy<ChatState>({
   messages: [],
   loading: false,
   approvalModal: null,
+  error: null,
+  processingTokens: 0,
 });
 
 export const actions: ChatActions = {
@@ -90,6 +96,10 @@ export const actions: ChatActions = {
       cwd: opts.cwd,
       sessionId: opts.sessionId,
     })) as InitializeResult;
+
+    if (!response.success) {
+      throw new Error(response.error?.message || 'Initialize failed');
+    }
 
     state.cwd = opts.cwd;
     state.sessionId = opts.sessionId || null;
@@ -165,9 +175,22 @@ export const actions: ChatActions = {
       state.messages.push(message as UIMessage);
     };
 
-    const handleChunk = (_chunk: any) => {
-      // console.log('handleChunk', JSON.stringify(chunk, null, 2));
-      // state.messages.push(chunk);
+    const handleChunk = (data: any) => {
+      if (data.sessionId === state.sessionId && data.cwd === state.cwd) {
+        const chunk = data.chunk;
+
+        // Collect tokens from text-delta and reasoning events
+        if (
+          chunk.type === 'raw_model_stream_event' &&
+          chunk.data?.type === 'model' &&
+          (chunk.data.event?.type === 'text-delta' ||
+            chunk.data.event?.type === 'reasoning')
+        ) {
+          const textDelta = chunk.data.event.textDelta || '';
+          const tokenCount = countTokens(textDelta);
+          state.processingTokens += tokenCount;
+        }
+      }
     };
 
     clientActions.onEvent('message', handleMessage);
@@ -227,6 +250,7 @@ export const actions: ChatActions = {
     model?: string;
   }) {
     state.status = 'processing';
+    state.processingTokens = 0;
     state.loading = true;
     const { cwd, sessionId } = state;
     let attachments: Array<FilePart | ImagePart> = [];
@@ -244,8 +268,11 @@ export const actions: ChatActions = {
 
     if (response.success) {
       state.status = 'idle';
+      state.processingTokens = 0;
     } else {
       state.status = 'failed';
+      state.processingTokens = 0;
+      state.error = response.error?.message;
     }
 
     state.loading = false;
