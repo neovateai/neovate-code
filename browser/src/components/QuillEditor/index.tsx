@@ -1,5 +1,5 @@
-import { createStyles } from 'antd-style';
 import type { TextAreaProps, TextAreaRef } from 'antd/es/input/TextArea';
+import { createStyles } from 'antd-style';
 import Quill, { Delta } from 'quill';
 import 'quill/dist/quill.core.css';
 import {
@@ -12,8 +12,8 @@ import {
   useState,
 } from 'react';
 import ContextBlot from './ContextBlot';
-import { QuillContext } from './QuillContext';
 import { makeChangeEvent, makeSelectEvent } from './events';
+import { QuillContext } from './QuillContext';
 import {
   getDeletedLength,
   getInsertText,
