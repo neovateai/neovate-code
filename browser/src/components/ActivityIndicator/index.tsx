@@ -8,7 +8,7 @@ const ActivityIndicator = () => {
 
   const text = useMemo(() => {
     if (status === 'processing') return 'Processing';
-    if (status === 'failed') return 'Failed';
+    if (status === 'failed') return `Failed: ${error}`;
     return 'Processing';
   }, [status, error]);
 

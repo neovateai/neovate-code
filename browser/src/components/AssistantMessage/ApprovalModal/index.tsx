@@ -1,18 +1,16 @@
-/** biome-ignore-all lint/correctness/useHookAtTopLevel: <explanation> */
-// import { CloseOutlined, RedoOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import MessageWrapper from '@/components/MessageWrapper';
+import { EditRender, WriteRender } from '@/components/ToolRender';
 import ApproveToolIcon from '@/icons/approveTool.svg?react';
 import BashIcon from '@/icons/bash.svg?react';
-import EditIcon from '@/icons/edit.svg?react';
 import SearchIcon from '@/icons/search.svg?react';
 import { state } from '@/state/chat';
 import type { ApprovalResult, UIToolPart } from '@/types/chat';
 import styles from './index.module.css';
 
-function ToolApprovalConfirmation({ part }: { part: UIToolPart }) {
+function ApprovalModal({ part }: { part: UIToolPart }) {
   const { t } = useTranslation();
   const snap = useSnapshot(state);
 
@@ -26,11 +24,13 @@ function ToolApprovalConfirmation({ part }: { part: UIToolPart }) {
 
   const { name, params } = snap.approvalModal.toolUse;
 
-  console.log('toolUse', snap.approvalModal.toolUse);
-
   // Don't show approval confirmation for edit or write tools
-  if (name === 'edit' || name === 'write') {
-    return null;
+  if (name === 'write') {
+    return <WriteRender part={part} />;
+  }
+
+  if (name === 'edit') {
+    return <EditRender part={part} />;
   }
 
   // Format tool parameter description, only fetch, bash, edit tools require approval
@@ -46,20 +46,6 @@ function ToolApprovalConfirmation({ part }: { part: UIToolPart }) {
           <div className="flex items-center gap-2">
             <BashIcon />
             {params.command}
-          </div>
-        );
-      case 'edit':
-        return (
-          <div className="flex items-center gap-2">
-            <EditIcon />
-            {params.file_path}
-          </div>
-        );
-      case 'write':
-        return (
-          <div className="flex items-center gap-2">
-            <EditIcon />
-            {params.file_path}
           </div>
         );
       case 'fetch':
@@ -81,12 +67,10 @@ function ToolApprovalConfirmation({ part }: { part: UIToolPart }) {
   };
 
   const onApprove = (option: ApprovalResult) => {
-    console.log('onApprove', option);
     snap.approvalModal?.resolve(option);
   };
 
   const onDeny = () => {
-    console.log('onDeny');
     snap.approvalModal?.resolve('deny');
   };
 
@@ -177,4 +161,4 @@ function ToolApprovalConfirmation({ part }: { part: UIToolPart }) {
   );
 }
 
-export default ToolApprovalConfirmation;
+export default ApprovalModal;

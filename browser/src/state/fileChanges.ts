@@ -160,6 +160,7 @@ export const fileChangesActions = {
   // Initialize fileState, push edits
   initFileState: async (path: string, edits: FileEdit[]) => {
     const fileState = fileChangesState.files[path];
+    console.log('initFileState --->', path, fileState, edits);
     if (!fileState) {
       const fileContent = await readFile(path);
       if (fileContent.success) {

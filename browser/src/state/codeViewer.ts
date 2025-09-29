@@ -6,7 +6,7 @@ import type {
   CodeViewerTabItem,
   DiffStat,
 } from '@/types/codeViewer';
-import { inferFileType } from '@/utils/codeViewer';
+import { diff, inferFileType } from '@/utils/codeViewer';
 import * as layout from './layout';
 
 interface CodeViewerState {
@@ -204,5 +204,29 @@ export const actions = {
   /** Register jump function */
   registerJumpFunction: (path: string, fn: (_: number) => void) => {
     state.jumpFunctionMap[path] = fn;
+  },
+
+  async openCodeViewer(
+    path: string,
+    originalCode: string,
+    modifiedCode: string,
+    mode?: CodeNormalViewerMode,
+  ) {
+    if (mode) {
+      this.updateNormalViewerConfig({
+        code: mode === 'new' ? modifiedCode : originalCode,
+        path,
+        mode,
+      });
+    } else {
+      const diffStat = await diff(originalCode, modifiedCode);
+      this.updateDiffViewerConfig({
+        path,
+        originalCode,
+        modifiedCode,
+        diffStat,
+      });
+    }
+    this.setVisible(true);
   },
 };

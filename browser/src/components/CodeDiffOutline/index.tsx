@@ -10,9 +10,14 @@ import { useSnapshot } from 'valtio';
 import { useClipboard } from '@/hooks/useClipboard';
 import ApproveToolIcon from '@/icons/approveTool.svg?react';
 import CopyIcon from '@/icons/copy.svg?react';
+import { state as chatState } from '@/state/chat';
 import * as codeViewer from '@/state/codeViewer';
-import * as fileChanges from '@/state/fileChanges';
-import type { CodeNormalViewerMode, DiffStat } from '@/types/codeViewer';
+import type { ApprovalResult } from '@/types/chat';
+import type {
+  CodeNormalViewerMode,
+  CodeViewerEditStatus,
+  DiffStat,
+} from '@/types/codeViewer';
 import { diff, inferFileType } from '@/utils/codeViewer';
 import CodeDiffView from '../CodeViewer/CodeDiffView';
 import CodeNormalView from '../CodeViewer/CodeNormalView';
@@ -20,12 +25,20 @@ import DiffStatBlocks from '../CodeViewer/DiffStatBlocks';
 import DevFileIcon from '../DevFileIcon';
 import MessageWrapper from '../MessageWrapper';
 
-interface Props {
-  readonly path: string;
-  readonly edit: fileChanges.FileEdit;
-  readonly normalViewerMode?: CodeNormalViewerMode;
-  readonly loading?: boolean;
-  readonly state: 'call' | 'result';
+export interface FileEdit {
+  toolCallId: string;
+  old_string: string;
+  new_string: string;
+  /** Represents the status of this edit, undefined means unmodified */
+  editStatus?: CodeViewerEditStatus;
+}
+
+interface CodeDiffOutlineProps {
+  path: string;
+  edit: FileEdit;
+  normalViewerMode?: CodeNormalViewerMode;
+  loading?: boolean;
+  state: 'call' | 'result';
 }
 
 const useStyles = createStyles(({ css }) => {
@@ -64,50 +77,31 @@ const useStyles = createStyles(({ css }) => {
   };
 });
 
-const CodeDiffOutline = (props: Props) => {
+const CodeDiffOutline = (props: CodeDiffOutlineProps) => {
   const { path, loading, normalViewerMode, edit, state } = props;
+  const snap = useSnapshot(chatState);
   const { writeText } = useClipboard();
   const [isCopySuccess, setIsCopySuccess] = useState(false);
   const { t } = useTranslation();
 
-  const { editStatus, old_string: oldString, new_string: newString } = edit;
-
-  const { files } = useSnapshot(fileChanges.fileChangesState);
-
-  // Used for file modification
-  const file = useMemo(() => files[path], [files, path]);
+  const { editStatus, old_string, new_string } = edit;
 
   const code = useMemo(() => {
-    if (!file) {
-      return {
-        oldContent: '',
-        newContent: '',
-      };
-    }
-
-    const replacedContent = oldString
-      ? file.content.replace(oldString, newString || '')
-      : file.content;
-
-    const oldContent = file.content;
-
-    const newContent = replacedContent;
-
     return {
-      oldContent,
-      newContent,
+      oldContent: old_string,
+      newContent: new_string,
     };
-  }, [file, oldString, newString]);
+  }, [old_string, new_string]);
 
   // Used for display
-  const [earlyFile, setEarlyFile] = useState<typeof file>();
+  const [earlyFile, setEarlyFile] = useState<string>();
 
   useEffect(() => {
-    if (!earlyFile && file) {
+    if (!earlyFile && path) {
       // Record the initial state of file
-      setEarlyFile(file);
+      setEarlyFile(path);
     }
-  }, [file]);
+  }, [path]);
 
   const earlyCode = useMemo(() => {
     if (!earlyFile) {
@@ -116,20 +110,11 @@ const CodeDiffOutline = (props: Props) => {
         newContent: '',
       };
     }
-
-    const replacedContent = oldString
-      ? earlyFile.content.replace(oldString, newString || '')
-      : earlyFile.content;
-
-    const oldContent = earlyFile.content;
-
-    const newContent = replacedContent;
-
     return {
-      oldContent,
-      newContent,
+      oldContent: old_string,
+      newContent: new_string,
     };
-  }, [earlyFile, oldString, newString]);
+  }, [earlyFile, old_string, new_string]);
 
   const language = useMemo(() => inferFileType(path), [path]);
 
@@ -149,33 +134,22 @@ const CodeDiffOutline = (props: Props) => {
     [diffStat],
   );
 
-  if (!file) {
-    return null;
-  }
-
-  const handleAccept = (_approveType: 'once' | 'always' | 'always_tool') => {
-    fileChanges.fileChangesActions.acceptEdit(path, edit, normalViewerMode);
-    // toolApprovalActions.approveToolUse(true, approveType);
-    // TODO: add approval modal
+  const handleAccept = (approveType: ApprovalResult) => {
+    snap.approvalModal?.resolve(approveType);
   };
 
   const handleReject = () => {
-    fileChanges.fileChangesActions.rejectEdit(path, edit, normalViewerMode);
-    // toolApprovalActions.approveToolUse(false, 'once');
-    // TODO: add approval modal
+    snap.approvalModal?.resolve('deny');
   };
 
   const handleShowCodeViewer = () => {
-    const newGlobalContent =
-      fileChanges.fileChangesActions.getFinalContent(path) || '';
-
-    fileChanges.fileChangesActions.updateCodeViewerState(
+    codeViewer.actions.openCodeViewer(
       path,
-      file.content,
-      newGlobalContent,
+      // TODO 恢复之前的逻辑
+      earlyCode.oldContent,
+      earlyCode.newContent,
       normalViewerMode,
     );
-    codeViewer.actions.setVisible(true);
   };
 
   // Build status information
@@ -257,30 +231,32 @@ const CodeDiffOutline = (props: Props) => {
   ];
 
   // Build footer buttons
-  const footers = [];
-  if (hasDiff && !editStatus) {
-    footers.push(
-      {
-        key: 'accept',
-        text: t('toolApproval.approveOnce', '本次允许'),
-        onClick: () => handleAccept('once'),
-        icon: <ApproveToolIcon />,
-      },
-      {
-        key: 'accept',
-        text: t('toolApproval.approveAlwaysTool', '永久允许{{toolName}}', {
-          toolName: 'edit' as const,
-        }),
-        onClick: () => handleAccept('always'),
-      },
-      {
-        key: 'reject',
-        text: t('toolApproval.deny', '拒绝'),
-        onClick: handleReject,
-        color: 'danger' as const,
-      },
-    );
-  }
+  const footers = useMemo(() => {
+    if (snap.approvalModal) {
+      return [
+        {
+          key: 'accept',
+          text: t('toolApproval.approveOnce'),
+          onClick: () => handleAccept('approve_once'),
+          icon: <ApproveToolIcon />,
+        },
+        {
+          key: 'accept',
+          text: t('toolApproval.approveAlwaysTool', {
+            toolName: 'edit' as const,
+          }),
+          onClick: () => handleAccept('approve_always_tool'),
+        },
+        {
+          key: 'reject',
+          text: t('toolApproval.deny'),
+          onClick: handleReject,
+          color: 'danger' as const,
+        },
+      ];
+    }
+    return [];
+  }, [snap.approvalModal]);
 
   return (
     <MessageWrapper

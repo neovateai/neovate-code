@@ -1,7 +1,7 @@
 import { VerticalLeftOutlined } from '@ant-design/icons';
 import { Tabs, type TabsProps } from 'antd';
 import { createStyles } from 'antd-style';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/codeViewer';
 import type {

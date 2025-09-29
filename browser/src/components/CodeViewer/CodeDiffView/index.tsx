@@ -1,11 +1,12 @@
 import { createStyles } from 'antd-style';
 import { forwardRef } from 'react';
+import { useSnapshot } from 'valtio';
 import { CodeRenderer } from '@/components/CodeRenderer/CodeRenderer';
-import useEditAll from '@/hooks/useEditAll';
+import { state } from '@/state/chat';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffToolbar from '../DiffToolbar';
 
-interface Props {
+interface CodeDiffViewProps {
   item: CodeDiffViewerTabItem;
   maxHeight?: number;
   hideToolBar?: boolean;
@@ -42,43 +43,46 @@ const useStyle = createStyles(
   },
 );
 
-const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
-  const { item, maxHeight, hideToolBar } = props;
-  const { styles } = useStyle({ maxHeight });
-  const { acceptAll, rejectAll } = useEditAll(item.path);
+const CodeDiffView = forwardRef<CodeDiffViewRef, CodeDiffViewProps>(
+  (props, ref) => {
+    const { item, maxHeight, hideToolBar } = props;
+    const { styles } = useStyle({ maxHeight });
+    const snap = useSnapshot(state);
 
-  return (
-    <div className={styles.container}>
-      {!hideToolBar && (
-        <DiffToolbar
-          onGotoDiff={() => {
-            // Simple diff navigation
-          }}
-          onAcceptAll={() => {
-            acceptAll(item.modifiedCode);
-          }}
-          onRejectAll={() => {
-            rejectAll(item.originalCode);
-          }}
-          item={item}
-        />
-      )}
-      <div className={styles.editor}>
-        <CodeRenderer
-          ref={ref}
-          code={item.modifiedCode}
-          originalCode={item.originalCode}
-          modifiedCode={item.modifiedCode}
-          language={item.language}
-          filename={item.path}
-          mode="diff"
-          maxHeight={maxHeight}
-          theme="snazzy-light"
-          showLineNumbers={true}
-        />
+    return (
+      <div className={styles.container}>
+        {!hideToolBar && (
+          <DiffToolbar
+            onGotoDiff={() => {
+              console.log('onGotoDiff');
+              // Simple diff navigation
+            }}
+            onAcceptAll={() => {
+              snap.approvalModal?.resolve('approve_always_edit');
+            }}
+            onRejectAll={() => {
+              snap.approvalModal?.resolve('deny');
+            }}
+            item={item}
+          />
+        )}
+        <div className={styles.editor}>
+          <CodeRenderer
+            ref={ref}
+            code={item.modifiedCode}
+            originalCode={item.originalCode}
+            modifiedCode={item.modifiedCode}
+            language={item.language}
+            filename={item.path}
+            mode="diff"
+            maxHeight={maxHeight}
+            theme="snazzy-light"
+            showLineNumbers={true}
+          />
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
 export default CodeDiffView;
