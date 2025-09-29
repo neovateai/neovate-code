@@ -1,6 +1,3 @@
-/**
- * 渲染toolRender中涉及到list展示的组件
- */
 import {
   DatabaseOutlined,
   FileImageOutlined,
@@ -162,7 +159,11 @@ const RenderItem = ({
       {childrenCount > 0 && isExpanded && (
         <ul className={styles.listContainer}>
           {item.children?.map((child, index) => (
-            <RenderItem key={index} item={child} showPath={showPath} />
+            <RenderItem
+              key={`${item.name}-${index}`}
+              item={child}
+              showPath={showPath}
+            />
           ))}
         </ul>
       )}
@@ -173,8 +174,8 @@ const RenderItem = ({
 export default function InnerList({ items, showPath = true }: InnerListProps) {
   return (
     <ul className={styles.listContainer}>
-      {items.map((item, index) => (
-        <RenderItem key={index} item={item} showPath={showPath} />
+      {items.map((item) => (
+        <RenderItem key={item.name} item={item} showPath={showPath} />
       ))}
     </ul>
   );
