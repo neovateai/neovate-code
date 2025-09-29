@@ -13,6 +13,6 @@ export function jsonSafeParse(json: string) {
     return JSON.parse(json);
   } catch (error) {
     console.error(error);
-    return null;
+    return {};
   }
 }

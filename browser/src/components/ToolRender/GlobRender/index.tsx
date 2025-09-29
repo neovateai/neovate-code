@@ -1,20 +1,28 @@
-// @ts-nocheck
-// TODO: fix this
+import { useMemo } from 'react';
+import { useSnapshot } from 'valtio';
 import MessageWrapper from '@/components/MessageWrapper';
 import FolderIcon from '@/icons/folder.svg?react';
+import { state } from '@/state/chat';
 import type { UIToolPart } from '@/types/chat';
+import { jsonSafeParse } from '@/utils/message';
 import InnerList, { type ListItem } from '../LsRender/InnerList';
 
 export default function GlobRender({ part }: { part: UIToolPart }) {
+  const snap = useSnapshot(state);
   const { name, result } = part;
-  const { filenames = [] } = result?.returnDisplay || {};
-  console.log('GlobRender', result);
-  const { path } = part.input as { path: string };
+  const filenames = useMemo<string[]>(() => {
+    if (typeof result?.llmContent === 'string') {
+      return jsonSafeParse(result?.llmContent)?.filenames || [];
+    }
+    return [];
+  }, [result?.llmContent]);
 
-  const items: ListItem[] = filenames.map((filename) => ({
-    name: path ? filename.replace(path, '') : filename,
-    isDirectory: filename.endsWith('/'),
-  }));
+  const items = useMemo<ListItem[]>(() => {
+    return filenames.map((filename) => ({
+      name: snap.cwd ? filename.replace(snap.cwd, '') : filename,
+      isDirectory: filename.endsWith('/'),
+    }));
+  }, [filenames, snap.cwd]);
 
   return (
     <MessageWrapper icon={<FolderIcon />} title={name}>

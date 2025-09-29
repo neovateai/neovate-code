@@ -31,7 +31,6 @@ export default function ReadRender({ part }: { part: UIToolPart }) {
     return null;
   }, [result?.llmContent]);
 
-  console.log('file_path', content);
   const code = content?.content || '';
 
   const handleCopy = useCallback(() => {
