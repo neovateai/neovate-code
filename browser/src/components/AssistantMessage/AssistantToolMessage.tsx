@@ -11,9 +11,9 @@ import {
   GrepRender,
   LsRender,
   ReadRender,
+  TodoRender,
   WriteRender,
 } from '../ToolRender';
-import TodoRender from '../ToolRender/TodoRender';
 
 const ToolResultItem: React.FC<{ part: UIToolPart }> = ({ part }) => {
   if (part.state !== 'tool_result') {
