@@ -5,13 +5,12 @@ import { useClipboard } from '@/hooks/useClipboard';
 import CopyIcon from '@/icons/copy.svg?react';
 import SearchIcon from '@/icons/search.svg?react';
 import type { UIToolPart } from '@/types/chat';
+import { jsonSafeParse } from '@/utils/message';
 
 export default function FetchRender({ part }: { part: UIToolPart }) {
-  const { input, state } = part;
+  const { input, state, result } = part;
 
   const { writeText } = useClipboard();
-
-  console.log('FetchRender', part);
 
   const url = (input?.url as string) || '';
   const prompt = (input?.prompt as string) || '';
@@ -39,14 +38,22 @@ export default function FetchRender({ part }: { part: UIToolPart }) {
     ];
   }, [state]);
 
+  const llmContent = useMemo(() => {
+    if (typeof result?.llmContent === 'string') {
+      return jsonSafeParse(result?.llmContent)?.result;
+    }
+    return null;
+  }, [result?.llmContent]);
+
   return (
     <MessageWrapper
       icon={<SearchIcon />}
       title={`${prompt} ${url}`}
-      expandable={false}
-      defaultExpanded={false}
-      showExpandIcon={false}
       actions={actions}
-    />
+    >
+      <div className="text-sm text-gray-500 whitespace-pre-wrap">
+        {llmContent}
+      </div>
+    </MessageWrapper>
   );
 }
