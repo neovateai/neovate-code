@@ -1,5 +1,6 @@
-import type { FileItem, ImageItem, SlashCommandItem } from '@/api/model';
+import type { FileItem, ImageItem } from '@/api/model';
 import { ContextType } from '@/constants/context';
+import type { SlashCommand } from '@/types/chat';
 import type { ContextItem, ContextStoreValue } from '@/types/context';
 
 export async function imageUrlToBase64(url: string) {
@@ -75,8 +76,8 @@ export function storeValueToContextItem(
     case ContextType.SLASH_COMMAND:
       return {
         type: ContextType.SLASH_COMMAND,
-        value: (storeValue as SlashCommandItem).path,
-        displayText: (storeValue as SlashCommandItem).name,
+        value: (storeValue as SlashCommand).name,
+        displayText: (storeValue as SlashCommand).name,
         context: storeValue,
       };
 

@@ -1,7 +1,6 @@
 import { CheckOutlined } from '@ant-design/icons';
 import { Button, Flex, Spin } from 'antd';
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { useClipboard } from '@/hooks/useClipboard';
 import CopyIcon from '@/icons/copy.svg?react';
@@ -24,7 +23,6 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
   status,
 }) => {
   const { mode } = useSnapshot(state);
-  const { t } = useTranslation();
   const { writeText } = useClipboard();
   const [isCopySuccess, setIsCopySuccess] = useState(false);
 

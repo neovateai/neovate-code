@@ -1,13 +1,14 @@
 import { proxy } from 'valtio';
-import type { FileItem, SlashCommandItem } from '@/api/model';
+import type { FileItem } from '@/api/model';
 import { ContextType } from '@/constants/context';
 import * as sender from '@/state/sender';
+import type { SlashCommand } from '@/types/chat';
 import type { ContextItem } from '@/types/context';
 
 interface ContextState {
   contexts: {
     files: Omit<FileItem, 'name'>[];
-    slashCommands: Pick<SlashCommandItem, 'path' | 'name'>[];
+    slashCommands: Pick<SlashCommand, 'name' | 'description'>[];
   };
 
   attachedContexts: ContextItem[];
@@ -40,11 +41,11 @@ export const state = proxy<ContextState>({
           contextItem.type === ContextType.SLASH_COMMAND,
       )
       .map((contextItem: ContextItem) => {
-        const cmd = contextItem.context as SlashCommandItem;
+        const cmd = contextItem.context as SlashCommand;
 
         return {
-          path: cmd.path,
-          name: cmd.name,
+          name: cmd?.name,
+          description: cmd?.description,
         };
       });
 

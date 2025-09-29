@@ -77,7 +77,10 @@ export const useSuggestion = () => {
         icon: <AppstoreOutlined />,
         extra: `${cmd.command.description} ${prefix ? `(${prefix})` : ''}`,
         disabled,
-        contextItem: storeValueToContextItem(cmd, ContextType.SLASH_COMMAND),
+        contextItem: storeValueToContextItem(
+          cmd.command,
+          ContextType.SLASH_COMMAND,
+        ),
       };
     });
   }, [slashCommandList, t, contexts]);

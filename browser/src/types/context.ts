@@ -1,7 +1,8 @@
-import type { FileItem, ImageItem, SlashCommandItem } from '@/api/model';
+import type { FileItem, ImageItem } from '@/api/model';
 import type { ContextType } from '@/constants/context';
+import type { SlashCommand } from '@/types/chat';
 
-export type ContextStoreValue = FileItem | ImageItem | SlashCommandItem;
+export type ContextStoreValue = FileItem | ImageItem | SlashCommand;
 
 export interface ContextItem {
   type: ContextType;
