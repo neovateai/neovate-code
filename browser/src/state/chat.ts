@@ -1,5 +1,8 @@
+import type { Delta } from 'quill';
 import { proxy } from 'valtio';
 import type { ApprovalMode, InitializeResult } from '@/client';
+import { getBlotName } from '@/components/QuillEditor/utils';
+import { CONTEXT_BLOT_NAME } from '@/constants';
 import type {
   ApprovalCategory,
   ApprovalResult,
@@ -60,11 +63,12 @@ interface ChatState {
   error: string | null;
 
   processingTokens: number;
+  browserContextMap: Record<string, string>;
 }
 
 interface ChatActions {
   initialize(opts: { cwd: string; sessionId?: string }): void;
-  send(message: string): void;
+  send(message: string, delta?: Delta): void;
   addMessage(message: UIMessage): void;
   destroy(): void;
   sendMessage(opts: {
@@ -74,6 +78,7 @@ interface ChatActions {
   }): Promise<LoopResult>;
   getSlashCommands(): Promise<CommandEntry[]>;
   cancel(): Promise<void>;
+  setBrowserContext(name: string, value: string): void;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -92,6 +97,7 @@ export const state = proxy<ChatState>({
   approvalModal: null,
   error: null,
   processingTokens: 0,
+  browserContextMap: {},
 });
 
 export const actions: ChatActions = {
@@ -242,7 +248,7 @@ export const actions: ChatActions = {
     };
   },
 
-  async send(message) {
+  async send(message, delta?: Delta) {
     const { cwd, sessionId } = state;
 
     clientActions.request('telemetry', {
@@ -251,7 +257,25 @@ export const actions: ChatActions = {
       payload: { message, sessionId },
     });
 
-    await actions.sendMessage({ message });
+    // expand message
+    if (delta) {
+      // message = delta.ops
+      //   .map((op) => {
+      //     if (typeof op.insert === 'string') {
+      //       return op.insert;
+      //     }
+      //     if (op.insert?.[CONTEXT_BLOT_NAME]) {
+      //       const blotData = op.insert[CONTEXT_BLOT_NAME];
+      //       // @ts-expect-error
+      //       actions.setBrowserContext(getBlotName(blotData), blotData.value);
+      //       return op.insert?.[CONTEXT_BLOT_NAME].value;
+      //     }
+      //     return op;
+      //   })
+      //   .join('');
+    }
+
+    await this.sendMessage({ message });
   },
 
   async sendMessage(opts: {
@@ -273,8 +297,6 @@ export const actions: ChatActions = {
       sessionId,
       attachments,
     })) as LoopResult;
-
-    console.log('response', response);
 
     if (response.success) {
       state.status = 'idle';
@@ -311,6 +333,20 @@ export const actions: ChatActions = {
     });
     state.status = 'idle';
     state.processingTokens = 0;
+  },
+
+  setBrowserContext(name: string, value: string) {
+    const { sessionId, browserContextMap } = state;
+    state.browserContextMap = {
+      ...browserContextMap,
+      [name]: value,
+    };
+    if (sessionId) {
+      clientActions.request('sessionConfig.browser.setBrowserContextMap', {
+        sessionId,
+        browserContextMap,
+      });
+    }
   },
 
   destroy() {

@@ -1,5 +1,3 @@
-// @ts-nocheck
-// TODO: fix this
 import { DownOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
 import { createStyles } from 'antd-style';
@@ -102,7 +100,5 @@ const UserMessageFooter = memo<UserMessageFooterProps>((props) => {
     </div>
   );
 });
-
-UserMessageFooter.displayName = 'UserMessageFooter';
 
 export default UserMessageFooter;

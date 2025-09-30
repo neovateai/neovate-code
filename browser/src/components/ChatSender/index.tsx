@@ -53,7 +53,7 @@ const ChatSender: React.FC = () => {
   const { styles } = useStyle();
   const { t } = useTranslation();
   const { status } = useSnapshot(state);
-  const { prompt, delta } = useSnapshot(sender.state);
+  const { prompt } = useSnapshot(sender.state);
 
   const [openPopup, setOpenPopup] = useState(false);
   const [inputText, setInputText] = useState<string>('');
@@ -73,14 +73,7 @@ const ChatSender: React.FC = () => {
   } = useSuggestion();
 
   const handleSubmit = () => {
-    // onQuery({
-    //   prompt,
-    //   attachedContexts: context.state.attachedContexts,
-    //   delta: delta as Delta,
-    // });
-
-    console.log('prompt', prompt, delta);
-    actions.send(sender.state.prompt);
+    actions.send(prompt, sender.state.delta);
     setInputText('');
     sender.actions.updatePrompt('');
     sender.actions.updateDelta(new Delta());

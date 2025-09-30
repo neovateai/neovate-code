@@ -31,7 +31,9 @@ interface IQuillEditorProps extends TextAreaProps {}
 
 interface IQuillEditorRef extends TextAreaRef {}
 
-Quill.register(ContextBlot);
+if (!Quill.imports['formats/takumi-context']) {
+  Quill.register(ContextBlot);
+}
 
 const useStyles = createStyles(
   ({ css }, { isCompositing }: { isCompositing: boolean }) => {

@@ -1,3 +1,5 @@
+import type { Delta } from 'quill';
+
 export type SystemMessage = {
   role: 'system';
   content: string;
@@ -219,3 +221,7 @@ export type NodeBridgeResponse<T = any> = {
   error?: string;
   message?: string;
 };
+
+export interface UIUserMessage extends UserMessage {
+  delta?: Delta;
+}

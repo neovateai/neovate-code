@@ -1,13 +1,14 @@
-// @ts-nocheck
-// TODO: fix this
-import { createStyles } from 'antd-style';
-import { memo } from 'react';
-import type { UserMessage } from '@/types/chat';
-import QuillEditor from '../QuillEditor';
-import { QuillContext } from '../QuillEditor/QuillContext';
+import { createStyles, cx } from 'antd-style';
+import { memo, useMemo } from 'react';
+import QuillEditor from '@/components/QuillEditor';
+import { QuillContext } from '@/components/QuillEditor/QuillContext';
+import { convertTextToDelta } from '@/components/QuillEditor/utils';
+import { BLOT_NAME_CONTENT_REGEX } from '@/constants';
+import type { UIUserMessage } from '@/types/chat';
+import { getMessageText, isCanceledMessage } from '@/utils/message';
 
 interface UserMessageProps {
-  message: UserMessage;
+  message: UIUserMessage;
 }
 
 const useStyles = createStyles(({ css }) => ({
@@ -57,13 +58,32 @@ const useStyles = createStyles(({ css }) => ({
     line-height: 1.5em;
     color: #110c22;
   `,
+  canceled: css`
+    color: #8b8b8b;
+  `,
 }));
 
-const UserMessage = (props: UserMessageProps) => {
+function UserMessage(props: UserMessageProps) {
   const { message } = props;
   const { styles } = useStyles();
+  const text = getMessageText(message);
+  const isCanceled = isCanceledMessage(message);
 
-  const { content, delta } = message;
+  const delta = useMemo(() => {
+    if (BLOT_NAME_CONTENT_REGEX.test(text)) {
+      const delta = convertTextToDelta(text);
+      return delta;
+    }
+    return null;
+  }, [text]);
+
+  const textCls = cx(styles.textWrapper, {
+    [styles.canceled]: isCanceled,
+  });
+
+  if (message.hidden) {
+    return null;
+  }
 
   return (
     <div className={styles.container}>
@@ -78,11 +98,11 @@ const UserMessage = (props: UserMessageProps) => {
             <QuillEditor />
           </QuillContext>
         ) : (
-          <div className={styles.textWrapper}>{content}</div>
+          <div className={textCls}>{text}</div>
         )}
       </div>
     </div>
   );
-};
+}
 
 export default memo(UserMessage);
