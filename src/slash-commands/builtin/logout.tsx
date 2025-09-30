@@ -1,6 +1,9 @@
 import { Box, Text, useInput } from 'ink';
+import fs from 'fs';
+import path from 'path';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import { Paths } from '../../paths';
 import PaginatedSelectInput from '../../ui/PaginatedSelectInput';
 import { useAppStore } from '../../ui/store';
 import type { LocalJSXCommand } from '../types';
@@ -20,7 +23,7 @@ interface LogoutSelectProps {
 }
 
 export const LogoutSelect: React.FC<LogoutSelectProps> = ({ onExit }) => {
-  const { bridge, cwd } = useAppStore();
+  const { bridge, cwd, productName } = useAppStore();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [providerItems, setProviderItems] = useState<
     { label: string; value: string }[]
@@ -66,6 +69,25 @@ export const LogoutSelect: React.FC<LogoutSelectProps> = ({ onExit }) => {
     if (!provider) return;
 
     try {
+      if (provider.id === 'github-copilot') {
+        const paths = new Paths({
+          productName,
+          cwd,
+        });
+        const githubDataPath = path.join(
+          paths.globalConfigDir,
+          'githubCopilot.json',
+        );
+
+        if (fs.existsSync(githubDataPath)) {
+          fs.unlinkSync(githubDataPath);
+          onExit(`✓ Successfully logged out from ${provider.name}`);
+        } else {
+          onExit(`✓ ${provider.name} is not logged in`);
+        }
+        return;
+      }
+
       const result = await bridge.request('removeConfig', {
         cwd,
         isGlobal: true,

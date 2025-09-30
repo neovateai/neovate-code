@@ -8,9 +8,11 @@ import {
 } from '@openrouter/ai-sdk-provider';
 import assert from 'assert';
 import defu from 'defu';
+import path from 'path';
 import type { ProviderConfig } from './config';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
+import { GithubProvider } from './providers/githubCopilot';
 import type { AiSdkModel } from './utils/ai-sdk';
 import { aisdk } from './utils/ai-sdk';
 
@@ -56,7 +58,11 @@ export interface Provider {
   api?: string;
   doc: string;
   models: Record<string, string | Omit<Model, 'id' | 'cost'>>;
-  createModel(name: string, provider: Provider): LanguageModelV1;
+  createModel(
+    name: string,
+    provider: Provider,
+    globalConfigDir: string,
+  ): Promise<LanguageModelV1> | LanguageModelV1;
   options?: {
     baseURL?: string;
     apiKey?: string;
@@ -657,6 +663,53 @@ export const defaultModelCreator = (name: string, provider: Provider) => {
 };
 
 export const providers: ProvidersMap = {
+  'github-copilot': {
+    id: 'github-copilot',
+    env: [],
+    apiEnv: [],
+    api: 'https://api.githubcopilot.com',
+    name: 'GitHub Copilot',
+    doc: 'https://docs.github.com/en/copilot',
+    models: {
+      'claude-opus-4': models['claude-4-opus'],
+      'grok-code-fast-1': models['grok-code-fast-1'],
+      'claude-3.5-sonnet': models['claude-3-5-sonnet-20241022'],
+      'o3-mini': models['o3-mini'],
+      'gpt-5-codex': models['gpt-5-codex'],
+      'gpt-4o': models['gpt-4o'],
+      'gpt-4.1': models['gpt-4.1'],
+      'o4-mini': models['o4-mini'],
+      'claude-opus-41': models['claude-4.1-opus'],
+      'gpt-5-mini': models['gpt-5-mini'],
+      'claude-3.7-sonnet': models['claude-3-7-sonnet'],
+      'gemini-2.5-pro': models['gemini-2.5-pro'],
+      o3: models['o3'],
+      'claude-sonnet-4': models['claude-4-sonnet'],
+      'gpt-5': models['gpt-5'],
+      'claude-3.7-sonnet-thought': models['claude-3-7-sonnet'],
+      'claude-sonnet-4.5': models['claude-4-5-sonnet'],
+    },
+    async createModel(name, provider, globalConfigDir) {
+      const githubDataPath = path.join(globalConfigDir, 'githubCopilot.json');
+      const githubProvider = new GithubProvider({ authFile: githubDataPath });
+      const token = await githubProvider.access();
+      if (!token) {
+        throw new Error(
+          'Failed to get GitHub Copilot token, use /login to login first',
+        );
+      }
+      return createOpenAI({
+        baseURL: 'https://api.individual.githubcopilot.com',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'User-Agent': 'GitHubCopilotChat/0.26.7',
+          'Editor-Version': 'vscode/1.99.3',
+          'Editor-Plugin-Version': 'copilot-chat/0.26.7',
+          'Copilot-Integration-Id': 'vscode-chat',
+        },
+      })(name);
+    },
+  },
   openai: {
     id: 'openai',
     env: ['OPENAI_API_KEY'],
@@ -1065,7 +1118,12 @@ export async function resolveModelWithContext(
   });
   const modelName = name || context.config.model;
   const model = modelName
-    ? resolveModel(modelName, finalProviders, hookedModelAlias)
+    ? await resolveModel(
+        modelName,
+        finalProviders,
+        hookedModelAlias,
+        context.paths.globalConfigDir,
+      )
     : null;
   return {
     providers: finalProviders,
@@ -1074,11 +1132,12 @@ export async function resolveModelWithContext(
   };
 }
 
-export function resolveModel(
+export async function resolveModel(
   name: string,
   providers: ProvidersMap,
   modelAlias: Record<string, string>,
-): ModelInfo {
+  globalConfigDir: string,
+): Promise<ModelInfo> {
   const alias = modelAlias[name];
   if (alias) {
     name = alias;
@@ -1096,9 +1155,17 @@ export function resolveModel(
     `Model ${modelId} not found in provider ${providerStr}, valid models: ${Object.keys(provider.models).join(', ')}`,
   );
   model.id = modelId;
+  let m = provider.createModel(modelId, provider, globalConfigDir);
+  if (isPromise(m)) {
+    m = await m;
+  }
   return {
     provider,
     model,
-    aisdk: aisdk(provider.createModel(modelId, provider)),
+    aisdk: aisdk(m as LanguageModelV1),
   };
+}
+
+function isPromise(m: any): m is Promise<LanguageModelV1> {
+  return m instanceof Promise;
 }
