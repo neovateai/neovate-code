@@ -3,7 +3,7 @@ import classNames from 'classnames';
 import { useMemo } from 'react';
 import type { DiffStat } from '@/types/codeViewer';
 
-interface Props {
+interface DiffStatBlocksProps {
   diffStat?: DiffStat;
 }
 
@@ -31,7 +31,7 @@ const useStyles = createStyles(({ css }) => {
   };
 });
 
-const DiffStatBlocks = (props: Props) => {
+const DiffStatBlocks = (props: DiffStatBlocksProps) => {
   const { diffStat } = props;
 
   const { styles } = useStyles();
@@ -75,25 +75,25 @@ const DiffStatBlocks = (props: Props) => {
 
   return (
     <div className={styles.diffStatBlocks}>
-      {diffStatArray.map((statType, index) => {
+      {diffStatArray.map((statType) => {
         if (statType === 'add') {
           return (
             <div
-              key={index}
+              key={statType}
               className={classNames(styles.addBlock, styles.block)}
             />
           );
         } else if (statType === 'remove') {
           return (
             <div
-              key={index}
+              key={statType}
               className={classNames(styles.removeBlock, styles.block)}
             />
           );
         } else {
           return (
             <div
-              key={index}
+              key={statType}
               className={classNames(styles.normalBlock, styles.block)}
             />
           );

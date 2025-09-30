@@ -1,175 +1,112 @@
-import {
-  CommentOutlined,
-  EllipsisOutlined,
-  HeartOutlined,
-  PaperClipOutlined,
-  ShareAltOutlined,
-  SmileOutlined,
-} from '@ant-design/icons';
-import { Prompts, Welcome as WelcomeX } from '@ant-design/x';
-import { Button, Flex, Space } from 'antd';
-import { createStyles } from 'antd-style';
+import { Flex, Space } from 'antd';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useChatState } from '@/hooks/provider';
+import { useSnapshot } from 'valtio';
+import { actions, state } from '@/state/chat';
+import styles from './index.module.css';
 
 const useWelcomeData = () => {
   const { t } = useTranslation();
 
-  const HOT_TOPICS = {
-    key: '1',
-    label: t('chat.quickStart'),
-    children: [
-      {
-        key: '1-1',
-        description: t('chat.askQuestions'),
-        icon: <span style={{ color: '#1890ff', fontWeight: 700 }}>🤖</span>,
-      },
-      {
-        key: '1-2',
-        description: t('chat.beSpecific'),
-        icon: <span style={{ color: '#52c41a', fontWeight: 700 }}>📁</span>,
-      },
-      {
-        key: '1-3',
-        description: t('chat.createTakumiMd'),
-        icon: <span style={{ color: '#faad14', fontWeight: 700 }}>⚡</span>,
-      },
-      {
-        key: '1-4',
-        description: t('chat.generateTests'),
-        icon: <span style={{ color: '#f5222d', fontWeight: 700 }}>🧪</span>,
-      },
-      {
-        key: '1-5',
-        description: t('chat.fixBugs'),
-        icon: <span style={{ color: '#722ed1', fontWeight: 700 }}>🔧</span>,
-      },
-    ],
-  };
-
   const DESIGN_GUIDE = {
-    key: '2',
-    label: t('chat.capabilities'),
-    children: [
+    capabilities: [
       {
-        key: '2-1',
-        icon: <HeartOutlined />,
-        label: t('chat.llmSupport'),
-        description: t('chat.llmSupportDesc'),
+        key: 'llmSupport',
+        icon: '/src/assets/llm-support-icon.svg',
+        title: t('welcome.llmSupport.title'),
+        description: t('welcome.llmSupport.description'),
       },
       {
-        key: '2-2',
-        icon: <SmileOutlined />,
-        label: t('chat.fileOperations'),
-        description: t('chat.fileOperationsDesc'),
+        key: 'fileOperations',
+        icon: '/src/assets/file-operations-icon.svg',
+        title: t('welcome.fileOperations.title'),
+        description: t('welcome.fileOperations.description'),
       },
       {
-        key: '2-3',
-        icon: <CommentOutlined />,
-        label: t('chat.codebaseNavigation'),
-        description: t('chat.codebaseNavigationDesc'),
+        key: 'codebaseNavigation',
+        icon: '/src/assets/codebase-navigation-icon.svg',
+        title: t('welcome.codebaseNavigation.title'),
+        description: t('welcome.codebaseNavigation.description'),
       },
       {
-        key: '2-4',
-        icon: <PaperClipOutlined />,
-        label: t('chat.planMode'),
-        description: t('chat.planModeDesc'),
+        key: 'planMode',
+        icon: '/src/assets/plan-mode-icon.svg',
+        title: t('welcome.planMode.title'),
+        description: t('welcome.planMode.description'),
       },
     ],
   };
 
-  return { HOT_TOPICS, DESIGN_GUIDE };
+  const handleCapabilityClick = (capability: any) => {
+    actions.send(
+      t('welcome.introduceCapability', {
+        capability: capability.title,
+      }),
+    );
+  };
+
+  return {
+    DESIGN_GUIDE,
+    handleCapabilityClick,
+  };
 };
 
-const useStyle = createStyles(({ css }) => {
-  return {
-    placeholder: css`
-      padding-inline: calc(calc(100% - 700px) / 2);
-    `,
-    chatPrompt: css`
-      .ant-prompts-label {
-        color: #000000e0 !important;
-      }
-      .ant-prompts-desc {
-        color: #000000a6 !important;
-        width: 100%;
-      }
-      .ant-prompts-icon {
-        color: #000000a6 !important;
-      }
-    `,
-  };
-});
-
-const Welcome = () => {
-  const { styles } = useStyle();
-  const { append } = useChatState();
+const Welcome: React.FC = () => {
   const { t } = useTranslation();
-  const { HOT_TOPICS, DESIGN_GUIDE } = useWelcomeData();
+  const { DESIGN_GUIDE, handleCapabilityClick } = useWelcomeData();
+  const { productName } = useSnapshot(state);
 
   return (
-    <Space
-      direction="vertical"
-      size={16}
-      style={{ paddingInline: 'calc(calc(100% - 700px) /2)' }}
-      className={styles.placeholder}
-    >
-      <WelcomeX
-        variant="borderless"
-        icon="https://mdn.alipayobjects.com/huamei_iwk9zp/afts/img/A*s5sNRo5LjfQAAAAAAAAAAAAADgCCAQ/fmt.webp"
-        title={t('chat.welcomeTitle')}
-        description={t('chat.welcomeDescription')}
-        extra={
-          <Space>
-            <Button icon={<ShareAltOutlined />} />
-            <Button icon={<EllipsisOutlined />} />
-          </Space>
-        }
-      />
-      <Flex gap={16}>
-        <Prompts
-          items={[HOT_TOPICS]}
-          styles={{
-            list: { height: '100%' },
-            item: {
-              flex: 1,
-              backgroundImage:
-                'linear-gradient(123deg, #e5f4ff 0%, #efe7ff 100%)',
-              borderRadius: 12,
-              border: 'none',
-            },
-            subItem: { padding: 0, background: 'transparent' },
-          }}
-          onItemClick={(info) => {
-            append({
-              role: 'user',
-              content: info.data.description as string,
-            });
-          }}
-          className={styles.chatPrompt}
-        />
+    <Space direction="vertical" size={16} className={styles.outerContainer}>
+      <div className={styles.container}>
+        <div className={styles.backgroundImage} />
+        <Space
+          direction="vertical"
+          align="center"
+          size={0}
+          className={styles.content}
+        >
+          <Flex align="center" justify="center" className={styles.welcomeTitle}>
+            {t('welcome.title', {
+              productName,
+            })}
+            <span className={styles.waveEmoji}>👋</span>
+          </Flex>
 
-        <Prompts
-          items={[DESIGN_GUIDE]}
-          styles={{
-            item: {
-              flex: 1,
-              backgroundImage:
-                'linear-gradient(123deg, #e5f4ff 0%, #efe7ff 100%)',
-              borderRadius: 12,
-              border: 'none',
-            },
-            subItem: { background: '#ffffffa6' },
-          }}
-          onItemClick={() => {
-            // append({
-            //   role: 'user',
-            //   content: info.data.description as string,
-            // });
-          }}
-          className={styles.chatPrompt}
-        />
-      </Flex>
+          <Space
+            direction="vertical"
+            size={8}
+            className={styles.capabilitiesContainer}
+          >
+            <div className={styles.capabilitiesTitle}>
+              {t('welcome.capabilitiesTitle')}
+            </div>
+            <Flex wrap={false} gap={16} className={styles.capabilitiesRow}>
+              {DESIGN_GUIDE.capabilities.map((capability) => (
+                <div
+                  key={capability.key}
+                  className={`${styles.capabilityCard} ${styles.capabilityItem}`}
+                  onClick={() => handleCapabilityClick(capability)}
+                >
+                  <div className={styles.capabilityHeader}>
+                    <img
+                      src={capability.icon}
+                      alt={capability.title}
+                      className={styles.capabilityIcon}
+                    />
+                    <div className={styles.capabilityTitle}>
+                      {capability.title}
+                    </div>
+                  </div>
+                  <div className={styles.capabilityDescription}>
+                    {capability.description}
+                  </div>
+                </div>
+              ))}
+            </Flex>
+          </Space>
+        </Space>
+      </div>
     </Space>
   );
 };

@@ -1,6 +1,7 @@
+import portfinder from 'portfinder';
 import { WebServer } from './web-server';
 
-const DEFAULT_PORT = 7001;
+const DEFAULT_PORT = 1024;
 const DEFAULT_HOST = '127.0.0.1';
 
 export async function runServerNext(opts: { contextCreateOpts: any }) {
@@ -13,22 +14,36 @@ export async function runServerNext(opts: { contextCreateOpts: any }) {
     number: ['port'],
     string: ['host'],
   });
+
+  const port = await portfinder.getPortPromise({
+    port: Number.parseInt(String(argv.port || DEFAULT_PORT), 10),
+  });
+
   const server = new WebServer({
-    port: argv.port || DEFAULT_PORT,
+    port,
     host: argv.host || DEFAULT_HOST,
     contextCreateOpts: opts.contextCreateOpts,
   });
-  process.on('SIGINT', async () => {
-    console.log('\n[WebServer] Shutting down...');
-    await server.stop();
-    process.exit(0);
-  });
 
-  process.on('SIGTERM', async () => {
+  let isShuttingDown = false;
+
+  const shutdown = async () => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
     console.log('\n[WebServer] Shutting down...');
-    await server.stop();
-    process.exit(0);
-  });
+    try {
+      await server.stop();
+      process.exit(0);
+    } catch (error) {
+      console.error('[WebServer] Error during shutdown:', error);
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+
   try {
     await server.start();
   } catch (error) {

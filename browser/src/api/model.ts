@@ -16,10 +16,3 @@ export interface ApiResponse<T = any> {
   error?: string;
   message?: string;
 }
-
-export interface AppData {
-  productName: string;
-  version: string;
-  cwd: string;
-  config: Record<string, any>;
-}

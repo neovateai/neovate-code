@@ -1,63 +1,96 @@
-import express from 'express';
-import { createServer } from 'http';
+import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import fastify, { type FastifyInstance } from 'fastify';
+import fs from 'fs';
 import path from 'pathe';
 import { fileURLToPath } from 'url';
 import { WebSocketServer } from 'ws';
+import type { ContextCreateOpts } from '../../context';
 import { NodeBridge } from '../../nodeBridge';
+import { isLocal } from '../../utils/isLocal';
 import { WebSocketTransport } from './websocketTransport';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const BROWSER_DIST_PATH = isLocal()
+  ? path.resolve(__dirname, '../../../dist/browser')
+  : path.resolve(__dirname, './browser');
+
+const BASE_API_PREFIX = '/api';
+
 interface WebServerOptions {
-  port?: number;
+  port: number;
   host?: string;
-  contextCreateOpts?: any;
+  contextCreateOpts: ContextCreateOpts;
 }
 
 class WebServer {
-  private app: express.Application;
-  private server: ReturnType<typeof createServer>;
-  private wss: WebSocketServer;
+  private app: FastifyInstance;
+  private wss!: WebSocketServer;
   private clients = new Map<
     string,
     { transport: WebSocketTransport; bridge: NodeBridge }
   >();
   private port: number;
   private host: string;
-  private contextCreateOpts: any;
+  private contextCreateOpts: ContextCreateOpts;
+  private isWssRunning = false;
 
-  constructor(options: WebServerOptions = {}) {
-    this.port = options.port || 3000;
+  constructor(options: WebServerOptions) {
+    this.port = options.port;
     this.host = options.host || 'localhost';
     this.contextCreateOpts = options.contextCreateOpts || {};
 
-    // Initialize Express app
-    this.app = express();
-    this.server = createServer(this.app);
-
-    // Initialize WebSocket server
-    this.wss = new WebSocketServer({
-      server: this.server,
-      path: '/ws',
-    });
-
-    this.setupRoutes();
-    this.setupWebSocket();
+    // Initialize Fastify app
+    this.app = fastify({
+      logger: false,
+      bodyLimit: 100 * 1024 * 1024, // 100MB limit for handling large images and files
+    }).withTypeProvider<TypeBoxTypeProvider>();
   }
 
-  private setupRoutes() {
-    // Serve static files
-    this.app.use(express.static(__dirname));
-
-    // Serve the web client HTML
-    this.app.get('/', (req, res) => {
-      res.sendFile(path.join(__dirname, 'web-client.html'));
+  private async registerPlugins() {
+    await this.app.register(import('@fastify/cors'), {
+      origin: true,
+      methods: ['GET', 'HEAD', 'PUT', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+      credentials: true,
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'Accept',
+        'Origin',
+        'Sec-WebSocket-Protocol',
+      ],
     });
 
+    await this.app.register(import('@fastify/compress'), {
+      global: true,
+    });
+
+    await this.app.register(import('@fastify/static'), {
+      root: BROWSER_DIST_PATH,
+      prefix: '/',
+      wildcard: false,
+    });
+
+    this.app.get('*', async (request, reply) => {
+      if (request.url.startsWith(BASE_API_PREFIX)) {
+        return reply.status(404).send('Not Found');
+      }
+
+      const htmlPath = path.join(BROWSER_DIST_PATH, 'index.html');
+      if (fs.existsSync(htmlPath)) {
+        return reply.sendFile('index.html');
+      } else {
+        return reply.status(404).send('Not Found');
+      }
+    });
+  }
+
+  private async setupRoutes() {
     // Health check endpoint
-    this.app.get('/health', (req, res) => {
-      res.json({
+    this.app.get('/health', async (_request, reply) => {
+      return reply.send({
         status: 'ok',
         clients: this.clients.size,
         timestamp: new Date().toISOString(),
@@ -65,7 +98,7 @@ class WebServer {
     });
 
     // Client info endpoint
-    this.app.get('/clients', (req, res) => {
+    this.app.get('/clients', async (_request, reply) => {
       const clientInfo = Array.from(this.clients.entries()).map(
         ([id, client]) => ({
           id,
@@ -73,12 +106,25 @@ class WebServer {
           state: client.transport.getState(),
         }),
       );
-      res.json(clientInfo);
+      return reply.send(clientInfo);
+    });
+
+    // files
+    await this.app.register(import('./routes/files'), {
+      prefix: BASE_API_PREFIX,
+      ...this.contextCreateOpts,
     });
   }
 
   private setupWebSocket() {
-    this.wss.on('connection', (ws, req) => {
+    // Initialize WebSocket server
+    this.wss = new WebSocketServer({
+      server: this.app.server,
+      path: '/ws',
+    });
+    this.isWssRunning = true;
+
+    this.wss.on('connection', (ws, _req) => {
       const clientId = this.generateClientId();
       console.log(`[WebServer] New client connected: ${clientId}`);
 
@@ -126,46 +172,64 @@ class WebServer {
   }
 
   async start(): Promise<void> {
-    return new Promise((resolve) => {
-      this.server.listen(this.port, this.host, () => {
-        console.log(
-          `[WebServer] Server running at http://${this.host}:${this.port}`,
-        );
-        console.log(
-          `[WebServer] WebSocket endpoint: ws://${this.host}:${this.port}/ws`,
-        );
-        resolve();
+    try {
+      // Setup routes and WebSocket first
+      await this.registerPlugins();
+      await this.setupRoutes();
+      this.setupWebSocket();
+
+      // Start Fastify server
+      await this.app.listen({
+        port: this.port,
+        host: this.host,
       });
-    });
+
+      console.log(
+        `[WebServer] Server running at http://${this.host}:${this.port}`,
+      );
+      console.log(
+        `[WebServer] WebSocket endpoint: ws://${this.host}:${this.port}/ws`,
+      );
+    } catch (err) {
+      console.error('[WebServer] Failed to start server:', err);
+      throw err;
+    }
   }
 
   async stop(): Promise<void> {
-    // Close all client connections
-    for (const [clientId, { transport }] of this.clients) {
-      console.log(`[WebServer] Closing client ${clientId}`);
-      await transport.close();
-    }
-    this.clients.clear();
-
-    // Close WebSocket server
-    return new Promise((resolve, reject) => {
-      this.wss.close((err) => {
-        if (err) {
-          reject(err);
-          return;
+    try {
+      // Close all client connections
+      for (const [clientId, { transport }] of this.clients) {
+        console.log(`[WebServer] Closing client ${clientId}`);
+        try {
+          await transport.close();
+        } catch (err) {
+          console.warn(`[WebServer] Failed to close client ${clientId}:`, err);
         }
+      }
+      this.clients.clear();
 
-        // Close HTTP server
-        this.server.close((err) => {
-          if (err) {
-            reject(err);
-          } else {
-            console.log('[WebServer] Server stopped');
-            resolve();
-          }
+      // Close WebSocket server
+      if (this.wss && this.isWssRunning) {
+        await new Promise<void>((resolve, reject) => {
+          this.wss.close((err) => {
+            this.isWssRunning = false;
+            if (err && err.message !== 'The server is not running') {
+              reject(err);
+            } else {
+              resolve();
+            }
+          });
         });
-      });
-    });
+      }
+
+      // Close Fastify server
+      await this.app.close();
+      console.log('[WebServer] Server stopped');
+    } catch (err) {
+      console.error('[WebServer] Error stopping server:', err);
+      throw err;
+    }
   }
 
   getClients() {

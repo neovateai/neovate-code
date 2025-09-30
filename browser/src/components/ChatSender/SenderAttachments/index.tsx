@@ -72,28 +72,17 @@ const SenderAttachments = () => {
       }),
     );
 
+    // TODO: do not support file besides image
     return false;
   };
 
   return (
     <>
       <Attachments
-        // action="/api/upload"
         accept={CONTEXT_AVAILABLE_FILE_TYPES.map((type) => type.extName).join(
           ',',
         )}
         beforeUpload={handleBeforeUpload}
-        onChange={({ file }) => {
-          // TODO server is not ready, so the file status won't be [done]
-          if (file.status === 'done') {
-            context.actions.addContext({
-              value: file.uid,
-              displayText: file.name,
-              type: ContextType.ATTACHMENT,
-              context: file,
-            });
-          }
-        }}
         getDropContainer={() => document.body}
         placeholder={{
           icon: <CloudUploadOutlined />,

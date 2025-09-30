@@ -6,7 +6,8 @@ import type {
   CodeViewerTabItem,
   DiffStat,
 } from '@/types/codeViewer';
-import { inferFileType } from '@/utils/codeViewer';
+import { diff, inferFileType } from '@/utils/codeViewer';
+import * as layout from './layout';
 
 interface CodeViewerState {
   visible: boolean;
@@ -16,10 +17,10 @@ interface CodeViewerState {
 }
 
 interface DisplayNormalViewerConfigs {
-  /** 如果为空但传入了path，会尝试使用path的后缀推断 */
+  /** If empty but path is provided, will try to infer from path extension */
   language?: CodeViewerLanguage;
   code: string;
-  /** 文件路径，默认作为key使用 */
+  /** File path, used as key by default */
   path?: string;
   mode?: CodeNormalViewerMode;
 }
@@ -43,6 +44,9 @@ export const state = proxy<CodeViewerState>({
 export const actions = {
   setVisible: (visible: boolean) => {
     state.visible = visible;
+    // Auto expand right panel when CodeViewer is shown
+    // Auto collapse right panel when CodeViewer is hidden
+    layout.actions.setRightPanelExpanded(visible);
   },
 
   hideDiffActions: (path: string) => {
@@ -62,8 +66,10 @@ export const actions = {
 
     if (nextItems.length === 0) {
       state.visible = false;
+      // Auto collapse right panel when there are no more tabs
+      layout.actions.setRightPanelExpanded(false);
     } else {
-      // TODO 可以优化成打开上一个而不是第一个
+      // TODO: Could be optimized to open the previous tab instead of the first one
       const nextActiveId = nextItems[0].id;
       state.activeId = nextActiveId;
     }
@@ -118,9 +124,12 @@ export const actions = {
     }
 
     state.activeId = id;
+    // Auto expand and show right panel when opening CodeViewer
+    state.visible = true;
+    layout.actions.setRightPanelExpanded(true);
   },
 
-  /** 代码有更新后，也需要重新调用一次这个函数刷新展示 */
+  /** Need to call this function again to refresh display after code updates */
   updateDiffViewerConfig: (config: DisplayDiffViewerConfigs) => {
     const { path, modifiedCode, originalCode, language, diffStat } = config;
 
@@ -131,7 +140,7 @@ export const actions = {
     const targetLanguage = language || inferFileType(path);
 
     let reuseTab = false;
-    // 更新所有满足要求的item
+    // Update all matching items
     state.codeViewerTabItems = state.codeViewerTabItems.map((item) => {
       if (item.id === id) {
         reuseTab = true;
@@ -166,11 +175,14 @@ export const actions = {
     }
 
     state.activeId = id;
+    // Auto expand and show right panel when opening CodeViewer
+    state.visible = true;
+    layout.actions.setRightPanelExpanded(true);
   },
 
   /**
-   * 展示编辑器、打开特定的文件并跳转特定的行，如果是DiffView，则跳转ModifiedModel对应的行
-   * @param path 文件路径
+   * Show editor, open specific file and jump to specific line. For DiffView, jump to corresponding line in ModifiedModel
+   * @param path File path
    */
   jumpToLine: (path: string, lineCount: number) => {
     const remainingItem = state.codeViewerTabItems.find(
@@ -182,13 +194,39 @@ export const actions = {
     if (remainingItem && jumpFunction) {
       state.activeId = remainingItem.id;
       state.visible = true;
+      // Auto expand right panel when jumping to code line
+      layout.actions.setRightPanelExpanded(true);
 
       jumpFunction(lineCount);
     }
   },
 
-  /** 注册跳转函数 */
+  /** Register jump function */
   registerJumpFunction: (path: string, fn: (_: number) => void) => {
     state.jumpFunctionMap[path] = fn;
+  },
+
+  async openCodeViewer(
+    path: string,
+    originalCode: string,
+    modifiedCode: string,
+    mode?: CodeNormalViewerMode,
+  ) {
+    if (mode) {
+      this.updateNormalViewerConfig({
+        code: mode === 'new' ? modifiedCode : originalCode,
+        path,
+        mode,
+      });
+    } else {
+      const diffStat = await diff(originalCode, modifiedCode);
+      this.updateDiffViewerConfig({
+        path,
+        originalCode,
+        modifiedCode,
+        diffStat,
+      });
+    }
+    this.setVisible(true);
   },
 };

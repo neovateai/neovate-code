@@ -1,0 +1,118 @@
+.container {
+  position: relative;
+  width: 100%;
+  min-width: 800px;
+  background: #ffffff;
+  padding: 168px 0 80px 0;
+}
+
+.backgroundImage {
+  position: absolute;
+  top: 100px;
+  left: 0;
+  width: 800px;
+  height: 100%;
+  background-image: url("/src/assets/welcome-background.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 0;
+}
+
+.content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 800px;
+  margin: 0 auto;
+  z-index: 1;
+}
+
+.welcomeTitle {
+  font-size: 36px;
+  font-weight: 600;
+  color: #110c22ff;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  margin-bottom: 73px;
+  gap: 8px;
+}
+
+.waveEmoji {
+  font-size: 36px;
+  color: initial;
+}
+
+.capabilitiesTitle {
+  font-size: 14px;
+  color: #4f4b5c;
+  font-weight: 400;
+  width: 100%;
+}
+
+.capabilitiesGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  width: 100%;
+}
+
+.capabilityCard {
+  width: 185px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0px 8px 48px 0px #eeeeee;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.capabilityCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 12px 56px 0px #e0e0e0;
+}
+
+.capabilityHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.capabilityIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.capabilityTitle {
+  font-size: 14px;
+  color: #110c22;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.capabilityDescription {
+  font-size: 11px;
+  color: #666f8dff;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.outerContainer {
+  padding-inline: calc(calc(100% - 800px) / 2);
+}
+
+.capabilitiesContainer {
+  width: 100%;
+}
+
+.capabilitiesRow {
+  width: 100%;
+}
+
+.capabilityItem {
+  flex: 1;
+}
