@@ -1,12 +1,12 @@
 # AGENTS.md
 
-This file provides guidance to CODE AGENT when working with code in this repository.
+This file provides guidance to neovate when working with code in this repository.
 
 ## Project Overview
 
-Takumi is a coding agent CLI to enhance development workflow. It's a TypeScript-based tool that provides AI-powered coding assistance through a command-line interface with support for multiple LLM providers and Model Context Protocol (MCP) servers.
+Neovate Code is a coding agent CLI to enhance development workflow. It's a TypeScript-based tool that provides AI-powered coding assistance through a command-line interface with support for multiple LLM providers and Model Context Protocol (MCP) servers.
 
-## Development Commandst
+## Development Commands
 
 ### Core Commands
 
@@ -118,6 +118,13 @@ Tools are resolved dynamically based on context and permissions:
 - `npm run release:major` - Major version release
 - Uses utools for release management
 - Automatic changelog generation
+
+## Chat History Storage
+
+- Chat history is stored in JSONL (JSON Lines) format
+- Location: `~/.neovate/projects/[formatted_project_path]/[session_id].jsonl`
+- Each session has its own file with messages stored as JSON objects, one per line
+- Global data including project history is stored in `~/.neovate/data.json`
 
 ## Important Notes
 
