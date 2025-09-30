@@ -23,12 +23,14 @@ export class OutputFormat {
     sessionId: string;
     cwd: string;
     tools: Tool[];
-    model: ModelInfo;
+    model: ModelInfo | null;
   }) {
     if (!this.quiet) {
       return;
     }
-    const model = `${opts.model.provider.id}/${opts.model.model.id}`;
+    const model = opts.model
+      ? `${opts.model.provider.id}/${opts.model.model.id}`
+      : null;
     const data = {
       type: 'system',
       subtype: 'init',

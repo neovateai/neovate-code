@@ -27,13 +27,13 @@ export async function resolveTools(opts: ResolveToolsOpts) {
   const sessionId = opts.sessionId;
   const model = (
     await resolveModelWithContext(opts.context.config.model, opts.context)
-  ).model!;
+  ).model;
   const readonlyTools = [
     createReadTool({ cwd, productName }),
     createLSTool({ cwd, productName }),
     createGlobTool({ cwd }),
     createGrepTool({ cwd }),
-    createFetchTool({ model }),
+    ...(model ? [createFetchTool({ model })] : []),
   ];
   const writeTools = opts.write
     ? [

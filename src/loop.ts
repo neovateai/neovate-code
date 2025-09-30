@@ -34,7 +34,7 @@ export type LoopResult =
 
 type RunLoopOpts = {
   input: string | NormalizedMessage[];
-  model: ModelInfo;
+  model: ModelInfo | null;
   tools: Tools;
   cwd: string;
   systemPrompt?: string;
@@ -63,6 +63,23 @@ type RunLoopOpts = {
 
 // TODO: support retry
 export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
+  // Check if model is configured
+  if (!opts.model) {
+    return {
+      success: false,
+      error: {
+        type: 'api_error',
+        message:
+          'No model configured. Please run /model to select a model first.',
+        details: {
+          turnsCount: 0,
+          toolCallsCount: 0,
+          duration: 0,
+        },
+      },
+    };
+  }
+
   const startTime = Date.now();
   let turnsCount = 0;
   let toolCallsCount = 0;
@@ -122,7 +139,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       };
     }
     if (opts.autoCompact) {
-      const compressed = await history.compress(opts.model);
+      const compressed = await history.compress(opts.model!);
       if (compressed.compressed) {
         debug('history compressed', compressed);
       }
@@ -131,13 +148,13 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     const runner = new Runner({
       modelProvider: {
         getModel() {
-          return opts.model.aisdk;
+          return opts.model!.aisdk;
         },
       },
     });
     const agent = new Agent({
       name: 'code',
-      model: opts.model.model.id,
+      model: opts.model!.model.id,
       instructions: `
 ${opts.systemPrompt || ''}
 ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
@@ -275,7 +292,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
       startTime,
       endTime,
     });
-    const model = `${opts.model.provider.id}/${opts.model.model.id}`;
+    const model = `${opts.model!.provider.id}/${opts.model!.model.id}`;
     await history.addMessage(
       {
         role: 'assistant',
