@@ -97,6 +97,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     },
   });
 
+  let shouldAtNormalize = true;
   while (true) {
     // Must use separate abortController to prevent ReadStream locking
     if (opts.signal?.aborted && !abortController.signal.aborted) {
@@ -151,11 +152,14 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
       } as SystemMessageItem;
     });
     let agentInput = [...llmsContextMessages, ...history.toAgentInput()];
-    // add file and directory contents for the last user prompt
-    agentInput = At.normalize({
-      input: agentInput,
-      cwd: opts.cwd,
-    });
+    if (shouldAtNormalize) {
+      // add file and directory contents for the last user prompt
+      agentInput = At.normalize({
+        input: agentInput,
+        cwd: opts.cwd,
+      });
+      shouldAtNormalize = false;
+    }
     const requestId = randomUUID();
     const result = await runner.run(agent, agentInput, {
       stream: true,
