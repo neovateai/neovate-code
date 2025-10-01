@@ -1,3 +1,12 @@
+## 0.12.6
+
+`2025-10-01`
+
+- feat: add GLM-4.6 model with enhanced context and output limits by [@sorrycc](https://github.com/sorrycc)
+- feat: add github copilot provider with login/logout support by [@sorrycc](https://github.com/sorrycc)
+- feat: add claude-4-5-sonnet model with updated capabilities and limits by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.12.5
 
 `2025-09-29`
