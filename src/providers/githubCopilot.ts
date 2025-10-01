@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 
 const CLIENT_ID = 'Iv1.b507a08c87ecfe98';
 const DEVICE_CODE_URL = 'https://github.com/login/device/code';
@@ -62,6 +63,7 @@ export class GithubProvider {
    */
   private saveState(): void {
     try {
+      fs.mkdirSync(path.dirname(this.authFile), { recursive: true });
       fs.writeFileSync(
         this.authFile,
         JSON.stringify(this.state, null, 2),
