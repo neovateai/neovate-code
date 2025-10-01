@@ -569,6 +569,19 @@ export const models: ModelMap = {
     open_weights: true,
     limit: { context: 64000, output: 16384 },
   },
+  'glm-4.6': {
+    name: 'GLM-4.6',
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-04',
+    release_date: '2025-09-30',
+    last_updated: '2025-09-30',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 204800, output: 131072 },
+  },
   'sonoma-dusk-alpha': {
     name: 'Sonoma Dusk Alpha',
     attachment: true,
@@ -875,6 +888,7 @@ export const providers: ProvidersMap = {
       'openrouter/sonoma-sky-alpha': models['sonoma-sky-alpha'],
       'z-ai/glm-4.5': models['glm-4.5'],
       'z-ai/glm-4.5v': models['glm-4.5v'],
+      'z-ai/glm-4.6': models['glm-4.6'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
@@ -1011,6 +1025,7 @@ export const providers: ProvidersMap = {
       'deepseek-ai/DeepSeek-V3.1': models['deepseek-v3-1'],
       'ZhipuAI/GLM-4.5': models['glm-4.5'],
       'ZhipuAI/GLM-4.5V': models['glm-4.5v'],
+      'ZhipuAI/GLM-4.6': models['glm-4.6'],
     },
     createModel: defaultModelCreator,
   },
