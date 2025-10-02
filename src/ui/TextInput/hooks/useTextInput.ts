@@ -106,14 +106,12 @@ export function useTextInput({
   );
 
   // Keep Escape for clearing input or custom action
-  const handleEscape = (show: boolean) => {
+  const handleEscape = () => {
     maybeClearImagePasteErrorTimeout();
-    // If onEscape callback is provided, call it instead of showing clear message
     if (onEscape) {
       onEscape();
       return;
     }
-    onMessage?.(!!originalValue && show, `Press Escape again to clear`);
   };
 
   function clear() {

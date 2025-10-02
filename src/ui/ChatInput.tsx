@@ -72,6 +72,13 @@ export function ChatInput() {
     [mode, handlers],
   );
 
+  // Handle delete key press - switch to prompt mode when value becomes empty
+  const handleDelete = useCallback(() => {
+    if ((mode === 'bash' || mode === 'memory') && displayValue === '') {
+      inputState.setValue('');
+    }
+  }, [mode, displayValue, inputState]);
+
   // Wrap cursor position change to add 1 for bash/memory modes
   const handleDisplayCursorChange = useCallback(
     (pos: number) => {
@@ -167,6 +174,7 @@ export function ChatInput() {
           onChangeCursorOffset={handleDisplayCursorChange}
           disableCursorMovementForUpDownKeys={showSuggestions}
           onTabPress={handlers.handleTabPress}
+          onDelete={handleDelete}
           columns={columns - 6}
           isDimmed={false}
         />
