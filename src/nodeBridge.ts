@@ -78,7 +78,7 @@ class NodeHandlerRegistry {
 
   private registerHandlers() {
     this.messageBus.registerHandler(
-      'initialize',
+      'session.initialize',
       async (data: { cwd: string; sessionId?: string }) => {
         const context = await this.getContext(data.cwd);
         await context.apply({
@@ -138,7 +138,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'send',
+      'session.send',
       async (data: {
         message: string | null;
         cwd: string;
@@ -194,7 +194,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'cancel',
+      'session.cancel',
       async (data: { cwd: string; sessionId: string }) => {
         const { cwd, sessionId } = data;
         const key = buildSignalKey(cwd, sessionId);
@@ -215,7 +215,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'addMessages',
+      'session.addMessages',
       async (data: { cwd: string; sessionId: string; messages: Message[] }) => {
         const { cwd, sessionId, messages } = data;
         const context = await this.getContext(cwd);
@@ -247,7 +247,7 @@ class NodeHandlerRegistry {
     //////////////////////////////////////////////
     // status
     this.messageBus.registerHandler(
-      'getStatus',
+      'status.get',
       async (data: { cwd: string; sessionId: string }) => {
         const { cwd, sessionId } = data;
         const context = await this.getContext(cwd);
@@ -281,7 +281,7 @@ class NodeHandlerRegistry {
     //////////////////////////////////////////////
     // config
     this.messageBus.registerHandler(
-      'setConfig',
+      'config.set',
       async (data: {
         cwd: string;
         isGlobal: boolean;
@@ -303,7 +303,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'removeConfig',
+      'config.remove',
       async (data: {
         cwd: string;
         isGlobal: boolean;
@@ -325,7 +325,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'getConfig',
+      'config.get',
       async (data: { cwd: string; key: string }) => {
         const { cwd, key } = data;
         const context = await this.getContext(cwd);
@@ -342,7 +342,7 @@ class NodeHandlerRegistry {
     //////////////////////////////////////////////
     // output style
     this.messageBus.registerHandler(
-      'getOutputStyles',
+      'outputStyles.list',
       async (data: { cwd: string }) => {
         const { cwd } = data;
         const context = await this.getContext(cwd);
@@ -363,7 +363,7 @@ class NodeHandlerRegistry {
     //////////////////////////////////////////////
     // sessions
     this.messageBus.registerHandler(
-      'getAllSessions',
+      'sessions.list',
       async (data: { cwd: string }) => {
         const { cwd } = data;
         const context = await this.getContext(cwd);
@@ -378,7 +378,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'resumeSession',
+      'sessions.resume',
       async (data: { cwd: string; sessionId: string }) => {
         const { cwd, sessionId } = data;
         const context = await this.getContext(cwd);
@@ -394,7 +394,7 @@ class NodeHandlerRegistry {
 
     // models
     this.messageBus.registerHandler(
-      'getModels',
+      'models.list',
       async (data: { cwd: string }) => {
         const { cwd } = data;
         const context = await this.getContext(cwd);
@@ -437,7 +437,7 @@ class NodeHandlerRegistry {
 
     // providers for login
     this.messageBus.registerHandler(
-      'getProviders',
+      'providers.list',
       async (data: { cwd: string }) => {
         const { cwd } = data;
         const context = await this.getContext(cwd);
@@ -455,7 +455,7 @@ class NodeHandlerRegistry {
     // slash command
 
     this.messageBus.registerHandler(
-      'getSlashCommands',
+      'slashCommand.list',
       async (data: { cwd: string }) => {
         const { cwd } = data;
         const context = await this.getContext(cwd);
@@ -470,7 +470,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'getSlashCommand',
+      'slashCommand.get',
       async (data: { cwd: string; command: string }) => {
         const { cwd, command } = data;
         const context = await this.getContext(cwd);
@@ -486,7 +486,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'executeSlashCommand',
+      'slashCommand.execute',
       async (data: {
         cwd: string;
         sessionId: string;
@@ -582,7 +582,7 @@ class NodeHandlerRegistry {
     // utils
 
     this.messageBus.registerHandler(
-      'query',
+      'utils.query',
       async (data: {
         userPrompt: string;
         cwd: string;
@@ -600,7 +600,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'getPaths',
+      'utils.getPaths',
       async (data: { cwd: string; maxFiles?: number }) => {
         const { cwd, maxFiles = 6000 } = data;
         const context = await this.getContext(cwd);
@@ -620,7 +620,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'compact',
+      'session.compact',
       async (data: {
         cwd: string;
         sessionId: string;
@@ -645,7 +645,7 @@ class NodeHandlerRegistry {
     //////////////////////////////////////////////
     // session config
     this.messageBus.registerHandler(
-      'sessionConfig.setApprovalMode',
+      'session.config.setApprovalMode',
       async (data: {
         cwd: string;
         sessionId: string;
@@ -664,7 +664,7 @@ class NodeHandlerRegistry {
       },
     );
     this.messageBus.registerHandler(
-      'sessionConfig.addApprovalTools',
+      'session.config.addApprovalTools',
       async (data: {
         cwd: string;
         sessionId: string;
@@ -686,7 +686,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'globalData.addHistory',
+      'project.addHistory',
       async (data: { cwd: string; history: string }) => {
         const { cwd, history } = data;
         const context = await this.getContext(cwd);
@@ -705,7 +705,7 @@ class NodeHandlerRegistry {
       },
     );
     this.messageBus.registerHandler(
-      'sessionConfig.setSummary',
+      'session.config.setSummary',
       async (data: { cwd: string; sessionId: string; summary: string }) => {
         const { cwd, sessionId, summary } = data;
         const context = await this.getContext(cwd);
@@ -721,7 +721,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'sessionConfig.setPastedTextMap',
+      'session.config.setPastedTextMap',
       async (data: {
         cwd: string;
         sessionId: string;
@@ -741,7 +741,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'sessionConfig.setPastedImageMap',
+      'session.config.setPastedImageMap',
       async (data: {
         cwd: string;
         sessionId: string;
@@ -763,7 +763,7 @@ class NodeHandlerRegistry {
     //////////////////////////////////////////////
     // MCP status
     this.messageBus.registerHandler(
-      'getMcpStatus',
+      'mcp.getStatus',
       async (data: { cwd: string }) => {
         const { cwd } = data;
         const context = await this.getContext(cwd);
@@ -824,7 +824,7 @@ class NodeHandlerRegistry {
 
     // MCP reconnection functionality
     this.messageBus.registerHandler(
-      'reconnectMcpServer',
+      'mcp.reconnect',
       async (data: { cwd: string; serverName: string }) => {
         const { cwd, serverName } = data;
         try {
@@ -854,7 +854,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'clearContext',
+      'project.clearContext',
       async (data: { cwd?: string }) => {
         await this.clearContext(data.cwd);
         return {
@@ -864,7 +864,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'telemetry',
+      'utils.telemetry',
       async (data: {
         cwd: string;
         name: string;

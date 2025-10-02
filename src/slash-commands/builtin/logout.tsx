@@ -32,7 +32,7 @@ export const LogoutSelect: React.FC<LogoutSelectProps> = ({ onExit }) => {
 
   useEffect(() => {
     bridge
-      .request('getProviders', { cwd })
+      .request('providers.list', { cwd })
       .then((result) => {
         if (result.success) {
           const providersData = result.data.providers as Provider[];
@@ -88,7 +88,7 @@ export const LogoutSelect: React.FC<LogoutSelectProps> = ({ onExit }) => {
         return;
       }
 
-      const result = await bridge.request('removeConfig', {
+      const result = await bridge.request('config.remove', {
         cwd,
         isGlobal: true,
         key: `provider.${provider.id}.options.apiKey`,

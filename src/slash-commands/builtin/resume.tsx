@@ -26,7 +26,7 @@ const ResumeSelect: React.FC<ResumeSelectProps> = ({ onExit, onSelect }) => {
 
   useEffect(() => {
     bridge
-      .request('getAllSessions', { cwd })
+      .request('sessions.list', { cwd })
       .then((result) => {
         if (result.success && Array.isArray(result.data?.sessions)) {
           setSessions(result.data.sessions);
@@ -134,7 +134,7 @@ const ResumeSelect: React.FC<ResumeSelectProps> = ({ onExit, onSelect }) => {
           initialIndex={0}
           itemsPerPage={10}
           onSelect={async (item) => {
-            const result = await bridge.request('resumeSession', {
+            const result = await bridge.request('sessions.resume', {
               cwd,
               sessionId: item.value,
             });

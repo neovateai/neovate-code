@@ -183,7 +183,7 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
 
   useEffect(() => {
     bridge
-      .request('getProviders', { cwd })
+      .request('providers.list', { cwd })
       .then((result) => {
         if (result.success) {
           const providersData = result.data.providers as Provider[];
@@ -260,7 +260,7 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
     if (!selectedProvider) return;
 
     try {
-      const result = await bridge.request('setConfig', {
+      const result = await bridge.request('config.set', {
         cwd,
         isGlobal: true,
         key: `provider.${selectedProvider.id}.options.apiKey`,
