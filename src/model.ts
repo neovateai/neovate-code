@@ -4,7 +4,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createXai } from '@ai-sdk/xai';
 import {
   createOpenRouter,
-  type LanguageModelV1,
+  type LanguageModelV2,
 } from '@openrouter/ai-sdk-provider';
 import assert from 'assert';
 import defu from 'defu';
@@ -13,8 +13,7 @@ import type { ProviderConfig } from './config';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
 import { GithubProvider } from './providers/githubCopilot';
-import type { AiSdkModel } from './utils/ai-sdk';
-import { aisdk } from './utils/ai-sdk';
+import { type AiSdkModel, aisdk } from './utils/ai-sdk';
 
 export interface ModelModalities {
   input: ('text' | 'image' | 'audio' | 'video' | 'pdf')[];
@@ -62,7 +61,7 @@ export interface Provider {
     name: string,
     provider: Provider,
     globalConfigDir: string,
-  ): Promise<LanguageModelV1> | LanguageModelV1;
+  ): Promise<LanguageModelV2> | LanguageModelV2;
   options?: {
     baseURL?: string;
     apiKey?: string;
@@ -689,7 +688,10 @@ function getProviderApiKey(provider: Provider) {
   return '';
 }
 
-export const defaultModelCreator = (name: string, provider: Provider) => {
+export const defaultModelCreator = (
+  name: string,
+  provider: Provider,
+): LanguageModelV2 => {
   if (provider.id !== 'openai') {
     assert(provider.api, `Provider ${provider.id} must have an api`);
   }
@@ -961,8 +963,6 @@ export const providers: ProvidersMap = {
       return createOpenAI({
         baseURL,
         apiKey,
-        // include usage information in streaming mode
-        compatibility: 'strict',
       })(name);
     },
   },
@@ -984,7 +984,6 @@ export const providers: ProvidersMap = {
         baseURL,
         apiKey,
         // include usage information in streaming mode why? https://platform.moonshot.cn/docs/guide/migrating-from-openai-to-kimi#stream-模式下的-usage-值
-        compatibility: 'strict',
       })(name);
     },
   },
@@ -1248,10 +1247,10 @@ export async function resolveModel(
   return {
     provider,
     model,
-    aisdk: aisdk(m as LanguageModelV1),
+    aisdk: aisdk(m as LanguageModelV2),
   };
 }
 
-function isPromise(m: any): m is Promise<LanguageModelV1> {
+function isPromise(m: any): m is Promise<LanguageModelV2> {
   return m instanceof Promise;
 }

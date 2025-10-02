@@ -1,4 +1,4 @@
-import type { Message } from 'ai';
+import type { UIMessage } from 'ai';
 import type { FileItem } from './files';
 
 export interface ImageItem {
@@ -35,7 +35,7 @@ export interface ContextItem {
   [key: string]: any;
 }
 
-export interface UserMessage extends Message {
+export interface UserUIMessage extends UIMessage {
   role: 'user';
   attachedContexts: ContextItem[];
   /**
@@ -46,7 +46,7 @@ export interface UserMessage extends Message {
 }
 
 export interface CompletionRequest {
-  messages: Array<UserMessage>;
+  messages: Array<UserUIMessage>;
   /**
    * The mode of the completion, can be 'agent', 'ask', 'plan'
    */
