@@ -1,3 +1,4 @@
+import assert from 'assert';
 import fm from 'front-matter';
 import fs from 'fs';
 import { glob } from 'glob';
@@ -82,7 +83,7 @@ export class OutputStyleManager {
     return loadPolishedMarkdownFiles(globalConfigDir).map((file) => {
       return new OutputStyle({
         name: file.name,
-        description: file.description + ' (user)',
+        description: `${file.description} (user)`,
         isCodingRelated: !!file.attributes.isCodingRelated,
         prompt: file.body,
       });
@@ -93,7 +94,7 @@ export class OutputStyleManager {
     return loadPolishedMarkdownFiles(projectConfigDir).map((file) => {
       return new OutputStyle({
         name: file.name,
-        description: file.description + ' (project)',
+        description: `${file.description} (project)`,
         isCodingRelated: !!file.attributes.isCodingRelated,
         prompt: file.body,
       });
@@ -129,11 +130,31 @@ export class OutputStyleManager {
         isCodingRelated: !!file.attributes.isCodingRelated,
         prompt: file.body,
       });
+    } else if (name.startsWith('{') && name.endsWith('}')) {
+      let json = null;
+      try {
+        json = JSON.parse(name);
+      } catch (error) {
+        throw new Error(
+          `Invalid JSON output style: ${error instanceof Error ? error.message : String(error)}, original: ${name}`,
+        );
+      }
+      assert(json.prompt, 'prompt is required');
+      return new OutputStyle({
+        name: json.name || 'Custom',
+        description: json.description || 'Custom',
+        isCodingRelated: json.isCodingRelated,
+        prompt: json.prompt,
+      });
+    } else if (name) {
+      const outputStyle = this.outputStyles.find(
+        (style) => style.name === name,
+      );
+      assert(outputStyle, `Output style ${name} not found`);
+      return outputStyle;
+    } else {
+      return defaultOutputStyle;
     }
-    return (
-      this.outputStyles.find((style) => style.name === name) ||
-      defaultOutputStyle
-    );
   }
 
   getDefaultOutputStyle(): OutputStyle {
