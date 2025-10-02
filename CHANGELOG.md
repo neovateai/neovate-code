@@ -1,3 +1,13 @@
+## 0.12.7
+
+`2025-10-02`
+
+- refactor: reorganize nodeBridge handlers and improve mcp status functionality [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename message bus handlers to use hierarchical naming convention [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add glm-4.5-air and glm-4.5-flash models with zai-coding-plan and zhipuai providers, Close #291 by [@sorrycc](https://github.com/sorrycc)
+- fix: ensure auth file directory exists before writing by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.12.6
 
 `2025-10-01`
