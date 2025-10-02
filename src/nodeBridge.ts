@@ -327,6 +327,26 @@ class NodeHandlerRegistry {
       },
     );
 
+    this.messageBus.registerHandler(
+      'project.addMemory',
+      async (data: { cwd: string; global: boolean; rule: string }) => {
+        const { cwd, global: isGlobal, rule } = data;
+        const context = await this.getContext(cwd);
+        const { appendFileSync } = await import('fs');
+        const { join } = await import('path');
+
+        const memoryFile = isGlobal
+          ? join(context.paths.globalConfigDir, 'AGENTS.md')
+          : join(cwd, 'AGENTS.md');
+
+        appendFileSync(memoryFile, `- ${rule}\n`, 'utf-8');
+
+        return {
+          success: true,
+        };
+      },
+    );
+
     //////////////////////////////////////////////
     // providers
     this.messageBus.registerHandler(

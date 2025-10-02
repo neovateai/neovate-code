@@ -120,6 +120,11 @@ interface AppState {
     resolve: (result: ApprovalResult) => Promise<void>;
   } | null;
 
+  memoryModal: {
+    rule: string;
+    resolve: (result: 'project' | 'global' | null) => void;
+  } | null;
+
   upgrade: {
     text: string;
     type?: 'success' | 'error';
@@ -164,6 +169,7 @@ interface AppActions {
     toolUse: ToolUse;
     category?: ApprovalCategory;
   }) => Promise<ApprovalResult>;
+  showMemoryModal: (rule: string) => Promise<'project' | 'global' | null>;
   addToQueue: (message: string) => void;
   clearQueue: () => void;
   processQueuedMessages: () => Promise<void>;
@@ -217,6 +223,7 @@ export const useAppStore = create<AppStore>()(
       processingStartTime: null,
       processingTokens: 0,
       approvalModal: null,
+      memoryModal: null,
       upgrade: null,
 
       // Input state
@@ -773,6 +780,21 @@ export const useAppStore = create<AppStore>()(
           });
         });
       },
+
+      showMemoryModal: (rule: string) => {
+        return new Promise<'project' | 'global' | null>((resolve) => {
+          set({
+            memoryModal: {
+              rule,
+              resolve: (result: 'project' | 'global' | null) => {
+                set({ memoryModal: null });
+                resolve(result);
+              },
+            },
+          });
+        });
+      },
+
       addToQueue: (message: string) => {
         set({ queuedMessages: [...get().queuedMessages, message] });
       },

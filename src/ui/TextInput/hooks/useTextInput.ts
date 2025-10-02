@@ -106,23 +106,16 @@ export function useTextInput({
   );
 
   // Keep Escape for clearing input or custom action
-  const handleEscape = useDoublePress(
-    (show) => {
-      maybeClearImagePasteErrorTimeout();
-      // If onEscape callback is provided, call it instead of showing clear message
-      if (onEscape) {
-        onEscape();
-        return;
-      }
-      onMessage?.(!!originalValue && show, `Press Escape again to clear`);
-    },
-    () => {
-      // Only clear input if no custom onEscape handler
-      if (!onEscape && originalValue) {
-        onChange('');
-      }
-    },
-  );
+  const handleEscape = (show: boolean) => {
+    maybeClearImagePasteErrorTimeout();
+    // If onEscape callback is provided, call it instead of showing clear message
+    if (onEscape) {
+      onEscape();
+      return;
+    }
+    onMessage?.(!!originalValue && show, `Press Escape again to clear`);
+  };
+
   function clear() {
     return Cursor.fromText('', columns, 0);
   }
