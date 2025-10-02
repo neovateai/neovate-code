@@ -674,7 +674,6 @@ export const useAppStore = create<AppStore>()(
               {
                 role: 'user',
                 content: [{ type: 'text', text: planResult }],
-                history: null,
               },
             ],
           })

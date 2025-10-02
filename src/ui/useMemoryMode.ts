@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useAppStore } from './store';
 
 export function useMemoryMode() {
-  const { bridge, cwd, showMemoryModal } = useAppStore();
+  const { bridge, cwd, showMemoryModal, addMessage } = useAppStore();
 
   const handleMemorySubmit = useCallback(
     async (rule: string) => {
@@ -14,9 +14,15 @@ export function useMemoryMode() {
           global: isGlobal,
           rule,
         });
+        addMessage({
+          role: 'user',
+          content: [
+            { type: 'text', text: `Added to ${result} memory: ${rule}` },
+          ],
+        });
       }
     },
-    [bridge, cwd, showMemoryModal],
+    [bridge, cwd, addMessage, showMemoryModal],
   );
 
   return {
