@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
 import type { LoopResult } from '../loop';
-import type { ImagePart, Message, UserMessage } from '../message';
+import type { Message, UserMessage } from '../message';
 import type { ProvidersMap } from '../model';
 import { Paths } from '../paths';
 import { loadSessionMessages, Session, SessionConfigManager } from '../session';
@@ -120,6 +120,11 @@ interface AppState {
     resolve: (result: ApprovalResult) => Promise<void>;
   } | null;
 
+  memoryModal: {
+    rule: string;
+    resolve: (result: 'project' | 'global' | null) => void;
+  } | null;
+
   upgrade: {
     text: string;
     type?: 'success' | 'error';
@@ -164,6 +169,7 @@ interface AppActions {
     toolUse: ToolUse;
     category?: ApprovalCategory;
   }) => Promise<ApprovalResult>;
+  showMemoryModal: (rule: string) => Promise<'project' | 'global' | null>;
   addToQueue: (message: string) => void;
   clearQueue: () => void;
   processQueuedMessages: () => Promise<void>;
@@ -217,6 +223,7 @@ export const useAppStore = create<AppStore>()(
       processingStartTime: null,
       processingTokens: 0,
       approvalModal: null,
+      memoryModal: null,
       upgrade: null,
 
       // Input state
@@ -231,7 +238,7 @@ export const useAppStore = create<AppStore>()(
       // Actions
       initialize: async (opts) => {
         const { bridge } = opts;
-        const response = await bridge.request('initialize', {
+        const response = await bridge.request('session.initialize', {
           cwd: opts.cwd,
           sessionId: opts.sessionId,
         });
@@ -293,7 +300,7 @@ export const useAppStore = create<AppStore>()(
           }
           // Upgrade
           if (opts.upgrade) {
-            const autoUpdateResponse = await bridge.request('getConfig', {
+            const autoUpdateResponse = await bridge.request('config.get', {
               cwd: opts.cwd,
               isGlobal: true,
               key: 'autoUpdate',
@@ -334,7 +341,7 @@ export const useAppStore = create<AppStore>()(
         const { bridge, cwd, sessionId, planMode, status, pastedTextMap } =
           get();
 
-        bridge.request('telemetry', {
+        bridge.request('utils.telemetry', {
           cwd,
           name: 'send',
           payload: { message, sessionId },
@@ -365,16 +372,15 @@ export const useAppStore = create<AppStore>()(
           }
         }
 
-        // Save history to session config (save the original message with placeholders)
+        // Save history to global data (save the original message with placeholders)
         if (!isSlashCommand(message)) {
           const newHistory = [...get().history, message];
           set({
             history: newHistory,
             historyIndex: null,
           });
-          await bridge.request('sessionConfig.addHistory', {
+          await bridge.request('project.addHistory', {
             cwd,
-            sessionId,
             history: message,
           });
         }
@@ -382,7 +388,7 @@ export const useAppStore = create<AppStore>()(
         // slash command - use expanded message for processing
         if (isSlashCommand(expandedMessage)) {
           const parsed = parseSlashCommand(expandedMessage);
-          const result = await bridge.request('getSlashCommand', {
+          const result = await bridge.request('slashCommand.get', {
             cwd,
             command: parsed.command,
           });
@@ -398,7 +404,7 @@ export const useAppStore = create<AppStore>()(
             const isLocalJSX = type === 'local-jsx';
             const isPrompt = type === 'prompt';
             if (isPrompt) {
-              await bridge.request('addMessages', {
+              await bridge.request('session.addMessages', {
                 cwd,
                 sessionId,
                 messages: [userMessage],
@@ -410,7 +416,7 @@ export const useAppStore = create<AppStore>()(
             }
             // TODO: save local type command's messages to history
             if (isLocal || isPrompt) {
-              const result = await bridge.request('executeSlashCommand', {
+              const result = await bridge.request('slashCommand.execute', {
                 cwd,
                 sessionId,
                 command: parsed.command,
@@ -419,7 +425,7 @@ export const useAppStore = create<AppStore>()(
               if (result.success) {
                 const messages = result.data.messages;
                 if (isPrompt) {
-                  await bridge.request('addMessages', {
+                  await bridge.request('session.addMessages', {
                     cwd,
                     sessionId,
                     messages,
@@ -492,7 +498,7 @@ export const useAppStore = create<AppStore>()(
             // don't await this
             (async () => {
               try {
-                const queryResult = await bridge.request('query', {
+                const queryResult = await bridge.request('utils.query', {
                   cwd,
                   systemPrompt:
                     "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with one fields: 'title' (string). Only include these fields, no other text.",
@@ -504,7 +510,7 @@ export const useAppStore = create<AppStore>()(
                     const response = JSON.parse(queryResult.data.text);
                     if (response && response.title) {
                       setTerminalTitle(response.title);
-                      await bridge.request('sessionConfig.setSummary', {
+                      await bridge.request('session.config.setSummary', {
                         cwd,
                         sessionId,
                         summary: response.title,
@@ -565,7 +571,7 @@ export const useAppStore = create<AppStore>()(
           }
         }
 
-        const response: LoopResult = await bridge.request('send', {
+        const response: LoopResult = await bridge.request('session.send', {
           message: opts.message,
           cwd,
           sessionId,
@@ -595,7 +601,7 @@ export const useAppStore = create<AppStore>()(
         if (!isExecuting(status)) {
           return;
         }
-        await bridge.request('cancel', {
+        await bridge.request('session.cancel', {
           cwd,
           sessionId,
         });
@@ -614,8 +620,6 @@ export const useAppStore = create<AppStore>()(
         });
         set({
           messages: [],
-          history: [],
-          historyIndex: null,
           sessionId,
           logFile: paths.getSessionLogPath(sessionId),
           // Also reset input state when clearing
@@ -663,14 +667,13 @@ export const useAppStore = create<AppStore>()(
         set({ planResult: null, planMode: false });
         const bridge = get().bridge;
         bridge
-          .request('addMessages', {
+          .request('session.addMessages', {
             cwd: get().cwd,
             sessionId: get().sessionId,
             messages: [
               {
                 role: 'user',
                 content: [{ type: 'text', text: planResult }],
-                history: null,
               },
             ],
           })
@@ -691,15 +694,12 @@ export const useAppStore = create<AppStore>()(
         const sessionConfigManager = new SessionConfigManager({
           logPath: logFile,
         });
-        const history = sessionConfigManager.config.history || [];
         const pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
         const pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
         set({
           sessionId,
           logFile,
           messages,
-          history,
-          historyIndex: null,
           status: 'idle',
           error: null,
           slashCommandJSX: null,
@@ -726,15 +726,15 @@ export const useAppStore = create<AppStore>()(
 
       setModel: async (model: string) => {
         const { bridge, cwd } = get();
-        await bridge.request('setConfig', {
+        await bridge.request('config.set', {
           cwd: cwd,
           key: 'model',
           value: model,
           isGlobal: true,
         });
-        await bridge.request('clearContext', {});
+        await bridge.request('project.clearContext', {});
         // Get the modelContextLimit for the selected model
-        const modelsResponse = await bridge.request('getModels', { cwd });
+        const modelsResponse = await bridge.request('models.list', { cwd });
         if (modelsResponse.success) {
           set({
             model,
@@ -761,13 +761,13 @@ export const useAppStore = create<AppStore>()(
                 set({ approvalModal: null });
                 const isApproved = result !== 'deny';
                 if (result === 'approve_always_edit') {
-                  await bridge.request('sessionConfig.setApprovalMode', {
+                  await bridge.request('session.config.setApprovalMode', {
                     cwd,
                     sessionId,
                     approvalMode: 'autoEdit',
                   });
                 } else if (result === 'approve_always_tool') {
-                  await bridge.request('sessionConfig.addApprovalTools', {
+                  await bridge.request('session.config.addApprovalTools', {
                     cwd,
                     sessionId,
                     approvalTool: toolUse.name,
@@ -779,6 +779,21 @@ export const useAppStore = create<AppStore>()(
           });
         });
       },
+
+      showMemoryModal: (rule: string) => {
+        return new Promise<'project' | 'global' | null>((resolve) => {
+          set({
+            memoryModal: {
+              rule,
+              resolve: (result: 'project' | 'global' | null) => {
+                set({ memoryModal: null });
+                resolve(result);
+              },
+            },
+          });
+        });
+      },
+
       addToQueue: (message: string) => {
         set({ queuedMessages: [...get().queuedMessages, message] });
       },
@@ -845,7 +860,7 @@ export const useAppStore = create<AppStore>()(
         set({ pastedTextMap: map });
         // Save to session config
         if (sessionId) {
-          await bridge.request('sessionConfig.setPastedTextMap', {
+          await bridge.request('session.config.setPastedTextMap', {
             cwd,
             sessionId,
             pastedTextMap: map,
@@ -858,7 +873,7 @@ export const useAppStore = create<AppStore>()(
         set({ pastedImageMap: map });
         // Save to session config
         if (sessionId) {
-          await bridge.request('sessionConfig.setPastedImageMap', {
+          await bridge.request('session.config.setPastedImageMap', {
             cwd,
             sessionId,
             pastedImageMap: map,

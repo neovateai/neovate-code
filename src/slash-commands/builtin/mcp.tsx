@@ -49,7 +49,7 @@ const McpManagerComponent: React.FC<McpManagerProps> = ({ onExit }) => {
   // Load server data
   const loadServers = async () => {
     try {
-      const result = await bridge.request('getMcpStatus', { cwd });
+      const result = await bridge.request('mcp.getStatus', { cwd });
       if (result.success) {
         const data = result.data;
 
@@ -128,7 +128,7 @@ const McpManagerComponent: React.FC<McpManagerProps> = ({ onExit }) => {
 
         (async () => {
           try {
-            const result = await bridge.request('reconnectMcpServer', {
+            const result = await bridge.request('mcp.reconnect', {
               cwd,
               serverName: server.name,
             });

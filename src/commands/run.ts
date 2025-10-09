@@ -2,7 +2,6 @@ import * as p from '@umijs/clack-prompts';
 import assert from 'assert';
 import { execSync } from 'child_process';
 import pc from 'picocolors';
-import yargsParser from 'yargs-parser';
 import type { Context } from '../context';
 import { query } from '../query';
 import * as logger from '../utils/logger';
@@ -56,6 +55,7 @@ Examples:
 }
 
 export async function runRun(context: Context) {
+  const { default: yargsParser } = await import('yargs-parser');
   const argv = yargsParser(process.argv.slice(2), {
     alias: {
       model: 'm',

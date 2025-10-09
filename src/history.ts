@@ -227,6 +227,10 @@ export class History {
     if (!summary || summary.trim().length === 0) {
       throw new Error('Generated summary is empty');
     }
+
+    // Clear original messages and replace with summary
+    this.messages = [];
+
     this.onMessage?.({
       parentUuid: null,
       uuid: randomUUID(),

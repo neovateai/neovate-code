@@ -43,7 +43,7 @@ export const compactCommand: LocalJSXCommand = {
         const run = async () => {
           try {
             log('compacting...');
-            const result = await bridge.request('compact', {
+            const result = await bridge.request('session.compact', {
               cwd,
               messages,
               sessionId,
@@ -54,7 +54,7 @@ export const compactCommand: LocalJSXCommand = {
             }
 
             log(`compacted${JSON.stringify(result)}`);
-            await bridge.request('addMessages', {
+            await bridge.request('session.addMessages', {
               cwd,
               sessionId,
               messages: [

@@ -142,6 +142,11 @@ export type Props = {
    * Function to call when `Tab` is pressed for auto-suggestion navigation.
    */
   readonly onTabPress?: (isShiftTab: boolean) => void;
+
+  /**
+   * Function to call when `Delete` or `Backspace` is pressed.
+   */
+  readonly onDelete?: () => void;
 };
 
 export default function TextInput({
@@ -169,6 +174,7 @@ export default function TextInput({
   cursorOffset,
   onChangeCursorOffset,
   onTabPress,
+  onDelete,
 }: Props): React.JSX.Element {
   const { onInput, renderedValue } = useTextInput({
     value: originalValue,
@@ -335,6 +341,11 @@ export default function TextInput({
   };
 
   const wrappedOnInput = (input: string, key: Key): void => {
+    // Call onDelete when backspace or delete key is pressed
+    if ((key.backspace || key.delete) && onDelete) {
+      onDelete();
+    }
+
     const isImageFormat = isImagePathText(input);
     const currentState = pasteStateRef.current;
     const currentTime = Date.now();
@@ -429,7 +440,7 @@ export default function TextInput({
         : chalk.inverse(' ');
   }
 
-  const showPlaceholder = originalValue.length == 0 && placeholder;
+  const showPlaceholder = originalValue.length === 0 && placeholder;
   return (
     <Text wrap="truncate-end" dimColor={isDimmed}>
       {showPlaceholder ? renderedPlaceholder : renderedValue}

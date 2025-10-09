@@ -3,8 +3,17 @@ import { useAppStore } from './store';
 import { useFileSuggestion } from './useFileSuggestion';
 import { useImagePasteManager } from './useImagePasteManager';
 import { useInputState } from './useInputState';
+import { useMemoryMode } from './useMemoryMode';
 import { usePasteManager } from './usePasteManager';
 import { useSlashCommands } from './useSlashCommands';
+
+export type InputMode = 'bash' | 'memory' | 'prompt';
+
+function getInputMode(value: string): InputMode {
+  if (value.startsWith('!')) return 'bash';
+  if (value.startsWith('#')) return 'memory';
+  return 'prompt';
+}
 
 export function useInputHandlers() {
   const {
@@ -19,11 +28,13 @@ export function useInputHandlers() {
     clearQueue,
   } = useAppStore();
   const inputState = useInputState();
+  const mode = getInputMode(inputState.state.value);
   const slashCommands = useSlashCommands(inputState.state.value);
   const [forceTabTrigger, setForceTabTrigger] = useState(false);
   const fileSuggestion = useFileSuggestion(inputState.state, forceTabTrigger);
   const pasteManager = usePasteManager();
   const imageManager = useImagePasteManager();
+  const memoryMode = useMemoryMode();
 
   const resetTabTrigger = useCallback(() => {
     setForceTabTrigger(false);
@@ -78,7 +89,14 @@ export function useInputHandlers() {
       applyFileSuggestion();
       return;
     }
-    // 3. submit (pasted text expansion is handled in store.send)
+    // 3. memory mode - show modal and save to memory
+    if (mode === 'memory') {
+      const rule = value.slice(1).trim(); // Remove # prefix
+      inputState.reset();
+      await memoryMode.handleMemorySubmit(rule);
+      return;
+    }
+    // 4. submit (pasted text expansion is handled in store.send)
     inputState.setValue('');
     resetTabTrigger();
     await send(value);
@@ -89,6 +107,8 @@ export function useInputHandlers() {
     fileSuggestion,
     applyFileSuggestion,
     resetTabTrigger,
+    mode,
+    memoryMode,
   ]);
 
   const handleTabPress = useCallback(
@@ -202,7 +222,7 @@ export function useInputHandlers() {
     }
     // 2. history
     if (historyIndex !== null) {
-      let value;
+      let value: string;
       if (historyIndex === history.length - 1) {
         setHistoryIndex(null);
         value = draftInput;
@@ -249,8 +269,21 @@ export function useInputHandlers() {
     [imageManager],
   );
 
+  const handleEscape = useCallback(() => {
+    // If in bash or memory mode with only prefix character, switch to prompt mode
+    if (
+      (mode === 'bash' || mode === 'memory') &&
+      inputState.state.value.length === 1
+    ) {
+      inputState.setValue('');
+      return true; // Indicates mode switch, don't cancel
+    }
+    return false; // Continue with normal cancel behavior
+  }, [mode, inputState]);
+
   return {
     inputState,
+    mode,
     handlers: {
       handleSubmit,
       handleTabPress,
@@ -260,6 +293,7 @@ export function useInputHandlers() {
       handleHistoryReset,
       handlePaste,
       handleImagePaste,
+      handleEscape,
     },
     slashCommands,
     fileSuggestion,
