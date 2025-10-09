@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import DevFileIcon from '@/components/DevFileIcon';
 import type { SuggestionItem } from '@/components/SuggestionList';
-import { CONTEXT_MAX_POPUP_ITEM_COUNT, ContextType } from '@/constants/context';
-import { state as clientState } from '@/state/client';
+import { ContextType } from '@/constants/context';
+import { state as chatState } from '@/state/chat';
 import * as context from '@/state/context';
 import { actions, state } from '@/state/suggestion';
 import { CommandSource } from '@/types/chat';
@@ -16,20 +16,16 @@ const SUGGESTION_SEARCH_DEBOUNCE_TIME = 200;
 
 export const useSuggestion = () => {
   const { fileList, slashCommandList, loading } = useSnapshot(state);
-  const clientSnap = useSnapshot(clientState);
   const { contexts } = useSnapshot(context.state);
 
   const { t } = useTranslation();
 
   useEffect(() => {
-    actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
-  }, []);
-
-  useEffect(() => {
-    if (clientSnap.state === 'connected') {
+    if (chatState.initialized) {
       actions.getSlashCommandList();
+      actions.getFileList('');
     }
-  }, [clientSnap.state]);
+  }, [chatState.initialized]);
 
   const fileSuggestions = useMemo(() => {
     return fileList.map((file) => {
@@ -105,11 +101,7 @@ export const useSuggestion = () => {
   }, [fileSuggestions, slashCommandSuggestions, t, contexts]);
 
   const searchFunctionMap: { [key in ContextType]?: (text: string) => void } = {
-    [ContextType.FILE]: (text) =>
-      actions.getFileList({
-        maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT,
-        searchString: text,
-      }),
+    [ContextType.FILE]: (text) => actions.getFileList(text),
     [ContextType.SLASH_COMMAND]: (text) =>
       actions.getSlashCommandList({
         searchString: text,

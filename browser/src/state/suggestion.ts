@@ -1,20 +1,16 @@
 import { proxy } from 'valtio';
-import { type FileListQueries, getFileList } from '@/api/files';
-import type { FileItem } from '@/api/model';
 import { actions as chatActions } from '@/state/chat';
-import type { CommandEntry } from '@/types/chat';
+import type { CommandEntry, FileItem } from '@/types/chat';
 
 interface SuggestionState {
   fileList: FileItem[];
   slashCommandList: CommandEntry[];
-  fileMap: Map<string, FileItem>;
   loading: boolean;
 }
 
 export const state = proxy<SuggestionState>({
   fileList: [],
   slashCommandList: [],
-  fileMap: new Map(),
   loading: false,
 });
 
@@ -35,30 +31,20 @@ const filterSlashCommands = (
 };
 
 export const actions = {
-  setFileList: (value: FileItem[]) => {
-    state.fileList = value;
-
-    state.loading = false;
-    value.forEach((file) => {
-      state.fileMap.set(file.path, file);
-    });
-  },
-  getFileList: async (queries?: FileListQueries) => {
+  getFileList: async (query?: string) => {
     if (state.loading) {
       return;
     }
 
     state.loading = true;
     try {
-      const response = await getFileList(queries);
-      actions.setFileList(response.data.items || []);
+      const items = await chatActions.getFiles({ query });
+      state.fileList = items || [];
+      state.loading = false;
     } catch (error) {
       state.loading = false;
       console.error('Failed to get file list:', error);
     }
-  },
-  getFileByPath: (path: string) => {
-    return state.fileMap.get(path);
   },
 
   setSlashCommandList: (value: CommandEntry[]) => {

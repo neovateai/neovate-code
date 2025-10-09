@@ -1,12 +1,11 @@
 import type { Delta } from 'quill';
 import { proxy } from 'valtio';
 import type { ApprovalMode, InitializeResult } from '@/client';
-import { getBlotName } from '@/components/QuillEditor/utils';
-import { CONTEXT_BLOT_NAME } from '@/constants';
 import type {
   ApprovalCategory,
   ApprovalResult,
   CommandEntry,
+  FileItem,
   FilePart,
   ImagePart,
   LoopResult,
@@ -63,7 +62,7 @@ interface ChatState {
   error: string | null;
 
   processingTokens: number;
-  browserContextMap: Record<string, string>;
+  initialized: boolean;
 }
 
 interface ChatActions {
@@ -77,8 +76,8 @@ interface ChatActions {
     model?: string;
   }): Promise<LoopResult>;
   getSlashCommands(): Promise<CommandEntry[]>;
+  getFiles(opts: { query?: string }): Promise<FileItem[]>;
   cancel(): Promise<void>;
-  setBrowserContext(name: string, value: string): void;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -97,7 +96,7 @@ export const state = proxy<ChatState>({
   approvalModal: null,
   error: null,
   processingTokens: 0,
-  browserContextMap: {},
+  initialized: false,
 });
 
 export const actions: ChatActions = {
@@ -108,10 +107,11 @@ export const actions: ChatActions = {
     }
     await clientActions.connect();
     await sleep(100);
-    const response = (await clientActions.request('initialize', {
+    const response = (await clientActions.request('session.initialize', {
       cwd: opts.cwd,
       sessionId: opts.sessionId,
     })) as InitializeResult;
+    state.initialized = true;
 
     if (!response.success) {
       throw new Error(response.error?.message || 'Initialize failed');
@@ -251,7 +251,7 @@ export const actions: ChatActions = {
   async send(message, delta?: Delta) {
     const { cwd, sessionId } = state;
 
-    clientActions.request('telemetry', {
+    clientActions.request('utils.telemetry', {
       cwd,
       name: 'send',
       payload: { message, sessionId },
@@ -289,7 +289,7 @@ export const actions: ChatActions = {
     const { cwd, sessionId } = state;
     let attachments: Array<FilePart | ImagePart> = [];
 
-    const response = (await clientActions.request('send', {
+    const response = (await clientActions.request('session.send', {
       message: opts.message,
       planMode: opts.planMode,
       model: opts.model,
@@ -316,7 +316,7 @@ export const actions: ChatActions = {
   },
 
   async getSlashCommands() {
-    const response = (await clientActions.request('getSlashCommands', {
+    const response = (await clientActions.request('slashCommand.list', {
       cwd: state.cwd,
     })) as NodeBridgeResponse<{ slashCommands: CommandEntry[] }>;
     return response.data.slashCommands;
@@ -327,7 +327,7 @@ export const actions: ChatActions = {
       return;
     }
     const { cwd, sessionId } = state;
-    await clientActions.request('cancel', {
+    await clientActions.request('session.cancel', {
       cwd,
       sessionId,
     });
@@ -335,18 +335,12 @@ export const actions: ChatActions = {
     state.processingTokens = 0;
   },
 
-  setBrowserContext(name: string, value: string) {
-    const { sessionId, browserContextMap } = state;
-    state.browserContextMap = {
-      ...browserContextMap,
-      [name]: value,
-    };
-    if (sessionId) {
-      clientActions.request('sessionConfig.browser.setBrowserContextMap', {
-        sessionId,
-        browserContextMap,
-      });
-    }
+  async getFiles(opts: { query?: string }) {
+    const response = (await clientActions.request('utils.files.list', {
+      cwd: state.cwd,
+      query: opts.query,
+    })) as NodeBridgeResponse<{ files: FileItem[] }>;
+    return response.data.files;
   },
 
   destroy() {

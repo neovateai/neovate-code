@@ -225,3 +225,10 @@ export type NodeBridgeResponse<T = any> = {
 export interface UIUserMessage extends UserMessage {
   delta?: Delta;
 }
+
+// files
+export interface FileItem {
+  path: string;
+  type: 'file' | 'directory';
+  name: string;
+}

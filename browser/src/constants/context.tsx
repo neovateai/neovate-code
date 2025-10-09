@@ -33,5 +33,3 @@ export const CONTEXT_AVAILABLE_FILE_TYPES: ContextFileType[] = [
 
 /** 10MB */
 export const CONTEXT_MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-export const CONTEXT_MAX_POPUP_ITEM_COUNT = 50;
