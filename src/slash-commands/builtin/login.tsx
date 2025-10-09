@@ -347,7 +347,6 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
     }
   }, [step, githubAuth, githubProvider, onExit]);
 
-
   if (loading) {
     return (
       <Box
