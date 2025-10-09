@@ -1,14 +1,37 @@
 import fs from 'fs';
+import { homedir } from 'os';
 import { join, relative, sep } from 'pathe';
 
-interface IgnoreCache {
-  mtime: number;
-  patterns: string[];
-  negationPatterns: string[];
+/**
+ * Gets the global gitignore file path
+ */
+function getGlobalGitignorePath(): string | null {
+  // Check common default locations
+  const commonPaths = [
+    join(homedir(), '.gitignore_global'),
+    join(homedir(), '.config', 'git', 'ignore'),
+    join(homedir(), '.gitignore'),
+  ];
+
+  for (const path of commonPaths) {
+    try {
+      if (fs.existsSync(path)) {
+        return path;
+      }
+    } catch (_e) {
+      // Continue to next path
+    }
+  }
+
+  return null;
 }
 
-// Cache for parsed ignore patterns
-const ignoreCache = new Map<string, IgnoreCache>();
+/**
+ * Gets the repository-specific exclude file path
+ */
+function getRepoExcludePath(rootPath: string): string {
+  return join(rootPath, '.git', 'info', 'exclude');
+}
 
 function parseIgnoreFiles(
   rootPath: string,
@@ -22,78 +45,65 @@ function parseIgnoreFiles(
     rootPath,
     `.${productName.toLowerCase()}ignore`,
   );
+  const globalGitignorePath = getGlobalGitignorePath();
+  const repoExcludePath = getRepoExcludePath(rootPath);
 
-  const cacheKey = `${rootPath}:${productName}`;
+  const patterns: string[] = [];
+  const negationPatterns: string[] = [];
 
-  try {
-    // Check modification times for both files
-    let gitignoreMtime = 0;
-    let productIgnoreMtime = 0;
-
+  // Parse global gitignore first (lowest precedence)
+  if (globalGitignorePath) {
     try {
-      const gitignoreStats = fs.statSync(gitignorePath);
-      gitignoreMtime = gitignoreStats.mtimeMs;
-    } catch (e) {
-      // .gitignore doesn't exist or can't be read
-    }
-
-    try {
-      const productIgnoreStats = fs.statSync(productIgnorePath);
-      productIgnoreMtime = productIgnoreStats.mtimeMs;
-    } catch (e) {
-      // .takumiignore doesn't exist or can't be read
-    }
-
-    const combinedMtime = Math.max(gitignoreMtime, productIgnoreMtime);
-
-    // Check cache first
-    const cached = ignoreCache.get(cacheKey);
-    if (cached && cached.mtime === combinedMtime) {
-      return {
-        patterns: cached.patterns,
-        negationPatterns: cached.negationPatterns,
-      };
-    }
-
-    const patterns: string[] = [];
-    const negationPatterns: string[] = [];
-
-    // Parse .gitignore first
-    try {
-      const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
-      const { patterns: gitPatterns, negationPatterns: gitNegationPatterns } =
-        parseIgnoreContent(gitignoreContent);
-      patterns.push(...gitPatterns);
-      negationPatterns.push(...gitNegationPatterns);
-    } catch (e) {
-      // .gitignore doesn't exist or can't be read
-    }
-
-    // Parse .takumiignore second (takes precedence)
-    try {
-      const takumiIgnoreContent = fs.readFileSync(productIgnorePath, 'utf8');
+      const globalContent = fs.readFileSync(globalGitignorePath, 'utf8');
       const {
-        patterns: takumiPatterns,
-        negationPatterns: takumiNegationPatterns,
-      } = parseIgnoreContent(takumiIgnoreContent);
-      patterns.push(...takumiPatterns);
-      negationPatterns.push(...takumiNegationPatterns);
-    } catch (e) {
-      // .takumiignore doesn't exist or can't be read
+        patterns: globalPatterns,
+        negationPatterns: globalNegationPatterns,
+      } = parseIgnoreContent(globalContent);
+      patterns.push(...globalPatterns);
+      negationPatterns.push(...globalNegationPatterns);
+    } catch (_e) {
+      // Global gitignore doesn't exist or can't be read
     }
-
-    // Cache the results
-    ignoreCache.set(cacheKey, {
-      mtime: combinedMtime,
-      patterns,
-      negationPatterns,
-    });
-
-    return { patterns, negationPatterns };
-  } catch (error) {
-    // If both files don't exist or can't be read, return empty patterns
-    return { patterns: [], negationPatterns: [] };
   }
+
+  // Parse .git/info/exclude second
+  try {
+    const repoExcludeContent = fs.readFileSync(repoExcludePath, 'utf8');
+    const {
+      patterns: excludePatterns,
+      negationPatterns: excludeNegationPatterns,
+    } = parseIgnoreContent(repoExcludeContent);
+    patterns.push(...excludePatterns);
+    negationPatterns.push(...excludeNegationPatterns);
+  } catch (_e) {
+    // .git/info/exclude doesn't exist or can't be read
+  }
+
+  // Parse .gitignore third
+  try {
+    const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
+    const { patterns: gitPatterns, negationPatterns: gitNegationPatterns } =
+      parseIgnoreContent(gitignoreContent);
+    patterns.push(...gitPatterns);
+    negationPatterns.push(...gitNegationPatterns);
+  } catch (_e) {
+    // .gitignore doesn't exist or can't be read
+  }
+
+  // Parse .takumiignore last (highest precedence)
+  try {
+    const takumiIgnoreContent = fs.readFileSync(productIgnorePath, 'utf8');
+    const {
+      patterns: takumiPatterns,
+      negationPatterns: takumiNegationPatterns,
+    } = parseIgnoreContent(takumiIgnoreContent);
+    patterns.push(...takumiPatterns);
+    negationPatterns.push(...takumiNegationPatterns);
+  } catch (_e) {
+    // .takumiignore doesn't exist or can't be read
+  }
+
+  return { patterns, negationPatterns };
 }
 
 /**
@@ -228,18 +238,4 @@ export function isIgnored(
   }
 
   return true; // Ignored by pattern and no negation applies
-}
-
-/**
- * Checks if a file or directory name should be ignored (for performance when you only have the name)
- */
-export function isIgnoredByName(
-  fileName: string,
-  rootPath: string,
-  productName: string = 'neovate',
-  isDirectory: boolean = false,
-): boolean {
-  // For relative paths within the root directory
-  const testPath = join(rootPath, fileName);
-  return isIgnored(testPath, rootPath, productName);
 }
