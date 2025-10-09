@@ -1,8 +1,10 @@
 import { Box, Text, useInput } from 'ink';
-import pc from 'picocolors';
+import path from 'path';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import PaginatedSelectInput from '../../ui/PaginatedSelectInput';
+import { Paths } from '../../paths';
+import { GithubProvider } from '../../providers/githubCopilot';
+import PaginatedGroupSelectInput from '../../ui/PaginatedGroupSelectInput';
 import { useAppStore } from '../../ui/store';
 import type { LocalJSXCommand } from '../types';
 
@@ -20,13 +22,64 @@ interface LoginSelectProps {
   onExit: (message: string) => void;
 }
 
-type LoginStep = 'provider-selection' | 'api-key-input';
+type LoginStep = 'provider-selection' | 'api-key-input' | 'github-copilot-auth';
 
 interface ApiKeyInputProps {
   provider: Provider;
   onSubmit: (apiKey: string) => void;
   onCancel: () => void;
 }
+
+interface GithubCopilotAuthProps {
+  verificationUri: string;
+  userCode: string;
+  onCancel: () => void;
+}
+
+const GithubCopilotAuth: React.FC<GithubCopilotAuthProps> = ({
+  verificationUri,
+  userCode,
+  onCancel,
+}) => {
+  useInput((_input, key) => {
+    if (key.escape) {
+      onCancel();
+    }
+  });
+
+  return (
+    <Box
+      borderStyle="round"
+      borderColor="gray"
+      flexDirection="column"
+      padding={1}
+      width="100%"
+    >
+      <Box marginBottom={1}>
+        <Text bold>GitHub Copilot Authorization</Text>
+      </Box>
+
+      <Box marginBottom={1}>
+        <Text color="cyan">📖 Go to: {verificationUri}</Text>
+      </Box>
+
+      <Box marginBottom={1}>
+        <Text color="yellow">Enter code: </Text>
+        <Text color="green" bold>
+          {userCode}
+        </Text>
+      </Box>
+
+      <Box marginBottom={1}>
+        <Text color="gray">Waiting for authorization...</Text>
+      </Box>
+
+      <Box>
+        <Text color="gray">(ESC: cancel)</Text>
+      </Box>
+    </Box>
+  );
+};
 
 const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
   provider,
@@ -107,48 +160,68 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
 };
 
 export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
-  const { bridge, cwd } = useAppStore();
+  const { bridge, cwd, productName } = useAppStore();
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [providerItems, setProviderItems] = useState<
-    { label: string; value: string }[]
+  const [groupedProviders, setGroupedProviders] = useState<
+    Array<{
+      provider: string;
+      providerId: string;
+      models: Array<{ name: string; modelId: string; value: string }>;
+    }>
   >([]);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<LoginStep>('provider-selection');
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
     null,
   );
+  const [githubAuth, setGithubAuth] = useState<{
+    verificationUri: string;
+    userCode: string;
+    deviceCode: string;
+    interval: number;
+  } | null>(null);
+  const [githubProvider, setGithubProvider] = useState<GithubProvider | null>(
+    null,
+  );
 
   useEffect(() => {
     bridge
-      .request('getProviders', { cwd })
+      .request('providers.list', { cwd })
       .then((result) => {
         if (result.success) {
           const providersData = result.data.providers as Provider[];
           setProviders(providersData);
 
-          // Convert providers to label/value format with descriptions
-          const items = providersData.map((provider) => {
-            const descriptions: string[] = [];
+          // Group providers by category (we'll use a simple grouping for now)
+          const groups = [
+            {
+              provider: 'Providers',
+              providerId: 'all',
+              models: providersData.map((provider) => {
+                const descriptions: string[] = [];
 
-            // Add valid environment variables info
-            if (provider.validEnvs.length > 0) {
-              descriptions.push(`✓ Envs: ${provider.validEnvs.join(', ')}`);
-            }
+                // Add valid environment variables info
+                if (provider.validEnvs.length > 0) {
+                  descriptions.push(`✓ Envs: ${provider.validEnvs.join(', ')}`);
+                }
 
-            // Add API key status
-            if (provider.hasApiKey) {
-              descriptions.push('✓ Logged');
-            }
+                // Add API key status
+                if (provider.hasApiKey) {
+                  descriptions.push('✓ Logged');
+                }
 
-            const description = descriptions.join(' | ');
+                const description = descriptions.join(' | ');
 
-            return {
-              label: `${provider.name}${description ? ` → ${pc.gray(`(${description})`)}` : ''}`,
-              value: provider.id,
-            };
-          });
+                return {
+                  name: provider.name,
+                  modelId: description || provider.id,
+                  value: provider.id,
+                };
+              }),
+            },
+          ];
 
-          setProviderItems(items);
+          setGroupedProviders(groups);
           setLoading(false);
         }
       })
@@ -157,11 +230,39 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
       });
   }, [cwd, bridge, onExit]);
 
-  const handleProviderSelect = (item: { value: string }) => {
+  const handleProviderSelect = async (item: { value: string }) => {
     const provider = providers.find((p) => p.id === item.value);
     if (provider) {
-      setSelectedProvider(provider);
-      setStep('api-key-input');
+      if (provider.id === 'github-copilot') {
+        const paths = new Paths({
+          productName,
+          cwd,
+        });
+        const githubDataPath = path.join(
+          paths.globalConfigDir,
+          'githubCopilot.json',
+        );
+        const ghProvider = new GithubProvider({ authFile: githubDataPath });
+        const existingToken = await ghProvider.access();
+        if (existingToken) {
+          onExit('✓ GitHub Copilot is already logged in');
+          return;
+        } else {
+          const auth = await ghProvider.authorize();
+          setGithubAuth({
+            verificationUri: auth.verification,
+            userCode: auth.user,
+            deviceCode: auth.device,
+            interval: auth.interval,
+          });
+          setGithubProvider(ghProvider);
+          setSelectedProvider(provider);
+          setStep('github-copilot-auth');
+        }
+      } else {
+        setSelectedProvider(provider);
+        setStep('api-key-input');
+      }
     }
   };
 
@@ -169,7 +270,7 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
     if (!selectedProvider) return;
 
     try {
-      const result = await bridge.request('setConfig', {
+      const result = await bridge.request('config.set', {
         cwd,
         isGlobal: true,
         key: `provider.${selectedProvider.id}.options.apiKey`,
@@ -193,16 +294,58 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
     setSelectedProvider(null);
   };
 
+  const handleGithubAuthCancel = () => {
+    setStep('provider-selection');
+    setSelectedProvider(null);
+    setGithubAuth(null);
+    setGithubProvider(null);
+  };
+
   const handleProviderCancel = () => {
     onExit('Login cancelled');
   };
 
-  // Handle ESC key for provider selection step
-  useInput((_input, key) => {
-    if (step === 'provider-selection' && key.escape) {
-      handleProviderCancel();
+  // Poll for GitHub authorization
+  useEffect(() => {
+    if (step === 'github-copilot-auth' && githubAuth && githubProvider) {
+      let cancelled = false;
+
+      const pollAuth = async () => {
+        let status: 'pending' | 'complete' | 'failed' = 'pending';
+
+        while (status === 'pending' && !cancelled) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, githubAuth.interval * 1000),
+          );
+
+          if (cancelled) return;
+
+          status = await githubProvider.poll(githubAuth.deviceCode);
+
+          if (status === 'complete') {
+            const token = await githubProvider.access();
+            if (token) {
+              onExit('✓ GitHub Copilot authorization successful!');
+            } else {
+              onExit('✗ Failed to get GitHub Copilot access token');
+            }
+            return;
+          }
+
+          if (status === 'failed') {
+            onExit('✗ GitHub Copilot authorization failed');
+            return;
+          }
+        }
+      };
+
+      pollAuth();
+
+      return () => {
+        cancelled = true;
+      };
     }
-  });
+  }, [step, githubAuth, githubProvider, onExit]);
 
   if (loading) {
     return (
@@ -228,6 +371,16 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
     );
   }
 
+  if (step === 'github-copilot-auth' && githubAuth) {
+    return (
+      <GithubCopilotAuth
+        verificationUri={githubAuth.verificationUri}
+        userCode={githubAuth.userCode}
+        onCancel={handleGithubAuthCancel}
+      />
+    );
+  }
+
   return (
     <Box
       borderStyle="round"
@@ -243,10 +396,12 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
         <Text color="gray">Select a provider to configure API key</Text>
       </Box>
       <Box>
-        <PaginatedSelectInput
-          items={providerItems}
+        <PaginatedGroupSelectInput
+          groups={groupedProviders}
           itemsPerPage={15}
+          enableSearch={true}
           onSelect={handleProviderSelect}
+          onCancel={handleProviderCancel}
         />
       </Box>
     </Box>

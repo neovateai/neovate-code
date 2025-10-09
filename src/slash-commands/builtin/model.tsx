@@ -31,7 +31,7 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
   const [groupedModels, setGroupedModels] = useState<GroupedData[]>([]);
 
   useEffect(() => {
-    bridge.request('getModels', { cwd }).then((result) => {
+    bridge.request('models.list', { cwd }).then((result) => {
       if (result.data.currentModel) {
         setCurrentModel(result.data.currentModel);
         setCurrentModelInfo(result.data.currentModelInfo);

@@ -1,7 +1,8 @@
 import { Box, Text } from 'ink';
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { SPACING, UI_COLORS } from './constants';
 import { DebugRandomNumber } from './Debug';
+import { MemoryModal } from './MemoryModal';
 import { ModeIndicator } from './ModeIndicator';
 import { StatusLine } from './StatusLine';
 import { Suggestion, SuggestionItem } from './Suggestion';
@@ -12,7 +13,7 @@ import { useTerminalSize } from './useTerminalSize';
 import { useTryTips } from './useTryTips';
 
 export function ChatInput() {
-  const { inputState, handlers, slashCommands, fileSuggestion } =
+  const { inputState, mode, handlers, slashCommands, fileSuggestion } =
     useInputHandlers();
   const { currentTip } = useTryTips();
   const {
@@ -22,6 +23,7 @@ export function ChatInput() {
     cancel,
     slashCommandJSX,
     approvalModal,
+    memoryModal,
     queuedMessages,
     status,
     setStatus,
@@ -39,6 +41,70 @@ export function ChatInput() {
     }
     return '';
   }, [currentTip, queuedMessages]);
+
+  // Display value - slice prefix for bash/memory modes
+  const displayValue = useMemo(() => {
+    if (mode === 'bash' || mode === 'memory') {
+      return inputState.state.value.slice(1);
+    }
+    return inputState.state.value;
+  }, [mode, inputState.state.value]);
+
+  // Adjust cursor position for display (subtract 1 for bash/memory modes)
+  const displayCursorOffset = useMemo(() => {
+    const offset = inputState.state.cursorPosition ?? 0;
+    if (mode === 'bash' || mode === 'memory') {
+      return Math.max(0, offset - 1);
+    }
+    return offset;
+  }, [mode, inputState.state.cursorPosition]);
+
+  // Wrap onChange to add prefix back for bash/memory modes
+  const handleDisplayChange = useCallback(
+    (val: string) => {
+      if (mode === 'bash' || mode === 'memory') {
+        const prefix = mode === 'bash' ? '!' : '#';
+        handlers.handleChange(prefix + val);
+      } else {
+        handlers.handleChange(val);
+      }
+    },
+    [mode, handlers],
+  );
+
+  // Handle delete key press - switch to prompt mode when value becomes empty
+  const handleDelete = useCallback(() => {
+    if ((mode === 'bash' || mode === 'memory') && displayValue === '') {
+      inputState.setValue('');
+    }
+  }, [mode, displayValue, inputState]);
+
+  // Wrap cursor position change to add 1 for bash/memory modes
+  const handleDisplayCursorChange = useCallback(
+    (pos: number) => {
+      if (mode === 'bash' || mode === 'memory') {
+        inputState.setCursorPosition(pos + 1);
+      } else {
+        inputState.setCursorPosition(pos);
+      }
+    },
+    [mode, inputState],
+  );
+
+  // Get border color based on mode
+  const borderColor = useMemo(() => {
+    if (mode === 'memory') return UI_COLORS.CHAT_BORDER_MEMORY;
+    if (mode === 'bash') return UI_COLORS.CHAT_BORDER_BASH;
+    return UI_COLORS.CHAT_BORDER;
+  }, [mode]);
+
+  // Get prompt symbol based on mode
+  const promptSymbol = useMemo(() => {
+    if (mode === 'memory') return '#';
+    if (mode === 'bash') return '!';
+    return '>';
+  }, [mode]);
+
   if (slashCommandJSX) {
     return null;
   }
@@ -48,6 +114,9 @@ export function ChatInput() {
   if (approvalModal) {
     return null;
   }
+  if (memoryModal) {
+    return <MemoryModal />;
+  }
   if (status === 'exit') {
     return null;
   }
@@ -56,7 +125,7 @@ export function ChatInput() {
       <ModeIndicator />
       <Box
         borderStyle="round"
-        borderColor={UI_COLORS.CHAT_BORDER}
+        borderColor={borderColor}
         paddingX={1}
         flexDirection="row"
         gap={1}
@@ -68,13 +137,13 @@ export function ChatInput() {
               : UI_COLORS.CHAT_ARROW
           }
         >
-          &gt;
+          {promptSymbol}
         </Text>
         <TextInput
           multiline
-          value={inputState.state.value}
+          value={displayValue}
           placeholder={placeholderText}
-          onChange={handlers.handleChange}
+          onChange={handleDisplayChange}
           onHistoryUp={handlers.handleHistoryUp}
           onHistoryDown={handlers.handleHistoryDown}
           onHistoryReset={handlers.handleHistoryReset}
@@ -87,21 +156,25 @@ export function ChatInput() {
           onExitMessage={(show, key) => {
             setExitMessage(show ? `Press ${key} again to exit` : null);
           }}
-          onMessage={(show, text) => {
-            log('onMessage' + text);
+          onMessage={(_show, text) => {
+            log(`onMessage${text}`);
           }}
           onEscape={() => {
-            cancel().catch((e) => {
-              log('cancel error: ' + e.message);
-            });
+            const shouldCancel = !handlers.handleEscape();
+            if (shouldCancel) {
+              cancel().catch((e) => {
+                log(`cancel error: ${e.message}`);
+              });
+            }
           }}
           onImagePaste={handlers.handleImagePaste}
           onPaste={handlers.handlePaste}
           onSubmit={handlers.handleSubmit}
-          cursorOffset={inputState.state.cursorPosition ?? 0}
-          onChangeCursorOffset={inputState.setCursorPosition}
+          cursorOffset={displayCursorOffset}
+          onChangeCursorOffset={handleDisplayCursorChange}
           disableCursorMovementForUpDownKeys={showSuggestions}
           onTabPress={handlers.handleTabPress}
+          onDelete={handleDelete}
           columns={columns - 6}
           isDimmed={false}
         />

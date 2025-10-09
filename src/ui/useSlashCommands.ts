@@ -26,7 +26,7 @@ export function useSlashCommands(input: string) {
     const start = Date.now();
     setIsLoading(true);
     bridge
-      .request('getSlashCommands', { cwd })
+      .request('slashCommand.list', { cwd })
       .then((res) => {
         setSlashCommands(res.data.slashCommands);
         setIsLoading(false);
