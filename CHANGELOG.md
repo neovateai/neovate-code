@@ -1,3 +1,70 @@
+## 0.12.7
+
+`2025-10-02`
+
+- refactor: reorganize nodeBridge handlers and improve mcp status functionality [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename message bus handlers to use hierarchical naming convention [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add glm-4.5-air and glm-4.5-flash models with zai-coding-plan and zhipuai providers, Close #291 by [@sorrycc](https://github.com/sorrycc)
+- fix: ensure auth file directory exists before writing by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.12.6
+
+`2025-10-01`
+
+- feat: add GLM-4.6 model with enhanced context and output limits by [@sorrycc](https://github.com/sorrycc)
+- feat: add github copilot provider with login/logout support by [@sorrycc](https://github.com/sorrycc)
+- feat: add claude-4-5-sonnet model with updated capabilities and limits by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.12.5
+
+`2025-09-29`
+
+- feat: add deepseek-v3-2-exp model and update provider mappings by [@sorrycc](https://github.com/sorrycc)
+- feat: add model command disable hint and validate model arg, Close #293, Close #292 by [@sorrycc](https://github.com/sorrycc)
+- fix: replace tab characters with spaces and use strict equality operators by [@阿平](https://github.com/阿平) in [#294](https://github.com/umijs/takumi/pull/294)
+- feat: add kimi-k2-0905-preview model to moonshot providers by [@阿平](https://github.com/阿平) in [#299](https://github.com/umijs/takumi/pull/299)
+- feat: add VolcEngine provider support by [@zy520](https://github.com/zy520) in [#288](https://github.com/umijs/takumi/pull/288)
+- feat: add beep utility function to emit terminal bell sound by [@sorrycc](https://github.com/sorrycc)
+- refactor: make progressMessage optional in PromptCommand by [@sorrycc](https://github.com/sorrycc)
+- refactor: lazy load yargs-parser in command modules by [@阿平](https://github.com/阿平) in [#286](https://github.com/umijs/takumi/pull/286)
+- feat: add gemini 2.5 flash preview 2025 09 model and provider support by [@sorrycc](https://github.com/sorrycc)
+- fix: prevent normal turns from being terminated when tool execution is denied by [@阿平](https://github.com/阿平) in [#284](https://github.com/umijs/takumi/pull/284)
+- feat: clear message history when generating summary by [@阿平](https://github.com/阿平) in [#285](https://github.com/umijs/takumi/pull/285)
+- refactor: remove unused session history tracking and related handlers by [@sorrycc](https://github.com/sorrycc)
+- feat: implement global data storage for project history across sessions [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: make model id comparison case-insensitive by [@阿平](https://github.com/阿平) in [#283](https://github.com/umijs/takumi/pull/283)
+- feat: add apiEnv support and default id/name for providers by [@sorrycc](https://github.com/sorrycc)
+- <|begin_of_box|>docs: update npm badges to use shields.io<|end_of_box|> [AI] by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.12.4
+
+`2025-09-26`
+
+- feat: add beep utility function to emit terminal bell sound by [@sorrycc](https://github.com/sorrycc)
+- refactor: make progressMessage optional in PromptCommand by [@sorrycc](https://github.com/sorrycc)
+- refactor: lazy load yargs-parser in command modules by [@阿平](https://github.com/阿平) in [#286](https://github.com/umijs/takumi/pull/286)
+- feat: add gemini 2.5 flash preview 2025 09 model and provider support by [@sorrycc](https://github.com/sorrycc)
+- fix: prevent normal turns from being terminated when tool execution is denied by [@阿平](https://github.com/阿平) in [#284](https://github.com/umijs/takumi/pull/284)
+- feat: clear message history when generating summary by [@阿平](https://github.com/阿平) in [#285](https://github.com/umijs/takumi/pull/285)
+- refactor: remove unused session history tracking and related handlers by [@sorrycc](https://github.com/sorrycc)
+- feat: implement global data storage for project history across sessions [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: make model id comparison case-insensitive by [@阿平](https://github.com/阿平) in [#283](https://github.com/umijs/takumi/pull/283)
+- feat: add apiEnv support and default id/name for providers by [@sorrycc](https://github.com/sorrycc)
+- <|begin_of_box|>docs: update npm badges to use shields.io<|end_of_box|> [AI] by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.12.3
+
+`2025-09-24`
+
+- feat: add SiliconFlow and SiliconFlow CN provider support by [@Pan YANG](https://github.com/Pan YANG) in [#279](https://github.com/umijs/takumi/pull/279)
+- feat: add glm-4.5v model and providers by [@sorrycc](https://github.com/sorrycc)
+- feat: add deepseek-v3-1-terminus model and provider mapping by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.12.2
 
 `2025-09-24`

@@ -17,6 +17,7 @@ export type SlashCommandManagerOpts = {
   paths: Paths;
   productName: string;
   slashCommands: SlashCommand[];
+  argvConfig: Record<string, any>;
 };
 
 export type CommandEntry = {
@@ -30,7 +31,10 @@ export class SlashCommandManager {
     const productName = opts.productName;
     const commands = new Map<string, CommandEntry>();
     // 1. builtin
-    const builtin = createBuiltinCommands({ productName });
+    const builtin = createBuiltinCommands({
+      productName,
+      argvConfig: opts.argvConfig,
+    });
     builtin.forEach((command) => {
       commands.set(command.name, { command, source: CommandSource.Builtin });
     });
@@ -66,6 +70,7 @@ export class SlashCommandManager {
       productName: context.productName,
       paths: context.paths,
       slashCommands: pluginSlashCommands,
+      argvConfig: context.argvConfig,
     });
   }
 

@@ -1,4 +1,3 @@
-import yargsParser from 'yargs-parser';
 import type { Context } from '../context';
 import { Upgrade, type UpgradeOptions } from '../upgrade';
 
@@ -23,6 +22,7 @@ export async function runUpdate(
   context: Context,
   upgradeOptions?: UpgradeOptions,
 ) {
+  const { default: yargsParser } = await import('yargs-parser');
   const productName = context.productName;
   const argv = yargsParser(process.argv.slice(3), {
     alias: {
