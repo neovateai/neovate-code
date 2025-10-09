@@ -940,6 +940,7 @@ export const providers: ProvidersMap = {
       'deepseek-v3.2': models['deepseek-v3-2-exp'],
       'deepseek-r1': models['deepseek-r1-0528'],
       'glm-4.5': models['glm-4.5'],
+      'glm-4.6': models['glm-4.6'],
       'qwen3-max-preview': models['qwen3-max'],
     },
     createModel: defaultModelCreator,
