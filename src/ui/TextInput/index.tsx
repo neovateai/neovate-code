@@ -146,6 +146,11 @@ export type Props = {
    * Function to call when `Delete` or `Backspace` is pressed.
    */
   readonly onDelete?: () => void;
+
+  /**
+   * Optional callback when Ctrl+G is pressed to edit prompt in external editor.
+   */
+  readonly onExternalEdit?: () => void;
 };
 
 export default function TextInput({
@@ -174,6 +179,7 @@ export default function TextInput({
   onChangeCursorOffset,
   onTabPress,
   onDelete,
+  onExternalEdit,
 }: Props): React.JSX.Element {
   const { onInput, renderedValue } = useTextInput({
     value: originalValue,
@@ -199,6 +205,7 @@ export default function TextInput({
     externalOffset: cursorOffset,
     onOffsetChange: onChangeCursorOffset,
     onTabPress,
+    onExternalEdit,
   });
 
   // Enhanced paste detection state for multi-chunk text merging
