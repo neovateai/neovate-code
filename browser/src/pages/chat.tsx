@@ -1,15 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { useMount, useRequest } from 'ahooks';
 import { createStyles } from 'antd-style';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useSnapshot } from 'valtio';
+import { initializeSession } from '@/api/session';
 import ChatContent from '@/components/ChatContent';
 import ResizeHandle from '@/components/ChatLayout/ResizeHandle';
 import RightPanel from '@/components/ChatLayout/RightPanel';
 import SidebarExpandButton from '@/components/ChatLayout/SidebarExpandButton';
 import TopRightExpandButton from '@/components/ChatLayout/TopRightExpandButton';
+import Loading from '@/components/Loading';
 import { actions } from '@/state/chat';
 import * as layout from '@/state/layout';
-import { randomUUID } from '@/utils/randomUUID';
 
 const useStyles = createStyles(({ css }) => {
   return {
@@ -49,11 +51,15 @@ const Chat: React.FC = () => {
   );
 
   // Auto collapse Sidebar when right panel is expanded
-  useEffect(() => {
+  const handleRightPanelExpansion = useCallback(() => {
     if (rightPanelExpanded) {
       layout.actions.setSidebarCollapsed(true);
     }
   }, [rightPanelExpanded]);
+
+  useEffect(() => {
+    handleRightPanelExpansion();
+  }, [handleRightPanelExpansion]);
 
   // Only calculate right panel width, left side automatically fills remaining space
   const rightWidth = rightPanelExpanded ? `${rightPanelWidthPercent}%` : '0%';
@@ -91,13 +97,33 @@ const Chat: React.FC = () => {
 };
 
 const ChatWrapper: React.FC = () => {
-  useEffect(() => {
-    const sessionId = randomUUID();
-    actions.initialize({
-      cwd: '/Users/xierenhong/Downloads/test/hello-takumi',
-      sessionId,
-    });
-  }, []);
+  const { run, loading } = useRequest(
+    () =>
+      initializeSession({
+        cwd: '/Users/xierenhong/Downloads/test/hello-takumi',
+      }),
+    {
+      manual: true,
+      async onSuccess(result) {
+        if (result.success) {
+          actions.initialize({
+            cwd: result.data.cwd,
+            sessionId: result.data.sessionId,
+            messages: result.data.messages,
+          });
+        }
+      },
+    },
+  );
+
+  useMount(() => {
+    run();
+  });
+
+  if (loading) {
+    return <Loading />;
+  }
+
   return <Chat />;
 };
 

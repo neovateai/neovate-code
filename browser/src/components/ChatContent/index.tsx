@@ -4,6 +4,7 @@ import { useSnapshot } from 'valtio';
 import AssistantFooter from '@/components/AssistantFooter';
 import AssistantMessage from '@/components/AssistantMessage';
 import ChatSender from '@/components/ChatSender';
+import DisplayMessage from '@/components/DisplayMessage';
 import { UserMessage, UserMessageFooter } from '@/components/UserMessage';
 import Welcome from '@/components/Welcome';
 import { state } from '@/state/chat';
@@ -15,7 +16,6 @@ const ChatContent: React.FC = () => {
 
   const items = messages?.map((message, index) => {
     const isLastMessage = index === messages.length - 1;
-    console.log('message', status);
     return {
       ...message,
       content: message,
@@ -53,6 +53,13 @@ const ChatContent: React.FC = () => {
             <Skeleton active paragraph={{ rows: 2 }} title={false} />
           </div>
         );
+      },
+    },
+    ui_display: {
+      placement: 'start',
+      variant: 'borderless',
+      messageRender(message) {
+        return <DisplayMessage message={message} />;
       },
     },
   };

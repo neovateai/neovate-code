@@ -159,7 +159,21 @@ export type UIAssistantMessage = {
   };
 };
 
-export type UIMessage = SystemMessage | UserMessage | UIAssistantMessage;
+export type UIDisplayContent = {
+  type: 'error' | 'info' | 'compression';
+  text: string;
+};
+
+export type UIDisplayMessage = {
+  role: 'ui_display';
+  content: UIDisplayContent;
+};
+
+export type UIMessage =
+  | SystemMessage
+  | UserMessage
+  | UIAssistantMessage
+  | UIDisplayMessage;
 
 export type LoopResult =
   | {

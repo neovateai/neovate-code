@@ -114,6 +114,12 @@ class WebServer {
       prefix: BASE_API_PREFIX,
       ...this.contextCreateOpts,
     });
+
+    // session
+    await this.app.register(import('./routes/session'), {
+      prefix: BASE_API_PREFIX,
+      ...this.contextCreateOpts,
+    });
   }
 
   private setupWebSocket() {

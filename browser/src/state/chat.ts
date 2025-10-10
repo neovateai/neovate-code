@@ -20,7 +20,7 @@ import type {
 import { isToolResultMessage } from '@/utils/message';
 import { getPrompt } from '@/utils/quill';
 import { countTokens } from '@/utils/tokenCounter';
-import { actions as clientActions, state as clientState } from './client';
+import { actions as clientActions } from './client';
 
 export type AppStatus =
   | 'idle'
@@ -68,7 +68,11 @@ interface ChatState {
 }
 
 interface ChatActions {
-  initialize(opts: { cwd: string; sessionId?: string }): void;
+  initialize(opts: {
+    cwd: string;
+    sessionId: string;
+    messages: Message[];
+  }): Promise<() => void>;
   send(message: string, delta?: Delta): void;
   addMessage(message: UIMessage): void;
   destroy(): void;
@@ -81,8 +85,6 @@ interface ChatActions {
   getFiles(opts: { query?: string }): Promise<FileItem[]>;
   cancel(): Promise<void>;
 }
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const state = proxy<ChatState>({
   cwd: null,
@@ -103,15 +105,11 @@ export const state = proxy<ChatState>({
 
 export const actions: ChatActions = {
   async initialize(opts) {
-    if (clientState.state === 'connecting') {
-      console.log('connecting');
-      return;
-    }
     await clientActions.connect();
-    await sleep(100);
     const response = (await clientActions.request('session.initialize', {
       cwd: opts.cwd,
       sessionId: opts.sessionId,
+      messages: opts.messages,
     })) as InitializeResult;
     state.initialized = true;
 
@@ -307,6 +305,10 @@ export const actions: ChatActions = {
       state.status = 'failed';
       state.processingTokens = 0;
       state.error = response.error?.message;
+      this.addMessage({
+        role: 'ui_display',
+        content: { type: 'error', text: response.error?.message },
+      });
     }
 
     state.loading = false;
