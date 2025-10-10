@@ -11,7 +11,7 @@ function log(message: string) {
 
 async function bundleMcp(fileName: string): Promise<boolean> {
   try {
-    const baseName = fileName.replace(/\.ts$/, '');
+    const baseName = fileName.replace(/\.mjs$/, '');
     const inputPath = join(MCPS_DIR, fileName);
     const outputPath = join(DIST_DIR, `${baseName}.mjs`);
 
