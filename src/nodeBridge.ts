@@ -77,8 +77,306 @@ class NodeHandlerRegistry {
   }
 
   private registerHandlers() {
+    //////////////////////////////////////////////
+    // config
     this.messageBus.registerHandler(
-      'initialize',
+      'config.get',
+      async (data: { cwd: string; key: string }) => {
+        const { cwd, key } = data;
+        const context = await this.getContext(cwd);
+        const value = context.config[key as keyof Config];
+        return {
+          success: true,
+          data: {
+            value,
+          },
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'config.set',
+      async (data: {
+        cwd: string;
+        isGlobal: boolean;
+        key: string;
+        value: string;
+      }) => {
+        const { cwd, key, value, isGlobal } = data;
+        const context = await this.getContext(cwd);
+        const configManager = new ConfigManager(cwd, context.productName, {});
+        configManager.setConfig(isGlobal, key, value);
+        if (this.contexts.has(cwd)) {
+          await context.destroy();
+          this.contexts.delete(cwd);
+        }
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'config.remove',
+      async (data: {
+        cwd: string;
+        isGlobal: boolean;
+        key: string;
+        values?: string[];
+      }) => {
+        const { cwd, key, isGlobal, values } = data;
+        const context = await this.getContext(cwd);
+        const configManager = new ConfigManager(cwd, context.productName, {});
+        configManager.removeConfig(isGlobal, key, values);
+        if (this.contexts.has(cwd)) {
+          await context.destroy();
+          this.contexts.delete(cwd);
+        }
+        return {
+          success: true,
+        };
+      },
+    );
+
+    //////////////////////////////////////////////
+    // mcp
+    this.messageBus.registerHandler(
+      'mcp.getStatus',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const mcpManager = context.mcpManager;
+
+        interface ServerData {
+          status: string;
+          error?: string;
+          toolCount: number;
+          tools: string[];
+        }
+
+        const configuredServers = context.config.mcpServers || {};
+        const allServerStatus = await mcpManager.getAllServerStatus();
+        const servers: Record<string, ServerData> = {};
+
+        // Get detailed status for each configured server
+        for (const serverName of mcpManager.getServerNames()) {
+          const serverStatus = allServerStatus[serverName];
+          let tools: string[] = [];
+
+          if (serverStatus && serverStatus.status === 'connected') {
+            try {
+              const serverTools = await mcpManager.getTools([serverName]);
+              tools = serverTools.map((tool) => tool.name);
+            } catch (err) {
+              console.warn(
+                `Failed to fetch tools for server ${serverName}:`,
+                err,
+              );
+            }
+          }
+
+          servers[serverName] = {
+            status: serverStatus?.status || 'disconnected',
+            error: serverStatus?.error,
+            toolCount: serverStatus?.toolCount || 0,
+            tools,
+          };
+        }
+
+        // Get config paths
+        const configManager = new ConfigManager(cwd, context.productName, {});
+
+        return {
+          success: true,
+          data: {
+            servers,
+            configs: configuredServers,
+            globalConfigPath: configManager.globalConfigPath,
+            projectConfigPath: configManager.projectConfigPath,
+            isReady: mcpManager.isReady(),
+            isLoading: mcpManager.isLoading(),
+          },
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'mcp.reconnect',
+      async (data: { cwd: string; serverName: string }) => {
+        const { cwd, serverName } = data;
+        try {
+          const context = await this.getContext(cwd);
+          const mcpManager = context.mcpManager;
+
+          if (!mcpManager) {
+            return {
+              success: false,
+              error: 'No MCP manager available',
+            };
+          }
+
+          await mcpManager.retryConnection(serverName);
+
+          return {
+            success: true,
+            message: `Successfully initiated reconnection for ${serverName}`,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
+    );
+
+    //////////////////////////////////////////////
+    // models
+    this.messageBus.registerHandler(
+      'models.list',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const { providers, model } = await resolveModelWithContext(
+          null,
+          context,
+        );
+        const currentModel = model
+          ? `${model.provider.id}/${model.model.id}`
+          : null;
+        const currentModelInfo = model
+          ? {
+              providerName: model.provider.name,
+              modelName: model.model.name,
+              modelId: model.model.id,
+              modelContextLimit: model.model.limit.context,
+            }
+          : null;
+        const filteredProviderIds = new Set(
+          normalizeProviders(providers, context)
+            .filter(
+              (provider) => provider.hasApiKey || provider.validEnvs.length > 0,
+            )
+            .map((provider) => provider.id),
+        );
+        const groupedModels = Object.values(
+          providers as Record<string, Provider>,
+        )
+          .filter((provider) => filteredProviderIds.has(provider.id))
+          .map((provider) => ({
+            provider: provider.name,
+            providerId: provider.id,
+            models: Object.entries(provider.models).map(([modelId, model]) => ({
+              name: (model as ModelData).name,
+              modelId: modelId,
+              value: `${provider.id}/${modelId}`,
+            })),
+          }));
+        return {
+          success: true,
+          data: {
+            groupedModels,
+            currentModel,
+            currentModelInfo,
+          },
+        };
+      },
+    );
+
+    //////////////////////////////////////////////
+    // outputStyles
+    this.messageBus.registerHandler(
+      'outputStyles.list',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const outputStyleManager = await OutputStyleManager.create(context);
+        return {
+          success: true,
+          data: {
+            outputStyles: outputStyleManager.outputStyles.map((style) => ({
+              name: style.name,
+              description: style.description,
+            })),
+            currentOutputStyle: context.config.outputStyle,
+          },
+        };
+      },
+    );
+
+    //////////////////////////////////////////////
+    // project
+    this.messageBus.registerHandler(
+      'project.addHistory',
+      async (data: { cwd: string; history: string }) => {
+        const { cwd, history } = data;
+        const context = await this.getContext(cwd);
+        const { GlobalData } = await import('./globalData');
+        const globalDataPath = context.paths.getGlobalDataPath();
+        const globalData = new GlobalData({
+          globalDataPath,
+        });
+        globalData.addProjectHistory({
+          cwd,
+          history,
+        });
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'project.clearContext',
+      async (data: { cwd?: string }) => {
+        await this.clearContext(data.cwd);
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'project.addMemory',
+      async (data: { cwd: string; global: boolean; rule: string }) => {
+        const { cwd, global: isGlobal, rule } = data;
+        const context = await this.getContext(cwd);
+        const { appendFileSync } = await import('fs');
+        const { join } = await import('path');
+
+        const memoryFile = isGlobal
+          ? join(context.paths.globalConfigDir, 'AGENTS.md')
+          : join(cwd, 'AGENTS.md');
+
+        appendFileSync(memoryFile, `- ${rule}\n`, 'utf-8');
+
+        return {
+          success: true,
+        };
+      },
+    );
+
+    //////////////////////////////////////////////
+    // providers
+    this.messageBus.registerHandler(
+      'providers.list',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const { providers } = await resolveModelWithContext(null, context);
+        return {
+          success: true,
+          data: {
+            providers: normalizeProviders(providers, context),
+          },
+        };
+      },
+    );
+
+    //////////////////////////////////////////////
+    // session
+    this.messageBus.registerHandler(
+      'session.initialize',
       async (data: { cwd: string; sessionId?: string }) => {
         const context = await this.getContext(data.cwd);
         await context.apply({
@@ -138,7 +436,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'send',
+      'session.send',
       async (data: {
         message: string | null;
         cwd: string;
@@ -194,7 +492,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'cancel',
+      'session.cancel',
       async (data: { cwd: string; sessionId: string }) => {
         const { cwd, sessionId } = data;
         const key = buildSignalKey(cwd, sessionId);
@@ -215,7 +513,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'addMessages',
+      'session.addMessages',
       async (data: { cwd: string; sessionId: string; messages: Message[] }) => {
         const { cwd, sessionId, messages } = data;
         const context = await this.getContext(cwd);
@@ -244,57 +542,64 @@ class NodeHandlerRegistry {
       },
     );
 
-    //////////////////////////////////////////////
-    // status
     this.messageBus.registerHandler(
-      'getStatus',
-      async (data: { cwd: string; sessionId: string }) => {
-        const { cwd, sessionId } = data;
+      'session.compact',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        messages: NormalizedMessage[];
+      }) => {
+        const { cwd, messages } = data;
         const context = await this.getContext(cwd);
-        const memo = {
-          [`${context.productName}`]: {
-            description: `v${context.version}`,
-            items: [context.paths.getSessionLogPath(sessionId)],
-          },
-          'Working Directory': {
-            items: [cwd],
-          },
-          Model: {
-            items: [context.config.model],
-          },
-        };
-        const status = await context.apply({
-          hook: 'status',
-          args: [],
-          memo,
-          type: PluginHookType.SeriesMerge,
+        const model = (await resolveModelWithContext(null, context)).model!;
+        const summary = await compact({
+          messages,
+          model,
         });
         return {
           success: true,
           data: {
-            status,
+            summary,
           },
         };
       },
     );
 
-    //////////////////////////////////////////////
-    // config
     this.messageBus.registerHandler(
-      'setConfig',
+      'session.config.setApprovalMode',
       async (data: {
         cwd: string;
-        isGlobal: boolean;
-        key: string;
-        value: string;
+        sessionId: string;
+        approvalMode: ApprovalMode;
       }) => {
-        const { cwd, key, value, isGlobal } = data;
+        const { cwd, sessionId, approvalMode } = data;
         const context = await this.getContext(cwd);
-        const configManager = new ConfigManager(cwd, context.productName, {});
-        configManager.setConfig(isGlobal, key, value);
-        if (this.contexts.has(cwd)) {
-          await context.destroy();
-          this.contexts.delete(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        sessionConfigManager.config.approvalMode = approvalMode;
+        sessionConfigManager.write();
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'session.config.addApprovalTools',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        approvalTool: string;
+      }) => {
+        const { cwd, sessionId, approvalTool } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        if (!sessionConfigManager.config.approvalTools.includes(approvalTool)) {
+          sessionConfigManager.config.approvalTools.push(approvalTool);
+          sessionConfigManager.write();
         }
         return {
           success: true,
@@ -303,21 +608,35 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'removeConfig',
+      'session.config.setSummary',
+      async (data: { cwd: string; sessionId: string; summary: string }) => {
+        const { cwd, sessionId, summary } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        sessionConfigManager.config.summary = summary;
+        sessionConfigManager.write();
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'session.config.setPastedTextMap',
       async (data: {
         cwd: string;
-        isGlobal: boolean;
-        key: string;
-        values?: string[];
+        sessionId: string;
+        pastedTextMap: Record<string, string>;
       }) => {
-        const { cwd, key, isGlobal, values } = data;
+        const { cwd, sessionId, pastedTextMap } = data;
         const context = await this.getContext(cwd);
-        const configManager = new ConfigManager(cwd, context.productName, {});
-        configManager.removeConfig(isGlobal, key, values);
-        if (this.contexts.has(cwd)) {
-          await context.destroy();
-          this.contexts.delete(cwd);
-        }
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        sessionConfigManager.config.pastedTextMap = pastedTextMap;
+        sessionConfigManager.write();
         return {
           success: true,
         };
@@ -325,37 +644,21 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'getConfig',
-      async (data: { cwd: string; key: string }) => {
-        const { cwd, key } = data;
+      'session.config.setPastedImageMap',
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        pastedImageMap: Record<string, string>;
+      }) => {
+        const { cwd, sessionId, pastedImageMap } = data;
         const context = await this.getContext(cwd);
-        const value = context.config[key as keyof Config];
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        sessionConfigManager.config.pastedImageMap = pastedImageMap;
+        sessionConfigManager.write();
         return {
           success: true,
-          data: {
-            value,
-          },
-        };
-      },
-    );
-
-    //////////////////////////////////////////////
-    // output style
-    this.messageBus.registerHandler(
-      'getOutputStyles',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
-        const context = await this.getContext(cwd);
-        const outputStyleManager = await OutputStyleManager.create(context);
-        return {
-          success: true,
-          data: {
-            outputStyles: outputStyleManager.outputStyles.map((style) => ({
-              name: style.name,
-              description: style.description,
-            })),
-            currentOutputStyle: context.config.outputStyle,
-          },
         };
       },
     );
@@ -363,7 +666,7 @@ class NodeHandlerRegistry {
     //////////////////////////////////////////////
     // sessions
     this.messageBus.registerHandler(
-      'getAllSessions',
+      'sessions.list',
       async (data: { cwd: string }) => {
         const { cwd } = data;
         const context = await this.getContext(cwd);
@@ -378,7 +681,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'resumeSession',
+      'sessions.resume',
       async (data: { cwd: string; sessionId: string }) => {
         const { cwd, sessionId } = data;
         const context = await this.getContext(cwd);
@@ -392,79 +695,10 @@ class NodeHandlerRegistry {
       },
     );
 
-    // models
-    this.messageBus.registerHandler(
-      'getModels',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
-        const context = await this.getContext(cwd);
-        const { providers, model } = await resolveModelWithContext(
-          null,
-          context,
-        );
-        const currentModel = model
-          ? `${model.provider.id}/${model.model.id}`
-          : null;
-        const currentModelInfo = model
-          ? {
-              providerName: model.provider.name,
-              modelName: model.model.name,
-              modelId: model.model.id,
-              modelContextLimit: model.model.limit.context,
-            }
-          : null;
-        const filteredProviderIds = new Set(
-          normalizeProviders(providers, context)
-            .filter(
-              (provider) => provider.hasApiKey || provider.validEnvs.length > 0,
-            )
-            .map((provider) => provider.id),
-        );
-        const groupedModels = Object.values(
-          providers as Record<string, Provider>,
-        )
-          .filter((provider) => filteredProviderIds.has(provider.id))
-          .map((provider) => ({
-            provider: provider.name,
-            providerId: provider.id,
-            models: Object.entries(provider.models).map(([modelId, model]) => ({
-              name: (model as ModelData).name,
-              modelId: modelId,
-              value: `${provider.id}/${modelId}`,
-            })),
-          }));
-        return {
-          success: true,
-          data: {
-            groupedModels,
-            currentModel,
-            currentModelInfo,
-          },
-        };
-      },
-    );
-
-    // providers for login
-    this.messageBus.registerHandler(
-      'getProviders',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
-        const context = await this.getContext(cwd);
-        const { providers } = await resolveModelWithContext(null, context);
-        return {
-          success: true,
-          data: {
-            providers: normalizeProviders(providers, context),
-          },
-        };
-      },
-    );
-
     //////////////////////////////////////////////
-    // slash command
-
+    // slashCommand
     this.messageBus.registerHandler(
-      'getSlashCommands',
+      'slashCommand.list',
       async (data: { cwd: string }) => {
         const { cwd } = data;
         const context = await this.getContext(cwd);
@@ -479,7 +713,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'getSlashCommand',
+      'slashCommand.get',
       async (data: { cwd: string; command: string }) => {
         const { cwd, command } = data;
         const context = await this.getContext(cwd);
@@ -495,7 +729,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'executeSlashCommand',
+      'slashCommand.execute',
       async (data: {
         cwd: string;
         sessionId: string;
@@ -588,10 +822,43 @@ class NodeHandlerRegistry {
     );
 
     //////////////////////////////////////////////
-    // utils
-
+    // status
     this.messageBus.registerHandler(
-      'query',
+      'status.get',
+      async (data: { cwd: string; sessionId: string }) => {
+        const { cwd, sessionId } = data;
+        const context = await this.getContext(cwd);
+        const memo = {
+          [`${context.productName}`]: {
+            description: `v${context.version}`,
+            items: [context.paths.getSessionLogPath(sessionId)],
+          },
+          'Working Directory': {
+            items: [cwd],
+          },
+          Model: {
+            items: [context.config.model],
+          },
+        };
+        const status = await context.apply({
+          hook: 'status',
+          args: [],
+          memo,
+          type: PluginHookType.SeriesMerge,
+        });
+        return {
+          success: true,
+          data: {
+            status,
+          },
+        };
+      },
+    );
+
+    //////////////////////////////////////////////
+    // utils
+    this.messageBus.registerHandler(
+      'utils.query',
       async (data: {
         userPrompt: string;
         cwd: string;
@@ -609,7 +876,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'getPaths',
+      'utils.getPaths',
       async (data: { cwd: string; maxFiles?: number }) => {
         const { cwd, maxFiles = 6000 } = data;
         const context = await this.getContext(cwd);
@@ -629,251 +896,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'compact',
-      async (data: {
-        cwd: string;
-        sessionId: string;
-        messages: NormalizedMessage[];
-      }) => {
-        const { cwd, messages } = data;
-        const context = await this.getContext(cwd);
-        const model = (await resolveModelWithContext(null, context)).model!;
-        const summary = await compact({
-          messages,
-          model,
-        });
-        return {
-          success: true,
-          data: {
-            summary,
-          },
-        };
-      },
-    );
-
-    //////////////////////////////////////////////
-    // session config
-    this.messageBus.registerHandler(
-      'sessionConfig.setApprovalMode',
-      async (data: {
-        cwd: string;
-        sessionId: string;
-        approvalMode: ApprovalMode;
-      }) => {
-        const { cwd, sessionId, approvalMode } = data;
-        const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
-        sessionConfigManager.config.approvalMode = approvalMode;
-        sessionConfigManager.write();
-        return {
-          success: true,
-        };
-      },
-    );
-    this.messageBus.registerHandler(
-      'sessionConfig.addApprovalTools',
-      async (data: {
-        cwd: string;
-        sessionId: string;
-        approvalTool: string;
-      }) => {
-        const { cwd, sessionId, approvalTool } = data;
-        const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
-        if (!sessionConfigManager.config.approvalTools.includes(approvalTool)) {
-          sessionConfigManager.config.approvalTools.push(approvalTool);
-          sessionConfigManager.write();
-        }
-        return {
-          success: true,
-        };
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'globalData.addHistory',
-      async (data: { cwd: string; history: string }) => {
-        const { cwd, history } = data;
-        const context = await this.getContext(cwd);
-        const { GlobalData } = await import('./globalData');
-        const globalDataPath = context.paths.getGlobalDataPath();
-        const globalData = new GlobalData({
-          globalDataPath,
-        });
-        globalData.addProjectHistory({
-          cwd,
-          history,
-        });
-        return {
-          success: true,
-        };
-      },
-    );
-    this.messageBus.registerHandler(
-      'sessionConfig.setSummary',
-      async (data: { cwd: string; sessionId: string; summary: string }) => {
-        const { cwd, sessionId, summary } = data;
-        const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
-        sessionConfigManager.config.summary = summary;
-        sessionConfigManager.write();
-        return {
-          success: true,
-        };
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'sessionConfig.setPastedTextMap',
-      async (data: {
-        cwd: string;
-        sessionId: string;
-        pastedTextMap: Record<string, string>;
-      }) => {
-        const { cwd, sessionId, pastedTextMap } = data;
-        const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
-        sessionConfigManager.config.pastedTextMap = pastedTextMap;
-        sessionConfigManager.write();
-        return {
-          success: true,
-        };
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'sessionConfig.setPastedImageMap',
-      async (data: {
-        cwd: string;
-        sessionId: string;
-        pastedImageMap: Record<string, string>;
-      }) => {
-        const { cwd, sessionId, pastedImageMap } = data;
-        const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
-        sessionConfigManager.config.pastedImageMap = pastedImageMap;
-        sessionConfigManager.write();
-        return {
-          success: true,
-        };
-      },
-    );
-
-    //////////////////////////////////////////////
-    // MCP status
-    this.messageBus.registerHandler(
-      'getMcpStatus',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
-        const context = await this.getContext(cwd);
-        const mcpManager = context.mcpManager;
-
-        interface ServerData {
-          status: string;
-          error?: string;
-          toolCount: number;
-          tools: string[];
-        }
-
-        const configuredServers = context.config.mcpServers || {};
-        const allServerStatus = await mcpManager.getAllServerStatus();
-        const servers: Record<string, ServerData> = {};
-
-        // Get detailed status for each configured server
-        for (const serverName of mcpManager.getServerNames()) {
-          const serverStatus = allServerStatus[serverName];
-          let tools: string[] = [];
-
-          if (serverStatus && serverStatus.status === 'connected') {
-            try {
-              const serverTools = await mcpManager.getTools([serverName]);
-              tools = serverTools.map((tool) => tool.name);
-            } catch (err) {
-              console.warn(
-                `Failed to fetch tools for server ${serverName}:`,
-                err,
-              );
-            }
-          }
-
-          servers[serverName] = {
-            status: serverStatus?.status || 'disconnected',
-            error: serverStatus?.error,
-            toolCount: serverStatus?.toolCount || 0,
-            tools,
-          };
-        }
-
-        // Get config paths
-        const configManager = new ConfigManager(cwd, context.productName, {});
-
-        return {
-          success: true,
-          data: {
-            servers,
-            configs: configuredServers,
-            globalConfigPath: configManager.globalConfigPath,
-            projectConfigPath: configManager.projectConfigPath,
-            isReady: mcpManager.isReady(),
-            isLoading: mcpManager.isLoading(),
-          },
-        };
-      },
-    );
-
-    // MCP reconnection functionality
-    this.messageBus.registerHandler(
-      'reconnectMcpServer',
-      async (data: { cwd: string; serverName: string }) => {
-        const { cwd, serverName } = data;
-        try {
-          const context = await this.getContext(cwd);
-          const mcpManager = context.mcpManager;
-
-          if (!mcpManager) {
-            return {
-              success: false,
-              error: 'No MCP manager available',
-            };
-          }
-
-          await mcpManager.retryConnection(serverName);
-
-          return {
-            success: true,
-            message: `Successfully initiated reconnection for ${serverName}`,
-          };
-        } catch (error) {
-          return {
-            success: false,
-            error: error instanceof Error ? error.message : String(error),
-          };
-        }
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'clearContext',
-      async (data: { cwd?: string }) => {
-        await this.clearContext(data.cwd);
-        return {
-          success: true,
-        };
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'telemetry',
+      'utils.telemetry',
       async (data: {
         cwd: string;
         name: string;

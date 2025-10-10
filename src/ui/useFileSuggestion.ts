@@ -26,7 +26,7 @@ export function usePaths() {
       return;
     }
     bridge
-      .request('getPaths', { cwd })
+      .request('utils.getPaths', { cwd })
       .then((res) => {
         setPaths(res.data.paths);
         setIsLoading(false);

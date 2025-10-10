@@ -353,7 +353,7 @@ ${colors.bright}Connection Info:${colors.reset}
 
     try {
       console.log(`${colors.cyan}Initializing...${colors.reset}`);
-      const result = await this.messageBus!.request('initialize', {
+      const result = await this.messageBus!.request('session.initialize', {
         cwd: this.cwd,
         sessionId: this.sessionId,
       });
@@ -386,7 +386,7 @@ ${colors.bright}Connection Info:${colors.reset}
 
     try {
       console.log(`${colors.cyan}Sending message...${colors.reset}`);
-      const result = await this.messageBus!.request('send', {
+      const result = await this.messageBus!.request('session.send', {
         message,
         cwd: this.cwd,
         sessionId: this.sessionId,
@@ -423,7 +423,7 @@ ${colors.bright}Connection Info:${colors.reset}
     }
 
     try {
-      const result = await this.messageBus!.request('cancel', {
+      const result = await this.messageBus!.request('session.cancel', {
         cwd: this.cwd,
         sessionId,
       });

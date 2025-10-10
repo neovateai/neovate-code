@@ -781,7 +781,7 @@ Hello, how can I help you today?</textarea
           const sessionId =
             document.getElementById('sessionId').value || undefined;
 
-          const result = await messageBus.request('initialize', {
+          const result = await messageBus.request('session.initialize', {
             cwd,
             sessionId,
           });
@@ -810,7 +810,7 @@ Hello, how can I help you today?</textarea
             currentSessionId = sessionId;
           }
 
-          const result = await messageBus.request('send', {
+          const result = await messageBus.request('session.send', {
             message,
             cwd,
             sessionId,
@@ -835,7 +835,7 @@ Hello, how can I help you today?</textarea
             return;
           }
 
-          const result = await messageBus.request('cancel', { cwd, sessionId });
+          const result = await messageBus.request('session.cancel', { cwd, sessionId });
           logMessage({ method: 'cancel', result }, 'response');
         } catch (error) {
           logMessage({ error: error.message }, 'error');
@@ -890,7 +890,7 @@ Hello, how can I help you today?</textarea
             currentSessionId ||
             document.getElementById('sessionId').value ||
             'default';
-          const result = await messageBus.request('getStatus', {
+          const result = await messageBus.request('status.get', {
             cwd,
             sessionId,
           });
@@ -903,7 +903,7 @@ Hello, how can I help you today?</textarea
       async function getAllSessions() {
         try {
           const cwd = document.getElementById('cwd').value;
-          const result = await messageBus.request('getAllSessions', { cwd });
+          const result = await messageBus.request('sessions.list', { cwd });
           logMessage({ method: 'getAllSessions', result }, 'response');
         } catch (error) {
           logMessage({ error: error.message }, 'error');
@@ -913,7 +913,7 @@ Hello, how can I help you today?</textarea
       async function getModels() {
         try {
           const cwd = document.getElementById('cwd').value;
-          const result = await messageBus.request('getModels', { cwd });
+          const result = await messageBus.request('models.list', { cwd });
           logMessage({ method: 'getModels', result }, 'response');
         } catch (error) {
           logMessage({ error: error.message }, 'error');
@@ -923,7 +923,7 @@ Hello, how can I help you today?</textarea
       async function getOutputStyles() {
         try {
           const cwd = document.getElementById('cwd').value;
-          const result = await messageBus.request('getOutputStyles', { cwd });
+          const result = await messageBus.request('outputStyles.list', { cwd });
           logMessage({ method: 'getOutputStyles', result }, 'response');
         } catch (error) {
           logMessage({ error: error.message }, 'error');
@@ -933,7 +933,7 @@ Hello, how can I help you today?</textarea
       async function getSlashCommands() {
         try {
           const cwd = document.getElementById('cwd').value;
-          const result = await messageBus.request('getSlashCommands', { cwd });
+          const result = await messageBus.request('slashCommand.list', { cwd });
           logMessage({ method: 'getSlashCommands', result }, 'response');
         } catch (error) {
           logMessage({ error: error.message }, 'error');
@@ -943,7 +943,7 @@ Hello, how can I help you today?</textarea
       async function getMcpStatus() {
         try {
           const cwd = document.getElementById('cwd').value;
-          const result = await messageBus.request('getMcpStatus', { cwd });
+          const result = await messageBus.request('mcp.getStatus', { cwd });
           logMessage({ method: 'getMcpStatus', result }, 'response');
         } catch (error) {
           logMessage({ error: error.message }, 'error');

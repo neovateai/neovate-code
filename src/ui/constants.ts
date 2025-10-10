@@ -13,6 +13,8 @@ export const UI_COLORS = {
   WARNING: 'yellow',
   INFO: 'gray',
   CHAT_BORDER: 'gray',
+  CHAT_BORDER_MEMORY: 'cyan',
+  CHAT_BORDER_BASH: 'magenta',
   CHAT_ARROW: 'gray',
   CHAT_ARROW_ACTIVE: 'white',
   CANCELED: 'red',
