@@ -1,6 +1,6 @@
-import type { FileItem, ImageItem } from '@/api/model';
+import type { ImageItem } from '@/api/model';
 import { ContextType } from '@/constants/context';
-import type { SlashCommand } from '@/types/chat';
+import type { FileItem, SlashCommand } from '@/types/chat';
 import type { ContextItem, ContextStoreValue } from '@/types/context';
 
 export async function imageUrlToBase64(url: string) {

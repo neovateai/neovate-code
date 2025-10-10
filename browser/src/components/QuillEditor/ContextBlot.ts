@@ -1,4 +1,4 @@
-import Quill, { Parchment } from 'quill';
+import Quill, { type Parchment } from 'quill';
 
 const Embed = Quill.import('blots/embed') as typeof Parchment.EmbedBlot;
 

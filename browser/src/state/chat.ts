@@ -1,6 +1,7 @@
 import type { Delta } from 'quill';
 import { proxy } from 'valtio';
 import type { ApprovalMode, InitializeResult } from '@/client';
+import { BLOT_NAME_CONTENT_REGEX } from '@/constants';
 import type {
   ApprovalCategory,
   ApprovalResult,
@@ -17,6 +18,7 @@ import type {
   UIMessage,
 } from '@/types/chat';
 import { isToolResultMessage } from '@/utils/message';
+import { getPrompt } from '@/utils/quill';
 import { countTokens } from '@/utils/tokenCounter';
 import { actions as clientActions, state as clientState } from './client';
 
@@ -71,7 +73,7 @@ interface ChatActions {
   addMessage(message: UIMessage): void;
   destroy(): void;
   sendMessage(opts: {
-    message: string;
+    message: string | null;
     planMode?: boolean;
     model?: string;
   }): Promise<LoopResult>;
@@ -242,14 +244,15 @@ export const actions: ChatActions = {
     });
 
     return () => {
-      console.log('destroy');
       clientActions.removeEventHandler('message', handleMessage);
       clientActions.removeEventHandler('chunk', handleChunk);
     };
   },
 
-  async send(message, delta?: Delta) {
+  async send(message, delta: Delta) {
     const { cwd, sessionId } = state;
+
+    const isDelta = BLOT_NAME_CONTENT_REGEX.test(message);
 
     clientActions.request('utils.telemetry', {
       cwd,
@@ -257,29 +260,28 @@ export const actions: ChatActions = {
       payload: { message, sessionId },
     });
 
-    // expand message
-    if (delta) {
-      // message = delta.ops
-      //   .map((op) => {
-      //     if (typeof op.insert === 'string') {
-      //       return op.insert;
-      //     }
-      //     if (op.insert?.[CONTEXT_BLOT_NAME]) {
-      //       const blotData = op.insert[CONTEXT_BLOT_NAME];
-      //       // @ts-expect-error
-      //       actions.setBrowserContext(getBlotName(blotData), blotData.value);
-      //       return op.insert?.[CONTEXT_BLOT_NAME].value;
-      //     }
-      //     return op;
-      //   })
-      //   .join('');
+    if (isDelta) {
+      // 区分是指令还是文件
+      const prompt = getPrompt(delta);
+      await clientActions.request('session.addMessages', {
+        cwd,
+        sessionId,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+            uiContent: message,
+          },
+        ],
+      });
+      await this.sendMessage({ message: null });
+    } else {
+      await this.sendMessage({ message });
     }
-
-    await this.sendMessage({ message });
   },
 
   async sendMessage(opts: {
-    message: string;
+    message: string | null;
     planMode?: boolean;
     model?: string;
   }) {
@@ -336,6 +338,11 @@ export const actions: ChatActions = {
   },
 
   async getFiles(opts: { query?: string }) {
+    if (!state.cwd) {
+      throw new Error(
+        'Current working directory (cwd) is not set. Please select or initialize a working directory first.',
+      );
+    }
     const response = (await clientActions.request('utils.files.list', {
       cwd: state.cwd,
       query: opts.query,

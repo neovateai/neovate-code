@@ -79,7 +79,7 @@ export function isInsertingAt(delta: Delta) {
 }
 
 const BLOT_NAME_REGEX = /\[(File|Slash Command|Context)\s+([^\]]+)\]/g;
-// 将文本中的 普通文本  和 delta 分开 say hi [File @ file.ts] demo [File @ file2.ts]
+// Separate plain text and delta in the text, e.g. [File @ file.ts] demo [File @ file2.ts]
 export function convertTextToDelta(text: string): Delta {
   const delta = new Delta();
   let lastIndex = 0;
