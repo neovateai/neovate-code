@@ -1,10 +1,13 @@
-import { join } from 'pathe';
+import { join, dirname } from 'pathe';
 import { isLocal } from './utils/isLocal';
 import type { McpServerConfig } from './config';
+import { fileURLToPath } from 'url';
 
 export type BrowserConfig = {
   browser: boolean;
 };
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export function getChromeDevToolsMcpServerConfig(): Record<
   string,
