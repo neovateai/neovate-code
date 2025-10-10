@@ -1,5 +1,11 @@
 import { $ } from 'bun';
-import { existsSync, mkdirSync, readdirSync } from 'fs';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'fs';
 import { join } from 'path';
 
 const MCPS_DIR = 'mcps';
@@ -18,6 +24,17 @@ async function bundleMcp(fileName: string): Promise<boolean> {
     log(`Bundling ${fileName} -> ${outputPath}`);
 
     await $`bun build ${inputPath} --minify --outfile ${outputPath} --target=node`;
+
+    // Post-process chrome-devtools-mcp
+    if (baseName === 'chrome-devtools-mcp') {
+      log(`Post-processing ${baseName}...`);
+      let content = readFileSync(outputPath, 'utf-8');
+      content = content.replace(
+        /console\.error\(`chrome-devtools-mcp/g,
+        '(`chrome-devtools-mcp after bundled',
+      );
+      writeFileSync(outputPath, content, 'utf-8');
+    }
 
     log(`✅ Successfully bundled: ${fileName}`);
     return true;
