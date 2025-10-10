@@ -252,26 +252,17 @@ class NodeHandlerRegistry {
               modelContextLimit: model.model.limit.context,
             }
           : null;
-        const filteredProviderIds = new Set(
-          normalizeProviders(providers, context)
-            .filter(
-              (provider) => provider.hasApiKey || provider.validEnvs.length > 0,
-            )
-            .map((provider) => provider.id),
-        );
         const groupedModels = Object.values(
           providers as Record<string, Provider>,
-        )
-          .filter((provider) => filteredProviderIds.has(provider.id))
-          .map((provider) => ({
-            provider: provider.name,
-            providerId: provider.id,
-            models: Object.entries(provider.models).map(([modelId, model]) => ({
-              name: (model as ModelData).name,
-              modelId: modelId,
-              value: `${provider.id}/${modelId}`,
-            })),
-          }));
+        ).map((provider) => ({
+          provider: provider.name,
+          providerId: provider.id,
+          models: Object.entries(provider.models).map(([modelId, model]) => ({
+            name: (model as ModelData).name,
+            modelId: modelId,
+            value: `${provider.id}/${modelId}`,
+          })),
+        }));
         return {
           success: true,
           data: {
