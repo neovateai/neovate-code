@@ -680,7 +680,7 @@ function getProviderApiKey(provider: Provider) {
   if (provider.options?.apiKey) {
     return provider.options.apiKey;
   }
-  const envs = provider.env;
+  const envs = provider.env || [];
   for (const env of envs) {
     if (process.env[env]) {
       return process.env[env];
