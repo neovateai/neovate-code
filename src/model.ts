@@ -746,6 +746,7 @@ export const providers: ProvidersMap = {
           'Editor-Plugin-Version': 'copilot-chat/0.26.7',
           'Copilot-Integration-Id': 'vscode-chat',
         },
+        // fix Failed: OpenAI API key is missing
         apiKey: '',
       })(name);
     },
