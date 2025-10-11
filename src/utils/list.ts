@@ -25,7 +25,7 @@ export function listDirectory(
     if (path !== initialPath) {
       results.push(relative(cwd, path) + sep);
     }
-    let children;
+    let children: fs.Dirent[];
     try {
       children = fs.readdirSync(path, { withFileTypes: true });
     } catch (e) {

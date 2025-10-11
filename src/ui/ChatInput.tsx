@@ -8,6 +8,7 @@ import { StatusLine } from './StatusLine';
 import { Suggestion, SuggestionItem } from './Suggestion';
 import { useAppStore } from './store';
 import TextInput from './TextInput';
+import { useExternalEditor } from './useExternalEditor';
 import { useInputHandlers } from './useInputHandlers';
 import { useTerminalSize } from './useTerminalSize';
 import { useTryTips } from './useTryTips';
@@ -29,6 +30,11 @@ export function ChatInput() {
     setStatus,
   } = useAppStore();
   const { columns } = useTerminalSize();
+  const { handleExternalEdit } = useExternalEditor({
+    value: inputState.state.value,
+    onChange: inputState.setValue,
+    setCursorPosition: inputState.setCursorPosition,
+  });
   const showSuggestions =
     slashCommands.suggestions.length > 0 ||
     fileSuggestion.matchedPaths.length > 0;
@@ -175,6 +181,7 @@ export function ChatInput() {
           disableCursorMovementForUpDownKeys={showSuggestions}
           onTabPress={handlers.handleTabPress}
           onDelete={handleDelete}
+          onExternalEdit={handleExternalEdit}
           columns={columns - 6}
           isDimmed={false}
         />

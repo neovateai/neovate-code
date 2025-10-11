@@ -1,3 +1,28 @@
+## 0.13.0
+
+`2025-10-10`
+
+- feat: add filename and dimensions to image paste placeholders by [@afc163](https://github.com/afc163) in [#296](https://github.com/umijs/takumi/pull/296)
+- feat: add ctrl-g external editor support for prompt editing by @chencheng (云谦) in [#307](https://github.com/umijs/takumi/pull/307)
+- fix: post-process chrome-devtools-mcp bundle to replace console.error call by [@sorrycc](https://github.com/sorrycc)
+- fix: update bundleMcps script to handle .mjs files and add browser module support by [@阿平](https://github.com/阿平) in [#306](https://github.com/umijs/takumi/pull/306)
+- fix: handle undefined provider env in getProviderApiKey by [@sorrycc](https://github.com/sorrycc)
+- feat: add empty apiKey field to copilot provider configuration by [@阿平](https://github.com/阿平) in [#305](https://github.com/umijs/takumi/pull/305)
+- Revert "feat: filter models by available API keys and improve documentation (…" by [@afc163](https://github.com/afc163) in [#304](https://github.com/umijs/takumi/pull/304)
+- feat: filter models by available API keys and improve documentation by [@Derek](https://github.com/Derek) in [#297](https://github.com/umijs/takumi/pull/297)
+- Merge branch 'sorrycc/chrome-devtools-mcp' by [@sorrycc](https://github.com/sorrycc)
+- feat: add browser integration with chrome-devtools-mcp support by [@sorrycc](https://github.com/sorrycc)
+- refactor: improve ignore pattern handling and add global gitignore support by [@sorrycc](https://github.com/sorrycc)
+- refactor: simplify user message detection and optimize at normalization by [@阿平](https://github.com/阿平) in [#300](https://github.com/umijs/takumi/pull/300)
+- feat: add glm-4.6 model support by [@sorrycc](https://github.com/sorrycc)
+- feat: support nested directory structure in command name extraction by [@阿平](https://github.com/阿平) in [#281](https://github.com/umijs/takumi/pull/281)
+- feat: update login command to use PaginatedGroupSelectInput by @chencheng (云谦) in [#303](https://github.com/umijs/takumi/pull/303)
+- feat: add memory rule submission with session message logging by [@sorrycc](https://github.com/sorrycc)
+- feat: add delete key handling and improve escape key behavior in text input components [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: support memory mode [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add support for JSON output styles and improve error handling by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.12.7
 
 `2025-10-02`

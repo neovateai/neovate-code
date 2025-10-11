@@ -113,6 +113,7 @@ export type Props = {
    */
   readonly onImagePaste?: (
     base64Image: string,
+    filename?: string,
   ) => Promise<{ prompt?: string }> | void;
 
   /**
@@ -146,6 +147,11 @@ export type Props = {
    * Function to call when `Delete` or `Backspace` is pressed.
    */
   readonly onDelete?: () => void;
+
+  /**
+   * Optional callback when Ctrl+G is pressed to edit prompt in external editor.
+   */
+  readonly onExternalEdit?: () => void;
 };
 
 export default function TextInput({
@@ -174,6 +180,7 @@ export default function TextInput({
   onChangeCursorOffset,
   onTabPress,
   onDelete,
+  onExternalEdit,
 }: Props): React.JSX.Element {
   const { onInput, renderedValue } = useTextInput({
     value: originalValue,
@@ -199,6 +206,7 @@ export default function TextInput({
     externalOffset: cursorOffset,
     onOffsetChange: onChangeCursorOffset,
     onTabPress,
+    onExternalEdit,
   });
 
   // Enhanced paste detection state for multi-chunk text merging
@@ -259,7 +267,10 @@ export default function TextInput({
           try {
             const imageResult = await processImageFromPath(mergedInput);
             if (imageResult) {
-              const imagePromptResult = await onImagePaste(imageResult.base64);
+              const imagePromptResult = await onImagePaste(
+                imageResult.base64,
+                imageResult.filename,
+              );
               if (imagePromptResult?.prompt) {
                 const { newValue, newCursorOffset } = insertTextAtCursor(
                   imagePromptResult.prompt,

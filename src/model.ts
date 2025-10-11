@@ -680,7 +680,7 @@ function getProviderApiKey(provider: Provider) {
   if (provider.options?.apiKey) {
     return provider.options.apiKey;
   }
-  const envs = provider.env;
+  const envs = provider.env || [];
   for (const env of envs) {
     if (process.env[env]) {
       return process.env[env];
@@ -746,6 +746,8 @@ export const providers: ProvidersMap = {
           'Editor-Plugin-Version': 'copilot-chat/0.26.7',
           'Copilot-Integration-Id': 'vscode-chat',
         },
+        // fix Failed: OpenAI API key is missing
+        apiKey: '',
       })(name);
     },
   },
@@ -940,6 +942,7 @@ export const providers: ProvidersMap = {
       'deepseek-v3.2': models['deepseek-v3-2-exp'],
       'deepseek-r1': models['deepseek-r1-0528'],
       'glm-4.5': models['glm-4.5'],
+      'glm-4.6': models['glm-4.6'],
       'qwen3-max-preview': models['qwen3-max'],
     },
     createModel: defaultModelCreator,
