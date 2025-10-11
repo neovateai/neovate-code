@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useMount, useRequest } from 'ahooks';
+import { message } from 'antd';
 import { createStyles } from 'antd-style';
 import { useCallback, useEffect, useRef } from 'react';
 import { useSnapshot } from 'valtio';
@@ -100,7 +101,7 @@ const ChatWrapper: React.FC = () => {
   const { run, loading } = useRequest(
     () =>
       initializeSession({
-        cwd: '/Users/xierenhong/Downloads/test/hello-takumi',
+        // cwd: '/Users/xierenhong/Downloads/test/hello-takumi',
       }),
     {
       manual: true,
@@ -111,6 +112,9 @@ const ChatWrapper: React.FC = () => {
             sessionId: result.data.sessionId,
             messages: result.data.messages,
           });
+        } else {
+          console.log('result', result);
+          message.error(result.message);
         }
       },
     },

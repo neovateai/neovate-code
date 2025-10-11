@@ -4,7 +4,10 @@ import { WebServer } from './web-server';
 const DEFAULT_PORT = 1024;
 const DEFAULT_HOST = '127.0.0.1';
 
-export async function runServerNext(opts: { contextCreateOpts: any }) {
+export async function runServerNext(opts: {
+  cwd: string;
+  contextCreateOpts: any;
+}) {
   const { default: yargsParser } = await import('yargs-parser');
   const argv = yargsParser(process.argv.slice(2), {
     alias: {
@@ -23,6 +26,7 @@ export async function runServerNext(opts: { contextCreateOpts: any }) {
     port,
     host: argv.host || DEFAULT_HOST,
     contextCreateOpts: opts.contextCreateOpts,
+    cwd: opts.cwd,
   });
 
   let isShuttingDown = false;

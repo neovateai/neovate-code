@@ -293,6 +293,7 @@ export async function runNeovate(opts: {
   const command = argv._[0];
   if (command === 'servernext') {
     await runServerNext({
+      cwd,
       contextCreateOpts,
     });
     return;

@@ -35,12 +35,13 @@
     "react-markdown": "^9.0.0",
     "react-syntax-highlighter": "^15.5.0",
     "remark-gfm": "^4.0.1",
-    "streamdown": "^1.1.6",
     "shiki": "^3.11.0",
+    "streamdown": "^1.1.6",
     "swr": "^2.3.3",
     "valtio": "^2.1.5"
   },
   "devDependencies": {
+    "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.1.10",
     "@tanstack/router-plugin": "^1.121.16",

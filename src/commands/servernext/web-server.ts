@@ -22,6 +22,7 @@ interface WebServerOptions {
   port: number;
   host?: string;
   contextCreateOpts: ContextCreateOpts;
+  cwd: string;
 }
 
 class WebServer {
@@ -35,12 +36,13 @@ class WebServer {
   private host: string;
   private contextCreateOpts: ContextCreateOpts;
   private isWssRunning = false;
+  private cwd: string;
 
   constructor(options: WebServerOptions) {
     this.port = options.port;
     this.host = options.host || 'localhost';
     this.contextCreateOpts = options.contextCreateOpts || {};
-
+    this.cwd = options.cwd;
     // Initialize Fastify app
     this.app = fastify({
       logger: false,
@@ -119,6 +121,7 @@ class WebServer {
     await this.app.register(import('./routes/session'), {
       prefix: BASE_API_PREFIX,
       ...this.contextCreateOpts,
+      cwd: this.cwd,
     });
   }
 
