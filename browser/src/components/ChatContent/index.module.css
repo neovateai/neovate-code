@@ -1,0 +1,43 @@
+.chat {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding-block: 16px;
+  gap: 16px;
+  flex: 1;
+}
+
+.chat::-webkit-scrollbar {
+  display: none;
+}
+
+.chatList {
+  flex: 1;
+  overflow: auto;
+}
+
+.chatList :global(.ant-bubble-footer) {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.chatList :global(.ant-bubble-content) {
+  min-height: 0px;
+}
+
+.chatList :global(.ant-btn-icon) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bubbleList {
+  height: 100%;
+  max-width: 800px;
+  margin-inline: auto;
+}
+
+.skeletonContainer {
+  width: 600px;
+}

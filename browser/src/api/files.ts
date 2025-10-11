@@ -1,28 +1,5 @@
 import { request } from '@/utils/request';
-import type { ApiResponse, FileItem } from './model';
-
-interface FileListResponse {
-  cwd: string;
-  directory: string;
-  items: FileItem[];
-  files: string[];
-  directories: string[];
-  error?: string;
-}
-
-export interface FileListQueries {
-  searchString?: string;
-
-  maxSize?: number;
-}
-
-export const getFileList = (
-  queries?: FileListQueries,
-): Promise<ApiResponse<FileListResponse>> => {
-  return request.get('/files/list', {
-    params: queries,
-  });
-};
+import type { ApiResponse } from './model';
 
 interface FileEditResponse {
   message: string;

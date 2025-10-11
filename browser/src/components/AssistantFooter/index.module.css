@@ -1,0 +1,9 @@
+.assistantFooter {
+  display: flex;
+  gap: 8px;
+}
+
+.assistantFooterIcon {
+  width: 18px !important;
+  height: 18px !important;
+}

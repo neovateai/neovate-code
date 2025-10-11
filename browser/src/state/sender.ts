@@ -1,17 +1,17 @@
+import { Delta } from 'quill';
 import { proxy } from 'valtio';
 
 interface SenderState {
   prompt: string;
-  plainText: string;
   mode: string;
-  openFooter: boolean;
+  /** For quill editor render rich text */
+  delta: Delta;
 }
 
 export const state = proxy<SenderState>({
   prompt: '',
-  plainText: '',
   mode: 'agent',
-  openFooter: false,
+  delta: new Delta(),
 });
 
 export const actions = {
@@ -19,20 +19,11 @@ export const actions = {
     state.prompt = prompt;
   },
 
-  updatePlainText: (plainText: string) => {
-    state.plainText = plainText;
-  },
-
-  updateOpenFooter: (openFooter: boolean) => {
-    state.openFooter = openFooter;
-  },
-
   updateMode: (mode: string) => {
     state.mode = mode;
   },
 
-  updateModeAndFooterVisible: (mode: string, openFooter: boolean) => {
-    state.mode = mode;
-    state.openFooter = openFooter;
+  updateDelta: (delta: Delta) => {
+    state.delta = delta;
   },
 };

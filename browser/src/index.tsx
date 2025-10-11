@@ -1,8 +1,9 @@
-import { RouterProvider, createRouter } from '@tanstack/react-router';
-import { StrictMode } from 'react';
+import '@ant-design/v5-patch-for-react-19';
+import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { createRoot } from 'react-dom/client';
 import './global.css';
 import './i18n';
+import { App } from 'antd';
 import { routeTree } from './routeTree.gen';
 
 const router = createRouter({ routeTree });
@@ -15,7 +16,9 @@ declare module '@tanstack/react-router' {
 }
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
+  // <StrictMode>
+  <App>
     <RouterProvider router={router} />
-  </StrictMode>,
+  </App>,
+  // </StrictMode>,
 );

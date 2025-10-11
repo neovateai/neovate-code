@@ -29,6 +29,27 @@
     "settings": "Settings",
     "help": "Help"
   },
+  "welcome": {
+    "title": "I'm {{productName}}, your development partner",
+    "capabilitiesTitle": "My Capabilities",
+    "introduceCapability": "Please introduce the features of {{capability}}",
+    "llmSupport": {
+      "title": "LLM Support",
+      "description": "Compatible with multiple mainstream models including OpenAI, Claude, Gemini, etc."
+    },
+    "fileOperations": {
+      "title": "File Operations",
+      "description": "Intelligently understand and edit project files, supporting multiple programming languages"
+    },
+    "codebaseNavigation": {
+      "title": "Codebase",
+      "description": "Smart navigation of project structure, quick analysis and search"
+    },
+    "planMode": {
+      "title": "Plan Mode",
+      "description": "Automatically break down complex tasks into visible and editable steps"
+    }
+  },
   "chat": {
     "welcomeTitle": "Hello, I'm Takumi",
     "welcomeDescription": "I'm your AI programming assistant that helps improve development workflows. I can write code, optimize performance, generate tests, analyze architecture and assist with development tasks.",
@@ -74,6 +95,18 @@
       "fileSizeLimited": "File size should be smaller than {{limit}}",
       "dragFileHere": "Drag file here to upload",
       "supportTypeDesc": "Support pictures and text files"
+    },
+    "filesAndFolders": "Files & Folders",
+    "slashCommands": "Slash Commands"
+  },
+  "suggestion": {
+    "navigate": "navigate",
+    "select": "select",
+    "close": "close",
+    "back": "back",
+    "slashCommandPrefix": {
+      "global": "Global",
+      "project": "Project"
     }
   },
   "menu": {
@@ -101,6 +134,7 @@
     "status": {
       "executing": "Executing",
       "completed": "Completed",
+      "failed": "Failed",
       "unknown": "Unknown"
     },
     "filesFound": "Found {{count}} files",
@@ -114,10 +148,10 @@
     "description": "AI requests to execute the following tool, do you allow it?",
     "toolName": "Tool Name",
     "parameters": "Parameters",
-    "approveOnce": "Allow (Once)",
-    "approveAlways": "Allow (Always for this command)",
-    "approveAlwaysTool": "Allow (Always for {{toolName}})",
-    "deny": "Deny",
+    "approveOnce": "Yes (Once)",
+    "approveAlwaysEdit": "Yes, allow all edits during this session",
+    "approveAlwaysTool": "Yes, allow {{toolName}} during this session",
+    "deny": "No, and suggest changes",
     "approved": "Tool execution approved",
     "denied": "Tool execution denied",
     "approvalOption": "Approval Option",
@@ -153,9 +187,10 @@
     "argumentsPlaceholder": "--param1 value1 --param2 value2",
     "url": "URL",
     "urlPlaceholder": "http://localhost:3000",
-    "environmentVariables": "Environment Variables (JSON)",
+    "environmentVariables": "Environment Variables",
     "environmentVariablesPlaceholder": "{\"API_KEY\": \"your-key\", \"DEBUG\": \"true\"}",
     "scope": "Scope",
+    "scopeTooltip": "Project: Use only in current project; Global: Use in all projects",
     "inputMode": "Input Mode",
     "project": "Project",
     "global": "Global",
@@ -176,12 +211,8 @@
     "noConfiguration": "No MCP configuration",
     "clickToStart": "Click \"Add Server\" to start configuring",
     "noServicesAvailable": "No services available",
-    "editApiKey": "Edit API Key for {{name}}",
-    "apiKeyPlaceholder": "Enter your API key",
-    "apiKeyDescription": "This API key will be used to configure the {{name}} service.",
     "playwrightDescription": "Browser automation and testing",
     "figmaDescription": "Figma design integration",
-    "figmaApiKeyLabel": "Figma API Key",
     "mcpManagementTitle": "MCP Management",
     "mcpServicesTitle": "MCP Services",
     "globalScope": "Global",
@@ -192,7 +223,7 @@
     "added": "Added {{name}} to project",
     "addedMultiple": "Added {{count}} server(s) successfully",
     "addedSingle": "Added successfully",
-    "apiKeyUpdated": "API key updated successfully",
+
     "alreadyEnabled": "{{name}} is already enabled",
     "noCachedConfig": "No cached configuration found for {{name}} ({{scope}})",
     "loadFailed": "Failed to load MCP servers",
@@ -209,7 +240,22 @@
     "commandOrUrlRequired": "Single server config must have command or url field",
     "serverConfigObject": "Server \"{{name}}\" configuration must be an object",
     "serverCommandOrUrl": "Server \"{{name}}\" must have command or url field",
-    "noServersFound": "No servers found in mcpServers object"
+    "noServersFound": "No servers found in mcpServers object",
+    "actions": "Actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirmTitle": "Confirm Delete",
+    "deleteConfirmContent": "Are you sure you want to delete MCP service \"{{name}}\"?",
+    "deleteSuccess": "Successfully deleted MCP service \"{{name}}\"",
+    "deleteError": "Failed to delete MCP service, please try again",
+    "continueAdd": "Continue Adding",
+    "jsonSupported": "Supported JSON formats include various structures",
+    "editServer": "Edit MCP Server",
+    "editSuccess": "Successfully edited MCP service \"{{name}}\"",
+    "editFailed": "Failed to edit MCP service, please try again",
+    "presetCannotDelete": "Preset MCP cannot be deleted",
+    "jsonFormatErrorMessage": "JSON format error",
+    "atLeastOneServerRequired": "At least one MCP server configuration is required"
   },
   "settings": {
     "title": "Settings",
@@ -259,15 +305,18 @@
     },
     "plugins": {
       "title": "Plugin Configuration",
-      "tooltip": "Configure plugins used by the project",
-      "placeholder": "Enter plugin name or path",
+      "tooltip": "Enter plugin name or path, press Enter after each plugin when adding multiple",
+      "placeholder": "Enter plugin name or path, press Enter after each plugin when adding multiple",
       "add": "Add",
       "delete": "Delete Plugin",
       "deleteConfirm": "Are you sure you want to delete plugin \"{{plugin}}\"?",
       "empty": "No plugins configured",
       "effective": "Current effective plugins",
       "none": "None"
-    }
+    },
+    "saveSuccess": "Settings saved successfully",
+    "saveError": "Failed to save settings",
+    "unsavedChanges": "Unsaved changes"
   },
   "toolRenders": {
     "read": {
@@ -283,6 +332,18 @@
     },
     "bash": {
       "noOutput": "No output."
+    },
+    "todo": {
+      "title": "Todos",
+      "noTodos": "No todos found",
+      "operationFailed": "Todo operation failed"
+    },
+    "error": {
+      "file": {
+        "title": "File read error",
+        "pathEmpty": "File path is empty",
+        "contentEmpty": "File content is empty"
+      }
     }
   },
   "senderFooterBoard": {
@@ -315,5 +376,13 @@
     "loading": "Loading...",
     "error": "Error",
     "preparingDiff": "Preparing diff..."
+  },
+  "messageWrapper": {
+    "status": {
+      "thinking": "Thinking...",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "error": "Error"
+    }
   }
 }

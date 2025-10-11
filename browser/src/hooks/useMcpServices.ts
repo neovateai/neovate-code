@@ -3,33 +3,11 @@ import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { addMCPServer, getMCPServers, removeMCPServer } from '@/api/mcpService';
 import { MCP_STORAGE_KEYS } from '@/constants/mcp';
-import type { McpServerConfig } from '@/types/mcp';
-
-interface UseMcpServicesOptions {
-  onLoadError?: (error: Error) => void;
-  onToggleError?: (error: Error, serverName: string) => void;
-}
-
-interface UseMcpServicesReturn {
-  allKnownServices: Set<string>;
-  serviceConfigs: Map<string, McpServerConfig>;
-  updateKnownServices: (newServices: Set<string>) => void;
-  updateServiceConfigs: (newConfigs: Map<string, McpServerConfig>) => void;
-  loadMcpData: () => Promise<{
-    globalServers: Record<string, unknown>;
-    projectServers: Record<string, unknown>;
-  }>;
-  handleToggleService: (
-    serverName: string,
-    enabled: boolean,
-    scope: string,
-    onSuccess?: () => void | Promise<void>,
-  ) => Promise<void>;
-  initializeFromLocalStorage: () => {
-    knownServices: Set<string>;
-    configs: Map<string, McpServerConfig>;
-  };
-}
+import type {
+  McpServerConfig,
+  UseMcpServicesOptions,
+  UseMcpServicesReturn,
+} from '@/types/mcp';
 
 export const useMcpServices = (
   options: UseMcpServicesOptions = {},
@@ -188,9 +166,23 @@ export const useMcpServices = (
             }),
           );
 
-          // Update known services
-          const newKnownServices = new Set([...allKnownServices, serverName]);
-          updateKnownServices(newKnownServices);
+          // Update known services using current state
+          setAllKnownServices((prev) => {
+            const newKnownServices = new Set([...prev, serverName]);
+            // Save to localStorage immediately
+            try {
+              localStorage.setItem(
+                MCP_STORAGE_KEYS.KNOWN_SERVICES,
+                JSON.stringify([...newKnownServices]),
+              );
+            } catch (error) {
+              console.warn(
+                'Failed to save known services to localStorage:',
+                error,
+              );
+            }
+            return newKnownServices;
+          });
         }
 
         if (onSuccess) {
@@ -210,7 +202,7 @@ export const useMcpServices = (
         }
       }
     },
-    [serviceConfigs, allKnownServices, updateKnownServices, t, onToggleError],
+    [serviceConfigs, t, onToggleError],
   );
 
   return {

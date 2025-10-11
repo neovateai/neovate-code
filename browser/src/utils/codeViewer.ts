@@ -1,90 +1,94 @@
-import * as monaco from 'monaco-editor';
 import type { CodeViewerLanguage, DiffStat } from '@/types/codeViewer';
 
-async function computeDiff(original: string, modified: string) {
-  const element = document.createElement('div');
+// Simple line-by-line diff algorithm
+function computeLineDiff(originalLines: string[], modifiedLines: string[]) {
+  const diffBlocks = [];
+  let originalIndex = 0;
+  let modifiedIndex = 0;
 
-  const editor = monaco.editor.createDiffEditor(element);
+  while (
+    originalIndex < originalLines.length ||
+    modifiedIndex < modifiedLines.length
+  ) {
+    // Find the start of a difference
+    while (
+      originalIndex < originalLines.length &&
+      modifiedIndex < modifiedLines.length &&
+      originalLines[originalIndex] === modifiedLines[modifiedIndex]
+    ) {
+      originalIndex++;
+      modifiedIndex++;
+    }
 
-  const originalModel = monaco.editor.createModel(original);
-  const modifiedModel = monaco.editor.createModel(modified);
+    if (
+      originalIndex >= originalLines.length &&
+      modifiedIndex >= modifiedLines.length
+    ) {
+      break;
+    }
 
-  editor.setModel({
-    original: originalModel,
-    modified: modifiedModel,
-  });
+    const blockStart = {
+      original: originalIndex,
+      modified: modifiedIndex,
+    };
 
-  const diffReady = new Promise<{
-    changes: monaco.editor.ILineChange[];
-    lines: { original: number; modified: number };
-  }>((resolve) => {
-    const disposable = editor.onDidUpdateDiff(() => {
-      disposable.dispose(); // 确保只触发一次
-      const changes = editor.getLineChanges() || [];
-      const lines = {
-        original: originalModel.getLineCount(),
-        modified: modifiedModel.getLineCount(),
-      };
+    // Find the end of the difference
+    let originalEnd = originalIndex;
+    let modifiedEnd = modifiedIndex;
 
-      editor.dispose();
-      originalModel.dispose();
-      modifiedModel.dispose();
-      resolve({ changes, lines });
+    // Simple heuristic: advance until we find matching lines or reach the end
+    while (
+      (originalEnd < originalLines.length ||
+        modifiedEnd < modifiedLines.length) &&
+      (originalEnd >= originalLines.length ||
+        modifiedEnd >= modifiedLines.length ||
+        originalLines[originalEnd] !== modifiedLines[modifiedEnd])
+    ) {
+      if (originalEnd < originalLines.length) originalEnd++;
+      if (modifiedEnd < modifiedLines.length) modifiedEnd++;
+    }
+
+    diffBlocks.push({
+      originalStartLineNumber: blockStart.original + 1,
+      originalEndLineNumber: originalEnd,
+      modifiedStartLineNumber: blockStart.modified + 1,
+      modifiedEndLineNumber: modifiedEnd,
+      addLines: modifiedEnd - blockStart.modified,
+      removeLines: originalEnd - blockStart.original,
     });
-  });
 
-  return diffReady;
+    originalIndex = originalEnd;
+    modifiedIndex = modifiedEnd;
+  }
+
+  return diffBlocks;
 }
 
 export async function diff(
   original: string,
   modified: string,
 ): Promise<DiffStat> {
-  const rawDiff = await computeDiff(original, modified);
+  const originalLines = original.split('\n');
+  const modifiedLines = modified.split('\n');
 
-  const diffResult: DiffStat = {
-    addLines: 0,
-    removeLines: 0,
-    diffBlockStats: [],
-    originalLines: rawDiff.lines.original,
-    modifiedLines: rawDiff.lines.modified,
+  const diffBlockStats = computeLineDiff(originalLines, modifiedLines);
+
+  const addLines = diffBlockStats.reduce(
+    (sum, block) => sum + block.addLines,
+    0,
+  );
+  const removeLines = diffBlockStats.reduce(
+    (sum, block) => sum + block.removeLines,
+    0,
+  );
+
+  return {
+    addLines,
+    removeLines,
+    diffBlockStats,
+    originalLines: originalLines.length,
+    modifiedLines: modifiedLines.length,
   };
-
-  for (const rawDiffItem of rawDiff.changes) {
-    const {
-      modifiedEndLineNumber,
-      modifiedStartLineNumber,
-      originalEndLineNumber,
-      originalStartLineNumber,
-    } = rawDiffItem;
-
-    diffResult.addLines +=
-      modifiedEndLineNumber > 0
-        ? modifiedEndLineNumber - modifiedStartLineNumber + 1
-        : 0;
-
-    diffResult.removeLines +=
-      originalEndLineNumber > 0
-        ? originalEndLineNumber - originalStartLineNumber + 1
-        : 0;
-
-    diffResult.diffBlockStats.push({
-      modifiedEndLineNumber,
-      modifiedStartLineNumber,
-      originalEndLineNumber,
-      originalStartLineNumber,
-      addLines:
-        modifiedEndLineNumber > 0
-          ? modifiedEndLineNumber - modifiedStartLineNumber + 1
-          : 0,
-      removeLines:
-        originalEndLineNumber > 0
-          ? originalEndLineNumber - originalStartLineNumber + 1
-          : 0,
-    });
-  }
-
-  return diffResult;
 }
 
 const extToLanguage: Record<string, CodeViewerLanguage> = {

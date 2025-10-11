@@ -17,7 +17,9 @@ export const getMCPServer = (
   name: string,
   global = false,
 ): Promise<McpServerResponse> => {
-  return request.get(`/mcp/servers/${name}?global=${global}`);
+  return request.get(
+    `/mcp/servers/${encodeURIComponent(name)}?global=${global}`,
+  );
 };
 
 // Add server
@@ -32,7 +34,23 @@ export const updateMCPServer = (
   name: string,
   config: UpdateMcpServerRequest,
 ): Promise<McpOperationResponse> => {
-  return request.patch(`/mcp/servers/${name}`, config);
+  return request.patch(`/mcp/servers/${encodeURIComponent(name)}`, config);
+};
+
+// Update server with name change support
+export const updateMCPServerWithName = async (
+  originalName: string,
+  newConfig: AddMcpServerRequest,
+): Promise<McpOperationResponse> => {
+  // If name changed, remove old server and add new one
+  if (originalName !== newConfig.name) {
+    await removeMCPServer(originalName, newConfig.global);
+    return addMCPServer(newConfig);
+  }
+
+  // If name unchanged, use regular update
+  const { name, ...updateConfig } = newConfig;
+  return updateMCPServer(originalName, updateConfig);
 };
 
 // Remove server
@@ -40,5 +58,7 @@ export const removeMCPServer = (
   name: string,
   global = false,
 ): Promise<McpOperationResponse> => {
-  return request.delete(`/mcp/servers/${name}?global=${global}`);
+  return request.delete(
+    `/mcp/servers/${encodeURIComponent(name)}?global=${global}`,
+  );
 };

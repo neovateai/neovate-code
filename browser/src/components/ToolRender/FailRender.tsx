@@ -1,11 +1,20 @@
 import { CloseCircleOutlined, RightOutlined } from '@ant-design/icons';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ToolMessage } from '@/types/message';
+import type { UIToolPart } from '@/types/chat';
 
-export default function FailRender({ message }: { message: ToolMessage }) {
+export default function FailRender({ part }: { part: UIToolPart }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const message = useMemo(() => {
+    const { result } = part;
+    let text = result?.returnDisplay || result?.llmContent;
+    if (typeof text !== 'string') {
+      text = JSON.stringify(text);
+    }
+    return text;
+  }, [part]);
 
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
@@ -27,7 +36,7 @@ export default function FailRender({ message }: { message: ToolMessage }) {
         <span className="text-red-500">
           <CloseCircleOutlined />
         </span>
-        <div>{t('tool.callFailed', { toolName: message.toolName })}</div>
+        <div>{t('tool.callFailed', { toolName: part.name })}</div>
       </div>
 
       <div

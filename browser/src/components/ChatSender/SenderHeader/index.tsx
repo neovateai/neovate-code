@@ -1,33 +1,10 @@
 import { Sender } from '@ant-design/x';
 import { Flex, Spin } from 'antd';
-import React, { Fragment, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useSnapshot } from 'valtio';
-import { AI_CONTEXT_NODE_CONFIGS } from '@/constants/context';
 import * as context from '@/state/context';
-import type { ContextItem } from '@/types/context';
 import AddContext from '../AddContext';
-
-const CONFIG_MAP = new Map(
-  AI_CONTEXT_NODE_CONFIGS.map((config) => [config.type, config]),
-);
-
-export const renderContextTag = (
-  contextItem: ContextItem,
-  onClose?: () => void,
-) => {
-  const { type, displayText, value, context } = contextItem;
-  const config = CONFIG_MAP.get(type);
-
-  if (!config) {
-    return null;
-  }
-
-  return (
-    <Fragment key={value}>
-      {config.render({ info: { displayText, value }, onClose, context })}
-    </Fragment>
-  );
-};
+import SenderComponent from '../SenderComponent';
 
 const SenderHeader: React.FC = () => {
   const { attachedContexts, loading } = useSnapshot(context.state);
@@ -37,11 +14,17 @@ const SenderHeader: React.FC = () => {
   }, []);
 
   const contextTags = useMemo(() => {
-    return attachedContexts.map((contextItem) =>
-      renderContextTag(contextItem, () =>
-        handleRemoveContext(contextItem.value),
-      ),
-    );
+    return attachedContexts.map((contextItem) => (
+      <SenderComponent.ContextTag
+        closeable
+        key={contextItem.value}
+        label={contextItem.displayText}
+        value={contextItem.value}
+        onClose={handleRemoveContext}
+        context={contextItem.context}
+        contextType={contextItem.type}
+      />
+    ));
   }, [attachedContexts, handleRemoveContext]);
 
   return (
@@ -49,6 +32,7 @@ const SenderHeader: React.FC = () => {
       closable={false}
       open={true}
       styles={{ content: { padding: 0 } }}
+      style={{ borderStyle: 'none' }}
     >
       <Spin spinning={loading}>
         <Flex gap={6} wrap="wrap" style={{ padding: 8, lineHeight: '22px' }}>

@@ -29,19 +29,40 @@
     "settings": "设置",
     "help": "帮助"
   },
+  "welcome": {
+    "title": "我是{{productName}}，开发任务交给我",
+    "capabilitiesTitle": "我的能力",
+    "introduceCapability": "请介绍一下{{capability}}的功能",
+    "llmSupport": {
+      "title": "支持LLM",
+      "description": "兼容多种主流大模型，包括OpenAI、Claude、Gemini等"
+    },
+    "fileOperations": {
+      "title": "文件操作",
+      "description": "智能理解与编辑项目文件，支持多种编程语言"
+    },
+    "codebaseNavigation": {
+      "title": "代码库导航",
+      "description": "智能导航项目结构，快速分析与查找"
+    },
+    "planMode": {
+      "title": "计划模式",
+      "description": "自动拆解复杂任务，步骤可视可改"
+    }
+  },
   "chat": {
-    "welcomeTitle": "你好，我是 Takumi",
+    "welcomeTitle": "你好，我是 Neovate",
     "welcomeDescription": "我是您的 AI 编程助手，专注于提升开发工作流程。我能帮助您编写代码、优化性能、生成测试、分析架构，以及执行各种开发任务～",
     "quickStart": "快速开始",
-    "capabilities": "Takumi 能力",
-    "greeting": "你好，我是 Takumi，你的 AI 编程助手！有什么可以帮助您的？",
+    "capabilities": "Neovate 能力",
+    "greeting": "你好，我是 Neovate，你的 AI 编程助手！有什么可以帮助您的？",
     "analyzeProject": "帮我分析这个项目的代码结构和架构",
     "optimizeCode": "优化代码性能并重构这个函数",
     "generateTests": "生成单元测试用例和测试文档",
     "fixBugs": "修复 Bug 并提供解决方案",
     "askQuestions": "提问、编辑文件或运行命令",
     "beSpecific": "具体描述需求以获得最佳结果",
-    "createTakumiMd": "创建 TAKUMI.md 文件来自定义与 Takumi 的交互",
+    "createTakumiMd": "创建 Neovate.md 文件来自定义与 Neovate 的交互",
     "llmSupport": "LLM 支持",
     "llmSupportDesc": "支持多种 LLM 提供商，包括 OpenAI、Claude、Gemini 等",
     "fileOperations": "文件操作",
@@ -74,6 +95,18 @@
       "fileSizeLimited": "文件大小超出{{limit}}限制",
       "dragFileHere": "拖拽文件到这里上传",
       "supportTypeDesc": "支持上传图片、文本文件"
+    },
+    "filesAndFolders": "文件和目录",
+    "slashCommands": "指令"
+  },
+  "suggestion": {
+    "navigate": "导航",
+    "select": "选择",
+    "close": "关闭",
+    "back": "返回",
+    "slashCommandPrefix": {
+      "global": "全局",
+      "project": "项目"
     }
   },
   "menu": {
@@ -101,6 +134,7 @@
     "status": {
       "executing": "执行中",
       "completed": "完成",
+      "failed": "失败",
       "unknown": "未知"
     },
     "filesFound": "找到 {{count}} 个文件",
@@ -114,9 +148,9 @@
     "description": "AI 请求执行以下工具，是否允许？",
     "toolName": "工具名称",
     "parameters": "参数",
-    "approveOnce": "允许（一次）",
-    "approveAlways": "允许（此命令总是）",
-    "approveAlwaysTool": "允许（{{toolName}} 总是）",
+    "approveOnce": "本次允许",
+    "approveAlwaysEdit": "本次会话允许所有编辑",
+    "approveAlwaysTool": "本次会话允许{{toolName}}",
     "deny": "拒绝",
     "approved": "工具执行已批准",
     "denied": "工具执行已拒绝",
@@ -143,8 +177,8 @@
   "mcp": {
     "management": "MCP 管理",
     "services": "MCP 服务",
-    "addServer": "添加 MCP 服务器",
-    "serverName": "MCP 服务器名称",
+    "addServer": "添加 MCP",
+    "serverName": "MCP 名称",
     "serverNamePlaceholder": "my-mcp-server",
     "transportType": "传输类型",
     "command": "命令",
@@ -153,9 +187,10 @@
     "argumentsPlaceholder": "--param1 value1 --param2 value2",
     "url": "URL",
     "urlPlaceholder": "http://localhost:3000",
-    "environmentVariables": "环境变量 (JSON)",
+    "environmentVariables": "环境变量",
     "environmentVariablesPlaceholder": "{\"API_KEY\": \"your-key\", \"DEBUG\": \"true\"}",
     "scope": "作用域",
+    "scopeTooltip": "项目：仅在当前项目中使用；全局：在所有项目中使用",
     "inputMode": "输入模式",
     "project": "项目",
     "global": "全局",
@@ -176,12 +211,8 @@
     "noConfiguration": "无 MCP 配置",
     "clickToStart": "点击\"添加服务器\"开始配置",
     "noServicesAvailable": "无可用服务",
-    "editApiKey": "编辑 {{name}} 的 API 密钥",
-    "apiKeyPlaceholder": "输入您的 API 密钥",
-    "apiKeyDescription": "此 API 密钥将用于配置 {{name}} 服务。",
     "playwrightDescription": "浏览器自动化和测试",
     "figmaDescription": "Figma 设计集成",
-    "figmaApiKeyLabel": "Figma API 密钥",
     "mcpManagementTitle": "MCP 管理",
     "mcpServicesTitle": "MCP 服务",
     "globalScope": "全局",
@@ -192,7 +223,7 @@
     "added": "已将 {{name}} 添加到项目",
     "addedMultiple": "成功添加了 {{count}} 个服务器",
     "addedSingle": "添加成功",
-    "apiKeyUpdated": "API 密钥更新成功",
+
     "alreadyEnabled": "{{name}} 已经启用",
     "noCachedConfig": "未找到 {{name}} ({{scope}}) 的缓存配置",
     "loadFailed": "加载 MCP 服务器失败",
@@ -200,7 +231,7 @@
     "addFailed": "添加 {{name}} 失败",
     "updateFailed": "更新 {{name}} 失败",
     "configNotFound": "未找到 {{name}} 的配置",
-    "apiKeyRequired": "需要 API 密钥",
+
     "jsonFormatError": "JSON 格式错误或添加失败",
     "addFormError": "添加失败",
     "invalidJson": "无效的 JSON 格式",
@@ -209,7 +240,22 @@
     "commandOrUrlRequired": "单个服务器配置必须有 command 或 url 字段",
     "serverConfigObject": "服务器\"{{name}}\"配置必须是对象",
     "serverCommandOrUrl": "服务器\"{{name}}\"必须有 command 或 url 字段",
-    "noServersFound": "在 mcpServers 对象中未找到服务器"
+    "noServersFound": "在 mcpServers 对象中未找到服务器",
+    "actions": "操作",
+    "edit": "编辑",
+    "delete": "删除",
+    "deleteConfirmTitle": "确认删除",
+    "deleteConfirmContent": "确定要删除服MCP \"{{name}}\" 吗？",
+    "deleteSuccess": "已成功删除MCP \"{{name}}\"",
+    "deleteError": "删除MCP失败，请重试",
+    "continueAdd": "继续添加",
+    "jsonSupported": "json支持的格式有什么什么",
+    "editServer": "编辑 MCP",
+    "editSuccess": "已成功编辑MCP \"{{name}}\"",
+    "editFailed": "编辑MCP失败，请重试",
+    "presetCannotDelete": "预设MCP不允许删除",
+    "jsonFormatErrorMessage": "JSON格式错误",
+    "atLeastOneServerRequired": "至少需要一个MCP配置"
   },
   "settings": {
     "title": "设置",
@@ -259,15 +305,18 @@
     },
     "plugins": {
       "title": "插件配置",
-      "tooltip": "配置项目使用的插件",
-      "placeholder": "输入插件名称或路径",
+      "tooltip": "输入插件名称或插件路径，添加多个插件时每输入一个按Enter键即可",
+      "placeholder": "输入插件名称或插件路径，添加多个插件时每输入一个按Enter键即可",
       "add": "添加",
       "delete": "删除插件",
       "deleteConfirm": "确定要删除插件 \"{{plugin}}\" 吗？",
       "empty": "暂未配置任何插件",
       "effective": "当前有效插件",
       "none": "无"
-    }
+    },
+    "saveSuccess": "设置保存成功",
+    "saveError": "设置保存失败",
+    "unsavedChanges": "有未保存的更改"
   },
   "toolRenders": {
     "read": {
@@ -283,6 +332,18 @@
     },
     "bash": {
       "noOutput": "无输出。"
+    },
+    "todo": {
+      "title": "待办列表",
+      "noTodos": "暂无待办事项",
+      "operationFailed": "待办操作失败"
+    },
+    "error": {
+      "file": {
+        "title": "文件读取错误",
+        "pathEmpty": "文件路径为空",
+        "contentEmpty": "文件内容为空"
+      }
     }
   },
   "senderFooterBoard": {
@@ -315,5 +376,13 @@
     "loading": "加载中...",
     "error": "错误",
     "preparingDiff": "准备Diff..."
+  },
+  "messageWrapper": {
+    "status": {
+      "thinking": "思考中...",
+      "completed": "思考完成",
+      "cancelled": "已取消",
+      "error": "错误"
+    }
   }
 }
