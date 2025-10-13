@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMount, useRequest } from 'ahooks';
 import { message } from 'antd';
+import { z } from 'zod';
 import { initializeSession } from '@/api/session';
 import Loading from '@/components/Loading';
 import { actions } from '@/state/chat';
 import Chat from './-components/Chat';
-import { z } from 'zod';
 
 const Session: React.FC = () => {
   const { sessionId } = Route.useSearch();

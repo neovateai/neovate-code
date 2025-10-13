@@ -18,11 +18,11 @@ import type {
   UIDisplayMessage,
   UIMessage,
 } from '@/types/chat';
-import { isToolResultMessage } from '@/utils/message';
+import { formatMessages, isToolResultMessage } from '@/utils/message';
 import { getPrompt } from '@/utils/quill';
+import { parseSlashCommand } from '@/utils/slashCommand';
 import { countTokens } from '@/utils/tokenCounter';
 import { actions as clientActions } from './client';
-import { parseSlashCommand } from '@/utils/slashCommand';
 
 export type AppStatus =
   | 'idle'
@@ -73,7 +73,7 @@ interface ChatActions {
   initialize(opts: {
     cwd: string;
     sessionId: string;
-    messages: UIMessage[];
+    messages: Message[];
   }): Promise<() => void>;
   send(message: string, delta?: Delta): void;
   addMessage(message: UIMessage | UIMessage[]): void;
@@ -121,7 +121,7 @@ export const actions: ChatActions = {
 
     state.cwd = opts.cwd;
     state.sessionId = opts.sessionId || null;
-    state.messages = opts.messages;
+    state.messages = formatMessages(opts.messages);
     state.productName = response.data.productName;
     state.version = response.data.version;
     state.model = response.data.model;
@@ -313,21 +313,21 @@ export const actions: ChatActions = {
       )) as NodeBridgeResponse<{ messages: UIMessage[] }>;
       const isLocal = type === 'local';
       const isPrompt = type === 'prompt';
+
+      const userMessage: UIMessage = {
+        role: 'user',
+        content: message,
+      };
       if (executeResult.success) {
         const messages = executeResult.data.messages;
         if (isPrompt) {
           await clientActions.request('session.addMessages', {
             cwd,
             sessionId,
-            messages,
+            messages: [userMessage, ...messages],
           });
           await this.sendMessage({ message: null });
         } else if (isLocal) {
-          const userMessage: UIMessage = {
-            role: 'user',
-            content: message,
-          };
-
           const parsedMessages = messages.map((message) => {
             if (message.role === 'user') {
               const contentArray = Array.isArray(message.content)
@@ -337,7 +337,7 @@ export const actions: ChatActions = {
                 typeof message.content === 'string'
                   ? message.content
                   : contentArray
-                      .map((part: any) =>
+                      .map((part) =>
                         part.type === 'text' ? part.text : String(part),
                       )
                       .join('\n');

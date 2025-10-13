@@ -6,7 +6,11 @@ import './i18n';
 import { App } from 'antd';
 import { routeTree } from './routeTree.gen';
 
-const router = createRouter({ routeTree });
+const router = createRouter({
+  routeTree,
+  defaultPreload: 'intent',
+  defaultPendingMs: 0,
+});
 
 // Register the router instance for type safety
 declare module '@tanstack/react-router' {

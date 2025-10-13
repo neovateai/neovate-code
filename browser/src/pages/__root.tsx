@@ -1,8 +1,32 @@
-import { Outlet, createRootRoute, redirect } from '@tanstack/react-router';
-import I18nProvider from '@/components/I18nProvider';
+import {
+  createRootRoute,
+  Outlet,
+  redirect,
+  useBlocker,
+} from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { Modal } from 'antd';
+import I18nProvider from '@/components/I18nProvider';
 
 const RootComponent: React.FC = () => {
+  useBlocker({
+    shouldBlockFn: () => {
+      return new Promise((resolve) => {
+        Modal.confirm({
+          title: 'Are you sure you want to leave the current workspace?',
+          content: 'Unsaved edits will be lost.',
+          onOk: () => {
+            resolve(false);
+          },
+          onCancel: () => {
+            resolve(true);
+          },
+        });
+      });
+    },
+    withResolver: true,
+  });
+
   return (
     <I18nProvider>
       <Outlet />
