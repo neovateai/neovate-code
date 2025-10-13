@@ -1,7 +1,7 @@
 import type { Delta } from 'quill';
 import { proxy } from 'valtio';
 import type { ApprovalMode, InitializeResult } from '@/client';
-import { BLOT_NAME_CONTENT_REGEX } from '@/constants';
+import { BLOT_NAME_CONTENT_REGEX, SLASH_COMMAND_REGEX } from '@/constants';
 import type {
   ApprovalCategory,
   ApprovalResult,
@@ -21,6 +21,7 @@ import { isToolResultMessage } from '@/utils/message';
 import { getPrompt } from '@/utils/quill';
 import { countTokens } from '@/utils/tokenCounter';
 import { actions as clientActions } from './client';
+import { parseSlashCommand } from '@/utils/slashCommand';
 
 export type AppStatus =
   | 'idle'
@@ -71,10 +72,10 @@ interface ChatActions {
   initialize(opts: {
     cwd: string;
     sessionId: string;
-    messages: Message[];
+    messages: UIMessage[];
   }): Promise<() => void>;
   send(message: string, delta?: Delta): void;
-  addMessage(message: UIMessage): void;
+  addMessage(message: UIMessage | UIMessage[]): void;
   destroy(): void;
   sendMessage(opts: {
     message: string | null;
@@ -119,6 +120,7 @@ export const actions: ChatActions = {
 
     state.cwd = opts.cwd;
     state.sessionId = opts.sessionId || null;
+    state.messages = opts.messages;
     state.productName = response.data.productName;
     state.version = response.data.version;
     state.model = response.data.model;
@@ -127,9 +129,7 @@ export const actions: ChatActions = {
     state.status = 'idle';
 
     const handleMessage = (data: { message: Message }) => {
-      // 处理 tool_result 和 tool_use
       const { message } = data;
-      console.log('handleMessage', message);
       if (
         message.role === 'assistant' &&
         Array.isArray(message.content) &&
@@ -214,14 +214,12 @@ export const actions: ChatActions = {
 
     clientActions.toolApproval(async (toolUse, category) => {
       return new Promise<{ approved: boolean }>((resolve) => {
-        console.log('toolApproval', toolUse, category);
         state.approvalModal = {
           toolUse,
           category,
           resolve: async (result: ApprovalResult) => {
             state.approvalModal = null;
             const isApproved = result !== 'deny';
-            console.log('result', state.cwd, state.sessionId);
             if (result === 'approve_always_edit') {
               await clientActions.request('sessionConfig.setApprovalMode', {
                 cwd: state.cwd,
@@ -258,9 +256,15 @@ export const actions: ChatActions = {
       payload: { message, sessionId },
     });
 
-    if (isDelta) {
-      // 区分是指令还是文件
-      const prompt = getPrompt(delta);
+    if (!isDelta) {
+      await this.sendMessage({ message });
+      return;
+    }
+
+    const isCommand = SLASH_COMMAND_REGEX.test(message);
+    const prompt = getPrompt(delta);
+
+    if (!isCommand) {
       await clientActions.request('session.addMessages', {
         cwd,
         sessionId,
@@ -273,8 +277,55 @@ export const actions: ChatActions = {
         ],
       });
       await this.sendMessage({ message: null });
-    } else {
-      await this.sendMessage({ message });
+      return;
+    }
+
+    if (isCommand) {
+      const parsed = parseSlashCommand(prompt);
+      const result = (await clientActions.request('slashCommand.get', {
+        cwd,
+        command: parsed.command,
+      })) as NodeBridgeResponse<{ commandEntry: CommandEntry }>;
+      const commandeEntry = result.data?.commandEntry;
+
+      if (!commandeEntry) {
+        this.addMessage({
+          role: 'ui_display',
+          content: {
+            type: 'error',
+            text: `Unknown slash command: ${parsed.command}`,
+          },
+        });
+        return;
+      }
+
+      const command = commandeEntry.command;
+      const type = command.type;
+      const executeResult = (await clientActions.request(
+        'slashCommand.execute',
+        {
+          cwd,
+          sessionId,
+          command: parsed.command,
+          args: parsed.args,
+        },
+      )) as NodeBridgeResponse<{ messages: UIMessage[] }>;
+      const isLocal = type === 'local';
+      const isPrompt = type === 'prompt';
+      const isLocalJSX = type === 'local-jsx';
+      if (executeResult.success) {
+        const messages = executeResult.data.messages;
+        if (isPrompt) {
+          await clientActions.request('session.addMessages', {
+            cwd,
+            sessionId,
+            messages,
+          });
+          await this.sendMessage({ message: null });
+        } else {
+          this.addMessage(messages);
+        }
+      }
     }
   },
 
@@ -315,8 +366,9 @@ export const actions: ChatActions = {
     return response;
   },
 
-  addMessage(message) {
-    state.messages.push(message);
+  addMessage(messages: UIMessage | UIMessage[]) {
+    const msgs = Array.isArray(messages) ? messages : [messages];
+    state.messages.push(...msgs);
   },
 
   async getSlashCommands() {

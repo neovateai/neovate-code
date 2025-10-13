@@ -1,56 +1,21 @@
-import { createRootRoute, Outlet, redirect } from '@tanstack/react-router';
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import { createStyles } from 'antd-style';
-import { useSnapshot } from 'valtio';
+import { Outlet, createRootRoute, redirect } from '@tanstack/react-router';
 import I18nProvider from '@/components/I18nProvider';
-import SettingsModal from '@/components/SettingsModal';
-import Sider from '@/components/Sider';
-import { uiActions, uiState } from '@/state/ui';
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 
-const useStyle = createStyles(({ token, css }) => {
-  return {
-    layout: css`
-      width: 100%;
-      min-width: 1000px;
-      height: 100vh;
-      display: flex;
-      background: ${token.colorBgContainer};
-      font-family: AlibabaPuHuiTi, ${token.fontFamily}, sans-serif;
-    `,
-    siderWrapper: css`
-      flex-shrink: 0;
-    `,
-  };
-});
-
-const Layout: React.FC = () => {
-  const { styles } = useStyle();
-  const { settingsModalOpen } = useSnapshot(uiState);
-
+const RootComponent: React.FC = () => {
   return (
     <I18nProvider>
-      <div className={styles.layout}>
-        <div className={styles.siderWrapper}>
-          <Sider />
-        </div>
-        <Outlet />
-        <TanStackRouterDevtools position="bottom-right" />
-
-        {/* Settings Modal */}
-        <SettingsModal
-          open={settingsModalOpen}
-          onClose={() => uiActions.closeSettingsModal()}
-        />
-      </div>
+      <Outlet />
+      <TanStackRouterDevtools position="bottom-right" />
     </I18nProvider>
   );
 };
 
 export const Route = createRootRoute({
-  component: Layout,
+  component: RootComponent,
   beforeLoad() {
     if (window.location.pathname === '/') {
-      throw redirect({ to: '/chat' });
+      throw redirect({ to: '/session' });
     }
   },
 });

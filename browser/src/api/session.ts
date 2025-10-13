@@ -1,11 +1,11 @@
-import type { Message } from '@/types/chat';
+import type { UIMessage } from '@/types/chat';
 import { request } from '@/utils/request';
 import type { ApiResponse } from './model';
 
 interface SessionInitializeResponse {
   cwd: string;
   sessionId: string;
-  messages: Message[];
+  messages: UIMessage[];
   history: string[];
   logFile: string;
 }

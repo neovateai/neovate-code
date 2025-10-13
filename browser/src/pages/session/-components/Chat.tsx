@@ -1,17 +1,11 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useMount, useRequest } from 'ahooks';
-import { message } from 'antd';
 import { createStyles } from 'antd-style';
 import { useCallback, useEffect, useRef } from 'react';
 import { useSnapshot } from 'valtio';
-import { initializeSession } from '@/api/session';
 import ChatContent from '@/components/ChatContent';
 import ResizeHandle from '@/components/ChatLayout/ResizeHandle';
 import RightPanel from '@/components/ChatLayout/RightPanel';
 import SidebarExpandButton from '@/components/ChatLayout/SidebarExpandButton';
 import TopRightExpandButton from '@/components/ChatLayout/TopRightExpandButton';
-import Loading from '@/components/Loading';
-import { actions } from '@/state/chat';
 import * as layout from '@/state/layout';
 
 const useStyles = createStyles(({ css }) => {
@@ -97,40 +91,4 @@ const Chat: React.FC = () => {
   );
 };
 
-const ChatWrapper: React.FC = () => {
-  const { run, loading } = useRequest(
-    () =>
-      initializeSession({
-        // cwd: '/Users/xierenhong/Downloads/test/hello-takumi',
-      }),
-    {
-      manual: true,
-      async onSuccess(result) {
-        if (result.success) {
-          actions.initialize({
-            cwd: result.data.cwd,
-            sessionId: result.data.sessionId,
-            messages: result.data.messages,
-          });
-        } else {
-          console.log('result', result);
-          message.error(result.message);
-        }
-      },
-    },
-  );
-
-  useMount(() => {
-    run();
-  });
-
-  if (loading) {
-    return <Loading />;
-  }
-
-  return <Chat />;
-};
-
-export const Route = createFileRoute('/chat')({
-  component: ChatWrapper,
-});
+export default Chat;

@@ -15,10 +15,11 @@ declare module '@tanstack/react-router' {
   }
 }
 
-createRoot(document.getElementById('root')!).render(
-  // <StrictMode>
-  <App>
-    <RouterProvider router={router} />
-  </App>,
-  // </StrictMode>,
-);
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  createRoot(rootElement).render(
+    <App>
+      <RouterProvider router={router} />
+    </App>,
+  );
+}
