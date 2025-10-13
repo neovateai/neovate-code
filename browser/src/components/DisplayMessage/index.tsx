@@ -1,5 +1,6 @@
 import { Alert } from 'antd';
 import type { UIDisplayMessage } from '@/types/chat';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 
 interface DisplayMessageProps {
   message: UIDisplayMessage;
@@ -10,7 +11,13 @@ const DisplayMessage: React.FC<DisplayMessageProps> = ({ message }) => {
     case 'error':
       return <Alert message={message.content.text} type="error" />;
     case 'info':
-      return <Alert message={message.content.text} type="info" />;
+      const normalizedContent = message.content.text.replace(/\n/g, '  \n');
+      return (
+        <Alert
+          message={<MarkdownRenderer content={normalizedContent} />}
+          type="info"
+        />
+      );
     case 'compression':
       return <Alert message={message.content.text} type="success" />;
     default:

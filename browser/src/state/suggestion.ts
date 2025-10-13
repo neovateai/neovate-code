@@ -64,8 +64,10 @@ export const actions = {
     state.loading = true;
     try {
       const slashCommands = await chatActions.getSlashCommands();
-      const filteredCommands = filterSlashCommands(slashCommands, searchString);
-      // TODO: 过滤掉 jsx 类型的命令
+      const filteredCommands = filterSlashCommands(
+        slashCommands,
+        searchString,
+      ).filter((cmd) => cmd.command.type !== 'local-jsx');
       actions.setSlashCommandList(filteredCommands);
     } catch (error) {
       state.loading = false;

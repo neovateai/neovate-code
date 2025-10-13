@@ -15,6 +15,7 @@ import type {
   ToolResultPart,
   ToolUse,
   UIAssistantMessage,
+  UIDisplayMessage,
   UIMessage,
 } from '@/types/chat';
 import { isToolResultMessage } from '@/utils/message';
@@ -312,7 +313,6 @@ export const actions: ChatActions = {
       )) as NodeBridgeResponse<{ messages: UIMessage[] }>;
       const isLocal = type === 'local';
       const isPrompt = type === 'prompt';
-      const isLocalJSX = type === 'local-jsx';
       if (executeResult.success) {
         const messages = executeResult.data.messages;
         if (isPrompt) {
@@ -322,8 +322,37 @@ export const actions: ChatActions = {
             messages,
           });
           await this.sendMessage({ message: null });
-        } else {
-          this.addMessage(messages);
+        } else if (isLocal) {
+          const userMessage: UIMessage = {
+            role: 'user',
+            content: message,
+          };
+
+          const parsedMessages = messages.map((message) => {
+            if (message.role === 'user') {
+              const contentArray = Array.isArray(message.content)
+                ? message.content
+                : [];
+              const text =
+                typeof message.content === 'string'
+                  ? message.content
+                  : contentArray
+                      .map((part: any) =>
+                        part.type === 'text' ? part.text : String(part),
+                      )
+                      .join('\n');
+              return {
+                role: 'ui_display',
+                content: {
+                  type: 'info',
+                  text,
+                },
+              } as UIDisplayMessage;
+            }
+            return message;
+          });
+
+          this.addMessage([userMessage, ...parsedMessages]);
         }
       }
     }
