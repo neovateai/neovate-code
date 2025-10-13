@@ -29,6 +29,7 @@ export type UserMessage = {
   role: 'user';
   content: UserContent;
   hidden?: boolean;
+  uiContent?: string;
 };
 
 export type ReasoningPart = {

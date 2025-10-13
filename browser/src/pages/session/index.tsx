@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useMount, useRequest } from 'ahooks';
+import { useMount, useRequest, useUnmount } from 'ahooks';
 import { message } from 'antd';
 import { z } from 'zod';
 import { initializeSession } from '@/api/session';
@@ -43,6 +43,10 @@ const Session: React.FC = () => {
 
   useMount(() => {
     run();
+  });
+
+  useUnmount(() => {
+    actions.destroy();
   });
 
   if (loading) {

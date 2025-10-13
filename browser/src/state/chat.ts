@@ -17,6 +17,7 @@ import type {
   UIAssistantMessage,
   UIDisplayMessage,
   UIMessage,
+  UserMessage,
 } from '@/types/chat';
 import { formatMessages, isToolResultMessage } from '@/utils/message';
 import { getPrompt } from '@/utils/quill';
@@ -302,6 +303,23 @@ export const actions: ChatActions = {
 
       const command = commandeEntry.command;
       const type = command.type;
+      const isPrompt = type === 'prompt';
+      const userMessage: UserMessage = {
+        role: 'user',
+        content: prompt,
+        uiContent: message,
+      };
+
+      if (isPrompt) {
+        await clientActions.request('session.addMessages', {
+          cwd,
+          sessionId,
+          messages: [userMessage],
+        });
+      } else {
+        this.addMessage(userMessage);
+      }
+
       const executeResult = (await clientActions.request(
         'slashCommand.execute',
         {
@@ -312,19 +330,14 @@ export const actions: ChatActions = {
         },
       )) as NodeBridgeResponse<{ messages: UIMessage[] }>;
       const isLocal = type === 'local';
-      const isPrompt = type === 'prompt';
 
-      const userMessage: UIMessage = {
-        role: 'user',
-        content: message,
-      };
       if (executeResult.success) {
         const messages = executeResult.data.messages;
         if (isPrompt) {
           await clientActions.request('session.addMessages', {
             cwd,
             sessionId,
-            messages: [userMessage, ...messages],
+            messages: messages,
           });
           await this.sendMessage({ message: null });
         } else if (isLocal) {
@@ -352,7 +365,7 @@ export const actions: ChatActions = {
             return message;
           });
 
-          this.addMessage([userMessage, ...parsedMessages]);
+          this.addMessage(parsedMessages);
         }
       }
     }
@@ -434,6 +447,12 @@ export const actions: ChatActions = {
   },
 
   destroy() {
+    if (state.approvalModal) {
+      // TODO: Optimization needed. We can't wait for approvalModal's resolve to complete here,
+      // so we need to manually handle tool message denial.
+      state.approvalModal.resolve('deny');
+      state.approvalModal = null;
+    }
     state.messages = [];
     state.cwd = null;
     state.sessionId = null;
