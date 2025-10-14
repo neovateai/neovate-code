@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
 import type { LoopResult } from '../loop';
-import type { Message, UserMessage } from '../message';
+import type { Message, NormalizedMessage, UserMessage } from '../message';
 import type { ProvidersMap } from '../model';
 import { Paths } from '../paths';
 import { loadSessionMessages, Session, SessionConfigManager } from '../session';
@@ -129,6 +129,9 @@ interface AppState {
     text: string;
     type?: 'success' | 'error';
   } | null;
+
+  forkModalVisible: boolean;
+  forkParentUuid: string | null;
 }
 
 type InitializeOpts = {
@@ -185,6 +188,9 @@ interface AppActions {
   resetInput: () => void;
   setPastedTextMap: (map: Record<string, string>) => Promise<void>;
   setPastedImageMap: (map: Record<string, string>) => Promise<void>;
+  showForkModal: () => void;
+  hideForkModal: () => void;
+  fork: (targetMessageUuid: string) => Promise<void>;
 }
 
 export type AppStore = AppState & AppActions;
@@ -234,6 +240,8 @@ export const useAppStore = create<AppStore>()(
       inputError: null,
       pastedTextMap: {},
       pastedImageMap: {},
+      forkModalVisible: false,
+      forkParentUuid: null,
 
       // Actions
       initialize: async (opts) => {
@@ -578,12 +586,14 @@ export const useAppStore = create<AppStore>()(
           planMode: opts.planMode,
           model: opts.model,
           attachments,
+          parentUuid: get().forkParentUuid || undefined,
         });
         if (response.success) {
           set({
             status: 'idle',
             processingStartTime: null,
             processingTokens: 0,
+            forkParentUuid: null, // Clear after successful send
           });
         } else {
           set({
@@ -631,6 +641,8 @@ export const useAppStore = create<AppStore>()(
           pastedTextMap: {},
           pastedImageMap: {},
           processingTokens: 0,
+          forkParentUuid: null,
+          forkModalVisible: false,
         });
         return {
           sessionId,
@@ -721,6 +733,8 @@ export const useAppStore = create<AppStore>()(
           inputError: null,
           pastedTextMap,
           pastedImageMap,
+          forkParentUuid: null,
+          forkModalVisible: false,
         });
       },
 
@@ -818,6 +832,53 @@ export const useAppStore = create<AppStore>()(
             get().log(`Failed to open log file: ${error.message}`),
           );
         }
+      },
+
+      showForkModal: () => {
+        set({ forkModalVisible: true });
+      },
+
+      hideForkModal: () => {
+        set({ forkModalVisible: false });
+      },
+
+      fork: async (targetMessageUuid: string) => {
+        const { bridge, cwd, sessionId, messages } = get();
+
+        // Find the target message
+        const targetMessage = messages.find(
+          (m) => (m as NormalizedMessage).uuid === targetMessageUuid,
+        );
+        if (!targetMessage) {
+          get().log(`Fork error: Message ${targetMessageUuid} not found`);
+          return;
+        }
+
+        // Filter messages up to and including the target
+        const messageIndex = messages.findIndex(
+          (m) => (m as NormalizedMessage).uuid === targetMessageUuid,
+        );
+        const filteredMessages = messages.slice(0, messageIndex);
+
+        // Extract content from target message
+        let contentText = '';
+        if (typeof targetMessage.content === 'string') {
+          contentText = targetMessage.content;
+        } else if (Array.isArray(targetMessage.content)) {
+          const textParts = targetMessage.content
+            .filter((part) => part.type === 'text')
+            .map((part) => part.text);
+          contentText = textParts.join('');
+        }
+
+        // Update store state
+        set({
+          messages: filteredMessages,
+          forkParentUuid: (targetMessage as NormalizedMessage).parentUuid,
+          inputValue: contentText,
+          inputCursorPosition: contentText.length,
+          forkModalVisible: false,
+        });
       },
 
       setStatus: (status: AppStatus) => {
