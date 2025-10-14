@@ -120,21 +120,43 @@ export class SessionConfigManager {
 export function filterMessages(
   messages: NormalizedMessage[],
 ): NormalizedMessage[] {
-  messages = messages.filter((message) => {
+  // Filter to message types only
+  const messageTypeOnly = messages.filter((message) => {
     const isMessage = message.type === 'message';
     return isMessage;
   });
-  let latestNullParentUuidIndex = -1;
-  messages.forEach((message, index) => {
-    if (message.parentUuid === null) {
-      latestNullParentUuidIndex = index;
-    }
-  });
-  if (latestNullParentUuidIndex !== -1) {
-    return messages.slice(latestNullParentUuidIndex);
-  } else {
+
+  if (messageTypeOnly.length === 0) {
     return [];
   }
+
+  // Create a map for O(1) uuid lookups
+  const messageMap = new Map<string, NormalizedMessage>();
+  for (const message of messageTypeOnly) {
+    messageMap.set(message.uuid, message);
+  }
+
+  // Start from the last message and walk backward to build the active path
+  const activePath = new Set<string>();
+  let currentMessage = messageTypeOnly[messageTypeOnly.length - 1];
+
+  while (currentMessage) {
+    activePath.add(currentMessage.uuid);
+    // Stop if we reached the root (null parent)
+    if (currentMessage.parentUuid === null) {
+      break;
+    }
+    // Move to parent if it exists
+    const parentMessage = messageMap.get(currentMessage.parentUuid);
+    if (!parentMessage) {
+      // Parent doesn't exist, stop traversal
+      break;
+    }
+    currentMessage = parentMessage;
+  }
+
+  // Filter original messages to only include those in the active path
+  return messageTypeOnly.filter((message) => activePath.has(message.uuid));
 }
 
 export function loadSessionMessages(opts: {
