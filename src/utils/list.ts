@@ -1,10 +1,12 @@
+import createDebug from 'debug';
 import fs from 'fs';
 import { basename, join, relative, sep } from 'pathe';
 import { PRODUCT_NAME } from '../constants';
 import { isIgnored } from './ignore';
-
 export const MAX_FILES = 1000;
 export const TRUNCATED_MESSAGE = `There are more than ${MAX_FILES} files in the repository. Use the LS tool (passing a specific path), Bash tool, and other tools to explore nested directories. The first ${MAX_FILES} files and directories are included below:\n\n`;
+
+const debug = createDebug('neovate:utils:list');
 
 export function listDirectory(
   initialPath: string,
@@ -30,7 +32,8 @@ export function listDirectory(
       children = fs.readdirSync(path, { withFileTypes: true });
     } catch (e) {
       // eg. EPERM, EACCES, ENOENT, etc.
-      console.error(`[LsTool] Error listing directory: ${path}`, e);
+      // Silently skip directories we don't have permission to read
+      debug(`[LsTool] Error listing directory: ${path}`, e);
       continue;
     }
     for (const child of children) {
@@ -94,7 +97,7 @@ export function listRootDirectory(
       }
     }
   } catch (e) {
-    console.error(`Error listing root directory: ${rootPath}`, e);
+    // Silently skip root directories we don't have permission to read
   }
   return results;
 }
