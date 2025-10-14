@@ -22,7 +22,7 @@ import { Project } from './project';
 import { query } from './query';
 import { SessionConfigManager } from './session';
 import { SlashCommandManager } from './slashCommand';
-import { listDirectory } from './utils/list';
+import { listDirectoryWithQuery } from './utils/list';
 import { randomUUID } from './utils/randomUUID';
 
 type ModelData = Omit<Model, 'id' | 'cost'>;
@@ -868,12 +868,13 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'utils.getPaths',
-      async (data: { cwd: string; maxFiles?: number }) => {
-        const { cwd, maxFiles = 6000 } = data;
+      async (data: { cwd: string; maxFiles?: number; query?: string }) => {
+        const { cwd, maxFiles = 100, query } = data;
         const context = await this.getContext(cwd);
-        const result = listDirectory(
+        const result = listDirectoryWithQuery(
           context.cwd,
           context.cwd,
+          query,
           context.productName,
           maxFiles,
         );

@@ -64,6 +64,84 @@ export function listDirectory(
   return results;
 }
 
+export function listDirectoryWithQuery(
+  initialPath: string,
+  cwd: string,
+  query?: string,
+  productName: string = PRODUCT_NAME,
+  maxFiles: number = MAX_FILES,
+) {
+  // If no query provided, use original listDirectory
+  if (!query || query.trim() === '') {
+    return listDirectory(initialPath, cwd, productName, maxFiles);
+  }
+
+  const results: string[] = [];
+  const queue = [initialPath];
+  const normalizedQuery = query.toLowerCase();
+
+  while (queue.length > 0) {
+    if (results.length >= maxFiles) {
+      return results;
+    }
+    const path = queue.shift()!;
+    if (skip(path)) {
+      continue;
+    }
+
+    // Check if current directory matches query
+    if (path !== initialPath) {
+      const relativePath = relative(cwd, path) + sep;
+      if (relativePath.toLowerCase().includes(normalizedQuery)) {
+        results.push(relativePath);
+        if (results.length >= maxFiles) {
+          return results;
+        }
+      }
+    }
+
+    let children: fs.Dirent[];
+    try {
+      children = fs.readdirSync(path, { withFileTypes: true });
+    } catch (e) {
+      // eg. EPERM, EACCES, ENOENT, etc.
+      // Silently skip directories we don't have permission to read
+      debug(`[LsTool] Error listing directory: ${path}`, e);
+      continue;
+    }
+
+    for (const child of children) {
+      if (child.name === 'node_modules') {
+        continue;
+      }
+
+      const childPath = join(path, child.name);
+
+      // Skip if ignored by gitignore or takumiignore
+      if (isIgnored(childPath, cwd, productName)) {
+        continue;
+      }
+
+      if (child.isDirectory()) {
+        queue.push(childPath + sep);
+      } else {
+        if (skip(childPath)) {
+          continue;
+        }
+        const relativePath = relative(cwd, childPath);
+        // Check if file matches query
+        if (relativePath.toLowerCase().includes(normalizedQuery)) {
+          results.push(relativePath);
+          if (results.length >= maxFiles) {
+            return results;
+          }
+        }
+      }
+    }
+  }
+  return results;
+}
+
 function skip(path: string) {
   if (path !== '.' && basename(path).startsWith('.')) {
     return true;

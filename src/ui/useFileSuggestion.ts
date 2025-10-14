@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from './store';
 import type { InputState } from './useInputState';
 
@@ -16,27 +16,76 @@ export function usePaths() {
   const { bridge, cwd } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
   const [paths, setPaths] = useState<string[]>([]);
-  const [lastLoadTime, setLastLoadTime] = useState(0);
-  const loadPaths = useCallback(() => {
-    setIsLoading(true);
-    // TODO: improve this
-    // Now it's load only once
-    if (Date.now() - lastLoadTime < 600000000000) {
-      setIsLoading(false);
-      return;
-    }
-    bridge
-      .request('utils.getPaths', { cwd })
-      .then((res) => {
-        setPaths(res.data.paths);
-        setIsLoading(false);
-        setLastLoadTime(Date.now());
-      })
-      .catch((error) => {
-        console.error('Failed to get paths:', error);
-        setIsLoading(false);
-      });
-  }, [bridge, cwd]);
+  const cacheRef = useRef<Map<string, { paths: string[]; timestamp: number }>>(
+    new Map(),
+  );
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const loadPaths = useCallback(
+    async (query?: string) => {
+      // Cancel previous request if still pending
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      const cacheKey = query || '';
+      const cached = cacheRef.current.get(cacheKey);
+      const now = Date.now();
+
+      // Use cache if less than 60 seconds old
+      if (cached && now - cached.timestamp < 60000) {
+        setPaths(cached.paths);
+        return;
+      }
+
+      setIsLoading(true);
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
+      try {
+        const res = await bridge.request('utils.getPaths', {
+          cwd,
+          query,
+        });
+
+        if (!abortController.signal.aborted) {
+          const newPaths = res.data.paths;
+          setPaths(newPaths);
+          // Cache the result
+          cacheRef.current.set(cacheKey, {
+            paths: newPaths,
+            timestamp: now,
+          });
+
+          const MAX_CACHE_SIZE = 50;
+          if (cacheRef.current.size > MAX_CACHE_SIZE) {
+            const oldestKey = cacheRef.current.keys().next().value;
+            cacheRef.current.delete(oldestKey!);
+          }
+        }
+      } catch (error) {
+        if (!abortController.signal.aborted) {
+          console.error('Failed to get paths:', error);
+        }
+      } finally {
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+          abortControllerRef.current = null;
+        }
+      }
+    },
+    [bridge, cwd],
+  );
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
   return {
     paths,
     isLoading,
@@ -210,6 +259,7 @@ export function useFileSuggestion(
 ) {
   const { paths, isLoading, loadPaths } = usePaths();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const atMatch = useAtTriggeredPaths(inputState);
   const tabMatch = useTabTriggeredPaths(inputState, forceTabTrigger);
@@ -218,23 +268,48 @@ export function useFileSuggestion(
   const activeMatch = atMatch.hasQuery ? atMatch : tabMatch;
   const { hasQuery, fullMatch, query, startIndex, triggerType } = activeMatch;
 
+  // Since we're doing server-side filtering, matchedPaths is just paths
   const matchedPaths = useMemo(() => {
     if (!hasQuery) return [];
-    if (query === '') return paths;
-    return paths.filter((path) => {
-      return path.toLowerCase().includes(query.toLowerCase());
-    });
-  }, [paths, hasQuery, query]);
+    return paths;
+  }, [paths, hasQuery]);
 
+  // Debounced query loading
   useEffect(() => {
-    if (hasQuery) {
-      loadPaths();
+    if (!hasQuery) {
+      return;
     }
+
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer for debounced query
+    debounceTimerRef.current = setTimeout(() => {
+      loadPaths(query || undefined);
+    }, 300);
+
+    // Cleanup function
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [hasQuery, query, loadPaths]);
 
   useEffect(() => {
     setSelectedIndex(0);
   }, [matchedPaths]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   const navigateNext = () => {
     if (matchedPaths.length === 0) return;
