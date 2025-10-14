@@ -384,5 +384,17 @@
       "cancelled": "已取消",
       "error": "错误"
     }
+  },
+  "folderPicker": {
+    "searchPlaceholder": "搜索文件夹...",
+    "refresh": "刷新",
+    "loading": "加载中...",
+    "retry": "重试",
+    "emptyDirectory": "此目录为空",
+    "noMatchingFolders": "没有找到匹配的文件夹",
+    "noVisibleFolders": "没有可显示的文件夹",
+    "fetchError": "获取文件夹列表失败",
+    "networkError": "网络错误",
+    "npmPackage": "NPM"
   }
 }

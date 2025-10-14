@@ -123,6 +123,13 @@ class WebServer {
       ...this.contextCreateOpts,
       cwd: this.cwd,
     });
+
+    // folders
+    await this.app.register(import('./routes/folders'), {
+      prefix: BASE_API_PREFIX,
+      ...this.contextCreateOpts,
+      cwd: this.cwd,
+    });
   }
 
   private setupWebSocket() {

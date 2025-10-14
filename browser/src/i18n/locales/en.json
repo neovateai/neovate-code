@@ -384,5 +384,17 @@
       "cancelled": "Cancelled",
       "error": "Error"
     }
+  },
+  "folderPicker": {
+    "searchPlaceholder": "Search folders...",
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "retry": "Retry",
+    "emptyDirectory": "This directory is empty",
+    "noMatchingFolders": "No matching folders found",
+    "noVisibleFolders": "No visible folders",
+    "fetchError": "Failed to fetch folder list",
+    "networkError": "Network error",
+    "npmPackage": "NPM"
   }
 }
