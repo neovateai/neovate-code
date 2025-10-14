@@ -82,7 +82,7 @@ export function App() {
       <ApprovalModal />
       {forkModalVisible && (
         <ForkModal
-          messages={messages}
+          messages={messages as any}
           onSelect={(uuid) => {
             fork(uuid);
           }}

@@ -3,7 +3,11 @@ import React from 'react';
 import type { Message } from '../message';
 
 interface ForkModalProps {
-  messages: Message[];
+  messages: (Message & {
+    uuid: string;
+    parentUuid: string | null;
+    timestamp: string;
+  })[];
   onSelect: (uuid: string) => void;
   onClose: () => void;
 }
@@ -41,7 +45,7 @@ export function ForkModal({ messages, onSelect, onClose }: ForkModalProps) {
     return text.length > 80 ? text.slice(0, 80) + '...' : text;
   };
 
-  const getTimestamp = (message: Message): string => {
+  const getTimestamp = (message: Message & { timestamp: string }): string => {
     if (!message.timestamp) return '';
     const date = new Date(message.timestamp);
     return date.toLocaleString('en-US', {
