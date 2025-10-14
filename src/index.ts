@@ -219,7 +219,7 @@ async function runInteractive(
       return argv.resume;
     }
     if (argv.continue) {
-      return paths.getLatestSessionId();
+      return paths.getLatestSessionId() || Session.createSessionId();
     }
     return Session.createSessionId();
   })();
