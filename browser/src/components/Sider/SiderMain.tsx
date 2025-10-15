@@ -162,7 +162,11 @@ const SiderMain = () => {
         }`}
       >
         <div className={styles.siderFooterLeft}>
-          <Button type="text" icon={<FolderOpenOutlined />}>
+          <Button
+            type="text"
+            icon={<FolderOpenOutlined />}
+            onClick={() => uiActions.openProjectSelectModal()}
+          >
             {t('project.projectManagement')}
           </Button>
         </div>

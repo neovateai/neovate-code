@@ -390,7 +390,17 @@
     "branch": "分支",
     "projectManagement": "项目管理",
     "noProject": "选择项目文件夹开始",
-    "openInEditor": "在编辑器中打开"
+    "openInEditor": "在编辑器中打开",
+    "selectModal": {
+      "title": "导入项目",
+      "cancel": "取消",
+      "confirm": "导入这个文件夹",
+      "description": "选中目录后导入项目",
+      "headerTitle": "选择项目目录",
+      "headerDescription": "浏览并选择要导入的项目文件夹，支持各种开发项目类型",
+      "footerInfo": "选择文件夹后点击\"导入项目\"开始使用",
+      "error": "请选择一个项目文件夹"
+    }
   },
   "folderPicker": {
     "searchPlaceholder": "搜索文件夹...",
@@ -401,7 +411,6 @@
     "noMatchingFolders": "没有找到匹配的文件夹",
     "noVisibleFolders": "没有可显示的文件夹",
     "fetchError": "获取文件夹列表失败",
-    "networkError": "网络错误",
-    "npmPackage": "NPM"
+    "networkError": "网络错误"
   }
 }

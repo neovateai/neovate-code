@@ -1,4 +1,5 @@
 import { FileOutlined, FolderFilled, FolderOutlined } from '@ant-design/icons';
+import { Tag } from 'antd';
 import type React from 'react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -35,11 +36,7 @@ const FolderItem: React.FC<FolderItemProps> = memo(
           <div className={styles.iconAndName}>
             {getIcon()}
             <span className={styles.name}>{folder.name}</span>
-            {folder.isPackage && (
-              <span className={styles.badge}>
-                {t('folderPicker.npmPackage')}
-              </span>
-            )}
+            {folder.isPackage && <Tag color="magenta">npm</Tag>}
           </div>
         </div>
       </div>

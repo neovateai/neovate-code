@@ -75,7 +75,7 @@
 .currentPath {
   color: #1f2937;
   font-weight: 600;
-  max-width: 150px;
+  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

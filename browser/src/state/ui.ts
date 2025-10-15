@@ -2,10 +2,12 @@ import { proxy } from 'valtio';
 
 interface UIState {
   settingsModalOpen: boolean;
+  projectSelectModalOpen: boolean;
 }
 
 export const uiState = proxy<UIState>({
   settingsModalOpen: false,
+  projectSelectModalOpen: false,
 });
 
 export const uiActions = {
@@ -19,5 +21,17 @@ export const uiActions = {
 
   toggleSettingsModal: () => {
     uiState.settingsModalOpen = !uiState.settingsModalOpen;
+  },
+
+  openProjectSelectModal: () => {
+    uiState.projectSelectModalOpen = true;
+  },
+
+  closeProjectSelectModal: () => {
+    uiState.projectSelectModalOpen = false;
+  },
+
+  toggleProjectSelectModal: () => {
+    uiState.projectSelectModalOpen = !uiState.projectSelectModalOpen;
   },
 };

@@ -1,4 +1,5 @@
-import { useRequest } from 'ahooks';
+import { useSearch } from '@tanstack/react-router';
+import { useMount } from 'ahooks';
 import { Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
 import {
@@ -7,10 +8,12 @@ import {
   FolderPlusIcon,
   GitBranchIcon,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getProjectInfo, openProjectInEditor } from '@/api/project';
+import { useSnapshot } from 'valtio';
+import { openProjectInEditor } from '@/api/project';
 import Loading from '@/components/Loading';
+import { actions, state } from '@/state/project';
 
 const useStyles = createStyles(({ css, token }) => {
   return {
@@ -186,15 +189,13 @@ const useStyles = createStyles(({ css, token }) => {
 const ProjectInfoArea: React.FC = () => {
   const { styles } = useStyles();
   const { t } = useTranslation();
-  const { loading, data } = useRequest(() => getProjectInfo());
+  const { projectInfo, loading } = useSnapshot(state);
   const [isOpening, setIsOpening] = useState(false);
+  const { folder } = useSearch({ from: '/session/' });
 
-  const projectInfo = useMemo(() => {
-    if (!data?.success || !data.data) {
-      return null;
-    }
-    return data.data;
-  }, [data]);
+  useMount(() => {
+    actions.getProjectInfo(folder);
+  });
 
   const handleOpenInEditor = async () => {
     if (!projectInfo?.path || isOpening) {

@@ -6,12 +6,7 @@ import styles from './index.module.css';
 import type { FolderPickerProps } from './types';
 
 const FolderPicker: React.FC<FolderPickerProps> = memo(
-  ({
-    initialPath = process.env.NODE_ENV === 'development' ? '/Users' : '/',
-    onFolderChange,
-    height = 400,
-    className,
-  }) => {
+  ({ initialPath = '/', onFolderChange, height = 400, className }) => {
     const [currentPath, setCurrentPath] = useState(initialPath);
 
     const handlePathChange = useCallback(

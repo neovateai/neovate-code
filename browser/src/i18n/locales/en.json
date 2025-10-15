@@ -390,7 +390,17 @@
     "branch": "Branch",
     "projectManagement": "Project Management",
     "noProject": "Select a project folder to start",
-    "openInEditor": "Open in Editor"
+    "openInEditor": "Open in Editor",
+    "selectModal": {
+      "title": "Import Project",
+      "cancel": "Cancel",
+      "confirm": "Import this folder",
+      "description": "Select a directory to import the project",
+      "headerTitle": "Select Project Directory",
+      "headerDescription": "Browse and select the project folder to import, supporting various development project types",
+      "footerInfo": "Select a folder and click \"Import Project\" to get started",
+      "error": "Please select a project folder"
+    }
   },
   "folderPicker": {
     "searchPlaceholder": "Search folders...",
@@ -401,7 +411,6 @@
     "noMatchingFolders": "No matching folders found",
     "noVisibleFolders": "No visible folders",
     "fetchError": "Failed to fetch folder list",
-    "networkError": "Network error",
-    "npmPackage": "NPM"
+    "networkError": "Network error"
   }
 }

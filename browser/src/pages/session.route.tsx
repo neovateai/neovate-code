@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { createStyles } from 'antd-style';
 import { useSnapshot } from 'valtio';
+import ProjectSelectModal from '@/components/ProjectSelectModal';
 import SettingsModal from '@/components/SettingsModal';
 import Sider from '@/components/Sider';
 import { uiActions, uiState } from '@/state/ui';
@@ -31,12 +32,13 @@ const Session: React.FC = () => {
         <Sider />
       </div>
       <Outlet />
-
       {/* Settings Modal */}
       <SettingsModal
         open={settingsModalOpen}
         onClose={() => uiActions.closeSettingsModal()}
       />
+      {/* Project Select Modal */}
+      <ProjectSelectModal />
     </div>
   );
 };

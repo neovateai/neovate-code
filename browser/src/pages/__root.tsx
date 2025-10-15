@@ -10,7 +10,10 @@ import I18nProvider from '@/components/I18nProvider';
 
 const RootComponent: React.FC = () => {
   useBlocker({
-    shouldBlockFn: () => {
+    shouldBlockFn: ({ current, next }) => {
+      if (current.fullPath === next.fullPath) {
+        return false;
+      }
       return new Promise((resolve) => {
         Modal.confirm({
           title: 'Are you sure you want to leave the current workspace?',

@@ -1,12 +1,5 @@
 import { proxy } from 'valtio';
-import {
-  type ProjectInfo as BaseProjectInfo,
-  getProjectInfo,
-} from '@/api/project';
-
-interface ProjectInfo extends BaseProjectInfo {
-  gitStatusColor?: string;
-}
+import { getProjectInfo, type ProjectInfo } from '@/api/project';
 
 export interface ProjectState {
   loading: boolean;
@@ -22,27 +15,9 @@ export const actions = {
     state.loading = true;
     try {
       const response = await getProjectInfo(folder);
-      state.projectInfo = {
-        ...response.data,
-        gitStatusColor: getGitStatusColor(response.data.gitStatus),
-      };
+      state.projectInfo = response.data;
     } finally {
       state.loading = false;
     }
   },
 };
-
-function getGitStatusColor(status?: ProjectInfo['gitStatus']): string {
-  switch (status) {
-    case 'clean':
-      return '#22c55e'; // green
-    case 'modified':
-      return '#f59e0b'; // yellow
-    case 'staged':
-      return '#3b82f6'; // blue
-    case 'conflicted':
-      return '#ef4444'; // red
-    default:
-      return '#6b7280'; // gray
-  }
-}

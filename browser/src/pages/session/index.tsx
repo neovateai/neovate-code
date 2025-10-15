@@ -8,13 +8,14 @@ import { actions } from '@/state/chat';
 import Chat from './-components/Chat';
 
 const Session: React.FC = () => {
-  const { sessionId } = Route.useSearch();
+  const { sessionId, folder } = Route.useSearch();
   const navigate = useNavigate();
 
   const { run, loading } = useRequest(
     () =>
       initializeSession({
         resume: sessionId,
+        cwd: folder,
       }),
     {
       manual: true,
@@ -59,6 +60,7 @@ const Session: React.FC = () => {
 export const Route = createFileRoute('/session/')({
   validateSearch: z.object({
     sessionId: z.string().optional(),
+    folder: z.string().optional(),
   }),
   component: Session,
 });
