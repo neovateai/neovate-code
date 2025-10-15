@@ -8,6 +8,7 @@ import { Button } from 'antd';
 import { createStyles } from 'antd-style';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
+import { useSession } from '@/hooks/useSession';
 import * as layout from '@/state/layout';
 import { uiActions } from '@/state/ui';
 import ConversationList from './Conversations';
@@ -132,6 +133,7 @@ const SiderMain = () => {
   const { styles } = useStyle();
   const { t } = useTranslation();
   const { sidebarCollapsed } = useSnapshot(layout.state);
+  const { newSession } = useSession();
 
   return (
     <div
@@ -140,7 +142,12 @@ const SiderMain = () => {
       }`}
     >
       <LogoArea />
-      <Button icon={<PlusOutlined />} type="text" className={styles.addBtn}>
+      <Button
+        icon={<PlusOutlined />}
+        type="text"
+        className={styles.addBtn}
+        onClick={newSession}
+      >
         {t('project.new')}
       </Button>
       <ProjectInfoArea />

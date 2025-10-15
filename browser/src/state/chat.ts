@@ -129,6 +129,10 @@ export const actions: ChatActions = {
     state.approvalMode = response.data.approvalMode;
     state.planMode = false;
     state.status = 'idle';
+    state.approvalModal = null;
+    state.error = null;
+    state.processingTokens = 0;
+    state.loading = false;
 
     const handleMessage = (data: { message: Message }) => {
       const { message } = data;
@@ -458,6 +462,15 @@ export const actions: ChatActions = {
     state.sessionId = null;
     state.productName = null;
     state.version = null;
+    state.model = null;
+    state.approvalMode = 'default';
+    state.planMode = false;
+    state.status = 'idle';
+    state.approvalModal = null;
+    state.error = null;
+    state.processingTokens = 0;
+    state.loading = false;
+    state.initialized = false;
     clientActions.unmount();
   },
 };

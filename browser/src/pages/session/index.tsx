@@ -1,10 +1,9 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useMount, useRequest, useUnmount } from 'ahooks';
-import { message } from 'antd';
+import { createFileRoute } from '@tanstack/react-router';
+import { useMount, useUnmount } from 'ahooks';
 import { createStyles } from 'antd-style';
 import { z } from 'zod';
-import { initializeSession } from '@/api/session';
 import Loading from '@/components/Loading';
+import { useSession } from '@/hooks/useSession';
 import { actions } from '@/state/chat';
 import Chat from './-components/Chat';
 
@@ -21,40 +20,8 @@ const useStyle = createStyles(({ css }) => {
 });
 
 const Session: React.FC = () => {
-  const { sessionId, folder } = Route.useSearch();
-  const navigate = useNavigate();
+  const { run, loading } = useSession();
 
-  const { run, loading } = useRequest(
-    () =>
-      initializeSession({
-        resume: sessionId,
-        cwd: folder,
-      }),
-    {
-      manual: true,
-      async onSuccess(result) {
-        if (result.success) {
-          actions.initialize({
-            cwd: result.data.cwd,
-            sessionId: result.data.sessionId,
-            messages: result.data.messages,
-          });
-
-          if (!sessionId) {
-            navigate({
-              to: '/session',
-              search: {
-                sessionId: result.data.sessionId,
-                folder: result.data.cwd,
-              },
-            });
-          }
-        } else {
-          message.error(result.message);
-        }
-      },
-    },
-  );
   const { styles } = useStyle();
 
   useMount(() => {
