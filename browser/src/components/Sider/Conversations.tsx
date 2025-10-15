@@ -131,7 +131,6 @@ const useStyle = createStyles(({ token, css }) => {
       margin-top: 24px;
       text-align: center;
       padding: 24px 16px;
-      background: ${token.colorBgContainer};
       border-radius: 8px;
       border: 1px dashed ${token.colorBorderSecondary};
 
