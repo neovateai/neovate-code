@@ -8,7 +8,6 @@ import { useSnapshot } from 'valtio';
 import FolderPicker from '@/components/FolderPicker';
 import { actions, state } from '@/state/project';
 import { uiActions, uiState } from '@/state/ui';
-import Loading from '../Loading';
 
 const useStyle = createStyles(({ css, token }) => {
   return {
@@ -83,7 +82,7 @@ const ProjectSelectModal = () => {
   const navigate = useNavigate();
 
   if (loading) {
-    return <Loading />;
+    return null;
   }
 
   const handleFolderChange = (folderPath: string) => {

@@ -1,6 +1,6 @@
 import { useSearch } from '@tanstack/react-router';
 import { useMount } from 'ahooks';
-import { Tooltip } from 'antd';
+import { Spin, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
 import {
   ExternalLinkIcon,
@@ -12,7 +12,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { openProjectInEditor } from '@/api/project';
-import Loading from '@/components/Loading';
 import { actions, state } from '@/state/project';
 
 const useStyles = createStyles(({ css, token }) => {
@@ -213,7 +212,13 @@ const ProjectInfoArea: React.FC = () => {
   };
 
   if (loading) {
-    return <Loading />;
+    return (
+      <div className={styles.projectInfoArea}>
+        <div className="flex justify-center items-center">
+          <Spin size="small" />
+        </div>
+      </div>
+    );
   }
 
   if (!projectInfo) {

@@ -1,11 +1,24 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMount, useRequest, useUnmount } from 'ahooks';
 import { message } from 'antd';
+import { createStyles } from 'antd-style';
 import { z } from 'zod';
 import { initializeSession } from '@/api/session';
 import Loading from '@/components/Loading';
 import { actions } from '@/state/chat';
 import Chat from './-components/Chat';
+
+const useStyle = createStyles(({ css }) => {
+  return {
+    container: css`
+      display: flex;
+      height: 100vh;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+    `,
+  };
+});
 
 const Session: React.FC = () => {
   const { sessionId, folder } = Route.useSearch();
@@ -41,6 +54,7 @@ const Session: React.FC = () => {
       },
     },
   );
+  const { styles } = useStyle();
 
   useMount(() => {
     run();
@@ -51,7 +65,11 @@ const Session: React.FC = () => {
   });
 
   if (loading) {
-    return <Loading />;
+    return (
+      <div className={styles.container}>
+        <Loading />
+      </div>
+    );
   }
 
   return <Chat />;
