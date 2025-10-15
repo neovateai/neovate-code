@@ -45,7 +45,7 @@ const Session: React.FC = () => {
 
 export const Route = createFileRoute('/session/')({
   validateSearch: z.object({
-    sessionId: z.string().optional(),
+    sessionId: z.union([z.string(), z.number()]).optional(),
     folder: z.string().optional(),
   }),
   component: Session,

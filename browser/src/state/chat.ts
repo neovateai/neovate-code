@@ -87,6 +87,7 @@ interface ChatActions {
   getSlashCommands(): Promise<CommandEntry[]>;
   getFiles(opts: { query?: string }): Promise<FileItem[]>;
   cancel(): Promise<void>;
+  setSummary(opts: { userPrompt: string; result: LoopResult }): Promise<void>;
 }
 
 export const state = proxy<ChatState>({
@@ -263,7 +264,8 @@ export const actions: ChatActions = {
     });
 
     if (!isDelta) {
-      await this.sendMessage({ message });
+      const result = await this.sendMessage({ message });
+      await this.setSummary({ userPrompt: message, result });
       return;
     }
 
@@ -282,7 +284,8 @@ export const actions: ChatActions = {
           },
         ],
       });
-      await this.sendMessage({ message: null });
+      const result = await this.sendMessage({ message: null });
+      await this.setSummary({ userPrompt: message, result });
       return;
     }
 
@@ -448,6 +451,33 @@ export const actions: ChatActions = {
       query: opts.query,
     })) as NodeBridgeResponse<{ files: FileItem[] }>;
     return response.data.files;
+  },
+
+  async setSummary(opts: { userPrompt: string; result: LoopResult }) {
+    try {
+      const { cwd, sessionId } = state;
+      if (opts.result.success) {
+        const queryResult = (await clientActions.request('utils.query', {
+          cwd,
+          systemPrompt:
+            "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with one fields: 'title' (string). Only include these fields, no other text.",
+          userPrompt: opts.userPrompt,
+        })) as NodeBridgeResponse<{ text: string }>;
+        if (queryResult.success && queryResult.data?.text) {
+          const response = JSON.parse(queryResult.data.text);
+          if (response?.title) {
+            document.title = response.title;
+          }
+          await clientActions.request('session.config.setSummary', {
+            cwd,
+            sessionId,
+            summary: response.title,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Set summary error:', error);
+    }
   },
 
   destroy() {
