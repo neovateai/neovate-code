@@ -1,12 +1,11 @@
 import { FolderOpenOutlined, ImportOutlined } from '@ant-design/icons';
-import { useNavigate } from '@tanstack/react-router';
 import { Button, Modal, message, Space, Typography } from 'antd';
 import { createStyles } from 'antd-style';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import FolderPicker from '@/components/FolderPicker';
-import { actions, state } from '@/state/project';
+import { state } from '@/state/project';
 import { uiActions, uiState } from '@/state/ui';
 
 const useStyle = createStyles(({ css, token }) => {
@@ -70,8 +69,6 @@ const useStyle = createStyles(({ css, token }) => {
   };
 });
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const ProjectSelectModal = () => {
   const { t } = useTranslation();
   const { projectSelectModalOpen } = useSnapshot(uiState);
@@ -80,8 +77,6 @@ const ProjectSelectModal = () => {
   const [selectedFolder, setSelectedFolder] = useState<string>(
     projectInfo?.path || '',
   );
-
-  const navigate = useNavigate();
 
   if (loading) {
     return null;
@@ -96,11 +91,10 @@ const ProjectSelectModal = () => {
       message.error(t('project.selectModal.error'));
       return;
     }
-    await actions.getProjectInfo(selectedFolder);
+    // await actions.getProjectInfo(selectedFolder);
     uiActions.closeProjectSelectModal();
-    await navigate({ to: '/session', search: { folder: selectedFolder } });
-    await sleep(100);
-    window.location.reload();
+    // TODO 做状态清理, 更好的体验
+    window.location.href = `/session?folder=${selectedFolder}`;
   };
 
   return (

@@ -1,9 +1,11 @@
 import { Conversations, type ConversationsProps } from '@ant-design/x';
+import { useSearch } from '@tanstack/react-router';
 import { Empty, type GetProp, Spin } from 'antd';
 import { createStyles } from 'antd-style';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
+import { state as chatState } from '@/state/chat';
 import { state } from '@/state/project';
 
 const useStyle = createStyles(({ token, css }) => {
@@ -142,8 +144,20 @@ const useStyle = createStyles(({ token, css }) => {
 });
 const ConversationList: React.FC = () => {
   const { projectInfo, loading } = useSnapshot(state);
+  const { sessionId } = useSnapshot(chatState);
   const { styles } = useStyle();
   const { t } = useTranslation();
+  const { folder } = useSearch({ from: '/session/' });
+
+  const handleActiveChange = (key: string) => {
+    // reload the page
+    const params = new URLSearchParams();
+    params.set('sessionId', key);
+    if (folder) params.set('folder', folder);
+    // TODO 做状态清理, 更好的体验
+    window.location.href = `/session?${params.toString()}`;
+  };
+
   const items = useMemo<GetProp<ConversationsProps, 'items'>>(() => {
     return (
       projectInfo?.sessions?.map((item) => {
@@ -181,7 +195,11 @@ const ConversationList: React.FC = () => {
         {t('conversations.title')}
       </div>
       <div className={styles.conversationsContent}>
-        <Conversations items={items} defaultActiveKey={items[0]?.key} />
+        <Conversations
+          items={items}
+          activeKey={sessionId || undefined}
+          onActiveChange={handleActiveChange}
+        />
       </div>
     </div>
   );

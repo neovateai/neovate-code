@@ -1,8 +1,7 @@
 import { proxy } from 'valtio';
-import type { FileItem } from '@/api/model';
 import { ContextType } from '@/constants/context';
 import * as sender from '@/state/sender';
-import type { SlashCommand } from '@/types/chat';
+import type { FileItem, SlashCommand } from '@/types/chat';
 import type { ContextItem } from '@/types/context';
 
 interface ContextState {

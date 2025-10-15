@@ -40,11 +40,12 @@ const Session: React.FC = () => {
             messages: result.data.messages,
           });
 
-          if (sessionId) {
+          if (!sessionId) {
             navigate({
               to: '/session',
               search: {
                 sessionId: result.data.sessionId,
+                folder: result.data.cwd,
               },
             });
           }
