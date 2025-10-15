@@ -44,7 +44,7 @@ const sessionRoute: FastifyPluginAsync<ContextCreateOpts> = async (
             return body.resume;
           }
           if (body.continue) {
-            return paths.getLatestSessionId();
+            return paths.getLatestSessionId() || Session.createSessionId();
           }
           return Session.createSessionId();
         })();
