@@ -38,6 +38,7 @@ export class Project {
       onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
       attachments?: ImagePart[];
+      parentUuid?: string;
     } = {},
   ) {
     let tools = await resolveTools({
@@ -85,6 +86,7 @@ export class Project {
       onChunk?: (chunk: any, requestId: string) => Promise<void>;
       signal?: AbortSignal;
       attachments?: ImagePart[];
+      parentUuid?: string;
     } = {},
   ) {
     let tools = await resolveTools({
@@ -134,6 +136,7 @@ export class Project {
       tools?: Tool[];
       systemPrompt?: string;
       attachments?: ImagePart[];
+      parentUuid?: string;
     } = {},
   ) {
     const startTime = new Date();
@@ -177,6 +180,7 @@ export class Project {
     let userMessage: NormalizedMessage | null = null;
     if (message !== null) {
       const lastMessageUuid =
+        opts.parentUuid ||
         this.session.history.messages[this.session.history.messages.length - 1]
           ?.uuid;
 
@@ -210,9 +214,12 @@ export class Project {
         message: userMessage,
       });
     }
+    const historyMessages = opts.parentUuid
+      ? this.session.history.getMessagesToUuid(opts.parentUuid)
+      : this.session.history.messages;
     const input =
-      this.session.history.messages.length > 0
-        ? [...this.session.history.messages, userMessage]
+      historyMessages.length > 0
+        ? [...historyMessages, userMessage]
         : [userMessage];
     const filteredInput = input.filter((message) => message !== null);
     const toolsManager = new Tools(tools);

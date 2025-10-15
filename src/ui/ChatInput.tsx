@@ -28,6 +28,8 @@ export function ChatInput() {
     queuedMessages,
     status,
     setStatus,
+    showForkModal,
+    forkModalVisible,
   } = useAppStore();
   const { columns } = useTerminalSize();
   const { handleExternalEdit } = useExternalEditor({
@@ -123,6 +125,9 @@ export function ChatInput() {
   if (memoryModal) {
     return <MemoryModal />;
   }
+  if (forkModalVisible) {
+    return null;
+  }
   if (status === 'exit') {
     return null;
   }
@@ -168,6 +173,9 @@ export function ChatInput() {
                   log(`cancel error: ${e.message}`);
                 });
               }
+            }}
+            onDoubleEscape={() => {
+              showForkModal();
             }}
             onImagePaste={handlers.handleImagePaste}
             onPaste={handlers.handlePaste}
