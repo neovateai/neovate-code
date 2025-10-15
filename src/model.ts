@@ -810,11 +810,6 @@ export const providers: ProvidersMap = {
       const githubDataPath = path.join(globalConfigDir, 'githubCopilot.json');
       const githubProvider = new GithubProvider({ authFile: githubDataPath });
       const token = await githubProvider.access();
-      if (!token) {
-        throw new Error(
-          'Failed to get GitHub Copilot token, use /login to login first',
-        );
-      }
       return createOpenAI({
         baseURL: 'https://api.individual.githubcopilot.com',
         headers: {

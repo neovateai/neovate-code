@@ -29,6 +29,7 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
     modelId: string;
   } | null>(null);
   const [groupedModels, setGroupedModels] = useState<GroupedData[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     bridge.request('models.list', { cwd }).then((result) => {
@@ -39,6 +40,54 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
       setGroupedModels(result.data.groupedModels);
     });
   }, [cwd]);
+
+  const handleSelect = async (item: { value: string }) => {
+    if (item.value.startsWith('github-copilot/')) {
+      const loginCheckResult = await bridge.request(
+        'utils.checkGithubCopilotLogin',
+        { cwd },
+      );
+      if (!loginCheckResult.data.loggedIn) {
+        setError(
+          'GitHub Copilot is not logged in. Please use /login command first.',
+        );
+        return;
+      }
+    }
+    setError(null);
+    setModel(item.value);
+    onSelect(item.value);
+  };
+
+  useInput((_input, key) => {
+    if (key.return && error) {
+      setError(null);
+    }
+  });
+
+  if (error) {
+    return (
+      <Box
+        borderStyle="round"
+        borderColor="red"
+        flexDirection="column"
+        padding={1}
+        width="100%"
+      >
+        <Box marginBottom={1}>
+          <Text bold color="red">
+            Login Required
+          </Text>
+        </Box>
+        <Box>
+          <Text color="gray">{error}</Text>
+        </Box>
+        <Box marginTop={1}>
+          <Text color="gray">Press Enter to continue...</Text>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -68,10 +117,7 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
           itemsPerPage={15}
           enableSearch={true}
           onCancel={() => onExit(currentModel)}
-          onSelect={(item) => {
-            setModel(item.value);
-            onSelect(item.value);
-          }}
+          onSelect={handleSelect}
         />
       </Box>
     </Box>
