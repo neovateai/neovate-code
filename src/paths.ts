@@ -48,6 +48,9 @@ export class Paths {
   }
 
   getLatestSessionId() {
+    if (!fs.existsSync(this.globalProjectDir)) {
+      return undefined;
+    }
     const jsonlFileTimeStamps = fs
       .readdirSync(this.globalProjectDir)
       .filter((file) => file.endsWith('.jsonl'))

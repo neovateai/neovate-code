@@ -43,6 +43,35 @@ export class History {
     await this.onMessage?.(normalizedMessage);
   }
 
+  getMessagesToUuid(uuid: string): NormalizedMessage[] {
+    // Build a map for O(1) lookups
+    const messageMap = new Map<string, NormalizedMessage>();
+    for (const message of this.messages) {
+      messageMap.set(message.uuid, message);
+    }
+
+    // Find the target message
+    const targetMessage = messageMap.get(uuid);
+    if (!targetMessage) {
+      // Target doesn't exist, return empty array
+      return [];
+    }
+
+    // Walk backward from target to root
+    const pathUuids = new Set<string>();
+    let current: NormalizedMessage | undefined = targetMessage;
+    while (current) {
+      pathUuids.add(current.uuid);
+      if (current.parentUuid === null) break;
+      const parent = messageMap.get(current.parentUuid);
+      if (!parent) break;
+      current = parent;
+    }
+
+    // Filter messages to keep only those in the path, maintaining order
+    return this.messages.filter((msg) => pathUuids.has(msg.uuid));
+  }
+
   toAgentInput(): AgentInputItem[] {
     return this.messages.map((message) => {
       if (message.role === 'user') {

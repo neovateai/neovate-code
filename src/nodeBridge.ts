@@ -428,6 +428,24 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
+      'session.messages.list',
+      async (data: { cwd: string; sessionId: string }) => {
+        const { cwd, sessionId } = data;
+        const context = await this.getContext(cwd);
+        const { loadSessionMessages } = await import('./session');
+        const messages = loadSessionMessages({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        return {
+          success: true,
+          data: {
+            messages,
+          },
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
       'session.send',
       async (data: {
         message: string | null;
@@ -436,13 +454,16 @@ class NodeHandlerRegistry {
         planMode: boolean;
         model?: string;
         attachments?: ImagePart[];
+        parentUuid?: string;
       }) => {
-        const { message, cwd, sessionId, model, attachments } = data;
+        const { message, cwd, sessionId, model, attachments, parentUuid } =
+          data;
         const context = await this.getContext(cwd);
         const project = new Project({
           sessionId,
           context,
         });
+
         const abortController = new AbortController();
         const key = buildSignalKey(cwd, project.session.id);
         this.abortControllers.set(key, abortController);
@@ -451,6 +472,7 @@ class NodeHandlerRegistry {
         const result = await fn.call(project, message, {
           attachments,
           model,
+          parentUuid,
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {
               message: opts.message,

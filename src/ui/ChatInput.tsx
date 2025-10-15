@@ -28,6 +28,8 @@ export function ChatInput() {
     queuedMessages,
     status,
     setStatus,
+    showForkModal,
+    forkModalVisible,
   } = useAppStore();
   const { columns } = useTerminalSize();
   const { handleExternalEdit } = useExternalEditor({
@@ -123,69 +125,73 @@ export function ChatInput() {
   if (memoryModal) {
     return <MemoryModal />;
   }
+  if (forkModalVisible) {
+    return null;
+  }
   if (status === 'exit') {
     return null;
   }
   return (
     <Box flexDirection="column" marginTop={SPACING.CHAT_INPUT_MARGIN_TOP}>
       <ModeIndicator />
-      <Box
-        borderStyle="round"
-        borderColor={borderColor}
-        paddingX={1}
-        flexDirection="row"
-        gap={1}
-      >
-        <Text
-          color={
-            inputState.state.value
-              ? UI_COLORS.CHAT_ARROW_ACTIVE
-              : UI_COLORS.CHAT_ARROW
-          }
-        >
-          {promptSymbol}
-        </Text>
-        <TextInput
-          multiline
-          value={displayValue}
-          placeholder={placeholderText}
-          onChange={handleDisplayChange}
-          onHistoryUp={handlers.handleHistoryUp}
-          onHistoryDown={handlers.handleHistoryDown}
-          onHistoryReset={handlers.handleHistoryReset}
-          onExit={() => {
-            setStatus('exit');
-            setTimeout(() => {
-              process.exit(0);
-            }, 100);
-          }}
-          onExitMessage={(show, key) => {
-            setExitMessage(show ? `Press ${key} again to exit` : null);
-          }}
-          onMessage={(_show, text) => {
-            log(`onMessage${text}`);
-          }}
-          onEscape={() => {
-            const shouldCancel = !handlers.handleEscape();
-            if (shouldCancel) {
-              cancel().catch((e) => {
-                log(`cancel error: ${e.message}`);
-              });
+      <Box flexDirection="column">
+        <Text color={borderColor}>{'─'.repeat(Math.max(0, columns))}</Text>
+        <Box flexDirection="row" gap={1}>
+          <Text
+            color={
+              inputState.state.value
+                ? UI_COLORS.CHAT_ARROW_ACTIVE
+                : UI_COLORS.CHAT_ARROW
             }
-          }}
-          onImagePaste={handlers.handleImagePaste}
-          onPaste={handlers.handlePaste}
-          onSubmit={handlers.handleSubmit}
-          cursorOffset={displayCursorOffset}
-          onChangeCursorOffset={handleDisplayCursorChange}
-          disableCursorMovementForUpDownKeys={showSuggestions}
-          onTabPress={handlers.handleTabPress}
-          onDelete={handleDelete}
-          onExternalEdit={handleExternalEdit}
-          columns={columns - 6}
-          isDimmed={false}
-        />
-        <DebugRandomNumber />
+          >
+            {promptSymbol}
+          </Text>
+          <TextInput
+            multiline
+            value={displayValue}
+            placeholder={placeholderText}
+            onChange={handleDisplayChange}
+            onHistoryUp={handlers.handleHistoryUp}
+            onHistoryDown={handlers.handleHistoryDown}
+            onHistoryReset={handlers.handleHistoryReset}
+            onExit={() => {
+              setStatus('exit');
+              setTimeout(() => {
+                process.exit(0);
+              }, 100);
+            }}
+            onExitMessage={(show, key) => {
+              setExitMessage(show ? `Press ${key} again to exit` : null);
+            }}
+            onMessage={(_show, text) => {
+              log(`onMessage${text}`);
+            }}
+            onEscape={() => {
+              const shouldCancel = !handlers.handleEscape();
+              if (shouldCancel) {
+                cancel().catch((e) => {
+                  log(`cancel error: ${e.message}`);
+                });
+              }
+            }}
+            onDoubleEscape={() => {
+              showForkModal();
+            }}
+            onImagePaste={handlers.handleImagePaste}
+            onPaste={handlers.handlePaste}
+            onSubmit={handlers.handleSubmit}
+            cursorOffset={displayCursorOffset}
+            onChangeCursorOffset={handleDisplayCursorChange}
+            disableCursorMovementForUpDownKeys={showSuggestions}
+            onTabPress={handlers.handleTabPress}
+            onDelete={handleDelete}
+            onExternalEdit={handleExternalEdit}
+            columns={columns - 6}
+            isDimmed={false}
+          />
+          <DebugRandomNumber />
+        </Box>
+        <Text color={borderColor}>{'─'.repeat(Math.max(0, columns))}</Text>
       </Box>
       <StatusLine />
       <Suggestion

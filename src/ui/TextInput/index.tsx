@@ -99,6 +99,11 @@ export type Props = {
   readonly onEscape?: () => void;
 
   /**
+   * Optional callback when Escape key is pressed twice quickly
+   */
+  readonly onDoubleEscape?: () => void;
+
+  /**
    * Optional callback to reset history position
    */
   readonly onHistoryReset?: () => void;
@@ -170,6 +175,7 @@ export default function TextInput({
   onExitMessage,
   onMessage,
   onEscape,
+  onDoubleEscape,
   onHistoryReset,
   columns,
   onImagePaste,
@@ -222,6 +228,15 @@ export default function TextInput({
     firstInputTime: null,
     lastInputTime: null,
     totalLength: 0,
+  });
+
+  // Track ESC key timing for double-press detection
+  const escPressRef = React.useRef<{
+    lastPressTime: number | null;
+    timeoutId: ReturnType<typeof setTimeout> | null;
+  }>({
+    lastPressTime: null,
+    timeoutId: null,
   });
 
   // Check if text matches image path format
@@ -348,6 +363,33 @@ export default function TextInput({
   };
 
   const wrappedOnInput = (input: string, key: Key): void => {
+    // Handle double-ESC for conversation forking
+    if (key.escape && onDoubleEscape) {
+      const now = Date.now();
+      const lastPress = escPressRef.current.lastPressTime;
+
+      if (lastPress && now - lastPress < 500) {
+        // Double ESC detected
+        if (escPressRef.current.timeoutId) {
+          clearTimeout(escPressRef.current.timeoutId);
+        }
+        escPressRef.current.lastPressTime = null;
+        escPressRef.current.timeoutId = null;
+        onDoubleEscape();
+        return;
+      }
+
+      // First ESC press
+      escPressRef.current.lastPressTime = now;
+      if (escPressRef.current.timeoutId) {
+        clearTimeout(escPressRef.current.timeoutId);
+      }
+      escPressRef.current.timeoutId = setTimeout(() => {
+        escPressRef.current.lastPressTime = null;
+        escPressRef.current.timeoutId = null;
+      }, 500);
+    }
+
     // Call onDelete when backspace or delete key is pressed
     if ((key.backspace || key.delete) && onDelete) {
       onDelete();
@@ -428,6 +470,9 @@ export default function TextInput({
     return () => {
       if (pasteStateRef.current.timeoutId) {
         clearTimeout(pasteStateRef.current.timeoutId);
+      }
+      if (escPressRef.current.timeoutId) {
+        clearTimeout(escPressRef.current.timeoutId);
       }
     };
   }, []);

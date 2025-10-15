@@ -176,6 +176,21 @@ async function runQuiet(argv: Argv, context: Context) {
     if (argv.continue) {
       sessionId = context.paths.getLatestSessionId();
     }
+
+    await context.apply({
+      hook: 'telemetry',
+      args: [
+        {
+          name: 'send',
+          payload: {
+            message: input,
+            sessionId,
+          },
+        },
+      ],
+      type: PluginHookType.Parallel,
+    });
+
     const project = new Project({
       context,
       sessionId,
@@ -219,7 +234,7 @@ async function runInteractive(
       return argv.resume;
     }
     if (argv.continue) {
-      return paths.getLatestSessionId();
+      return paths.getLatestSessionId() || Session.createSessionId();
     }
     return Session.createSessionId();
   })();
