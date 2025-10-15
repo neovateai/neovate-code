@@ -1,11 +1,20 @@
 import { request } from '@/utils/request';
 import type { ApiResponse } from './model';
 
+interface SessionInfo {
+  sessionId: string;
+  modified: Date;
+  created: Date;
+  messageCount: number;
+  summary: string;
+}
+
 export interface ProjectInfo {
   name: string;
   path: string;
   gitBranch?: string;
   gitStatus?: 'clean' | 'modified' | 'staged' | 'conflicted';
+  sessions: SessionInfo[];
 }
 
 export const getProjectInfo = (

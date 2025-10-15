@@ -2,12 +2,7 @@ import { useSearch } from '@tanstack/react-router';
 import { useMount } from 'ahooks';
 import { Spin, Tooltip } from 'antd';
 import { createStyles } from 'antd-style';
-import {
-  ExternalLinkIcon,
-  FolderIcon,
-  FolderPlusIcon,
-  GitBranchIcon,
-} from 'lucide-react';
+import { ExternalLinkIcon, FolderPlusIcon, GitBranchIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
@@ -17,29 +12,7 @@ import { actions, state } from '@/state/project';
 const useStyles = createStyles(({ css, token }) => {
   return {
     projectInfoArea: css`
-      padding: 0 10px;
-      margin-bottom: 16px;
-    `,
-
-    currentProjectSection: css`
-      margin-bottom: 20px;
-    `,
-
-    sectionTitle: css`
-      font-size: 12px;
-      font-weight: 500;
-      color: ${token.colorTextTertiary};
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-
-      svg {
-        width: 12px;
-        height: 12px;
-      }
+      margin-top: 10px;
     `,
 
     projectCard: css`
@@ -224,10 +197,6 @@ const ProjectInfoArea: React.FC = () => {
   if (!projectInfo) {
     return (
       <div className={styles.projectInfoArea}>
-        <div className={styles.sectionTitle}>
-          <FolderIcon />
-          {t('project.currentProject')}
-        </div>
         <div className={styles.noProject}>
           <FolderPlusIcon className="no-project-icon" />
           <span>{t('project.noProject')}</span>
@@ -238,35 +207,28 @@ const ProjectInfoArea: React.FC = () => {
 
   return (
     <div className={styles.projectInfoArea}>
-      <div className={styles.currentProjectSection}>
-        <div className={styles.sectionTitle}>
-          <FolderIcon />
-          {t('project.currentProject')}
-        </div>
-
-        <div className={styles.projectCard}>
-          <Tooltip title={projectInfo.path} placement="right">
-            <div className={styles.projectName}>{projectInfo.name}</div>
-          </Tooltip>
-          <div className={styles.gitInfo}>
-            <div className={styles.branchInfo}>
-              <GitBranchIcon />
-              <span className={styles.branchName}>
-                {projectInfo.gitBranch || 'main'}
-              </span>
-            </div>
-
-            <Tooltip title={t('project.openInEditor')}>
-              <button
-                className={styles.openInEditorButton}
-                onClick={handleOpenInEditor}
-                disabled={isOpening}
-                title={isOpening ? '...' : t('project.openInEditor')}
-              >
-                <ExternalLinkIcon />
-              </button>
-            </Tooltip>
+      <div className={styles.projectCard}>
+        <Tooltip title={projectInfo.path} placement="right">
+          <div className={styles.projectName}>{projectInfo.name}</div>
+        </Tooltip>
+        <div className={styles.gitInfo}>
+          <div className={styles.branchInfo}>
+            <GitBranchIcon />
+            <span className={styles.branchName}>
+              {projectInfo.gitBranch || 'main'}
+            </span>
           </div>
+
+          <Tooltip title={t('project.openInEditor')}>
+            <button
+              className={styles.openInEditorButton}
+              onClick={handleOpenInEditor}
+              disabled={isOpening}
+              title={isOpening ? '...' : t('project.openInEditor')}
+            >
+              <ExternalLinkIcon />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>

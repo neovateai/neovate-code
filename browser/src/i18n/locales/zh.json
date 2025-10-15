@@ -29,6 +29,11 @@
     "settings": "设置",
     "help": "帮助"
   },
+  "conversations": {
+    "title": "历史对话",
+    "empty": "暂无历史对话",
+    "unnamed": "未命名对话"
+  },
   "welcome": {
     "title": "我是{{productName}}，开发任务交给我",
     "capabilitiesTitle": "我的能力",
@@ -386,11 +391,11 @@
     }
   },
   "project": {
-    "currentProject": "当前项目",
     "branch": "分支",
     "projectManagement": "项目管理",
     "noProject": "选择项目文件夹开始",
     "openInEditor": "在编辑器中打开",
+    "new": "新会话",
     "selectModal": {
       "title": "导入项目",
       "cancel": "取消",

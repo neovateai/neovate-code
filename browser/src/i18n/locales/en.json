@@ -29,6 +29,11 @@
     "settings": "Settings",
     "help": "Help"
   },
+  "conversations": {
+    "title": "History",
+    "empty": "No conversations yet",
+    "unnamed": "Unnamed conversation"
+  },
   "welcome": {
     "title": "I'm {{productName}}, your development partner",
     "capabilitiesTitle": "My Capabilities",
@@ -386,11 +391,11 @@
     }
   },
   "project": {
-    "currentProject": "Current Project",
     "branch": "Branch",
     "projectManagement": "Project Management",
     "noProject": "Select a project folder to start",
     "openInEditor": "Open in Editor",
+    "new": "New Conversation",
     "selectModal": {
       "title": "Import Project",
       "cancel": "Cancel",

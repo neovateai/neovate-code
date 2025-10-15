@@ -6,15 +6,25 @@ import createDebug from 'debug';
 import type { FastifyPluginAsync } from 'fastify';
 import path from 'pathe';
 import type { ContextCreateOpts } from '../../../context';
+import { Paths } from '../../../paths';
 import { getGitStatus } from '../../../utils/git';
 
 const debug = createDebug('neovate:server:project');
+
+interface SessionInfo {
+  sessionId: string;
+  modified: Date;
+  created: Date;
+  messageCount: number;
+  summary: string;
+}
 
 interface ProjectInfo {
   name: string;
   path: string;
   gitBranch?: string;
   gitStatus?: 'clean' | 'modified' | 'staged' | 'conflicted';
+  sessions: SessionInfo[];
 }
 
 type GitStatusType = ProjectInfo['gitStatus'];
@@ -190,6 +200,11 @@ const projectRoute: FastifyPluginAsync<ContextCreateOpts> = async (
         const cwd = folder || opts.cwd;
         const projectPath = path.resolve(cwd);
         const projectName = path.basename(projectPath);
+        const paths = new Paths({
+          productName: opts.productName,
+          cwd,
+        });
+        const sessions = paths.getAllSessions();
 
         const gitStatus = await getGitStatus({ cwd });
 
@@ -198,6 +213,7 @@ const projectRoute: FastifyPluginAsync<ContextCreateOpts> = async (
           path: projectPath,
           gitBranch: gitStatus?.branch || undefined,
           gitStatus: gitStatus ? parseGitStatus(gitStatus.status) : undefined,
+          sessions,
         };
 
         return reply.send({

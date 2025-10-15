@@ -1,5 +1,6 @@
 import {
   FolderOpenOutlined,
+  PlusOutlined,
   QuestionCircleOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
@@ -9,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import * as layout from '@/state/layout';
 import { uiActions } from '@/state/ui';
-import siderBg from './imgs/sider-bg.png';
+import ConversationList from './Conversations';
 import LogoArea from './LogoArea';
 import ProjectInfoArea from './ProjectInfoArea';
 
@@ -18,14 +19,17 @@ const useStyle = createStyles(({ token, css }) => {
     sider: css`
       position: relative;
       height: 100%;
-      padding: 0 14px;
+      padding: 0 16px;
       box-sizing: border-box;
-      border-right: 1px solid #ececed;
+      border-right: 1px solid ${token.colorBorderSecondary};
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      background: url(${siderBg}) no-repeat bottom / contain;
+      background: linear-gradient(180deg,
+        ${token.colorBgContainer} 0%,
+        ${token.colorBgLayout} 100%);
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      backdrop-filter: blur(10px);
     `,
     siderExpanded: css`
       width: 280px;
@@ -55,17 +59,15 @@ const useStyle = createStyles(({ token, css }) => {
       }
     `,
     siderFooter: css`
-      position: absolute;
-      bottom: 16px;
-      left: 0;
-      width: 100%;
-      height: 22px;
-      padding: 0 24px;
+      margin-top: auto;
+      border-top: 1px solid ${token.colorBorderSecondary};
       display: flex;
       align-items: center;
       justify-content: space-between;
+      border-radius: 8px 8px 0 0;
       opacity: 1;
       transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 8px 0;
     `,
     siderFooterHidden: css`
       opacity: 0;
@@ -75,64 +77,53 @@ const useStyle = createStyles(({ token, css }) => {
       display: flex;
       align-items: center;
       gap: 4px;
-      span {
-        color: rgba(0, 0, 0, 0.65);
-        font-family: 'PingFang HK';
-        font-size: 12px;
-        font-style: normal;
-        font-weight: 400;
-        line-height: 20px;
-      }
 
       .ant-btn {
-        padding: 0 2px;
+        padding: 6px 8px;
+        height: auto;
+        font-size: 12px;
+        border-radius: 6px;
+        color: ${token.colorTextSecondary};
+
+        &:hover {
+          color: ${token.colorPrimary};
+          background: ${token.colorPrimaryBg};
+        }
       }
     `,
     siderFooterRight: css`
       display: flex;
       align-items: center;
-      gap: 8px;
+      width: 48px;
+
       .ant-btn {
-        width: auto;
-        height: auto;
-        padding: 0 !important;
-      }
-      .ant-btn-icon {
-        line-height: 1;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: ${token.colorTextSecondary};
+        transition: all 0.2s ease;
+
+        &:hover {
+          color: ${token.colorPrimary};
+          background: ${token.colorPrimaryBg};
+          transform: translateY(-1px);
+        }
       }
     `,
     siderExpanIcon: css`
-      transfrom: rotateY(180deg);
+      transform: rotateY(180deg);
     `,
 
-    siderContent: css`
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    `,
-
-    projectSection: css`
-      flex: 1;
-      overflow-y: auto;
-      margin-bottom: 16px;
-
-      &::-webkit-scrollbar {
-        width: 4px;
-      }
-
-      &::-webkit-scrollbar-track {
-        background: transparent;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background: ${token.colorBorderSecondary};
-        border-radius: 2px;
-      }
-
-      &::-webkit-scrollbar-thumb:hover {
-        background: ${token.colorBorder};
-      }
+    addBtn: css`
+      height: 40px;
+      border-radius: 8px;
+      color: ${token.colorPrimary};
+      background: #F9F8FF;
+      border: 1px solid $F9F8FF;
     `,
   };
 });
@@ -149,13 +140,11 @@ const SiderMain = () => {
       }`}
     >
       <LogoArea />
-
-      <div className={styles.siderContent}>
-        <div className={styles.projectSection}>
-          <ProjectInfoArea />
-        </div>
-      </div>
-
+      <Button icon={<PlusOutlined />} type="text" className={styles.addBtn}>
+        {t('project.new')}
+      </Button>
+      <ProjectInfoArea />
+      <ConversationList />
       <div
         className={`${styles.siderFooter} ${
           sidebarCollapsed ? styles.siderFooterHidden : ''

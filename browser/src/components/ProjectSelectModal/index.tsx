@@ -70,6 +70,8 @@ const useStyle = createStyles(({ css, token }) => {
   };
 });
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const ProjectSelectModal = () => {
   const { t } = useTranslation();
   const { projectSelectModalOpen } = useSnapshot(uiState);
@@ -95,8 +97,9 @@ const ProjectSelectModal = () => {
       return;
     }
     await actions.getProjectInfo(selectedFolder);
-    navigate({ to: '/session', search: { folder: selectedFolder } });
     uiActions.closeProjectSelectModal();
+    await navigate({ to: '/session', search: { folder: selectedFolder } });
+    await sleep(100);
     window.location.reload();
   };
 
