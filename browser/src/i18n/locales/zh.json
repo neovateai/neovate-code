@@ -385,6 +385,13 @@
       "error": "错误"
     }
   },
+  "project": {
+    "currentProject": "当前项目",
+    "branch": "分支",
+    "projectManagement": "项目管理",
+    "noProject": "选择项目文件夹开始",
+    "openInEditor": "在编辑器中打开"
+  },
   "folderPicker": {
     "searchPlaceholder": "搜索文件夹...",
     "refresh": "刷新",

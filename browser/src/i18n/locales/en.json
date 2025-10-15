@@ -385,6 +385,13 @@
       "error": "Error"
     }
   },
+  "project": {
+    "currentProject": "Current Project",
+    "branch": "Branch",
+    "projectManagement": "Project Management",
+    "noProject": "Select a project folder to start",
+    "openInEditor": "Open in Editor"
+  },
   "folderPicker": {
     "searchPlaceholder": "Search folders...",
     "refresh": "Refresh",

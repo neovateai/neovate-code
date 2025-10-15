@@ -126,20 +126,18 @@ const Sider = () => {
 
   // Keep original codeViewer logic unchanged
   return codeViewerVisible ? (
-    <>
-      {active ? (
-        <div
-          className={styles.hoveredPopoverWrapper}
-          onMouseLeave={() => setActive(false)}
-        >
-          <div className={styles.popoverContent}>
-            <SiderMain />
-          </div>
+    active ? (
+      <div
+        className={styles.hoveredPopoverWrapper}
+        onMouseLeave={() => setActive(false)}
+      >
+        <div className={styles.popoverContent}>
+          <SiderMain />
         </div>
-      ) : (
-        <div className={styles.popoverWrapper}>{MenuButton}</div>
-      )}
-    </>
+      </div>
+    ) : (
+      <div className={styles.popoverWrapper}>{MenuButton}</div>
+    )
   ) : (
     <SiderMain />
   );

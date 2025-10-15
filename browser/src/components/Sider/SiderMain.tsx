@@ -1,11 +1,17 @@
-import { QuestionCircleOutlined, SettingOutlined } from '@ant-design/icons';
-import { Avatar, Button } from 'antd';
+import {
+  FolderOpenOutlined,
+  QuestionCircleOutlined,
+  SettingOutlined,
+} from '@ant-design/icons';
+import { Button } from 'antd';
 import { createStyles } from 'antd-style';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import * as layout from '@/state/layout';
 import { uiActions } from '@/state/ui';
-import LogoArea from './LogoArea';
 import siderBg from './imgs/sider-bg.png';
+import LogoArea from './LogoArea';
+import ProjectInfoArea from './ProjectInfoArea';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
@@ -18,6 +24,8 @@ const useStyle = createStyles(({ token, css }) => {
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       background: url(${siderBg}) no-repeat bottom / contain;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     `,
     siderExpanded: css`
       width: 280px;
@@ -75,6 +83,10 @@ const useStyle = createStyles(({ token, css }) => {
         font-weight: 400;
         line-height: 20px;
       }
+
+      .ant-btn {
+        padding: 0 2px;
+      }
     `,
     siderFooterRight: css`
       display: flex;
@@ -83,6 +95,7 @@ const useStyle = createStyles(({ token, css }) => {
       .ant-btn {
         width: auto;
         height: auto;
+        padding: 0 !important;
       }
       .ant-btn-icon {
         line-height: 1;
@@ -91,11 +104,42 @@ const useStyle = createStyles(({ token, css }) => {
     siderExpanIcon: css`
       transfrom: rotateY(180deg);
     `,
+
+    siderContent: css`
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    `,
+
+    projectSection: css`
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 16px;
+
+      &::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: ${token.colorBorderSecondary};
+        border-radius: 2px;
+      }
+
+      &::-webkit-scrollbar-thumb:hover {
+        background: ${token.colorBorder};
+      }
+    `,
   };
 });
 
 const SiderMain = () => {
   const { styles } = useStyle();
+  const { t } = useTranslation();
   const { sidebarCollapsed } = useSnapshot(layout.state);
 
   return (
@@ -105,14 +149,22 @@ const SiderMain = () => {
       }`}
     >
       <LogoArea />
+
+      <div className={styles.siderContent}>
+        <div className={styles.projectSection}>
+          <ProjectInfoArea />
+        </div>
+      </div>
+
       <div
         className={`${styles.siderFooter} ${
           sidebarCollapsed ? styles.siderFooterHidden : ''
         }`}
       >
         <div className={styles.siderFooterLeft}>
-          <Avatar size={22} />
-          <span>name</span>
+          <Button type="text" icon={<FolderOpenOutlined />}>
+            {t('project.projectManagement')}
+          </Button>
         </div>
         <div className={styles.siderFooterRight}>
           <Button
