@@ -1138,7 +1138,7 @@ export const providers: ProvidersMap = {
   },
   volcengine: {
     id: 'volcengine',
-    env: ['VOLCENGINE_API_KEY'],
+    env: ['ARK_API_KEY'],
     name: 'VolcEngine',
     api: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
     doc: 'https://www.volcengine.com/docs/82379/1330310',
