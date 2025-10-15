@@ -1154,7 +1154,7 @@ export const providers: ProvidersMap = {
     id: 'volcengine',
     env: ['VOLCENGINE_API_KEY'],
     name: 'VolcEngine',
-    api: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+    api: 'https://ark.cn-beijing.volces.com/api/v3',
     doc: 'https://www.volcengine.com/docs/82379/1330310',
     models: {
       'deepseek-v3-1-250821': models['deepseek-v3-1'],
