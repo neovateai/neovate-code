@@ -1,4 +1,5 @@
 packages:
+  - desktop
   - vscode-extension
   - examples/*
 
