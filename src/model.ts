@@ -658,7 +658,7 @@ export const models: ModelMap = {
     last_updated: '2025-09-29',
     modalities: { input: ['text', 'image'], output: ['text'] },
     open_weights: false,
-    limit: { context: 80000, output: 16000 },
+    limit: { context: 200000, output: 32000 },
   },
   'ling-1t': {
     name: 'InclusionAI Ling-1T',
