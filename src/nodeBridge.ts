@@ -321,13 +321,6 @@ class NodeHandlerRegistry {
       'project.clearContext',
       async (data: { cwd?: string }) => {
         await this.clearContext(data.cwd);
-        const { getGlobalCacheManager } = await import(
-          './ui/useFileSuggestion'
-        );
-        const manager = getGlobalCacheManager();
-        if (manager) {
-          manager.clearCache(data.cwd);
-        }
         return {
           success: true,
         };
