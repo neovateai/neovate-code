@@ -36,7 +36,7 @@ export class LlmsContext {
         cwd: opts.context.cwd,
         productName: opts.context.productName,
       });
-      const result = (await LSTool.execute({ dir_path: '.' }));
+      const result = await LSTool.execute({ dir_path: '.' });
       if (result) {
         llmsContext.directoryStructure = `
 ${result.returnDisplay}
