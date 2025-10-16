@@ -22,6 +22,10 @@ function getCacheManager(productName: string): PathCacheManager {
   return globalCacheManager;
 }
 
+export function getGlobalCacheManager(): PathCacheManager | null {
+  return globalCacheManager;
+}
+
 export function usePaths() {
   const { bridge, cwd } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
