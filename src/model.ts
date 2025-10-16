@@ -660,6 +660,19 @@ export const models: ModelMap = {
     open_weights: false,
     limit: { context: 200000, output: 32000 },
   },
+  'claude-haiku-4-5': {
+    name: 'Claude Haiku 4.5',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-02-31',
+    release_date: '2025-10-15',
+    last_updated: '2025-10-15',
+    modalities: { input: ['text', 'image'], output: ['text'] },
+    open_weights: false,
+    limit: { context: 200000, output: 64000 },
+  },
   'ling-1t': {
     name: 'InclusionAI Ling-1T',
     attachment: true,
@@ -918,6 +931,7 @@ export const providers: ProvidersMap = {
       'claude-3-7-sonnet-20250219': models['claude-3-7-sonnet'],
       'claude-3-7-sonnet-20250219-thinking': models['claude-3-7-sonnet'],
       'claude-3-5-sonnet-20241022': models['claude-3-5-sonnet-20241022'],
+      'claude-haiku-4-5': models['claude-haiku-4-5'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
@@ -965,6 +979,7 @@ export const providers: ProvidersMap = {
       'anthropic/claude-3.7-sonnet': models['claude-3-7-sonnet'],
       'anthropic/claude-sonnet-4': models['claude-4-sonnet'],
       'anthropic/claude-sonnet-4.5': models['claude-4-5-sonnet'],
+      'anthropic/claude-haiku-4.5': models['claude-haiku-4-5'],
       'anthropic/claude-opus-4': models['claude-4-opus'],
       'anthropic/claude-opus-4.1': models['claude-4.1-opus'],
       'deepseek/deepseek-r1-0528': models['deepseek-r1-0528'],
@@ -1227,6 +1242,7 @@ export const modelAlias: ModelAlias = {
   grok: 'xai/grok-4',
   'grok-code': 'xai/grok-code-fast-1',
   sonnet: 'anthropic/claude-sonnet-4-5-20250929',
+  haiku: 'anthropic/claude-haiku-4-5',
   'sonnet-3.5': 'anthropic/claude-3-5-sonnet-20241022',
   'sonnet-3.7': 'anthropic/claude-3-7-sonnet-20250219',
   'sonnet-3.7-thinking': 'anthropic/claude-3-7-sonnet-20250219-thinking',
