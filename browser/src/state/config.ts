@@ -1,4 +1,5 @@
 import { message } from 'antd';
+import i18n from 'i18next';
 import { proxy } from 'valtio';
 import type { NodeBridgeResponse } from '@/types/chat';
 import type { Config, ProviderConfig } from '@/types/config';
@@ -8,14 +9,21 @@ import { actions as clientActions } from './client';
 interface ConfigState {
   globalConfigDir: string;
   projectConfigDir: string;
-  config: Config | null;
+  config: Partial<Config>;
   loading: boolean;
 }
 
 export const state = proxy<ConfigState>({
   globalConfigDir: '',
   projectConfigDir: '',
-  config: null,
+  config: {
+    language: 'English',
+    approvalMode: 'default',
+    todo: true,
+    autoCompact: true,
+    autoUpdate: true,
+    browser: false,
+  },
   loading: false,
 });
 
@@ -76,5 +84,49 @@ export const actions = {
       } | null;
     }>;
     return response;
+  },
+
+  async set(key: keyof Config, value: any, isGlobal = false) {
+    const { cwd } = chatState;
+    state.loading = true;
+    const response = (await clientActions.request('config.set', {
+      cwd,
+      isGlobal,
+      key,
+      value,
+    })) as NodeBridgeResponse;
+    await clientActions.request('project.clearContext', {
+      cwd,
+    });
+
+    if (!response.success) {
+      message.error(response.message || i18n.t('settings.updateError'));
+      state.loading = false;
+      return false;
+    }
+
+    message.success(i18n.t('settings.updateSuccess'));
+    await this.getConfig();
+    state.loading = false;
+    return true;
+  },
+
+  async remove(key: keyof Config, isGlobal = false, values?: string[]) {
+    const { cwd } = chatState;
+    state.loading = true;
+    const response = (await clientActions.request('config.remove', {
+      cwd,
+      isGlobal,
+      key,
+      values,
+    })) as NodeBridgeResponse;
+    await clientActions.request('project.clearContext', {
+      cwd,
+    });
+    if (!response.success) {
+      message.error(response.message || i18n.t('settings.updateError'));
+      state.loading = false;
+      return false;
+    }
   },
 };

@@ -362,6 +362,8 @@
     "saveSuccess": "Settings saved successfully",
     "saveError": "Failed to save settings",
     "loadError": "Failed to load settings",
+    "updateSuccess": "Configuration updated successfully",
+    "updateError": "Failed to update configuration",
     "resetSuccess": "Settings reset successfully",
     "resetError": "Failed to reset settings",
     "resetConfirm": "Are you sure you want to reset all settings?",
@@ -376,7 +378,22 @@
       "defaultModel": "Default model",
       "defaultModelDesc": "Choose the default model for new chats",
       "language": "Language",
-      "languageDesc": "Set language for model response"
+      "languageDesc": "Set language for model response",
+      "approvalMode": "Approval Mode",
+      "approvalModeDesc": "Control how tool calls are approved",
+      "approvalModeOptions": {
+        "default": "Default - Ask every time",
+        "autoEdit": "Auto Edit - Auto approve edit operations",
+        "yolo": "YOLO - Auto approve all tools"
+      },
+      "todo": "Todo Feature",
+      "todoDesc": "Enable session-level todo management",
+      "autoCompact": "Auto Compact",
+      "autoCompactDesc": "Automatically compress conversation history when reaching context limit",
+      "autoUpdate": "Auto Update",
+      "autoUpdateDesc": "Automatically check and download new versions",
+      "browser": "Browser Mode",
+      "browserDesc": "Enable browser interface access"
     }
   }
 }

@@ -1,5 +1,5 @@
 import { useRequest } from 'ahooks';
-import { Divider, Input, Select, Typography } from 'antd';
+import { Divider, Input, Select, Switch, Typography } from 'antd';
 import { createStyles } from 'antd-style';
 import classNames from 'classnames';
 import { useMemo } from 'react';
@@ -37,8 +37,8 @@ const GeneralSettings: React.FC = () => {
 
   const generalCls = classNames('flex-1 p-6 overflow-y-auto', styles.general);
 
-  const handleFieldChange = (field: keyof Config, value: any) => {
-    console.log(field, value);
+  const handleFieldChange = async (field: keyof Config, value: any) => {
+    await actions.set(field, value);
   };
 
   return (
@@ -89,12 +89,81 @@ const GeneralSettings: React.FC = () => {
         content={
           <Input
             className={styles.w2}
-            value={config?.language}
+            value={config.language}
             onChange={(e) => handleFieldChange('language', e.target.value)}
           />
         }
       />
       <Divider />
+      <SettingItem
+        label={t('settings.general.approvalMode')}
+        description={t('settings.general.approvalModeDesc')}
+        content={
+          <Select
+            onChange={(value) => handleFieldChange('approvalMode', value)}
+            value={config.approvalMode}
+            className="w-60"
+          >
+            <Select.Option value="default">
+              {t('settings.general.approvalModeOptions.default')}
+            </Select.Option>
+            <Select.Option value="autoEdit">
+              {t('settings.general.approvalModeOptions.autoEdit')}
+            </Select.Option>
+            <Select.Option value="yolo">
+              {t('settings.general.approvalModeOptions.yolo')}
+            </Select.Option>
+          </Select>
+        }
+      />
+      <Divider />
+      <SettingItem
+        label={t('settings.general.todo')}
+        description={t('settings.general.todoDesc')}
+        content={
+          <Switch
+            checked={config.todo}
+            onChange={(checked) => handleFieldChange('todo', checked)}
+            disabled={state.loading}
+          />
+        }
+      />
+      <Divider />
+      <SettingItem
+        label={t('settings.general.autoCompact')}
+        description={t('settings.general.autoCompactDesc')}
+        content={
+          <Switch
+            checked={config.autoCompact}
+            onChange={(checked) => handleFieldChange('autoCompact', checked)}
+            disabled={state.loading}
+          />
+        }
+      />
+      <Divider />
+      <SettingItem
+        label={t('settings.general.autoUpdate')}
+        description={t('settings.general.autoUpdateDesc')}
+        content={
+          <Switch
+            checked={config.autoUpdate}
+            onChange={(checked) => handleFieldChange('autoUpdate', checked)}
+            disabled={state.loading}
+          />
+        }
+      />
+      <Divider />
+      <SettingItem
+        label={t('settings.general.browser')}
+        description={t('settings.general.browserDesc')}
+        content={
+          <Switch
+            checked={config.browser}
+            onChange={(checked) => handleFieldChange('browser', checked)}
+            disabled={state.loading}
+          />
+        }
+      />
     </div>
   );
 };

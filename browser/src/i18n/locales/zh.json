@@ -362,6 +362,8 @@
     "saveSuccess": "设置保存成功",
     "saveError": "设置保存失败",
     "loadError": "设置加载失败",
+    "updateSuccess": "配置更新成功",
+    "updateError": "配置更新失败",
     "resetSuccess": "设置重置成功",
     "resetError": "设置重置失败",
     "resetConfirm": "确定要重置所有设置吗？",
@@ -376,7 +378,22 @@
       "defaultModel": "默认模型",
       "defaultModelDesc": "选择新对话的默认模型",
       "language": "语言",
-      "languageDesc": "设置模型回复的语言"
+      "languageDesc": "设置模型回复的语言",
+      "approvalMode": "审批模式",
+      "approvalModeDesc": "控制工具调用的审批方式",
+      "approvalModeOptions": {
+        "default": "默认 - 每次询问",
+        "autoEdit": "自动编辑 - 自动批准编辑操作",
+        "yolo": "完全自动 - 自动批准所有工具"
+      },
+      "todo": "待办功能",
+      "todoDesc": "启用会话级别的待办事项管理",
+      "autoCompact": "自动压缩",
+      "autoCompactDesc": "当对话历史达到上下文限制时自动压缩",
+      "autoUpdate": "自动更新",
+      "autoUpdateDesc": "自动检查并下载新版本",
+      "browser": "浏览器模式",
+      "browserDesc": "启用浏览器界面访问"
     }
   }
 }
