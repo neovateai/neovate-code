@@ -50,4 +50,37 @@ describe('PathCacheManager', () => {
     await manager.getPaths(cwd);
     expect(mockEngine.scan).toHaveBeenCalledTimes(2);
   });
+
+  it('should cache search results by query', async () => {
+    const cwd = '/test/dir';
+    mockEngine.scan.mockResolvedValue({
+      paths: ['src/file1.ts', 'src/utils/file2.ts', 'lib/file3.js'],
+      fromCache: false,
+      truncated: false,
+    });
+
+    await manager.getPaths(cwd);
+
+    const result1 = await manager.search(cwd, 'src');
+    expect(result1).toEqual(['src/file1.ts', 'src/utils/file2.ts']);
+
+    const result2 = await manager.search(cwd, 'src');
+    expect(result2).toEqual(result1);
+  });
+
+  it('should filter incrementally from previous results', async () => {
+    const cwd = '/test/dir';
+    mockEngine.scan.mockResolvedValue({
+      paths: ['src/file1.ts', 'src/utils/file2.ts', 'lib/file3.js'],
+      fromCache: false,
+      truncated: false,
+    });
+
+    await manager.getPaths(cwd);
+
+    await manager.search(cwd, 'src');
+    const result = await manager.search(cwd, 'src/u');
+
+    expect(result).toEqual(['src/utils/file2.ts']);
+  });
 });
