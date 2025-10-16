@@ -29,8 +29,6 @@ export function Suggestion<T>({
   );
   const windowEnd = Math.min(suggestions.length, windowStart + maxVisible);
   const visibleSuggestions = suggestions.slice(windowStart, windowEnd);
-  const hasMoreAbove = windowStart > 0;
-  const hasMoreBelow = windowEnd < suggestions.length;
   return (
     <Box flexDirection="column" marginLeft={2}>
       {visibleSuggestions.map((suggestion: T, index) => {

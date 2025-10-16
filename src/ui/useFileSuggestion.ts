@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PathCacheManager } from '../utils/pathCache';
 import { useAppStore } from './store';
 import type { InputState } from './useInputState';
@@ -22,26 +22,13 @@ function getCacheManager(productName: string): PathCacheManager {
   return globalCacheManager;
 }
 
-export function getGlobalCacheManager(): PathCacheManager | null {
-  return globalCacheManager;
-}
-
 export function usePaths() {
-  const { bridge, cwd } = useAppStore();
+  const { cwd, productName } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
   const [paths, setPaths] = useState<string[]>([]);
   const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const cacheManagerRef = useRef<PathCacheManager | null>(null);
 
-  useEffect(() => {
-    bridge.request('session.initialize', { cwd }).then((res) => {
-      if (res.data?.productName) {
-        cacheManagerRef.current = getCacheManager(res.data.productName);
-      }
-    });
-  }, [bridge, cwd]);
-
-  const loadPaths = useCallback(() => {
+  const loadPaths = () => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
@@ -50,13 +37,8 @@ export function usePaths() {
 
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        if (cacheManagerRef.current) {
-          const result = await cacheManagerRef.current.getPaths(cwd);
-          setPaths(result.paths);
-        } else {
-          const res = await bridge.request('utils.getPaths', { cwd });
-          setPaths(res.data.paths);
-        }
+        const result = await getCacheManager(productName).getPaths(cwd);
+        setPaths(result.paths);
       } catch (error) {
         console.error('Failed to get paths:', error);
         setPaths([]);
@@ -64,7 +46,7 @@ export function usePaths() {
         setIsLoading(false);
       }
     }, 200);
-  }, [bridge, cwd]);
+  };
 
   useEffect(() => {
     return () => {
@@ -251,11 +233,11 @@ export function useFileSuggestion(
     if (hasQuery) {
       loadPaths();
     }
-  }, [hasQuery, query, loadPaths]);
+  }, [hasQuery, loadPaths]);
 
   useEffect(() => {
     setSelectedIndex(0);
-  }, [matchedPaths]);
+  }, []);
 
   const navigateNext = () => {
     if (matchedPaths.length === 0) return;
