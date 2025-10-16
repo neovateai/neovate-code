@@ -32,8 +32,10 @@ export class PathCacheManager {
     this.searchCache.set(searchKey, filtered);
 
     if (this.searchCache.size > CACHE_CONFIG.MAX_SEARCH_CACHE_SIZE) {
-      const firstKey = this.searchCache.keys().next().value;
-      this.searchCache.delete(firstKey);
+      const firstKey = this.searchCache.keys().next().value as string;
+      if (firstKey) {
+        this.searchCache.delete(firstKey);
+      }
     }
 
     return filtered;

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { PathCacheManager } from '../utils/pathCache';
 import { useAppStore } from './store';
 import type { InputState } from './useInputState';
 
@@ -12,31 +13,63 @@ interface MatchResult {
   triggerType: TriggerType;
 }
 
+let globalCacheManager: PathCacheManager | null = null;
+
+function getCacheManager(productName: string): PathCacheManager {
+  if (!globalCacheManager) {
+    globalCacheManager = new PathCacheManager(productName);
+  }
+  return globalCacheManager;
+}
+
 export function usePaths() {
   const { bridge, cwd } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
   const [paths, setPaths] = useState<string[]>([]);
-  const [lastLoadTime, setLastLoadTime] = useState(0);
-  const loadPaths = useCallback(() => {
-    setIsLoading(true);
-    // TODO: improve this
-    // Now it's load only once
-    if (Date.now() - lastLoadTime < 600000000000) {
-      setIsLoading(false);
-      return;
-    }
-    bridge
-      .request('utils.getPaths', { cwd })
-      .then((res) => {
-        setPaths(res.data.paths);
-        setIsLoading(false);
-        setLastLoadTime(Date.now());
-      })
-      .catch((error) => {
-        console.error('Failed to get paths:', error);
-        setIsLoading(false);
-      });
+  const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const cacheManagerRef = useRef<PathCacheManager | null>(null);
+
+  useEffect(() => {
+    bridge.request('session.initialize', { cwd }).then((res) => {
+      if (res.data?.productName) {
+        cacheManagerRef.current = getCacheManager(res.data.productName);
+      }
+    });
   }, [bridge, cwd]);
+
+  const loadPaths = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    setIsLoading(true);
+
+    debounceTimerRef.current = setTimeout(async () => {
+      try {
+        if (cacheManagerRef.current) {
+          const result = await cacheManagerRef.current.getPaths(cwd);
+          setPaths(result.paths);
+        } else {
+          const res = await bridge.request('utils.getPaths', { cwd });
+          setPaths(res.data.paths);
+        }
+      } catch (error) {
+        console.error('Failed to get paths:', error);
+        setPaths([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 200);
+  }, [bridge, cwd]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
   return {
     paths,
     isLoading,
@@ -47,12 +80,10 @@ export function usePaths() {
 function useAtTriggeredPaths(inputState: InputState): MatchResult {
   const { value, cursorPosition } = inputState;
 
-  // Find all @ mentions in the text (including quoted paths and escaped spaces)
   const atMatches = [
     ...value.matchAll(/(?:^|\s)(@(?:"[^"]*"|(?:[^\\ ]|\\ )*))/g),
   ];
 
-  // If no cursor position, fallback to last match
   if (cursorPosition === undefined) {
     const lastAtMatch = atMatches[atMatches.length - 1];
     if (!lastAtMatch) {
@@ -66,15 +97,12 @@ function useAtTriggeredPaths(inputState: InputState): MatchResult {
     }
     const fullMatch = lastAtMatch[1];
     let query = fullMatch.slice(1);
-    // Process query for matching
     if (query.startsWith('"')) {
-      // Remove quotes
       query = query.slice(1);
       if (query.endsWith('"')) {
         query = query.slice(0, -1);
       }
     } else {
-      // Unescape spaces
       query = query.replace(/\\ /g, ' ');
     }
     const startIndex =
@@ -88,14 +116,12 @@ function useAtTriggeredPaths(inputState: InputState): MatchResult {
     };
   }
 
-  // Find the @ mention that the cursor is in or just after
   let targetMatch = null;
   for (const match of atMatches) {
     const fullMatch = match[1];
     const matchStartIndex = match.index! + (match[0].length - fullMatch.length);
     const matchEndIndex = matchStartIndex + fullMatch.length;
 
-    // Check if cursor is within or just after this @ mention
     if (cursorPosition >= matchStartIndex && cursorPosition <= matchEndIndex) {
       targetMatch = match;
       break;
@@ -114,15 +140,12 @@ function useAtTriggeredPaths(inputState: InputState): MatchResult {
 
   const fullMatch = targetMatch[1];
   let query = fullMatch.slice(1);
-  // Process query for matching
   if (query.startsWith('"')) {
-    // Remove quotes
     query = query.slice(1);
     if (query.endsWith('"')) {
       query = query.slice(0, -1);
     }
   } else {
-    // Unescape spaces
     query = query.replace(/\\ /g, ' ');
   }
   const startIndex =
@@ -143,7 +166,6 @@ function useTabTriggeredPaths(
 ): MatchResult {
   const { value, cursorPosition } = inputState;
 
-  // Only trigger if explicitly forced
   if (!forceTabTrigger || cursorPosition === undefined) {
     return {
       hasQuery: false,
@@ -154,10 +176,8 @@ function useTabTriggeredPaths(
     };
   }
 
-  // Find the word at cursor position
   const beforeCursor = value.substring(0, cursorPosition);
 
-  // Match word boundaries - find the current word the cursor is in/at the end of
   const wordMatch = beforeCursor.match(/([^\s]*)$/);
   if (!wordMatch || !wordMatch[1]) {
     return {
@@ -172,7 +192,6 @@ function useTabTriggeredPaths(
   const currentWord = wordMatch[1];
   const wordStartIndex = beforeCursor.length - currentWord.length;
 
-  // Ensure we're not inside an @ mention
   const hasAtMention = beforeCursor.match(/@[^\s]*$/);
   if (hasAtMention) {
     return {
@@ -184,7 +203,6 @@ function useTabTriggeredPaths(
     };
   }
 
-  // If there's any content in the current word, allow tab triggering
   if (currentWord.length > 0) {
     return {
       hasQuery: true,
@@ -214,7 +232,6 @@ export function useFileSuggestion(
   const atMatch = useAtTriggeredPaths(inputState);
   const tabMatch = useTabTriggeredPaths(inputState, forceTabTrigger);
 
-  // Prioritize @ trigger over tab trigger
   const activeMatch = atMatch.hasQuery ? atMatch : tabMatch;
   const { hasQuery, fullMatch, query, startIndex, triggerType } = activeMatch;
 
@@ -251,7 +268,6 @@ export function useFileSuggestion(
   const getSelected = () => {
     if (matchedPaths.length === 0) return '';
     const selected = matchedPaths[selectedIndex];
-    // Wrap in quotes if the path contains spaces
     if (selected.includes(' ')) {
       return `"${selected}"`;
     }
