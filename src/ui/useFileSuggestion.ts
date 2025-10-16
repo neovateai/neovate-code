@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { PathCacheManager } from '../utils/pathCache';
+import { PathCacheManager } from '../utils/path-cache';
 import { useAppStore } from './store';
 import type { InputState } from './useInputState';
 

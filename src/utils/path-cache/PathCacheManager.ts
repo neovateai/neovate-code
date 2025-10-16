@@ -1,14 +1,20 @@
-import { PathSearchEngine } from './PathSearchEngine';
+import { listDirectory } from '../list';
 import type { CacheEntry, PathSearchOptions, PathSearchResult } from './types';
-import { CACHE_CONFIG } from './types';
+
+const CACHE_CONFIG = {
+  MEMORY_TTL: 30000,
+  MAX_SEARCH_CACHE_SIZE: 100,
+  DEBOUNCE_DELAY: 200,
+  SCAN_TIMEOUT: 10000,
+} as const;
 
 export class PathCacheManager {
   private memoryCache = new Map<string, CacheEntry>();
   private searchCache = new Map<string, string[]>();
-  private searchEngine: PathSearchEngine;
+  private productName: string;
 
   constructor(productName: string) {
-    this.searchEngine = new PathSearchEngine(productName);
+    this.productName = productName;
   }
 
   private getSearchKey(cwd: string, query: string): string {
@@ -56,7 +62,7 @@ export class PathCacheManager {
       };
     }
 
-    const result = await this.searchEngine.scan({ cwd, ...options });
+    const result = await this.scan({ cwd, ...options });
 
     this.memoryCache.set(cwd, {
       paths: result.paths,
@@ -67,6 +73,34 @@ export class PathCacheManager {
     this.searchCache.clear();
 
     return result;
+  }
+
+  private async scan(options: PathSearchOptions): Promise<PathSearchResult> {
+    const { cwd, maxFiles = 6000, signal } = options;
+
+    if (signal?.aborted) {
+      throw new Error('Scan aborted');
+    }
+
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Scan timeout'));
+      }, CACHE_CONFIG.SCAN_TIMEOUT);
+
+      try {
+        const paths = listDirectory(cwd, cwd, this.productName, maxFiles);
+        clearTimeout(timeoutId);
+
+        resolve({
+          paths,
+          fromCache: false,
+          truncated: paths.length >= maxFiles,
+        });
+      } catch (error) {
+        clearTimeout(timeoutId);
+        reject(error);
+      }
+    });
   }
 
   clearCache(cwd?: string): void {
