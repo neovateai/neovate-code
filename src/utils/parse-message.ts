@@ -247,7 +247,7 @@ export function parseMessage(text: string): MessageContent[] {
         }
       }
     }
-    // 如果 tool_name 为空，尝试从 <name> 标签提取
+    // 若 tool_name 为空，尝试从 <name> 标签提取名称（兼容 Claude 4.5 返回 <name> 而不是 <tool_name> 的场景）
     if (currentToolUse.name === '') {
       const toolUseText = text.slice(toolUseStartIndex);
       const nameFromTag = extractNameTag(toolUseText);
