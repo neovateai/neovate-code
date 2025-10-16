@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { PathCacheManager } from '../utils/path-cache';
+import { PathCacheManager } from '../utils/path-cache-manager';
 import { useAppStore } from './store';
 import type { InputState } from './useInputState';
 
@@ -237,7 +237,7 @@ export function useFileSuggestion(
 
   useEffect(() => {
     setSelectedIndex(0);
-  }, []);
+  }, [matchedPaths]);
 
   const navigateNext = () => {
     if (matchedPaths.length === 0) return;
