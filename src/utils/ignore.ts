@@ -2,6 +2,15 @@ import fs from 'fs';
 import { homedir } from 'os';
 import { join, relative, sep } from 'pathe';
 
+interface IgnoreCache {
+  patterns: string[];
+  negationPatterns: string[];
+  timestamp: number;
+}
+
+const ignoreCache = new Map<string, IgnoreCache>();
+const CACHE_TTL = 5000;
+
 /**
  * Gets the global gitignore file path
  */
@@ -40,6 +49,17 @@ function parseIgnoreFiles(
   patterns: string[];
   negationPatterns: string[];
 } {
+  const cacheKey = `${rootPath}:${productName}`;
+  const now = Date.now();
+  const cached = ignoreCache.get(cacheKey);
+
+  if (cached && now - cached.timestamp < CACHE_TTL) {
+    return {
+      patterns: cached.patterns,
+      negationPatterns: cached.negationPatterns,
+    };
+  }
+
   const gitignorePath = join(rootPath, '.gitignore');
   const productIgnorePath = join(
     rootPath,
@@ -103,6 +123,12 @@ function parseIgnoreFiles(
     // .takumiignore doesn't exist or can't be read
   }
 
+  ignoreCache.set(cacheKey, {
+    patterns,
+    negationPatterns,
+    timestamp: now,
+  });
+
   return { patterns, negationPatterns };
 }
 
@@ -157,6 +183,8 @@ function normalizePattern(pattern: string): string {
   return normalized;
 }
 
+const patternRegexCache = new Map<string, RegExp>();
+
 /**
  * Simple pattern matching for ignore patterns
  * Supports basic wildcards * and ** but not full glob syntax
@@ -180,7 +208,11 @@ function matchesPattern(filePath: string, pattern: string): boolean {
 
   // Handle single * wildcard
   if (pattern.includes('*')) {
-    const regex = new RegExp('^' + pattern.replace(/\*/g, '[^/]*') + '$');
+    let regex = patternRegexCache.get(pattern);
+    if (!regex) {
+      regex = new RegExp('^' + pattern.replace(/\*/g, '[^/]*') + '$');
+      patternRegexCache.set(pattern, regex);
+    }
     return regex.test(filePath);
   }
 
@@ -238,4 +270,9 @@ export function isIgnored(
   }
 
   return true; // Ignored by pattern and no negation applies
+}
+
+export function clearIgnoreCache(): void {
+  ignoreCache.clear();
+  patternRegexCache.clear();
 }
