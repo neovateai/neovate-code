@@ -47,9 +47,8 @@ const SettingsModal = () => {
       default:
         return (
           <div className="flex-1 p-6">
-            <h2 className="text-xl font-semibold mb-4">未知设置</h2>
             <p className="text-gray-600 dark:text-gray-400">
-              请选择左侧的设置选项
+              We are working on it, please stay tuned.
             </p>
           </div>
         );
