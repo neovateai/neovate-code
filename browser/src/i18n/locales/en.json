@@ -356,5 +356,27 @@
     "noVisibleFolders": "No visible folders",
     "fetchError": "Failed to fetch folder list",
     "networkError": "Network error"
+  },
+  "settings": {
+    "title": "Settings",
+    "saveSuccess": "Settings saved successfully",
+    "saveError": "Failed to save settings",
+    "loadError": "Failed to load settings",
+    "resetSuccess": "Settings reset successfully",
+    "resetError": "Failed to reset settings",
+    "resetConfirm": "Are you sure you want to reset all settings?",
+    "tabs": {
+      "general": "General",
+      "changelog": "Changelog",
+      "docs": "Docs"
+    },
+    "general": {
+      "title": "General",
+      "description": "Configure your {{productName}} preferences",
+      "defaultModel": "Default model",
+      "defaultModelDesc": "Choose the default model for new chats",
+      "language": "Language",
+      "languageDesc": "Set language for model response"
+    }
   }
 }

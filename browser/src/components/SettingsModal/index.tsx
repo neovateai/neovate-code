@@ -1,24 +1,81 @@
-import { Modal } from 'antd';
+import { useMount } from 'ahooks';
+import { Modal, Spin } from 'antd';
+import { createStyles } from 'antd-style';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSnapshot } from 'valtio';
+import { actions, state } from '@/state/config';
+import { uiActions, uiState } from '@/state/ui';
+import GeneralSettings from './components/GeneralSettings';
+import SettingsSidebar from './components/SettingsSidebar';
+import type { SettingsTab } from './types/settings';
 
-interface SettingsModalProps {
-  open: boolean;
-  onClose: () => void;
-}
+const useStyles = createStyles(({ css }) => ({
+  setting: css`
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
+    .ant-modal-header {
+      background-color: var(--color-gray-50);
+      display: none;
+      padding: 16px 20px;
+      margin: 0;
+    }
+
+    .ant-modal-content {
+      padding: 0;
+    }
+
+    .ant-menu-light {
+      background: transparent;
+    }
+  `,
+}));
+
+const SettingsModal = () => {
   const { t } = useTranslation();
+  const { settingsModalOpen } = useSnapshot(uiState);
+  const { styles } = useStyles();
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+  const { loading } = useSnapshot(state);
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'general':
+        return <GeneralSettings />;
+      default:
+        return (
+          <div className="flex-1 p-6">
+            <h2 className="text-xl font-semibold mb-4">未知设置</h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              请选择左侧的设置选项
+            </p>
+          </div>
+        );
+    }
+  };
+
+  useMount(() => {
+    actions.getConfig();
+  });
 
   return (
     <Modal
       title={t('settings.title')}
-      open={open}
+      open={settingsModalOpen}
+      onCancel={uiActions.closeSettingsModal}
       footer={null}
-      width={880}
+      width={1200}
       centered
-      className="[&_.ant-modal-body]:max-h-[70vh] [&_.ant-modal-body]:overflow-y-auto [&_.ant-modal-body]:p-6"
+      className={styles.setting}
     >
-      配置管理
+      <Spin spinning={loading} tip={t('common.loading')}>
+        <div className="flex h-[70vh]">
+          <SettingsSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+          {renderContent()}
+        </div>
+      </Spin>
     </Modal>
   );
 };

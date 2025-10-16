@@ -4,7 +4,7 @@ import { useSnapshot } from 'valtio';
 import ProjectSelectModal from '@/components/ProjectSelectModal';
 import SettingsModal from '@/components/SettingsModal';
 import Sider from '@/components/Sider';
-import { uiActions, uiState } from '@/state/ui';
+import { uiState } from '@/state/ui';
 
 const useStyle = createStyles(({ token, css }) => {
   return {
@@ -24,7 +24,7 @@ const useStyle = createStyles(({ token, css }) => {
 
 const Session: React.FC = () => {
   const { styles } = useStyle();
-  const { settingsModalOpen } = useSnapshot(uiState);
+  const { settingsModalOpen, projectSelectModalOpen } = useSnapshot(uiState);
 
   return (
     <div className={styles.layout}>
@@ -32,13 +32,8 @@ const Session: React.FC = () => {
         <Sider />
       </div>
       <Outlet />
-      {/* Settings Modal */}
-      <SettingsModal
-        open={settingsModalOpen}
-        onClose={() => uiActions.closeSettingsModal()}
-      />
-      {/* Project Select Modal */}
-      <ProjectSelectModal />
+      {settingsModalOpen && <SettingsModal />}
+      {projectSelectModalOpen && <ProjectSelectModal />}
     </div>
   );
 };

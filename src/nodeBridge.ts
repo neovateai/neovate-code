@@ -139,6 +139,22 @@ class NodeHandlerRegistry {
       },
     );
 
+    this.messageBus.registerHandler(
+      'config.list',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        return {
+          success: true,
+          data: {
+            globalConfigDir: context.paths.globalConfigDir,
+            projectConfigDir: context.paths.projectConfigDir,
+            config: context.config,
+          },
+        };
+      },
+    );
+
     //////////////////////////////////////////////
     // mcp
     this.messageBus.registerHandler(

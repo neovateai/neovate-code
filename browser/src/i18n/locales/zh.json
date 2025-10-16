@@ -356,5 +356,27 @@
     "noVisibleFolders": "没有可显示的文件夹",
     "fetchError": "获取文件夹列表失败",
     "networkError": "网络错误"
+  },
+  "settings": {
+    "title": "设置",
+    "saveSuccess": "设置保存成功",
+    "saveError": "设置保存失败",
+    "loadError": "设置加载失败",
+    "resetSuccess": "设置重置成功",
+    "resetError": "设置重置失败",
+    "resetConfirm": "确定要重置所有设置吗？",
+    "tabs": {
+      "general": "通用",
+      "changelog": "更新日志",
+      "docs": "文档"
+    },
+    "general": {
+      "title": "通用",
+      "description": "配置您的 {{productName}} 偏好",
+      "defaultModel": "默认模型",
+      "defaultModelDesc": "选择新对话的默认模型",
+      "language": "语言",
+      "languageDesc": "设置模型回复的语言"
+    }
   }
 }
