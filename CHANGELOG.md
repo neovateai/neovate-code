@@ -1,3 +1,22 @@
+## 0.14.0
+
+`2025-10-16`
+
+- feat: add claude-haiku-4-5 model support by [@sorrycc](https://github.com/sorrycc)
+- fix: The provider VolcEngine issue by [@Wu Changming](https://github.com/Wu Changming) in [#319](https://github.com/umijs/takumi/pull/319)
+- fix: LSTool.execute result by [@Cloudyan](https://github.com/Cloudyan) in [#325](https://github.com/umijs/takumi/pull/325)
+- feat: add spec commands for brainstorming, planning, and execution by [@sorrycc](https://github.com/sorrycc)
+- feat: increase context and output limits for model by [@阿平](https://github.com/阿平) in [#324](https://github.com/umijs/takumi/pull/324)
+- feat(quiet): add telemetry hook to track messages with session id by [@阿平](https://github.com/阿平) in [#316](https://github.com/umijs/takumi/pull/316)
+- feat: implement conversation forking by @chencheng (云谦) in [#312](https://github.com/umijs/takumi/pull/312)
+- fix: handle missing global project directory in getLatestSessionId by [@sorrycc](https://github.com/sorrycc)
+- feat: add ZenMux provider with InclusionAI model support by [@明城](https://github.com/明城) in [#309](https://github.com/umijs/takumi/pull/309)
+- refactor: replace console.error with debug logging for directory access errors by [@阿平](https://github.com/阿平) in [#311](https://github.com/umijs/takumi/pull/311)
+- feat: filterMessages support fork by [@sorrycc](https://github.com/sorrycc)
+- refactor: update chat input layout and border styling by [@sorrycc](https://github.com/sorrycc)
+- feat: update global memory label to use dynamic product name by [@阿平](https://github.com/阿平) in [#308](https://github.com/umijs/takumi/pull/308)
+
+
 ## 0.13.0
 
 `2025-10-10`
