@@ -30,7 +30,6 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 - "Run it to make sure it fails" - step
 - "Implement the minimal code to make the test pass" - step
 - "Run the tests and make sure they pass" - step
-- "Commit" - step
 
 ## Plan Document Header
 
