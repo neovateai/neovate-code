@@ -83,13 +83,6 @@ def function(input):
 Run: \`pytest tests/path/test.py::test_name -v\`
 Expected: PASS
 
-**Step 5: Commit**
-
-\`\`\`bash
-git add tests/path/test.py src/path/file.py
-git commit -m "feat: add specific feature"
-\`\`\`
-
 ## Remember
 - Exact file paths always
 - Complete code in plan (not "add validation")
