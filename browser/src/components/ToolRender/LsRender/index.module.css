@@ -1,0 +1,61 @@
+.itemContainer {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.itemIcon {
+  width: 14px;
+  height: 14px;
+  color: #666f8d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.itemTitle {
+  font-family: PingFang HK;
+  font-weight: 400;
+  font-style: Regular;
+  font-size: 12px;
+  letter-spacing: 0%;
+  color: #110c22;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.listContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.itemCount {
+  font-family: Inter;
+  font-weight: 600;
+  font-style: Semi Bold;
+  font-size: 8px;
+  letter-spacing: 0%;
+  color: #666f8d;
+
+  background-color: #f7f8fa;
+  border-radius: 50%;
+  padding: 2px 4px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expandIcon {
+  transform: rotate(0deg);
+  transition: transform 0.2s ease-in-out;
+}
+
+.expandIconExpanded {
+  transform: rotate(90deg);
+  transition: transform 0.2s ease-in-out;
+}

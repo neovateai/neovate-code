@@ -1,5 +1,5 @@
-import { Spin } from 'antd';
-import React, { Suspense } from 'react';
+import { ConfigProvider, Spin } from 'antd';
+import { Suspense } from 'react';
 
 interface I18nProviderProps {
   children: React.ReactNode;
@@ -7,21 +7,29 @@ interface I18nProviderProps {
 
 const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
   return (
-    <Suspense
-      fallback={
-        <Spin
-          size="large"
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100vh',
-          }}
-        />
-      }
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: '#7357FE',
+        },
+      }}
     >
-      {children}
-    </Suspense>
+      <Suspense
+        fallback={
+          <Spin
+            size="large"
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '100vh',
+            }}
+          />
+        }
+      >
+        {children}
+      </Suspense>
+    </ConfigProvider>
   );
 };
 

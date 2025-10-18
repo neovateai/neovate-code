@@ -1,14 +1,14 @@
 import { RadarChartOutlined, RightOutlined } from '@ant-design/icons';
 import { useCallback, useState } from 'react';
-import type { ReasoningMessage } from '@/types/message';
+import type { ReasoningPart } from '@/types/chat';
 
 interface ThinkingMessageProps {
-  message: ReasoningMessage;
+  part: ReasoningPart;
   defaultExpanded?: boolean;
 }
 
 const ThinkingMessage: React.FC<ThinkingMessageProps> = ({
-  message,
+  part,
   defaultExpanded = true,
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
@@ -17,7 +17,7 @@ const ThinkingMessage: React.FC<ThinkingMessageProps> = ({
     setIsExpanded((prev) => !prev);
   }, []);
 
-  if (!message.reasoning?.trim()) {
+  if (!part.text?.trim()) {
     return null;
   }
 
@@ -51,7 +51,7 @@ const ThinkingMessage: React.FC<ThinkingMessageProps> = ({
           Thinking...
         </div>
         <div className="text-xs text-gray-400 dark:text-gray-500">
-          {message.reasoning.split('\n').length} lines
+          {part.text.split('\n').length} lines
         </div>
       </div>
 
@@ -62,7 +62,7 @@ const ThinkingMessage: React.FC<ThinkingMessageProps> = ({
       >
         <div className="border-l-2 border-blue-400 dark:border-blue-500 ml-3 px-3 py-2 bg-gray-50 dark:bg-gray-800/50">
           <pre className="font-mono text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap break-words leading-relaxed">
-            {message.reasoning}
+            {part.text}
           </pre>
         </div>
       </div>

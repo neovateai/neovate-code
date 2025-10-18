@@ -1,13 +1,9 @@
-import { DownOutlined } from '@ant-design/icons';
-import { Button, type ButtonProps, Divider, Flex } from 'antd';
-import { createStyles } from 'antd-style';
-import { useMemo } from 'react';
+import { type ButtonProps, Divider, Flex } from 'antd';
 import { useSnapshot } from 'valtio';
 import McpDropdown from '@/components/McpDropdown';
-import { MODES_MAP } from '@/constants/chat';
-import { useChatState } from '@/hooks/provider';
-import { actions, state } from '@/state/sender';
+import { state } from '@/state/chat';
 import SenderAttachments from '../SenderAttachments';
+import ModeSelect from './ModeSelect';
 
 type ActionsComponents = {
   SendButton: React.ComponentType<ButtonProps>;
@@ -16,56 +12,23 @@ type ActionsComponents = {
   SpeechButton: React.ComponentType<ButtonProps>;
 };
 
-const useStyle = createStyles(({ token, css }) => {
-  return {
-    senderFooterButton: css`
-      padding: 8px;
-      background-color: ${token.colorFillQuaternary};
-      transition: background-color 0.3s;
-      border-radius: ${token.borderRadiusLG}px;
-      border: 1px solid ${token.colorBorderSecondary};
-    `,
-    icon: css`
-      font-size: 18px;
-      color: ${token.colorText};
-    `,
-  };
-});
-
 const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
   components,
 }) => {
-  const { styles } = useStyle();
-  const { mode } = useSnapshot(state);
-  const { status } = useChatState();
+  const { status } = useSnapshot(state);
 
   const { SendButton, LoadingButton } = components;
 
-  const onOpenFooter = () => {
-    actions.updateOpenFooter(!state.openFooter);
-  };
-
-  const modeDetail = useMemo(() => {
-    return MODES_MAP[mode];
-  }, [mode]);
-
-  const isProcessing = status === 'submitted' || status === 'streaming';
+  const isProcessing = status === 'processing';
 
   return (
     <Flex justify="space-between" align="center">
       <Flex gap="small" align="center">
-        <Button
-          icon={modeDetail?.icon}
-          type="text"
-          onClick={onOpenFooter}
-          className={styles.senderFooterButton}
-        >
-          {modeDetail?.label} <DownOutlined />
-        </Button>
+        <ModeSelect />
+        <McpDropdown />
         <Divider type="vertical" />
       </Flex>
       <Flex align="center">
-        <McpDropdown />
         <SenderAttachments />
         <Divider type="vertical" />
         {isProcessing ? (

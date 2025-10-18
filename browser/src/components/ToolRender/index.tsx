@@ -6,6 +6,7 @@ import GlobRenderComponent from './GlobRender';
 import GrepRenderComponent from './GrepRender';
 import LsRenderComponent from './LsRender';
 import ReadRenderComponent from './ReadRender';
+import TodoRenderComponent from './TodoRender';
 import WriteRenderComponent from './WriteRender';
 import { withDebugInfo } from './withDebugInfo';
 
@@ -18,3 +19,4 @@ export const ReadRender = withDebugInfo(ReadRenderComponent);
 export const EditRender = withDebugInfo(EditRenderComponent);
 export const WriteRender = withDebugInfo(WriteRenderComponent);
 export const FailRender = withDebugInfo(FailRenderComponent);
+export const TodoRender = withDebugInfo(TodoRenderComponent);

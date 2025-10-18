@@ -1,0 +1,538 @@
+/* McpAddForm Component Styles */
+
+/* Add Form Modal Styles - Based on Figma Design */
+.addFormModal :global(.ant-modal-content) {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 0 43.3px 13px rgba(100, 99, 119, 0.12);
+  border: none;
+  overflow: hidden;
+  width: 640px !important;
+  max-width: 640px !important;
+  height: 635px !important;
+  padding: 0;
+}
+
+.addFormModal :global(.ant-modal-header) {
+  background: #ffffff;
+  border-bottom: none;
+  padding: 24px 24px 0 24px;
+  margin: 0;
+}
+
+.addFormModal :global(.ant-modal-body) {
+  padding: 0;
+  background: #ffffff;
+  height: 535px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e0e0e0 transparent;
+}
+
+.addFormModal :global(.ant-modal-body)::-webkit-scrollbar {
+  width: 6px;
+}
+
+.addFormModal :global(.ant-modal-body)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.addFormModal :global(.ant-modal-body)::-webkit-scrollbar-thumb {
+  background-color: #e0e0e0;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.addFormModal :global(.ant-modal-body)::-webkit-scrollbar-thumb:hover {
+  background-color: #c0c0c0;
+}
+
+.addFormModal :global(.ant-modal-close) {
+  top: 24px;
+  right: 24px;
+  width: 16px;
+  height: 16px;
+  color: #666f8d;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.addFormModal :global(.ant-modal-close:hover) {
+  color: #374151;
+}
+
+.addFormModal :global(.ant-modal-footer) {
+  border-top: none;
+  padding: 0 24px 24px 24px;
+  text-align: right;
+  margin: 0;
+}
+
+/* Modal Header */
+.modalHeader {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.headerTitle {
+  color: #110c22;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+  font-family: "PingFang SC", sans-serif;
+}
+
+/* Modal Body */
+.modalBody {
+  padding: 24px;
+  height: calc(100% - 48px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: #e0e0e0 transparent;
+}
+
+.modalBody::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modalBody::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modalBody::-webkit-scrollbar-thumb {
+  background-color: #e0e0e0;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.modalBody::-webkit-scrollbar-thumb:hover {
+  background-color: #c0c0c0;
+}
+
+.form {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Settings Row - 设定描述和输入模式 */
+.settingsRow {
+  display: flex;
+  gap: 48px;
+  margin-bottom: 24px;
+}
+
+.settingGroup {
+  flex: 1;
+}
+
+.settingHeader {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.settingLabel {
+  color: #110c22;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "PingFang SC", sans-serif;
+}
+
+.questionIcon {
+  width: 16px;
+  height: 16px;
+  color: #85878a;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 16px;
+}
+
+.radioOption {
+  color: #110c22;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: "PingFang SC", sans-serif;
+}
+
+/* Radio button styling */
+.addFormModal :global(.ant-radio-wrapper) {
+  color: #110c22;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: "PingFang SC", sans-serif;
+}
+
+.addFormModal :global(.ant-radio-inner) {
+  border-color: #dcdde0;
+  background-color: #ffffff;
+}
+
+.addFormModal :global(.ant-radio-checked .ant-radio-inner) {
+  border-color: #7357ff;
+  background-color: #ffffff;
+}
+
+.addFormModal :global(.ant-radio-checked .ant-radio-inner::after) {
+  background-color: #7357ff;
+}
+
+/* Config Section */
+.configSection {
+  margin-bottom: 24px;
+}
+
+.jsonFormContainer {
+  width: 100%;
+}
+
+.jsonFormHeader {
+  margin-bottom: 8px;
+}
+
+.jsonTextArea {
+  background: #ffffff;
+  border: 1px solid #dcdde0;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: "PingFang SC", sans-serif;
+}
+
+.jsonTextArea:focus,
+.jsonTextArea:hover {
+  border-color: #7357ff;
+  box-shadow: none;
+}
+
+.jsonDescription {
+  color: #898b8f;
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: 8px;
+  opacity: 0.8;
+  font-family: "PingFang SC", sans-serif;
+}
+
+/* MCP Preview Section */
+.mcpPreviewSection {
+  background: #f9fbfe;
+  border: 1px solid #edeef0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.mcpPreviewHeader {
+  background: #f9fbfe;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 8px 8px 0 0;
+}
+
+.mcpLabel {
+  color: #252931;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: "PingFang SC", sans-serif;
+}
+
+.collapseIcon {
+  width: 16px;
+  height: 16px;
+  color: #12141a;
+}
+
+/* Continue Section */
+.continueSection {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 16px;
+}
+
+.continueButton {
+  height: 32px;
+  padding: 6px 16px;
+  background: #ffffff;
+  border: 1px solid #7357ff;
+  border-radius: 4px;
+  color: #7357ff;
+  font-size: 14px;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-family: "PingFang SC", sans-serif;
+}
+
+.continueButton:hover {
+  background: #f0f7ff;
+  border-color: #7357ff;
+  color: #7357ff;
+}
+
+.continueButton:focus {
+  background: #ffffff;
+  border-color: #7357ff;
+  color: #7357ff;
+  box-shadow: none;
+}
+
+/* Footer Buttons */
+.cancelButton {
+  height: 32px;
+  padding: 6px 16px;
+  background: #ffffff;
+  border: 1px solid #dcdde0;
+  border-radius: 26px;
+  color: #110c22;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: "PingFang SC", sans-serif;
+}
+
+.cancelButton:hover {
+  background: #f5f5f5;
+  border-color: #dcdde0;
+  color: #110c22;
+}
+
+.cancelButton:focus {
+  background: #ffffff;
+  border-color: #dcdde0;
+  color: #110c22;
+  box-shadow: none;
+}
+
+.confirmButton {
+  height: 32px;
+  padding: 6px 16px;
+  background: #110c22;
+  border: 1px solid #110c22;
+  border-radius: 26px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: "PingFang SC", sans-serif;
+}
+
+.confirmButton:hover {
+  background: #110c22 !important;
+  border-color: #110c22 !important;
+  color: #ffffff !important;
+}
+
+.confirmButton:focus {
+  background: #110c22 !important;
+  border-color: #110c22 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.confirmButton:active {
+  background: #110c22 !important;
+  border-color: #110c22 !important;
+  color: #ffffff !important;
+}
+
+/* Form Fields Styles - Based on Figma Design */
+.formFieldsContainer {
+  width: 100%;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e0e0e0 transparent;
+}
+
+.formFieldsContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.formFieldsContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.formFieldsContainer::-webkit-scrollbar-thumb {
+  background-color: #e0e0e0;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.formFieldsContainer::-webkit-scrollbar-thumb:hover {
+  background-color: #c0c0c0;
+}
+
+.formFieldsRow {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.formField {
+  flex: 1;
+}
+
+.formFieldFull {
+  width: 100%;
+}
+
+.fieldLabel {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.requiredMark {
+  color: #ff4050;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: "PingFang SC", sans-serif;
+}
+
+.formInput {
+  height: 32px;
+  background: #ffffff;
+  border: 1px solid #dcdde0;
+  border-radius: 4px;
+  color: #110c22;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: "PingFang SC", sans-serif;
+  padding: 6px 12px;
+}
+
+.formInput:focus,
+.formInput:hover {
+  border-color: #7357ff;
+  box-shadow: none;
+}
+
+.formInput::placeholder {
+  color: #aaabaf;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: "PingFang SC", sans-serif;
+}
+
+.formTextArea {
+  background: #ffffff;
+  border: 1px solid #dcdde0;
+  border-radius: 4px;
+  color: #110c22;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: "PingFang SC", sans-serif;
+  padding: 6px 12px;
+  resize: vertical;
+}
+
+/* Override Ant Design form item margins */
+.addFormModal :global(.ant-form-item) {
+  margin-bottom: 0;
+}
+
+.addFormModal :global(.ant-select-selector) {
+  height: 32px !important;
+  border: 1px solid #dcdde0 !important;
+  border-radius: 4px !important;
+  background: #ffffff !important;
+  padding: 6px 12px !important;
+  color: #110c22 !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  font-family: "PingFang SC", sans-serif !important;
+}
+
+.addFormModal :global(.ant-select-selector:hover) {
+  border-color: #7357ff !important;
+}
+
+.addFormModal :global(.ant-select-focused .ant-select-selector) {
+  border-color: #7357ff !important;
+  box-shadow: none !important;
+}
+
+.addFormModal :global(.ant-select-arrow) {
+  color: #898b8f;
+}
+
+.addFormModal :global(.ant-select-selection-placeholder) {
+  color: #aaabaf !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  font-family: "PingFang SC", sans-serif !important;
+}
+
+/* Multiple Form Container */
+.multipleFormContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Custom MessageWrapper for MCP Config Items */
+.mcpMessageWrapper {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Single Form Container */
+.singleFormContainer {
+  width: 100%;
+}
+
+.formSelect {
+  width: 100%;
+}
+
+/* Config Content Section */
+.configContentSection {
+  margin-top: 16px;
+}
+
+/* JSON Editor Styles */
+.jsonEditor {
+  width: 100%;
+  border: 1px solid #dcdde0;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.jsonEditor:hover {
+  border-color: #7357ff;
+}
+
+.jsonEditorError {
+  border-color: #ff4d4f !important;
+}
+
+.jsonEditorErrorMessage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #fff2f0;
+  border-top: 1px solid #ffccc7;
+  color: #ff4d4f;
+  font-size: 12px;
+  font-family: "PingFang SC", sans-serif;
+}
+
+.errorIcon {
+  font-size: 14px;
+}

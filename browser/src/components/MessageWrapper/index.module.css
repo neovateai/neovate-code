@@ -1,0 +1,224 @@
+/* MessageWrapper CSS Module */
+
+/* Container styles */
+.container {
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #ebebeb;
+  margin-bottom: 12px;
+  min-width: 789px;
+}
+
+/* Header styles */
+.header {
+  background-color: #f9fbfe;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  height: 36px;
+  min-height: 36px;
+}
+
+/* Header when content is collapsed */
+.headerCollapsed {
+  border-radius: 8px;
+}
+
+.headerExpandable {
+  cursor: pointer;
+}
+
+.headerNotExpandable {
+  cursor: default;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+/* Icon styles */
+.icon {
+  color: #666f8d;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Title styles */
+.title {
+  font-weight: 500;
+  color: #666f8d;
+  font-size: 12px;
+  line-height: 16px;
+  max-width: 375px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+/* Expand icon styles */
+.expandIcon {
+  transition: transform 0.3s ease-in-out;
+  cursor: pointer;
+}
+
+.arrowExpanded {
+  transform: rotate(180deg);
+}
+
+/* Status styles */
+.statusContainer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 14px;
+}
+
+.statusIcon {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statusText {
+  font-size: 12px;
+  line-height: 16px;
+  margin-left: 4px;
+  font-weight: 500;
+  color: #666f8d;
+}
+
+/* Action button styles */
+.actionButton {
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  color: #666f8d;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.actionButton:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.actionButton svg {
+  width: 14px;
+  height: 14px;
+}
+
+.actionButtonGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* When expand icon is shown, add margin to action button group */
+.actionButtonGroupWithExpandIcon {
+  margin-right: 8px;
+}
+
+/* Content styles */
+.content {
+  overflow: hidden;
+}
+
+.contentInner {
+  padding: 12px 16px 16px;
+}
+
+.scrollable {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollable::-webkit-scrollbar {
+  display: none;
+}
+
+/* Gradient mask styles */
+.gradientMaskTop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  pointer-events: none;
+  z-index: 10;
+  background: linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 1) 100%
+  );
+}
+
+.gradientMaskBottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  pointer-events: none;
+  z-index: 10;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 1) 100%
+  );
+}
+
+/* Content wrapper styles */
+.contentWrapper {
+  position: relative;
+}
+
+/* Footer styles */
+.footerContainer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.footerButton {
+  padding: 6px 22.5px;
+  border: solid 1px #f0f2f5;
+  border-radius: 40px;
+  font-family: PingFang SC;
+  font-weight: 400;
+  font-style: Regular;
+  font-size: 12px;
+  line-height: 130%;
+  letter-spacing: 0%;
+  text-align: center;
+
+  margin-bottom: 16px;
+  margin-right: 12px;
+  margin-top: 7px;
+}
+
+.footerButton:last-child {
+  margin-right: 16px;
+}
