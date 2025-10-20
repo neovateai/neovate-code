@@ -28,6 +28,9 @@ import {
 } from '@openai/agents';
 
 import { mergeConsecutiveSystemMessages } from './merge-consecutive-system-messages';
+import { removeImagePrefix } from './removeImagePrefix';
+
+const URL_PATTERN = /^https?:\/\//i;
 
 /**
  * @internal
@@ -78,11 +81,20 @@ export function itemsToLanguageV2Messages(
                   if (c.type === 'input_image') {
                     const image =
                       typeof c.image === 'string' ? c.image : c.image.id;
-                    // image = removeImagePrefix(image);
-                    const url = new URL(image);
+
+                    let data: string | URL;
+                    if (
+                      typeof image === 'string' &&
+                      URL_PATTERN.test(image.trim())
+                    ) {
+                      data = new URL(image.trim());
+                    } else {
+                      data = removeImagePrefix(image);
+                    }
+
                     return {
                       type: 'file',
-                      data: url,
+                      data,
                       mediaType: 'image/*',
                       providerOptions: {
                         ...(contentProviderData ?? {}),
