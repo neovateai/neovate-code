@@ -13,19 +13,19 @@ import type {
 import {
   createGenerationSpan,
   getLogger,
-  type Model,
-  type ModelRequest,
-  type ModelResponse,
-  type ModelSettingsToolChoice,
+  Model,
+  ModelRequest,
+  ModelResponse,
+  ModelSettingsToolChoice,
   protocol,
-  type ResponseStreamEvent,
+  ResponseStreamEvent,
   resetCurrentSpan,
-  type SerializedHandoff,
-  type SerializedOutputType,
-  type SerializedTool,
+  SerializedHandoff,
+  SerializedOutputType,
+  SerializedTool,
   setCurrentSpan,
-  type Usage,
-  type UserError,
+  Usage,
+  UserError,
   withGenerationSpan,
 } from '@openai/agents';
 import { isZodObject } from '@openai/agents/utils';
@@ -661,10 +661,7 @@ export class AiSdkModel implements Model {
         );
       }
 
-      console.log('aiSdkRequest', aiSdkRequest);
-      delete aiSdkRequest.tools;
       const { stream } = await this.#model.doStream(aiSdkRequest);
-      console.log('stream', stream);
 
       let started = false;
       let responseId: string | undefined;
@@ -674,7 +671,6 @@ export class AiSdkModel implements Model {
       let textOutput: protocol.OutputText | undefined;
 
       for await (const part of stream) {
-        console.log('part', part);
         if (!started) {
           started = true;
           yield { type: 'response_started' };
@@ -722,7 +718,6 @@ export class AiSdkModel implements Model {
             break;
           }
           case 'error': {
-            console.log('error', part.error);
             throw part.error;
           }
           default:

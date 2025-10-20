@@ -791,7 +791,7 @@ export const defaultModelCreator = (
   return createOpenAI({
     baseURL,
     apiKey,
-  })(name);
+  }).chat(name);
 };
 
 export const providers: ProvidersMap = {

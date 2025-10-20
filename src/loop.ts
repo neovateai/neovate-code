@@ -185,7 +185,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
         ) {
           switch (chunk.data.event.type) {
             case 'text-delta': {
-              const textDelta = chunk.data.event.textDelta;
+              const textDelta = chunk.data.event.delta;
               textBuffer += textDelta;
               text += textDelta;
               // Check if the current text has incomplete XML tags
@@ -202,7 +202,7 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
               break;
             }
             case 'reasoning':
-              await opts.onReasoning?.(chunk.data.event.textDelta);
+              await opts.onReasoning?.(chunk.data.event.delta);
               break;
             case 'finish':
               lastUsage = Usage.fromEventUsage(chunk.data.event.usage);
