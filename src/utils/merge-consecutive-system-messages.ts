@@ -1,4 +1,4 @@
-import type { LanguageModelV1Message } from '@ai-sdk/provider';
+import type { LanguageModelV2Message } from '@ai-sdk/provider';
 import { UserError } from '@openai/agents';
 import createDebug from 'debug';
 
@@ -22,10 +22,10 @@ const debug = createDebug('neovate:utils:merge-consecutive-system-messages');
  * @throws {UserError} When non-consecutive system messages are detected for restricted models
  */
 export function mergeConsecutiveSystemMessages(
-  messages: LanguageModelV1Message[],
+  messages: LanguageModelV2Message[],
   modelProvider: string,
   modelId?: string,
-): LanguageModelV1Message[] {
+): LanguageModelV2Message[] {
   // Early returns for performance
   if (
     process.env.TAKUMI_MERGE_SYSTEM_MESSAGES !== '1' ||
@@ -55,8 +55,8 @@ export function mergeConsecutiveSystemMessages(
     return messages;
   }
 
-  const mergedMessages: LanguageModelV1Message[] = [];
-  let consecutiveSystemMessages: LanguageModelV1Message[] = [];
+  const mergedMessages: LanguageModelV2Message[] = [];
+  let consecutiveSystemMessages: LanguageModelV2Message[] = [];
 
   const flushSystemMessages = () => {
     if (consecutiveSystemMessages.length === 0) return;
@@ -74,7 +74,7 @@ export function mergeConsecutiveSystemMessages(
       mergedMessages.push({
         role: 'system',
         content: mergedContent,
-        providerMetadata: firstSystemMessage.providerMetadata,
+        providerOptions: firstSystemMessage.providerOptions,
       });
     }
     consecutiveSystemMessages = [];

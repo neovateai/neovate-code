@@ -1,6 +1,6 @@
 import type { OpenAIProvider } from '@ai-sdk/openai';
 import type { AgentInputItem } from '@openai/agents';
-import type { LanguageModelV1 } from '@openrouter/ai-sdk-provider';
+import type { LanguageModelV2 } from '@openrouter/ai-sdk-provider';
 import defu from 'defu';
 import type { Config } from './config';
 import type { Context, ContextCreateOpts } from './context';
@@ -152,7 +152,7 @@ export type Plugin = {
       defaultModelCreator: (
         name: string,
         provider: Provider,
-      ) => LanguageModelV1;
+      ) => LanguageModelV2;
       createOpenAI: (options: any) => OpenAIProvider;
     },
   ) => Promise<ProvidersMap> | ProvidersMap;
