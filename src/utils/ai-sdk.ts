@@ -27,6 +27,8 @@ import {
   UserError,
 } from '@openai/agents';
 
+import { mergeConsecutiveSystemMessages } from './merge-consecutive-system-messages';
+
 /**
  * @internal
  * Converts a list of model items to a list of language model V2 messages.
@@ -442,6 +444,12 @@ export class AiSdkModel implements Model {
           ...input,
         ];
       }
+
+      input = mergeConsecutiveSystemMessages(
+        input,
+        this.#model.provider,
+        this.#model.modelId,
+      );
 
       const tools = request.tools.map((tool) =>
         toolToLanguageV2Tool(this.#model, tool),
