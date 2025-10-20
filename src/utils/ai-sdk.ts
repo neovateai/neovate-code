@@ -24,11 +24,8 @@ import {
   type SerializedOutputType,
   type SerializedTool,
   setCurrentSpan,
-  Usage,
   UserError,
-  withGenerationSpan,
 } from '@openai/agents';
-import { isZodObject } from '@openai/agents/utils';
 
 /**
  * @internal
@@ -77,7 +74,10 @@ export function itemsToLanguageV2Messages(
                     };
                   }
                   if (c.type === 'input_image') {
-                    const url = new URL(c.image as any);
+                    const image =
+                      typeof c.image === 'string' ? c.image : c.image.id;
+                    // image = removeImagePrefix(image);
+                    const url = new URL(image);
                     return {
                       type: 'file',
                       data: url,
@@ -401,189 +401,9 @@ export class AiSdkModel implements Model {
     this.#model = model;
   }
 
+  // @ts-ignore
   async getResponse(request: ModelRequest) {
-    return withGenerationSpan(async (span) => {
-      try {
-        span.spanData.model = this.#model.provider + ':' + this.#model.modelId;
-        span.spanData.model_config = {
-          provider: this.#model.provider,
-          model_impl: 'ai-sdk',
-        };
-
-        let input: LanguageModelV2Prompt =
-          typeof request.input === 'string'
-            ? [
-                {
-                  role: 'user',
-                  content: [{ type: 'text', text: request.input }],
-                },
-              ]
-            : itemsToLanguageV2Messages(this.#model, request.input);
-
-        if (request.systemInstructions) {
-          input = [
-            {
-              role: 'system',
-              content: request.systemInstructions,
-            },
-            ...input,
-          ];
-        }
-
-        const tools = request.tools.map((tool) =>
-          toolToLanguageV2Tool(this.#model, tool),
-        );
-
-        request.handoffs.forEach((handoff) => {
-          tools.push(handoffToLanguageV2Tool(this.#model, handoff));
-        });
-
-        if (span && request.tracing === true) {
-          span.spanData.input = input;
-        }
-
-        if (isZodObject(request.outputType)) {
-          throw new UserError('Zod output type is not yet supported');
-        }
-
-        const responseFormat: LanguageModelV2CallOptions['responseFormat'] =
-          getResponseFormat(request.outputType);
-
-        const aiSdkRequest: LanguageModelV2CallOptions = {
-          tools,
-          toolChoice: toolChoiceToLanguageV2Format(
-            request.modelSettings.toolChoice,
-          ),
-          prompt: input,
-          temperature: request.modelSettings.temperature,
-          topP: request.modelSettings.topP,
-          frequencyPenalty: request.modelSettings.frequencyPenalty,
-          presencePenalty: request.modelSettings.presencePenalty,
-          maxOutputTokens: request.modelSettings.maxTokens,
-          responseFormat,
-          abortSignal: request.signal,
-
-          ...(request.modelSettings.providerData ?? {}),
-        };
-
-        if (this.#logger.dontLogModelData) {
-          this.#logger.debug('Request sent');
-        } else {
-          this.#logger.debug('Request:', JSON.stringify(aiSdkRequest, null, 2));
-        }
-
-        const result = await this.#model.doGenerate(aiSdkRequest);
-
-        const output: ModelResponse['output'] = [];
-
-        const resultContent = (result as any).content ?? [];
-        const toolCalls = resultContent.filter(
-          (c: any) => c && c.type === 'tool-call',
-        );
-        const hasToolCalls = toolCalls.length > 0;
-        for (const toolCall of toolCalls) {
-          output.push({
-            type: 'function_call',
-            callId: toolCall.toolCallId,
-            name: toolCall.toolName,
-            arguments:
-              typeof toolCall.input === 'string'
-                ? toolCall.input
-                : JSON.stringify(toolCall.input ?? {}),
-            status: 'completed',
-            providerData: hasToolCalls ? result.providerMetadata : undefined,
-          });
-        }
-
-        // Some of other platforms may return both tool calls and text.
-        // Putting a text message here will let the agent loop to complete,
-        // so adding this item only when the tool calls are empty.
-        // Note that the same support is not available for streaming mode.
-        if (!hasToolCalls) {
-          const textItem = resultContent.find(
-            (c: any) => c && c.type === 'text' && typeof c.text === 'string',
-          );
-          if (textItem) {
-            output.push({
-              type: 'message',
-              content: [{ type: 'output_text', text: textItem.text }],
-              role: 'assistant',
-              status: 'completed',
-              providerData: (result as any).providerMetadata,
-            });
-          }
-        }
-
-        if (span && request.tracing === true) {
-          span.spanData.output = output;
-        }
-
-        const response = {
-          responseId: (result as any).response?.id ?? 'FAKE_ID',
-          usage: new Usage({
-            inputTokens: Number.isNaN((result as any).usage?.inputTokens)
-              ? 0
-              : ((result as any).usage?.inputTokens ?? 0),
-            outputTokens: Number.isNaN((result as any).usage?.outputTokens)
-              ? 0
-              : ((result as any).usage?.outputTokens ?? 0),
-            totalTokens:
-              (Number.isNaN((result as any).usage?.inputTokens)
-                ? 0
-                : ((result as any).usage?.inputTokens ?? 0)) +
-                (Number.isNaN((result as any).usage?.outputTokens)
-                  ? 0
-                  : ((result as any).usage?.outputTokens ?? 0)) || 0,
-          }),
-          output,
-          providerData: result,
-        } as const;
-
-        if (span && request.tracing === true) {
-          span.spanData.usage = {
-            // Note that tracing supports only input and output tokens for Chat Completions.
-            // So, we don't include other properties here.
-            input_tokens: response.usage.inputTokens,
-            output_tokens: response.usage.outputTokens,
-          };
-        }
-
-        if (this.#logger.dontLogModelData) {
-          this.#logger.debug('Response ready');
-        } else {
-          this.#logger.debug('Response:', JSON.stringify(response, null, 2));
-        }
-
-        return response;
-      } catch (error) {
-        if (error instanceof Error) {
-          span.setError({
-            message: request.tracing === true ? error.message : 'Unknown error',
-            data: {
-              error:
-                request.tracing === true
-                  ? String(error)
-                  : error instanceof Error
-                    ? error.name
-                    : undefined,
-            },
-          });
-        } else {
-          span.setError({
-            message: 'Unknown error',
-            data: {
-              error:
-                request.tracing === true
-                  ? String(error)
-                  : error instanceof Error
-                    ? error.name
-                    : undefined,
-            },
-          });
-        }
-        throw error;
-      }
-    });
+    throw new Error(`not implemented`);
   }
 
   async *getStreamedResponse(
