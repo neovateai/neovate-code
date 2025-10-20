@@ -841,7 +841,7 @@ export const providers: ProvidersMap = {
         },
         // fix Failed: OpenAI API key is missing
         apiKey: '',
-      })(name);
+      }).chat(name);
     },
   },
   openai: {
@@ -916,7 +916,7 @@ export const providers: ProvidersMap = {
       return createXai({
         baseURL: api,
         apiKey,
-      })(name);
+      }).chat(name);
     },
   },
   anthropic: {
@@ -941,7 +941,7 @@ export const providers: ProvidersMap = {
       return createAnthropic({
         apiKey,
         baseURL,
-      })(name);
+      }).chat(name);
     },
   },
   aihubmix: {
@@ -1019,7 +1019,7 @@ export const providers: ProvidersMap = {
       return createOpenRouter({
         apiKey,
         baseURL,
-      })(name);
+      }).chat(name);
     },
   },
   iflow: {
@@ -1059,7 +1059,7 @@ export const providers: ProvidersMap = {
       return createOpenAI({
         baseURL,
         apiKey,
-      })(name);
+      }).chat(name);
     },
   },
   'moonshotai-cn': {
@@ -1080,7 +1080,7 @@ export const providers: ProvidersMap = {
         baseURL,
         apiKey,
         // include usage information in streaming mode why? https://platform.moonshot.cn/docs/guide/migrating-from-openai-to-kimi#stream-模式下的-usage-值
-      })(name);
+      }).chat(name);
     },
   },
   groq: {
