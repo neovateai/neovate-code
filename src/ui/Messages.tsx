@@ -198,7 +198,11 @@ function User({ message }: { message: UserMessage }) {
       {isCanceled ? (
         <Text color={UI_COLORS.CANCELED}>User canceled the request</Text>
       ) : (
-        <Text>{text}</Text>
+        <Box>
+          <Text backgroundColor="#e0e0e0" color="#000000">
+            {text}{' '}
+          </Text>
+        </Box>
       )}
     </Box>
   );
@@ -215,7 +219,6 @@ function AssistantText({
     <Box
       flexDirection="column"
       marginTop={SPACING.MESSAGE_MARGIN_TOP}
-      marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
     >
       <Text bold color="#FF3070">
         {productName.toLowerCase()}
@@ -231,7 +234,6 @@ function ToolUse({ part }: { part: ToolUsePart }) {
   return (
     <Box
       marginTop={SPACING.MESSAGE_MARGIN_TOP}
-      marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
     >
       <Text bold color={UI_COLORS.TOOL}>
         {displayName || name}
@@ -289,7 +291,6 @@ function Thinking({ text }: { text: string }) {
     <Box
       flexDirection="column"
       marginTop={SPACING.MESSAGE_MARGIN_TOP}
-      marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
     >
       <Text bold color="gray">
         thinking
@@ -366,7 +367,6 @@ function ToolResult({ message }: { message: ToolMessage }) {
     <Box
       flexDirection="column"
       marginTop={SPACING.MESSAGE_MARGIN_TOP_TOOL_RESULT}
-      marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
     >
       <ToolResultItem part={part} />
     </Box>
