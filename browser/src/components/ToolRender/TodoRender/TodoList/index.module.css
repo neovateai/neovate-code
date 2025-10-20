@@ -1,0 +1,79 @@
+.todoList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.todoItem {
+  display: flex;
+  align-items: center;
+  padding: 6px 6px;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.todoItem:hover {
+  background-color: #f9fafb;
+}
+
+.todoCheckbox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+}
+
+.todoCheckboxPending {
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+}
+
+.loadingIcon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingSpinner {
+  width: 16px;
+  height: 16px;
+  color: #7357ff;
+  animation: spin 1s linear infinite;
+}
+
+.todoText {
+  font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.4285714285714286em;
+  color: #252931;
+  flex: 1;
+}
+
+.noTodos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+  color: #6b7280;
+}
+
+.noTodosText {
+  margin-top: 0.5rem;
+  font-size: 14px;
+}

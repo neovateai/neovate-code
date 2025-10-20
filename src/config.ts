@@ -299,7 +299,14 @@ export class ConfigManager {
 
       let newValue: any = value;
       if (BOOLEAN_CONFIG_KEYS.includes(key)) {
-        newValue = value === 'true';
+        if (typeof value === 'boolean') {
+          newValue = value;
+        } else {
+          newValue = value === 'true';
+        }
+      }
+      if (ARRAY_CONFIG_KEYS.includes(key)) {
+        newValue = JSON.parse(value);
       }
       if (OBJECT_CONFIG_KEYS.includes(key)) {
         newValue = JSON.parse(value);

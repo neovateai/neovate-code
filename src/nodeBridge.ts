@@ -22,6 +22,7 @@ import { Project } from './project';
 import { query } from './query';
 import { SessionConfigManager } from './session';
 import { SlashCommandManager } from './slashCommand';
+import { getFiles } from './utils/files';
 import { listDirectory } from './utils/list';
 import { randomUUID } from './utils/randomUUID';
 
@@ -134,6 +135,22 @@ class NodeHandlerRegistry {
         }
         return {
           success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'config.list',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        return {
+          success: true,
+          data: {
+            globalConfigDir: context.paths.globalConfigDir,
+            projectConfigDir: context.paths.projectConfigDir,
+            config: context.config,
+          },
         };
       },
     );
@@ -929,6 +946,25 @@ class NodeHandlerRegistry {
         });
         return {
           success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'utils.files.list',
+      async (data: { cwd: string; query?: string }) => {
+        const { cwd, query } = data;
+        const context = await this.getContext(cwd);
+        return {
+          success: true,
+          data: {
+            files: await getFiles({
+              cwd,
+              maxSize: 50,
+              productName: context.productName,
+              query: query || '',
+            }),
+          },
         };
       },
     );
