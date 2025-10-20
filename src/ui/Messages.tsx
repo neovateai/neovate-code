@@ -216,10 +216,7 @@ function AssistantText({
   productName: string;
 }) {
   return (
-    <Box
-      flexDirection="column"
-      marginTop={SPACING.MESSAGE_MARGIN_TOP}
-    >
+    <Box flexDirection="column" marginTop={SPACING.MESSAGE_MARGIN_TOP}>
       <Text bold color="#FF3070">
         {productName.toLowerCase()}
       </Text>
@@ -232,9 +229,7 @@ function ToolUse({ part }: { part: ToolUsePart }) {
   const { name, displayName } = part;
   const description = part.description;
   return (
-    <Box
-      marginTop={SPACING.MESSAGE_MARGIN_TOP}
-    >
+    <Box marginTop={SPACING.MESSAGE_MARGIN_TOP}>
       <Text bold color={UI_COLORS.TOOL}>
         {displayName || name}
       </Text>
@@ -288,10 +283,7 @@ function Assistant({
 
 function Thinking({ text }: { text: string }) {
   return (
-    <Box
-      flexDirection="column"
-      marginTop={SPACING.MESSAGE_MARGIN_TOP}
-    >
+    <Box flexDirection="column" marginTop={SPACING.MESSAGE_MARGIN_TOP}>
       <Text bold color="gray">
         thinking
       </Text>
