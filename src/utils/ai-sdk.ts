@@ -401,8 +401,7 @@ export class AiSdkModel implements Model {
     this.#model = model;
   }
 
-  // @ts-ignore
-  async getResponse(request: ModelRequest) {
+  async getResponse(request: ModelRequest): Promise<ModelResponse> {
     throw new Error(`not implemented`);
   }
 
