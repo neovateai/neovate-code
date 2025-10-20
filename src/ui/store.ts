@@ -346,14 +346,29 @@ export const useAppStore = create<AppStore>()(
       },
 
       send: async (message) => {
-        const { bridge, cwd, sessionId, planMode, status, pastedTextMap } =
-          get();
+        const {
+          bridge,
+          cwd,
+          sessionId,
+          planMode,
+          status,
+          pastedTextMap,
+          model,
+        } = get();
 
         bridge.request('utils.telemetry', {
           cwd,
           name: 'send',
           payload: { message, sessionId },
         });
+
+        if (!isSlashCommand(message) && !model) {
+          set({
+            status: 'failed',
+            error: 'Please select a model first (use /model command)',
+          });
+          return;
+        }
 
         // Check if processing, queue the message
         if (isExecuting(status)) {

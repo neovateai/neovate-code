@@ -1,3 +1,4 @@
+import path from 'path';
 import { compact } from './compact';
 import { type ApprovalMode, type Config, ConfigManager } from './config';
 import { CANCELED_MESSAGE_TEXT } from './constants';
@@ -929,6 +930,27 @@ class NodeHandlerRegistry {
         });
         return {
           success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'utils.checkGithubCopilotLogin',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const { GithubProvider } = await import('./providers/githubCopilot');
+        const githubDataPath = path.join(
+          context.paths.globalConfigDir,
+          'githubCopilot.json',
+        );
+        const githubProvider = new GithubProvider({ authFile: githubDataPath });
+        const token = await githubProvider.access();
+        return {
+          success: true,
+          data: {
+            loggedIn: !!token,
+          },
         };
       },
     );
