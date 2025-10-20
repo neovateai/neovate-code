@@ -83,11 +83,14 @@ interface ChatActions {
     message: string | null;
     planMode?: boolean;
     model?: string;
-  }): Promise<LoopResult>;
+  }): Promise<LoopResult | { success: false; error: Error }>;
   getSlashCommands(): Promise<CommandEntry[]>;
   getFiles(opts: { query?: string }): Promise<FileItem[]>;
   cancel(): Promise<void>;
-  setSummary(opts: { userPrompt: string; result: LoopResult }): Promise<void>;
+  setSummary(opts: {
+    userPrompt: string;
+    result: LoopResult | { success: false; error: Error };
+  }): Promise<void>;
 }
 
 export const state = proxy<ChatState>({
@@ -383,36 +386,53 @@ export const actions: ChatActions = {
     planMode?: boolean;
     model?: string;
   }) {
-    state.status = 'processing';
-    state.processingTokens = 0;
-    state.loading = true;
-    const { cwd, sessionId } = state;
-    let attachments: Array<FilePart | ImagePart> = [];
-
-    const response = (await clientActions.request('session.send', {
-      message: opts.message,
-      planMode: opts.planMode,
-      model: opts.model,
-      cwd,
-      sessionId,
-      attachments,
-    })) as LoopResult;
-
-    if (response.success) {
-      state.status = 'idle';
+    try {
+      state.status = 'processing';
       state.processingTokens = 0;
-    } else {
+      state.loading = true;
+      const { cwd, sessionId } = state;
+      let attachments: Array<FilePart | ImagePart> = [];
+
+      const response = (await clientActions.request('session.send', {
+        message: opts.message,
+        planMode: opts.planMode,
+        model: opts.model,
+        cwd,
+        sessionId,
+        attachments,
+      })) as LoopResult;
+
+      if (response.success) {
+        state.status = 'idle';
+        state.processingTokens = 0;
+      } else {
+        state.status = 'failed';
+        state.processingTokens = 0;
+        state.error = response.error?.message;
+        this.addMessage({
+          role: 'ui_display',
+          content: { type: 'error', text: response.error?.message },
+        });
+      }
+
+      state.loading = false;
+      return response;
+    } catch (error) {
+      console.error('Send message error:', error);
       state.status = 'failed';
       state.processingTokens = 0;
-      state.error = response.error?.message;
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      state.error = errorMessage;
       this.addMessage({
         role: 'ui_display',
-        content: { type: 'error', text: response.error?.message },
+        content: { type: 'error', text: errorMessage },
       });
+      return {
+        success: false,
+        error: error as Error,
+      };
     }
-
-    state.loading = false;
-    return response;
   },
 
   addMessage(messages: UIMessage | UIMessage[]) {
