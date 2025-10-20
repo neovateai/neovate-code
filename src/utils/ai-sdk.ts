@@ -13,16 +13,16 @@ import type {
 import {
   createGenerationSpan,
   getLogger,
-  Model,
-  ModelRequest,
-  ModelResponse,
-  ModelSettingsToolChoice,
+  type Model,
+  type ModelRequest,
+  type ModelResponse,
+  type ModelSettingsToolChoice,
   protocol,
-  ResponseStreamEvent,
+  type ResponseStreamEvent,
   resetCurrentSpan,
-  SerializedHandoff,
-  SerializedOutputType,
-  SerializedTool,
+  type SerializedHandoff,
+  type SerializedOutputType,
+  type SerializedTool,
   setCurrentSpan,
   Usage,
   UserError,
@@ -77,7 +77,7 @@ export function itemsToLanguageV2Messages(
                     };
                   }
                   if (c.type === 'input_image') {
-                    const url = new URL(c.image);
+                    const url = new URL(c.image as any);
                     return {
                       type: 'file',
                       data: url,
