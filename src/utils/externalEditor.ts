@@ -58,7 +58,7 @@ function getEditorCommand(): string | null {
   }
 
   // Try common editors on Unix-like systems
-  const candidates = ['code', 'vi', 'nano'];
+  const candidates = ['code', 'cursor', 'vi', 'nano'];
   for (const editor of candidates) {
     if (commandExists(editor)) {
       return editor;
@@ -101,8 +101,8 @@ export async function openExternalEditor(text: string): Promise<string | null> {
 
     // Prepare command with proper flags
     let command = editorCommand;
-    if (editorCommand === 'code') {
-      command = 'code -w'; // -w flag waits for window to close
+    if (['code', 'cursor'].includes(editorCommand)) {
+      command = `${editorCommand} -w`; // -w flag waits for window to close
     }
 
     // Switch to alternate screen buffer

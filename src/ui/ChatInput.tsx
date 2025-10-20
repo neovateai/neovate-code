@@ -193,7 +193,7 @@ export function ChatInput() {
         </Box>
         <Text color={borderColor}>{'─'.repeat(Math.max(0, columns))}</Text>
       </Box>
-      <StatusLine />
+      <StatusLine hasSuggestions={showSuggestions} />
       <Suggestion
         suggestions={slashCommands.suggestions}
         selectedIndex={slashCommands.selectedIndex}

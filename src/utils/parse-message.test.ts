@@ -382,4 +382,23 @@ Based on the weather data, it looks like a great day!`;
       });
     });
   });
+
+  it('当 tool_name 为空时，应该从 <name> 标签提取工具名）', () => {
+    const input = `<use_tool>
+<name>bash</name>
+<arguments>
+{"command": "git --no-pager diff --cached"}
+</arguments>
+</use_tool>`;
+
+    const result = parseMessage(input);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      type: 'tool_use',
+      name: 'bash',
+      params: { command: 'git --no-pager diff --cached' },
+      partial: false,
+    });
+  });
 });

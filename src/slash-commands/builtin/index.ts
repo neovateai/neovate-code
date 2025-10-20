@@ -11,6 +11,9 @@ import { createModelCommand } from './model';
 import { createOutputStyleCommand } from './output-style';
 import { createResumeCommand } from './resume';
 import { createReviewCommand } from './review';
+import { brainstormCommand } from './spec/brainstorm';
+import { executePlanCommand } from './spec/execute-plan';
+import { writePlanCommand } from './spec/write-plan';
 import { statusCommand } from './status';
 import { createTerminalSetupCommand } from './terminal-setup';
 
@@ -33,5 +36,8 @@ export function createBuiltinCommands(opts: {
     createTerminalSetupCommand(),
     compactCommand,
     statusCommand,
+    brainstormCommand,
+    writePlanCommand,
+    executePlanCommand,
   ];
 }

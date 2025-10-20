@@ -72,7 +72,7 @@ export function useInputHandlers() {
     if (value.trim() === '' || value.includes('@')) {
       resetTabTrigger();
     }
-  }, [inputState.state.value, resetTabTrigger]);
+  }, [inputState.state.value]);
 
   const handleSubmit = useCallback(async () => {
     const value = inputState.state.value.trim();
