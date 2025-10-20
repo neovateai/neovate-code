@@ -5,6 +5,7 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MCP_DEFAULTS } from '@/constants/mcp';
 import { useMcpServerLoader } from '@/hooks/useMcpServerLoader';
+import { actions as configActions } from '@/state/config';
 import type { McpManagerProps, McpManagerServer } from '@/types/mcp';
 import { containerEventHandlers } from '@/utils/eventUtils';
 import styles from './index.module.css';
@@ -39,7 +40,9 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
 
   useEffect(() => {
     if (visible) {
-      loadServers();
+      configActions.getConfig().then(() => {
+        loadServers();
+      });
     }
   }, [visible, loadServers]);
 

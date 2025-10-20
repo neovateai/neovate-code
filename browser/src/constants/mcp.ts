@@ -1,14 +1,4 @@
-import type { McpConfigItem, PresetMcpService } from '@/types/mcp';
-
-/**
- * MCP (Message Control Protocol) related constants
- */
-
-// LocalStorage keys
-export const MCP_STORAGE_KEYS = {
-  KNOWN_SERVICES: 'takumi-known-mcp-services',
-  SERVICE_CONFIGS: 'takumi-mcp-service-configs',
-} as const;
+import type { McpConfigItem } from '@/types/mcp';
 
 // Default values
 export const MCP_DEFAULTS = {
@@ -16,33 +6,6 @@ export const MCP_DEFAULTS = {
   SCOPE: 'project' as const,
   INPUT_MODE: 'json' as const,
 } as const;
-
-// Preset MCP services configuration
-export const PRESET_MCP_SERVICES: Omit<PresetMcpService, 'description'>[] = [
-  {
-    key: 'playwright',
-    name: '@playwright mcp',
-    config: {
-      name: '@playwright mcp',
-      command: 'npx',
-      args: ['@playwright/mcp@latest'],
-    },
-  },
-  {
-    key: 'figma',
-    name: 'Framelink Figma MCP',
-    config: {
-      name: 'Framelink Figma MCP',
-      command: 'npx',
-      args: [
-        '-y',
-        'figma-developer-mcp',
-        '--figma-api-key=YOUR-KEY',
-        '--stdio',
-      ],
-    },
-  },
-];
 
 // Preset service names for identification
 export const PRESET_SERVICE_NAMES = new Set([
@@ -56,7 +19,6 @@ export const MCP_KEY_PREFIXES = {
   PROJECT: 'project',
   DISABLED_GLOBAL: 'disabled-global',
   DISABLED_PROJECT: 'disabled-project',
-  PRESET: 'preset',
 } as const;
 
 // MCP menu item keys
@@ -65,20 +27,6 @@ export const MCP_MENU_KEYS = {
   SERVICES_HEADER: 'services-header',
   NO_SERVICES: 'no-services',
 } as const;
-
-// Helper function to get preset services with translations
-export const getPresetMcpServicesWithTranslations = (
-  t: (key: any) => string,
-): PresetMcpService[] => [
-  {
-    ...PRESET_MCP_SERVICES[0],
-    description: t('mcp.playwrightDescription'),
-  },
-  {
-    ...PRESET_MCP_SERVICES[1],
-    description: t('mcp.figmaDescription'),
-  },
-];
 
 export const getJsonExample = () => {
   return JSON.stringify(

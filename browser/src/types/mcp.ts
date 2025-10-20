@@ -1,27 +1,4 @@
-/**
- * MCP (Message Control Protocol) related type definitions
- */
-
-// Basic MCP server configuration
-export interface McpServerConfig {
-  command?: string;
-  args?: string[];
-  url?: string;
-  type?: 'sse' | 'stdio';
-  env?: Record<string, string>;
-  scope?: 'global' | 'project';
-}
-
-// MCP server instance for dropdown component
-export interface McpServer {
-  key: string;
-  name: string;
-  config: McpServerConfig;
-  installed: boolean;
-  scope: 'global' | 'project';
-}
-
-// MCP server instance for manager component
+import { type McpServerItemConfig } from '@/state/mcp';
 export interface McpManagerServer {
   key: string;
   name: string;
@@ -35,21 +12,9 @@ export interface McpManagerServer {
   isPreset?: boolean;
 }
 
-// Preset MCP service configuration
-export interface PresetMcpService {
-  key: string;
-  name: string;
-  description: string;
-  config: {
-    name: string;
-    command: string;
-    args: string[];
-  };
-}
-
 // JSON configuration format for adding services
 export interface JsonConfigFormat {
-  mcpServers?: Record<string, McpServerConfig>;
+  mcpServers?: Record<string, McpServerItemConfig>;
   name?: string;
   command?: string;
   args?: string[];
@@ -69,11 +34,6 @@ export interface FormValues {
   env?: string;
 }
 
-// Component props
-export interface McpDropdownProps {
-  loading?: boolean;
-}
-
 export interface McpManagerProps {
   visible: boolean;
   onClose: () => void;
@@ -88,20 +48,20 @@ export type McpTransportType = 'sse' | 'stdio';
 // API Response types
 export interface McpServersResponse {
   success: true;
-  servers: Record<string, McpServerConfig>;
+  servers: Record<string, McpServerItemConfig>;
   scope: 'global' | 'project';
 }
 
 export interface McpServerResponse {
   success: true;
-  server: McpServerConfig;
+  server: McpServerItemConfig;
   name: string;
 }
 
 export interface McpOperationResponse {
   success: true;
   message: string;
-  server?: McpServerConfig;
+  server?: McpServerItemConfig;
 }
 
 // API Request types
@@ -135,14 +95,14 @@ export interface UseMcpServerLoaderReturn {
   loading: boolean;
 
   // For McpDropdown
-  mcpServers: McpServer[];
+  mcpServers: McpServerItemConfig[];
   loadMcpServers: () => Promise<void>;
   handleToggleEnabled: (
     serverName: string,
     enabled: boolean,
     scope: string,
   ) => Promise<void>;
-  handleQuickAdd: (service: PresetMcpService) => Promise<void>;
+  handleQuickAdd: (service: McpServerItemConfig) => Promise<void>;
 
   // For McpManager
   managerServers: McpManagerServer[];
@@ -175,9 +135,9 @@ export interface UseMcpServicesOptions {
 
 export interface UseMcpServicesReturn {
   allKnownServices: Set<string>;
-  serviceConfigs: Map<string, McpServerConfig>;
+  serviceConfigs: Map<string, McpServerItemConfig>;
   updateKnownServices: (newServices: Set<string>) => void;
-  updateServiceConfigs: (newConfigs: Map<string, McpServerConfig>) => void;
+  updateServiceConfigs: (newConfigs: Map<string, McpServerItemConfig>) => void;
   loadMcpData: () => Promise<{
     globalServers: Record<string, unknown>;
     projectServers: Record<string, unknown>;
@@ -190,25 +150,12 @@ export interface UseMcpServicesReturn {
   ) => Promise<void>;
   initializeFromLocalStorage: () => {
     knownServices: Set<string>;
-    configs: Map<string, McpServerConfig>;
+    configs: Map<string, McpServerItemConfig>;
   };
 }
 
-// Component Props types
-export interface McpDropdownContentProps {
-  mcpServers: McpServer[];
-  presetMcpServices: PresetMcpService[];
-  onToggleService: (
-    serverName: string,
-    enabled: boolean,
-    scope: string,
-  ) => void;
-  onQuickAdd: (service: PresetMcpService) => void;
-  onOpenManager: () => void;
-}
-
 export interface McpServiceItemProps {
-  server: McpServer;
+  server: McpServerItemConfig;
   onToggle: (serverName: string, enabled: boolean, scope: string) => void;
 }
 

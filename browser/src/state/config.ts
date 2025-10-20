@@ -89,15 +89,14 @@ export const actions = {
   async set(key: keyof Config, value: any, isGlobal = false) {
     const { cwd } = chatState;
     state.loading = true;
+    const serializedValue =
+      typeof value === 'object' ? JSON.stringify(value) : String(value);
     const response = (await clientActions.request('config.set', {
       cwd,
       isGlobal,
       key,
-      value,
+      value: serializedValue,
     })) as NodeBridgeResponse;
-    await clientActions.request('project.clearContext', {
-      cwd,
-    });
 
     if (!response.success) {
       message.error(response.message || i18n.t('settings.updateError'));
@@ -120,9 +119,6 @@ export const actions = {
       key,
       values,
     })) as NodeBridgeResponse;
-    await clientActions.request('project.clearContext', {
-      cwd,
-    });
     if (!response.success) {
       message.error(response.message || i18n.t('settings.updateError'));
       state.loading = false;

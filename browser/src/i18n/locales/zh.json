@@ -180,6 +180,8 @@
     }
   },
   "mcp": {
+    "recommended": "推荐",
+
     "management": "MCP 管理",
     "services": "MCP 服务",
     "addServer": "添加 MCP",
@@ -215,9 +217,6 @@
     "available": "可用",
     "noConfiguration": "无 MCP 配置",
     "clickToStart": "点击\"添加服务器\"开始配置",
-    "noServicesAvailable": "无可用服务",
-    "playwrightDescription": "浏览器自动化和测试",
-    "figmaDescription": "Figma 设计集成",
     "mcpManagementTitle": "MCP 管理",
     "mcpServicesTitle": "MCP 服务",
     "globalScope": "全局",

@@ -180,6 +180,8 @@
     }
   },
   "mcp": {
+    "recommended": "Recommended",
+
     "management": "MCP Management",
     "services": "MCP Services",
     "addServer": "Add MCP Server",
@@ -215,9 +217,6 @@
     "available": "Available",
     "noConfiguration": "No MCP configuration",
     "clickToStart": "Click \"Add Server\" to start configuring",
-    "noServicesAvailable": "No services available",
-    "playwrightDescription": "Browser automation and testing",
-    "figmaDescription": "Figma design integration",
     "mcpManagementTitle": "MCP Management",
     "mcpServicesTitle": "MCP Services",
     "globalScope": "Global",
