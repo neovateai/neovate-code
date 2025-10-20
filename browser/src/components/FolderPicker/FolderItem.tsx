@@ -8,7 +8,7 @@ import type { FolderItemProps } from './types';
 
 const FolderItem: React.FC<FolderItemProps> = memo(
   ({ folder, onSelect, isSelected = false, level = 0 }) => {
-    const { t } = useTranslation();
+    const { t: _t } = useTranslation();
     const handleClick = useCallback(() => {
       onSelect(folder.path);
     }, [folder.path, onSelect]);

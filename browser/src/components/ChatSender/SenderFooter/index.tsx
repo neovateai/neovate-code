@@ -25,8 +25,8 @@ const SenderFooter: React.FC<{ components: ActionsComponents }> = ({
     <Flex justify="space-between" align="center">
       <Flex gap="small" align="center">
         <ModeSelect />
-        <McpDropdown />
         <Divider type="vertical" />
+        <McpDropdown />
       </Flex>
       <Flex align="center">
         <SenderAttachments />

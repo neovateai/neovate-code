@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMcpConfigManager } from '@/hooks/useMcpConfigManager';
 import { useMcpFormSubmit } from '@/hooks/useMcpFormSubmit';
-import type { FormValues, McpAddFormProps } from '@/types/mcp';
+import type { McpAddFormProps } from '@/types/mcp';
 import { containerEventHandlers } from '@/utils/eventUtils';
 import { McpAddMode } from './McpAddMode';
 import { McpEditMode } from './McpEditMode';
@@ -18,7 +18,7 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
   onScopeChange,
   editMode = false,
   editingServer,
-  onEditServer,
+  onEditServer: _onEditServer, // Mark as unused
 }) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
@@ -28,19 +28,7 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
     useMcpConfigManager();
 
   // Form submission hook
-  const { handleSubmit, contextHolder } = useMcpFormSubmit({
-    editMode,
-    editingServer,
-    addScope,
-    onEditServer,
-    onSuccess: () => {
-      form.resetFields();
-      if (!editMode) {
-        resetConfigs();
-      }
-      onSuccess();
-    },
-  });
+  const { handleAdd, handleEdit } = useMcpFormSubmit();
 
   // Pre-fill form when in edit mode
   useEffect(() => {
@@ -64,8 +52,25 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
     }
   }, [editMode, editingServer, visible, form]);
 
-  const handleFormSubmit = async (values: FormValues) => {
-    await handleSubmit(values, editMode ? undefined : mcpConfigs);
+  const handleFormSubmit = async (values: any) => {
+    try {
+      let success = false;
+      if (editMode && editingServer) {
+        success = await handleEdit(editingServer, values);
+      } else {
+        success = await handleAdd(values, addScope);
+      }
+
+      if (success) {
+        form.resetFields();
+        if (!editMode) {
+          resetConfigs();
+        }
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+    }
   };
 
   const handleCancel = () => {
@@ -78,7 +83,6 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
 
   return (
     <>
-      {contextHolder}
       <Modal
         title={
           <div className={styles.modalHeader}>

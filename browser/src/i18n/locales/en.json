@@ -181,6 +181,12 @@
   },
   "mcp": {
     "recommended": "Recommended",
+    "activeServers": "Active Servers",
+    "noActiveServers": "No active MCP servers",
+    "manage": "Manage",
+    "tools": "tools",
+    "addSuccess": "MCP server added successfully",
+    "updateSuccess": "MCP server updated successfully",
 
     "management": "MCP Management",
     "services": "MCP Services",

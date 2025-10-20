@@ -3,17 +3,18 @@ import { useSetState, useToggle } from 'ahooks';
 import { Button, Modal } from 'antd';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSnapshot } from 'valtio';
 import { MCP_DEFAULTS } from '@/constants/mcp';
-import { useMcpServerLoader } from '@/hooks/useMcpServerLoader';
-import { actions as configActions } from '@/state/config';
+import { actions as mcpActions, state as mcpState } from '@/state/mcp';
 import type { McpManagerProps, McpManagerServer } from '@/types/mcp';
 import { containerEventHandlers } from '@/utils/eventUtils';
 import styles from './index.module.css';
 import McpAddForm from './McpAddForm';
-import McpServerTable from './McpServerTable';
+import McpScopeTab from './McpScopeTab';
 
 const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
   const { t } = useTranslation();
+  const { managerData, loading } = useSnapshot(mcpState);
 
   // Form states
   const [showAddForm, { toggle: toggleAddForm }] = useToggle(false);
@@ -28,28 +29,46 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     addScope: MCP_DEFAULTS.SCOPE,
   });
 
-  // Use unified hook for server management
-  const {
-    managerServers: servers,
-    loading,
-    loadServers,
-    handleToggleService,
-    handleEditServer,
-    handleDeleteLocal,
-  } = useMcpServerLoader();
-
   useEffect(() => {
     if (visible) {
-      configActions.getConfig().then(() => {
-        loadServers();
-      });
+      mcpActions.getList();
     }
-  }, [visible, loadServers]);
+  }, [visible]);
+
+  // 转换数据格式为 McpManagerServer[]
+  const projectServers = React.useMemo(() => {
+    if (!managerData?.projectServers) return [];
+    return Object.entries(managerData.projectServers).map(([name, config]) => ({
+      name,
+      key: name,
+      scope: 'project' as const,
+      installed: true,
+      ...config,
+    }));
+  }, [managerData?.projectServers]);
+
+  const globalServers = React.useMemo(() => {
+    if (!managerData?.globalServers) return [];
+    return Object.entries(managerData.globalServers).map(([name, config]) => ({
+      name,
+      key: name,
+      scope: 'global' as const,
+      installed: true,
+      ...config,
+    }));
+  }, [managerData?.globalServers]);
+
+  const handleToggleService = async (server: McpManagerServer) => {
+    await mcpActions.toggleServer(server.name, server.scope, !server.disable);
+  };
+
+  const handleDeleteLocal = async (server: McpManagerServer) => {
+    await mcpActions.removeServer(server.name, server.scope);
+  };
 
   const handleAddSuccess = () => {
     toggleAddForm();
     setFormState({ inputMode: MCP_DEFAULTS.INPUT_MODE });
-    loadServers();
   };
 
   const handleAddCancel = () => {
@@ -70,13 +89,16 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
     toggleEditForm();
     setEditingServer(null);
     setFormState({ inputMode: MCP_DEFAULTS.INPUT_MODE });
-    loadServers();
   };
 
   const handleEditCancel = () => {
     toggleEditForm();
     setEditingServer(null);
     setFormState({ inputMode: MCP_DEFAULTS.INPUT_MODE });
+  };
+
+  const handleEditServer = async (server: McpManagerServer, newConfig: any) => {
+    await mcpActions.updateServer(server.name, newConfig, server.scope);
   };
 
   return (
@@ -102,11 +124,12 @@ const McpManager: React.FC<McpManagerProps> = ({ visible, onClose }) => {
       className={styles.modal}
     >
       <div {...containerEventHandlers}>
-        <McpServerTable
-          servers={servers}
+        <McpScopeTab
+          projectServers={projectServers}
+          globalServers={globalServers}
           loading={loading}
           onToggleService={handleToggleService}
-          onDeleteSuccess={loadServers}
+          onDeleteSuccess={() => mcpActions.getList()}
           onDeleteLocal={handleDeleteLocal}
           onEditServer={handleEditClick}
         />

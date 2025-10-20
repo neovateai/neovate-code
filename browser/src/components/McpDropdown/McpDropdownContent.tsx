@@ -1,146 +1,96 @@
-import { ApiOutlined } from '@ant-design/icons';
-import { Button, Divider } from 'antd';
+import { LoadingOutlined, SettingOutlined } from '@ant-design/icons';
+import { Button, List, Typography } from 'antd';
 import { createStyles } from 'antd-style';
-import { useMemo } from 'react';
+import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
-import {
-  actions as mcpActions,
-  type McpServerItemConfig,
-  state,
-} from '@/state/mcp';
-import McpServiceItem from './McpServiceItem';
+import { state } from '@/state/mcp';
 
 interface McpDropdownContentProps {
   onOpenManager: () => void;
 }
 
-const useStyles = createStyles(({ css }) => ({
-  recommendedTitle: css`
-    margin: 0;
-    padding: 12px 13px 2px 13px;
-    font-size: 12px;
-    color: #8f959e;
-    line-height: 1.4;
-    font-family: "PingFang SC", sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  `,
-  dropdownContainer: css`
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0px 4px 16px 0px rgba(37, 41, 49, 0.08);
-    border: 1px solid #eeeff0;
-    overflow: hidden;
-    width: 260px;
-  `,
-  serviceList: css`
-    padding: 4px 4px 8px 4px;
-  `,
-  divider: css`
-    margin: 8px 0;
-    border-color: #eeeff0;
-  `,
-  manageButtonContainer: css`
-    padding: 0 14px 14px 14px;
-    border-top: 1px solid #eeeff0;
-    padding-top: 12px;
-  `,
-  manageButton: css`
-    width: 100%;
-    height: 32px;
-    border-radius: 34px;
-    background-color: #f7f8fa;
-    border: 1px solid #f7f8fa;
-    color: #110c22;
-    font-size: 12px;
-    font-weight: 400;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
-
-    &:hover {
-      background-color: #eeeff0;
-      border-color: #eeeff0;
-    }
-
-    &:focus,
-    &:active {
-      outline: none;
-      box-shadow: none;
-    }
+const useStyle = createStyles(({ css }) => ({
+  item: css`
+    padding: 6px 0 !important;
   `,
 }));
 
 const McpDropdownContent: React.FC<McpDropdownContentProps> = ({
   onOpenManager,
 }) => {
-  const { styles } = useStyles();
-  const { mcpServers, recommendedMcpServices } = useSnapshot(state);
   const { t } = useTranslation();
+  const { activeServers, loading } = useSnapshot(state);
+  const { styles } = useStyle();
+  const itemCls = classNames(
+    'px-0 py-2 border-0 hover:bg-[#F8F7FF] rounded-[6px] transition-colors',
+    styles.item,
+  );
 
-  const recommendedList = useMemo(() => {
-    return recommendedMcpServices
-      .filter((item) => !mcpServers.some((server) => server.name === item.name))
-      .map((item) => ({
-        ...item,
-        disable: true,
-      }));
-  }, [recommendedMcpServices, mcpServers]) as McpServerItemConfig[];
-
-  const onToggle = async (
-    server: McpServerItemConfig,
-    isRecommended: boolean,
-  ) => {
-    if (isRecommended) {
-      await mcpActions.addMcpServer(server, false);
-    } else {
-      await mcpActions.toggleMcpServer(server, false);
-    }
-  };
-
-  const recommendedContent = useMemo(() => {
-    if (recommendedList.length === 0) {
-      return null;
-    }
-    return (
-      <>
-        <div className={styles.recommendedTitle}>{t('mcp.recommended')}</div>
-        {recommendedList.map((service) => (
-          <McpServiceItem
-            key={service.name}
-            server={service}
-            onToggle={(server) => onToggle(server, true)}
-            isRecommended={true}
-          />
-        ))}
-        {mcpServers.length > 0 && <Divider className={styles.divider} />}
-      </>
-    );
-  }, [recommendedList, mcpServers, styles.divider, t]);
+  const serverList = Object.entries(activeServers);
 
   return (
-    <div className={styles.dropdownContainer}>
-      <div className={styles.serviceList}>
-        {recommendedContent}
-        {mcpServers.map((service) => (
-          <McpServiceItem
-            key={service.name}
-            server={service as McpServerItemConfig}
-            onToggle={(server) => onToggle(server, false)}
-          />
-        ))}
-      </div>
-
-      <div className={styles.manageButtonContainer}>
-        <Button className={styles.manageButton} onClick={onOpenManager}>
-          <ApiOutlined />
-          {t('mcp.mcpManagementTitle')}
+    <div className="bg-white rounded-[12px] border border-[#F0F2F5] shadow-sm p-2">
+      <div className="flex items-center justify-between mb-3">
+        <Typography.Text className="text-[#110C22] font-medium text-sm">
+          {t('mcp.activeServers')} ({serverList.length})
+        </Typography.Text>
+        <Button
+          type="text"
+          size="small"
+          icon={<SettingOutlined className="text-[#666F8D]" />}
+          onClick={onOpenManager}
+          className="text-[#666F8D] hover:text-[#7357FF] hover:bg-[#F8F7FF] rounded-[6px] border-0"
+        >
+          {t('mcp.manage')}
         </Button>
       </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-4">
+          <LoadingOutlined className="text-[#7357FF]" />
+          <span className="ml-2 text-[#666F8D] text-sm">
+            {t('common.loading')}
+          </span>
+        </div>
+      ) : serverList.length === 0 ? (
+        <div className="text-[#666F8D] text-center py-4 text-sm">
+          {t('mcp.noActiveServers')}
+        </div>
+      ) : (
+        <List
+          size="small"
+          dataSource={serverList}
+          renderItem={([name, server]) => (
+            <List.Item className={itemCls}>
+              <div className="flex items-center justify-between w-full px-2">
+                <div className="flex items-center">
+                  <div
+                    className={`w-2 h-2 rounded-full mr-3 ${
+                      server.status === 'connected'
+                        ? 'bg-[#22C55E]'
+                        : server.status === 'failed'
+                          ? 'bg-[#EF4444]'
+                          : 'bg-[#9CA3AF]'
+                    }`}
+                  />
+                  <div>
+                    <div className="text-sm font-medium text-[#110C22]">
+                      {name}
+                    </div>
+                    <div className="text-xs text-[#666F8D]">
+                      {server.scope === 'project'
+                        ? t('mcp.project')
+                        : t('mcp.global')}{' '}
+                      | {server.toolCount} {t('mcp.tools')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </List.Item>
+          )}
+        />
+      )}
     </div>
   );
 };

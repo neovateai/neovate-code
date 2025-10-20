@@ -11,7 +11,7 @@ import {
 } from 'antd';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { removeMCPServer } from '@/api/mcpService';
+// import { removeMCPServer } from '@/api/mcpService';
 import type { McpManagerServer, McpServerTableProps } from '@/types/mcp';
 import styles from './index.module.css';
 
@@ -35,13 +35,8 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
     try {
       setDeleteLoading(true);
 
-      // If the service is enabled, call the API to close the service first
-      if (server.installed) {
-        await removeMCPServer(server.name, server.scope === 'global');
-      }
-
-      // Regardless of whether it is enabled, delete it completely from local storage
-      onDeleteLocal?.(server.name, server.scope);
+      // Delete it completely from local storage
+      await onDeleteLocal?.(server);
 
       messageApi.success(t('mcp.deleteSuccess', { name: server.name }));
       onDeleteSuccess?.();
@@ -72,8 +67,8 @@ const McpServerTable: React.FC<McpServerTableProps> = ({
       render: (record: McpManagerServer) => (
         <Switch
           checked={record.installed}
-          onChange={(checked) => {
-            onToggleService(record.name, checked, record.scope);
+          onChange={async (_checked) => {
+            await onToggleService(record);
           }}
           size="small"
           className={styles.mcpSwitch}

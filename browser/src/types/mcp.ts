@@ -1,4 +1,28 @@
-import { type McpServerItemConfig } from '@/state/mcp';
+import type { McpServerItemConfig } from '@/state/mcp';
+
+export interface McpServerWithStatus {
+  config: McpServerItemConfig;
+  status: 'pending' | 'connecting' | 'connected' | 'failed' | 'disconnected';
+  error?: string;
+  toolCount: number;
+  tools: string[];
+  scope: 'project' | 'global';
+}
+
+export interface McpManagerData {
+  projectServers: Record<string, McpServerItemConfig>;
+  globalServers: Record<string, McpServerItemConfig>;
+  activeServers: Record<string, McpServerWithStatus>;
+  projectConfigPath: string;
+  globalConfigPath: string;
+  isReady: boolean;
+  isLoading: boolean;
+}
+
+export interface McpScope {
+  scope: 'project' | 'global';
+}
+
 export interface McpManagerServer {
   key: string;
   name: string;
@@ -10,6 +34,7 @@ export interface McpManagerServer {
   env?: Record<string, string>;
   installed: boolean;
   isPreset?: boolean;
+  disable?: boolean;
 }
 
 // JSON configuration format for adding services
@@ -32,6 +57,15 @@ export interface FormValues {
   url?: string;
   transport?: 'sse' | 'stdio';
   env?: string;
+}
+
+export interface McpFormData {
+  name: string;
+  transport: 'sse' | 'stdio';
+  command?: string;
+  args?: string[];
+  url?: string;
+  env?: Record<string, string>;
 }
 
 export interface McpManagerProps {
@@ -162,13 +196,9 @@ export interface McpServiceItemProps {
 export interface McpServerTableProps {
   servers: McpManagerServer[];
   loading: boolean;
-  onToggleService: (
-    serverName: string,
-    enabled: boolean,
-    scope: string,
-  ) => void;
+  onToggleService: (server: McpManagerServer) => Promise<void>;
   onDeleteSuccess?: () => void;
-  onDeleteLocal?: (serverName: string, scope: string) => void;
+  onDeleteLocal?: (server: McpManagerServer) => Promise<void>;
   onEditServer?: (server: McpManagerServer) => void;
 }
 
@@ -182,19 +212,7 @@ export interface McpAddFormProps {
   onScopeChange: (scope: 'global' | 'project') => void;
   editMode?: boolean;
   editingServer?: McpManagerServer;
-  onEditServer?: (
-    originalName: string,
-    originalScope: string,
-    newConfig: {
-      name: string;
-      command?: string;
-      args?: string[];
-      url?: string;
-      transport?: string;
-      env?: string;
-      global?: boolean;
-    },
-  ) => Promise<void>;
+  onEditServer?: (server: McpManagerServer, newConfig: any) => Promise<void>;
 }
 
 export interface McpEditFormProps {
