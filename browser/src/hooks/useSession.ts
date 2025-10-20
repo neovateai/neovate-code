@@ -1,4 +1,4 @@
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useSearch } from '@tanstack/react-router';
 import { useRequest } from 'ahooks';
 import { message } from 'antd';
 import { initializeSession } from '@/api/session';
@@ -6,7 +6,6 @@ import { actions } from '@/state/chat';
 
 export const useSession = () => {
   const { sessionId, folder } = useSearch({ from: '/session/' });
-  const navigate = useNavigate();
 
   const { run: runSession, loading } = useRequest(
     (options: { resume?: string; cwd?: string }) =>
@@ -25,13 +24,14 @@ export const useSession = () => {
           });
 
           if (!params.resume) {
-            navigate({
-              to: '/session',
-              search: {
-                sessionId: result.data.sessionId,
-                folder: result.data.cwd,
-              },
-            });
+            // navigate({
+            //   to: '/session',
+            //   search: {
+            //     sessionId: result.data.sessionId,
+            //     folder: result.data.cwd,
+            //   },
+            // });
+            window.location.href = `/session?sessionId=${result.data.sessionId}&folder=${result.data.cwd}`;
           }
         } else {
           message.error(result.message);
@@ -40,7 +40,11 @@ export const useSession = () => {
     },
   );
 
-  const run = () => runSession({ resume: sessionId || undefined, cwd: folder });
+  const run = () =>
+    runSession({
+      resume: sessionId ? String(sessionId) : undefined,
+      cwd: folder,
+    });
 
   const newSession = () => runSession({ cwd: folder });
 
