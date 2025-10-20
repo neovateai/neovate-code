@@ -81,15 +81,15 @@ export function itemsToLanguageV2Messages(
                   if (c.type === 'input_image') {
                     const image =
                       typeof c.image === 'string' ? c.image : c.image.id;
+                    const isGeminiModel =
+                      model.modelId.includes('gemini') &&
+                      model.provider === 'google.generative-ai';
 
                     let data: string | URL;
-                    if (
-                      typeof image === 'string' &&
-                      URL_PATTERN.test(image.trim())
-                    ) {
-                      data = new URL(image.trim());
-                    } else {
+                    if (isGeminiModel && typeof image === 'string') {
                       data = removeImagePrefix(image);
+                    } else {
+                      data = new URL(image);
                     }
 
                     return {
