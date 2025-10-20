@@ -1,56 +1,58 @@
 import { memo, useMemo } from 'react';
 import { useStableValue } from '@/hooks/useStableValue';
-import type { UIMessage, UIMessageAnnotation } from '@/types/message';
-import { UIMessageType } from '@/types/message';
-import { mergeMessages } from '@/utils/mergeMessages';
+import type {
+  ReasoningPart,
+  TextPart,
+  UIAssistantMessage,
+  UIToolPart,
+} from '@/types/chat';
 import MarkdownRenderer from '../MarkdownRenderer';
-import ToolApprovalConfirmation from '../ToolApprovalConfirmation';
-import ToolApprovalError from '../ToolApprovalError';
-import ToolApprovalResult from '../ToolApprovalResult';
+import ApprovalModal from './ApprovalModal';
 import AssistantTextMessage from './AssistantTextMessage';
 import AssistantThinkingMessage from './AssistantThinkingMessage';
 import AssistantToolMessage from './AssistantToolMessage';
-
-interface MessageProps {
-  message: UIMessage;
-}
+import styles from './index.module.css';
 
 interface MessagePartProps {
-  part: UIMessageAnnotation;
-  index: number;
+  part: TextPart | ReasoningPart | UIToolPart;
+  uuid: string;
 }
 
-const MessagePart: React.FC<MessagePartProps> = memo(({ part, index }) => {
+const MessagePart: React.FC<MessagePartProps> = memo(({ part, uuid }) => {
   switch (part.type) {
-    case UIMessageType.Text:
-      return <AssistantTextMessage key={index} message={part} />;
-    case UIMessageType.Reasoning:
-      return <AssistantThinkingMessage key={index} message={part} />;
-    case UIMessageType.Tool:
-      return <AssistantToolMessage key={index} message={part} />;
-    case UIMessageType.ToolApprovalRequest:
-      return <ToolApprovalConfirmation key={index} message={part} />;
-    case UIMessageType.ToolApprovalResult:
-      return <ToolApprovalResult key={index} message={part} />;
-    case UIMessageType.ToolApprovalError:
-      return <ToolApprovalError key={index} message={part} />;
+    case 'text':
+      return <AssistantTextMessage key={uuid} part={part} />;
+    case 'reasoning':
+      return <AssistantThinkingMessage key={uuid} part={part} />;
+    case 'tool':
+      return (
+        <>
+          <AssistantToolMessage key={`${uuid}-${part.state}`} part={part} />
+          <ApprovalModal part={part} />
+        </>
+      );
     default:
       return (
-        <div key={index}>
+        <div key={uuid}>
           <MarkdownRenderer
-            content={`Unsupported message type: ${part.type}`}
+            content={`Unsupported message type: ${JSON.stringify(part)}`}
           />
         </div>
       );
   }
 });
 
-MessagePart.displayName = 'MessagePart';
+interface MessageProps {
+  message: UIAssistantMessage;
+}
 
 const AssistantMessage: React.FC<MessageProps> = ({ message }) => {
   const mergedMessages = useMemo(() => {
-    return mergeMessages(message.annotations);
-  }, [message.annotations]);
+    if (typeof message.content === 'string') {
+      return [{ type: 'text', text: message.content }] as TextPart[];
+    }
+    return message.content;
+  }, [message.content]);
 
   const messageParts = useStableValue(mergedMessages);
 
@@ -59,11 +61,11 @@ const AssistantMessage: React.FC<MessageProps> = ({ message }) => {
   }
 
   return (
-    <>
-      {messageParts.map((part, index) => (
-        <MessagePart key={`${part.type}-${index}`} part={part} index={index} />
+    <div className={styles.assistantMessage}>
+      {messageParts.map((part) => (
+        <MessagePart key={message.uuid} part={part} uuid={message.uuid} />
       ))}
-    </>
+    </div>
   );
 };
 

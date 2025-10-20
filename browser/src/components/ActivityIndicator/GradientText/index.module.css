@@ -1,0 +1,92 @@
+.gradientText {
+  display: inline-flex;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.character {
+  transition:
+    color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    text-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+  white-space: pre;
+  font-weight: 500;
+}
+
+.character.base {
+  color: #9ca3af; /* gray-400 */
+}
+
+.character.highlight {
+  color: #7c3aed; /* purple-600 */
+  text-shadow:
+    0 0 8px rgba(124, 58, 237, 0.5),
+    0 0 16px rgba(124, 58, 237, 0.3);
+  filter: brightness(1.1);
+  font-weight: 600;
+}
+
+.character.fade1 {
+  color: #8b5cf6; /* purple-500 */
+  font-weight: 500;
+}
+
+.character.fade2 {
+  color: #a78bfa; /* purple-400 */
+}
+
+.character.fade3 {
+  color: #c4b5fd; /* purple-300 */
+}
+
+.character.fade4 {
+  color: #ddd6fe; /* purple-200 */
+}
+
+/* 暗色主题适配 */
+@media (prefers-color-scheme: dark) {
+  .character.base {
+    color: #6b7280; /* gray-500 */
+  }
+
+  .character.highlight {
+    color: #a855f7; /* purple-500 */
+    text-shadow:
+      0 0 10px rgba(168, 85, 247, 0.6),
+      0 0 20px rgba(168, 85, 247, 0.4);
+    filter: brightness(1.2);
+    font-weight: 600;
+  }
+
+  .character.fade1 {
+    color: #9333ea; /* purple-600 */
+    font-weight: 500;
+  }
+
+  .character.fade2 {
+    color: #8b5cf6; /* purple-500 */
+  }
+
+  .character.fade3 {
+    color: #a78bfa; /* purple-400 */
+  }
+
+  .character.fade4 {
+    color: #c4b5fd; /* purple-300 */
+  }
+}
+
+/* 自定义颜色变量支持 */
+.gradientText[data-base-color] .character.base {
+  color: var(--base-color);
+}
+
+.gradientText[data-highlight-color] .character.highlight {
+  color: var(--highlight-color);
+}
+
+/* 动画暂停状态 */
+.gradientText.paused .character {
+  transition: none;
+}

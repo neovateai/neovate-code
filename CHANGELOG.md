@@ -1,3 +1,47 @@
+## 0.14.0
+
+`2025-10-16`
+
+- feat: add claude-haiku-4-5 model support by [@sorrycc](https://github.com/sorrycc)
+- fix: The provider VolcEngine issue by [@Wu Changming](https://github.com/Wu Changming) in [#319](https://github.com/umijs/takumi/pull/319)
+- fix: LSTool.execute result by [@Cloudyan](https://github.com/Cloudyan) in [#325](https://github.com/umijs/takumi/pull/325)
+- feat: add spec commands for brainstorming, planning, and execution by [@sorrycc](https://github.com/sorrycc)
+- feat: increase context and output limits for model by [@阿平](https://github.com/阿平) in [#324](https://github.com/umijs/takumi/pull/324)
+- feat(quiet): add telemetry hook to track messages with session id by [@阿平](https://github.com/阿平) in [#316](https://github.com/umijs/takumi/pull/316)
+- feat: implement conversation forking by @chencheng (云谦) in [#312](https://github.com/umijs/takumi/pull/312)
+- fix: handle missing global project directory in getLatestSessionId by [@sorrycc](https://github.com/sorrycc)
+- feat: add ZenMux provider with InclusionAI model support by [@明城](https://github.com/明城) in [#309](https://github.com/umijs/takumi/pull/309)
+- refactor: replace console.error with debug logging for directory access errors by [@阿平](https://github.com/阿平) in [#311](https://github.com/umijs/takumi/pull/311)
+- feat: filterMessages support fork by [@sorrycc](https://github.com/sorrycc)
+- refactor: update chat input layout and border styling by [@sorrycc](https://github.com/sorrycc)
+- feat: update global memory label to use dynamic product name by [@阿平](https://github.com/阿平) in [#308](https://github.com/umijs/takumi/pull/308)
+
+
+## 0.13.0
+
+`2025-10-10`
+
+- feat: add filename and dimensions to image paste placeholders by [@afc163](https://github.com/afc163) in [#296](https://github.com/umijs/takumi/pull/296)
+- feat: add ctrl-g external editor support for prompt editing by @chencheng (云谦) in [#307](https://github.com/umijs/takumi/pull/307)
+- fix: post-process chrome-devtools-mcp bundle to replace console.error call by [@sorrycc](https://github.com/sorrycc)
+- fix: update bundleMcps script to handle .mjs files and add browser module support by [@阿平](https://github.com/阿平) in [#306](https://github.com/umijs/takumi/pull/306)
+- fix: handle undefined provider env in getProviderApiKey by [@sorrycc](https://github.com/sorrycc)
+- feat: add empty apiKey field to copilot provider configuration by [@阿平](https://github.com/阿平) in [#305](https://github.com/umijs/takumi/pull/305)
+- Revert "feat: filter models by available API keys and improve documentation (…" by [@afc163](https://github.com/afc163) in [#304](https://github.com/umijs/takumi/pull/304)
+- feat: filter models by available API keys and improve documentation by [@Derek](https://github.com/Derek) in [#297](https://github.com/umijs/takumi/pull/297)
+- Merge branch 'sorrycc/chrome-devtools-mcp' by [@sorrycc](https://github.com/sorrycc)
+- feat: add browser integration with chrome-devtools-mcp support by [@sorrycc](https://github.com/sorrycc)
+- refactor: improve ignore pattern handling and add global gitignore support by [@sorrycc](https://github.com/sorrycc)
+- refactor: simplify user message detection and optimize at normalization by [@阿平](https://github.com/阿平) in [#300](https://github.com/umijs/takumi/pull/300)
+- feat: add glm-4.6 model support by [@sorrycc](https://github.com/sorrycc)
+- feat: support nested directory structure in command name extraction by [@阿平](https://github.com/阿平) in [#281](https://github.com/umijs/takumi/pull/281)
+- feat: update login command to use PaginatedGroupSelectInput by @chencheng (云谦) in [#303](https://github.com/umijs/takumi/pull/303)
+- feat: add memory rule submission with session message logging by [@sorrycc](https://github.com/sorrycc)
+- feat: add delete key handling and improve escape key behavior in text input components [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: support memory mode [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add support for JSON output styles and improve error handling by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.12.7
 
 `2025-10-02`

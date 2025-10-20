@@ -19,6 +19,16 @@ interface ToolUse {
 
 export type MessageContent = TextContent | ToolUse;
 
+/**
+ * 从文本中提取 <name> 标签的内容
+ * @param text 要搜索的文本
+ * @returns 提取的名称，如果不存在则返回 null
+ */
+function extractNameTag(text: string): string | null {
+  const match = text.match(/<name>(.*?)<\/name>/s);
+  return match ? match[1].trim() : null;
+}
+
 export function parseMessage(text: string): MessageContent[] {
   const contentBlocks: MessageContent[] = [];
 
@@ -27,6 +37,7 @@ export function parseMessage(text: string): MessageContent[] {
   let currentTextContent: TextContent | undefined;
 
   let currentToolUse: ToolUse | undefined; // 当前正在解析的工具使用对象
+  let toolUseStartIndex = 0; // 记录 <use_tool> 开始的位置
   // 当前正在解析的参数标签名 ('tool_name', 'arguments' 或 'argument')
   let currentParamName: 'tool_name' | 'arguments' | 'argument' | undefined;
   let currentParamValueStart = 0; // 当前参数值的起始索引
@@ -134,6 +145,17 @@ export function parseMessage(text: string): MessageContent[] {
         i >= TOOL_USE_CLOSE.length - 1 &&
         text.startsWith(TOOL_USE_CLOSE, i - TOOL_USE_CLOSE.length + 1)
       ) {
+        // 如果 tool_name 为空，尝试从 <name> 标签提取
+        if (currentToolUse.name === '') {
+          const toolUseText = text.slice(
+            toolUseStartIndex,
+            i - TOOL_USE_CLOSE.length + 1,
+          );
+          const nameFromTag = extractNameTag(toolUseText);
+          if (nameFromTag) {
+            currentToolUse.name = nameFromTag;
+          }
+        }
         currentToolUse.partial = false; // 标记为完整
         contentBlocks.push(currentToolUse);
         currentToolUse = undefined; // 重置工具状态
@@ -165,6 +187,7 @@ export function parseMessage(text: string): MessageContent[] {
         currentTextContent = undefined;
 
         // 开始一个新的工具使用块
+        toolUseStartIndex = i - TOOL_USE_OPEN.length + 1; // 记录开始位置
         currentToolUse = {
           type: 'tool_use',
           name: '',
@@ -222,6 +245,14 @@ export function parseMessage(text: string): MessageContent[] {
             };
           }
         }
+      }
+    }
+    // 若 tool_name 为空，尝试从 <name> 标签提取名称（兼容 Claude 4.5 返回 <name> 而不是 <tool_name> 的场景）
+    if (currentToolUse.name === '') {
+      const toolUseText = text.slice(toolUseStartIndex);
+      const nameFromTag = extractNameTag(toolUseText);
+      if (nameFromTag) {
+        currentToolUse.name = nameFromTag;
       }
     }
     // 整个工具块是不完整的，推入结果数组

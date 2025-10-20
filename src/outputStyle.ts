@@ -190,7 +190,7 @@ export function loadPolishedMarkdownFiles(
   });
   return files.map((relativePath) => {
     const absPath = path.join(dir, relativePath);
-    return loadPolishedMarkdownFile(absPath);
+    return loadPolishedMarkdownFile(absPath, dir);
   });
 }
 
@@ -204,12 +204,21 @@ function loadMarkdownFile(path: string): MarkdownFile {
   };
 }
 
-function loadPolishedMarkdownFile(filePath: string): NormalizedMarkdownFile {
+function loadPolishedMarkdownFile(
+  filePath: string,
+  dir?: string,
+): NormalizedMarkdownFile {
   if (!fs.existsSync(filePath)) {
     throw new Error(`Output style file not found: ${filePath}`);
   }
+
+  let name = path.basename(filePath, '.md');
   const file = loadMarkdownFile(filePath);
-  const name = path.basename(filePath, '.md');
+  if (dir) {
+    const relativePath = path.relative(dir, filePath);
+    // Extract command name from relative path (remove .md extension and convert / to :)
+    name = relativePath.replace(/\.md$/, '').replace(/[/\\]/g, ':');
+  }
   let description = file.attributes.description?.trim();
   if (!description) {
     const lines = file.body.split('\n');

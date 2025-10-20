@@ -13,18 +13,21 @@ export function MemoryModal() {
 }
 
 function MemoryModalContent() {
-  const { memoryModal } = useAppStore();
+  const { memoryModal, productName } = useAppStore();
 
   const selectOptions = useMemo(() => {
     const options = [
       { label: 'Project memory (./AGENTS.md)', value: 'project' },
-      { label: 'Global memory (~/.neovate/AGENTS.md)', value: 'global' },
+      {
+        label: `Global memory (~/.${productName.toLowerCase()}/AGENTS.md)`,
+        value: 'global',
+      },
     ].map((option, index) => ({
       label: `${index + 1}. ${option.label}`,
       value: option.value,
     }));
     return options;
-  }, []);
+  }, [productName]);
 
   useInput((input, key) => {
     const inputNum = parseInt(input, 10);

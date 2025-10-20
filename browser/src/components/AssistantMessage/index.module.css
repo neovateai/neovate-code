@@ -1,0 +1,10 @@
+.assistantMessage {
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0%;
+  color: #110c22;
+}
+
+.assistantFooterLoading {
+  width: 600px;
+}

@@ -1,11 +1,10 @@
 import { Box, Text, useInput } from 'ink';
 import path from 'path';
-import pc from 'picocolors';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { Paths } from '../../paths';
 import { GithubProvider } from '../../providers/githubCopilot';
-import PaginatedSelectInput from '../../ui/PaginatedSelectInput';
+import PaginatedGroupSelectInput from '../../ui/PaginatedGroupSelectInput';
 import { useAppStore } from '../../ui/store';
 import type { LocalJSXCommand } from '../types';
 
@@ -163,8 +162,12 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
 export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
   const { bridge, cwd, productName } = useAppStore();
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [providerItems, setProviderItems] = useState<
-    { label: string; value: string }[]
+  const [groupedProviders, setGroupedProviders] = useState<
+    Array<{
+      provider: string;
+      providerId: string;
+      models: Array<{ name: string; modelId: string; value: string }>;
+    }>
   >([]);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<LoginStep>('provider-selection');
@@ -189,29 +192,36 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
           const providersData = result.data.providers as Provider[];
           setProviders(providersData);
 
-          // Convert providers to label/value format with descriptions
-          const items = providersData.map((provider) => {
-            const descriptions: string[] = [];
+          // Group providers by category (we'll use a simple grouping for now)
+          const groups = [
+            {
+              provider: 'Providers',
+              providerId: 'all',
+              models: providersData.map((provider) => {
+                const descriptions: string[] = [];
 
-            // Add valid environment variables info
-            if (provider.validEnvs.length > 0) {
-              descriptions.push(`✓ Envs: ${provider.validEnvs.join(', ')}`);
-            }
+                // Add valid environment variables info
+                if (provider.validEnvs.length > 0) {
+                  descriptions.push(`✓ Envs: ${provider.validEnvs.join(', ')}`);
+                }
 
-            // Add API key status
-            if (provider.hasApiKey) {
-              descriptions.push('✓ Logged');
-            }
+                // Add API key status
+                if (provider.hasApiKey) {
+                  descriptions.push('✓ Logged');
+                }
 
-            const description = descriptions.join(' | ');
+                const description = descriptions.join(' | ');
 
-            return {
-              label: `${provider.name}${description ? ` → ${pc.gray(`(${description})`)}` : ''}`,
-              value: provider.id,
-            };
-          });
+                return {
+                  name: provider.name,
+                  modelId: description || provider.id,
+                  value: provider.id,
+                };
+              }),
+            },
+          ];
 
-          setProviderItems(items);
+          setGroupedProviders(groups);
           setLoading(false);
         }
       })
@@ -337,13 +347,6 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
     }
   }, [step, githubAuth, githubProvider, onExit]);
 
-  // Handle ESC key for provider selection step
-  useInput((_input, key) => {
-    if (step === 'provider-selection' && key.escape) {
-      handleProviderCancel();
-    }
-  });
-
   if (loading) {
     return (
       <Box
@@ -393,10 +396,12 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
         <Text color="gray">Select a provider to configure API key</Text>
       </Box>
       <Box>
-        <PaginatedSelectInput
-          items={providerItems}
+        <PaginatedGroupSelectInput
+          groups={groupedProviders}
           itemsPerPage={15}
+          enableSearch={true}
           onSelect={handleProviderSelect}
+          onCancel={handleProviderCancel}
         />
       </Box>
     </Box>

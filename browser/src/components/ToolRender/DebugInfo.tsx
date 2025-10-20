@@ -1,11 +1,11 @@
 import { RightOutlined } from '@ant-design/icons';
 import { useState } from 'react';
-import type { ToolMessage } from '@/types/message';
+import type { UIToolPart } from '@/types/chat';
 
-export default function DebugInfo({ message }: { message?: ToolMessage }) {
+export default function DebugInfo({ part }: { part?: UIToolPart }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  if (!import.meta.env.DEV || !message) {
+  if (!import.meta.env.DEV || !part) {
     return null;
   }
 
@@ -34,7 +34,7 @@ export default function DebugInfo({ message }: { message?: ToolMessage }) {
         }`}
       >
         <pre className="bg-gray-100 p-2 rounded whitespace-pre-wrap break-all">
-          {JSON.stringify(message, null, 2)}
+          {JSON.stringify(part, null, 2)}
         </pre>
       </div>
     </div>

@@ -6,6 +6,7 @@ import { ApprovalModal } from './ApprovalModal';
 import { ChatInput } from './ChatInput';
 import { Debug } from './Debug';
 import { ExitHint } from './ExitHint';
+import { ForkModal } from './ForkModal';
 import { Markdown } from './Markdown';
 import { Messages } from './Messages';
 import { QueueDisplay } from './QueueDisplay';
@@ -67,9 +68,11 @@ function PlanResult() {
 }
 
 export function App() {
-  const { forceRerender, forceUpdate } = useTerminalRefresh();
+  const { forceRerender } = useTerminalRefresh();
+  const { forkModalVisible, messages, fork, hideForkModal, forkParentUuid } =
+    useAppStore();
   return (
-    <Box flexDirection="column" key={forceRerender}>
+    <Box flexDirection="column" key={`${forceRerender}-${forkParentUuid}`}>
       <Messages />
       <PlanResult />
       <ActivityIndicator />
@@ -77,6 +80,17 @@ export function App() {
       <ChatInput />
       <SlashCommandJSX />
       <ApprovalModal />
+      {forkModalVisible && (
+        <ForkModal
+          messages={messages as any}
+          onSelect={(uuid) => {
+            fork(uuid);
+          }}
+          onClose={() => {
+            hideForkModal();
+          }}
+        />
+      )}
       <ExitHint />
       <Debug />
     </Box>

@@ -145,32 +145,29 @@ const CodeDiffOutlineHeader = (props: Props) => {
         </span>
         <DevFileIcon size={16} fileExt={path.split('.').pop() || ''} />
         <div className={styles.plainText}>{path}</div>
-        {showDiffActionsAndInfo && (
-          <>
-            {normalViewMode ? (
-              <div className={styles.itemLeftDiffStat}>
-                {normalViewMode === 'new' && (
-                  <>
-                    <span className={styles.add}>(new)</span>
-                    {renderAddLines(diffStat)}
-                  </>
-                )}
-                {normalViewMode === 'deleted' && (
-                  <>
-                    <span className={styles.remove}>(deleted)</span>
-                    {renderRemoveLines(diffStat)}
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className={styles.itemLeftDiffStat}>
-                {renderAddLines(diffStat)}
-                {renderRemoveLines(diffStat)}
-                <DiffStatBlocks diffStat={diffStat} />
-              </div>
-            )}
-          </>
-        )}
+        {showDiffActionsAndInfo &&
+          (normalViewMode ? (
+            <div className={styles.itemLeftDiffStat}>
+              {normalViewMode === 'new' && (
+                <>
+                  <span className={styles.add}>(new)</span>
+                  {renderAddLines(diffStat)}
+                </>
+              )}
+              {normalViewMode === 'deleted' && (
+                <>
+                  <span className={styles.remove}>(deleted)</span>
+                  {renderRemoveLines(diffStat)}
+                </>
+              )}
+            </div>
+          ) : (
+            <div className={styles.itemLeftDiffStat}>
+              {renderAddLines(diffStat)}
+              {renderRemoveLines(diffStat)}
+              <DiffStatBlocks diffStat={diffStat} />
+            </div>
+          ))}
         {editStatus === 'accept' && <CheckOutlined className={styles.add} />}
         {editStatus === 'reject' && <CloseOutlined className={styles.remove} />}
       </div>

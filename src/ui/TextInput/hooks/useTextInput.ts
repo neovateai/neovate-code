@@ -40,11 +40,12 @@ type UseTextInputProps = {
   invert: (text: string) => string;
   themeText: (text: string) => string;
   columns: number;
-  onImagePaste?: (base64Image: string) => void;
+  onImagePaste?: (base64Image: string, filename?: string) => void;
   disableCursorMovementForUpDownKeys?: boolean;
   externalOffset: number;
   onOffsetChange: (offset: number) => void;
   onTabPress?: (isShiftTab: boolean) => void;
+  onExternalEdit?: () => void;
 };
 
 type UseTextInputResult = {
@@ -75,6 +76,7 @@ export function useTextInput({
   externalOffset,
   onOffsetChange,
   onTabPress,
+  onExternalEdit,
 }: UseTextInputProps): UseTextInputResult {
   const offset = externalOffset;
   const setOffset = onOffsetChange;
@@ -202,6 +204,13 @@ export function useTextInput({
     ['d', handleCtrlD],
     ['e', () => cursor.endOfLine()],
     ['f', () => cursor.right()],
+    [
+      'g',
+      () => {
+        onExternalEdit?.();
+        return cursor;
+      },
+    ],
     ['h', () => cursor.backspace()],
     ['k', () => cursor.deleteToLineEnd()],
     ['l', () => clear()],

@@ -36,7 +36,7 @@ export function usePaths() {
         console.error('Failed to get paths:', error);
         setIsLoading(false);
       });
-  }, [bridge, cwd]);
+  }, [bridge, cwd, lastLoadTime]);
   return {
     paths,
     isLoading,
@@ -230,7 +230,7 @@ export function useFileSuggestion(
     if (hasQuery) {
       loadPaths();
     }
-  }, [hasQuery, query, loadPaths]);
+  }, [hasQuery, query]);
 
   useEffect(() => {
     setSelectedIndex(0);

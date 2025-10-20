@@ -72,7 +72,7 @@ export function useInputHandlers() {
     if (value.trim() === '' || value.includes('@')) {
       resetTabTrigger();
     }
-  }, [inputState.state.value, resetTabTrigger]);
+  }, [inputState.state.value]);
 
   const handleSubmit = useCallback(async () => {
     const value = inputState.state.value.trim();
@@ -259,8 +259,8 @@ export function useInputHandlers() {
   );
 
   const handleImagePaste = useCallback(
-    async (base64Data: string) => {
-      const result = await imageManager.handleImagePaste(base64Data);
+    async (base64Data: string, filename?: string) => {
+      const result = await imageManager.handleImagePaste(base64Data, filename);
       if (result.success && result.prompt) {
         return { prompt: result.prompt };
       }

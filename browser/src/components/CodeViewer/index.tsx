@@ -1,14 +1,7 @@
 import { VerticalLeftOutlined } from '@ant-design/icons';
-import { loader } from '@monaco-editor/react';
 import { Tabs, type TabsProps } from 'antd';
 import { createStyles } from 'antd-style';
-import * as monaco from 'monaco-editor';
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
-import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useSnapshot } from 'valtio';
 import { actions, state } from '@/state/codeViewer';
 import type {
@@ -18,31 +11,6 @@ import type {
 import DevFileIcon from '../DevFileIcon';
 import CodeDiffView from './CodeDiffView';
 import CodeNormalView from './CodeNormalView';
-
-// Monaco editor config
-self.MonacoEnvironment = {
-  getWorker(_, label) {
-    if (label === 'json') {
-      return new jsonWorker();
-    }
-    if (label === 'css' || label === 'scss' || label === 'less') {
-      return new cssWorker();
-    }
-    if (label === 'html' || label === 'handlebars' || label === 'razor') {
-      return new htmlWorker();
-    }
-    if (label === 'typescript' || label === 'javascript') {
-      return new tsWorker();
-    }
-    return new editorWorker();
-  },
-};
-
-loader.config({
-  monaco: monaco,
-});
-
-loader.init();
 
 const useStyle = createStyles(({ css, token }) => {
   return {

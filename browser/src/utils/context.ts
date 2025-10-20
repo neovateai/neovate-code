@@ -1,3 +1,8 @@
+import type { ImageItem } from '@/api/model';
+import { ContextType } from '@/constants/context';
+import type { FileItem, SlashCommand } from '@/types/chat';
+import type { ContextItem, ContextStoreValue } from '@/types/context';
+
 export async function imageUrlToBase64(url: string) {
   return new Promise<string>((resolve) => {
     const canvas = document.createElement('canvas');
@@ -28,7 +33,7 @@ export async function imageUrlToBase64(url: string) {
   });
 }
 
-// 根据图片 src 猜测 mime 类型
+// Guess mime type based on image src
 export function guessImageMime(src: string): string {
   if (src.startsWith('data:')) {
     const match = src.match(/^data:(image\/[a-zA-Z0-9.+-]+)[;,]/);
@@ -45,4 +50,38 @@ export function guessImageMime(src: string): string {
     return 'image/svg+xml';
   }
   return 'image/png';
+}
+
+export function storeValueToContextItem(
+  storeValue: ContextStoreValue,
+  type: ContextType,
+): ContextItem | null {
+  switch (type) {
+    case ContextType.FILE:
+      return {
+        type: ContextType.FILE,
+        value: (storeValue as FileItem).path,
+        displayText: (storeValue as FileItem).name,
+        context: storeValue,
+      };
+
+    case ContextType.IMAGE:
+      return {
+        type: ContextType.IMAGE,
+        value: (storeValue as ImageItem).src,
+        displayText: 'Image',
+        context: storeValue,
+      };
+
+    case ContextType.SLASH_COMMAND:
+      return {
+        type: ContextType.SLASH_COMMAND,
+        value: (storeValue as SlashCommand).name,
+        displayText: (storeValue as SlashCommand).name,
+        context: storeValue,
+      };
+
+    default:
+      return null;
+  }
 }

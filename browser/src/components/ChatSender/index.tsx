@@ -1,20 +1,22 @@
 import { Sender } from '@ant-design/x';
+import { Spin } from 'antd';
 import { createStyles } from 'antd-style';
-import { differenceWith } from 'lodash-es';
+import type Quill from 'quill';
+import { type Bounds, Delta } from 'quill';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
-import { AI_CONTEXT_NODE_CONFIGS, ContextType } from '@/constants/context';
-import { useChatState } from '@/hooks/provider';
+import { ContextType } from '@/constants/context';
+import { useChatPaste } from '@/hooks/useChatPaste';
 import { useSuggestion } from '@/hooks/useSuggestion';
+import { actions, state } from '@/state/chat';
 import * as context from '@/state/context';
-import { actions, state } from '@/state/sender';
-import { getInputInfo } from '@/utils/chat';
-import SuggestionList from '../SuggestionList';
-import LexicalTextArea from './LexicalTextArea';
-import { LexicalTextAreaContext } from './LexicalTextAreaContext';
+import * as sender from '@/state/sender';
+import QuillEditor, { KeyCode } from '../QuillEditor';
+import type { ContextBlotData } from '../QuillEditor/ContextBlot';
+import { QuillContext } from '../QuillEditor/QuillContext';
+import SuggestionList, { type ISuggestionListRef } from '../SuggestionList';
 import SenderFooter from './SenderFooter';
-import SenderFooterBoard from './SenderFooterBoard';
 import SenderHeader from './SenderHeader';
 
 const useStyle = createStyles(({ token, css }) => {
@@ -49,108 +51,155 @@ const useStyle = createStyles(({ token, css }) => {
 
 const ChatSender: React.FC = () => {
   const { styles } = useStyle();
-  const { loading, stop, onQuery } = useChatState();
   const { t } = useTranslation();
-  const [insertNodePosition, setInsertNodePosition] = useState(0);
+  const { status } = useSnapshot(state);
+  const { prompt } = useSnapshot(sender.state);
 
   const [openPopup, setOpenPopup] = useState(false);
+  const [inputText, setInputText] = useState<string>('');
+  const [atIndex, setAtIndex] = useState<number>();
+  const [bounds, setBounds] = useState<Bounds>();
+  const [searchingInEditor, setSearchingInEditor] = useState(false);
+  const [searchText, setSearchText] = useState<string>();
+  const quill = useRef<Quill>(null);
+  const suggestionListRef = useRef<ISuggestionListRef>(null);
 
-  const prevInputValue = useRef<string>(state.prompt);
-  const { prompt } = useSnapshot(state);
+  const { isPasting, handlePaste, contextHolder } = useChatPaste();
 
   const {
     defaultSuggestions,
     handleSearch,
-    getOriginalContextByValue,
     loading: suggestionLoading,
   } = useSuggestion();
 
   const handleSubmit = () => {
-    onQuery({
-      prompt,
-      attachedContexts: context.state.attachedContexts,
-      originalContent: state.plainText,
-    });
-    actions.updatePrompt('');
+    actions.send(prompt, sender.state.delta);
+    setInputText('');
+    sender.actions.updatePrompt('');
+    sender.actions.updateDelta(new Delta());
+    quill.current?.setText('\n');
   };
 
   const handleEnterPress = () => {
-    if (!loading && prompt.trim()) {
-      handleSubmit();
-    }
+    // if (!loading && prompt.trim()) {
+    handleSubmit();
+    // }
   };
 
   return (
-    <>
-      <LexicalTextAreaContext.Provider
+    <Spin spinning={isPasting}>
+      <QuillContext
         value={{
-          onEnterPress: handleEnterPress,
-          onChangeNodes: (prevNodes, nextNodes) => {
-            // remove old nodes
-            differenceWith(prevNodes, nextNodes, (prev, next) => {
-              return prev.originalText === next.originalText;
-            }).forEach((node) => {
-              context.actions.removeContext(node.originalText);
-            });
-
-            // add new nodes
-            differenceWith(nextNodes, prevNodes, (next, prev) => {
-              return next.originalText === prev.originalText;
-            }).forEach((node) => {
-              const contextItem = getOriginalContextByValue(
-                node.type,
-                node.displayText,
-              );
-              if (contextItem) {
-                context.actions.addContext(contextItem);
-              }
-            });
-          },
-          value: prompt,
-          onChange: (markedText, plainText) => {
-            const { isInputingAiContext, position } = getInputInfo(
-              prevInputValue.current,
-              markedText,
-            );
-            if (isInputingAiContext) {
-              setInsertNodePosition(position);
+          onInputAt: (inputing, index, bounds) => {
+            if (inputing) {
               setOpenPopup(true);
-            } else {
-              setOpenPopup(false);
+              setBounds(bounds);
+              setAtIndex(index);
             }
-            prevInputValue.current = markedText;
-            actions.updatePrompt(markedText);
-            actions.updatePlainText(plainText);
           },
-          onPastingImage: (loading) => {
-            context.actions.setContextLoading(loading);
+          searchingAtIndex: searchingInEditor ? atIndex : undefined,
+          onExitSearch: () => {
+            setSearchText(undefined);
+            setOpenPopup(false);
+            setSearchingInEditor(false);
           },
-          aiContextNodeConfigs: AI_CONTEXT_NODE_CONFIGS,
-          namespace: 'SenderTextarea',
+          onSearch: (text) => setSearchText(text),
+          onQuillLoad: (quillInstance) => {
+            quillInstance.focus();
+            quill.current = quillInstance;
+          },
+          onKeyDown: (code) => {
+            if (
+              code === KeyCode.Enter &&
+              quill.current?.hasFocus() &&
+              !openPopup
+            ) {
+              handleEnterPress();
+            }
+          },
+          onNativeKeyDown: (e) => {
+            if (searchingInEditor) {
+              suggestionListRef.current?.triggerKeyDown(e);
+            }
+          },
+          onChange: (text, delta) => {
+            // rich text will auto add '\n' at the end
+            setInputText(text.trimEnd());
+            sender.actions.updatePrompt(text.trimEnd());
+            sender.actions.updateDelta(delta);
+          },
+          onDeleteContexts: (values) => {
+            values.forEach((value) => {
+              context.actions.removeContext(value);
+            });
+          },
         }}
       >
         <SuggestionList
+          ref={suggestionListRef}
           loading={suggestionLoading}
           className={styles.suggestion}
           open={openPopup}
-          onOpenChange={(open) => setOpenPopup(open)}
+          onOpenChange={(open) => {
+            setOpenPopup(open);
+            if (!open) {
+              setSearchingInEditor(false);
+            }
+          }}
           items={defaultSuggestions}
           onSearch={(type, text) => {
-            return handleSearch(type as ContextType, text);
+            handleSearch(type as ContextType, text);
           }}
-          onSelect={(type, itemValue) => {
+          onSelect={(_type, _itemValue, contextItem) => {
             setOpenPopup(false);
-            const contextItem = getOriginalContextByValue(
-              type as ContextType,
-              itemValue,
-            );
+            setSearchingInEditor(false);
             if (contextItem) {
-              const nextInputValue =
-                prompt.slice(0, insertNodePosition) +
-                contextItem.value +
-                prompt.slice(insertNodePosition + 1);
-              actions.updatePrompt(nextInputValue);
+              context.actions.addContext(contextItem);
+
+              if (atIndex !== undefined) {
+                const delIndex = Math.max(0, atIndex - 1);
+
+                // delete the @
+                quill.current?.deleteText(
+                  delIndex,
+                  (searchText?.length ?? 0) + 1,
+                );
+
+                // insert the context
+                quill.current?.insertEmbed(
+                  delIndex,
+                  'takumi-context',
+                  {
+                    text: contextItem.displayText,
+                    value: contextItem.value,
+                    prefix:
+                      contextItem.type === ContextType.SLASH_COMMAND
+                        ? '/'
+                        : '@',
+                    prompt:
+                      contextItem.type === ContextType.SLASH_COMMAND
+                        ? '' // command blot won't have prompt
+                        : undefined,
+                  } as ContextBlotData,
+                  'user',
+                );
+
+                // insert a space to get focus
+                quill.current?.insertText(delIndex + 1, ' ');
+
+                // set the selection
+                quill.current?.setSelection(delIndex + 2, 0, 'user');
+              }
             }
+          }}
+          onLostFocus={() => quill.current?.focus()}
+          offset={{ top: (bounds?.top ?? -50) + 50, left: bounds?.left ?? 0 }}
+          searchControl={{
+            searchText,
+            onSearchStart: () => {
+              quill.current?.focus();
+              setSearchingInEditor(true);
+            },
           }}
         >
           <Sender
@@ -161,24 +210,24 @@ const ChatSender: React.FC = () => {
               return <SenderFooter components={components} />;
             }}
             onSubmit={handleSubmit}
-            // onKeyDown={onKeyDown}
+            onPaste={handlePaste}
             onCancel={() => {
-              stop();
+              actions.cancel();
             }}
-            value={prompt}
-            loading={loading}
+            value={inputText}
+            loading={status === 'processing'}
             allowSpeech
             actions={false}
+            submitType="enter"
             components={{
-              // @ts-ignore
-              input: LexicalTextArea,
+              input: QuillEditor,
             }}
             placeholder={t('chat.inputPlaceholder')}
           />
         </SuggestionList>
-        <SenderFooterBoard />
-      </LexicalTextAreaContext.Provider>
-    </>
+      </QuillContext>
+      {contextHolder}
+    </Spin>
   );
 };
 

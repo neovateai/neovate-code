@@ -1,0 +1,121 @@
+.breadcrumbContainer {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+}
+
+.breadcrumb {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.breadcrumb .ant-breadcrumb {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.breadcrumb .ant-breadcrumb ol {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.breadcrumb .ant-breadcrumb-link {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #6366f1;
+  transition: all 0.2s ease;
+}
+
+.breadcrumbButton {
+  padding: 6px 6px;
+  height: auto;
+  font-size: 14px;
+  color: #6366f1;
+  border: none;
+  box-shadow: none;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.breadcrumbButton:hover {
+  color: #4f46e5;
+  background: rgba(99, 102, 241, 0.08);
+  transform: none;
+}
+
+.breadcrumbButton:focus {
+  color: #4f46e5;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.15) 0%,
+    rgba(139, 92, 246, 0.15) 100%
+  );
+  outline: none;
+}
+
+.currentPath {
+  color: #1f2937;
+  font-weight: 600;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: 6px;
+  border: none;
+}
+
+.separator {
+  color: #9ca3af;
+  font-size: 12px;
+  margin: 0 8px;
+  opacity: 0.7;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .breadcrumb .ant-breadcrumb-link {
+    max-width: 80px;
+  }
+
+  .breadcrumbButton {
+    max-width: 80px;
+    font-size: 12px;
+    padding: 1px 4px;
+  }
+
+  .currentPath {
+    max-width: 100px;
+    font-size: 12px;
+  }
+
+  .separator {
+    margin: 0 2px;
+  }
+}
+
+/* Ensure breadcrumb items are vertically centered */
+.breadcrumb .ant-breadcrumb li {
+  display: flex;
+  align-items: center;
+}

@@ -1,8 +1,8 @@
-import type { ToolMessage } from '@/types/message';
+import type { UIToolPart } from '@/types/chat';
 import DebugInfo from './DebugInfo';
 
 interface ToolRenderProps {
-  message?: ToolMessage;
+  part?: UIToolPart;
 }
 
 export function withDebugInfo<P extends ToolRenderProps>(
@@ -12,7 +12,7 @@ export function withDebugInfo<P extends ToolRenderProps>(
     return (
       <div>
         <WrappedComponent {...props} />
-        <DebugInfo message={props.message} />
+        <DebugInfo part={props.part} />
       </div>
     );
   };

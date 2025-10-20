@@ -29,6 +29,32 @@
     "settings": "Settings",
     "help": "Help"
   },
+  "conversations": {
+    "title": "History",
+    "empty": "No conversations yet",
+    "unnamed": "Unnamed conversation"
+  },
+  "welcome": {
+    "title": "I'm {{productName}}, your development partner",
+    "capabilitiesTitle": "My Capabilities",
+    "introduceCapability": "Please introduce the features of {{capability}}",
+    "llmSupport": {
+      "title": "LLM Support",
+      "description": "Compatible with multiple mainstream models including OpenAI, Claude, Gemini, etc."
+    },
+    "fileOperations": {
+      "title": "File Operations",
+      "description": "Intelligently understand and edit project files, supporting multiple programming languages"
+    },
+    "codebaseNavigation": {
+      "title": "Codebase",
+      "description": "Smart navigation of project structure, quick analysis and search"
+    },
+    "planMode": {
+      "title": "Plan Mode",
+      "description": "Automatically break down complex tasks into visible and editable steps"
+    }
+  },
   "chat": {
     "welcomeTitle": "Hello, I'm Takumi",
     "welcomeDescription": "I'm your AI programming assistant that helps improve development workflows. I can write code, optimize performance, generate tests, analyze architecture and assist with development tasks.",
@@ -74,6 +100,18 @@
       "fileSizeLimited": "File size should be smaller than {{limit}}",
       "dragFileHere": "Drag file here to upload",
       "supportTypeDesc": "Support pictures and text files"
+    },
+    "filesAndFolders": "Files & Folders",
+    "slashCommands": "Slash Commands"
+  },
+  "suggestion": {
+    "navigate": "navigate",
+    "select": "select",
+    "close": "close",
+    "back": "back",
+    "slashCommandPrefix": {
+      "global": "Global",
+      "project": "Project"
     }
   },
   "menu": {
@@ -101,6 +139,7 @@
     "status": {
       "executing": "Executing",
       "completed": "Completed",
+      "failed": "Failed",
       "unknown": "Unknown"
     },
     "filesFound": "Found {{count}} files",
@@ -114,10 +153,10 @@
     "description": "AI requests to execute the following tool, do you allow it?",
     "toolName": "Tool Name",
     "parameters": "Parameters",
-    "approveOnce": "Allow (Once)",
-    "approveAlways": "Allow (Always for this command)",
-    "approveAlwaysTool": "Allow (Always for {{toolName}})",
-    "deny": "Deny",
+    "approveOnce": "Yes (Once)",
+    "approveAlwaysEdit": "Yes, allow all edits during this session",
+    "approveAlwaysTool": "Yes, allow {{toolName}} during this session",
+    "deny": "No, and suggest changes",
     "approved": "Tool execution approved",
     "denied": "Tool execution denied",
     "approvalOption": "Approval Option",
@@ -141,6 +180,8 @@
     }
   },
   "mcp": {
+    "recommended": "Recommended",
+
     "management": "MCP Management",
     "services": "MCP Services",
     "addServer": "Add MCP Server",
@@ -153,9 +194,10 @@
     "argumentsPlaceholder": "--param1 value1 --param2 value2",
     "url": "URL",
     "urlPlaceholder": "http://localhost:3000",
-    "environmentVariables": "Environment Variables (JSON)",
+    "environmentVariables": "Environment Variables",
     "environmentVariablesPlaceholder": "{\"API_KEY\": \"your-key\", \"DEBUG\": \"true\"}",
     "scope": "Scope",
+    "scopeTooltip": "Project: Use only in current project; Global: Use in all projects",
     "inputMode": "Input Mode",
     "project": "Project",
     "global": "Global",
@@ -175,13 +217,6 @@
     "available": "Available",
     "noConfiguration": "No MCP configuration",
     "clickToStart": "Click \"Add Server\" to start configuring",
-    "noServicesAvailable": "No services available",
-    "editApiKey": "Edit API Key for {{name}}",
-    "apiKeyPlaceholder": "Enter your API key",
-    "apiKeyDescription": "This API key will be used to configure the {{name}} service.",
-    "playwrightDescription": "Browser automation and testing",
-    "figmaDescription": "Figma design integration",
-    "figmaApiKeyLabel": "Figma API Key",
     "mcpManagementTitle": "MCP Management",
     "mcpServicesTitle": "MCP Services",
     "globalScope": "Global",
@@ -192,7 +227,7 @@
     "added": "Added {{name}} to project",
     "addedMultiple": "Added {{count}} server(s) successfully",
     "addedSingle": "Added successfully",
-    "apiKeyUpdated": "API key updated successfully",
+
     "alreadyEnabled": "{{name}} is already enabled",
     "noCachedConfig": "No cached configuration found for {{name}} ({{scope}})",
     "loadFailed": "Failed to load MCP servers",
@@ -209,65 +244,22 @@
     "commandOrUrlRequired": "Single server config must have command or url field",
     "serverConfigObject": "Server \"{{name}}\" configuration must be an object",
     "serverCommandOrUrl": "Server \"{{name}}\" must have command or url field",
-    "noServersFound": "No servers found in mcpServers object"
-  },
-  "settings": {
-    "title": "Settings",
-    "loading": "Loading settings...",
-    "scope": {
-      "title": "Configuration Scope",
-      "global": "Global",
-      "project": "Project",
-      "globalDesc": "Global settings (~/.takumi/config.json)",
-      "projectDesc": "Project settings (./.takumi/config.json)"
-    },
-    "model": {
-      "title": "Model Configuration",
-      "main": "Main Model",
-      "mainTooltip": "Used for main code generation and complex reasoning tasks",
-      "mainPlaceholder": "Select main model",
-      "small": "Small Model",
-      "smallTooltip": "Used for simple tasks like generating commit messages",
-      "smallPlaceholder": "Select small model (optional)",
-      "plan": "Plan Model",
-      "planTooltip": "Used for generating execution plans",
-      "planPlaceholder": "Select plan model (optional)",
-      "defaultPrefix": "Default"
-    },
-    "behavior": {
-      "title": "Behavior Configuration",
-      "language": "Language",
-      "languageTooltip": "Language for AI responses and interface display",
-      "languagePlaceholder": "Select interface language",
-      "approvalMode": "Execution Mode",
-      "approvalModeTooltip": "Controls confirmation behavior when AI executes tools",
-      "approvalModePlaceholder": "Select execution mode",
-      "approvalModes": {
-        "suggest": "Suggest Mode",
-        "autoEdit": "Auto Edit",
-        "fullAuto": "Full Auto"
-      },
-      "approvalModeLabels": {
-        "suggest": "Suggest Mode - All operations require confirmation",
-        "autoEdit": "Auto Edit - Auto edit files, commands require confirmation",
-        "fullAuto": "Full Auto - All operations execute automatically"
-      },
-      "quiet": "Quiet Mode",
-      "quietTooltip": "Enable non-interactive mode when activated",
-      "enabled": "Enabled",
-      "disabled": "Disabled"
-    },
-    "plugins": {
-      "title": "Plugin Configuration",
-      "tooltip": "Configure plugins used by the project",
-      "placeholder": "Enter plugin name or path",
-      "add": "Add",
-      "delete": "Delete Plugin",
-      "deleteConfirm": "Are you sure you want to delete plugin \"{{plugin}}\"?",
-      "empty": "No plugins configured",
-      "effective": "Current effective plugins",
-      "none": "None"
-    }
+    "noServersFound": "No servers found in mcpServers object",
+    "actions": "Actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirmTitle": "Confirm Delete",
+    "deleteConfirmContent": "Are you sure you want to delete MCP service \"{{name}}\"?",
+    "deleteSuccess": "Successfully deleted MCP service \"{{name}}\"",
+    "deleteError": "Failed to delete MCP service, please try again",
+    "continueAdd": "Continue Adding",
+    "jsonSupported": "Supported JSON formats include various structures",
+    "editServer": "Edit MCP Server",
+    "editSuccess": "Successfully edited MCP service \"{{name}}\"",
+    "editFailed": "Failed to edit MCP service, please try again",
+    "presetCannotDelete": "Preset MCP cannot be deleted",
+    "jsonFormatErrorMessage": "JSON format error",
+    "atLeastOneServerRequired": "At least one MCP server configuration is required"
   },
   "toolRenders": {
     "read": {
@@ -283,6 +275,18 @@
     },
     "bash": {
       "noOutput": "No output."
+    },
+    "todo": {
+      "title": "Todos",
+      "noTodos": "No todos found",
+      "operationFailed": "Todo operation failed"
+    },
+    "error": {
+      "file": {
+        "title": "File read error",
+        "pathEmpty": "File path is empty",
+        "contentEmpty": "File content is empty"
+      }
     }
   },
   "senderFooterBoard": {
@@ -315,5 +319,80 @@
     "loading": "Loading...",
     "error": "Error",
     "preparingDiff": "Preparing diff..."
+  },
+  "messageWrapper": {
+    "status": {
+      "thinking": "Thinking...",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "error": "Error"
+    }
+  },
+  "project": {
+    "branch": "Branch",
+    "projectManagement": "Project Management",
+    "noProject": "Select a project folder to start",
+    "openInEditor": "Open in Editor",
+    "new": "New Conversation",
+    "selectModal": {
+      "title": "Import Project",
+      "cancel": "Cancel",
+      "confirm": "Import this folder",
+      "description": "Select a directory to import the project",
+      "headerTitle": "Select Project Directory",
+      "headerDescription": "Browse and select the project folder to import, supporting various development project types",
+      "footerInfo": "Select a folder and click \"Import Project\" to get started",
+      "error": "Please select a project folder"
+    }
+  },
+  "folderPicker": {
+    "searchPlaceholder": "Search folders...",
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "retry": "Retry",
+    "emptyDirectory": "This directory is empty",
+    "noMatchingFolders": "No matching folders found",
+    "noVisibleFolders": "No visible folders",
+    "fetchError": "Failed to fetch folder list",
+    "networkError": "Network error"
+  },
+  "settings": {
+    "title": "Settings",
+    "saveSuccess": "Settings saved successfully",
+    "saveError": "Failed to save settings",
+    "loadError": "Failed to load settings",
+    "updateSuccess": "Configuration updated successfully",
+    "updateError": "Failed to update configuration",
+    "resetSuccess": "Settings reset successfully",
+    "resetError": "Failed to reset settings",
+    "resetConfirm": "Are you sure you want to reset all settings?",
+    "tabs": {
+      "general": "General",
+      "changelog": "Changelog",
+      "docs": "Docs"
+    },
+    "general": {
+      "title": "General",
+      "description": "Configure your {{productName}} preferences",
+      "defaultModel": "Default model",
+      "defaultModelDesc": "Choose the default model for new chats",
+      "language": "Language",
+      "languageDesc": "Set language for model response",
+      "approvalMode": "Approval Mode",
+      "approvalModeDesc": "Control how tool calls are approved",
+      "approvalModeOptions": {
+        "default": "Default - Ask every time",
+        "autoEdit": "Auto Edit - Auto approve edit operations",
+        "yolo": "YOLO - Auto approve all tools"
+      },
+      "todo": "Todo Feature",
+      "todoDesc": "Enable session-level todo management",
+      "autoCompact": "Auto Compact",
+      "autoCompactDesc": "Automatically compress conversation history when reaching context limit",
+      "autoUpdate": "Auto Update",
+      "autoUpdateDesc": "Automatically check and download new versions",
+      "browser": "Browser Mode",
+      "browserDesc": "Enable browser interface access"
+    }
   }
 }

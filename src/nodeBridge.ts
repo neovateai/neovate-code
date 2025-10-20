@@ -22,6 +22,7 @@ import { Project } from './project';
 import { query } from './query';
 import { SessionConfigManager } from './session';
 import { SlashCommandManager } from './slashCommand';
+import { getFiles } from './utils/files';
 import { listDirectory } from './utils/list';
 import { randomUUID } from './utils/randomUUID';
 
@@ -134,6 +135,22 @@ class NodeHandlerRegistry {
         }
         return {
           success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'config.list',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        return {
+          success: true,
+          data: {
+            globalConfigDir: context.paths.globalConfigDir,
+            projectConfigDir: context.paths.projectConfigDir,
+            config: context.config,
+          },
         };
       },
     );
@@ -427,6 +444,24 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
+      'session.messages.list',
+      async (data: { cwd: string; sessionId: string }) => {
+        const { cwd, sessionId } = data;
+        const context = await this.getContext(cwd);
+        const { loadSessionMessages } = await import('./session');
+        const messages = loadSessionMessages({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        return {
+          success: true,
+          data: {
+            messages,
+          },
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
       'session.send',
       async (data: {
         message: string | null;
@@ -435,13 +470,16 @@ class NodeHandlerRegistry {
         planMode: boolean;
         model?: string;
         attachments?: ImagePart[];
+        parentUuid?: string;
       }) => {
-        const { message, cwd, sessionId, model, attachments } = data;
+        const { message, cwd, sessionId, model, attachments, parentUuid } =
+          data;
         const context = await this.getContext(cwd);
         const project = new Project({
           sessionId,
           context,
         });
+
         const abortController = new AbortController();
         const key = buildSignalKey(cwd, project.session.id);
         this.abortControllers.set(key, abortController);
@@ -450,6 +488,7 @@ class NodeHandlerRegistry {
         const result = await fn.call(project, message, {
           attachments,
           model,
+          parentUuid,
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {
               message: opts.message,
@@ -907,6 +946,25 @@ class NodeHandlerRegistry {
         });
         return {
           success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'utils.files.list',
+      async (data: { cwd: string; query?: string }) => {
+        const { cwd, query } = data;
+        const context = await this.getContext(cwd);
+        return {
+          success: true,
+          data: {
+            files: await getFiles({
+              cwd,
+              maxSize: 50,
+              productName: context.productName,
+              query: query || '',
+            }),
+          },
         };
       },
     );

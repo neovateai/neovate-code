@@ -1,9 +1,8 @@
 import { Box, Text } from 'ink';
 import path from 'pathe';
 import React, { useMemo } from 'react';
-import { useAppStore } from './store';
-import { useInputHandlers } from './useInputHandlers';
 import type { NormalizedMessage } from '../message';
+import { useAppStore } from './store';
 
 function HelpHint() {
   const { status } = useAppStore();
@@ -131,13 +130,13 @@ function UpgradeHint() {
   );
 }
 
-export function StatusLine() {
+interface StatusLineProps {
+  hasSuggestions?: boolean;
+}
+
+export function StatusLine({ hasSuggestions = false }: StatusLineProps) {
   const { slashCommandJSX, planResult } = useAppStore();
-  const { slashCommands, fileSuggestion } = useInputHandlers();
-  if (
-    slashCommands.suggestions.length > 0 ||
-    fileSuggestion.matchedPaths.length > 0
-  ) {
+  if (hasSuggestions) {
     return null;
   }
   if (slashCommandJSX) {
