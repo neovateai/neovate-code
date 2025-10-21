@@ -33,6 +33,7 @@ export type ApprovalMode = 'default' | 'autoEdit' | 'yolo';
 
 export type CommitConfig = {
   language: string;
+  prompt?: string;
 };
 
 export type ProviderConfig = Partial<Omit<Provider, 'createModel'>>;

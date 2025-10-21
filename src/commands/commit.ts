@@ -12,6 +12,7 @@ import * as logger from '../utils/logger';
 interface GenerateCommitMessageOpts {
   prompt: string;
   language?: string;
+  systemPrompt?: string;
   context: Context;
 }
 
@@ -31,9 +32,10 @@ function escapeShellArg(arg: string): string {
 
 async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
   const language = opts.language ?? 'English';
+  const systemPrompt = opts.systemPrompt ?? createCommitSystemPrompt(language);
   const result = await query({
     userPrompt: opts.prompt,
-    systemPrompt: createCommitSystemPrompt(language),
+    systemPrompt,
     context: opts.context,
   });
   const message = result.success ? result.data.text : null;
@@ -230,6 +232,7 @@ ${repoStyle}
       `,
         context,
         language: context.config.commit?.language ?? context.config.language,
+        systemPrompt: context.config.commit?.prompt,
       });
       stop();
       checkCommitMessage(message, argv.ai);
