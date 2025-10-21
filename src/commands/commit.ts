@@ -232,7 +232,7 @@ ${repoStyle}
       `,
         context,
         language: context.config.commit?.language ?? context.config.language,
-        systemPrompt: context.config.commit?.prompt,
+        systemPrompt: context.config.commit?.systemPrompt,
       });
       stop();
       checkCommitMessage(message, argv.ai);
