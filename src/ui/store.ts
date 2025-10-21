@@ -296,7 +296,7 @@ export const useAppStore = create<AppStore>()(
               (chunk.data.event?.type === 'text-delta' ||
                 chunk.data.event?.type === 'reasoning')
             ) {
-              const textDelta = chunk.data.event.textDelta || '';
+              const textDelta = chunk.data.event.delta || '';
               const tokenCount = countTokens(textDelta);
               set({ processingTokens: get().processingTokens + tokenCount });
             }
