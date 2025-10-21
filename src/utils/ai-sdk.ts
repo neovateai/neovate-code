@@ -28,6 +28,9 @@ import {
 } from '@openai/agents';
 
 import { mergeConsecutiveSystemMessages } from './merge-consecutive-system-messages';
+import { removeImagePrefix } from './removeImagePrefix';
+
+const URL_PATTERN = /^https?:\/\//i;
 
 /**
  * @internal
@@ -78,11 +81,20 @@ export function itemsToLanguageV2Messages(
                   if (c.type === 'input_image') {
                     const image =
                       typeof c.image === 'string' ? c.image : c.image.id;
-                    // image = removeImagePrefix(image);
-                    const url = new URL(image);
+                    const isGeminiModel =
+                      model.modelId.includes('gemini') &&
+                      model.provider === 'google.generative-ai';
+
+                    let data: string | URL;
+                    if (isGeminiModel && typeof image === 'string') {
+                      data = removeImagePrefix(image);
+                    } else {
+                      data = new URL(image);
+                    }
+
                     return {
                       type: 'file',
-                      data: url,
+                      data,
                       mediaType: 'image/*',
                       providerOptions: {
                         ...(contentProviderData ?? {}),
