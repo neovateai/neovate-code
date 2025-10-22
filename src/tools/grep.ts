@@ -5,6 +5,8 @@ import { createTool } from '../tool';
 import { ripGrep } from '../utils/ripgrep';
 import { safeStringify } from '../utils/safeStringify';
 
+const DEFAULT_LIMIT = 1000;
+
 export function createGrepTool(opts: { cwd: string }) {
   return createTool({
     name: 'grep',
@@ -21,6 +23,14 @@ export function createGrepTool(opts: { cwd: string }) {
         .optional()
         .nullable()
         .describe('The file pattern to include in the search'),
+      limit: z
+        .number()
+        .positive()
+        .max(DEFAULT_LIMIT)
+        .optional()
+        .describe(
+          `Maximum number of files to return (default: ${DEFAULT_LIMIT})`,
+        ),
     }),
     getDescription: ({ params }) => {
       if (!params.pattern || typeof params.pattern !== 'string') {
@@ -28,7 +38,7 @@ export function createGrepTool(opts: { cwd: string }) {
       }
       return params.pattern;
     },
-    execute: async ({ pattern, search_path, include }) => {
+    execute: async ({ pattern, search_path, include, limit }) => {
       try {
         const start = Date.now();
         const args = ['-li', pattern];
@@ -42,7 +52,7 @@ export function createGrepTool(opts: { cwd: string }) {
           : opts.cwd;
         const results = await ripGrep(args, absolutePath);
         const stats = await Promise.all(results.map((_) => fs.statSync(_)));
-        const matches = results
+        const allMatches = results
           // Sort by modification time
           .map((_, i) => [_, stats[i]!] as const)
           .sort((a, b) => {
@@ -57,13 +67,24 @@ export function createGrepTool(opts: { cwd: string }) {
             return timeComparison;
           })
           .map((_) => _[0]);
+
+        const maxFiles = limit ?? DEFAULT_LIMIT;
+        const totalFiles = allMatches.length;
+        const truncated = totalFiles > maxFiles;
+        const matches = allMatches.slice(0, maxFiles);
+        const returnedFiles = matches.length;
         const durationMs = Date.now() - start;
+        const returnDisplay = truncated
+          ? `Found ${totalFiles} files (showing first ${returnedFiles} of ${totalFiles} total) in ${durationMs}ms.`
+          : `Found ${totalFiles} files in ${durationMs}ms.`;
         return {
-          returnDisplay: `Found ${matches.length} files in ${durationMs}ms.`,
+          returnDisplay,
           llmContent: safeStringify({
             filenames: matches,
             durationMs,
-            numFiles: matches.length,
+            totalFiles,
+            returnedFiles,
+            truncated,
           }),
         };
       } catch (e) {
