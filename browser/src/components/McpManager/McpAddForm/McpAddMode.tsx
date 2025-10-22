@@ -1,10 +1,9 @@
 import { PlusOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { McpConfigItem as McpConfigItemType } from '@/types/mcp';
-import { McpConfigItem } from './McpConfigItem';
 import styles from './index.module.css';
+import { McpConfigItem } from './McpConfigItem';
 
 interface McpAddModeProps {
   configs: McpConfigItemType[];

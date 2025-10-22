@@ -1,11 +1,10 @@
-import { Form, Input, Select } from 'antd';
-import { Typography } from 'antd';
+import { Form, Input, Select, Typography } from 'antd';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { MCP_DEFAULTS } from '@/constants/mcp';
 import { modalEventHandlers } from '@/utils/eventUtils';
-import { McpJsonEditor } from './McpJsonEditor';
 import styles from './index.module.css';
+import { McpJsonEditor } from './McpJsonEditor';
 
 const { Text } = Typography;
 
@@ -46,13 +45,11 @@ export const McpFormFields: React.FC = () => {
               {t('mcp.transportType')}
             </Text>
           </div>
-          <Form.Item
-            name="transport"
-            initialValue={MCP_DEFAULTS.TRANSPORT_TYPE}
-          >
+          <Form.Item name="type" initialValue={MCP_DEFAULTS.TRANSPORT_TYPE}>
             <Select>
               <Select.Option value="stdio">STDIO</Select.Option>
               <Select.Option value="sse">SSE</Select.Option>
+              <Select.Option value="http">HTTP</Select.Option>
             </Select>
           </Form.Item>
         </div>
@@ -62,10 +59,11 @@ export const McpFormFields: React.FC = () => {
       <div className={styles.formFieldsRow}>
         <Form.Item
           noStyle
-          shouldUpdate={(prev, curr) => prev.transport !== curr.transport}
+          shouldUpdate={(prev, curr) => prev.type !== curr.type}
         >
           {({ getFieldValue }) => {
-            return getFieldValue('transport') === 'sse' ? (
+            return getFieldValue('type') === 'sse' ||
+              getFieldValue('type') === 'http' ? (
               <div className={styles.formField}>
                 <div className={styles.fieldLabel}>
                   <Text className={styles.settingLabel}>{t('mcp.url')}</Text>

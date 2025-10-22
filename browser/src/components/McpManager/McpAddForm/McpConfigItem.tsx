@@ -1,13 +1,12 @@
 import { DeleteOutlined } from '@ant-design/icons';
 import { Input, Radio, Select, Typography } from 'antd';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import MessageWrapper from '@/components/MessageWrapper';
 import type { McpConfigItem as McpConfigItemType } from '@/types/mcp';
 import { modalEventHandlers } from '@/utils/eventUtils';
+import styles from './index.module.css';
 import { McpJsonEditor } from './McpJsonEditor';
 import { McpScopeSelector } from './McpScopeSelector';
-import styles from './index.module.css';
 
 const { Text } = Typography;
 
@@ -165,19 +164,20 @@ const McpFormConfigContent: React.FC<{
             </Text>
           </div>
           <Select
-            value={config.transport}
-            onChange={(value) => onUpdateConfig(config.id, 'transport', value)}
+            value={config.type}
+            onChange={(value) => onUpdateConfig(config.id, 'type', value)}
             className={styles.formSelect}
           >
             <Select.Option value="stdio">STDIO</Select.Option>
             <Select.Option value="sse">SSE</Select.Option>
+            <Select.Option value="http">HTTP</Select.Option>
           </Select>
         </div>
       </div>
 
       {/* Command and arguments / URL */}
       <div className={styles.formFieldsRow}>
-        {config.transport === 'sse' ? (
+        {config.type === 'sse' || config.type === 'http' ? (
           <div className={styles.formField}>
             <div className={styles.fieldLabel}>
               <Text className={styles.settingLabel}>{t('mcp.url')}</Text>

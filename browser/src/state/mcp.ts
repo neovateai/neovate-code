@@ -1,14 +1,14 @@
-import { message } from 'antd';
 import { proxy } from 'valtio';
 import type { NodeBridgeResponse } from '@/types/chat';
 import type { McpServerConfig } from '@/types/config';
 import type { McpManagerData, McpServerWithStatus } from '@/types/mcp';
 import { state as chatState } from './chat';
 import { actions as bridge } from './client';
-import { actions as configActions } from './config';
 
 export type McpServerItemConfig = McpServerConfig & {
   name: string;
+  scope: 'project' | 'global';
+  env?: Record<string, string>;
 };
 
 interface McpState {
@@ -21,36 +21,11 @@ interface McpState {
 
 export const state = proxy<McpState>({
   mcpServers: [],
-  recommendedMcpServices: [
-    {
-      name: 'Context7',
-      type: 'stdio' as const,
-      command: 'npx',
-      args: ['-y', '@upstash/context7-mcp', '--api-key', 'YOUR_API_KEY'],
-    },
-    {
-      name: 'Figma',
-      command: 'npx',
-      args: [
-        '-y',
-        'figma-developer-mcp',
-        '--figma-api-key=YOUR-KEY',
-        '--stdio',
-      ],
-      type: 'stdio' as const,
-    },
-  ],
+  recommendedMcpServices: [],
   managerData: null,
   activeServers: {},
   loading: false,
 });
-
-interface ServerData {
-  status: string;
-  error?: string;
-  toolCount: number;
-  tools: string[];
-}
 
 export const actions = {
   async getList() {
@@ -70,8 +45,9 @@ export const actions = {
 
   async addServer(
     name: string,
-    config: McpServerItemConfig,
+    config: McpServerConfig,
     scope: 'project' | 'global',
+    isRefreshList = true,
   ) {
     const currentServers =
       scope === 'global'
@@ -90,12 +66,14 @@ export const actions = {
       value: JSON.stringify(updatedServers),
     });
 
-    await this.getList();
+    if (isRefreshList) {
+      await this.getList();
+    }
   },
 
   async updateServer(
     name: string,
-    config: McpServerItemConfig,
+    config: McpServerConfig,
     scope: 'project' | 'global',
   ) {
     await this.addServer(name, config, scope);
@@ -158,101 +136,8 @@ export const actions = {
     await this.getList();
   },
 
-  // Legacy methods for backward compatibility
-  getMcpStatus: async () => {
-    const result = (await bridge.request('mcp.getStatus', {
-      cwd: chatState.cwd,
-    })) as NodeBridgeResponse<{
-      servers: Record<string, ServerData>;
-      configs: Record<string, McpServerConfig>;
-      globalConfigPath: string;
-      projectConfigPath: string;
-      isReady: boolean;
-      isLoading: boolean;
-    }>;
-    if (!result.success) {
-      message.error(result.message || 'Failed to get MCP status');
-      return;
-    }
-
-    state.mcpServers = Object.entries(result.data.configs).map(
-      ([name, config]) => ({
-        name,
-        ...config,
-      }),
-    );
-  },
-
-  addMcpServer: async (server: McpServerItemConfig, isGlobal = false) => {
-    try {
-      const { name, ...config } = server;
-      const currentServers = state.mcpServers.reduce(
-        (acc, s) => {
-          const { name: serverName, ...serverConfig } = s;
-          acc[serverName] = serverConfig;
-          return acc;
-        },
-        {} as Record<string, McpServerConfig>,
-      );
-
-      const newServers = {
-        ...currentServers,
-        [name]: config,
-      };
-
-      const success = await configActions.set(
-        'mcpServers',
-        newServers,
-        isGlobal,
-      );
-
-      if (success) {
-        await actions.getMcpStatus();
-        message.success(`Added MCP server: ${name}`);
-      }
-      return success;
-    } catch (error) {
-      message.error(`Failed to add MCP server: ${error}`);
-      return false;
-    }
-  },
-
-  toggleMcpServer: async (server: McpServerItemConfig, isGlobal = false) => {
-    try {
-      const { name, disable, ...config } = server;
-      const currentServers = state.mcpServers.reduce(
-        (acc, s) => {
-          const { name: serverName, ...serverConfig } = s;
-          acc[serverName] = serverConfig;
-          return acc;
-        },
-        {} as Record<string, McpServerConfig>,
-      );
-
-      const newServers = {
-        ...currentServers,
-        [name]: {
-          ...config,
-          disable: !disable,
-        },
-      };
-
-      const success = await configActions.set(
-        'mcpServers',
-        newServers,
-        isGlobal,
-      );
-
-      if (success) {
-        await actions.getMcpStatus();
-        message.success(
-          `${disable ? 'Enabled' : 'Disabled'} MCP server: ${name}`,
-        );
-      }
-      return success;
-    } catch (error) {
-      message.error(`Failed to toggle MCP server: ${error}`);
-      return false;
-    }
+  async refreshList() {
+    await bridge.request('project.clearContext', {});
+    await this.getList();
   },
 };

@@ -1,16 +1,16 @@
 import { Tabs } from 'antd';
 import { useTranslation } from 'react-i18next';
+import type { McpServerItemConfig } from '@/state/mcp';
 import McpServerTable from './McpServerTable';
-import type { McpManagerServer } from '@/types/mcp';
 
 interface McpScopeTabProps {
-  projectServers: McpManagerServer[];
-  globalServers: McpManagerServer[];
+  readonly projectServers: McpServerItemConfig[];
+  readonly globalServers: McpServerItemConfig[];
   loading: boolean;
-  onToggleService: (server: McpManagerServer) => Promise<void>;
+  onToggleService: (server: McpServerItemConfig) => Promise<void>;
   onDeleteSuccess: () => void;
-  onDeleteLocal: (server: McpManagerServer) => Promise<void>;
-  onEditServer: (server: McpManagerServer) => void;
+  onDeleteLocal: (server: McpServerItemConfig) => Promise<void>;
+  onEditServer: (server: McpServerItemConfig) => void;
 }
 
 const McpScopeTab: React.FC<McpScopeTabProps> = ({

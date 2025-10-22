@@ -5,14 +5,14 @@ export type CommitConfig = {
 };
 
 export type McpStdioServerConfig = {
-  type: 'stdio';
+  type?: 'stdio';
   command: string;
   args: string[];
   env?: Record<string, string>;
   disable?: boolean;
 };
 export type McpSSEServerConfig = {
-  type: 'sse';
+  type?: 'sse';
   url: string;
   disable?: boolean;
   headers?: Record<string, string>;

@@ -263,7 +263,6 @@
     "editServer": "编辑 MCP",
     "editSuccess": "已成功编辑MCP \"{{name}}\"",
     "editFailed": "编辑MCP失败，请重试",
-    "presetCannotDelete": "预设MCP不允许删除",
     "jsonFormatErrorMessage": "JSON格式错误",
     "atLeastOneServerRequired": "至少需要一个MCP配置"
   },

@@ -18,7 +18,7 @@ const McpDropdown: React.FC = () => {
     { setTrue: setDropdownTrue, setFalse: setDropdownFalse },
   ] = useBoolean(false);
 
-  const { loading, run } = useRequest(() => actions.getList(), {
+  const { run } = useRequest(() => actions.getList(), {
     manual: true,
   });
   const { initialized } = useSnapshot(chatState);
@@ -57,9 +57,7 @@ const McpDropdown: React.FC = () => {
           <McpDropdownContent onOpenManager={toggleMcpManager} />
         )}
       >
-        <SenderButton title={t('mcp.mcpManagementTitle')} disabled={loading}>
-          MCP
-        </SenderButton>
+        <SenderButton title={t('mcp.mcpManagementTitle')}>MCP</SenderButton>
       </Dropdown>
 
       <McpManager
