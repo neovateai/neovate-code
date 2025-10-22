@@ -15,6 +15,9 @@ test('isSlashCommand', () => {
   expect(isSlashCommand('/')).toBe(false);
   expect(isSlashCommand('/foo/bar')).toBe(false);
   expect(isSlashCommand('help')).toBe(false);
+  expect(isSlashCommand('/*')).toBe(false);
+  expect(isSlashCommand('/* this is a comment')).toBe(false);
+  expect(isSlashCommand('/*comment*/')).toBe(false);
 });
 
 test('replaceParameterPlaceholders', () => {

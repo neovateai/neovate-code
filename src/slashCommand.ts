@@ -217,6 +217,7 @@ export function isSlashCommand(input: string): boolean {
   const trimmed = input.trim();
   if (!trimmed.startsWith('/')) return false;
   if (trimmed === '/') return false;
+  if (trimmed.startsWith('/*')) return false;
   const match = trimmed.match(/^\S+/);
   const commandPart = match ? match[0] : '';
   return commandPart !== '' && !isFilePath(commandPart);
