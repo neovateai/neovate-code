@@ -89,14 +89,21 @@ export function useInputHandlers() {
       applyFileSuggestion();
       return;
     }
-    // 3. memory mode - show modal and save to memory
+    // 3. bash mode - execute command directly
+    if (mode === 'bash') {
+      const command = value.slice(1).trim();
+      inputState.reset();
+      await send(`!${command}`);
+      return;
+    }
+    // 4. memory mode - show modal and save to memory
     if (mode === 'memory') {
       const rule = value.slice(1).trim(); // Remove # prefix
       inputState.reset();
       await memoryMode.handleMemorySubmit(rule);
       return;
     }
-    // 4. submit (pasted text expansion is handled in store.send)
+    // 5. submit (pasted text expansion is handled in store.send)
     inputState.setValue('');
     resetTabTrigger();
     await send(value);
