@@ -1,6 +1,5 @@
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import { Radio, Tooltip, Typography } from 'antd';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import styles from './index.module.css';
 

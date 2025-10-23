@@ -4,9 +4,9 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import { SenderButton } from '@/components/ChatSender/SenderComponent/SenderButton';
-// import McpManager from '@/components/McpManager';
+import McpManager from '@/components/McpManager';
 import { state as chatState } from '@/state/chat';
-import { actions, state } from '@/state/mcp';
+import { actions } from '@/state/mcp';
 import McpDropdownContent from './McpDropdownContent';
 
 const McpDropdown: React.FC = () => {
@@ -18,7 +18,7 @@ const McpDropdown: React.FC = () => {
     { setTrue: setDropdownTrue, setFalse: setDropdownFalse },
   ] = useBoolean(false);
 
-  const { loading, run } = useRequest(() => actions.getMcpStatus(), {
+  const { run } = useRequest(() => actions.getList(), {
     manual: true,
   });
   const { initialized } = useSnapshot(chatState);
@@ -46,22 +46,26 @@ const McpDropdown: React.FC = () => {
             setDropdownFalse();
           }
         }}
-        overlayStyle={{ width: '220px' }}
+        overlayStyle={{
+          width: '240px',
+          padding: '0',
+          borderRadius: '12px',
+          boxShadow:
+            '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        }}
         dropdownRender={() => (
           <McpDropdownContent onOpenManager={toggleMcpManager} />
         )}
       >
-        <SenderButton title={t('mcp.mcpManagementTitle')} disabled={loading}>
-          MCP
-        </SenderButton>
+        <SenderButton title={t('mcp.mcpManagementTitle')}>MCP</SenderButton>
       </Dropdown>
 
-      {/* <McpManager
+      <McpManager
         visible={mcpManagerOpen}
         onClose={() => {
           toggleMcpManager();
         }}
-      /> */}
+      />
     </>
   );
 };

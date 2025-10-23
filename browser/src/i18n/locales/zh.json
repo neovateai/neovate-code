@@ -181,6 +181,16 @@
   },
   "mcp": {
     "recommended": "推荐",
+    "activeServers": "Active MCP",
+    "noActiveServers": "暂无活跃的MCP服务器",
+    "manage": "管理",
+    "project": "项目",
+    "global": "全局",
+    "tools": "工具",
+    "addSuccess": "添加MCP服务器成功",
+    "addFailed": "添加MCP服务器失败",
+    "updateSuccess": "更新MCP服务器成功",
+    "updateFailed": "更新MCP服务器失败",
 
     "management": "MCP 管理",
     "services": "MCP 服务",
@@ -199,8 +209,6 @@
     "scope": "作用域",
     "scopeTooltip": "项目：仅在当前项目中使用；全局：在所有项目中使用",
     "inputMode": "输入模式",
-    "project": "项目",
-    "global": "全局",
     "json": "JSON",
     "form": "表单",
     "configuration": "配置 JSON",
@@ -232,8 +240,6 @@
     "noCachedConfig": "未找到 {{name}} ({{scope}}) 的缓存配置",
     "loadFailed": "加载 MCP 服务器失败",
     "toggleFailed": "{{action}} {{name}} 失败",
-    "addFailed": "添加 {{name}} 失败",
-    "updateFailed": "更新 {{name}} 失败",
     "configNotFound": "未找到 {{name}} 的配置",
 
     "jsonFormatError": "JSON 格式错误或添加失败",
@@ -257,7 +263,6 @@
     "editServer": "编辑 MCP",
     "editSuccess": "已成功编辑MCP \"{{name}}\"",
     "editFailed": "编辑MCP失败，请重试",
-    "presetCannotDelete": "预设MCP不允许删除",
     "jsonFormatErrorMessage": "JSON格式错误",
     "atLeastOneServerRequired": "至少需要一个MCP配置"
   },

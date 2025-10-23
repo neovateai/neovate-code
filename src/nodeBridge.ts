@@ -1,5 +1,10 @@
 import { compact } from './compact';
-import { type ApprovalMode, type Config, ConfigManager } from './config';
+import {
+  type ApprovalMode,
+  type Config,
+  ConfigManager,
+  type McpServerConfig,
+} from './config';
 import { CANCELED_MESSAGE_TEXT } from './constants';
 import { Context } from './context';
 import { JsonlLogger } from './jsonl';
@@ -244,6 +249,90 @@ class NodeHandlerRegistry {
             error: error instanceof Error ? error.message : String(error),
           };
         }
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'mcp.list',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        const context = await this.getContext(cwd);
+        const configManager = new ConfigManager(cwd, context.productName, {});
+
+        const projectServers = context.config.mcpServers || {};
+        const globalConfig = configManager.globalConfig;
+        const globalServers = globalConfig.mcpServers || {};
+
+        const mcpManager = context.mcpManager;
+        const allServerStatus = await mcpManager.getAllServerStatus();
+
+        // Merge active servers (project takes priority)
+        const activeServers: Record<
+          string,
+          {
+            status:
+              | 'pending'
+              | 'connecting'
+              | 'connected'
+              | 'failed'
+              | 'disconnected';
+            config: McpServerConfig;
+            error?: string;
+            toolCount?: number;
+            tools: string[];
+            scope: 'global' | 'project';
+          }
+        > = {};
+
+        for (const [name, config] of Object.entries(globalServers)) {
+          if (!config.disable) {
+            activeServers[name] = {
+              config,
+              status: allServerStatus[name]?.status || 'disconnected',
+              error: allServerStatus[name]?.error,
+              toolCount: allServerStatus[name]?.toolCount || 0,
+              tools: [],
+              scope: 'global',
+            };
+          }
+        }
+
+        for (const [name, config] of Object.entries(projectServers)) {
+          if (!config.disable) {
+            activeServers[name] = {
+              config,
+              status: allServerStatus[name]?.status || 'disconnected',
+              error: allServerStatus[name]?.error,
+              toolCount: allServerStatus[name]?.toolCount || 0,
+              tools: [],
+              scope: 'project',
+            };
+          }
+        }
+
+        for (const [name, server] of Object.entries(activeServers)) {
+          if (server.status === 'connected') {
+            try {
+              const serverTools = await mcpManager.getTools([name]);
+              server.tools = serverTools.map((tool) => tool.name);
+            } catch (err) {
+              console.warn(`Failed to fetch tools for server ${name}:`, err);
+            }
+          }
+        }
+
+        return {
+          success: true,
+          data: {
+            projectServers,
+            globalServers,
+            activeServers,
+            projectConfigPath: configManager.projectConfigPath,
+            globalConfigPath: configManager.globalConfigPath,
+            isReady: mcpManager.isReady(),
+            isLoading: mcpManager.isLoading(),
+          },
+        };
       },
     );
 

@@ -181,6 +181,12 @@
   },
   "mcp": {
     "recommended": "Recommended",
+    "activeServers": "Active Servers",
+    "noActiveServers": "No active MCP servers",
+    "manage": "Manage",
+    "tools": "tools",
+    "addSuccess": "MCP server added successfully",
+    "updateSuccess": "MCP server updated successfully",
 
     "management": "MCP Management",
     "services": "MCP Services",
@@ -257,7 +263,6 @@
     "editServer": "Edit MCP Server",
     "editSuccess": "Successfully edited MCP service \"{{name}}\"",
     "editFailed": "Failed to edit MCP service, please try again",
-    "presetCannotDelete": "Preset MCP cannot be deleted",
     "jsonFormatErrorMessage": "JSON format error",
     "atLeastOneServerRequired": "At least one MCP server configuration is required"
   },

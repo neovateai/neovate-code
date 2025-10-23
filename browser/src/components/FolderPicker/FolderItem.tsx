@@ -2,13 +2,11 @@ import { FileOutlined, FolderFilled, FolderOutlined } from '@ant-design/icons';
 import { Tag } from 'antd';
 import type React from 'react';
 import { memo, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import styles from './FolderItem.module.css';
 import type { FolderItemProps } from './types';
 
 const FolderItem: React.FC<FolderItemProps> = memo(
   ({ folder, onSelect, isSelected = false, level = 0 }) => {
-    const { t } = useTranslation();
     const handleClick = useCallback(() => {
       onSelect(folder.path);
     }, [folder.path, onSelect]);

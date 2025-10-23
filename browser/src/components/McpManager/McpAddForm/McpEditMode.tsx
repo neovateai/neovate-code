@@ -1,12 +1,10 @@
-import React from 'react';
-import type { McpAddFormProps } from '@/types/mcp';
+import styles from './index.module.css';
 import { McpFormFields } from './McpFormFields';
 import { McpScopeSelector } from './McpScopeSelector';
-import styles from './index.module.css';
 
 interface McpEditModeProps {
-  addScope: McpAddFormProps['addScope'];
-  onScopeChange: McpAddFormProps['onScopeChange'];
+  addScope: 'global' | 'project';
+  onScopeChange: (scope: 'global' | 'project') => void;
 }
 
 /**
