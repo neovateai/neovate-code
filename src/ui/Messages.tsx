@@ -199,7 +199,7 @@ function User({ message }: { message: UserMessage }) {
         <Text color={UI_COLORS.CANCELED}>User canceled the request</Text>
       ) : (
         <Box>
-          <Text backgroundColor="#e0e0e0" color="#000000">
+          <Text backgroundColor="#3a3a3a" color="#ffffff">
             {text}{' '}
           </Text>
         </Box>
