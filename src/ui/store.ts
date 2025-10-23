@@ -4,7 +4,12 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
 import type { LoopResult } from '../loop';
-import type { Message, NormalizedMessage, UserMessage } from '../message';
+import type {
+  Message,
+  NormalizedMessage,
+  ToolMessage,
+  UserMessage,
+} from '../message';
 import type { ProvidersMap } from '../model';
 import { Paths } from '../paths';
 import { loadSessionMessages, Session, SessionConfigManager } from '../session';
@@ -16,6 +21,7 @@ import {
 import type { ApprovalCategory, ToolUse } from '../tool';
 import type { UIBridge } from '../uiBridge';
 import { Upgrade, type UpgradeOptions } from '../upgrade';
+import { randomUUID } from '../utils/randomUUID';
 import { setTerminalTitle } from '../utils/setTerminalTitle';
 import { clearTerminal } from '../utils/terminal';
 import { countTokens } from '../utils/tokenCounter';
@@ -488,6 +494,56 @@ export const useAppStore = create<AppStore>()(
             };
             get().addMessage(userMessage);
           }
+          return;
+        }
+
+        // Check if message is a bash command
+        if (expandedMessage.startsWith('!')) {
+          const command = expandedMessage.slice(1).trim();
+          if (!command) return;
+
+          // Add bash command message
+          const bashCommandMsg: Message = {
+            role: 'user',
+            // bash mode
+            command,
+            content: command,
+          };
+
+          await bridge.request('session.addMessages', {
+            cwd,
+            sessionId,
+            messages: [bashCommandMsg],
+          });
+
+          // Execute command via bash tool
+          const result = await bridge.request('utils.tool.executeBash', {
+            cwd,
+            command,
+          });
+
+          // Add output message
+          const bashOutputMsg: ToolMessage = {
+            role: 'user',
+            content: [
+              {
+                type: 'tool_result',
+                id: randomUUID(),
+                name: 'bash',
+                input: {
+                  command,
+                },
+                result: result.data,
+              },
+            ],
+          };
+
+          await bridge.request('session.addMessages', {
+            cwd,
+            sessionId,
+            messages: [bashOutputMsg],
+          });
+
           return;
         } else {
           // Use store's current model for regular message sending

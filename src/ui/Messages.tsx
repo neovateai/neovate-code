@@ -1,6 +1,6 @@
 import { Box, Static, Text } from 'ink';
 import pc from 'picocolors';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import type {
   AssistantMessage,
   NormalizedMessage,
@@ -13,6 +13,7 @@ import {
   getMessageText,
   isCanceledMessage,
   isToolResultMessage,
+  isUserBashCommandMessage,
 } from '../message';
 import { SPACING, UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
@@ -26,6 +27,23 @@ interface EnrichedProvider {
   name: string;
   validEnvs?: string[];
   hasApiKey?: boolean;
+}
+
+export function BashCommandMessage({ message }: { message: UserMessage }) {
+  return (
+    <Box
+      flexDirection="column"
+      marginTop={SPACING.MESSAGE_MARGIN_TOP}
+      marginLeft={SPACING.MESSAGE_MARGIN_LEFT_USER}
+    >
+      <Box>
+        <Text color={UI_COLORS.CHAT_BORDER_BASH} bold>
+          !{' '}
+        </Text>
+        <Text>{message.command}</Text>
+      </Box>
+    </Box>
+  );
 }
 
 export function Messages() {
@@ -372,6 +390,10 @@ type MessageProps = {
 
 function Message({ message, productName }: MessageProps) {
   if (message.role === 'user') {
+    if (isUserBashCommandMessage(message)) {
+      return <BashCommandMessage message={message as UserMessage} />;
+    }
+
     const isToolResult = isToolResultMessage(message);
     if (isToolResult) {
       return <ToolResult key={message.uuid} message={message as ToolMessage} />;

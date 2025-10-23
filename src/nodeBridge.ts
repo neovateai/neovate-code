@@ -1057,6 +1057,30 @@ class NodeHandlerRegistry {
         };
       },
     );
+
+    this.messageBus.registerHandler(
+      'utils.tool.executeBash',
+      async (data: { cwd: string; command: string }) => {
+        const { cwd, command } = data;
+        const { createBashTool } = await import('./tools/bash');
+        const bashTool = createBashTool({ cwd });
+
+        try {
+          const result = await bashTool.execute({ command });
+          return {
+            success: true,
+            data: result,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: {
+              message: error instanceof Error ? error.message : String(error),
+            },
+          };
+        }
+      },
+    );
   }
 }
 

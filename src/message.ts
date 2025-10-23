@@ -23,7 +23,9 @@ export type FilePart = {
   data: string;
   mimeType: string;
 };
+
 export type UserContent = string | Array<TextPart | ImagePart>;
+
 export type ToolUsePart = {
   type: 'tool_use';
   id: string;
@@ -55,6 +57,7 @@ export type UserMessage = {
   role: 'user';
   content: UserContent;
   hidden?: boolean;
+  command?: string; // for bash command
 };
 export type ToolMessage = {
   role: 'user';
@@ -68,11 +71,13 @@ export type ToolResultPart = {
   input: Record<string, any>;
   result: ToolResult;
 };
+
 export type Message =
   | SystemMessage
   | UserMessage
   | AssistantMessage
   | ToolMessage;
+
 export type NormalizedMessage = Message & {
   type: 'message';
   timestamp: string;
@@ -117,7 +122,15 @@ export function isUserTextMessage(message: Message) {
   return (
     message.role === 'user' &&
     !isToolResultMessage(message) &&
-    !isCanceledMessage(message)
+    !isCanceledMessage(message) &&
+    !isUserBashCommandMessage(message)
+  );
+}
+
+export function isUserBashCommandMessage(message: Message) {
+  return (
+    message.role === 'user' &&
+    typeof (message as Partial<{ command: unknown }>).command === 'string'
   );
 }
 
