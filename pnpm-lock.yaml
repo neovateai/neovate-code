@@ -55,9 +55,6 @@ importers:
       '@modelcontextprotocol/inspector':
         specifier: ^0.17.1
         version: 0.17.1(@swc/core@1.12.1)(@types/node@24.8.1)(@types/react-dom@19.1.9(@types/react@19.2.2))(@types/react@19.2.2)(typescript@5.9.3)
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.20.2
-        version: 1.20.2
       '@openai/agents':
         specifier: ^0.1.7
         version: 0.1.10(ws@8.18.3)(zod@3.25.76)
