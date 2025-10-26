@@ -5,7 +5,9 @@ import type {
   AssistantMessage,
   NormalizedMessage,
   ToolMessage,
+  ToolMessage2,
   ToolResultPart,
+  ToolResultPart2,
   ToolUsePart,
   UserMessage,
 } from '../message';
@@ -13,6 +15,7 @@ import {
   getMessageText,
   isCanceledMessage,
   isToolResultMessage,
+  toolResultPart2ToToolResultPart,
 } from '../message';
 import { SPACING, UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
@@ -350,6 +353,27 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
   return <Text color={UI_COLORS.TOOL_RESULT}>↳ {text}</Text>;
 }
 
+function ToolResult2({ message }: { message: ToolMessage2 }) {
+  if (message.content.length === 0) {
+    return null;
+  }
+  return (
+    <Box
+      flexDirection="column"
+      marginTop={SPACING.MESSAGE_MARGIN_TOP_TOOL_RESULT}
+    >
+      {message.content.map((part: ToolResultPart2, index: number) => {
+        return (
+          <ToolResultItem
+            key={part.toolCallId}
+            part={toolResultPart2ToToolResultPart(part)}
+          />
+        );
+      })}
+    </Box>
+  );
+}
+
 function ToolResult({ message }: { message: ToolMessage }) {
   if (message.content.length === 0) {
     return null;
@@ -387,6 +411,9 @@ function Message({ message, productName }: MessageProps) {
         productName={productName}
       />
     );
+  }
+  if (message.role === 'tool') {
+    return <ToolResult2 key={message.uuid} message={message} />;
   }
   return null;
 }

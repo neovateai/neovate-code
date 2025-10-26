@@ -269,7 +269,9 @@ async function runAllTasks(
   filter: FilterOptions | null = null,
 ): Promise<TaskResult[]> {
   const allResults: TaskResult[] = [];
-  const fixtures = fs.readdirSync(fixturesDir);
+  const fixtures = fs
+    .readdirSync(fixturesDir)
+    .filter((fixture) => !fixture.startsWith('.'));
 
   // Filter fixtures if needed
   const filteredFixtures = filter?.fixtureName

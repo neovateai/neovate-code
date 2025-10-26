@@ -2,6 +2,10 @@ import type { AgentInputItem, UserMessageItem } from '@openai/agents';
 import fs from 'fs';
 import path from 'pathe';
 import { IMAGE_EXTENSIONS } from './constants';
+import type {
+  LanguageModelV2Message,
+  LanguageModelV2Prompt,
+} from '@ai-sdk/provider';
 
 const MAX_LINE_LENGTH_TEXT_FILE = 2000;
 const MAX_LINES_TO_READ = 2000;
@@ -154,6 +158,33 @@ export class At {
       content: truncatedLines.join('\n'),
       metadata: `Showing first ${MAX_LINES_TO_READ} lines of ${totalLines} total lines`,
     };
+  }
+
+  static normalizeLanguageV2Prompt(opts: {
+    input: LanguageModelV2Prompt;
+    cwd: string;
+  }): LanguageModelV2Prompt {
+    const lastUserMessage = [...opts.input].reverse().find((item) => {
+      return 'role' in item && item.role === 'user';
+    });
+    if (!lastUserMessage) {
+      return opts.input;
+    }
+    const content = lastUserMessage.content;
+    for (const item of content) {
+      if (item.type === 'text') {
+        const userPrompt = item.text;
+        const at = new At({
+          userPrompt,
+          cwd: opts.cwd,
+        });
+        const content = at.getContent();
+        if (content) {
+          item.text += `\n\n${content}`;
+        }
+      }
+    }
+    return opts.input;
   }
 
   static normalize(opts: {
