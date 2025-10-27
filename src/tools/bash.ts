@@ -565,28 +565,26 @@ export function createBashTool(opts: {
   return createTool({
     name: TOOL_NAMES.BASH,
     description:
-      `Run shell commands in the terminal, with support for long-running background tasks.
+      `Run shell commands in the terminal, ensuring proper handling and security measures.
 
 Background Execution:
-- Commands matching development patterns (npm/pnpm/yarn, dev servers, build watchers) automatically move to background after 2 seconds if producing output
 - Set run_in_background=true to force background execution
-- Background tasks return a task_id for use with bash_output and kill_bash tools
+- Background tasks return a task_id for use with ${TOOL_NAMES.BASH_OUTPUT} and ${TOOL_NAMES.KILL_BASH} tools
 - Initial output shown when moved to background
 
-Before using this tool:
-- Verify command is not banned: ${BANNED_COMMANDS.join(', ')}
-- Quote file paths with spaces
-- Capture command output
+Before using this tool, please follow these steps:
+- Verify that the command is not one of the banned commands: ${BANNED_COMMANDS.join(', ')}.
+- Always quote file paths that contain spaces with double quotes (e.g., cd "path with spaces/file.txt")
+- Capture the output of the command.
 
 Notes:
-- Command argument required
-- Optional timeout in milliseconds (max ${MAX_TIMEOUT}ms / 10 minutes), default 30 minutes
-- IMPORTANT: Avoid search commands like \`find\` and \`grep\`. Use grep and glob tools instead
-- Avoid read tools like \`cat\`, \`head\`, \`tail\`, \`ls\`. Use \`read\` and \`ls\` tools
-- For \`grep\`, use ripgrep at \`rg\` (pre-installed)
-- Separate multiple commands with ';' or '&&', not newlines
-- Maintain working directory using absolute paths, avoid \`cd\`
-- Don't add \`<command>\` wrapper
+- The command argument is required.
+- You can specify an optional timeout in milliseconds (up to ${MAX_TIMEOUT}ms / 10 minutes). If not specified, commands will timeout after 30 minutes.
+- VERY IMPORTANT: You MUST avoid using search commands like \`find\` and \`grep\`. Instead use grep and glob tool to search. You MUST avoid read tools like \`cat\`, \`head\`, \`tail\`, and \`ls\`, and use \`read\` and \`ls\` tool to read files.
+- If you _still_ need to run \`grep\`, STOP. ALWAYS USE ripgrep at \`rg\` first, which all users have pre-installed.
+- When issuing multiple commands, use the ';' or '&&' operator to separate them. DO NOT use newlines (newlines are ok in quoted strings).
+- Try to maintain your current working directory throughout the session by using absolute paths and avoiding usage of \`cd\`. You may use \`cd\` if the User explicitly requests it.
+- Don't add \`<command>\` wrapper to the command.
 
 <good-example>
 pytest /foo/bar/tests
