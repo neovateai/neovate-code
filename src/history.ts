@@ -202,6 +202,8 @@ export class History {
           const normalizedContent = message.content.map((part: any) => {
             if (part.type === 'text') {
               return { type: 'text', text: part.text };
+            } else if (part.type === 'reasoning') {
+              return { type: 'reasoning', text: part.text };
             } else if (part.type === 'tool_use') {
               return {
                 type: 'tool-call',
