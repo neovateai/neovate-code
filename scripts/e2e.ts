@@ -233,6 +233,7 @@ async function runTask(task: Task, model: string): Promise<TaskResult> {
       assistantMessages,
       result: resultItem?.content,
       isError: resultItem?.isError,
+      cwd: tmpPath,
     });
 
     const duration = Date.now() - startTime;
