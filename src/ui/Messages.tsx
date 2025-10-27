@@ -1,10 +1,13 @@
 import { Box, Static, Text } from 'ink';
 import pc from 'picocolors';
-import React, { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import type {
   AssistantMessage,
   NormalizedMessage,
+  ReasoningPart,
+  TextPart,
   ToolMessage,
+  ToolMessage2,
   ToolResultPart,
   ToolUsePart,
   UserMessage,
@@ -13,6 +16,7 @@ import {
   getMessageText,
   isCanceledMessage,
   isToolResultMessage,
+  toolResultPart2ToToolResultPart,
 } from '../message';
 import { SPACING, UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
@@ -28,20 +32,153 @@ interface EnrichedProvider {
   hasApiKey?: boolean;
 }
 
+type ToolPair = {
+  toolUse: ToolUsePart;
+  toolResult?: ToolResultPart;
+};
+
+export function splitMessages(messages: NormalizedMessage[]): {
+  completedMessages: NormalizedMessage[];
+  pendingMessages: NormalizedMessage[];
+} {
+  // 1. Find the last assistant message with tool_use from the end
+  let lastToolUseIndex = -1;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg.role === 'assistant' && Array.isArray(msg.content)) {
+      const hasToolUse = msg.content.some((part) => part.type === 'tool_use');
+      if (hasToolUse) {
+        lastToolUseIndex = i;
+        break;
+      }
+    }
+  }
+
+  // 2. If no tool_use found, all messages go to Static
+  if (lastToolUseIndex === -1) {
+    return { completedMessages: messages, pendingMessages: [] };
+  }
+
+  // 3. Get all tool_use ids from the last assistant message
+  const assistantMsg = messages[lastToolUseIndex] as AssistantMessage;
+  if (typeof assistantMsg.content === 'string') {
+    return { completedMessages: messages, pendingMessages: [] };
+  }
+  const toolUseIds = assistantMsg.content
+    .filter(
+      (p: TextPart | ReasoningPart | ToolUsePart) => p.type === 'tool_use',
+    )
+    .map((p: TextPart | ReasoningPart | ToolUsePart) => (p as ToolUsePart).id);
+
+  // 4. Collect all tool results after this message
+  const toolResults = new Set<string>();
+  for (let i = lastToolUseIndex + 1; i < messages.length; i++) {
+    const msg = messages[i];
+    // Handle new format: role: 'tool'
+    if (msg.role === 'tool') {
+      (msg as ToolMessage2).content.forEach((part) => {
+        if (part.toolCallId) {
+          toolResults.add(part.toolCallId);
+        }
+      });
+    }
+    // Handle legacy format: role: 'user' with isToolResult
+    else if (msg.role === 'user' && isToolResultMessage(msg)) {
+      const toolMsg = msg as ToolMessage;
+      if (toolMsg.content[0]) {
+        toolResults.add(toolMsg.content[0].id);
+      }
+    }
+  }
+
+  // 5. Check if all tools are completed
+  const allToolsCompleted = toolUseIds.every((id) => toolResults.has(id));
+
+  if (allToolsCompleted) {
+    return { completedMessages: messages, pendingMessages: [] };
+  } else {
+    return {
+      completedMessages: messages.slice(0, lastToolUseIndex),
+      pendingMessages: messages.slice(lastToolUseIndex),
+    };
+  }
+}
+
+export function pairToolsWithResults(
+  assistantMsg: AssistantMessage,
+  subsequentMessages: NormalizedMessage[],
+): ToolPair[] {
+  // Extract all tool_use parts
+  if (typeof assistantMsg.content === 'string') {
+    return [];
+  }
+  const toolUses = assistantMsg.content.filter(
+    (p: TextPart | ReasoningPart | ToolUsePart) => p.type === 'tool_use',
+  ) as ToolUsePart[];
+
+  // Collect all tool results indexed by toolCallId
+  const resultsMap = new Map<string, ToolResultPart>();
+  for (const msg of subsequentMessages) {
+    // Handle new format: role: 'tool'
+    if (msg.role === 'tool') {
+      (msg as ToolMessage2).content.forEach((part) => {
+        resultsMap.set(part.toolCallId, toolResultPart2ToToolResultPart(part));
+      });
+    }
+    // Handle legacy format: role: 'user' with isToolResult
+    else if (msg.role === 'user' && isToolResultMessage(msg)) {
+      const toolMsg = msg as ToolMessage;
+      if (toolMsg.content[0]) {
+        const part = toolMsg.content[0];
+        resultsMap.set(part.id, part);
+      }
+    }
+  }
+
+  // Pair each tool_use with its result (if available)
+  return toolUses.map((toolUse) => ({
+    toolUse,
+    toolResult: resultsMap.get(toolUse.id),
+  }));
+}
+
 export function Messages() {
   const { messages, productName, sessionId } = useAppStore();
+
+  // Split messages into completed and pending
+  const { completedMessages, pendingMessages } = useMemo(
+    () => splitMessages(messages as NormalizedMessage[]),
+    [messages],
+  );
+
   return (
     <Box flexDirection="column">
-      <Static key={sessionId} items={['header', ...messages] as any[]}>
+      {/* Static area - completed messages */}
+      <Static key={sessionId} items={['header', ...completedMessages] as any[]}>
         {(item, index) => {
           if (item === 'header') {
-            return <Header key={'header'} />;
+            return <Header key="header" />;
           }
           return (
-            <Message key={index} message={item} productName={productName} />
+            <MessageGroup
+              key={index}
+              message={item}
+              messages={completedMessages}
+              productName={productName}
+            />
           );
         }}
       </Static>
+
+      {/* Dynamic area - pending messages */}
+      {pendingMessages.map((message, index) => (
+        <MessageGroup
+          key={`pending-${message.uuid || index}`}
+          message={message}
+          messages={pendingMessages}
+          productName={productName}
+        />
+      ))}
     </Box>
   );
 }
@@ -240,43 +377,109 @@ function ToolUse({ part }: { part: ToolUsePart }) {
   );
 }
 
-function Assistant({
+function ToolPair({ pair }: { pair: ToolPair }) {
+  return (
+    <Box flexDirection="column">
+      {/* Render ToolUse */}
+      <ToolUse part={pair.toolUse} />
+
+      {/* Render ToolResult if available */}
+      {pair.toolResult && (
+        <Box marginTop={SPACING.MESSAGE_MARGIN_TOP_TOOL_RESULT}>
+          <ToolResultItem part={pair.toolResult} />
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+function AssistantWithTools({
   message,
+  messages,
   productName,
 }: {
   message: AssistantMessage;
+  messages: NormalizedMessage[];
   productName: string;
 }) {
+  // If it's a pure string, render directly
   if (typeof message.content === 'string') {
     return <AssistantText text={message.content} productName={productName} />;
   }
-  // Don't render parts after tool use
-  // Only ONE tool use is allowed
-  let hasToolUse = false;
+
+  // Separate text/thinking and tool_use parts
+  const textParts = message.content.filter(
+    (p) => p.type === 'text' || p.type === 'reasoning',
+  );
+  const toolUseParts = message.content.filter((p) => p.type === 'tool_use');
+
+  // If no tool_use, render with original logic
+  if (toolUseParts.length === 0) {
+    return (
+      <>
+        {textParts.map((part, index) => {
+          if (part.type === 'text') {
+            return (
+              <AssistantText
+                key={`text-${index}`}
+                text={(part as TextPart).text}
+                productName={productName}
+              />
+            );
+          }
+          if (part.type === 'reasoning') {
+            return (
+              <Thinking
+                key={`thinking-${index}`}
+                text={(part as ReasoningPart).text}
+              />
+            );
+          }
+          return null;
+        })}
+      </>
+    );
+  }
+
+  // Find current message position in the array
+  const currentIndex = messages.findIndex(
+    (m) =>
+      (m as NormalizedMessage).uuid === (message as NormalizedMessage).uuid,
+  );
+  const subsequentMessages =
+    currentIndex >= 0 ? messages.slice(currentIndex + 1) : [];
+
+  // Pair tool_use with tool_result
+  const toolPairs = pairToolsWithResults(message, subsequentMessages);
+
   return (
     <>
-      {message.content.map((part, index) => {
-        if (hasToolUse) {
-          return null;
-        }
+      {/* Render text parts */}
+      {textParts.map((part, index) => {
         if (part.type === 'text') {
           return (
             <AssistantText
-              key={index}
-              text={part.text}
+              key={`text-${index}`}
+              text={(part as TextPart).text}
               productName={productName}
             />
           );
         }
-        if (part.type === 'tool_use') {
-          hasToolUse = true;
-          return <ToolUse key={index} part={part} />;
-        }
         if (part.type === 'reasoning') {
-          return <Thinking key={index} text={part.text} />;
+          return (
+            <Thinking
+              key={`thinking-${index}`}
+              text={(part as ReasoningPart).text}
+            />
+          );
         }
         return null;
       })}
+
+      {/* Render paired tool_use + tool_result */}
+      {toolPairs.map((pair) => (
+        <ToolPair key={pair.toolUse.id} pair={pair} />
+      ))}
     </>
   );
 }
@@ -365,28 +568,37 @@ function ToolResult({ message }: { message: ToolMessage }) {
   );
 }
 
-type MessageProps = {
+type MessageGroupProps = {
   message: NormalizedMessage;
+  messages: NormalizedMessage[];
   productName: string;
 };
 
-function Message({ message, productName }: MessageProps) {
+function MessageGroup({ message, messages, productName }: MessageGroupProps) {
+  // If it's a user message
   if (message.role === 'user') {
     const isToolResult = isToolResultMessage(message);
     if (isToolResult) {
-      return <ToolResult key={message.uuid} message={message as ToolMessage} />;
-    } else {
-      return <User key={message.uuid} message={message as UserMessage} />;
+      return <ToolResult message={message as ToolMessage} />;
     }
+    return <User message={message as UserMessage} />;
   }
+
+  // If it's a tool message (already paired in assistant, skip rendering)
+  if (message.role === 'tool') {
+    return null;
+  }
+
+  // If it's an assistant message
   if (message.role === 'assistant') {
     return (
-      <Assistant
-        key={message.uuid}
+      <AssistantWithTools
         message={message as AssistantMessage}
+        messages={messages}
         productName={productName}
       />
     );
   }
+
   return null;
 }

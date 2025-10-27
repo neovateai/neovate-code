@@ -1,5 +1,5 @@
 import { CANCELED_MESSAGE_TEXT } from './constants';
-import type { ToolResult } from './tool';
+import type { ReturnDisplay, ToolResult } from './tool';
 import { randomUUID } from './utils/randomUUID';
 
 export type SystemMessage = {
@@ -60,6 +60,17 @@ export type ToolMessage = {
   role: 'user';
   content: ToolContent;
 };
+export type ToolMessage2 = {
+  role: 'tool';
+  content: ToolResultPart2[];
+};
+export type ToolResultPart2 = {
+  type: 'tool-result';
+  toolCallId: string;
+  toolName: string;
+  input: Record<string, any>;
+  result: ToolResult;
+};
 export type ToolContent = Array<ToolResultPart>;
 export type ToolResultPart = {
   type: 'tool_result';
@@ -72,7 +83,8 @@ export type Message =
   | SystemMessage
   | UserMessage
   | AssistantMessage
-  | ToolMessage;
+  | ToolMessage
+  | ToolMessage2;
 export type NormalizedMessage = Message & {
   type: 'message';
   timestamp: string;
@@ -80,6 +92,18 @@ export type NormalizedMessage = Message & {
   parentUuid: string | null;
   uiContent?: string;
 };
+
+export function toolResultPart2ToToolResultPart(
+  part: ToolResultPart2,
+): ToolResultPart {
+  return {
+    type: 'tool_result',
+    id: part.toolCallId,
+    name: part.toolName,
+    input: part.input,
+    result: part.result,
+  };
+}
 
 export function createUserMessage(
   content: string,

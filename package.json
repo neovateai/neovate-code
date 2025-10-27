@@ -65,6 +65,7 @@
     "@ai-sdk/anthropic": "^2.0.22",
     "@ai-sdk/deepseek": "^1.0.18",
     "@ai-sdk/google": "^2.0.17",
+    "@ai-sdk/mcp": "^0.0.1",
     "@ai-sdk/openai": "^2.0.53",
     "@ai-sdk/provider": "^2.0.0",
     "@ai-sdk/xai": "^2.0.23",

@@ -358,7 +358,7 @@ export function toolToLanguageV2Tool(
   }
 
   const exhaustiveCheck: never = tool;
-  throw new Error(`Unsupported tool type: ${exhaustiveCheck}`);
+  throw new Error(`Unsupported tool type: ${JSON.stringify(exhaustiveCheck)}`);
 }
 
 /**
