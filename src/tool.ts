@@ -5,7 +5,11 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { Context } from './context';
 import type { ImagePart, TextPart } from './message';
 import { resolveModelWithContext } from './model';
-import { createBashTool } from './tools/bash';
+import {
+  createBashTool,
+  createBashOutputTool,
+  createKillBashTool,
+} from './tools/bash';
 import { createEditTool } from './tools/edit';
 import { createFetchTool } from './tools/fetch';
 import { createGlobTool } from './tools/glob';
@@ -39,7 +43,10 @@ export async function resolveTools(opts: ResolveToolsOpts) {
     ? [
         createWriteTool({ cwd }),
         createEditTool({ cwd }),
-        createBashTool({ cwd }),
+        createBashTool({
+          cwd,
+          backgroundTaskManager: opts.context.backgroundTaskManager,
+        }),
       ]
     : [];
   const todoTools = (() => {
@@ -49,8 +56,24 @@ export async function resolveTools(opts: ResolveToolsOpts) {
     });
     return [todoReadTool, todoWriteTool];
   })();
+  const backgroundTools = opts.write
+    ? [
+        createBashOutputTool({
+          backgroundTaskManager: opts.context.backgroundTaskManager,
+        }),
+        createKillBashTool({
+          backgroundTaskManager: opts.context.backgroundTaskManager,
+        }),
+      ]
+    : [];
   const mcpTools = await getMcpTools(opts.context);
-  return [...readonlyTools, ...writeTools, ...todoTools, ...mcpTools];
+  return [
+    ...readonlyTools,
+    ...writeTools,
+    ...todoTools,
+    ...backgroundTools,
+    ...mcpTools,
+  ];
 }
 
 async function getMcpTools(context: Context): Promise<Tool[]> {
