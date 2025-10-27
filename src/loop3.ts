@@ -292,9 +292,6 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       },
       requestId,
     );
-    // console.log('toolCalls', toolCalls, toolCalls.length);
-    // console.log('assistantContent', assistantContent);
-    // console.log('text', text);
     if (!toolCalls.length) {
       break;
     }
@@ -327,54 +324,47 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
           input: toolUse.params,
           result: toolResult,
         });
-        // await history.addMessage({
-        //   role: 'user',
-        //   content: [
-        //     {
-        //       type: 'tool_result',
-        //       id: toolUse.callId,
-        //       name: toolUse.name,
-        //       input: toolUse.params,
-        //       result: toolResult,
-        //     },
-        //   ],
-        // });
         // Prevent normal turns from being terminated due to exceeding the limit
         turnsCount--;
       } else {
-        throw new Error(`Not implemented`);
-        // const message = 'Error: Tool execution was denied by user.';
-        // let toolResult: ToolResult = {
-        //   llmContent: message,
-        //   isError: true,
-        // };
-        // if (opts.onToolResult) {
-        //   toolResult = await opts.onToolResult(toolUse, toolResult, approved);
-        // }
-        // await history.addMessage({
-        //   role: 'user',
-        //   content: [
-        //     {
-        //       type: 'tool_result',
-        //       id: toolUse.callId,
-        //       name: toolUse.name,
-        //       input: toolUse.params,
-        //       result: toolResult,
-        //     },
-        //   ],
-        // });
-        // return {
-        //   success: false,
-        //   error: {
-        //     type: 'tool_denied',
-        //     message,
-        //     details: {
-        //       toolUse,
-        //       history,
-        //       usage: totalUsage,
-        //     },
-        //   },
-        // };
+        const message = 'Error: Tool execution was denied by user.';
+        let toolResult: ToolResult = {
+          llmContent: message,
+          isError: true,
+        };
+        if (opts.onToolResult) {
+          toolResult = await opts.onToolResult(toolUse, toolResult, approved);
+        }
+        toolResults.push({
+          toolCallId: toolUse.callId,
+          toolName: toolUse.name,
+          input: toolUse.params,
+          result: toolResult,
+        });
+        await history.addMessage({
+          role: 'tool',
+          content: toolResults.map((tr) => {
+            return {
+              type: 'tool-result',
+              toolCallId: tr.toolCallId,
+              toolName: tr.toolName,
+              input: tr.input,
+              result: tr.result,
+            };
+          }),
+        } as any);
+        return {
+          success: false,
+          error: {
+            type: 'tool_denied',
+            message,
+            details: {
+              toolUse,
+              history,
+              usage: totalUsage,
+            },
+          },
+        };
       }
     }
     if (toolResults.length) {
