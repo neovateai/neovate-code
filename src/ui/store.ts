@@ -559,7 +559,7 @@ export const useAppStore = create<AppStore>()(
           }
 
           // Update terminal title after successful send
-          if (result.success) {
+          if (result.success && get().messages.length <= 2) {
             // don't await this
             (async () => {
               try {

@@ -1253,6 +1253,7 @@ export type ModelInfo = {
   provider: Provider;
   model: Omit<Model, 'cost'>;
   aisdk: AiSdkModel;
+  m: LanguageModelV2;
 };
 
 function mergeConfigProviders(
@@ -1353,14 +1354,19 @@ export async function resolveModel(
     `Model ${modelId} not found in provider ${providerStr}, valid models: ${Object.keys(provider.models).join(', ')}`,
   );
   model.id = modelId;
-  let m = provider.createModel(modelId, provider, globalConfigDir);
+  let m: LanguageModelV2 | Promise<LanguageModelV2> = provider.createModel(
+    modelId,
+    provider,
+    globalConfigDir,
+  );
   if (isPromise(m)) {
     m = await m;
   }
   return {
     provider,
     model,
-    aisdk: aisdk(m as LanguageModelV2),
+    aisdk: aisdk(m),
+    m,
   };
 }
 

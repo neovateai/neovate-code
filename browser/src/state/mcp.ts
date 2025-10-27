@@ -80,11 +80,18 @@ export const actions = {
   },
 
   async removeServer(name: string, scope: 'project' | 'global') {
-    await bridge.request('config.remove', {
+    const currentServers =
+      scope === 'global'
+        ? state.managerData?.globalServers || {}
+        : state.managerData?.projectServers || {};
+
+    const { [name]: _, ...updatedServers } = currentServers;
+
+    await bridge.request('config.set', {
       cwd: chatState.cwd,
       isGlobal: scope === 'global',
       key: 'mcpServers',
-      values: [name],
+      value: JSON.stringify(updatedServers),
     });
 
     await this.getList();

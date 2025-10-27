@@ -1,12 +1,4 @@
-import {
-  type Tool as AgentTool,
-  type FunctionTool,
-  type MCPServer,
-  MCPServerSSE,
-  MCPServerStdio,
-  MCPServerStreamableHttp,
-  mcpToFunctionTool,
-} from '@openai/agents';
+import { experimental_createMCPClient } from '@ai-sdk/mcp';
 import createDebug from 'debug';
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -30,8 +22,6 @@ export interface MCPConfig {
 
 const debug = createDebug('neovate:mcp');
 
-export type MCP = MCPServerStdio | MCPServerStreamableHttp | MCPServerSSE;
-
 type MCPServerStatus =
   | 'pending'
   | 'connecting'
@@ -40,10 +30,11 @@ type MCPServerStatus =
   | 'disconnected';
 
 interface ServerState {
-  server?: MCP;
+  config: MCPConfig;
   status: MCPServerStatus;
   error?: string;
-  tools?: AgentTool[];
+  tools?: Record<string, any>;
+  client?: any; // Store client for cleanup
   retryCount: number;
   isTemporaryError?: boolean;
 }
@@ -67,6 +58,7 @@ export class MCPManager {
         continue;
       }
       manager.servers.set(key, {
+        config,
         status: 'pending',
         retryCount: 0,
       });
@@ -132,56 +124,16 @@ export class MCPManager {
       debug(`Connecting MCP server: ${key}`);
       serverState.status = 'connecting';
 
-      let server: MCPServerStdio | MCPServerStreamableHttp | MCPServerSSE;
-      if (config.command) {
-        const env = config.env;
-        if (env) {
-          env.PATH = process.env.PATH || '';
-        }
-        server = new MCPServerStdio({
-          name: key,
-          command: config.command!,
-          args: config.args,
-          env,
-          timeout: config.timeout,
-        });
-      } else if (config.url) {
-        const requestInit = config.headers
-          ? { requestInit: { headers: config.headers } }
-          : {};
-        if (config.type === 'sse') {
-          server = new MCPServerSSE({
-            name: key,
-            url: config.url!,
-            timeout: config.timeout,
-            ...requestInit,
-          });
-        } else {
-          server = new MCPServerStreamableHttp({
-            name: key,
-            url: config.url!,
-            timeout: config.timeout,
-            ...requestInit,
-          });
-        }
-      } else {
-        throw new Error(
-          `MCP server ${key} must have either command or url configured`,
-        );
-      }
+      // Test connection and fetch tools
+      const { client, tools } = await this._testConnectionAndFetchTools(config);
 
-      await server.connect();
-
-      // Get tools from connected server
-      const tools = await this.getFunctionToolsFromServer(server, false);
-
-      serverState.server = server;
       serverState.status = 'connected';
+      serverState.client = client;
       serverState.tools = tools;
       serverState.error = undefined;
 
       debug(
-        `MCP server connected successfully: ${key}, tools: ${tools.length}`,
+        `MCP server connected successfully: ${key}, tools: ${Object.keys(tools).length}`,
       );
     } catch (error) {
       const errorMessage =
@@ -194,45 +146,90 @@ export class MCPManager {
       serverState.status = 'failed';
       serverState.error = errorMessage;
       serverState.retryCount += 1;
-
-      // Add error classification metadata
       serverState.isTemporaryError = isTemporaryError;
 
-      // Clean up failed connection attempt
-      if (serverState.server) {
-        try {
-          await serverState.server.close();
-        } catch (cleanupError) {
-          debug(
-            `Error cleaning up failed connection for ${key}:`,
-            cleanupError,
-          );
-        }
-        serverState.server = undefined;
-      }
+      // Ensure no client reference is left on failure
+      serverState.client = undefined;
+      serverState.tools = undefined;
     }
   }
 
   async getAllTools(): Promise<Tool[]> {
-    const connectedServers = Array.from(this.servers.values())
-      .filter((state) => state.status === 'connected' && state.server)
-      .map((state) => state.server!);
+    const allTools: Tool[] = [];
+    const toolNames = new Set<string>();
 
-    return this.getAllMcpTools(connectedServers);
+    for (const [serverName, serverState] of this.servers.entries()) {
+      if (serverState.status !== 'connected' || !serverState.tools) {
+        continue;
+      }
+
+      for (const [toolName, toolDef] of Object.entries(serverState.tools)) {
+        const fullToolName = `mcp__${serverName}__${toolName}`;
+
+        if (toolNames.has(fullToolName)) {
+          throw new Error(`Duplicate tool name found: ${fullToolName}`);
+        }
+
+        toolNames.add(fullToolName);
+        allTools.push(
+          this.#convertAiSdkToolToLocal(
+            toolName,
+            toolDef,
+            serverName,
+            serverState.config,
+          ),
+        );
+      }
+    }
+
+    return allTools;
   }
 
   async getTools(keys: string[]): Promise<Tool[]> {
-    const servers = keys
-      .map((key) => this.servers.get(key))
-      .filter((state) => state && state.status === 'connected' && state.server)
-      .map((state) => state!.server!);
-    return this.getAllMcpTools(servers);
+    const allTools: Tool[] = [];
+    const toolNames = new Set<string>();
+
+    for (const key of keys) {
+      const serverState = this.servers.get(key);
+      if (
+        !serverState ||
+        serverState.status !== 'connected' ||
+        !serverState.tools
+      ) {
+        continue;
+      }
+
+      for (const [toolName, toolDef] of Object.entries(serverState.tools)) {
+        const fullToolName = `mcp__${key}__${toolName}`;
+
+        if (toolNames.has(fullToolName)) {
+          throw new Error(`Duplicate tool name found: ${fullToolName}`);
+        }
+
+        toolNames.add(fullToolName);
+        allTools.push(
+          this.#convertAiSdkToolToLocal(
+            toolName,
+            toolDef,
+            key,
+            serverState.config,
+          ),
+        );
+      }
+    }
+
+    return allTools;
   }
 
   async destroy() {
+    // Close all client connections
     const closePromises = Array.from(this.servers.values())
-      .filter((state) => state.server)
-      .map((state) => state.server!.close());
+      .filter((state) => state.client)
+      .map((state) =>
+        state.client.close().catch((err: Error) => {
+          debug('Error closing client during destroy:', err);
+        }),
+      );
 
     await Promise.allSettled(closePromises);
     this.servers.clear();
@@ -272,7 +269,7 @@ export class MCPManager {
       result[name] = {
         status: state.status,
         error: state.error,
-        toolCount: state.tools?.length || 0,
+        toolCount: state.tools ? Object.keys(state.tools).length : 0,
       };
     }
     return result;
@@ -300,17 +297,17 @@ export class MCPManager {
     // Log reconnection attempt
     debug(`Attempting to reconnect MCP server: ${serverName}`);
 
-    // Close existing connection if any
-    if (serverState.server) {
+    // Close existing client if any
+    if (serverState.client) {
       try {
-        await serverState.server.close();
+        await serverState.client.close();
       } catch (error) {
-        debug(`Error closing server ${serverName}:`, error);
+        debug(`Error closing existing client for ${serverName}:`, error);
       }
     }
 
     // Reset state and retry
-    serverState.server = undefined;
+    serverState.client = undefined;
     serverState.tools = undefined;
     serverState.error = undefined;
     serverState.status = 'connecting';
@@ -326,41 +323,54 @@ export class MCPManager {
     debug(`Successfully reconnected MCP server: ${serverName}`);
   }
 
-  async getAllMcpTools(
-    mcpServers: MCPServer[],
-    convertSchemasToStrict: boolean = false,
-  ): Promise<Tool[]> {
-    const allTools: Tool[] = [];
-    const toolNames = new Set<string>();
-    for (const server of mcpServers) {
-      const serverTools = await this.getFunctionToolsFromServer(
-        server,
-        convertSchemasToStrict,
+  private async _createClient(config: MCPConfig) {
+    if (config.command) {
+      // Stdio transport (for local servers only)
+      const env = config.env
+        ? { ...config.env, PATH: process.env.PATH || '' }
+        : undefined;
+
+      const { Experimental_StdioMCPTransport } = await import(
+        '@ai-sdk/mcp/mcp-stdio'
       );
-      const serverToolNames = new Set(serverTools.map((t) => t.name));
-      const intersection = [...serverToolNames].filter((n) => toolNames.has(n));
-      if (intersection.length > 0) {
-        throw new Error(
-          `Duplicate tool names found across MCP servers: ${intersection.join(', ')}`,
-        );
-      }
-      for (const t of serverTools) {
-        toolNames.add(t.name);
-        allTools.push(this.#convertMcpToolToLocal(t, server.name));
-      }
+
+      return experimental_createMCPClient({
+        transport: new Experimental_StdioMCPTransport({
+          command: config.command,
+          args: config.args,
+          env,
+        }),
+      });
+    } else if (config.url) {
+      // HTTP or SSE transport
+      const transportType = config.type || 'http'; // Default to HTTP
+
+      return experimental_createMCPClient({
+        transport: {
+          type: transportType === 'sse' ? 'sse' : 'http',
+          url: config.url,
+          headers: config.headers,
+        },
+      });
+    } else {
+      throw new Error('MCP config must have either command or url configured');
     }
-    return allTools;
   }
 
-  async getFunctionToolsFromServer<TContext = UnknownContext>(
-    server: MCPServer,
-    convertSchemasToStrict: boolean,
-  ) {
-    const mcpTools = await server.listTools();
-    const tools: FunctionTool<TContext, any, string>[] = mcpTools.map((t) =>
-      mcpToFunctionTool(t, server, convertSchemasToStrict),
-    );
-    return tools;
+  private async _testConnectionAndFetchTools(
+    config: MCPConfig,
+  ): Promise<{ client: any; tools: Record<string, any> }> {
+    const client = await this._createClient(config);
+    try {
+      const tools = await client.tools();
+      return { client, tools };
+    } catch (error) {
+      // Close client on error
+      await client.close().catch((err) => {
+        debug('Error closing client after connection failure:', err);
+      });
+      throw error;
+    }
   }
 
   private _isTemporaryError(error: unknown): boolean {
@@ -413,26 +423,27 @@ export class MCPManager {
     return true;
   }
 
-  #convertMcpToolToLocal(mcpTool: FunctionTool, serverName: string): Tool {
+  #convertAiSdkToolToLocal(
+    toolName: string,
+    toolDef: any,
+    serverName: string,
+    config: MCPConfig,
+  ): Tool {
     return {
-      name: `mcp__${serverName}__${mcpTool.name}`,
-      description: mcpTool.description,
+      name: `mcp__${serverName}__${toolName}`,
+      description: toolDef.description,
       getDescription: ({ params }) => {
         return formatParamsDescription(params);
       },
-      // @ts-expect-error mcpTool.parameters is a JsonObjectSchema
-      parameters: mcpTool.parameters,
+      parameters: toolDef.inputSchema.jsonSchema,
       execute: async (params) => {
         try {
-          // FunctionTool.invoke expects (runContext, input)
-          // We'll pass null as runContext since we don't have a full run context
-          const result = await mcpTool.invoke(
-            null as any,
-            JSON.stringify(params || {}),
-          );
+          // toolDef is already a Tool from AI SDK with an execute method
+          const result = await toolDef.execute(params || {});
 
-          const returnDisplay = `Tool ${mcpTool.name} executed successfully, ${params ? `parameters: ${JSON.stringify(params)}` : ''}`;
+          const returnDisplay = `Tool ${toolName} executed successfully${params ? `, parameters: ${JSON.stringify(params)}` : ''}`;
           const llmContent = convertMcpResultToLlmContent(result);
+
           return {
             llmContent,
             returnDisplay,
@@ -450,8 +461,6 @@ export class MCPManager {
     };
   }
 }
-
-type UnknownContext = unknown;
 
 export function parseMcpConfig(
   mcpConfigArgs: string[],

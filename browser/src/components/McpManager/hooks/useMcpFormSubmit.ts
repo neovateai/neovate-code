@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <explanation> */
 import { message } from 'antd';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type McpServerItemConfig, actions as mcpActions } from '@/state/mcp';
 import type {
@@ -12,6 +13,7 @@ import type { JsonConfigFormat, McpConfigItem } from '@/types/mcp';
 
 export const useMcpFormSubmit = () => {
   const { t } = useTranslation();
+  const [loading, setLoading] = useState(false);
 
   const handleConfigToServerConfig = (
     config: McpConfigItem,
@@ -82,6 +84,7 @@ export const useMcpFormSubmit = () => {
   };
 
   const handleAdd = async (configs: McpConfigItem[]) => {
+    setLoading(true);
     try {
       for (const config of configs) {
         if (config.inputMode === 'json') {
@@ -103,6 +106,8 @@ export const useMcpFormSubmit = () => {
       console.error('Add MCP server failed:', error);
       message.error(t('mcp.addFailed'));
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -110,6 +115,7 @@ export const useMcpFormSubmit = () => {
     server: McpServerItemConfig,
     formData: McpServerItemConfig,
   ) => {
+    setLoading(true);
     try {
       const { name, ...config } = formData;
 
@@ -123,11 +129,14 @@ export const useMcpFormSubmit = () => {
     } catch (_error) {
       message.error(t('mcp.updateFailed'));
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 
   return {
     handleAdd,
     handleEdit,
+    loading,
   };
 };
