@@ -184,6 +184,7 @@ interface AppActions {
   processQueuedMessages: () => Promise<void>;
   toggleDebugMode: () => void;
   setStatus: (status: AppStatus) => void;
+  setBashMode: (bashMode: boolean) => void;
 
   // Input state actions
   setInputValue: (value: string) => void;
@@ -939,6 +940,10 @@ export const useAppStore = create<AppStore>()(
 
       setStatus: (status: AppStatus) => {
         set({ status });
+      },
+
+      setBashMode: (bashMode: boolean) => {
+        set({ bashMode });
       },
 
       // Input state actions

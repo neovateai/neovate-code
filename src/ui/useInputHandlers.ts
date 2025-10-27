@@ -26,6 +26,7 @@ export function useInputHandlers() {
     setHistoryIndex,
     togglePlanMode,
     clearQueue,
+    setBashMode,
   } = useAppStore();
   const inputState = useInputState();
   const mode = getInputMode(inputState.state.value);
@@ -73,6 +74,10 @@ export function useInputHandlers() {
       resetTabTrigger();
     }
   }, [inputState.state.value]);
+
+  useEffect(() => {
+    setBashMode(mode === 'bash');
+  }, [mode, setBashMode]);
 
   const handleSubmit = useCallback(async () => {
     const value = inputState.state.value.trim();
