@@ -7,6 +7,7 @@ import {
 } from './config';
 import { CANCELED_MESSAGE_TEXT } from './constants';
 import { Context } from './context';
+import { BackgroundTaskManager } from './utils/backgroundTasks';
 import { JsonlLogger } from './jsonl';
 import type {
   ImagePart,
@@ -68,6 +69,8 @@ class NodeHandlerRegistry {
     });
     // init mcp manager but don't wait for it
     context.mcpManager.initAsync();
+    // init background task manager
+    context.backgroundTaskManager = new BackgroundTaskManager(cwd);
     this.contexts.set(cwd, context);
     return context;
   }

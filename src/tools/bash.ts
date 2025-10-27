@@ -5,6 +5,7 @@ import os from 'os';
 import path from 'pathe';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../constants';
+import type { Context } from '../context';
 import { createTool } from '../tool';
 import { getErrorMessage } from '../utils/error';
 import { shellExecute } from '../utils/shell-execution';
@@ -95,7 +96,7 @@ function isHighRiskCommand(command: string): boolean {
   );
 }
 
-function validateCommand(command: string): string | null {
+export function validateCommand(command: string): string | null {
   if (!command.trim()) {
     return 'Command cannot be empty.';
   }
@@ -231,7 +232,7 @@ async function executeCommand(command: string, timeout: number, cwd: string) {
   };
 }
 
-export function createBashTool(opts: { cwd: string }) {
+export function createBashTool(opts: { cwd: string; context: Context }) {
   return createTool({
     name: TOOL_NAMES.BASH,
     description:
@@ -245,6 +246,7 @@ Before using this tool, please follow these steps:
 Notes:
 - The command argument is required.
 - You can specify an optional timeout in milliseconds (up to ${MAX_TIMEOUT}ms / 10 minutes). If not specified, commands will timeout after 30 minutes.
+- You can use the \`run_in_background\` parameter to run the command in the background, which allows you to continue working while the command runs. You can monitor the output using the ${TOOL_NAMES.BASH_OUTPUT} tool as it becomes available.
 - VERY IMPORTANT: You MUST avoid using search commands like \`find\` and \`grep\`. Instead use grep and glob tool to search. You MUST avoid read tools like \`cat\`, \`head\`, \`tail\`, and \`ls\`, and use \`read\` and \`ls\` tool to read files.
 - If you _still_ need to run \`grep\`, STOP. ALWAYS USE ripgrep at \`rg\` first, which all users have pre-installed.
 - When issuing multiple commands, use the ';' or '&&' operator to separate them. DO NOT use newlines (newlines are ok in quoted strings).
@@ -268,6 +270,13 @@ cd /foo/bar && pytest tests
         .optional()
         .nullable()
         .describe(`Optional timeout in milliseconds (max ${MAX_TIMEOUT})`),
+      run_in_background: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe(
+          `Set to true to run this command in the background. Use ${TOOL_NAMES.BASH_OUTPUT} to read the output later.`,
+        ),
     }),
     getDescription: ({ params }) => {
       if (!params.command || typeof params.command !== 'string') {
@@ -276,7 +285,11 @@ cd /foo/bar && pytest tests
       const command = params.command.trim();
       return command.length > 100 ? command.substring(0, 97) + '...' : command;
     },
-    execute: async ({ command, timeout = DEFAULT_TIMEOUT }) => {
+    execute: async ({
+      command,
+      timeout = DEFAULT_TIMEOUT,
+      run_in_background = false,
+    }) => {
       try {
         if (!command) {
           return {
@@ -284,6 +297,34 @@ cd /foo/bar && pytest tests
             isError: true,
           };
         }
+
+        if (run_in_background) {
+          const manager = opts.context?.backgroundTaskManager;
+          if (!manager) {
+            return {
+              llmContent:
+                'Error: Background tasks are not supported in this session.',
+              isError: true,
+            };
+          }
+
+          const taskId = await manager.startTask(
+            command,
+            opts.cwd,
+            timeout || DEFAULT_TIMEOUT,
+          );
+
+          return {
+            llmContent: [
+              `Background task started successfully`,
+              `Task ID: ${taskId}`,
+              `Command: ${command}`,
+              `Use bash_output tool with task_id="${taskId}" to retrieve output`,
+            ].join('\n'),
+            returnDisplay: `Task ${taskId} started`,
+          };
+        }
+
         return await executeCommand(
           command,
           timeout || DEFAULT_TIMEOUT,
@@ -322,6 +363,87 @@ cd /foo/bar && pytest tests
         // For other commands, defer to approval mode settings
         return approvalMode !== 'yolo';
       },
+    },
+  });
+}
+
+export function createBashOutputTool(opts: { context: Context }) {
+  return createTool({
+    name: TOOL_NAMES.BASH_OUTPUT,
+    description: `
+- Retrieves output from a running or completed background bash shell
+- Takes a task_id parameter identifying the shell
+- Always returns only new output since the last check
+- Returns stdout and stderr output along with shell status
+- Supports optional regex filtering to show only lines matching a pattern
+- Use this tool when you need to monitor or check the output of a long-running shell
+- Shell IDs can be found using the /bashes command
+`.trim(),
+    parameters: z.object({
+      task_id: z
+        .string()
+        .describe('The ID of the background shell to retrieve output from'),
+      incremental: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe('Only return new output since last read'),
+      stream: z
+        .enum(['stdout', 'stderr', 'both'])
+        .optional()
+        .default('both')
+        .describe('Which output stream to retrieve'),
+    }),
+    getDescription: ({ params }) => {
+      const taskId = params.task_id as string;
+      const incremental = params.incremental as boolean;
+      return `Get ${incremental ? 'new' : 'all'} output from task ${taskId}`;
+    },
+    execute: async ({ task_id, incremental = false, stream = 'both' }) => {
+      const manager = opts.context?.backgroundTaskManager;
+      if (!manager) {
+        return {
+          llmContent:
+            'Error: Background tasks are not supported in this session.',
+          isError: true,
+        };
+      }
+
+      try {
+        const status = manager.getTaskStatus(task_id);
+        const output = manager.getTaskOutput(task_id, incremental, stream);
+
+        const llmContent = [
+          `Task ID: ${task_id}`,
+          `Command: ${status.command}`,
+          `Status: ${status.status}`,
+          `Exit Code: ${status.exitCode ?? '(still running)'}`,
+          `Duration: ${status.duration ? `${status.duration}ms` : '(in progress)'}`,
+          `Stdout: ${output.stdout || '(empty)'}`,
+          `Stderr: ${output.stderr || '(empty)'}`,
+        ].join('\n');
+
+        const displayMessage = output.combined
+          ? truncateOutput(output.combined)
+          : `Task ${status.status}, no output`;
+
+        return {
+          llmContent,
+          returnDisplay: displayMessage,
+        };
+      } catch (error) {
+        return {
+          llmContent:
+            error instanceof Error
+              ? `Error retrieving task output: ${error.message}`
+              : 'Error retrieving task output',
+          isError: true,
+        };
+      }
+    },
+    approval: {
+      category: 'read',
+      needsApproval: async () => false,
     },
   });
 }

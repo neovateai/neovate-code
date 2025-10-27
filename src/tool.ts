@@ -5,7 +5,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { Context } from './context';
 import type { ImagePart, TextPart } from './message';
 import { resolveModelWithContext } from './model';
-import { createBashTool } from './tools/bash';
+import { createBashTool, createBashOutputTool } from './tools/bash';
 import { createEditTool } from './tools/edit';
 import { createFetchTool } from './tools/fetch';
 import { createGlobTool } from './tools/glob';
@@ -39,7 +39,8 @@ export async function resolveTools(opts: ResolveToolsOpts) {
     ? [
         createWriteTool({ cwd }),
         createEditTool({ cwd }),
-        createBashTool({ cwd }),
+        createBashTool({ cwd, context: opts.context }),
+        createBashOutputTool({ context: opts.context }),
       ]
     : [];
   const todoTools = (() => {

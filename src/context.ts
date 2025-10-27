@@ -11,6 +11,7 @@ import {
   PluginHookType,
   PluginManager,
 } from './plugin';
+import type { BackgroundTaskManager } from './utils/backgroundTasks';
 
 type ContextOpts = {
   cwd: string;
@@ -22,6 +23,7 @@ type ContextOpts = {
   paths: Paths;
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
+  backgroundTaskManager?: BackgroundTaskManager;
 };
 
 export type ContextCreateOpts = {
@@ -43,6 +45,7 @@ export class Context {
   #pluginManager: PluginManager;
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
+  backgroundTaskManager?: BackgroundTaskManager;
 
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
@@ -54,6 +57,7 @@ export class Context {
     this.mcpManager = opts.mcpManager;
     this.#pluginManager = opts.pluginManager;
     this.argvConfig = opts.argvConfig;
+    this.backgroundTaskManager = opts.backgroundTaskManager;
   }
 
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {
@@ -64,6 +68,7 @@ export class Context {
   }
 
   async destroy() {
+    this.backgroundTaskManager?.cleanup();
     await this.mcpManager.destroy();
     await this.apply({
       hook: 'destroy',
