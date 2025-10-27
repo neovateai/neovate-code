@@ -48,16 +48,22 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
       const type =
         editingServer.type ||
         ((editingServer as McpSSEServerConfig).url ? 'sse' : 'stdio');
-      const envString = editingServer.env
-        ? typeof editingServer.env === 'string'
-          ? editingServer.env
-          : JSON.stringify(editingServer.env, null, 2)
-        : undefined;
+      let envString = '';
+      if (editingServer.env) {
+        if (typeof editingServer.env === 'string') {
+          envString = editingServer.env;
+        } else {
+          const { PATH, ...envWithoutPath } = editingServer.env;
+          envString = JSON.stringify(envWithoutPath, null, 2);
+        }
+      }
+
+      const { env: _, ...serverWithoutEnv } = editingServer;
 
       form.setFieldsValue({
+        ...serverWithoutEnv,
         type,
         env: envString,
-        ...editingServer,
       });
     } else if (!editMode) {
       form.resetFields();
