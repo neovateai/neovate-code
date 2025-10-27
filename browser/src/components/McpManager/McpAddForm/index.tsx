@@ -40,7 +40,7 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
     useMcpConfigManager();
 
   // Form submission hook
-  const { handleAdd, handleEdit } = useMcpFormSubmit();
+  const { handleAdd, handleEdit, loading: submitLoading } = useMcpFormSubmit();
 
   // Pre-fill form when in edit mode
   useEffect(() => {
@@ -109,6 +109,7 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
           key="cancel"
           onClick={handleCancel}
           className={styles.cancelButton}
+          disabled={submitLoading}
         >
           {t('common.cancel')}
         </Button>,
@@ -117,6 +118,7 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
           type="primary"
           onClick={form.submit}
           className={styles.confirmButton}
+          loading={submitLoading}
         >
           {t('common.confirm')}
         </Button>,
