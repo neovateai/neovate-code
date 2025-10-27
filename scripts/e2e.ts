@@ -200,6 +200,10 @@ async function runTask(task: Task, model: string): Promise<TaskResult> {
       task: TaskModule;
     };
 
+    if (taskModule.model) {
+      model = taskModule.model;
+    }
+
     const tmpPath = path.join(
       os.tmpdir(),
       `neovate-e2e-${normalizeTaskFilePath(task.taskFilePath)}`,

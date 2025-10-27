@@ -7,4 +7,5 @@ export type TaskModule = {
     cwd: string;
   }) => void;
   cliArgs: string[];
+  model?: string;
 };
