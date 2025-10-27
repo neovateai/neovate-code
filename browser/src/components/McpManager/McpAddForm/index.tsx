@@ -40,7 +40,7 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
     useMcpConfigManager();
 
   // Form submission hook
-  const { handleAdd, handleEdit } = useMcpFormSubmit();
+  const { handleAdd, handleEdit, loading: submitLoading } = useMcpFormSubmit();
 
   // Pre-fill form when in edit mode
   useEffect(() => {
@@ -48,16 +48,22 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
       const type =
         editingServer.type ||
         ((editingServer as McpSSEServerConfig).url ? 'sse' : 'stdio');
-      const envString = editingServer.env
-        ? typeof editingServer.env === 'string'
-          ? editingServer.env
-          : JSON.stringify(editingServer.env, null, 2)
-        : undefined;
+      let envString = '';
+      if (editingServer.env) {
+        if (typeof editingServer.env === 'string') {
+          envString = editingServer.env;
+        } else {
+          const { PATH, ...envWithoutPath } = editingServer.env;
+          envString = JSON.stringify(envWithoutPath, null, 2);
+        }
+      }
+
+      const { env: _, ...serverWithoutEnv } = editingServer;
 
       form.setFieldsValue({
+        ...serverWithoutEnv,
         type,
         env: envString,
-        ...editingServer,
       });
     } else if (!editMode) {
       form.resetFields();
@@ -109,6 +115,7 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
           key="cancel"
           onClick={handleCancel}
           className={styles.cancelButton}
+          disabled={submitLoading}
         >
           {t('common.cancel')}
         </Button>,
@@ -117,6 +124,7 @@ const McpAddForm: React.FC<McpAddFormProps> = ({
           type="primary"
           onClick={form.submit}
           className={styles.confirmButton}
+          loading={submitLoading}
         >
           {t('common.confirm')}
         </Button>,
