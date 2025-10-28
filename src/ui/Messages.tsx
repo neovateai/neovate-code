@@ -1,6 +1,6 @@
 import { Box, Static, Text } from 'ink';
 import pc from 'picocolors';
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import type {
   AssistantMessage,
   NormalizedMessage,
@@ -16,6 +16,8 @@ import {
   getMessageText,
   isCanceledMessage,
   isToolResultMessage,
+  isUserBashCommandMessage,
+  isUserBashOutputMessage,
   toolResultPart2ToToolResultPart,
 } from '../message';
 import { SPACING, UI_COLORS } from './constants';
@@ -30,6 +32,54 @@ interface EnrichedProvider {
   name: string;
   validEnvs?: string[];
   hasApiKey?: boolean;
+}
+
+function BashCommandMessage({ message }: { message: UserMessage }) {
+  const command = useMemo(() => {
+    if (typeof message.content !== 'string') return '';
+    return message.content.replace(/<\/?bash-input>/g, '');
+  }, [message.content]);
+  return (
+    <Box
+      flexDirection="column"
+      marginTop={SPACING.MESSAGE_MARGIN_TOP}
+      marginLeft={SPACING.MESSAGE_MARGIN_LEFT_USER}
+    >
+      <Box>
+        <Text color={UI_COLORS.CHAT_BORDER_BASH} bold>
+          !{' '}
+        </Text>
+        <Text bold color={UI_COLORS.TOOL}>
+          {command}
+        </Text>
+      </Box>
+    </Box>
+  );
+}
+
+function BashOutputMessage({ message }: { message: NormalizedMessage }) {
+  const isError = useMemo(() => {
+    if (typeof message.content !== 'string') return false;
+    return message.content.startsWith('<bash-stderr>');
+  }, [message.content]);
+
+  const output = useMemo(() => {
+    if (message.uiContent) {
+      return message.uiContent.replace(/^\n/, '');
+    }
+    if (typeof message.content !== 'string') return '';
+    return message.content
+      .replace(/<\/?bash-stdout>/g, '')
+      .replace(/<\/?bash-stderr>/g, '');
+  }, [message.content, message.uiContent]);
+
+  return (
+    <Box flexDirection="column" marginLeft={SPACING.MESSAGE_MARGIN_LEFT_USER}>
+      <Text color={isError ? UI_COLORS.ERROR : UI_COLORS.TOOL_RESULT}>
+        ↳ {output}
+      </Text>
+    </Box>
+  );
 }
 
 type ToolPair = {
@@ -577,6 +627,12 @@ type MessageGroupProps = {
 function MessageGroup({ message, messages, productName }: MessageGroupProps) {
   // If it's a user message
   if (message.role === 'user') {
+    if (isUserBashCommandMessage(message)) {
+      return <BashCommandMessage message={message as UserMessage} />;
+    } else if (isUserBashOutputMessage(message)) {
+      return <BashOutputMessage message={message as NormalizedMessage} />;
+    }
+
     const isToolResult = isToolResultMessage(message);
     if (isToolResult) {
       return <ToolResult message={message as ToolMessage} />;

@@ -178,6 +178,7 @@ interface AppActions {
   processQueuedMessages: () => Promise<void>;
   toggleDebugMode: () => void;
   setStatus: (status: AppStatus) => void;
+  setBashMode: (bashMode: boolean) => void;
 
   // Input state actions
   setInputValue: (value: string) => void;
@@ -484,6 +485,55 @@ export const useAppStore = create<AppStore>()(
             };
             get().addMessage(userMessage);
           }
+          return;
+        }
+
+        // Check if message is a bash command
+        if (expandedMessage.startsWith('!')) {
+          const command = expandedMessage.slice(1).trim();
+          if (!command) return;
+
+          set({
+            status: 'processing',
+          });
+
+          // Add bash command message
+          const bashCommandMsg: Message = {
+            role: 'user',
+            content: `<bash-input>${command}</bash-input>`,
+          };
+
+          await bridge.request('session.addMessages', {
+            cwd,
+            sessionId,
+            messages: [bashCommandMsg],
+          });
+
+          // Execute command via bash tool
+          const result = await bridge.request('utils.tool.executeBash', {
+            cwd,
+            command,
+          });
+
+          // Add output message
+          const bashOutputMsg = {
+            role: 'user',
+            uiContent: result.data.returnDisplay,
+            content: result.data.isError
+              ? `<bash-stderr>${result.data.llmContent}</bash-stderr>`
+              : `<bash-stdout>${result.data.llmContent}</bash-stdout>`,
+          };
+
+          await bridge.request('session.addMessages', {
+            cwd,
+            sessionId,
+            messages: [bashOutputMsg],
+          });
+
+          set({
+            status: 'idle',
+          });
+
           return;
         } else {
           // Use store's current model for regular message sending
@@ -879,6 +929,10 @@ export const useAppStore = create<AppStore>()(
 
       setStatus: (status: AppStatus) => {
         set({ status });
+      },
+
+      setBashMode: (bashMode: boolean) => {
+        set({ bashMode });
       },
 
       // Input state actions

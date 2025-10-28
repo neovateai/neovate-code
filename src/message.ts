@@ -23,7 +23,9 @@ export type FilePart = {
   data: string;
   mimeType: string;
 };
+
 export type UserContent = string | Array<TextPart | ImagePart>;
+
 export type ToolUsePart = {
   type: 'tool_use';
   id: string;
@@ -79,6 +81,7 @@ export type ToolResultPart = {
   input: Record<string, any>;
   result: ToolResult;
 };
+
 export type Message =
   | SystemMessage
   | UserMessage
@@ -141,7 +144,25 @@ export function isUserTextMessage(message: Message) {
   return (
     message.role === 'user' &&
     !isToolResultMessage(message) &&
-    !isCanceledMessage(message)
+    !isCanceledMessage(message) &&
+    !isUserBashCommandMessage(message) &&
+    !isUserBashOutputMessage(message)
+  );
+}
+
+export function isUserBashCommandMessage(message: Message) {
+  return (
+    message.role === 'user' &&
+    typeof message.content === 'string' &&
+    message.content.startsWith('<bash-input>')
+  );
+}
+
+export function isUserBashOutputMessage(message: Message) {
+  return (
+    message.role === 'user' &&
+    typeof message.content === 'string' &&
+    message.content.startsWith('<bash-stdout>')
   );
 }
 
