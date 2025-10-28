@@ -1063,7 +1063,11 @@ class NodeHandlerRegistry {
       async (data: { cwd: string; command: string }) => {
         const { cwd, command } = data;
         const { createBashTool } = await import('./tools/bash');
-        const bashTool = createBashTool({ cwd });
+        const context = await this.getContext(cwd);
+        const bashTool = createBashTool({
+          cwd,
+          backgroundTaskManager: context.backgroundTaskManager,
+        });
 
         try {
           const result = await bashTool.execute({ command });
