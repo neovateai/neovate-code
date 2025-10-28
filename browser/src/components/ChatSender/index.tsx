@@ -67,13 +67,15 @@ const ChatSender: React.FC = () => {
     string | undefined
   >();
 
+  const showSlashCommand = selectedFirstKey === ContextType.SLASH_COMMAND;
+
   const { isPasting, handlePaste, contextHolder } = useChatPaste();
 
   const {
     defaultSuggestions,
     handleSearch,
     loading: suggestionLoading,
-  } = useSuggestion();
+  } = useSuggestion(showSlashCommand);
 
   const handleSubmit = () => {
     actions.send(prompt, sender.state.delta);
