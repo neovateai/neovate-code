@@ -1,7 +1,6 @@
 import type { LanguageModelV2FunctionTool } from '@ai-sdk/provider';
 import path from 'pathe';
-import type { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import * as z from 'zod';
 import type { Context } from './context';
 import type { ImagePart, TextPart } from './message';
 import { resolveModelWithContext } from './model';
@@ -139,7 +138,7 @@ export class Tools {
     return Object.entries(this.tools).map(([key, tool]) => {
       // parameters of mcp tools is not zod object
       const isMCP = key.startsWith('mcp__');
-      const schema = isMCP ? tool.parameters : zodToJsonSchema(tool.parameters);
+      const schema = isMCP ? tool.parameters : z.toJSONSchema(tool.parameters);
       return {
         type: 'function',
         name: key,
@@ -191,14 +190,20 @@ export type ToolUseResult = {
   approved: boolean;
 };
 
-export interface Tool<T = any> {
+export interface Tool<TSchema extends z.ZodTypeAny = z.ZodTypeAny> {
   name: string;
   description: string;
-  getDescription?: ({ params, cwd }: { params: T; cwd: string }) => string;
+  getDescription?: ({
+    params,
+    cwd,
+  }: {
+    params: z.output<TSchema>;
+    cwd: string;
+  }) => string;
   displayName?: string;
-  execute: (params: T) => Promise<ToolResult> | ToolResult;
+  execute: (params: z.output<TSchema>) => Promise<ToolResult> | ToolResult;
   approval?: ToolApprovalInfo;
-  parameters: z.ZodSchema<T>;
+  parameters: TSchema;
 }
 
 type ApprovalContext = {
@@ -250,16 +255,16 @@ export function createTool<TSchema extends z.ZodTypeAny>(config: {
   name: string;
   description: string;
   parameters: TSchema;
-  execute: (params: z.infer<TSchema>) => Promise<ToolResult> | ToolResult;
+  execute: (params: z.output<TSchema>) => Promise<ToolResult> | ToolResult;
   approval?: ToolApprovalInfo;
   getDescription?: ({
     params,
     cwd,
   }: {
-    params: z.infer<TSchema>;
+    params: z.output<TSchema>;
     cwd: string;
   }) => string;
-}): Tool<z.infer<TSchema>> {
+}): Tool<TSchema> {
   return {
     name: config.name,
     description: config.description,
