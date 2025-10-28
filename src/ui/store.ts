@@ -4,12 +4,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
 import type { LoopResult } from '../loop';
-import type {
-  Message,
-  NormalizedMessage,
-  ToolMessage,
-  UserMessage,
-} from '../message';
+import type { Message, NormalizedMessage, UserMessage } from '../message';
 import type { ProvidersMap } from '../model';
 import { Paths } from '../paths';
 import { loadSessionMessages, Session, SessionConfigManager } from '../session';
@@ -21,7 +16,6 @@ import {
 import type { ApprovalCategory, ToolUse } from '../tool';
 import type { UIBridge } from '../uiBridge';
 import { Upgrade, type UpgradeOptions } from '../upgrade';
-import { randomUUID } from '../utils/randomUUID';
 import { setTerminalTitle } from '../utils/setTerminalTitle';
 import { clearTerminal } from '../utils/terminal';
 import { countTokens } from '../utils/tokenCounter';
