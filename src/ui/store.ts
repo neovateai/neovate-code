@@ -19,6 +19,7 @@ import { Upgrade, type UpgradeOptions } from '../upgrade';
 import { setTerminalTitle } from '../utils/setTerminalTitle';
 import { clearTerminal } from '../utils/terminal';
 import { countTokens } from '../utils/tokenCounter';
+import { getUsername } from '../utils/username';
 import { detectImageFormat } from './TextInput/utils/imagePaste';
 
 export type ApprovalResult =
@@ -33,9 +34,7 @@ type AppStatus =
   | 'processing'
   | 'planning'
   | 'plan_approving'
-  // | 'plan_approved'
   | 'tool_approving'
-  // | 'tool_approved'
   | 'tool_executing'
   | 'compacting'
   | 'failed'
@@ -43,16 +42,6 @@ type AppStatus =
   | 'slash_command_executing'
   | 'help'
   | 'exit';
-
-const APP_STATUS_MESSAGES = {
-  processing: 'Processing...',
-  planning: 'Planning...',
-  plan_approving: 'Waiting for plan approval...',
-  tool_approving: 'Waiting for tool approval...',
-  tool_executing: 'Executing tool...',
-  failed: 'Failed',
-  cancelled: 'Cancelled',
-};
 
 function isExecuting(status: AppStatus) {
   return (
@@ -67,6 +56,7 @@ interface AppState {
   bridge: UIBridge;
 
   cwd: string;
+  userName: string;
   productName: string;
   productASCIIArt: string;
   version: string;
@@ -273,6 +263,7 @@ export const useAppStore = create<AppStore>()(
           approvalMode: response.data.approvalMode,
           pastedTextMap: response.data.pastedTextMap || {},
           pastedImageMap: response.data.pastedImageMap || {},
+          userName: getUsername() ?? 'user',
           // theme: 'light',
         });
 

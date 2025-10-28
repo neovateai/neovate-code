@@ -193,7 +193,7 @@ export function pairToolsWithResults(
 }
 
 export function Messages() {
-  const { messages, productName, sessionId } = useAppStore();
+  const { userName, messages, productName, sessionId } = useAppStore();
 
   // Split messages into completed and pending
   const { completedMessages, pendingMessages } = useMemo(
@@ -215,6 +215,7 @@ export function Messages() {
               message={item}
               messages={completedMessages}
               productName={productName}
+              userName={userName}
             />
           );
         }}
@@ -227,6 +228,7 @@ export function Messages() {
           message={message}
           messages={pendingMessages}
           productName={productName}
+          userName={userName}
         />
       ))}
     </Box>
@@ -367,7 +369,13 @@ function Header() {
   );
 }
 
-function User({ message }: { message: UserMessage }) {
+function User({
+  message,
+  userName,
+}: {
+  message: UserMessage;
+  userName: string;
+}) {
   const text = getMessageText(message);
   const isCanceled = isCanceledMessage(message);
   if (message.hidden) {
@@ -380,13 +388,13 @@ function User({ message }: { message: UserMessage }) {
       marginLeft={SPACING.MESSAGE_MARGIN_LEFT_USER}
     >
       <Text bold color={UI_COLORS.USER}>
-        user
+        {userName}
       </Text>
       {isCanceled ? (
         <Text color={UI_COLORS.CANCELED}>User canceled the request</Text>
       ) : (
         <Box>
-          <Text backgroundColor="#e0e0e0" color="#000000">
+          <Text backgroundColor="#555555" color="#cdcdcd">
             {text}{' '}
           </Text>
         </Box>
@@ -622,9 +630,15 @@ type MessageGroupProps = {
   message: NormalizedMessage;
   messages: NormalizedMessage[];
   productName: string;
+  userName: string;
 };
 
-function MessageGroup({ message, messages, productName }: MessageGroupProps) {
+function MessageGroup({
+  message,
+  messages,
+  productName,
+  userName,
+}: MessageGroupProps) {
   // If it's a user message
   if (message.role === 'user') {
     if (isUserBashCommandMessage(message)) {
@@ -637,7 +651,7 @@ function MessageGroup({ message, messages, productName }: MessageGroupProps) {
     if (isToolResult) {
       return <ToolResult message={message as ToolMessage} />;
     }
-    return <User message={message as UserMessage} />;
+    return <User message={message as UserMessage} userName={userName} />;
   }
 
   // If it's a tool message (already paired in assistant, skip rendering)

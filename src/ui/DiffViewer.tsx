@@ -168,10 +168,8 @@ function RenderNewFileContent(
       {fileName && (
         <Box paddingX={1} justifyContent="space-between">
           <Box>
-            <Text bold color="cyan">
-              {fileName}
-            </Text>
-            <Text color="green"> (new file)</Text>
+            <Text bold>{fileName}</Text>
+            <Text> (new file)</Text>
           </Box>
         </Box>
       )}
@@ -265,9 +263,7 @@ function RenderDiffContent(
       {fileName && (
         <Box paddingX={1} justifyContent="space-between">
           <Box>
-            <Text bold color="cyan">
-              {fileName}
-            </Text>
+            <Text bold>{fileName}</Text>
             <Text>{renderLines}</Text>
           </Box>
         </Box>
@@ -373,9 +369,7 @@ export function DiffViewer({
       <Box paddingX={1} flexDirection="column">
         {fileName && (
           <Box paddingX={1}>
-            <Text bold color="cyan">
-              {fileName}
-            </Text>
+            <Text bold>{fileName}</Text>
           </Box>
         )}
         <Box paddingX={1}>

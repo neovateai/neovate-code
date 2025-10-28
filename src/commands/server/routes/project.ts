@@ -1,6 +1,6 @@
-import { spawn } from 'node:child_process';
-import fs from 'node:fs';
-import os from 'node:os';
+import { spawn } from 'child_process';
+import fs from 'fs';
+import os from 'os';
 import { Type } from '@sinclair/typebox';
 import createDebug from 'debug';
 import type { FastifyPluginAsync } from 'fastify';
