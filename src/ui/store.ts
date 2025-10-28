@@ -515,7 +515,9 @@ export const useAppStore = create<AppStore>()(
           const bashOutputMsg = {
             role: 'user',
             uiContent: result.data.returnDisplay,
-            content: `<bash-stdout>${result.data.llmContent}</bash-stdout>`,
+            content: result.data.isError
+              ? `<bash-stderr>${result.data.llmContent}</bash-stderr>`
+              : `<bash-stdout>${result.data.llmContent}</bash-stdout>`,
           };
 
           await bridge.request('session.addMessages', {

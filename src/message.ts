@@ -145,7 +145,8 @@ export function isUserTextMessage(message: Message) {
     message.role === 'user' &&
     !isToolResultMessage(message) &&
     !isCanceledMessage(message) &&
-    !isUserBashCommandMessage(message)
+    !isUserBashCommandMessage(message) &&
+    !isUserBashOutputMessage(message)
   );
 }
 

@@ -58,14 +58,26 @@ function BashCommandMessage({ message }: { message: UserMessage }) {
 }
 
 function BashOutputMessage({ message }: { message: NormalizedMessage }) {
+  const isError = useMemo(() => {
+    if (typeof message.content !== 'string') return false;
+    return message.content.startsWith('<bash-stderr>');
+  }, [message.content]);
+
   const output = useMemo(() => {
-    if (message.uiContent) return message.uiContent;
+    if (message.uiContent) {
+      return message.uiContent.replace(/^\n/, '');
+    }
     if (typeof message.content !== 'string') return '';
-    return message.content.replace(/<\/?bash-stdout>/g, '');
+    return message.content
+      .replace(/<\/?bash-stdout>/g, '')
+      .replace(/<\/?bash-stderr>/g, '');
   }, [message.content, message.uiContent]);
+
   return (
     <Box flexDirection="column" marginLeft={SPACING.MESSAGE_MARGIN_LEFT_USER}>
-      <Text color={UI_COLORS.TOOL_RESULT}>↳ {output}</Text>
+      <Text color={isError ? UI_COLORS.ERROR : UI_COLORS.TOOL_RESULT}>
+        ↳ {output}
+      </Text>
     </Box>
   );
 }
