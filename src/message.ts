@@ -57,7 +57,6 @@ export type UserMessage = {
   role: 'user';
   content: UserContent;
   hidden?: boolean;
-  command?: string; // for bash command
 };
 export type ToolMessage = {
   role: 'user';
@@ -153,7 +152,16 @@ export function isUserTextMessage(message: Message) {
 export function isUserBashCommandMessage(message: Message) {
   return (
     message.role === 'user' &&
-    typeof (message as Partial<{ command: unknown }>).command === 'string'
+    typeof message.content === 'string' &&
+    message.content.startsWith('<bash-input>')
+  );
+}
+
+export function isUserBashOutputMessage(message: Message) {
+  return (
+    message.role === 'user' &&
+    typeof message.content === 'string' &&
+    message.content.startsWith('<bash-stdout>')
   );
 }
 

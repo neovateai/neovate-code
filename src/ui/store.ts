@@ -502,9 +502,7 @@ export const useAppStore = create<AppStore>()(
           // Add bash command message
           const bashCommandMsg: Message = {
             role: 'user',
-            // bash mode
-            command,
-            content: command,
+            content: `<bash-input>${command}</bash-input>`,
           };
 
           await bridge.request('session.addMessages', {
@@ -520,19 +518,10 @@ export const useAppStore = create<AppStore>()(
           });
 
           // Add output message
-          const bashOutputMsg: ToolMessage = {
+          const bashOutputMsg = {
             role: 'user',
-            content: [
-              {
-                type: 'tool_result',
-                id: randomUUID(),
-                name: 'bash',
-                input: {
-                  command,
-                },
-                result: result.data,
-              },
-            ],
+            uiContent: result.data.returnDisplay,
+            content: `<bash-stdout>${result.data.llmContent}</bash-stdout>`,
           };
 
           await bridge.request('session.addMessages', {

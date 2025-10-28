@@ -17,6 +17,7 @@ import {
   isCanceledMessage,
   isToolResultMessage,
   isUserBashCommandMessage,
+  isUserBashOutputMessage,
   toolResultPart2ToToolResultPart,
 } from '../message';
 import { SPACING, UI_COLORS } from './constants';
@@ -33,7 +34,11 @@ interface EnrichedProvider {
   hasApiKey?: boolean;
 }
 
-export function BashCommandMessage({ message }: { message: UserMessage }) {
+function BashCommandMessage({ message }: { message: UserMessage }) {
+  const command = useMemo(() => {
+    if (typeof message.content !== 'string') return '';
+    return message.content.replace(/<\/?bash-input>/g, '');
+  }, [message.content]);
   return (
     <Box
       flexDirection="column"
@@ -44,8 +49,23 @@ export function BashCommandMessage({ message }: { message: UserMessage }) {
         <Text color={UI_COLORS.CHAT_BORDER_BASH} bold>
           !{' '}
         </Text>
-        <Text>{message.command}</Text>
+        <Text bold color={UI_COLORS.TOOL}>
+          {command}
+        </Text>
       </Box>
+    </Box>
+  );
+}
+
+function BashOutputMessage({ message }: { message: NormalizedMessage }) {
+  const output = useMemo(() => {
+    if (message.uiContent) return message.uiContent;
+    if (typeof message.content !== 'string') return '';
+    return message.content.replace(/<\/?bash-stdout>/g, '');
+  }, [message.content, message.uiContent]);
+  return (
+    <Box flexDirection="column" marginLeft={SPACING.MESSAGE_MARGIN_LEFT_USER}>
+      <Text color={UI_COLORS.TOOL_RESULT}>↳ {output}</Text>
     </Box>
   );
 }
@@ -597,6 +617,8 @@ function MessageGroup({ message, messages, productName }: MessageGroupProps) {
   if (message.role === 'user') {
     if (isUserBashCommandMessage(message)) {
       return <BashCommandMessage message={message as UserMessage} />;
+    } else if (isUserBashOutputMessage(message)) {
+      return <BashOutputMessage message={message as UserMessage} />;
     }
 
     const isToolResult = isToolResultMessage(message);
