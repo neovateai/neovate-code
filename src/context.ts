@@ -2,6 +2,7 @@ import fs from 'fs';
 import { createJiti } from 'jiti';
 import path from 'pathe';
 import resolve from 'resolve';
+import { BackgroundTaskManager } from './backgroundTaskManager';
 import { type Config, ConfigManager } from './config';
 import { MCPManager } from './mcp';
 import { Paths } from './paths';
@@ -22,6 +23,7 @@ type ContextOpts = {
   paths: Paths;
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
+  backgroundTaskManager: BackgroundTaskManager;
 };
 
 export type ContextCreateOpts = {
@@ -43,6 +45,7 @@ export class Context {
   #pluginManager: PluginManager;
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
+  backgroundTaskManager: BackgroundTaskManager;
 
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
@@ -54,6 +57,7 @@ export class Context {
     this.mcpManager = opts.mcpManager;
     this.#pluginManager = opts.pluginManager;
     this.argvConfig = opts.argvConfig;
+    this.backgroundTaskManager = opts.backgroundTaskManager;
   }
 
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {
@@ -122,6 +126,7 @@ export class Context {
       ...opts.argvConfig.mcpServers,
     };
     const mcpManager = MCPManager.create(mcpServers);
+    const backgroundTaskManager = new BackgroundTaskManager();
     return new Context({
       cwd,
       productName,
@@ -132,6 +137,7 @@ export class Context {
       config: resolvedConfig,
       paths,
       mcpManager,
+      backgroundTaskManager,
     });
   }
 }
