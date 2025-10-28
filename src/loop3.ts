@@ -164,10 +164,6 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     }
     const requestId = randomUUID();
     const m: LanguageModelV2 = opts.model.m;
-    // console.log(
-    //   'do stream',
-    //   JSON.stringify(opts.tools.toLanguageV2Tools(), null, 2),
-    // );
     const result = await m.doStream({
       prompt: prompt,
       tools: opts.tools.toLanguageV2Tools(),
@@ -175,6 +171,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     });
 
     let text = '';
+    let reasoning = '';
 
     const toolCalls: Array<{
       toolCallId: string;
@@ -199,7 +196,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
             break;
           }
           case 'reasoning-delta':
-            await opts.onReasoning?.(chunk.delta);
+            reasoning += chunk.delta;
             break;
           case 'tool-call':
             toolCalls.push({
@@ -241,6 +238,9 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     }
 
     await opts.onText?.(text);
+    if (reasoning) {
+      await opts.onReasoning?.(reasoning);
+    }
 
     const endTime = new Date();
     opts.onTurn?.({
@@ -250,6 +250,12 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     });
     const model = `${opts.model.provider.id}/${opts.model.model.id}`;
     const assistantContent: AssistantContent = [];
+    if (reasoning) {
+      assistantContent.push({
+        type: 'reasoning',
+        text: reasoning,
+      });
+    }
     if (text) {
       finalText = text;
       assistantContent.push({

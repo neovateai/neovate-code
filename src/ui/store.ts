@@ -295,16 +295,12 @@ export const useAppStore = create<AppStore>()(
           // Match sessionId and cwd
           if (data.sessionId === get().sessionId && data.cwd === get().cwd) {
             const chunk = data.chunk;
-
             // Collect tokens from text-delta and reasoning events
             if (
-              chunk.type === 'raw_model_stream_event' &&
-              chunk.data?.type === 'model' &&
-              (chunk.data.event?.type === 'text-delta' ||
-                chunk.data.event?.type === 'reasoning')
+              chunk.type === 'text-delta' ||
+              chunk.type === 'reasoning-delta'
             ) {
-              const textDelta = chunk.data.event.delta || '';
-              const tokenCount = countTokens(textDelta);
+              const tokenCount = countTokens(chunk.delta);
               set({ processingTokens: get().processingTokens + tokenCount });
             }
           }

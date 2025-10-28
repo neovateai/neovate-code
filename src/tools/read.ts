@@ -41,14 +41,17 @@ function createImageResponse(buffer: Buffer, ext: string): ToolResult {
   };
 }
 
-async function processImage(filePath: string): Promise<ToolResult> {
+async function processImage(
+  filePath: string,
+  cwd: string,
+): Promise<ToolResult> {
   try {
     const stats = fs.statSync(filePath);
     const ext = path.extname(filePath).toLowerCase();
 
     // Security: Validate file path to prevent traversal attacks
     const resolvedPath = path.resolve(filePath);
-    if (!resolvedPath.startsWith(process.cwd())) {
+    if (!resolvedPath.startsWith(cwd)) {
       throw new Error('Invalid file path: path traversal detected');
     }
 
@@ -140,7 +143,7 @@ Usage:
 
         // Handle image files
         if (IMAGE_EXTENSIONS.has(ext)) {
-          const result = await processImage(fullFilePath);
+          const result = await processImage(fullFilePath, opts.cwd);
           return result;
         }
 

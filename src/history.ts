@@ -173,6 +173,16 @@ export class History {
           const normalizedContent = content.map((part: any) => {
             if (part.type === 'text') {
               return { type: 'text', text: part.text };
+            } else if (part.type === 'image') {
+              const isBase64 = part.data.includes(';base64,');
+              const data = isBase64
+                ? part.data.split(';base64,')[1]
+                : part.data;
+              return {
+                type: 'file',
+                data,
+                mediaType: part.mimeType,
+              };
             } else {
               throw new Error(`Not implemented`);
             }
@@ -192,6 +202,8 @@ export class History {
           const normalizedContent = message.content.map((part: any) => {
             if (part.type === 'text') {
               return { type: 'text', text: part.text };
+            } else if (part.type === 'reasoning') {
+              return { type: 'reasoning', text: part.text };
             } else if (part.type === 'tool_use') {
               return {
                 type: 'tool-call',
@@ -217,14 +229,34 @@ export class History {
         return {
           role: 'tool',
           content: message.content.map((part: ToolResultPart2) => {
+            const llmContent = part.result.llmContent;
+            const output = (() => {
+              if (typeof llmContent === 'string') {
+                return { type: 'text', value: llmContent };
+              } else if (Array.isArray(llmContent)) {
+                return {
+                  type: 'content',
+                  value: llmContent.map((part) => {
+                    if (part.type === 'text') {
+                      return { type: 'text', value: part.text };
+                    } else if (part.type === 'image') {
+                      const isBase64 = part.data.includes(';base64,');
+                      const data = isBase64
+                        ? part.data.split(';base64,')[1]
+                        : part.data;
+                      return { type: 'media', data, mediaType: part.mimeType };
+                    } else {
+                      throw new Error(`Not implemented`);
+                    }
+                  }),
+                };
+              }
+            })();
             return {
               type: 'tool-result',
               toolCallId: part.toolCallId,
               toolName: part.toolName,
-              output: {
-                type: 'text',
-                value: part.result.llmContent,
-              },
+              output,
             };
           }) as LanguageModelV2ToolResultPart[],
         } as LanguageModelV2Message;
