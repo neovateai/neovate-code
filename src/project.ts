@@ -1,7 +1,7 @@
 import type { Context } from './context';
 import { JsonlLogger } from './jsonl';
 import { LlmsContext } from './llmsContext';
-import { runLoop } from './loop3';
+import { runLoop } from './loop';
 import type { ImagePart, NormalizedMessage, UserContent } from './message';
 import { resolveModelWithContext } from './model';
 import { OutputFormat } from './outputFormat';

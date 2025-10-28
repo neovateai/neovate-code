@@ -1,5 +1,4 @@
 import type { LanguageModelV2Message } from '@ai-sdk/provider';
-import { UserError } from '@openai/agents';
 import createDebug from 'debug';
 
 const debug = createDebug('neovate:utils:merge-consecutive-system-messages');
@@ -19,7 +18,7 @@ const debug = createDebug('neovate:utils:merge-consecutive-system-messages');
  * @param modelId - Optional model ID for specific model requirement checks
  * @returns The processed messages array with consecutive system messages merged
  *
- * @throws {UserError} When non-consecutive system messages are detected for restricted models
+ * @throws {Error} When non-consecutive system messages are detected for restricted models
  */
 export function mergeConsecutiveSystemMessages(
   messages: LanguageModelV2Message[],
@@ -87,7 +86,7 @@ export function mergeConsecutiveSystemMessages(
       if (hasSeenNonSystemMessage) {
         // Non-consecutive system message detected - throw error
         const modelType = `${modelId} (via ${modelProvider})`;
-        throw new UserError(
+        throw new Error(
           `Non-consecutive system messages are not supported for ${modelType} models. ` +
             'System messages must appear consecutively at the beginning of the conversation.',
         );

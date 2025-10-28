@@ -1,11 +1,7 @@
-import type { AgentInputItem, UserMessageItem } from '@openai/agents';
+import type { LanguageModelV2Prompt } from '@ai-sdk/provider';
 import fs from 'fs';
 import path from 'pathe';
 import { IMAGE_EXTENSIONS } from './constants';
-import type {
-  LanguageModelV2Message,
-  LanguageModelV2Prompt,
-} from '@ai-sdk/provider';
 
 const MAX_LINE_LENGTH_TEXT_FILE = 2000;
 const MAX_LINES_TO_READ = 2000;
@@ -182,40 +178,6 @@ export class At {
         if (content) {
           item.text += `\n\n${content}`;
         }
-      }
-    }
-    return opts.input;
-  }
-
-  static normalize(opts: {
-    input: AgentInputItem[];
-    cwd: string;
-  }): AgentInputItem[] {
-    const reversedInput = [...opts.input].reverse();
-    const lastUserMessage = reversedInput.find((item) => {
-      return 'role' in item && item.role === 'user';
-    }) as UserMessageItem;
-    if (lastUserMessage) {
-      let userPrompt = lastUserMessage.content;
-      if (Array.isArray(userPrompt)) {
-        userPrompt =
-          userPrompt[0]?.type === 'input_text' ? userPrompt[0].text : '';
-      }
-      const at = new At({
-        userPrompt,
-        cwd: opts.cwd,
-      });
-      const content = at.getContent();
-      if (content) {
-        if (Array.isArray(lastUserMessage.content)) {
-          if (lastUserMessage.content[0]?.type === 'input_text') {
-            lastUserMessage.content[0].text += `\n\n${content}`;
-          }
-        } else {
-          lastUserMessage.content += `\n\n${content}`;
-        }
-        const input = reversedInput.reverse();
-        return input;
       }
     }
     return opts.input;

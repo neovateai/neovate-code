@@ -2,12 +2,6 @@ import type {
   LanguageModelV2Message,
   LanguageModelV2ToolResultPart,
 } from '@ai-sdk/provider';
-import type {
-  AgentInputItem,
-  AssistantMessageItem,
-  SystemMessageItem,
-  UserMessageItem,
-} from '@openai/agents';
 import createDebug from 'debug';
 import { COMPACT_MESSAGE, compact } from './compact';
 import { MIN_TOKEN_THRESHOLD } from './constants';
@@ -18,10 +12,8 @@ import type {
   UserContent,
 } from './message';
 import type { ModelInfo } from './model';
-import type { ToolResult } from './tool';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
-import { safeStringify } from './utils/safeStringify';
 
 export type OnMessage = (message: NormalizedMessage) => Promise<void>;
 export type HistoryOpts = {
@@ -79,85 +71,6 @@ export class History {
 
     // Filter messages to keep only those in the path, maintaining order
     return this.messages.filter((msg) => pathUuids.has(msg.uuid));
-  }
-
-  toAgentInput(): AgentInputItem[] {
-    return this.messages.map((message) => {
-      if (message.role === 'user') {
-        const content = (() => {
-          let content: any = message.content;
-          if (!Array.isArray(content)) {
-            content = [
-              {
-                type: 'input_text',
-                text: content,
-              },
-            ];
-          }
-          content = content.flatMap((part: any) => {
-            if (part.type === 'tool_result') {
-              const result = part.result as ToolResult;
-              const llmContent = result.llmContent;
-              const formatText = (text: string) => {
-                return {
-                  type: 'input_text',
-                  text: `[${part.name} for ${safeStringify(part.input)}] result: \n<function_results>\n${text}\n</function_results>`,
-                };
-              };
-              if (typeof llmContent === 'string') {
-                return formatText(llmContent);
-              } else {
-                return llmContent.map((part) => {
-                  if (part.type === 'text') {
-                    return formatText(part.text);
-                  } else {
-                    return {
-                      type: 'input_image',
-                      image: part.data,
-                      providerData: { mime_type: part.mimeType },
-                    };
-                  }
-                });
-              }
-            } else if (part.type === 'text') {
-              return [{ type: 'input_text', text: part.text }];
-            } else if (part.type === 'image') {
-              return [
-                {
-                  type: 'input_image',
-                  image: part.data,
-                  providerData: { mime_type: part.mimeType },
-                },
-              ];
-            } else {
-              return [part];
-            }
-          });
-          return content;
-        })();
-        return {
-          role: 'user',
-          content,
-        } as UserMessageItem;
-      } else if (message.role === 'assistant') {
-        return {
-          role: 'assistant',
-          content: [
-            {
-              type: 'output_text',
-              text: message.text,
-            },
-          ],
-        } as AssistantMessageItem;
-      } else if (message.role === 'system') {
-        return {
-          role: 'system',
-          content: message.content,
-        } as SystemMessageItem;
-      } else {
-        throw new Error(`Unsupported message role: ${message}.`);
-      }
-    });
   }
 
   toLanguageV2Messages(): LanguageModelV2Message[] {

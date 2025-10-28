@@ -55,15 +55,6 @@ importers:
       '@modelcontextprotocol/inspector':
         specifier: ^0.17.1
         version: 0.17.1(@swc/core@1.12.1)(@types/node@24.8.1)(@types/react-dom@19.1.9(@types/react@19.2.2))(@types/react@19.2.2)(typescript@5.9.3)
-      '@openai/agents':
-        specifier: ^0.1.7
-        version: 0.1.10(ws@8.18.3)(zod@3.25.76)
-      '@openai/agents-core':
-        specifier: ^0.1.7
-        version: 0.1.10(ws@8.18.3)(zod@3.25.76)
-      '@openai/agents-extensions':
-        specifier: ^0.1.0
-        version: 0.1.5(@openai/agents@0.1.10(ws@8.18.3)(zod@3.25.76))(ws@8.18.3)(zod@3.25.76)
       '@openrouter/ai-sdk-provider':
         specifier: ^1.2.0
         version: 1.2.0(ai@5.0.76(zod@3.25.76))(zod@3.25.76)
@@ -1329,36 +1320,6 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
-
-  '@openai/agents-core@0.1.10':
-    resolution: {integrity: sha512-tRoTAJ7a3ynhojIjHQmCnupjzg6XAYfjcPfXFTYG9Jyvt5skNJSVgbzMNFPn1sbRta0sYLryBs8eky5O37s7rg==}
-    peerDependencies:
-      zod: ^3.25.40
-    peerDependenciesMeta:
-      zod:
-        optional: true
-
-  '@openai/agents-extensions@0.1.5':
-    resolution: {integrity: sha512-sIEuGBQvYE6Ax0+OCLgQU2mfDWYB4hz78TQ+6dXHIm9Zk4XeQLQDoEwQFWBt2IUrzHsqYGYF7vyqZJQN6C3lmQ==}
-    peerDependencies:
-      '@openai/agents': '>=0.0.0'
-      ws: ^8.18.1
-      zod: ^3.25.40
-
-  '@openai/agents-openai@0.1.10':
-    resolution: {integrity: sha512-uwQ5mBUIylnEWSR/5aRlNbR22kYYpCs7Nid/1nETLzvxMc1Wcz1t1ybJ9E8vv1Mm9f0Gv8DCicsjPBiw5w7Kqg==}
-    peerDependencies:
-      zod: ^3.25.40
-
-  '@openai/agents-realtime@0.1.10':
-    resolution: {integrity: sha512-YFEIhN5AoBSh70aOXxzorrSHq+8A3guQWTlO5KdsBmOt1B3lc7ykmxnRgxVWJxxzNsvV/7PqRZhxfpGYaqgLvA==}
-    peerDependencies:
-      zod: ^3.25.40
-
-  '@openai/agents@0.1.10':
-    resolution: {integrity: sha512-1X0gRBpsH7ar3wA5b+tK8RtjyDzBjzEOqaFXDwT0qdYzShfqsfIqYQlN6hgPqrck25r3nUANUXXqmN2Z2zatPw==}
-    peerDependencies:
-      zod: ^3.25.40
 
   '@openrouter/ai-sdk-provider@1.2.0':
     resolution: {integrity: sha512-stuIwq7Yb7DNmk3GuCtz+oS3nZOY4TXEV3V5KsknDGQN7Fpu3KRMQVWRc1J073xKdf0FC9EHOctSyzsACmp5Ag==}
@@ -5570,18 +5531,6 @@ packages:
     resolution: {integrity: sha512-YgBpdJHPyQ2UE5x+hlSXcnejzAvD0b22U2OuAP+8OnlJT+PjWPxtgmGqKKc+RgTM63U9gN0YzrYc71R2WT/hTA==}
     engines: {node: '>=18'}
 
-  openai@5.23.2:
-    resolution: {integrity: sha512-MQBzmTulj+MM5O8SKEk/gL8a7s5mktS9zUtAkU257WjvobGc9nKcBuVwjyEEcb9SI8a8Y2G/mzn3vm9n1Jlleg==}
-    hasBin: true
-    peerDependencies:
-      ws: ^8.18.0
-      zod: ^3.23.8
-    peerDependenciesMeta:
-      ws:
-        optional: true
-      zod:
-        optional: true
-
   ora@8.2.0:
     resolution: {integrity: sha512-weP+BZ8MVNnlCm8c0Qdc1WSWq4Qn7I+9CJGm7Qali6g44e/PUzbjNqJX5NJ9ljlNMosfJvg1fKEGILklK9cwnw==}
     engines: {node: '>=18'}
@@ -8796,64 +8745,6 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
-
-  '@openai/agents-core@0.1.10(ws@8.18.3)(zod@3.25.76)':
-    dependencies:
-      debug: 4.4.3(supports-color@8.1.1)
-      openai: 5.23.2(ws@8.18.3)(zod@3.25.76)
-    optionalDependencies:
-      '@modelcontextprotocol/sdk': 1.20.2
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - supports-color
-      - ws
-
-  '@openai/agents-extensions@0.1.5(@openai/agents@0.1.10(ws@8.18.3)(zod@3.25.76))(ws@8.18.3)(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@openai/agents': 0.1.10(ws@8.18.3)(zod@3.25.76)
-      '@types/ws': 8.18.1
-      debug: 4.4.3(supports-color@8.1.1)
-      ws: 8.18.3
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - supports-color
-
-  '@openai/agents-openai@0.1.10(ws@8.18.3)(zod@3.25.76)':
-    dependencies:
-      '@openai/agents-core': 0.1.10(ws@8.18.3)(zod@3.25.76)
-      debug: 4.4.3(supports-color@8.1.1)
-      openai: 5.23.2(ws@8.18.3)(zod@3.25.76)
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - supports-color
-      - ws
-
-  '@openai/agents-realtime@0.1.10(zod@3.25.76)':
-    dependencies:
-      '@openai/agents-core': 0.1.10(ws@8.18.3)(zod@3.25.76)
-      '@types/ws': 8.18.1
-      debug: 4.4.3(supports-color@8.1.1)
-      ws: 8.18.3
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
-
-  '@openai/agents@0.1.10(ws@8.18.3)(zod@3.25.76)':
-    dependencies:
-      '@openai/agents-core': 0.1.10(ws@8.18.3)(zod@3.25.76)
-      '@openai/agents-openai': 0.1.10(ws@8.18.3)(zod@3.25.76)
-      '@openai/agents-realtime': 0.1.10(zod@3.25.76)
-      debug: 4.4.3(supports-color@8.1.1)
-      openai: 5.23.2(ws@8.18.3)(zod@3.25.76)
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
-      - ws
 
   '@openrouter/ai-sdk-provider@1.2.0(ai@5.0.76(zod@3.25.76))(zod@3.25.76)':
     dependencies:
@@ -13848,11 +13739,6 @@ snapshots:
       define-lazy-prop: 3.0.0
       is-inside-container: 1.0.0
       wsl-utils: 0.1.0
-
-  openai@5.23.2(ws@8.18.3)(zod@3.25.76):
-    optionalDependencies:
-      ws: 8.18.3
-      zod: 3.25.76
 
   ora@8.2.0:
     dependencies:

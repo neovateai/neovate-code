@@ -1,4 +1,3 @@
-import { setTraceProcessors } from '@openai/agents';
 import assert from 'assert';
 import { render } from 'ink';
 import React from 'react';
@@ -11,7 +10,7 @@ import { NodeBridge } from './nodeBridge';
 import { Paths } from './paths';
 import { type Plugin, PluginHookType } from './plugin';
 import { Project } from './project';
-import { loadSessionMessages, Session, SessionConfigManager } from './session';
+import { loadSessionMessages, Session } from './session';
 import {
   isSlashCommand,
   parseSlashCommand,
@@ -278,8 +277,6 @@ export async function runNeovate(opts: {
   plugins: Plugin[];
   upgrade?: UpgradeOptions;
 }) {
-  // clear tracing
-  setTraceProcessors([]);
   const argv = await parseArgs(process.argv.slice(2));
   const cwd = argv.cwd || process.cwd();
 

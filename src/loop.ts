@@ -1,12 +1,19 @@
-import { Agent, Runner, type SystemMessageItem } from '@openai/agents';
+import type {
+  LanguageModelV2,
+  LanguageModelV2Message,
+  LanguageModelV2Prompt,
+} from '@ai-sdk/provider';
 import createDebug from 'debug';
 import { At } from './at';
 import { History, type OnMessage } from './history';
-import type { NormalizedMessage, ToolUsePart } from './message';
+import type {
+  AssistantContent,
+  NormalizedMessage,
+  ToolUsePart,
+} from './message';
 import type { ModelInfo } from './model';
 import type { ToolResult, Tools, ToolUse } from './tool';
 import { Usage } from './usage';
-import { parseMessage } from './utils/parse-message';
 import { randomUUID } from './utils/randomUUID';
 
 const DEFAULT_MAX_TURNS = 50;
@@ -129,49 +136,51 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       }
     }
     lastUsage.reset();
-    const runner = new Runner({
-      modelProvider: {
-        getModel() {
-          return opts.model.aisdk;
-        },
-      },
-    });
-    const agent = new Agent({
-      name: 'code',
-      model: opts.model.model.id,
-      instructions: `
-${opts.systemPrompt || ''}
-${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
-      `,
-    });
+
+    const systemPromptMessage = {
+      role: 'system',
+      content: opts.systemPrompt || '',
+    } as LanguageModelV2Message;
     const llmsContexts = opts.llmsContexts || [];
     const llmsContextMessages = llmsContexts.map((llmsContext) => {
       return {
         role: 'system',
         content: llmsContext,
-      } as SystemMessageItem;
+      } as LanguageModelV2Message;
     });
-    let agentInput = [...llmsContextMessages, ...history.toAgentInput()];
+    let prompt: LanguageModelV2Prompt = [
+      systemPromptMessage,
+      ...llmsContextMessages,
+      ...history.toLanguageV2Messages(),
+    ];
+
     if (shouldAtNormalize) {
       // add file and directory contents for the last user prompt
-      agentInput = At.normalize({
-        input: agentInput,
+      prompt = At.normalizeLanguageV2Prompt({
+        input: prompt,
         cwd: opts.cwd,
       });
       shouldAtNormalize = false;
     }
     const requestId = randomUUID();
-    const result = await runner.run(agent, agentInput, {
-      stream: true,
-      signal: abortController.signal,
+    const m: LanguageModelV2 = opts.model.m;
+    const result = await m.doStream({
+      prompt: prompt,
+      tools: opts.tools.toLanguageV2Tools(),
+      abortSignal: abortController.signal,
     });
 
     let text = '';
-    let textBuffer = '';
-    let hasToolUse = false;
+    let reasoning = '';
+
+    const toolCalls: Array<{
+      toolCallId: string;
+      toolName: string;
+      input: string;
+    }> = [];
 
     try {
-      for await (const chunk of result.toStream()) {
+      for await (const chunk of result.stream) {
         if (opts.signal?.aborted) {
           return createCancelError();
         }
@@ -179,41 +188,30 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
         // Call onChunk for all chunks
         await opts.onChunk?.(chunk, requestId);
 
-        if (
-          chunk.type === 'raw_model_stream_event' &&
-          chunk.data.type === 'model'
-        ) {
-          switch (chunk.data.event.type) {
-            case 'text-delta': {
-              const textDelta = chunk.data.event.delta;
-              textBuffer += textDelta;
-              text += textDelta;
-              // Check if the current text has incomplete XML tags
-              if (hasIncompleteXmlTag(text)) {
-                continue;
-              }
-              // If we have buffered content, process it
-              if (textBuffer) {
-                await pushTextDelta(textBuffer, text, opts.onTextDelta);
-                textBuffer = '';
-              } else {
-                await pushTextDelta(textDelta, text, opts.onTextDelta);
-              }
-              break;
-            }
-            case 'reasoning':
-              await opts.onReasoning?.(chunk.data.event.delta);
-              break;
-            case 'finish':
-              lastUsage = Usage.fromEventUsage(chunk.data.event.usage);
-              totalUsage.add(lastUsage);
-              break;
-            default:
-              // console.log('Unknown event:', chunk.data.event);
-              break;
+        switch (chunk.type) {
+          case 'text-delta': {
+            const textDelta = chunk.delta;
+            text += textDelta;
+            await opts.onTextDelta?.(textDelta);
+            break;
           }
-        } else {
-          // console.log('Unknown chunk:', chunk);
+          case 'reasoning-delta':
+            reasoning += chunk.delta;
+            break;
+          case 'tool-call':
+            toolCalls.push({
+              toolCallId: chunk.toolCallId,
+              toolName: chunk.toolName,
+              input: chunk.input,
+            });
+            break;
+          case 'finish':
+            lastUsage = Usage.fromEventUsage(chunk.usage);
+            totalUsage.add(lastUsage);
+            break;
+          default:
+            // console.log('Unknown event:', chunk.data.event);
+            break;
         }
       }
     } catch (error: any) {
@@ -239,39 +237,10 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
       return createCancelError();
     }
 
-    // Handle any remaining buffered content
-    // TODO: why have textBuffer here?
-    if (textBuffer) {
-      await pushTextDelta(textBuffer, text, opts.onTextDelta);
-      textBuffer = '';
+    await opts.onText?.(text);
+    if (reasoning) {
+      await opts.onReasoning?.(reasoning);
     }
-
-    // Only accept one tool use per message
-    // TODO: fix this...
-    const parts = text.split('</use_tool>');
-    if (parts.length > 2 && result.history.length > 0) {
-      const lastEntry = result.history[result.history.length - 1];
-      if (
-        lastEntry.type === 'message' &&
-        lastEntry.content &&
-        lastEntry.content[0]
-      ) {
-        text = parts[0] + '</use_tool>';
-        (lastEntry.content[0] as any).text = text;
-      }
-    }
-
-    const parsed = parseMessage(text);
-    if (parsed[0]?.type === 'text') {
-      await opts.onText?.(parsed[0].content);
-      finalText = parsed[0].content;
-    }
-    parsed.forEach((item) => {
-      if (item.type === 'tool_use') {
-        const callId = randomUUID();
-        item.callId = callId;
-      }
-    });
 
     const endTime = new Date();
     opts.onTurn?.({
@@ -280,37 +249,46 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
       endTime,
     });
     const model = `${opts.model.provider.id}/${opts.model.model.id}`;
+    const assistantContent: AssistantContent = [];
+    if (reasoning) {
+      assistantContent.push({
+        type: 'reasoning',
+        text: reasoning,
+      });
+    }
+    if (text) {
+      finalText = text;
+      assistantContent.push({
+        type: 'text',
+        text: text,
+      });
+    }
+    for (const toolCall of toolCalls) {
+      const tool = opts.tools.get(toolCall.toolName);
+      const input = JSON.parse(toolCall.input);
+      const description = tool?.getDescription?.({
+        params: input,
+        cwd: opts.cwd,
+      });
+      const displayName = tool?.displayName;
+      const toolUse: ToolUsePart = {
+        type: 'tool_use',
+        id: toolCall.toolCallId,
+        name: toolCall.toolName,
+        input: input,
+      };
+      if (description) {
+        toolUse.description = description;
+      }
+      if (displayName) {
+        toolUse.displayName = displayName;
+      }
+      assistantContent.push(toolUse);
+    }
     await history.addMessage(
       {
         role: 'assistant',
-        content: parsed.map((item) => {
-          if (item.type === 'text') {
-            return {
-              type: 'text',
-              text: item.content,
-            };
-          } else {
-            const tool = opts.tools.get(item.name);
-            const description = tool?.getDescription?.({
-              params: item.params,
-              cwd: opts.cwd,
-            });
-            const displayName = tool?.displayName;
-            const toolUse: ToolUsePart = {
-              type: 'tool_use',
-              id: item.callId!,
-              name: item.name,
-              input: item.params,
-            };
-            if (description) {
-              toolUse.description = description;
-            }
-            if (displayName) {
-              toolUse.displayName = displayName;
-            }
-            return toolUse;
-          }
-        }),
+        content: assistantContent,
         text,
         model,
         usage: {
@@ -320,8 +298,17 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
       },
       requestId,
     );
-    let toolUse = parsed.find((item) => item.type === 'tool_use') as ToolUse;
-    if (toolUse) {
+    if (!toolCalls.length) {
+      break;
+    }
+
+    const toolResults: any[] = [];
+    for (const toolCall of toolCalls) {
+      let toolUse: ToolUse = {
+        name: toolCall.toolName,
+        params: JSON.parse(toolCall.input),
+        callId: toolCall.toolCallId,
+      };
       if (opts.onToolUse) {
         toolUse = await opts.onToolUse(toolUse as ToolUse);
       }
@@ -337,17 +324,11 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
         if (opts.onToolResult) {
           toolResult = await opts.onToolResult(toolUse, toolResult, approved);
         }
-        await history.addMessage({
-          role: 'user',
-          content: [
-            {
-              type: 'tool_result',
-              id: toolUse.callId,
-              name: toolUse.name,
-              input: toolUse.params,
-              result: toolResult,
-            },
-          ],
+        toolResults.push({
+          toolCallId: toolUse.callId,
+          toolName: toolUse.name,
+          input: toolUse.params,
+          result: toolResult,
         });
         // Prevent normal turns from being terminated due to exceeding the limit
         turnsCount--;
@@ -360,18 +341,24 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
         if (opts.onToolResult) {
           toolResult = await opts.onToolResult(toolUse, toolResult, approved);
         }
-        await history.addMessage({
-          role: 'user',
-          content: [
-            {
-              type: 'tool_result',
-              id: toolUse.callId,
-              name: toolUse.name,
-              input: toolUse.params,
-              result: toolResult,
-            },
-          ],
+        toolResults.push({
+          toolCallId: toolUse.callId,
+          toolName: toolUse.name,
+          input: toolUse.params,
+          result: toolResult,
         });
+        await history.addMessage({
+          role: 'tool',
+          content: toolResults.map((tr) => {
+            return {
+              type: 'tool-result',
+              toolCallId: tr.toolCallId,
+              toolName: tr.toolName,
+              input: tr.input,
+              result: tr.result,
+            };
+          }),
+        } as any);
         return {
           success: false,
           error: {
@@ -385,10 +372,20 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
           },
         };
       }
-      hasToolUse = true;
     }
-    if (!hasToolUse) {
-      break;
+    if (toolResults.length) {
+      await history.addMessage({
+        role: 'tool',
+        content: toolResults.map((tr) => {
+          return {
+            type: 'tool-result',
+            toolCallId: tr.toolCallId,
+            toolName: tr.toolName,
+            input: tr.input,
+            result: tr.result,
+          };
+        }),
+      } as any);
     }
   }
   const duration = Date.now() - startTime;
@@ -405,48 +402,4 @@ ${opts.tools.length() > 0 ? opts.tools.getToolsPrompt() : ''}
       duration,
     },
   };
-}
-
-const INCOMPLETE_PATTERNS = [
-  '<use_tool',
-  '<tool_name',
-  '<arguments',
-  '</use_tool',
-  '</tool_name',
-  '</arguments',
-];
-
-function hasIncompleteXmlTag(text: string): boolean {
-  text = text.slice(-15);
-  for (const pattern of INCOMPLETE_PATTERNS) {
-    if (text.endsWith(pattern)) {
-      return true;
-    }
-    if (text.length < pattern.length) {
-      if (
-        pattern.startsWith(text.slice(-Math.min(text.length, pattern.length)))
-      ) {
-        return true;
-      }
-    } else {
-      const maxCheck = Math.min(pattern.length - 1, text.length);
-      for (let i = 1; i <= maxCheck; i++) {
-        if (text.slice(-i) === pattern.slice(0, i)) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-}
-
-async function pushTextDelta(
-  content: string,
-  text: string,
-  onTextDelta?: (text: string) => Promise<void>,
-): Promise<void> {
-  const parsed = parseMessage(text);
-  if (parsed[0]?.type === 'text' && parsed[0].partial) {
-    await onTextDelta?.(content);
-  }
 }

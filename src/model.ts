@@ -13,7 +13,6 @@ import type { ProviderConfig } from './config';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
 import { GithubProvider } from './providers/githubCopilot';
-import { type AiSdkModel, aisdk } from './utils/ai-sdk';
 
 export interface ModelModalities {
   input: ('text' | 'image' | 'audio' | 'video' | 'pdf')[];
@@ -1266,7 +1265,6 @@ export const modelAlias: ModelAlias = {
 export type ModelInfo = {
   provider: Provider;
   model: Omit<Model, 'cost'>;
-  aisdk: AiSdkModel;
   m: LanguageModelV2;
 };
 
@@ -1379,7 +1377,6 @@ export async function resolveModel(
   return {
     provider,
     model,
-    aisdk: aisdk(m),
     m,
   };
 }
