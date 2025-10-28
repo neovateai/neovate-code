@@ -1,5 +1,5 @@
 import { Bubble } from '@ant-design/x';
-import { type GetProp, Skeleton } from 'antd';
+import { type GetProp, Skeleton, Spin } from 'antd';
 import { useSnapshot } from 'valtio';
 import AssistantFooter from '@/components/AssistantFooter';
 import AssistantMessage from '@/components/AssistantMessage';
@@ -10,25 +10,55 @@ import Welcome from '@/components/Welcome';
 import { state } from '@/state/chat';
 import type { Message } from '@/types/chat';
 import styles from './index.module.css';
+import ActivityIndicator from '../ActivityIndicator';
 
 const ChatContent: React.FC = () => {
   const { messages, status } = useSnapshot(state);
 
+  // 检查是否需要显示 assistant loading
+  const shouldShowAssistantLoading =
+    status !== 'idle' &&
+    messages &&
+    messages.length > 0 &&
+    messages[messages.length - 1].role === 'user';
+
   const items = messages?.map((message, index) => {
     const isLastMessage = index === messages.length - 1;
+
+    const footer = () => {
+      // 如果是最后一条消息且是assistant消息，显示assistant footer
+      if (isLastMessage && message.role === 'assistant') {
+        return <AssistantFooter message={message as Message} />;
+      }
+      // 其他情况显示普通的用户消息footer
+      return <UserMessageFooter message={message as Message} />;
+    };
+
     return {
       ...message,
       content: message,
-      // typing: status === 'processing' ? { step: 20, interval: 150 } : false,
-      // loading: status === 'processing_stream' && isLastMessage,
-      footer:
-        isLastMessage && message.role === 'assistant'
-          ? () => (
-              <AssistantFooter message={message as Message} status={status} />
-            )
-          : () => <UserMessageFooter message={message as Message} />,
+      footer: footer,
     };
   });
+
+  // 如果需要显示assistant loading，添加一个loading项
+  const finalItems =
+    shouldShowAssistantLoading && items
+      ? [
+          ...items,
+          {
+            role: 'assistant',
+            content: '',
+            loading: true,
+            footer: () => (
+              <div className="flex items-center space-x-2 pt-2">
+                <Spin size="small" />
+                <ActivityIndicator />
+              </div>
+            ),
+          },
+        ]
+      : items;
 
   const roles: GetProp<typeof Bubble.List, 'roles'> = {
     user: {
@@ -67,9 +97,9 @@ const ChatContent: React.FC = () => {
   return (
     <div className={styles.chat}>
       <div className={styles.chatList}>
-        {items?.length ? (
+        {finalItems?.length ? (
           <Bubble.List
-            items={items}
+            items={finalItems}
             className={styles.bubbleList}
             roles={roles}
           />
