@@ -618,7 +618,7 @@ function MessageGroup({ message, messages, productName }: MessageGroupProps) {
     if (isUserBashCommandMessage(message)) {
       return <BashCommandMessage message={message as UserMessage} />;
     } else if (isUserBashOutputMessage(message)) {
-      return <BashOutputMessage message={message as UserMessage} />;
+      return <BashOutputMessage message={message as NormalizedMessage} />;
     }
 
     const isToolResult = isToolResultMessage(message);
