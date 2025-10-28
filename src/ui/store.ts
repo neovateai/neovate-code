@@ -493,6 +493,10 @@ export const useAppStore = create<AppStore>()(
           const command = expandedMessage.slice(1).trim();
           if (!command) return;
 
+          set({
+            status: 'processing',
+          });
+
           // Add bash command message
           const bashCommandMsg: Message = {
             role: 'user',
@@ -524,6 +528,10 @@ export const useAppStore = create<AppStore>()(
             cwd,
             sessionId,
             messages: [bashOutputMsg],
+          });
+
+          set({
+            status: 'idle',
           });
 
           return;
