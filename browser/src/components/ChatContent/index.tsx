@@ -15,7 +15,7 @@ import ActivityIndicator from '../ActivityIndicator';
 const ChatContent: React.FC = () => {
   const { messages, status } = useSnapshot(state);
 
-  // 检查是否需要显示 assistant loading
+  // Check if assistant loading needs to be displayed
   const shouldShowAssistantLoading =
     status !== 'idle' &&
     messages &&
@@ -26,11 +26,11 @@ const ChatContent: React.FC = () => {
     const isLastMessage = index === messages.length - 1;
 
     const footer = () => {
-      // 如果是最后一条消息且是assistant消息，显示assistant footer
+      // If it's the last message and it's an assistant message, show the assistant footer
       if (isLastMessage && message.role === 'assistant') {
         return <AssistantFooter message={message as Message} />;
       }
-      // 其他情况显示普通的用户消息footer
+      // Otherwise, show the normal user message footer
       return <UserMessageFooter message={message as Message} />;
     };
 
@@ -41,7 +41,7 @@ const ChatContent: React.FC = () => {
     };
   });
 
-  // 如果需要显示assistant loading，添加一个loading项
+  // If assistant loading needs to be displayed, add a loading item
   const finalItems =
     shouldShowAssistantLoading && items
       ? [
