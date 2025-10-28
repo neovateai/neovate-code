@@ -264,6 +264,7 @@ export class Project {
           tools: result.tools,
           request: result.request,
           response: result.response,
+          error: result.error,
         });
         await opts.onStreamResult?.(result);
       },

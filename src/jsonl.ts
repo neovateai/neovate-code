@@ -70,6 +70,7 @@ export class RequestLogger {
     tools: StreamResult['tools'];
     request?: StreamResult['request'];
     response?: StreamResult['response'];
+    error?: StreamResult['error'];
   }) {
     const filePath = this.getFilePath(opts.requestId);
     const entry = {
@@ -81,6 +82,7 @@ export class RequestLogger {
       tools: opts.tools,
       request: opts.request,
       response: opts.response,
+      error: opts.error,
     };
     fs.appendFileSync(filePath, JSON.stringify(entry) + '\n');
   }

@@ -41,17 +41,22 @@ export type LoopResult =
       };
     };
 
-export type StreamResult = {
+type StreamResultBase = {
   requestId: string;
   prompt: LanguageModelV2Prompt;
   model: ModelInfo;
   tools: LanguageModelV2FunctionTool[];
+};
+export type StreamResult = StreamResultBase & {
   request?: {
     body?: unknown;
   };
   response?: {
     headers?: SharedV2Headers;
+    statusCode?: number;
+    body?: unknown;
   };
+  error?: any;
 };
 
 type RunLoopOpts = {
@@ -210,10 +215,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         if (opts.signal?.aborted) {
           return createCancelError();
         }
-
-        // Call onChunk for all chunks
         await opts.onChunk?.(chunk, requestId);
-
         switch (chunk.type) {
           case 'text-delta': {
             const textDelta = chunk.delta;
@@ -236,11 +238,25 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
             totalUsage.add(lastUsage);
             break;
           default:
-            // console.log('Unknown event:', chunk.data.event);
             break;
         }
       }
     } catch (error: any) {
+      opts.onStreamResult?.({
+        requestId,
+        prompt,
+        model: opts.model,
+        tools,
+        response: {
+          statusCode: error.statusCode,
+          headers: error.responseHeaders,
+          body: error.responseBody,
+        },
+        error: {
+          data: error.data,
+          isRetryable: error.isRetryable,
+        },
+      });
       return {
         success: false,
         error: {
