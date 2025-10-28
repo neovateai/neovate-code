@@ -78,6 +78,18 @@ export function isInsertingAt(delta: Delta) {
   return getInsertText(delta) === '@';
 }
 
+export function isInsertingSlash(delta: Delta) {
+  return getInsertText(delta) === '/';
+}
+
+export function isEditorEmpty(contents: Delta): boolean {
+  if (contents.ops.length === 1) {
+    const op = contents.ops[0];
+    return op.insert === '\n';
+  }
+  return contents.ops.length === 0;
+}
+
 const BLOT_NAME_REGEX = /\[(File|Slash Command|Context)\s+([^\]]+)\]/g;
 // Separate plain text and delta in the text, e.g. [File @ file.ts] demo [File @ file2.ts]
 export function convertTextToDelta(text: string): Delta {

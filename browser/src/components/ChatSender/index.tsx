@@ -63,6 +63,9 @@ const ChatSender: React.FC = () => {
   const [searchText, setSearchText] = useState<string>();
   const quill = useRef<Quill>(null);
   const suggestionListRef = useRef<ISuggestionListRef>(null);
+  const [selectedFirstKey, setSelectedFirstKey] = useState<
+    string | undefined
+  >();
 
   const { isPasting, handlePaste, contextHolder } = useChatPaste();
 
@@ -95,6 +98,15 @@ const ChatSender: React.FC = () => {
               setOpenPopup(true);
               setBounds(bounds);
               setAtIndex(index);
+              setSelectedFirstKey(undefined);
+            }
+          },
+          onInputSlash: (inputing, index, bounds) => {
+            if (inputing) {
+              setOpenPopup(true);
+              setBounds(bounds);
+              setAtIndex(index);
+              setSelectedFirstKey(ContextType.SLASH_COMMAND);
             }
           },
           searchingAtIndex: searchingInEditor ? atIndex : undefined,
@@ -103,7 +115,10 @@ const ChatSender: React.FC = () => {
             setOpenPopup(false);
             setSearchingInEditor(false);
           },
-          onSearch: (text) => setSearchText(text),
+          onSearch: (text) => {
+            setSearchText(text);
+            console.log('on');
+          },
           onQuillLoad: (quillInstance) => {
             quillInstance.focus();
             quill.current = quillInstance;
@@ -140,6 +155,7 @@ const ChatSender: React.FC = () => {
           loading={suggestionLoading}
           className={styles.suggestion}
           open={openPopup}
+          controlledSelectedFirstKey={selectedFirstKey}
           onOpenChange={(open) => {
             setOpenPopup(open);
             if (!open) {
