@@ -1,7 +1,9 @@
 import type {
   LanguageModelV2,
+  LanguageModelV2FunctionTool,
   LanguageModelV2Message,
   LanguageModelV2Prompt,
+  SharedV2Headers,
 } from '@ai-sdk/provider';
 import createDebug from 'debug';
 import { At } from './at';
@@ -39,6 +41,19 @@ export type LoopResult =
       };
     };
 
+export type StreamResult = {
+  requestId: string;
+  prompt: LanguageModelV2Prompt;
+  model: ModelInfo;
+  tools: LanguageModelV2FunctionTool[];
+  request?: {
+    body?: unknown;
+  };
+  response?: {
+    headers?: SharedV2Headers;
+  };
+};
+
 type RunLoopOpts = {
   input: string | NormalizedMessage[];
   model: ModelInfo;
@@ -52,6 +67,7 @@ type RunLoopOpts = {
   onTextDelta?: (text: string) => Promise<void>;
   onText?: (text: string) => Promise<void>;
   onReasoning?: (text: string) => Promise<void>;
+  onStreamResult?: (result: StreamResult) => Promise<void>;
   onChunk?: (chunk: any, requestId: string) => Promise<void>;
   onToolUse?: (toolUse: ToolUse) => Promise<ToolUse>;
   onToolResult?: (
@@ -164,10 +180,20 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     }
     const requestId = randomUUID();
     const m: LanguageModelV2 = opts.model.m;
+    const tools = opts.tools.toLanguageV2Tools();
     const result = await m.doStream({
       prompt: prompt,
-      tools: opts.tools.toLanguageV2Tools(),
+      tools,
       abortSignal: abortController.signal,
+    });
+
+    opts.onStreamResult?.({
+      requestId,
+      prompt,
+      model: opts.model,
+      tools,
+      request: result.request,
+      response: result.response,
     });
 
     let text = '';

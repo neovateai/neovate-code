@@ -1,7 +1,7 @@
 import type { Context } from './context';
-import { JsonlLogger } from './jsonl';
+import { JsonlLogger, RequestLogger } from './jsonl';
 import { LlmsContext } from './llmsContext';
-import { runLoop } from './loop';
+import { runLoop, type StreamResult } from './loop';
 import type { ImagePart, NormalizedMessage, UserContent } from './message';
 import { resolveModelWithContext } from './model';
 import { OutputFormat } from './outputFormat';
@@ -36,6 +36,7 @@ export class Project {
       onToolApprove?: (opts: { toolUse: ToolUse }) => Promise<boolean>;
       onTextDelta?: (text: string) => Promise<void>;
       onChunk?: (chunk: any, requestId: string) => Promise<void>;
+      onStreamResult?: (result: StreamResult) => Promise<void>;
       signal?: AbortSignal;
       attachments?: ImagePart[];
       parentUuid?: string;
@@ -84,6 +85,7 @@ export class Project {
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
       onTextDelta?: (text: string) => Promise<void>;
       onChunk?: (chunk: any, requestId: string) => Promise<void>;
+      onStreamResult?: (result: StreamResult) => Promise<void>;
       signal?: AbortSignal;
       attachments?: ImagePart[];
       parentUuid?: string;
@@ -132,6 +134,7 @@ export class Project {
       }) => Promise<boolean>;
       onTextDelta?: (text: string) => Promise<void>;
       onChunk?: (chunk: any, requestId: string) => Promise<void>;
+      onStreamResult?: (result: StreamResult) => Promise<void>;
       signal?: AbortSignal;
       tools?: Tool[];
       systemPrompt?: string;
@@ -147,6 +150,9 @@ export class Project {
     });
     const jsonlLogger = new JsonlLogger({
       filePath: this.context.paths.getSessionLogPath(this.session.id),
+    });
+    const requestLogger = new RequestLogger({
+      globalProjectDir: this.context.paths.globalProjectDir,
     });
     if (message !== null) {
       message = await this.context.apply({
@@ -250,7 +256,19 @@ export class Project {
       onTextDelta: async (text) => {
         await opts.onTextDelta?.(text);
       },
+      onStreamResult: async (result) => {
+        requestLogger.logMetadata({
+          requestId: result.requestId,
+          prompt: result.prompt,
+          model: result.model,
+          tools: result.tools,
+          request: result.request,
+          response: result.response,
+        });
+        await opts.onStreamResult?.(result);
+      },
       onChunk: async (chunk, requestId) => {
+        requestLogger.logChunk(requestId, chunk);
         await opts.onChunk?.(chunk, requestId);
       },
       onText: async (text) => {},
