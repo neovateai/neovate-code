@@ -80,7 +80,7 @@ const ChatSender: React.FC = () => {
     setInputText('');
     sender.actions.updatePrompt('');
     sender.actions.updateDelta(new Delta());
-    quill.current?.setText('\n');
+    quill.current?.setText('\n', 'user');
   };
 
   const handleEnterPress = () => {
@@ -117,7 +117,6 @@ const ChatSender: React.FC = () => {
           },
           onSearch: (text) => {
             setSearchText(text);
-            console.log('on');
           },
           onQuillLoad: (quillInstance) => {
             quillInstance.focus();
