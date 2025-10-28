@@ -178,34 +178,34 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       });
       shouldAtNormalize = false;
     }
-    const requestId = randomUUID();
-    const m: LanguageModelV2 = opts.model.m;
-    const tools = opts.tools.toLanguageV2Tools();
-    const result = await m.doStream({
-      prompt: prompt,
-      tools,
-      abortSignal: abortController.signal,
-    });
-
-    opts.onStreamResult?.({
-      requestId,
-      prompt,
-      model: opts.model,
-      tools,
-      request: result.request,
-      response: result.response,
-    });
 
     let text = '';
     let reasoning = '';
-
     const toolCalls: Array<{
       toolCallId: string;
       toolName: string;
       input: string;
     }> = [];
 
+    const requestId = randomUUID();
+    const m: LanguageModelV2 = opts.model.m;
+    const tools = opts.tools.toLanguageV2Tools();
+
     try {
+      const result = await m.doStream({
+        prompt: prompt,
+        tools,
+        abortSignal: abortController.signal,
+      });
+      opts.onStreamResult?.({
+        requestId,
+        prompt,
+        model: opts.model,
+        tools,
+        request: result.request,
+        response: result.response,
+      });
+
       for await (const chunk of result.stream) {
         if (opts.signal?.aborted) {
           return createCancelError();
