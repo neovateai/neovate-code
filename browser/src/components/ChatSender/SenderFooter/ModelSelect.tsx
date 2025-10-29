@@ -17,7 +17,7 @@ const ModelSelect = () => {
       return actions.getModelsList();
     },
     {
-      ready: !!cwd && initialized, // 只有当cwd存在且已初始化时才调用API
+      ready: !!cwd && initialized, // Only call API when cwd exists and is initialized
       refreshDeps: [cwd, initialized],
     },
   );
