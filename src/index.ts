@@ -133,6 +133,7 @@ Commands:
   mcp                           Manage MCP servers
   run                           Run a command
   update                        Check for and apply updates
+  workspace                     Manage workspaces
     `.trimEnd(),
   );
 }
@@ -313,7 +314,15 @@ export async function runNeovate(opts: {
     });
     return;
   }
-  const validCommands = ['config', 'commit', 'mcp', 'run', 'server', 'update'];
+  const validCommands = [
+    'config',
+    'commit',
+    'mcp',
+    'run',
+    'server',
+    'update',
+    'workspace',
+  ];
   if (validCommands.includes(command)) {
     const context = await Context.create({
       cwd,
@@ -343,6 +352,11 @@ export async function runNeovate(opts: {
       case 'update': {
         const { runUpdate } = await import('./commands/update');
         await runUpdate(context, opts.upgrade);
+        break;
+      }
+      case 'workspace': {
+        const { runWorkspace } = await import('./commands/workspace');
+        await runWorkspace(context);
         break;
       }
       default:
