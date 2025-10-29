@@ -21,7 +21,7 @@ Commands:
 
 Workflow:
   1. Create a workspace:     ${p} workspace create
-  2. Work in isolation:      cd .neovate-workspaces/<name>
+  2. Work in isolation:      cd .${p}-workspaces/<name>
   3. When done, complete:    ${p} workspace complete
   4. Or delete without merge: ${p} workspace delete <name>
 
@@ -35,7 +35,7 @@ Examples:
   ${p} workspace complete                  Complete and merge current workspace
 
 Notes:
-  - Workspaces are stored in .neovate-workspaces/ directory
+  - Workspaces are stored in .${p}-workspaces/ directory
   - Each workspace is a separate git worktree with its own branch
   - Complete workflow merges back to your original branch
       `.trim(),
