@@ -182,7 +182,7 @@ describe('shell-execution', () => {
 
       const allChunks = dataEvents.map((e) => e.chunk).join('');
       expect(allChunks).toContain('hello');
-    }, 10000);
+    });
 
     test('should detect binary output', async () => {
       const outputEvents: any[] = [];

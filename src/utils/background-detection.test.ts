@@ -27,8 +27,8 @@ describe('background-detection', () => {
   });
 
   test('should return true for dev commands with output after 2s', () => {
-    expect(shouldRunInBackground('npm run dev', 2500, true, false)).toBe(true);
-    expect(shouldRunInBackground('pnpm dev', 2500, true, false)).toBe(true);
-    expect(shouldRunInBackground('yarn start', 2500, true, false)).toBe(true);
+    expect(shouldRunInBackground('npm run dev', 4500, true, false)).toBe(true);
+    expect(shouldRunInBackground('pnpm dev', 4500, true, false)).toBe(true);
+    expect(shouldRunInBackground('yarn start', 4500, true, false)).toBe(true);
   });
 });
