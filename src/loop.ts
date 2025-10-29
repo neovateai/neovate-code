@@ -19,8 +19,31 @@ import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
 
 const DEFAULT_MAX_TURNS = 50;
+const DEFAULT_ERROR_RETRY_TURNS = 10;
 
 const debug = createDebug('neovate:loop');
+
+async function exponentialBackoffWithCancellation(
+  attempt: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  const baseDelay = 1000;
+  const delay = baseDelay * Math.pow(2, attempt - 1);
+  const checkInterval = 100;
+
+  const startTime = Date.now();
+  while (Date.now() - startTime < delay) {
+    if (signal?.aborted) {
+      throw new Error('Cancelled during retry backoff');
+    }
+    await new Promise((resolve) =>
+      setTimeout(
+        resolve,
+        Math.min(checkInterval, delay - (Date.now() - startTime)),
+      ),
+    );
+  }
+}
 
 export type LoopResult =
   | {
@@ -66,6 +89,7 @@ type RunLoopOpts = {
   cwd: string;
   systemPrompt?: string;
   maxTurns?: number;
+  errorRetryTurns?: number;
   signal?: AbortSignal;
   llmsContexts?: string[];
   autoCompact?: boolean;
@@ -196,82 +220,132 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     const m: LanguageModelV2 = opts.model.m;
     const tools = opts.tools.toLanguageV2Tools();
 
-    try {
-      const result = await m.doStream({
-        prompt: prompt,
-        tools,
-        abortSignal: abortController.signal,
-      });
-      opts.onStreamResult?.({
-        requestId,
-        prompt,
-        model: opts.model,
-        tools,
-        request: result.request,
-        response: result.response,
-      });
+    let retryCount = 0;
+    const errorRetryTurns = opts.errorRetryTurns ?? DEFAULT_ERROR_RETRY_TURNS;
 
-      for await (const chunk of result.stream) {
-        if (opts.signal?.aborted) {
-          return createCancelError();
-        }
-        await opts.onChunk?.(chunk, requestId);
-        switch (chunk.type) {
-          case 'text-delta': {
-            const textDelta = chunk.delta;
-            text += textDelta;
-            await opts.onTextDelta?.(textDelta);
-            break;
-          }
-          case 'reasoning-delta':
-            reasoning += chunk.delta;
-            break;
-          case 'tool-call':
-            toolCalls.push({
-              toolCallId: chunk.toolCallId,
-              toolName: chunk.toolName,
-              input: chunk.input,
-            });
-            break;
-          case 'finish':
-            lastUsage = Usage.fromEventUsage(chunk.usage);
-            totalUsage.add(lastUsage);
-            break;
-          default:
-            break;
-        }
+    while (retryCount <= errorRetryTurns) {
+      if (opts.signal?.aborted) {
+        return createCancelError();
       }
-    } catch (error: any) {
-      opts.onStreamResult?.({
-        requestId,
-        prompt,
-        model: opts.model,
-        tools,
-        response: {
-          statusCode: error.statusCode,
-          headers: error.responseHeaders,
-          body: error.responseBody,
-        },
-        error: {
-          data: error.data,
-          isRetryable: error.isRetryable,
-        },
-      });
-      return {
-        success: false,
-        error: {
-          type: 'api_error',
-          message:
-            error instanceof Error ? error.message : 'Unknown streaming error',
-          details: {
-            code: error.data?.error?.code,
-            status: error.data?.error?.status,
-            url: error.url,
-            error,
-            stack: error.stack,
+
+      try {
+        const result = await m.doStream({
+          prompt: prompt,
+          tools,
+          abortSignal: abortController.signal,
+        });
+        opts.onStreamResult?.({
+          requestId,
+          prompt,
+          model: opts.model,
+          tools,
+          request: result.request,
+          response: result.response,
+        });
+
+        for await (const chunk of result.stream) {
+          if (opts.signal?.aborted) {
+            return createCancelError();
+          }
+          await opts.onChunk?.(chunk, requestId);
+          switch (chunk.type) {
+            case 'text-delta': {
+              const textDelta = chunk.delta;
+              text += textDelta;
+              await opts.onTextDelta?.(textDelta);
+              break;
+            }
+            case 'reasoning-delta':
+              reasoning += chunk.delta;
+              break;
+            case 'tool-call':
+              toolCalls.push({
+                toolCallId: chunk.toolCallId,
+                toolName: chunk.toolName,
+                input: chunk.input,
+              });
+              break;
+            case 'finish':
+              lastUsage = Usage.fromEventUsage(chunk.usage);
+              totalUsage.add(lastUsage);
+              break;
+            case 'error': {
+              const message = (() => {
+                if ((chunk as any).error.message) {
+                  return (chunk as any).error.message;
+                }
+                try {
+                  const message = JSON.parse(
+                    (chunk as any).error.value?.details,
+                  )?.error?.message;
+                  if (message) {
+                    return message;
+                  }
+                } catch (_e) {}
+                return JSON.stringify(chunk.error);
+              })();
+              const error = new Error(message);
+              (error as any).isRetryable = false;
+              const value = (chunk.error as any).value;
+              if (value) {
+                (error as any).statusCode = value?.status;
+              }
+              throw error;
+            }
+            default:
+              break;
+          }
+        }
+
+        break;
+      } catch (error: any) {
+        opts.onStreamResult?.({
+          requestId,
+          prompt,
+          model: opts.model,
+          tools,
+          response: {
+            statusCode: error.statusCode,
+            headers: error.responseHeaders,
+            body: error.responseBody,
           },
-        },
-      };
+          error: {
+            data: error.data,
+            isRetryable: error.isRetryable,
+            retryAttempt: retryCount,
+            maxRetries: errorRetryTurns,
+          },
+        });
+
+        if (error.isRetryable && retryCount < errorRetryTurns) {
+          retryCount++;
+          try {
+            await exponentialBackoffWithCancellation(retryCount, opts.signal);
+          } catch {
+            return createCancelError();
+          }
+          continue;
+        }
+
+        return {
+          success: false,
+          error: {
+            type: 'api_error',
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Unknown streaming error',
+            details: {
+              code: error.data?.error?.code,
+              status: error.data?.error?.status,
+              url: error.url,
+              error,
+              stack: error.stack,
+              retriesAttempted: retryCount,
+            },
+          },
+        };
+      }
     }
 
     // Exit early if cancellation signal is received

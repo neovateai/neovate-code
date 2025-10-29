@@ -8,6 +8,7 @@ import {
 import { CANCELED_MESSAGE_TEXT } from './constants';
 import { Context } from './context';
 import { JsonlLogger } from './jsonl';
+import type { StreamResult } from './loop';
 import type {
   ImagePart,
   Message,
@@ -602,6 +603,11 @@ class NodeHandlerRegistry {
               category,
             });
             return result.approved;
+          },
+          onStreamResult: async (result: StreamResult) => {
+            await this.messageBus.emitEvent('streamResult', {
+              result,
+            });
           },
           signal: abortController.signal,
         });

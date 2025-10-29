@@ -13,6 +13,7 @@ export function ActivityIndicator() {
     approvalModal,
     processingStartTime,
     processingTokens,
+    retryInfo,
   } = useAppStore();
   const [seconds, setSeconds] = useState(0);
 
@@ -46,6 +47,20 @@ export function ActivityIndicator() {
     }
   }, [status, processingStartTime]);
 
+  const statusText = useMemo(() => {
+    let text = 'Esc to cancel';
+    if (processingTokens > 0) {
+      text += `, ↓ ${processingTokens} tokens`;
+    }
+    if (retryInfo) {
+      const errorMsg = retryInfo.error;
+      text += `, Retry ${retryInfo.currentRetry}/${retryInfo.maxRetries}${
+        errorMsg ? `: ${errorMsg}` : ''
+      }`;
+    }
+    return `(${text})`;
+  }, [processingTokens, retryInfo]);
+
   if (status === 'idle') return null;
   if (status === 'exit') return null;
   if (planResult) return null;
@@ -57,9 +72,7 @@ export function ActivityIndicator() {
         <Box>
           <GradientText text={text} highlightIndex={highlightIndex} />
           <Box marginLeft={1}>
-            <Text color={UI_COLORS.ACTIVITY_INDICATOR_TEXT}>
-              {`(Esc to cancel${processingTokens > 0 ? `, ↓ ${processingTokens} tokens` : ''})`}
-            </Text>
+            <Text color={UI_COLORS.ACTIVITY_INDICATOR_TEXT}>{statusText}</Text>
           </Box>
         </Box>
       ) : (
