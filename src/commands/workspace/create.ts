@@ -15,6 +15,7 @@ import { WorkspaceSuccessMessage } from './components';
 
 export async function runCreate(context: Context, argv: any) {
   const cwd = process.cwd();
+  const productName = context.productName.toLowerCase();
 
   try {
     // Step 1: Ensure clean working directory
@@ -39,7 +40,7 @@ export async function runCreate(context: Context, argv: any) {
     console.log(`Creating workspace '${name}'...`);
     const worktree = await createWorktree(cwd, name, {
       baseBranch: mainBranch,
-      workspacesDir: '.neovate-workspaces',
+      workspacesDir: `.${productName}-workspaces`,
     });
 
     // Update worktree object with original branch
@@ -47,7 +48,7 @@ export async function runCreate(context: Context, argv: any) {
 
     // Step 7: Save metadata for later use
     const gitRoot = await getGitRoot(cwd);
-    const metadataPath = `${gitRoot}/.neovate-workspaces/.metadata`;
+    const metadataPath = `${gitRoot}/.${productName}-workspaces/.metadata`;
     const fs = await import('fs');
     const path = await import('pathe');
 
@@ -69,7 +70,7 @@ export async function runCreate(context: Context, argv: any) {
     };
 
     // Ensure .neovate-workspaces directory exists
-    const workspacesDir = path.join(gitRoot, '.neovate-workspaces');
+    const workspacesDir = path.join(gitRoot, `.${productName}-workspaces`);
     if (!fs.existsSync(workspacesDir)) {
       fs.mkdirSync(workspacesDir, { recursive: true });
     }
