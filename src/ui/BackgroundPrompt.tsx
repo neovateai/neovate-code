@@ -16,10 +16,8 @@ export function BackgroundPrompt() {
   const { currentOutput } = bashBackgroundPrompt;
 
   // Truncate output to avoid overwhelming the display
-  const lines = currentOutput
-    .replace(/^\n/, '')
-    .split('\n')
-    .slice(0, MAX_OUTPUT_LINES);
+  const outputLines = currentOutput.replace(/^\n/, '').split('\n');
+  const lines = outputLines.slice(0, MAX_OUTPUT_LINES);
   const displayOutput = lines
     .map((line) =>
       line.length > MAX_OUTPUT_LINE_LENGTH
@@ -28,7 +26,7 @@ export function BackgroundPrompt() {
     )
     .join('\n');
   const hasMoreOutput =
-    currentOutput.split('\n').length > MAX_OUTPUT_LINES ||
+    outputLines.length > MAX_OUTPUT_LINES ||
     lines.some((line) => line.length > MAX_OUTPUT_LINE_LENGTH);
 
   return (
