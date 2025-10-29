@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
-import type { LoopResult } from '../loop';
+import type { LoopResult, StreamResult } from '../loop';
 import type { Message, NormalizedMessage, UserMessage } from '../message';
 import type { ProvidersMap } from '../model';
 import { Paths } from '../paths';
@@ -78,6 +78,12 @@ interface AppState {
   planResult: string | null;
   processingStartTime: number | null;
   processingTokens: number;
+
+  retryInfo: {
+    currentRetry: number;
+    maxRetries: number;
+    error: string | null;
+  } | null;
 
   messages: Message[];
   currentMessage: Message | null;
@@ -169,6 +175,13 @@ interface AppActions {
   toggleDebugMode: () => void;
   setStatus: (status: AppStatus) => void;
   setBashMode: (bashMode: boolean) => void;
+  setRetryInfo: (
+    retryInfo: {
+      currentRetry: number;
+      maxRetries: number;
+      error: string | null;
+    } | null,
+  ) => void;
 
   // Input state actions
   setInputValue: (value: string) => void;
@@ -219,6 +232,7 @@ export const useAppStore = create<AppStore>()(
       planResult: null,
       processingStartTime: null,
       processingTokens: 0,
+      retryInfo: null,
       approvalModal: null,
       memoryModal: null,
       upgrade: null,
@@ -288,6 +302,26 @@ export const useAppStore = create<AppStore>()(
               const tokenCount = countTokens(chunk.delta);
               set({ processingTokens: get().processingTokens + tokenCount });
             }
+          }
+        });
+        bridge.onEvent('streamResult', (data) => {
+          const result = data.result as StreamResult;
+          if (result.error) {
+            const error = (() => {
+              try {
+                return result.error.data.error.message;
+              } catch (_e) {}
+              return JSON.stringify(result.error.data);
+            })();
+            set({
+              retryInfo: {
+                currentRetry: result.error.retryAttempt,
+                maxRetries: result.error.maxRetries,
+                error,
+              },
+            });
+          } else {
+            set({ retryInfo: null });
           }
         });
         setImmediate(async () => {
@@ -630,6 +664,7 @@ export const useAppStore = create<AppStore>()(
             status: 'idle',
             processingStartTime: null,
             processingTokens: 0,
+            retryInfo: null,
             forkParentUuid: null, // Clear after successful send
           });
         } else {
@@ -638,6 +673,7 @@ export const useAppStore = create<AppStore>()(
             error: response.error.message,
             processingStartTime: null,
             processingTokens: 0,
+            retryInfo: null,
           });
         }
         return response;
@@ -656,6 +692,7 @@ export const useAppStore = create<AppStore>()(
           status: 'idle',
           processingStartTime: null,
           processingTokens: 0,
+          retryInfo: null,
         });
       },
 
@@ -678,6 +715,7 @@ export const useAppStore = create<AppStore>()(
           pastedTextMap: {},
           pastedImageMap: {},
           processingTokens: 0,
+          retryInfo: null,
           forkParentUuid: null,
           forkModalVisible: false,
         });
@@ -760,6 +798,7 @@ export const useAppStore = create<AppStore>()(
           planResult: null,
           processingStartTime: null,
           processingTokens: 0,
+          retryInfo: null,
           planMode: false,
           bashMode: false,
           // Reset input state when resuming
@@ -924,6 +963,10 @@ export const useAppStore = create<AppStore>()(
 
       setBashMode: (bashMode: boolean) => {
         set({ bashMode });
+      },
+
+      setRetryInfo: (retryInfo) => {
+        set({ retryInfo });
       },
 
       // Input state actions
