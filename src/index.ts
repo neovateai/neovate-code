@@ -133,6 +133,7 @@ Commands:
   mcp                           Manage MCP servers
   run                           Run a command
   update                        Check for and apply updates
+  workspace                     Manage workspaces
     `.trimEnd(),
   );
 }
