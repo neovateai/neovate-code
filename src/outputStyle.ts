@@ -187,7 +187,7 @@ export function loadPolishedMarkdownFiles(
   }
   const files = glob.sync('**/*.md', {
     cwd: dir,
-    follow: true, // 支持软连接
+    follow: true,
   });
   return files.map((relativePath) => {
     const absPath = path.join(dir, relativePath);
