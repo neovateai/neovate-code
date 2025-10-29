@@ -8,8 +8,12 @@ describe('background-detection', () => {
     expect(getCommandRoot('/usr/bin/node script.js')).toBe('node');
   });
 
-  test('should return true when user explicitly requests background', () => {
-    expect(shouldRunInBackground('any command', 0, false, true)).toBe(true);
+  test('should return true when user explicitly requests background after threshold', () => {
+    expect(shouldRunInBackground('any command', 4000, true, true)).toBe(true);
+  });
+
+  test('should return false when user requests background but before threshold', () => {
+    expect(shouldRunInBackground('any command', 1000, true, true)).toBe(false);
   });
 
   test('should return false for short running commands', () => {

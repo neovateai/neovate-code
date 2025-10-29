@@ -383,13 +383,12 @@ async function executeCommand(
 
         if (
           shouldRunInBackground(command, elapsed, hasOutput, runInBackground) &&
-          !backgroundPromptEmitted &&
-          messageBus
+          !backgroundPromptEmitted
         ) {
           backgroundPromptEmitted = true;
-          const tempTaskId = `temp_${crypto.randomBytes(6).toString('hex')}`;
-          pendingBackgroundMoves.set(tempTaskId, {
-            moveToBackground: () => {
+
+          if (runInBackground === true) {
+            if (!movedToBackgroundRef.value) {
               movedToBackgroundRef.value = true;
               const actualTaskId = handleBackgroundTransition(
                 command,
@@ -400,17 +399,33 @@ async function executeCommand(
                 resultPromise,
               );
               backgroundTaskIdRef.value = actualTaskId;
-            },
-          });
+            }
+          } else if (messageBus) {
+            const tempTaskId = `temp_${crypto.randomBytes(6).toString('hex')}`;
+            pendingBackgroundMoves.set(tempTaskId, {
+              moveToBackground: () => {
+                movedToBackgroundRef.value = true;
+                const actualTaskId = handleBackgroundTransition(
+                  command,
+                  pid,
+                  tempFilePath,
+                  isWindows,
+                  backgroundTaskManager,
+                  resultPromise,
+                );
+                backgroundTaskIdRef.value = actualTaskId;
+              },
+            });
 
-          // Emit the prompt event
-          const promptEvent: BashPromptBackgroundEvent = {
-            taskId: tempTaskId,
-            command,
-            currentOutput: outputBufferRef.value,
-          };
+            // Emit the prompt event
+            const promptEvent: BashPromptBackgroundEvent = {
+              taskId: tempTaskId,
+              command,
+              currentOutput: outputBufferRef.value,
+            };
 
-          messageBus.emitEvent(BASH_EVENTS.PROMPT_BACKGROUND, promptEvent);
+            messageBus.emitEvent(BASH_EVENTS.PROMPT_BACKGROUND, promptEvent);
+          }
         }
       }
     },

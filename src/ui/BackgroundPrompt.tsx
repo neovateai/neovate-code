@@ -3,6 +3,9 @@ import React from 'react';
 import { UI_COLORS } from './constants';
 import { useAppStore } from './store';
 
+const MAX_OUTPUT_LINES = 10;
+const MAX_OUTPUT_LINE_LENGTH = 80;
+
 export function BackgroundPrompt() {
   const { bashBackgroundPrompt } = useAppStore();
 
@@ -13,13 +16,20 @@ export function BackgroundPrompt() {
   const { currentOutput } = bashBackgroundPrompt;
 
   // Truncate output to avoid overwhelming the display
-  const lines = currentOutput.replace(/^\n/, '').split('\n').slice(0, 5);
+  const lines = currentOutput
+    .replace(/^\n/, '')
+    .split('\n')
+    .slice(0, MAX_OUTPUT_LINES);
   const displayOutput = lines
-    .map((line) => (line.length > 80 ? line.substring(0, 77) + '...' : line))
+    .map((line) =>
+      line.length > MAX_OUTPUT_LINE_LENGTH
+        ? `${line.substring(0, MAX_OUTPUT_LINE_LENGTH - 3)}...`
+        : line,
+    )
     .join('\n');
   const hasMoreOutput =
-    currentOutput.split('\n').length > 5 ||
-    lines.some((line) => line.length > 80);
+    currentOutput.split('\n').length > MAX_OUTPUT_LINES ||
+    lines.some((line) => line.length > MAX_OUTPUT_LINE_LENGTH);
 
   return (
     <Box flexDirection="column">
