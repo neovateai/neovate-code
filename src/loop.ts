@@ -268,6 +268,13 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
             case 'finish':
               lastUsage = Usage.fromEventUsage(chunk.usage);
               totalUsage.add(lastUsage);
+              if (toolCalls.length === 0 && text.trim() === '') {
+                const error = new Error(
+                  'Empty response: no text or tool calls received',
+                );
+                (error as any).isRetryable = true;
+                throw error;
+              }
               break;
             case 'error': {
               const message = (() => {
@@ -310,7 +317,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
             body: error.responseBody,
           },
           error: {
-            data: error.data,
+            data: error.data || error.message,
             isRetryable: error.isRetryable,
             retryAttempt: retryCount,
             maxRetries: errorRetryTurns,
