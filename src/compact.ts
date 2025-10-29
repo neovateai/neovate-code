@@ -17,7 +17,11 @@ export async function compact(opts: CompactOptions): Promise<string> {
     model: opts.model,
   });
   if (result.success) {
-    return result.data.text;
+    const summary = result.data.text;
+    if (!summary || summary.trim() === '') {
+      throw new Error('Failed to compact: received empty summary from model');
+    }
+    return summary;
   }
   throw new Error(`Failed to compact: ${result.error.message}`);
 }
