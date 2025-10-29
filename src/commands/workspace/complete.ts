@@ -1,7 +1,7 @@
 import { exec } from 'child_process';
 import { render } from 'ink';
-import { promisify } from 'util';
 import React from 'react';
+import { promisify } from 'util';
 import type { Context } from '../../context';
 import {
   detectMainBranch,
@@ -23,7 +23,7 @@ export async function runComplete(context: Context, argv: any) {
 
     // Load metadata to get original branch
     const fs = await import('fs');
-    const metadataPath = `${gitRoot}/.neovate-workspaces/.metadata`;
+    const metadataPath = `${gitRoot}/.${context.productName.toLowerCase()}-workspaces/.metadata`;
     let metadata: Record<string, any> = {};
     if (fs.existsSync(metadataPath)) {
       try {
