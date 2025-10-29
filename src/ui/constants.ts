@@ -27,6 +27,8 @@ export const UI_COLORS = {
     FADE_LEVELS: ['white', 'gray', 'blackBright', 'black'] as const,
   },
   MODE_INDICATOR_TEXT: 'magentaBright',
+  MODE_INDICATOR_TEXT_BASH: 'magenta',
+  MODE_INDICATOR_TEXT_MEMORY: 'cyan',
   MODE_INDICATOR_DESCRIPTION: 'gray',
 } as const;
 

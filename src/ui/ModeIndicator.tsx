@@ -4,7 +4,7 @@ import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 
 export function ModeIndicator() {
-  const { planMode, brainstormMode, bashMode, planResult, slashCommandJSX } =
+  const { planMode, brainstormMode, planResult, slashCommandJSX, mode } =
     useAppStore();
   if (slashCommandJSX) {
     return null;
@@ -12,33 +12,51 @@ export function ModeIndicator() {
   if (planResult) {
     return null;
   }
-  const text = planMode ? (
-    <>
-      <Text color={UI_COLORS.MODE_INDICATOR_TEXT}>plan mode</Text>
-      <Text color={UI_COLORS.MODE_INDICATOR_DESCRIPTION}>
-        {' '}
-        (shift + tab to toggle)
-      </Text>
-    </>
-  ) : brainstormMode ? (
-    <>
-      <Text color={UI_COLORS.MODE_INDICATOR_TEXT}>🧠 brainstorm mode</Text>
-      <Text color={UI_COLORS.MODE_INDICATOR_DESCRIPTION}>
-        {' '}
-        (shift + tab to toggle)
-      </Text>
-    </>
-  ) : bashMode ? (
-    <>
-      <Text color={UI_COLORS.MODE_INDICATOR_TEXT}>bash mode</Text>
-      <Text color={UI_COLORS.MODE_INDICATOR_DESCRIPTION}>
-        {' '}
-        (esc to disable)
-      </Text>
-    </>
-  ) : (
-    <Text> </Text>
-  );
+
+  function getModeText() {
+    if (mode === 'bash' || mode === 'memory') {
+      const color = `MODE_INDICATOR_TEXT_${mode.toUpperCase()}` as
+        | 'MODE_INDICATOR_TEXT_BASH'
+        | 'MODE_INDICATOR_TEXT_MEMORY';
+      return (
+        <>
+          <Text color={UI_COLORS[color]}>{mode} mode</Text>
+          <Text color={UI_COLORS.MODE_INDICATOR_DESCRIPTION}>
+            {' '}
+            (esc to disable)
+          </Text>
+        </>
+      );
+    }
+
+    if (mode === 'prompt') {
+      if (planMode) {
+        return (
+          <>
+            <Text color={UI_COLORS.MODE_INDICATOR_TEXT}>plan mode</Text>
+            <Text color={UI_COLORS.MODE_INDICATOR_DESCRIPTION}>
+              {' '}
+              (shift + tab to toggle)
+            </Text>
+          </>
+        );
+      }
+      if (brainstormMode) {
+        return (
+          <>
+            <Text color={UI_COLORS.MODE_INDICATOR_TEXT}>🧠 brainstorm mode</Text>
+            <Text color={UI_COLORS.MODE_INDICATOR_DESCRIPTION}>
+              {' '}
+              (shift + tab to toggle)
+            </Text>
+          </>
+        );
+      }
+    }
+
+    return <Text> </Text>;
+  }
+
   return (
     <Box
       flexDirection="row"
@@ -46,7 +64,7 @@ export function ModeIndicator() {
       marginTop={SPACING.MODE_INDICATOR_MARGIN_TOP}
     >
       <Box flexGrow={1} />
-      <Box>{text}</Box>
+      <Box>{getModeText()}</Box>
     </Box>
   );
 }

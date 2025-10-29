@@ -15,7 +15,7 @@ import { useTerminalSize } from './useTerminalSize';
 import { useTryTips } from './useTryTips';
 
 export function ChatInput() {
-  const { inputState, mode, handlers, slashCommands, fileSuggestion } =
+  const { inputState, handlers, slashCommands, fileSuggestion } =
     useInputHandlers();
   const { currentTip } = useTryTips();
   const {
@@ -34,6 +34,8 @@ export function ChatInput() {
     bashBackgroundPrompt,
     bridge,
     thinking,
+    mode,
+    updateMode,
   } = useAppStore();
   const { columns } = useTerminalSize();
   const { handleExternalEdit } = useExternalEditor({
@@ -64,9 +66,6 @@ export function ChatInput() {
 
   // Display value - slice prefix for bash/memory modes
   const displayValue = useMemo(() => {
-    if (mode === 'bash' || mode === 'memory') {
-      return inputState.state.value.slice(1);
-    }
     return inputState.state.value;
   }, [mode, inputState.state.value]);
 
@@ -82,21 +81,21 @@ export function ChatInput() {
   // Wrap onChange to add prefix back for bash/memory modes
   const handleDisplayChange = useCallback(
     (val: string) => {
-      if (mode === 'bash' || mode === 'memory') {
-        const prefix = mode === 'bash' ? '!' : '#';
-        if (['!', '#'].includes(val)) return;
-        handlers.handleChange(prefix + val);
-      } else {
-        handlers.handleChange(val);
+      // 输入的第一个字符，=== ! 或者 #，则不赋值，仅仅改变 mode
+      if (['!', '#'].includes(val)) {
+        updateMode(val);
+        return;
       }
+      handlers.handleChange(val);
     },
     [mode, handlers],
   );
 
   // Handle delete key press - switch to prompt mode when value becomes empty
   const handleDelete = useCallback(() => {
+    // 当前 displayValue 为空时，继续点击删除键，则改为默认模式
     if ((mode === 'bash' || mode === 'memory') && displayValue === '') {
-      inputState.setValue('');
+      updateMode('');
     }
   }, [mode, displayValue, inputState]);
 
