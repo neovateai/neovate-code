@@ -232,6 +232,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         const result = await m.doStream({
           prompt: prompt,
           tools,
+          toolChoice: { type: 'auto' },
           abortSignal: abortController.signal,
         });
         opts.onStreamResult?.({
