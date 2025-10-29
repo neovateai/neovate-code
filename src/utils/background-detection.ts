@@ -15,7 +15,7 @@ const DEV_COMMANDS = [
   'pytest',
 ];
 
-const BACKGROUND_THRESHOLD_MS = 2000;
+const BACKGROUND_THRESHOLD_MS = 4000;
 
 export function getCommandRoot(command: string): string | undefined {
   return command

@@ -28,6 +28,12 @@ export type ApprovalResult =
   | 'approve_always_tool'
   | 'deny';
 
+export interface BashPromptBackgroundEvent {
+  taskId: string;
+  command: string;
+  currentOutput: string;
+}
+
 type Theme = 'light' | 'dark';
 type AppStatus =
   | 'idle'
@@ -128,6 +134,8 @@ interface AppState {
 
   forkModalVisible: boolean;
   forkParentUuid: string | null;
+
+  bashBackgroundPrompt: BashPromptBackgroundEvent | null;
 }
 
 type InitializeOpts = {
@@ -195,6 +203,8 @@ interface AppActions {
   showForkModal: () => void;
   hideForkModal: () => void;
   fork: (targetMessageUuid: string) => Promise<void>;
+  setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => void;
+  clearBashBackgroundPrompt: () => void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -247,6 +257,8 @@ export const useAppStore = create<AppStore>()(
       pastedImageMap: {},
       forkModalVisible: false,
       forkParentUuid: null,
+
+      bashBackgroundPrompt: null,
 
       // Actions
       initialize: async (opts) => {
@@ -617,6 +629,14 @@ export const useAppStore = create<AppStore>()(
         }
       },
 
+      setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => {
+        set({ bashBackgroundPrompt: prompt });
+      },
+
+      clearBashBackgroundPrompt: () => {
+        set({ bashBackgroundPrompt: null });
+      },
+
       sendMessage: async (opts: {
         message: string | null;
         planMode?: boolean;
@@ -693,6 +713,7 @@ export const useAppStore = create<AppStore>()(
           processingStartTime: null,
           processingTokens: 0,
           retryInfo: null,
+          bashBackgroundPrompt: null,
         });
       },
 
