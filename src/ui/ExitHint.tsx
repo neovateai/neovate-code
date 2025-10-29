@@ -24,7 +24,12 @@ export function ExitHint() {
 
   return (
     <Box flexDirection="column" marginTop={1}>
-      <Text color="gray">Session ended</Text>
+      <Text color="gray" dimColor>
+        ---
+      </Text>
+      <Text color="gray" bold dimColor>
+        Session ended
+      </Text>
       <Box flexDirection="column" marginTop={1}>
         <Text color="gray">📁 Working directory: {cwd}</Text>
         <Text color="gray">🤖 Model: {model}</Text>
