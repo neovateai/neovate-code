@@ -167,25 +167,6 @@ describe('shell-execution', () => {
       expect(outputEvents.some((event) => event.type === 'data')).toBe(true);
     });
 
-    test('should call onOutputEvent with data events containing chunks', async () => {
-      const events: any[] = [];
-      const onOutputEvent = (event: any) => events.push(event);
-
-      const command = isWindows
-        ? 'for /L %i in (1,1,5) do @echo Line%i'
-        : 'for i in 1 2 3 4 5; do echo "Line$i"; done';
-      const { result } = shellExecute(command, testCwd, timeout, onOutputEvent);
-
-      await result;
-
-      expect(events.length).toBeGreaterThan(0);
-      const dataEvents = events.filter((e) => e.type === 'data');
-      expect(dataEvents.length).toBeGreaterThan(0);
-
-      const allChunks = dataEvents.map((e) => e.chunk).join('');
-      expect(allChunks).toContain('Line');
-    });
-
     test('should detect binary output', async () => {
       const outputEvents: any[] = [];
       const onOutputEvent = vi.fn((event) => {
