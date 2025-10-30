@@ -85,6 +85,20 @@ const ChatContent: React.FC = () => {
         );
       },
     },
+    tool: {
+      placement: 'start',
+      variant: 'borderless',
+      messageRender(message) {
+        return <AssistantMessage message={message} />;
+      },
+      loadingRender() {
+        return (
+          <div className={styles.skeletonContainer}>
+            <Skeleton active paragraph={{ rows: 2 }} title={false} />
+          </div>
+        );
+      },
+    },
     ui_display: {
       placement: 'start',
       variant: 'borderless',

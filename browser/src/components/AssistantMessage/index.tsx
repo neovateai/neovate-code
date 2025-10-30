@@ -19,12 +19,20 @@ interface MessagePartProps {
 }
 
 const MessagePart: React.FC<MessagePartProps> = memo(({ part, uuid }) => {
+  console.log('thy debug MessagePart part', part);
   switch (part.type) {
     case 'text':
       return <AssistantTextMessage key={uuid} part={part} />;
     case 'reasoning':
       return <AssistantThinkingMessage key={uuid} part={part} />;
     case 'tool':
+      return (
+        <>
+          <AssistantToolMessage key={`${uuid}-${part.state}`} part={part} />
+          <ApprovalModal part={part} />
+        </>
+      );
+    case 'tool-result':
       return (
         <>
           <AssistantToolMessage key={`${uuid}-${part.state}`} part={part} />

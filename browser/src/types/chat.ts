@@ -130,10 +130,12 @@ export type Message =
   | ToolResultMessage;
 
 export type UIToolPart = {
-  type: 'tool';
+  type: 'tool' | 'tool-result';
   state: 'tool_use' | 'tool_result';
   id: string;
   name: string;
+  toolName?: string;
+  toolCallId?: string;
   input: Record<string, any>;
   // tool_result
   result?: ToolResult;
