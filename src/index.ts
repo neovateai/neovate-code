@@ -50,6 +50,7 @@ type Argv = {
   outputFormat?: string;
   outputStyle?: string;
   planModel?: string;
+  smallModel?: string;
   resume?: string;
   systemPrompt?: string;
   // array
@@ -84,6 +85,7 @@ async function parseArgs(argv: any) {
       'outputFormat',
       'outputStyle',
       'planModel',
+      'smallModel',
       'resume',
       'systemPrompt',
     ],
@@ -112,6 +114,7 @@ Options:
   -h, --help                    Show help
   -m, --model <model>           Specify model to use
   --plan-model <model>          Specify a plan model for some tasks
+  --small-model <model>         Specify a small model for quick operations
   -r, --resume <session-id>     Resume a session
   -c, --continue                Continue the latest session
   -q, --quiet                   Quiet mode, non interactive
@@ -291,6 +294,7 @@ export async function runNeovate(opts: {
     argvConfig: {
       model: argv.model,
       planModel: argv.planModel,
+      smallModel: argv.smallModel,
       quiet: argv.quiet,
       outputFormat: argv.outputFormat,
       plugins: argv.plugin,

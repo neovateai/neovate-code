@@ -41,6 +41,7 @@ export type ProviderConfig = Partial<Omit<Provider, 'createModel'>>;
 export type Config = {
   model: string;
   planModel: string;
+  smallModel?: string;
   language: string;
   quiet: boolean;
   approvalMode: ApprovalMode;
@@ -80,6 +81,7 @@ const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
   'model',
   'planModel',
+  'smallModel',
   'systemPrompt',
   'todo',
   'autoCompact',
@@ -139,6 +141,7 @@ export class ConfigManager {
       defu(this.projectConfig, defu(this.globalConfig, DEFAULT_CONFIG)),
     ) as Config;
     config.planModel = config.planModel || config.model;
+    config.smallModel = config.smallModel || config.model;
     if (config.browser) {
       config.mcpServers = mergeBrowserMcpServers(
         config.mcpServers,

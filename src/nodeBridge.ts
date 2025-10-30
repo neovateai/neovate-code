@@ -1001,6 +1001,28 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
+      'utils.quickQuery',
+      async (data: {
+        userPrompt: string;
+        cwd: string;
+        systemPrompt?: string;
+      }) => {
+        const { userPrompt, cwd, systemPrompt } = data;
+        const context = await this.getContext(cwd);
+        const { model } = await resolveModelWithContext(
+          context.config.smallModel || null,
+          context,
+        );
+        const result = await query({
+          userPrompt,
+          model: model!,
+          systemPrompt,
+        });
+        return result;
+      },
+    );
+
+    this.messageBus.registerHandler(
       'utils.getPaths',
       async (data: { cwd: string; maxFiles?: number }) => {
         const { cwd, maxFiles = 6000 } = data;
