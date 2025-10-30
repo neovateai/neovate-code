@@ -577,7 +577,7 @@ export const useAppStore = create<AppStore>()(
             // don't await this
             (async () => {
               try {
-                const queryResult = await bridge.request('utils.query', {
+                const queryResult = await bridge.request('utils.quickQuery', {
                   cwd,
                   systemPrompt:
                     "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with one fields: 'title' (string). Only include these fields, no other text.",
