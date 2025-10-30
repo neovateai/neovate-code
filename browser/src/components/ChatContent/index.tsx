@@ -1,6 +1,6 @@
 import { Bubble } from '@ant-design/x';
 import { type GetProp, Skeleton, Spin } from 'antd';
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { useSnapshot } from 'valtio';
 import AssistantFooter from '@/components/AssistantFooter';
 import AssistantMessage from '@/components/AssistantMessage';
@@ -168,6 +168,10 @@ function createProcessedAssistantMessage(
 
 const ChatContent: React.FC = () => {
   const { messages, status } = useSnapshot(state);
+  const chatListRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLengthRef = useRef(0);
+  const isUserScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Split messages into completed and pending
   const { completedMessages, pendingMessages } = useMemo(
@@ -199,6 +203,86 @@ const ChatContent: React.FC = () => {
     ...processedCompletedMessages,
     ...processedPendingMessages,
   ];
+
+  // Auto scroll to bottom when new messages arrive
+  useEffect(() => {
+    const scrollToBottom = () => {
+      if (chatListRef.current) {
+        const chatListElement = chatListRef.current;
+
+        // Check if user is already at the bottom or close to it (within 100px)
+        const isNearBottom =
+          chatListElement.scrollHeight -
+            chatListElement.scrollTop -
+            chatListElement.clientHeight <
+          100;
+
+        // Only auto-scroll if user is near the bottom or if it's a new conversation
+        if (isNearBottom || !isUserScrollingRef.current) {
+          chatListElement.scrollTo({
+            top: chatListElement.scrollHeight,
+            behavior: 'smooth',
+          });
+        }
+      }
+    };
+
+    // Check if new messages were added
+    const currentMessagesLength = allProcessedMessages.length;
+    if (currentMessagesLength > prevMessagesLengthRef.current) {
+      scrollToBottom();
+      prevMessagesLengthRef.current = currentMessagesLength;
+    }
+  }, [allProcessedMessages]);
+
+  // Also scroll to bottom when status changes to processing (new assistant response starting)
+  useEffect(() => {
+    if (status === 'processing' && chatListRef.current) {
+      const chatListElement = chatListRef.current;
+      const isNearBottom =
+        chatListElement.scrollHeight -
+          chatListElement.scrollTop -
+          chatListElement.clientHeight <
+        100;
+
+      if (isNearBottom || !isUserScrollingRef.current) {
+        chatListElement.scrollTo({
+          top: chatListElement.scrollHeight,
+          behavior: 'smooth',
+        });
+      }
+    }
+  }, [status]);
+
+  // Handle user scroll detection
+  useEffect(() => {
+    const chatListElement = chatListRef.current;
+    if (!chatListElement) return;
+
+    const handleScroll = () => {
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      // Mark as user scrolling
+      isUserScrollingRef.current = true;
+
+      // Reset user scrolling flag after 2 seconds of no scrolling
+      scrollTimeoutRef.current = setTimeout(() => {
+        isUserScrollingRef.current = false;
+      }, 2000);
+    };
+
+    chatListElement.addEventListener('scroll', handleScroll);
+
+    return () => {
+      chatListElement.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Check if assistant loading needs to be displayed
   const shouldShowAssistantLoading = () => {
@@ -293,7 +377,7 @@ const ChatContent: React.FC = () => {
 
   return (
     <div className={styles.chat}>
-      <div className={styles.chatList}>
+      <div className={styles.chatList} ref={chatListRef}>
         {finalItems?.length ? (
           <Bubble.List
             items={finalItems}
