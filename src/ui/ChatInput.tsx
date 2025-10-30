@@ -119,6 +119,12 @@ export function ChatInput() {
     return UI_COLORS.CHAT_BORDER;
   }, [thinking, mode]);
 
+  const chatArrowColor = useMemo(() => {
+    if (mode === 'memory') return UI_COLORS.CHAT_ARROW_MEMORY;
+    if (mode === 'bash') return UI_COLORS.CHAT_ARROW_BASH;
+    return UI_COLORS.CHAT_ARROW;
+  }, [mode]);
+
   // Get prompt symbol based on mode
   const promptSymbol = useMemo(() => {
     if (mode === 'memory') return '#';
@@ -151,15 +157,7 @@ export function ChatInput() {
       <Box flexDirection="column">
         <Text color={borderColor}>{'─'.repeat(Math.max(0, columns))}</Text>
         <Box flexDirection="row" gap={1}>
-          <Text
-            color={
-              inputState.state.value
-                ? UI_COLORS.CHAT_ARROW_ACTIVE
-                : UI_COLORS.CHAT_ARROW
-            }
-          >
-            {promptSymbol}
-          </Text>
+          <Text color={chatArrowColor}>{promptSymbol}</Text>
           <TextInput
             multiline
             value={displayValue}
