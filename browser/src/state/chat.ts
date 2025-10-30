@@ -24,6 +24,7 @@ import { getPrompt } from '@/utils/quill';
 import { parseSlashCommand } from '@/utils/slashCommand';
 import { countTokens } from '@/utils/tokenCounter';
 import { actions as clientActions } from './client';
+import * as context from './context';
 
 export type AppStatus =
   | 'idle'
@@ -267,8 +268,20 @@ export const actions: ChatActions = {
     });
 
     if (!isDelta) {
-      const result = await this.sendMessage({ message });
+      await clientActions.request('session.addMessages', {
+        cwd,
+        sessionId,
+        messages: [
+          {
+            role: 'user',
+            content: message,
+            attachedContexts: [...context.state.attachedContexts],
+          },
+        ],
+      });
+      const result = await this.sendMessage({ message: null });
       await this.setSummary({ userPrompt: message, result });
+      context.state.attachedContexts = [];
       return;
     }
 
@@ -284,11 +297,13 @@ export const actions: ChatActions = {
             role: 'user',
             content: prompt,
             uiContent: message,
+            attachedContexts: [...context.state.attachedContexts],
           },
         ],
       });
       const result = await this.sendMessage({ message: null });
       await this.setSummary({ userPrompt: message, result });
+      context.state.attachedContexts = [];
       return;
     }
 
@@ -318,6 +333,7 @@ export const actions: ChatActions = {
         role: 'user',
         content: prompt,
         uiContent: message,
+        attachedContexts: [...context.state.attachedContexts],
       };
 
       if (isPrompt) {
@@ -350,6 +366,7 @@ export const actions: ChatActions = {
             messages: messages,
           });
           await this.sendMessage({ message: null });
+          context.state.attachedContexts = [];
         } else if (isLocal) {
           const parsedMessages = messages.map((message) => {
             if (message.role === 'user') {
@@ -376,6 +393,7 @@ export const actions: ChatActions = {
           });
 
           this.addMessage(parsedMessages);
+          context.state.attachedContexts = [];
         }
       }
     }

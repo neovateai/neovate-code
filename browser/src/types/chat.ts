@@ -30,6 +30,12 @@ export type UserMessage = {
   content: UserContent;
   hidden?: boolean;
   uiContent?: string;
+  attachedContexts?: Array<{
+    type: any;
+    value: string;
+    displayText: string;
+    context?: any;
+  }>;
 };
 
 export type ReasoningPart = {
