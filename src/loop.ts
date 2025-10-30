@@ -113,7 +113,6 @@ type RunLoopOpts = {
   onMessage?: OnMessage;
 };
 
-// TODO: support retry
 export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   const startTime = Date.now();
   let turnsCount = 0;
