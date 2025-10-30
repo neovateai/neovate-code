@@ -1,0 +1,19 @@
+.toolPairContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+  border-left: 2px solid #e5e7eb;
+  padding-left: 12px;
+}
+
+.toolUse {
+  display: flex;
+  flex-direction: column;
+}
+
+.toolResult {
+  margin-top: 4px;
+  padding-left: 16px;
+  border-left: 1px solid #f3f4f6;
+}

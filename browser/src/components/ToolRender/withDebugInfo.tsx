@@ -12,7 +12,7 @@ export function withDebugInfo<P extends ToolRenderProps>(
     return (
       <div>
         <WrappedComponent {...props} />
-        <DebugInfo part={props.part} />
+        {/* <DebugInfo part={props.part} /> */}
       </div>
     );
   };
