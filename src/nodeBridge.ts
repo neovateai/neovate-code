@@ -8,6 +8,7 @@ import {
 import { CANCELED_MESSAGE_TEXT } from './constants';
 import { Context } from './context';
 import { JsonlLogger } from './jsonl';
+import type { StreamResult } from './loop';
 import type {
   ImagePart,
   Message,
@@ -603,6 +604,11 @@ class NodeHandlerRegistry {
             });
             return result.approved;
           },
+          onStreamResult: async (result: StreamResult) => {
+            await this.messageBus.emitEvent('streamResult', {
+              result,
+            });
+          },
           signal: abortController.signal,
         });
         this.abortControllers.delete(key);
@@ -988,6 +994,28 @@ class NodeHandlerRegistry {
         const result = await query({
           userPrompt,
           context,
+          systemPrompt,
+        });
+        return result;
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'utils.quickQuery',
+      async (data: {
+        userPrompt: string;
+        cwd: string;
+        systemPrompt?: string;
+      }) => {
+        const { userPrompt, cwd, systemPrompt } = data;
+        const context = await this.getContext(cwd);
+        const { model } = await resolveModelWithContext(
+          context.config.smallModel || null,
+          context,
+        );
+        const result = await query({
+          userPrompt,
+          model: model!,
           systemPrompt,
         });
         return result;

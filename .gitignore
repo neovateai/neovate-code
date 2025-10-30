@@ -13,3 +13,4 @@
 .takumi/todos
 /tmp
 /.conductor
+/scripts/unused-analysis.json

@@ -433,7 +433,7 @@ export class MCPManager {
       name: `mcp__${serverName}__${toolName}`,
       description: toolDef.description,
       getDescription: ({ params }) => {
-        return formatParamsDescription(params);
+        return formatParamsDescription(params as Record<string, any>);
       },
       parameters: toolDef.inputSchema.jsonSchema,
       execute: async (params) => {
