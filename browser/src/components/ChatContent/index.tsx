@@ -202,12 +202,7 @@ const ChatContent: React.FC = () => {
 
   // Check if assistant loading needs to be displayed
   const shouldShowAssistantLoading = () => {
-    return (
-      status !== 'idle' &&
-      allProcessedMessages &&
-      allProcessedMessages.length > 0 &&
-      allProcessedMessages[allProcessedMessages.length - 1].role === 'user'
-    );
+    return status === 'processing';
   };
 
   const items = allProcessedMessages?.map((message, index) => {

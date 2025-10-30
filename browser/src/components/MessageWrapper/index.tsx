@@ -199,63 +199,36 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
         </div>
       </div>
 
-      {/* Content area */}
-      {expandable
-        ? isExpanded && (
-            <div className={styles.content}>
-              <div className={styles.contentWrapper}>
-                <div
-                  ref={contentRef}
-                  className={`${styles.contentInner} ${styles.scrollable}`}
-                  style={{
-                    maxHeight:
-                      typeof maxHeight === 'number'
-                        ? `${maxHeight}px`
-                        : maxHeight,
-                  }}
-                  onScroll={checkScrollState}
-                >
-                  {children}
-                </div>
-                {/* Top gradient mask - show when gradient is enabled and can scroll up */}
-                {showGradientMask && canScrollUp && (
-                  <div className={styles.gradientMaskTop} />
-                )}
-
-                {/* Bottom gradient mask - show when gradient is enabled and can scroll down */}
-                {showGradientMask && canScrollDown && (
-                  <div className={styles.gradientMaskBottom} />
-                )}
-              </div>
-            </div>
-          )
-        : // When not expandable, show content based on defaultExpanded
-          isExpanded && (
-            <div className={styles.contentWrapper}>
-              <div
-                ref={expandable ? undefined : contentRef}
-                className={`${styles.contentInner} ${styles.scrollable}`}
-                style={{
-                  maxHeight:
-                    typeof maxHeight === 'number'
-                      ? `${maxHeight}px`
-                      : maxHeight,
-                }}
-                onScroll={expandable ? undefined : checkScrollState}
-              >
-                {children}
-              </div>
-              {/* Top gradient mask - show when gradient is enabled and can scroll up */}
-              {showGradientMask && canScrollUp && (
-                <div className={styles.gradientMaskTop} />
-              )}
-
-              {/* Bottom gradient mask - show when gradient is enabled and can scroll down */}
-              {showGradientMask && canScrollDown && (
-                <div className={styles.gradientMaskBottom} />
-              )}
-            </div>
+      {/* Content area - always render but control visibility with CSS */}
+      <div
+        className={`${styles.content} ${!isExpanded ? styles.contentHidden : ''}`}
+        style={{
+          display: !expandable || isExpanded ? 'block' : 'none',
+        }}
+      >
+        <div className={styles.contentWrapper}>
+          <div
+            ref={contentRef}
+            className={`${styles.contentInner} ${styles.scrollable}`}
+            style={{
+              maxHeight:
+                typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight,
+            }}
+            onScroll={checkScrollState}
+          >
+            {children}
+          </div>
+          {/* Top gradient mask - show when gradient is enabled and can scroll up */}
+          {showGradientMask && canScrollUp && (
+            <div className={styles.gradientMaskTop} />
           )}
+
+          {/* Bottom gradient mask - show when gradient is enabled and can scroll down */}
+          {showGradientMask && canScrollDown && (
+            <div className={styles.gradientMaskBottom} />
+          )}
+        </div>
+      </div>
 
       {/* Bottom action buttons */}
       {footers && footers.length > 0 && (

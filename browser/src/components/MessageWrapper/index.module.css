@@ -75,8 +75,9 @@
 
 /* Expand icon styles */
 .expandIcon {
-  transition: transform 0.3s ease-in-out;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  will-change: transform;
 }
 
 .arrowExpanded {
@@ -142,6 +143,16 @@
 /* Content styles */
 .content {
   overflow: hidden;
+  transition:
+    opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+.contentHidden {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
 }
 
 .contentInner {
