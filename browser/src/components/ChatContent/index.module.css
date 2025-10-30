@@ -43,3 +43,8 @@
 .skeletonContainer {
   width: 600px;
 }
+
+/* Override Ant Design bubble list gap */
+.chatList :global(.ant-bubble-list) {
+  gap: 0;
+}
