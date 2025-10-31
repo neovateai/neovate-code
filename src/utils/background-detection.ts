@@ -1,3 +1,5 @@
+import { BACKGROUND_THRESHOLD_MS } from '../constants';
+
 const DEV_COMMANDS = [
   'npm',
   'pnpm',
@@ -15,8 +17,6 @@ const DEV_COMMANDS = [
   'pytest',
 ];
 
-const BACKGROUND_THRESHOLD_MS = 2000;
-
 export function getCommandRoot(command: string): string | undefined {
   return command
     .trim()
@@ -32,12 +32,12 @@ export function shouldRunInBackground(
   hasOutput: boolean,
   userRequested?: boolean,
 ): boolean {
-  if (userRequested) {
-    return true;
-  }
-
   if (elapsedMs < BACKGROUND_THRESHOLD_MS || !hasOutput) {
     return false;
+  }
+
+  if (userRequested) {
+    return true;
   }
 
   const commandRoot = getCommandRoot(command);

@@ -66,6 +66,7 @@ class NodeHandlerRegistry {
     const context = await Context.create({
       cwd,
       ...this.contextCreateOpts,
+      messageBus: this.messageBus,
     });
     // init mcp manager but don't wait for it
     context.mcpManager.initAsync();

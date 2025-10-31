@@ -46,6 +46,7 @@ type UseTextInputProps = {
   onOffsetChange: (offset: number) => void;
   onTabPress?: (isShiftTab: boolean) => void;
   onExternalEdit?: () => void;
+  onCtrlBBackground?: () => void;
 };
 
 type UseTextInputResult = {
@@ -77,6 +78,7 @@ export function useTextInput({
   onOffsetChange,
   onTabPress,
   onExternalEdit,
+  onCtrlBBackground,
 }: UseTextInputProps): UseTextInputResult {
   const offset = externalOffset;
   const setOffset = onOffsetChange;
@@ -199,7 +201,17 @@ export function useTextInput({
 
   const handleCtrl = mapInput([
     ['a', () => cursor.startOfLine()],
-    ['b', () => cursor.left()],
+    [
+      'b',
+      () => {
+        // Handle Ctrl+B for background prompt if callback exists
+        if (onCtrlBBackground) {
+          onCtrlBBackground();
+          return cursor; // Don't move cursor for background action
+        }
+        return cursor.left(); // Default behavior: move cursor left
+      },
+    ],
     ['c', handleCtrlC],
     ['d', handleCtrlD],
     ['e', () => cursor.endOfLine()],

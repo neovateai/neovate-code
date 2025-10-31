@@ -157,6 +157,8 @@ export type Props = {
    * Optional callback when Ctrl+G is pressed to edit prompt in external editor.
    */
   readonly onExternalEdit?: () => void;
+
+  onCtrlBBackground?: () => void;
 };
 
 export default function TextInput({
@@ -187,6 +189,7 @@ export default function TextInput({
   onTabPress,
   onDelete,
   onExternalEdit,
+  onCtrlBBackground,
 }: Props): React.JSX.Element {
   const { onInput, renderedValue } = useTextInput({
     value: originalValue,
@@ -213,6 +216,7 @@ export default function TextInput({
     onOffsetChange: onChangeCursorOffset,
     onTabPress,
     onExternalEdit,
+    onCtrlBBackground,
   });
 
   // Enhanced paste detection state for multi-chunk text merging
