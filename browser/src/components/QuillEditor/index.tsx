@@ -20,6 +20,8 @@ import {
   getRemovedTakumiContexts,
   getTextWithTakumiContext,
   isInsertingAt,
+  isInsertingSlash,
+  isEditorEmpty,
 } from './utils';
 
 interface ISearchInfo {
@@ -82,6 +84,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
 
   const {
     onInputAt,
+    onInputSlash,
     onQuillLoad,
     onKeyDown,
     onDeleteContexts,
@@ -163,19 +166,27 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
 
       quillInstance.on('text-change', (delta, _oldContent, source) => {
         if (source === 'user') {
+          const currentContents = quillInstance.getContents();
+
           if (isInsertingAt(delta) && searchInfoRef.current === null) {
             const selection = quillInstance.getSelection();
-
             if (selection) {
               const bounds = quillInstance.getBounds(selection.index);
-
-              onInputAt?.(true, selection?.index, bounds ?? undefined);
+              onInputAt?.(true, selection.index, bounds ?? undefined);
+            }
+          } else if (
+            isInsertingSlash(delta) &&
+            isEditorEmpty(oldContentsRef.current)
+          ) {
+            const selection = quillInstance.getSelection();
+            if (selection) {
+              const bounds = quillInstance.getBounds(selection.index);
+              onInputSlash?.(true, selection.index, bounds ?? undefined);
             }
           } else {
             onInputAt?.(false);
+            onInputSlash?.(false);
           }
-
-          const currentContents = quillInstance.getContents();
 
           if (searchInfoRef.current) {
             const insertText = getInsertText(delta);
