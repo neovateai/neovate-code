@@ -1,5 +1,6 @@
 name: "\U0001F41E Bug report"
-description: Report an issue with TNF
+title: '[Bug]: '
+description: Report an issue with Neovate Code
 body:
   - type: markdown
     attributes:

@@ -1,5 +1,6 @@
-name: 'Feature Request'
-description: Suggest an idea for this project
+name: "\U0001F680 New feature"
+title: '[Feature Request]: '
+description: Suggest an idea for Neovate Code
 body:
   - type: markdown
     attributes:
