@@ -7,14 +7,6 @@ import { useMemoryMode } from './useMemoryMode';
 import { usePasteManager } from './usePasteManager';
 import { useSlashCommands } from './useSlashCommands';
 
-export type InputMode = 'bash' | 'memory' | 'prompt';
-
-function getInputMode(value: string): InputMode {
-  if (value.startsWith('!')) return 'bash';
-  if (value.startsWith('#')) return 'memory';
-  return 'prompt';
-}
-
 export function useInputHandlers() {
   const {
     send,
@@ -27,9 +19,10 @@ export function useInputHandlers() {
     togglePlanMode,
     clearQueue,
     setBashMode,
+    mode,
+    updateMode,
   } = useAppStore();
   const inputState = useInputState();
-  const mode = getInputMode(inputState.state.value);
   const slashCommands = useSlashCommands(inputState.state.value);
   const [forceTabTrigger, setForceTabTrigger] = useState(false);
   const fileSuggestion = useFileSuggestion(inputState.state, forceTabTrigger);
@@ -96,14 +89,14 @@ export function useInputHandlers() {
     }
     // 3. bash mode - execute command directly
     if (mode === 'bash') {
-      const command = value.slice(1).trim();
+      const command = value.trim();
       inputState.reset();
       await send(`!${command}`);
       return;
     }
     // 4. memory mode - show modal and save to memory
     if (mode === 'memory') {
-      const rule = value.slice(1).trim(); // Remove # prefix
+      const rule = value.trim(); // Remove # prefix
       inputState.reset();
       await memoryMode.handleMemorySubmit(rule);
       return;
@@ -282,13 +275,13 @@ export function useInputHandlers() {
   );
 
   const handleEscape = useCallback(() => {
-    // If in bash or memory mode with only prefix character, switch to prompt mode
-    if (
-      (mode === 'bash' || mode === 'memory') &&
-      inputState.state.value.length === 1
-    ) {
-      inputState.setValue('');
-      return true; // Indicates mode switch, don't cancel
+    if (mode === 'bash' || mode === 'memory') {
+      if (inputState.state.value.length > 0) {
+        inputState.setValue(''); // 第一次清空输入
+        return true;
+      }
+      updateMode(''); // 第二次切换为 prompt 默认模式
+      return true;
     }
     return false; // Continue with normal cancel behavior
   }, [mode, inputState]);

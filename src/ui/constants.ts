@@ -17,6 +17,8 @@ export const UI_COLORS = {
   CHAT_BORDER_BASH: 'magenta',
   CHAT_ARROW: '#FF3070',
   CHAT_ARROW_ACTIVE: '#FF3070',
+  CHAT_ARROW_MEMORY: 'cyan',
+  CHAT_ARROW_BASH: 'magenta',
   CANCELED: 'red',
   ACTIVITY_INDICATOR_TEXT: 'gray',
   ACTIVITY_INDICATOR_GRADIENT: {
@@ -25,6 +27,8 @@ export const UI_COLORS = {
     FADE_LEVELS: ['white', 'gray', 'blackBright', 'black'] as const,
   },
   MODE_INDICATOR_TEXT: 'magentaBright',
+  MODE_INDICATOR_TEXT_BASH: 'magenta',
+  MODE_INDICATOR_TEXT_MEMORY: 'cyan',
   MODE_INDICATOR_DESCRIPTION: 'gray',
 } as const;
 

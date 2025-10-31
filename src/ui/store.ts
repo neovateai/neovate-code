@@ -43,6 +43,14 @@ type AppStatus =
   | 'help'
   | 'exit';
 
+type InputMode = 'bash' | 'memory' | 'prompt';
+
+export function getInputMode(value: string): InputMode {
+  if (value === '!') return 'bash';
+  if (value === '#') return 'memory';
+  return 'prompt';
+}
+
 function isExecuting(status: AppStatus) {
   return (
     status === 'processing' ||
@@ -74,6 +82,7 @@ interface AppState {
   planMode: boolean;
   bashMode: boolean;
   approvalMode: ApprovalMode;
+  mode: InputMode;
 
   planResult: string | null;
   processingStartTime: number | null;
@@ -159,6 +168,7 @@ interface AppActions {
   togglePlanMode: () => void;
   approvePlan: (planResult: string) => void;
   denyPlan: () => void;
+  updateMode: (value: string) => void;
   resumeSession: (sessionId: string, logFile: string) => Promise<void>;
   setModel: (model: string) => void;
   approveToolUse: ({
@@ -220,6 +230,7 @@ export const useAppStore = create<AppStore>()(
       planMode: false,
       bashMode: false,
       approvalMode: 'default',
+      mode: 'prompt',
       messages: [],
       currentMessage: null,
       queuedMessages: [],
@@ -773,6 +784,14 @@ export const useAppStore = create<AppStore>()(
 
       denyPlan: () => {
         set({ planResult: null });
+      },
+
+      updateMode: (value: string = '') => {
+        const mode = getInputMode(value);
+        set({
+          mode: mode,
+          bashMode: mode === 'bash',
+        });
       },
 
       resumeSession: async (sessionId: string, logFile: string) => {
