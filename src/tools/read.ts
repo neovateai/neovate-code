@@ -50,8 +50,9 @@ async function processImage(
     const ext = path.extname(filePath).toLowerCase();
 
     // Security: Validate file path to prevent traversal attacks
-    const resolvedPath = path.resolve(filePath);
-    if (!resolvedPath.startsWith(cwd)) {
+    const resolvedPath = path.normalize(path.resolve(filePath));
+    const resolvedCwd = path.normalize(path.resolve(process.cwd()));
+    if (!resolvedPath.startsWith(resolvedCwd)) {
       throw new Error('Invalid file path: path traversal detected');
     }
 
