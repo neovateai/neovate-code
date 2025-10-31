@@ -1,14 +1,17 @@
 import { proxy } from 'valtio';
 import { ContextType } from '@/constants/context';
 import * as sender from '@/state/sender';
-import type { FileItem, SlashCommand } from '@/types/chat';
+import type { FileItem, FilePart, ImagePart, SlashCommand } from '@/types/chat';
 import type { ContextItem } from '@/types/context';
+import type { ImageItem } from '@/api/model';
 
 interface ContextState {
   contexts: {
     files: Omit<FileItem, 'name'>[];
     slashCommands: Pick<SlashCommand, 'name' | 'description'>[];
   };
+
+  attachments: (ImagePart | FilePart)[];
 
   attachedContexts: ContextItem[];
 
@@ -52,6 +55,23 @@ export const state = proxy<ContextState>({
       files,
       slashCommands,
     };
+  },
+
+  get attachments() {
+    // images
+    return this.attachedContexts
+      .filter(
+        (contextItem: ContextItem) => contextItem.type === ContextType.IMAGE,
+      )
+      .map((contextItem: ContextItem) => {
+        const context = contextItem.context as ImageItem;
+
+        return {
+          type: 'image',
+          data: context.src,
+          mimeType: context.mime,
+        } as ImagePart;
+      });
   },
 });
 

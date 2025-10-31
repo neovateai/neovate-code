@@ -18,6 +18,7 @@ import { QuillContext } from '../QuillEditor/QuillContext';
 import SuggestionList, { type ISuggestionListRef } from '../SuggestionList';
 import SenderFooter from './SenderFooter';
 import SenderHeader from './SenderHeader';
+import type { FilePart, ImagePart } from '@/types/chat';
 
 const useStyle = createStyles(({ token, css }) => {
   const maxWidth = 800;
@@ -54,6 +55,7 @@ const ChatSender: React.FC = () => {
   const { t } = useTranslation();
   const { status } = useSnapshot(state);
   const { prompt } = useSnapshot(sender.state);
+  const { attachments } = useSnapshot(context.state);
 
   const [openPopup, setOpenPopup] = useState(false);
   const [inputText, setInputText] = useState<string>('');
@@ -73,7 +75,10 @@ const ChatSender: React.FC = () => {
   } = useSuggestion();
 
   const handleSubmit = () => {
-    actions.send(prompt, sender.state.delta);
+    actions.send(prompt, {
+      delta: sender.state.delta,
+      attachments: attachments as (ImagePart | FilePart)[],
+    });
     setInputText('');
     sender.actions.updatePrompt('');
     sender.actions.updateDelta(new Delta());
