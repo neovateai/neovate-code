@@ -79,7 +79,9 @@
     "sendMessage": "Send Message",
     "thinking": "Thinking...",
     "stopGenerating": "Stop Generating",
-    "inputPlaceholder": "Ask or input @ use skills"
+    "inputPlaceholder": "Ask or input @ use skills",
+    "selectModel": "Select model",
+    "noModels": "No models available"
   },
   "prompts": {
     "upgrades": "Upgrades",
