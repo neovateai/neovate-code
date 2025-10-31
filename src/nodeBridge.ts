@@ -624,13 +624,68 @@ class NodeHandlerRegistry {
         const abortController = this.abortControllers.get(key);
         abortController?.abort();
         this.abortControllers.delete(key);
+
         const context = await this.getContext(cwd);
         const jsonlLogger = new JsonlLogger({
           filePath: context.paths.getSessionLogPath(sessionId),
         });
+
+        // Load current messages to check for incomplete tool_uses
+        const { loadSessionMessages } = await import('./session');
+        const { findIncompleteToolUses } = await import('./message');
+
+        const messages = loadSessionMessages({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+
+        // Check for incomplete tool_uses and add tool_result messages
+        const incompleteResult = findIncompleteToolUses(messages);
+        if (incompleteResult) {
+          const { assistantMessage, incompleteToolUses } = incompleteResult;
+
+          // Add a tool_result message for each incomplete tool_use
+          for (const toolUse of incompleteToolUses) {
+            const normalizedToolResultMessage: NormalizedMessage & {
+              sessionId: string;
+            } = {
+              parentUuid: assistantMessage.uuid,
+              uuid: randomUUID(),
+              role: 'tool',
+              content: [
+                {
+                  type: 'tool-result',
+                  toolCallId: toolUse.id,
+                  toolName: toolUse.name,
+                  input: toolUse.input,
+                  result: {
+                    llmContent: CANCELED_MESSAGE_TEXT,
+                    returnDisplay: 'Tool execution was canceled by user.',
+                    isError: true,
+                  },
+                },
+              ],
+              type: 'message',
+              timestamp: new Date().toISOString(),
+              sessionId,
+            };
+
+            await this.messageBus.emitEvent('message', {
+              message: jsonlLogger.addMessage({
+                message: normalizedToolResultMessage,
+              }),
+            });
+          }
+
+          return {
+            success: true,
+          };
+        }
+
+        // Always add the user cancellation message
         await this.messageBus.emitEvent('message', {
           message: jsonlLogger.addUserMessage(CANCELED_MESSAGE_TEXT, sessionId),
         });
+
         return {
           success: true,
         };
