@@ -21,7 +21,6 @@ interface MessagePartProps {
 }
 
 const MessagePart: React.FC<MessagePartProps> = memo(({ part, uuid }) => {
-  console.log('thy debug MessagePart part', part);
   switch (part.type) {
     case 'text':
       return <AssistantTextMessage key={uuid} part={part} />;
