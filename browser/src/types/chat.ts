@@ -130,10 +130,12 @@ export type Message =
   | ToolResultMessage;
 
 export type UIToolPart = {
-  type: 'tool';
+  type: 'tool' | 'tool-result';
   state: 'tool_use' | 'tool_result';
   id: string;
   name: string;
+  toolName?: string;
+  toolCallId?: string;
   input: Record<string, any>;
   // tool_result
   result?: ToolResult;
@@ -143,7 +145,17 @@ export type UIToolPart = {
   description?: string;
 };
 
-export type UIAssistantContent = Array<TextPart | ReasoningPart | UIToolPart>;
+// Define UIToolPair type for the paired tool representation
+export type UIToolPair = {
+  type: 'tool-pair';
+  id: string;
+  toolUse: UIToolPart;
+  toolResult?: UIToolPart;
+};
+
+export type UIAssistantContent = Array<
+  TextPart | ReasoningPart | UIToolPart | UIToolPair
+>;
 
 export type UIAssistantMessage = {
   role: 'assistant';
