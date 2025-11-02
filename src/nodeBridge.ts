@@ -561,6 +561,9 @@ class NodeHandlerRegistry {
         model?: string;
         attachments?: ImagePart[];
         parentUuid?: string;
+        thinking?: {
+          effort: 'low' | 'medium' | 'high';
+        };
       }) => {
         const { message, cwd, sessionId, model, attachments, parentUuid } =
           data;
@@ -579,6 +582,7 @@ class NodeHandlerRegistry {
           attachments,
           model,
           parentUuid,
+          thinking: data.thinking,
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {
               message: opts.message,
