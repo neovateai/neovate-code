@@ -114,8 +114,8 @@ function StatusMain() {
     <Box>
       <Text color="gray">
         [{model ? model : <Text color="red">use /model to select a model</Text>}
-        <ThinkingIndicator />
-        ] | {folderName} | {(tokenUsed / 1000).toFixed(1)}K |{' '}
+        <ThinkingIndicator />] | {folderName} | {(tokenUsed / 1000).toFixed(1)}K
+        |{' '}
         <Text color={getContextLeftColor(contextLeftPercentage)}>
           {contextLeftPercentage}%
         </Text>{' '}
