@@ -14,3 +14,5 @@
 /tmp
 /.conductor
 /scripts/unused-analysis.json
+/.neovate-workspaces
+
