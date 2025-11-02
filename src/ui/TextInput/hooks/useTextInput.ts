@@ -1,5 +1,6 @@
 import type { Key } from 'ink';
 import { useState } from 'react';
+import { useAppStore } from '../../store';
 import { Cursor } from '../utils/Cursor';
 import {
   CLIPBOARD_ERROR_MESSAGE,
@@ -78,6 +79,7 @@ export function useTextInput({
   onTabPress,
   onExternalEdit,
 }: UseTextInputProps): UseTextInputResult {
+  const { toggleThinking } = useAppStore();
   const offset = externalOffset;
   const setOffset = onOffsetChange;
   const cursor = Cursor.fromText(originalValue, columns, offset);
@@ -219,6 +221,13 @@ export function useTextInput({
     ['u', () => cursor.deleteToLineStart()],
     ['v', () => tryImagePaste()],
     ['w', () => cursor.deleteWordBefore()],
+    [
+      't',
+      () => {
+        toggleThinking();
+        return cursor;
+      },
+    ],
   ]);
 
   const handleMeta = mapInput([

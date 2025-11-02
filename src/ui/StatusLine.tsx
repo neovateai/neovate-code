@@ -20,6 +20,19 @@ function getContextLeftColor(percentage: number): string {
   return 'red';
 }
 
+function ThinkingIndicator() {
+  const { thinking } = useAppStore();
+
+  if (!thinking) return null;
+
+  return (
+    <>
+      {' | '}
+      <Text color="cyan">thinking: {thinking.effort}</Text>
+    </>
+  );
+}
+
 function StatusMain() {
   const {
     cwd,
@@ -101,11 +114,12 @@ function StatusMain() {
     <Box>
       <Text color="gray">
         [{model ? model : <Text color="red">use /model to select a model</Text>}
-        ] | 📁 {folderName} | 🪙 {(tokenUsed / 1000).toFixed(1)}K |{' '}
+        <ThinkingIndicator />] | {folderName} | {(tokenUsed / 1000).toFixed(1)}K
+        |{' '}
         <Text color={getContextLeftColor(contextLeftPercentage)}>
           {contextLeftPercentage}%
         </Text>{' '}
-        {approval}| 🆔 {sessionId || 'N/A'}
+        {approval}
       </Text>
     </Box>
   );
