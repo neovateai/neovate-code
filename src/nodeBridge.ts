@@ -349,9 +349,7 @@ class NodeHandlerRegistry {
           null,
           context,
         );
-        const currentModel = model
-          ? `${model.provider.id}/${model.model.id}`
-          : null;
+        const currentModel = model;
         const currentModelInfo = model
           ? {
               providerName: model.provider.name,
@@ -483,21 +481,10 @@ class NodeHandlerRegistry {
           args: [{ cwd: data.cwd, quiet: false }],
           type: PluginHookType.Series,
         });
-        const [model, modelContextLimit, providers] = await (async () => {
-          const { model, providers } = await resolveModelWithContext(
-            null,
-            context,
-          );
-          const modelId = model
-            ? `${model.provider.id}/${model.model.id}`
-            : null;
-          const modelContextLimit = model ? model.model.limit.context : null;
-          return [
-            modelId,
-            modelContextLimit,
-            normalizeProviders(providers, context),
-          ];
-        })();
+        const { model, providers } = await resolveModelWithContext(
+          null,
+          context,
+        );
 
         // Get session config if sessionId is provided
         let sessionSummary: string | undefined;
@@ -523,8 +510,7 @@ class NodeHandlerRegistry {
             productASCIIArt: context.productASCIIArt,
             version: context.version,
             model,
-            modelContextLimit,
-            providers,
+            providers: normalizeProviders(providers, context),
             approvalMode: context.config.approvalMode,
             sessionSummary,
             pastedTextMap,

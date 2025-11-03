@@ -227,12 +227,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     // Get thinking config based on model's reasoning capability
     let thinkingConfig: Record<string, any> | undefined = undefined;
     if (shouldThinking && opts.thinking) {
-      thinkingConfig = getThinkingConfig(
-        opts.model.provider.id,
-        opts.model.model.reasoning,
-        opts.model.model.id,
-        opts.thinking.effort,
-      );
+      thinkingConfig = getThinkingConfig(opts.model, opts.thinking.effort);
       shouldThinking = false;
     }
 
