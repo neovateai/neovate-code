@@ -227,10 +227,10 @@ export function findIncompleteToolUses(messages: NormalizedMessage[]): {
   // Collect all tool_result IDs from subsequent messages
   const completedToolIds = new Set<string>();
   for (const msg of subsequentMessages) {
-    if (msg.role === 'user' && Array.isArray(msg.content)) {
+    if (msg.role === 'tool' && Array.isArray(msg.content)) {
       for (const part of msg.content) {
-        if (part.type === 'tool_result') {
-          completedToolIds.add(part.id);
+        if (part.type === 'tool-result') {
+          completedToolIds.add(part.toolCallId);
         }
       }
     }
