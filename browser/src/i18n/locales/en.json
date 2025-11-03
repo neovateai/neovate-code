@@ -318,6 +318,9 @@
       "accept": "Accept",
       "reject": "Reject",
       "copyModifiedCode": "Copy Modified Code"
+    },
+    "diffToolbar": {
+      "changesCompleted": "Changes completed"
     }
   },
   "editRender": {

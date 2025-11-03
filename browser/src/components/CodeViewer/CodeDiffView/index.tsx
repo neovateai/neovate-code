@@ -1,8 +1,7 @@
 import { createStyles } from 'antd-style';
-import { forwardRef } from 'react';
-import { useSnapshot } from 'valtio';
+import { forwardRef, useEffect, useState } from 'react';
 import { CodeRenderer } from '@/components/CodeRenderer/CodeRenderer';
-import { state } from '@/state/chat';
+import { useClipboard } from '@/hooks/useClipboard';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffToolbar from '../DiffToolbar';
 
@@ -47,22 +46,45 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, CodeDiffViewProps>(
   (props, ref) => {
     const { item, maxHeight, hideToolBar } = props;
     const { styles } = useStyle({ maxHeight });
-    const snap = useSnapshot(state);
+    const [isCopySuccess, setIsCopySuccess] = useState(false);
+    const { writeText } = useClipboard();
+
+    const handleCopy = async () => {
+      try {
+        await writeText(item.modifiedCode);
+        setIsCopySuccess(true);
+      } catch (error) {
+        console.error('Failed to copy content:', error);
+      }
+    };
+
+    const handleAcceptAll = () => {
+      // TODO: Implement accept all logic
+      console.log('Accept all changes for:', item.path, item.modifiedCode);
+    };
+
+    const handleRejectAll = () => {
+      // TODO: Implement reject all logic
+      console.log('Reject all changes for:', item.path, item.originalCode);
+    };
+
+    useEffect(() => {
+      if (isCopySuccess) {
+        const timer = setTimeout(() => {
+          setIsCopySuccess(false);
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+    }, [isCopySuccess]);
 
     return (
       <div className={styles.container}>
         {!hideToolBar && (
           <DiffToolbar
-            onGotoDiff={() => {
-              console.log('onGotoDiff');
-              // Simple diff navigation
-            }}
-            onAcceptAll={() => {
-              snap.approvalModal?.resolve('approve_always_edit');
-            }}
-            onRejectAll={() => {
-              snap.approvalModal?.resolve('deny');
-            }}
+            onAcceptAll={handleAcceptAll}
+            onRejectAll={handleRejectAll}
+            onCopy={handleCopy}
+            isCopySuccess={isCopySuccess}
             item={item}
           />
         )}

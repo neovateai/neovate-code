@@ -318,6 +318,9 @@
       "accept": "接受",
       "reject": "拒绝",
       "copyModifiedCode": "复制修改后的代码"
+    },
+    "diffToolbar": {
+      "changesCompleted": "变更已完成"
     }
   },
   "editRender": {
