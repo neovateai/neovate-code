@@ -81,7 +81,7 @@ export function ChatInput() {
   // Wrap onChange to add prefix back for bash/memory modes
   const handleDisplayChange = useCallback(
     (val: string) => {
-      // 输入的第一个字符，=== ! 或者 #，则不赋值，仅仅改变 mode
+      // If the first character is ! or #, don't set value, just change mode
       if (['!', '#'].includes(val)) {
         updateMode(val);
         return;
@@ -93,7 +93,7 @@ export function ChatInput() {
 
   // Handle delete key press - switch to prompt mode when value becomes empty
   const handleDelete = useCallback(() => {
-    // 当前 displayValue 为空时，继续点击删除键，则改为默认模式
+    // When current displayValue is empty, continue pressing delete key to switch to default mode
     if ((mode === 'bash' || mode === 'memory') && displayValue === '') {
       updateMode('');
     }

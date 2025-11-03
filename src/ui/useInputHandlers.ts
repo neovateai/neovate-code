@@ -277,10 +277,10 @@ export function useInputHandlers() {
   const handleEscape = useCallback(() => {
     if (mode === 'bash' || mode === 'memory') {
       if (inputState.state.value.length > 0) {
-        inputState.setValue(''); // 第一次清空输入
+        inputState.setValue(''); // First clear input
         return true;
       }
-      updateMode(''); // 第二次切换为 prompt 默认模式
+      updateMode(''); // Second switch to default prompt mode
       return true;
     }
     return false; // Continue with normal cancel behavior
