@@ -72,9 +72,6 @@ export function ChatInput() {
   // Adjust cursor position for display (subtract 1 for bash/memory modes)
   const displayCursorOffset = useMemo(() => {
     const offset = inputState.state.cursorPosition ?? 0;
-    if (mode === 'bash' || mode === 'memory') {
-      return Math.max(0, offset - 1);
-    }
     return offset;
   }, [mode, inputState.state.cursorPosition]);
 
@@ -82,8 +79,9 @@ export function ChatInput() {
   const handleDisplayChange = useCallback(
     (val: string) => {
       // If the first character is ! or #, don't set value, just change mode
-      if (['!', '#'].includes(val)) {
-        updateMode(val);
+      const firstChar = val[0];
+      if (['!', '#'].includes(firstChar)) {
+        updateMode(firstChar);
         return;
       }
       handlers.handleChange(val);
@@ -102,11 +100,7 @@ export function ChatInput() {
   // Wrap cursor position change to add 1 for bash/memory modes
   const handleDisplayCursorChange = useCallback(
     (pos: number) => {
-      if (mode === 'bash' || mode === 'memory') {
-        inputState.setCursorPosition(pos + 1);
-      } else {
-        inputState.setCursorPosition(pos);
-      }
+      inputState.setCursorPosition(pos);
     },
     [mode, inputState],
   );
