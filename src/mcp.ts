@@ -430,7 +430,7 @@ export class MCPManager {
     config: MCPConfig,
   ): Tool {
     return {
-      name: `mcp__${serverName}__${toolName}`,
+      name: `mcp__${serverName.replace(/[^a-zA-Z0-9_-]/g, '')}__${toolName}`,
       description: toolDef.description,
       getDescription: ({ params }) => {
         return formatParamsDescription(params as Record<string, any>);
