@@ -196,6 +196,8 @@ export async function runCommit(context: Context) {
     );
   }
 
+  const fileList = await getStagedFileList();
+
   let repoStyle = '';
   if (argv.followStyle) {
     try {
@@ -226,6 +228,9 @@ Please follow a similar style for this commit message while still adhering to th
       const stop = logger.spinThink({ productName: context.productName });
       message = await generateCommitMessage({
         prompt: `
+# Staged files:
+${fileList}
+
 # Diffs:
 ${diff}
 ${repoStyle}
@@ -618,6 +623,17 @@ function checkCommitMessage(message: string, hasAiSuffix = false) {
   // }
   if (message.length === 0) {
     throw new Error('Commit message is empty');
+  }
+}
+
+async function getStagedFileList() {
+  try {
+    const fileList = execSync('git diff --cached --name-status', {
+      encoding: 'utf-8',
+    });
+    return fileList.trim();
+  } catch (error: any) {
+    return '';
   }
 }
 
