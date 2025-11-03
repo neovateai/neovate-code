@@ -136,6 +136,7 @@ interface AppState {
   forkParentUuid: string | null;
 
   bashBackgroundPrompt: BashPromptBackgroundEvent | null;
+  thinking: { effort: 'low' | 'medium' | 'high' } | undefined;
 }
 
 type InitializeOpts = {
@@ -205,6 +206,7 @@ interface AppActions {
   fork: (targetMessageUuid: string) => Promise<void>;
   setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => void;
   clearBashBackgroundPrompt: () => void;
+  toggleThinking: () => void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -257,6 +259,7 @@ export const useAppStore = create<AppStore>()(
       pastedImageMap: {},
       forkModalVisible: false,
       forkParentUuid: null,
+      thinking: undefined,
 
       bashBackgroundPrompt: null,
 
@@ -270,6 +273,9 @@ export const useAppStore = create<AppStore>()(
         if (!response.success) {
           throw new Error(response.error.message);
         }
+        const providerId = response.data.model?.split('/')[0];
+        const shouldEnableThinking =
+          providerId === 'google' || providerId === 'anthropic';
         set({
           bridge,
           cwd: opts.cwd,
@@ -290,6 +296,7 @@ export const useAppStore = create<AppStore>()(
           pastedTextMap: response.data.pastedTextMap || {},
           pastedImageMap: response.data.pastedImageMap || {},
           userName: getUsername() ?? 'user',
+          thinking: shouldEnableThinking ? { effort: 'low' } : undefined,
           // theme: 'light',
         });
 
@@ -589,7 +596,7 @@ export const useAppStore = create<AppStore>()(
             // don't await this
             (async () => {
               try {
-                const queryResult = await bridge.request('utils.query', {
+                const queryResult = await bridge.request('utils.quickQuery', {
                   cwd,
                   systemPrompt:
                     "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with one fields: 'title' (string). Only include these fields, no other text.",
@@ -678,6 +685,7 @@ export const useAppStore = create<AppStore>()(
           model: opts.model,
           attachments,
           parentUuid: get().forkParentUuid || undefined,
+          thinking: get().thinking,
         });
         if (response.success) {
           set({
@@ -847,10 +855,14 @@ export const useAppStore = create<AppStore>()(
         // Get the modelContextLimit for the selected model
         const modelsResponse = await bridge.request('models.list', { cwd });
         if (modelsResponse.success) {
+          const providerId = model?.split('/')[0];
+          const shouldEnableThinking =
+            providerId === 'google' || providerId === 'anthropic';
           set({
             model,
             modelContextLimit:
               modelsResponse.data.currentModelInfo.modelContextLimit,
+            thinking: shouldEnableThinking ? { effort: 'low' } : undefined,
           });
         }
       },
@@ -1045,6 +1057,28 @@ export const useAppStore = create<AppStore>()(
             pastedImageMap: map,
           });
         }
+      },
+
+      toggleThinking: () => {
+        const current = get().thinking;
+        const model = get().model;
+        const providerId = model?.split('/')[0];
+        const shouldEnableThinking =
+          providerId === 'google' || providerId === 'anthropic';
+        if (!shouldEnableThinking) {
+          return undefined;
+        }
+        let next: { effort: 'low' | 'medium' | 'high' } | undefined;
+        if (!current) {
+          next = { effort: 'low' };
+        } else if (current.effort === 'low') {
+          next = { effort: 'medium' };
+        } else if (current.effort === 'medium') {
+          next = { effort: 'high' };
+        } else {
+          next = undefined;
+        }
+        set({ thinking: next });
       },
     }),
     { name: 'app-store' },

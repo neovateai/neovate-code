@@ -14,6 +14,7 @@ import type {
   ToolUsePart,
 } from './message';
 import type { ModelInfo } from './model';
+import { getThinkingConfig } from './thinking-config';
 import type { ToolResult, Tools, ToolUse } from './tool';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
@@ -93,6 +94,9 @@ type RunLoopOpts = {
   signal?: AbortSignal;
   llmsContexts?: string[];
   autoCompact?: boolean;
+  thinking?: {
+    effort: 'low' | 'medium' | 'high';
+  };
   onTextDelta?: (text: string) => Promise<void>;
   onText?: (text: string) => Promise<void>;
   onReasoning?: (text: string) => Promise<void>;
@@ -113,7 +117,6 @@ type RunLoopOpts = {
   onMessage?: OnMessage;
 };
 
-// TODO: support retry
 export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   const startTime = Date.now();
   let turnsCount = 0;
@@ -150,6 +153,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   });
 
   let shouldAtNormalize = true;
+  let shouldThinking = true;
   while (true) {
     // Must use separate abortController to prevent ReadStream locking
     if (opts.signal?.aborted && !abortController.signal.aborted) {
@@ -220,6 +224,18 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     const m: LanguageModelV2 = opts.model.m;
     const tools = opts.tools.toLanguageV2Tools();
 
+    // Get thinking config based on model's reasoning capability
+    let thinkingConfig: Record<string, any> | undefined = undefined;
+    if (shouldThinking && opts.thinking) {
+      thinkingConfig = getThinkingConfig(
+        opts.model.provider.id,
+        opts.model.model.reasoning,
+        opts.model.model.id,
+        opts.thinking.effort,
+      );
+      shouldThinking = false;
+    }
+
     let retryCount = 0;
     const errorRetryTurns = opts.errorRetryTurns ?? DEFAULT_ERROR_RETRY_TURNS;
 
@@ -234,6 +250,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
           tools,
           toolChoice: { type: 'auto' },
           abortSignal: abortController.signal,
+          ...thinkingConfig,
         });
         opts.onStreamResult?.({
           requestId,

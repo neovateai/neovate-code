@@ -562,6 +562,9 @@ class NodeHandlerRegistry {
         model?: string;
         attachments?: ImagePart[];
         parentUuid?: string;
+        thinking?: {
+          effort: 'low' | 'medium' | 'high';
+        };
       }) => {
         const { message, cwd, sessionId, model, attachments, parentUuid } =
           data;
@@ -580,6 +583,7 @@ class NodeHandlerRegistry {
           attachments,
           model,
           parentUuid,
+          thinking: data.thinking,
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {
               message: opts.message,
@@ -995,6 +999,28 @@ class NodeHandlerRegistry {
         const result = await query({
           userPrompt,
           context,
+          systemPrompt,
+        });
+        return result;
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'utils.quickQuery',
+      async (data: {
+        userPrompt: string;
+        cwd: string;
+        systemPrompt?: string;
+      }) => {
+        const { userPrompt, cwd, systemPrompt } = data;
+        const context = await this.getContext(cwd);
+        const { model } = await resolveModelWithContext(
+          context.config.smallModel || null,
+          context,
+        );
+        const result = await query({
+          userPrompt,
+          model: model!,
           systemPrompt,
         });
         return result;
