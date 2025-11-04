@@ -261,7 +261,8 @@ class NodeHandlerRegistry {
         const context = await this.getContext(cwd);
         const configManager = new ConfigManager(cwd, context.productName, {});
 
-        const projectServers = context.config.mcpServers || {};
+        const projectConfig = configManager.projectConfig;
+        const projectServers = projectConfig.mcpServers || {};
         const globalConfig = configManager.globalConfig;
         const globalServers = globalConfig.mcpServers || {};
 
