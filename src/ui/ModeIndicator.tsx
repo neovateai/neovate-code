@@ -4,7 +4,7 @@ import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 
 export function ModeIndicator() {
-  const { planMode, bashMode, planResult, slashCommandJSX } = useAppStore();
+  const { planMode, brainstormMode, bashMode, planResult, slashCommandJSX } = useAppStore();
   if (slashCommandJSX) {
     return null;
   }
@@ -14,6 +14,14 @@ export function ModeIndicator() {
   const text = planMode ? (
     <>
       <Text color={UI_COLORS.MODE_INDICATOR_TEXT}>plan mode</Text>
+      <Text color={UI_COLORS.MODE_INDICATOR_DESCRIPTION}>
+        {' '}
+        (shift + tab to toggle)
+      </Text>
+    </>
+  ) : brainstormMode ? (
+    <>
+      <Text color={UI_COLORS.MODE_INDICATOR_TEXT}>brainstorm mode</Text>
       <Text color={UI_COLORS.MODE_INDICATOR_DESCRIPTION}>
         {' '}
         (shift + tab to toggle)

@@ -79,6 +79,7 @@ interface AppState {
   error: string | null;
   slashCommandJSX: ReactNode | null;
   planMode: boolean;
+  brainstormMode: boolean;
   bashMode: boolean;
   approvalMode: ApprovalMode;
 
@@ -231,6 +232,7 @@ export const useAppStore = create<AppStore>()(
       error: null,
       slashCommandJSX: null,
       planMode: false,
+      brainstormMode: false,
       bashMode: false,
       approvalMode: 'default',
       messages: [],
@@ -584,8 +586,14 @@ export const useAppStore = create<AppStore>()(
           return;
         } else {
           // Use store's current model for regular message sending
+          let messageToSend = expandedMessage;
+          const { brainstormMode } = get();
+          if (brainstormMode) {
+            messageToSend = `/spec:brainstorm ${expandedMessage}`;
+          }
+          
           const result = await get().sendMessage({
-            message: expandedMessage,
+            message: messageToSend,
             planMode,
           });
           if (planMode && result.success) {
@@ -778,8 +786,15 @@ export const useAppStore = create<AppStore>()(
         set({ historyIndex });
       },
 
-      togglePlanMode: () => {
-        set({ planMode: !get().planMode });
+      toggleMode: () => {
+        const { planMode, brainstormMode } = get();
+        if (!planMode && !brainstormMode) {
+          set({ planMode: true });
+        } else if (planMode && !brainstormMode) {
+          set({ planMode: false, brainstormMode: true });
+        } else {
+          set({ planMode: false, brainstormMode: false });
+        }
       },
 
       approvePlan: (planResult: string) => {
