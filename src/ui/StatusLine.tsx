@@ -2,6 +2,7 @@ import { Box, Text } from 'ink';
 import path from 'pathe';
 import React, { useMemo } from 'react';
 import type { NormalizedMessage } from '../message';
+import { UI_COLORS } from './constants';
 import { useAppStore } from './store';
 
 function HelpHint() {
@@ -25,10 +26,15 @@ function ThinkingIndicator() {
 
   if (!thinking) return null;
 
+  const color =
+    thinking.effort === 'high'
+      ? UI_COLORS.CHAT_BORDER_THINKING_HARD
+      : UI_COLORS.CHAT_BORDER_THINKING;
+
   return (
     <>
       {' | '}
-      <Text color="cyan">thinking: {thinking.effort}</Text>
+      <Text color={color}>thinking: {thinking.effort}</Text>
     </>
   );
 }
