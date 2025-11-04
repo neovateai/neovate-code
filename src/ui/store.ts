@@ -167,7 +167,7 @@ interface AppActions {
   clear: () => Promise<void>;
   setDraftInput: (draftInput: string) => void;
   setHistoryIndex: (historyIndex: number | null) => void;
-  togglePlanMode: () => void;
+  toggleMode: () => void;
   approvePlan: (planResult: string) => void;
   denyPlan: () => void;
   resumeSession: (sessionId: string, logFile: string) => Promise<void>;
