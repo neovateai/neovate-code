@@ -40,5 +40,3 @@ Requirements:
     ];
   },
 };
-
-export default changelogCommand;
