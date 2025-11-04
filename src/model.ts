@@ -212,7 +212,7 @@ export const models: ModelMap = {
     name: 'Qwen3 235B A22B Instruct 2507',
     shortName: 'Qwen3',
     attachment: false,
-    reasoning: false,
+    reasoning: true,
     temperature: true,
     tool_call: true,
     knowledge: '2025-04',
