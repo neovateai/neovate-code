@@ -264,7 +264,7 @@ function ProductInfo() {
 }
 
 function GettingStartedTips() {
-  const { productName } = useAppStore();
+  const { productName, initializeModelError } = useAppStore();
   return (
     <Box flexDirection="column" marginTop={1}>
       <Text>Tips to getting started:</Text>
@@ -279,6 +279,11 @@ function GettingStartedTips() {
       <Text>
         4. <Text bold>/help</Text> for more information
       </Text>
+      {initializeModelError && (
+        <Box marginTop={1}>
+          <Text color="red">⚠ {initializeModelError}</Text>
+        </Box>
+      )}
     </Box>
   );
 }

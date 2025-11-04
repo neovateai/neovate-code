@@ -481,7 +481,7 @@ class NodeHandlerRegistry {
           args: [{ cwd: data.cwd, quiet: false }],
           type: PluginHookType.Series,
         });
-        const { model, providers } = await resolveModelWithContext(
+        const { model, providers, error } = await resolveModelWithContext(
           null,
           context,
         );
@@ -510,6 +510,7 @@ class NodeHandlerRegistry {
             productASCIIArt: context.productASCIIArt,
             version: context.version,
             model,
+            initializeModelError: error instanceof Error ? error.message : null,
             providers: normalizeProviders(providers, context),
             approvalMode: context.config.approvalMode,
             sessionSummary,
