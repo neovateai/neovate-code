@@ -26,7 +26,10 @@ function ThinkingIndicator() {
 
   if (!thinking) return null;
 
-  const color = thinking.effort === 'high' ? UI_COLORS.CHAT_BORDER_THINKING_HARD : UI_COLORS.CHAT_BORDER_THINKING;
+  const color =
+    thinking.effort === 'high'
+      ? UI_COLORS.CHAT_BORDER_THINKING_HARD
+      : UI_COLORS.CHAT_BORDER_THINKING;
 
   return (
     <>
