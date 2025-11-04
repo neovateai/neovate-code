@@ -3,7 +3,7 @@ import type { PromptCommand } from '../types';
 export const changelogCommand: PromptCommand = {
   type: 'prompt',
   name: 'changelog',
-  description: '列出最近两版更新',
+  description: 'List the latest two version updates',
   progressMessage: '正在读取并润色更新日志…',
   async getPromptForCommand(_args?: string) {
     const user = `你是发布说明专家，请：
