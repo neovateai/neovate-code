@@ -2,7 +2,6 @@ import type {
   NormalizedMessage,
   ReasoningPart,
   TextPart,
-  ToolResultPart,
   ToolResultPart2,
 } from '../message';
 
@@ -108,57 +107,6 @@ export function normalizeMessagesForCompact(
           role: 'user' as const,
           content: '[Tool operations completed]',
         };
-      }
-
-      if (message.role === 'user' && Array.isArray(message.content)) {
-        const hasToolResults = message.content.some(
-          (part): part is ToolResultPart =>
-            'type' in part && part.type === 'tool_result',
-        );
-
-        if (hasToolResults) {
-          const toolSummaries = message.content
-            .filter(
-              (part): part is ToolResultPart =>
-                'type' in part && part.type === 'tool_result',
-            )
-            .map((part: ToolResultPart) => {
-              const result = part.result;
-              let summary = `${part.name} tool executed`;
-
-              if (
-                result &&
-                typeof result === 'object' &&
-                'llmContent' in result
-              ) {
-                const contentSuffix = formatToolResultContent(
-                  result.llmContent,
-                );
-                summary += contentSuffix || ' successfully';
-              } else {
-                summary += ' successfully';
-              }
-
-              return summary;
-            });
-
-          const textContent = message.content
-            .filter(
-              (part): part is TextPart =>
-                'type' in part && part.type === 'text',
-            )
-            .map((part: TextPart) => part.text)
-            .join('');
-
-          const finalContent = textContent
-            ? `${textContent}\n[Tools: ${toolSummaries.join('; ')}]`
-            : `[Tools: ${toolSummaries.join('; ')}]`;
-
-          return {
-            ...message,
-            content: finalContent,
-          };
-        }
       }
 
       return message;

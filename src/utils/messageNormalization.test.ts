@@ -104,42 +104,6 @@ describe('normalizeMessagesForCompact', () => {
     expect(result[0].content).toContain('const x = 1;');
   });
 
-  test('should handle user messages with tool_result', () => {
-    const messages: NormalizedMessage[] = [
-      {
-        role: 'user',
-        // @ts-expect-error
-        content: [
-          { type: 'text', text: 'Here is the result:' },
-          {
-            type: 'tool_result',
-            id: '1',
-            name: 'read',
-            input: { file_path: 'test.ts' },
-            result: {
-              llmContent: 'const x = 1;',
-              isError: false,
-            },
-          },
-        ],
-        type: 'message',
-        timestamp: '2024-01-01',
-        uuid: 'uuid-3',
-        parentUuid: 'uuid-2',
-      },
-    ];
-
-    const result = normalizeMessagesForCompact(messages);
-
-    expect(result).toHaveLength(1);
-    expect(result[0].role).toBe('user');
-    expect(typeof result[0].content).toBe('string');
-    const content = result[0].content as string;
-    expect(content).toContain('Here is the result:');
-    expect(content).toContain('read tool executed');
-    expect(content).toContain('const x = 1;');
-  });
-
   test('should keep regular user and system messages unchanged', () => {
     const messages: NormalizedMessage[] = [
       {

@@ -11,6 +11,7 @@ type CompactOptions = {
 export const COMPACT_MESSAGE = `Chat history compacted successfully.`;
 
 export async function compact(opts: CompactOptions): Promise<string> {
+  // why: The toolConfig field must be defined when using toolUse and toolResult content blocks
   const normalizedMessages = normalizeMessagesForCompact(opts.messages);
 
   const result = await query({
