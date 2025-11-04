@@ -6,7 +6,7 @@ export const writePlanCommand = {
   description:
     'Create detailed implementation plans with bite-sized tasks for engineers with zero codebase context',
   progressMessage: 'Creating implementation plan...',
-  async getPromptForCommand() {
+  async getPromptForCommand(args: string) {
     return [
       {
         role: 'user',
@@ -88,6 +88,8 @@ Expected: PASS
 - Complete code in plan (not "add validation")
 - Exact commands with expected output
 - DRY, YAGNI
+
+Arguments: ${args}
         `.trim(),
       },
     ];

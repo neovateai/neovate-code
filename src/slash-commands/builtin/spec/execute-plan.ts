@@ -5,7 +5,7 @@ export const executePlanCommand = {
   name: 'spec:execute-plan',
   description: 'Execute detailed plans in batches with review checkpoints',
   progressMessage: 'Executing implementation plan...',
-  async getPromptForCommand() {
+  async getPromptForCommand(args: string) {
     return [
       {
         role: 'user',
@@ -78,6 +78,8 @@ After all tasks complete and verified:
 - Don't skip verifications
 - Between batches: just report and wait
 - Stop when blocked, don't guess
+
+Arguments: ${args}
         `.trim(),
       },
     ];

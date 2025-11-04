@@ -6,7 +6,7 @@ export const brainstormCommand = {
   description:
     'Transform rough ideas into fully-formed designs through structured questioning',
   progressMessage: 'Refining your idea into a design...',
-  async getPromptForCommand() {
+  async getPromptForCommand(args: string) {
     return [
       {
         role: 'user',
@@ -55,7 +55,9 @@ Transform rough ideas into fully-formed designs through structured questioning a
 - Explore 2-3 alternatives before settling
 - Present incrementally, validate as you go
 - Go backward when needed - flexibility > rigid progression
-- Announce skill usage at start
+- Don't edit or write code during brainstorming
+
+Arguments: ${args}
         `.trim(),
       },
     ];
