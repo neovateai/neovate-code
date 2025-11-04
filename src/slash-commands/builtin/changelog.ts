@@ -4,7 +4,7 @@ export const changelogCommand: PromptCommand = {
   type: 'prompt',
   name: 'changelog',
   description: 'List the latest two version updates',
-  progressMessage: '正在读取并润色更新日志…',
+  progressMessage: 'Reading and formatting changelog...',
   async getPromptForCommand(_args?: string) {
     const user = `你是发布说明专家，请：
 
