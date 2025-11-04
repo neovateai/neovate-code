@@ -33,6 +33,7 @@ export function ChatInput() {
     forkModalVisible,
     bashBackgroundPrompt,
     bridge,
+    thinking,
   } = useAppStore();
   const { columns } = useTerminalSize();
   const { handleExternalEdit } = useExternalEditor({
@@ -112,10 +113,11 @@ export function ChatInput() {
 
   // Get border color based on mode
   const borderColor = useMemo(() => {
+    if (thinking?.effort === 'high') return UI_COLORS.CHAT_BORDER_THINKING_HARD;
     if (mode === 'memory') return UI_COLORS.CHAT_BORDER_MEMORY;
     if (mode === 'bash') return UI_COLORS.CHAT_BORDER_BASH;
     return UI_COLORS.CHAT_BORDER;
-  }, [mode]);
+  }, [thinking, mode]);
 
   // Get prompt symbol based on mode
   const promptSymbol = useMemo(() => {
