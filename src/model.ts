@@ -13,6 +13,7 @@ import type { ProviderConfig } from './config';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
 import { GithubProvider } from './providers/githubCopilot';
+import * as logger from './utils/logger';
 
 export interface ModelModalities {
   input: ('text' | 'image' | 'audio' | 'video' | 'pdf')[];
@@ -838,9 +839,10 @@ export const providers: ProvidersMap = {
       const githubProvider = new GithubProvider({ authFile: githubDataPath });
       const token = await githubProvider.access();
       if (!token) {
-        throw new Error(
-          'Failed to get GitHub Copilot token, use /login to login first',
-        );
+        logger.logError({
+          error:
+            'Failed to get GitHub Copilot token, use /login to login first',
+        });
       }
       return createOpenAI({
         baseURL: 'https://api.individual.githubcopilot.com',
