@@ -1326,14 +1326,20 @@ export async function resolveModelWithContext(
     type: PluginHookType.SeriesLast,
   });
   const modelName = name || context.config.model;
-  const model = modelName
-    ? await resolveModel(
-        modelName,
-        finalProviders,
-        hookedModelAlias,
-        context.paths.globalConfigDir,
-      )
-    : null;
+  let model = null;
+  let error = null;
+  try {
+    model = modelName
+      ? await resolveModel(
+          modelName,
+          finalProviders,
+          hookedModelAlias,
+          context.paths.globalConfigDir,
+        )
+      : null;
+  } catch (err) {
+    error = err;
+  }
 
   // Add thinking config to model if available
   if (model) {
@@ -1347,6 +1353,7 @@ export async function resolveModelWithContext(
     providers: finalProviders,
     modelAlias,
     model,
+    error,
   };
 }
 

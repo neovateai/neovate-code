@@ -69,6 +69,7 @@ interface AppState {
   theme: Theme;
   model: ModelInfo | null;
   modelContextLimit: number;
+  initializeModelError: string | null;
   providers: ProvidersMap;
   sessionId: string | null;
   initialPrompt: string | null;
@@ -280,6 +281,7 @@ export const useAppStore = create<AppStore>()(
           productASCIIArt: response.data.productASCIIArt,
           version: response.data.version,
           model: response.data.model,
+          initializeModelError: response.data.initializeModelError,
           modelContextLimit: response.data.model
             ? response.data.model.model.limit.context
             : 0,
