@@ -44,7 +44,9 @@ export function ModeIndicator() {
       if (brainstormMode) {
         return (
           <>
-            <Text color={UI_COLORS.MODE_INDICATOR_TEXT}>🧠 brainstorm mode</Text>
+            <Text color={UI_COLORS.MODE_INDICATOR_TEXT}>
+              🧠 brainstorm mode
+            </Text>
             <Text color={UI_COLORS.MODE_INDICATOR_DESCRIPTION}>
               {' '}
               (shift + tab to toggle)
