@@ -39,7 +39,7 @@ function Bug({ onDone }: BugProps) {
     setEnvironmentInfo({
       cliVersion: version || 'unknown',
       sessionId: sessionId || 'unknown',
-      model: model || 'unknown',
+      model: model ? `${model.provider.id}/${model.model.id}` : 'unknown',
       memoryUsage: `${heapUsedMB}MB / ${heapTotalMB}MB`,
       platform: env.platform,
       nodeVersion: env.nodeVersion,

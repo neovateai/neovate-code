@@ -1,39 +1,36 @@
+import type { ModelInfo } from './model';
+
 export function getThinkingConfig(
-  providerId: string,
-  reasoning: boolean,
-  modelId: string,
+  model: ModelInfo,
   reasoningEffort: 'low' | 'medium' | 'high',
 ): Record<string, any> | undefined {
-  if (!reasoning) {
+  if (!model.model.reasoning) {
     return undefined;
   }
 
-  switch (providerId) {
-    case 'anthropic':
-      return {
-        providerOptions: {
-          anthropic: {
-            thinking: {
-              type: 'enabled' as const,
-              budgetTokens: reasoningEffort === 'low' ? 1024 : 31999,
-            },
+  if (model.model.id.startsWith('claude-')) {
+    return {
+      providerOptions: {
+        anthropic: {
+          thinking: {
+            type: 'enabled' as const,
+            budgetTokens: reasoningEffort === 'low' ? 1024 : 31999,
           },
         },
-      };
+      },
+    };
+  }
 
-    case 'google':
-      return {
-        providerOptions: {
-          google: {
-            thinkingConfig: {
-              thinkingBudget: reasoningEffort === 'low' ? 1024 : 31999,
-              includeThoughts: true,
-            },
+  if (model.provider.id === 'google') {
+    return {
+      providerOptions: {
+        google: {
+          thinkingConfig: {
+            thinkingBudget: reasoningEffort === 'low' ? 1024 : 31999,
+            includeThoughts: true,
           },
         },
-      };
-
-    default:
-      return undefined;
+      },
+    };
   }
 }

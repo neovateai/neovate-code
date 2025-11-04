@@ -113,7 +113,12 @@ function StatusMain() {
   return (
     <Box>
       <Text color="gray">
-        [{model ? model : <Text color="red">use /model to select a model</Text>}
+        [
+        {model ? (
+          `${model.provider.id}/${model.model.id}`
+        ) : (
+          <Text color="red">use /model to select a model</Text>
+        )}
         <ThinkingIndicator />] | {folderName} | {(tokenUsed / 1000).toFixed(1)}K
         |{' '}
         <Text color={getContextLeftColor(contextLeftPercentage)}>

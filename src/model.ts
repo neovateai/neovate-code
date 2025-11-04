@@ -13,6 +13,7 @@ import type { ProviderConfig } from './config';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
 import { GithubProvider } from './providers/githubCopilot';
+import { getThinkingConfig } from './thinking-config';
 import * as logger from './utils/logger';
 
 export interface ModelModalities {
@@ -1264,6 +1265,7 @@ export type ModelInfo = {
   provider: Provider;
   model: Omit<Model, 'cost'>;
   m: LanguageModelV2;
+  thinkingConfig?: Record<string, any>;
 };
 
 function mergeConfigProviders(
@@ -1334,6 +1336,15 @@ export async function resolveModelWithContext(
         context.paths.globalConfigDir,
       )
     : null;
+
+  // Add thinking config to model if available
+  if (model) {
+    const thinkingConfig = getThinkingConfig(model, 'low');
+    if (thinkingConfig) {
+      model.thinkingConfig = thinkingConfig;
+    }
+  }
+
   return {
     providers: finalProviders,
     modelAlias,
