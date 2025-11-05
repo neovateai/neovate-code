@@ -222,7 +222,18 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
 
     const requestId = randomUUID();
     const m: LanguageModelV2 = opts.model.m;
-    const tools = opts.tools.toLanguageV2Tools();
+    let tools = opts.tools.toLanguageV2Tools();
+
+    // Add web_search tool for supported models
+    if (
+      opts.model.model.web_search &&
+      opts.model.provider.id === 'anthropic' &&
+      opts.model.provider.providerInstance?.tools?.webSearch_20250305
+    ) {
+      const webSearchTool =
+        opts.model.provider.providerInstance.tools.webSearch_20250305();
+      tools = [...tools, webSearchTool];
+    }
 
     // Get thinking config based on model's reasoning capability
     let thinkingConfig: Record<string, any> | undefined = undefined;
