@@ -1,15 +1,16 @@
 import type { PromptCommand } from '../../types';
 
-export const executePlanCommand = {
-  type: 'prompt',
-  name: 'spec:execute-plan',
-  description: 'Execute detailed plans in batches with review checkpoints',
-  progressMessage: 'Executing implementation plan...',
-  async getPromptForCommand(args: string) {
-    return [
-      {
-        role: 'user',
-        content: `
+export function executePlanCommand(language: string): PromptCommand {
+  return {
+    type: 'prompt',
+    name: 'spec:execute-plan',
+    description: 'Execute detailed plans in batches with review checkpoints',
+    progressMessage: 'Executing implementation plan...',
+    async getPromptForCommand(args: string) {
+      return [
+        {
+          role: 'user',
+          content: `
 # Executing Plans
 
 ## Overview
@@ -19,6 +20,8 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 **Core principle:** Batch execution with checkpoints for architect review.
 
 **Announce at start:** "I'm implementing this plan."
+
+**Language:** Please communicate in ${language}.
 
 ## The Process
 
@@ -81,7 +84,8 @@ After all tasks complete and verified:
 
 Arguments: ${args}
         `.trim(),
-      },
-    ];
-  },
-} as PromptCommand;
+        },
+      ];
+    },
+  } as PromptCommand;
+}

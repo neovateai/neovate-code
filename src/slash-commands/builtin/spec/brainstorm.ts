@@ -1,16 +1,17 @@
 import type { PromptCommand } from '../../types';
 
-export const brainstormCommand = {
-  type: 'prompt',
-  name: 'spec:brainstorm',
-  description:
-    'Transform rough ideas into fully-formed designs through structured questioning',
-  progressMessage: 'Refining your idea into a design...',
-  async getPromptForCommand(args: string) {
-    return [
-      {
-        role: 'user',
-        content: `
+export function brainstormCommand(language: string): PromptCommand {
+  return {
+    type: 'prompt',
+    name: 'spec:brainstorm',
+    description:
+      'Transform rough ideas into fully-formed designs through structured questioning',
+    progressMessage: 'Refining your idea into a design...',
+    async getPromptForCommand(args: string) {
+      return [
+        {
+          role: 'user',
+          content: `
 # Brainstorming Ideas Into Designs
 
 ## Overview
@@ -20,6 +21,8 @@ Transform rough ideas into fully-formed designs through structured questioning a
 **Core principle:** Ask questions to understand, explore alternatives, present design incrementally for validation.
 
 **Announce at start:** "I'm refining your idea into a design."
+
+**Language:** Please communicate in ${language}.
 
 ## The Process
 
@@ -59,7 +62,8 @@ Transform rough ideas into fully-formed designs through structured questioning a
 
 Arguments: ${args}
         `.trim(),
-      },
-    ];
-  },
-} as PromptCommand;
+        },
+      ];
+    },
+  } as PromptCommand;
+}
