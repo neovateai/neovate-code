@@ -29,6 +29,7 @@ const useStyles = createStyles(({ css }) => ({
       'Consolas', monospace;
     display: flex;
     flex-direction: column;
+    justify-content: start;
     height: 100%;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   `,
@@ -79,10 +80,11 @@ const useStyles = createStyles(({ css }) => ({
 
     pre {
       margin: 0;
-      padding: 12px 16px;
+      padding: 18px 18px;
       background: transparent;
       overflow: visible;
-      min-height: fit-content;
+      width: fit-content;
+      min-width: 100%;
     }
 
     code {
@@ -90,15 +92,14 @@ const useStyles = createStyles(({ css }) => ({
         'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro',
         'Consolas', monospace;
       font-size: 12px;
-      line-height: 1.4;
       letter-spacing: 0;
       display: block;
-      white-space: pre-wrap;
+      white-space: pre;
       overflow: visible;
       background: transparent;
       color: #24292f;
-      word-break: break-all;
-      overflow-wrap: break-word;
+      width: fit-content;
+      min-width: 100%;
     }
 
     /* Ensure all Shiki-generated elements have transparent backgrounds */
@@ -124,27 +125,27 @@ const useStyles = createStyles(({ css }) => ({
     /* Diff notation styles for [!code ++] and [!code --] */
     .line.diff.add {
       background-color: #f6fff0 !important;
-      width: 100%;
+      width: fit-content;
       display: inline-block;
     }
 
     .line.diff.remove {
       background-color: #fff6f5 !important;
-      width: 100%;
+      width: fit-content;
       display: inline-block;
     }
 
     /* Alternative: for lines without line numbers */
     .diff.add {
       background-color: #f6fff0 !important;
-      width: 100%;
-      display: inline-block;
+      min-width: 100%;
+      width: fit-content;
     }
 
     .diff.remove {
       background-color: #fff6f5 !important;
-      width: 100%;
-      display: inline-block;
+      min-width: 100%;
+      width: fit-content;
     }
 
     .shiki-with-line-numbers .line-number {
@@ -154,15 +155,17 @@ const useStyles = createStyles(({ css }) => ({
       font-style: normal;
       font-weight: 400;
       letter-spacing: -0.24px;
-      text-align: left;
-      height: 100%;
-      display: inline-block;
+      text-align: right;
+      display: inline-flex;
+      align-items: center;
+      height: auto;
       width: 32px;
       min-width: 32px;
       flex-shrink: 0;
       margin-right: 8px;
+      margin-left: 12px;
       user-select: none;
-      padding-left: 10px;
+      padding: 0 8px 0 4px;
     }
 
     /* Ensure line number area also has background color and spacing */
