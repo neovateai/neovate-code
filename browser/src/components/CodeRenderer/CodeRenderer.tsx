@@ -362,10 +362,12 @@ export const CodeRenderer = forwardRef<CodeRendererRef, CodeRendererProps>(
             transformers,
           });
 
-          // Remove all background color styles
+          // Remove only background color styles, keep other styles like color
           const cleanHtml = html
-            .replace(/background-color:[^;"]*;?/gi, '')
-            .replace(/background:[^;"]*;?/gi, '')
+            .replace(/background-color:[^;"]*;?\s*/gi, '')
+            .replace(/background:[^;"]*;?\s*/gi, '')
+            .replace(/style="\s*;?\s*"/gi, '')
+            .replace(/style='\s*;?\s*'/gi, '')
             .replace(/style="\s*"/gi, '')
             .replace(/style='\s*'/gi, '');
 
