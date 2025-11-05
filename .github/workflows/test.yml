@@ -38,7 +38,7 @@ jobs:
         run: pnpm typecheck
 
       - name: Check formatting
-        run: pnpm biome:format
+        run: pnpm format
 
       - name: Run tests
         run: pnpm test

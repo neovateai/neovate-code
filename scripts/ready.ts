@@ -43,7 +43,7 @@ async function main() {
   // Step 4: Run format and check for git changes
   console.log('🎨 Running formatter...');
   try {
-    await $`npm run biome:format -- --write`.quiet();
+    await $`npm run format -- --write`.quiet();
 
     // Check if there are any unstaged changes (modified but not staged)
     const gitStatus = execSync('git diff --name-only', { encoding: 'utf-8' });
