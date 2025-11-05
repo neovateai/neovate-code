@@ -18,6 +18,7 @@ import { getThinkingConfig } from './thinking-config';
 import type { ToolResult, Tools, ToolUse } from './tool';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
+import { safeParseJson } from './utils/safeParseJson';
 
 const DEFAULT_MAX_TURNS = 50;
 const DEFAULT_ERROR_RETRY_TURNS = 10;
@@ -401,7 +402,8 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     }
     for (const toolCall of toolCalls) {
       const tool = opts.tools.get(toolCall.toolName);
-      const input = JSON.parse(toolCall.input);
+      // compatible with models that may return an empty value instead of a JSON string for input
+      const input = safeParseJson(toolCall.input);
       const description = tool?.getDescription?.({
         params: input,
         cwd: opts.cwd,
@@ -442,7 +444,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     for (const toolCall of toolCalls) {
       let toolUse: ToolUse = {
         name: toolCall.toolName,
-        params: JSON.parse(toolCall.input),
+        params: safeParseJson(toolCall.input),
         callId: toolCall.toolCallId,
       };
       if (opts.onToolUse) {
