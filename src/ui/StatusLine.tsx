@@ -130,7 +130,7 @@ function StatusMain() {
         <Text color={getContextLeftColor(contextLeftPercentage)}>
           {contextLeftPercentage}%
         </Text>{' '}
-        {approval}
+        {approval}| 🆔 {sessionId || 'N/A'}
       </Text>
     </Box>
   );
