@@ -21,6 +21,7 @@ import { createTerminalSetupCommand } from './terminal-setup';
 export function createBuiltinCommands(opts: {
   productName: string;
   argvConfig: Record<string, any>;
+  language: string;
 }): SlashCommand[] {
   return [
     clearCommand,
@@ -38,8 +39,8 @@ export function createBuiltinCommands(opts: {
     createBugCommand(),
     compactCommand,
     statusCommand,
-    brainstormCommand,
-    writePlanCommand,
-    executePlanCommand,
+    brainstormCommand(opts.language),
+    writePlanCommand(opts.language),
+    executePlanCommand(opts.language),
   ];
 }
