@@ -2,6 +2,7 @@ import { CopyOutlined } from '@ant-design/icons';
 import { Button, Divider, message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useClipboard } from '@/hooks/useClipboard';
+import CopyIcon from '@/icons/copy.svg?react';
 import type {
   CodeNormalViewerMetaInfo,
   CodeNormalViewerTabItem,
@@ -32,16 +33,13 @@ const NormalToolbar = (props: Props) => {
           <div>
             {normalMetaInfo.lineCount} {t('codeViewer.lineCount')}
           </div>
-          <Divider type="vertical" dashed />
           <div>
             {normalMetaInfo.charCount} {t('codeViewer.charCount')}
           </div>
         </div>
 
         <div>
-          <Button
-            type="text"
-            icon={<CopyOutlined />}
+          <CopyIcon
             onClick={async () => {
               try {
                 await writeText(item.code);
