@@ -34,7 +34,7 @@ export function createBuiltinCommands(opts: {
     createModelCommand(opts),
     createOutputStyleCommand(),
     createResumeCommand(),
-    createReviewCommand(),
+    createReviewCommand(opts.language),
     createTerminalSetupCommand(),
     createBugCommand(),
     compactCommand,
