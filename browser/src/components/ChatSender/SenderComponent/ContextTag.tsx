@@ -2,9 +2,11 @@ import Icon, { AppstoreOutlined, CloseCircleFilled } from '@ant-design/icons';
 import { Popover } from 'antd';
 import { cx } from 'antd-style';
 import { useMemo, useState } from 'react';
-import type { FileItem, ImageItem } from '@/api/model';
+import type { ImageItem } from '@/api/model';
 import DevFileIcon from '@/components/DevFileIcon';
 import { ContextType } from '@/constants/context';
+import * as codeViewer from '@/state/codeViewer';
+import type { FileItem } from '@/types/chat';
 import type { ContextStoreValue } from '@/types/context';
 
 interface Props {
@@ -12,8 +14,6 @@ interface Props {
   closeable?: boolean;
   /** Close callback */
   onClose?: (val: string) => void;
-  /** Click callback */
-  onClick?: (val: string) => void;
   /** Tag content */
   label: string;
   /** Tag value, must be unique */
@@ -25,8 +25,7 @@ interface Props {
 }
 
 export const SenderContextTag = (props: Props) => {
-  const { closeable, onClose, onClick, label, value, context, contextType } =
-    props;
+  const { closeable, onClose, label, value, context, contextType } = props;
 
   const [hover, setHover] = useState(false);
 
@@ -35,13 +34,14 @@ export const SenderContextTag = (props: Props) => {
       return null;
     }
     switch (contextType) {
-      case ContextType.FILE:
+      case ContextType.FILE: {
         const fileExt = (context as FileItem).name.split('.').pop() ?? '';
         const isFolder = (context as FileItem).type === 'directory';
         return <DevFileIcon fileExt={fileExt} isFolder={isFolder} />;
+      }
       case ContextType.SLASH_COMMAND:
         return <AppstoreOutlined />;
-      case ContextType.IMAGE:
+      case ContextType.IMAGE: {
         const imageSrc = (context as ImageItem).src;
         return (
           <img
@@ -52,6 +52,7 @@ export const SenderContextTag = (props: Props) => {
             draggable={false}
           />
         );
+      }
       default:
         return null;
     }
@@ -59,7 +60,7 @@ export const SenderContextTag = (props: Props) => {
 
   const popoverContent = useMemo(() => {
     switch (contextType) {
-      case ContextType.IMAGE:
+      case ContextType.IMAGE: {
         const imageSrc = (context as ImageItem).src;
         return (
           <img
@@ -68,6 +69,7 @@ export const SenderContextTag = (props: Props) => {
             draggable={false}
           />
         );
+      }
       case ContextType.FILE:
         return (context as FileItem).path;
       default:
@@ -75,17 +77,32 @@ export const SenderContextTag = (props: Props) => {
     }
   }, [contextType, context]);
 
+  const { isClickable, handleClick } = useMemo(() => {
+    const isClickable =
+      contextType === ContextType.FILE &&
+      (context as FileItem)?.type === 'file';
+
+    const handleClick = () => {
+      if (isClickable) {
+        codeViewer.actions.openFileViewer((context as FileItem).path);
+      }
+    };
+
+    return { isClickable, handleClick };
+  }, []);
+
   return (
     <div
-      className={cx('relative', { 'cursor-pointer': !!onClick })}
+      className={cx('relative', { 'cursor-pointer': isClickable })}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      onClick={() => onClick?.(value)}
+      onClick={handleClick}
     >
       {closeable && hover && (
         <div
           className="absolute cursor-pointer -top-1.5 -right-1.5 z-10"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             onClose?.(value);
           }}
         >
