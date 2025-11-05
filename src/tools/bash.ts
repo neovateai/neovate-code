@@ -336,6 +336,13 @@ async function executeCommand(
 
   let backgroundPromptEmitted = false;
 
+  // Helper function to clear background prompt when command completes
+  const clearBackgroundPromptIfNeeded = () => {
+    if (backgroundPromptEmitted && messageBus && !movedToBackgroundRef.value) {
+      messageBus.emitEvent(BASH_EVENTS.BACKGROUND_MOVED, {});
+    }
+  };
+
   const isWindows = os.platform() === 'win32';
   const tempFileName = `shell_pgrep_${crypto.randomBytes(6).toString('hex')}.tmp`;
   const tempFilePath = path.join(os.tmpdir(), tempFileName);
@@ -445,15 +452,18 @@ async function executeCommand(
 
     if (backgroundCheckResult.shouldReturn) {
       cleanupTempFile();
+      clearBackgroundPromptIfNeeded();
       return backgroundCheckResult.result;
     }
   } catch (error) {
     cleanupTempFile();
+    clearBackgroundPromptIfNeeded();
     throw error;
   }
 
   const result = await resultPromise;
   cleanupTempFile();
+  clearBackgroundPromptIfNeeded();
 
   const backgroundPIDs = extractBackgroundPIDs(
     tempFilePath,
