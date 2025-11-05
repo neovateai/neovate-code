@@ -16,14 +16,15 @@ Commands:
   create [options]              Create a new workspace worktree
   list|ls                       List all active workspaces
   delete|rm [options] <name>    Delete a workspace without merging
-  complete                      Complete workspace and merge changes
+  complete                      Complete workspace and merge changes (run from root)
   help                          Show help
 
 Workflow:
   1. Create a workspace:     ${p} workspace create
   2. Work in isolation:      cd .${p}-workspaces/<name>
-  3. When done, complete:    ${p} workspace complete (from workspace or root)
-  4. Or delete without merge: ${p} workspace delete <name>
+  3. Return to root:         cd <repository-root>
+  4. Complete workspace:     ${p} workspace complete
+  5. Or delete without merge: ${p} workspace delete <name>
 
 Examples:
   ${p} workspace create                    Create new workspace with random city name
@@ -32,13 +33,13 @@ Examples:
   ${p} workspace list                      Show all active workspaces
   ${p} workspace delete tokyo              Delete workspace named 'tokyo'
   ${p} workspace delete tokyo --force      Delete even with uncommitted changes
-  ${p} workspace complete                  Complete and merge workspace (from workspace or root)
+  ${p} workspace complete                  Complete and merge workspace (from root)
 
 Notes:
   - Workspaces are stored in .${p}-workspaces/ directory
   - Each workspace is a separate git worktree with its own branch
-  - Complete command can be run from inside a workspace or from the root directory
-  - When run from root, you can select from multiple workspaces if available
+  - Complete command must be run from the repository root directory
+  - When multiple workspaces exist, you'll be prompted to select one
       `.trim(),
   );
 }
