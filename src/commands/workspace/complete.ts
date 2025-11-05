@@ -28,9 +28,7 @@ export async function runComplete(context: Context, argv: any) {
       console.error(
         `Error: Please run this command from the repository root directory, not from inside a workspace.`,
       );
-      console.error(
-        `\nCurrent location: ${cwd}`,
-      );
+      console.error(`\nCurrent location: ${cwd}`);
       console.error(`Repository root: ${gitRoot}`);
       console.error(
         `\nNavigate to root first:\n  cd ${gitRoot}\n  ${context.productName.toLowerCase()} workspace complete`,
@@ -44,12 +42,8 @@ export async function runComplete(context: Context, argv: any) {
     const worktrees = await listWorktrees(gitRoot);
 
     if (worktrees.length === 0) {
-      console.error(
-        'Error: No active workspaces found. Create one with:',
-      );
-      console.error(
-        `  ${context.productName.toLowerCase()} workspace create`,
-      );
+      console.error('Error: No active workspaces found. Create one with:');
+      console.error(`  ${context.productName.toLowerCase()} workspace create`);
       process.exit(1);
     }
 
