@@ -115,6 +115,7 @@ class WebServer {
     await this.app.register(import('./routes/files'), {
       prefix: BASE_API_PREFIX,
       ...this.contextCreateOpts,
+      cwd: this.cwd,
     });
 
     // session
