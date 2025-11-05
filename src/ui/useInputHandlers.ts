@@ -263,11 +263,18 @@ export function useInputHandlers() {
     async (text: string) => {
       const result = await pasteManager.handleTextPaste(text);
       if (result.success && result.prompt) {
+        // If slash command suggestions are active, complete the command first
+        // before inserting the pasted text to avoid breaking the command name
+        if (slashCommands.suggestions.length > 0) {
+          const completedCommand = slashCommands.getCompletedCommand();
+          inputState.setValue(completedCommand);
+          inputState.setCursorPosition(completedCommand.length);
+        }
         return { prompt: result.prompt };
       }
       return {};
     },
-    [pasteManager],
+    [pasteManager, slashCommands, inputState],
   );
 
   const handleImagePaste = useCallback(
