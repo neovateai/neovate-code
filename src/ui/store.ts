@@ -464,7 +464,7 @@ export const useAppStore = create<AppStore>()(
           if (commandeEntry) {
             const userMessage: Message = {
               role: 'user',
-              content: message, // Use original message with placeholders for display
+              content: expandedMessage, // Use original message with placeholders for display
             };
             const command = commandeEntry.command;
             const type = command.type;
