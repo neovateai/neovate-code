@@ -5,7 +5,7 @@ import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
 import type { LoopResult, StreamResult } from '../loop';
 import type { Message, NormalizedMessage, UserMessage } from '../message';
-import type { ProvidersMap } from '../model';
+import type { ModelInfo, ProvidersMap } from '../model';
 import { Paths } from '../paths';
 import { loadSessionMessages, Session, SessionConfigManager } from '../session';
 import {
@@ -27,6 +27,12 @@ export type ApprovalResult =
   | 'approve_always_edit'
   | 'approve_always_tool'
   | 'deny';
+
+export interface BashPromptBackgroundEvent {
+  taskId: string;
+  command: string;
+  currentOutput: string;
+}
 
 type Theme = 'light' | 'dark';
 type AppStatus =
@@ -61,8 +67,9 @@ interface AppState {
   productASCIIArt: string;
   version: string;
   theme: Theme;
-  model: string | null;
+  model: ModelInfo | null;
   modelContextLimit: number;
+  initializeModelError: string | null;
   providers: ProvidersMap;
   sessionId: string | null;
   initialPrompt: string | null;
@@ -72,6 +79,7 @@ interface AppState {
   error: string | null;
   slashCommandJSX: ReactNode | null;
   planMode: boolean;
+  brainstormMode: boolean;
   bashMode: boolean;
   approvalMode: ApprovalMode;
 
@@ -128,6 +136,9 @@ interface AppState {
 
   forkModalVisible: boolean;
   forkParentUuid: string | null;
+
+  bashBackgroundPrompt: BashPromptBackgroundEvent | null;
+  thinking: { effort: 'low' | 'medium' | 'high' } | undefined;
 }
 
 type InitializeOpts = {
@@ -156,7 +167,7 @@ interface AppActions {
   clear: () => Promise<void>;
   setDraftInput: (draftInput: string) => void;
   setHistoryIndex: (historyIndex: number | null) => void;
-  togglePlanMode: () => void;
+  toggleMode: () => void;
   approvePlan: (planResult: string) => void;
   denyPlan: () => void;
   resumeSession: (sessionId: string, logFile: string) => Promise<void>;
@@ -195,6 +206,9 @@ interface AppActions {
   showForkModal: () => void;
   hideForkModal: () => void;
   fork: (targetMessageUuid: string) => Promise<void>;
+  setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => void;
+  clearBashBackgroundPrompt: () => void;
+  toggleThinking: () => void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -218,6 +232,7 @@ export const useAppStore = create<AppStore>()(
       error: null,
       slashCommandJSX: null,
       planMode: false,
+      brainstormMode: false,
       bashMode: false,
       approvalMode: 'default',
       messages: [],
@@ -247,6 +262,9 @@ export const useAppStore = create<AppStore>()(
       pastedImageMap: {},
       forkModalVisible: false,
       forkParentUuid: null,
+      thinking: undefined,
+
+      bashBackgroundPrompt: null,
 
       // Actions
       initialize: async (opts) => {
@@ -265,7 +283,10 @@ export const useAppStore = create<AppStore>()(
           productASCIIArt: response.data.productASCIIArt,
           version: response.data.version,
           model: response.data.model,
-          modelContextLimit: response.data.modelContextLimit,
+          initializeModelError: response.data.initializeModelError,
+          modelContextLimit: response.data.model
+            ? response.data.model.model.limit.context
+            : 0,
           providers: response.data.providers,
           sessionId: opts.sessionId,
           messages: opts.messages,
@@ -278,6 +299,9 @@ export const useAppStore = create<AppStore>()(
           pastedTextMap: response.data.pastedTextMap || {},
           pastedImageMap: response.data.pastedImageMap || {},
           userName: getUsername() ?? 'user',
+          thinking: response.data.model?.thinkingConfig
+            ? { effort: 'low' }
+            : undefined,
           // theme: 'light',
         });
 
@@ -368,8 +392,22 @@ export const useAppStore = create<AppStore>()(
       },
 
       send: async (message) => {
-        const { bridge, cwd, sessionId, planMode, status, pastedTextMap } =
-          get();
+        const {
+          bridge,
+          cwd,
+          sessionId,
+          planMode,
+          brainstormMode,
+          status,
+          pastedTextMap,
+        } = get();
+
+        if (brainstormMode) {
+          message = `/spec:brainstorm ${message}`;
+          set({
+            brainstormMode: false,
+          });
+        }
 
         bridge.request('utils.telemetry', {
           cwd,
@@ -617,6 +655,14 @@ export const useAppStore = create<AppStore>()(
         }
       },
 
+      setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => {
+        set({ bashBackgroundPrompt: prompt });
+      },
+
+      clearBashBackgroundPrompt: () => {
+        set({ bashBackgroundPrompt: null });
+      },
+
       sendMessage: async (opts: {
         message: string | null;
         planMode?: boolean;
@@ -658,6 +704,7 @@ export const useAppStore = create<AppStore>()(
           model: opts.model,
           attachments,
           parentUuid: get().forkParentUuid || undefined,
+          thinking: get().thinking,
         });
         if (response.success) {
           set({
@@ -693,6 +740,7 @@ export const useAppStore = create<AppStore>()(
           processingStartTime: null,
           processingTokens: 0,
           retryInfo: null,
+          bashBackgroundPrompt: null,
         });
       },
 
@@ -746,8 +794,15 @@ export const useAppStore = create<AppStore>()(
         set({ historyIndex });
       },
 
-      togglePlanMode: () => {
-        set({ planMode: !get().planMode });
+      toggleMode: () => {
+        const { planMode, brainstormMode } = get();
+        if (!planMode && !brainstormMode) {
+          set({ planMode: true });
+        } else if (planMode && !brainstormMode) {
+          set({ planMode: false, brainstormMode: true });
+        } else {
+          set({ planMode: false, brainstormMode: false });
+        }
       },
 
       approvePlan: (planResult: string) => {
@@ -826,10 +881,13 @@ export const useAppStore = create<AppStore>()(
         // Get the modelContextLimit for the selected model
         const modelsResponse = await bridge.request('models.list', { cwd });
         if (modelsResponse.success) {
+          const currentModel = modelsResponse.data.currentModel;
           set({
-            model,
-            modelContextLimit:
-              modelsResponse.data.currentModelInfo.modelContextLimit,
+            model: currentModel,
+            modelContextLimit: currentModel?.model.limit.context || 0,
+            thinking: currentModel?.thinkingConfig
+              ? { effort: 'low' }
+              : undefined,
           });
         }
       },
@@ -1024,6 +1082,23 @@ export const useAppStore = create<AppStore>()(
             pastedImageMap: map,
           });
         }
+      },
+
+      toggleThinking: () => {
+        const { thinking: current, model } = get();
+        if (!model) return;
+        if (!model.thinkingConfig) return;
+        let next: { effort: 'low' | 'medium' | 'high' } | undefined;
+        if (!current) {
+          next = { effort: 'low' };
+        } else if (current.effort === 'low') {
+          next = { effort: 'medium' };
+        } else if (current.effort === 'medium') {
+          next = { effort: 'high' };
+        } else {
+          next = undefined;
+        }
+        set({ thinking: next });
       },
     }),
     { name: 'app-store' },

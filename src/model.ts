@@ -13,6 +13,7 @@ import type { ProviderConfig } from './config';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
 import { GithubProvider } from './providers/githubCopilot';
+import { getThinkingConfig } from './thinking-config';
 
 export interface ModelModalities {
   input: ('text' | 'image' | 'audio' | 'video' | 'pdf')[];
@@ -207,11 +208,24 @@ export const models: ModelMap = {
     open_weights: true,
     limit: { context: 262144, output: 66536 },
   },
+  'qwen3-coder-plus': {
+    name: 'Qwen3 Coder Plus',
+    attachment: false,
+    reasoning: false,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-04',
+    release_date: '2025-07-23',
+    last_updated: '2025-07-23',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 1048576, output: 65536 },
+  },
   'qwen3-235b-a22b-07-25': {
     name: 'Qwen3 235B A22B Instruct 2507',
     shortName: 'Qwen3',
     attachment: false,
-    reasoning: false,
+    reasoning: true,
     temperature: true,
     tool_call: true,
     knowledge: '2025-04',
@@ -1043,6 +1057,7 @@ export const providers: ProvidersMap = {
     doc: 'https://iflow.cn/',
     models: {
       'qwen3-coder': models['qwen3-coder-480b-a35b-instruct'],
+      'qwen3-coder-plus': models['qwen3-coder-plus'],
       'kimi-k2': models['kimi-k2'],
       'kimi-k2-0905': models['kimi-k2-0905'],
       'deepseek-v3': models['deepseek-v3-0324'],
@@ -1051,6 +1066,7 @@ export const providers: ProvidersMap = {
       'deepseek-r1': models['deepseek-r1-0528'],
       'glm-4.5': models['glm-4.5'],
       'glm-4.6': models['glm-4.6'],
+      'qwen3-max': models['qwen3-max'],
       'qwen3-max-preview': models['qwen3-max'],
     },
     createModel: defaultModelCreator,
@@ -1262,6 +1278,7 @@ export type ModelInfo = {
   provider: Provider;
   model: Omit<Model, 'cost'>;
   m: LanguageModelV2;
+  thinkingConfig?: Record<string, any>;
 };
 
 function mergeConfigProviders(
@@ -1324,18 +1341,34 @@ export async function resolveModelWithContext(
     type: PluginHookType.SeriesLast,
   });
   const modelName = name || context.config.model;
-  const model = modelName
-    ? await resolveModel(
-        modelName,
-        finalProviders,
-        hookedModelAlias,
-        context.paths.globalConfigDir,
-      )
-    : null;
+  let model = null;
+  let error = null;
+  try {
+    model = modelName
+      ? await resolveModel(
+          modelName,
+          finalProviders,
+          hookedModelAlias,
+          context.paths.globalConfigDir,
+        )
+      : null;
+  } catch (err) {
+    error = err;
+  }
+
+  // Add thinking config to model if available
+  if (model) {
+    const thinkingConfig = getThinkingConfig(model, 'low');
+    if (thinkingConfig) {
+      model.thinkingConfig = thinkingConfig;
+    }
+  }
+
   return {
     providers: finalProviders,
     modelAlias,
     model,
+    error,
   };
 }
 

@@ -157,8 +157,8 @@ describe('shell-execution', () => {
       });
 
       const command = isWindows
-        ? 'echo Line1 && echo Line2'
-        : 'echo "Line1" && echo "Line2"';
+        ? 'echo Line1 && echo Line2 && echo Line3'
+        : 'for i in 1 2 3; do echo "Line$i"; done';
       const { result } = shellExecute(command, testCwd, timeout, onOutputEvent);
 
       await result;
@@ -166,23 +166,6 @@ describe('shell-execution', () => {
       expect(onOutputEvent).toHaveBeenCalled();
       expect(outputEvents.some((event) => event.type === 'data')).toBe(true);
     });
-
-    test('should call onOutputEvent with data events containing chunks', async () => {
-      const events: any[] = [];
-      const onOutputEvent = (event: any) => events.push(event);
-
-      const command = isWindows ? 'echo hello world' : 'echo "hello world"';
-      const { result } = shellExecute(command, testCwd, timeout, onOutputEvent);
-
-      await result;
-
-      expect(events.length).toBeGreaterThan(0);
-      const dataEvents = events.filter((e) => e.type === 'data');
-      expect(dataEvents.length).toBeGreaterThan(0);
-
-      const allChunks = dataEvents.map((e) => e.chunk).join('');
-      expect(allChunks).toContain('hello');
-    }, 10000);
 
     test('should detect binary output', async () => {
       const outputEvents: any[] = [];

@@ -40,6 +40,9 @@ export class Project {
       signal?: AbortSignal;
       attachments?: ImagePart[];
       parentUuid?: string;
+      thinking?: {
+        effort: 'low' | 'medium' | 'high';
+      };
     } = {},
   ) {
     let tools = await resolveTools({
@@ -89,6 +92,9 @@ export class Project {
       signal?: AbortSignal;
       attachments?: ImagePart[];
       parentUuid?: string;
+      thinking?: {
+        effort: 'low' | 'medium' | 'high';
+      };
     } = {},
   ) {
     let tools = await resolveTools({
@@ -140,6 +146,9 @@ export class Project {
       systemPrompt?: string;
       attachments?: ImagePart[];
       parentUuid?: string;
+      thinking?: {
+        effort: 'low' | 'medium' | 'high';
+      };
     } = {},
   ) {
     const startTime = new Date();
@@ -238,6 +247,7 @@ export class Project {
       llmsContexts: llmsContext.messages,
       signal: opts.signal,
       autoCompact: this.context.config.autoCompact,
+      thinking: opts.thinking,
       onMessage: async (message) => {
         const normalizedMessage = {
           ...message,

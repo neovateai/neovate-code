@@ -24,7 +24,7 @@ export function useInputHandlers() {
     draftInput,
     setDraftInput,
     setHistoryIndex,
-    togglePlanMode,
+    toggleMode,
     clearQueue,
     setBashMode,
   } = useAppStore();
@@ -150,14 +150,14 @@ export function useInputHandlers() {
       }
       // 4. switch mode
       if (isShiftTab) {
-        togglePlanMode();
+        toggleMode();
       }
     },
     [
       slashCommands,
       fileSuggestion,
       inputState,
-      togglePlanMode,
+      toggleMode,
       setForceTabTrigger,
       applyFileSuggestion,
       canTriggerTabSuggestion,

@@ -3,6 +3,7 @@ import SelectInput from 'ink-select-input';
 import React, { useCallback } from 'react';
 import { ActivityIndicator } from './ActivityIndicator';
 import { ApprovalModal } from './ApprovalModal';
+import { BackgroundPrompt } from './BackgroundPrompt';
 import { ChatInput } from './ChatInput';
 import { Debug } from './Debug';
 import { ExitHint } from './ExitHint';
@@ -74,6 +75,7 @@ export function App() {
   return (
     <Box flexDirection="column" key={`${forceRerender}-${forkParentUuid}`}>
       <Messages />
+      <BackgroundPrompt />
       <PlanResult />
       <ActivityIndicator />
       <QueueDisplay />
