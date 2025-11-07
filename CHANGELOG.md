@@ -1,3 +1,32 @@
+## 0.16.0
+
+`2025-11-07`
+
+- fix: use expanded message content in user message display by [@阿平](https://github.com/阿平) in [#415](https://github.com/umijs/takumi/pull/415)
+- fix(browser): width exceeds and horizontal scrollbar appears by [@Cloudyan](https://github.com/Cloudyan) in [#414](https://github.com/umijs/takumi/pull/414)
+- feat: add polaris-alpha model with 256k context and multimodal support by [@sorrycc](https://github.com/sorrycc)
+- feat: add kimi-k2-thinking and kimi-k2-thinking-turbo models by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename biome:format script to format by @chencheng (云谦) in [#409](https://github.com/umijs/takumi/pull/409)
+- feat: add safe JSON parsing for tool call inputs by [@阿平](https://github.com/阿平) in [#408](https://github.com/umijs/takumi/pull/408)
+- feat: add language switching support to review command by @chencheng (云谦) in [#407](https://github.com/umijs/takumi/pull/407)
+- style: clean up console error message formatting in workspace complete command by [@sorrycc](https://github.com/sorrycc)
+- feat: allow workspace complete command to run from root directory by @chencheng (云谦) in [#406](https://github.com/umijs/takumi/pull/406)
+- feat: add language switching support to spec commands by @chencheng (云谦) in [#405](https://github.com/umijs/takumi/pull/405)
+- feat: add session ID display to status line by [@阿平](https://github.com/阿平) in [#403](https://github.com/umijs/takumi/pull/403)
+- fix: add background prompt cleanup when bash commands complete by [@阿平](https://github.com/阿平) in [#402](https://github.com/umijs/takumi/pull/402)
+- feat: add message normalization for compacting chat history by [@阿平](https://github.com/阿平) in [#393](https://github.com/umijs/takumi/pull/393)
+- refactor: use configManager.projectConfig instead of context.config by [@YK菌](https://github.com/YK菌) in [#399](https://github.com/umijs/takumi/pull/399)
+- feat: add brainstorm mode by @chencheng (云谦) in [#398](https://github.com/umijs/takumi/pull/398)
+- feat: add error handling for model initialization and display in UI by @chencheng (云谦) in [#397](https://github.com/umijs/takumi/pull/397)
+- feat: add golden border for high thinking effort with priority over mode colors by @chencheng (云谦) in [#396](https://github.com/umijs/takumi/pull/396)
+- fix: remove spaces from MCP tool names by [@阿平](https://github.com/阿平) in [#392](https://github.com/umijs/takumi/pull/392)
+- refactor: update model handling and thinking config integration by [@sorrycc](https://github.com/sorrycc)
+- feat(commit): add staged file list to commit message prompt by [@sorrycc](https://github.com/sorrycc)
+- feat: add interactive bash background execution prompt with ctrl+b shortcut by [@阿平](https://github.com/阿平) in [#367](https://github.com/umijs/takumi/pull/367)
+- feat: add /bug command for GitHub issue reporting by [@Din](https://github.com/Din) in [#390](https://github.com/umijs/takumi/pull/390)
+- feat: add incomplete tool use detection and handling on session cancel by [@阿平](https://github.com/阿平) in [#374](https://github.com/umijs/takumi/pull/374)
+
+
 ## 0.15.0
 
 `2025-11-02`
