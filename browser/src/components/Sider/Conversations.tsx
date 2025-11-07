@@ -20,6 +20,7 @@ const useStyle = createStyles(({ token, css }) => {
 
       .ant-conversations {
         padding: 0;
+        overflow: hidden;
 
         .ant-conversations-group {
           margin-bottom: 16px;
