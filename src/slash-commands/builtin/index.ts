@@ -2,6 +2,7 @@ import type { SlashCommand } from '../types';
 import { createBugCommand } from './bug';
 import { clearCommand } from './clear';
 import { compactCommand } from './compact';
+import contextCommand from './context';
 import { exitCommand } from './exit';
 import { helpCommand } from './help';
 import { createInitCommand } from './init';
@@ -37,6 +38,7 @@ export function createBuiltinCommands(opts: {
     createTerminalSetupCommand(),
     createBugCommand(),
     compactCommand,
+    contextCommand,
     statusCommand,
     brainstormCommand,
     writePlanCommand,
