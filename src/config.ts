@@ -62,6 +62,7 @@ export type Config = {
   outputFormat?: 'text' | 'stream-json' | 'json';
   autoUpdate?: boolean;
   browser?: boolean;
+  temperature?: number;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -90,6 +91,7 @@ const VALID_CONFIG_KEYS = [
   'autoUpdate',
   'provider',
   'browser',
+  'temperature',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider'];
