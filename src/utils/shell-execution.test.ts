@@ -156,9 +156,10 @@ describe('shell-execution', () => {
         outputEvents.push(event);
       });
 
+      // Use a command with forced flush to ensure streaming events are triggered
       const command = isWindows
         ? 'echo Line1 && echo Line2 && echo Line3'
-        : 'for i in 1 2 3; do echo "Line$i"; done';
+        : 'for i in 1 2 3; do echo "Line$i"; sleep 0.01; done';
       const { result } = shellExecute(command, testCwd, timeout, onOutputEvent);
 
       await result;
