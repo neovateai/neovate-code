@@ -98,6 +98,7 @@ type RunLoopOpts = {
   thinking?: {
     effort: 'low' | 'medium' | 'high';
   };
+  temperature?: number;
   onTextDelta?: (text: string) => Promise<void>;
   onText?: (text: string) => Promise<void>;
   onReasoning?: (text: string) => Promise<void>;
@@ -247,6 +248,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
           toolChoice: { type: 'auto' },
           abortSignal: abortController.signal,
           ...thinkingConfig,
+          ...(opts.temperature !== undefined && { temperature: opts.temperature }),
         });
         opts.onStreamResult?.({
           requestId,
