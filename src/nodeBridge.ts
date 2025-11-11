@@ -511,6 +511,7 @@ class NodeHandlerRegistry {
             productASCIIArt: context.productASCIIArt,
             version: context.version,
             model,
+            planModel: context.config.planModel,
             initializeModelError: error instanceof Error ? error.message : null,
             providers: normalizeProviders(providers, context),
             approvalMode: context.config.approvalMode,
