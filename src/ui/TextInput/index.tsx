@@ -28,6 +28,11 @@ export type Props = {
   readonly onHistoryUp?: () => void;
 
   /**
+   * Optional callback for handling queued messages on option+up arrow
+   */
+  readonly onQueuedMessagesUp?: () => void;
+
+  /**
    * Optional callback for handling history navigation on down arrow at end of input
    */
   readonly onHistoryDown?: () => void;
@@ -173,6 +178,7 @@ export default function TextInput({
   onSubmit,
   onExit,
   onHistoryUp,
+  onQueuedMessagesUp,
   onHistoryDown,
   onExitMessage,
   onMessage,
@@ -201,6 +207,7 @@ export default function TextInput({
     onEscape,
     onHistoryReset,
     onHistoryUp,
+    onQueuedMessagesUp,
     onHistoryDown,
     focus,
     mask,

@@ -31,6 +31,7 @@ type UseTextInputProps = {
   onMessage?: (show: boolean, message?: string) => void;
   onEscape?: () => void;
   onHistoryUp?: () => void;
+  onQueuedMessagesUp?: () => void;
   onHistoryDown?: () => void;
   onHistoryReset?: () => void;
   focus?: boolean;
@@ -69,6 +70,7 @@ export function useTextInput({
   onMessage,
   onEscape,
   onHistoryUp,
+  onQueuedMessagesUp,
   onHistoryDown,
   onHistoryReset,
   mask = '',
@@ -276,10 +278,13 @@ export function useTextInput({
     }
     const cursorUp = cursor.up();
     if (cursorUp.equals(cursor)) {
-      // already at beginning
       onHistoryUp?.();
     }
     return cursorUp;
+  }
+  function queuedMessagesUp() {
+    onQueuedMessagesUp?.();
+    return cursor;
   }
   function downOrHistoryDown() {
     if (disableCursorMovementForUpDownKeys) {
@@ -313,8 +318,12 @@ export function useTextInput({
         return () => cursor.endOfLine();
       case key.pageUp:
         return () => cursor.startOfLine();
-      case key.meta:
+      case key.meta: {
+        if (key.upArrow) {
+          return queuedMessagesUp;
+        }
         return handleMeta;
+      }
       case key.return:
         return () => handleEnter(key);
       case key.tab:

@@ -248,7 +248,9 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
           toolChoice: { type: 'auto' },
           abortSignal: abortController.signal,
           ...thinkingConfig,
-          ...(opts.temperature !== undefined && { temperature: opts.temperature }),
+          ...(opts.temperature !== undefined && {
+            temperature: opts.temperature,
+          }),
         });
         opts.onStreamResult?.({
           requestId,
