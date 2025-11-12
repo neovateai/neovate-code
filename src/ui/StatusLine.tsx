@@ -124,7 +124,7 @@ function StatusMain() {
         [
         {model ? (
           `${modelDesc}${
-            planModel && planModel !== modelDesc ? ` | plan: ${planModel}` : ''
+            '' // planModel && planModel !== modelDesc ? ` | plan: ${planModel}` : ''
           }`
         ) : (
           <Text color="red">use /model to select a model</Text>
