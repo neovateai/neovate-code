@@ -322,6 +322,7 @@ export async function runNeovate(opts: {
     'config',
     'commit',
     'mcp',
+    'log',
     'run',
     'server',
     'update',
@@ -341,6 +342,11 @@ export async function runNeovate(opts: {
       case 'mcp': {
         const { runMCP } = await import('./commands/mcp');
         await runMCP(context);
+        break;
+      }
+      case 'log': {
+        const { runLog } = await import('./commands/log');
+        await runLog(context);
         break;
       }
       case 'run': {
