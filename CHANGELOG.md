@@ -1,3 +1,21 @@
+## 0.17.0
+
+`2025-11-12`
+
+- feat: add log command to view session logs in HTML by [@sorrycc](https://github.com/sorrycc)
+- feat: add spec:save-design slash command to save brainstorming sessions as design documents by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance log command with tool details and optimized request loading by [@sorrycc](https://github.com/sorrycc)
+- Merge branch 'workspace/log-command' by [@sorrycc](https://github.com/sorrycc)
+- feat: add log command to view session logs in HTML format by [@sorrycc](https://github.com/sorrycc)
+- feat: add anthropic prompt caching for sonnet and opus models by @chencheng (云谦) in [#421](https://github.com/umijs/takumi/pull/421)
+- fix: remove plan model display in status line by [@sorrycc](https://github.com/sorrycc)
+- feat: show plan model in status line when configured by [@sorrycc](https://github.com/sorrycc)
+- feat: change queued messages edit shortcut from up to option+up by [@sorrycc](https://github.com/sorrycc)
+- feat: add temperature configuration to app by @chencheng (云谦) in [#419](https://github.com/umijs/takumi/pull/419)
+- feat: add periodic background check with interval-based monitoring by [@阿平](https://github.com/阿平) in [#413](https://github.com/umijs/takumi/pull/413)
+- refactor: improve image paste handling and code quality in useTextInput by [@阿平](https://github.com/阿平) in [#412](https://github.com/umijs/takumi/pull/412)
+
+
 ## 0.16.0
 
 `2025-11-07`
