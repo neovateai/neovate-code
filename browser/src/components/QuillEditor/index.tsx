@@ -19,9 +19,9 @@ import {
   getInsertText,
   getRemovedTakumiContexts,
   getTextWithTakumiContext,
+  isEditorEmpty,
   isInsertingAt,
   isInsertingSlash,
-  isEditorEmpty,
 } from './utils';
 
 interface ISearchInfo {
@@ -165,9 +165,8 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
       });
 
       quillInstance.on('text-change', (delta, _oldContent, source) => {
+        const currentContents = quillInstance.getContents();
         if (source === 'user') {
-          const currentContents = quillInstance.getContents();
-
           if (isInsertingAt(delta) && searchInfoRef.current === null) {
             const selection = quillInstance.getSelection();
             if (selection) {
@@ -208,18 +207,18 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
             onSearch?.(searchText);
           }
 
-          const removedTakumiContexts = getRemovedTakumiContexts(
-            oldContentsRef.current,
-            currentContents,
-          );
-
-          onDeleteContexts?.(removedTakumiContexts.map((ctx) => ctx.value));
-
           const currentText = getTextWithTakumiContext(currentContents);
 
           onChange?.(makeChangeEvent(currentText, editorRef.current));
           onQuillChange?.(currentText, currentContents);
         }
+        const removedTakumiContexts = getRemovedTakumiContexts(
+          oldContentsRef.current,
+          currentContents,
+        );
+
+        onDeleteContexts?.(removedTakumiContexts.map((ctx) => ctx.value));
+
         oldContentsRef.current = quillInstance.getContents();
       });
 
