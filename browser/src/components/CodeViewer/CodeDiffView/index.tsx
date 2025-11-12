@@ -1,9 +1,9 @@
-import { createStyles } from 'antd-style';
 import { forwardRef, useEffect, useState } from 'react';
 import { CodeRenderer } from '@/components/CodeRenderer/CodeRenderer';
 import { useClipboard } from '@/hooks/useClipboard';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffToolbar from '../DiffToolbar';
+import styles from './index.module.css';
 
 interface CodeDiffViewProps {
   item: CodeDiffViewerTabItem;
@@ -16,36 +16,9 @@ export interface CodeDiffViewRef {
   jumpToLine: (lineCount: number) => void;
 }
 
-const useStyle = createStyles(
-  ({ css }, { maxHeight }: { maxHeight?: number }) => {
-    return {
-      container: css`
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        ${
-          maxHeight
-            ? css`
-              max-height: ${maxHeight}px;
-            `
-            : ''
-        }
-      `,
-      editor: css`
-        height: 100%;
-        flex: 1;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      `,
-    };
-  },
-);
-
 const CodeDiffView = forwardRef<CodeDiffViewRef, CodeDiffViewProps>(
   (props, ref) => {
     const { item, maxHeight, hideToolBar } = props;
-    const { styles } = useStyle({ maxHeight });
     const [isCopySuccess, setIsCopySuccess] = useState(false);
     const { writeText } = useClipboard();
 
@@ -68,7 +41,10 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, CodeDiffViewProps>(
     }, [isCopySuccess]);
 
     return (
-      <div className={styles.container}>
+      <div
+        className={styles.container}
+        style={maxHeight ? { maxHeight: `${maxHeight}px` } : {}}
+      >
         {!hideToolBar && (
           <DiffToolbar
             onCopy={handleCopy}

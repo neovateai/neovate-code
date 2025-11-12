@@ -93,11 +93,17 @@ export function useShiki(): UseShikiReturn {
         releaseShikiHighlighter();
 
         if (mounted) {
-          setError(
+          console.error('Failed to initialize Shiki highlighter:', err);
+          const userFriendlyError =
             err instanceof Error
-              ? err
-              : new Error('Failed to initialize highlighter'),
-          );
+              ? new Error(
+                  `Code highlighting is temporarily unavailable: ${err.message}`,
+                )
+              : new Error(
+                  'Code highlighting is temporarily unavailable. Please refresh the page and try again.',
+                );
+
+          setError(userFriendlyError);
         }
       }
     };

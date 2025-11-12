@@ -235,10 +235,6 @@ export const actions = {
    * Simplified API to open a file in viewer - only requires file path
    * Automatically reads file content using the backend file API
    */
-  /**
-   * Simplified API to open a file in viewer - only requires file path
-   * Automatically reads file content using the backend file API
-   */
   async openFileViewer(filePath: string) {
     try {
       const language = inferFileType(filePath);
@@ -250,9 +246,15 @@ export const actions = {
           path: filePath,
           language,
         });
+      } else {
+        // Handle API error response
+        throw new Error(response.message || 'Failed to read file content');
       }
     } catch (error) {
       console.error('Failed to open file in viewer:', error);
+
+      // Interface already shows error notifications, so we just log the error
+      // and don't open the viewer for failed file loads
     }
   },
 };

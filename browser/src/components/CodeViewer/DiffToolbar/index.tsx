@@ -12,7 +12,7 @@ interface Props {
 }
 
 const DiffToolbar = (props: Props) => {
-  const { item, onCopy, isCopySuccess = false } = props;
+  const { onCopy, isCopySuccess = false } = props;
   const { t } = useTranslation();
 
   return (

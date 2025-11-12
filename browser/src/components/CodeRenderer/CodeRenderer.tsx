@@ -82,7 +82,7 @@ const useStyles = createStyles(({ css }) => ({
       margin: 0;
       padding: 18px 18px;
       background: transparent;
-      overflow: visible;
+      overflow-x: auto;
       width: fit-content;
       min-width: 100%;
     }
@@ -95,7 +95,7 @@ const useStyles = createStyles(({ css }) => ({
       letter-spacing: 0;
       display: block;
       white-space: pre;
-      overflow: visible;
+      overflow-x: auto;
       background: transparent;
       color: #24292f;
       width: fit-content;
