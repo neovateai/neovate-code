@@ -108,10 +108,9 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
     const { t } = useTranslation();
 
     const [selectedFirstKey, setSelectedFirstKey] = useState<string>();
-    const finalSelectedFirstKey = useMemo(
-      () => controlledSelectedFirstKey ?? selectedFirstKey,
-      [controlledSelectedFirstKey, selectedFirstKey],
-    );
+    const effectiveSelectedFirstKey =
+      controlledSelectedFirstKey ?? selectedFirstKey;
+
     const isControlled = useMemo(
       () => controlledSelectedFirstKey !== undefined,
       [controlledSelectedFirstKey],
@@ -135,15 +134,15 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
         return searchResults;
       } else {
         return (
-          items.find((item) => item.value === finalSelectedFirstKey)
+          items.find((item) => item.value === effectiveSelectedFirstKey)
             ?.children || []
         );
       }
-    }, [items, searchResults, finalSelectedFirstKey]);
+    }, [items, searchResults, effectiveSelectedFirstKey]);
 
     const currentList = useMemo(
-      () => (finalSelectedFirstKey ? secondLevelList : firstLevelList),
-      [firstLevelList, finalSelectedFirstKey, secondLevelList],
+      () => (effectiveSelectedFirstKey ? secondLevelList : firstLevelList),
+      [firstLevelList, effectiveSelectedFirstKey, secondLevelList],
     );
 
     const { attachedContexts } = useSnapshot(context.state);
@@ -156,13 +155,13 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
     const isSecondItemSelected = useCallback(
       (val: string) => {
         return (
-          finalSelectedFirstKey &&
-          selectedContextMap?.[finalSelectedFirstKey]?.some(
+          effectiveSelectedFirstKey &&
+          selectedContextMap?.[effectiveSelectedFirstKey]?.some(
             (secondItem) => secondItem.value === val,
           )
         );
       },
-      [finalSelectedFirstKey, selectedContextMap],
+      [effectiveSelectedFirstKey, selectedContextMap],
     );
 
     const clearSearch = useCallback(
@@ -211,10 +210,10 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
                 break;
               }
 
-              if (finalSelectedFirstKey) {
+              if (effectiveSelectedFirstKey) {
                 if (!isSecondItemSelected(selectedItem.value)) {
                   onSelect?.(
-                    finalSelectedFirstKey,
+                    effectiveSelectedFirstKey,
                     selectedItem.value,
                     selectedItem.contextItem,
                   );
@@ -230,7 +229,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
             break;
           case 'Escape':
             event.preventDefault();
-            if (finalSelectedFirstKey) {
+            if (effectiveSelectedFirstKey) {
               if (!isControlled) {
                 setSelectedFirstKey(undefined);
               } else {
@@ -246,7 +245,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       },
       [
         currentList,
-        finalSelectedFirstKey,
+        effectiveSelectedFirstKey,
         isControlled,
         selectedIndex,
         onSelect,
@@ -267,7 +266,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
 
     const renderItem = (item: SuggestionItem, index: number) => {
       const isSelected = selectedIndex === index;
-      const isFirstLevel = !finalSelectedFirstKey;
+      const isFirstLevel = !effectiveSelectedFirstKey;
       const isSecondSeleted = isSecondItemSelected(item.value);
 
       const isDisabled = !!item.disabled;
@@ -286,8 +285,12 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
             if (isDisabled) {
               e.preventDefault();
             } else {
-              if (finalSelectedFirstKey) {
-                onSelect?.(finalSelectedFirstKey, item.value, item.contextItem);
+              if (effectiveSelectedFirstKey) {
+                onSelect?.(
+                  effectiveSelectedFirstKey,
+                  item.value,
+                  item.contextItem,
+                );
                 setSelectedFirstKey(undefined);
                 onOpenChange?.(false);
                 onLostFocus?.();
@@ -309,7 +312,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
                     : undefined
                 }
                 renderTooltip={() => {
-                  switch (finalSelectedFirstKey) {
+                  switch (effectiveSelectedFirstKey) {
                     case ContextType.FILE:
                       return (
                         <TooltipRender.File
@@ -354,19 +357,19 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
 
     const handleInputChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (finalSelectedFirstKey) {
+        if (effectiveSelectedFirstKey) {
           const searchResults = onSearch?.(
-            finalSelectedFirstKey,
+            effectiveSelectedFirstKey,
             e.target.value,
           );
           setSearchResults(searchResults || undefined);
         }
       },
-      [onSearch, finalSelectedFirstKey],
+      [onSearch, effectiveSelectedFirstKey],
     );
 
     const ListHeader = useMemo(() => {
-      if (finalSelectedFirstKey) {
+      if (effectiveSelectedFirstKey) {
         return (
           <div className="flex items-center justify-between h-5.5 pb-1 px-3.5 w-full">
             {!isControlled && (
@@ -380,7 +383,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
               <div className="w-full ml-2">
                 {
                   firstLevelList.find(
-                    (item) => item.value === finalSelectedFirstKey,
+                    (item) => item.value === effectiveSelectedFirstKey,
                   )?.label
                 }
               </div>
@@ -398,7 +401,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       }
       return null;
     }, [
-      finalSelectedFirstKey,
+      effectiveSelectedFirstKey,
       isControlled,
       firstLevelList,
       handleBackClick,
@@ -415,7 +418,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
           popupRef.current.focus();
         }
 
-        if (finalSelectedFirstKey) {
+        if (effectiveSelectedFirstKey) {
           if (searchControl) {
             searchControl.onSearchStart?.();
           } else {
@@ -428,22 +431,22 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       }
     }, [
       open,
-      finalSelectedFirstKey,
+      effectiveSelectedFirstKey,
       currentList,
       searchControl?.onSearchStart,
     ]);
 
     useEffect(() => {
       if (searchControl?.searchText) {
-        if (finalSelectedFirstKey) {
+        if (effectiveSelectedFirstKey) {
           const searchResults = onSearch?.(
-            finalSelectedFirstKey,
+            effectiveSelectedFirstKey,
             searchControl?.searchText,
           );
           setSearchResults(searchResults || undefined);
         }
       }
-    }, [searchControl?.searchText, finalSelectedFirstKey]); // Don't add onSearch here
+    }, [searchControl?.searchText, effectiveSelectedFirstKey]); // Don't add onSearch here
 
     // Handle click outside to close popup
     useEffect(() => {
@@ -454,8 +457,8 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
           popupRef.current &&
           !popupRef.current.contains(event.target as Node)
         ) {
-          if (finalSelectedFirstKey) {
-            clearSearch(finalSelectedFirstKey);
+          if (effectiveSelectedFirstKey) {
+            clearSearch(effectiveSelectedFirstKey);
           }
           setSelectedFirstKey(undefined);
           setSelectedIndex(-1);
@@ -468,7 +471,13 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
-    }, [open, onOpenChange, finalSelectedFirstKey, onLostFocus, clearSearch]);
+    }, [
+      open,
+      onOpenChange,
+      effectiveSelectedFirstKey,
+      onLostFocus,
+      clearSearch,
+    ]);
 
     // Scroll selected item into view
     useEffect(() => {
@@ -537,7 +546,7 @@ const SuggestionList = forwardRef<ISuggestionListRef, ISuggestionListProps>(
               dataSource={currentList}
               renderItem={renderItem}
             />
-            <ListFooter selectedFirstKey={finalSelectedFirstKey} />
+            <ListFooter selectedFirstKey={effectiveSelectedFirstKey} />
           </div>
         )}
         trigger={[]}

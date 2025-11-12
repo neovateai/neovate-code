@@ -82,7 +82,7 @@ const ChatSender: React.FC = () => {
     setInputText('');
     sender.actions.updatePrompt('');
     sender.actions.updateDelta(new Delta());
-    quill.current?.setText('\n', 'user');
+    quill.current?.setText('\n');
   };
 
   const handleEnterPress = () => {
