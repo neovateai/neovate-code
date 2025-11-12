@@ -1,8 +1,8 @@
-import fs from 'fs';
-import path from 'pathe';
-import { render, Box, Text } from 'ink';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { exec } from 'child_process';
+import fs from 'fs';
+import { render, Box, Text } from 'ink';
+import path from 'pathe';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Context } from '../context';
 import PaginatedGroupSelectInput from '../ui/PaginatedGroupSelectInput';
 
@@ -61,14 +61,23 @@ function loadAllSessionMessages(logPath: string): NormalizedMessage[] {
   return items.filter((i) => i && i.type === 'message') as NormalizedMessage[];
 }
 
-function loadAllRequestLogs(requestsDir: string): {
+function loadAllRequestLogs(
+  requestsDir: string,
+  messages: NormalizedMessage[],
+): {
   requestId: string;
   filePath: string;
   entries: RequestLogEntry[];
-  firstTimestamp?: number;
-  lastTimestamp?: number;
 }[] {
   if (!fs.existsSync(requestsDir)) return [];
+  const assistantUuids = new Set(
+    messages
+      .filter((m) => m.role === 'assistant')
+      .map((m) => m.uuid)
+      .filter(Boolean),
+  );
+  if (assistantUuids.size === 0) return [];
+
   const files = fs
     .readdirSync(requestsDir)
     .filter((f) => f.endsWith('.jsonl'))
@@ -78,57 +87,20 @@ function loadAllRequestLogs(requestsDir: string): {
     requestId: string;
     filePath: string;
     entries: RequestLogEntry[];
-    firstTimestamp?: number;
-    lastTimestamp?: number;
   }[] = [];
+
   for (const file of files) {
-    const entries = readJsonlFile(file) as RequestLogEntry[];
-    let firstTs: number | undefined;
-    let lastTs: number | undefined;
-    for (const e of entries) {
-      const ts = Date.parse((e as any).timestamp || '');
-      if (!Number.isNaN(ts)) {
-        if (firstTs === undefined || ts < firstTs) firstTs = ts;
-        if (lastTs === undefined || ts > lastTs) lastTs = ts;
-      }
-    }
     const requestId = path.basename(file, '.jsonl');
+    if (!assistantUuids.has(requestId)) continue;
+    const entries = readJsonlFile(file) as RequestLogEntry[];
     results.push({
       requestId,
       filePath: file,
       entries,
-      firstTimestamp: firstTs,
-      lastTimestamp: lastTs,
     });
   }
-  return results;
-}
 
-function findNearestRequestForAssistant(
-  assistantTs: number,
-  all: ReturnType<typeof loadAllRequestLogs>,
-) {
-  let best: {
-    delta: number;
-    item: (typeof all)[number] | null;
-  } = { delta: Number.POSITIVE_INFINITY, item: null };
-  for (const item of all) {
-    if (item.firstTimestamp === undefined || item.lastTimestamp === undefined)
-      continue;
-    // Prefer a request whose time window envelopes the assistant timestamp,
-    // otherwise pick the nearest by absolute delta to either bound.
-    if (assistantTs >= item.firstTimestamp && assistantTs <= item.lastTimestamp) {
-      return item;
-    }
-    const delta = Math.min(
-      Math.abs(assistantTs - item.firstTimestamp),
-      Math.abs(assistantTs - item.lastTimestamp),
-    );
-    if (delta < best.delta) {
-      best = { delta, item };
-    }
-  }
-  return best.item;
+  return results;
 }
 
 function pretty(obj: any) {
@@ -137,6 +109,103 @@ function pretty(obj: any) {
   } catch {
     return String(obj);
   }
+}
+
+type RenderableItem =
+  | { type: 'message'; message: NormalizedMessage; indent: false }
+  | {
+      type: 'tool-call';
+      indent: true;
+      id: string;
+      name: string;
+      input: Record<string, any>;
+    }
+  | {
+      type: 'tool-result';
+      indent: true;
+      id: string;
+      name: string;
+      result: any;
+      isError: boolean;
+    };
+
+function buildRenderableItems(messages: NormalizedMessage[]): RenderableItem[] {
+  const items: RenderableItem[] = [];
+  const toolResultsMap = new Map<
+    string,
+    { name: string; result: any; isError: boolean }
+  >();
+
+  for (const msg of messages) {
+    if (msg.role === 'user' || msg.role === 'tool') {
+      if (Array.isArray(msg.content)) {
+        for (const part of msg.content) {
+          if (part.type === 'tool_result') {
+            const isError =
+              part.result &&
+              typeof part.result === 'object' &&
+              part.result.type === 'error';
+            toolResultsMap.set(part.id, {
+              name: part.name,
+              result: part.result,
+              isError,
+            });
+          } else if (part.type === 'tool-result') {
+            const isError =
+              part.result &&
+              typeof part.result === 'object' &&
+              part.result.type === 'error';
+            toolResultsMap.set(part.toolCallId, {
+              name: part.toolName,
+              result: part.result,
+              isError,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  for (const msg of messages) {
+    items.push({ type: 'message', message: msg, indent: false });
+
+    if (msg.role === 'assistant' && Array.isArray(msg.content)) {
+      const toolUses = msg.content.filter(
+        (
+          part,
+        ): part is {
+          type: 'tool_use';
+          id: string;
+          name: string;
+          input: Record<string, any>;
+        } => part.type === 'tool_use',
+      );
+
+      for (const toolUse of toolUses) {
+        items.push({
+          type: 'tool-call',
+          indent: true,
+          id: toolUse.id,
+          name: toolUse.name,
+          input: toolUse.input,
+        });
+
+        const resultData = toolResultsMap.get(toolUse.id);
+        if (resultData) {
+          items.push({
+            type: 'tool-result',
+            indent: true,
+            id: toolUse.id,
+            name: resultData.name,
+            result: resultData.result,
+            isError: resultData.isError,
+          });
+        }
+      }
+    }
+  }
+
+  return items;
 }
 
 function buildHtml(opts: {
@@ -148,19 +217,14 @@ function buildHtml(opts: {
   const { sessionId, sessionLogPath, messages, requestLogs } = opts;
   const title = `Session ${sessionId}`;
 
-  // Build mapping: assistant message uuid -> requestId
   const assistantMap: Record<string, string | null> = {};
   for (const m of messages) {
     if (m.role === 'assistant') {
-      const tsNum = Date.parse(m.timestamp || '');
-      const matched = Number.isNaN(tsNum)
-        ? null
-        : findNearestRequestForAssistant(tsNum, requestLogs);
-      assistantMap[m.uuid] = matched ? matched.requestId : null;
+      assistantMap[m.uuid] = m.uuid;
     }
   }
 
-  const requestData: Record<string, { filePath: string; entries: AnyJson[] } > =
+  const requestData: Record<string, { filePath: string; entries: AnyJson[] }> =
     {};
   for (const r of requestLogs) {
     requestData[r.requestId] = { filePath: r.filePath, entries: r.entries };
@@ -171,30 +235,58 @@ function buildHtml(opts: {
     messagesMap[m.uuid] = m as AnyJson;
   }
 
-  const messagesHtml = messages
-    .map((m) => {
-      const isRoot = m.parentUuid === null;
-      const contentText = typeof m.content === 'string'
-        ? m.content
-        : Array.isArray(m.content)
-          ? m.content
-              .filter((p: any) => p && typeof p.text === 'string')
-              .map((p: any) => p.text)
-              .join('')
-          : JSON.stringify(m.content);
-      const role = escapeHtml(m.role);
-      const ts = m.timestamp ? formatDate(new Date(m.timestamp)) : '';
-      const cls = `msg ${role} ${isRoot ? 'root' : ''}`;
-      const dataAttrs =
-        m.role === 'assistant' && assistantMap[m.uuid]
-          ? `data-msg-uuid="${m.uuid}" data-request-id="${assistantMap[m.uuid]}"`
-          : `data-msg-uuid="${m.uuid}"`;
-      return `<div class="${cls}" ${dataAttrs}>
-  <div class="meta">${role}${ts ? ` · ${escapeHtml(ts)}` : ''}$${
-        isRoot ? ' · root' : ''
-      }</div>
+  const renderableItems = buildRenderableItems(messages);
+
+  const messagesHtml = renderableItems
+    .map((item) => {
+      if (item.type === 'message') {
+        const m = item.message;
+        const isRoot = m.parentUuid === null;
+        const contentText =
+          typeof m.content === 'string'
+            ? m.content
+            : Array.isArray(m.content)
+              ? m.content
+                  .filter((p: any) => p && typeof p.text === 'string')
+                  .map((p: any) => p.text)
+                  .join('')
+              : JSON.stringify(m.content);
+        const role = escapeHtml(m.role);
+        const ts = m.timestamp ? formatDate(new Date(m.timestamp)) : '';
+        const cls = `msg ${role} ${isRoot ? 'root' : ''}`;
+        const dataAttrs =
+          m.role === 'assistant' && assistantMap[m.uuid]
+            ? `data-msg-uuid="${m.uuid}" data-request-id="${assistantMap[m.uuid]}"`
+            : `data-msg-uuid="${m.uuid}"`;
+        return `<div class="${cls}" ${dataAttrs}>
+  <div class="meta">${role}${ts ? ` · ${escapeHtml(ts)}` : ''}${
+    isRoot ? ' · root' : ''
+  }</div>
   <div class="content">${escapeHtml(contentText || '')}</div>
 </div>`;
+      } else if (item.type === 'tool-call') {
+        const inputStr = escapeHtml(pretty(item.input));
+        return `<div class="msg tool-call indented">
+  <div class="meta">🔧 Tool Call: ${escapeHtml(item.name)}</div>
+  <div class="content"><pre>${inputStr}</pre></div>
+</div>`;
+      } else if (item.type === 'tool-result') {
+        const resultContent =
+          item.result && typeof item.result === 'object'
+            ? item.result.content || item.result
+            : item.result;
+        const resultStr = escapeHtml(
+          typeof resultContent === 'string'
+            ? resultContent
+            : pretty(resultContent),
+        );
+        const statusLabel = item.isError ? '✗' : '✓';
+        return `<div class="msg tool-result indented ${item.isError ? 'error' : 'success'}">
+  <div class="meta">${statusLabel} Tool Result: ${escapeHtml(item.name)}</div>
+  <div class="content"><pre>${resultStr}</pre></div>
+</div>`;
+      }
+      return '';
     })
     .join('\n');
 
@@ -205,19 +297,25 @@ function buildHtml(opts: {
     .left { border-right: 1px solid #eee; overflow: auto; padding: 16px; }
     .right { overflow: auto; padding: 16px; }
     .msg { border: 1px solid #eee; border-radius: 6px; padding: 10px; margin-bottom: 10px; cursor: default; }
-    .msg .meta { color: #666; font-size: 12px; margin-bottom: 6px; }
+    .msg .meta { color: #666; font-size: 12px; margin-bottom: 6px; font-weight: 600; }
     .msg.user { background: #fafafa; }
     .msg.assistant { background: #f6fbff; cursor: pointer; }
-    .msg.tool { background: #fff7f0; }
+    .msg.tool { background: #fff7f0; display: none; }
     .msg.root { outline: 1px dashed #ccc; }
+    .msg.indented { margin-left: 32px; }
+    .msg.tool-call { background: #fffbf0; border-left: 3px solid #f59e0b; }
+    .msg.tool-result { background: #f0fdf4; border-left: 3px solid #10b981; }
+    .msg.tool-result.error { background: #fef2f2; border-left: 3px solid #ef4444; }
+    .msg.tool-call pre, .msg.tool-result pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 12px; }
     .details code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .details pre { background: #fafafa; border: 1px solid #eee; padding: 8px; border-radius: 6px; overflow: auto; }
     .muted { color: #777; }
   `;
 
   const script = `
-    const requestData = ${JSON.stringify(requestData)};
-    const messagesMap = ${JSON.stringify(messagesMap)};
+    const requestData = JSON.parse(decodeURIComponent("${encodeURIComponent(JSON.stringify(requestData))}"));
+    const messagesMap = JSON.parse(decodeURIComponent("${encodeURIComponent(JSON.stringify(messagesMap))}"));
+
     const right = document.getElementById('right');
     const state = { lastSelected: null };
     function renderDetails(requestId) {
@@ -245,7 +343,7 @@ function buildHtml(opts: {
           <pre><code>__RES__</code></pre>
           <div><b>Error:</b></div>
           <pre><code>__ERR__</code></pre>
-          <div><b>Chunks:</b> <span class="muted">(showing first 5)</span></div>
+          <div><b>Chunks:</b></div>
           <pre><code>__CHUNKS__</code></pre>
         </div>`,
       )};
@@ -263,7 +361,6 @@ function buildHtml(opts: {
       const req = meta && meta.request ? meta.request : null;
       const res = meta && meta.response ? meta.response : null;
       const err = meta && meta.error ? meta.error : null;
-      const chunksPreview = chunks.slice(0, 5);
       const finalHtml = html
         .replace('__MESSAGE__', pretty(state.lastMessage || null))
         .replace('__REQUEST_ID__', d ? String(requestId) : 'N/A')
@@ -273,7 +370,7 @@ function buildHtml(opts: {
         .replace('__REQ__', pretty(req))
         .replace('__RES__', pretty(res))
         .replace('__ERR__', pretty(err))
-        .replace('__CHUNKS__', pretty(chunksPreview));
+        .replace('__CHUNKS__', pretty(chunks));
       right.innerHTML = finalHtml;
     }
     document.getElementById('left').addEventListener('click', (e) => {
@@ -316,7 +413,7 @@ async function generateHtmlForSession(context: Context, sessionId: string) {
   const sessionLogPath = context.paths.getSessionLogPath(sessionId);
   const messages = loadAllSessionMessages(sessionLogPath);
   const requestsDir = path.join(path.dirname(sessionLogPath), 'requests');
-  const requestLogs = loadAllRequestLogs(requestsDir);
+  const requestLogs = loadAllRequestLogs(requestsDir, messages);
 
   const html = buildHtml({
     sessionId,
@@ -369,20 +466,23 @@ const LogUI: React.FC<{ context: Context }> = ({ context }) => {
     ];
   }, [sessions]);
 
-  const onSelect = useCallback(async (item: { value: string }) => {
-    setSelected(item.value);
-    try {
-      const out = await generateHtmlForSession(context, item.value);
-      setOutputPath(out);
+  const onSelect = useCallback(
+    async (item: { value: string }) => {
+      setSelected(item.value);
       try {
-        exec(`open ${JSON.stringify(out)}`);
-      } catch (e) {
-        // ignore open failures; user can open manually
+        const out = await generateHtmlForSession(context, item.value);
+        setOutputPath(out);
+        try {
+          exec(`open ${JSON.stringify(out)}`);
+        } catch (e) {
+          // ignore open failures; user can open manually
+        }
+      } catch (e: any) {
+        setError(e?.message || 'Failed to generate HTML');
       }
-    } catch (e: any) {
-      setError(e?.message || 'Failed to generate HTML');
-    }
-  }, [context]);
+    },
+    [context],
+  );
 
   if (error) {
     return React.createElement(
