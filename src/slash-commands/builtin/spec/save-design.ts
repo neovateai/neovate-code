@@ -4,7 +4,7 @@ export function saveDesignCommand(language: string): PromptCommand {
   return {
     type: 'prompt',
     name: 'spec:save-design',
-    description: 'Save the current brainstorming session as a design document',
+    description: 'Save design document',
     progressMessage: 'Saving design document from brainstorming session...',
     async getPromptForCommand() {
       return [
