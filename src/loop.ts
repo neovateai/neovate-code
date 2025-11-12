@@ -14,6 +14,7 @@ import type {
   ToolUsePart,
 } from './message';
 import type { ModelInfo } from './model';
+import { addPromptCache } from './promptCache';
 import { getThinkingConfig } from './thinking-config';
 import type { ToolResult, Tools, ToolUse } from './tool';
 import { Usage } from './usage';
@@ -213,6 +214,8 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       });
       shouldAtNormalize = false;
     }
+
+    prompt = addPromptCache(prompt, opts.model);
 
     let text = '';
     let reasoning = '';
