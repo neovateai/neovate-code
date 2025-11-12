@@ -133,6 +133,7 @@ Examples:
 Commands:
   config                        Manage configuration
   commit                        Commit changes to the repository
+  log                           View session logs in HTML
   mcp                           Manage MCP servers
   run                           Run a command
   update                        Check for and apply updates
