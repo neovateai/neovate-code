@@ -478,6 +478,7 @@ export const useAppStore = create<AppStore>()(
                 cwd,
                 sessionId,
                 messages: [userMessage],
+                parentUuid: get().forkParentUuid || undefined,
               });
             } else {
               set({
