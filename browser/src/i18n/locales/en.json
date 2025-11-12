@@ -313,8 +313,6 @@
     "toolButton": {
       "nextDiff": "Next Diff",
       "prevDiff": "Previous Diff",
-      "rejectAll": "Reject All",
-      "acceptAll": "Accept All",
       "accept": "Accept",
       "reject": "Reject",
       "copyModifiedCode": "Copy Modified Code"

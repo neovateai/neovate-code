@@ -58,16 +58,6 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, CodeDiffViewProps>(
       }
     };
 
-    const handleAcceptAll = () => {
-      // TODO: Implement accept all logic
-      console.log('Accept all changes for:', item.path, item.modifiedCode);
-    };
-
-    const handleRejectAll = () => {
-      // TODO: Implement reject all logic
-      console.log('Reject all changes for:', item.path, item.originalCode);
-    };
-
     useEffect(() => {
       if (isCopySuccess) {
         const timer = setTimeout(() => {
@@ -81,8 +71,6 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, CodeDiffViewProps>(
       <div className={styles.container}>
         {!hideToolBar && (
           <DiffToolbar
-            onAcceptAll={handleAcceptAll}
-            onRejectAll={handleRejectAll}
             onCopy={handleCopy}
             isCopySuccess={isCopySuccess}
             item={item}

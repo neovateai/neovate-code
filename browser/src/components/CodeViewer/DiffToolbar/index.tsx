@@ -7,20 +7,12 @@ import styles from './index.module.css';
 
 interface Props {
   item: CodeDiffViewerTabItem;
-  onAcceptAll: () => void;
-  onRejectAll: () => void;
   onCopy?: () => void;
   isCopySuccess?: boolean;
 }
 
 const DiffToolbar = (props: Props) => {
-  const {
-    item,
-    onAcceptAll,
-    onRejectAll,
-    onCopy,
-    isCopySuccess = false,
-  } = props;
+  const { item, onCopy, isCopySuccess = false } = props;
   const { t } = useTranslation();
 
   return (
@@ -29,26 +21,6 @@ const DiffToolbar = (props: Props) => {
         <div className={styles.statusText}>
           {t('codeViewer.diffToolbar.changesCompleted')}
         </div>
-
-        {/*
-        {!item.hideDiffActions && (
-          <>
-            <Button
-              className={`${styles.actionButton} ${styles.acceptButton}`}
-              onClick={() => onAcceptAll()}
-            >
-              {t('codeViewer.toolButton.acceptAll')}
-            </Button>
-
-            <Button
-              className={`${styles.actionButton} ${styles.rejectButton}`}
-              onClick={() => onRejectAll()}
-            >
-              {t('codeViewer.toolButton.rejectAll')}
-            </Button>
-          </>
-        )}
-        */}
       </div>
 
       <Button

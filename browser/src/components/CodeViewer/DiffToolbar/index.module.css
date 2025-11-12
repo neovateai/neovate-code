@@ -24,69 +24,6 @@
   line-height: 20px;
 }
 
-.rightActions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.actionButton {
-  height: 32px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 400;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  border: 1px solid #e5e7eb;
-  min-width: 64px;
-  text-align: left;
-}
-
-.actionButton:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-}
-
-.acceptButton {
-  background-color: #ffffff;
-  border-color: #e5e7eb;
-  color: #374151;
-}
-
-.acceptButton:hover {
-  background-color: #f9fafb !important;
-  border-color: #d1d5db !important;
-  color: #374151 !important;
-}
-
-.acceptButton:focus,
-.acceptButton:active {
-  background-color: #f3f4f6 !important;
-  border-color: #d1d5db !important;
-  color: #374151 !important;
-}
-
-.rejectButton {
-  background-color: #ffffff;
-  border-color: #e5e7eb;
-  color: #374151;
-}
-
-.rejectButton:hover {
-  background-color: #f9fafb !important;
-  border-color: #d1d5db !important;
-  color: #374151 !important;
-}
-
-.rejectButton:focus,
-.rejectButton:active {
-  background-color: #f3f4f6 !important;
-  border-color: #d1d5db !important;
-  color: #374151 !important;
-}
-
 .copyButton {
   color: #6b7280;
   border: none;
