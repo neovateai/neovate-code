@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import fs from 'fs';
 import { render, Box, Text } from 'ink';
 import path from 'pathe';
+import { filterMessages } from '../session';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Context } from '../context';
 import PaginatedGroupSelectInput from '../ui/PaginatedGroupSelectInput';
@@ -213,8 +214,10 @@ function buildHtml(opts: {
   sessionLogPath: string;
   messages: NormalizedMessage[];
   requestLogs: ReturnType<typeof loadAllRequestLogs>;
+  activeUuids: Set<string>;
 }) {
-  const { sessionId, sessionLogPath, messages, requestLogs } = opts;
+  const { sessionId, sessionLogPath, messages, requestLogs, activeUuids } =
+    opts;
   const title = `Session ${sessionId}`;
 
   const assistantMap: Record<string, string | null> = {};
@@ -242,6 +245,8 @@ function buildHtml(opts: {
       if (item.type === 'message') {
         const m = item.message;
         const isRoot = m.parentUuid === null;
+        const isActive = activeUuids.has(m.uuid);
+        const disabledCls = isActive ? '' : ' disabled';
         const contentText =
           typeof m.content === 'string'
             ? m.content
@@ -253,12 +258,17 @@ function buildHtml(opts: {
               : JSON.stringify(m.content);
         const role = escapeHtml(m.role);
         const ts = m.timestamp ? formatDate(new Date(m.timestamp)) : '';
-        const cls = `msg ${role} ${isRoot ? 'root' : ''}`;
+        const cls = `msg ${role} ${isRoot ? 'root' : ''}${disabledCls}`;
         const dataAttrs =
           m.role === 'assistant' && assistantMap[m.uuid]
             ? `data-msg-uuid="${m.uuid}" data-request-id="${assistantMap[m.uuid]}"`
             : `data-msg-uuid="${m.uuid}"`;
+        const parentLabel = m.parentUuid
+          ? ` p:${escapeHtml(m.parentUuid.slice(0, 8))}`
+          : '';
+        const uuidBadge = `<div class="uuid-badge">${escapeHtml(m.uuid.slice(0, 8))}${parentLabel}</div>`;
         return `<div class="${cls}" ${dataAttrs}>
+  ${uuidBadge}
   <div class="meta">${role}${ts ? ` · ${escapeHtml(ts)}` : ''}${
     isRoot ? ' · root' : ''
   }</div>
@@ -266,7 +276,11 @@ function buildHtml(opts: {
 </div>`;
       } else if (item.type === 'tool-call') {
         const inputStr = escapeHtml(pretty(item.input));
-        return `<div class="msg tool-call indented">
+        const parentIsActive = activeUuids.has(item.id);
+        const disabledCls = parentIsActive ? '' : ' disabled';
+        const uuidBadge = `<div class="uuid-badge">${escapeHtml(item.id.slice(0, 8))}</div>`;
+        return `<div class="msg tool-call indented${disabledCls}">
+  ${uuidBadge}
   <div class="meta">🔧 Tool Call: ${escapeHtml(item.name)}</div>
   <div class="content"><pre>${inputStr}</pre></div>
 </div>`;
@@ -281,7 +295,13 @@ function buildHtml(opts: {
             : pretty(resultContent),
         );
         const statusLabel = item.isError ? '✗' : '✓';
-        return `<div class="msg tool-result indented ${item.isError ? 'error' : 'success'}">
+        const parentIsActive = activeUuids.has(item.id);
+        const disabledCls = parentIsActive ? '' : ' disabled';
+        const uuidBadge = `<div class="uuid-badge">${escapeHtml(item.id.slice(0, 8))}</div>`;
+        return `<div class="msg tool-result indented ${
+          item.isError ? 'error' : 'success'
+        }${disabledCls}">
+  ${uuidBadge}
   <div class="meta">${statusLabel} Tool Result: ${escapeHtml(item.name)}</div>
   <div class="content"><pre>${resultStr}</pre></div>
 </div>`;
@@ -296,7 +316,7 @@ function buildHtml(opts: {
     header { padding: 12px 16px; border-bottom: 1px solid #eee; font-weight: 600; }
     .left { border-right: 1px solid #eee; overflow: auto; padding: 16px; }
     .right { overflow: auto; padding: 16px; }
-    .msg { border: 1px solid #eee; border-radius: 6px; padding: 10px; margin-bottom: 10px; cursor: default; }
+    .msg { position: relative; border: 1px solid #eee; border-radius: 6px; padding: 10px; margin-bottom: 10px; cursor: default; }
     .msg .meta { color: #666; font-size: 12px; margin-bottom: 6px; font-weight: 600; }
     .msg.user { background: #fafafa; cursor: pointer; }
     .msg.assistant { background: #f6fbff; cursor: pointer; }
@@ -306,6 +326,10 @@ function buildHtml(opts: {
     .msg.tool-call { background: #fffbf0; border-left: 3px solid #f59e0b; }
     .msg.tool-result { background: #f0fdf4; border-left: 3px solid #10b981; }
     .msg.tool-result.error { background: #fef2f2; border-left: 3px solid #ef4444; }
+    .uuid-badge { position: absolute; top: 8px; right: 10px; font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #999; background: rgba(255, 255, 255, 0.8); padding: 2px 6px; border-radius: 3px; }
+    .msg.disabled { opacity: 0.4; }
+    .msg.disabled.tool-call,
+    .msg.disabled.tool-result { opacity: 0.4; }
     .msg.tool-call pre, .msg.tool-result pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 12px; }
     .details code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .details pre { background: #fafafa; border: 1px solid #eee; padding: 8px; border-radius: 6px; overflow: auto; }
@@ -423,6 +447,8 @@ function buildHtml(opts: {
 async function generateHtmlForSession(context: Context, sessionId: string) {
   const sessionLogPath = context.paths.getSessionLogPath(sessionId);
   const messages = loadAllSessionMessages(sessionLogPath);
+  const activeMessages = filterMessages(messages as any);
+  const activeUuids = new Set(activeMessages.map((m) => m.uuid));
   const requestsDir = path.join(path.dirname(sessionLogPath), 'requests');
   const requestLogs = loadAllRequestLogs(requestsDir, messages);
 
@@ -431,6 +457,7 @@ async function generateHtmlForSession(context: Context, sessionId: string) {
     sessionLogPath,
     messages,
     requestLogs,
+    activeUuids,
   });
 
   const outDir = path.join(process.cwd(), '.log-outputs');
