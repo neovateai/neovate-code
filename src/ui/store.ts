@@ -721,7 +721,7 @@ export const useAppStore = create<AppStore>()(
             processingStartTime: null,
             processingTokens: 0,
             retryInfo: null,
-            forkParentUuid: null, // Clear after successful send
+            forkParentUuid: null,
           });
         } else {
           set({
@@ -730,6 +730,7 @@ export const useAppStore = create<AppStore>()(
             processingStartTime: null,
             processingTokens: 0,
             retryInfo: null,
+            forkParentUuid: null,
           });
         }
         return response;
