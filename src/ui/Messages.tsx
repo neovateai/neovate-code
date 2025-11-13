@@ -205,7 +205,7 @@ export function Messages() {
     <Box flexDirection="column">
       {/* Static area - completed messages */}
       <Static
-        key={`${sessionId}-${messages.length}`}
+        key={`${sessionId}`}
         items={['header', ...completedMessages] as any[]}
       >
         {(item, index) => {
