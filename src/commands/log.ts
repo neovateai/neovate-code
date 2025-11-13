@@ -298,7 +298,7 @@ function buildHtml(opts: {
     .right { overflow: auto; padding: 16px; }
     .msg { border: 1px solid #eee; border-radius: 6px; padding: 10px; margin-bottom: 10px; cursor: default; }
     .msg .meta { color: #666; font-size: 12px; margin-bottom: 6px; font-weight: 600; }
-    .msg.user { background: #fafafa; }
+    .msg.user { background: #fafafa; cursor: pointer; }
     .msg.assistant { background: #f6fbff; cursor: pointer; }
     .msg.tool { background: #fff7f0; display: none; }
     .msg.root { outline: 1px dashed #ccc; }
@@ -317,8 +317,20 @@ function buildHtml(opts: {
     const messagesMap = JSON.parse(decodeURIComponent("${encodeURIComponent(JSON.stringify(messagesMap))}"));
 
     const right = document.getElementById('right');
-    const state = { lastSelected: null };
+    const state = { lastSelected: null, lastMessage: null };
     function renderDetails(requestId) {
+      if (!requestId) {
+        const pretty = (obj) => {
+          try { return JSON.stringify(obj, null, 2); } catch { return String(obj); }
+        };
+        const html = ${JSON.stringify(`<div class="details">
+          <div><b>Message JSON:</b></div>
+          <pre><code>__MESSAGE__</code></pre>
+        </div>`)};
+        const finalHtml = html.replace('__MESSAGE__', pretty(state.lastMessage || null));
+        right.innerHTML = finalHtml;
+        return;
+      }
       const d = requestId ? requestData[requestId] : null;
       const entries = d ? d.entries : [];
       const meta = entries.find(e => e.type === 'metadata') || null;
@@ -379,7 +391,6 @@ function buildHtml(opts: {
         el = el.parentElement;
       }
       if (!el) return;
-      if (!el.classList.contains('assistant')) return;
       const reqId = el.getAttribute('data-request-id');
       const msgId = el.getAttribute('data-msg-uuid');
       state.lastSelected = reqId || null;
@@ -387,7 +398,7 @@ function buildHtml(opts: {
       renderDetails(state.lastSelected);
     });
     // Initial details placeholder
-    right.innerHTML = '<div class="muted">Select an assistant message to see request details.</div>';
+    right.innerHTML = '<div class="muted">Select a message to see details.</div>';
   `;
 
   return `<!doctype html>
