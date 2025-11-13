@@ -14,6 +14,7 @@ import type { Context } from './context';
 import { PluginHookType } from './plugin';
 import { GithubProvider } from './providers/githubCopilot';
 import { getThinkingConfig } from './thinking-config';
+import { rotateApiKey } from './utils/apiKeyRotation';
 
 export interface ModelModalities {
   input: ('text' | 'image' | 'audio' | 'video' | 'pdf')[];
@@ -832,16 +833,20 @@ function getProviderBaseURL(provider: Provider) {
 }
 
 function getProviderApiKey(provider: Provider) {
-  if (provider.options?.apiKey) {
-    return provider.options.apiKey;
-  }
-  const envs = provider.env || [];
-  for (const env of envs) {
-    if (process.env[env]) {
-      return process.env[env];
+  const apiKey = (() => {
+    if (provider.options?.apiKey) {
+      return provider.options.apiKey;
     }
-  }
-  return '';
+    const envs = provider.env || [];
+    for (const env of envs) {
+      if (process.env[env]) {
+        return process.env[env];
+      }
+    }
+    return '';
+  })();
+  const key = rotateApiKey(apiKey);
+  return key;
 }
 
 export const defaultModelCreator = (
@@ -1322,8 +1327,9 @@ export const modelAlias: ModelAlias = {
 export type ModelInfo = {
   provider: Provider;
   model: Omit<Model, 'cost'>;
-  m: LanguageModelV2;
+  // m: LanguageModelV2;
   thinkingConfig?: Record<string, any>;
+  _mCreator: () => Promise<LanguageModelV2>;
 };
 
 function mergeConfigProviders(
@@ -1440,18 +1446,21 @@ export async function resolveModel(
     `Model ${modelId} not found in provider ${providerStr}, valid models: ${Object.keys(provider.models).join(', ')}`,
   );
   model.id = modelId;
-  let m: LanguageModelV2 | Promise<LanguageModelV2> = provider.createModel(
-    modelId,
-    provider,
-    globalConfigDir,
-  );
-  if (isPromise(m)) {
-    m = await m;
-  }
+  const mCreator = async () => {
+    let m: LanguageModelV2 | Promise<LanguageModelV2> = provider.createModel(
+      modelId,
+      provider,
+      globalConfigDir,
+    );
+    if (isPromise(m)) {
+      m = await m;
+    }
+    return m;
+  };
   return {
     provider,
     model,
-    m,
+    _mCreator: mCreator,
   };
 }
 

@@ -226,7 +226,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     }> = [];
 
     const requestId = randomUUID();
-    const m: LanguageModelV2 = opts.model.m;
+    const m: LanguageModelV2 = await opts.model._mCreator();
     const tools = opts.tools.toLanguageV2Tools();
 
     // Get thinking config based on model's reasoning capability
