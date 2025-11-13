@@ -204,7 +204,10 @@ export function Messages() {
   return (
     <Box flexDirection="column">
       {/* Static area - completed messages */}
-      <Static key={sessionId} items={['header', ...completedMessages] as any[]}>
+      <Static
+        key={`${sessionId}-${messages.length}`}
+        items={['header', ...completedMessages] as any[]}
+      >
         {(item, index) => {
           if (item === 'header') {
             return <Header key="header" />;
