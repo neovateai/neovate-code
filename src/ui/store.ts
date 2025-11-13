@@ -474,11 +474,18 @@ export const useAppStore = create<AppStore>()(
             const isLocalJSX = type === 'local-jsx';
             const isPrompt = type === 'prompt';
             if (isPrompt) {
+              const forkParentUuid = get().forkParentUuid;
               await bridge.request('session.addMessages', {
                 cwd,
                 sessionId,
                 messages: [userMessage],
+                parentUuid: forkParentUuid || undefined,
               });
+              if (forkParentUuid) {
+                set({
+                  forkParentUuid: null,
+                });
+              }
             } else {
               set({
                 messages: [...get().messages, userMessage],

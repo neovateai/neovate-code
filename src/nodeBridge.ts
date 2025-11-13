@@ -688,16 +688,24 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'session.addMessages',
-      async (data: { cwd: string; sessionId: string; messages: Message[] }) => {
-        const { cwd, sessionId, messages } = data;
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        messages: Message[];
+        parentUuid?: string;
+      }) => {
+        const { cwd, sessionId, messages, parentUuid } = data;
         const context = await this.getContext(cwd);
         const jsonlLogger = new JsonlLogger({
           filePath: context.paths.getSessionLogPath(sessionId),
         });
+
+        let previousUuid = parentUuid ?? jsonlLogger.getLatestUuid();
+
         for (const message of messages) {
           const normalizedMessage = {
             // @ts-expect-error
-            parentUuid: message.parentUuid ?? jsonlLogger.getLatestUuid(),
+            parentUuid: message.parentUuid ?? previousUuid,
             uuid: randomUUID(),
             ...message,
             type: 'message' as const,
@@ -709,6 +717,7 @@ class NodeHandlerRegistry {
               message: normalizedMessage,
             }),
           });
+          previousUuid = normalizedMessage.uuid;
         }
         return {
           success: true,
