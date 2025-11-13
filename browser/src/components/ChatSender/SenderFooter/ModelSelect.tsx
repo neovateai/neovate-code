@@ -37,7 +37,7 @@ const ModelSelect = () => {
       }}
       loading={loading}
       popupMatchSelectWidth={false}
-      placeholder={t('chat.selectModel', '选择模型')}
+      placeholder={t('chat.selectModel')}
       className="min-w-[140px]"
       optionLabelProp="label"
     >
