@@ -11,8 +11,9 @@
   display: flex;
   align-items: flex-start;
   counter-increment: line-number;
-  min-height: 1.5em;
   padding-left: 0;
+  min-width: 100%;
+  width: fit-content;
 }
 
 /* 行号样式 */
@@ -75,7 +76,8 @@
 .shiki-with-line-numbers .line.diff.add {
   background-color: #dafbe1;
   border-left: 3px solid #28a745;
-  width: 100%;
+  min-width: 100%;
+  width: fit-content;
   margin: 0;
   padding-right: 1em;
 }
@@ -83,7 +85,8 @@
 .shiki-with-line-numbers .line.diff.remove {
   background-color: #ffeaea;
   border-left: 3px solid #d73a49;
-  width: 100%;
+  min-width: 100%;
+  width: fit-content;
   margin: 0;
   padding-right: 1em;
 }

@@ -80,9 +80,16 @@ const CodeDiffOutline = (props: CodeDiffOutlineProps) => {
   const { editStatus, old_string, new_string } = edit;
 
   const code = useMemo(() => {
+    // For write tool, old_string is empty, meaning create new file
+    // In this case, oldContent should be empty and newContent should be the new_string
+    const oldContent = old_string ? old_string : '';
+    const newContent = old_string
+      ? old_string.replace(old_string, new_string || '')
+      : new_string || '';
+
     return {
-      oldContent: old_string,
-      newContent: new_string,
+      oldContent,
+      newContent,
     };
   }, [old_string, new_string]);
 
@@ -103,9 +110,17 @@ const CodeDiffOutline = (props: CodeDiffOutlineProps) => {
         newContent: '',
       };
     }
+
+    // For write tool, old_string is empty, meaning create new file
+    // In this case, oldContent should be empty and newContent should be the new_string
+    const oldContent = old_string ? old_string : '';
+    const newContent = old_string
+      ? old_string.replace(old_string, new_string || '')
+      : new_string || '';
+
     return {
-      oldContent: old_string,
-      newContent: new_string,
+      oldContent,
+      newContent,
     };
   }, [earlyFile, old_string, new_string]);
 

@@ -1,4 +1,3 @@
-import { createStyles } from 'antd-style';
 import { forwardRef, useEffect, useState } from 'react';
 import { CodeRenderer } from '@/components/CodeRenderer/CodeRenderer';
 import type {
@@ -6,6 +5,7 @@ import type {
   CodeNormalViewerTabItem,
 } from '@/types/codeViewer';
 import NormalToolbar from '../NormalToolbar';
+import styles from './index.module.css';
 
 interface Props {
   item: CodeNormalViewerTabItem;
@@ -18,33 +18,6 @@ export interface CodeNormalViewRef {
   jumpToLine: (lineCount: number) => void;
 }
 
-const useStyle = createStyles(
-  ({ css }, { maxHeight }: { maxHeight?: number }) => {
-    return {
-      container: css`
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        ${
-          maxHeight
-            ? css`
-              max-height: ${maxHeight}px;
-            `
-            : ''
-        }
-      `,
-      editor: css`
-        height: 100%;
-        flex: 1;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      `,
-    };
-  },
-);
-
 const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
   const { item, hideToolbar, maxHeight } = props;
 
@@ -52,7 +25,6 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
     lineCount: 0,
     charCount: 0,
   });
-  const { styles } = useStyle({ maxHeight });
 
   useEffect(() => {
     const lines = item.code.split('\n');
@@ -63,7 +35,10 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
   }, [item.code]);
 
   return (
-    <div className={styles.container}>
+    <div
+      className={styles.container}
+      style={maxHeight ? { maxHeight: `${maxHeight}px` } : {}}
+    >
       {!hideToolbar && <NormalToolbar normalMetaInfo={metaInfo} item={item} />}
       <div className={styles.editor}>
         <CodeRenderer
@@ -72,7 +47,7 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
           language={item.language}
           filename={item.title}
           mode="normal"
-          showLineNumbers={false}
+          showLineNumbers={true}
           maxHeight={maxHeight}
           theme="snazzy-light"
         />

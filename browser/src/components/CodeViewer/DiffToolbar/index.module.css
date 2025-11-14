@@ -1,0 +1,49 @@
+.actionBar {
+  height: 48px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  background-color: #f6f8fb;
+  border-radius: 8px;
+  gap: 16px;
+}
+
+.leftSection {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.statusText {
+  color: #666f8d;
+  font-family: "PingFang SC";
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.copyButton {
+  color: #6b7280;
+  border: none;
+  background: none;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.copyButton:hover {
+  background-color: rgba(107, 114, 128, 0.1);
+  color: #374151;
+}
+
+.copyButton:focus {
+  outline: none;
+  background-color: rgba(107, 114, 128, 0.15);
+  color: #374151;
+}

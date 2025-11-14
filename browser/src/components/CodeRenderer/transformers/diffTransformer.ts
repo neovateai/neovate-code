@@ -1,3 +1,5 @@
+import type { ShikiTransformer } from 'shiki';
+
 // Constants for diff markers
 export const DIFF_MARKERS = {
   ADD: '// [!code ++]',
@@ -5,70 +7,110 @@ export const DIFF_MARKERS = {
 } as const;
 
 /**
- * Custom diff transformer to handle diff notation markers
- * Processes [!code --] and [!code ++] markers and converts them to diff classes
+ * Creates a custom Shiki transformer for handling diff notation markers.
+ *
+ * This transformer processes VitePress-style diff markers in code:
+ * - `// [!code ++]` for added lines (green background)
+ * - `// [!code --]` for removed lines (red background)
+ *
+ * The transformer adds appropriate CSS classes and removes the marker text
+ * from the final rendered output.
+ *
+ * @returns A Shiki transformer object
  */
-export const customDiffTransformer = () => {
+export const customDiffTransformer = (): ShikiTransformer => {
+  // Store line metadata for later use
+  const lineMetadata: Map<number, { type: 'add' | 'remove' | null }> =
+    new Map();
+
   return {
     name: 'custom-diff-transformer',
+
+    /**
+     * Preprocesses the code before syntax highlighting.
+     *
+     * This runs before Shiki parses the code, allowing us to:
+     * 1. Detect diff markers in raw text
+     * 2. Store metadata about which lines are add/remove
+     * 3. Remove markers before they get syntax highlighted
+     *
+     * This prevents markers from being split across multiple spans.
+     */
     preprocess(code: string) {
-      return code;
-    },
-    line(node: any, _line: number) {
-      try {
-        // Recursively get all text content from the line
-        const getTextContent = (n: any): string => {
-          if (n.type === 'text') {
-            return n.value || '';
-          }
-          if (n.children) {
-            return n.children.map(getTextContent).join('');
-          }
-          return '';
-        };
+      const lines = code.split('\n');
+      const processedLines = lines.map((line, index) => {
+        const lineNumber = index + 1;
 
-        // Recursively remove markers from all text nodes
-        const removeMarkers = (n: any, marker: string) => {
-          if (n.type === 'text' && n.value) {
-            // Improved regex: match marker with optional whitespace at line end
-            n.value = n.value.replace(
-              new RegExp(
-                `\\s*${marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`,
-                'g',
-              ),
-              '',
-            );
-          }
-          if (n.children) {
-            n.children.forEach((child: any) => removeMarkers(child, marker));
-          }
-        };
-
-        const lineText = getTextContent(node);
-
-        // Check for diff markers and add classes to the line node
-        if (lineText.includes(DIFF_MARKERS.REMOVE)) {
-          // Add diff remove class
-          const currentClass = node.properties?.class || '';
-          node.properties = node.properties || {};
-          node.properties.class = `${currentClass} diff remove`.trim();
-
-          // Remove the marker from all text nodes recursively
-          removeMarkers(node, DIFF_MARKERS.REMOVE);
+        if (line.includes(DIFF_MARKERS.ADD)) {
+          lineMetadata.set(lineNumber, { type: 'add' });
+          return line.replace(DIFF_MARKERS.ADD, '').trimEnd();
         }
 
-        if (lineText.includes(DIFF_MARKERS.ADD)) {
-          // Add diff add class
-          const currentClass = node.properties?.class || '';
-          node.properties = node.properties || {};
-          node.properties.class = `${currentClass} diff add`.trim();
+        if (line.includes(DIFF_MARKERS.REMOVE)) {
+          lineMetadata.set(lineNumber, { type: 'remove' });
+          return line.replace(DIFF_MARKERS.REMOVE, '').trimEnd();
+        }
 
-          // Remove the marker from all text nodes recursively
-          removeMarkers(node, DIFF_MARKERS.ADD);
+        lineMetadata.set(lineNumber, { type: null });
+        return line;
+      });
+
+      return processedLines.join('\n');
+    },
+
+    /**
+     * Processes each line of code in the AST.
+     *
+     * Uses the metadata collected during preprocessing to:
+     * 1. Add appropriate CSS classes for styling
+     * 2. No need to remove markers (already done in preprocess)
+     *
+     * @param node - The AST node representing a line of code
+     * @param lineNumber - The current line number (1-based)
+     */
+    line(node: any, lineNumber: number) {
+      try {
+        const metadata = lineMetadata.get(lineNumber);
+        if (!metadata || !metadata.type) return;
+
+        // Add CSS classes based on metadata
+        if (metadata.type === 'add') {
+          addCSSClass(node, 'diff add');
+        } else if (metadata.type === 'remove') {
+          addCSSClass(node, 'diff remove');
         }
       } catch (error) {
-        console.error('Error in diff transformer line:', error);
+        // Silent fail to avoid breaking rendering
       }
+    },
+
+    /**
+     * Final cleanup pass on the generated HTML.
+     *
+     * Since markers are removed in preprocess, this should not be needed.
+     * Kept as a safety net for any edge cases.
+     *
+     * @param html - The complete HTML string generated by Shiki
+     * @returns HTML string (should already be clean)
+     */
+    postprocess(html: string) {
+      // Safety net: remove any remaining markers (should be rare)
+      return html.replace(/\/\/\s*\[!code\s*[+\-]{2}\]\s*/g, '');
     },
   };
 };
+
+/**
+ * Adds a CSS class to an AST node's properties.
+ *
+ * This function safely adds CSS classes to a node, preserving any
+ * existing classes and ensuring the properties object exists.
+ *
+ * @param node - AST node to modify
+ * @param className - CSS class name to add (e.g., 'diff add', 'diff remove')
+ */
+function addCSSClass(node: any, className: string): void {
+  const currentClass = node.properties?.class || '';
+  node.properties = node.properties || {};
+  node.properties.class = `${currentClass} ${className}`.trim();
+}

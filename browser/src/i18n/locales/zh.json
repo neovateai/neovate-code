@@ -313,11 +313,12 @@
     "toolButton": {
       "nextDiff": "查看下一个Diff",
       "prevDiff": "查看上一个Diff",
-      "rejectAll": "全部拒绝",
-      "acceptAll": "全部接受",
       "accept": "接受",
       "reject": "拒绝",
       "copyModifiedCode": "复制修改后的代码"
+    },
+    "diffToolbar": {
+      "changesCompleted": "变更已完成"
     }
   },
   "editRender": {

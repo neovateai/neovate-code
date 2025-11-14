@@ -1,5 +1,6 @@
 import { proxy } from 'valtio';
 import i18n from '@/i18n';
+import { readFile } from '@/api/files';
 import type {
   CodeNormalViewerMode,
   CodeViewerLanguage,
@@ -228,5 +229,32 @@ export const actions = {
       });
     }
     this.setVisible(true);
+  },
+
+  /**
+   * Simplified API to open a file in viewer - only requires file path
+   * Automatically reads file content using the backend file API
+   */
+  async openFileViewer(filePath: string) {
+    try {
+      const language = inferFileType(filePath);
+      const response = await readFile(filePath);
+
+      if (response.success && response.data) {
+        this.updateNormalViewerConfig({
+          code: response.data.content,
+          path: filePath,
+          language,
+        });
+      } else {
+        // Handle API error response
+        throw new Error(response.message || 'Failed to read file content');
+      }
+    } catch (error) {
+      console.error('Failed to open file in viewer:', error);
+
+      // Interface already shows error notifications, so we just log the error
+      // and don't open the viewer for failed file loads
+    }
   },
 };
