@@ -1,5 +1,6 @@
 import type { SlashCommand } from '../types';
 import { createBugCommand } from './bug';
+import { createCheckProviderCommand } from './check-provider';
 import { clearCommand } from './clear';
 import { compactCommand } from './compact';
 import { exitCommand } from './exit';
@@ -31,6 +32,7 @@ export function createBuiltinCommands(opts: {
     createInitCommand(opts),
     createLoginCommand(),
     createLogoutCommand(),
+    createCheckProviderCommand(),
     createMcpCommand(opts),
     createModelCommand(opts),
     createOutputStyleCommand(),
