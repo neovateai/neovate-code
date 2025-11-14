@@ -1,28 +1,19 @@
 import { CheckOutlined } from '@ant-design/icons';
-import { Button, Flex, Spin } from 'antd';
+import { Button, Flex } from 'antd';
 import { useEffect, useState } from 'react';
-import { useSnapshot } from 'valtio';
 import { useClipboard } from '@/hooks/useClipboard';
 import CopyIcon from '@/icons/copy.svg?react';
 import DislikeIcon from '@/icons/dislike.svg?react';
 import LikeIcon from '@/icons/like.svg?react';
 import RefreshIcon from '@/icons/refresh.svg?react';
-import type { AppStatus } from '@/state/chat';
-import { state } from '@/state/sender';
 import type { Message } from '@/types/chat';
-import ActivityIndicator from '../ActivityIndicator';
 import styles from './index.module.css';
 
 interface AssistantFooterProps {
   message: Message;
-  status: AppStatus;
 }
 
-const AssistantFooter: React.FC<AssistantFooterProps> = ({
-  message,
-  status,
-}) => {
-  const { mode } = useSnapshot(state);
+const AssistantFooter: React.FC<AssistantFooterProps> = ({ message }) => {
   const { writeText } = useClipboard();
   const [isCopySuccess, setIsCopySuccess] = useState(false);
 
@@ -56,48 +47,6 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({
       return () => clearTimeout(timer);
     }
   }, [isCopySuccess]);
-
-  if (mode === 'plan' && status === 'idle') {
-    // const lastMessage = message;
-    // if (
-    //   lastMessage?.type === UIMessageType.Text &&
-    //   lastMessage.mode === 'plan'
-    // ) {
-    //   return (
-    //     <div className="w-full p-2 border-t border-gray-100 bg-gray-50/50">
-    //       <Flex justify="space-between" align="center" className="w-full">
-    //         <Text
-    //           type="secondary"
-    //           className="text-sm text-gray-600 flex-1 mr-4"
-    //         >
-    //           {t('plan.approveDescription')}
-    //         </Text>
-    //         <Button
-    //           type="primary"
-    //           size="middle"
-    //           icon={<RefreshIcon />}
-    //           className="shrink-0"
-    //           onClick={async () => {
-    //             actions.updateMode('agent');
-    //             console.log('approvePlan', message);
-    //           }}
-    //         >
-    //           {t('plan.approve')}
-    //         </Button>
-    //       </Flex>
-    //     </div>
-    //   );
-    // }
-  }
-
-  if (status !== 'idle') {
-    return (
-      <div className="flex items-center space-x-2 pt-2">
-        <Spin size="small" />
-        <ActivityIndicator />
-      </div>
-    );
-  }
 
   return (
     <Flex className={styles.assistantFooter}>
