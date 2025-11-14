@@ -1132,7 +1132,7 @@ export const providers: ProvidersMap = {
       'z-ai/glm-4.5': models['glm-4.5'],
       'z-ai/glm-4.5v': models['glm-4.5v'],
       'z-ai/glm-4.6': models['glm-4.6'],
-      'minimax/minimax-m2:free': models['minimax-m2'],
+      'minimax/minimax-m2': models['minimax-m2'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
