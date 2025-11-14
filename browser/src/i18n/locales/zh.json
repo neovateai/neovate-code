@@ -79,7 +79,7 @@
     "sendMessage": "发送消息",
     "thinking": "思考中...",
     "stopGenerating": "停止生成",
-    "inputPlaceholder": "询问或输入 @ 使用技能"
+    "inputPlaceholder": "输入 @ 使用技能，或输入 / 使用指令"
   },
   "prompts": {
     "upgrades": "升级",

@@ -14,7 +14,7 @@ import { storeValueToContextItem } from '@/utils/context';
 
 const SUGGESTION_SEARCH_DEBOUNCE_TIME = 200;
 
-export const useSuggestion = () => {
+export const useSuggestion = (showSlashCommand: boolean = true) => {
   const { fileList, slashCommandList, loading } = useSnapshot(state);
   const { contexts } = useSnapshot(context.state);
 
@@ -78,27 +78,31 @@ export const useSuggestion = () => {
           ContextType.SLASH_COMMAND,
         ),
       };
-    });
+    }) as SuggestionItem[];
   }, [slashCommandList, t, contexts]);
 
   const defaultSuggestions = useMemo(() => {
-    return [
+    const suggestions: SuggestionItem[] = [
       {
         label: t('context.filesAndFolders'),
         value: ContextType.FILE,
         icon: <FileSearchOutlined />,
         children: fileSuggestions,
       },
-      {
+    ];
+
+    if (showSlashCommand) {
+      suggestions.push({
         label: t('context.slashCommands'),
         value: ContextType.SLASH_COMMAND,
         icon: <AppstoreOutlined />,
         children: slashCommandSuggestions,
-        // only allow one slash command
         disabled: contexts.slashCommands.length > 0,
-      },
-    ] as SuggestionItem[];
-  }, [fileSuggestions, slashCommandSuggestions, t, contexts]);
+      });
+    }
+
+    return suggestions;
+  }, [fileSuggestions, slashCommandSuggestions, t, contexts, showSlashCommand]);
 
   const searchFunctionMap: { [key in ContextType]?: (text: string) => void } = {
     [ContextType.FILE]: (text) => actions.getFileList(text),
