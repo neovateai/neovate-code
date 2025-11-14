@@ -38,6 +38,17 @@ export type CommitConfig = {
 
 export type ProviderConfig = Partial<Omit<Provider, 'createModel'>>;
 
+export type ReasoningLevel = 'disabled' | 'low' | 'medium' | 'high';
+export type CompletionSound =
+  | 'off'
+  | 'terminal-bell'
+  | 'fx-ok01'
+  | 'fx-ack01'
+  | 'custom';
+export type PlaySoundsTiming = 'always' | 'when-focused' | 'when-unfocused';
+export type DiffDisplayMode = 'github' | 'unified';
+export type Theme = 'dark' | 'light';
+
 export type Config = {
   model: string;
   planModel: string;
@@ -63,6 +74,14 @@ export type Config = {
   autoUpdate?: boolean;
   browser?: boolean;
   temperature?: number;
+  reasoningLevel?: ReasoningLevel;
+  completionSound?: CompletionSound;
+  playSounds?: PlaySoundsTiming;
+  showTips?: boolean;
+  diffDisplayMode?: DiffDisplayMode;
+  respectGitignore?: boolean;
+  theme?: Theme;
+  autoConnectIDE?: boolean;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -77,6 +96,14 @@ const DEFAULT_CONFIG: Partial<Config> = {
   outputFormat: 'text',
   autoUpdate: true,
   browser: false,
+  reasoningLevel: 'disabled',
+  completionSound: 'off',
+  playSounds: 'always',
+  showTips: true,
+  diffDisplayMode: 'unified',
+  respectGitignore: true,
+  theme: 'dark',
+  autoConnectIDE: false,
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -92,6 +119,14 @@ const VALID_CONFIG_KEYS = [
   'provider',
   'browser',
   'temperature',
+  'reasoningLevel',
+  'completionSound',
+  'playSounds',
+  'showTips',
+  'diffDisplayMode',
+  'respectGitignore',
+  'theme',
+  'autoConnectIDE',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider'];
@@ -101,7 +136,19 @@ const BOOLEAN_CONFIG_KEYS = [
   'autoCompact',
   'autoUpdate',
   'browser',
+  'showTips',
+  'respectGitignore',
+  'autoConnectIDE',
 ];
+const ENUM_CONFIG_KEYS = {
+  approvalMode: ['default', 'autoEdit', 'yolo'],
+  reasoningLevel: ['disabled', 'low', 'medium', 'high'],
+  completionSound: ['off', 'terminal-bell', 'fx-ok01', 'fx-ack01', 'custom'],
+  playSounds: ['always', 'when-focused', 'when-unfocused'],
+  diffDisplayMode: ['github', 'unified'],
+  theme: ['dark', 'light'],
+  outputFormat: ['text', 'stream-json', 'json'],
+} as const;
 
 export class ConfigManager {
   globalConfig: Partial<Config>;
@@ -316,6 +363,16 @@ export class ConfigManager {
       }
       if (OBJECT_CONFIG_KEYS.includes(key)) {
         newValue = JSON.parse(value);
+      }
+      // Validate enum values
+      if (key in ENUM_CONFIG_KEYS) {
+        const validValues =
+          ENUM_CONFIG_KEYS[key as keyof typeof ENUM_CONFIG_KEYS];
+        if (!validValues.includes(newValue as never)) {
+          throw new Error(
+            `Invalid value "${newValue}" for config key "${key}". Valid values are: ${validValues.join(', ')}`,
+          );
+        }
       }
       (config[key as keyof Config] as any) = newValue;
     }
