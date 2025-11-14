@@ -1,3 +1,23 @@
+## 0.17.1
+
+`2025-11-14`
+
+- fix: remove duplicate and incorrect model entries by [@sorrycc](https://github.com/sorrycc)
+- feat: add minimax provider by [@unknown_](https://github.com/unknown_) in [#424](https://github.com/umijs/takumi/pull/424)
+- fix: remove ':free' suffix from minimax model name by [@sorrycc](https://github.com/sorrycc)
+- feat: add support for GPT-5.1 models by [@sorrycc](https://github.com/sorrycc)
+- feat: remove polaris-alpha model and provider mapping by [@sorrycc](https://github.com/sorrycc)
+- fix: force UI re-render on fork by adding forkCounter to component keys by [@sorrycc](https://github.com/sorrycc)
+- feat: add active message highlighting and UUID badges to log viewer by [@sorrycc](https://github.com/sorrycc)
+- feat: make user messages clickable in log viewer with minimal details panel by [@sorrycc](https://github.com/sorrycc)
+- fix: remove messages length from Static component key to prevent re-renders by [@sorrycc](https://github.com/sorrycc)
+- refactor: remove redundant forkParentUuid null assignment comment by [@sorrycc](https://github.com/sorrycc)
+- fix: chain messages correctly when adding multiple messages in sequence by [@阿平](https://github.com/阿平) in [#423](https://github.com/umijs/takumi/pull/423)
+- feat: implement fork modal message filtering and loading state by [@sorrycc](https://github.com/sorrycc)
+- fix: update gitignore and messages component key prop by [@sorrycc](https://github.com/sorrycc)
+- feat: implement api key round-robin rotation with utility function by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.17.0
 
 `2025-11-12`
