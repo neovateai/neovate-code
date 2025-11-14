@@ -1348,6 +1348,24 @@ export const providers: ProvidersMap = {
     },
     createModel: defaultModelCreator,
   },
+  minimax: {
+    id: 'minimax',
+    env: ['MINIMAX_API_KEY'],
+    name: 'Minimax',
+    api: 'https://api.minimaxi.com/anthropic/v1',
+    doc: 'https://platform.minimaxi.com/docs/guides/quickstart',
+    models: {
+      'minimax-m2': models['minimax-m2'],
+    },
+    createModel(name, provider) {
+      const baseURL = getProviderBaseURL(provider);
+      const apiKey = getProviderApiKey(provider);
+      return createAnthropic({
+        baseURL,
+        apiKey,
+      }).chat(name);
+    },
+  },
 };
 
 // value format: provider/model
