@@ -803,19 +803,6 @@ export const models: ModelMap = {
     open_weights: true,
     limit: { context: 196608, output: 64000 },
   },
-  'polaris-alpha': {
-    name: 'Polaris Alpha',
-    attachment: true,
-    reasoning: false,
-    temperature: false,
-    tool_call: true,
-    knowledge: '2025-07',
-    release_date: '2025-07-30',
-    last_updated: '2025-07-30',
-    modalities: { input: ['text', 'image'], output: ['text'] },
-    open_weights: false,
-    limit: { context: 256000, output: 128000 },
-  },
 };
 
 function getProviderBaseURL(provider: Provider) {
@@ -1084,7 +1071,6 @@ export const providers: ProvidersMap = {
       'z-ai/glm-4.5v': models['glm-4.5v'],
       'z-ai/glm-4.6': models['glm-4.6'],
       'minimax/minimax-m2:free': models['minimax-m2'],
-      'openrouter/polaris-alpha': models['polaris-alpha'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
