@@ -91,6 +91,7 @@ interface ChatActions {
     userPrompt: string;
     result: LoopResult | { success: false; error: Error };
   }): Promise<void>;
+  retry(): Promise<void>;
 }
 
 export const state = proxy<ChatState>({
@@ -497,6 +498,54 @@ export const actions: ChatActions = {
       }
     } catch (error) {
       console.error('Set summary error:', error);
+    }
+  },
+
+  async retry() {
+    // Find the last user message
+    let lastUserMessageIndex = -1;
+    for (let i = state.messages.length - 1; i >= 0; i--) {
+      if (state.messages[i].role === 'user') {
+        lastUserMessageIndex = i;
+        break;
+      }
+    }
+
+    if (lastUserMessageIndex === -1) {
+      console.warn('No user message found to retry');
+      return;
+    }
+
+    // Remove all messages after the last user message (including assistant responses)
+    state.messages = state.messages.slice(0, lastUserMessageIndex + 1);
+
+    // Get the last user message content
+    const lastUserMessage = state.messages[lastUserMessageIndex];
+    let userPrompt = '';
+
+    if (typeof lastUserMessage.content === 'string') {
+      userPrompt = lastUserMessage.content;
+    } else if (Array.isArray(lastUserMessage.content)) {
+      userPrompt = lastUserMessage.content
+        .map((part) => {
+          if (typeof part === 'string') return part;
+          if (part && part.type === 'text' && typeof part.text === 'string') {
+            return part.text;
+          }
+          return '';
+        })
+        .join('');
+    } else if ((lastUserMessage as any).uiContent) {
+      // Use uiContent if available (for rich text messages)
+      userPrompt = (lastUserMessage as any).uiContent;
+    }
+
+    // Resend the message
+    try {
+      const result = await this.sendMessage({ message: null });
+      await this.setSummary({ userPrompt, result });
+    } catch (error) {
+      console.error('Retry failed:', error);
     }
   },
 

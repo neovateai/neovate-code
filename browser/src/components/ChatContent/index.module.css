@@ -33,11 +33,18 @@
 }
 
 .bubbleList {
-  height: 100%;
+  /* Remove height: 100% to prevent internal scrolling */
   max-width: 800px;
   margin-inline: auto;
+  /* Ensure content flows naturally */
+  min-height: auto;
 }
 
 .skeletonContainer {
   width: 600px;
+}
+
+/* Override Ant Design bubble list gap */
+.chatList :global(.ant-bubble-list) {
+  gap: 0;
 }
