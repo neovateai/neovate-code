@@ -5,10 +5,8 @@ import type {
   TextPart,
   UIAssistantMessage,
   UIToolPart,
-  UIToolPair,
 } from '@/types/chat';
 import MarkdownRenderer from '../MarkdownRenderer';
-import ToolPairRender from '../ToolPairRender';
 import ApprovalModal from './ApprovalModal';
 import AssistantTextMessage from './AssistantTextMessage';
 import AssistantThinkingMessage from './AssistantThinkingMessage';
@@ -16,7 +14,7 @@ import AssistantToolMessage from './AssistantToolMessage';
 import styles from './index.module.css';
 
 interface MessagePartProps {
-  part: TextPart | ReasoningPart | UIToolPart | UIToolPair;
+  part: TextPart | ReasoningPart | UIToolPart;
   uuid: string;
 }
 
@@ -39,14 +37,6 @@ const MessagePart: React.FC<MessagePartProps> = memo(({ part, uuid }) => {
           <AssistantToolMessage key={`${uuid}-${part.state}`} part={part} />
           <ApprovalModal part={part} />
         </>
-      );
-    case 'tool-pair':
-      return (
-        <ToolPairRender
-          key={`${uuid}-pair-${part.id}`}
-          pair={part}
-          uuid={uuid}
-        />
       );
     default:
       return (

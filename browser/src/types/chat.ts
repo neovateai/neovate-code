@@ -145,17 +145,7 @@ export type UIToolPart = {
   description?: string;
 };
 
-// Define UIToolPair type for the paired tool representation
-export type UIToolPair = {
-  type: 'tool-pair';
-  id: string;
-  toolUse: UIToolPart;
-  toolResult?: UIToolPart;
-};
-
-export type UIAssistantContent = Array<
-  TextPart | ReasoningPart | UIToolPart | UIToolPair
->;
+export type UIAssistantContent = Array<TextPart | ReasoningPart | UIToolPart>;
 
 export type UIAssistantMessage = {
   role: 'assistant';
