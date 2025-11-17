@@ -140,10 +140,19 @@ export class Tools {
       // parameters of mcp tools is not zod object
       const isMCP = key.startsWith('mcp__');
       const schema = isMCP ? tool.parameters : z.toJSONSchema(tool.parameters);
+      // some providers have a limit on the description length, so we need to truncate it
+      // e.g. megallm.io has a limit of 1024 characters
+      const limit = process.env.TOOL_DESCRIPTION_LIMIT
+        ? Math.floor(parseInt(process.env.TOOL_DESCRIPTION_LIMIT, 10))
+        : 0;
+      const desc =
+        limit > 0 && tool.description.length > limit
+          ? tool.description.slice(0, limit - 3) + '...'
+          : tool.description;
       return {
         type: 'function',
         name: key,
-        description: tool.description,
+        description: desc,
         inputSchema: schema,
         providerOptions: {},
       };

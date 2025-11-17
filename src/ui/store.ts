@@ -68,6 +68,7 @@ interface AppState {
   version: string;
   theme: Theme;
   model: ModelInfo | null;
+  planModel: string | null;
   modelContextLimit: number;
   initializeModelError: string | null;
   providers: ProvidersMap;
@@ -136,6 +137,7 @@ interface AppState {
 
   forkModalVisible: boolean;
   forkParentUuid: string | null;
+  forkCounter: number;
 
   bashBackgroundPrompt: BashPromptBackgroundEvent | null;
   thinking: { effort: 'low' | 'medium' | 'high' } | undefined;
@@ -206,6 +208,7 @@ interface AppActions {
   showForkModal: () => void;
   hideForkModal: () => void;
   fork: (targetMessageUuid: string) => Promise<void>;
+  incrementForkCounter: () => void;
   setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => void;
   clearBashBackgroundPrompt: () => void;
   toggleThinking: () => void;
@@ -262,6 +265,7 @@ export const useAppStore = create<AppStore>()(
       pastedImageMap: {},
       forkModalVisible: false,
       forkParentUuid: null,
+      forkCounter: 0,
       thinking: undefined,
 
       bashBackgroundPrompt: null,
@@ -283,6 +287,7 @@ export const useAppStore = create<AppStore>()(
           productASCIIArt: response.data.productASCIIArt,
           version: response.data.version,
           model: response.data.model,
+          planModel: response.data.planModel,
           initializeModelError: response.data.initializeModelError,
           modelContextLimit: response.data.model
             ? response.data.model.model.limit.context
@@ -464,7 +469,7 @@ export const useAppStore = create<AppStore>()(
           if (commandeEntry) {
             const userMessage: Message = {
               role: 'user',
-              content: message, // Use original message with placeholders for display
+              content: expandedMessage,
             };
             const command = commandeEntry.command;
             const type = command.type;
@@ -472,11 +477,18 @@ export const useAppStore = create<AppStore>()(
             const isLocalJSX = type === 'local-jsx';
             const isPrompt = type === 'prompt';
             if (isPrompt) {
+              const forkParentUuid = get().forkParentUuid;
               await bridge.request('session.addMessages', {
                 cwd,
                 sessionId,
                 messages: [userMessage],
+                parentUuid: forkParentUuid || undefined,
               });
+              if (forkParentUuid) {
+                set({
+                  forkParentUuid: null,
+                });
+              }
             } else {
               set({
                 messages: [...get().messages, userMessage],
@@ -712,7 +724,7 @@ export const useAppStore = create<AppStore>()(
             processingStartTime: null,
             processingTokens: 0,
             retryInfo: null,
-            forkParentUuid: null, // Clear after successful send
+            forkParentUuid: null,
           });
         } else {
           set({
@@ -721,6 +733,7 @@ export const useAppStore = create<AppStore>()(
             processingStartTime: null,
             processingTokens: 0,
             retryInfo: null,
+            forkParentUuid: null,
           });
         }
         return response;
@@ -1013,6 +1026,11 @@ export const useAppStore = create<AppStore>()(
           inputCursorPosition: contentText.length,
           forkModalVisible: false,
         });
+        get().incrementForkCounter();
+      },
+
+      incrementForkCounter: () => {
+        set({ forkCounter: get().forkCounter + 1 });
       },
 
       setStatus: (status: AppStatus) => {

@@ -43,6 +43,7 @@ function StatusMain() {
   const {
     cwd,
     model,
+    planModel,
     modelContextLimit,
     status,
     exitMessage,
@@ -116,12 +117,15 @@ function StatusMain() {
       </>
     );
   })();
+  const modelDesc = model ? `${model.provider.id}/${model.model.id}` : '';
   return (
     <Box>
       <Text color="gray">
         [
         {model ? (
-          `${model.provider.id}/${model.model.id}`
+          `${modelDesc}${
+            '' // planModel && planModel !== modelDesc ? ` | plan: ${planModel}` : ''
+          }`
         ) : (
           <Text color="red">use /model to select a model</Text>
         )}

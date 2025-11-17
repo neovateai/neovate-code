@@ -4,7 +4,7 @@ export function executePlanCommand(language: string): PromptCommand {
   return {
     type: 'prompt',
     name: 'spec:execute-plan',
-    description: 'Execute detailed plans in batches with review checkpoints',
+    description: 'Execute implementation plan',
     progressMessage: 'Executing implementation plan...',
     async getPromptForCommand(args: string) {
       return [

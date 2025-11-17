@@ -4,7 +4,7 @@ This file provides guidance to CODE AGENT when working with code in this reposit
 
 ## Project Overview
 
-Takumi is a coding agent CLI to enhance development workflow. It's a TypeScript-based tool that provides AI-powered coding assistance through a command-line interface with support for multiple LLM providers and Model Context Protocol (MCP) servers.
+Neovate Code is a coding agent CLI to enhance development workflow. It's a TypeScript-based tool that provides AI-powered coding assistance through a command-line interface with support for multiple LLM providers and Model Context Protocol (MCP) servers.
 
 ## Development Commandst
 
