@@ -172,6 +172,15 @@ export function useInputHandlers() {
     [inputState, setHistoryIndex],
   );
 
+  const handleQueuedMessagesUp = useCallback(() => {
+    const { queuedMessages } = useAppStore.getState();
+    if (queuedMessages.length === 0) return;
+    const queuedText = queuedMessages.join('\n');
+    clearQueue();
+    inputState.setValue(queuedText);
+    inputState.setCursorPosition(0);
+  }, [inputState, clearQueue]);
+
   const handleHistoryUp = useCallback(() => {
     // 1. auto suggest
     // 1.1 slash command suggestions
@@ -184,16 +193,7 @@ export function useInputHandlers() {
       fileSuggestion.navigatePrevious();
       return;
     }
-    // 2. queued message (handled before history)
-    const { queuedMessages } = useAppStore.getState();
-    if (historyIndex === null && queuedMessages.length > 0) {
-      const queuedText = queuedMessages.join('\n');
-      clearQueue();
-      inputState.setValue(queuedText);
-      inputState.setCursorPosition(0);
-      return;
-    }
-    // 3. history
+    // 2. history
     if (history.length > 0) {
       let nextHistoryIndex = null;
       if (historyIndex === null) {
@@ -216,7 +216,6 @@ export function useInputHandlers() {
     setDraftInput,
     slashCommands,
     fileSuggestion,
-    clearQueue,
     log,
   ]);
 
@@ -301,6 +300,7 @@ export function useInputHandlers() {
       handleTabPress,
       handleChange,
       handleHistoryUp,
+      handleQueuedMessagesUp,
       handleHistoryDown,
       handleHistoryReset,
       handlePaste,

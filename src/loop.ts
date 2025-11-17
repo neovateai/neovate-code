@@ -14,6 +14,7 @@ import type {
   ToolUsePart,
 } from './message';
 import type { ModelInfo } from './model';
+import { addPromptCache } from './promptCache';
 import { getThinkingConfig } from './thinking-config';
 import type { ToolResult, Tools, ToolUse } from './tool';
 import { Usage } from './usage';
@@ -98,6 +99,7 @@ type RunLoopOpts = {
   thinking?: {
     effort: 'low' | 'medium' | 'high';
   };
+  temperature?: number;
   onTextDelta?: (text: string) => Promise<void>;
   onText?: (text: string) => Promise<void>;
   onReasoning?: (text: string) => Promise<void>;
@@ -213,6 +215,8 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       shouldAtNormalize = false;
     }
 
+    prompt = addPromptCache(prompt, opts.model);
+
     let text = '';
     let reasoning = '';
     const toolCalls: Array<{
@@ -222,7 +226,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     }> = [];
 
     const requestId = randomUUID();
-    const m: LanguageModelV2 = opts.model.m;
+    const m: LanguageModelV2 = await opts.model._mCreator();
     const tools = opts.tools.toLanguageV2Tools();
 
     // Get thinking config based on model's reasoning capability
@@ -247,6 +251,9 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
           toolChoice: { type: 'auto' },
           abortSignal: abortController.signal,
           ...thinkingConfig,
+          ...(opts.temperature !== undefined && {
+            temperature: opts.temperature,
+          }),
         });
         opts.onStreamResult?.({
           requestId,

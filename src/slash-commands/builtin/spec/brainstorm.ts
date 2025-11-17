@@ -4,8 +4,7 @@ export function brainstormCommand(language: string): PromptCommand {
   return {
     type: 'prompt',
     name: 'spec:brainstorm',
-    description:
-      'Transform rough ideas into fully-formed designs through structured questioning',
+    description: 'Brainstorm design ideas',
     progressMessage: 'Refining your idea into a design...',
     async getPromptForCommand(args: string) {
       return [

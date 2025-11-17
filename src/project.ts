@@ -248,6 +248,7 @@ export class Project {
       signal: opts.signal,
       autoCompact: this.context.config.autoCompact,
       thinking: opts.thinking,
+      temperature: this.context.config.temperature,
       onMessage: async (message) => {
         const normalizedMessage = {
           ...message,

@@ -1,7 +1,7 @@
 import { experimental_createMCPClient } from '@ai-sdk/mcp';
 import createDebug from 'debug';
 import { existsSync, readFileSync } from 'fs';
-import { resolve } from 'path';
+import { resolve } from 'pathe';
 import type { ImagePart, TextPart } from './message';
 import type { Tool } from './tool';
 import { safeStringify } from './utils/safeStringify';
