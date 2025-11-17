@@ -1,6 +1,6 @@
 import { Bubble } from '@ant-design/x';
 import { type GetProp, Skeleton, Spin } from 'antd';
-import { useMemo, useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useSnapshot } from 'valtio';
 import AssistantFooter from '@/components/AssistantFooter';
 import AssistantMessage from '@/components/AssistantMessage';
@@ -11,20 +11,12 @@ import Welcome from '@/components/Welcome';
 import { state } from '@/state/chat';
 import type {
   Message,
-  ReasoningPart,
-  TextPart,
   UIAssistantMessage,
   UIMessage,
-  UIToolPair,
   UIToolPart,
 } from '@/types/chat';
 import ActivityIndicator from '../ActivityIndicator';
 import styles from './index.module.css';
-
-type ToolPair = {
-  toolUse: UIToolPart;
-  toolResult?: UIToolPart;
-};
 
 /**
  * Split messages into completed and pending based on tool completion status
@@ -85,87 +77,6 @@ function splitMessages(messages: readonly UIMessage[]): {
   }
 }
 
-/**
- * Pair tool_use with tool_result within the same assistant message
- */
-function pairToolsWithResults(
-  assistantMsg: Readonly<UIAssistantMessage>,
-): ToolPair[] {
-  if (typeof assistantMsg.content === 'string') {
-    return [];
-  }
-
-  // Extract all tool parts
-  const toolParts = assistantMsg.content.filter(
-    (p) => p.type === 'tool',
-  ) as UIToolPart[];
-
-  // Group by tool id
-  const toolsMap = new Map<string, { use?: UIToolPart; result?: UIToolPart }>();
-
-  toolParts.forEach((part) => {
-    const id = part.id;
-    if (!toolsMap.has(id)) {
-      toolsMap.set(id, {});
-    }
-
-    const toolGroup = toolsMap.get(id)!;
-    if (part.state === 'tool_use') {
-      toolGroup.use = part;
-    } else if (part.state === 'tool_result') {
-      toolGroup.result = part;
-    }
-  });
-
-  // Create pairs (only include tools that have at least a tool_use)
-  const pairs: ToolPair[] = [];
-  toolsMap.forEach((toolGroup) => {
-    if (toolGroup.use) {
-      pairs.push({
-        toolUse: toolGroup.use,
-        toolResult: toolGroup.result,
-      });
-    }
-  });
-
-  return pairs;
-}
-
-/**
- * Create a processed assistant message with paired tools
- */
-function createProcessedAssistantMessage(
-  message: Readonly<UIAssistantMessage>,
-): UIAssistantMessage {
-  if (typeof message.content === 'string') {
-    return { ...message };
-  }
-
-  // Separate text/reasoning parts from tool parts
-  const textParts = message.content
-    .filter((p) => p.type === 'text' || p.type === 'reasoning')
-    .map((p) => ({ ...p })) as (TextPart | ReasoningPart)[];
-
-  // Get tool pairs
-  const toolPairs = pairToolsWithResults(message);
-
-  // Create new content with paired tools
-  const newContent: (TextPart | ReasoningPart | UIToolPair)[] = [
-    ...textParts,
-    ...toolPairs.map((pair) => ({
-      type: 'tool-pair' as const,
-      id: pair.toolUse.id,
-      toolUse: { ...pair.toolUse },
-      toolResult: pair.toolResult ? { ...pair.toolResult } : undefined,
-    })),
-  ];
-
-  return {
-    ...message,
-    content: newContent,
-  };
-}
-
 const ChatContent: React.FC = () => {
   const { messages, status } = useSnapshot(state);
   const chatListRef = useRef<HTMLDivElement>(null);
@@ -179,30 +90,8 @@ const ChatContent: React.FC = () => {
     [messages],
   );
 
-  // Process all messages to pair tools
-  const processedCompletedMessages = useMemo(() => {
-    return completedMessages.map((message) => {
-      if (message.role === 'assistant') {
-        return createProcessedAssistantMessage(message as UIAssistantMessage);
-      }
-      return message;
-    });
-  }, [completedMessages]);
-
-  const processedPendingMessages = useMemo(() => {
-    return pendingMessages.map((message) => {
-      if (message.role === 'assistant') {
-        return createProcessedAssistantMessage(message as UIAssistantMessage);
-      }
-      return message;
-    });
-  }, [pendingMessages]);
-
-  // Combine processed messages
-  const allProcessedMessages = [
-    ...processedCompletedMessages,
-    ...processedPendingMessages,
-  ];
+  // Combine messages
+  const allProcessedMessages = [...completedMessages, ...pendingMessages];
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
