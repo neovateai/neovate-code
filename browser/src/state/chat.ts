@@ -232,13 +232,13 @@ export const actions: ChatActions = {
             state.approvalModal = null;
             const isApproved = result !== 'deny';
             if (result === 'approve_always_edit') {
-              await clientActions.request('sessionConfig.setApprovalMode', {
+              await clientActions.request('session.config.setApprovalMode', {
                 cwd: state.cwd,
                 sessionId: state.sessionId,
                 approvalMode: 'autoEdit',
               });
             } else if (result === 'approve_always_tool') {
-              await clientActions.request('sessionConfig.addApprovalTools', {
+              await clientActions.request('session.config.addApprovalTools', {
                 cwd: state.cwd,
                 sessionId: state.sessionId,
                 approvalTool: toolUse.name,

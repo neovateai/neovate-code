@@ -73,27 +73,33 @@ const DiffStatBlocks = (props: DiffStatBlocksProps) => {
     return null;
   }
 
+  // Generate unique keys for each block type
+  const counters = { add: 0, remove: 0, normal: 0 };
+
   return (
     <div className={styles.diffStatBlocks}>
       {diffStatArray.map((statType) => {
+        const count = counters[statType as keyof typeof counters]++;
+        const uniqueKey = `${statType}-${count}`;
+
         if (statType === 'add') {
           return (
             <div
-              key={statType}
+              key={uniqueKey}
               className={classNames(styles.addBlock, styles.block)}
             />
           );
         } else if (statType === 'remove') {
           return (
             <div
-              key={statType}
+              key={uniqueKey}
               className={classNames(styles.removeBlock, styles.block)}
             />
           );
         } else {
           return (
             <div
-              key={statType}
+              key={uniqueKey}
               className={classNames(styles.normalBlock, styles.block)}
             />
           );

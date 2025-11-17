@@ -66,7 +66,7 @@ const TodoRender: React.FC<TodoRenderProps> = ({ part }) => {
       >
         <div className={styles.errorContainer}>
           {String(t('toolRenders.todo.operationFailed'))}
-          <div className={styles.errorDetail}>{result.llmContent}</div>
+          <div className={styles.errorDetail}>{result?.llmContent || ''}</div>
         </div>
       </MessageWrapper>
     );

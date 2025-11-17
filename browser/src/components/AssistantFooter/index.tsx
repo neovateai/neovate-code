@@ -66,6 +66,10 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({ message }) => {
     }
   }, [isCopySuccess]);
 
+  if (status === 'processing') {
+    return null;
+  }
+
   return (
     <Flex className={styles.assistantFooter}>
       <Button
@@ -73,7 +77,6 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({ message }) => {
         type="text"
         icon={<RefreshIcon />}
         onClick={handleRetry}
-        disabled={status === 'processing'}
         title="Retry"
       />
       <Button

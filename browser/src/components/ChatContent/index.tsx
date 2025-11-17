@@ -266,6 +266,7 @@ const ChatContent: React.FC = () => {
 
   return (
     <div className={styles.chat}>
+      status: {status}
       <div className={styles.chatList} ref={chatListRef}>
         {finalItems?.length ? (
           <Bubble.List

@@ -215,7 +215,7 @@ const CodeDiffOutline = (props: CodeDiffOutlineProps) => {
           icon: <ApproveToolIcon />,
         },
         {
-          key: 'accept',
+          key: 'accept_always',
           text: t('toolApproval.approveAlwaysTool', {
             toolName: 'edit' as const,
           }),
