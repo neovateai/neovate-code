@@ -156,6 +156,48 @@ export function ConfirmPrompt({
   );
 }
 
+// Workspace selector
+export function WorkspaceSelector({
+  worktrees,
+  onSelect,
+  onCancel,
+}: {
+  worktrees: Worktree[];
+  onSelect: (worktree: Worktree) => void;
+  onCancel: () => void;
+}) {
+  const items = [
+    ...worktrees.map((wt) => ({
+      label: `${wt.name} (${wt.branch})${!wt.isClean ? ' - has changes' : ''}`,
+      value: wt.name,
+    })),
+    {
+      label: 'Cancel',
+      value: '__cancel__',
+    },
+  ];
+
+  const handleSelect = (item: { value: string }) => {
+    if (item.value === '__cancel__') {
+      onCancel();
+    } else {
+      const worktree = worktrees.find((wt) => wt.name === item.value);
+      if (worktree) {
+        onSelect(worktree);
+      }
+    }
+  };
+
+  return (
+    <Box flexDirection="column">
+      <Box marginBottom={1}>
+        <Text bold>Select a workspace to complete:</Text>
+      </Box>
+      <SelectInput items={items} onSelect={handleSelect} />
+    </Box>
+  );
+}
+
 // Completion choice menu
 export function CompletionChoice({
   originalBranch,

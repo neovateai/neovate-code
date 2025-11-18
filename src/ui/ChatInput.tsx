@@ -1,5 +1,6 @@
 import { Box, Text } from 'ink';
 import React, { useCallback, useMemo } from 'react';
+import { BackgroundPrompt } from './BackgroundPrompt';
 import { SPACING, UI_COLORS } from './constants';
 import { DebugRandomNumber } from './Debug';
 import { MemoryModal } from './MemoryModal';
@@ -30,6 +31,9 @@ export function ChatInput() {
     setStatus,
     showForkModal,
     forkModalVisible,
+    bashBackgroundPrompt,
+    bridge,
+    thinking,
   } = useAppStore();
   const { columns } = useTerminalSize();
   const { handleExternalEdit } = useExternalEditor({
@@ -37,12 +41,20 @@ export function ChatInput() {
     onChange: inputState.setValue,
     setCursorPosition: inputState.setCursorPosition,
   });
+
+  // Handle Ctrl+B for background prompt
+  const handleMoveToBackground = useCallback(() => {
+    if (bashBackgroundPrompt) {
+      bridge.requestMoveToBackground(bashBackgroundPrompt.taskId);
+    }
+  }, [bashBackgroundPrompt, bridge]);
+
   const showSuggestions =
     slashCommands.suggestions.length > 0 ||
     fileSuggestion.matchedPaths.length > 0;
   const placeholderText = useMemo(() => {
     if (queuedMessages.length > 0) {
-      return 'Press up to edit queued messages';
+      return 'Press option+up to edit queued messages';
     }
     if (currentTip) {
       return currentTip;
@@ -101,10 +113,11 @@ export function ChatInput() {
 
   // Get border color based on mode
   const borderColor = useMemo(() => {
+    if (thinking?.effort === 'high') return UI_COLORS.CHAT_BORDER_THINKING_HARD;
     if (mode === 'memory') return UI_COLORS.CHAT_BORDER_MEMORY;
     if (mode === 'bash') return UI_COLORS.CHAT_BORDER_BASH;
     return UI_COLORS.CHAT_BORDER;
-  }, [mode]);
+  }, [thinking, mode]);
 
   // Get prompt symbol based on mode
   const promptSymbol = useMemo(() => {
@@ -131,6 +144,7 @@ export function ChatInput() {
   if (status === 'exit') {
     return null;
   }
+
   return (
     <Box flexDirection="column" marginTop={SPACING.CHAT_INPUT_MARGIN_TOP}>
       <ModeIndicator />
@@ -152,6 +166,7 @@ export function ChatInput() {
             placeholder={placeholderText}
             onChange={handleDisplayChange}
             onHistoryUp={handlers.handleHistoryUp}
+            onQueuedMessagesUp={handlers.handleQueuedMessagesUp}
             onHistoryDown={handlers.handleHistoryDown}
             onHistoryReset={handlers.handleHistoryReset}
             onExit={() => {
@@ -188,6 +203,9 @@ export function ChatInput() {
             onExternalEdit={handleExternalEdit}
             columns={columns - 6}
             isDimmed={false}
+            onCtrlBBackground={
+              bashBackgroundPrompt ? handleMoveToBackground : undefined
+            }
           />
           <DebugRandomNumber />
         </Box>

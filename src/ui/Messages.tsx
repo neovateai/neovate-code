@@ -193,7 +193,8 @@ export function pairToolsWithResults(
 }
 
 export function Messages() {
-  const { userName, messages, productName, sessionId } = useAppStore();
+  const { userName, messages, productName, sessionId, forkCounter } =
+    useAppStore();
 
   // Split messages into completed and pending
   const { completedMessages, pendingMessages } = useMemo(
@@ -204,7 +205,10 @@ export function Messages() {
   return (
     <Box flexDirection="column">
       {/* Static area - completed messages */}
-      <Static key={sessionId} items={['header', ...completedMessages] as any[]}>
+      <Static
+        key={`${sessionId}-${forkCounter}`}
+        items={['header', ...completedMessages] as any[]}
+      >
         {(item, index) => {
           if (item === 'header') {
             return <Header key="header" />;
@@ -264,7 +268,7 @@ function ProductInfo() {
 }
 
 function GettingStartedTips() {
-  const { productName } = useAppStore();
+  const { productName, initializeModelError } = useAppStore();
   return (
     <Box flexDirection="column" marginTop={1}>
       <Text>Tips to getting started:</Text>
@@ -279,6 +283,11 @@ function GettingStartedTips() {
       <Text>
         4. <Text bold>/help</Text> for more information
       </Text>
+      {initializeModelError && (
+        <Box marginTop={1}>
+          <Text color="red">⚠ {initializeModelError}</Text>
+        </Box>
+      )}
     </Box>
   );
 }

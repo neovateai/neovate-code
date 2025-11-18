@@ -5,6 +5,7 @@ import React from 'react';
 interface QuillContextType {
   /** call this function when should open/close context menu */
   onInputAt?: (inputing: boolean, index?: number, bounds?: Bounds) => void;
+  onInputSlash?: (inputing: boolean, index?: number, bounds?: Bounds) => void;
   /** call this function when quill instance is ready */
   onQuillLoad?: (quill: Quill) => void;
   /** call this function when user delete context */

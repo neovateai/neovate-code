@@ -6,6 +6,7 @@ import { WorkspaceList } from './components';
 
 export async function runList(context: Context, argv: any) {
   const cwd = process.cwd();
+  const productName = context.productName.toLowerCase();
 
   try {
     const gitRoot = await getGitRoot(cwd);
@@ -13,7 +14,7 @@ export async function runList(context: Context, argv: any) {
 
     // Load metadata to get original branches
     const fs = await import('fs');
-    const metadataPath = `${gitRoot}/.neovate-workspaces/.metadata`;
+    const metadataPath = `${gitRoot}/.${productName}-workspaces/.metadata`;
     let metadata: Record<string, any> = {};
     if (fs.existsSync(metadataPath)) {
       try {

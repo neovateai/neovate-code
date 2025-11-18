@@ -20,8 +20,7 @@ export function createTerminalSetupCommand(): LocalCommand {
     name: 'terminal-setup',
     isEnabled:
       (platform() === 'darwin' && terminal === 'iTerm.app') || isVSCode,
-    description:
-      'Install Shift+Enter key binding to support line breaks (iTerm2 and VSCode only)',
+    description: 'Setup Shift+Enter binding',
     async call() {
       let result = '';
 

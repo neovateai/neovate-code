@@ -32,7 +32,9 @@ export function ExitHint() {
       </Text>
       <Box flexDirection="column" marginTop={1}>
         <Text color="gray">📁 Working directory: {cwd}</Text>
-        <Text color="gray">🤖 Model: {model}</Text>
+        <Text color="gray">
+          🤖 Model: {model ? `${model.provider.id}/${model.model.id}` : 'N/A'}
+        </Text>
         <Text color="gray">🍖 Total tokens used: {tokenUsed}</Text>
         <Text color="gray">🆔 Session ID: {sessionId || 'N/A'}</Text>
         <Text color="gray">

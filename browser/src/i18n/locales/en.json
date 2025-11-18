@@ -79,7 +79,7 @@
     "sendMessage": "Send Message",
     "thinking": "Thinking...",
     "stopGenerating": "Stop Generating",
-    "inputPlaceholder": "Ask or input @ use skills"
+    "inputPlaceholder": "Input @ to use skills or input / to use commands"
   },
   "prompts": {
     "upgrades": "Upgrades",

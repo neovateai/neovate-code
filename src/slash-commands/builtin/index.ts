@@ -1,4 +1,5 @@
 import type { SlashCommand } from '../types';
+import { createBugCommand } from './bug';
 import { clearCommand } from './clear';
 import { compactCommand } from './compact';
 import { exitCommand } from './exit';
@@ -13,6 +14,7 @@ import { createResumeCommand } from './resume';
 import { createReviewCommand } from './review';
 import { brainstormCommand } from './spec/brainstorm';
 import { executePlanCommand } from './spec/execute-plan';
+import { saveDesignCommand } from './spec/save-design';
 import { writePlanCommand } from './spec/write-plan';
 import { statusCommand } from './status';
 import { createTerminalSetupCommand } from './terminal-setup';
@@ -20,6 +22,7 @@ import { createTerminalSetupCommand } from './terminal-setup';
 export function createBuiltinCommands(opts: {
   productName: string;
   argvConfig: Record<string, any>;
+  language: string;
 }): SlashCommand[] {
   return [
     clearCommand,
@@ -32,12 +35,14 @@ export function createBuiltinCommands(opts: {
     createModelCommand(opts),
     createOutputStyleCommand(),
     createResumeCommand(),
-    createReviewCommand(),
+    createReviewCommand(opts.language),
     createTerminalSetupCommand(),
+    createBugCommand(),
     compactCommand,
     statusCommand,
-    brainstormCommand,
-    writePlanCommand,
-    executePlanCommand,
+    brainstormCommand(opts.language),
+    writePlanCommand(opts.language),
+    executePlanCommand(opts.language),
+    saveDesignCommand(opts.language),
   ];
 }
