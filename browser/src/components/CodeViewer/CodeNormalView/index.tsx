@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useState } from 'react';
 import { CodeRenderer } from '@/components/CodeRenderer/CodeRenderer';
+import { createHeightStyle } from '@/constants/styles';
 import type {
   CodeNormalViewerMetaInfo,
   CodeNormalViewerTabItem,
@@ -35,10 +36,7 @@ const CodeNormalView = forwardRef<CodeNormalViewRef, Props>((props, ref) => {
   }, [item.code]);
 
   return (
-    <div
-      className={styles.container}
-      style={maxHeight ? { maxHeight: `${maxHeight}px` } : {}}
-    >
+    <div className={styles.container} style={createHeightStyle(maxHeight)}>
       {!hideToolbar && <NormalToolbar normalMetaInfo={metaInfo} item={item} />}
       <div className={styles.editor}>
         <CodeRenderer

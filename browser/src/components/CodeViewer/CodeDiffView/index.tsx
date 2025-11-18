@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useState } from 'react';
 import { CodeRenderer } from '@/components/CodeRenderer/CodeRenderer';
 import { useClipboard } from '@/hooks/useClipboard';
+import { createHeightStyle, STYLE_CONSTANTS } from '@/constants/styles';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffToolbar from '../DiffToolbar';
 import styles from './index.module.css';
@@ -35,16 +36,13 @@ const CodeDiffView = forwardRef<CodeDiffViewRef, CodeDiffViewProps>(
       if (isCopySuccess) {
         const timer = setTimeout(() => {
           setIsCopySuccess(false);
-        }, 2000);
+        }, STYLE_CONSTANTS.TIMING.COPY_SUCCESS_DURATION);
         return () => clearTimeout(timer);
       }
     }, [isCopySuccess]);
 
     return (
-      <div
-        className={styles.container}
-        style={maxHeight ? { maxHeight: `${maxHeight}px` } : {}}
-      >
+      <div className={styles.container} style={createHeightStyle(maxHeight)}>
         {!hideToolBar && (
           <DiffToolbar
             onCopy={handleCopy}

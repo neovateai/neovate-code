@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { type Highlighter, createHighlighter } from 'shiki';
 import { SUPPORTED_LANGUAGES } from '@/constants/languages';
 
-// Module-level shared state
+// Module-level shared state with protection against race conditions
 let sharedHighlighter: Highlighter | null = null;
 let initPromise: Promise<Highlighter> | null = null;
 let refCount = 0;
+// Track initialization state to prevent concurrent initialization
+let isInitializing = false;
 
 interface UseShikiReturn {
   codeToHtml: Highlighter['codeToHtml'] | null;
@@ -27,7 +29,15 @@ const getShikiHighlighter = async (): Promise<Highlighter> => {
     return initPromise;
   }
 
+  // Prevent concurrent initialization
+  if (isInitializing) {
+    // Wait a bit and retry
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    return getShikiHighlighter();
+  }
+
   // Create new instance
+  isInitializing = true;
   initPromise = createHighlighter({
     themes: ['snazzy-light'],
     langs: [...SUPPORTED_LANGUAGES],
@@ -38,6 +48,7 @@ const getShikiHighlighter = async (): Promise<Highlighter> => {
     return sharedHighlighter;
   } finally {
     initPromise = null;
+    isInitializing = false;
   }
 };
 
@@ -48,10 +59,15 @@ const releaseShikiHighlighter = (): void => {
   // Only dispose when no components are using the highlighter
   if (refCount <= 0) {
     if (sharedHighlighter) {
-      sharedHighlighter.dispose();
+      try {
+        sharedHighlighter.dispose();
+      } catch (error) {
+        console.warn('Error disposing shiki highlighter:', error);
+      }
       sharedHighlighter = null;
     }
     initPromise = null;
+    isInitializing = false;
     refCount = 0;
   }
 };
@@ -59,15 +75,21 @@ const releaseShikiHighlighter = (): void => {
 // Helper function for testing - reset shared state
 export const resetShikiState = (): void => {
   if (sharedHighlighter) {
-    sharedHighlighter.dispose();
+    try {
+      sharedHighlighter.dispose();
+    } catch (error) {
+      console.warn('Error disposing shiki highlighter during reset:', error);
+    }
   }
   sharedHighlighter = null;
   initPromise = null;
+  isInitializing = false;
   refCount = 0;
 };
 
 /**
  * Shiki hook with shared instance management
+ * Handles React 18 Concurrent mode and Strict mode double mounting
  */
 export function useShiki(): UseShikiReturn {
   const [isReady, setIsReady] = useState(false);
@@ -76,23 +98,36 @@ export function useShiki(): UseShikiReturn {
     Highlighter['codeToHtml'] | null
   >(null);
 
+  // Use ref to track if this instance is still mounted
+  const mountedRef = useRef(true);
+  // Track if we've incremented refCount to ensure proper cleanup
+  const refIncrementedRef = useRef(false);
+
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
 
     const initHighlighter = async () => {
       try {
         setError(null);
         const highlighter = await getShikiHighlighter();
+        refIncrementedRef.current = true;
 
-        if (mounted) {
+        if (mountedRef.current) {
           setCodeToHtml(() => highlighter.codeToHtml.bind(highlighter));
           setIsReady(true);
+        } else {
+          // Component was unmounted during initialization
+          releaseShikiHighlighter();
+          refIncrementedRef.current = false;
         }
       } catch (err) {
-        // Decrease count on error to maintain consistency
-        releaseShikiHighlighter();
+        // Decrease count on error only if we successfully incremented it
+        if (refIncrementedRef.current) {
+          releaseShikiHighlighter();
+          refIncrementedRef.current = false;
+        }
 
-        if (mounted) {
+        if (mountedRef.current) {
           console.error('Failed to initialize Shiki highlighter:', err);
           const userFriendlyError =
             err instanceof Error
@@ -112,8 +147,20 @@ export function useShiki(): UseShikiReturn {
 
     // Cleanup: release the reference when component unmounts
     return () => {
-      mounted = false;
-      releaseShikiHighlighter();
+      mountedRef.current = false;
+
+      // Only release if we successfully incremented the count
+      if (refIncrementedRef.current) {
+        releaseShikiHighlighter();
+        refIncrementedRef.current = false;
+      }
+    };
+  }, []);
+
+  // Clear mounted flag on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
     };
   }, []);
 

@@ -1,3 +1,4 @@
+import type { Element } from 'hast';
 import type { ShikiTransformer } from 'shiki';
 
 export interface LineNumberOptions {
@@ -27,10 +28,10 @@ export function createLineNumberTransformer(
         console.error('Error in line number transformer pre:', error);
       }
     },
-    line(node, line) {
+    line(node: Element, lineNumber: number) {
       try {
         // Add line number element to each line
-        const lineNumber = validStartLine + line - 1;
+        const lineCount = validStartLine + lineNumber - 1;
 
         // Create line number span element
         const lineNumberElement = {
@@ -38,13 +39,13 @@ export function createLineNumberTransformer(
           tagName: 'span',
           properties: {
             class: 'line-number',
-            'data-line': lineNumber,
+            'data-line': lineCount,
             'aria-hidden': 'true',
           },
           children: [
             {
               type: 'text' as const,
-              value: String(lineNumber),
+              value: String(lineCount),
             },
           ],
         };
@@ -59,7 +60,7 @@ export function createLineNumberTransformer(
 
         // Add data attribute to the line itself
         node.properties = node.properties || {};
-        node.properties['data-line'] = lineNumber;
+        node.properties['data-line'] = lineCount;
       } catch (error) {
         console.error('Error in line number transformer line:', error);
       }

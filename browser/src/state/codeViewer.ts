@@ -1,6 +1,7 @@
+import { message } from 'antd';
 import { proxy } from 'valtio';
-import i18n from '@/i18n';
 import { readFile } from '@/api/files';
+import i18n from '@/i18n';
 import type {
   CodeNormalViewerMode,
   CodeViewerLanguage,
@@ -253,8 +254,12 @@ export const actions = {
     } catch (error) {
       console.error('Failed to open file in viewer:', error);
 
-      // Interface already shows error notifications, so we just log the error
-      // and don't open the viewer for failed file loads
+      message.error(
+        i18n.t('codeViewer.error.failedToOpenFile', {
+          file: filePath,
+          error: error,
+        }),
+      );
     }
   },
 };

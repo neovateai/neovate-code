@@ -46,6 +46,7 @@
     "@tailwindcss/vite": "^4.1.10",
     "@tanstack/router-plugin": "^1.121.16",
     "@types/diff": "^5.2.3",
+    "@types/hast": "^3.0.4",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@types/react-i18next": "^8.1.0",

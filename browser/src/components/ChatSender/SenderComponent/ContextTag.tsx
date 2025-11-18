@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import type { ImageItem } from '@/api/model';
 import DevFileIcon from '@/components/DevFileIcon';
 import { ContextType } from '@/constants/context';
+import { STYLE_CONSTANTS } from '@/constants/styles';
 import * as codeViewer from '@/state/codeViewer';
 import type { FileItem } from '@/types/chat';
 import type { ContextStoreValue } from '@/types/context';
@@ -46,8 +47,8 @@ export const SenderContextTag = (props: Props) => {
         return (
           <img
             src={imageSrc}
-            width={30}
-            height={20}
+            width={STYLE_CONSTANTS.IMAGES.CONTEXT_TAG_ICON.WIDTH}
+            height={STYLE_CONSTANTS.IMAGES.CONTEXT_TAG_ICON.HEIGHT}
             className="rounded-2xl h-5 w-7.5 select-none pointer-events-none"
             draggable={false}
           />
@@ -65,7 +66,11 @@ export const SenderContextTag = (props: Props) => {
         return (
           <img
             src={imageSrc}
-            className="max-w-xl max-h-120 select-none pointer-events-none"
+            style={{
+              maxWidth: `${STYLE_CONSTANTS.IMAGES.CONTEXT_TAG_PREVIEW.MAX_WIDTH}px`,
+              maxHeight: `${STYLE_CONSTANTS.IMAGES.CONTEXT_TAG_PREVIEW.MAX_HEIGHT}px`,
+            }}
+            className="select-none pointer-events-none"
             draggable={false}
           />
         );
@@ -89,7 +94,7 @@ export const SenderContextTag = (props: Props) => {
     };
 
     return { isClickable, handleClick };
-  }, []);
+  }, [contextType, context]);
 
   return (
     <div
