@@ -13,8 +13,6 @@ import type {
   Message,
   NodeBridgeResponse,
   ToolMessage2,
-  ToolResultPart,
-  ToolResultPart2,
   ToolUse,
   UIAssistantMessage,
   UIDisplayMessage,
@@ -167,7 +165,7 @@ export const actions: ChatActions = {
         return;
       }
 
-      // 处理新格式的 ToolMessage2 (role: 'tool')
+      // Handle new format ToolMessage2 (role: 'tool')
       if (message.role === 'tool') {
         const lastMessage = state.messages[
           state.messages.length - 1
@@ -177,7 +175,7 @@ export const actions: ChatActions = {
           throw new Error('Tool message must be after assistant message');
         }
 
-        // 遍历所有 tool results，更新对应的 tool_use
+        // Iterate over all tool results, update the corresponding tool_use
         const toolMessage = message as ToolMessage2;
         toolMessage.content.forEach((toolResultPart2) => {
           const toolResult = toolResultPart2ToToolResultPart(toolResultPart2);

@@ -123,7 +123,7 @@ export type ToolUseMessage = {
   content: ToolUsePart;
 };
 
-// 新格式 ToolMessage2 相关类型
+// New format ToolMessage2 related types
 export type ToolResultPart2 = {
   type: 'tool-result';
   toolCallId: string;
