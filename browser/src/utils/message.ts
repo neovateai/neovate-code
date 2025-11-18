@@ -1,11 +1,25 @@
 import { CANCELED_MESSAGE_TEXT } from '@/constants';
 import type {
   Message,
+  ToolMessage2,
   ToolResultPart,
+  ToolResultPart2,
   UIAssistantMessage,
   UIMessage,
 } from '@/types/chat';
 import { safeStringify } from './safeStringify';
+
+export function toolResultPart2ToToolResultPart(
+  part: ToolResultPart2,
+): ToolResultPart {
+  return {
+    type: 'tool_result',
+    id: part.toolCallId,
+    name: part.toolName,
+    input: part.input,
+    result: part.result,
+  };
+}
 
 export function isToolResultMessage(message: Message) {
   return (
