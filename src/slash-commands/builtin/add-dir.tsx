@@ -136,7 +136,7 @@ const DirectoryManagerComponent: React.FC<DirectoryManagerProps> = ({
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedIndex, setSelectedIndex] = useState(1); // 0 = cwd, 1 = Add directory...
   const [inputValue, setInputValue] = useState(initialPath || '');
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [processingAction, setProcessingAction] = useState(false);
   const [confirmSelection, setConfirmSelection] = useState(0); // 0 = Yes, 1 = No
   const [directoryToRemove, setDirectoryToRemove] = useState<string | null>(
@@ -170,7 +170,7 @@ const DirectoryManagerComponent: React.FC<DirectoryManagerProps> = ({
       if (viewMode === 'input') {
         setViewMode('list');
         setInputValue('');
-        setStatusMessage(null);
+        setErrorMessage(null);
       } else if (viewMode === 'confirm-remove') {
         setViewMode('list');
         setDirectoryToRemove(null);
@@ -189,8 +189,7 @@ const DirectoryManagerComponent: React.FC<DirectoryManagerProps> = ({
         if (confirmSelection === 0 && directoryToRemove) {
           // Yes - remove directory
           setProcessingAction(true);
-          removeDirectory(directoryToRemove).then((message) => {
-            setStatusMessage(message);
+          removeDirectory(directoryToRemove).then(() => {
             setProcessingAction(false);
             setViewMode('list');
             setDirectoryToRemove(null);
@@ -225,7 +224,7 @@ const DirectoryManagerComponent: React.FC<DirectoryManagerProps> = ({
           // Selected "Add directory..."
           setViewMode('input');
           setInputValue('');
-          setStatusMessage(null);
+          setErrorMessage(null);
         } else {
           // Selected an additional directory - show confirmation dialog
           const dirToRemove = directories[selectedIndex - 1];
@@ -241,12 +240,18 @@ const DirectoryManagerComponent: React.FC<DirectoryManagerProps> = ({
     if (viewMode === 'input') {
       if (key.return && inputValue.trim()) {
         setProcessingAction(true);
+        setErrorMessage(null);
         addDirectory(inputValue.trim()).then((message) => {
-          setStatusMessage(message);
           setProcessingAction(false);
           if (message.includes('Success')) {
+            // Find the index of the newly added directory
+            const newDirIndex = directories.length + 1; // Will be at this position after reload
+            setSelectedIndex(newDirIndex);
             setViewMode('list');
             setInputValue('');
+          } else {
+            // On error, stay in input mode and show error
+            setErrorMessage(message);
           }
         });
       } else if (key.backspace || key.delete) {
@@ -301,6 +306,7 @@ const DirectoryManagerComponent: React.FC<DirectoryManagerProps> = ({
           borderColor="red"
           flexDirection="column"
           paddingX={1}
+          width={80}
         >
           <Text bold color="red">
             Remove directory from workspace?
@@ -362,7 +368,8 @@ const DirectoryManagerComponent: React.FC<DirectoryManagerProps> = ({
           const isSelected = selectedIndex === itemIndex;
           return (
             <Text key={dir} color={isSelected ? 'white' : 'gray'}>
-              {isSelected ? '› ' : '  '} {dir}
+              {isSelected ? '› ' : '  '}
+              {itemIndex}. {dir}
             </Text>
           );
         })}
@@ -376,18 +383,6 @@ const DirectoryManagerComponent: React.FC<DirectoryManagerProps> = ({
         </Text>
 
         <Text></Text>
-
-        {/* Status message */}
-        {statusMessage && (
-          <>
-            <Text
-              color={statusMessage.includes('Success') ? 'green' : 'yellow'}
-            >
-              {statusMessage}
-            </Text>
-            <Text></Text>
-          </>
-        )}
 
         {/* Processing indicator */}
         {processingAction && (
@@ -409,7 +404,14 @@ const DirectoryManagerComponent: React.FC<DirectoryManagerProps> = ({
   // Input mode - show input box
   return (
     <Box flexDirection="column">
-      <Box borderStyle="round" flexDirection="column" paddingX={1} paddingY={1}>
+      <Box
+        borderStyle="round"
+        borderColor="gray"
+        flexDirection="column"
+        paddingX={1}
+        paddingY={1}
+        width={80}
+      >
         <Text bold>Add directory to workspace</Text>
         <Text></Text>
 
@@ -422,7 +424,7 @@ const DirectoryManagerComponent: React.FC<DirectoryManagerProps> = ({
         <Text>Enter the path to the directory:</Text>
         <Text></Text>
 
-        <Box borderStyle="round" paddingX={1} borderColor="gray">
+        <Box borderStyle="round" paddingX={1} borderColor="white">
           <Text color={inputValue ? 'white' : 'gray'}>
             {inputValue || 'Directory path…'}
           </Text>
@@ -431,12 +433,10 @@ const DirectoryManagerComponent: React.FC<DirectoryManagerProps> = ({
 
       <Text></Text>
 
-      {/* Status message */}
-      {statusMessage && (
+      {/* Error message */}
+      {errorMessage && (
         <>
-          <Text color={statusMessage.includes('Success') ? 'green' : 'yellow'}>
-            {statusMessage}
-          </Text>
+          <Text color="red">{errorMessage}</Text>
           <Text></Text>
         </>
       )}
@@ -464,7 +464,6 @@ export function createAddDirCommand(): LocalJSXCommand {
     name: 'add-dir',
     description: 'Add or manage additional working directories',
     async call(onDone, _context, args) {
-      console.log('🔍 add-dir command called with args:', args);
       const initialPath = args || undefined;
       return (
         <DirectoryManagerComponent onExit={onDone} initialPath={initialPath} />
