@@ -28,6 +28,11 @@ export type Props = {
   readonly onHistoryUp?: () => void;
 
   /**
+   * Optional callback for handling queued messages on option+up arrow
+   */
+  readonly onQueuedMessagesUp?: () => void;
+
+  /**
    * Optional callback for handling history navigation on down arrow at end of input
    */
   readonly onHistoryDown?: () => void;
@@ -157,6 +162,8 @@ export type Props = {
    * Optional callback when Ctrl+G is pressed to edit prompt in external editor.
    */
   readonly onExternalEdit?: () => void;
+
+  onCtrlBBackground?: () => void;
 };
 
 export default function TextInput({
@@ -171,6 +178,7 @@ export default function TextInput({
   onSubmit,
   onExit,
   onHistoryUp,
+  onQueuedMessagesUp,
   onHistoryDown,
   onExitMessage,
   onMessage,
@@ -187,6 +195,7 @@ export default function TextInput({
   onTabPress,
   onDelete,
   onExternalEdit,
+  onCtrlBBackground,
 }: Props): React.JSX.Element {
   const { onInput, renderedValue } = useTextInput({
     value: originalValue,
@@ -198,6 +207,7 @@ export default function TextInput({
     onEscape,
     onHistoryReset,
     onHistoryUp,
+    onQueuedMessagesUp,
     onHistoryDown,
     focus,
     mask,
@@ -213,6 +223,7 @@ export default function TextInput({
     onOffsetChange: onChangeCursorOffset,
     onTabPress,
     onExternalEdit,
+    onCtrlBBackground,
   });
 
   // Enhanced paste detection state for multi-chunk text merging

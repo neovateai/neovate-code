@@ -66,6 +66,7 @@ class NodeHandlerRegistry {
     const context = await Context.create({
       cwd,
       ...this.contextCreateOpts,
+      messageBus: this.messageBus,
     });
     // init mcp manager but don't wait for it
     context.mcpManager.initAsync();
@@ -260,7 +261,8 @@ class NodeHandlerRegistry {
         const context = await this.getContext(cwd);
         const configManager = new ConfigManager(cwd, context.productName, {});
 
-        const projectServers = context.config.mcpServers || {};
+        const projectConfig = configManager.projectConfig;
+        const projectServers = projectConfig.mcpServers || {};
         const globalConfig = configManager.globalConfig;
         const globalServers = globalConfig.mcpServers || {};
 
@@ -348,9 +350,7 @@ class NodeHandlerRegistry {
           null,
           context,
         );
-        const currentModel = model
-          ? `${model.provider.id}/${model.model.id}`
-          : null;
+        const currentModel = model;
         const currentModelInfo = model
           ? {
               providerName: model.provider.name,
@@ -454,6 +454,490 @@ class NodeHandlerRegistry {
       },
     );
 
+    this.messageBus.registerHandler(
+      'project.getRepoInfo',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        try {
+          const context = await this.getContext(cwd);
+          const { getGitRoot, listWorktrees, isGitRepository } = await import(
+            './worktree'
+          );
+          const { getGitRemoteUrl, getDefaultBranch, getGitSyncStatus } =
+            await import('./utils/git');
+          const { GlobalData } = await import('./globalData');
+          const { basename } = await import('pathe');
+
+          // Check if it's a git repository
+          const isGit = await isGitRepository(cwd);
+          if (!isGit) {
+            return {
+              success: false,
+              error: 'Not a git repository',
+            };
+          }
+
+          // Get git root path
+          const gitRoot = await getGitRoot(cwd);
+
+          // Get git remote information
+          const originUrl = await getGitRemoteUrl(gitRoot);
+          const defaultBranch = await getDefaultBranch(gitRoot);
+          const syncStatus = await getGitSyncStatus(gitRoot);
+
+          // Get workspace names
+          const worktrees = await listWorktrees(gitRoot);
+          const workspaceIds = worktrees.map((w) => w.name);
+
+          // Get last accessed timestamp from GlobalData
+          const globalDataPath = context.paths.getGlobalDataPath();
+          const globalData = new GlobalData({ globalDataPath });
+          const lastAccessed =
+            globalData.getProjectLastAccessed({ cwd: gitRoot }) || Date.now();
+
+          // Update last accessed time
+          globalData.updateProjectLastAccessed({ cwd: gitRoot });
+
+          // Get project settings from config
+          const settings = context.config;
+
+          const repoData = {
+            path: gitRoot,
+            name: basename(gitRoot),
+            workspaceIds,
+            metadata: {
+              lastAccessed,
+              settings,
+            },
+            gitRemote: {
+              originUrl,
+              defaultBranch,
+              syncStatus,
+            },
+          };
+
+          return {
+            success: true,
+            data: { repoData },
+          };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || 'Failed to get repository info',
+          };
+        }
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'project.getWorkspacesInfo',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        try {
+          const context = await this.getContext(cwd);
+          const { getGitRoot, listWorktrees, isGitRepository } = await import(
+            './worktree'
+          );
+          const { getCurrentCommit, getPendingChanges } = await import(
+            './utils/git'
+          );
+          const { Paths } = await import('./paths');
+          const { statSync } = await import('fs');
+
+          // Check if it's a git repository
+          const isGit = await isGitRepository(cwd);
+          if (!isGit) {
+            return {
+              success: false,
+              error: 'Not a git repository',
+            };
+          }
+
+          // Get git root path
+          const gitRoot = await getGitRoot(cwd);
+
+          // Get all worktrees
+          const worktrees = await listWorktrees(gitRoot);
+
+          // Build workspace data for each worktree
+          const workspacesData = await Promise.all(
+            worktrees.map(async (worktree) => {
+              // Get git state
+              const currentCommit = await getCurrentCommit(worktree.path);
+              const isDirty = !worktree.isClean;
+              const pendingChanges = await getPendingChanges(worktree.path);
+
+              // Get sessions for this worktree
+              const worktreePaths = new Paths({
+                productName: context.productName,
+                cwd: worktree.path,
+              });
+              const sessions = worktreePaths.getAllSessions();
+              const sessionIds = sessions.map((s) => s.sessionId);
+
+              // Get creation timestamp from filesystem
+              let createdAt = Date.now();
+              try {
+                const stats = statSync(worktree.path);
+                createdAt = stats.birthtimeMs || stats.ctimeMs;
+              } catch {
+                // Use current time as fallback
+              }
+
+              // Compute status based on git state
+              let status: 'active' | 'archived' | 'stale' = 'active';
+              const daysSinceCreation =
+                (Date.now() - createdAt) / (1000 * 60 * 60 * 24);
+              if (
+                daysSinceCreation > 30 &&
+                !isDirty &&
+                sessionIds.length === 0
+              ) {
+                status = 'stale';
+              }
+              // Note: 'archived' status could be implemented with a metadata file in the future
+
+              // Get active files - currently not available in session metadata
+              // This could be extracted from the session log in the future
+              const activeFiles: string[] = [];
+
+              // Get worktree-level settings from config
+              // For now, we'll use the global config
+              const settings = context.config;
+
+              return {
+                id: worktree.name,
+                repoPath: gitRoot,
+                branch: worktree.branch,
+                worktreePath: worktree.path,
+                sessionIds,
+                gitState: {
+                  currentCommit,
+                  isDirty,
+                  pendingChanges,
+                },
+                metadata: {
+                  createdAt,
+                  description: '',
+                  status,
+                },
+                context: {
+                  activeFiles,
+                  settings,
+                  preferences: {},
+                },
+              };
+            }),
+          );
+
+          return {
+            success: true,
+            data: { workspaces: workspacesData },
+          };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || 'Failed to get workspaces info',
+          };
+        }
+      },
+    );
+
+    //////////////////////////////////////////////
+    // workspaces operations
+    this.messageBus.registerHandler(
+      'project.workspaces.create',
+      async (data: { cwd: string; name?: string; skipUpdate?: boolean }) => {
+        const { cwd, name, skipUpdate = false } = data;
+        try {
+          const context = await this.getContext(cwd);
+          const {
+            getGitRoot,
+            isGitRepository,
+            detectMainBranch,
+            updateMainBranch,
+            generateWorkspaceName,
+            createWorktree,
+            addToGitExclude,
+          } = await import('./worktree');
+          const { existsSync, mkdirSync } = await import('fs');
+          const { join } = await import('pathe');
+
+          // Check if it's a git repository
+          const isGit = await isGitRepository(cwd);
+          if (!isGit) {
+            return {
+              success: false,
+              error: 'Not a git repository',
+            };
+          }
+
+          // Get git root path
+          const gitRoot = await getGitRoot(cwd);
+
+          // Detect main branch
+          const mainBranch = await detectMainBranch(gitRoot);
+
+          // Update main branch if not skipped
+          await updateMainBranch(gitRoot, mainBranch, skipUpdate);
+
+          // Generate or use provided workspace name
+          const workspaceName = name || (await generateWorkspaceName(gitRoot));
+
+          // Ensure .neovate-workspaces directory exists
+          const workspacesDir = join(
+            gitRoot,
+            `.${context.productName}-workspaces`,
+          );
+          if (!existsSync(workspacesDir)) {
+            mkdirSync(workspacesDir, { recursive: true });
+          }
+
+          // Create worktree
+          const worktree = await createWorktree(gitRoot, workspaceName, {
+            baseBranch: mainBranch,
+            workspacesDir: `.${context.productName}-workspaces`,
+          });
+
+          // Add workspaces directory to git exclude
+          await addToGitExclude(gitRoot);
+
+          return {
+            success: true,
+            data: {
+              workspace: {
+                name: worktree.name,
+                path: worktree.path,
+                branch: worktree.branch,
+              },
+            },
+          };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || 'Failed to create workspace',
+          };
+        }
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'project.workspaces.delete',
+      async (data: { cwd: string; name: string; force?: boolean }) => {
+        const { cwd, name, force = false } = data;
+        try {
+          await this.getContext(cwd);
+          const { getGitRoot, isGitRepository, deleteWorktree } = await import(
+            './worktree'
+          );
+
+          // Check if it's a git repository
+          const isGit = await isGitRepository(cwd);
+          if (!isGit) {
+            return {
+              success: false,
+              error: 'Not a git repository',
+            };
+          }
+
+          // Get git root path
+          const gitRoot = await getGitRoot(cwd);
+
+          // Delete worktree
+          await deleteWorktree(gitRoot, name, force);
+
+          return {
+            success: true,
+          };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || 'Failed to delete workspace',
+          };
+        }
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'project.workspaces.merge',
+      async (data: { cwd: string; name: string }) => {
+        const { cwd, name } = data;
+        try {
+          await this.getContext(cwd);
+          const { getGitRoot, isGitRepository, listWorktrees, mergeWorktree } =
+            await import('./worktree');
+
+          // Check if it's a git repository
+          const isGit = await isGitRepository(cwd);
+          if (!isGit) {
+            return {
+              success: false,
+              error: 'Not a git repository',
+            };
+          }
+
+          // Get git root path
+          const gitRoot = await getGitRoot(cwd);
+
+          // List worktrees to find target workspace
+          const worktrees = await listWorktrees(gitRoot);
+          const worktree = worktrees.find((w) => w.name === name);
+
+          if (!worktree) {
+            return {
+              success: false,
+              error: `Workspace '${name}' not found`,
+            };
+          }
+
+          // Merge worktree back to original branch
+          await mergeWorktree(gitRoot, worktree);
+
+          return {
+            success: true,
+          };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || 'Failed to merge workspace',
+          };
+        }
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'project.workspaces.createGithubPR',
+      async (data: {
+        cwd: string;
+        name: string;
+        title?: string;
+        description?: string;
+        baseBranch?: string;
+      }) => {
+        const { cwd, name, title, description = '', baseBranch } = data;
+        try {
+          await this.getContext(cwd);
+          const {
+            getGitRoot,
+            isGitRepository,
+            listWorktrees,
+            ensureCleanWorkingDirectory,
+            detectMainBranch,
+          } = await import('./worktree');
+          const { promisify } = await import('util');
+          const execPromise = promisify((await import('child_process')).exec);
+
+          // Check if it's a git repository
+          const isGit = await isGitRepository(cwd);
+          if (!isGit) {
+            return {
+              success: false,
+              error: 'Not a git repository',
+            };
+          }
+
+          // Get git root path
+          const gitRoot = await getGitRoot(cwd);
+
+          // List worktrees to find target workspace
+          const worktrees = await listWorktrees(gitRoot);
+          const worktree = worktrees.find((w) => w.name === name);
+
+          if (!worktree) {
+            return {
+              success: false,
+              error: `Workspace '${name}' not found`,
+            };
+          }
+
+          // Ensure workspace has no uncommitted changes
+          await ensureCleanWorkingDirectory(worktree.path);
+
+          // Push workspace branch to remote
+          try {
+            await execPromise(`git push origin ${worktree.branch}`, {
+              cwd: worktree.path,
+            });
+          } catch (error: any) {
+            return {
+              success: false,
+              error: `Failed to push branch: ${error.message}`,
+            };
+          }
+
+          // Detect base branch if not provided
+          const targetBranch = baseBranch || (await detectMainBranch(gitRoot));
+
+          // Generate title from branch name if not provided
+          const prTitle =
+            title ||
+            worktree.branch
+              .replace('workspace/', '')
+              .replace(/-/g, ' ')
+              .replace(/\b\w/g, (l) => l.toUpperCase());
+
+          // Create PR using GitHub CLI
+          try {
+            const ghCommand = [
+              'gh pr create',
+              `--base ${targetBranch}`,
+              `--head ${worktree.branch}`,
+              `--title "${prTitle}"`,
+              description ? `--body "${description}"` : '--body ""',
+            ].join(' ');
+
+            const { stdout } = await execPromise(ghCommand, {
+              cwd: worktree.path,
+            });
+
+            // Parse PR URL from output (gh pr create returns the PR URL)
+            const prUrl = stdout.trim();
+            // Extract PR number from URL (e.g., https://github.com/owner/repo/pull/123)
+            const prNumberMatch = prUrl.match(/\/pull\/(\d+)/);
+            const prNumber = prNumberMatch ? parseInt(prNumberMatch[1], 10) : 0;
+
+            return {
+              success: true,
+              data: {
+                prUrl,
+                prNumber,
+              },
+            };
+          } catch (error: any) {
+            if (error.message?.includes('gh: command not found')) {
+              return {
+                success: false,
+                error:
+                  'GitHub CLI (gh) is not installed. Please install it from https://cli.github.com/',
+              };
+            }
+            if (error.message?.includes('not authenticated')) {
+              return {
+                success: false,
+                error:
+                  'GitHub CLI is not authenticated. Please run: gh auth login',
+              };
+            }
+            if (error.message?.includes('already exists')) {
+              return {
+                success: false,
+                error: 'A pull request already exists for this branch',
+              };
+            }
+            return {
+              success: false,
+              error: `Failed to create PR: ${error.message}`,
+            };
+          }
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || 'Failed to create GitHub PR',
+          };
+        }
+      },
+    );
+
     //////////////////////////////////////////////
     // providers
     this.messageBus.registerHandler(
@@ -482,21 +966,10 @@ class NodeHandlerRegistry {
           args: [{ cwd: data.cwd, quiet: false }],
           type: PluginHookType.Series,
         });
-        const [model, modelContextLimit, providers] = await (async () => {
-          const { model, providers } = await resolveModelWithContext(
-            null,
-            context,
-          );
-          const modelId = model
-            ? `${model.provider.id}/${model.model.id}`
-            : null;
-          const modelContextLimit = model ? model.model.limit.context : null;
-          return [
-            modelId,
-            modelContextLimit,
-            normalizeProviders(providers, context),
-          ];
-        })();
+        const { model, providers, error } = await resolveModelWithContext(
+          null,
+          context,
+        );
 
         // Get session config if sessionId is provided
         let sessionSummary: string | undefined;
@@ -510,7 +983,7 @@ class NodeHandlerRegistry {
             sessionSummary = sessionConfigManager.config.summary;
             pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
             pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
-          } catch (error) {
+          } catch {
             // Silently ignore if session config not available
           }
         }
@@ -522,8 +995,9 @@ class NodeHandlerRegistry {
             productASCIIArt: context.productASCIIArt,
             version: context.version,
             model,
-            modelContextLimit,
-            providers,
+            planModel: context.config.planModel,
+            initializeModelError: error instanceof Error ? error.message : null,
+            providers: normalizeProviders(providers, context),
             approvalMode: context.config.approvalMode,
             sessionSummary,
             pastedTextMap,
@@ -561,6 +1035,9 @@ class NodeHandlerRegistry {
         model?: string;
         attachments?: ImagePart[];
         parentUuid?: string;
+        thinking?: {
+          effort: 'low' | 'medium' | 'high';
+        };
       }) => {
         const { message, cwd, sessionId, model, attachments, parentUuid } =
           data;
@@ -579,6 +1056,7 @@ class NodeHandlerRegistry {
           attachments,
           model,
           parentUuid,
+          thinking: data.thinking,
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {
               message: opts.message,
@@ -624,13 +1102,68 @@ class NodeHandlerRegistry {
         const abortController = this.abortControllers.get(key);
         abortController?.abort();
         this.abortControllers.delete(key);
+
         const context = await this.getContext(cwd);
         const jsonlLogger = new JsonlLogger({
           filePath: context.paths.getSessionLogPath(sessionId),
         });
+
+        // Load current messages to check for incomplete tool_uses
+        const { loadSessionMessages } = await import('./session');
+        const { findIncompleteToolUses } = await import('./message');
+
+        const messages = loadSessionMessages({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+
+        // Check for incomplete tool_uses and add tool_result messages
+        const incompleteResult = findIncompleteToolUses(messages);
+        if (incompleteResult) {
+          const { assistantMessage, incompleteToolUses } = incompleteResult;
+
+          // Add a tool_result message for each incomplete tool_use
+          for (const toolUse of incompleteToolUses) {
+            const normalizedToolResultMessage: NormalizedMessage & {
+              sessionId: string;
+            } = {
+              parentUuid: assistantMessage.uuid,
+              uuid: randomUUID(),
+              role: 'tool',
+              content: [
+                {
+                  type: 'tool-result',
+                  toolCallId: toolUse.id,
+                  toolName: toolUse.name,
+                  input: toolUse.input,
+                  result: {
+                    llmContent: CANCELED_MESSAGE_TEXT,
+                    returnDisplay: 'Tool execution was canceled by user.',
+                    isError: true,
+                  },
+                },
+              ],
+              type: 'message',
+              timestamp: new Date().toISOString(),
+              sessionId,
+            };
+
+            await this.messageBus.emitEvent('message', {
+              message: jsonlLogger.addMessage({
+                message: normalizedToolResultMessage,
+              }),
+            });
+          }
+
+          return {
+            success: true,
+          };
+        }
+
+        // Always add the user cancellation message
         await this.messageBus.emitEvent('message', {
           message: jsonlLogger.addUserMessage(CANCELED_MESSAGE_TEXT, sessionId),
         });
+
         return {
           success: true,
         };
@@ -639,16 +1172,24 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'session.addMessages',
-      async (data: { cwd: string; sessionId: string; messages: Message[] }) => {
-        const { cwd, sessionId, messages } = data;
+      async (data: {
+        cwd: string;
+        sessionId: string;
+        messages: Message[];
+        parentUuid?: string;
+      }) => {
+        const { cwd, sessionId, messages, parentUuid } = data;
         const context = await this.getContext(cwd);
         const jsonlLogger = new JsonlLogger({
           filePath: context.paths.getSessionLogPath(sessionId),
         });
+
+        let previousUuid = parentUuid ?? jsonlLogger.getLatestUuid();
+
         for (const message of messages) {
           const normalizedMessage = {
             // @ts-expect-error
-            parentUuid: message.parentUuid ?? jsonlLogger.getLatestUuid(),
+            parentUuid: message.parentUuid ?? previousUuid,
             uuid: randomUUID(),
             ...message,
             type: 'message' as const,
@@ -660,6 +1201,7 @@ class NodeHandlerRegistry {
               message: normalizedMessage,
             }),
           });
+          previousUuid = normalizedMessage.uuid;
         }
         return {
           success: true,
@@ -994,6 +1536,28 @@ class NodeHandlerRegistry {
         const result = await query({
           userPrompt,
           context,
+          systemPrompt,
+        });
+        return result;
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'utils.quickQuery',
+      async (data: {
+        userPrompt: string;
+        cwd: string;
+        systemPrompt?: string;
+      }) => {
+        const { userPrompt, cwd, systemPrompt } = data;
+        const context = await this.getContext(cwd);
+        const { model } = await resolveModelWithContext(
+          context.config.smallModel || null,
+          context,
+        );
+        const result = await query({
+          userPrompt,
+          model: model!,
           systemPrompt,
         });
         return result;

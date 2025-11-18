@@ -1,5 +1,5 @@
 import { Box, Text, useInput } from 'ink';
-import path from 'path';
+import path from 'pathe';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { Paths } from '../../paths';

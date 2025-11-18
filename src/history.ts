@@ -96,8 +96,13 @@ export class History {
                 data,
                 mediaType: part.mimeType,
               };
+            } else if (part.type === 'tool_result') {
+              // Compatible with old message format
+              return part;
             } else {
-              throw new Error(`Not implemented`);
+              throw new Error(
+                `Not implemented with type: ${part.type} of role: user`,
+              );
             }
           });
           return {
@@ -125,7 +130,9 @@ export class History {
                 input: part.input,
               };
             } else {
-              throw new Error(`Not implemented`);
+              throw new Error(
+                `Not implemented with type: ${part.type} of role: assistant`,
+              );
             }
           });
           return {
@@ -159,7 +166,9 @@ export class History {
                         : part.data;
                       return { type: 'media', data, mediaType: part.mimeType };
                     } else {
-                      throw new Error(`Not implemented`);
+                      throw new Error(
+                        `Not implemented with type: ${(part as any).type} of role: tool`,
+                      );
                     }
                   }),
                 };

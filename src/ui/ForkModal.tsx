@@ -1,6 +1,8 @@
 import { Box, Text, useInput } from 'ink';
 import React from 'react';
 import type { Message } from '../message';
+import { isCanceledMessage } from '../message';
+import { CANCELED_MESSAGE_TEXT } from '../constants';
 
 interface ForkModalProps {
   messages: (Message & {
@@ -16,7 +18,15 @@ export function ForkModal({ messages, onSelect, onClose }: ForkModalProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
   // Filter to user messages only and reverse for chronological order (newest first)
-  const userMessages = messages.filter((m) => m.role === 'user').reverse();
+  const userMessages = messages
+    .filter(
+      (m) =>
+        m.role === 'user' &&
+        !('hidden' in m && m.hidden) &&
+        !isCanceledMessage(m) &&
+        !(typeof m.content === 'string' && m.content === CANCELED_MESSAGE_TEXT),
+    )
+    .reverse();
 
   useInput((input, key) => {
     if (key.escape) {

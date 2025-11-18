@@ -12,14 +12,17 @@ import type {
   LoopResult,
   Message,
   NodeBridgeResponse,
-  ToolResultPart,
+  ToolMessage2,
   ToolUse,
   UIAssistantMessage,
   UIDisplayMessage,
   UIMessage,
   UserMessage,
 } from '@/types/chat';
-import { formatMessages, isToolResultMessage } from '@/utils/message';
+import {
+  formatMessages,
+  toolResultPart2ToToolResultPart,
+} from '@/utils/message';
 import { getPrompt } from '@/utils/quill';
 import { parseSlashCommand } from '@/utils/slashCommand';
 import { countTokens } from '@/utils/tokenCounter';
@@ -161,27 +164,30 @@ export const actions: ChatActions = {
         state.messages.push(uiMessage);
         return;
       }
-      if (isToolResultMessage(message)) {
+
+      // Handle new format ToolMessage2 (role: 'tool')
+      if (message.role === 'tool') {
         const lastMessage = state.messages[
           state.messages.length - 1
         ] as UIAssistantMessage;
-        if (lastMessage) {
-          const toolResult = message.content[0] as ToolResultPart;
-          const matchToolUse = lastMessage.content.find(
-            (part) =>
-              part.type === 'tool' &&
-              part.state === 'tool_use' &&
-              part.id === toolResult.id,
-          );
-          if (!matchToolUse) {
-            throw new Error(
-              'Tool result message must be after tool use message',
-            );
-          }
+
+        if (!lastMessage || lastMessage.role !== 'assistant') {
+          throw new Error('Tool message must be after assistant message');
+        }
+
+        // Iterate over all tool results, update the corresponding tool_use
+        const toolMessage = message as ToolMessage2;
+        toolMessage.content.forEach((toolResultPart2) => {
+          const toolResult = toolResultPart2ToToolResultPart(toolResultPart2);
+
           const uiMessage = {
             ...lastMessage,
             content: lastMessage.content.map((part) => {
-              if (part.type === 'tool') {
+              if (
+                part.type === 'tool' &&
+                part.state === 'tool_use' &&
+                part.id === toolResult.id
+              ) {
                 return {
                   ...part,
                   ...toolResult,
@@ -192,12 +198,12 @@ export const actions: ChatActions = {
               return part;
             }),
           } as UIMessage;
+
           state.messages[state.messages.length - 1] = uiMessage;
-          return;
-        } else {
-          throw new Error('Tool result message must be after tool use message');
-        }
+        });
+        return;
       }
+
       state.messages.push(message as UIMessage);
     };
 
@@ -231,13 +237,13 @@ export const actions: ChatActions = {
             state.approvalModal = null;
             const isApproved = result !== 'deny';
             if (result === 'approve_always_edit') {
-              await clientActions.request('sessionConfig.setApprovalMode', {
+              await clientActions.request('session.config.setApprovalMode', {
                 cwd: state.cwd,
                 sessionId: state.sessionId,
                 approvalMode: 'autoEdit',
               });
             } else if (result === 'approve_always_tool') {
-              await clientActions.request('sessionConfig.addApprovalTools', {
+              await clientActions.request('session.config.addApprovalTools', {
                 cwd: state.cwd,
                 sessionId: state.sessionId,
                 approvalTool: toolUse.name,

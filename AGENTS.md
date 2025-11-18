@@ -4,7 +4,7 @@ This file provides guidance to CODE AGENT when working with code in this reposit
 
 ## Project Overview
 
-Takumi is a coding agent CLI to enhance development workflow. It's a TypeScript-based tool that provides AI-powered coding assistance through a command-line interface with support for multiple LLM providers and Model Context Protocol (MCP) servers.
+Neovate Code is a coding agent CLI to enhance development workflow. It's a TypeScript-based tool that provides AI-powered coding assistance through a command-line interface with support for multiple LLM providers and Model Context Protocol (MCP) servers.
 
 ## Development Commandst
 
@@ -21,9 +21,9 @@ Takumi is a coding agent CLI to enhance development workflow. It's a TypeScript-
   - Tests are located in `src/**/*.test.ts` files
 - **Type Checking**: `npm run typecheck` - Run TypeScript type checking
 - **Formatting**:
-  - `npm run biome:format` - Check formatting without changes
-  - `npm run biome:format -- --write` - Format all files
-- **CI Pipeline**: `npm run ci` - Runs typecheck, biome:format, and tests
+  - `npm run format` - Check formatting without changes
+  - `npm run format -- --write` - Format all files
+- **CI Pipeline**: `npm run ci` - Runs typecheck, format, and tests
 
 ### VSCode Extension
 

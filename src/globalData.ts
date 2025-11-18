@@ -6,6 +6,7 @@ interface GlobalDataSchema {
     string,
     {
       history: string[];
+      lastAccessed?: number;
     }
   >;
 }
@@ -55,6 +56,22 @@ export class GlobalData {
     }
 
     data.projects[cwd].history.push(history);
+    this.writeData(data);
+  }
+
+  getProjectLastAccessed({ cwd }: { cwd: string }): number | null {
+    const data = this.readData();
+    return data.projects[cwd]?.lastAccessed || null;
+  }
+
+  updateProjectLastAccessed({ cwd }: { cwd: string }): void {
+    const data = this.readData();
+
+    if (!data.projects[cwd]) {
+      data.projects[cwd] = { history: [] };
+    }
+
+    data.projects[cwd].lastAccessed = Date.now();
     this.writeData(data);
   }
 }
