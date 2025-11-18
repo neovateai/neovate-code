@@ -19,6 +19,9 @@ const ModelSelect = () => {
     {
       ready: !!cwd && initialized, // Only call API when cwd exists and is initialized
       refreshDeps: [cwd, initialized],
+      onSuccess: async () => {
+        await actions.getConfig();
+      },
     },
   );
 
@@ -40,6 +43,7 @@ const ModelSelect = () => {
       placeholder={t('chat.selectModel')}
       className="min-w-[140px]"
       optionLabelProp="label"
+      showSearch
     >
       {modelsList.map((providerGroup) => (
         <Select.OptGroup
