@@ -285,7 +285,7 @@ export const actions: ChatActions = {
           {
             role: 'user',
             content: message,
-            attachedContexts: [...contextState.attachedContexts],
+            attachedContexts: Array.from(contextState.attachedContexts),
           },
         ],
       });
@@ -307,7 +307,7 @@ export const actions: ChatActions = {
             role: 'user',
             content: prompt,
             uiContent: message,
-            attachedContexts: [...contextState.attachedContexts],
+            attachedContexts: Array.from(contextState.attachedContexts),
           },
         ],
       });
@@ -343,7 +343,7 @@ export const actions: ChatActions = {
         role: 'user',
         content: prompt,
         uiContent: message,
-        attachedContexts: [...contextState.attachedContexts],
+        attachedContexts: Array.from(contextState.attachedContexts),
       };
 
       if (isPrompt) {
