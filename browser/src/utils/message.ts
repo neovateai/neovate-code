@@ -21,14 +21,6 @@ export function toolResultPart2ToToolResultPart(
   };
 }
 
-export function isToolResultMessage(message: Message) {
-  return (
-    Array.isArray(message.content) &&
-    message.content.length === 1 &&
-    message.content[0].type === 'tool_result'
-  );
-}
-
 export function jsonSafeParse(json: string) {
   try {
     return JSON.parse(json);
@@ -106,25 +98,29 @@ export function formatMessages(messages: Message[]): UIMessage[] {
       continue;
     }
 
-    if (isToolResultMessage(message)) {
+    // 处理新格式的 ToolMessage2 (role: 'tool')
+    if (message.role === 'tool') {
       const lastMessage = formattedMessages[
         formattedMessages.length - 1
       ] as UIAssistantMessage;
-      if (lastMessage) {
-        const toolResult = message.content[0] as ToolResultPart;
-        const matchToolUse = lastMessage.content.find(
-          (part) =>
-            part.type === 'tool' &&
-            part.state === 'tool_use' &&
-            part.id === toolResult.id,
-        );
-        if (!matchToolUse) {
-          throw new Error('Tool result message must be after tool use message');
-        }
+
+      if (!lastMessage || lastMessage.role !== 'assistant') {
+        throw new Error('Tool message must be after assistant message');
+      }
+
+      // 遍历所有 tool results，更新对应的 tool_use
+      const toolMessage = message as ToolMessage2;
+      toolMessage.content.forEach((toolResultPart2) => {
+        const toolResult = toolResultPart2ToToolResultPart(toolResultPart2);
+
         const uiMessage = {
           ...lastMessage,
           content: lastMessage.content.map((part) => {
-            if (part.type === 'tool' && part.id === toolResult.id) {
+            if (
+              part.type === 'tool' &&
+              part.state === 'tool_use' &&
+              part.id === toolResult.id
+            ) {
               return {
                 ...part,
                 ...toolResult,
@@ -135,11 +131,10 @@ export function formatMessages(messages: Message[]): UIMessage[] {
             return part;
           }),
         } as UIMessage;
+
         formattedMessages[formattedMessages.length - 1] = uiMessage;
-        continue;
-      } else {
-        throw new Error('Tool result message must be after tool use message');
-      }
+      });
+      continue;
     }
 
     formattedMessages.push(message as UIMessage);
