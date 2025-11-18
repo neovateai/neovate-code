@@ -98,24 +98,42 @@ export function formatMessages(messages: Message[]): UIMessage[] {
       continue;
     }
 
-    // 处理新格式的 ToolMessage2 (role: 'tool')
     if (message.role === 'tool') {
-      const lastMessage = formattedMessages[
-        formattedMessages.length - 1
-      ] as UIAssistantMessage;
-
-      if (!lastMessage || lastMessage.role !== 'assistant') {
-        throw new Error('Tool message must be after assistant message');
-      }
-
-      // 遍历所有 tool results，更新对应的 tool_use
       const toolMessage = message as ToolMessage2;
+
       toolMessage.content.forEach((toolResultPart2) => {
         const toolResult = toolResultPart2ToToolResultPart(toolResultPart2);
 
-        const uiMessage = {
-          ...lastMessage,
-          content: lastMessage.content.map((part) => {
+        let targetIndex = -1;
+        for (let i = formattedMessages.length - 1; i >= 0; i--) {
+          const msg = formattedMessages[i];
+          if (msg.role === 'assistant') {
+            const hasMatchingToolUse = msg.content.some(
+              (part) =>
+                part.type === 'tool' &&
+                part.state === 'tool_use' &&
+                part.id === toolResult.id,
+            );
+            if (hasMatchingToolUse) {
+              targetIndex = i;
+              break;
+            }
+          }
+        }
+
+        if (targetIndex === -1) {
+          console.error(
+            `No matching tool_use found for tool result id: ${toolResult.id}`,
+          );
+          return;
+        }
+
+        const targetMessage = formattedMessages[
+          targetIndex
+        ] as UIAssistantMessage;
+        formattedMessages[targetIndex] = {
+          ...targetMessage,
+          content: targetMessage.content.map((part) => {
             if (
               part.type === 'tool' &&
               part.state === 'tool_use' &&
@@ -123,16 +141,15 @@ export function formatMessages(messages: Message[]): UIMessage[] {
             ) {
               return {
                 ...part,
-                ...toolResult,
-                type: 'tool',
-                state: 'tool_result',
+                state: 'tool_result' as const,
+                name: toolResult.name,
+                input: toolResult.input,
+                result: toolResult.result,
               };
             }
             return part;
           }),
-        } as UIMessage;
-
-        formattedMessages[formattedMessages.length - 1] = uiMessage;
+        } as UIAssistantMessage;
       });
       continue;
     }

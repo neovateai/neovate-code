@@ -218,13 +218,8 @@ export const actions: ChatActions = {
         const chunk = data.chunk;
 
         // Collect tokens from text-delta and reasoning events
-        if (
-          chunk.type === 'raw_model_stream_event' &&
-          chunk.data?.type === 'model' &&
-          (chunk.data.event?.type === 'text-delta' ||
-            chunk.data.event?.type === 'reasoning')
-        ) {
-          const textDelta = chunk.data.event.textDelta || '';
+        if (chunk.type === 'text-delta') {
+          const textDelta = chunk.delta || '';
           const tokenCount = countTokens(textDelta);
           state.processingTokens += tokenCount;
         }

@@ -8,72 +8,77 @@
 .character {
   transition:
     color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    text-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    text-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-block;
   white-space: pre;
   font-weight: 500;
 }
 
 .character.base {
-  color: #9ca3af; /* gray-400 */
+  color: #8c8c8c; /* gray-500 */
 }
 
 .character.highlight {
-  color: #7c3aed; /* purple-600 */
+  color: #1890ff; /* blue-primary */
   text-shadow:
-    0 0 8px rgba(124, 58, 237, 0.5),
-    0 0 16px rgba(124, 58, 237, 0.3);
+    0 0 8px rgba(24, 144, 255, 0.4),
+    0 0 16px rgba(24, 144, 255, 0.2);
   filter: brightness(1.1);
   font-weight: 600;
+  transform: scale(1.05);
 }
 
 .character.fade1 {
-  color: #8b5cf6; /* purple-500 */
-  font-weight: 500;
+  color: #40a9ff; /* blue-400 */
+  font-weight: 550;
 }
 
 .character.fade2 {
-  color: #a78bfa; /* purple-400 */
+  color: #69c0ff; /* blue-300 */
+  font-weight: 525;
 }
 
 .character.fade3 {
-  color: #c4b5fd; /* purple-300 */
+  color: #91d5ff; /* blue-200 */
 }
 
 .character.fade4 {
-  color: #ddd6fe; /* purple-200 */
+  color: #bae7ff; /* blue-100 */
 }
 
 /* 暗色主题适配 */
 @media (prefers-color-scheme: dark) {
   .character.base {
-    color: #6b7280; /* gray-500 */
+    color: #595959; /* gray-600 */
   }
 
   .character.highlight {
-    color: #a855f7; /* purple-500 */
+    color: #40a9ff; /* blue-400 */
     text-shadow:
-      0 0 10px rgba(168, 85, 247, 0.6),
-      0 0 20px rgba(168, 85, 247, 0.4);
+      0 0 10px rgba(64, 169, 255, 0.5),
+      0 0 20px rgba(64, 169, 255, 0.3);
     filter: brightness(1.2);
     font-weight: 600;
+    transform: scale(1.05);
   }
 
   .character.fade1 {
-    color: #9333ea; /* purple-600 */
-    font-weight: 500;
+    color: #1890ff; /* blue-500 */
+    font-weight: 550;
   }
 
   .character.fade2 {
-    color: #8b5cf6; /* purple-500 */
+    color: #096dd9; /* blue-600 */
+    font-weight: 525;
   }
 
   .character.fade3 {
-    color: #a78bfa; /* purple-400 */
+    color: #0050b3; /* blue-700 */
   }
 
   .character.fade4 {
-    color: #c4b5fd; /* purple-300 */
+    color: #003a8c; /* blue-800 */
   }
 }
 
