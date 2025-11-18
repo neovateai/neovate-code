@@ -1,4 +1,5 @@
 import type { SlashCommand } from '../types';
+import { createAddDirCommand } from './add-dir';
 import { createBugCommand } from './bug';
 import { clearCommand } from './clear';
 import { compactCommand } from './compact';
@@ -40,6 +41,7 @@ export function createBuiltinCommands(opts: {
     createBugCommand(),
     compactCommand,
     statusCommand,
+    createAddDirCommand(),
     brainstormCommand(opts.language),
     writePlanCommand(opts.language),
     executePlanCommand(opts.language),

@@ -520,27 +520,31 @@ export const useAppStore = create<AppStore>()(
                 });
               }
             } else if (isLocalJSX) {
-              const jsx = await command.call(async (result) => {
-                set({
-                  slashCommandJSX: null,
-                });
-                if (result) {
+              const jsx = await command.call(
+                async (result) => {
                   set({
-                    messages: [
-                      ...get().messages,
-                      {
-                        role: 'user',
-                        content: [
-                          {
-                            type: 'text',
-                            text: result,
-                          },
-                        ],
-                      },
-                    ],
+                    slashCommandJSX: null,
                   });
-                }
-              }, {} as any);
+                  if (result) {
+                    set({
+                      messages: [
+                        ...get().messages,
+                        {
+                          role: 'user',
+                          content: [
+                            {
+                              type: 'text',
+                              text: result,
+                            },
+                          ],
+                        },
+                      ],
+                    });
+                  }
+                },
+                {} as any,
+                parsed.args,
+              );
               set({
                 slashCommandJSX: jsx,
               });

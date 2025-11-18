@@ -846,6 +846,65 @@ class NodeHandlerRegistry {
       },
     );
 
+    this.messageBus.registerHandler(
+      'session.config.getAdditionalDirectories',
+      async (data: { cwd: string; sessionId: string }) => {
+        const { cwd, sessionId } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        return {
+          success: true,
+          data: {
+            directories:
+              sessionConfigManager.config.additionalDirectories || [],
+          },
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'session.config.addDirectory',
+      async (data: { cwd: string; sessionId: string; directory: string }) => {
+        const { cwd, sessionId, directory } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        const directories =
+          sessionConfigManager.config.additionalDirectories || [];
+        if (!directories.includes(directory)) {
+          directories.push(directory);
+          sessionConfigManager.config.additionalDirectories = directories;
+          sessionConfigManager.write();
+        }
+        return {
+          success: true,
+        };
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'session.config.removeDirectory',
+      async (data: { cwd: string; sessionId: string; directory: string }) => {
+        const { cwd, sessionId, directory } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+        });
+        const directories =
+          sessionConfigManager.config.additionalDirectories || [];
+        sessionConfigManager.config.additionalDirectories = directories.filter(
+          (dir) => dir !== directory,
+        );
+        sessionConfigManager.write();
+        return {
+          success: true,
+        };
+      },
+    );
+
     //////////////////////////////////////////////
     // sessions
     this.messageBus.registerHandler(

@@ -23,6 +23,7 @@ export interface LocalJSXCommand extends BaseSlashCommand {
   call(
     onDone: (result: string | null) => void,
     context: Context,
+    args?: string,
   ): Promise<React.ReactNode>;
 }
 
