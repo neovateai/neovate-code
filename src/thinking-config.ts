@@ -8,17 +8,40 @@ export function getThinkingConfig(
     return undefined;
   }
 
-  if (model.model.id.startsWith('claude-')) {
-    return {
-      providerOptions: {
-        anthropic: {
-          thinking: {
-            type: 'enabled' as const,
-            budgetTokens: reasoningEffort === 'low' ? 1024 : 31999,
+  if (
+    model.model.id.startsWith('claude-') ||
+    model.model.id.startsWith('anthropic/')
+  ) {
+    if (model.provider.id === 'openrouter') {
+      let effort: 'low' | 'medium' | 'high' | undefined = reasoningEffort;
+      let budgetTokens = undefined;
+      if (effort === 'high') {
+        effort = undefined;
+        budgetTokens = 31999;
+      }
+      return {
+        providerOptions: {
+          openrouter: {
+            reasoning: {
+              enabled: true,
+              effort,
+              max_tokens: budgetTokens,
+            },
           },
         },
-      },
-    };
+      };
+    } else {
+      return {
+        providerOptions: {
+          anthropic: {
+            thinking: {
+              type: 'enabled' as const,
+              budgetTokens: reasoningEffort === 'low' ? 1024 : 31999,
+            },
+          },
+        },
+      };
+    }
   }
 
   if (model.provider.id === 'google') {

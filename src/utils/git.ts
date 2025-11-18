@@ -114,3 +114,154 @@ Your recent commits:
 ${status.authorLog || '(no recent commits)'}
   `.trim();
 }
+
+/**
+ * Get remote origin URL
+ */
+export async function getGitRemoteUrl(cwd: string): Promise<string | null> {
+  try {
+    const { stdout } = await execFileNoThrow(
+      cwd,
+      'git',
+      ['config', '--get', 'remote.origin.url'],
+      undefined,
+      undefined,
+      false,
+    );
+    return stdout.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get default branch from remote
+ */
+export async function getDefaultBranch(cwd: string): Promise<string | null> {
+  try {
+    const { stdout } = await execFileNoThrow(
+      cwd,
+      'git',
+      ['rev-parse', '--abbrev-ref', 'origin/HEAD'],
+      undefined,
+      undefined,
+      false,
+    );
+    return stdout.replace('origin/', '').trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check sync status with remote
+ */
+export async function getGitSyncStatus(
+  cwd: string,
+): Promise<'synced' | 'ahead' | 'behind' | 'diverged' | 'unknown'> {
+  try {
+    // Fetch remote to get latest info
+    await execFileNoThrow(
+      cwd,
+      'git',
+      ['fetch', 'origin', '--quiet'],
+      undefined,
+      undefined,
+      false,
+    );
+
+    // Get current branch
+    const { stdout: branch } = await execFileNoThrow(
+      cwd,
+      'git',
+      ['rev-parse', '--abbrev-ref', 'HEAD'],
+      undefined,
+      undefined,
+      false,
+    );
+    const currentBranch = branch.trim();
+
+    // Check if remote tracking branch exists
+    const { code: trackingExists } = await execFileNoThrow(
+      cwd,
+      'git',
+      ['rev-parse', '--verify', `origin/${currentBranch}`],
+      undefined,
+      undefined,
+      false,
+    );
+
+    if (trackingExists !== 0) {
+      return 'unknown';
+    }
+
+    // Get ahead/behind counts
+    const { stdout: counts } = await execFileNoThrow(
+      cwd,
+      'git',
+      ['rev-list', '--left-right', '--count', `origin/${currentBranch}...HEAD`],
+      undefined,
+      undefined,
+      false,
+    );
+
+    const [behind, ahead] = counts.trim().split('\t').map(Number);
+
+    if (ahead === 0 && behind === 0) {
+      return 'synced';
+    }
+    if (ahead > 0 && behind === 0) {
+      return 'ahead';
+    }
+    if (ahead === 0 && behind > 0) {
+      return 'behind';
+    }
+    return 'diverged';
+  } catch {
+    return 'unknown';
+  }
+}
+
+/**
+ * Get current commit hash
+ */
+export async function getCurrentCommit(cwd: string): Promise<string> {
+  try {
+    const { stdout } = await execFileNoThrow(
+      cwd,
+      'git',
+      ['rev-parse', 'HEAD'],
+      undefined,
+      undefined,
+      false,
+    );
+    return stdout.trim();
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Get list of pending changes
+ */
+export async function getPendingChanges(cwd: string): Promise<string[]> {
+  try {
+    const { stdout } = await execFileNoThrow(
+      cwd,
+      'git',
+      ['status', '--porcelain'],
+      undefined,
+      undefined,
+      false,
+    );
+    if (!stdout.trim()) {
+      return [];
+    }
+    return stdout
+      .trim()
+      .split('\n')
+      .map((line) => line.substring(3).trim());
+  } catch {
+    return [];
+  }
+}

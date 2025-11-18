@@ -76,6 +76,7 @@ export function App() {
     fork,
     hideForkModal,
     forkParentUuid,
+    forkCounter,
     bridge,
     sessionId,
     cwd,
@@ -104,7 +105,10 @@ export function App() {
     })();
   }, [forkModalVisible, bridge, cwd, sessionId]);
   return (
-    <Box flexDirection="column" key={`${forceRerender}-${forkParentUuid}`}>
+    <Box
+      flexDirection="column"
+      key={`${forceRerender}-${forkParentUuid}-${forkCounter}`}
+    >
       <Messages />
       <BackgroundPrompt />
       <PlanResult />

@@ -193,7 +193,8 @@ export function pairToolsWithResults(
 }
 
 export function Messages() {
-  const { userName, messages, productName, sessionId } = useAppStore();
+  const { userName, messages, productName, sessionId, forkCounter } =
+    useAppStore();
 
   // Split messages into completed and pending
   const { completedMessages, pendingMessages } = useMemo(
@@ -205,7 +206,7 @@ export function Messages() {
     <Box flexDirection="column">
       {/* Static area - completed messages */}
       <Static
-        key={`${sessionId}`}
+        key={`${sessionId}-${forkCounter}`}
         items={['header', ...completedMessages] as any[]}
       >
         {(item, index) => {

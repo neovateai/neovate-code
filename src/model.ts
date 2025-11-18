@@ -8,7 +8,7 @@ import {
 } from '@openrouter/ai-sdk-provider';
 import assert from 'assert';
 import defu from 'defu';
-import path from 'path';
+import path from 'pathe';
 import type { ProviderConfig } from './config';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
@@ -449,6 +449,54 @@ export const models: ModelMap = {
     open_weights: true,
     limit: { context: 131072, output: 32768 },
   },
+  'gpt-5.1-codex': {
+    name: 'GPT-5.1-Codex',
+    attachment: false,
+    reasoning: true,
+    temperature: false,
+    tool_call: true,
+    knowledge: '2024-09-30',
+    release_date: '2025-11-13',
+    last_updated: '2025-11-13',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    open_weights: false,
+    limit: { context: 400000, output: 128000 },
+  },
+  'gpt-5.1-codex-mini': {
+    name: 'GPT-5.1-Codex-mini',
+    attachment: false,
+    reasoning: true,
+    temperature: false,
+    tool_call: true,
+    knowledge: '2024-09-30',
+    release_date: '2025-11-13',
+    last_updated: '2025-11-13',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    open_weights: false,
+    limit: { context: 400000, output: 100000 },
+  },
+  'gpt-5.1': {
+    name: 'GPT-5.1',
+    attachment: true,
+    reasoning: true,
+    temperature: false,
+    tool_call: true,
+    knowledge: '2024-09-30',
+    release_date: '2025-11-13',
+    last_updated: '2025-11-13',
+    modalities: {
+      input: ['text', 'image'],
+      output: ['text'],
+    },
+    open_weights: false,
+    limit: { context: 400000, output: 128000 },
+  },
   'gpt-5': {
     name: 'GPT-5',
     attachment: true,
@@ -803,18 +851,31 @@ export const models: ModelMap = {
     open_weights: true,
     limit: { context: 196608, output: 64000 },
   },
-  'polaris-alpha': {
-    name: 'Polaris Alpha',
+  'sherlock-dash-alpha': {
+    name: 'Sherlock Dash Alpha',
     attachment: true,
     reasoning: false,
     temperature: false,
     tool_call: true,
-    knowledge: '2025-07',
-    release_date: '2025-07-30',
-    last_updated: '2025-07-30',
+    knowledge: 'unknown',
+    release_date: '2025-11-15',
+    last_updated: '2025-11-15',
     modalities: { input: ['text', 'image'], output: ['text'] },
     open_weights: false,
-    limit: { context: 256000, output: 128000 },
+    limit: { context: 1840000, output: 64000 },
+  },
+  'sherlock-think-alpha': {
+    name: 'Sherlock Think Alpha',
+    attachment: true,
+    reasoning: true,
+    temperature: false,
+    tool_call: true,
+    knowledge: 'unknown',
+    release_date: '2025-11-15',
+    last_updated: '2025-11-15',
+    modalities: { input: ['text', 'image'], output: ['text'] },
+    open_weights: false,
+    limit: { context: 1840000, output: 64000 },
   },
 };
 
@@ -887,6 +948,9 @@ export const providers: ProvidersMap = {
       'gemini-2.5-pro': models['gemini-2.5-pro'],
       o3: models['o3'],
       'claude-sonnet-4': models['claude-4-sonnet'],
+      'gpt-5.1-codex': models['gpt-5.1-codex'],
+      'gpt-5.1-codex-mini': models['gpt-5.1-codex-mini'],
+      'gpt-5.1': models['gpt-5.1'],
       'gpt-5': models['gpt-5'],
       'claude-3.7-sonnet-thought': models['claude-3-7-sonnet'],
       'claude-sonnet-4.5': models['claude-4-5-sonnet'],
@@ -927,6 +991,9 @@ export const providers: ProvidersMap = {
       o3: models['o3'],
       'o3-mini': models['o3-mini'],
       'o4-mini': models['o4-mini'],
+      'gpt-5.1': models['gpt-5.1'],
+      'gpt-5.1-codex': models['gpt-5.1-codex'],
+      'gpt-5.1-codex-mini': models['gpt-5.1-codex-mini'],
       'gpt-5': models['gpt-5'],
       'gpt-5-mini': models['gpt-5-mini'],
       'gpt-5-codex': models['gpt-5-codex'],
@@ -1027,7 +1094,9 @@ export const providers: ProvidersMap = {
       'DeepSeek-R1': models['deepseek-r1-0528'],
       'DeepSeek-V3': models['deepseek-v3-0324'],
       'claude-opus-4-20250514': models['claude-4-opus'],
+      'claude-opus-4-1': models['claude-4.1-opus'],
       'claude-sonnet-4-20250514': models['claude-4-sonnet'],
+      'claude-sonnet-4-5': models['claude-4-5-sonnet'],
       'claude-3-7-sonnet-20250219': models['claude-3-7-sonnet'],
       'claude-3-5-sonnet-20241022': models['claude-3-5-sonnet-20241022'],
       'gpt-4.1': models['gpt-4.1'],
@@ -1038,6 +1107,9 @@ export const providers: ProvidersMap = {
       'o4-mini': models['o4-mini'],
       'gpt-5': models['gpt-5'],
       'gpt-5-mini': models['gpt-5-mini'],
+      'glm-4.6': models['glm-4.6'],
+      'kimi-k2-thinking': models['kimi-k2-thinking'],
+      'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
     },
     createModel: defaultModelCreator,
   },
@@ -1067,6 +1139,9 @@ export const providers: ProvidersMap = {
       'openai/o3-mini': models['o3-mini'],
       'openai/o4-mini': models['o4-mini'],
       'openai/gpt-oss-120b': models['gpt-oss-120b'],
+      'openai/gpt-5.1-codex': models['gpt-5.1-codex'],
+      'openai/gpt-5.1-codex-mini': models['gpt-5.1-codex-mini'],
+      'openai/gpt-5.1': models['gpt-5.1'],
       'openai/gpt-5': models['gpt-5'],
       'openai/gpt-5-mini': models['gpt-5-mini'],
       'openai/gpt-5-codex': models['gpt-5-codex'],
@@ -1077,14 +1152,13 @@ export const providers: ProvidersMap = {
       'qwen/qwen3-max': models['qwen3-max'],
       'x-ai/grok-code-fast-1': models['grok-code-fast-1'],
       'x-ai/grok-4': models['grok-4'],
-      'x-ai/grok-4-fast:free': models['grok-4-fast'],
-      'openrouter/sonoma-dusk-alpha': models['sonoma-dusk-alpha'],
-      'openrouter/sonoma-sky-alpha': models['sonoma-sky-alpha'],
+      'x-ai/grok-4-fast': models['grok-4-fast'],
       'z-ai/glm-4.5': models['glm-4.5'],
       'z-ai/glm-4.5v': models['glm-4.5v'],
       'z-ai/glm-4.6': models['glm-4.6'],
-      'minimax/minimax-m2:free': models['minimax-m2'],
-      'openrouter/polaris-alpha': models['polaris-alpha'],
+      'minimax/minimax-m2': models['minimax-m2'],
+      'openrouter/sherlock-dash-alpha': models['sherlock-dash-alpha'],
+      'openrouter/sherlock-think-alpha': models['sherlock-think-alpha'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
@@ -1092,6 +1166,10 @@ export const providers: ProvidersMap = {
       return createOpenRouter({
         apiKey,
         baseURL,
+        headers: {
+          'X-Title': 'Neovate Code',
+          'HTTP-Referer': 'https://neovateai.dev/',
+        },
       }).chat(name);
     },
   },
@@ -1107,13 +1185,10 @@ export const providers: ProvidersMap = {
       'kimi-k2': models['kimi-k2'],
       'kimi-k2-0905': models['kimi-k2-0905'],
       'deepseek-v3': models['deepseek-v3-0324'],
-      'deepseek-v3.1': models['deepseek-v3-1'],
       'deepseek-v3.2': models['deepseek-v3-2-exp'],
       'deepseek-r1': models['deepseek-r1-0528'],
-      'glm-4.5': models['glm-4.5'],
       'glm-4.6': models['glm-4.6'],
       'qwen3-max': models['qwen3-max'],
-      'qwen3-max-preview': models['qwen3-max'],
     },
     createModel: defaultModelCreator,
   },
@@ -1299,6 +1374,24 @@ export const providers: ProvidersMap = {
       'inclusionai/ling-mini-2.0': models['ling-mini-2.0'],
     },
     createModel: defaultModelCreator,
+  },
+  minimax: {
+    id: 'minimax',
+    env: ['MINIMAX_API_KEY'],
+    name: 'Minimax',
+    api: 'https://api.minimaxi.com/anthropic/v1',
+    doc: 'https://platform.minimaxi.com/docs/guides/quickstart',
+    models: {
+      'minimax-m2': models['minimax-m2'],
+    },
+    createModel(name, provider) {
+      const baseURL = getProviderBaseURL(provider);
+      const apiKey = getProviderApiKey(provider);
+      return createAnthropic({
+        baseURL,
+        apiKey,
+      }).chat(name);
+    },
   },
 };
 

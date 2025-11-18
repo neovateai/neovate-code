@@ -38,10 +38,13 @@ async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
     systemPrompt,
     context: opts.context,
   });
-  const message = result.success ? result.data.text : null;
+  let message = result.success ? result.data.text : null;
   if (typeof message !== 'string') {
     throw new Error('Commit message is not a string');
   }
+  message = message.trim();
+  message = message.replace(/^```/, '').replace(/```$/, '');
+  message = message.trim();
   return message;
 }
 

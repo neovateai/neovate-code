@@ -454,6 +454,195 @@ class NodeHandlerRegistry {
       },
     );
 
+    this.messageBus.registerHandler(
+      'project.getRepoInfo',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        try {
+          const context = await this.getContext(cwd);
+          const { getGitRoot, listWorktrees, isGitRepository } = await import(
+            './worktree'
+          );
+          const { getGitRemoteUrl, getDefaultBranch, getGitSyncStatus } =
+            await import('./utils/git');
+          const { GlobalData } = await import('./globalData');
+          const { basename } = await import('pathe');
+
+          // Check if it's a git repository
+          const isGit = await isGitRepository(cwd);
+          if (!isGit) {
+            return {
+              success: false,
+              error: 'Not a git repository',
+            };
+          }
+
+          // Get git root path
+          const gitRoot = await getGitRoot(cwd);
+
+          // Get git remote information
+          const originUrl = await getGitRemoteUrl(gitRoot);
+          const defaultBranch = await getDefaultBranch(gitRoot);
+          const syncStatus = await getGitSyncStatus(gitRoot);
+
+          // Get workspace names
+          const worktrees = await listWorktrees(gitRoot);
+          const workspaceIds = worktrees.map((w) => w.name);
+
+          // Get last accessed timestamp from GlobalData
+          const globalDataPath = context.paths.getGlobalDataPath();
+          const globalData = new GlobalData({ globalDataPath });
+          const lastAccessed =
+            globalData.getProjectLastAccessed({ cwd: gitRoot }) || Date.now();
+
+          // Update last accessed time
+          globalData.updateProjectLastAccessed({ cwd: gitRoot });
+
+          // Get project settings from config
+          const settings = context.config;
+
+          const repoData = {
+            path: gitRoot,
+            name: basename(gitRoot),
+            workspaceIds,
+            metadata: {
+              lastAccessed,
+              settings,
+            },
+            gitRemote: {
+              originUrl,
+              defaultBranch,
+              syncStatus,
+            },
+          };
+
+          return {
+            success: true,
+            data: { repoData },
+          };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || 'Failed to get repository info',
+          };
+        }
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'project.getWorkspacesInfo',
+      async (data: { cwd: string }) => {
+        const { cwd } = data;
+        try {
+          const context = await this.getContext(cwd);
+          const { getGitRoot, listWorktrees, isGitRepository } = await import(
+            './worktree'
+          );
+          const { getCurrentCommit, getPendingChanges } = await import(
+            './utils/git'
+          );
+          const { Paths } = await import('./paths');
+          const { statSync } = await import('fs');
+
+          // Check if it's a git repository
+          const isGit = await isGitRepository(cwd);
+          if (!isGit) {
+            return {
+              success: false,
+              error: 'Not a git repository',
+            };
+          }
+
+          // Get git root path
+          const gitRoot = await getGitRoot(cwd);
+
+          // Get all worktrees
+          const worktrees = await listWorktrees(gitRoot);
+
+          // Build workspace data for each worktree
+          const workspacesData = await Promise.all(
+            worktrees.map(async (worktree) => {
+              // Get git state
+              const currentCommit = await getCurrentCommit(worktree.path);
+              const isDirty = !worktree.isClean;
+              const pendingChanges = await getPendingChanges(worktree.path);
+
+              // Get sessions for this worktree
+              const worktreePaths = new Paths({
+                productName: context.productName,
+                cwd: worktree.path,
+              });
+              const sessions = worktreePaths.getAllSessions();
+              const sessionIds = sessions.map((s) => s.sessionId);
+
+              // Get creation timestamp from filesystem
+              let createdAt = Date.now();
+              try {
+                const stats = statSync(worktree.path);
+                createdAt = stats.birthtimeMs || stats.ctimeMs;
+              } catch {
+                // Use current time as fallback
+              }
+
+              // Compute status based on git state
+              let status: 'active' | 'archived' | 'stale' = 'active';
+              const daysSinceCreation =
+                (Date.now() - createdAt) / (1000 * 60 * 60 * 24);
+              if (
+                daysSinceCreation > 30 &&
+                !isDirty &&
+                sessionIds.length === 0
+              ) {
+                status = 'stale';
+              }
+              // Note: 'archived' status could be implemented with a metadata file in the future
+
+              // Get active files - currently not available in session metadata
+              // This could be extracted from the session log in the future
+              const activeFiles: string[] = [];
+
+              // Get worktree-level settings from config
+              // For now, we'll use the global config
+              const settings = context.config;
+
+              return {
+                id: worktree.name,
+                repoPath: gitRoot,
+                branch: worktree.branch,
+                worktreePath: worktree.path,
+                sessionIds,
+                gitState: {
+                  currentCommit,
+                  isDirty,
+                  pendingChanges,
+                },
+                metadata: {
+                  createdAt,
+                  description: '',
+                  status,
+                },
+                context: {
+                  activeFiles,
+                  settings,
+                  preferences: {},
+                },
+              };
+            }),
+          );
+
+          return {
+            success: true,
+            data: { workspaces: workspacesData },
+          };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || 'Failed to get workspaces info',
+          };
+        }
+      },
+    );
+
     //////////////////////////////////////////////
     // providers
     this.messageBus.registerHandler(
@@ -499,7 +688,7 @@ class NodeHandlerRegistry {
             sessionSummary = sessionConfigManager.config.summary;
             pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
             pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
-          } catch (error) {
+          } catch {
             // Silently ignore if session config not available
           }
         }
