@@ -1,7 +1,6 @@
 import type { LanguageModelV2FunctionTool } from '@ai-sdk/provider';
 import path from 'pathe';
-import type { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import * as z from 'zod';
 import type { Context } from './context';
 import type { ImagePart, TextPart } from './message';
 import { resolveModelWithContext } from './model';
@@ -46,6 +45,7 @@ export async function resolveTools(opts: ResolveToolsOpts) {
         createBashTool({
           cwd,
           backgroundTaskManager: opts.context.backgroundTaskManager,
+          messageBus: opts.context.messageBus,
         }),
       ]
     : [];
@@ -139,11 +139,20 @@ export class Tools {
     return Object.entries(this.tools).map(([key, tool]) => {
       // parameters of mcp tools is not zod object
       const isMCP = key.startsWith('mcp__');
-      const schema = isMCP ? tool.parameters : zodToJsonSchema(tool.parameters);
+      const schema = isMCP ? tool.parameters : z.toJSONSchema(tool.parameters);
+      // some providers have a limit on the description length, so we need to truncate it
+      // e.g. megallm.io has a limit of 1024 characters
+      const limit = process.env.TOOL_DESCRIPTION_LIMIT
+        ? Math.floor(parseInt(process.env.TOOL_DESCRIPTION_LIMIT, 10))
+        : 0;
+      const desc =
+        limit > 0 && tool.description.length > limit
+          ? tool.description.slice(0, limit - 3) + '...'
+          : tool.description;
       return {
         type: 'function',
         name: key,
-        description: tool.description,
+        description: desc,
         inputSchema: schema,
         providerOptions: {},
       };
@@ -191,14 +200,20 @@ export type ToolUseResult = {
   approved: boolean;
 };
 
-export interface Tool<T = any> {
+export interface Tool<TSchema extends z.ZodTypeAny = z.ZodTypeAny> {
   name: string;
   description: string;
-  getDescription?: ({ params, cwd }: { params: T; cwd: string }) => string;
+  getDescription?: ({
+    params,
+    cwd,
+  }: {
+    params: z.output<TSchema>;
+    cwd: string;
+  }) => string;
   displayName?: string;
-  execute: (params: T) => Promise<ToolResult> | ToolResult;
+  execute: (params: z.output<TSchema>) => Promise<ToolResult> | ToolResult;
   approval?: ToolApprovalInfo;
-  parameters: z.ZodSchema<T>;
+  parameters: TSchema;
 }
 
 type ApprovalContext = {
@@ -250,16 +265,16 @@ export function createTool<TSchema extends z.ZodTypeAny>(config: {
   name: string;
   description: string;
   parameters: TSchema;
-  execute: (params: z.infer<TSchema>) => Promise<ToolResult> | ToolResult;
+  execute: (params: z.output<TSchema>) => Promise<ToolResult> | ToolResult;
   approval?: ToolApprovalInfo;
   getDescription?: ({
     params,
     cwd,
   }: {
-    params: z.infer<TSchema>;
+    params: z.output<TSchema>;
     cwd: string;
   }) => string;
-}): Tool<z.infer<TSchema>> {
+}): Tool<TSchema> {
   return {
     name: config.name,
     description: config.description,

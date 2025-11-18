@@ -41,6 +41,7 @@ export type ProviderConfig = Partial<Omit<Provider, 'createModel'>>;
 export type Config = {
   model: string;
   planModel: string;
+  smallModel?: string;
   language: string;
   quiet: boolean;
   approvalMode: ApprovalMode;
@@ -61,6 +62,7 @@ export type Config = {
   outputFormat?: 'text' | 'stream-json' | 'json';
   autoUpdate?: boolean;
   browser?: boolean;
+  temperature?: number;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -80,6 +82,7 @@ const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
   'model',
   'planModel',
+  'smallModel',
   'systemPrompt',
   'todo',
   'autoCompact',
@@ -88,6 +91,7 @@ const VALID_CONFIG_KEYS = [
   'autoUpdate',
   'provider',
   'browser',
+  'temperature',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider'];
@@ -139,6 +143,7 @@ export class ConfigManager {
       defu(this.projectConfig, defu(this.globalConfig, DEFAULT_CONFIG)),
     ) as Config;
     config.planModel = config.planModel || config.model;
+    config.smallModel = config.smallModel || config.model;
     if (config.browser) {
       config.mcpServers = mergeBrowserMcpServers(
         config.mcpServers,

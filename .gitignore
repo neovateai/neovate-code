@@ -13,3 +13,9 @@
 .takumi/todos
 /tmp
 /.conductor
+/scripts/unused-analysis.json
+/.neovate-workspaces
+/.log-outputs
+/.trae
+/.qoder
+

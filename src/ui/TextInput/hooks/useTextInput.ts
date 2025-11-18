@@ -1,5 +1,6 @@
 import type { Key } from 'ink';
 import { useState } from 'react';
+import { useAppStore } from '../../store';
 import { Cursor } from '../utils/Cursor';
 import {
   CLIPBOARD_ERROR_MESSAGE,
@@ -30,6 +31,7 @@ type UseTextInputProps = {
   onMessage?: (show: boolean, message?: string) => void;
   onEscape?: () => void;
   onHistoryUp?: () => void;
+  onQueuedMessagesUp?: () => void;
   onHistoryDown?: () => void;
   onHistoryReset?: () => void;
   focus?: boolean;
@@ -40,12 +42,16 @@ type UseTextInputProps = {
   invert: (text: string) => string;
   themeText: (text: string) => string;
   columns: number;
-  onImagePaste?: (base64Image: string, filename?: string) => void;
+  onImagePaste?: (
+    base64Image: string,
+    filename?: string,
+  ) => Promise<{ prompt?: string }> | void;
   disableCursorMovementForUpDownKeys?: boolean;
   externalOffset: number;
   onOffsetChange: (offset: number) => void;
   onTabPress?: (isShiftTab: boolean) => void;
   onExternalEdit?: () => void;
+  onCtrlBBackground?: () => void;
 };
 
 type UseTextInputResult = {
@@ -64,6 +70,7 @@ export function useTextInput({
   onMessage,
   onEscape,
   onHistoryUp,
+  onQueuedMessagesUp,
   onHistoryDown,
   onHistoryReset,
   mask = '',
@@ -77,7 +84,9 @@ export function useTextInput({
   onOffsetChange,
   onTabPress,
   onExternalEdit,
+  onCtrlBBackground,
 }: UseTextInputProps): UseTextInputResult {
+  const { toggleThinking } = useAppStore();
   const offset = externalOffset;
   const setOffset = onOffsetChange;
   const cursor = Cursor.fromText(originalValue, columns, offset);
@@ -136,27 +145,49 @@ export function useTextInput({
     return cursor.forwardDelete();
   }
 
+  // Helper function to show success message
+  const showSuccessMessage = () => {
+    onMessage?.(true, 'Image pasted successfully');
+    setImagePasteErrorTimeout(
+      setTimeout(() => {
+        onMessage?.(false);
+      }, 2000),
+    );
+  };
+
+  // Helper function to show error message
+  const showErrorMessage = (message: string, timeout: number = 4000) => {
+    onMessage?.(true, message);
+    setImagePasteErrorTimeout(
+      setTimeout(() => {
+        onMessage?.(false);
+      }, timeout),
+    );
+  };
+
+  // Helper function to handle successful image processing
+  const handleImageProcessResult = async (
+    base64Image: string,
+  ): Promise<void> => {
+    const result = await onImagePaste?.(base64Image);
+    const content = result?.prompt || IMAGE_PLACEHOLDER;
+    const newCursor = cursor.insert(content);
+    setOffset(newCursor.offset);
+    onChange(newCursor.text);
+    showSuccessMessage();
+  };
+
   async function tryImagePaste() {
     maybeClearImagePasteErrorTimeout();
 
     try {
-      // Try new cross-platform method first
       const imageResult = await getImageFromClipboard();
 
       if (imageResult) {
-        // Successfully pasted image with enhanced method
-        onImagePaste?.(imageResult.base64);
-        onMessage?.(true, 'Image pasted successfully');
-        setImagePasteErrorTimeout(
-          setTimeout(() => {
-            onMessage?.(false);
-          }, 2000),
-        );
-
-        return cursor.insert(IMAGE_PLACEHOLDER);
+        await handleImageProcessResult(imageResult.base64);
+        return;
       }
 
-      // Fall back to legacy method for macOS compatibility
       const base64Image = getImageFromClipboardLegacy();
 
       if (base64Image === null) {
@@ -166,40 +197,32 @@ export function useTextInput({
           errorMessage = `Image paste is not supported on ${process.platform} platform`;
         }
 
-        onMessage?.(true, errorMessage);
-        setImagePasteErrorTimeout(
-          setTimeout(() => {
-            onMessage?.(false);
-          }, 4000),
-        );
-        return cursor;
+        showErrorMessage(errorMessage);
+        return;
       }
 
-      // Successfully pasted image with legacy method
-      onImagePaste?.(base64Image);
-      onMessage?.(true, 'Image pasted successfully');
-      setImagePasteErrorTimeout(
-        setTimeout(() => {
-          onMessage?.(false);
-        }, 2000),
-      );
-
-      return cursor.insert(IMAGE_PLACEHOLDER);
+      await handleImageProcessResult(base64Image);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      onMessage?.(true, `Image paste failed: ${errorMsg}`);
-      setImagePasteErrorTimeout(
-        setTimeout(() => {
-          onMessage?.(false);
-        }, 4000),
-      );
-      return cursor;
+      showErrorMessage(`Image paste failed: ${errorMsg}`);
     }
+
+    return cursor;
   }
 
   const handleCtrl = mapInput([
     ['a', () => cursor.startOfLine()],
-    ['b', () => cursor.left()],
+    [
+      'b',
+      () => {
+        // Handle Ctrl+B for background prompt if callback exists
+        if (onCtrlBBackground) {
+          onCtrlBBackground();
+          return cursor; // Don't move cursor for background action
+        }
+        return cursor.left(); // Default behavior: move cursor left
+      },
+    ],
     ['c', handleCtrlC],
     ['d', handleCtrlD],
     ['e', () => cursor.endOfLine()],
@@ -219,6 +242,13 @@ export function useTextInput({
     ['u', () => cursor.deleteToLineStart()],
     ['v', () => tryImagePaste()],
     ['w', () => cursor.deleteWordBefore()],
+    [
+      't',
+      () => {
+        toggleThinking();
+        return cursor;
+      },
+    ],
   ]);
 
   const handleMeta = mapInput([
@@ -248,10 +278,13 @@ export function useTextInput({
     }
     const cursorUp = cursor.up();
     if (cursorUp.equals(cursor)) {
-      // already at beginning
       onHistoryUp?.();
     }
     return cursorUp;
+  }
+  function queuedMessagesUp() {
+    onQueuedMessagesUp?.();
+    return cursor;
   }
   function downOrHistoryDown() {
     if (disableCursorMovementForUpDownKeys) {
@@ -285,8 +318,12 @@ export function useTextInput({
         return () => cursor.endOfLine();
       case key.pageUp:
         return () => cursor.startOfLine();
-      case key.meta:
+      case key.meta: {
+        if (key.upArrow) {
+          return queuedMessagesUp;
+        }
         return handleMeta;
+      }
       case key.return:
         return () => handleEnter(key);
       case key.tab:
@@ -304,10 +341,10 @@ export function useTextInput({
     return (input: string) => {
       switch (true) {
         // Home key
-        case input == '\x1b[H' || input == '\x1b[1~':
+        case input === '\x1b[H' || input === '\x1b[1~':
           return cursor.startOfLine();
         // End key
-        case input == '\x1b[F' || input == '\x1b[4~':
+        case input === '\x1b[F' || input === '\x1b[4~':
           return cursor.endOfLine();
         default:
           // Check if input might be an image path and handle accordingly
@@ -327,7 +364,7 @@ export function useTextInput({
     if (nextCursor) {
       if (!cursor.equals(nextCursor)) {
         setOffset(nextCursor.offset);
-        if (cursor.text != nextCursor.text) {
+        if (cursor.text !== nextCursor.text) {
           onChange(nextCursor.text || '');
         }
       }

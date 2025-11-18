@@ -16,7 +16,11 @@
     "lineEnding": "lf",
     "lineWidth": 80,
     "attributePosition": "auto",
-    "includes": ["**/*", "!browser/src/routeTree.gen.ts"]
+    "includes": [
+      "**/*",
+      "!browser/src/routeTree.gen.ts",
+      "!browser/src/global.css"
+    ]
   },
   "linter": {
     "enabled": true,

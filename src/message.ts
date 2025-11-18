@@ -1,5 +1,5 @@
 import { CANCELED_MESSAGE_TEXT } from './constants';
-import type { ReturnDisplay, ToolResult } from './tool';
+import type { ToolResult } from './tool';
 import { randomUUID } from './utils/randomUUID';
 
 export type SystemMessage = {
@@ -180,4 +180,73 @@ export function getMessageText(message: Message) {
         .filter((c) => c.type === 'text')
         .map((c) => c.text)
         .join('');
+}
+
+/**
+ * Finds tool uses in the last assistant message that don't have corresponding tool results.
+ * This is useful for identifying incomplete tool executions, such as when a session is canceled
+ * before all tools have finished executing.
+ *
+ * @param messages - Array of normalized messages to analyze
+ * @returns Object containing the assistant message and incomplete tool uses, or null if none found
+ */
+export function findIncompleteToolUses(messages: NormalizedMessage[]): {
+  assistantMessage: NormalizedMessage;
+  incompleteToolUses: ToolUsePart[];
+} | null {
+  if (messages.length === 0) {
+    return null;
+  }
+
+  // Find the last assistant message
+  let lastAssistantMessage: NormalizedMessage | undefined;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'assistant') {
+      lastAssistantMessage = messages[i];
+      break;
+    }
+  }
+
+  if (!lastAssistantMessage || !Array.isArray(lastAssistantMessage.content)) {
+    return null;
+  }
+
+  // Extract all tool_use from the assistant message
+  const toolUses = lastAssistantMessage.content.filter(
+    (part): part is ToolUsePart => part.type === 'tool_use',
+  );
+
+  if (toolUses.length === 0) {
+    return null;
+  }
+
+  // Find all tool_result messages after the assistant message
+  const assistantIndex = messages.lastIndexOf(lastAssistantMessage);
+  const subsequentMessages = messages.slice(assistantIndex + 1);
+
+  // Collect all tool_result IDs from subsequent messages
+  const completedToolIds = new Set<string>();
+  for (const msg of subsequentMessages) {
+    if (msg.role === 'tool' && Array.isArray(msg.content)) {
+      for (const part of msg.content) {
+        if (part.type === 'tool-result') {
+          completedToolIds.add(part.toolCallId);
+        }
+      }
+    }
+  }
+
+  // Find tool_uses that don't have corresponding tool_results
+  const incompleteToolUses = toolUses.filter(
+    (toolUse) => !completedToolIds.has(toolUse.id),
+  );
+
+  if (incompleteToolUses.length === 0) {
+    return null;
+  }
+
+  return {
+    assistantMessage: lastAssistantMessage,
+    incompleteToolUses,
+  };
 }

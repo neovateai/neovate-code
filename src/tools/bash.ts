@@ -5,8 +5,10 @@ import os from 'os';
 import path from 'pathe';
 import { z } from 'zod';
 import type { BackgroundTaskManager } from '../backgroundTaskManager';
-import { TOOL_NAMES } from '../constants';
+import { BASH_EVENTS, TOOL_NAMES } from '../constants';
+import type { MessageBus } from '../messageBus';
 import { createTool } from '../tool';
+import type { BashPromptBackgroundEvent } from '../ui/store';
 import { shouldRunInBackground } from '../utils/background-detection';
 import { getErrorMessage } from '../utils/error';
 import { shellExecute } from '../utils/shell-execution';
@@ -42,6 +44,7 @@ const BANNED_COMMANDS = [
 
 const DEFAULT_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const MAX_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+const BACKGROUND_CHECK_INTERVAL = 500; // ms
 
 /**
  * Truncate output by line count, showing maximum 20 lines
@@ -311,6 +314,8 @@ async function executeCommand(
   cwd: string,
   runInBackground: boolean | undefined,
   backgroundTaskManager: BackgroundTaskManager,
+  messageBus: MessageBus | undefined,
+  pendingBackgroundMoves: Map<string, { moveToBackground: () => void }>,
 ) {
   const actualTimeout = Math.min(timeout, MAX_TIMEOUT);
 
@@ -328,6 +333,99 @@ async function executeCommand(
   const movedToBackgroundRef = { value: false };
   const backgroundTaskIdRef: { value: string | undefined } = {
     value: undefined,
+  };
+  const isCommandCompletedRef = { value: false };
+  let backgroundCheckInterval: ReturnType<typeof setInterval> | null = null;
+
+  let backgroundPromptEmitted = false;
+
+  // Helper function to clear background prompt when command completes
+  const clearBackgroundPromptIfNeeded = () => {
+    if (backgroundPromptEmitted && messageBus && !movedToBackgroundRef.value) {
+      messageBus.emitEvent(BASH_EVENTS.BACKGROUND_MOVED, {});
+    }
+  };
+
+  const triggerBackgroundTransition = () => {
+    if (runInBackground === true) {
+      if (!movedToBackgroundRef.value) {
+        movedToBackgroundRef.value = true;
+        const actualTaskId = handleBackgroundTransition(
+          command,
+          pid,
+          tempFilePath,
+          isWindows,
+          backgroundTaskManager,
+          resultPromise,
+        );
+        backgroundTaskIdRef.value = actualTaskId;
+      }
+    } else if (messageBus) {
+      const tempTaskId = `temp_${crypto.randomBytes(6).toString('hex')}`;
+      pendingBackgroundMoves.set(tempTaskId, {
+        moveToBackground: () => {
+          movedToBackgroundRef.value = true;
+          const actualTaskId = handleBackgroundTransition(
+            command,
+            pid,
+            tempFilePath,
+            isWindows,
+            backgroundTaskManager,
+            resultPromise,
+          );
+          backgroundTaskIdRef.value = actualTaskId;
+        },
+      });
+
+      const promptEvent: BashPromptBackgroundEvent = {
+        taskId: tempTaskId,
+        command,
+        currentOutput: outputBufferRef.value,
+      };
+
+      messageBus.emitEvent(BASH_EVENTS.PROMPT_BACKGROUND, promptEvent);
+    }
+  };
+
+  const shouldStopCheck = () =>
+    movedToBackgroundRef.value || isCommandCompletedRef.value;
+
+  const shouldTransitionToBackground = () => {
+    const elapsed = Date.now() - startTime;
+    return (
+      shouldRunInBackground(
+        command,
+        elapsed,
+        hasOutput,
+        isCommandCompletedRef.value,
+        runInBackground,
+      ) && !backgroundPromptEmitted
+    );
+  };
+
+  const clearCheckInterval = () => {
+    if (backgroundCheckInterval) {
+      clearInterval(backgroundCheckInterval);
+      backgroundCheckInterval = null;
+    }
+  };
+
+  // 定时检查函数
+  const startBackgroundCheck = () => {
+    if (backgroundCheckInterval) return; // Avoid duplicate startup
+
+    backgroundCheckInterval = setInterval(() => {
+      if (shouldStopCheck()) {
+        clearCheckInterval();
+        return;
+      }
+
+      if (shouldTransitionToBackground()) {
+        backgroundPromptEmitted = true;
+        triggerBackgroundTransition();
+        clearCheckInterval();
+      }
+    }, BACKGROUND_CHECK_INTERVAL);
   };
 
   const isWindows = os.platform() === 'win32';
@@ -373,23 +471,17 @@ async function executeCommand(
         hasOutput = true;
         outputBufferRef.value += event.chunk;
 
-        const elapsed = Date.now() - startTime;
-        if (
-          shouldRunInBackground(command, elapsed, hasOutput, runInBackground)
-        ) {
-          movedToBackgroundRef.value = true;
-          backgroundTaskIdRef.value = handleBackgroundTransition(
-            command,
-            pid,
-            tempFilePath,
-            isWindows,
-            backgroundTaskManager,
-            resultPromise,
-          );
-        }
+        // Start background check if not already started
+        startBackgroundCheck();
       }
     },
   );
+
+  // Monitor command completion
+  resultPromise.finally(() => {
+    isCommandCompletedRef.value = true;
+    clearCheckInterval();
+  });
 
   try {
     const backgroundCheckResult = await Promise.race([
@@ -405,15 +497,18 @@ async function executeCommand(
 
     if (backgroundCheckResult.shouldReturn) {
       cleanupTempFile();
+      clearBackgroundPromptIfNeeded();
       return backgroundCheckResult.result;
     }
   } catch (error) {
     cleanupTempFile();
+    clearBackgroundPromptIfNeeded();
     throw error;
   }
 
   const result = await resultPromise;
   cleanupTempFile();
+  clearBackgroundPromptIfNeeded();
 
   const backgroundPIDs = extractBackgroundPIDs(
     tempFilePath,
@@ -560,8 +655,30 @@ Usage:
 export function createBashTool(opts: {
   cwd: string;
   backgroundTaskManager: BackgroundTaskManager;
+  messageBus?: MessageBus;
 }) {
-  const { cwd, backgroundTaskManager } = opts;
+  const { cwd, backgroundTaskManager, messageBus } = opts;
+
+  // Track pending background moves
+  const pendingBackgroundMoves = new Map<
+    string,
+    { moveToBackground: () => void }
+  >();
+
+  // Add background move listener only if messageBus is available
+  if (messageBus) {
+    messageBus.onEvent(
+      BASH_EVENTS.MOVE_TO_BACKGROUND,
+      ({ taskId }: { taskId: string }) => {
+        const pendingMove = pendingBackgroundMoves.get(taskId);
+        if (pendingMove) {
+          pendingMove.moveToBackground();
+          pendingBackgroundMoves.delete(taskId);
+          messageBus.emitEvent(BASH_EVENTS.BACKGROUND_MOVED, { taskId });
+        }
+      },
+    );
+  }
   return createTool({
     name: TOOL_NAMES.BASH,
     description:
@@ -635,6 +752,8 @@ cd /foo/bar && pytest tests
           cwd,
           run_in_background,
           backgroundTaskManager,
+          messageBus,
+          pendingBackgroundMoves,
         );
       } catch (e) {
         return {

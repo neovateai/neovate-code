@@ -1,7 +1,9 @@
 import type {
   LanguageModelV2,
+  LanguageModelV2FunctionTool,
   LanguageModelV2Message,
   LanguageModelV2Prompt,
+  SharedV2Headers,
 } from '@ai-sdk/provider';
 import createDebug from 'debug';
 import { At } from './at';
@@ -12,13 +14,39 @@ import type {
   ToolUsePart,
 } from './message';
 import type { ModelInfo } from './model';
+import { addPromptCache } from './promptCache';
+import { getThinkingConfig } from './thinking-config';
 import type { ToolResult, Tools, ToolUse } from './tool';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
+import { safeParseJson } from './utils/safeParseJson';
 
 const DEFAULT_MAX_TURNS = 50;
+const DEFAULT_ERROR_RETRY_TURNS = 10;
 
 const debug = createDebug('neovate:loop');
+
+async function exponentialBackoffWithCancellation(
+  attempt: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  const baseDelay = 1000;
+  const delay = baseDelay * Math.pow(2, attempt - 1);
+  const checkInterval = 100;
+
+  const startTime = Date.now();
+  while (Date.now() - startTime < delay) {
+    if (signal?.aborted) {
+      throw new Error('Cancelled during retry backoff');
+    }
+    await new Promise((resolve) =>
+      setTimeout(
+        resolve,
+        Math.min(checkInterval, delay - (Date.now() - startTime)),
+      ),
+    );
+  }
+}
 
 export type LoopResult =
   | {
@@ -39,6 +67,24 @@ export type LoopResult =
       };
     };
 
+type StreamResultBase = {
+  requestId: string;
+  prompt: LanguageModelV2Prompt;
+  model: ModelInfo;
+  tools: LanguageModelV2FunctionTool[];
+};
+export type StreamResult = StreamResultBase & {
+  request?: {
+    body?: unknown;
+  };
+  response?: {
+    headers?: SharedV2Headers;
+    statusCode?: number;
+    body?: unknown;
+  };
+  error?: any;
+};
+
 type RunLoopOpts = {
   input: string | NormalizedMessage[];
   model: ModelInfo;
@@ -46,12 +92,18 @@ type RunLoopOpts = {
   cwd: string;
   systemPrompt?: string;
   maxTurns?: number;
+  errorRetryTurns?: number;
   signal?: AbortSignal;
   llmsContexts?: string[];
   autoCompact?: boolean;
+  thinking?: {
+    effort: 'low' | 'medium' | 'high';
+  };
+  temperature?: number;
   onTextDelta?: (text: string) => Promise<void>;
   onText?: (text: string) => Promise<void>;
   onReasoning?: (text: string) => Promise<void>;
+  onStreamResult?: (result: StreamResult) => Promise<void>;
   onChunk?: (chunk: any, requestId: string) => Promise<void>;
   onToolUse?: (toolUse: ToolUse) => Promise<ToolUse>;
   onToolResult?: (
@@ -68,7 +120,6 @@ type RunLoopOpts = {
   onMessage?: OnMessage;
 };
 
-// TODO: support retry
 export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   const startTime = Date.now();
   let turnsCount = 0;
@@ -105,6 +156,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   });
 
   let shouldAtNormalize = true;
+  let shouldThinking = true;
   while (true) {
     // Must use separate abortController to prevent ReadStream locking
     if (opts.signal?.aborted && !abortController.signal.aborted) {
@@ -162,74 +214,166 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       });
       shouldAtNormalize = false;
     }
-    const requestId = randomUUID();
-    const m: LanguageModelV2 = opts.model.m;
-    const result = await m.doStream({
-      prompt: prompt,
-      tools: opts.tools.toLanguageV2Tools(),
-      abortSignal: abortController.signal,
-    });
+
+    prompt = addPromptCache(prompt, opts.model);
 
     let text = '';
     let reasoning = '';
-
     const toolCalls: Array<{
       toolCallId: string;
       toolName: string;
       input: string;
     }> = [];
 
-    try {
-      for await (const chunk of result.stream) {
-        if (opts.signal?.aborted) {
-          return createCancelError();
-        }
+    const requestId = randomUUID();
+    const m: LanguageModelV2 = await opts.model._mCreator();
+    const tools = opts.tools.toLanguageV2Tools();
 
-        // Call onChunk for all chunks
-        await opts.onChunk?.(chunk, requestId);
+    // Get thinking config based on model's reasoning capability
+    let thinkingConfig: Record<string, any> | undefined = undefined;
+    if (shouldThinking && opts.thinking) {
+      thinkingConfig = getThinkingConfig(opts.model, opts.thinking.effort);
+      shouldThinking = false;
+    }
 
-        switch (chunk.type) {
-          case 'text-delta': {
-            const textDelta = chunk.delta;
-            text += textDelta;
-            await opts.onTextDelta?.(textDelta);
-            break;
-          }
-          case 'reasoning-delta':
-            reasoning += chunk.delta;
-            break;
-          case 'tool-call':
-            toolCalls.push({
-              toolCallId: chunk.toolCallId,
-              toolName: chunk.toolName,
-              input: chunk.input,
-            });
-            break;
-          case 'finish':
-            lastUsage = Usage.fromEventUsage(chunk.usage);
-            totalUsage.add(lastUsage);
-            break;
-          default:
-            // console.log('Unknown event:', chunk.data.event);
-            break;
-        }
+    let retryCount = 0;
+    const errorRetryTurns = opts.errorRetryTurns ?? DEFAULT_ERROR_RETRY_TURNS;
+
+    while (retryCount <= errorRetryTurns) {
+      if (opts.signal?.aborted) {
+        return createCancelError();
       }
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          type: 'api_error',
-          message:
-            error instanceof Error ? error.message : 'Unknown streaming error',
-          details: {
-            code: error.data?.error?.code,
-            status: error.data?.error?.status,
-            url: error.url,
-            error,
-            stack: error.stack,
+
+      try {
+        const result = await m.doStream({
+          prompt: prompt,
+          tools,
+          toolChoice: { type: 'auto' },
+          abortSignal: abortController.signal,
+          ...thinkingConfig,
+          ...(opts.temperature !== undefined && {
+            temperature: opts.temperature,
+          }),
+        });
+        opts.onStreamResult?.({
+          requestId,
+          prompt,
+          model: opts.model,
+          tools,
+          request: result.request,
+          response: result.response,
+        });
+
+        for await (const chunk of result.stream) {
+          if (opts.signal?.aborted) {
+            return createCancelError();
+          }
+          await opts.onChunk?.(chunk, requestId);
+          switch (chunk.type) {
+            case 'text-delta': {
+              const textDelta = chunk.delta;
+              text += textDelta;
+              await opts.onTextDelta?.(textDelta);
+              break;
+            }
+            case 'reasoning-delta':
+              reasoning += chunk.delta;
+              break;
+            case 'tool-call':
+              toolCalls.push({
+                toolCallId: chunk.toolCallId,
+                toolName: chunk.toolName,
+                input: chunk.input,
+              });
+              break;
+            case 'finish':
+              lastUsage = Usage.fromEventUsage(chunk.usage);
+              totalUsage.add(lastUsage);
+              if (toolCalls.length === 0 && text.trim() === '') {
+                const error = new Error(
+                  'Empty response: no text or tool calls received',
+                );
+                (error as any).isRetryable = true;
+                throw error;
+              }
+              break;
+            case 'error': {
+              const message = (() => {
+                if ((chunk as any).error.message) {
+                  return (chunk as any).error.message;
+                }
+                try {
+                  const message = JSON.parse(
+                    (chunk as any).error.value?.details,
+                  )?.error?.message;
+                  if (message) {
+                    return message;
+                  }
+                } catch (_e) {}
+                return JSON.stringify(chunk.error);
+              })();
+              const error = new Error(message);
+              (error as any).isRetryable = false;
+              const value = (chunk.error as any).value;
+              if (value) {
+                (error as any).statusCode = value?.status;
+              }
+              throw error;
+            }
+            default:
+              break;
+          }
+        }
+
+        break;
+      } catch (error: any) {
+        opts.onStreamResult?.({
+          requestId,
+          prompt,
+          model: opts.model,
+          tools,
+          response: {
+            statusCode: error.statusCode,
+            headers: error.responseHeaders,
+            body: error.responseBody,
           },
-        },
-      };
+          error: {
+            data: error.data || error.message,
+            isRetryable: error.isRetryable,
+            retryAttempt: retryCount,
+            maxRetries: errorRetryTurns,
+          },
+        });
+
+        if (error.isRetryable && retryCount < errorRetryTurns) {
+          retryCount++;
+          try {
+            await exponentialBackoffWithCancellation(retryCount, opts.signal);
+          } catch {
+            return createCancelError();
+          }
+          continue;
+        }
+
+        return {
+          success: false,
+          error: {
+            type: 'api_error',
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Unknown streaming error',
+            details: {
+              code: error.data?.error?.code,
+              status: error.data?.error?.status,
+              url: error.url,
+              error,
+              stack: error.stack,
+              retriesAttempted: retryCount,
+            },
+          },
+        };
+      }
     }
 
     // Exit early if cancellation signal is received
@@ -265,7 +409,8 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     }
     for (const toolCall of toolCalls) {
       const tool = opts.tools.get(toolCall.toolName);
-      const input = JSON.parse(toolCall.input);
+      // compatible with models that may return an empty value instead of a JSON string for input
+      const input = safeParseJson(toolCall.input);
       const description = tool?.getDescription?.({
         params: input,
         cwd: opts.cwd,
@@ -306,7 +451,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     for (const toolCall of toolCalls) {
       let toolUse: ToolUse = {
         name: toolCall.toolName,
-        params: JSON.parse(toolCall.input),
+        params: safeParseJson(toolCall.input),
         callId: toolCall.toolCallId,
       };
       if (opts.onToolUse) {

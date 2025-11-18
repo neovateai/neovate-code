@@ -12,7 +12,7 @@ const debug = createDebug('neovate:slash-commands:compact');
 export const compactCommand: LocalJSXCommand = {
   type: 'local-jsx',
   name: 'compact',
-  description: `Clear conversation history but keep a summary in context.`,
+  description: 'Compact conversation history',
   async call(onDone) {
     return React.createElement(() => {
       const { bridge, messages, cwd, sessionId, log } = useAppStore();

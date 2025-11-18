@@ -2,6 +2,7 @@ import { Box, Text } from 'ink';
 import path from 'pathe';
 import React, { useMemo } from 'react';
 import type { NormalizedMessage } from '../message';
+import { UI_COLORS } from './constants';
 import { useAppStore } from './store';
 
 function HelpHint() {
@@ -20,10 +21,29 @@ function getContextLeftColor(percentage: number): string {
   return 'red';
 }
 
+function ThinkingIndicator() {
+  const { thinking } = useAppStore();
+
+  if (!thinking) return null;
+
+  const color =
+    thinking.effort === 'high'
+      ? UI_COLORS.CHAT_BORDER_THINKING_HARD
+      : UI_COLORS.CHAT_BORDER_THINKING;
+
+  return (
+    <>
+      {' | '}
+      <Text color={color}>thinking: {thinking.effort}</Text>
+    </>
+  );
+}
+
 function StatusMain() {
   const {
     cwd,
     model,
+    planModel,
     modelContextLimit,
     status,
     exitMessage,
@@ -97,11 +117,20 @@ function StatusMain() {
       </>
     );
   })();
+  const modelDesc = model ? `${model.provider.id}/${model.model.id}` : '';
   return (
     <Box>
       <Text color="gray">
-        [{model ? model : <Text color="red">use /model to select a model</Text>}
-        ] | 📁 {folderName} | 🪙 {(tokenUsed / 1000).toFixed(1)}K |{' '}
+        [
+        {model ? (
+          `${modelDesc}${
+            '' // planModel && planModel !== modelDesc ? ` | plan: ${planModel}` : ''
+          }`
+        ) : (
+          <Text color="red">use /model to select a model</Text>
+        )}
+        <ThinkingIndicator />] | {folderName} | {(tokenUsed / 1000).toFixed(1)}K
+        |{' '}
         <Text color={getContextLeftColor(contextLeftPercentage)}>
           {contextLeftPercentage}%
         </Text>{' '}

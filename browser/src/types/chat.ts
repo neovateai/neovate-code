@@ -123,11 +123,26 @@ export type ToolUseMessage = {
   content: ToolUsePart;
 };
 
+// New format ToolMessage2 related types
+export type ToolResultPart2 = {
+  type: 'tool-result';
+  toolCallId: string;
+  toolName: string;
+  input: Record<string, any>;
+  result: ToolResult;
+};
+
+export type ToolMessage2 = {
+  role: 'tool';
+  content: ToolResultPart2[];
+};
+
 export type Message =
   | SystemMessage
   | UserMessage
   | AssistantMessage
-  | ToolResultMessage;
+  | ToolResultMessage
+  | ToolMessage2;
 
 export type UIToolPart = {
   type: 'tool';
