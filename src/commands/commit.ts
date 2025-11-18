@@ -38,10 +38,13 @@ async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
     systemPrompt,
     context: opts.context,
   });
-  const message = result.success ? result.data.text : null;
+  let message = result.success ? result.data.text : null;
   if (typeof message !== 'string') {
     throw new Error('Commit message is not a string');
   }
+  message = message.trim();
+  message = message.replace(/^```/, '').replace(/```$/, '');
+  message = message.trim();
   return message;
 }
 
@@ -196,6 +199,8 @@ export async function runCommit(context: Context) {
     );
   }
 
+  const fileList = await getStagedFileList();
+
   let repoStyle = '';
   if (argv.followStyle) {
     try {
@@ -226,6 +231,9 @@ Please follow a similar style for this commit message while still adhering to th
       const stop = logger.spinThink({ productName: context.productName });
       message = await generateCommitMessage({
         prompt: `
+# Staged files:
+${fileList}
+
 # Diffs:
 ${diff}
 ${repoStyle}
@@ -618,6 +626,17 @@ function checkCommitMessage(message: string, hasAiSuffix = false) {
   // }
   if (message.length === 0) {
     throw new Error('Commit message is empty');
+  }
+}
+
+async function getStagedFileList() {
+  try {
+    const fileList = execSync('git diff --cached --name-status', {
+      encoding: 'utf-8',
+    });
+    return fileList.trim();
+  } catch (error: any) {
+    return '';
   }
 }
 

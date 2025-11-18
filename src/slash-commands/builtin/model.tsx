@@ -2,6 +2,7 @@ import { Box, Text, useInput } from 'ink';
 import pc from 'picocolors';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import type { ModelInfo } from '../../model';
 import PaginatedGroupSelectInput from '../../ui/PaginatedGroupSelectInput';
 import { useAppStore } from '../../ui/store';
 import type { LocalJSXCommand } from '../types';
@@ -33,7 +34,8 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
   useEffect(() => {
     bridge.request('models.list', { cwd }).then((result) => {
       if (result.data.currentModel) {
-        setCurrentModel(result.data.currentModel);
+        const currentModel: ModelInfo = result.data.currentModel;
+        setCurrentModel(`${currentModel.provider.id}/${currentModel.model.id}`);
         setCurrentModelInfo(result.data.currentModelInfo);
       }
       setGroupedModels(result.data.groupedModels);

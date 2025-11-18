@@ -3,6 +3,7 @@ import SelectInput from 'ink-select-input';
 import React, { useCallback } from 'react';
 import { ActivityIndicator } from './ActivityIndicator';
 import { ApprovalModal } from './ApprovalModal';
+import { BackgroundPrompt } from './BackgroundPrompt';
 import { ChatInput } from './ChatInput';
 import { Debug } from './Debug';
 import { ExitHint } from './ExitHint';
@@ -69,11 +70,47 @@ function PlanResult() {
 
 export function App() {
   const { forceRerender } = useTerminalRefresh();
-  const { forkModalVisible, messages, fork, hideForkModal, forkParentUuid } =
-    useAppStore();
+  const {
+    forkModalVisible,
+    messages,
+    fork,
+    hideForkModal,
+    forkParentUuid,
+    forkCounter,
+    bridge,
+    sessionId,
+    cwd,
+  } = useAppStore();
+  const [forkMessages, setForkMessages] = React.useState<any[]>([]);
+  const [forkLoading, setForkLoading] = React.useState(false);
+  React.useEffect(() => {
+    if (!forkModalVisible) return;
+    if (!bridge || !cwd || !sessionId) {
+      setForkMessages([]);
+      return;
+    }
+    setForkLoading(true);
+    (async () => {
+      try {
+        const res = await bridge.request('session.messages.list', {
+          cwd,
+          sessionId,
+        });
+        setForkMessages(res.data?.messages || []);
+      } catch (_e) {
+        setForkMessages([]);
+      } finally {
+        setForkLoading(false);
+      }
+    })();
+  }, [forkModalVisible, bridge, cwd, sessionId]);
   return (
-    <Box flexDirection="column" key={`${forceRerender}-${forkParentUuid}`}>
+    <Box
+      flexDirection="column"
+      key={`${forceRerender}-${forkParentUuid}-${forkCounter}`}
+    >
       <Messages />
+      <BackgroundPrompt />
       <PlanResult />
       <ActivityIndicator />
       <QueueDisplay />
@@ -82,7 +119,7 @@ export function App() {
       <ApprovalModal />
       {forkModalVisible && (
         <ForkModal
-          messages={messages as any}
+          messages={forkMessages as any}
           onSelect={(uuid) => {
             fork(uuid);
           }}
