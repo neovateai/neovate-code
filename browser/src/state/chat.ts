@@ -27,7 +27,7 @@ import { getPrompt } from '@/utils/quill';
 import { parseSlashCommand } from '@/utils/slashCommand';
 import { countTokens } from '@/utils/tokenCounter';
 import { actions as clientActions } from './client';
-import * as context from './context';
+import { state as contextState } from './context';
 
 export type AppStatus =
   | 'idle'
@@ -278,9 +278,20 @@ export const actions: ChatActions = {
     });
 
     if (!isDelta) {
-      const result = await this.sendMessage({ message, attachments });
+      await clientActions.request('session.addMessages', {
+        cwd,
+        sessionId,
+        messages: [
+          {
+            role: 'user',
+            content: message,
+            attachedContexts: [...contextState.attachedContexts],
+          },
+        ],
+      });
+      const result = await this.sendMessage({ message: null, attachments });
       await this.setSummary({ userPrompt: message, result });
-      context.state.attachedContexts = [];
+      contextState.attachedContexts = [];
       return;
     }
 
@@ -296,13 +307,13 @@ export const actions: ChatActions = {
             role: 'user',
             content: prompt,
             uiContent: message,
-            attachedContexts: [...context.state.attachedContexts],
+            attachedContexts: [...contextState.attachedContexts],
           },
         ],
       });
       const result = await this.sendMessage({ message: null, attachments });
       await this.setSummary({ userPrompt: message, result });
-      context.state.attachedContexts = [];
+      contextState.attachedContexts = [];
       return;
     }
 
@@ -332,7 +343,7 @@ export const actions: ChatActions = {
         role: 'user',
         content: prompt,
         uiContent: message,
-        attachedContexts: [...context.state.attachedContexts],
+        attachedContexts: [...contextState.attachedContexts],
       };
 
       if (isPrompt) {
@@ -391,7 +402,7 @@ export const actions: ChatActions = {
           });
 
           this.addMessage(parsedMessages);
-          context.state.attachedContexts = [];
+          contextState.attachedContexts = [];
         }
       }
     }
