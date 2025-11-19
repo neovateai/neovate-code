@@ -7,7 +7,9 @@ import DislikeIcon from '@/icons/dislike.svg?react';
 import LikeIcon from '@/icons/like.svg?react';
 import RefreshIcon from '@/icons/refresh.svg?react';
 import type { Message } from '@/types/chat';
+import { actions, state } from '@/state/chat';
 import styles from './index.module.css';
+import { useSnapshot } from 'valtio';
 
 interface AssistantFooterProps {
   message: Message;
@@ -16,6 +18,22 @@ interface AssistantFooterProps {
 const AssistantFooter: React.FC<AssistantFooterProps> = ({ message }) => {
   const { writeText } = useClipboard();
   const [isCopySuccess, setIsCopySuccess] = useState(false);
+  const { status } = useSnapshot(state);
+
+  /**
+   * Handle retry functionality
+   */
+  const handleRetry = async () => {
+    if (status === 'processing') {
+      return; // Don't retry if already processing
+    }
+
+    try {
+      await actions.retry();
+    } catch (error) {
+      console.error('Retry failed:', error);
+    }
+  };
 
   /**
    * read all Text Message and copy to clipboard
@@ -48,15 +66,17 @@ const AssistantFooter: React.FC<AssistantFooterProps> = ({ message }) => {
     }
   }, [isCopySuccess]);
 
+  if (status === 'processing') {
+    return null;
+  }
+
   return (
     <Flex className={styles.assistantFooter}>
       <Button
         className={styles.assistantFooterIcon}
         type="text"
         icon={<RefreshIcon />}
-        onClick={() => {
-          console.log('onRetry');
-        }}
+        onClick={handleRetry}
       />
       <Button
         className={styles.assistantFooterIcon}
