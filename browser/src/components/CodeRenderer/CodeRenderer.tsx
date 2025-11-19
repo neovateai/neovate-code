@@ -12,6 +12,7 @@ import {
   isLanguageSupported,
   type SupportedLanguage,
 } from '@/constants/languages';
+import { cleanHtmlStyles, needsStyleCleaning } from './htmlUtils';
 import {
   createLineNumberTransformer,
   customDiffTransformer,

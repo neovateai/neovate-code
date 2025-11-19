@@ -7,8 +7,8 @@ import { createStyles } from 'antd-style';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
-import { useClipboard } from '@/hooks/useClipboard';
 import { STYLE_CONSTANTS } from '@/constants/styles';
+import { useClipboard } from '@/hooks/useClipboard';
 import ApproveToolIcon from '@/icons/approveTool.svg?react';
 import CopyIcon from '@/icons/copy.svg?react';
 import { state as chatState } from '@/state/chat';
@@ -20,6 +20,7 @@ import CodeDiffView from '../CodeViewer/CodeDiffView';
 import DiffStatBlocks from '../CodeViewer/DiffStatBlocks';
 import DevFileIcon from '../DevFileIcon';
 import MessageWrapper from '../MessageWrapper';
+import { computeDiffContent, isValidDiffContent } from './diffUtils';
 
 export interface FileEdit {
   toolCallId: string;
@@ -34,24 +35,6 @@ interface CodeDiffOutlineProps {
   edit: FileEdit;
   state: 'call' | 'result';
 }
-
-/**
- * Compute diff content from old and new strings
- * Handles the logic for creating new files (empty old_string) vs modifying existing files
- */
-const computeDiffContent = (oldStr: string, newStr: string) => {
-  // For write tool, old_string is empty, meaning create new file
-  // In this case, oldContent should be empty and newContent should be the new_string
-  const oldContent = oldStr || '';
-  const newContent = oldStr
-    ? oldStr.replace(oldStr, newStr || '')
-    : newStr || '';
-
-  return {
-    oldContent,
-    newContent,
-  };
-};
 
 const useStyles = createStyles(({ css }) => {
   return {
@@ -99,7 +82,11 @@ const CodeDiffOutline = (props: CodeDiffOutlineProps) => {
   const { editStatus, old_string, new_string } = edit;
 
   const code = useMemo(() => {
-    return computeDiffContent(old_string, new_string);
+    const diffContent = computeDiffContent(old_string, new_string);
+    if (!isValidDiffContent(diffContent)) {
+      return { oldContent: '', newContent: '' };
+    }
+    return diffContent;
   }, [old_string, new_string]);
 
   // Used for display
@@ -120,7 +107,11 @@ const CodeDiffOutline = (props: CodeDiffOutlineProps) => {
       };
     }
 
-    return computeDiffContent(old_string, new_string);
+    const diffContent = computeDiffContent(old_string, new_string);
+    if (!isValidDiffContent(diffContent)) {
+      return { oldContent: '', newContent: '' };
+    }
+    return diffContent;
   }, [earlyFile, old_string, new_string]);
 
   const language = useMemo(() => inferFileType(path), [path]);

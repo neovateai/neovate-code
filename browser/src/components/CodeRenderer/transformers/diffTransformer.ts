@@ -1,4 +1,10 @@
+import type { Element } from 'hast';
 import type { ShikiTransformer } from 'shiki';
+
+// Type definitions for line metadata
+interface LineMetadata {
+  type: 'add' | 'remove' | null;
+}
 
 // Constants for diff markers
 export const DIFF_MARKERS = {
@@ -20,8 +26,7 @@ export const DIFF_MARKERS = {
  */
 export const customDiffTransformer = (): ShikiTransformer => {
   // Store line metadata for later use
-  const lineMetadata: Map<number, { type: 'add' | 'remove' | null }> =
-    new Map();
+  const lineMetadata: Map<number, LineMetadata> = new Map();
 
   return {
     name: 'custom-diff-transformer',
@@ -65,10 +70,10 @@ export const customDiffTransformer = (): ShikiTransformer => {
      * 1. Add appropriate CSS classes for styling
      * 2. No need to remove markers (already done in preprocess)
      *
-     * @param node - The AST node representing a line of code
+     * @param node - The AST Element node representing a line of code
      * @param lineNumber - The current line number (1-based)
      */
-    line(node: any, lineNumber: number) {
+    line(node: Element, lineNumber: number) {
       try {
         const metadata = lineMetadata.get(lineNumber);
         if (!metadata || !metadata.type) return;
@@ -80,7 +85,8 @@ export const customDiffTransformer = (): ShikiTransformer => {
           addCSSClass(node, 'diff remove');
         }
       } catch (error) {
-        // Silent fail to avoid breaking rendering
+        // Log error for debugging, but don't break rendering
+        console.warn('Diff transformer error at line', lineNumber, ':', error);
       }
     },
 
@@ -101,16 +107,22 @@ export const customDiffTransformer = (): ShikiTransformer => {
 };
 
 /**
- * Adds a CSS class to an AST node's properties.
+ * Adds a CSS class to an AST Element node's properties.
  *
  * This function safely adds CSS classes to a node, preserving any
  * existing classes and ensuring the properties object exists.
  *
- * @param node - AST node to modify
+ * @param node - AST Element node to modify
  * @param className - CSS class name to add (e.g., 'diff add', 'diff remove')
  */
-function addCSSClass(node: any, className: string): void {
-  const currentClass = node.properties?.class || '';
+function addCSSClass(node: Element, className: string): void {
+  // Ensure properties object exists
   node.properties = node.properties || {};
-  node.properties.class = `${currentClass} ${className}`.trim();
+
+  // Get current class value and normalize to string
+  const currentClass = node.properties.class;
+  const existingClasses = currentClass ? String(currentClass) : '';
+
+  // Add new class and clean up whitespace
+  node.properties.class = `${existingClasses} ${className}`.trim();
 }
