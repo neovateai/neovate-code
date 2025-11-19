@@ -8,40 +8,40 @@ export function getThinkingConfig(
     return undefined;
   }
 
+  if (['openrouter', 'zenmux'].includes(model.provider.id)) {
+    let effort: 'low' | 'medium' | 'high' | undefined = reasoningEffort;
+    let budgetTokens = undefined;
+    if (effort === 'high') {
+      effort = undefined;
+      budgetTokens = 31999;
+    }
+    return {
+      providerOptions: {
+        [model.provider.id]: {
+          reasoning: {
+            enabled: true,
+            effort,
+            max_tokens: budgetTokens,
+          },
+        },
+      },
+    };
+  }
+
   if (
     model.model.id.startsWith('claude-') ||
     model.model.id.startsWith('anthropic/')
   ) {
-    if (model.provider.id === 'openrouter') {
-      let effort: 'low' | 'medium' | 'high' | undefined = reasoningEffort;
-      let budgetTokens = undefined;
-      if (effort === 'high') {
-        effort = undefined;
-        budgetTokens = 31999;
-      }
-      return {
-        providerOptions: {
-          openrouter: {
-            reasoning: {
-              enabled: true,
-              effort,
-              max_tokens: budgetTokens,
-            },
+    return {
+      providerOptions: {
+        anthropic: {
+          thinking: {
+            type: 'enabled' as const,
+            budgetTokens: reasoningEffort === 'low' ? 1024 : 31999,
           },
         },
-      };
-    } else {
-      return {
-        providerOptions: {
-          anthropic: {
-            thinking: {
-              type: 'enabled' as const,
-              budgetTokens: reasoningEffort === 'low' ? 1024 : 31999,
-            },
-          },
-        },
-      };
-    }
+      },
+    };
   }
 
   if (model.provider.id === 'google') {

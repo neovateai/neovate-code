@@ -1,3 +1,19 @@
+## 0.17.3
+
+`2025-11-19`
+
+- feat: add openai compatible provider and gemini 3 pro preview model support by [@sorrycc](https://github.com/sorrycc)
+- refactor(browser): optimize tool message processing using map lookup by [@阿平](https://github.com/阿平) in [#432](https://github.com/umijs/takumi/pull/432)
+- feat: pass attachments from context state to send message action by [@Z-Bokle](https://github.com/Z-Bokle) in [#359](https://github.com/umijs/takumi/pull/359)
+- feat(browser): extract a standalone slash command menu by [@Z-Bokle](https://github.com/Z-Bokle) in [#358](https://github.com/umijs/takumi/pull/358)
+- feat(browser): message loading & fix side bar scroll flashing by [@thy](https://github.com/thy) in [#357](https://github.com/umijs/takumi/pull/357)
+- feat(browser): add toolResultPart2ToToolResultPart converter by [@阿平](https://github.com/阿平) in [#430](https://github.com/umijs/takumi/pull/430)
+- feat: add workspace nodebridge handlers and test ui with react conversion by [@sorrycc](https://github.com/sorrycc)
+- feat: add project info handlers and test command for browser UI by [@sorrycc](https://github.com/sorrycc)
+- fix: trim and clean commit message output by [@sorrycc](https://github.com/sorrycc)
+- feat: add support for anthropic models with openrouter provider by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.17.2
 
 `2025-11-17`

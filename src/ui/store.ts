@@ -289,9 +289,7 @@ export const useAppStore = create<AppStore>()(
           model: response.data.model,
           planModel: response.data.planModel,
           initializeModelError: response.data.initializeModelError,
-          modelContextLimit: response.data.model
-            ? response.data.model.model.limit.context
-            : 0,
+          modelContextLimit: response.data.model?.model?.limit.context || 0,
           providers: response.data.providers,
           sessionId: opts.sessionId,
           messages: opts.messages,
@@ -465,13 +463,13 @@ export const useAppStore = create<AppStore>()(
             cwd,
             command: parsed.command,
           });
-          const commandeEntry = result.data?.commandEntry as CommandEntry;
-          if (commandeEntry) {
+          const commandEntry = result.data?.commandEntry as CommandEntry;
+          if (commandEntry) {
             const userMessage: Message = {
               role: 'user',
               content: expandedMessage,
             };
-            const command = commandeEntry.command;
+            const command = commandEntry.command;
             const type = command.type;
             const isLocal = type === 'local';
             const isLocalJSX = type === 'local-jsx';
@@ -523,7 +521,7 @@ export const useAppStore = create<AppStore>()(
                 });
               }
             } else if (isLocalJSX) {
-              const jsx = await command.call(async (result) => {
+              const jsx = await command.call(async (result: string | null) => {
                 set({
                   slashCommandJSX: null,
                 });
@@ -549,7 +547,7 @@ export const useAppStore = create<AppStore>()(
               });
             } else {
               throw new Error(
-                `Unknown slash command type: ${commandeEntry.command.type}`,
+                `Unknown slash command type: ${commandEntry.command.type}`,
               );
             }
             // set({ status: 'slash_command_executing' });
@@ -647,13 +645,13 @@ export const useAppStore = create<AppStore>()(
                     }
                   } catch (parseError) {
                     get().log(
-                      'Parse query result error: ' + String(parseError),
+                      `Parse query result error: ${String(parseError)}`,
                     );
-                    get().log('Query result: ' + queryResult.data.text);
+                    get().log(`Query result: ${queryResult.data.text}`);
                   }
                 }
               } catch (error) {
-                get().log('Query error: ' + String(error));
+                get().log(`Query error: ${String(error)}`);
               }
             })();
 

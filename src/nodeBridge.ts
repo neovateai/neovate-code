@@ -1060,11 +1060,15 @@ class NodeHandlerRegistry {
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {
               message: opts.message,
+              sessionId,
+              cwd,
             });
           },
           onTextDelta: async (text) => {
             await this.messageBus.emitEvent('textDelta', {
               text,
+              sessionId,
+              cwd,
             });
           },
           onChunk: async (chunk, requestId) => {
@@ -1085,6 +1089,8 @@ class NodeHandlerRegistry {
           onStreamResult: async (result: StreamResult) => {
             await this.messageBus.emitEvent('streamResult', {
               result,
+              sessionId,
+              cwd,
             });
           },
           signal: abortController.signal,

@@ -17,6 +17,7 @@ import type {
   UIAssistantMessage,
   UIDisplayMessage,
   UIMessage,
+  UIToolPart,
   UserMessage,
 } from '@/types/chat';
 import {
@@ -171,40 +172,41 @@ export const actions: ChatActions = {
 
       // Handle new format ToolMessage2 (role: 'tool')
       if (message.role === 'tool') {
-        const lastMessage = state.messages[
-          state.messages.length - 1
-        ] as UIAssistantMessage;
+        const toolMessage = message as ToolMessage2;
 
-        if (!lastMessage || lastMessage.role !== 'assistant') {
-          throw new Error('Tool message must be after assistant message');
+        const toolUseMap = new Map<string, UIToolPart>();
+        for (let i = state.messages.length - 1; i >= 0; i--) {
+          const msg = state.messages[i];
+          if (msg.role === 'assistant') {
+            msg.content.forEach((part) => {
+              if (part.type === 'tool' && part.state === 'tool_use') {
+                toolUseMap.set(part.id, part);
+              }
+            });
+          }
         }
 
-        // Iterate over all tool results, update the corresponding tool_use
-        const toolMessage = message as ToolMessage2;
         toolMessage.content.forEach((toolResultPart2) => {
           const toolResult = toolResultPart2ToToolResultPart(toolResultPart2);
+          const toolPart = toolUseMap.get(toolResult.id);
 
-          const uiMessage = {
-            ...lastMessage,
-            content: lastMessage.content.map((part) => {
-              if (
-                part.type === 'tool' &&
-                part.state === 'tool_use' &&
-                part.id === toolResult.id
-              ) {
-                return {
-                  ...part,
-                  ...toolResult,
-                  type: 'tool',
-                  state: 'tool_result',
-                };
-              }
-              return part;
-            }),
-          } as UIMessage;
+          if (!toolPart) {
+            console.error(
+              `No matching tool_use found for tool id: ${toolResult.id}`,
+            );
+            return;
+          }
 
-          state.messages[state.messages.length - 1] = uiMessage;
+          if (toolPart.type === 'tool') {
+            Object.assign(toolPart, {
+              state: 'tool_result',
+              name: toolResult.name,
+              input: toolResult.input,
+              result: toolResult.result,
+            });
+          }
         });
+
         return;
       }
 
@@ -216,13 +218,8 @@ export const actions: ChatActions = {
         const chunk = data.chunk;
 
         // Collect tokens from text-delta and reasoning events
-        if (
-          chunk.type === 'raw_model_stream_event' &&
-          chunk.data?.type === 'model' &&
-          (chunk.data.event?.type === 'text-delta' ||
-            chunk.data.event?.type === 'reasoning')
-        ) {
-          const textDelta = chunk.data.event.textDelta || '';
+        if (chunk.type === 'text-delta') {
+          const textDelta = chunk.delta || '';
           const tokenCount = countTokens(textDelta);
           state.processingTokens += tokenCount;
         }
