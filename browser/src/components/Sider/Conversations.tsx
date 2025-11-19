@@ -45,7 +45,6 @@ const useStyle = createStyles(({ token, css }) => {
 
           &:hover {
             background: ${token.colorBgTextHover};
-            transform: translateX(4px);
 
             .ant-conversations-item-content {
               color: ${token.colorPrimary};
@@ -91,7 +90,7 @@ const useStyle = createStyles(({ token, css }) => {
     conversationsContent: css`
       width: 100%;
       flex: 1;
-      overflow-y: auto;
+      overflow-y: scroll;
       overflow-x: hidden;
       min-height: 0;
       padding-right: 4px;

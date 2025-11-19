@@ -17,6 +17,10 @@
  * Currently supports testing:
  * - project.getRepoInfo
  * - project.getWorkspacesInfo
+ * - project.workspaces.create
+ * - project.workspaces.delete
+ * - project.workspaces.merge
+ * - project.workspaces.createGithubPR
  */
 import { Box, render, Text, useInput } from 'ink';
 import React, { useEffect, useState } from 'react';
@@ -53,6 +57,35 @@ const TEST_HANDLERS: TestHandler[] = [
     handler: 'project.getWorkspacesInfo',
     getData: (cwd: string) => ({ cwd }),
   },
+  {
+    label: 'Project: Create Workspace',
+    handler: 'project.workspaces.create',
+    getData: (cwd: string) => ({
+      cwd,
+      name: 'test-workspace',
+      skipUpdate: true,
+    }),
+  },
+  {
+    label: 'Project: Delete Workspace',
+    handler: 'project.workspaces.delete',
+    getData: (cwd: string) => ({ cwd, name: 'test-workspace', force: false }),
+  },
+  {
+    label: 'Project: Merge Workspace',
+    handler: 'project.workspaces.merge',
+    getData: (cwd: string) => ({ cwd, name: 'test-workspace' }),
+  },
+  {
+    label: 'Project: Create GitHub PR',
+    handler: 'project.workspaces.createGithubPR',
+    getData: (cwd: string) => ({
+      cwd,
+      name: 'test-workspace',
+      title: 'Test PR',
+      description: 'Test PR description',
+    }),
+  },
 ];
 
 type State = 'selecting' | 'executing' | 'displaying';
@@ -70,118 +103,72 @@ const ResultsDisplay: React.FC<{
     onContinue();
   });
 
-  return React.createElement(
-    Box,
-    { flexDirection: 'column' },
-    React.createElement(
-      Box,
-      {
-        flexDirection: 'column',
-        borderStyle: 'round',
-        borderColor: 'cyan',
-        paddingX: 1,
-      },
-      React.createElement(
-        Text,
-        { bold: true, color: 'cyan' },
-        '┌─ Request ────────────',
-      ),
-      React.createElement(
-        Text,
-        null,
-        'Handler: ',
-        React.createElement(Text, { color: 'yellow' }, result.handler),
-      ),
-      React.createElement(
-        Text,
-        null,
-        'Payload: ',
-        React.createElement(
-          Text,
-          { color: 'gray' },
-          JSON.stringify(result.requestPayload, null, 2),
-        ),
-      ),
-      React.createElement(
-        Text,
-        { bold: true, color: 'cyan', marginTop: 1 },
-        '├─ Response ──────────',
-      ),
-      React.createElement(
-        Text,
-        null,
-        'Success: ',
-        React.createElement(
-          Text,
-          { color: result.success ? 'green' : 'red' },
-          String(result.success),
-        ),
-      ),
-      result.success && result.response
-        ? React.createElement(
-            Box,
-            { key: 'response-data', flexDirection: 'column' },
-            React.createElement(Text, null, 'Data:'),
-            React.createElement(
-              Text,
-              { color: 'gray' },
-              JSON.stringify(result.response, null, 2),
-            ),
-          )
-        : null,
-      React.createElement(
-        Text,
-        { bold: true, color: 'cyan', marginTop: 1 },
-        '├─ Timing ───────────',
-      ),
-      React.createElement(
-        Text,
-        null,
-        'Duration: ',
-        React.createElement(Text, { color: 'magenta' }, `${result.duration}ms`),
-      ),
-      !result.success && result.error
-        ? React.createElement(
-            React.Fragment,
-            null,
-            React.createElement(
-              Text,
-              { bold: true, color: 'red', marginTop: 1 },
-              '└─ Errors ───────────',
-            ),
-            React.createElement(
-              Text,
-              { color: 'red' },
-              `Message: ${result.error.message}`,
-            ),
-            result.error.stack
-              ? React.createElement(
-                  Box,
-                  { flexDirection: 'column', marginTop: 1 },
-                  React.createElement(
-                    Text,
-                    { color: 'red', dimColor: true },
-                    'Stack trace:',
-                  ),
-                  React.createElement(
-                    Text,
-                    { color: 'red', dimColor: true },
-                    result.error.stack,
-                  ),
-                )
-              : null,
-          )
-        : null,
-    ),
-    React.createElement(
-      Box,
-      { marginTop: 1 },
-      React.createElement(
-        Text,
-        { color: 'gray', dimColor: true },
-        'Press any key to return to handler selection...',
-      ),
-    ),
+  return (
+    <Box flexDirection="column">
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor="cyan"
+        paddingX={1}
+      >
+        <Text bold color="cyan">
+          ┌─ Request ────────────
+        </Text>
+        <Text>
+          Handler: <Text color="yellow">{result.handler}</Text>
+        </Text>
+        <Text>
+          Payload:{' '}
+          <Text color="gray">
+            {JSON.stringify(result.requestPayload, null, 2)}
+          </Text>
+        </Text>
+        <Text bold color="cyan">
+          ├─ Response ──────────
+        </Text>
+        <Text>
+          Success:{' '}
+          <Text color={result.success ? 'green' : 'red'}>
+            {String(result.success)}
+          </Text>
+        </Text>
+        {result.success && result.response ? (
+          <Box key="response-data" flexDirection="column">
+            <Text>Data:</Text>
+            <Text color="gray">{JSON.stringify(result.response, null, 2)}</Text>
+          </Box>
+        ) : null}
+        <Text bold color="cyan">
+          ├─ Timing ───────────
+        </Text>
+        <Text>
+          Duration: <Text color="magenta">{result.duration}ms</Text>
+        </Text>
+        {!result.success && result.error ? (
+          <>
+            <Text bold color="red">
+              └─ Errors ───────────
+            </Text>
+            <Text color="red">Message: {result.error.message}</Text>
+            {result.error.stack ? (
+              <Box flexDirection="column" marginTop={1}>
+                <Text color="red" dimColor>
+                  Stack trace:
+                </Text>
+                <Text color="red" dimColor>
+                  {result.error.stack}
+                </Text>
+              </Box>
+            ) : null}
+          </>
+        ) : null}
+      </Box>
+      <Box marginTop={1}>
+        <Text color="gray" dimColor>
+          Press any key to return to handler selection...
+        </Text>
+      </Box>
+    </Box>
   );
 };
 
@@ -265,45 +252,35 @@ const TestUI: React.FC<TestUIProps> = ({ messageBus, cwd }) => {
       value: h.handler,
     }));
 
-    return React.createElement(
-      Box,
-      { flexDirection: 'column' },
-      React.createElement(
-        Text,
-        { bold: true, color: 'cyan' },
-        'NodeBridge Handler Test Tool',
-      ),
-      React.createElement(
-        Text,
-        { color: 'gray', dimColor: true, marginBottom: 1 },
-        'Select a handler to test (ESC to exit)',
-      ),
-      React.createElement(PaginatedSelectInput, {
-        items,
-        onSelect: handleSelect,
-      }),
+    return (
+      <Box flexDirection="column">
+        <Text bold color="cyan">
+          NodeBridge Handler Test Tool
+        </Text>
+        <Text color="gray" dimColor>
+          Select a handler to test (ESC to exit)
+        </Text>
+        <PaginatedSelectInput items={items} onSelect={handleSelect} />
+      </Box>
     );
   }
 
   if (state === 'executing') {
-    return React.createElement(
-      Box,
-      { flexDirection: 'column' },
-      React.createElement(Text, { color: 'yellow' }, '⏳ Executing handler...'),
+    return (
+      <Box flexDirection="column">
+        <Text color="yellow">⏳ Executing handler...</Text>
+      </Box>
     );
   }
 
   if (state === 'displaying' && result) {
-    return React.createElement(ResultsDisplay, {
-      result,
-      onContinue: handleContinue,
-    });
+    return <ResultsDisplay result={result} onContinue={handleContinue} />;
   }
 
-  return React.createElement(
-    Box,
-    null,
-    React.createElement(Text, { color: 'red' }, 'Unexpected state'),
+  return (
+    <Box>
+      <Text color="red">Unexpected state</Text>
+    </Box>
   );
 };
 
@@ -325,16 +302,10 @@ export async function runTest(context: Context) {
     uiMessageBus.setTransport(uiTransport);
     nodeBridge.messageBus.setTransport(nodeTransport);
 
-    render(
-      React.createElement(TestUI, {
-        messageBus: uiMessageBus,
-        cwd: context.cwd,
-      }),
-      {
-        patchConsole: true,
-        exitOnCtrlC: true,
-      },
-    );
+    render(<TestUI messageBus={uiMessageBus} cwd={context.cwd} />, {
+      patchConsole: true,
+      exitOnCtrlC: true,
+    });
 
     const exit = () => {
       process.exit(0);

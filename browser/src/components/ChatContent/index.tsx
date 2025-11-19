@@ -1,5 +1,5 @@
 import { Bubble } from '@ant-design/x';
-import { type GetProp, Skeleton } from 'antd';
+import { type GetProp, Skeleton, Spin } from 'antd';
 import { useSnapshot } from 'valtio';
 import AssistantFooter from '@/components/AssistantFooter';
 import AssistantMessage from '@/components/AssistantMessage';
@@ -10,25 +10,53 @@ import Welcome from '@/components/Welcome';
 import { state } from '@/state/chat';
 import type { Message } from '@/types/chat';
 import styles from './index.module.css';
+import ActivityIndicator from '../ActivityIndicator';
 
 const ChatContent: React.FC = () => {
-  const { messages, status } = useSnapshot(state);
+  const { messages, status, approvalModal } = useSnapshot(state);
+
+  // Check if we should show loading state
+  // Only show loading for active processing states, not for idle/exit/failed/cancelled
+  const shouldShowLoading =
+    (status === 'processing' ||
+      status === 'planning' ||
+      status === 'tool_executing' ||
+      status === 'compacting' ||
+      status === 'slash_command_executing') &&
+    !approvalModal;
 
   const items = messages?.map((message, index) => {
     const isLastMessage = index === messages.length - 1;
+
+    const footer = () => {
+      // If it's the last message and it's an assistant message, show the assistant footer
+      if (isLastMessage && message.role === 'assistant') {
+        return <AssistantFooter message={message as Message} />;
+      }
+      // Otherwise, show the normal user message footer
+      return <UserMessageFooter message={message as Message} />;
+    };
+
     return {
       ...message,
       content: message,
-      // typing: status === 'processing' ? { step: 20, interval: 150 } : false,
-      // loading: status === 'processing_stream' && isLastMessage,
-      footer:
-        isLastMessage && message.role === 'assistant'
-          ? () => (
-              <AssistantFooter message={message as Message} status={status} />
-            )
-          : () => <UserMessageFooter message={message as Message} />,
+      footer: footer,
     };
   });
+
+  // Add loading state as a message if needed
+  const finalItems =
+    shouldShowLoading && items
+      ? [
+          ...items,
+          {
+            role: 'assistant',
+            content: '',
+            loading: true,
+            footer: () => null,
+          },
+        ]
+      : items;
 
   const roles: GetProp<typeof Bubble.List, 'roles'> = {
     user: {
@@ -49,8 +77,11 @@ const ChatContent: React.FC = () => {
       },
       loadingRender() {
         return (
-          <div className={styles.skeletonContainer}>
-            <Skeleton active paragraph={{ rows: 2 }} title={false} />
+          <div className={styles.loadingContainer}>
+            <div className={styles.loadingContent}>
+              <Spin size="small" />
+              <ActivityIndicator />
+            </div>
           </div>
         );
       },
@@ -67,9 +98,9 @@ const ChatContent: React.FC = () => {
   return (
     <div className={styles.chat}>
       <div className={styles.chatList}>
-        {items?.length ? (
+        {finalItems?.length ? (
           <Bubble.List
-            items={items}
+            items={finalItems}
             className={styles.bubbleList}
             roles={roles}
           />

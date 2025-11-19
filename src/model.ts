@@ -1,6 +1,7 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createXai } from '@ai-sdk/xai';
 import {
   createOpenRouter,
@@ -339,6 +340,22 @@ export const models: ModelMap = {
     },
     open_weights: false,
     limit: { context: 1048576, output: 65536 },
+  },
+  'gemini-3-pro-preview': {
+    name: 'Gemini 3 Pro Preview',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-01',
+    release_date: '2025-01-01',
+    last_updated: '2025-01-01',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video', 'pdf'],
+      output: ['text'],
+    },
+    open_weights: false,
+    limit: { context: 200000, output: 65536 },
   },
   'grok-4': {
     name: 'Grok 4',
@@ -910,6 +927,23 @@ function getProviderApiKey(provider: Provider) {
   return key;
 }
 
+export const defaultModelCreatorCompatible = (
+  name: string,
+  provider: Provider,
+): LanguageModelV2 => {
+  if (provider.id !== 'openai') {
+    assert(provider.api, `Provider ${provider.id} must have an api`);
+  }
+  const baseURL = getProviderBaseURL(provider);
+  const apiKey = getProviderApiKey(provider);
+  assert(baseURL, 'baseURL is required');
+  return createOpenAICompatible({
+    name: provider.id,
+    baseURL,
+    apiKey,
+  })(name);
+};
+
 export const defaultModelCreator = (
   name: string,
   provider: Provider,
@@ -946,6 +980,7 @@ export const providers: ProvidersMap = {
       'gpt-5-mini': models['gpt-5-mini'],
       'claude-3.7-sonnet': models['claude-3-7-sonnet'],
       'gemini-2.5-pro': models['gemini-2.5-pro'],
+      'gemini-3-pro-preview': models['gemini-3-pro-preview'],
       o3: models['o3'],
       'claude-sonnet-4': models['claude-4-sonnet'],
       'gpt-5.1-codex': models['gpt-5.1-codex'],
@@ -1012,6 +1047,7 @@ export const providers: ProvidersMap = {
         models['gemini-2.5-flash-preview-09-2025'],
       'gemini-2.5-flash-lite': models['gemini-2.5-flash-lite-preview-06-17'],
       'gemini-2.5-pro': models['gemini-2.5-pro'],
+      'gemini-3-pro-preview': models['gemini-3-pro-preview'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
@@ -1111,7 +1147,7 @@ export const providers: ProvidersMap = {
       'kimi-k2-thinking': models['kimi-k2-thinking'],
       'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
     },
-    createModel: defaultModelCreator,
+    createModel: defaultModelCreatorCompatible,
   },
   openrouter: {
     id: 'openrouter',
@@ -1145,6 +1181,7 @@ export const providers: ProvidersMap = {
       'openai/gpt-5': models['gpt-5'],
       'openai/gpt-5-mini': models['gpt-5-mini'],
       'openai/gpt-5-codex': models['gpt-5-codex'],
+      'google/gemini-3-pro-preview': models['gemini-3-pro-preview'],
       'moonshotai/kimi-k2': models['kimi-k2'],
       'moonshotai/kimi-k2-0905': models['kimi-k2-0905'],
       'moonshotai/kimi-k2-thinking': models['kimi-k2-thinking'],
@@ -1190,7 +1227,7 @@ export const providers: ProvidersMap = {
       'glm-4.6': models['glm-4.6'],
       'qwen3-max': models['qwen3-max'],
     },
-    createModel: defaultModelCreator,
+    createModel: defaultModelCreatorCompatible,
   },
   moonshotai: {
     id: 'moonshotai',
@@ -1372,8 +1409,15 @@ export const providers: ProvidersMap = {
       'inclusionai/ling-flash-2.0': models['ling-flash-2.0'],
       'inclusionai/ring-mini-2.0': models['ring-mini-2.0'],
       'inclusionai/ling-mini-2.0': models['ling-mini-2.0'],
+      'google/gemini-3-pro-preview-free': models['gemini-3-pro-preview'],
+      'google/gemini-3-pro-preview': models['gemini-3-pro-preview'],
+      'openai/gpt-5.1': models['gpt-5.1'],
+      'openai/gpt-5.1-codex': models['gpt-5.1-codex'],
+      'openai/gpt-5.1-codex-mini': models['gpt-5.1-codex-mini'],
+      'anthropic/claude-sonnet-4.5': models['claude-4-5-sonnet'],
+      'anthropic/claude-opus-4.1': models['claude-4.1-opus'],
     },
-    createModel: defaultModelCreator,
+    createModel: defaultModelCreatorCompatible,
   },
   minimax: {
     id: 'minimax',

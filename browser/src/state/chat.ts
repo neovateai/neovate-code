@@ -12,14 +12,18 @@ import type {
   LoopResult,
   Message,
   NodeBridgeResponse,
-  ToolResultPart,
+  ToolMessage2,
   ToolUse,
   UIAssistantMessage,
   UIDisplayMessage,
   UIMessage,
+  UIToolPart,
   UserMessage,
 } from '@/types/chat';
-import { formatMessages, isToolResultMessage } from '@/utils/message';
+import {
+  formatMessages,
+  toolResultPart2ToToolResultPart,
+} from '@/utils/message';
 import { getPrompt } from '@/utils/quill';
 import { parseSlashCommand } from '@/utils/slashCommand';
 import { countTokens } from '@/utils/tokenCounter';
@@ -76,13 +80,17 @@ interface ChatActions {
     sessionId: string;
     messages: Message[];
   }): Promise<() => void>;
-  send(message: string, delta?: Delta): void;
+  send(
+    message: string,
+    extra: { delta?: Delta; attachments?: (FilePart | ImagePart)[] },
+  ): void;
   addMessage(message: UIMessage | UIMessage[]): void;
   destroy(): void;
   sendMessage(opts: {
     message: string | null;
     planMode?: boolean;
     model?: string;
+    attachments?: (FilePart | ImagePart)[];
   }): Promise<LoopResult | { success: false; error: Error }>;
   getSlashCommands(): Promise<CommandEntry[]>;
   getFiles(opts: { query?: string }): Promise<FileItem[]>;
@@ -161,43 +169,47 @@ export const actions: ChatActions = {
         state.messages.push(uiMessage);
         return;
       }
-      if (isToolResultMessage(message)) {
-        const lastMessage = state.messages[
-          state.messages.length - 1
-        ] as UIAssistantMessage;
-        if (lastMessage) {
-          const toolResult = message.content[0] as ToolResultPart;
-          const matchToolUse = lastMessage.content.find(
-            (part) =>
-              part.type === 'tool' &&
-              part.state === 'tool_use' &&
-              part.id === toolResult.id,
-          );
-          if (!matchToolUse) {
-            throw new Error(
-              'Tool result message must be after tool use message',
-            );
-          }
-          const uiMessage = {
-            ...lastMessage,
-            content: lastMessage.content.map((part) => {
-              if (part.type === 'tool') {
-                return {
-                  ...part,
-                  ...toolResult,
-                  type: 'tool',
-                  state: 'tool_result',
-                };
+
+      // Handle new format ToolMessage2 (role: 'tool')
+      if (message.role === 'tool') {
+        const toolMessage = message as ToolMessage2;
+
+        const toolUseMap = new Map<string, UIToolPart>();
+        for (let i = state.messages.length - 1; i >= 0; i--) {
+          const msg = state.messages[i];
+          if (msg.role === 'assistant') {
+            msg.content.forEach((part) => {
+              if (part.type === 'tool' && part.state === 'tool_use') {
+                toolUseMap.set(part.id, part);
               }
-              return part;
-            }),
-          } as UIMessage;
-          state.messages[state.messages.length - 1] = uiMessage;
-          return;
-        } else {
-          throw new Error('Tool result message must be after tool use message');
+            });
+          }
         }
+
+        toolMessage.content.forEach((toolResultPart2) => {
+          const toolResult = toolResultPart2ToToolResultPart(toolResultPart2);
+          const toolPart = toolUseMap.get(toolResult.id);
+
+          if (!toolPart) {
+            console.error(
+              `No matching tool_use found for tool id: ${toolResult.id}`,
+            );
+            return;
+          }
+
+          if (toolPart.type === 'tool') {
+            Object.assign(toolPart, {
+              state: 'tool_result',
+              name: toolResult.name,
+              input: toolResult.input,
+              result: toolResult.result,
+            });
+          }
+        });
+
+        return;
       }
+
       state.messages.push(message as UIMessage);
     };
 
@@ -206,13 +218,8 @@ export const actions: ChatActions = {
         const chunk = data.chunk;
 
         // Collect tokens from text-delta and reasoning events
-        if (
-          chunk.type === 'raw_model_stream_event' &&
-          chunk.data?.type === 'model' &&
-          (chunk.data.event?.type === 'text-delta' ||
-            chunk.data.event?.type === 'reasoning')
-        ) {
-          const textDelta = chunk.data.event.textDelta || '';
+        if (chunk.type === 'text-delta') {
+          const textDelta = chunk.delta || '';
           const tokenCount = countTokens(textDelta);
           state.processingTokens += tokenCount;
         }
@@ -231,13 +238,13 @@ export const actions: ChatActions = {
             state.approvalModal = null;
             const isApproved = result !== 'deny';
             if (result === 'approve_always_edit') {
-              await clientActions.request('sessionConfig.setApprovalMode', {
+              await clientActions.request('session.config.setApprovalMode', {
                 cwd: state.cwd,
                 sessionId: state.sessionId,
                 approvalMode: 'autoEdit',
               });
             } else if (result === 'approve_always_tool') {
-              await clientActions.request('sessionConfig.addApprovalTools', {
+              await clientActions.request('session.config.addApprovalTools', {
                 cwd: state.cwd,
                 sessionId: state.sessionId,
                 approvalTool: toolUse.name,
@@ -255,7 +262,7 @@ export const actions: ChatActions = {
     };
   },
 
-  async send(message, delta: Delta) {
+  async send(message, { delta, attachments }) {
     const { cwd, sessionId } = state;
 
     const isDelta = BLOT_NAME_CONTENT_REGEX.test(message);
@@ -267,13 +274,13 @@ export const actions: ChatActions = {
     });
 
     if (!isDelta) {
-      const result = await this.sendMessage({ message });
+      const result = await this.sendMessage({ message, attachments });
       await this.setSummary({ userPrompt: message, result });
       return;
     }
 
     const isCommand = SLASH_COMMAND_REGEX.test(message);
-    const prompt = getPrompt(delta);
+    const prompt = delta ? getPrompt(delta) : '';
 
     if (!isCommand) {
       await clientActions.request('session.addMessages', {
@@ -287,7 +294,7 @@ export const actions: ChatActions = {
           },
         ],
       });
-      const result = await this.sendMessage({ message: null });
+      const result = await this.sendMessage({ message: null, attachments });
       await this.setSummary({ userPrompt: message, result });
       return;
     }
@@ -349,7 +356,7 @@ export const actions: ChatActions = {
             sessionId,
             messages: messages,
           });
-          await this.sendMessage({ message: null });
+          await this.sendMessage({ message: null, attachments });
         } else if (isLocal) {
           const parsedMessages = messages.map((message) => {
             if (message.role === 'user') {
@@ -385,13 +392,13 @@ export const actions: ChatActions = {
     message: string | null;
     planMode?: boolean;
     model?: string;
+    attachments?: (FilePart | ImagePart)[];
   }) {
     try {
       state.status = 'processing';
       state.processingTokens = 0;
       state.loading = true;
       const { cwd, sessionId } = state;
-      let attachments: Array<FilePart | ImagePart> = [];
 
       const response = (await clientActions.request('session.send', {
         message: opts.message,
@@ -399,7 +406,7 @@ export const actions: ChatActions = {
         model: opts.model,
         cwd,
         sessionId,
-        attachments,
+        attachments: opts.attachments,
       })) as LoopResult;
 
       if (response.success) {

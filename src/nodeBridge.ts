@@ -644,6 +644,301 @@ class NodeHandlerRegistry {
     );
 
     //////////////////////////////////////////////
+    // workspaces operations
+    this.messageBus.registerHandler(
+      'project.workspaces.create',
+      async (data: { cwd: string; name?: string; skipUpdate?: boolean }) => {
+        const { cwd, name, skipUpdate = false } = data;
+        try {
+          const context = await this.getContext(cwd);
+          const {
+            getGitRoot,
+            isGitRepository,
+            detectMainBranch,
+            updateMainBranch,
+            generateWorkspaceName,
+            createWorktree,
+            addToGitExclude,
+          } = await import('./worktree');
+          const { existsSync, mkdirSync } = await import('fs');
+          const { join } = await import('pathe');
+
+          // Check if it's a git repository
+          const isGit = await isGitRepository(cwd);
+          if (!isGit) {
+            return {
+              success: false,
+              error: 'Not a git repository',
+            };
+          }
+
+          // Get git root path
+          const gitRoot = await getGitRoot(cwd);
+
+          // Detect main branch
+          const mainBranch = await detectMainBranch(gitRoot);
+
+          // Update main branch if not skipped
+          await updateMainBranch(gitRoot, mainBranch, skipUpdate);
+
+          // Generate or use provided workspace name
+          const workspaceName = name || (await generateWorkspaceName(gitRoot));
+
+          // Ensure .neovate-workspaces directory exists
+          const workspacesDir = join(
+            gitRoot,
+            `.${context.productName}-workspaces`,
+          );
+          if (!existsSync(workspacesDir)) {
+            mkdirSync(workspacesDir, { recursive: true });
+          }
+
+          // Create worktree
+          const worktree = await createWorktree(gitRoot, workspaceName, {
+            baseBranch: mainBranch,
+            workspacesDir: `.${context.productName}-workspaces`,
+          });
+
+          // Add workspaces directory to git exclude
+          await addToGitExclude(gitRoot);
+
+          return {
+            success: true,
+            data: {
+              workspace: {
+                name: worktree.name,
+                path: worktree.path,
+                branch: worktree.branch,
+              },
+            },
+          };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || 'Failed to create workspace',
+          };
+        }
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'project.workspaces.delete',
+      async (data: { cwd: string; name: string; force?: boolean }) => {
+        const { cwd, name, force = false } = data;
+        try {
+          await this.getContext(cwd);
+          const { getGitRoot, isGitRepository, deleteWorktree } = await import(
+            './worktree'
+          );
+
+          // Check if it's a git repository
+          const isGit = await isGitRepository(cwd);
+          if (!isGit) {
+            return {
+              success: false,
+              error: 'Not a git repository',
+            };
+          }
+
+          // Get git root path
+          const gitRoot = await getGitRoot(cwd);
+
+          // Delete worktree
+          await deleteWorktree(gitRoot, name, force);
+
+          return {
+            success: true,
+          };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || 'Failed to delete workspace',
+          };
+        }
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'project.workspaces.merge',
+      async (data: { cwd: string; name: string }) => {
+        const { cwd, name } = data;
+        try {
+          await this.getContext(cwd);
+          const { getGitRoot, isGitRepository, listWorktrees, mergeWorktree } =
+            await import('./worktree');
+
+          // Check if it's a git repository
+          const isGit = await isGitRepository(cwd);
+          if (!isGit) {
+            return {
+              success: false,
+              error: 'Not a git repository',
+            };
+          }
+
+          // Get git root path
+          const gitRoot = await getGitRoot(cwd);
+
+          // List worktrees to find target workspace
+          const worktrees = await listWorktrees(gitRoot);
+          const worktree = worktrees.find((w) => w.name === name);
+
+          if (!worktree) {
+            return {
+              success: false,
+              error: `Workspace '${name}' not found`,
+            };
+          }
+
+          // Merge worktree back to original branch
+          await mergeWorktree(gitRoot, worktree);
+
+          return {
+            success: true,
+          };
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || 'Failed to merge workspace',
+          };
+        }
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'project.workspaces.createGithubPR',
+      async (data: {
+        cwd: string;
+        name: string;
+        title?: string;
+        description?: string;
+        baseBranch?: string;
+      }) => {
+        const { cwd, name, title, description = '', baseBranch } = data;
+        try {
+          await this.getContext(cwd);
+          const {
+            getGitRoot,
+            isGitRepository,
+            listWorktrees,
+            ensureCleanWorkingDirectory,
+            detectMainBranch,
+          } = await import('./worktree');
+          const { promisify } = await import('util');
+          const execPromise = promisify((await import('child_process')).exec);
+
+          // Check if it's a git repository
+          const isGit = await isGitRepository(cwd);
+          if (!isGit) {
+            return {
+              success: false,
+              error: 'Not a git repository',
+            };
+          }
+
+          // Get git root path
+          const gitRoot = await getGitRoot(cwd);
+
+          // List worktrees to find target workspace
+          const worktrees = await listWorktrees(gitRoot);
+          const worktree = worktrees.find((w) => w.name === name);
+
+          if (!worktree) {
+            return {
+              success: false,
+              error: `Workspace '${name}' not found`,
+            };
+          }
+
+          // Ensure workspace has no uncommitted changes
+          await ensureCleanWorkingDirectory(worktree.path);
+
+          // Push workspace branch to remote
+          try {
+            await execPromise(`git push origin ${worktree.branch}`, {
+              cwd: worktree.path,
+            });
+          } catch (error: any) {
+            return {
+              success: false,
+              error: `Failed to push branch: ${error.message}`,
+            };
+          }
+
+          // Detect base branch if not provided
+          const targetBranch = baseBranch || (await detectMainBranch(gitRoot));
+
+          // Generate title from branch name if not provided
+          const prTitle =
+            title ||
+            worktree.branch
+              .replace('workspace/', '')
+              .replace(/-/g, ' ')
+              .replace(/\b\w/g, (l) => l.toUpperCase());
+
+          // Create PR using GitHub CLI
+          try {
+            const ghCommand = [
+              'gh pr create',
+              `--base ${targetBranch}`,
+              `--head ${worktree.branch}`,
+              `--title "${prTitle}"`,
+              description ? `--body "${description}"` : '--body ""',
+            ].join(' ');
+
+            const { stdout } = await execPromise(ghCommand, {
+              cwd: worktree.path,
+            });
+
+            // Parse PR URL from output (gh pr create returns the PR URL)
+            const prUrl = stdout.trim();
+            // Extract PR number from URL (e.g., https://github.com/owner/repo/pull/123)
+            const prNumberMatch = prUrl.match(/\/pull\/(\d+)/);
+            const prNumber = prNumberMatch ? parseInt(prNumberMatch[1], 10) : 0;
+
+            return {
+              success: true,
+              data: {
+                prUrl,
+                prNumber,
+              },
+            };
+          } catch (error: any) {
+            if (error.message?.includes('gh: command not found')) {
+              return {
+                success: false,
+                error:
+                  'GitHub CLI (gh) is not installed. Please install it from https://cli.github.com/',
+              };
+            }
+            if (error.message?.includes('not authenticated')) {
+              return {
+                success: false,
+                error:
+                  'GitHub CLI is not authenticated. Please run: gh auth login',
+              };
+            }
+            if (error.message?.includes('already exists')) {
+              return {
+                success: false,
+                error: 'A pull request already exists for this branch',
+              };
+            }
+            return {
+              success: false,
+              error: `Failed to create PR: ${error.message}`,
+            };
+          }
+        } catch (error: any) {
+          return {
+            success: false,
+            error: error.message || 'Failed to create GitHub PR',
+          };
+        }
+      },
+    );
+
+    //////////////////////////////////////////////
     // providers
     this.messageBus.registerHandler(
       'providers.list',

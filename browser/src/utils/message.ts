@@ -1,18 +1,24 @@
 import { CANCELED_MESSAGE_TEXT } from '@/constants';
 import type {
   Message,
+  ToolMessage2,
   ToolResultPart,
+  ToolResultPart2,
   UIAssistantMessage,
   UIMessage,
 } from '@/types/chat';
 import { safeStringify } from './safeStringify';
 
-export function isToolResultMessage(message: Message) {
-  return (
-    Array.isArray(message.content) &&
-    message.content.length === 1 &&
-    message.content[0].type === 'tool_result'
-  );
+export function toolResultPart2ToToolResultPart(
+  part: ToolResultPart2,
+): ToolResultPart {
+  return {
+    type: 'tool_result',
+    id: part.toolCallId,
+    name: part.toolName,
+    input: part.input,
+    result: part.result,
+  };
 }
 
 export function jsonSafeParse(json: string) {
@@ -92,40 +98,60 @@ export function formatMessages(messages: Message[]): UIMessage[] {
       continue;
     }
 
-    if (isToolResultMessage(message)) {
-      const lastMessage = formattedMessages[
-        formattedMessages.length - 1
-      ] as UIAssistantMessage;
-      if (lastMessage) {
-        const toolResult = message.content[0] as ToolResultPart;
-        const matchToolUse = lastMessage.content.find(
-          (part) =>
-            part.type === 'tool' &&
-            part.state === 'tool_use' &&
-            part.id === toolResult.id,
-        );
-        if (!matchToolUse) {
-          throw new Error('Tool result message must be after tool use message');
+    if (message.role === 'tool') {
+      const toolMessage = message as ToolMessage2;
+
+      toolMessage.content.forEach((toolResultPart2) => {
+        const toolResult = toolResultPart2ToToolResultPart(toolResultPart2);
+
+        let targetIndex = -1;
+        for (let i = formattedMessages.length - 1; i >= 0; i--) {
+          const msg = formattedMessages[i];
+          if (msg.role === 'assistant') {
+            const hasMatchingToolUse = msg.content.some(
+              (part) =>
+                part.type === 'tool' &&
+                part.state === 'tool_use' &&
+                part.id === toolResult.id,
+            );
+            if (hasMatchingToolUse) {
+              targetIndex = i;
+              break;
+            }
+          }
         }
-        const uiMessage = {
-          ...lastMessage,
-          content: lastMessage.content.map((part) => {
-            if (part.type === 'tool' && part.id === toolResult.id) {
+
+        if (targetIndex === -1) {
+          console.error(
+            `No matching tool_use found for tool result id: ${toolResult.id}`,
+          );
+          return;
+        }
+
+        const targetMessage = formattedMessages[
+          targetIndex
+        ] as UIAssistantMessage;
+        formattedMessages[targetIndex] = {
+          ...targetMessage,
+          content: targetMessage.content.map((part) => {
+            if (
+              part.type === 'tool' &&
+              part.state === 'tool_use' &&
+              part.id === toolResult.id
+            ) {
               return {
                 ...part,
-                ...toolResult,
-                type: 'tool',
-                state: 'tool_result',
+                state: 'tool_result' as const,
+                name: toolResult.name,
+                input: toolResult.input,
+                result: toolResult.result,
               };
             }
             return part;
           }),
-        } as UIMessage;
-        formattedMessages[formattedMessages.length - 1] = uiMessage;
-        continue;
-      } else {
-        throw new Error('Tool result message must be after tool use message');
-      }
+        } as UIAssistantMessage;
+      });
+      continue;
     }
 
     formattedMessages.push(message as UIMessage);
