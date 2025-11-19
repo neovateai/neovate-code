@@ -3,6 +3,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createXai } from '@ai-sdk/xai';
+import { createAihubmix } from '@aihubmix/ai-sdk-provider';
 import {
   createOpenRouter,
   type LanguageModelV2,
@@ -1147,7 +1148,12 @@ export const providers: ProvidersMap = {
       'kimi-k2-thinking': models['kimi-k2-thinking'],
       'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
     },
-    createModel: defaultModelCreatorCompatible,
+    createModel(name, provider) {
+      const apiKey = getProviderApiKey(provider);
+      return createAihubmix({
+        apiKey,
+      }).chat(name);
+    },
   },
   openrouter: {
     id: 'openrouter',

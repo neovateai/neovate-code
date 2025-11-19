@@ -71,6 +71,7 @@
     "@ai-sdk/openai-compatible": "^1.0.27",
     "@ai-sdk/provider": "^2.0.0",
     "@ai-sdk/xai": "^2.0.33",
+    "@aihubmix/ai-sdk-provider": "^0.0.6",
     "@biomejs/biome": "^2.3.5",
     "@fastify/compress": "8.3.0",
     "@fastify/cors": "11.1.0",

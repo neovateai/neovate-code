@@ -455,6 +455,173 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
+      'project.analyzeContext',
+      async (data: { cwd: string; sessionId: string }) => {
+        const { cwd, sessionId } = data;
+        try {
+          const context = await this.getContext(cwd);
+          const { loadSessionMessages } = await import('./session');
+          const { countTokens } = await import('./utils/tokenCounter');
+          const { existsSync, readFileSync } = await import('fs');
+          const { join } = await import('pathe');
+
+          // Load session messages to find the latest assistant message
+          const logPath = context.paths.getSessionLogPath(sessionId);
+          const messages = loadSessionMessages({ logPath });
+
+          // Find the last assistant message UUID
+          const lastAssistantMessage = messages
+            .slice()
+            .reverse()
+            .find((msg) => msg.role === 'assistant');
+
+          if (!lastAssistantMessage) {
+            return {
+              success: false,
+              error:
+                'No context available - send a message first to analyze context usage',
+            };
+          }
+
+          const requestId = lastAssistantMessage.uuid;
+          const requestsDir = join(context.paths.globalProjectDir, 'requests');
+          const requestLogPath = join(requestsDir, `${requestId}.jsonl`);
+
+          if (!existsSync(requestLogPath)) {
+            return {
+              success: false,
+              error: 'Request log file not found',
+            };
+          }
+
+          // Read the first line of the JSONL file (the metadata)
+          const content = readFileSync(requestLogPath, 'utf-8');
+          const lines = content.split('\n').filter(Boolean);
+          if (lines.length === 0) {
+            return {
+              success: false,
+              error: 'Request log is empty',
+            };
+          }
+
+          let metadata: any;
+          try {
+            metadata = JSON.parse(lines[0]);
+          } catch {
+            return {
+              success: false,
+              error: 'Failed to parse request log',
+            };
+          }
+
+          const requestBody = metadata.request?.body;
+          if (!requestBody) {
+            return {
+              success: false,
+              error: 'Invalid request log format',
+            };
+          }
+
+          // Get the model context window size
+          const { model } = metadata;
+          if (!model || !model.model || !model.model.limit) {
+            return {
+              success: false,
+              error: 'Failed to resolve model context window',
+            };
+          }
+
+          const totalContextWindow = model.model.limit.context;
+
+          // Count tokens for each category
+          const systemPromptTokens = (() => {
+            const systemPrompt = requestBody.system || [];
+            const messages = requestBody.messages || [];
+            for (const message of messages) {
+              if (message.role === 'system') {
+                systemPrompt.push(message);
+              }
+            }
+            if (!systemPrompt.length) return 0;
+            return countTokens(JSON.stringify(systemPrompt));
+          })();
+
+          const tools = requestBody.tools || [];
+          const systemTools: any[] = [];
+          const mcpTools: any[] = [];
+
+          for (const tool of tools) {
+            if (tool.name?.startsWith('mcp__')) {
+              mcpTools.push(tool);
+            } else {
+              systemTools.push(tool);
+            }
+          }
+
+          const systemToolsTokens = systemTools.length
+            ? countTokens(JSON.stringify(systemTools))
+            : 0;
+          const mcpToolsTokens = mcpTools.length
+            ? countTokens(JSON.stringify(mcpTools))
+            : 0;
+
+          const messagesTokens = (() => {
+            const messages = (requestBody.messages || []).filter(
+              (item: any) => item.role !== 'system',
+            );
+            return countTokens(JSON.stringify(messages));
+          })();
+
+          const totalUsed =
+            systemPromptTokens +
+            systemToolsTokens +
+            mcpToolsTokens +
+            messagesTokens;
+          const freeSpaceTokens = Math.max(0, totalContextWindow - totalUsed);
+
+          // Calculate percentages
+          const calculatePercentage = (tokens: number) =>
+            (tokens / totalContextWindow) * 100;
+
+          return {
+            success: true,
+            data: {
+              systemPrompt: {
+                tokens: systemPromptTokens,
+                percentage: calculatePercentage(systemPromptTokens),
+              },
+              systemTools: {
+                tokens: systemToolsTokens,
+                percentage: calculatePercentage(systemToolsTokens),
+              },
+              mcpTools: {
+                tokens: mcpToolsTokens,
+                percentage: calculatePercentage(mcpToolsTokens),
+              },
+              messages: {
+                tokens: messagesTokens,
+                percentage: calculatePercentage(messagesTokens),
+              },
+              freeSpace: {
+                tokens: freeSpaceTokens,
+                percentage: calculatePercentage(freeSpaceTokens),
+              },
+              totalContextWindow,
+            },
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to analyze context',
+          };
+        }
+      },
+    );
+
+    this.messageBus.registerHandler(
       'project.getRepoInfo',
       async (data: { cwd: string }) => {
         const { cwd } = data;
@@ -1060,11 +1227,15 @@ class NodeHandlerRegistry {
           onMessage: async (opts) => {
             await this.messageBus.emitEvent('message', {
               message: opts.message,
+              sessionId,
+              cwd,
             });
           },
           onTextDelta: async (text) => {
             await this.messageBus.emitEvent('textDelta', {
               text,
+              sessionId,
+              cwd,
             });
           },
           onChunk: async (chunk, requestId) => {
@@ -1085,6 +1256,8 @@ class NodeHandlerRegistry {
           onStreamResult: async (result: StreamResult) => {
             await this.messageBus.emitEvent('streamResult', {
               result,
+              sessionId,
+              cwd,
             });
           },
           signal: abortController.signal,

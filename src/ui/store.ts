@@ -185,6 +185,7 @@ interface AppActions {
   addToQueue: (message: string) => void;
   clearQueue: () => void;
   processQueuedMessages: () => Promise<void>;
+  scheduleQueueProcessing: () => void;
   toggleDebugMode: () => void;
   setStatus: (status: AppStatus) => void;
   setBashMode: (bashMode: boolean) => void;
@@ -289,9 +290,7 @@ export const useAppStore = create<AppStore>()(
           model: response.data.model,
           planModel: response.data.planModel,
           initializeModelError: response.data.initializeModelError,
-          modelContextLimit: response.data.model
-            ? response.data.model.model.limit.context
-            : 0,
+          modelContextLimit: response.data.model?.model?.limit.context || 0,
           providers: response.data.providers,
           sessionId: opts.sessionId,
           messages: opts.messages,
@@ -465,13 +464,13 @@ export const useAppStore = create<AppStore>()(
             cwd,
             command: parsed.command,
           });
-          const commandeEntry = result.data?.commandEntry as CommandEntry;
-          if (commandeEntry) {
+          const commandEntry = result.data?.commandEntry as CommandEntry;
+          if (commandEntry) {
             const userMessage: Message = {
               role: 'user',
               content: expandedMessage,
             };
-            const command = commandeEntry.command;
+            const command = commandEntry.command;
             const type = command.type;
             const isLocal = type === 'local';
             const isLocalJSX = type === 'local-jsx';
@@ -524,7 +523,7 @@ export const useAppStore = create<AppStore>()(
               }
             } else if (isLocalJSX) {
               const jsx = await command.call(
-                async (result) => {
+                async (result: string | null) => {
                   set({
                     slashCommandJSX: null,
                   });
@@ -553,7 +552,7 @@ export const useAppStore = create<AppStore>()(
               });
             } else {
               throw new Error(
-                `Unknown slash command type: ${commandeEntry.command.type}`,
+                `Unknown slash command type: ${commandEntry.command.type}`,
               );
             }
             // set({ status: 'slash_command_executing' });
@@ -613,6 +612,9 @@ export const useAppStore = create<AppStore>()(
             status: 'idle',
           });
 
+          // Check for queued messages after bash command execution
+          get().scheduleQueueProcessing();
+
           return;
         } else {
           // Use store's current model for regular message sending
@@ -651,23 +653,34 @@ export const useAppStore = create<AppStore>()(
                     }
                   } catch (parseError) {
                     get().log(
-                      'Parse query result error: ' + String(parseError),
+                      `Parse query result error: ${String(parseError)}`,
                     );
-                    get().log('Query result: ' + queryResult.data.text);
+                    get().log(`Query result: ${queryResult.data.text}`);
                   }
                 }
               } catch (error) {
-                get().log('Query error: ' + String(error));
+                get().log(`Query error: ${String(error)}`);
               }
             })();
-
-            // Check for queued messages
-            if (get().queuedMessages.length > 0) {
-              setTimeout(() => {
-                get().processQueuedMessages();
-              }, 100);
-            }
           }
+
+          // Check for queued messages after successful send
+          if (result.success) {
+            get().scheduleQueueProcessing();
+          }
+        }
+      },
+
+      // Helper method to schedule queued message processing
+      scheduleQueueProcessing: () => {
+        const QUEUE_PROCESSING_DELAY_MS = 100; // Delay to ensure current operation completes
+        if (get().queuedMessages.length > 0) {
+          get().log(
+            `Scheduling processing of ${get().queuedMessages.length} queued message(s)`,
+          );
+          setTimeout(() => {
+            get().processQueuedMessages();
+          }, QUEUE_PROCESSING_DELAY_MS);
         }
       },
 
