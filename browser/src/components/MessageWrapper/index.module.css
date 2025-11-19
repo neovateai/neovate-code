@@ -142,10 +142,15 @@
 /* Content styles */
 .content {
   overflow: hidden;
+  transition:
+    opacity 0.2s ease-in-out,
+    max-height 0.2s ease-in-out;
 }
 
+/* Content inner styles */
 .contentInner {
   padding: 12px 16px 16px;
+  transition: opacity 0.15s ease-in-out;
 }
 
 .scrollable {

@@ -55,6 +55,7 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const scrollTimerRef = useRef<NodeJS.Timeout | null>(null);
   // State management
   const [isExpanded, setIsExpanded] = useState(expanded ?? defaultExpanded);
 
@@ -67,23 +68,23 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
 
   // Check scroll state
   const checkScrollState = useCallback(() => {
-    if (contentRef.current && isExpanded) {
-      const { scrollHeight, clientHeight, scrollTop } = contentRef.current;
-      const hasScrollbar = scrollHeight > clientHeight;
+    if (!contentRef.current || !isExpanded) {
+      setCanScrollUp(false);
+      setCanScrollDown(false);
+      return;
+    }
 
-      if (hasScrollbar) {
-        // Check if can scroll up (not at top)
-        const canScrollUp = scrollTop > 1;
-        // Check if can scroll down (not at bottom)
-        const canScrollDown =
-          Math.abs(scrollHeight - clientHeight - scrollTop) > 1;
+    const { scrollHeight, clientHeight, scrollTop } = contentRef.current;
+    const hasScrollbar = scrollHeight > clientHeight;
 
-        setCanScrollUp(canScrollUp);
-        setCanScrollDown(canScrollDown);
-      } else {
-        setCanScrollUp(false);
-        setCanScrollDown(false);
-      }
+    if (hasScrollbar) {
+      // Check if can scroll up (not at top)
+      const up = scrollTop > 1;
+      // Check if can scroll down (not at bottom)
+      const down = Math.abs(scrollHeight - clientHeight - scrollTop) > 1;
+
+      setCanScrollUp(up);
+      setCanScrollDown(down);
     } else {
       setCanScrollUp(false);
       setCanScrollDown(false);
@@ -92,10 +93,20 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
 
   // Listen for content changes and expand state changes
   useEffect(() => {
+    // Clear previous timer
+    if (scrollTimerRef.current) {
+      clearTimeout(scrollTimerRef.current);
+    }
+
     checkScrollState();
     // Delayed check to ensure DOM is updated
-    const timer = setTimeout(checkScrollState, 100);
-    return () => clearTimeout(timer);
+    scrollTimerRef.current = setTimeout(checkScrollState, 50);
+
+    return () => {
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+    };
   }, [checkScrollState, children, isExpanded]);
 
   // Handle expand state change
@@ -200,62 +211,38 @@ const MessageWrapper: React.FC<MessageWrapperProps> = ({
       </div>
 
       {/* Content area */}
-      {expandable
-        ? isExpanded && (
-            <div className={styles.content}>
-              <div className={styles.contentWrapper}>
-                <div
-                  ref={contentRef}
-                  className={`${styles.contentInner} ${styles.scrollable}`}
-                  style={{
-                    maxHeight:
-                      typeof maxHeight === 'number'
-                        ? `${maxHeight}px`
-                        : maxHeight,
-                  }}
-                  onScroll={checkScrollState}
-                >
-                  {children}
-                </div>
-                {/* Top gradient mask - show when gradient is enabled and can scroll up */}
-                {showGradientMask && canScrollUp && (
-                  <div className={styles.gradientMaskTop} />
-                )}
-
-                {/* Bottom gradient mask - show when gradient is enabled and can scroll down */}
-                {showGradientMask && canScrollDown && (
-                  <div className={styles.gradientMaskBottom} />
-                )}
-              </div>
-            </div>
-          )
-        : // When not expandable, show content based on defaultExpanded
-          isExpanded && (
-            <div className={styles.contentWrapper}>
-              <div
-                ref={expandable ? undefined : contentRef}
-                className={`${styles.contentInner} ${styles.scrollable}`}
-                style={{
-                  maxHeight:
-                    typeof maxHeight === 'number'
-                      ? `${maxHeight}px`
-                      : maxHeight,
-                }}
-                onScroll={expandable ? undefined : checkScrollState}
-              >
-                {children}
-              </div>
-              {/* Top gradient mask - show when gradient is enabled and can scroll up */}
-              {showGradientMask && canScrollUp && (
-                <div className={styles.gradientMaskTop} />
-              )}
-
-              {/* Bottom gradient mask - show when gradient is enabled and can scroll down */}
-              {showGradientMask && canScrollDown && (
-                <div className={styles.gradientMaskBottom} />
-              )}
-            </div>
+      <div
+        className={styles.content}
+        style={{
+          display: (expandable ? isExpanded : defaultExpanded)
+            ? 'block'
+            : 'none',
+          overflow: 'hidden',
+        }}
+      >
+        <div className={styles.contentWrapper}>
+          <div
+            ref={contentRef}
+            className={`${styles.contentInner} ${styles.scrollable}`}
+            style={{
+              maxHeight:
+                typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight,
+            }}
+            onScroll={checkScrollState}
+          >
+            {children}
+          </div>
+          {/* Top gradient mask - show when gradient is enabled and can scroll up */}
+          {showGradientMask && canScrollUp && (
+            <div className={styles.gradientMaskTop} />
           )}
+
+          {/* Bottom gradient mask - show when gradient is enabled and can scroll down */}
+          {showGradientMask && canScrollDown && (
+            <div className={styles.gradientMaskBottom} />
+          )}
+        </div>
+      </div>
 
       {/* Bottom action buttons */}
       {footers && footers.length > 0 && (
