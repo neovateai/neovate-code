@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  ink>string-width: 7.2.0
-
 patchedDependencies:
   marked-terminal:
     hash: 536fe9685e91d559cf29a033191aa39da45729949e9d1c69989255091c8618fb
@@ -12872,7 +12869,7 @@ snapshots:
       signal-exit: 3.0.7
       slice-ansi: 7.1.2
       stack-utils: 2.0.6
-      string-width: 7.2.0
+      string-width: 8.1.0
       type-fest: 4.41.0
       widest-line: 5.0.0
       wrap-ansi: 9.0.2
