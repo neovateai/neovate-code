@@ -12,6 +12,8 @@ jobs:
     strategy:
       matrix:
         node-version: [18, 20, 22]
+    env:
+      IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -46,42 +48,8 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-      - name: Upload build artifacts
-        if: matrix.node-version == 22
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-node-22
-          path: dist/
-
-  integration-test:
-    needs: [build-and-test]
-    runs-on: ubuntu-latest
-    env:
-      IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10.8.0
-
-      - name: Install production dependencies
-        run: pnpm install --prod
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-node-22
-          path: dist/
-
       - name: Run CLI integration test
+        if: matrix.node-version == 22
         run: |
           output=$(node ./dist/cli.mjs -m iflow/qwen3-coder-plus -q --output-format json "hello")
           echo "$output"
