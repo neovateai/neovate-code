@@ -49,7 +49,6 @@ jobs:
         run: pnpm test
 
       - name: Run CLI integration test
-        if: matrix.node-version == 22
         run: |
           output=$(node ./dist/cli.mjs -m iflow/qwen3-coder-plus -q --output-format json "hello")
           echo "$output"
