@@ -20,7 +20,7 @@ export function getThinkingConfig(
     };
   }
 
-  if (['openrouter', 'zenmux'].includes(model.provider.id)) {
+  if (['openrouter', 'zenmux', 'wanqing'].includes(model.provider.id)) {
     let effort: 'low' | 'medium' | 'high' | undefined = reasoningEffort;
     let budgetTokens = undefined;
     if (effort === 'high') {
