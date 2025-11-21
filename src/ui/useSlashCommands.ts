@@ -41,7 +41,7 @@ export function useSlashCommands(input: string) {
 
   useEffect(() => {
     setSelectedIndex(0);
-  }, []);
+  }, [suggestions]);
 
   const navigateNext = () => {
     if (suggestions.length === 0) return;
