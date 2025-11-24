@@ -44,7 +44,7 @@ The goal is to provide the browser with structured data about the current projec
 - Returns: `{ success: true, data: { repoData: RepoData } }`
 - Provides repository-level overview with workspace list
 
-**Handler 2: `project.getWorkspacesInfo`**
+**Handler 2: `project.workspaces.list`** (renamed from `project.getWorkspacesInfo`)
 - Input: `{ cwd: string }`
 - Returns: `{ success: true, data: { workspaces: WorkspaceData[] } }`
 - Provides detailed information for all workspaces
@@ -114,7 +114,7 @@ export interface WorkspaceData {
 7. Get project settings from config
 8. Build and return RepoData object
 
-**project.getWorkspacesInfo Handler:**
+**project.workspaces.list Handler:**
 1. Get git root path
 2. List all worktrees using `worktree.listWorktrees()`
 3. For each worktree:

@@ -185,6 +185,7 @@ interface AppActions {
   addToQueue: (message: string) => void;
   clearQueue: () => void;
   processQueuedMessages: () => Promise<void>;
+  scheduleQueueProcessing: () => void;
   toggleDebugMode: () => void;
   setStatus: (status: AppStatus) => void;
   setBashMode: (bashMode: boolean) => void;
@@ -521,27 +522,31 @@ export const useAppStore = create<AppStore>()(
                 });
               }
             } else if (isLocalJSX) {
-              const jsx = await command.call(async (result: string | null) => {
-                set({
-                  slashCommandJSX: null,
-                });
-                if (result) {
+              const jsx = await command.call(
+                async (result: string | null) => {
                   set({
-                    messages: [
-                      ...get().messages,
-                      {
-                        role: 'user',
-                        content: [
-                          {
-                            type: 'text',
-                            text: result,
-                          },
-                        ],
-                      },
-                    ],
+                    slashCommandJSX: null,
                   });
-                }
-              }, {} as any);
+                  if (result) {
+                    set({
+                      messages: [
+                        ...get().messages,
+                        {
+                          role: 'user',
+                          content: [
+                            {
+                              type: 'text',
+                              text: result,
+                            },
+                          ],
+                        },
+                      ],
+                    });
+                  }
+                },
+                {} as any,
+                parsed.args,
+              );
               set({
                 slashCommandJSX: jsx,
               });
@@ -607,6 +612,9 @@ export const useAppStore = create<AppStore>()(
             status: 'idle',
           });
 
+          // Check for queued messages after bash command execution
+          get().scheduleQueueProcessing();
+
           return;
         } else {
           // Use store's current model for regular message sending
@@ -654,14 +662,25 @@ export const useAppStore = create<AppStore>()(
                 get().log(`Query error: ${String(error)}`);
               }
             })();
-
-            // Check for queued messages
-            if (get().queuedMessages.length > 0) {
-              setTimeout(() => {
-                get().processQueuedMessages();
-              }, 100);
-            }
           }
+
+          // Check for queued messages after successful send
+          if (result.success) {
+            get().scheduleQueueProcessing();
+          }
+        }
+      },
+
+      // Helper method to schedule queued message processing
+      scheduleQueueProcessing: () => {
+        const QUEUE_PROCESSING_DELAY_MS = 100; // Delay to ensure current operation completes
+        if (get().queuedMessages.length > 0) {
+          get().log(
+            `Scheduling processing of ${get().queuedMessages.length} queued message(s)`,
+          );
+          setTimeout(() => {
+            get().processQueuedMessages();
+          }, QUEUE_PROCESSING_DELAY_MS);
         }
       },
 

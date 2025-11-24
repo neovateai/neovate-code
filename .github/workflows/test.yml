@@ -7,16 +7,21 @@ on:
     branches: [master]
 
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    env:
+      IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node-version }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -42,3 +47,9 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+      - name: Run CLI integration test
+        run: |
+          output=$(node ./dist/cli.mjs -m iflow/qwen3-coder-plus -q --output-format json "hello")
+          echo "$output"
+          echo "$output" | node -e "JSON.parse(require('fs').readFileSync(0, 'utf-8'))"

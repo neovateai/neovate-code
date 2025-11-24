@@ -16,7 +16,8 @@
  *
  * Currently supports testing:
  * - project.getRepoInfo
- * - project.getWorkspacesInfo
+ * - project.workspaces.list
+ * - project.workspaces.get
  * - project.workspaces.create
  * - project.workspaces.delete
  * - project.workspaces.merge
@@ -53,9 +54,14 @@ const TEST_HANDLERS: TestHandler[] = [
     getData: (cwd: string) => ({ cwd }),
   },
   {
-    label: 'Project: Get Workspaces Info',
-    handler: 'project.getWorkspacesInfo',
+    label: 'Project: List Workspaces',
+    handler: 'project.workspaces.list',
     getData: (cwd: string) => ({ cwd }),
+  },
+  {
+    label: 'Project: Get Workspace',
+    handler: 'project.workspaces.get',
+    getData: (cwd: string) => ({ cwd, workspaceId: 'master' }),
   },
   {
     label: 'Project: Create Workspace',

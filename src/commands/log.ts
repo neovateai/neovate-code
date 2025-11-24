@@ -1,11 +1,57 @@
 import { exec } from 'child_process';
 import fs from 'fs';
 import { render, Box, Text } from 'ink';
+import { platform } from 'os';
 import path from 'pathe';
-import { filterMessages } from '../session';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Context } from '../context';
+import { filterMessages } from '../session';
 import PaginatedGroupSelectInput from '../ui/PaginatedGroupSelectInput';
+
+// Utility function: Get cross-platform file open command
+function getOpenCommand(): string {
+  const currentPlatform = platform();
+  switch (currentPlatform) {
+    case 'darwin': // macOS
+      return 'open';
+    case 'win32': // Windows
+      return 'start';
+    default: // Linux and others
+      return 'xdg-open';
+  }
+}
+
+// Utility function: Open file with cross-platform support
+async function openFile(
+  filePath: string,
+): Promise<{ success: boolean; message?: string }> {
+  return new Promise((resolve) => {
+    const openCommand = getOpenCommand();
+
+    // Windows start command needs special parameter handling
+    let command: string;
+    if (platform() === 'win32') {
+      // Windows: start "" "filepath" - empty title to avoid parameter confusion
+      command = `start "" "${filePath}"`;
+    } else {
+      // macOS/Linux: command "filepath"
+      command = `${openCommand} "${filePath}"`;
+    }
+
+    exec(command, (error) => {
+      if (error) {
+        // Return friendly message on failure, don't show error
+        const dir = path.dirname(filePath);
+        resolve({
+          success: false,
+          message: `Please manually open the HTML file to view session logs\nFile path: ${filePath} (${dir})`,
+        });
+      } else {
+        resolve({ success: true });
+      }
+    });
+  });
+}
 
 type SessionInfo = ReturnType<Context['paths']['getAllSessions']>[number];
 
@@ -474,6 +520,11 @@ const LogUI: React.FC<{ context: Context }> = ({ context }) => {
   const [selected, setSelected] = useState<string | null>(null);
   const [outputPath, setOutputPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [openResult, setOpenResult] = useState<{
+    path: string;
+    success: boolean;
+    message?: string;
+  } | null>(null);
 
   useEffect(() => {
     try {
@@ -510,11 +561,14 @@ const LogUI: React.FC<{ context: Context }> = ({ context }) => {
       try {
         const out = await generateHtmlForSession(context, item.value);
         setOutputPath(out);
-        try {
-          exec(`open ${JSON.stringify(out)}`);
-        } catch (e) {
-          // ignore open failures; user can open manually
-        }
+
+        // Use cross-platform openFile function
+        const result = await openFile(out);
+        setOpenResult({
+          path: out,
+          success: result.success,
+          message: result.message,
+        });
       } catch (e: any) {
         setError(e?.message || 'Failed to generate HTML');
       }
@@ -522,11 +576,48 @@ const LogUI: React.FC<{ context: Context }> = ({ context }) => {
     [context],
   );
 
+  const onCancel = useCallback(() => {
+    process.exit(0);
+  }, []);
+
   if (error) {
     return React.createElement(
       Box,
       { flexDirection: 'column' as any },
       React.createElement(Text, { color: 'red' as any }, error),
+    );
+  }
+
+  // Prioritize showing file open result
+  if (openResult) {
+    return React.createElement(
+      Box,
+      { flexDirection: 'column' as any },
+      React.createElement(Text, null, 'HTML generated:'),
+      React.createElement(Text, { color: 'green' as any }, openResult.path),
+      React.createElement(
+        Box,
+        { marginTop: 1 as any },
+        React.createElement(
+          Text,
+          { color: openResult.success ? ('green' as any) : ('yellow' as any) },
+          openResult.success
+            ? '✓ HTML file opened:'
+            : '⚠️  Please manually open HTML file:',
+        ),
+      ),
+      React.createElement(
+        Box,
+        { marginTop: 1 as any },
+        React.createElement(
+          Text,
+          { dimColor: true as any },
+          openResult.success
+            ? 'File has been opened in default browser, you can view session logs'
+            : openResult.message ||
+                'You can use any browser to open this file to view session logs',
+        ),
+      ),
     );
   }
 
@@ -537,9 +628,13 @@ const LogUI: React.FC<{ context: Context }> = ({ context }) => {
       React.createElement(Text, null, 'HTML generated:'),
       React.createElement(Text, { color: 'green' as any }, outputPath),
       React.createElement(
-        Text,
-        { dimColor: true as any },
-        'Open this file in your browser to view session logs.',
+        Box,
+        { marginTop: 1 as any },
+        React.createElement(
+          Text,
+          { dimColor: true as any },
+          'Attempting to open in browser...',
+        ),
       ),
     );
   }
@@ -553,6 +648,7 @@ const LogUI: React.FC<{ context: Context }> = ({ context }) => {
       itemsPerPage: 10,
       enableSearch: true,
       onSelect,
+      onCancel,
     }),
     selected
       ? React.createElement(

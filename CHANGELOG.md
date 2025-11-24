@@ -1,3 +1,17 @@
+## 0.18.0
+
+`2025-11-20`
+
+- feat: add /add-dir command for managing additional working directories by [@阿平](https://github.com/阿平) in [#429](https://github.com/umijs/takumi/pull/429)
+- feat: add grok-4.1-fast model and xai provider configuration by [@sorrycc](https://github.com/sorrycc)
+- fix: integrate aihubmix provider to resolve Claude usage errors by [@unknown_](https://github.com/unknown_) in [#433](https://github.com/umijs/takumi/pull/433)
+- refactor: extract queue processing scheduling into dedicated method by [@阿平](https://github.com/阿平) in [#435](https://github.com/umijs/takumi/pull/435)
+- feat: add context slash command to analyze token usage breakdown, Close #379 by [@sorrycc](https://github.com/sorrycc)
+- feat: add sessionId and cwd to message bus events in nodeBridge by [@sorrycc](https://github.com/sorrycc)
+- refactor(store): Optimize type definitions and code structure by [@QuietlyChan](https://github.com/QuietlyChan) in [#434](https://github.com/umijs/takumi/pull/434)
+- feat: allow commit.model to override main model for commit generation by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.17.3
 
 `2025-11-19`

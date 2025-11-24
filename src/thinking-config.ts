@@ -8,7 +8,19 @@ export function getThinkingConfig(
     return undefined;
   }
 
-  if (['openrouter', 'zenmux'].includes(model.provider.id)) {
+  if (model.provider.id === 'xai') {
+    return {
+      providerOptions: {
+        xai: {
+          // https://ai-sdk.dev/providers/ai-sdk-providers/xai#provider-options
+          // Only supported by grok-3-mini and grok-3-mini-fast models?
+          // reasoningEffort: 'low',
+        },
+      },
+    };
+  }
+
+  if (['openrouter', 'zenmux', 'wanqing'].includes(model.provider.id)) {
     let effort: 'low' | 'medium' | 'high' | undefined = reasoningEffort;
     let budgetTokens = undefined;
     if (effort === 'high') {

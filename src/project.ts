@@ -178,10 +178,18 @@ export class Project {
     const model = (
       await resolveModelWithContext(opts.model || null, this.context)
     ).model!;
+
+    const sessionConfigManager = new SessionConfigManager({
+      logPath: this.context.paths.getSessionLogPath(this.session.id),
+    });
+    const additionalDirectories =
+      sessionConfigManager.config.additionalDirectories || [];
+
     const llmsContext = await LlmsContext.create({
       context: this.context,
       sessionId: this.session.id,
       userPrompt: message,
+      additionalDirectories,
     });
     if (message !== null) {
       outputFormat.onInit({

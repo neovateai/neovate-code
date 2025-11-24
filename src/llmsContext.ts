@@ -12,6 +12,7 @@ export type LlmsContextCreateOpts = {
   context: Context;
   sessionId: string;
   userPrompt: string | null;
+  additionalDirectories?: string[];
 };
 
 export class LlmsContext {
@@ -82,6 +83,11 @@ ${Object.entries(llmsContext)
 
     let llmsEnv = {
       'Working directory': opts.context.cwd,
+      ...(opts.additionalDirectories &&
+        opts.additionalDirectories.length > 0 && {
+          'Additional working directories':
+            opts.additionalDirectories.join(', '),
+        }),
       'Is directory a git repo': gitStatus ? 'YES' : 'NO',
       Platform: platform,
       "Today's date": new Date().toLocaleDateString(),
