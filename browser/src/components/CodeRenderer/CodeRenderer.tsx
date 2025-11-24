@@ -12,7 +12,7 @@ import {
   isLanguageSupported,
   type SupportedLanguage,
 } from '@/constants/languages';
-import { cleanHtmlStyles, needsStyleCleaning } from './htmlUtils';
+import { cleanHtmlStyles } from './htmlUtils';
 import {
   createLineNumberTransformer,
   customDiffTransformer,
@@ -364,13 +364,7 @@ export const CodeRenderer = forwardRef<CodeRendererRef, CodeRendererProps>(
           });
 
           // Remove only background color styles, keep other styles like color
-          const cleanHtml = html
-            .replace(/background-color:[^;"]*;?\s*/gi, '')
-            .replace(/background:[^;"]*;?\s*/gi, '')
-            .replace(/style="\s*;?\s*"/gi, '')
-            .replace(/style='\s*;?\s*'/gi, '')
-            .replace(/style="\s*"/gi, '')
-            .replace(/style='\s*'/gi, '');
+          const cleanHtml = cleanHtmlStyles(html);
 
           setHighlightedHtml(cleanHtml);
         } catch (_err) {

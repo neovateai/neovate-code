@@ -21,14 +21,9 @@ export const computeDiffContent = (
   newStr?: string | null,
 ): DiffContent => {
   try {
-    // 简单的输入处理
-    const safeOldStr = oldStr ?? '';
-    const safeNewStr = newStr ?? '';
-
-    // 基本类型验证
-    if (typeof safeOldStr !== 'string' || typeof safeNewStr !== 'string') {
-      return { oldContent: '', newContent: '' };
-    }
+    // 统一的输入处理 - 只接受字符串类型
+    const safeOldStr = typeof oldStr === 'string' ? oldStr : '';
+    const safeNewStr = typeof newStr === 'string' ? newStr : '';
 
     return {
       oldContent: safeOldStr,
@@ -36,10 +31,8 @@ export const computeDiffContent = (
     };
   } catch (error) {
     console.error('Failed to compute diff content:', error);
-    return {
-      oldContent: oldStr ?? '',
-      newContent: newStr ?? '',
-    };
+    // 统一错误回退策略：都返回空字符串
+    return { oldContent: '', newContent: '' };
   }
 };
 

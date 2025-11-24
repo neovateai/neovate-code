@@ -21,26 +21,3 @@ export const cleanHtmlStyles = (html: string): string => {
     return html;
   }
 };
-
-/**
- * 批量处理多个HTML字符串的样式清理
- * 适用于需要处理大量代码块的场景
- */
-export const batchCleanHtmlStyles = (htmlArray: string[]): string[] => {
-  return htmlArray.map((html) => {
-    try {
-      return cleanHtmlStyles(html);
-    } catch (error) {
-      console.error('Failed to clean HTML styles in batch:', error);
-      return html;
-    }
-  });
-};
-
-/**
- * 检查HTML是否需要样式清理
- * 可用于避免不必要的处理
- */
-export const needsStyleCleaning = (html: string): boolean => {
-  return /background(?:-color)?:/i.test(html);
-};
