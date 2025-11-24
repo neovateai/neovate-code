@@ -81,7 +81,9 @@
     "stopGenerating": "Stop Generating",
     "inputPlaceholder": "Ask or input @ use skills",
     "selectModel": "Select model",
-    "noModels": "No models available"
+    "searchModel": "Search models",
+    "noModels": "No models available",
+    "noModelsFound": "No models found"
   },
   "prompts": {
     "upgrades": "Upgrades",
