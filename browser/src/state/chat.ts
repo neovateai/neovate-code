@@ -91,6 +91,7 @@ interface ChatActions {
     planMode?: boolean;
     model?: string;
     attachments?: (FilePart | ImagePart)[];
+    parentUuid?: string;
   }): Promise<LoopResult | { success: false; error: Error }>;
   getSlashCommands(): Promise<CommandEntry[]>;
   getFiles(opts: { query?: string }): Promise<FileItem[]>;
@@ -394,6 +395,7 @@ export const actions: ChatActions = {
     planMode?: boolean;
     model?: string;
     attachments?: (FilePart | ImagePart)[];
+    parentUuid?: string;
   }) {
     try {
       state.status = 'processing';
@@ -408,6 +410,7 @@ export const actions: ChatActions = {
         cwd,
         sessionId,
         attachments: opts.attachments,
+        parentUuid: opts.parentUuid,
       })) as LoopResult;
 
       if (response.success) {
@@ -507,7 +510,6 @@ export const actions: ChatActions = {
       console.error('Set summary error:', error);
     }
   },
-
   async retry() {
     // Find the last user message
     let lastUserMessageIndex = -1;
@@ -523,13 +525,18 @@ export const actions: ChatActions = {
       return;
     }
 
-    // Remove all messages after the last user message (including assistant responses)
-    state.messages = state.messages.slice(0, lastUserMessageIndex + 1);
-
-    // Get the last user message content
     const lastUserMessage = state.messages[lastUserMessageIndex];
-    let userPrompt = '';
 
+    // Get the parentUuid from the user message itself
+    // This represents where this message was originally attached in the conversation tree
+    const parentUuid = (lastUserMessage as any).parentUuid || null;
+
+    // Remove the last user message and all subsequent messages
+    // This includes the user message itself and any assistant responses
+    state.messages = state.messages.slice(0, lastUserMessageIndex);
+
+    // Extract content from the user message for re-sending
+    let userPrompt = '';
     if (typeof lastUserMessage.content === 'string') {
       userPrompt = lastUserMessage.content;
     } else if (Array.isArray(lastUserMessage.content)) {
@@ -547,9 +554,23 @@ export const actions: ChatActions = {
       userPrompt = (lastUserMessage as any).uiContent;
     }
 
-    // Resend the message
+    const { cwd, sessionId } = state;
+
     try {
-      const result = await this.sendMessage({ message: null });
+      // Re-add the user message with the same parentUuid to maintain conversation tree structure
+      await clientActions.request('session.addMessages', {
+        cwd,
+        sessionId,
+        messages: [lastUserMessage],
+        parentUuid: parentUuid || undefined,
+      });
+
+      // Trigger a new response - the backend will handle creating a new branch
+      const result = await this.sendMessage({
+        message: null,
+        attachments: undefined,
+      });
+
       await this.setSummary({ userPrompt, result });
     } catch (error) {
       console.error('Retry failed:', error);
