@@ -35,11 +35,7 @@ export const computeDiffContent = (
       newContent: safeNewStr,
     };
   } catch (error) {
-    // 只在真正异常时记录错误
-    console.error(
-      '[DiffUtils] Unexpected error computing diff content:',
-      error,
-    );
+    console.error('Failed to compute diff content:', error);
     return {
       oldContent: oldStr ?? '',
       newContent: newStr ?? '',

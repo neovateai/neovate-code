@@ -17,6 +17,7 @@ export const cleanHtmlStyles = (html: string): string => {
       .replace(/style=["'](\s*;?\s*)*["']/gi, '') // 移除只包含分号和空格的style属性
       .trim();
   } catch (error) {
+    console.error('Failed to clean HTML styles:', error);
     return html;
   }
 };
@@ -30,6 +31,7 @@ export const batchCleanHtmlStyles = (htmlArray: string[]): string[] => {
     try {
       return cleanHtmlStyles(html);
     } catch (error) {
+      console.error('Failed to clean HTML styles in batch:', error);
       return html;
     }
   });
