@@ -1,7 +1,10 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
+import { createCerebras } from '@ai-sdk/cerebras';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createXai } from '@ai-sdk/xai';
+import { createAihubmix } from '@aihubmix/ai-sdk-provider';
 import {
   createOpenRouter,
   type LanguageModelV2,
@@ -340,6 +343,22 @@ export const models: ModelMap = {
     open_weights: false,
     limit: { context: 1048576, output: 65536 },
   },
+  'gemini-3-pro-preview': {
+    name: 'Gemini 3 Pro Preview',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-01',
+    release_date: '2025-01-01',
+    last_updated: '2025-01-01',
+    modalities: {
+      input: ['text', 'image', 'audio', 'video', 'pdf'],
+      output: ['text'],
+    },
+    open_weights: false,
+    limit: { context: 200000, output: 65536 },
+  },
   'grok-4': {
     name: 'Grok 4',
     attachment: false,
@@ -375,6 +394,19 @@ export const models: ModelMap = {
     knowledge: '2024-11',
     release_date: '2025-08-19',
     last_updated: '2025-08-19',
+    modalities: { input: ['text', 'image'], output: ['text'] },
+    open_weights: false,
+    limit: { context: 2000000, output: 2000000 },
+  },
+  'grok-4.1-fast': {
+    name: 'Grok 4.1 Fast',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-10',
+    release_date: '2025-11-19',
+    last_updated: '2025-11-19',
     modalities: { input: ['text', 'image'], output: ['text'] },
     open_weights: false,
     limit: { context: 2000000, output: 2000000 },
@@ -910,6 +942,23 @@ function getProviderApiKey(provider: Provider) {
   return key;
 }
 
+export const defaultModelCreatorCompatible = (
+  name: string,
+  provider: Provider,
+): LanguageModelV2 => {
+  if (provider.id !== 'openai') {
+    assert(provider.api, `Provider ${provider.id} must have an api`);
+  }
+  const baseURL = getProviderBaseURL(provider);
+  const apiKey = getProviderApiKey(provider);
+  assert(baseURL, 'baseURL is required');
+  return createOpenAICompatible({
+    name: provider.id,
+    baseURL,
+    apiKey,
+  })(name);
+};
+
 export const defaultModelCreator = (
   name: string,
   provider: Provider,
@@ -946,6 +995,7 @@ export const providers: ProvidersMap = {
       'gpt-5-mini': models['gpt-5-mini'],
       'claude-3.7-sonnet': models['claude-3-7-sonnet'],
       'gemini-2.5-pro': models['gemini-2.5-pro'],
+      'gemini-3-pro-preview': models['gemini-3-pro-preview'],
       o3: models['o3'],
       'claude-sonnet-4': models['claude-4-sonnet'],
       'gpt-5.1-codex': models['gpt-5.1-codex'],
@@ -1012,6 +1062,7 @@ export const providers: ProvidersMap = {
         models['gemini-2.5-flash-preview-09-2025'],
       'gemini-2.5-flash-lite': models['gemini-2.5-flash-lite-preview-06-17'],
       'gemini-2.5-pro': models['gemini-2.5-pro'],
+      'gemini-3-pro-preview': models['gemini-3-pro-preview'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
@@ -1043,6 +1094,11 @@ export const providers: ProvidersMap = {
     name: 'xAI',
     doc: 'https://xai.com/docs/models',
     models: {
+      'grok-4-1-fast': models['grok-4.1-fast'],
+      'grok-4-1-fast-non-reasoning': {
+        ...models['grok-4.1-fast'],
+        reasoning: false,
+      },
       'grok-4': models['grok-4'],
       'grok-4-fast': models['grok-4-fast'],
       'grok-code-fast-1': models['grok-code-fast-1'],
@@ -1111,7 +1167,12 @@ export const providers: ProvidersMap = {
       'kimi-k2-thinking': models['kimi-k2-thinking'],
       'kimi-k2-turbo-preview': models['kimi-k2-turbo-preview'],
     },
-    createModel: defaultModelCreator,
+    createModel(name, provider) {
+      const apiKey = getProviderApiKey(provider);
+      return createAihubmix({
+        apiKey,
+      }).chat(name);
+    },
   },
   openrouter: {
     id: 'openrouter',
@@ -1145,6 +1206,7 @@ export const providers: ProvidersMap = {
       'openai/gpt-5': models['gpt-5'],
       'openai/gpt-5-mini': models['gpt-5-mini'],
       'openai/gpt-5-codex': models['gpt-5-codex'],
+      'google/gemini-3-pro-preview': models['gemini-3-pro-preview'],
       'moonshotai/kimi-k2': models['kimi-k2'],
       'moonshotai/kimi-k2-0905': models['kimi-k2-0905'],
       'moonshotai/kimi-k2-thinking': models['kimi-k2-thinking'],
@@ -1153,6 +1215,7 @@ export const providers: ProvidersMap = {
       'x-ai/grok-code-fast-1': models['grok-code-fast-1'],
       'x-ai/grok-4': models['grok-4'],
       'x-ai/grok-4-fast': models['grok-4-fast'],
+      'x-ai/grok-4.1-fast': models['grok-4.1-fast'],
       'z-ai/glm-4.5': models['glm-4.5'],
       'z-ai/glm-4.5v': models['glm-4.5v'],
       'z-ai/glm-4.6': models['glm-4.6'],
@@ -1180,7 +1243,6 @@ export const providers: ProvidersMap = {
     api: 'https://apis.iflow.cn/v1/',
     doc: 'https://iflow.cn/',
     models: {
-      'qwen3-coder': models['qwen3-coder-480b-a35b-instruct'],
       'qwen3-coder-plus': models['qwen3-coder-plus'],
       'kimi-k2': models['kimi-k2'],
       'kimi-k2-0905': models['kimi-k2-0905'],
@@ -1190,7 +1252,7 @@ export const providers: ProvidersMap = {
       'glm-4.6': models['glm-4.6'],
       'qwen3-max': models['qwen3-max'],
     },
-    createModel: defaultModelCreator,
+    createModel: defaultModelCreatorCompatible,
   },
   moonshotai: {
     id: 'moonshotai',
@@ -1372,8 +1434,15 @@ export const providers: ProvidersMap = {
       'inclusionai/ling-flash-2.0': models['ling-flash-2.0'],
       'inclusionai/ring-mini-2.0': models['ring-mini-2.0'],
       'inclusionai/ling-mini-2.0': models['ling-mini-2.0'],
+      'google/gemini-3-pro-preview-free': models['gemini-3-pro-preview'],
+      'google/gemini-3-pro-preview': models['gemini-3-pro-preview'],
+      'openai/gpt-5.1': models['gpt-5.1'],
+      'openai/gpt-5.1-codex': models['gpt-5.1-codex'],
+      'openai/gpt-5.1-codex-mini': models['gpt-5.1-codex-mini'],
+      'anthropic/claude-sonnet-4.5': models['claude-4-5-sonnet'],
+      'anthropic/claude-opus-4.1': models['claude-4.1-opus'],
     },
-    createModel: defaultModelCreator,
+    createModel: defaultModelCreatorCompatible,
   },
   minimax: {
     id: 'minimax',
@@ -1391,6 +1460,20 @@ export const providers: ProvidersMap = {
         baseURL,
         apiKey,
       }).chat(name);
+    },
+  },
+  cerebras: {
+    id: 'cerebras',
+    env: ['CEREBRAS_API_KEY'],
+    name: 'Cerebras',
+    doc: 'https://cerebras.ai/docs',
+    models: {
+      'zai-glm-4.6': models['glm-4.6'],
+      'gpt-oss-120b': models['gpt-oss-120b'],
+    },
+    createModel(name, provider) {
+      const apiKey = getProviderApiKey(provider);
+      return createCerebras({ apiKey })(name);
     },
   },
 };

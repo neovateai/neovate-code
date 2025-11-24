@@ -234,7 +234,7 @@ This allows manual testing through the `__test` command's interactive UI.
 
 - All handlers use async/await pattern
 - Handlers are registered in the existing `NodeHandlerRegistry.registerHandlers()` method
-- Follows the same context management pattern as `project.getRepoInfo` and `project.getWorkspacesInfo`
+- Follows the same context management pattern as `project.getRepoInfo` and `project.workspaces.list`
 - Uses existing worktree.ts methods without modification
 - Error messages match CLI command patterns for consistency
 - GitHub PR creation uses `gh` CLI via bash tool for simplicity

@@ -38,6 +38,30 @@
   margin-inline: auto;
 }
 
+.loadingContainer {
+  width: 100%;
+  max-width: 600px;
+  padding: 12px 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  position: relative;
+}
+
+.loadingContent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.loadingContent :global(.ant-spin) {
+  color: #1890ff;
+}
+
+.loadingContent :global(.ant-spin-dot-item) {
+  background-color: #1890ff;
+}
+
 .skeletonContainer {
   width: 600px;
 }

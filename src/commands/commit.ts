@@ -8,6 +8,7 @@ import pc from 'picocolors';
 import type { Context } from '../context';
 import { query } from '../query';
 import * as logger from '../utils/logger';
+import { type ModelInfo, resolveModelWithContext } from '../model';
 
 interface GenerateCommitMessageOpts {
   prompt: string;
@@ -33,10 +34,21 @@ function escapeShellArg(arg: string): string {
 async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
   const language = opts.language ?? 'English';
   const systemPrompt = opts.systemPrompt ?? createCommitSystemPrompt(language);
+
+  let model: ModelInfo | undefined;
+  if (opts.context.config.commit?.model) {
+    const resolved = await resolveModelWithContext(
+      opts.context.config.commit.model,
+      opts.context,
+    );
+    model = resolved.model || undefined;
+  }
+
   const result = await query({
     userPrompt: opts.prompt,
     systemPrompt,
     context: opts.context,
+    model,
   });
   let message = result.success ? result.data.text : null;
   if (typeof message !== 'string') {
@@ -49,10 +61,20 @@ async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
 }
 
 async function generateBranchName(opts: GenerateBranchNameOpts) {
+  let model: ModelInfo | undefined;
+  if (opts.context.config.commit?.model) {
+    const resolved = await resolveModelWithContext(
+      opts.context.config.commit.model,
+      opts.context,
+    );
+    model = resolved.model || undefined;
+  }
+
   const result = await query({
     userPrompt: opts.commitMessage,
     systemPrompt: createBranchSystemPrompt(),
     context: opts.context,
+    model,
   });
   const branchName = result.success ? result.data.text : null;
   if (typeof branchName !== 'string') {
@@ -221,7 +243,7 @@ Please follow a similar style for this commit message while still adhering to th
   }
 
   // Generate the commit message
-  const model = context.config.model;
+  const model = context.config.commit?.model || context.config.model;
   logger.logInfo(`Using model: ${model}`);
   let message = '';
   let attempts = 0;

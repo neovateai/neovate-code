@@ -19,7 +19,9 @@ import {
   getInsertText,
   getRemovedTakumiContexts,
   getTextWithTakumiContext,
+  isEditorEmpty,
   isInsertingAt,
+  isInsertingSlash,
 } from './utils';
 
 interface ISearchInfo {
@@ -82,6 +84,7 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
 
   const {
     onInputAt,
+    onInputSlash,
     onQuillLoad,
     onKeyDown,
     onDeleteContexts,
@@ -162,20 +165,27 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
       });
 
       quillInstance.on('text-change', (delta, _oldContent, source) => {
+        const currentContents = quillInstance.getContents();
         if (source === 'user') {
           if (isInsertingAt(delta) && searchInfoRef.current === null) {
             const selection = quillInstance.getSelection();
-
             if (selection) {
               const bounds = quillInstance.getBounds(selection.index);
-
-              onInputAt?.(true, selection?.index, bounds ?? undefined);
+              onInputAt?.(true, selection.index, bounds ?? undefined);
+            }
+          } else if (
+            isInsertingSlash(delta) &&
+            isEditorEmpty(oldContentsRef.current)
+          ) {
+            const selection = quillInstance.getSelection();
+            if (selection) {
+              const bounds = quillInstance.getBounds(selection.index);
+              onInputSlash?.(true, selection.index, bounds ?? undefined);
             }
           } else {
             onInputAt?.(false);
+            onInputSlash?.(false);
           }
-
-          const currentContents = quillInstance.getContents();
 
           if (searchInfoRef.current) {
             const insertText = getInsertText(delta);
@@ -197,18 +207,18 @@ const Editor = forwardRef<IQuillEditorRef, IQuillEditorProps>((props, ref) => {
             onSearch?.(searchText);
           }
 
-          const removedTakumiContexts = getRemovedTakumiContexts(
-            oldContentsRef.current,
-            currentContents,
-          );
-
-          onDeleteContexts?.(removedTakumiContexts.map((ctx) => ctx.value));
-
           const currentText = getTextWithTakumiContext(currentContents);
 
           onChange?.(makeChangeEvent(currentText, editorRef.current));
           onQuillChange?.(currentText, currentContents);
         }
+        const removedTakumiContexts = getRemovedTakumiContexts(
+          oldContentsRef.current,
+          currentContents,
+        );
+
+        onDeleteContexts?.(removedTakumiContexts.map((ctx) => ctx.value));
+
         oldContentsRef.current = quillInstance.getContents();
       });
 

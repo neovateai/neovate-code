@@ -1,3 +1,33 @@
+## 0.18.0
+
+`2025-11-20`
+
+- feat: add /add-dir command for managing additional working directories by [@阿平](https://github.com/阿平) in [#429](https://github.com/umijs/takumi/pull/429)
+- feat: add grok-4.1-fast model and xai provider configuration by [@sorrycc](https://github.com/sorrycc)
+- fix: integrate aihubmix provider to resolve Claude usage errors by [@unknown_](https://github.com/unknown_) in [#433](https://github.com/umijs/takumi/pull/433)
+- refactor: extract queue processing scheduling into dedicated method by [@阿平](https://github.com/阿平) in [#435](https://github.com/umijs/takumi/pull/435)
+- feat: add context slash command to analyze token usage breakdown, Close #379 by [@sorrycc](https://github.com/sorrycc)
+- feat: add sessionId and cwd to message bus events in nodeBridge by [@sorrycc](https://github.com/sorrycc)
+- refactor(store): Optimize type definitions and code structure by [@QuietlyChan](https://github.com/QuietlyChan) in [#434](https://github.com/umijs/takumi/pull/434)
+- feat: allow commit.model to override main model for commit generation by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.17.3
+
+`2025-11-19`
+
+- feat: add openai compatible provider and gemini 3 pro preview model support by [@sorrycc](https://github.com/sorrycc)
+- refactor(browser): optimize tool message processing using map lookup by [@阿平](https://github.com/阿平) in [#432](https://github.com/umijs/takumi/pull/432)
+- feat: pass attachments from context state to send message action by [@Z-Bokle](https://github.com/Z-Bokle) in [#359](https://github.com/umijs/takumi/pull/359)
+- feat(browser): extract a standalone slash command menu by [@Z-Bokle](https://github.com/Z-Bokle) in [#358](https://github.com/umijs/takumi/pull/358)
+- feat(browser): message loading & fix side bar scroll flashing by [@thy](https://github.com/thy) in [#357](https://github.com/umijs/takumi/pull/357)
+- feat(browser): add toolResultPart2ToToolResultPart converter by [@阿平](https://github.com/阿平) in [#430](https://github.com/umijs/takumi/pull/430)
+- feat: add workspace nodebridge handlers and test ui with react conversion by [@sorrycc](https://github.com/sorrycc)
+- feat: add project info handlers and test command for browser UI by [@sorrycc](https://github.com/sorrycc)
+- fix: trim and clean commit message output by [@sorrycc](https://github.com/sorrycc)
+- feat: add support for anthropic models with openrouter provider by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.17.2
 
 `2025-11-17`

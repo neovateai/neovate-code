@@ -17,7 +17,7 @@ const AddContext = () => {
     defaultSuggestions,
     handleSearch,
     loading: suggestionLoading,
-  } = useSuggestion();
+  } = useSuggestion(false);
 
   return (
     <SuggestionList

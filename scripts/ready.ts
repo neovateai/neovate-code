@@ -65,7 +65,7 @@ async function main() {
   console.log('🔍 Testing CLI...');
   try {
     const result = execSync(
-      'node ./dist/cli.mjs -m iflow/qwen3-coder -q --output-format json "hello"',
+      'node ./dist/cli.mjs -m iflow/qwen3-coder-plus -q --output-format json "hello"',
       {
         encoding: 'utf-8',
       },

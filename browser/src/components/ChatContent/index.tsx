@@ -13,14 +13,17 @@ import styles from './index.module.css';
 import ActivityIndicator from '../ActivityIndicator';
 
 const ChatContent: React.FC = () => {
-  const { messages, status } = useSnapshot(state);
+  const { messages, status, approvalModal } = useSnapshot(state);
 
-  // Check if assistant loading needs to be displayed
-  const shouldShowAssistantLoading =
-    status !== 'idle' &&
-    messages &&
-    messages.length > 0 &&
-    messages[messages.length - 1].role === 'user';
+  // Check if we should show loading state
+  // Only show loading for active processing states, not for idle/exit/failed/cancelled
+  const shouldShowLoading =
+    (status === 'processing' ||
+      status === 'planning' ||
+      status === 'tool_executing' ||
+      status === 'compacting' ||
+      status === 'slash_command_executing') &&
+    !approvalModal;
 
   const items = messages?.map((message, index) => {
     const isLastMessage = index === messages.length - 1;
@@ -41,21 +44,16 @@ const ChatContent: React.FC = () => {
     };
   });
 
-  // If assistant loading needs to be displayed, add a loading item
+  // Add loading state as a message if needed
   const finalItems =
-    shouldShowAssistantLoading && items
+    shouldShowLoading && items
       ? [
           ...items,
           {
             role: 'assistant',
             content: '',
             loading: true,
-            footer: () => (
-              <div className="flex items-center space-x-2 pt-2">
-                <Spin size="small" />
-                <ActivityIndicator />
-              </div>
-            ),
+            footer: () => null,
           },
         ]
       : items;
@@ -79,8 +77,11 @@ const ChatContent: React.FC = () => {
       },
       loadingRender() {
         return (
-          <div className={styles.skeletonContainer}>
-            <Skeleton active paragraph={{ rows: 2 }} title={false} />
+          <div className={styles.loadingContainer}>
+            <div className={styles.loadingContent}>
+              <Spin size="small" />
+              <ActivityIndicator />
+            </div>
           </div>
         );
       },

@@ -4,9 +4,10 @@
 
 ## Context
 
-Add a `__test` command to `src/commands/` for testing nodeBridge handlers during development. The command should use Ink for rendering and initially support testing two handlers:
+Add a `__test` command to `src/commands/` for testing nodeBridge handlers during development. The command should use Ink for rendering and initially support testing handlers including:
 - `project.getRepoInfo`
-- `project.getWorkspacesInfo`
+- `project.workspaces.list`
+- `project.workspaces.get`
 
 The command will use `@src/ui/PaginatedSelectInput.tsx` for rendering the handler selection interface.
 
@@ -94,9 +95,14 @@ const TEST_HANDLERS = [
     getData: (cwd: string) => ({ cwd })
   },
   {
-    label: 'Project: Get Workspaces Info',
-    handler: 'project.getWorkspacesInfo',
+    label: 'Project: List Workspaces',
+    handler: 'project.workspaces.list',
     getData: (cwd: string) => ({ cwd })
+  },
+  {
+    label: 'Project: Get Workspace',
+    handler: 'project.workspaces.get',
+    getData: (cwd: string) => ({ cwd, workspaceId: 'master' })
   }
 ];
 ```

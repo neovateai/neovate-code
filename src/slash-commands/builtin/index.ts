@@ -1,7 +1,9 @@
 import type { SlashCommand } from '../types';
+import { createAddDirCommand } from './add-dir';
 import { createBugCommand } from './bug';
 import { clearCommand } from './clear';
 import { compactCommand } from './compact';
+import { contextCommand } from './context';
 import { exitCommand } from './exit';
 import { helpCommand } from './help';
 import { createInitCommand } from './init';
@@ -26,6 +28,7 @@ export function createBuiltinCommands(opts: {
 }): SlashCommand[] {
   return [
     clearCommand,
+    contextCommand,
     exitCommand,
     helpCommand,
     createInitCommand(opts),
@@ -40,6 +43,7 @@ export function createBuiltinCommands(opts: {
     createBugCommand(),
     compactCommand,
     statusCommand,
+    createAddDirCommand(),
     brainstormCommand(opts.language),
     writePlanCommand(opts.language),
     executePlanCommand(opts.language),
