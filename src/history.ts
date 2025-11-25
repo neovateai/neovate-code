@@ -294,10 +294,7 @@ export class History {
       throw new Error('Generated summary is empty');
     }
 
-    // Clear original messages and replace with summary
-    this.messages = [];
-
-    this.onMessage?.({
+    const summaryMessage: NormalizedMessage = {
       parentUuid: null,
       uuid: randomUUID(),
       role: 'user',
@@ -305,7 +302,9 @@ export class History {
       uiContent: COMPACT_MESSAGE,
       type: 'message',
       timestamp: new Date().toISOString(),
-    });
+    };
+    this.messages = [summaryMessage];
+    await this.onMessage?.(summaryMessage);
     debug('Generated summary:', summary);
     return {
       compressed: true,
