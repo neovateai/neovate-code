@@ -16,7 +16,11 @@
     "lineEnding": "lf",
     "lineWidth": 80,
     "attributePosition": "auto",
-    "includes": ["**/*", "!browser/src/routeTree.gen.ts"]
+    "includes": [
+      "**/*",
+      "!browser/src/routeTree.gen.ts",
+      "!browser/src/global.css"
+    ]
   },
   "linter": {
     "enabled": true,
@@ -24,7 +28,8 @@
       "recommended": true,
       "style": {
         "useNodejsImportProtocol": "off"
-      }
+      },
+      "a11y": "off"
     }
   },
   "javascript": {
@@ -48,6 +53,24 @@
   "css": {
     "formatter": {
       "enabled": true
+    },
+    "parser": {
+      "cssModules": true
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["browser/src/**/*"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useExhaustiveDependencies": "off"
+          },
+          "suspicious": {
+            "noUnknownAtRules": "off"
+          }
+        }
+      }
+    }
+  ]
 }

@@ -200,6 +200,10 @@ async function runTask(task: Task, model: string): Promise<TaskResult> {
       task: TaskModule;
     };
 
+    if (taskModule.model) {
+      model = taskModule.model;
+    }
+
     const tmpPath = path.join(
       os.tmpdir(),
       `neovate-e2e-${normalizeTaskFilePath(task.taskFilePath)}`,
@@ -233,6 +237,7 @@ async function runTask(task: Task, model: string): Promise<TaskResult> {
       assistantMessages,
       result: resultItem?.content,
       isError: resultItem?.isError,
+      cwd: tmpPath,
     });
 
     const duration = Date.now() - startTime;
@@ -269,7 +274,9 @@ async function runAllTasks(
   filter: FilterOptions | null = null,
 ): Promise<TaskResult[]> {
   const allResults: TaskResult[] = [];
-  const fixtures = fs.readdirSync(fixturesDir);
+  const fixtures = fs
+    .readdirSync(fixturesDir)
+    .filter((fixture) => !fixture.startsWith('.'));
 
   // Filter fixtures if needed
   const filteredFixtures = filter?.fixtureName

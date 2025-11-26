@@ -1,57 +1,31 @@
-/**
- * MCP (Message Control Protocol) related type definitions
- */
+import type { McpServerItemConfig } from '@/state/mcp';
 
-// Basic MCP server configuration
-export interface McpServerConfig {
-  command?: string;
-  args?: string[];
-  url?: string;
-  type?: 'sse' | 'stdio';
-  env?: Record<string, string>;
-  scope?: 'global' | 'project';
+export interface McpServerWithStatus {
+  config: McpServerItemConfig;
+  status: 'pending' | 'connecting' | 'connected' | 'failed' | 'disconnected';
+  error?: string;
+  toolCount: number;
+  tools: string[];
+  scope: 'project' | 'global';
 }
 
-// MCP server instance for dropdown component
-export interface McpServer {
-  key: string;
-  name: string;
-  config: McpServerConfig;
-  installed: boolean;
-  scope: 'global' | 'project';
+export interface McpManagerData {
+  projectServers: Record<string, McpServerItemConfig>;
+  globalServers: Record<string, McpServerItemConfig>;
+  activeServers: Record<string, McpServerWithStatus>;
+  projectConfigPath: string;
+  globalConfigPath: string;
+  isReady: boolean;
+  isLoading: boolean;
 }
 
-// MCP server instance for manager component
-export interface McpManagerServer {
-  key: string;
-  name: string;
-  scope: 'global' | 'project';
-  command?: string;
-  args?: string[];
-  url?: string;
-  type?: 'sse' | 'stdio';
-  env?: Record<string, string>;
-  installed: boolean;
-}
-
-// Preset MCP service configuration
-export interface PresetMcpService {
-  key: string;
-  name: string;
-  description: string;
-  requiresApiKey?: boolean;
-  apiKeyLabel?: string;
-  apiKeyPlaceholder?: string;
-  config: {
-    name: string;
-    command: string;
-    args: string[];
-  };
+export interface McpScope {
+  scope: 'project' | 'global';
 }
 
 // JSON configuration format for adding services
 export interface JsonConfigFormat {
-  mcpServers?: Record<string, McpServerConfig>;
+  mcpServers?: Record<string, McpServerItemConfig>;
   name?: string;
   command?: string;
   args?: string[];
@@ -61,21 +35,6 @@ export interface JsonConfigFormat {
 }
 
 // Form values for adding MCP services
-export interface FormValues {
-  jsonConfig?: string;
-  name?: string;
-  command?: string;
-  args?: string;
-  url?: string;
-  transport?: 'sse' | 'stdio';
-  env?: string;
-}
-
-// Component props
-export interface McpDropdownProps {
-  loading?: boolean;
-}
-
 export interface McpManagerProps {
   visible: boolean;
   onClose: () => void;
@@ -90,20 +49,20 @@ export type McpTransportType = 'sse' | 'stdio';
 // API Response types
 export interface McpServersResponse {
   success: true;
-  servers: Record<string, McpServerConfig>;
+  servers: Record<string, McpServerItemConfig>;
   scope: 'global' | 'project';
 }
 
 export interface McpServerResponse {
   success: true;
-  server: McpServerConfig;
+  server: McpServerItemConfig;
   name: string;
 }
 
 export interface McpOperationResponse {
   success: true;
   message: string;
-  server?: McpServerConfig;
+  server?: McpServerItemConfig;
 }
 
 // API Request types
@@ -124,4 +83,38 @@ export interface UpdateMcpServerRequest {
   transport?: string;
   env?: string;
   global?: boolean;
+}
+
+// Hook types
+export interface UseMcpServerLoaderOptions {
+  onLoadError?: (error: Error) => void;
+  onToggleError?: (error: Error, serverName: string) => void;
+}
+
+export interface McpServiceItemProps {
+  server: McpServerItemConfig;
+  onToggle: (serverName: string, enabled: boolean, scope: string) => void;
+}
+
+// MCP configuration item for add form
+export interface McpConfigItem {
+  id: string;
+  scope: 'global' | 'project';
+  inputMode: 'json' | 'form';
+  name: string;
+  type: string;
+  command?: string;
+  args?: string;
+  url?: string;
+  env?: string;
+  jsonConfig?: string;
+}
+
+// MCP JSON Editor component props
+export interface McpJsonEditorProps {
+  value?: string;
+  onChange?: (value: string) => void;
+  placeholder?: string;
+  height?: string;
+  disabled?: boolean;
 }

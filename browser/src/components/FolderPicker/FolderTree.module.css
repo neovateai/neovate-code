@@ -1,0 +1,290 @@
+.folderTree {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: #fefefe;
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.refreshButton {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #6366f1;
+  transition: all 0.2s ease;
+}
+
+.refreshButton:hover {
+  background: rgba(99, 102, 241, 0.1);
+  transform: none;
+  box-shadow: none;
+}
+
+.folderList {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 16px 16px;
+}
+
+.folderList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.folderList::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+}
+
+.folderList::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.3) 0%,
+    rgba(139, 92, 246, 0.3) 100%
+  );
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.folderList::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.5) 0%,
+    rgba(139, 92, 246, 0.5) 100%
+  );
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 160px;
+  color: #6b7280;
+  text-align: center;
+  padding: 24px;
+}
+
+.emptyIcon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  opacity: 0.6;
+  color: #d1d5db;
+  background: linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 160px;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.02) 0%,
+    rgba(139, 92, 246, 0.02) 100%
+  );
+}
+
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 160px;
+  color: #ef4444;
+  padding: 24px;
+  text-align: center;
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.02) 0%,
+    rgba(248, 113, 113, 0.02) 100%
+  );
+  border-radius: 12px;
+  margin: 20px;
+}
+
+.errorIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #ef4444;
+  opacity: 0.8;
+}
+
+.errorMessage {
+  font-size: 15px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+  color: #374151;
+  font-weight: 500;
+}
+
+.retryButton {
+  font-size: 13px;
+  padding: 8px 20px;
+  height: auto;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border: none;
+  color: #fff;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.retryButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Search input style optimization */
+.searchInput .ant-input {
+  font-size: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  padding: 8px 16px;
+  height: 40px;
+  transition: all 0.2s ease;
+}
+
+.searchInput .ant-input:focus,
+.searchInput .ant-input-focused {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  background: #fff;
+}
+
+.searchInput .ant-input::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+/* Button style optimization */
+.refreshButton .anticon {
+  font-size: 14px;
+}
+
+/* Toolbar adaptation for mobile */
+@media (max-width: 768px) {
+  .toolbar {
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .searchInput .ant-input {
+    font-size: 14px;
+  }
+
+  .refreshButton {
+    width: 32px;
+    height: 32px;
+  }
+
+  .refreshButton .anticon {
+    font-size: 16px;
+  }
+
+  .folderList {
+    padding: 2px;
+  }
+
+  .emptyState {
+    min-height: 100px;
+    padding: 12px;
+  }
+
+  .emptyIcon {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+
+  .loading,
+  .error {
+    min-height: 100px;
+    padding: 12px;
+  }
+
+  .errorIcon {
+    font-size: 28px;
+  }
+
+  .errorMessage {
+    font-size: 13px;
+  }
+}
+
+/* Hide scrollbar on mobile */
+@media (max-width: 768px) {
+  .folderList {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+  }
+
+  .folderList::-webkit-scrollbar {
+    display: none; /* Chrome Safari */
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .toolbar {
+    border-bottom-color: #000;
+    background: #fff;
+  }
+
+  .emptyIcon {
+    color: #666;
+    opacity: 0.8;
+  }
+
+  .refreshButton:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .toolbar {
+    background: #141414;
+    border-bottom-color: #303030;
+  }
+
+  .emptyState {
+    color: #8c8c8c;
+  }
+
+  .emptyIcon {
+    color: #434343;
+  }
+
+  .refreshButton:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+}

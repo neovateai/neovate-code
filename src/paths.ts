@@ -17,6 +17,10 @@ interface MessageLogEntry {
 
 type LogEntry = ConfigLogEntry | MessageLogEntry;
 
+export function getGlobalDataPath(globalDir: string): string {
+  return path.join(globalDir, 'data.json');
+}
+
 export class Paths {
   globalConfigDir: string;
   globalProjectDir: string;
@@ -44,6 +48,9 @@ export class Paths {
   }
 
   getLatestSessionId() {
+    if (!fs.existsSync(this.globalProjectDir)) {
+      return undefined;
+    }
     const jsonlFileTimeStamps = fs
       .readdirSync(this.globalProjectDir)
       .filter((file) => file.endsWith('.jsonl'))
@@ -109,6 +116,10 @@ export class Paths {
       .slice(0, 50);
 
     return jsonlFiles;
+  }
+
+  getGlobalDataPath() {
+    return path.join(this.globalConfigDir, 'data.json');
   }
 }
 

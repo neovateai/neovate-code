@@ -2,6 +2,7 @@ import defu from 'defu';
 import fs from 'fs';
 import { homedir } from 'os';
 import path from 'pathe';
+import { mergeBrowserMcpServers } from './browser';
 import type { Provider } from './model';
 
 export type McpStdioServerConfig = {
@@ -23,7 +24,7 @@ export type McpHttpServerConfig = {
   disable?: boolean;
   headers?: Record<string, string>;
 };
-type McpServerConfig =
+export type McpServerConfig =
   | McpStdioServerConfig
   | McpSSEServerConfig
   | McpHttpServerConfig;
@@ -32,6 +33,8 @@ export type ApprovalMode = 'default' | 'autoEdit' | 'yolo';
 
 export type CommitConfig = {
   language: string;
+  systemPrompt?: string;
+  model?: string;
 };
 
 export type ProviderConfig = Partial<Omit<Provider, 'createModel'>>;
@@ -39,6 +42,7 @@ export type ProviderConfig = Partial<Omit<Provider, 'createModel'>>;
 export type Config = {
   model: string;
   planModel: string;
+  smallModel?: string;
   language: string;
   quiet: boolean;
   approvalMode: ApprovalMode;
@@ -58,6 +62,8 @@ export type Config = {
   outputStyle?: string;
   outputFormat?: 'text' | 'stream-json' | 'json';
   autoUpdate?: boolean;
+  browser?: boolean;
+  temperature?: number;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -71,11 +77,13 @@ const DEFAULT_CONFIG: Partial<Config> = {
   autoCompact: true,
   outputFormat: 'text',
   autoUpdate: true,
+  browser: false,
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
   'model',
   'planModel',
+  'smallModel',
   'systemPrompt',
   'todo',
   'autoCompact',
@@ -83,10 +91,18 @@ const VALID_CONFIG_KEYS = [
   'outputStyle',
   'autoUpdate',
   'provider',
+  'browser',
+  'temperature',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider'];
-const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact', 'autoUpdate'];
+const BOOLEAN_CONFIG_KEYS = [
+  'quiet',
+  'todo',
+  'autoCompact',
+  'autoUpdate',
+  'browser',
+];
 
 export class ConfigManager {
   globalConfig: Partial<Config>;
@@ -128,6 +144,13 @@ export class ConfigManager {
       defu(this.projectConfig, defu(this.globalConfig, DEFAULT_CONFIG)),
     ) as Config;
     config.planModel = config.planModel || config.model;
+    config.smallModel = config.smallModel || config.model;
+    if (config.browser) {
+      config.mcpServers = mergeBrowserMcpServers(
+        config.mcpServers,
+        config.browser,
+      );
+    }
     return config;
   }
 
@@ -283,7 +306,14 @@ export class ConfigManager {
 
       let newValue: any = value;
       if (BOOLEAN_CONFIG_KEYS.includes(key)) {
-        newValue = value === 'true';
+        if (typeof value === 'boolean') {
+          newValue = value;
+        } else {
+          newValue = value === 'true';
+        }
+      }
+      if (ARRAY_CONFIG_KEYS.includes(key)) {
+        newValue = JSON.parse(value);
       }
       if (OBJECT_CONFIG_KEYS.includes(key)) {
         newValue = JSON.parse(value);

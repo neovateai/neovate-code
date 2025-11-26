@@ -1,16 +1,17 @@
-import { setTraceProcessors } from '@openai/agents';
 import assert from 'assert';
 import { render } from 'ink';
 import React from 'react';
-import { runServerNext } from './commands/servernext/server';
+import { runTest } from './commands/__test';
+import { runServer } from './commands/server/server';
 import { Context } from './context';
+import { GlobalData } from './globalData';
 import { parseMcpConfig } from './mcp';
 import { DirectTransport } from './messageBus';
 import { NodeBridge } from './nodeBridge';
 import { Paths } from './paths';
 import { type Plugin, PluginHookType } from './plugin';
 import { Project } from './project';
-import { loadSessionMessages, Session, SessionConfigManager } from './session';
+import { loadSessionMessages, Session } from './session';
 import {
   isSlashCommand,
   parseSlashCommand,
@@ -40,6 +41,7 @@ type Argv = {
   quiet: boolean;
   continue?: boolean;
   version: boolean;
+  browser?: boolean;
   // string
   appendSystemPrompt?: string;
   approvalMode?: string;
@@ -49,6 +51,7 @@ type Argv = {
   outputFormat?: string;
   outputStyle?: string;
   planModel?: string;
+  smallModel?: string;
   resume?: string;
   systemPrompt?: string;
   // array
@@ -72,7 +75,7 @@ async function parseArgs(argv: any) {
       mcpConfig: [],
     },
     array: ['plugin', 'mcpConfig'],
-    boolean: ['help', 'mcp', 'quiet', 'continue', 'version'],
+    boolean: ['help', 'mcp', 'quiet', 'continue', 'version', 'browser'],
     string: [
       'appendSystemPrompt',
       'approvalMode',
@@ -83,12 +86,16 @@ async function parseArgs(argv: any) {
       'outputFormat',
       'outputStyle',
       'planModel',
+      'smallModel',
       'resume',
       'systemPrompt',
     ],
   }) as Argv;
   if (args.resume && args.continue) {
     throw new Error('Cannot use --resume and --continue at the same time');
+  }
+  if (args.model === '') {
+    throw new Error('Model cannot be empty string');
   }
   return args;
 }
@@ -108,9 +115,11 @@ Options:
   -h, --help                    Show help
   -m, --model <model>           Specify model to use
   --plan-model <model>          Specify a plan model for some tasks
+  --small-model <model>         Specify a small model for quick operations
   -r, --resume <session-id>     Resume a session
   -c, --continue                Continue the latest session
   -q, --quiet                   Quiet mode, non interactive
+  --browser                     Enable browser integration
   --cwd <path>                  Specify the working directory
   --system-prompt <prompt>      Custom system prompt for code agent
   --output-format <format>      Output format, text, stream-json, json
@@ -125,9 +134,11 @@ Examples:
 Commands:
   config                        Manage configuration
   commit                        Commit changes to the repository
+  log                           View session logs in HTML
   mcp                           Manage MCP servers
   run                           Run a command
   update                        Check for and apply updates
+  workspace                     Manage workspaces
     `.trimEnd(),
   );
 }
@@ -170,6 +181,21 @@ async function runQuiet(argv: Argv, context: Context) {
     if (argv.continue) {
       sessionId = context.paths.getLatestSessionId();
     }
+
+    await context.apply({
+      hook: 'telemetry',
+      args: [
+        {
+          name: 'send',
+          payload: {
+            message: input,
+            sessionId,
+          },
+        },
+      ],
+      type: PluginHookType.Parallel,
+    });
+
     const project = new Project({
       context,
       sessionId,
@@ -213,16 +239,17 @@ async function runInteractive(
       return argv.resume;
     }
     if (argv.continue) {
-      return paths.getLatestSessionId();
+      return paths.getLatestSessionId() || Session.createSessionId();
     }
     return Session.createSessionId();
   })();
   const [messages, history] = (() => {
     const logPath = paths.getSessionLogPath(sessionId);
     const messages = loadSessionMessages({ logPath });
-    // Get history from session config
-    const sessionConfigManager = new SessionConfigManager({ logPath });
-    const history = sessionConfigManager.config.history || [];
+    const globalData = new GlobalData({
+      globalDataPath: paths.getGlobalDataPath(),
+    });
+    const history = globalData.getProjectHistory({ cwd });
     return [messages, history];
   })();
   const initialPrompt = String(argv._[0] || '');
@@ -256,8 +283,6 @@ export async function runNeovate(opts: {
   plugins: Plugin[];
   upgrade?: UpgradeOptions;
 }) {
-  // clear tracing
-  setTraceProcessors([]);
   const argv = await parseArgs(process.argv.slice(2));
   const cwd = argv.cwd || process.cwd();
 
@@ -271,6 +296,7 @@ export async function runNeovate(opts: {
     argvConfig: {
       model: argv.model,
       planModel: argv.planModel,
+      smallModel: argv.smallModel,
       quiet: argv.quiet,
       outputFormat: argv.outputFormat,
       plugins: argv.plugin,
@@ -280,25 +306,41 @@ export async function runNeovate(opts: {
       outputStyle: argv.outputStyle,
       approvalMode: argv.approvalMode,
       mcpServers,
+      browser: argv.browser,
     },
     plugins: opts.plugins,
   };
 
   // sub commands
   const command = argv._[0];
-  if (command === 'servernext') {
-    await runServerNext({
+  if (command === 'server') {
+    await runServer({
+      cwd,
       contextCreateOpts,
     });
     return;
   }
-  const validCommands = ['config', 'commit', 'mcp', 'run', 'server', 'update'];
+  const validCommands = [
+    '__test',
+    'config',
+    'commit',
+    'mcp',
+    'log',
+    'run',
+    'server',
+    'update',
+    'workspace',
+  ];
   if (validCommands.includes(command)) {
     const context = await Context.create({
       cwd,
       ...contextCreateOpts,
     });
     switch (command) {
+      case '__test': {
+        await runTest(context);
+        break;
+      }
       case 'config': {
         const { runConfig } = await import('./commands/config');
         await runConfig(context);
@@ -307,6 +349,11 @@ export async function runNeovate(opts: {
       case 'mcp': {
         const { runMCP } = await import('./commands/mcp');
         await runMCP(context);
+        break;
+      }
+      case 'log': {
+        const { runLog } = await import('./commands/log');
+        await runLog(context);
         break;
       }
       case 'run': {
@@ -322,6 +369,11 @@ export async function runNeovate(opts: {
       case 'update': {
         const { runUpdate } = await import('./commands/update');
         await runUpdate(context, opts.upgrade);
+        break;
+      }
+      case 'workspace': {
+        const { runWorkspace } = await import('./commands/workspace');
+        await runWorkspace(context);
         break;
       }
       default:

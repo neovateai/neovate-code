@@ -3,11 +3,11 @@ import { Button } from 'antd';
 import { createStyles } from 'antd-style';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { UIUserMessage } from '@/types/message';
-import { renderContextTag } from '../ChatSender/SenderHeader';
+import type { Message } from '@/types/chat';
+import SenderComponent from '../ChatSender/SenderComponent';
 
 interface UserMessageFooterProps {
-  message: UIUserMessage;
+  message: Message;
 }
 
 const useStyle = createStyles(({ css }) => {
@@ -16,11 +16,20 @@ const useStyle = createStyles(({ css }) => {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      max-width: 800px;
+      max-width: 70%;
+      margin-left: auto;
       row-gap: 6px;
     `,
     button: css`
       font-size: 12px;
+      color: #8b8b8b;
+      padding: 2px 8px;
+      height: auto;
+
+      &:hover {
+        color: #110c22;
+        background: rgba(246, 248, 251, 0.5);
+      }
     `,
     itemsContainer: css`
       display: flex;
@@ -48,10 +57,15 @@ const UserMessageFooter = memo<UserMessageFooterProps>((props) => {
   }, []);
 
   const contextTags = useMemo(() => {
-    return (
-      attachedContexts?.map((contextItem) => renderContextTag(contextItem)) ||
-      null
-    );
+    return attachedContexts?.map((contextItem, index) => (
+      <SenderComponent.ContextTag
+        key={index}
+        label={contextItem.displayText}
+        value={contextItem.value}
+        context={contextItem.context}
+        contextType={contextItem.type}
+      />
+    ));
   }, [attachedContexts]);
 
   const buttonText = useMemo(() => {
@@ -86,7 +100,5 @@ const UserMessageFooter = memo<UserMessageFooterProps>((props) => {
     </div>
   );
 });
-
-UserMessageFooter.displayName = 'UserMessageFooter';
 
 export default UserMessageFooter;

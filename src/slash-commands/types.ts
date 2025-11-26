@@ -23,13 +23,13 @@ export interface LocalJSXCommand extends BaseSlashCommand {
   call(
     onDone: (result: string | null) => void,
     context: Context,
+    args?: string,
   ): Promise<React.ReactNode>;
 }
 
 export interface PromptCommand extends BaseSlashCommand {
   type: 'prompt';
-  argNames?: string[];
-  progressMessage: string;
+  progressMessage?: string;
   model?: string;
   getPromptForCommand(
     args: string,

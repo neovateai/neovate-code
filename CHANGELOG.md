@@ -1,3 +1,284 @@
+## 0.18.1
+
+`2025-11-25`
+
+- feat: add claude-opus-4-5 model support and update model aliases by [@sorrycc](https://github.com/sorrycc)
+- fix(ui): fix indentation issues caused by special characters by [@QuietlyChan](https://github.com/QuietlyChan) in [#452](https://github.com/umijs/takumi/pull/452)
+- feat(log): add cross-platform support to open generated HTML log files by [@QuietlyChan](https://github.com/QuietlyChan) in [#443](https://github.com/umijs/takumi/pull/443)
+- fix: reset selected index when suggestions change by [@Rongjianying](https://github.com/Rongjianying) in [#448](https://github.com/umijs/takumi/pull/448)
+- feat: add wanqing provider support to thinking configuration by [@阿平](https://github.com/阿平) in [#440](https://github.com/umijs/takumi/pull/440)
+- fix: add pnpmfile hooks to downgrade string-width 8.x to 7.2.0 for compatibility by [@阿平](https://github.com/阿平) in [#439](https://github.com/umijs/takumi/pull/439)
+- feat: add cerebras provider support with glm-4.6 and gpt-oss-120b models by [@sorrycc](https://github.com/sorrycc)
+- Revert "fix: pin string-width version to 7.2.0 to resolve ink compatibility issue " by [@sorrycc](https://github.com/sorrycc) in [#437](https://github.com/umijs/takumi/pull/437)
+- fix: pin string-width version to 7.2.0 to resolve ink compatibility issue by [@阿平](https://github.com/阿平) in [#437](https://github.com/umijs/takumi/pull/437)
+- feat: add project.workspaces.get handler and rename list handler by [@sorrycc](https://github.com/sorrycc)
+- fix: remove qwen3-coder model from providers map by [@sorrycc](https://github.com/sorrycc)
+- dep: update clipboardy from 5.0.0 to 5.0.1 and glob from 11.0.3 to 13.0.0 by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.18.0
+
+`2025-11-20`
+
+- feat: add /add-dir command for managing additional working directories by [@阿平](https://github.com/阿平) in [#429](https://github.com/umijs/takumi/pull/429)
+- feat: add grok-4.1-fast model and xai provider configuration by [@sorrycc](https://github.com/sorrycc)
+- fix: integrate aihubmix provider to resolve Claude usage errors by [@unknown_](https://github.com/unknown_) in [#433](https://github.com/umijs/takumi/pull/433)
+- refactor: extract queue processing scheduling into dedicated method by [@阿平](https://github.com/阿平) in [#435](https://github.com/umijs/takumi/pull/435)
+- feat: add context slash command to analyze token usage breakdown, Close #379 by [@sorrycc](https://github.com/sorrycc)
+- feat: add sessionId and cwd to message bus events in nodeBridge by [@sorrycc](https://github.com/sorrycc)
+- refactor(store): Optimize type definitions and code structure by [@QuietlyChan](https://github.com/QuietlyChan) in [#434](https://github.com/umijs/takumi/pull/434)
+- feat: allow commit.model to override main model for commit generation by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.17.3
+
+`2025-11-19`
+
+- feat: add openai compatible provider and gemini 3 pro preview model support by [@sorrycc](https://github.com/sorrycc)
+- refactor(browser): optimize tool message processing using map lookup by [@阿平](https://github.com/阿平) in [#432](https://github.com/umijs/takumi/pull/432)
+- feat: pass attachments from context state to send message action by [@Z-Bokle](https://github.com/Z-Bokle) in [#359](https://github.com/umijs/takumi/pull/359)
+- feat(browser): extract a standalone slash command menu by [@Z-Bokle](https://github.com/Z-Bokle) in [#358](https://github.com/umijs/takumi/pull/358)
+- feat(browser): message loading & fix side bar scroll flashing by [@thy](https://github.com/thy) in [#357](https://github.com/umijs/takumi/pull/357)
+- feat(browser): add toolResultPart2ToToolResultPart converter by [@阿平](https://github.com/阿平) in [#430](https://github.com/umijs/takumi/pull/430)
+- feat: add workspace nodebridge handlers and test ui with react conversion by [@sorrycc](https://github.com/sorrycc)
+- feat: add project info handlers and test command for browser UI by [@sorrycc](https://github.com/sorrycc)
+- fix: trim and clean commit message output by [@sorrycc](https://github.com/sorrycc)
+- feat: add support for anthropic models with openrouter provider by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.17.2
+
+`2025-11-17`
+
+- feat: add tool description length limit with environment variable configuration by [@sorrycc](https://github.com/sorrycc)
+- feat: add custom headers to OpenRouter provider configuration by [@sorrycc](https://github.com/sorrycc)
+- feat: add sherlock dash alpha and sherlock think alpha models with openrouter provider support by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.17.1
+
+`2025-11-14`
+
+- fix: remove duplicate and incorrect model entries by [@sorrycc](https://github.com/sorrycc)
+- feat: add minimax provider by [@unknown_](https://github.com/unknown_) in [#424](https://github.com/umijs/takumi/pull/424)
+- fix: remove ':free' suffix from minimax model name by [@sorrycc](https://github.com/sorrycc)
+- feat: add support for GPT-5.1 models by [@sorrycc](https://github.com/sorrycc)
+- feat: remove polaris-alpha model and provider mapping by [@sorrycc](https://github.com/sorrycc)
+- fix: force UI re-render on fork by adding forkCounter to component keys by [@sorrycc](https://github.com/sorrycc)
+- feat: add active message highlighting and UUID badges to log viewer by [@sorrycc](https://github.com/sorrycc)
+- feat: make user messages clickable in log viewer with minimal details panel by [@sorrycc](https://github.com/sorrycc)
+- fix: remove messages length from Static component key to prevent re-renders by [@sorrycc](https://github.com/sorrycc)
+- refactor: remove redundant forkParentUuid null assignment comment by [@sorrycc](https://github.com/sorrycc)
+- fix: chain messages correctly when adding multiple messages in sequence by [@阿平](https://github.com/阿平) in [#423](https://github.com/umijs/takumi/pull/423)
+- feat: implement fork modal message filtering and loading state by [@sorrycc](https://github.com/sorrycc)
+- fix: update gitignore and messages component key prop by [@sorrycc](https://github.com/sorrycc)
+- feat: implement api key round-robin rotation with utility function by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.17.0
+
+`2025-11-12`
+
+- feat: add log command to view session logs in HTML by [@sorrycc](https://github.com/sorrycc)
+- feat: add spec:save-design slash command to save brainstorming sessions as design documents by [@sorrycc](https://github.com/sorrycc)
+- feat: enhance log command with tool details and optimized request loading by [@sorrycc](https://github.com/sorrycc)
+- Merge branch 'workspace/log-command' by [@sorrycc](https://github.com/sorrycc)
+- feat: add log command to view session logs in HTML format by [@sorrycc](https://github.com/sorrycc)
+- feat: add anthropic prompt caching for sonnet and opus models by @chencheng (云谦) in [#421](https://github.com/umijs/takumi/pull/421)
+- fix: remove plan model display in status line by [@sorrycc](https://github.com/sorrycc)
+- feat: show plan model in status line when configured by [@sorrycc](https://github.com/sorrycc)
+- feat: change queued messages edit shortcut from up to option+up by [@sorrycc](https://github.com/sorrycc)
+- feat: add temperature configuration to app by @chencheng (云谦) in [#419](https://github.com/umijs/takumi/pull/419)
+- feat: add periodic background check with interval-based monitoring by [@阿平](https://github.com/阿平) in [#413](https://github.com/umijs/takumi/pull/413)
+- refactor: improve image paste handling and code quality in useTextInput by [@阿平](https://github.com/阿平) in [#412](https://github.com/umijs/takumi/pull/412)
+
+
+## 0.16.0
+
+`2025-11-07`
+
+- fix: use expanded message content in user message display by [@阿平](https://github.com/阿平) in [#415](https://github.com/umijs/takumi/pull/415)
+- fix(browser): width exceeds and horizontal scrollbar appears by [@Cloudyan](https://github.com/Cloudyan) in [#414](https://github.com/umijs/takumi/pull/414)
+- feat: add polaris-alpha model with 256k context and multimodal support by [@sorrycc](https://github.com/sorrycc)
+- feat: add kimi-k2-thinking and kimi-k2-thinking-turbo models by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename biome:format script to format by @chencheng (云谦) in [#409](https://github.com/umijs/takumi/pull/409)
+- feat: add safe JSON parsing for tool call inputs by [@阿平](https://github.com/阿平) in [#408](https://github.com/umijs/takumi/pull/408)
+- feat: add language switching support to review command by @chencheng (云谦) in [#407](https://github.com/umijs/takumi/pull/407)
+- style: clean up console error message formatting in workspace complete command by [@sorrycc](https://github.com/sorrycc)
+- feat: allow workspace complete command to run from root directory by @chencheng (云谦) in [#406](https://github.com/umijs/takumi/pull/406)
+- feat: add language switching support to spec commands by @chencheng (云谦) in [#405](https://github.com/umijs/takumi/pull/405)
+- feat: add session ID display to status line by [@阿平](https://github.com/阿平) in [#403](https://github.com/umijs/takumi/pull/403)
+- fix: add background prompt cleanup when bash commands complete by [@阿平](https://github.com/阿平) in [#402](https://github.com/umijs/takumi/pull/402)
+- feat: add message normalization for compacting chat history by [@阿平](https://github.com/阿平) in [#393](https://github.com/umijs/takumi/pull/393)
+- refactor: use configManager.projectConfig instead of context.config by [@YK菌](https://github.com/YK菌) in [#399](https://github.com/umijs/takumi/pull/399)
+- feat: add brainstorm mode by @chencheng (云谦) in [#398](https://github.com/umijs/takumi/pull/398)
+- feat: add error handling for model initialization and display in UI by @chencheng (云谦) in [#397](https://github.com/umijs/takumi/pull/397)
+- feat: add golden border for high thinking effort with priority over mode colors by @chencheng (云谦) in [#396](https://github.com/umijs/takumi/pull/396)
+- fix: remove spaces from MCP tool names by [@阿平](https://github.com/阿平) in [#392](https://github.com/umijs/takumi/pull/392)
+- refactor: update model handling and thinking config integration by [@sorrycc](https://github.com/sorrycc)
+- feat(commit): add staged file list to commit message prompt by [@sorrycc](https://github.com/sorrycc)
+- feat: add interactive bash background execution prompt with ctrl+b shortcut by [@阿平](https://github.com/阿平) in [#367](https://github.com/umijs/takumi/pull/367)
+- feat: add /bug command for GitHub issue reporting by [@Din](https://github.com/Din) in [#390](https://github.com/umijs/takumi/pull/390)
+- feat: add incomplete tool use detection and handling on session cancel by [@阿平](https://github.com/阿平) in [#374](https://github.com/umijs/takumi/pull/374)
+
+
+## 0.15.0
+
+`2025-11-02`
+
+- feat: add thinking status UI with Ctrl+. toggle and model-based initialization by @chencheng (云谦) in [#388](https://github.com/umijs/takumi/pull/388)
+- feat: add smallModel config and quickQuery utility for fast operations by @chencheng (云谦) in [#372](https://github.com/umijs/takumi/pull/372)
+- feat: update metadata path with product name in workspace by [@阿平](https://github.com/阿平) in [#371](https://github.com/umijs/takumi/pull/371)
+- fix: handle tool_result type in history parsing and improve error messages by [@sorrycc](https://github.com/sorrycc)
+- fix: add validation for empty summary response in compact function by [@阿平](https://github.com/阿平) in [#368](https://github.com/umijs/takumi/pull/368)
+- feat: workspace command by @chencheng (云谦) in [#366](https://github.com/umijs/takumi/pull/366)
+- feat: add toolChoice option to doStream call by [@sorrycc](https://github.com/sorrycc)
+- fix: handle empty responses and improve error data fallback by [@sorrycc](https://github.com/sorrycc)
+- style: update exit hint UI with dimmed separator and bold text by [@sorrycc](https://github.com/sorrycc)
+- feat: outputStyle glob supports symbolic links by [@Cloudyan](https://github.com/Cloudyan) in [#360](https://github.com/umijs/takumi/pull/360)
+- feat: add retry with exponential backoff for API errors by @chencheng (云谦) in [#361](https://github.com/umijs/takumi/pull/361)
+- fix: add error handling to request logging and stream results by [@sorrycc](https://github.com/sorrycc)
+- fix: move variable initialization and API call inside try block by [@sorrycc](https://github.com/sorrycc)
+- feat: log raw LLM API requests and responses by [@sorrycc](https://github.com/sorrycc)
+- refactor: remove openai agents dependencies and update tool handling by [@sorrycc](https://github.com/sorrycc)
+- feat: display actual username instead of hardcoded 'user' and improve ui by [@sorrycc](https://github.com/sorrycc)
+- feat: add bash command execution with ! prefix by [@阿平](https://github.com/阿平) in [#349](https://github.com/umijs/takumi/pull/349)
+- feat: improve markdown renderer by @chencheng (云谦) in [#356](https://github.com/umijs/takumi/pull/356)
+- feat: add background task management for long-running bash commands by [@阿平](https://github.com/阿平) in [#355](https://github.com/umijs/takumi/pull/355)
+- feat: add minimax-m2 model by [@sorrycc](https://github.com/sorrycc)
+- fix: image reading and processing by [@sorrycc](https://github.com/sorrycc)
+- fix: token counting logic by [@sorrycc](https://github.com/sorrycc)
+- feat(browser): add loading state and fix env display issues in MCP manager[AI] by [@YK菌](https://github.com/YK菌) in [#354](https://github.com/umijs/takumi/pull/354)
+- feat: update terminal title only for early conversation messages by [@阿平](https://github.com/阿平) in [#345](https://github.com/umijs/takumi/pull/345)
+- feat: native function call by @chencheng (云谦) in [#352](https://github.com/umijs/takumi/pull/352)
+- refactor(browser): update mcp dropdown and manager components by [@阿平](https://github.com/阿平) in [#346](https://github.com/umijs/takumi/pull/346)
+- fix: prevent slash commands from starting with /* comment syntax by [@sorrycc](https://github.com/sorrycc)
+- feat: add limit parameter to grep tool for controlling result count by [@阿平](https://github.com/阿平) in [#344](https://github.com/umijs/takumi/pull/344)
+- fix: update property names for event handling and token usage by [@阿平](https://github.com/阿平) in [#343](https://github.com/umijs/takumi/pull/343)
+- feat: handle gemini model image data without url validation by [@阿平](https://github.com/阿平) in [#341](https://github.com/umijs/takumi/pull/341)
+- feat: add commit.systemPrompt config by @chencheng (云谦) in [#342](https://github.com/umijs/takumi/pull/342)
+- fix: merge consecutive system messages by [@阿平](https://github.com/阿平) in [#340](https://github.com/umijs/takumi/pull/340)
+- fix: replace function call syntax with chat method calls in providers by [@阿平](https://github.com/阿平) in [#339](https://github.com/umijs/takumi/pull/339)
+- feat: increase ripgrep timeout from 10s to 20s by [@阿平](https://github.com/阿平) in [#338](https://github.com/umijs/takumi/pull/338)
+- dep: upgrade to ai 5 by @chencheng (云谦) in [#337](https://github.com/umijs/takumi/pull/337)
+- feat: support server mode by [@阿平](https://github.com/阿平) in [#301](https://github.com/umijs/takumi/pull/301)
+- refactor: remove git commit step from write-plan template by [@阿平](https://github.com/阿平) in [#331](https://github.com/umijs/takumi/pull/331)
+- feat: add fallback to extract tool name from name tag when tool_name is empty by [@阿平](https://github.com/阿平) in [#329](https://github.com/umijs/takumi/pull/329)
+- fix: @ suggestion is laggy in large codebase by [@sorrycc](https://github.com/sorrycc)
+- feat: add cursor editor support to external editor candidates by [@阿平](https://github.com/阿平) in [#327](https://github.com/umijs/takumi/pull/327)
+
+
+## 0.14.0
+
+`2025-10-16`
+
+- feat: add claude-haiku-4-5 model support by [@sorrycc](https://github.com/sorrycc)
+- fix: The provider VolcEngine issue by [@Wu Changming](https://github.com/Wu Changming) in [#319](https://github.com/umijs/takumi/pull/319)
+- fix: LSTool.execute result by [@Cloudyan](https://github.com/Cloudyan) in [#325](https://github.com/umijs/takumi/pull/325)
+- feat: add spec commands for brainstorming, planning, and execution by [@sorrycc](https://github.com/sorrycc)
+- feat: increase context and output limits for model by [@阿平](https://github.com/阿平) in [#324](https://github.com/umijs/takumi/pull/324)
+- feat(quiet): add telemetry hook to track messages with session id by [@阿平](https://github.com/阿平) in [#316](https://github.com/umijs/takumi/pull/316)
+- feat: implement conversation forking by @chencheng (云谦) in [#312](https://github.com/umijs/takumi/pull/312)
+- fix: handle missing global project directory in getLatestSessionId by [@sorrycc](https://github.com/sorrycc)
+- feat: add ZenMux provider with InclusionAI model support by [@明城](https://github.com/明城) in [#309](https://github.com/umijs/takumi/pull/309)
+- refactor: replace console.error with debug logging for directory access errors by [@阿平](https://github.com/阿平) in [#311](https://github.com/umijs/takumi/pull/311)
+- feat: filterMessages support fork by [@sorrycc](https://github.com/sorrycc)
+- refactor: update chat input layout and border styling by [@sorrycc](https://github.com/sorrycc)
+- feat: update global memory label to use dynamic product name by [@阿平](https://github.com/阿平) in [#308](https://github.com/umijs/takumi/pull/308)
+
+
+## 0.13.0
+
+`2025-10-10`
+
+- feat: add filename and dimensions to image paste placeholders by [@afc163](https://github.com/afc163) in [#296](https://github.com/umijs/takumi/pull/296)
+- feat: add ctrl-g external editor support for prompt editing by @chencheng (云谦) in [#307](https://github.com/umijs/takumi/pull/307)
+- fix: post-process chrome-devtools-mcp bundle to replace console.error call by [@sorrycc](https://github.com/sorrycc)
+- fix: update bundleMcps script to handle .mjs files and add browser module support by [@阿平](https://github.com/阿平) in [#306](https://github.com/umijs/takumi/pull/306)
+- fix: handle undefined provider env in getProviderApiKey by [@sorrycc](https://github.com/sorrycc)
+- feat: add empty apiKey field to copilot provider configuration by [@阿平](https://github.com/阿平) in [#305](https://github.com/umijs/takumi/pull/305)
+- Revert "feat: filter models by available API keys and improve documentation (…" by [@afc163](https://github.com/afc163) in [#304](https://github.com/umijs/takumi/pull/304)
+- feat: filter models by available API keys and improve documentation by [@Derek](https://github.com/Derek) in [#297](https://github.com/umijs/takumi/pull/297)
+- Merge branch 'sorrycc/chrome-devtools-mcp' by [@sorrycc](https://github.com/sorrycc)
+- feat: add browser integration with chrome-devtools-mcp support by [@sorrycc](https://github.com/sorrycc)
+- refactor: improve ignore pattern handling and add global gitignore support by [@sorrycc](https://github.com/sorrycc)
+- refactor: simplify user message detection and optimize at normalization by [@阿平](https://github.com/阿平) in [#300](https://github.com/umijs/takumi/pull/300)
+- feat: add glm-4.6 model support by [@sorrycc](https://github.com/sorrycc)
+- feat: support nested directory structure in command name extraction by [@阿平](https://github.com/阿平) in [#281](https://github.com/umijs/takumi/pull/281)
+- feat: update login command to use PaginatedGroupSelectInput by @chencheng (云谦) in [#303](https://github.com/umijs/takumi/pull/303)
+- feat: add memory rule submission with session message logging by [@sorrycc](https://github.com/sorrycc)
+- feat: add delete key handling and improve escape key behavior in text input components [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: support memory mode [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add support for JSON output styles and improve error handling by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.12.7
+
+`2025-10-02`
+
+- refactor: reorganize nodeBridge handlers and improve mcp status functionality [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: rename message bus handlers to use hierarchical naming convention [AI] by [@sorrycc](https://github.com/sorrycc)
+- feat: add glm-4.5-air and glm-4.5-flash models with zai-coding-plan and zhipuai providers, Close #291 by [@sorrycc](https://github.com/sorrycc)
+- fix: ensure auth file directory exists before writing by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.12.6
+
+`2025-10-01`
+
+- feat: add GLM-4.6 model with enhanced context and output limits by [@sorrycc](https://github.com/sorrycc)
+- feat: add github copilot provider with login/logout support by [@sorrycc](https://github.com/sorrycc)
+- feat: add claude-4-5-sonnet model with updated capabilities and limits by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.12.5
+
+`2025-09-29`
+
+- feat: add deepseek-v3-2-exp model and update provider mappings by [@sorrycc](https://github.com/sorrycc)
+- feat: add model command disable hint and validate model arg, Close #293, Close #292 by [@sorrycc](https://github.com/sorrycc)
+- fix: replace tab characters with spaces and use strict equality operators by [@阿平](https://github.com/阿平) in [#294](https://github.com/umijs/takumi/pull/294)
+- feat: add kimi-k2-0905-preview model to moonshot providers by [@阿平](https://github.com/阿平) in [#299](https://github.com/umijs/takumi/pull/299)
+- feat: add VolcEngine provider support by [@zy520](https://github.com/zy520) in [#288](https://github.com/umijs/takumi/pull/288)
+- feat: add beep utility function to emit terminal bell sound by [@sorrycc](https://github.com/sorrycc)
+- refactor: make progressMessage optional in PromptCommand by [@sorrycc](https://github.com/sorrycc)
+- refactor: lazy load yargs-parser in command modules by [@阿平](https://github.com/阿平) in [#286](https://github.com/umijs/takumi/pull/286)
+- feat: add gemini 2.5 flash preview 2025 09 model and provider support by [@sorrycc](https://github.com/sorrycc)
+- fix: prevent normal turns from being terminated when tool execution is denied by [@阿平](https://github.com/阿平) in [#284](https://github.com/umijs/takumi/pull/284)
+- feat: clear message history when generating summary by [@阿平](https://github.com/阿平) in [#285](https://github.com/umijs/takumi/pull/285)
+- refactor: remove unused session history tracking and related handlers by [@sorrycc](https://github.com/sorrycc)
+- feat: implement global data storage for project history across sessions [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: make model id comparison case-insensitive by [@阿平](https://github.com/阿平) in [#283](https://github.com/umijs/takumi/pull/283)
+- feat: add apiEnv support and default id/name for providers by [@sorrycc](https://github.com/sorrycc)
+- <|begin_of_box|>docs: update npm badges to use shields.io<|end_of_box|> [AI] by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.12.4
+
+`2025-09-26`
+
+- feat: add beep utility function to emit terminal bell sound by [@sorrycc](https://github.com/sorrycc)
+- refactor: make progressMessage optional in PromptCommand by [@sorrycc](https://github.com/sorrycc)
+- refactor: lazy load yargs-parser in command modules by [@阿平](https://github.com/阿平) in [#286](https://github.com/umijs/takumi/pull/286)
+- feat: add gemini 2.5 flash preview 2025 09 model and provider support by [@sorrycc](https://github.com/sorrycc)
+- fix: prevent normal turns from being terminated when tool execution is denied by [@阿平](https://github.com/阿平) in [#284](https://github.com/umijs/takumi/pull/284)
+- feat: clear message history when generating summary by [@阿平](https://github.com/阿平) in [#285](https://github.com/umijs/takumi/pull/285)
+- refactor: remove unused session history tracking and related handlers by [@sorrycc](https://github.com/sorrycc)
+- feat: implement global data storage for project history across sessions [AI] by [@sorrycc](https://github.com/sorrycc)
+- refactor: make model id comparison case-insensitive by [@阿平](https://github.com/阿平) in [#283](https://github.com/umijs/takumi/pull/283)
+- feat: add apiEnv support and default id/name for providers by [@sorrycc](https://github.com/sorrycc)
+- <|begin_of_box|>docs: update npm badges to use shields.io<|end_of_box|> [AI] by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.12.3
+
+`2025-09-24`
+
+- feat: add SiliconFlow and SiliconFlow CN provider support by [@Pan YANG](https://github.com/Pan YANG) in [#279](https://github.com/umijs/takumi/pull/279)
+- feat: add glm-4.5v model and providers by [@sorrycc](https://github.com/sorrycc)
+- feat: add deepseek-v3-1-terminus model and provider mapping by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.12.2
 
 `2025-09-24`

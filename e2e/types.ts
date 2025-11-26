@@ -4,6 +4,8 @@ export type TaskModule = {
     assistantMessages: any[];
     result: string;
     isError: boolean;
+    cwd: string;
   }) => void;
   cliArgs: string[];
+  model?: string;
 };

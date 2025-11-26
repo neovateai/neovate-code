@@ -3,9 +3,11 @@ import SelectInput from 'ink-select-input';
 import React, { useCallback } from 'react';
 import { ActivityIndicator } from './ActivityIndicator';
 import { ApprovalModal } from './ApprovalModal';
+import { BackgroundPrompt } from './BackgroundPrompt';
 import { ChatInput } from './ChatInput';
 import { Debug } from './Debug';
 import { ExitHint } from './ExitHint';
+import { ForkModal } from './ForkModal';
 import { Markdown } from './Markdown';
 import { Messages } from './Messages';
 import { QueueDisplay } from './QueueDisplay';
@@ -67,16 +69,65 @@ function PlanResult() {
 }
 
 export function App() {
-  const { forceRerender, forceUpdate } = useTerminalRefresh();
+  const { forceRerender } = useTerminalRefresh();
+  const {
+    forkModalVisible,
+    messages,
+    fork,
+    hideForkModal,
+    forkParentUuid,
+    forkCounter,
+    bridge,
+    sessionId,
+    cwd,
+  } = useAppStore();
+  const [forkMessages, setForkMessages] = React.useState<any[]>([]);
+  const [forkLoading, setForkLoading] = React.useState(false);
+  React.useEffect(() => {
+    if (!forkModalVisible) return;
+    if (!bridge || !cwd || !sessionId) {
+      setForkMessages([]);
+      return;
+    }
+    setForkLoading(true);
+    (async () => {
+      try {
+        const res = await bridge.request('session.messages.list', {
+          cwd,
+          sessionId,
+        });
+        setForkMessages(res.data?.messages || []);
+      } catch (_e) {
+        setForkMessages([]);
+      } finally {
+        setForkLoading(false);
+      }
+    })();
+  }, [forkModalVisible, bridge, cwd, sessionId]);
   return (
-    <Box flexDirection="column" key={forceRerender}>
+    <Box
+      flexDirection="column"
+      key={`${forceRerender}-${forkParentUuid}-${forkCounter}`}
+    >
       <Messages />
+      <BackgroundPrompt />
       <PlanResult />
       <ActivityIndicator />
       <QueueDisplay />
       <ChatInput />
       <SlashCommandJSX />
       <ApprovalModal />
+      {forkModalVisible && (
+        <ForkModal
+          messages={forkMessages as any}
+          onSelect={(uuid) => {
+            fork(uuid);
+          }}
+          onClose={() => {
+            hideForkModal();
+          }}
+        />
+      )}
       <ExitHint />
       <Debug />
     </Box>

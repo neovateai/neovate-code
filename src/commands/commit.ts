@@ -5,14 +5,15 @@ import {
 } from 'child_process';
 import clipboardy from 'clipboardy';
 import pc from 'picocolors';
-import yargsParser from 'yargs-parser';
 import type { Context } from '../context';
 import { query } from '../query';
 import * as logger from '../utils/logger';
+import { type ModelInfo, resolveModelWithContext } from '../model';
 
 interface GenerateCommitMessageOpts {
   prompt: string;
   language?: string;
+  systemPrompt?: string;
   context: Context;
 }
 
@@ -32,23 +33,48 @@ function escapeShellArg(arg: string): string {
 
 async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
   const language = opts.language ?? 'English';
+  const systemPrompt = opts.systemPrompt ?? createCommitSystemPrompt(language);
+
+  let model: ModelInfo | undefined;
+  if (opts.context.config.commit?.model) {
+    const resolved = await resolveModelWithContext(
+      opts.context.config.commit.model,
+      opts.context,
+    );
+    model = resolved.model || undefined;
+  }
+
   const result = await query({
     userPrompt: opts.prompt,
-    systemPrompt: createCommitSystemPrompt(language),
+    systemPrompt,
     context: opts.context,
+    model,
   });
-  const message = result.success ? result.data.text : null;
+  let message = result.success ? result.data.text : null;
   if (typeof message !== 'string') {
     throw new Error('Commit message is not a string');
   }
+  message = message.trim();
+  message = message.replace(/^```/, '').replace(/```$/, '');
+  message = message.trim();
   return message;
 }
 
 async function generateBranchName(opts: GenerateBranchNameOpts) {
+  let model: ModelInfo | undefined;
+  if (opts.context.config.commit?.model) {
+    const resolved = await resolveModelWithContext(
+      opts.context.config.commit.model,
+      opts.context,
+    );
+    model = resolved.model || undefined;
+  }
+
   const result = await query({
     userPrompt: opts.commitMessage,
     systemPrompt: createBranchSystemPrompt(),
     context: opts.context,
+    model,
   });
   const branchName = result.success ? result.data.text : null;
   if (typeof branchName !== 'string') {
@@ -92,6 +118,7 @@ Examples:
 }
 
 export async function runCommit(context: Context) {
+  const { default: yargsParser } = await import('yargs-parser');
   const argv = yargsParser(process.argv.slice(2), {
     alias: {
       stage: 's',
@@ -194,6 +221,8 @@ export async function runCommit(context: Context) {
     );
   }
 
+  const fileList = await getStagedFileList();
+
   let repoStyle = '';
   if (argv.followStyle) {
     try {
@@ -214,7 +243,7 @@ Please follow a similar style for this commit message while still adhering to th
   }
 
   // Generate the commit message
-  const model = context.config.model;
+  const model = context.config.commit?.model || context.config.model;
   logger.logInfo(`Using model: ${model}`);
   let message = '';
   let attempts = 0;
@@ -224,12 +253,16 @@ Please follow a similar style for this commit message while still adhering to th
       const stop = logger.spinThink({ productName: context.productName });
       message = await generateCommitMessage({
         prompt: `
+# Staged files:
+${fileList}
+
 # Diffs:
 ${diff}
 ${repoStyle}
       `,
         context,
         language: context.config.commit?.language ?? context.config.language,
+        systemPrompt: context.config.commit?.systemPrompt,
       });
       stop();
       checkCommitMessage(message, argv.ai);
@@ -615,6 +648,17 @@ function checkCommitMessage(message: string, hasAiSuffix = false) {
   // }
   if (message.length === 0) {
     throw new Error('Commit message is empty');
+  }
+}
+
+async function getStagedFileList() {
+  try {
+    const fileList = execSync('git diff --cached --name-status', {
+      encoding: 'utf-8',
+    });
+    return fileList.trim();
+  } catch (error: any) {
+    return '';
   }
 }
 

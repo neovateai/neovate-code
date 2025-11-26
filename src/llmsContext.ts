@@ -12,6 +12,7 @@ export type LlmsContextCreateOpts = {
   context: Context;
   sessionId: string;
   userPrompt: string | null;
+  additionalDirectories?: string[];
 };
 
 export class LlmsContext {
@@ -36,12 +37,12 @@ export class LlmsContext {
         cwd: opts.context.cwd,
         productName: opts.context.productName,
       });
-      const result = (await LSTool.execute({ dir_path: '.' })) as any;
-      if (result.success) {
+      const result = await LSTool.execute({ dir_path: '.' });
+      if (result) {
         llmsContext.directoryStructure = `
-${result.message}
+${result.returnDisplay}
 <directory_structure>
-${result.data}
+${result.llmContent}
 </directory_structure>
         `.trim();
       }
@@ -82,6 +83,11 @@ ${Object.entries(llmsContext)
 
     let llmsEnv = {
       'Working directory': opts.context.cwd,
+      ...(opts.additionalDirectories &&
+        opts.additionalDirectories.length > 0 && {
+          'Additional working directories':
+            opts.additionalDirectories.join(', '),
+        }),
       'Is directory a git repo': gitStatus ? 'YES' : 'NO',
       Platform: platform,
       "Today's date": new Date().toLocaleDateString(),

@@ -1,11 +1,14 @@
-import { isZodObject } from '@openai/agents/utils';
+import type { LanguageModelV2FunctionTool } from '@ai-sdk/provider';
 import path from 'pathe';
-import type { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import * as z from 'zod';
 import type { Context } from './context';
 import type { ImagePart, TextPart } from './message';
 import { resolveModelWithContext } from './model';
-import { createBashTool } from './tools/bash';
+import {
+  createBashOutputTool,
+  createBashTool,
+  createKillBashTool,
+} from './tools/bash';
 import { createEditTool } from './tools/edit';
 import { createFetchTool } from './tools/fetch';
 import { createGlobTool } from './tools/glob';
@@ -39,7 +42,11 @@ export async function resolveTools(opts: ResolveToolsOpts) {
     ? [
         createWriteTool({ cwd }),
         createEditTool({ cwd }),
-        createBashTool({ cwd }),
+        createBashTool({
+          cwd,
+          backgroundTaskManager: opts.context.backgroundTaskManager,
+          messageBus: opts.context.messageBus,
+        }),
       ]
     : [];
   const todoTools = (() => {
@@ -49,8 +56,24 @@ export async function resolveTools(opts: ResolveToolsOpts) {
     });
     return [todoReadTool, todoWriteTool];
   })();
+  const backgroundTools = opts.write
+    ? [
+        createBashOutputTool({
+          backgroundTaskManager: opts.context.backgroundTaskManager,
+        }),
+        createKillBashTool({
+          backgroundTaskManager: opts.context.backgroundTaskManager,
+        }),
+      ]
+    : [];
   const mcpTools = await getMcpTools(opts.context);
-  return [...readonlyTools, ...writeTools, ...todoTools, ...mcpTools];
+  return [
+    ...readonlyTools,
+    ...writeTools,
+    ...todoTools,
+    ...backgroundTools,
+    ...mcpTools,
+  ];
 }
 
 async function getMcpTools(context: Context): Promise<Tool[]> {
@@ -92,110 +115,78 @@ export class Tools {
         isError: true,
       };
     }
-    // @ts-expect-error
-    const result = validateToolParams(tool.parameters, args);
-    if (!result.success) {
-      return {
-        llmContent: `Invalid tool parameters: ${result.error}`,
-        isError: true,
-      };
-    }
+    // // @ts-expect-error
+    // const result = validateToolParams(tool.parameters, args);
+    // if (!result.success) {
+    //   return {
+    //     llmContent: `Invalid tool parameters: ${result.error}`,
+    //     isError: true,
+    //   };
+    // }
     let argsObj: any;
     try {
       argsObj = JSON.parse(args);
     } catch (error) {
       return {
-        llmContent: `Invalid tool parameters: ${error}`,
+        llmContent: `Tool parameters parse failed: ${error}`,
         isError: true,
       };
     }
     return await tool.execute(argsObj);
   }
 
-  getToolsPrompt() {
-    const availableTools = `
-  ${Object.entries(this.tools)
-    .map(([key, tool]) => {
+  toLanguageV2Tools(): LanguageModelV2FunctionTool[] {
+    return Object.entries(this.tools).map(([key, tool]) => {
       // parameters of mcp tools is not zod object
-      const schema = isZodObject(tool.parameters)
-        ? zodToJsonSchema(tool.parameters)
-        : tool.parameters;
-      return `
-<tool>
-<name>${key}</name>
-<description>${tool.description}</description>
-<input_json_schema>${JSON.stringify(schema)}</input_json_schema>
-</tool>
-  `.trim();
-    })
-    .join('\n')}
-  `;
-    return `
-# TOOLS
-
-You only have access to the tools provided below. You can only use one tool per message, and will receive the result of that tool use in the user's response. You use tools step-by-step to accomplish a given task, with each tool use informed by the result of the previous tool use.
-
-## Tool Use Formatting
-
-**CRITICAL: Always close all XML tags properly.**
-**CRITICAL: Ensure valid JSON in arguments with proper escaping.**
-
-Tool use is formatted using XML-style tags. The tool use is enclosed in <use_tool></use_tool> and Parameters are enclosed within <arguments></arguments> tags as valid JSON.
-
-Description: Tools have defined input schemas that specify required and optional parameters.
-
-Parameters:
-- tool_name: (required) The name of the tool to execute
-- arguments: (required) A JSON object containing the tool's input parameters, following the tool's input schema, quotes within string must be properly escaped, ensure it's valid JSON
-
-Usage:
-<use_tool>
-  <tool_name>tool name here</tool_name>
-  <arguments>
-    {"param1": "value1","param2": "value2 "escaped string""}
-  </arguments>
-</use_tool>
-
-When using tools, the tool use must be placed at the end of your response, top level, and not nested within other tags. Do not call tools when you don't have enough information.
-
-Always adhere to this format for the tool use to ensure proper parsing and execution.
-
-**Before submitting: Double-check that every < has a matching > and every <tag> has a </tag>**
-
-## Available Tools
-
-${availableTools}
-    `;
-  }
-}
-
-function validateToolParams(schema: z.ZodObject<any>, params: string) {
-  try {
-    if (isZodObject(schema)) {
-      const parsedParams = JSON.parse(params);
-      const result = schema.safeParse(parsedParams);
-      if (!result.success) {
-        return {
-          success: false,
-          error: `Parameter validation failed: ${result.error.message}`,
-        };
-      }
+      const isMCP = key.startsWith('mcp__');
+      const schema = isMCP ? tool.parameters : z.toJSONSchema(tool.parameters);
+      // some providers have a limit on the description length, so we need to truncate it
+      // e.g. megallm.io has a limit of 1024 characters
+      const limit = process.env.TOOL_DESCRIPTION_LIMIT
+        ? Math.floor(parseInt(process.env.TOOL_DESCRIPTION_LIMIT, 10))
+        : 0;
+      const desc =
+        limit > 0 && tool.description.length > limit
+          ? tool.description.slice(0, limit - 3) + '...'
+          : tool.description;
       return {
-        success: true,
-        message: 'Tool parameters validated successfully',
+        type: 'function',
+        name: key,
+        description: desc,
+        inputSchema: schema,
+        providerOptions: {},
       };
-    }
-    return {
-      success: true,
-      message: 'Tool parameters validated successfully',
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error,
-    };
+    });
   }
 }
+
+// function validateToolParams(schema: z.ZodObject<any>, params: string) {
+//   try {
+//     if (isZodObject(schema)) {
+//       const parsedParams = JSON.parse(params);
+//       const result = schema.safeParse(parsedParams);
+//       if (!result.success) {
+//         return {
+//           success: false,
+//           error: `Parameter validation failed: ${result.error.message}`,
+//         };
+//       }
+//       return {
+//         success: true,
+//         message: 'Tool parameters validated successfully',
+//       };
+//     }
+//     return {
+//       success: true,
+//       message: 'Tool parameters validated successfully',
+//     };
+//   } catch (error) {
+//     return {
+//       success: false,
+//       error: error,
+//     };
+//   }
+// }
 
 export type ToolUse = {
   name: string;
@@ -209,14 +200,20 @@ export type ToolUseResult = {
   approved: boolean;
 };
 
-export interface Tool<T = any> {
+export interface Tool<TSchema extends z.ZodTypeAny = z.ZodTypeAny> {
   name: string;
   description: string;
-  getDescription?: ({ params, cwd }: { params: T; cwd: string }) => string;
+  getDescription?: ({
+    params,
+    cwd,
+  }: {
+    params: z.output<TSchema>;
+    cwd: string;
+  }) => string;
   displayName?: string;
-  execute: (params: T) => Promise<ToolResult> | ToolResult;
+  execute: (params: z.output<TSchema>) => Promise<ToolResult> | ToolResult;
   approval?: ToolApprovalInfo;
-  parameters: z.ZodSchema<T>;
+  parameters: TSchema;
 }
 
 type ApprovalContext = {
@@ -252,13 +249,15 @@ type DiffViewerReturnDisplay = {
   [key: string]: any;
 };
 
+export type ReturnDisplay =
+  | string
+  | DiffViewerReturnDisplay
+  | TodoReadReturnDisplay
+  | TodoWriteReturnDisplay;
+
 export type ToolResult = {
   llmContent: string | (TextPart | ImagePart)[];
-  returnDisplay?:
-    | string
-    | DiffViewerReturnDisplay
-    | TodoReadReturnDisplay
-    | TodoWriteReturnDisplay;
+  returnDisplay?: ReturnDisplay;
   isError?: boolean;
 };
 
@@ -266,16 +265,16 @@ export function createTool<TSchema extends z.ZodTypeAny>(config: {
   name: string;
   description: string;
   parameters: TSchema;
-  execute: (params: z.infer<TSchema>) => Promise<ToolResult> | ToolResult;
+  execute: (params: z.output<TSchema>) => Promise<ToolResult> | ToolResult;
   approval?: ToolApprovalInfo;
   getDescription?: ({
     params,
     cwd,
   }: {
-    params: z.infer<TSchema>;
+    params: z.output<TSchema>;
     cwd: string;
   }) => string;
-}): Tool<z.infer<TSchema>> {
+}): Tool<TSchema> {
   return {
     name: config.name,
     description: config.description,

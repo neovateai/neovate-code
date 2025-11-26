@@ -2,8 +2,10 @@ import fs from 'fs';
 import { createJiti } from 'jiti';
 import path from 'pathe';
 import resolve from 'resolve';
+import { BackgroundTaskManager } from './backgroundTaskManager';
 import { type Config, ConfigManager } from './config';
 import { MCPManager } from './mcp';
+import type { MessageBus } from './messageBus';
 import { Paths } from './paths';
 import {
   type Plugin,
@@ -22,6 +24,8 @@ type ContextOpts = {
   paths: Paths;
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
+  backgroundTaskManager: BackgroundTaskManager;
+  messageBus?: MessageBus;
 };
 
 export type ContextCreateOpts = {
@@ -31,6 +35,7 @@ export type ContextCreateOpts = {
   version: string;
   argvConfig: Record<string, any>;
   plugins: (string | Plugin)[];
+  messageBus?: MessageBus;
 };
 
 export class Context {
@@ -41,8 +46,10 @@ export class Context {
   config: Config;
   paths: Paths;
   #pluginManager: PluginManager;
-  #argvConfig: Record<string, any>;
+  argvConfig: Record<string, any>;
   mcpManager: MCPManager;
+  backgroundTaskManager: BackgroundTaskManager;
+  messageBus?: MessageBus;
 
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
@@ -53,7 +60,9 @@ export class Context {
     this.paths = opts.paths;
     this.mcpManager = opts.mcpManager;
     this.#pluginManager = opts.pluginManager;
-    this.#argvConfig = opts.argvConfig;
+    this.argvConfig = opts.argvConfig;
+    this.backgroundTaskManager = opts.backgroundTaskManager;
+    this.messageBus = opts.messageBus;
   }
 
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {
@@ -122,6 +131,7 @@ export class Context {
       ...opts.argvConfig.mcpServers,
     };
     const mcpManager = MCPManager.create(mcpServers);
+    const backgroundTaskManager = new BackgroundTaskManager();
     return new Context({
       cwd,
       productName,
@@ -132,6 +142,8 @@ export class Context {
       config: resolvedConfig,
       paths,
       mcpManager,
+      backgroundTaskManager,
+      messageBus: opts.messageBus,
     });
   }
 }

@@ -27,7 +27,7 @@ const OutputStyleSelect: React.FC<OutputStyleSelectProps> = ({
   >([]);
 
   useEffect(() => {
-    bridge.request('getOutputStyles', { cwd }).then((result) => {
+    bridge.request('outputStyles.list', { cwd }).then((result) => {
       setCurrentOutputStyle(result.data.currentOutputStyle);
       setSelectItems(
         result.data.outputStyles.map((style: any) => ({
@@ -74,7 +74,7 @@ const OutputStyleSelect: React.FC<OutputStyleSelectProps> = ({
           itemsPerPage={10}
           onSelect={(item) => {
             bridge
-              .request('setConfig', {
+              .request('config.set', {
                 cwd,
                 isGlobal: false,
                 key: 'outputStyle',

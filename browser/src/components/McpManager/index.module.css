@@ -1,0 +1,280 @@
+/* McpManager - Consolidated CSS Module */
+.modal :global(.ant-modal-content) {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 0 43.3px 13px rgba(100, 99, 119, 0.12);
+  border: none;
+  overflow: hidden;
+  width: 640px !important;
+  max-width: 640px !important;
+  height: 635px !important;
+  padding: 0;
+}
+
+.modal :global(.ant-modal-header) {
+  background: #ffffff;
+  border-bottom: none;
+  padding: 24px 24px 0 24px;
+  margin: 0;
+}
+
+.modal :global(.ant-modal-title) {
+  color: #110c22;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+  font-family: "PingFang SC", sans-serif;
+}
+
+.modal :global(.ant-modal-body) {
+  padding: 24px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  height: 535px;
+  overflow: hidden;
+}
+
+.modal :global(.ant-modal-close) {
+  top: 24px;
+  right: 24px;
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.modal :global(.ant-modal-close:hover) {
+  color: #374151;
+}
+
+.modal :global(.ant-modal-close .ant-modal-close-x) {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.modal :global(.ant-modal-footer) {
+  border-top: none;
+  padding: 0 24px 24px 24px;
+  text-align: right;
+  margin: 0;
+}
+
+/* Pagination container */
+.paginationContainer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 16px 24px;
+  background: #ffffff;
+  border-top: 1px solid #f0f0f0;
+  margin-top: auto;
+}
+
+.paginationContainer :global(.ant-pagination) {
+  margin: 0;
+}
+
+/* Empty state */
+.emptyState {
+  padding: 20px;
+  color: #999999;
+  text-align: center;
+}
+
+.emptyStateSubtitle {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.serviceName {
+  display: inline-block;
+  color: #252931;
+  font-family: "PingFang SC";
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+/* Tag styles */
+.tagEnabled {
+  opacity: 1;
+}
+
+.tagDisabled {
+  opacity: 0.5;
+}
+
+/* Config text styles */
+.configCode {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Footer button styles - Based on Figma design */
+.modal :global(.ant-btn) {
+  height: 32px;
+  border-radius: 26px;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 5px 15px;
+  border: 1px solid #dcdde0;
+  background: #ffffff;
+  color: #110c22;
+  transition: all 0.2s;
+  font-family: "PingFang SC", sans-serif;
+}
+
+.modal :global(.ant-btn:hover) {
+  border-color: #bcbdc0;
+}
+
+.modal :global(.ant-btn-primary) {
+  background: #110c22;
+  border-color: #110c22;
+  color: #ffffff;
+  padding: 6px 16px;
+}
+
+.modal :global(.ant-btn-primary:hover) {
+  background: #110c22 !important;
+  border-color: #110c22 !important;
+  color: #ffffff !important;
+}
+
+.modal :global(.ant-btn-primary:focus) {
+  background: #110c22 !important;
+  border-color: #110c22 !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+}
+
+.modal :global(.ant-btn-primary:active) {
+  background: #110c22 !important;
+  border-color: #110c22 !important;
+  color: #ffffff !important;
+}
+
+.modal :global(.ant-btn:focus) {
+  box-shadow: none !important;
+}
+
+.modal :global(.ant-btn:active) {
+  box-shadow: none !important;
+}
+
+/* Additional overrides for potential blue styling */
+.modal :global(.ant-btn-primary:hover:not(:disabled)) {
+  background: #110c22 !important;
+  border-color: #110c22 !important;
+}
+
+.modal :global(.ant-btn-primary):not(:disabled):hover {
+  background: #110c22 !important;
+  border-color: #110c22 !important;
+}
+
+/* Specific add button styling */
+.modal :global(.mcp-add-button) {
+  background: #110c22 !important;
+  border-color: #110c22 !important;
+  color: #ffffff !important;
+}
+
+.modal :global(.mcp-add-button:hover) {
+  background: #110c22 !important;
+  border-color: #110c22 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.modal :global(.mcp-add-button:focus) {
+  background: #110c22 !important;
+  border-color: #110c22 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.modal :global(.mcp-add-button:active) {
+  background: #110c22 !important;
+  border-color: #110c22 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* Action link styling */
+.actionLink {
+  color: #7357ff;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  font-family: "PingFang SC", sans-serif;
+}
+
+.actionLink:hover {
+  color: #5d47e6;
+  text-decoration: none;
+}
+
+.actionLink:active {
+  color: #4c3dd4;
+}
+
+.actionDisabled {
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
+  opacity: 0.5;
+}
+
+.actionDisabled:hover {
+  color: #9ca3af !important;
+}
+
+/* Popconfirm styles for better text wrapping */
+.modal :global(.ant-popover-inner) {
+  max-width: 280px;
+}
+
+.modal :global(.ant-popover-message) {
+  margin-bottom: 8px;
+}
+
+.modal :global(.ant-popover-message-title) {
+  font-size: 14px;
+  font-weight: 500;
+  color: #262626;
+  line-height: 1.4;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+.modal :global(.ant-popconfirm-description) {
+  font-size: 12px;
+  color: #595959;
+  line-height: 1.4;
+  word-wrap: break-word;
+  white-space: normal;
+  margin-top: 4px;
+}

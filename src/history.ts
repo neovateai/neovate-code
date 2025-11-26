@@ -1,18 +1,19 @@
 import type {
-  AgentInputItem,
-  AssistantMessageItem,
-  SystemMessageItem,
-  UserMessageItem,
-} from '@openai/agents';
+  LanguageModelV2Message,
+  LanguageModelV2ToolResultPart,
+} from '@ai-sdk/provider';
 import createDebug from 'debug';
 import { COMPACT_MESSAGE, compact } from './compact';
 import { MIN_TOKEN_THRESHOLD } from './constants';
-import type { Message, NormalizedMessage } from './message';
+import type {
+  Message,
+  NormalizedMessage,
+  ToolResultPart2,
+  UserContent,
+} from './message';
 import type { ModelInfo } from './model';
-import type { ToolResult } from './tool';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
-import { safeStringify } from './utils/safeStringify';
 
 export type OnMessage = (message: NormalizedMessage) => Promise<void>;
 export type HistoryOpts = {
@@ -43,79 +44,144 @@ export class History {
     await this.onMessage?.(normalizedMessage);
   }
 
-  toAgentInput(): AgentInputItem[] {
-    return this.messages.map((message) => {
+  getMessagesToUuid(uuid: string): NormalizedMessage[] {
+    // Build a map for O(1) lookups
+    const messageMap = new Map<string, NormalizedMessage>();
+    for (const message of this.messages) {
+      messageMap.set(message.uuid, message);
+    }
+
+    // Find the target message
+    const targetMessage = messageMap.get(uuid);
+    if (!targetMessage) {
+      // Target doesn't exist, return empty array
+      return [];
+    }
+
+    // Walk backward from target to root
+    const pathUuids = new Set<string>();
+    let current: NormalizedMessage | undefined = targetMessage;
+    while (current) {
+      pathUuids.add(current.uuid);
+      if (current.parentUuid === null) break;
+      const parent = messageMap.get(current.parentUuid);
+      if (!parent) break;
+      current = parent;
+    }
+
+    // Filter messages to keep only those in the path, maintaining order
+    return this.messages.filter((msg) => pathUuids.has(msg.uuid));
+  }
+
+  toLanguageV2Messages(): LanguageModelV2Message[] {
+    return this.messages.map((message: NormalizedMessage) => {
       if (message.role === 'user') {
-        const content = (() => {
-          let content: any = message.content;
-          if (!Array.isArray(content)) {
-            content = [
-              {
-                type: 'input_text',
-                text: content,
-              },
-            ];
-          }
-          content = content.flatMap((part: any) => {
-            if (part.type === 'tool_result') {
-              const result = part.result as ToolResult;
-              const llmContent = result.llmContent;
-              const formatText = (text: string) => {
-                return {
-                  type: 'input_text',
-                  text: `[${part.name} for ${safeStringify(part.input)}] result: \n<function_results>\n${text}\n</function_results>`,
-                };
-              };
-              if (typeof llmContent === 'string') {
-                return formatText(llmContent);
-              } else {
-                return llmContent.map((part) => {
-                  if (part.type === 'text') {
-                    return formatText(part.text);
-                  } else {
-                    return {
-                      type: 'input_image',
-                      image: part.data,
-                      providerData: { mime_type: part.mimeType },
-                    };
-                  }
-                });
-              }
-            } else if (part.type === 'text') {
-              return [{ type: 'input_text', text: part.text }];
+        const content = message.content as UserContent;
+        if (typeof content === 'string') {
+          return {
+            role: 'user',
+            content: [{ type: 'text', text: content }],
+          } as LanguageModelV2Message;
+        } else {
+          const normalizedContent = content.map((part: any) => {
+            if (part.type === 'text') {
+              return { type: 'text', text: part.text };
             } else if (part.type === 'image') {
-              return [
-                {
-                  type: 'input_image',
-                  image: part.data,
-                  providerData: { mime_type: part.mimeType },
-                },
-              ];
+              const isBase64 = part.data.includes(';base64,');
+              const data = isBase64
+                ? part.data.split(';base64,')[1]
+                : part.data;
+              return {
+                type: 'file',
+                data,
+                mediaType: part.mimeType,
+              };
+            } else if (part.type === 'tool_result') {
+              // Compatible with old message format
+              return part;
             } else {
-              return [part];
+              throw new Error(
+                `Not implemented with type: ${part.type} of role: user`,
+              );
             }
           });
-          return content;
-        })();
-        return {
-          role: 'user',
-          content,
-        } as UserMessageItem;
+          return {
+            role: 'user',
+            content: normalizedContent,
+          } as LanguageModelV2Message;
+        }
       } else if (message.role === 'assistant') {
-        return {
-          role: 'assistant',
-          content: [
-            {
-              type: 'output_text',
-              text: message.text,
-            },
-          ],
-        } as AssistantMessageItem;
+        if (typeof message.content === 'string') {
+          return {
+            role: 'assistant',
+            content: [{ type: 'text', text: message.content }],
+          } as LanguageModelV2Message;
+        } else {
+          const normalizedContent = message.content.map((part: any) => {
+            if (part.type === 'text') {
+              return { type: 'text', text: part.text };
+            } else if (part.type === 'reasoning') {
+              return { type: 'reasoning', text: part.text };
+            } else if (part.type === 'tool_use') {
+              return {
+                type: 'tool-call',
+                toolCallId: part.id,
+                toolName: part.name,
+                input: part.input,
+              };
+            } else {
+              throw new Error(
+                `Not implemented with type: ${part.type} of role: assistant`,
+              );
+            }
+          });
+          return {
+            role: 'assistant',
+            content: normalizedContent,
+          } as LanguageModelV2Message;
+        }
       } else if (message.role === 'system') {
         return {
           role: 'system',
           content: message.content,
-        } as SystemMessageItem;
+        };
+      } else if (message.role === 'tool') {
+        return {
+          role: 'tool',
+          content: message.content.map((part: ToolResultPart2) => {
+            const llmContent = part.result.llmContent;
+            const output = (() => {
+              if (typeof llmContent === 'string') {
+                return { type: 'text', value: llmContent };
+              } else if (Array.isArray(llmContent)) {
+                return {
+                  type: 'content',
+                  value: llmContent.map((part) => {
+                    if (part.type === 'text') {
+                      return { type: 'text', value: part.text };
+                    } else if (part.type === 'image') {
+                      const isBase64 = part.data.includes(';base64,');
+                      const data = isBase64
+                        ? part.data.split(';base64,')[1]
+                        : part.data;
+                      return { type: 'media', data, mediaType: part.mimeType };
+                    } else {
+                      throw new Error(
+                        `Not implemented with type: ${(part as any).type} of role: tool`,
+                      );
+                    }
+                  }),
+                };
+              }
+            })();
+            return {
+              type: 'tool-result',
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              output,
+            };
+          }) as LanguageModelV2ToolResultPart[],
+        } as LanguageModelV2Message;
       } else {
         throw new Error(`Unsupported message role: ${message}.`);
       }
@@ -227,7 +293,8 @@ export class History {
     if (!summary || summary.trim().length === 0) {
       throw new Error('Generated summary is empty');
     }
-    this.onMessage?.({
+
+    const summaryMessage: NormalizedMessage = {
       parentUuid: null,
       uuid: randomUUID(),
       role: 'user',
@@ -235,7 +302,9 @@ export class History {
       uiContent: COMPACT_MESSAGE,
       type: 'message',
       timestamp: new Date().toISOString(),
-    });
+    };
+    this.messages = [summaryMessage];
+    await this.onMessage?.(summaryMessage);
     debug('Generated summary:', summary);
     return {
       compressed: true,

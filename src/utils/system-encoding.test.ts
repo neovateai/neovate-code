@@ -17,6 +17,7 @@ describe('system-encoding', () => {
   let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    // @ts-ignore
     consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     resetEncodingCache();
     vi.clearAllMocks();

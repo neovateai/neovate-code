@@ -1,10 +1,13 @@
 import { Box, Static, Text } from 'ink';
 import pc from 'picocolors';
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import type {
   AssistantMessage,
   NormalizedMessage,
+  ReasoningPart,
+  TextPart,
   ToolMessage,
+  ToolMessage2,
   ToolResultPart,
   ToolUsePart,
   UserMessage,
@@ -13,6 +16,9 @@ import {
   getMessageText,
   isCanceledMessage,
   isToolResultMessage,
+  isUserBashCommandMessage,
+  isUserBashOutputMessage,
+  toolResultPart2ToToolResultPart,
 } from '../message';
 import { SPACING, UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
@@ -28,20 +34,207 @@ interface EnrichedProvider {
   hasApiKey?: boolean;
 }
 
+function BashCommandMessage({ message }: { message: UserMessage }) {
+  const command = useMemo(() => {
+    if (typeof message.content !== 'string') return '';
+    return message.content.replace(/<\/?bash-input>/g, '');
+  }, [message.content]);
+  return (
+    <Box
+      flexDirection="column"
+      marginTop={SPACING.MESSAGE_MARGIN_TOP}
+      marginLeft={SPACING.MESSAGE_MARGIN_LEFT_USER}
+    >
+      <Box>
+        <Text color={UI_COLORS.CHAT_BORDER_BASH} bold>
+          !{' '}
+        </Text>
+        <Text bold color={UI_COLORS.TOOL}>
+          {command}
+        </Text>
+      </Box>
+    </Box>
+  );
+}
+
+function BashOutputMessage({ message }: { message: NormalizedMessage }) {
+  const isError = useMemo(() => {
+    if (typeof message.content !== 'string') return false;
+    return message.content.startsWith('<bash-stderr>');
+  }, [message.content]);
+
+  const output = useMemo(() => {
+    if (message.uiContent) {
+      return message.uiContent.replace(/^\n/, '');
+    }
+    if (typeof message.content !== 'string') return '';
+    return message.content
+      .replace(/<\/?bash-stdout>/g, '')
+      .replace(/<\/?bash-stderr>/g, '');
+  }, [message.content, message.uiContent]);
+
+  return (
+    <Box flexDirection="column" marginLeft={SPACING.MESSAGE_MARGIN_LEFT_USER}>
+      <Text color={isError ? UI_COLORS.ERROR : UI_COLORS.TOOL_RESULT}>
+        ↳ {output}
+      </Text>
+    </Box>
+  );
+}
+
+type ToolPair = {
+  toolUse: ToolUsePart;
+  toolResult?: ToolResultPart;
+};
+
+export function splitMessages(messages: NormalizedMessage[]): {
+  completedMessages: NormalizedMessage[];
+  pendingMessages: NormalizedMessage[];
+} {
+  // 1. Find the last assistant message with tool_use from the end
+  let lastToolUseIndex = -1;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg.role === 'assistant' && Array.isArray(msg.content)) {
+      const hasToolUse = msg.content.some((part) => part.type === 'tool_use');
+      if (hasToolUse) {
+        lastToolUseIndex = i;
+        break;
+      }
+    }
+  }
+
+  // 2. If no tool_use found, all messages go to Static
+  if (lastToolUseIndex === -1) {
+    return { completedMessages: messages, pendingMessages: [] };
+  }
+
+  // 3. Get all tool_use ids from the last assistant message
+  const assistantMsg = messages[lastToolUseIndex] as AssistantMessage;
+  if (typeof assistantMsg.content === 'string') {
+    return { completedMessages: messages, pendingMessages: [] };
+  }
+  const toolUseIds = assistantMsg.content
+    .filter(
+      (p: TextPart | ReasoningPart | ToolUsePart) => p.type === 'tool_use',
+    )
+    .map((p: TextPart | ReasoningPart | ToolUsePart) => (p as ToolUsePart).id);
+
+  // 4. Collect all tool results after this message
+  const toolResults = new Set<string>();
+  for (let i = lastToolUseIndex + 1; i < messages.length; i++) {
+    const msg = messages[i];
+    // Handle new format: role: 'tool'
+    if (msg.role === 'tool') {
+      (msg as ToolMessage2).content.forEach((part) => {
+        if (part.toolCallId) {
+          toolResults.add(part.toolCallId);
+        }
+      });
+    }
+    // Handle legacy format: role: 'user' with isToolResult
+    else if (msg.role === 'user' && isToolResultMessage(msg)) {
+      const toolMsg = msg as ToolMessage;
+      if (toolMsg.content[0]) {
+        toolResults.add(toolMsg.content[0].id);
+      }
+    }
+  }
+
+  // 5. Check if all tools are completed
+  const allToolsCompleted = toolUseIds.every((id) => toolResults.has(id));
+
+  if (allToolsCompleted) {
+    return { completedMessages: messages, pendingMessages: [] };
+  } else {
+    return {
+      completedMessages: messages.slice(0, lastToolUseIndex),
+      pendingMessages: messages.slice(lastToolUseIndex),
+    };
+  }
+}
+
+export function pairToolsWithResults(
+  assistantMsg: AssistantMessage,
+  subsequentMessages: NormalizedMessage[],
+): ToolPair[] {
+  // Extract all tool_use parts
+  if (typeof assistantMsg.content === 'string') {
+    return [];
+  }
+  const toolUses = assistantMsg.content.filter(
+    (p: TextPart | ReasoningPart | ToolUsePart) => p.type === 'tool_use',
+  ) as ToolUsePart[];
+
+  // Collect all tool results indexed by toolCallId
+  const resultsMap = new Map<string, ToolResultPart>();
+  for (const msg of subsequentMessages) {
+    // Handle new format: role: 'tool'
+    if (msg.role === 'tool') {
+      (msg as ToolMessage2).content.forEach((part) => {
+        resultsMap.set(part.toolCallId, toolResultPart2ToToolResultPart(part));
+      });
+    }
+    // Handle legacy format: role: 'user' with isToolResult
+    else if (msg.role === 'user' && isToolResultMessage(msg)) {
+      const toolMsg = msg as ToolMessage;
+      if (toolMsg.content[0]) {
+        const part = toolMsg.content[0];
+        resultsMap.set(part.id, part);
+      }
+    }
+  }
+
+  // Pair each tool_use with its result (if available)
+  return toolUses.map((toolUse) => ({
+    toolUse,
+    toolResult: resultsMap.get(toolUse.id),
+  }));
+}
+
 export function Messages() {
-  const { messages, productName, sessionId } = useAppStore();
+  const { userName, messages, productName, sessionId, forkCounter } =
+    useAppStore();
+
+  // Split messages into completed and pending
+  const { completedMessages, pendingMessages } = useMemo(
+    () => splitMessages(messages as NormalizedMessage[]),
+    [messages],
+  );
+
   return (
     <Box flexDirection="column">
-      <Static key={sessionId} items={['header', ...messages] as any[]}>
+      {/* Static area - completed messages */}
+      <Static
+        key={`${sessionId}-${forkCounter}`}
+        items={['header', ...completedMessages] as any[]}
+      >
         {(item, index) => {
           if (item === 'header') {
-            return <Header key={'header'} />;
+            return <Header key="header" />;
           }
           return (
-            <Message key={index} message={item} productName={productName} />
+            <MessageGroup
+              key={index}
+              message={item}
+              messages={completedMessages}
+              productName={productName}
+              userName={userName}
+            />
           );
         }}
       </Static>
+
+      {/* Dynamic area - pending messages */}
+      {pendingMessages.map((message, index) => (
+        <MessageGroup
+          key={`pending-${message.uuid || index}`}
+          message={message}
+          messages={pendingMessages}
+          productName={productName}
+          userName={userName}
+        />
+      ))}
     </Box>
   );
 }
@@ -75,7 +268,7 @@ function ProductInfo() {
 }
 
 function GettingStartedTips() {
-  const { productName } = useAppStore();
+  const { productName, initializeModelError } = useAppStore();
   return (
     <Box flexDirection="column" marginTop={1}>
       <Text>Tips to getting started:</Text>
@@ -90,6 +283,11 @@ function GettingStartedTips() {
       <Text>
         4. <Text bold>/help</Text> for more information
       </Text>
+      {initializeModelError && (
+        <Box marginTop={1}>
+          <Text color="red">⚠ {initializeModelError}</Text>
+        </Box>
+      )}
     </Box>
   );
 }
@@ -109,7 +307,7 @@ function ModelConfigurationWarning() {
       padding={1}
     >
       <Text bold color="yellow">
-        ⚠ Model Configuration Required
+        ! Model Configuration Required
       </Text>
       <Box marginTop={1} flexDirection="column">
         <Text>
@@ -180,7 +378,13 @@ function Header() {
   );
 }
 
-function User({ message }: { message: UserMessage }) {
+function User({
+  message,
+  userName,
+}: {
+  message: UserMessage;
+  userName: string;
+}) {
   const text = getMessageText(message);
   const isCanceled = isCanceledMessage(message);
   if (message.hidden) {
@@ -193,12 +397,16 @@ function User({ message }: { message: UserMessage }) {
       marginLeft={SPACING.MESSAGE_MARGIN_LEFT_USER}
     >
       <Text bold color={UI_COLORS.USER}>
-        user
+        {userName}
       </Text>
       {isCanceled ? (
         <Text color={UI_COLORS.CANCELED}>User canceled the request</Text>
       ) : (
-        <Text>{text}</Text>
+        <Box>
+          <Text backgroundColor="#555555" color="#cdcdcd">
+            {text}{' '}
+          </Text>
+        </Box>
       )}
     </Box>
   );
@@ -212,11 +420,7 @@ function AssistantText({
   productName: string;
 }) {
   return (
-    <Box
-      flexDirection="column"
-      marginTop={SPACING.MESSAGE_MARGIN_TOP}
-      marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
-    >
+    <Box flexDirection="column" marginTop={SPACING.MESSAGE_MARGIN_TOP}>
       <Text bold color="#FF3070">
         {productName.toLowerCase()}
       </Text>
@@ -229,10 +433,7 @@ function ToolUse({ part }: { part: ToolUsePart }) {
   const { name, displayName } = part;
   const description = part.description;
   return (
-    <Box
-      marginTop={SPACING.MESSAGE_MARGIN_TOP}
-      marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
-    >
+    <Box marginTop={SPACING.MESSAGE_MARGIN_TOP}>
       <Text bold color={UI_COLORS.TOOL}>
         {displayName || name}
       </Text>
@@ -243,54 +444,116 @@ function ToolUse({ part }: { part: ToolUsePart }) {
   );
 }
 
-function Assistant({
+function ToolPair({ pair }: { pair: ToolPair }) {
+  return (
+    <Box flexDirection="column">
+      {/* Render ToolUse */}
+      <ToolUse part={pair.toolUse} />
+
+      {/* Render ToolResult if available */}
+      {pair.toolResult && (
+        <Box marginTop={SPACING.MESSAGE_MARGIN_TOP_TOOL_RESULT}>
+          <ToolResultItem part={pair.toolResult} />
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+function AssistantWithTools({
   message,
+  messages,
   productName,
 }: {
   message: AssistantMessage;
+  messages: NormalizedMessage[];
   productName: string;
 }) {
+  // If it's a pure string, render directly
   if (typeof message.content === 'string') {
     return <AssistantText text={message.content} productName={productName} />;
   }
-  // Don't render parts after tool use
-  // Only ONE tool use is allowed
-  let hasToolUse = false;
+
+  // Separate text/thinking and tool_use parts
+  const textParts = message.content.filter(
+    (p) => p.type === 'text' || p.type === 'reasoning',
+  );
+  const toolUseParts = message.content.filter((p) => p.type === 'tool_use');
+
+  // If no tool_use, render with original logic
+  if (toolUseParts.length === 0) {
+    return (
+      <>
+        {textParts.map((part, index) => {
+          if (part.type === 'text') {
+            return (
+              <AssistantText
+                key={`text-${index}`}
+                text={(part as TextPart).text}
+                productName={productName}
+              />
+            );
+          }
+          if (part.type === 'reasoning') {
+            return (
+              <Thinking
+                key={`thinking-${index}`}
+                text={(part as ReasoningPart).text}
+              />
+            );
+          }
+          return null;
+        })}
+      </>
+    );
+  }
+
+  // Find current message position in the array
+  const currentIndex = messages.findIndex(
+    (m) =>
+      (m as NormalizedMessage).uuid === (message as NormalizedMessage).uuid,
+  );
+  const subsequentMessages =
+    currentIndex >= 0 ? messages.slice(currentIndex + 1) : [];
+
+  // Pair tool_use with tool_result
+  const toolPairs = pairToolsWithResults(message, subsequentMessages);
+
   return (
     <>
-      {message.content.map((part, index) => {
-        if (hasToolUse) {
-          return null;
-        }
+      {/* Render text parts */}
+      {textParts.map((part, index) => {
         if (part.type === 'text') {
           return (
             <AssistantText
-              key={index}
-              text={part.text}
+              key={`text-${index}`}
+              text={(part as TextPart).text}
               productName={productName}
             />
           );
         }
-        if (part.type === 'tool_use') {
-          hasToolUse = true;
-          return <ToolUse key={index} part={part} />;
-        }
         if (part.type === 'reasoning') {
-          return <Thinking key={index} text={part.text} />;
+          return (
+            <Thinking
+              key={`thinking-${index}`}
+              text={(part as ReasoningPart).text}
+            />
+          );
         }
         return null;
       })}
+
+      {/* Render paired tool_use + tool_result */}
+      {toolPairs.map((pair) => (
+        <ToolPair key={pair.toolUse.id} pair={pair} />
+      ))}
     </>
   );
 }
 
 function Thinking({ text }: { text: string }) {
   return (
-    <Box
-      flexDirection="column"
-      marginTop={SPACING.MESSAGE_MARGIN_TOP}
-      marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
-    >
+    <Box flexDirection="column" marginTop={SPACING.MESSAGE_MARGIN_TOP}>
       <Text bold color="gray">
         thinking
       </Text>
@@ -366,35 +629,55 @@ function ToolResult({ message }: { message: ToolMessage }) {
     <Box
       flexDirection="column"
       marginTop={SPACING.MESSAGE_MARGIN_TOP_TOOL_RESULT}
-      marginLeft={SPACING.MESSAGE_MARGIN_LEFT}
     >
       <ToolResultItem part={part} />
     </Box>
   );
 }
 
-type MessageProps = {
+type MessageGroupProps = {
   message: NormalizedMessage;
+  messages: NormalizedMessage[];
   productName: string;
+  userName: string;
 };
 
-function Message({ message, productName }: MessageProps) {
+function MessageGroup({
+  message,
+  messages,
+  productName,
+  userName,
+}: MessageGroupProps) {
+  // If it's a user message
   if (message.role === 'user') {
+    if (isUserBashCommandMessage(message)) {
+      return <BashCommandMessage message={message as UserMessage} />;
+    } else if (isUserBashOutputMessage(message)) {
+      return <BashOutputMessage message={message as NormalizedMessage} />;
+    }
+
     const isToolResult = isToolResultMessage(message);
     if (isToolResult) {
-      return <ToolResult key={message.uuid} message={message as ToolMessage} />;
-    } else {
-      return <User key={message.uuid} message={message as UserMessage} />;
+      return <ToolResult message={message as ToolMessage} />;
     }
+    return <User message={message as UserMessage} userName={userName} />;
   }
+
+  // If it's a tool message (already paired in assistant, skip rendering)
+  if (message.role === 'tool') {
+    return null;
+  }
+
+  // If it's an assistant message
   if (message.role === 'assistant') {
     return (
-      <Assistant
-        key={message.uuid}
+      <AssistantWithTools
         message={message as AssistantMessage}
+        messages={messages}
         productName={productName}
       />
     );
   }
+
   return null;
 }

@@ -11,7 +11,7 @@ async function main() {
   // Step 1: Run full build process
   console.log('📦 Building project...');
   try {
-    await $`rm -rf dist dist-dts && npm run build:cli && npm run build:index && npm run build:dts && npm run build:post`.quiet();
+    await $`rm -rf dist dist-dts && npm run build:cli && npm run build:index && npm run build:dts && npm run build:mcps && npm run build:post`.quiet();
     console.log('✅ Build completed successfully\n');
   } catch (error) {
     console.error('❌ Build failed:', error);
@@ -43,7 +43,7 @@ async function main() {
   // Step 4: Run format and check for git changes
   console.log('🎨 Running formatter...');
   try {
-    await $`npm run biome:format -- --write`.quiet();
+    await $`npm run format -- --write`.quiet();
 
     // Check if there are any unstaged changes (modified but not staged)
     const gitStatus = execSync('git diff --name-only', { encoding: 'utf-8' });
@@ -65,7 +65,7 @@ async function main() {
   console.log('🔍 Testing CLI...');
   try {
     const result = execSync(
-      'node ./dist/cli.mjs -q --output-format json "hello"',
+      'node ./dist/cli.mjs -m iflow/qwen3-coder-plus -q --output-format json "hello"',
       {
         encoding: 'utf-8',
       },

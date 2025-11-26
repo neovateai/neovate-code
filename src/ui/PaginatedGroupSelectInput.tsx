@@ -507,7 +507,7 @@ const ListItemRenderer: React.FC<ListItemRendererProps> = ({
     return (
       <Box key={startIndex + index}>
         <Text bold color="magenta">
-          ▶ {item.label}
+          ▸ {item.label}
         </Text>
       </Box>
     );
@@ -516,7 +516,7 @@ const ListItemRenderer: React.FC<ListItemRendererProps> = ({
   return (
     <Box key={startIndex + index}>
       <Text color={isSelected ? 'cyan' : undefined} inverse={isSelected}>
-        {isSelected ? pc.cyan('  > ') : '    '}
+        {isSelected ? pc.cyan('  ▹ ') : '    '}
         {item.label}
       </Text>
     </Box>
@@ -542,7 +542,7 @@ const SelectedItemInfo: React.FC<SelectedItemInfoProps> = ({
         <Text bold color="magenta">
           {selectedProvider}
         </Text>{' '}
-        {pc.gray('▶')} <Text color="white">{selectedItem.name}</Text>
+        {pc.gray('➤')} <Text color="white">{selectedItem.name}</Text>
       </Text>
     </Box>
   );

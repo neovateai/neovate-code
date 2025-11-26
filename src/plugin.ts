@@ -1,6 +1,5 @@
 import type { OpenAIProvider } from '@ai-sdk/openai';
-import type { AgentInputItem } from '@openai/agents';
-import type { LanguageModelV1 } from '@openrouter/ai-sdk-provider';
+import type { LanguageModelV2 } from '@openrouter/ai-sdk-provider';
 import defu from 'defu';
 import type { Config } from './config';
 import type { Context, ContextCreateOpts } from './context';
@@ -10,7 +9,6 @@ import type { OutputStyle } from './outputStyle';
 import type { SlashCommand } from './slash-commands/types';
 import type { Tool, ToolResult, ToolUse } from './tool';
 import type { Usage } from './usage';
-import type { MessageContent } from './utils/parse-message';
 
 export enum PluginHookType {
   First = 'first',
@@ -152,7 +150,7 @@ export type Plugin = {
       defaultModelCreator: (
         name: string,
         provider: Provider,
-      ) => LanguageModelV1;
+      ) => LanguageModelV2;
       createOpenAI: (options: any) => OpenAIProvider;
     },
   ) => Promise<ProvidersMap> | ProvidersMap;

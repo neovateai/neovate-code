@@ -1,19 +1,27 @@
 import { Box, Text } from 'ink';
-import React, { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { SPACING, UI_COLORS } from './constants';
 import { DebugRandomNumber } from './Debug';
+import { MemoryModal } from './MemoryModal';
 import { ModeIndicator } from './ModeIndicator';
 import { StatusLine } from './StatusLine';
 import { Suggestion, SuggestionItem } from './Suggestion';
 import { useAppStore } from './store';
 import TextInput from './TextInput';
+import { useExternalEditor } from './useExternalEditor';
 import { useInputHandlers } from './useInputHandlers';
 import { useTerminalSize } from './useTerminalSize';
 import { useTryTips } from './useTryTips';
 
 export function ChatInput() {
-  const { inputState, handlers, slashCommands, fileSuggestion } =
-    useInputHandlers();
+  const {
+    inputState,
+    mode,
+    handlers,
+    slashCommands,
+    fileSuggestion,
+    reverseSearch,
+  } = useInputHandlers();
   const { currentTip } = useTryTips();
   const {
     log,
@@ -22,23 +30,135 @@ export function ChatInput() {
     cancel,
     slashCommandJSX,
     approvalModal,
+    memoryModal,
     queuedMessages,
     status,
     setStatus,
+    showForkModal,
+    forkModalVisible,
+    bashBackgroundPrompt,
+    bridge,
+    thinking,
   } = useAppStore();
   const { columns } = useTerminalSize();
+  const { handleExternalEdit } = useExternalEditor({
+    value: inputState.state.value,
+    onChange: inputState.setValue,
+    setCursorPosition: inputState.setCursorPosition,
+  });
+
+  // Handle Ctrl+B for background prompt
+  const handleMoveToBackground = useCallback(() => {
+    if (bashBackgroundPrompt) {
+      bridge.requestMoveToBackground(bashBackgroundPrompt.taskId);
+    }
+  }, [bashBackgroundPrompt, bridge]);
+
   const showSuggestions =
     slashCommands.suggestions.length > 0 ||
-    fileSuggestion.matchedPaths.length > 0;
+    fileSuggestion.matchedPaths.length > 0 ||
+    reverseSearch.active;
   const placeholderText = useMemo(() => {
+    // Reverse search mode has highest priority
+    if (reverseSearch.placeholderText) {
+      return reverseSearch.placeholderText;
+    }
     if (queuedMessages.length > 0) {
-      return 'Press up to edit queued messages';
+      return 'Press option+up to edit queued messages';
     }
     if (currentTip) {
       return currentTip;
     }
     return '';
-  }, [currentTip, queuedMessages]);
+  }, [currentTip, queuedMessages, reverseSearch.placeholderText]);
+
+  // Display value - slice prefix for bash/memory modes, or show search query in reverse search mode
+  const displayValue = useMemo(() => {
+    if (reverseSearch.active) {
+      return reverseSearch.query;
+    }
+    if (mode === 'bash' || mode === 'memory') {
+      return inputState.state.value.slice(1);
+    }
+    return inputState.state.value;
+  }, [mode, inputState.state.value, reverseSearch.active, reverseSearch.query]);
+
+  // Adjust cursor position for display (subtract 1 for bash/memory modes)
+  const displayCursorOffset = useMemo(() => {
+    // In reverse search mode, cursor is always at the end of search query
+    if (reverseSearch.active) {
+      return reverseSearch.query.length;
+    }
+    const offset = inputState.state.cursorPosition ?? 0;
+    if (mode === 'bash' || mode === 'memory') {
+      return Math.max(0, offset - 1);
+    }
+    return offset;
+  }, [
+    mode,
+    inputState.state.cursorPosition,
+    reverseSearch.active,
+    reverseSearch.query,
+  ]);
+
+  // Wrap onChange to add prefix back for bash/memory modes
+  const handleDisplayChange = useCallback(
+    (val: string) => {
+      // In reverse search mode, don't modify the value
+      if (reverseSearch.active) {
+        handlers.handleChange(val);
+        return;
+      }
+      if (mode === 'bash' || mode === 'memory') {
+        const prefix = mode === 'bash' ? '!' : '#';
+        handlers.handleChange(prefix + val);
+      } else {
+        handlers.handleChange(val);
+      }
+    },
+    [mode, handlers, reverseSearch.active],
+  );
+
+  // Handle delete key press - switch to prompt mode when value becomes empty
+  const handleDelete = useCallback(() => {
+    if ((mode === 'bash' || mode === 'memory') && displayValue === '') {
+      inputState.setValue('');
+    }
+  }, [mode, displayValue, inputState]);
+
+  // Wrap cursor position change to add 1 for bash/memory modes
+  const handleDisplayCursorChange = useCallback(
+    (pos: number) => {
+      // In reverse search mode, don't update cursor position
+      // (cursor is managed by the search query length)
+      if (reverseSearch.active) {
+        return;
+      }
+      if (mode === 'bash' || mode === 'memory') {
+        inputState.setCursorPosition(pos + 1);
+      } else {
+        inputState.setCursorPosition(pos);
+      }
+    },
+    [mode, inputState, reverseSearch.active],
+  );
+
+  // Get border color based on mode
+  const borderColor = useMemo(() => {
+    if (thinking?.effort === 'high') return UI_COLORS.CHAT_BORDER_THINKING_HARD;
+    if (mode === 'memory') return UI_COLORS.CHAT_BORDER_MEMORY;
+    if (mode === 'bash') return UI_COLORS.CHAT_BORDER_BASH;
+    return UI_COLORS.CHAT_BORDER;
+  }, [thinking, mode]);
+
+  // Get prompt symbol based on mode
+  const promptSymbol = useMemo(() => {
+    if (reverseSearch.active) return 'search';
+    if (mode === 'memory') return '#';
+    if (mode === 'bash') return '!';
+    return '>';
+  }, [mode, reverseSearch.active]);
+
   if (slashCommandJSX) {
     return null;
   }
@@ -48,104 +168,153 @@ export function ChatInput() {
   if (approvalModal) {
     return null;
   }
+  if (memoryModal) {
+    return <MemoryModal />;
+  }
+  if (forkModalVisible) {
+    return null;
+  }
   if (status === 'exit') {
     return null;
   }
+
   return (
     <Box flexDirection="column" marginTop={SPACING.CHAT_INPUT_MARGIN_TOP}>
       <ModeIndicator />
-      <Box
-        borderStyle="round"
-        borderColor={UI_COLORS.CHAT_BORDER}
-        paddingX={1}
-        flexDirection="row"
-        gap={1}
-      >
-        <Text
-          color={
-            inputState.state.value
-              ? UI_COLORS.CHAT_ARROW_ACTIVE
-              : UI_COLORS.CHAT_ARROW
-          }
-        >
-          &gt;
-        </Text>
-        <TextInput
-          multiline
-          value={inputState.state.value}
-          placeholder={placeholderText}
-          onChange={handlers.handleChange}
-          onHistoryUp={handlers.handleHistoryUp}
-          onHistoryDown={handlers.handleHistoryDown}
-          onHistoryReset={handlers.handleHistoryReset}
-          onExit={() => {
-            setStatus('exit');
-            setTimeout(() => {
-              process.exit(0);
-            }, 100);
-          }}
-          onExitMessage={(show, key) => {
-            setExitMessage(show ? `Press ${key} again to exit` : null);
-          }}
-          onMessage={(show, text) => {
-            log('onMessage' + text);
-          }}
-          onEscape={() => {
-            cancel().catch((e) => {
-              log('cancel error: ' + e.message);
-            });
-          }}
-          onImagePaste={handlers.handleImagePaste}
-          onPaste={handlers.handlePaste}
-          onSubmit={handlers.handleSubmit}
-          cursorOffset={inputState.state.cursorPosition ?? 0}
-          onChangeCursorOffset={inputState.setCursorPosition}
-          disableCursorMovementForUpDownKeys={showSuggestions}
-          onTabPress={handlers.handleTabPress}
-          columns={columns - 6}
-          isDimmed={false}
-        />
-        <DebugRandomNumber />
+      <Box flexDirection="column">
+        <Text color={borderColor}>{'─'.repeat(Math.max(0, columns))}</Text>
+        <Box flexDirection="row" gap={1}>
+          <Text
+            color={
+              inputState.state.value
+                ? UI_COLORS.CHAT_ARROW_ACTIVE
+                : UI_COLORS.CHAT_ARROW
+            }
+          >
+            {promptSymbol}
+          </Text>
+          <TextInput
+            multiline
+            value={displayValue}
+            placeholder={placeholderText}
+            onChange={handleDisplayChange}
+            onHistoryUp={handlers.handleHistoryUp}
+            onQueuedMessagesUp={handlers.handleQueuedMessagesUp}
+            onHistoryDown={handlers.handleHistoryDown}
+            onHistoryReset={handlers.handleHistoryReset}
+            onReverseSearch={handlers.handleReverseSearch}
+            onReverseSearchPrevious={handlers.handleReverseSearchPrevious}
+            onExit={() => {
+              setStatus('exit');
+              setTimeout(() => {
+                process.exit(0);
+              }, 100);
+            }}
+            onExitMessage={(show, key) => {
+              setExitMessage(show ? `Press ${key} again to exit` : null);
+            }}
+            onMessage={(_show, text) => {
+              log(`onMessage${text}`);
+            }}
+            onEscape={() => {
+              const shouldCancel = !handlers.handleEscape();
+              if (shouldCancel) {
+                cancel().catch((e) => {
+                  log(`cancel error: ${e.message}`);
+                });
+              }
+            }}
+            onDoubleEscape={() => {
+              showForkModal();
+            }}
+            onImagePaste={handlers.handleImagePaste}
+            onPaste={handlers.handlePaste}
+            onSubmit={handlers.handleSubmit}
+            cursorOffset={displayCursorOffset}
+            onChangeCursorOffset={handleDisplayCursorChange}
+            disableCursorMovementForUpDownKeys={showSuggestions}
+            onTabPress={handlers.handleTabPress}
+            onDelete={handleDelete}
+            onExternalEdit={handleExternalEdit}
+            columns={columns - 6}
+            isDimmed={false}
+            onCtrlBBackground={
+              bashBackgroundPrompt ? handleMoveToBackground : undefined
+            }
+          />
+          <DebugRandomNumber />
+        </Box>
+        <Text color={borderColor}>{'─'.repeat(Math.max(0, columns))}</Text>
       </Box>
-      <StatusLine />
-      <Suggestion
-        suggestions={slashCommands.suggestions}
-        selectedIndex={slashCommands.selectedIndex}
-        maxVisible={10}
-      >
-        {(suggestion, isSelected, visibleSuggestions) => {
-          const maxNameLength = Math.max(
-            ...visibleSuggestions.map((s) => s.command.name.length),
-          );
-          return (
-            <SuggestionItem
-              name={`/${suggestion.command.name}`}
-              description={suggestion.command.description}
-              isSelected={isSelected}
-              firstColumnWidth={maxNameLength + 4}
-            />
-          );
-        }}
-      </Suggestion>
-      <Suggestion
-        suggestions={fileSuggestion.matchedPaths}
-        selectedIndex={fileSuggestion.selectedIndex}
-        maxVisible={10}
-      >
-        {(suggestion, isSelected, visibleSuggestions) => {
-          const maxNameLength = Math.max(
-            ...visibleSuggestions.map((s) => s.length),
-          );
-          return (
-            <SuggestionItem
-              name={suggestion}
-              description={''}
-              isSelected={isSelected}
-              firstColumnWidth={maxNameLength + 4}
-            />
-          );
-        }}
-      </Suggestion>
+      <StatusLine hasSuggestions={showSuggestions} />
+      {reverseSearch.active &&
+        (reverseSearch.matches.length > 0 ? (
+          <Suggestion
+            suggestions={reverseSearch.matches}
+            selectedIndex={reverseSearch.selectedIndex}
+            maxVisible={10}
+          >
+            {(suggestion, isSelected, visibleSuggestions) => {
+              const maxNameLength = Math.max(
+                ...visibleSuggestions.map((s) => s.length),
+              );
+              return (
+                <SuggestionItem
+                  name={suggestion}
+                  description={''}
+                  isSelected={isSelected}
+                  firstColumnWidth={maxNameLength + 4}
+                />
+              );
+            }}
+          </Suggestion>
+        ) : (
+          <Box marginLeft={2} marginTop={1}>
+            <Text dimColor>No matches found</Text>
+          </Box>
+        ))}
+      {!reverseSearch.active && slashCommands.suggestions.length > 0 && (
+        <Suggestion
+          suggestions={slashCommands.suggestions}
+          selectedIndex={slashCommands.selectedIndex}
+          maxVisible={10}
+        >
+          {(suggestion, isSelected, visibleSuggestions) => {
+            const maxNameLength = Math.max(
+              ...visibleSuggestions.map((s) => s.command.name.length),
+            );
+            return (
+              <SuggestionItem
+                name={`/${suggestion.command.name}`}
+                description={suggestion.command.description}
+                isSelected={isSelected}
+                firstColumnWidth={maxNameLength + 4}
+              />
+            );
+          }}
+        </Suggestion>
+      )}
+      {!reverseSearch.active && fileSuggestion.matchedPaths.length > 0 && (
+        <Suggestion
+          suggestions={fileSuggestion.matchedPaths}
+          selectedIndex={fileSuggestion.selectedIndex}
+          maxVisible={10}
+        >
+          {(suggestion, isSelected, visibleSuggestions) => {
+            const maxNameLength = Math.max(
+              ...visibleSuggestions.map((s) => s.length),
+            );
+            return (
+              <SuggestionItem
+                name={suggestion}
+                description={''}
+                isSelected={isSelected}
+                firstColumnWidth={maxNameLength + 4}
+              />
+            );
+          }}
+        </Suggestion>
+      )}
     </Box>
   );
 }

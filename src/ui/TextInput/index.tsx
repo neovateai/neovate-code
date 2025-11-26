@@ -28,6 +28,11 @@ export type Props = {
   readonly onHistoryUp?: () => void;
 
   /**
+   * Optional callback for handling queued messages on option+up arrow
+   */
+  readonly onQueuedMessagesUp?: () => void;
+
+  /**
    * Optional callback for handling history navigation on down arrow at end of input
    */
   readonly onHistoryDown?: () => void;
@@ -99,6 +104,11 @@ export type Props = {
   readonly onEscape?: () => void;
 
   /**
+   * Optional callback when Escape key is pressed twice quickly
+   */
+  readonly onDoubleEscape?: () => void;
+
+  /**
    * Optional callback to reset history position
    */
   readonly onHistoryReset?: () => void;
@@ -113,6 +123,7 @@ export type Props = {
    */
   readonly onImagePaste?: (
     base64Image: string,
+    filename?: string,
   ) => Promise<{ prompt?: string }> | void;
 
   /**
@@ -141,6 +152,28 @@ export type Props = {
    * Function to call when `Tab` is pressed for auto-suggestion navigation.
    */
   readonly onTabPress?: (isShiftTab: boolean) => void;
+
+  /**
+   * Function to call when `Delete` or `Backspace` is pressed.
+   */
+  readonly onDelete?: () => void;
+
+  /**
+   * Optional callback when Ctrl+G is pressed to edit prompt in external editor.
+   */
+  readonly onExternalEdit?: () => void;
+
+  /**
+   * Optional callback when Ctrl+R is pressed for reverse search.
+   */
+  readonly onReverseSearch?: () => void;
+
+  /**
+   * Optional callback when Ctrl+S is pressed for reverse search previous.
+   */
+  readonly onReverseSearchPrevious?: () => void;
+
+  onCtrlBBackground?: () => void;
 };
 
 export default function TextInput({
@@ -155,10 +188,12 @@ export default function TextInput({
   onSubmit,
   onExit,
   onHistoryUp,
+  onQueuedMessagesUp,
   onHistoryDown,
   onExitMessage,
   onMessage,
   onEscape,
+  onDoubleEscape,
   onHistoryReset,
   columns,
   onImagePaste,
@@ -168,6 +203,11 @@ export default function TextInput({
   cursorOffset,
   onChangeCursorOffset,
   onTabPress,
+  onDelete,
+  onExternalEdit,
+  onReverseSearch,
+  onReverseSearchPrevious,
+  onCtrlBBackground,
 }: Props): React.JSX.Element {
   const { onInput, renderedValue } = useTextInput({
     value: originalValue,
@@ -179,7 +219,10 @@ export default function TextInput({
     onEscape,
     onHistoryReset,
     onHistoryUp,
+    onQueuedMessagesUp,
     onHistoryDown,
+    onReverseSearch,
+    onReverseSearchPrevious,
     focus,
     mask,
     multiline,
@@ -193,6 +236,8 @@ export default function TextInput({
     externalOffset: cursorOffset,
     onOffsetChange: onChangeCursorOffset,
     onTabPress,
+    onExternalEdit,
+    onCtrlBBackground,
   });
 
   // Enhanced paste detection state for multi-chunk text merging
@@ -208,6 +253,15 @@ export default function TextInput({
     firstInputTime: null,
     lastInputTime: null,
     totalLength: 0,
+  });
+
+  // Track ESC key timing for double-press detection
+  const escPressRef = React.useRef<{
+    lastPressTime: number | null;
+    timeoutId: ReturnType<typeof setTimeout> | null;
+  }>({
+    lastPressTime: null,
+    timeoutId: null,
   });
 
   // Check if text matches image path format
@@ -253,7 +307,10 @@ export default function TextInput({
           try {
             const imageResult = await processImageFromPath(mergedInput);
             if (imageResult) {
-              const imagePromptResult = await onImagePaste(imageResult.base64);
+              const imagePromptResult = await onImagePaste(
+                imageResult.base64,
+                imageResult.filename,
+              );
               if (imagePromptResult?.prompt) {
                 const { newValue, newCursorOffset } = insertTextAtCursor(
                   imagePromptResult.prompt,
@@ -331,6 +388,38 @@ export default function TextInput({
   };
 
   const wrappedOnInput = (input: string, key: Key): void => {
+    // Handle double-ESC for conversation forking
+    if (key.escape && onDoubleEscape) {
+      const now = Date.now();
+      const lastPress = escPressRef.current.lastPressTime;
+
+      if (lastPress && now - lastPress < 500) {
+        // Double ESC detected
+        if (escPressRef.current.timeoutId) {
+          clearTimeout(escPressRef.current.timeoutId);
+        }
+        escPressRef.current.lastPressTime = null;
+        escPressRef.current.timeoutId = null;
+        onDoubleEscape();
+        return;
+      }
+
+      // First ESC press
+      escPressRef.current.lastPressTime = now;
+      if (escPressRef.current.timeoutId) {
+        clearTimeout(escPressRef.current.timeoutId);
+      }
+      escPressRef.current.timeoutId = setTimeout(() => {
+        escPressRef.current.lastPressTime = null;
+        escPressRef.current.timeoutId = null;
+      }, 500);
+    }
+
+    // Call onDelete when backspace or delete key is pressed
+    if ((key.backspace || key.delete) && onDelete) {
+      onDelete();
+    }
+
     const isImageFormat = isImagePathText(input);
     const currentState = pasteStateRef.current;
     const currentTime = Date.now();
@@ -407,6 +496,9 @@ export default function TextInput({
       if (pasteStateRef.current.timeoutId) {
         clearTimeout(pasteStateRef.current.timeoutId);
       }
+      if (escPressRef.current.timeoutId) {
+        clearTimeout(escPressRef.current.timeoutId);
+      }
     };
   }, []);
 
@@ -425,7 +517,7 @@ export default function TextInput({
         : chalk.inverse(' ');
   }
 
-  const showPlaceholder = originalValue.length == 0 && placeholder;
+  const showPlaceholder = originalValue.length === 0 && placeholder;
   return (
     <Text wrap="truncate-end" dimColor={isDimmed}>
       {showPlaceholder ? renderedPlaceholder : renderedValue}

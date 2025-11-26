@@ -1,6 +1,7 @@
 import { type EventHandler, MessageBus } from './messageBus';
+import { BASH_EVENTS } from './constants';
 import type { ApprovalCategory, ToolUse } from './tool';
-import type { AppStore } from './ui/store';
+import type { AppStore, BashPromptBackgroundEvent } from './ui/store';
 
 export class UIBridge {
   appStore: AppStore;
@@ -18,6 +19,12 @@ export class UIBridge {
   }
   onEvent(event: string, handler: EventHandler) {
     return this.messageBus.onEvent(event, handler);
+  }
+
+  async requestMoveToBackground(taskId: string) {
+    return this.messageBus.emitEvent(BASH_EVENTS.MOVE_TO_BACKGROUND, {
+      taskId,
+    });
   }
 }
 
@@ -47,5 +54,16 @@ class UIHandlerRegistry {
         return { approved: result };
       },
     );
+
+    this.messageBus.onEvent(
+      BASH_EVENTS.PROMPT_BACKGROUND,
+      (data: BashPromptBackgroundEvent) => {
+        this.appStore.setBashBackgroundPrompt(data);
+      },
+    );
+
+    this.messageBus.onEvent(BASH_EVENTS.BACKGROUND_MOVED, () => {
+      this.appStore.clearBashBackgroundPrompt();
+    });
   }
 }

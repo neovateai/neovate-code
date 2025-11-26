@@ -3,9 +3,9 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
-import type { LoopResult } from '../loop';
-import type { ImagePart, Message, UserMessage } from '../message';
-import type { ProvidersMap } from '../model';
+import type { LoopResult, StreamResult } from '../loop';
+import type { Message, NormalizedMessage, UserMessage } from '../message';
+import type { ModelInfo, ProvidersMap } from '../model';
 import { Paths } from '../paths';
 import { loadSessionMessages, Session, SessionConfigManager } from '../session';
 import {
@@ -19,6 +19,7 @@ import { Upgrade, type UpgradeOptions } from '../upgrade';
 import { setTerminalTitle } from '../utils/setTerminalTitle';
 import { clearTerminal } from '../utils/terminal';
 import { countTokens } from '../utils/tokenCounter';
+import { getUsername } from '../utils/username';
 import { detectImageFormat } from './TextInput/utils/imagePaste';
 
 export type ApprovalResult =
@@ -27,15 +28,19 @@ export type ApprovalResult =
   | 'approve_always_tool'
   | 'deny';
 
+export interface BashPromptBackgroundEvent {
+  taskId: string;
+  command: string;
+  currentOutput: string;
+}
+
 type Theme = 'light' | 'dark';
 type AppStatus =
   | 'idle'
   | 'processing'
   | 'planning'
   | 'plan_approving'
-  // | 'plan_approved'
   | 'tool_approving'
-  // | 'tool_approved'
   | 'tool_executing'
   | 'compacting'
   | 'failed'
@@ -43,16 +48,6 @@ type AppStatus =
   | 'slash_command_executing'
   | 'help'
   | 'exit';
-
-const APP_STATUS_MESSAGES = {
-  processing: 'Processing...',
-  planning: 'Planning...',
-  plan_approving: 'Waiting for plan approval...',
-  tool_approving: 'Waiting for tool approval...',
-  tool_executing: 'Executing tool...',
-  failed: 'Failed',
-  cancelled: 'Cancelled',
-};
 
 function isExecuting(status: AppStatus) {
   return (
@@ -67,12 +62,15 @@ interface AppState {
   bridge: UIBridge;
 
   cwd: string;
+  userName: string;
   productName: string;
   productASCIIArt: string;
   version: string;
   theme: Theme;
-  model: string | null;
+  model: ModelInfo | null;
+  planModel: string | null;
   modelContextLimit: number;
+  initializeModelError: string | null;
   providers: ProvidersMap;
   sessionId: string | null;
   initialPrompt: string | null;
@@ -82,12 +80,19 @@ interface AppState {
   error: string | null;
   slashCommandJSX: ReactNode | null;
   planMode: boolean;
+  brainstormMode: boolean;
   bashMode: boolean;
   approvalMode: ApprovalMode;
 
   planResult: string | null;
   processingStartTime: number | null;
   processingTokens: number;
+
+  retryInfo: {
+    currentRetry: number;
+    maxRetries: number;
+    error: string | null;
+  } | null;
 
   messages: Message[];
   currentMessage: Message | null;
@@ -120,10 +125,22 @@ interface AppState {
     resolve: (result: ApprovalResult) => Promise<void>;
   } | null;
 
+  memoryModal: {
+    rule: string;
+    resolve: (result: 'project' | 'global' | null) => void;
+  } | null;
+
   upgrade: {
     text: string;
     type?: 'success' | 'error';
   } | null;
+
+  forkModalVisible: boolean;
+  forkParentUuid: string | null;
+  forkCounter: number;
+
+  bashBackgroundPrompt: BashPromptBackgroundEvent | null;
+  thinking: { effort: 'low' | 'medium' | 'high' } | undefined;
 }
 
 type InitializeOpts = {
@@ -152,7 +169,7 @@ interface AppActions {
   clear: () => Promise<void>;
   setDraftInput: (draftInput: string) => void;
   setHistoryIndex: (historyIndex: number | null) => void;
-  togglePlanMode: () => void;
+  toggleMode: () => void;
   approvePlan: (planResult: string) => void;
   denyPlan: () => void;
   resumeSession: (sessionId: string, logFile: string) => Promise<void>;
@@ -164,11 +181,21 @@ interface AppActions {
     toolUse: ToolUse;
     category?: ApprovalCategory;
   }) => Promise<ApprovalResult>;
+  showMemoryModal: (rule: string) => Promise<'project' | 'global' | null>;
   addToQueue: (message: string) => void;
   clearQueue: () => void;
   processQueuedMessages: () => Promise<void>;
+  scheduleQueueProcessing: () => void;
   toggleDebugMode: () => void;
   setStatus: (status: AppStatus) => void;
+  setBashMode: (bashMode: boolean) => void;
+  setRetryInfo: (
+    retryInfo: {
+      currentRetry: number;
+      maxRetries: number;
+      error: string | null;
+    } | null,
+  ) => void;
 
   // Input state actions
   setInputValue: (value: string) => void;
@@ -179,6 +206,13 @@ interface AppActions {
   resetInput: () => void;
   setPastedTextMap: (map: Record<string, string>) => Promise<void>;
   setPastedImageMap: (map: Record<string, string>) => Promise<void>;
+  showForkModal: () => void;
+  hideForkModal: () => void;
+  fork: (targetMessageUuid: string) => Promise<void>;
+  incrementForkCounter: () => void;
+  setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => void;
+  clearBashBackgroundPrompt: () => void;
+  toggleThinking: () => void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -202,6 +236,7 @@ export const useAppStore = create<AppStore>()(
       error: null,
       slashCommandJSX: null,
       planMode: false,
+      brainstormMode: false,
       bashMode: false,
       approvalMode: 'default',
       messages: [],
@@ -216,7 +251,9 @@ export const useAppStore = create<AppStore>()(
       planResult: null,
       processingStartTime: null,
       processingTokens: 0,
+      retryInfo: null,
       approvalModal: null,
+      memoryModal: null,
       upgrade: null,
 
       // Input state
@@ -227,11 +264,17 @@ export const useAppStore = create<AppStore>()(
       inputError: null,
       pastedTextMap: {},
       pastedImageMap: {},
+      forkModalVisible: false,
+      forkParentUuid: null,
+      forkCounter: 0,
+      thinking: undefined,
+
+      bashBackgroundPrompt: null,
 
       // Actions
       initialize: async (opts) => {
         const { bridge } = opts;
-        const response = await bridge.request('initialize', {
+        const response = await bridge.request('session.initialize', {
           cwd: opts.cwd,
           sessionId: opts.sessionId,
         });
@@ -245,7 +288,9 @@ export const useAppStore = create<AppStore>()(
           productASCIIArt: response.data.productASCIIArt,
           version: response.data.version,
           model: response.data.model,
-          modelContextLimit: response.data.modelContextLimit,
+          planModel: response.data.planModel,
+          initializeModelError: response.data.initializeModelError,
+          modelContextLimit: response.data.model?.model?.limit.context || 0,
           providers: response.data.providers,
           sessionId: opts.sessionId,
           messages: opts.messages,
@@ -257,6 +302,10 @@ export const useAppStore = create<AppStore>()(
           approvalMode: response.data.approvalMode,
           pastedTextMap: response.data.pastedTextMap || {},
           pastedImageMap: response.data.pastedImageMap || {},
+          userName: getUsername() ?? 'user',
+          thinking: response.data.model?.thinkingConfig
+            ? { effort: 'low' }
+            : undefined,
           // theme: 'light',
         });
 
@@ -273,18 +322,34 @@ export const useAppStore = create<AppStore>()(
           // Match sessionId and cwd
           if (data.sessionId === get().sessionId && data.cwd === get().cwd) {
             const chunk = data.chunk;
-
             // Collect tokens from text-delta and reasoning events
             if (
-              chunk.type === 'raw_model_stream_event' &&
-              chunk.data?.type === 'model' &&
-              (chunk.data.event?.type === 'text-delta' ||
-                chunk.data.event?.type === 'reasoning')
+              chunk.type === 'text-delta' ||
+              chunk.type === 'reasoning-delta'
             ) {
-              const textDelta = chunk.data.event.textDelta || '';
-              const tokenCount = countTokens(textDelta);
+              const tokenCount = countTokens(chunk.delta);
               set({ processingTokens: get().processingTokens + tokenCount });
             }
+          }
+        });
+        bridge.onEvent('streamResult', (data) => {
+          const result = data.result as StreamResult;
+          if (result.error) {
+            const error = (() => {
+              try {
+                return result.error.data.error.message;
+              } catch (_e) {}
+              return JSON.stringify(result.error.data);
+            })();
+            set({
+              retryInfo: {
+                currentRetry: result.error.retryAttempt,
+                maxRetries: result.error.maxRetries,
+                error,
+              },
+            });
+          } else {
+            set({ retryInfo: null });
           }
         });
         setImmediate(async () => {
@@ -293,7 +358,7 @@ export const useAppStore = create<AppStore>()(
           }
           // Upgrade
           if (opts.upgrade) {
-            const autoUpdateResponse = await bridge.request('getConfig', {
+            const autoUpdateResponse = await bridge.request('config.get', {
               cwd: opts.cwd,
               isGlobal: true,
               key: 'autoUpdate',
@@ -331,10 +396,24 @@ export const useAppStore = create<AppStore>()(
       },
 
       send: async (message) => {
-        const { bridge, cwd, sessionId, planMode, status, pastedTextMap } =
-          get();
+        const {
+          bridge,
+          cwd,
+          sessionId,
+          planMode,
+          brainstormMode,
+          status,
+          pastedTextMap,
+        } = get();
 
-        bridge.request('telemetry', {
+        if (brainstormMode) {
+          message = `/spec:brainstorm ${message}`;
+          set({
+            brainstormMode: false,
+          });
+        }
+
+        bridge.request('utils.telemetry', {
           cwd,
           name: 'send',
           payload: { message, sessionId },
@@ -365,16 +444,15 @@ export const useAppStore = create<AppStore>()(
           }
         }
 
-        // Save history to session config (save the original message with placeholders)
+        // Save history to global data (save the original message with placeholders)
         if (!isSlashCommand(message)) {
           const newHistory = [...get().history, message];
           set({
             history: newHistory,
             historyIndex: null,
           });
-          await bridge.request('sessionConfig.addHistory', {
+          await bridge.request('project.addHistory', {
             cwd,
-            sessionId,
             history: message,
           });
         }
@@ -382,27 +460,34 @@ export const useAppStore = create<AppStore>()(
         // slash command - use expanded message for processing
         if (isSlashCommand(expandedMessage)) {
           const parsed = parseSlashCommand(expandedMessage);
-          const result = await bridge.request('getSlashCommand', {
+          const result = await bridge.request('slashCommand.get', {
             cwd,
             command: parsed.command,
           });
-          const commandeEntry = result.data?.commandEntry as CommandEntry;
-          if (commandeEntry) {
+          const commandEntry = result.data?.commandEntry as CommandEntry;
+          if (commandEntry) {
             const userMessage: Message = {
               role: 'user',
-              content: message, // Use original message with placeholders for display
+              content: expandedMessage,
             };
-            const command = commandeEntry.command;
+            const command = commandEntry.command;
             const type = command.type;
             const isLocal = type === 'local';
             const isLocalJSX = type === 'local-jsx';
             const isPrompt = type === 'prompt';
             if (isPrompt) {
-              await bridge.request('addMessages', {
+              const forkParentUuid = get().forkParentUuid;
+              await bridge.request('session.addMessages', {
                 cwd,
                 sessionId,
                 messages: [userMessage],
+                parentUuid: forkParentUuid || undefined,
               });
+              if (forkParentUuid) {
+                set({
+                  forkParentUuid: null,
+                });
+              }
             } else {
               set({
                 messages: [...get().messages, userMessage],
@@ -410,7 +495,7 @@ export const useAppStore = create<AppStore>()(
             }
             // TODO: save local type command's messages to history
             if (isLocal || isPrompt) {
-              const result = await bridge.request('executeSlashCommand', {
+              const result = await bridge.request('slashCommand.execute', {
                 cwd,
                 sessionId,
                 command: parsed.command,
@@ -419,7 +504,7 @@ export const useAppStore = create<AppStore>()(
               if (result.success) {
                 const messages = result.data.messages;
                 if (isPrompt) {
-                  await bridge.request('addMessages', {
+                  await bridge.request('session.addMessages', {
                     cwd,
                     sessionId,
                     messages,
@@ -437,33 +522,37 @@ export const useAppStore = create<AppStore>()(
                 });
               }
             } else if (isLocalJSX) {
-              const jsx = await command.call(async (result) => {
-                set({
-                  slashCommandJSX: null,
-                });
-                if (result) {
+              const jsx = await command.call(
+                async (result: string | null) => {
                   set({
-                    messages: [
-                      ...get().messages,
-                      {
-                        role: 'user',
-                        content: [
-                          {
-                            type: 'text',
-                            text: result,
-                          },
-                        ],
-                      },
-                    ],
+                    slashCommandJSX: null,
                   });
-                }
-              }, {} as any);
+                  if (result) {
+                    set({
+                      messages: [
+                        ...get().messages,
+                        {
+                          role: 'user',
+                          content: [
+                            {
+                              type: 'text',
+                              text: result,
+                            },
+                          ],
+                        },
+                      ],
+                    });
+                  }
+                },
+                {} as any,
+                parsed.args,
+              );
               set({
                 slashCommandJSX: jsx,
               });
             } else {
               throw new Error(
-                `Unknown slash command type: ${commandeEntry.command.type}`,
+                `Unknown slash command type: ${commandEntry.command.type}`,
               );
             }
             // set({ status: 'slash_command_executing' });
@@ -474,6 +563,58 @@ export const useAppStore = create<AppStore>()(
             };
             get().addMessage(userMessage);
           }
+          return;
+        }
+
+        // Check if message is a bash command
+        if (expandedMessage.startsWith('!')) {
+          const command = expandedMessage.slice(1).trim();
+          if (!command) return;
+
+          set({
+            status: 'processing',
+          });
+
+          // Add bash command message
+          const bashCommandMsg: Message = {
+            role: 'user',
+            content: `<bash-input>${command}</bash-input>`,
+          };
+
+          await bridge.request('session.addMessages', {
+            cwd,
+            sessionId,
+            messages: [bashCommandMsg],
+          });
+
+          // Execute command via bash tool
+          const result = await bridge.request('utils.tool.executeBash', {
+            cwd,
+            command,
+          });
+
+          // Add output message
+          const bashOutputMsg = {
+            role: 'user',
+            uiContent: result.data.returnDisplay,
+            content: result.data.isError
+              ? `<bash-stderr>${result.data.llmContent}</bash-stderr>`
+              : `<bash-stdout>${result.data.llmContent}</bash-stdout>`,
+          };
+
+          await bridge.request('session.addMessages', {
+            cwd,
+            sessionId,
+            messages: [bashOutputMsg],
+          });
+
+          set({
+            status: 'idle',
+          });
+
+          // Check for queued messages after bash command execution
+          get().scheduleQueueProcessing();
+
           return;
         } else {
           // Use store's current model for regular message sending
@@ -488,11 +629,11 @@ export const useAppStore = create<AppStore>()(
           }
 
           // Update terminal title after successful send
-          if (result.success) {
+          if (result.success && get().messages.length <= 2) {
             // don't await this
             (async () => {
               try {
-                const queryResult = await bridge.request('query', {
+                const queryResult = await bridge.request('utils.quickQuery', {
                   cwd,
                   systemPrompt:
                     "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with one fields: 'title' (string). Only include these fields, no other text.",
@@ -504,7 +645,7 @@ export const useAppStore = create<AppStore>()(
                     const response = JSON.parse(queryResult.data.text);
                     if (response && response.title) {
                       setTerminalTitle(response.title);
-                      await bridge.request('sessionConfig.setSummary', {
+                      await bridge.request('session.config.setSummary', {
                         cwd,
                         sessionId,
                         summary: response.title,
@@ -512,24 +653,43 @@ export const useAppStore = create<AppStore>()(
                     }
                   } catch (parseError) {
                     get().log(
-                      'Parse query result error: ' + String(parseError),
+                      `Parse query result error: ${String(parseError)}`,
                     );
-                    get().log('Query result: ' + queryResult.data.text);
+                    get().log(`Query result: ${queryResult.data.text}`);
                   }
                 }
               } catch (error) {
-                get().log('Query error: ' + String(error));
+                get().log(`Query error: ${String(error)}`);
               }
             })();
+          }
 
-            // Check for queued messages
-            if (get().queuedMessages.length > 0) {
-              setTimeout(() => {
-                get().processQueuedMessages();
-              }, 100);
-            }
+          // Check for queued messages after successful send
+          if (result.success) {
+            get().scheduleQueueProcessing();
           }
         }
+      },
+
+      // Helper method to schedule queued message processing
+      scheduleQueueProcessing: () => {
+        const QUEUE_PROCESSING_DELAY_MS = 100; // Delay to ensure current operation completes
+        if (get().queuedMessages.length > 0) {
+          get().log(
+            `Scheduling processing of ${get().queuedMessages.length} queued message(s)`,
+          );
+          setTimeout(() => {
+            get().processQueuedMessages();
+          }, QUEUE_PROCESSING_DELAY_MS);
+        }
+      },
+
+      setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => {
+        set({ bashBackgroundPrompt: prompt });
+      },
+
+      clearBashBackgroundPrompt: () => {
+        set({ bashBackgroundPrompt: null });
       },
 
       sendMessage: async (opts: {
@@ -548,11 +708,11 @@ export const useAppStore = create<AppStore>()(
         const attachments = [];
         // Handle pasted images
         if (message && Object.keys(pastedImageMap).length > 0) {
-          const pastedImageRegex = /\[Image (#\d+)\]/g;
+          const pastedImageRegex = /\[Image \d+X\d+ [^\]]+#(\d+)\]/g;
           const imageMatches = [...message.matchAll(pastedImageRegex)];
 
           for (const match of imageMatches) {
-            const imageId = match[1];
+            const imageId = `#${match[1]}`;
             const imageData = pastedImageMap[imageId];
             if (imageData) {
               const mimeType = detectImageFormat(imageData);
@@ -565,19 +725,23 @@ export const useAppStore = create<AppStore>()(
           }
         }
 
-        const response: LoopResult = await bridge.request('send', {
+        const response: LoopResult = await bridge.request('session.send', {
           message: opts.message,
           cwd,
           sessionId,
           planMode: opts.planMode,
           model: opts.model,
           attachments,
+          parentUuid: get().forkParentUuid || undefined,
+          thinking: get().thinking,
         });
         if (response.success) {
           set({
             status: 'idle',
             processingStartTime: null,
             processingTokens: 0,
+            retryInfo: null,
+            forkParentUuid: null,
           });
         } else {
           set({
@@ -585,6 +749,8 @@ export const useAppStore = create<AppStore>()(
             error: response.error.message,
             processingStartTime: null,
             processingTokens: 0,
+            retryInfo: null,
+            forkParentUuid: null,
           });
         }
         return response;
@@ -595,7 +761,7 @@ export const useAppStore = create<AppStore>()(
         if (!isExecuting(status)) {
           return;
         }
-        await bridge.request('cancel', {
+        await bridge.request('session.cancel', {
           cwd,
           sessionId,
         });
@@ -603,6 +769,8 @@ export const useAppStore = create<AppStore>()(
           status: 'idle',
           processingStartTime: null,
           processingTokens: 0,
+          retryInfo: null,
+          bashBackgroundPrompt: null,
         });
       },
 
@@ -614,8 +782,6 @@ export const useAppStore = create<AppStore>()(
         });
         set({
           messages: [],
-          history: [],
-          historyIndex: null,
           sessionId,
           logFile: paths.getSessionLogPath(sessionId),
           // Also reset input state when clearing
@@ -627,6 +793,9 @@ export const useAppStore = create<AppStore>()(
           pastedTextMap: {},
           pastedImageMap: {},
           processingTokens: 0,
+          retryInfo: null,
+          forkParentUuid: null,
+          forkModalVisible: false,
         });
         return {
           sessionId,
@@ -655,22 +824,28 @@ export const useAppStore = create<AppStore>()(
         set({ historyIndex });
       },
 
-      togglePlanMode: () => {
-        set({ planMode: !get().planMode });
+      toggleMode: () => {
+        const { planMode, brainstormMode } = get();
+        if (!planMode && !brainstormMode) {
+          set({ planMode: true });
+        } else if (planMode && !brainstormMode) {
+          set({ planMode: false, brainstormMode: true });
+        } else {
+          set({ planMode: false, brainstormMode: false });
+        }
       },
 
       approvePlan: (planResult: string) => {
         set({ planResult: null, planMode: false });
         const bridge = get().bridge;
         bridge
-          .request('addMessages', {
+          .request('session.addMessages', {
             cwd: get().cwd,
             sessionId: get().sessionId,
             messages: [
               {
                 role: 'user',
                 content: [{ type: 'text', text: planResult }],
-                history: null,
               },
             ],
           })
@@ -691,15 +866,12 @@ export const useAppStore = create<AppStore>()(
         const sessionConfigManager = new SessionConfigManager({
           logPath: logFile,
         });
-        const history = sessionConfigManager.config.history || [];
         const pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
         const pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
         set({
           sessionId,
           logFile,
           messages,
-          history,
-          historyIndex: null,
           status: 'idle',
           error: null,
           slashCommandJSX: null,
@@ -711,6 +883,7 @@ export const useAppStore = create<AppStore>()(
           planResult: null,
           processingStartTime: null,
           processingTokens: 0,
+          retryInfo: null,
           planMode: false,
           bashMode: false,
           // Reset input state when resuming
@@ -721,25 +894,30 @@ export const useAppStore = create<AppStore>()(
           inputError: null,
           pastedTextMap,
           pastedImageMap,
+          forkParentUuid: null,
+          forkModalVisible: false,
         });
       },
 
       setModel: async (model: string) => {
         const { bridge, cwd } = get();
-        await bridge.request('setConfig', {
+        await bridge.request('config.set', {
           cwd: cwd,
           key: 'model',
           value: model,
           isGlobal: true,
         });
-        await bridge.request('clearContext', {});
+        await bridge.request('project.clearContext', {});
         // Get the modelContextLimit for the selected model
-        const modelsResponse = await bridge.request('getModels', { cwd });
+        const modelsResponse = await bridge.request('models.list', { cwd });
         if (modelsResponse.success) {
+          const currentModel = modelsResponse.data.currentModel;
           set({
-            model,
-            modelContextLimit:
-              modelsResponse.data.currentModelInfo.modelContextLimit,
+            model: currentModel,
+            modelContextLimit: currentModel?.model.limit.context || 0,
+            thinking: currentModel?.thinkingConfig
+              ? { effort: 'low' }
+              : undefined,
           });
         }
       },
@@ -761,13 +939,13 @@ export const useAppStore = create<AppStore>()(
                 set({ approvalModal: null });
                 const isApproved = result !== 'deny';
                 if (result === 'approve_always_edit') {
-                  await bridge.request('sessionConfig.setApprovalMode', {
+                  await bridge.request('session.config.setApprovalMode', {
                     cwd,
                     sessionId,
                     approvalMode: 'autoEdit',
                   });
                 } else if (result === 'approve_always_tool') {
-                  await bridge.request('sessionConfig.addApprovalTools', {
+                  await bridge.request('session.config.addApprovalTools', {
                     cwd,
                     sessionId,
                     approvalTool: toolUse.name,
@@ -779,6 +957,21 @@ export const useAppStore = create<AppStore>()(
           });
         });
       },
+
+      showMemoryModal: (rule: string) => {
+        return new Promise<'project' | 'global' | null>((resolve) => {
+          set({
+            memoryModal: {
+              rule,
+              resolve: (result: 'project' | 'global' | null) => {
+                set({ memoryModal: null });
+                resolve(result);
+              },
+            },
+          });
+        });
+      },
+
       addToQueue: (message: string) => {
         set({ queuedMessages: [...get().queuedMessages, message] });
       },
@@ -805,8 +998,68 @@ export const useAppStore = create<AppStore>()(
         }
       },
 
+      showForkModal: () => {
+        set({ forkModalVisible: true });
+      },
+
+      hideForkModal: () => {
+        set({ forkModalVisible: false });
+      },
+
+      fork: async (targetMessageUuid: string) => {
+        const { bridge, cwd, sessionId, messages } = get();
+
+        // Find the target message
+        const targetMessage = messages.find(
+          (m) => (m as NormalizedMessage).uuid === targetMessageUuid,
+        );
+        if (!targetMessage) {
+          get().log(`Fork error: Message ${targetMessageUuid} not found`);
+          return;
+        }
+
+        // Filter messages up to and including the target
+        const messageIndex = messages.findIndex(
+          (m) => (m as NormalizedMessage).uuid === targetMessageUuid,
+        );
+        const filteredMessages = messages.slice(0, messageIndex);
+
+        // Extract content from target message
+        let contentText = '';
+        if (typeof targetMessage.content === 'string') {
+          contentText = targetMessage.content;
+        } else if (Array.isArray(targetMessage.content)) {
+          const textParts = targetMessage.content
+            .filter((part) => part.type === 'text')
+            .map((part) => part.text);
+          contentText = textParts.join('');
+        }
+
+        // Update store state
+        set({
+          messages: filteredMessages,
+          forkParentUuid: (targetMessage as NormalizedMessage).parentUuid,
+          inputValue: contentText,
+          inputCursorPosition: contentText.length,
+          forkModalVisible: false,
+        });
+        get().incrementForkCounter();
+      },
+
+      incrementForkCounter: () => {
+        set({ forkCounter: get().forkCounter + 1 });
+      },
+
       setStatus: (status: AppStatus) => {
         set({ status });
+      },
+
+      setBashMode: (bashMode: boolean) => {
+        set({ bashMode });
+      },
+
+      setRetryInfo: (retryInfo) => {
+        set({ retryInfo });
       },
 
       // Input state actions
@@ -845,7 +1098,7 @@ export const useAppStore = create<AppStore>()(
         set({ pastedTextMap: map });
         // Save to session config
         if (sessionId) {
-          await bridge.request('sessionConfig.setPastedTextMap', {
+          await bridge.request('session.config.setPastedTextMap', {
             cwd,
             sessionId,
             pastedTextMap: map,
@@ -858,12 +1111,29 @@ export const useAppStore = create<AppStore>()(
         set({ pastedImageMap: map });
         // Save to session config
         if (sessionId) {
-          await bridge.request('sessionConfig.setPastedImageMap', {
+          await bridge.request('session.config.setPastedImageMap', {
             cwd,
             sessionId,
             pastedImageMap: map,
           });
         }
+      },
+
+      toggleThinking: () => {
+        const { thinking: current, model } = get();
+        if (!model) return;
+        if (!model.thinkingConfig) return;
+        let next: { effort: 'low' | 'medium' | 'high' } | undefined;
+        if (!current) {
+          next = { effort: 'low' };
+        } else if (current.effort === 'low') {
+          next = { effort: 'medium' };
+        } else if (current.effort === 'medium') {
+          next = { effort: 'high' };
+        } else {
+          next = undefined;
+        }
+        set({ thinking: next });
       },
     }),
     { name: 'app-store' },

@@ -1,48 +1,48 @@
-import { Outlet, createRootRoute, redirect } from '@tanstack/react-router';
+import {
+  createRootRoute,
+  Outlet,
+  redirect,
+  useBlocker,
+} from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import { useMount } from 'ahooks';
-import { createStyles } from 'antd-style';
-import React from 'react';
+import { Modal } from 'antd';
 import I18nProvider from '@/components/I18nProvider';
-import Sider from '@/components/Sider';
-import { actions } from '@/state/appData';
 
-const useStyle = createStyles(({ token, css }) => {
-  return {
-    layout: css`
-      width: 100%;
-      min-width: 1000px;
-      height: 100vh;
-      display: flex;
-      background: ${token.colorBgContainer};
-      font-family: AlibabaPuHuiTi, ${token.fontFamily}, sans-serif;
-    `,
-  };
-});
-
-const Layout: React.FC = () => {
-  const { styles } = useStyle();
-
-  useMount(() => {
-    actions.getAppData();
+const RootComponent: React.FC = () => {
+  useBlocker({
+    shouldBlockFn: ({ current, next }) => {
+      if (current.fullPath === next.fullPath) {
+        return false;
+      }
+      return new Promise((resolve) => {
+        Modal.confirm({
+          title: 'Are you sure you want to leave the current workspace?',
+          content: 'Unsaved edits will be lost.',
+          onOk: () => {
+            resolve(false);
+          },
+          onCancel: () => {
+            resolve(true);
+          },
+        });
+      });
+    },
+    withResolver: true,
   });
 
   return (
     <I18nProvider>
-      <div className={styles.layout}>
-        <Sider />
-        <Outlet />
-        <TanStackRouterDevtools position="bottom-right" />
-      </div>
+      <Outlet />
+      <TanStackRouterDevtools position="bottom-right" />
     </I18nProvider>
   );
 };
 
 export const Route = createRootRoute({
-  component: Layout,
+  component: RootComponent,
   beforeLoad() {
     if (window.location.pathname === '/') {
-      throw redirect({ to: '/chat' });
+      throw redirect({ to: '/session' });
     }
   },
 });

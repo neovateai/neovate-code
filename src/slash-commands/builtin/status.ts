@@ -11,7 +11,7 @@ export const statusCommand: LocalJSXCommand = {
       const { bridge, cwd, sessionId } = useAppStore();
       React.useEffect(() => {
         bridge
-          .request('getStatus', {
+          .request('status.get', {
             cwd,
             sessionId,
           })

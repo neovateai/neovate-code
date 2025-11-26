@@ -16,18 +16,17 @@ export class Usage {
   }
 
   static fromEventUsage(eventUsage: any): Usage {
-    const promptTokens = Number.isNaN(eventUsage?.promptTokens)
-      ? 0
-      : (eventUsage?.promptTokens ?? 0);
-    const completionTokens = Number.isNaN(eventUsage?.completionTokens)
-      ? 0
-      : (eventUsage?.completionTokens ?? 0);
-    const totalTokens = promptTokens + completionTokens;
+    const promptTokens =
+      eventUsage?.promptTokens ?? eventUsage?.inputTokens ?? 0;
+    const completionTokens =
+      eventUsage?.completionTokens ?? eventUsage?.outputTokens ?? 0;
+    const totalTokens =
+      eventUsage?.totalTokens ?? promptTokens + completionTokens;
 
     return new Usage({
-      promptTokens,
-      completionTokens,
-      totalTokens,
+      promptTokens: Number.isNaN(promptTokens) ? 0 : promptTokens,
+      completionTokens: Number.isNaN(completionTokens) ? 0 : completionTokens,
+      totalTokens: Number.isNaN(totalTokens) ? 0 : totalTokens,
     });
   }
 

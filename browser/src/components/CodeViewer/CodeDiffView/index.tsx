@@ -1,18 +1,12 @@
-import { DiffEditor } from '@monaco-editor/react';
 import { createStyles } from 'antd-style';
-import * as monaco from 'monaco-editor';
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
-import useEditAll from '@/hooks/useEditAll';
+import { forwardRef } from 'react';
+import { useSnapshot } from 'valtio';
+import { CodeRenderer } from '@/components/CodeRenderer/CodeRenderer';
+import { state } from '@/state/chat';
 import type { CodeDiffViewerTabItem } from '@/types/codeViewer';
 import DiffToolbar from '../DiffToolbar';
 
-interface Props {
+interface CodeDiffViewProps {
   item: CodeDiffViewerTabItem;
   maxHeight?: number;
   hideToolBar?: boolean;
@@ -33,7 +27,7 @@ const useStyle = createStyles(
         ${
           maxHeight
             ? css`
-              max-height: ${maxHeight};
+              max-height: ${maxHeight}px;
             `
             : ''
         }
@@ -41,128 +35,54 @@ const useStyle = createStyles(
       editor: css`
         height: 100%;
         flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
       `,
     };
   },
 );
 
-const CodeDiffView = forwardRef<CodeDiffViewRef, Props>((props, ref) => {
-  const { item, maxHeight, hideToolBar, heightFollow = 'container' } = props;
-  const { styles } = useStyle({ maxHeight });
-  const editorRef = useRef<monaco.editor.IStandaloneDiffEditor>(null);
-  const [height, setHeight] = useState<number>();
-  const { acceptAll, rejectAll } = useEditAll(item.path);
+const CodeDiffView = forwardRef<CodeDiffViewRef, CodeDiffViewProps>(
+  (props, ref) => {
+    const { item, maxHeight, hideToolBar } = props;
+    const { styles } = useStyle({ maxHeight });
+    const snap = useSnapshot(state);
 
-  useImperativeHandle(ref, () => {
-    return {
-      jumpToLine(lineCount) {
-        const modifiedEditor = editorRef.current?.getModifiedEditor();
-
-        modifiedEditor?.revealLineInCenter(lineCount);
-        modifiedEditor?.setPosition({
-          lineNumber: lineCount,
-          column: 1,
-        });
-      },
-    };
-  });
-
-  useEffect(() => {
-    return () => {
-      editorRef.current?.dispose();
-      editorRef.current?.getModifiedEditor().dispose();
-      editorRef.current?.getOriginalEditor().dispose();
-    };
-  }, []);
-
-  useEffect(() => {
-    handleCalcHeight();
-  }, [heightFollow, item]);
-
-  const handleCalcHeight = () => {
-    if (heightFollow === 'content') {
-      const modifiedEditor = editorRef.current?.getModifiedEditor();
-      const modifiedModel = modifiedEditor?.getModel();
-
-      if (
-        !item.diffStat?.diffBlockStats.length ||
-        !modifiedEditor ||
-        !modifiedModel
-      ) {
-        return;
-      }
-
-      try {
-        const lastViewLine =
-          item.diffStat.diffBlockStats[item.diffStat.diffBlockStats.length - 1]
-            .modifiedEndLineNumber + 3;
-
-        const height = modifiedEditor.getBottomForLineNumber(lastViewLine);
-        setHeight(Math.max(height, 200));
-      } catch (e) {
-        console.error('Auto set height error:', e);
-        setHeight(maxHeight);
-      }
-    } else {
-      setHeight(undefined);
-    }
-  };
-
-  return (
-    <div className={styles.container}>
-      {!hideToolBar && (
-        <DiffToolbar
-          onGotoDiff={(target) => {
-            editorRef?.current?.goToDiff(target);
-          }}
-          onAcceptAll={() => {
-            acceptAll(item.modifiedCode);
-          }}
-          onRejectAll={() => {
-            rejectAll(item.originalCode);
-          }}
-          item={item}
-        />
-      )}
-      <DiffEditor
-        height={height}
-        className={styles.editor}
-        originalLanguage={item.language}
-        modifiedLanguage={item.language}
-        keepCurrentModifiedModel
-        keepCurrentOriginalModel
-        original={item.originalCode}
-        modified={item.modifiedCode}
-        onMount={(editor) => {
-          editorRef.current = editor;
-          handleCalcHeight();
-          editor.getOriginalEditor().updateOptions({
-            lineNumbers: 'off',
-          });
-        }}
-        beforeMount={(monaco) => {
-          monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-            jsx: monaco.languages.typescript.JsxEmit.React,
-            target: monaco.languages.typescript.ScriptTarget.ESNext,
-            jsxFactory: 'React.createElement',
-            reactNamespace: 'React',
-            allowNonTsExtensions: true,
-            allowJs: true,
-          });
-        }}
-        options={{
-          renderSideBySide: false,
-          contextmenu: false,
-          readOnly: true,
-          fontSize: 14,
-          hideUnchangedRegions: { enabled: true },
-          minimap: { enabled: false },
-          diffAlgorithm: 'advanced',
-          renderWhitespace: 'boundary',
-        }}
-      />
-    </div>
-  );
-});
+    return (
+      <div className={styles.container}>
+        {!hideToolBar && (
+          <DiffToolbar
+            onGotoDiff={() => {
+              console.log('onGotoDiff');
+              // Simple diff navigation
+            }}
+            onAcceptAll={() => {
+              snap.approvalModal?.resolve('approve_always_edit');
+            }}
+            onRejectAll={() => {
+              snap.approvalModal?.resolve('deny');
+            }}
+            item={item}
+          />
+        )}
+        <div className={styles.editor}>
+          <CodeRenderer
+            ref={ref}
+            code={item.modifiedCode}
+            originalCode={item.originalCode}
+            modifiedCode={item.modifiedCode}
+            language={item.language}
+            filename={item.path}
+            mode="diff"
+            maxHeight={maxHeight}
+            theme="snazzy-light"
+            showLineNumbers={true}
+          />
+        </div>
+      </div>
+    );
+  },
+);
 
 export default CodeDiffView;

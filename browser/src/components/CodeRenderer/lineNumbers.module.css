@@ -1,0 +1,227 @@
+/* Shiki Line Numbers Styles */
+
+/* 基础行号容器样式 */
+.shiki-with-line-numbers {
+  position: relative;
+  counter-reset: line-number calc(var(--start-line, 1) - 1);
+}
+
+.shiki-with-line-numbers .line {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  counter-increment: line-number;
+  min-height: 1.5em;
+  padding-left: 0;
+}
+
+/* 行号样式 */
+.shiki-with-line-numbers .line-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 4em;
+  min-width: 4em;
+  height: auto;
+  margin-right: 12px;
+  padding: 0 8px 0 4px;
+  color: #656d76;
+  background-color: #f6f8fa;
+  border-right: 2px solid #d0d7de;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
+  font-family:
+    "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", "Source Code Pro",
+    "Consolas", monospace;
+  text-align: right;
+  direction: ltr;
+  unicode-bidi: embed;
+  user-select: none;
+  flex-shrink: 0;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  transition: all 0.2s ease;
+  border-radius: 0 3px 3px 0;
+}
+
+/* 代码内容区域 */
+.shiki-with-line-numbers .line > span:not(.line-number) {
+  flex: 1;
+  min-width: 0;
+  padding-left: 8px;
+  white-space: pre;
+  overflow: visible;
+  line-height: 1.4;
+}
+
+/* 鼠标悬停效果 */
+.shiki-with-line-numbers .line:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.shiki-with-line-numbers .line:hover .line-number {
+  background-color: #e6edf3;
+  color: #24292f;
+  border-right-color: #0969da;
+  transform: translateX(-1px);
+  box-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Diff 样式支持 */
+.shiki-with-line-numbers .line.diff.add {
+  background-color: #dafbe1;
+  border-left: 3px solid #28a745;
+  width: 100%;
+  margin: 0;
+  padding-right: 1em;
+}
+
+.shiki-with-line-numbers .line.diff.remove {
+  background-color: #ffeaea;
+  border-left: 3px solid #d73a49;
+  width: 100%;
+  margin: 0;
+  padding-right: 1em;
+}
+
+.shiki-with-line-numbers .line.diff.add .line-number {
+  background-color: #ccffd8;
+  border-right-color: #28a745;
+  color: #22863a;
+  margin-right: 12px;
+  padding: 0 8px 0 4px;
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 #28a745;
+}
+
+.shiki-with-line-numbers .line.diff.remove .line-number {
+  background-color: #ffdce0;
+  border-right-color: #d73a49;
+  color: #cb2431;
+  margin-right: 12px;
+  padding: 0 8px 0 4px;
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 #d73a49;
+}
+
+/* 高亮行样式 */
+.shiki-with-line-numbers .line.highlighted {
+  background-color: #fff7ed;
+}
+
+.shiki-with-line-numbers .line.highlighted .line-number {
+  background-color: rgba(254, 215, 170, 0.4);
+  color: #9a3412;
+  border-right-color: rgba(251, 146, 60, 0.6);
+}
+
+/* 焦点行样式 */
+.shiki-with-line-numbers .line.focused {
+  background-color: #f0f9ff;
+}
+
+.shiki-with-line-numbers .line.focused .line-number {
+  background-color: rgba(219, 234, 254, 0.4);
+  color: #1e40af;
+  border-right-color: rgba(59, 130, 246, 0.6);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .shiki-with-line-numbers .line-number {
+    width: 3em;
+    min-width: 3em;
+    padding: 0 6px 0 2px;
+    font-size: 10px;
+    margin-right: 8px;
+    text-align: right;
+    justify-content: flex-end;
+  }
+
+  .shiki-with-line-numbers .line > span:not(.line-number) {
+    padding-left: 6px;
+  }
+}
+
+/* 暗色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .shiki-with-line-numbers .line-number {
+    color: #8b949e;
+    background-color: #161b22;
+    border-right-color: #30363d;
+  }
+
+  .shiki-with-line-numbers .line:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+
+  .shiki-with-line-numbers .line:hover .line-number {
+    background-color: #21262d;
+    color: #f0f6fc;
+    border-right-color: #58a6ff;
+    transform: translateX(-1px);
+    box-shadow: 1px 0 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .shiki-with-line-numbers .line.diff.add .line-number {
+    background-color: #033a16;
+    border-right-color: #238636;
+    color: #3fb950;
+    box-shadow: inset 2px 0 0 #238636;
+  }
+
+  .shiki-with-line-numbers .line.diff.remove .line-number {
+    background-color: #67060c;
+    border-right-color: #da3633;
+    color: #f85149;
+    box-shadow: inset 2px 0 0 #da3633;
+  }
+}
+
+/* 可选：使用 CSS Counter 的替代方案 */
+.shiki-with-line-numbers.use-counter .line::before {
+  content: counter(line-number);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 3.5em;
+  min-width: 3.5em;
+  height: 1.5em;
+  margin-right: 1em;
+  padding: 0 0.75em 0 0.5em;
+  color: #8b8b8b;
+  background-color: transparent;
+  border-right: 1px solid rgba(225, 232, 237, 0.6);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 130%; /* 15.6px */
+  letter-spacing: -0.24px;
+  text-align: right;
+  user-select: none;
+  flex-shrink: 0;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  transition: all 0.15s ease;
+}
+
+/* 确保代码块正确显示 */
+.shiki-with-line-numbers pre {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.shiki-with-line-numbers code {
+  display: block;
+  padding: 0;
+  background: transparent;
+  white-space: pre;
+  overflow: visible;
+}

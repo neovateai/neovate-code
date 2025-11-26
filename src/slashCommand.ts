@@ -17,6 +17,8 @@ export type SlashCommandManagerOpts = {
   paths: Paths;
   productName: string;
   slashCommands: SlashCommand[];
+  argvConfig: Record<string, any>;
+  language: string;
 };
 
 export type CommandEntry = {
@@ -30,7 +32,11 @@ export class SlashCommandManager {
     const productName = opts.productName;
     const commands = new Map<string, CommandEntry>();
     // 1. builtin
-    const builtin = createBuiltinCommands({ productName });
+    const builtin = createBuiltinCommands({
+      productName,
+      argvConfig: opts.argvConfig,
+      language: opts.language,
+    });
     builtin.forEach((command) => {
       commands.set(command.name, { command, source: CommandSource.Builtin });
     });
@@ -66,6 +72,8 @@ export class SlashCommandManager {
       productName: context.productName,
       paths: context.paths,
       slashCommands: pluginSlashCommands,
+      argvConfig: context.argvConfig,
+      language: context.config.language,
     });
   }
 
@@ -212,6 +220,7 @@ export function isSlashCommand(input: string): boolean {
   const trimmed = input.trim();
   if (!trimmed.startsWith('/')) return false;
   if (trimmed === '/') return false;
+  if (trimmed.startsWith('/*')) return false;
   const match = trimmed.match(/^\S+/);
   const commandPart = match ? match[0] : '';
   return commandPart !== '' && !isFilePath(commandPart);

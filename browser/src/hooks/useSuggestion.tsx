@@ -1,34 +1,42 @@
-import { ArrowRightOutlined, FileSearchOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { debounce } from 'lodash-es';
 import { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnapshot } from 'valtio';
 import DevFileIcon from '@/components/DevFileIcon';
 import type { SuggestionItem } from '@/components/SuggestionList';
-import {
-  AI_CONTEXT_NODE_CONFIGS,
-  CONTEXT_MAX_POPUP_ITEM_COUNT,
-  ContextType,
-} from '@/constants/context';
+import { ContextType } from '@/constants/context';
+import { state as chatState } from '@/state/chat';
+import * as context from '@/state/context';
 import { actions, state } from '@/state/suggestion';
-import type { ContextItem, ContextStoreValue } from '@/types/context';
+import { CommandSource } from '@/types/chat';
+import { storeValueToContextItem } from '@/utils/context';
 
-export const useSuggestion = (selectedValues?: readonly string[]) => {
-  const { fileList, loading } = useSnapshot(state);
+const SUGGESTION_SEARCH_DEBOUNCE_TIME = 200;
+
+export const useSuggestion = (showSlashCommand: boolean = true) => {
+  const { fileList, slashCommandList, loading } = useSnapshot(state);
+  const { contexts } = useSnapshot(context.state);
+
+  const { t } = useTranslation();
 
   useEffect(() => {
-    actions.getFileList({ maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT });
-  }, []);
+    if (chatState.initialized) {
+      actions.getSlashCommandList();
+      actions.getFileList('');
+    }
+  }, [chatState.initialized]);
 
   const fileSuggestions = useMemo(() => {
     return fileList.map((file) => {
-      const label = file.type === 'file' ? file.name : file.path;
-      const extra =
-        file.type === 'file'
-          ? file.path.split('/').slice(0, -1).join('/')
-          : null;
+      const label = file.name;
+      const extra = file.path.split('/').slice(0, -1).join('/');
+      const disabled = contexts.files.some(
+        (selectedFile) => selectedFile.path === file.path,
+      );
 
       return {
-        label: label,
+        label,
         value: file.path,
         icon: (
           <DevFileIcon
@@ -36,38 +44,70 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
             fileExt={file.path.split('.').pop() ?? ''}
           />
         ),
-        disabled: selectedValues?.includes(file.path),
+        disabled,
         extra,
-      };
+        contextItem: storeValueToContextItem(file, ContextType.FILE),
+      } as SuggestionItem;
     });
-  }, [fileList]);
+  }, [fileList, contexts]);
 
-  const getOriginalFile = (value: string) => {
-    return fileList.find((file) => file.path === value);
-  };
+  const slashCommandSuggestions = useMemo(() => {
+    return slashCommandList.map((cmd) => {
+      const label = `/${cmd.command.name}`;
+      const prefix = (() => {
+        switch (cmd.source) {
+          case CommandSource.User:
+            return t('suggestion.slashCommandPrefix.global');
+          case CommandSource.Project:
+            return t('suggestion.slashCommandPrefix.project');
+          default:
+            return '';
+        }
+      })();
+      // only allow one slash command
+      const disabled = contexts.slashCommands.length > 0;
+
+      return {
+        label,
+        value: cmd.command.name,
+        icon: <AppstoreOutlined />,
+        extra: `${cmd.command.description} ${prefix ? `(${prefix})` : ''}`,
+        disabled,
+        contextItem: storeValueToContextItem(
+          cmd.command,
+          ContextType.SLASH_COMMAND,
+        ),
+      };
+    }) as SuggestionItem[];
+  }, [slashCommandList, t, contexts]);
 
   const defaultSuggestions = useMemo(() => {
-    return [
+    const suggestions: SuggestionItem[] = [
       {
-        label: 'Files & Folders',
+        label: t('context.filesAndFolders'),
         value: ContextType.FILE,
         icon: <FileSearchOutlined />,
-        extra: <ArrowRightOutlined />,
         children: fileSuggestions,
       },
-    ] as SuggestionItem[];
-  }, [fileSuggestions]);
+    ];
 
-  const originalContextGetterMap: {
-    [key in ContextType]?: (value: string) => ContextStoreValue | undefined;
-  } = {
-    [ContextType.FILE]: getOriginalFile,
-  };
+    if (showSlashCommand) {
+      suggestions.push({
+        label: t('context.slashCommands'),
+        value: ContextType.SLASH_COMMAND,
+        icon: <AppstoreOutlined />,
+        children: slashCommandSuggestions,
+        disabled: contexts.slashCommands.length > 0,
+      });
+    }
+
+    return suggestions;
+  }, [fileSuggestions, slashCommandSuggestions, t, contexts, showSlashCommand]);
 
   const searchFunctionMap: { [key in ContextType]?: (text: string) => void } = {
-    [ContextType.FILE]: (text) =>
-      actions.getFileList({
-        maxSize: CONTEXT_MAX_POPUP_ITEM_COUNT,
+    [ContextType.FILE]: (text) => actions.getFileList(text),
+    [ContextType.SLASH_COMMAND]: (text) =>
+      actions.getSlashCommandList({
         searchString: text,
       }),
   };
@@ -76,28 +116,9 @@ export const useSuggestion = (selectedValues?: readonly string[]) => {
     const targetFunction = searchFunctionMap[type];
 
     targetFunction?.(text);
-  }, 500);
-
-  const getOriginalContextByValue = (type: ContextType, value: string) => {
-    const config = AI_CONTEXT_NODE_CONFIGS.find(
-      (config) => config.type === type,
-    );
-    const getOriginalContext = originalContextGetterMap[type];
-    const originalContext = getOriginalContext?.(value);
-    const contextItemValue = config?.valueFormatter?.(value) || value;
-
-    const contextItem: ContextItem = {
-      type,
-      context: originalContext,
-      value: contextItemValue,
-      displayText: value,
-    };
-
-    return contextItem;
-  };
+  }, SUGGESTION_SEARCH_DEBOUNCE_TIME);
 
   return {
-    getOriginalContextByValue,
     defaultSuggestions,
     handleSearch,
     loading,

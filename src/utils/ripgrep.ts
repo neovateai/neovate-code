@@ -39,7 +39,7 @@ export async function ripGrep(
       [...args, target],
       {
         maxBuffer: 1_000_000,
-        timeout: 10_000,
+        timeout: 20_000,
       },
       (err, stdout) => {
         if (err) {
