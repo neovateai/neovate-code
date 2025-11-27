@@ -94,7 +94,7 @@ describe('normalizeMessagesForCompact', () => {
           },
         ],
         text: '',
-        model: 'wanqing/claude-4.5-sonnet',
+        model: 'claude-4.5-sonnet',
         usage: {
           input_tokens: 139630,
           output_tokens: 308,
