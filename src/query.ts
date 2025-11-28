@@ -13,6 +13,11 @@ export async function query(opts: {
   model?: ModelInfo;
   systemPrompt?: string;
   onMessage?: (message: NormalizedMessage) => Promise<void>;
+  thinking?:
+    | false
+    | {
+        effort: 'low' | 'medium' | 'high';
+      };
 }) {
   const messages: NormalizedMessage[] = [
     ...(opts.messages || []),
@@ -38,5 +43,6 @@ export async function query(opts: {
       await opts.onMessage?.(message);
     },
     autoCompact: false,
+    thinking: opts.thinking !== false ? opts.thinking : undefined,
   });
 }

@@ -49,6 +49,7 @@ async function generateCommitMessage(opts: GenerateCommitMessageOpts) {
     systemPrompt,
     context: opts.context,
     model,
+    thinking: false, // Disable thinking mode for commit messages
   });
   let message = result.success ? result.data.text : null;
   if (typeof message !== 'string') {
@@ -75,6 +76,7 @@ async function generateBranchName(opts: GenerateBranchNameOpts) {
     systemPrompt: createBranchSystemPrompt(),
     context: opts.context,
     model,
+    thinking: false, // Disable thinking mode for branch names
   });
   const branchName = result.success ? result.data.text : null;
   if (typeof branchName !== 'string') {
