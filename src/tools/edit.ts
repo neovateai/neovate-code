@@ -23,6 +23,12 @@ Usage:
       new_string: z
         .string()
         .describe('The text to replace the old_string with'),
+      replace_all: z
+        .boolean()
+        .default(false)
+        .describe(
+          'Whether to replace all occurrences of old_string with new_string',
+        ),
     }),
     getDescription: ({ params, cwd }) => {
       if (!params.file_path || typeof params.file_path !== 'string') {
@@ -30,7 +36,7 @@ Usage:
       }
       return path.relative(cwd, params.file_path);
     },
-    execute: async ({ file_path, old_string, new_string }) => {
+    execute: async ({ file_path, old_string, new_string, replace_all }) => {
       try {
         const cwd = opts.cwd;
         const fullFilePath = path.isAbsolute(file_path)
@@ -43,6 +49,7 @@ Usage:
           old_string,
           new_string,
           'search-replace',
+          replace_all,
         );
         const dir = path.dirname(fullFilePath);
         fs.mkdirSync(dir, { recursive: true });
