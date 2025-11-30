@@ -20,6 +20,9 @@ export const CANCELED_MESSAGE_TEXT = '[Request interrupted by user]';
 export enum TOOL_NAMES {
   TODO_WRITE = 'todoWrite',
   TODO_READ = 'todoRead',
+  TODO_CREATE = 'todoCreate',
+  TODO_DELETE = 'todoDelete',
+  TODO_LIST = 'todoList',
   BASH = 'bash',
   BASH_OUTPUT = 'bash_output',
   KILL_BASH = 'kill_bash',

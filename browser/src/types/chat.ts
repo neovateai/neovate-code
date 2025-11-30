@@ -83,6 +83,48 @@ type TodoWriteReturnDisplay = {
   type: 'todo_write';
   oldTodos: TodoItem[];
   newTodos: TodoItem[];
+  metadata: {
+    agentId: string;
+    version: number;
+    totalTodos: number;
+    completedTodos: number;
+    pendingTodos: number;
+    inProgressTodos: number;
+  };
+  hasCleanupSuggestions?: boolean;
+};
+
+type TodoCreateReturnDisplay = {
+  type: 'todo_create';
+  agentId: string;
+  filePath: string;
+  message: string;
+};
+
+type TodoCleanupSuggestionReturnDisplay = {
+  type: 'todo_cleanup_suggestion';
+  agentId: string;
+  completedTodos: TodoItem[];
+  suggestion: string;
+  summary: {
+    totalCompleted: number;
+    totalRemaining: number;
+  };
+};
+
+type TodoListReturnDisplay = {
+  type: 'todo_list';
+  agentId: string;
+  summary: string;
+  metadata: {
+    agentId: string;
+    version: number;
+    totalTodos: number;
+    completedTodos: number;
+    pendingTodos: number;
+    inProgressTodos: number;
+  };
+  todos: TodoItem[];
 };
 
 type DiffViewerReturnDisplay = {
@@ -99,7 +141,10 @@ export type ToolResult = {
     | string
     | DiffViewerReturnDisplay
     | TodoReadReturnDisplay
-    | TodoWriteReturnDisplay;
+    | TodoWriteReturnDisplay
+    | TodoCreateReturnDisplay
+    | TodoCleanupSuggestionReturnDisplay
+    | TodoListReturnDisplay;
   isError?: boolean;
 };
 

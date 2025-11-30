@@ -1,7 +1,8 @@
 import fs from 'fs';
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, writeFile, unlink } from 'fs/promises';
 import path from 'pathe';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
 
@@ -183,72 +184,288 @@ The assistant did not use the todo list because this is a single command executi
 When in doubt, use this tool. Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully.
 `;
 
-const TODO_READ_PROMPT = `Use this tool to read your todo list`;
+const TODO_READ_PROMPT = `Use this tool to read your todo list (use agentId from todoCreate)`;
+
+const TODO_CREATE_PROMPT = `Initialize a new todo list for an agent/session. Creates an agent-specific todo file with metadata tracking.`;
+
+const TODO_LIST_PROMPT = `List all todos for a specific agent or current session. Shows current state with metadata.`;
+
+const TODO_DELETE_PROMPT = `Delete a specific todo item by ID from an agent's todo list.`;
 
 const TodoItemSchema = z.object({
   id: z.string(),
   content: z.string().min(1, 'Content cannot be empty'),
   status: z.enum(['pending', 'in_progress', 'completed']),
   priority: z.enum(['low', 'medium', 'high']),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  completedAt: z.string().datetime().optional(),
 });
 
 const TodoListSchema = z.array(TodoItemSchema);
 
-type TodoList = z.infer<typeof TodoListSchema>;
+const TodoMetadataSchema = z.object({
+  agentId: z.string(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  version: z.number(),
+  totalTodos: z.number(),
+  completedTodos: z.number(),
+  pendingTodos: z.number(),
+  inProgressTodos: z.number(),
+});
+
+const TodoFileSchema = z.object({
+  metadata: TodoMetadataSchema,
+  todos: TodoListSchema,
+});
 
 export type TodoItem = z.infer<typeof TodoItemSchema>;
+export type TodoMetadata = z.infer<typeof TodoMetadataSchema>;
+export type TodoFile = z.infer<typeof TodoFileSchema>;
 
-async function loadTodosFromFile(filePath: string) {
-  if (!fs.existsSync(filePath)) return [];
+async function generateAgentId(): Promise<string> {
+  return `agent-${Date.now()}-${randomUUID()}`;
+}
+
+async function ensureTodoDirectory(filePath: string): Promise<string> {
+  const todoDir = path.dirname(filePath);
+  if (!fs.existsSync(todoDir)) {
+    await fs.promises.mkdir(todoDir, { recursive: true });
+  }
+  return todoDir;
+}
+
+async function loadTodoFile(filePath: string): Promise<TodoFile | null> {
+  if (!fs.existsSync(filePath)) return null;
 
   try {
     const fileContent = await readFile(filePath, { encoding: 'utf-8' });
     const parsedData = JSON.parse(fileContent);
-    return TodoListSchema.parse(parsedData);
+    return TodoFileSchema.parse(parsedData);
   } catch (error) {
-    console.error(error instanceof Error ? error : new Error(String(error)));
-    return [];
+    console.error(
+      'Error loading todo file:',
+      error instanceof Error ? error : new Error(String(error)),
+    );
+    return null;
   }
 }
 
-async function saveTodos(todos: TodoList, filePath: string) {
-  await writeFile(filePath, JSON.stringify(todos, null, 2));
-}
+async function saveTodoFile(
+  todoFile: TodoFile,
+  filePath: string,
+): Promise<void> {
+  const jsonContent = JSON.stringify(todoFile, null, 2);
+  const tempFilePath = `${filePath}.tmp`;
 
-export function createTodoTool(opts: { filePath: string }) {
-  function ensureTodoDirectory() {
-    const todoDir = path.dirname(opts.filePath);
-    if (!fs.existsSync(todoDir)) {
-      fs.mkdirSync(todoDir, { recursive: true });
+  try {
+    // Write to temporary file first, then atomic rename
+    await writeFile(tempFilePath, jsonContent);
+    await fs.promises.rename(tempFilePath, filePath);
+  } catch (error) {
+    // Clean up temp file on error
+    try {
+      await unlink(tempFilePath);
+    } catch (cleanupError) {
+      // Ignore cleanup errors
     }
-    return todoDir;
+    throw error;
+  }
+}
+
+function calculateTodoStats(todos: TodoItem[]): {
+  total: number;
+  completed: number;
+  pending: number;
+  inProgress: number;
+} {
+  const total = todos.length;
+  const completed = todos.filter((t) => t.status === 'completed').length;
+  const pending = todos.filter((t) => t.status === 'pending').length;
+  const inProgress = todos.filter((t) => t.status === 'in_progress').length;
+
+  return { total, completed, pending, inProgress };
+}
+
+function updateMetadata(
+  metadata: TodoMetadata,
+  todos: TodoItem[],
+): TodoMetadata {
+  const stats = calculateTodoStats(todos);
+  const now = new Date().toISOString();
+
+  return {
+    ...metadata,
+    updatedAt: now,
+    version: metadata.version + 1,
+    totalTodos: stats.total,
+    completedTodos: stats.completed,
+    pendingTodos: stats.pending,
+    inProgressTodos: stats.inProgress,
+  };
+}
+
+export function createTodoTool(opts: { baseDir: string }) {
+  function getAgentFilePath(agentId: string): string {
+    return path.join(opts.baseDir, `agent-${agentId}.json`);
   }
 
-  function getTodoFilePath() {
-    ensureTodoDirectory();
-    return opts.filePath;
+  async function createAgentTodos(
+    agentId?: string,
+  ): Promise<{ agentId: string; filePath: string }> {
+    const finalAgentId = agentId || (await generateAgentId());
+    const filePath = getAgentFilePath(finalAgentId);
+
+    await ensureTodoDirectory(filePath);
+
+    const now = new Date().toISOString();
+    const initialMetadata: TodoMetadata = {
+      agentId: finalAgentId,
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+      totalTodos: 0,
+      completedTodos: 0,
+      pendingTodos: 0,
+      inProgressTodos: 0,
+    };
+
+    const initialTodoFile: TodoFile = {
+      metadata: initialMetadata,
+      todos: [],
+    };
+
+    await saveTodoFile(initialTodoFile, filePath);
+
+    return { agentId: finalAgentId, filePath };
   }
 
-  async function readTodos() {
-    return await loadTodosFromFile(getTodoFilePath());
-  }
+  const todoCreateTool = createTool({
+    name: TOOL_NAMES.TODO_CREATE,
+    description: TODO_CREATE_PROMPT,
+    parameters: z.object({
+      agentId: z
+        .string()
+        .optional()
+        .describe(
+          'Optional agent ID. If not provided, a new one will be generated.',
+        ),
+    }),
+    async execute({ agentId }) {
+      try {
+        const { agentId: finalAgentId, filePath } =
+          await createAgentTodos(agentId);
+
+        return {
+          llmContent: `Todo list created for agent ${finalAgentId}`,
+          returnDisplay: {
+            type: 'todo_create',
+            agentId: finalAgentId,
+            filePath,
+            message: 'New todo list initialized with empty state',
+          },
+        };
+      } catch (error) {
+        return {
+          isError: true,
+          llmContent:
+            error instanceof Error
+              ? `Failed to create todo list: ${error.message}`
+              : 'Unknown error',
+        };
+      }
+    },
+    approval: {
+      category: 'read',
+    },
+  });
 
   const todoWriteTool = createTool({
     name: TOOL_NAMES.TODO_WRITE,
     description: TODO_WRITE_PROMPT,
     parameters: z.object({
+      agentId: z.string().describe('Agent/session ID'),
       todos: TodoListSchema.describe('The updated todo list'),
     }),
-    async execute({ todos }) {
+    async execute({ agentId, todos }) {
       try {
-        const oldTodos = await readTodos();
-        const newTodos = todos;
-        await saveTodos(newTodos, getTodoFilePath());
+        const filePath = getAgentFilePath(agentId);
+        const todoFile = await loadTodoFile(filePath);
+
+        if (!todoFile) {
+          return {
+            isError: true,
+            llmContent: `No todo file found for agent ${agentId}. Use todoCreate first.`,
+          };
+        }
+
+        // Update timestamps for all todos
+        const now = new Date().toISOString();
+        const updatedTodos = todos.map((todo) => ({
+          ...todo,
+          updatedAt: now,
+          completedAt: todo.status === 'completed' ? now : todo.completedAt,
+        }));
+
+        const updatedMetadata = updateMetadata(todoFile.metadata, updatedTodos);
+
+        const newTodoFile: TodoFile = {
+          metadata: updatedMetadata,
+          todos: updatedTodos,
+        };
+
+        await saveTodoFile(newTodoFile, filePath);
+
+        // Check if all todos are completed
+        const allCompleted =
+          updatedTodos.length > 0 &&
+          updatedTodos.every((todo) => todo.status === 'completed');
+        const hasCompletedTodos = updatedTodos.some(
+          (todo) => todo.status === 'completed',
+        );
+
+        // Generate smart cleanup suggestions
+        let llmContent = `Todo list updated for agent ${agentId}. ${updatedTodos.length} todos saved.`;
+        let suggestions = undefined;
+
+        if (allCompleted) {
+          llmContent += `\n\n🎉 **All todos completed!** Great job! Here are some cleanup options:\n`;
+          llmContent += `• Use \`todoDeleteTool\` to remove specific completed items\n`;
+          llmContent += `• Keep the list for historical reference\n`;
+          llmContent += `• Archive the completed items for later review\n\n`;
+          llmContent += `Your accomplishments are saved in the version history!`;
+          suggestions = 'cleanup_suggestions';
+        } else if (hasCompletedTodos) {
+          const completedCount = updatedTodos.filter(
+            (t) => t.status === 'completed',
+          ).length;
+          const pendingCount = updatedTodos.filter(
+            (t) => t.status === 'pending',
+          ).length;
+          const inProgressCount = updatedTodos.filter(
+            (t) => t.status === 'in_progress',
+          ).length;
+
+          if (
+            completedCount >= Math.max(3, Math.ceil(updatedTodos.length * 0.5))
+          ) {
+            llmContent += `\n\n💡 **Progress update:** ${completedCount} completed, ${pendingCount} pending, ${inProgressCount} in progress.\n`;
+            llmContent += `You can use \`todoDeleteTool\` to clean up completed items if desired.`;
+            suggestions = 'progress_update';
+          }
+        }
 
         return {
-          llmContent:
-            'Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable',
-          returnDisplay: { type: 'todo_write', oldTodos, newTodos },
+          llmContent,
+          returnDisplay: {
+            type: 'todo_write',
+            agentId,
+            oldTodos: todoFile.todos,
+            newTodos: updatedTodos,
+            metadata: updatedMetadata,
+            suggestions,
+          },
         };
       } catch (error) {
         return {
@@ -268,16 +485,29 @@ export function createTodoTool(opts: { filePath: string }) {
   const todoReadTool = createTool({
     name: TOOL_NAMES.TODO_READ,
     description: TODO_READ_PROMPT,
-    parameters: z.object({}).passthrough(),
-    async execute() {
+    parameters: z.object({
+      agentId: z.string().describe('Agent/session ID'),
+    }),
+    async execute({ agentId }) {
       try {
-        const todos = await readTodos();
+        const filePath = getAgentFilePath(agentId);
+        const todoFile = await loadTodoFile(filePath);
+
+        if (!todoFile) {
+          return {
+            isError: true,
+            llmContent: `No todo file found for agent ${agentId}. Use todoCreate first.`,
+          };
+        }
+
         return {
-          llmContent:
-            todos.length === 0
-              ? 'Todo list is empty'
-              : `Found ${todos.length} todos`,
-          returnDisplay: { type: 'todo_read', todos },
+          llmContent: `Found ${todoFile.todos.length} todos for agent ${agentId}`,
+          returnDisplay: {
+            type: 'todo_read',
+            agentId,
+            todos: todoFile.todos,
+            metadata: todoFile.metadata,
+          },
         };
       } catch (error) {
         return {
@@ -294,8 +524,122 @@ export function createTodoTool(opts: { filePath: string }) {
     },
   });
 
+  const todoListTool = createTool({
+    name: TOOL_NAMES.TODO_LIST,
+    description: TODO_LIST_PROMPT,
+    parameters: z.object({
+      agentId: z.string().describe('Agent/session ID'),
+    }),
+    async execute({ agentId }) {
+      try {
+        const filePath = getAgentFilePath(agentId);
+        const todoFile = await loadTodoFile(filePath);
+
+        if (!todoFile) {
+          return {
+            isError: true,
+            llmContent: `No todo file found for agent ${agentId}. Use todoCreate first.`,
+          };
+        }
+
+        const stats = todoFile.metadata;
+        const todoSummary = `Agent ${agentId}: ${stats.totalTodos} total (${stats.completedTodos} completed, ${stats.pendingTodos} pending, ${stats.inProgressTodos} in progress)`;
+
+        return {
+          llmContent: todoSummary,
+          returnDisplay: {
+            type: 'todo_list',
+            agentId,
+            summary: todoSummary,
+            metadata: stats,
+            todos: todoFile.todos,
+          },
+        };
+      } catch (error) {
+        return {
+          isError: true,
+          llmContent:
+            error instanceof Error
+              ? `Failed to list todos: ${error.message}`
+              : 'Unknown error',
+        };
+      }
+    },
+    approval: {
+      category: 'read',
+    },
+  });
+
+  const todoDeleteTool = createTool({
+    name: TOOL_NAMES.TODO_DELETE,
+    description: TODO_DELETE_PROMPT,
+    parameters: z.object({
+      agentId: z.string().describe('Agent/session ID'),
+      todoId: z.string().describe('ID of the todo item to delete'),
+    }),
+    async execute({ agentId, todoId }) {
+      try {
+        const filePath = getAgentFilePath(agentId);
+        const todoFile = await loadTodoFile(filePath);
+
+        if (!todoFile) {
+          return {
+            isError: true,
+            llmContent: `No todo file found for agent ${agentId}. Use todoCreate first.`,
+          };
+        }
+
+        const todoToDelete = todoFile.todos.find((t) => t.id === todoId);
+        if (!todoToDelete) {
+          return {
+            isError: true,
+            llmContent: `Todo item ${todoId} not found for agent ${agentId}`,
+          };
+        }
+
+        const filteredTodos = todoFile.todos.filter((t) => t.id !== todoId);
+        const updatedMetadata = updateMetadata(
+          todoFile.metadata,
+          filteredTodos,
+        );
+
+        const newTodoFile: TodoFile = {
+          metadata: updatedMetadata,
+          todos: filteredTodos,
+        };
+
+        await saveTodoFile(newTodoFile, filePath);
+
+        return {
+          llmContent: `Todo "${todoToDelete.content}" deleted from agent ${agentId}`,
+          returnDisplay: {
+            type: 'todo_delete',
+            agentId,
+            deletedTodo: todoToDelete,
+            remainingCount: filteredTodos.length,
+            metadata: updatedMetadata,
+          },
+        };
+      } catch (error) {
+        return {
+          isError: true,
+          llmContent:
+            error instanceof Error
+              ? `Failed to delete todo: ${error.message}`
+              : 'Unknown error',
+        };
+      }
+    },
+    approval: {
+      category: 'read',
+    },
+  });
+
   return {
+    todoCreateTool,
     todoWriteTool,
     todoReadTool,
+    todoListTool,
+    todoDeleteTool,
   };
 }

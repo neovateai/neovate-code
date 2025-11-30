@@ -51,10 +51,22 @@ export async function resolveTools(opts: ResolveToolsOpts) {
     : [];
   const todoTools = (() => {
     if (!opts.todo) return [];
-    const { todoWriteTool, todoReadTool } = createTodoTool({
-      filePath: path.join(paths.globalConfigDir, 'todos', `${sessionId}.json`),
+    const {
+      todoCreateTool,
+      todoWriteTool,
+      todoReadTool,
+      todoListTool,
+      todoDeleteTool,
+    } = createTodoTool({
+      baseDir: path.join(paths.globalConfigDir, 'todos'),
     });
-    return [todoReadTool, todoWriteTool];
+    return [
+      todoCreateTool,
+      todoWriteTool,
+      todoReadTool,
+      todoListTool,
+      todoDeleteTool,
+    ];
   })();
   const backgroundTools = opts.write
     ? [
@@ -239,6 +251,63 @@ type TodoWriteReturnDisplay = {
   type: 'todo_write';
   oldTodos: TodoItem[];
   newTodos: TodoItem[];
+  metadata: {
+    agentId: string;
+    version: number;
+    totalTodos: number;
+    completedTodos: number;
+    pendingTodos: number;
+    inProgressTodos: number;
+  };
+  hasCleanupSuggestions?: boolean;
+};
+
+type TodoCreateReturnDisplay = {
+  type: 'todo_create';
+  agentId: string;
+  filePath: string;
+  message: string;
+};
+
+type TodoDeleteReturnDisplay = {
+  type: 'todo_delete';
+  agentId: string;
+  deletedTodo: TodoItem;
+  remainingCount: number;
+  metadata: {
+    agentId: string;
+    version: number;
+    totalTodos: number;
+    completedTodos: number;
+    pendingTodos: number;
+    inProgressTodos: number;
+  };
+};
+
+type TodoCleanupSuggestionReturnDisplay = {
+  type: 'todo_cleanup_suggestion';
+  agentId: string;
+  completedTodos: TodoItem[];
+  suggestion: string;
+  summary: {
+    totalCompleted: number;
+    totalRemaining: number;
+  };
+};
+
+type TodoListReturnDisplay = {
+  type: 'todo_list';
+  agentId: string;
+  summary: string;
+  metadata: {
+    agentId: string;
+    version: number;
+    totalTodos: number;
+    completedTodos: number;
+    pendingTodos: number;
+    inProgressTodos: number;
+  };
+  todos: TodoItem[];
 };
 
 type DiffViewerReturnDisplay = {
@@ -253,7 +322,11 @@ export type ReturnDisplay =
   | string
   | DiffViewerReturnDisplay
   | TodoReadReturnDisplay
-  | TodoWriteReturnDisplay;
+  | TodoWriteReturnDisplay
+  | TodoCreateReturnDisplay
+  | TodoDeleteReturnDisplay
+  | TodoCleanupSuggestionReturnDisplay
+  | TodoListReturnDisplay;
 
 export type ToolResult = {
   llmContent: string | (TextPart | ImagePart)[];
