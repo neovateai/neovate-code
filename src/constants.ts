@@ -23,6 +23,17 @@ export enum TOOL_NAMES {
   BASH = 'bash',
   BASH_OUTPUT = 'bash_output',
   KILL_BASH = 'kill_bash',
+  TASK = 'task',
+  READ = 'read',
+  GLOB = 'glob',
+  WRITE = 'write',
+  GREP = 'grep',
+  EDIT = 'edit',
+}
+
+export enum AGENT_TYPE {
+  EXPLORE = 'Explore',
+  PLAN = 'Plan',
 }
 
 export const BASH_EVENTS = {

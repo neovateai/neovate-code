@@ -2,6 +2,7 @@ import fs from 'fs';
 import { createJiti } from 'jiti';
 import path from 'pathe';
 import resolve from 'resolve';
+import { AgentManager } from './agent';
 import { BackgroundTaskManager } from './backgroundTaskManager';
 import { type Config, ConfigManager } from './config';
 import { MCPManager } from './mcp';
@@ -26,6 +27,7 @@ type ContextOpts = {
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
   messageBus?: MessageBus;
+  agentManager?: AgentManager;
 };
 
 export type ContextCreateOpts = {
@@ -50,6 +52,7 @@ export class Context {
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
   messageBus?: MessageBus;
+  agentManager?: AgentManager;
 
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
@@ -63,6 +66,7 @@ export class Context {
     this.argvConfig = opts.argvConfig;
     this.backgroundTaskManager = opts.backgroundTaskManager;
     this.messageBus = opts.messageBus;
+    this.agentManager = opts.agentManager;
   }
 
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {
@@ -132,7 +136,9 @@ export class Context {
     };
     const mcpManager = MCPManager.create(mcpServers);
     const backgroundTaskManager = new BackgroundTaskManager();
-    return new Context({
+
+    // Create Context first without AgentManager
+    const context = new Context({
       cwd,
       productName,
       productASCIIArt,
@@ -145,6 +151,12 @@ export class Context {
       backgroundTaskManager,
       messageBus: opts.messageBus,
     });
+
+    // Create and attach AgentManager
+    const agentManager = new AgentManager({ context });
+    context.agentManager = agentManager;
+
+    return context;
   }
 }
 
@@ -175,7 +187,7 @@ function scanPlugins(pluginDir: string): string[] {
     return files
       .filter((file) => file.endsWith('.js') || file.endsWith('.ts'))
       .map((file) => path.join(pluginDir, file));
-  } catch (error) {
+  } catch (_error) {
     return [];
   }
 }

@@ -1,5 +1,6 @@
 import { glob } from 'glob';
 import { z } from 'zod';
+import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
 import { safeStringify } from '../utils/safeStringify';
 
@@ -7,7 +8,7 @@ const LIMIT = 100;
 
 export function createGlobTool(opts: { cwd: string }) {
   return createTool({
-    name: 'glob',
+    name: TOOL_NAMES.GLOB,
     description: `
 Glob
 - Fast file pattern matching tool that works with any codebase size

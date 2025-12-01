@@ -2,7 +2,7 @@ import type { LanguageModelV2FunctionTool } from '@ai-sdk/provider';
 import path from 'pathe';
 import * as z from 'zod';
 import type { Context } from './context';
-import type { ImagePart, TextPart } from './message';
+import type { ImagePart, NormalizedMessage, TextPart } from './message';
 import { resolveModelWithContext } from './model';
 import {
   createBashOutputTool,
@@ -15,6 +15,7 @@ import { createGlobTool } from './tools/glob';
 import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
+import { createTaskTool } from './tools/task';
 import { createTodoTool, type TodoItem } from './tools/todo';
 import { createWriteTool } from './tools/write';
 
@@ -23,6 +24,7 @@ type ResolveToolsOpts = {
   sessionId: string;
   write?: boolean;
   todo?: boolean;
+  getCurrentMessages?: () => NormalizedMessage[];
 };
 
 export async function resolveTools(opts: ResolveToolsOpts) {
@@ -66,14 +68,28 @@ export async function resolveTools(opts: ResolveToolsOpts) {
         }),
       ]
     : [];
+
   const mcpTools = await getMcpTools(opts.context);
-  return [
+
+  const availableTools = [
     ...readonlyTools,
     ...writeTools,
     ...todoTools,
     ...backgroundTools,
     ...mcpTools,
   ];
+
+  const taskTools = (() => {
+    if (!opts.context.agentManager) return [];
+    return [
+      createTaskTool({
+        context: opts.context,
+        tools: availableTools,
+      }),
+    ];
+  })();
+
+  return [...availableTools, ...taskTools];
 }
 
 async function getMcpTools(context: Context): Promise<Tool[]> {
@@ -147,7 +163,7 @@ export class Tools {
         : 0;
       const desc =
         limit > 0 && tool.description.length > limit
-          ? tool.description.slice(0, limit - 3) + '...'
+          ? `${tool.description.slice(0, limit - 3)}...`
           : tool.description;
       return {
         type: 'function',

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'pathe';
 import { z } from 'zod';
+import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
 import { ripGrep } from '../utils/ripgrep';
 import { safeStringify } from '../utils/safeStringify';
@@ -10,7 +11,15 @@ const DEFAULT_LIMIT = 1000;
 export function createGrepTool(opts: { cwd: string }) {
   return createTool({
     name: 'grep',
-    description: `Search for a pattern in a file or directory.`,
+    description: `
+    Search for a pattern in a file or directory.
+
+    Usage:
+      - ALWAYS use ${TOOL_NAMES.GREP} for search tasks. NEVER invoke \`grep\` or \`rg\` as a ${TOOL_NAMES.BASH} command. The ${TOOL_NAMES.GREP} tool has been optimized for correct permissions and access.
+      - Supports full regex syntax (e.g., "log.*Error", "function\\s+\\w+")
+      - Filter files with glob parameter (e.g., "*.js", "**/*.tsx") or type parameter (e.g., "js", "py", "rust")
+      - Use ${TOOL_NAMES.TASK} tool for open-ended searches requiring multiple rounds
+    `,
     parameters: z.object({
       pattern: z.string().describe('The pattern to search for'),
       search_path: z
