@@ -20,7 +20,6 @@
     "build:cli": "bun build src/cli.ts --external react-devtools-core --minify --outfile dist/cli.mjs --target=node",
     "build:index": "bun build src/index.ts --external react-devtools-core --minify --outfile dist/index.mjs --target=node",
     "build:dts": "npm run build:type && api-extractor run --local --verbose",
-    "build:browser": "pnpm --filter @neovate/browser build",
     "build:post": "bun scripts/post-build.ts",
     "build:mcps": "bun scripts/bundleMcps.ts",
     "build": "rm -rf dist dist-dts && npm run build:cli && npm run build:index && npm run build:dts && npm run build:mcps && npm run build:post",

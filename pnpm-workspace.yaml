@@ -1,7 +1,6 @@
 packages:
   - vscode-extension
   - examples/*
-  - browser
 
 patchedDependencies:
   marked-terminal: patches/marked-terminal.patch
