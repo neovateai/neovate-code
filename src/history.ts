@@ -128,6 +128,9 @@ export class History {
                 toolCallId: part.id,
                 toolName: part.name,
                 input: part.input,
+                ...(part.providerMetadata && {
+                  providerMetadata: part.providerMetadata,
+                }),
               };
             } else {
               throw new Error(

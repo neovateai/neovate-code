@@ -35,6 +35,15 @@ function formatToolResultContent(llmContent: unknown): string {
  * to make the conversation history suitable for compression without losing
  * important context about what operations were performed.
  *
+ * For assistant messages:
+ * - Removes tool_use parts
+ * - Keeps text and reasoning parts
+ * - If no text content exists, converts reasoning to text for readability
+ * - If no content remains, uses a default placeholder
+ *
+ * For tool messages:
+ * - Converts to user messages with tool execution summaries
+ *
  * @param messages - Array of normalized messages to process
  * @returns Array of normalized messages with tool content converted to summaries
  */
@@ -51,6 +60,42 @@ export function normalizeMessagesForCompact(
           );
 
           if (filteredContent.length === 0) {
+            return {
+              ...message,
+              content: [
+                {
+                  type: 'text' as const,
+                  text: '[Assistant performed tool operations]',
+                },
+              ],
+            };
+          }
+
+          // If there's no text content, convert reasoning to text for readability
+          const hasTextPart = filteredContent.some(
+            (part) => part.type === 'text',
+          );
+          if (!hasTextPart) {
+            const reasoningTexts = filteredContent
+              .filter(
+                (part): part is ReasoningPart => part.type === 'reasoning',
+              )
+              .map((part) => part.text)
+              .filter((text) => text.trim().length > 0);
+
+            if (reasoningTexts.length > 0) {
+              return {
+                ...message,
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: reasoningTexts.join('\n'),
+                  },
+                ],
+              };
+            }
+
+            // If even reasoning is empty, use default text
             return {
               ...message,
               content: [

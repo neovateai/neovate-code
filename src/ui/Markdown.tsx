@@ -33,6 +33,25 @@ export function Markdown({ children, ...options }: Props) {
           return chalk.bold.dim(text);
       }
     },
+    list: (body: string, ordered?: boolean) => {
+      let content = body.trim();
+      // Collapse multiple newlines to single newline to reduce vertical spacing
+      content = content.replace(/\n\n+/g, '\n');
+      if (ordered) {
+        let count = 0;
+        content = content
+          .split('\n')
+          .map((line) => {
+            if (line.startsWith('* ')) {
+              count++;
+              return line.replace(/^\* /, `${count}. `);
+            }
+            return line;
+          })
+          .join('\n');
+      }
+      return content;
+    },
     ...options,
   };
   // @ts-expect-error

@@ -1,3 +1,19 @@
+## 0.18.2
+
+`2025-11-28`
+
+- fix: update copilot documentation url in model configuration by [@sorrycc](https://github.com/sorrycc)
+- fix(mcp): fix redundant console output for stdio-type MCP by [@QuietlyChan](https://github.com/QuietlyChan) in [#463](https://github.com/umijs/takumi/pull/463)
+- feat: add visionModel support for multimodal tasks by [@Yuwang Liu](https://github.com/Yuwang Liu) in [#467](https://github.com/umijs/takumi/pull/467)
+- refactor: unify list navigation logic using useListNavigation hook by [@Yuwang Liu](https://github.com/Yuwang Liu) in [#456](https://github.com/umijs/takumi/pull/456)
+- fix: add reasoning content conversion for assistant messages in compact normalization by [@阿平](https://github.com/阿平) in [#468](https://github.com/umijs/takumi/pull/468)
+- feat: add antigravity provider and improve github provider by [@sorrycc](https://github.com/sorrycc)
+- fix: simplify summary message generation and assignment by [@阿平](https://github.com/阿平) in [#459](https://github.com/umijs/takumi/pull/459)
+- feat(browser): add model selection dropdown to chat sender footer [AI] by [@Kying-star](https://github.com/Kying-star) in [#369](https://github.com/umijs/takumi/pull/369)
+- feat: add poe provider with claude gemini gpt grok models support, Close #455 by [@sorrycc](https://github.com/sorrycc)
+- feat: add reverse history search (Ctrl+R) functionality by [@Yuwang Liu](https://github.com/Yuwang Liu) in [#451](https://github.com/umijs/takumi/pull/451)
+
+
 ## 0.18.1
 
 `2025-11-25`

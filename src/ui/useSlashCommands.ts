@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CommandEntry } from '../slashCommand';
 import { useAppStore } from './store';
+import { useListNavigation } from './useListNavigation';
 
 export function useSlashCommands(input: string) {
   const { bridge, cwd, log } = useAppStore();
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [slashCommands, setSlashCommands] = useState<CommandEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,31 +39,20 @@ export function useSlashCommands(input: string) {
       });
   }, [bridge, cwd, input, log]);
 
+  // Use common list navigation logic
+  const navigation = useListNavigation(suggestions);
+
+  // Track suggestions length to reset selection when it changes
+  const prevSuggestionsLengthRef = useRef(suggestions.length);
   useEffect(() => {
-    setSelectedIndex(0);
-  }, [suggestions]);
-
-  const navigateNext = () => {
-    if (suggestions.length === 0) return;
-    setSelectedIndex((prev) => (prev + 1) % suggestions.length);
-  };
-
-  const navigatePrevious = () => {
-    if (suggestions.length === 0) return;
-    setSelectedIndex(
-      (prev) => (prev - 1 + suggestions.length) % suggestions.length,
-    );
-  };
+    if (prevSuggestionsLengthRef.current !== suggestions.length) {
+      navigation.reset();
+      prevSuggestionsLengthRef.current = suggestions.length;
+    }
+  });
 
   const getSelectedSuggestion = () => {
-    if (
-      suggestions.length === 0 ||
-      selectedIndex < 0 ||
-      selectedIndex >= suggestions.length
-    ) {
-      return null;
-    }
-    return suggestions[selectedIndex];
+    return navigation.getSelected();
   };
 
   const getCompletedCommand = () => {
@@ -76,10 +65,10 @@ export function useSlashCommands(input: string) {
 
   return {
     suggestions,
-    selectedIndex,
+    selectedIndex: navigation.selectedIndex,
     isLoading,
-    navigateNext,
-    navigatePrevious,
+    navigateNext: navigation.navigateNext,
+    navigatePrevious: navigation.navigatePrevious,
     getSelectedSuggestion,
     getCompletedCommand,
   };

@@ -52,6 +52,7 @@ type Argv = {
   outputStyle?: string;
   planModel?: string;
   smallModel?: string;
+  visionModel?: string;
   resume?: string;
   systemPrompt?: string;
   // array
@@ -87,6 +88,7 @@ async function parseArgs(argv: any) {
       'outputStyle',
       'planModel',
       'smallModel',
+      'visionModel',
       'resume',
       'systemPrompt',
     ],
@@ -116,6 +118,7 @@ Options:
   -m, --model <model>           Specify model to use
   --plan-model <model>          Specify a plan model for some tasks
   --small-model <model>         Specify a small model for quick operations
+  --vision-model <model>        Specify a vision model for image tasks
   -r, --resume <session-id>     Resume a session
   -c, --continue                Continue the latest session
   -q, --quiet                   Quiet mode, non interactive
@@ -297,6 +300,7 @@ export async function runNeovate(opts: {
       model: argv.model,
       planModel: argv.planModel,
       smallModel: argv.smallModel,
+      visionModel: argv.visionModel,
       quiet: argv.quiet,
       outputFormat: argv.outputFormat,
       plugins: argv.plugin,

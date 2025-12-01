@@ -1,7 +1,6 @@
 import { compact } from './compact';
 import {
   type ApprovalMode,
-  type Config,
   ConfigManager,
   type McpServerConfig,
 } from './config';
@@ -181,10 +180,15 @@ class NodeHandlerRegistry {
     // config
     this.messageBus.registerHandler(
       'config.get',
-      async (data: { cwd: string; key: string }) => {
-        const { cwd, key } = data;
+      async (data: { cwd: string; isGlobal: boolean; key: string }) => {
+        const { cwd, key, isGlobal } = data;
         const context = await this.getContext(cwd);
-        const value = context.config[key as keyof Config];
+        const configManager = new ConfigManager(
+          cwd,
+          context.productName,
+          context.argvConfig,
+        );
+        const value = configManager.getConfig(isGlobal, key);
         return {
           success: true,
           data: {

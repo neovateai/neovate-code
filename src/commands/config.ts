@@ -24,16 +24,23 @@ Available Configuration Keys:
   model                                 Primary model for AI interactions (default: flash)
   smallModel                            Smaller model for lightweight operations
   planModel                             Model for planning operations
+  visionModel                           Model for image/vision tasks
   language                              Language for AI responses (default: English)
   quiet                                 Suppress verbose output (boolean, default: false)
   approvalMode                          Approval mode for operations (default|autoEdit|yolo, default: default)
   plugins                               Array of plugin names to load
   mcpServers                            MCP (Message Control Protocol) server configurations (object)
+  httpProxy                             Global HTTP/HTTPS proxy URL (e.g., http://127.0.0.1:7890)
+  provider.{id}.options.baseURL         Custom API endpoint for specific provider
+  provider.{id}.options.httpProxy       Provider-level proxy URL (overrides global httpProxy)
 
 Examples:
   ${p} config get model               Get current model setting
   ${p} config set model gpt-4o        Set model for current project
   ${p} config set -g model gpt-4o     Set model globally
+  ${p} config set httpProxy http://127.0.0.1:7890 Set global proxy
+  ${p} config set provider.openai.options.baseURL https://api.openai.com/v1  Set custom API endpoint
+  ${p} config set provider.deepseek.options.httpProxy http://127.0.0.1:8888  Set provider-specific proxy
   ${p} config list                    Show all current config values
   ${p} config ls -g                   Show all global config values
   ${p} config add plugins "custom"    Add value to plugins array

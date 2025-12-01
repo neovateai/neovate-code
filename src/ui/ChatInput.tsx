@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink';
-import { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { SPACING, UI_COLORS } from './constants';
 import { DebugRandomNumber } from './Debug';
 import { MemoryModal } from './MemoryModal';

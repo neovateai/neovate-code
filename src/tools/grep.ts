@@ -25,11 +25,11 @@ export function createGrepTool(opts: { cwd: string }) {
         .describe('The file pattern to include in the search'),
       limit: z
         .number()
-        .positive()
+        // .positive()
         .max(DEFAULT_LIMIT)
         .optional()
         .describe(
-          `Maximum number of files to return (default: ${DEFAULT_LIMIT})`,
+          `Maximum number of files to return (positive number, default: ${DEFAULT_LIMIT})`,
         ),
     }),
     getDescription: ({ params }) => {

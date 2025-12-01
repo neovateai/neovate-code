@@ -338,6 +338,7 @@ export class MCPManager {
         transport: new Experimental_StdioMCPTransport({
           command: config.command,
           args: config.args,
+          stderr: 'ignore',
           env,
         }),
       });
@@ -525,7 +526,27 @@ export function convertMcpResultToLlmContent(
 ): string | (TextPart | ImagePart)[] {
   // Support mcp spec data types
   // ref: https://modelcontextprotocol.io/specification/2025-06-18/server/tools#data-types
-  let llmContent: any = result;
+
+  // Step 1: Unpack MCP result format
+  let actualContent: any;
+
+  if (result && typeof result === 'object' && !Array.isArray(result)) {
+    // why? https://github.com/vercel/ai/blob/main/packages/mcp/src/tool/types.ts#L201
+    if ('content' in result && Array.isArray(result.content)) {
+      // Format 1: { content: [...], isError?: boolean }
+      actualContent = result.content;
+    } else if ('toolResult' in result) {
+      // Format 2: { toolResult: unknown }
+      return safeStringify(result.toolResult);
+    } else {
+      // Fallback: treat as regular object
+      actualContent = result;
+    }
+  } else {
+    actualContent = result;
+  }
+
+  // Step 2: Type detection functions
   const isTextPart = (part: object) => {
     return 'type' in part && part.type === 'text' && 'text' in part;
   };
@@ -537,32 +558,47 @@ export function convertMcpResultToLlmContent(
       'mimeType' in part
     );
   };
-  const isPart = (part: object) => {
-    return isTextPart(part) || isImagePart(part);
+  const isResourcePart = (part: object) => {
+    return 'type' in part && part.type === 'resource' && 'resource' in part;
   };
-  if (typeof llmContent === 'object') {
+  const isPart = (part: object) => {
+    return isTextPart(part) || isImagePart(part) || isResourcePart(part);
+  };
+
+  // Step 3: Process actualContent based on type
+  let llmContent: any = actualContent;
+
+  if (typeof llmContent === 'object' && !Array.isArray(llmContent)) {
+    // Single object: wrap in array if it's a part, otherwise stringify
     if (isPart(llmContent as object)) {
       llmContent = [llmContent];
     } else {
       llmContent = safeStringify(llmContent);
     }
   } else if (Array.isArray(llmContent)) {
-    const hasPart = llmContent.some((part) => isPart(part));
+    // Array: check if it contains parts
+    const hasPart = llmContent.some(
+      (item) => typeof item === 'object' && item !== null && isPart(item),
+    );
     if (hasPart) {
+      // Mixed array: convert non-part elements to text parts
       llmContent = llmContent.map((part) => {
-        if (isPart(part)) {
+        if (typeof part === 'object' && part !== null && isPart(part)) {
           return part;
         } else {
           return { type: 'text', text: safeStringify(part) };
         }
       });
     } else {
+      // Pure data array: stringify
       llmContent = safeStringify(llmContent);
     }
   } else if (typeof llmContent === 'string') {
-    // keep llmContent as string
+    // Keep llmContent as string
   } else {
+    // Other types: convert to string
     llmContent = String(llmContent);
   }
+
   return llmContent;
 }

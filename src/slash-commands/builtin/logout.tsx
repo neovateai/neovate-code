@@ -69,25 +69,6 @@ export const LogoutSelect: React.FC<LogoutSelectProps> = ({ onExit }) => {
     if (!provider) return;
 
     try {
-      if (provider.id === 'github-copilot') {
-        const paths = new Paths({
-          productName,
-          cwd,
-        });
-        const githubDataPath = path.join(
-          paths.globalConfigDir,
-          'githubCopilot.json',
-        );
-
-        if (fs.existsSync(githubDataPath)) {
-          fs.unlinkSync(githubDataPath);
-          onExit(`✓ Successfully logged out from ${provider.name}`);
-        } else {
-          onExit(`✓ ${provider.name} is not logged in`);
-        }
-        return;
-      }
-
       const result = await bridge.request('config.remove', {
         cwd,
         isGlobal: true,

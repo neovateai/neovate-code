@@ -1,7 +1,6 @@
 import { Box, Text, useInput } from 'ink';
 import pc from 'picocolors';
-import type React from 'react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { ModelInfo } from '../../model';
 import PaginatedGroupSelectInput from '../../ui/PaginatedGroupSelectInput';
 import { useAppStore } from '../../ui/store';
