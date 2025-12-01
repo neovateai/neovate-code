@@ -195,14 +195,55 @@ export function loadPolishedMarkdownFiles(
   });
 }
 
-function loadMarkdownFile(path: string): MarkdownFile {
-  const content = fs.readFileSync(path, 'utf-8');
-  const { attributes, body } = fm<Record<string, string>>(content);
-  return {
-    path,
-    attributes,
-    body,
-  };
+export function loadMarkdownFile(filePath: string): MarkdownFile {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  try {
+    const { attributes, body } = fm<Record<string, string>>(content);
+    return {
+      path: filePath,
+      attributes,
+      body,
+    };
+  } catch (error) {
+    // Try to fix common YAML issues
+    // Issue 1: Colon in unquoted value (e.g. "name: OpenSpec: Proposal")
+    try {
+      const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      if (frontmatterMatch) {
+        const originalFm = frontmatterMatch[1];
+        const fixedFm = originalFm.replace(
+          /^(\s*[a-zA-Z0-9_-]+\s*:\s+)(.*:\s+.*)$/gm,
+          (match, keyPart, valuePart) => {
+            const trimmed = valuePart.trim();
+            if (
+              (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+              (trimmed.startsWith("'") && trimmed.endsWith("'"))
+            ) {
+              return match;
+            }
+            return `${keyPart}"${trimmed.replace(/"/g, '\\"')}"`;
+          },
+        );
+
+        if (fixedFm !== originalFm) {
+          const fixedContent = content.replace(originalFm, fixedFm);
+          const { attributes, body } = fm<Record<string, string>>(fixedContent);
+          return {
+            path: filePath,
+            attributes,
+            body,
+          };
+        }
+      }
+    } catch {
+      // Ignore retry errors
+    }
+
+    if (error instanceof Error) {
+      error.message = `Failed to parse markdown file ${filePath}: ${error.message}`;
+    }
+    throw error;
+  }
 }
 
 function loadPolishedMarkdownFile(
