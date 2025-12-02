@@ -79,6 +79,7 @@
     "@fastify/type-provider-typebox": "6.1.0",
     "@microsoft/api-extractor": "^7.55.0",
     "@modelcontextprotocol/inspector": "^0.17.2",
+    "@modelcontextprotocol/sdk": "^1.23.0",
     "@openrouter/ai-sdk-provider": "^1.2.3",
     "@sinclair/typebox": "^0.34.38",
     "@stagewise/agent-interface": "^0.3.2",
