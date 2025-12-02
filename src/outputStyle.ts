@@ -1,5 +1,4 @@
 import assert from 'assert';
-import fm from 'front-matter';
 import fs from 'fs';
 import { glob } from 'glob';
 import path from 'pathe';
@@ -10,6 +9,7 @@ import {
 } from './output-style/builtin';
 import type { Paths } from './paths';
 import { PluginHookType } from './plugin';
+import { safeFrontMatter } from './utils/safeFrontMatter';
 import { kebabToTitleCase } from './utils/string';
 
 export type OutputStyleOpts = {
@@ -197,53 +197,15 @@ export function loadPolishedMarkdownFiles(
 
 export function loadMarkdownFile(filePath: string): MarkdownFile {
   const content = fs.readFileSync(filePath, 'utf-8');
-  try {
-    const { attributes, body } = fm<Record<string, string>>(content);
-    return {
-      path: filePath,
-      attributes,
-      body,
-    };
-  } catch (error) {
-    // Try to fix common YAML issues
-    // Issue 1: Colon in unquoted value (e.g. "name: OpenSpec: Proposal")
-    try {
-      const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-      if (frontmatterMatch) {
-        const originalFm = frontmatterMatch[1];
-        const fixedFm = originalFm.replace(
-          /^(\s*[a-zA-Z0-9_-]+\s*:\s+)(.*:\s+.*)$/gm,
-          (match, keyPart, valuePart) => {
-            const trimmed = valuePart.trim();
-            if (
-              (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-              (trimmed.startsWith("'") && trimmed.endsWith("'"))
-            ) {
-              return match;
-            }
-            return `${keyPart}"${trimmed.replace(/"/g, '\\"')}"`;
-          },
-        );
-
-        if (fixedFm !== originalFm) {
-          const fixedContent = content.replace(originalFm, fixedFm);
-          const { attributes, body } = fm<Record<string, string>>(fixedContent);
-          return {
-            path: filePath,
-            attributes,
-            body,
-          };
-        }
-      }
-    } catch {
-      // Ignore retry errors
-    }
-
-    if (error instanceof Error) {
-      error.message = `Failed to parse markdown file ${filePath}: ${error.message}`;
-    }
-    throw error;
-  }
+  const { attributes, body } = safeFrontMatter<Record<string, string>>(
+    content,
+    filePath,
+  );
+  return {
+    path: filePath,
+    attributes,
+    body,
+  };
 }
 
 function loadPolishedMarkdownFile(
