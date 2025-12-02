@@ -73,6 +73,175 @@ describe('normalizeMessagesForCompact', () => {
     ]);
   });
 
+  test('should convert reasoning-only assistant content to readable text', () => {
+    const messages: NormalizedMessage[] = [
+      {
+        role: 'assistant',
+        content: [
+          {
+            type: 'reasoning',
+            text: 'The user asked me to revert recent changes to manifest.json.',
+          },
+          {
+            type: 'tool_use',
+            id: 'toolu_vrtx_011pD7AhictqR2PsxdL3vE9L',
+            name: 'write',
+            input: {
+              content: '{ "name": "Node Link Handling Plugin" }',
+              file_path: '/tmp/manifest.json',
+            },
+            description: 'packages/figma-link-plugin/manifest.json',
+          },
+        ],
+        text: '',
+        model: 'claude-4.5-sonnet',
+        usage: {
+          input_tokens: 139630,
+          output_tokens: 308,
+        },
+        type: 'message',
+        timestamp: '2025-11-27T09:42:48.764Z',
+        uuid: '1f050587-ecb1-41f7-97f3-b2d5acb6cb08',
+        parentUuid: '19c7f79b-71fe-4d77-bf3d-fcc6080be42f',
+      },
+    ];
+
+    const result = normalizeMessagesForCompact(messages);
+
+    expect(result).toHaveLength(1);
+    const content = result[0].content;
+    expect(Array.isArray(content)).toBe(true);
+    expect(content).toEqual([
+      {
+        type: 'text',
+        text: 'The user asked me to revert recent changes to manifest.json.',
+      },
+    ]);
+  });
+
+  test('should handle multiple reasoning parts by joining them', () => {
+    const messages: NormalizedMessage[] = [
+      {
+        role: 'assistant',
+        content: [
+          {
+            type: 'reasoning',
+            text: 'First, I need to analyze the request.',
+          },
+          {
+            type: 'reasoning',
+            text: 'Then, I will execute the appropriate tool.',
+          },
+          {
+            type: 'tool_use',
+            id: 'tool-1',
+            name: 'bash',
+            input: { command: 'ls' },
+          },
+        ],
+        text: '',
+        model: 'test-model',
+        usage: { input_tokens: 100, output_tokens: 50 },
+        type: 'message',
+        timestamp: '2025-11-27T10:00:00.000Z',
+        uuid: 'test-uuid',
+        parentUuid: null,
+      },
+    ];
+
+    const result = normalizeMessagesForCompact(messages);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].content).toEqual([
+      {
+        type: 'text',
+        text: 'First, I need to analyze the request.\nThen, I will execute the appropriate tool.',
+      },
+    ]);
+  });
+
+  test('should use default text when reasoning contains only whitespace', () => {
+    const messages: NormalizedMessage[] = [
+      {
+        role: 'assistant',
+        content: [
+          {
+            type: 'reasoning',
+            text: '   \n  \t  ',
+          },
+          {
+            type: 'tool_use',
+            id: 'tool-1',
+            name: 'read',
+            input: { file_path: 'test.ts' },
+          },
+        ],
+        text: '',
+        model: 'test-model',
+        usage: { input_tokens: 100, output_tokens: 50 },
+        type: 'message',
+        timestamp: '2025-11-27T10:00:00.000Z',
+        uuid: 'test-uuid',
+        parentUuid: null,
+      },
+    ];
+
+    const result = normalizeMessagesForCompact(messages);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].content).toEqual([
+      {
+        type: 'text',
+        text: '[Assistant performed tool operations]',
+      },
+    ]);
+  });
+
+  test('should preserve text content when both text and reasoning exist', () => {
+    const messages: NormalizedMessage[] = [
+      {
+        role: 'assistant',
+        content: [
+          {
+            type: 'text',
+            text: 'Let me help you with that.',
+          },
+          {
+            type: 'reasoning',
+            text: 'Internal thought process...',
+          },
+          {
+            type: 'tool_use',
+            id: 'tool-1',
+            name: 'write',
+            input: { file_path: 'test.ts', content: 'code' },
+          },
+        ],
+        text: 'Let me help you with that.',
+        model: 'test-model',
+        usage: { input_tokens: 100, output_tokens: 50 },
+        type: 'message',
+        timestamp: '2025-11-27T10:00:00.000Z',
+        uuid: 'test-uuid',
+        parentUuid: null,
+      },
+    ];
+
+    const result = normalizeMessagesForCompact(messages);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].content).toEqual([
+      {
+        type: 'text',
+        text: 'Let me help you with that.',
+      },
+      {
+        type: 'reasoning',
+        text: 'Internal thought process...',
+      },
+    ]);
+  });
+
   test('should convert tool messages to user messages with summary', () => {
     const messages: NormalizedMessage[] = [
       {

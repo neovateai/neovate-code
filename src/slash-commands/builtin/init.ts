@@ -6,87 +6,167 @@ export function createInitCommand(opts: { productName: string }) {
   return {
     type: 'prompt',
     name: 'init',
-    description: `Create or improve the ${ruleFile} file`,
-    progressMessage: `Analyzing codebase to create ${ruleFile}...`,
+    description: `Create or improve the ${ruleFile} file with progressive disclosure`,
+    progressMessage: `Analyzing codebase to create minimal ${ruleFile} with progressive disclosure...`,
     async getPromptForCommand() {
       return [
         {
           role: 'user',
           content: `
-Please analyze this codebase and create a comprehensive ${ruleFile} file that will guide future instances of ${productName} working in this repository.
+# Progressive Disclosure Documentation Generator
 
-## ESSENTIAL CONTENT TO INCLUDE
+You are creating documentation for this codebase using **progressive disclosure principles**. This means:
+- The root ${ruleFile} stays minimal (<60 lines) with only high-level guidance
+- Detailed information goes into separate \`docs/agent/*.md\` files
+- Only create additional docs where substantial content exists
 
-### 1. Development Commands
-Identify and document ALL essential commands for development workflow:
-- **Build/compilation commands** (npm run build, cargo build, etc.)
-- **Testing commands** (run all tests, single test, watch mode, coverage)
-- **Linting/formatting** (eslint, prettier, clippy, etc.)
-- **Development server** (dev mode, hot reload commands)
-- **Package management** (install, update, audit commands)
-- **Database/migration commands** (if applicable)
-- **Deployment/release commands** (if present in scripts)
+## TWO-PHASE APPROACH
 
-### 2. Code Architecture & Patterns
-Document the "big picture" that requires understanding multiple files:
-- **Project structure philosophy** (monorepo, modules, layers)
-- **Key architectural patterns** (MVC, microservices, plugin system, etc.)
-- **Data flow patterns** (state management, event handling, request flow)
-- **Configuration management** (how settings/env vars are handled)
-- **Key abstractions and interfaces** that other components depend on
-- **Plugin/extension system** (if present)
-- **Build/bundling strategy** (webpack config, build pipeline)
+### Phase 1: Discovery & Analysis
 
-### 3. Technology Stack & Dependencies
-- **Core frameworks/libraries** and their usage patterns
-- **Development dependencies** and their purposes
-- **Special tooling** or custom build processes
+First, analyze the codebase to understand:
 
-## ANALYSIS GUIDELINES
+1. **Package/Build Configuration**
+   - Read \`package.json\`, \`Cargo.toml\`, \`pyproject.toml\`, or similar
+   - Extract: scripts/commands, dependencies, project metadata
 
-### If ${ruleFile} Already Exists:
-- Compare with existing content and suggest specific improvements
-- Identify missing essential information
-- Point out outdated or incorrect information
-- Preserve valuable existing content
+2. **Existing Documentation**
+   - Check for existing \`${ruleFile}\`, \`CLAUDE.md\`, \`.cursorrules\`
+   - Read \`README.md\` for project overview
+   - Check \`docs/\` directory for existing documentation
 
-### Source Material to Examine:
-- **package.json/Cargo.toml**: Extract npm scripts, dependencies, project metadata
-- **README.md**: Include setup instructions, project overview, important notes
-- **.cursor/rules/ or .cursorrules**: Merge relevant coding guidelines
-- **.github/copilot-instructions.md**: Include important development practices
-- **Configuration files**: Build tools, linters, test configs for important patterns
-- **Source code**: Look for architectural patterns, not exhaustive file listings
+3. **Source Code Patterns**
+   - Identify key architectural patterns (not exhaustive file listings)
+   - Look for plugin systems, configuration patterns, data flow
 
-### What NOT to Include:
-- Generic development advice ("write good code", "test your changes")
-- Obvious security reminders (don't commit secrets, etc.)
-- Exhaustive file/directory listings that can be discovered with ls/find
-- Made-up sections like "Tips for Development" unless actually found in source
-- Boilerplate advice that applies to any codebase
+4. **Test Infrastructure**
+   - Identify test framework, test locations, testing patterns
 
-## OUTPUT REQUIREMENTS
+### Phase 2: Create Documentation Structure
 
-### Structure:
-- Start with the required header format
-- Use clear sections with markdown headers
-- Be concise but comprehensive
-- Focus on repository-specific information
+Based on your analysis, create the following:
 
-### Required Header:
-\`\`\`
+## 1. MINIMAL ${ruleFile} (REQUIRED)
+
+**CRITICAL: Must be under 60 lines total**
+
+Structure:
+\`\`\`markdown
 # ${ruleFile}
 
 This file provides guidance to ${productName} when working with code in this repository.
+
+## WHY: Purpose and Goals
+[1-3 sentences explaining what this project does and its core value. MAX 100 WORDS]
+
+## WHAT: Technical Stack
+[Bullet points listing key technologies. MAX 150 WORDS]
+- Runtime/Language: ...
+- Framework: ...
+- Key dependencies: ...
+
+## HOW: Core Development Workflow
+[3-5 ESSENTIAL commands only. MAX 100 WORDS]
+\`\`\`bash
+# Development
+npm run dev
+
+# Testing
+npm test
+
+# Build
+npm run build
 \`\`\`
 
-### Tone:
-- Direct and actionable
-- Assume the reader is a competent developer
-- Focus on what's unique or non-obvious about this codebase
-- Use bullet points and clear formatting for scannability
+## Progressive Disclosure
 
-Analyze the codebase thoroughly and create a rule file that will genuinely help future AI agents be productive from day one.
+For detailed information, consult these documents as needed:
+
+- \`docs/agent/development_commands.md\` - All build, test, lint, release commands
+- \`docs/agent/architecture.md\` - Module structure and architectural patterns
+- \`docs/agent/testing.md\` - Test setup, frameworks, and conventions
+
+**When working on a task, first determine which documentation is relevant, then read only those files.**
+\`\`\`
+
+## 2. DOCUMENTATION FILES (CREATE ONLY IF SUBSTANTIAL CONTENT EXISTS)
+
+Create \`docs/agent/\` directory and add files ONLY where you have substantial, specific information:
+
+### docs/agent/development_commands.md
+Create if you found multiple commands. Include:
+- All npm scripts / build commands with descriptions
+- Development server commands
+- Linting and formatting commands
+- Database/migration commands (if applicable)
+- Release/deployment commands (if present)
+- CI/CD related commands
+
+### docs/agent/architecture.md
+Create if you found clear architectural patterns. Include:
+- Project structure philosophy
+- Key architectural patterns (MVC, microservices, plugin system, etc.)
+- Data flow patterns
+- Configuration management approach
+- Key abstractions and interfaces
+- Build/bundling strategy
+
+### docs/agent/testing.md
+Create if you found test infrastructure. Include:
+- Test framework and setup
+- Test file locations and naming conventions
+- How to run tests (all, single, watch mode, coverage)
+- Testing patterns and best practices for this codebase
+- Mock/fixture conventions
+
+### docs/agent/conventions.md
+Create ONLY if strong, unique patterns exist. Include:
+- Import organization patterns
+- Naming conventions specific to this project
+- File organization rules
+- Code style beyond what linters enforce
+
+## ERROR HANDLING
+
+### Existing Files
+- If \`${ruleFile}\` exists: Show a summary of what would change, then ask "AGENTS.md exists. Replace? [y/n]"
+- If \`docs/agent/*.md\` files exist: Ask for each file "Replace docs/agent/[filename]? [y/n]"
+- Preserve any valuable custom content from existing files
+
+### Missing Information
+- If insufficient info for a category, DO NOT create that doc file
+- ${ruleFile} is always created with minimum: WHY, WHAT, HOW
+- Very minimal projects may only need ${ruleFile} without additional docs
+
+## VALIDATION
+
+After generation:
+1. Count lines in ${ruleFile} - if over 60, move content to appropriate docs/agent/ files
+2. Verify each docs/agent/ file has substantial, specific content (not generic advice)
+
+## OUTPUT
+
+After creating all files, provide a summary:
+- "Created ${ruleFile} (XX lines) + N documentation files"
+- List each created file with its purpose
+- Remind: "Review and refine manually for best results - auto-generated content should be validated"
+
+## WHAT NOT TO INCLUDE
+
+In ${ruleFile}:
+- Exhaustive file listings (can be discovered with ls)
+- Generic development advice ("write good code")
+- Obvious security reminders
+- Boilerplate that applies to any codebase
+
+In docs/agent/ files:
+- Information that's already obvious from file/directory names
+- Generic framework documentation (link to official docs instead)
+- Made-up sections without actual source material
+
+---
+
+Now analyze this codebase and create the progressive disclosure documentation structure.
           `,
         },
       ];

@@ -163,6 +163,16 @@ export type Props = {
    */
   readonly onExternalEdit?: () => void;
 
+  /**
+   * Optional callback when Ctrl+R is pressed for reverse search.
+   */
+  readonly onReverseSearch?: () => void;
+
+  /**
+   * Optional callback when Ctrl+S is pressed for reverse search previous.
+   */
+  readonly onReverseSearchPrevious?: () => void;
+
   onCtrlBBackground?: () => void;
 };
 
@@ -195,6 +205,8 @@ export default function TextInput({
   onTabPress,
   onDelete,
   onExternalEdit,
+  onReverseSearch,
+  onReverseSearchPrevious,
   onCtrlBBackground,
 }: Props): React.JSX.Element {
   const { onInput, renderedValue } = useTextInput({
@@ -209,6 +221,8 @@ export default function TextInput({
     onHistoryUp,
     onQueuedMessagesUp,
     onHistoryDown,
+    onReverseSearch,
+    onReverseSearchPrevious,
     focus,
     mask,
     multiline,

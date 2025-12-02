@@ -43,6 +43,7 @@ export type Config = {
   model: string;
   planModel: string;
   smallModel?: string;
+  visionModel?: string;
   language: string;
   quiet: boolean;
   approvalMode: ApprovalMode;
@@ -64,6 +65,7 @@ export type Config = {
   autoUpdate?: boolean;
   browser?: boolean;
   temperature?: number;
+  httpProxy?: string;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -84,6 +86,7 @@ const VALID_CONFIG_KEYS = [
   'model',
   'planModel',
   'smallModel',
+  'visionModel',
   'systemPrompt',
   'todo',
   'autoCompact',
@@ -93,6 +96,7 @@ const VALID_CONFIG_KEYS = [
   'provider',
   'browser',
   'temperature',
+  'httpProxy',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider'];
@@ -145,6 +149,7 @@ export class ConfigManager {
     ) as Config;
     config.planModel = config.planModel || config.model;
     config.smallModel = config.smallModel || config.model;
+    config.visionModel = config.visionModel || config.model;
     if (config.browser) {
       config.mcpServers = mergeBrowserMcpServers(
         config.mcpServers,

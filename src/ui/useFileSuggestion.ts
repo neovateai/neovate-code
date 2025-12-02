@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore } from './store';
+import { useListNavigation } from './useListNavigation';
 import type { InputState } from './useInputState';
 
 type TriggerType = 'at' | 'tab';
@@ -209,7 +210,6 @@ export function useFileSuggestion(
   forceTabTrigger = false,
 ) {
   const { paths, isLoading, loadPaths } = usePaths();
-  const [selectedIndex, setSelectedIndex] = useState(0);
 
   const atMatch = useAtTriggeredPaths(inputState);
   const tabMatch = useTabTriggeredPaths(inputState, forceTabTrigger);
@@ -232,25 +232,21 @@ export function useFileSuggestion(
     }
   }, [hasQuery, query]);
 
+  // Use common list navigation logic
+  const navigation = useListNavigation(matchedPaths);
+
+  // Track matchedPaths length to reset selection when it changes
+  const prevMatchedPathsLengthRef = useRef(matchedPaths.length);
   useEffect(() => {
-    setSelectedIndex(0);
-  }, [matchedPaths]);
-
-  const navigateNext = () => {
-    if (matchedPaths.length === 0) return;
-    setSelectedIndex((prev) => (prev + 1) % matchedPaths.length);
-  };
-
-  const navigatePrevious = () => {
-    if (matchedPaths.length === 0) return;
-    setSelectedIndex(
-      (prev) => (prev - 1 + matchedPaths.length) % matchedPaths.length,
-    );
-  };
+    if (prevMatchedPathsLengthRef.current !== matchedPaths.length) {
+      navigation.reset();
+      prevMatchedPathsLengthRef.current = matchedPaths.length;
+    }
+  });
 
   const getSelected = () => {
-    if (matchedPaths.length === 0) return '';
-    const selected = matchedPaths[selectedIndex];
+    const selected = navigation.getSelected();
+    if (!selected) return '';
     // Wrap in quotes if the path contains spaces
     if (selected.includes(' ')) {
       return `"${selected}"`;
@@ -261,12 +257,12 @@ export function useFileSuggestion(
   return {
     matchedPaths,
     isLoading,
-    selectedIndex,
+    selectedIndex: navigation.selectedIndex,
     startIndex,
     fullMatch,
     triggerType,
-    navigateNext,
-    navigatePrevious,
+    navigateNext: navigation.navigateNext,
+    navigatePrevious: navigation.navigatePrevious,
     getSelected,
   };
 }

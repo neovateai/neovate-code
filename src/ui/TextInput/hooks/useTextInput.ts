@@ -34,6 +34,8 @@ type UseTextInputProps = {
   onQueuedMessagesUp?: () => void;
   onHistoryDown?: () => void;
   onHistoryReset?: () => void;
+  onReverseSearch?: () => void;
+  onReverseSearchPrevious?: () => void;
   focus?: boolean;
   mask?: string;
   multiline?: boolean;
@@ -73,6 +75,8 @@ export function useTextInput({
   onQueuedMessagesUp,
   onHistoryDown,
   onHistoryReset,
+  onReverseSearch,
+  onReverseSearchPrevious,
   mask = '',
   multiline = false,
   cursorChar,
@@ -239,6 +243,20 @@ export function useTextInput({
     ['l', () => clear()],
     ['n', () => downOrHistoryDown()],
     ['p', () => upOrHistoryUp()],
+    [
+      'r',
+      () => {
+        onReverseSearch?.();
+        return cursor;
+      },
+    ],
+    [
+      's',
+      () => {
+        onReverseSearchPrevious?.();
+        return cursor;
+      },
+    ],
     ['u', () => cursor.deleteToLineStart()],
     ['v', () => tryImagePaste()],
     ['w', () => cursor.deleteWordBefore()],

@@ -5,6 +5,7 @@ import { useImagePasteManager } from './useImagePasteManager';
 import { useInputState } from './useInputState';
 import { useMemoryMode } from './useMemoryMode';
 import { usePasteManager } from './usePasteManager';
+import { useReverseHistorySearch } from './useReverseHistorySearch';
 import { useSlashCommands } from './useSlashCommands';
 
 export type InputMode = 'bash' | 'memory' | 'prompt';
@@ -28,6 +29,7 @@ export function useInputHandlers() {
     clearQueue,
     setBashMode,
   } = useAppStore();
+
   const inputState = useInputState();
   const mode = getInputMode(inputState.state.value);
   const slashCommands = useSlashCommands(inputState.state.value);
@@ -36,6 +38,13 @@ export function useInputHandlers() {
   const pasteManager = usePasteManager();
   const imageManager = useImagePasteManager();
   const memoryMode = useMemoryMode();
+
+  // Reverse history search state
+  const [reverseSearchActive, setReverseSearchActive] = useState(false);
+  const reverseSearch = useReverseHistorySearch({
+    history,
+    active: reverseSearchActive,
+  });
 
   const resetTabTrigger = useCallback(() => {
     setForceTabTrigger(false);
@@ -73,13 +82,25 @@ export function useInputHandlers() {
     if (value.trim() === '' || value.includes('@')) {
       resetTabTrigger();
     }
-  }, [inputState.state.value]);
+  }, [inputState.state.value, resetTabTrigger]);
 
   useEffect(() => {
     setBashMode(mode === 'bash');
   }, [mode, setBashMode]);
 
   const handleSubmit = useCallback(async () => {
+    // In reverse search mode, select the current match
+    if (reverseSearchActive) {
+      const selectedMatch = reverseSearch.getSelected();
+      if (selectedMatch) {
+        inputState.setValue(selectedMatch);
+        inputState.setCursorPosition(selectedMatch.length);
+      }
+      setReverseSearchActive(false);
+      setHistoryIndex(null); // Reset history index
+      return;
+    }
+
     const value = inputState.state.value.trim();
     if (value === '') return;
     // 1. slash command
@@ -121,10 +142,17 @@ export function useInputHandlers() {
     resetTabTrigger,
     mode,
     memoryMode,
+    reverseSearchActive,
+    reverseSearch,
+    setHistoryIndex,
   ]);
 
   const handleTabPress = useCallback(
     (isShiftTab: boolean) => {
+      // Disable tab in reverse search mode
+      if (reverseSearchActive) {
+        return;
+      }
       // 1. slash command
       if (slashCommands.suggestions.length > 0 && !isShiftTab) {
         const completedCommand = slashCommands.getCompletedCommand();
@@ -158,30 +186,45 @@ export function useInputHandlers() {
       fileSuggestion,
       inputState,
       toggleMode,
-      setForceTabTrigger,
       applyFileSuggestion,
       canTriggerTabSuggestion,
+      reverseSearchActive,
     ],
   );
 
   const handleChange = useCallback(
     (val: string) => {
+      // In reverse search mode, update search query instead
+      if (reverseSearchActive) {
+        reverseSearch.updateQuery(val);
+        return;
+      }
+
       setHistoryIndex(null);
       inputState.setValue(val);
     },
-    [inputState, setHistoryIndex],
+    [inputState, setHistoryIndex, reverseSearchActive, reverseSearch],
   );
 
   const handleQueuedMessagesUp = useCallback(() => {
+    // Disable in reverse search mode
+    if (reverseSearchActive) {
+      return;
+    }
     const { queuedMessages } = useAppStore.getState();
     if (queuedMessages.length === 0) return;
     const queuedText = queuedMessages.join('\n');
     clearQueue();
     inputState.setValue(queuedText);
     inputState.setCursorPosition(0);
-  }, [inputState, clearQueue]);
+  }, [inputState, clearQueue, reverseSearchActive]);
 
   const handleHistoryUp = useCallback(() => {
+    // In reverse search mode, navigate to previous match
+    if (reverseSearchActive) {
+      reverseSearch.navigatePrevious();
+      return;
+    }
     // 1. auto suggest
     // 1.1 slash command suggestions
     if (slashCommands.suggestions.length > 0) {
@@ -203,8 +246,8 @@ export function useInputHandlers() {
         nextHistoryIndex = Math.max(historyIndex - 1, 0);
       }
       const value = history[nextHistoryIndex];
-      log('history: ' + JSON.stringify(history));
-      log('handleHistoryUp: ' + value + ' ' + nextHistoryIndex);
+      log(`history: ${JSON.stringify(history)}`);
+      log(`handleHistoryUp: ${value} ${nextHistoryIndex}`);
       inputState.setValue(value);
       inputState.setCursorPosition(0);
       setHistoryIndex(nextHistoryIndex);
@@ -217,9 +260,17 @@ export function useInputHandlers() {
     slashCommands,
     fileSuggestion,
     log,
+    reverseSearchActive,
+    reverseSearch,
+    setHistoryIndex,
   ]);
 
   const handleHistoryDown = useCallback(() => {
+    // In reverse search mode, navigate to next match
+    if (reverseSearchActive) {
+      reverseSearch.navigateNext();
+      return;
+    }
     // 1. auto suggest
     // 1.1 slash command suggestions
     if (slashCommands.suggestions.length > 0) {
@@ -252,6 +303,8 @@ export function useInputHandlers() {
     setHistoryIndex,
     slashCommands,
     fileSuggestion,
+    reverseSearchActive,
+    reverseSearch,
   ]);
 
   const handleHistoryReset = useCallback(() => {
@@ -281,6 +334,12 @@ export function useInputHandlers() {
   );
 
   const handleEscape = useCallback(() => {
+    // Exit reverse search mode if active
+    if (reverseSearchActive) {
+      setReverseSearchActive(false);
+      return true; // Indicates search mode exit, don't cancel
+    }
+
     // If in bash or memory mode with only prefix character, switch to prompt mode
     if (
       (mode === 'bash' || mode === 'memory') &&
@@ -290,7 +349,24 @@ export function useInputHandlers() {
       return true; // Indicates mode switch, don't cancel
     }
     return false; // Continue with normal cancel behavior
-  }, [mode, inputState]);
+  }, [mode, inputState, reverseSearchActive]);
+
+  const handleReverseSearch = useCallback(() => {
+    if (reverseSearchActive) {
+      // Already in reverse search mode, cycle to next match
+      reverseSearch.navigateNext();
+    } else {
+      // Enter reverse search mode - clear history index to avoid state conflicts
+      setHistoryIndex(null);
+      setReverseSearchActive(true);
+    }
+  }, [reverseSearchActive, reverseSearch, setHistoryIndex]);
+
+  const handleReverseSearchPrevious = useCallback(() => {
+    if (reverseSearchActive) {
+      reverseSearch.navigatePrevious();
+    }
+  }, [reverseSearchActive, reverseSearch]);
 
   return {
     inputState,
@@ -306,10 +382,19 @@ export function useInputHandlers() {
       handlePaste,
       handleImagePaste,
       handleEscape,
+      handleReverseSearch,
+      handleReverseSearchPrevious,
     },
     slashCommands,
     fileSuggestion,
     pasteManager,
     imageManager,
+    reverseSearch: {
+      active: reverseSearchActive,
+      query: reverseSearch.query,
+      matches: reverseSearch.matches,
+      selectedIndex: reverseSearch.selectedIndex,
+      placeholderText: reverseSearch.placeholderText,
+    },
   };
 }

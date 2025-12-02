@@ -307,7 +307,7 @@ function ModelConfigurationWarning() {
       padding={1}
     >
       <Text bold color="yellow">
-        ⚠ Model Configuration Required
+        ! Model Configuration Required
       </Text>
       <Box marginTop={1} flexDirection="column">
         <Text>

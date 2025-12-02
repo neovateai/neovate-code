@@ -9,7 +9,6 @@
 /fixtures/*/node_modules
 /dist-browser
 /.claude
-/CLAUDE.md
 .takumi/todos
 /tmp
 /.conductor

@@ -220,6 +220,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     let text = '';
     let reasoning = '';
     const toolCalls: Array<{
+      providerMetadata?: any;
       toolCallId: string;
       toolName: string;
       input: string;
@@ -284,6 +285,9 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
                 toolCallId: chunk.toolCallId,
                 toolName: chunk.toolName,
                 input: chunk.input,
+                ...(chunk.providerMetadata && {
+                  providerMetadata: chunk.providerMetadata,
+                }),
               });
               break;
             case 'finish':
@@ -427,6 +431,10 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       }
       if (displayName) {
         toolUse.displayName = displayName;
+      }
+      if (toolCall.providerMetadata) {
+        // @ts-ignore
+        toolUse.providerMetadata = toolCall.providerMetadata;
       }
       assistantContent.push(toolUse);
     }

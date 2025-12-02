@@ -1,11 +1,10 @@
 import { Box, Text, useInput } from 'ink';
-import path from 'pathe';
+import { AntigravityProvider, GithubProvider } from 'oauth-providers';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { Paths } from '../../paths';
-import { GithubProvider } from '../../providers/githubCopilot';
 import PaginatedGroupSelectInput from '../../ui/PaginatedGroupSelectInput';
 import { useAppStore } from '../../ui/store';
+import { Link } from '../../utils/Link';
 import type { LocalJSXCommand } from '../types';
 
 interface Provider {
@@ -22,7 +21,7 @@ interface LoginSelectProps {
   onExit: (message: string) => void;
 }
 
-type LoginStep = 'provider-selection' | 'api-key-input' | 'github-copilot-auth';
+type LoginStep = 'provider-selection' | 'api-key-input' | 'oauth-auth';
 
 interface ApiKeyInputProps {
   provider: Provider;
@@ -30,15 +29,23 @@ interface ApiKeyInputProps {
   onCancel: () => void;
 }
 
-interface GithubCopilotAuthProps {
-  verificationUri: string;
-  userCode: string;
+interface OAuthAuthorizationUIProps {
+  title: string;
+  authUrl: string;
+  userCode?: string;
+  waitingMessage?: string;
   onCancel: () => void;
 }
 
-const GithubCopilotAuth: React.FC<GithubCopilotAuthProps> = ({
-  verificationUri,
+/**
+ * Unified OAuth Authorization UI component
+ * Handles both device code flow (GitHub Copilot) and redirect flow (Antigravity)
+ */
+const OAuthAuthorizationUI: React.FC<OAuthAuthorizationUIProps> = ({
+  title,
+  authUrl,
   userCode,
+  waitingMessage = 'Waiting for authorization...',
   onCancel,
 }) => {
   useInput((_input, key) => {
@@ -56,22 +63,27 @@ const GithubCopilotAuth: React.FC<GithubCopilotAuthProps> = ({
       width="100%"
     >
       <Box marginBottom={1}>
-        <Text bold>GitHub Copilot Authorization</Text>
+        <Text bold>{title}</Text>
       </Box>
 
       <Box marginBottom={1}>
-        <Text color="cyan">📖 Go to: {verificationUri}</Text>
+        <Text color="cyan">📖 Go to: </Text>
+        <Link url={authUrl}>
+          <Text color="blue">Click to open in browser</Text>
+        </Link>
       </Box>
 
-      <Box marginBottom={1}>
-        <Text color="yellow">Enter code: </Text>
-        <Text color="green" bold>
-          {userCode}
-        </Text>
-      </Box>
+      {userCode && (
+        <Box marginBottom={1}>
+          <Text color="yellow">Enter code: </Text>
+          <Text color="green" bold>
+            {userCode}
+          </Text>
+        </Box>
+      )}
 
       <Box marginBottom={1}>
-        <Text color="gray">Waiting for authorization...</Text>
+        <Text color="gray">{waitingMessage}</Text>
       </Box>
 
       <Box>
@@ -159,8 +171,21 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
   );
 };
 
+// OAuth auth state for unified handling
+interface OAuthState {
+  provider: 'github-copilot' | 'antigravity';
+  authUrl: string;
+  userCode?: string;
+  // GitHub-specific
+  githubProvider?: GithubProvider;
+  // Antigravity-specific
+  antigravityProvider?: AntigravityProvider;
+  tokenPromise?: Promise<string>;
+  cleanup?: () => void;
+}
+
 export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
-  const { bridge, cwd, productName } = useAppStore();
+  const { bridge, cwd } = useAppStore();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [groupedProviders, setGroupedProviders] = useState<
     Array<{
@@ -174,15 +199,7 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
     null,
   );
-  const [githubAuth, setGithubAuth] = useState<{
-    verificationUri: string;
-    userCode: string;
-    deviceCode: string;
-    interval: number;
-  } | null>(null);
-  const [githubProvider, setGithubProvider] = useState<GithubProvider | null>(
-    null,
-  );
+  const [oauthState, setOauthState] = useState<OAuthState | null>(null);
 
   useEffect(() => {
     bridge
@@ -234,30 +251,74 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
     const provider = providers.find((p) => p.id === item.value);
     if (provider) {
       if (provider.id === 'github-copilot') {
-        const paths = new Paths({
-          productName,
+        // GitHub Copilot OAuth flow (device code)
+        // Check if already logged in
+        const configResult = await bridge.request('config.get', {
           cwd,
+          isGlobal: true,
+          key: 'provider.github-copilot.options.apiKey',
         });
-        const githubDataPath = path.join(
-          paths.globalConfigDir,
-          'githubCopilot.json',
-        );
-        const ghProvider = new GithubProvider({ authFile: githubDataPath });
-        const existingToken = await ghProvider.access();
-        if (existingToken) {
+        if (configResult.success && configResult.data.value) {
           onExit('✓ GitHub Copilot is already logged in');
           return;
-        } else {
-          const auth = await ghProvider.authorize();
-          setGithubAuth({
-            verificationUri: auth.verification,
-            userCode: auth.user,
-            deviceCode: auth.device,
-            interval: auth.interval,
+        }
+
+        try {
+          // Initialize OAuth flow with new GithubProvider API
+          const githubProvider = new GithubProvider();
+          const auth = await githubProvider.initAuth(300000); // 5 minute timeout
+
+          if (!auth.verificationUri) {
+            onExit('✗ Failed to get authorization URL');
+            return;
+          }
+
+          setOauthState({
+            provider: 'github-copilot',
+            authUrl: auth.verificationUri,
+            userCode: auth.userCode,
+            githubProvider,
+            tokenPromise: auth.tokenPromise,
           });
-          setGithubProvider(ghProvider);
           setSelectedProvider(provider);
-          setStep('github-copilot-auth');
+          setStep('oauth-auth');
+        } catch (error) {
+          onExit(`✗ Failed to start GitHub OAuth: ${error}`);
+        }
+      } else if (provider.id === 'antigravity') {
+        // Antigravity OAuth flow (redirect-based)
+        // Check if already logged in
+        const configResult = await bridge.request('config.get', {
+          cwd,
+          isGlobal: true,
+          key: 'provider.antigravity.options.apiKey',
+        });
+        if (configResult.success && configResult.data.value) {
+          onExit('✓ Antigravity is already logged in');
+          return;
+        }
+
+        try {
+          // Initialize OAuth flow with new AntigravityProvider API
+          const antigravityProvider = new AntigravityProvider();
+          const auth = await antigravityProvider.initAuth(300000); // 5 minute timeout
+
+          if (!auth.authUrl) {
+            onExit('✗ Failed to get authorization URL');
+            return;
+          }
+
+          setOauthState({
+            provider: 'antigravity',
+            authUrl: auth.authUrl,
+            antigravityProvider,
+            tokenPromise: auth.tokenPromise,
+            cleanup: auth.cleanup,
+          });
+          setSelectedProvider(provider);
+          setStep('oauth-auth');
+        } catch (error) {
+          onExit(`✗ Failed to start OAuth server: ${error}`);
         }
       } else {
         setSelectedProvider(provider);
@@ -294,58 +355,121 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
     setSelectedProvider(null);
   };
 
-  const handleGithubAuthCancel = () => {
+  const handleOAuthCancel = () => {
     setStep('provider-selection');
     setSelectedProvider(null);
-    setGithubAuth(null);
-    setGithubProvider(null);
+    setOauthState(null);
   };
 
   const handleProviderCancel = () => {
     onExit('Login cancelled');
   };
 
-  // Poll for GitHub authorization
+  // Poll for OAuth authorization (handles both GitHub Copilot and Antigravity)
   useEffect(() => {
-    if (step === 'github-copilot-auth' && githubAuth && githubProvider) {
-      let cancelled = false;
+    if (step !== 'oauth-auth' || !oauthState) return;
 
-      const pollAuth = async () => {
-        let status: 'pending' | 'complete' | 'failed' = 'pending';
+    let cancelled = false;
 
-        while (status === 'pending' && !cancelled) {
-          await new Promise((resolve) =>
-            setTimeout(resolve, githubAuth.interval * 1000),
-          );
+    if (oauthState.provider === 'github-copilot') {
+      // GitHub Copilot OAuth flow with new API
+      const { githubProvider, tokenPromise } = oauthState;
+      if (!githubProvider || !tokenPromise) return;
+
+      const handleAuth = async () => {
+        try {
+          // Wait for OAuth callback (device code authorization)
+          const token = await tokenPromise;
 
           if (cancelled) return;
 
-          status = await githubProvider.poll(githubAuth.deviceCode);
+          // Exchange token
+          await githubProvider.getToken(token);
+          await githubProvider.refresh();
 
-          if (status === 'complete') {
-            const token = await githubProvider.access();
-            if (token) {
-              onExit('✓ GitHub Copilot authorization successful!');
-            } else {
-              onExit('✗ Failed to get GitHub Copilot access token');
-            }
+          if (cancelled) return;
+
+          // Get account data from provider state
+          const account = githubProvider.getState();
+
+          if (!account) {
+            onExit('✗ Failed to get account after authentication');
             return;
           }
 
-          if (status === 'failed') {
-            onExit('✗ GitHub Copilot authorization failed');
-            return;
+          // Save token to global config
+          const result = await bridge.request('config.set', {
+            cwd,
+            isGlobal: true,
+            key: 'provider.github-copilot.options.apiKey',
+            value: JSON.stringify(account),
+          });
+
+          if (result.success) {
+            onExit('✓ GitHub Copilot authorization successful!');
+          } else {
+            onExit('✗ Failed to save GitHub Copilot access token');
+          }
+        } catch (error) {
+          if (!cancelled) {
+            onExit(`✗ GitHub Copilot authorization failed: ${error}`);
           }
         }
       };
 
-      pollAuth();
+      handleAuth();
+    } else if (oauthState.provider === 'antigravity') {
+      // Antigravity redirect-based OAuth with new API
+      const { antigravityProvider, tokenPromise } = oauthState;
+      if (!antigravityProvider || !tokenPromise) return;
 
-      return () => {
-        cancelled = true;
+      const handleAuth = async () => {
+        try {
+          // Wait for OAuth callback (server receives code)
+          const code = await tokenPromise;
+
+          if (cancelled) return;
+
+          // Exchange code for token
+          await antigravityProvider.getToken(code);
+
+          if (cancelled) return;
+
+          // Get account data from provider state
+          const account = antigravityProvider.getState();
+
+          if (!account) {
+            onExit('✗ Failed to get account after authentication');
+            return;
+          }
+
+          // Save token to global config
+          const result = await bridge.request('config.set', {
+            cwd,
+            isGlobal: true,
+            key: 'provider.antigravity.options.apiKey',
+            value: JSON.stringify(account),
+          });
+
+          if (result.success) {
+            onExit('✓ Antigravity authorization successful!');
+          } else {
+            onExit('✗ Failed to save Antigravity access token');
+          }
+        } catch (error) {
+          if (!cancelled) {
+            onExit(`✗ Antigravity authorization failed: ${error}`);
+          }
+        }
       };
+
+      handleAuth();
     }
-  }, [step, githubAuth, githubProvider, onExit]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [step, oauthState, bridge, cwd, onExit]);
 
   if (loading) {
     return (
@@ -371,12 +495,23 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
     );
   }
 
-  if (step === 'github-copilot-auth' && githubAuth) {
+  if (step === 'oauth-auth' && oauthState) {
+    const title =
+      oauthState.provider === 'github-copilot'
+        ? 'GitHub Copilot Authorization'
+        : 'Antigravity Authorization';
+    const waitingMessage =
+      oauthState.provider === 'antigravity'
+        ? 'Waiting for authorization in browser...'
+        : 'Waiting for authorization...';
+
     return (
-      <GithubCopilotAuth
-        verificationUri={githubAuth.verificationUri}
-        userCode={githubAuth.userCode}
-        onCancel={handleGithubAuthCancel}
+      <OAuthAuthorizationUI
+        title={title}
+        authUrl={oauthState.authUrl}
+        userCode={oauthState.userCode}
+        waitingMessage={waitingMessage}
+        onCancel={handleOAuthCancel}
       />
     );
   }
