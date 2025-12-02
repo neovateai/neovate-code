@@ -1888,9 +1888,7 @@ class NodeHandlerRegistry {
         const { relative } = await import('pathe');
 
         const fileOperationRecords =
-          sessionConfigManager.config.fileOperationRecords ||
-          sessionConfigManager.config.fileOperationRecords ||
-          [];
+          sessionConfigManager.config.fileOperationRecords || [];
         const messages = loadSessionMessages({
           logPath: context.paths.getSessionLogPath(sessionId),
         });
