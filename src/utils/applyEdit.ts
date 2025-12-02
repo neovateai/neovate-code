@@ -121,13 +121,3 @@ export function applyEdits(
 
   return { patch, updatedFile: currentContent };
 }
-
-export function applyEdit(
-  cwd: string,
-  filePath: string,
-  old_string: string,
-  new_string: string,
-  replace_all = false,
-): { patch: any; updatedFile: string } {
-  return applyEdits(cwd, filePath, [{ old_string, new_string, replace_all }]);
-}

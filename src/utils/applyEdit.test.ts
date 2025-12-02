@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { applyEdit, applyEdits } from './applyEdit';
+import { applyEdits } from './applyEdit';
 
 vi.mock('fs');
 vi.mock('pathe', async () => {
@@ -25,7 +25,9 @@ describe('applyEdit', () => {
   test('should apply single replacement', () => {
     mockReadFileSync.mockReturnValue('Hello World\nHello Universe');
 
-    const result = applyEdit('/', 'test.txt', 'Hello', 'Hi');
+    const result = applyEdits('/', 'test.txt', [
+      { old_string: 'Hello', new_string: 'Hi' },
+    ]);
 
     expect(result.updatedFile).toBe('Hi World\nHello Universe');
   });
@@ -33,7 +35,9 @@ describe('applyEdit', () => {
   test('should apply global replacement when replace_all is true', () => {
     mockReadFileSync.mockReturnValue('Hello World\nHello Universe');
 
-    const result = applyEdit('/', 'test.txt', 'Hello', 'Hi', true);
+    const result = applyEdits('/', 'test.txt', [
+      { old_string: 'Hello', new_string: 'Hi', replace_all: true },
+    ]);
 
     expect(result.updatedFile).toBe('Hi World\nHi Universe');
   });
@@ -42,7 +46,9 @@ describe('applyEdit', () => {
     mockReadFileSync.mockReturnValue('Line 1\nLine 2\nLine 3');
 
     // Deleting "Line 2" should also remove the newline after it
-    const result = applyEdit('/', 'test.txt', 'Line 2', '');
+    const result = applyEdits('/', 'test.txt', [
+      { old_string: 'Line 2', new_string: '' },
+    ]);
 
     expect(result.updatedFile).toBe('Line 1\nLine 3');
   });
@@ -51,7 +57,9 @@ describe('applyEdit', () => {
     mockReadFileSync.mockReturnValue('Line 1\nLine 2');
 
     // "Line 2" is at the end, so no trailing newline to remove
-    const result = applyEdit('/', 'test.txt', 'Line 2', '');
+    const result = applyEdits('/', 'test.txt', [
+      { old_string: 'Line 2', new_string: '' },
+    ]);
 
     expect(result.updatedFile).toBe('Line 1\n');
   });
@@ -60,7 +68,9 @@ describe('applyEdit', () => {
     mockReadFileSync.mockReturnValue('Hello World');
 
     expect(() => {
-      applyEdit('/', 'test.txt', 'Universe', 'Galaxy');
+      applyEdits('/', 'test.txt', [
+        { old_string: 'Universe', new_string: 'Galaxy' },
+      ]);
     }).toThrow(/String not found in file/);
   });
 
@@ -68,7 +78,9 @@ describe('applyEdit', () => {
     mockReadFileSync.mockReturnValue('Hello World');
 
     expect(() => {
-      applyEdit('/', 'test.txt', 'Hello', 'Hello');
+      applyEdits('/', 'test.txt', [
+        { old_string: 'Hello', new_string: 'Hello' },
+      ]);
     }).toThrow(
       /No changes to make: old_string and new_string are exactly the same/,
     );
@@ -78,7 +90,9 @@ describe('applyEdit', () => {
     mockReadFileSync.mockReturnValue('const a = 1;');
 
     // If we used simple string replace without lambda, "$&" might insert matched string
-    const result = applyEdit('/', 'test.txt', '1', '$&');
+    const result = applyEdits('/', 'test.txt', [
+      { old_string: '1', new_string: '$&' },
+    ]);
 
     expect(result.updatedFile).toBe('const a = $&;');
   });
@@ -86,7 +100,9 @@ describe('applyEdit', () => {
   test('should handle special characters in search string with replace_all', () => {
     mockReadFileSync.mockReturnValue('a+b=c\na+b=d');
 
-    const result = applyEdit('/', 'test.txt', 'a+b', 'x', true);
+    const result = applyEdits('/', 'test.txt', [
+      { old_string: 'a+b', new_string: 'x', replace_all: true },
+    ]);
 
     expect(result.updatedFile).toBe('x=c\nx=d');
   });
@@ -94,7 +110,9 @@ describe('applyEdit', () => {
   test('should handle whole-file mode (empty old_string)', () => {
     mockReadFileSync.mockReturnValue('Old Content');
 
-    const result = applyEdit('/', 'test.txt', '', 'New Content');
+    const result = applyEdits('/', 'test.txt', [
+      { old_string: '', new_string: 'New Content' },
+    ]);
 
     expect(result.updatedFile).toBe('New Content');
   });
@@ -106,7 +124,9 @@ describe('applyEdit', () => {
       throw error;
     });
 
-    const result = applyEdit('/', 'new.txt', '', 'New Content');
+    const result = applyEdits('/', 'new.txt', [
+      { old_string: '', new_string: 'New Content' },
+    ]);
 
     expect(result.updatedFile).toBe('New Content');
   });
@@ -119,7 +139,9 @@ describe('applyEdit', () => {
     });
 
     expect(() => {
-      applyEdit('/', 'missing.txt', 'Old', 'New');
+      applyEdits('/', 'missing.txt', [
+        { old_string: 'Old', new_string: 'New' },
+      ]);
     }).toThrow('File not found');
   });
 

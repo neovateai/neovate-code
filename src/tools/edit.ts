@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'pathe';
 import { z } from 'zod';
 import { createTool } from '../tool';
-import { applyEdit } from '../utils/applyEdit';
+import { applyEdits } from '../utils/applyEdit';
 
 export function createEditTool(opts: { cwd: string }) {
   return createTool({
@@ -43,13 +43,9 @@ Usage:
           ? file_path
           : path.resolve(cwd, file_path);
         const relativeFilePath = path.relative(cwd, fullFilePath);
-        const { patch, updatedFile } = applyEdit(
-          cwd,
-          fullFilePath,
-          old_string,
-          new_string,
-          replace_all,
-        );
+        const { patch, updatedFile } = applyEdits(cwd, fullFilePath, [
+          { old_string, new_string, replace_all },
+        ]);
         const dir = path.dirname(fullFilePath);
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(fullFilePath, updatedFile, 'utf-8');
