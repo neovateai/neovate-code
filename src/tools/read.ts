@@ -80,7 +80,7 @@ async function processImage(
 
 const MAX_LINES_TO_READ = 2000;
 const MAX_LINE_LENGTH = 2000;
-const MAX_FILE_LENGTH = 262144; // 最大字符长度 (256KB)
+const MAX_FILE_LENGTH = 262144;
 const MAX_TOKENS = 25000;
 
 export function createReadTool(opts: { cwd: string; productName: string }) {
