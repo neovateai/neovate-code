@@ -37,9 +37,9 @@ export type CommitConfig = {
   model?: string;
 };
 
-export type SnapshotConfig = {
+export type OperationRecordConfig = {
   enabled?: boolean;
-  maxSnapshots?: number;
+  maxOperationRecords?: number;
   maxFileSize?: number; // in bytes
 };
 
@@ -71,7 +71,7 @@ export type Config = {
   autoUpdate?: boolean;
   browser?: boolean;
   temperature?: number;
-  snapshot?: SnapshotConfig;
+  operationRecord?: OperationRecordConfig;
   httpProxy?: string;
 };
 
@@ -87,9 +87,9 @@ const DEFAULT_CONFIG: Partial<Config> = {
   outputFormat: 'text',
   autoUpdate: true,
   browser: false,
-  snapshot: {
+  operationRecord: {
     enabled: true,
-    maxSnapshots: 50,
+    maxOperationRecords: 50,
     maxFileSize: 512000, // 500KB
   },
 };
@@ -108,11 +108,16 @@ const VALID_CONFIG_KEYS = [
   'provider',
   'browser',
   'temperature',
-  'snapshot',
+  'operationRecord',
   'httpProxy',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
-const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider', 'snapshot'];
+const OBJECT_CONFIG_KEYS = [
+  'mcpServers',
+  'commit',
+  'provider',
+  'operationRecord',
+];
 const BOOLEAN_CONFIG_KEYS = [
   'quiet',
   'todo',

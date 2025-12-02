@@ -10,7 +10,7 @@ import { ExitHint } from './ExitHint';
 import { Markdown } from './Markdown';
 import { Messages } from './Messages';
 import { QueueDisplay } from './QueueDisplay';
-import { SnapshotModal } from './SnapshotModal';
+import { OperationRecordModal } from './OperationRecordModal';
 import { useAppStore } from './store';
 import { useTerminalRefresh } from './useTerminalRefresh';
 
@@ -73,8 +73,8 @@ export function App() {
   const {
     forkParentUuid,
     restoreCounter,
-    snapshotModalVisible,
-    hideSnapshotModal,
+    operationRecordModalVisible,
+    hideOperationRecordModal,
   } = useAppStore();
   return (
     <Box
@@ -89,10 +89,10 @@ export function App() {
       <ChatInput />
       <SlashCommandJSX />
       <ApprovalModal />
-      {snapshotModalVisible && (
-        <SnapshotModal
+      {operationRecordModalVisible && (
+        <OperationRecordModal
           onClose={() => {
-            hideSnapshotModal();
+            hideOperationRecordModal();
           }}
         />
       )}

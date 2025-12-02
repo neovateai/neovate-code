@@ -580,7 +580,7 @@ async function executeCommand(
     }
   }
 
-  // Extract affected files for snapshot tracking
+  // Extract affected files for operation record tracking
   const affectedFiles =
     result.exitCode === 0 ? extractAffectedFiles(command, cwd) : [];
 

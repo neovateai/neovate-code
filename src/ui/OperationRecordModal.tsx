@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import PaginatedSelectInput from './PaginatedSelectInput';
 import { useAppStore } from './store';
 
-interface SnapshotInfo {
+interface OperationRecordInfo {
   messageUuid: string;
   parentMessageUuid: string | null;
   timestamp: string;
@@ -15,19 +15,22 @@ interface SnapshotInfo {
   userPrompt?: string;
 }
 
-interface SnapshotModalProps {
+interface OperationRecordModalProps {
   onClose: () => void;
 }
 
-export function SnapshotModal({ onClose }: SnapshotModalProps) {
-  const { bridge, cwd, sessionId, log, isRestoringSnapshot } = useAppStore();
-  const [snapshots, setSnapshots] = useState<SnapshotInfo[]>([]);
+export function OperationRecordModal({ onClose }: OperationRecordModalProps) {
+  const { bridge, cwd, sessionId, log, isRestoringOperationRecord } =
+    useAppStore();
+  const [operationRecords, setOperationRecords] = useState<
+    OperationRecordInfo[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Only listen to ESC when there's no PaginatedSelectInput (which has its own ESC handler)
-  // This fixes the issue where snapshots.length === 0 or loading/error states can't be closed
-  const hasSelectInput = !loading && !error && snapshots.length > 0;
+  // This fixes the issue where operationRecords.length === 0 or loading/error states can't be closed
+  const hasSelectInput = !loading && !error && operationRecords.length > 0;
 
   useInput(
     (input, key) => {
@@ -40,25 +43,25 @@ export function SnapshotModal({ onClose }: SnapshotModalProps) {
 
   useEffect(() => {
     bridge
-      .request('session.listSnapshots', { cwd, sessionId })
+      .request('session.listOperationRecords', { cwd, sessionId })
       .then((result) => {
-        if (result.success && Array.isArray(result.data?.snapshots)) {
+        if (result.success && Array.isArray(result.data?.operationRecords)) {
           // Sort by timestamp descending (newest first)
-          const sortedSnapshots = [...result.data.snapshots].sort(
+          const sortedRecords = [...result.data.operationRecords].sort(
             (a, b) =>
               new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
           );
-          setSnapshots(sortedSnapshots);
+          setOperationRecords(sortedRecords);
         } else {
-          setError(result.error?.message || 'Failed to load snapshots');
-          setSnapshots([]);
+          setError(result.error?.message || 'Failed to load operation records');
+          setOperationRecords([]);
         }
         setLoading(false);
       })
       .catch((err) => {
-        console.error('Failed to fetch snapshots:', err);
+        console.error('Failed to fetch operation records:', err);
         setError(err.message || 'Unknown error');
-        setSnapshots([]);
+        setOperationRecords([]);
         setLoading(false);
       });
   }, [cwd, sessionId, bridge]);
@@ -83,24 +86,24 @@ export function SnapshotModal({ onClose }: SnapshotModalProps) {
   };
 
   const selectItems = [
-    // Add "Initial State" option at the end (bottom of list)
-    ...snapshots.map((snapshot) => {
-      const fileList = snapshot.affectedFiles.slice(0, 2).join(', ');
+    // Add operation records
+    ...operationRecords.map((record) => {
+      const fileList = record.affectedFiles.slice(0, 2).join(', ');
       const moreFiles =
-        snapshot.affectedFiles.length > 2
-          ? ` +${snapshot.affectedFiles.length - 2}`
+        record.affectedFiles.length > 2
+          ? ` +${record.affectedFiles.length - 2}`
           : '';
 
       // Truncate user prompt to 60 characters
-      const promptPreview = snapshot.userPrompt
-        ? snapshot.userPrompt.length > 60
-          ? `${snapshot.userPrompt.substring(0, 60)}...`
-          : snapshot.userPrompt
+      const promptPreview = record.userPrompt
+        ? record.userPrompt.length > 60
+          ? `${record.userPrompt.substring(0, 60)}...`
+          : record.userPrompt
         : '';
 
       const label = [
-        formatTime(snapshot.timestamp).padEnd(10),
-        `${snapshot.operationCount} ops`.padEnd(8),
+        formatTime(record.timestamp).padEnd(10),
+        `${record.operationCount} ops`.padEnd(8),
         `${fileList}${moreFiles}`.padEnd(30),
       ].join(' ');
 
@@ -110,7 +113,7 @@ export function SnapshotModal({ onClose }: SnapshotModalProps) {
 
       return {
         label: fullLabel,
-        value: snapshot.messageUuid,
+        value: record.messageUuid,
       };
     }),
     // Add initial state option
@@ -129,7 +132,7 @@ export function SnapshotModal({ onClose }: SnapshotModalProps) {
         padding={1}
         width="100%"
       >
-        <Text>Loading snapshots...</Text>
+        <Text>Loading operation records...</Text>
         <Box marginTop={1}>
           <Text color="gray" dimColor>
             Press Esc to cancel
@@ -158,7 +161,7 @@ export function SnapshotModal({ onClose }: SnapshotModalProps) {
     );
   }
 
-  if (snapshots.length === 0) {
+  if (operationRecords.length === 0) {
     return (
       <Box
         borderStyle="round"
@@ -167,10 +170,10 @@ export function SnapshotModal({ onClose }: SnapshotModalProps) {
         padding={1}
         width="100%"
       >
-        <Text color="yellow">No snapshots found in this session.</Text>
+        <Text color="yellow">No operation records found in this session.</Text>
         <Box marginTop={1}>
           <Text color="gray">
-            Snapshots are created automatically when AI modifies files.
+            Operation records are created automatically when AI modifies files.
           </Text>
         </Box>
         <Box marginTop={1}>
@@ -191,20 +194,23 @@ export function SnapshotModal({ onClose }: SnapshotModalProps) {
       width="100%"
     >
       <Box marginBottom={1}>
-        <Text bold>Rollback to Previous Step</Text>
+        <Text bold>Rollback to Operation</Text>
         <Text color="gray" dimColor>
-          Select a step to rollback - undoes changes and fills prompt for
-          re-editing
+          Select an operation to rollback to - undoes changes from that point
+          onward and fills prompt for re-editing
         </Text>
       </Box>
-      {isRestoringSnapshot && (
+      {isRestoringOperationRecord && (
         <Box marginBottom={1}>
-          <Text color="yellow">⏳ Restoring snapshot, please wait...</Text>
+          <Text color="yellow">
+            ⏳ Restoring operation record, please wait...
+          </Text>
         </Box>
       )}
       <Box marginBottom={1}>
         <Text color="gray" dimColor>
-          After rollback: undo selected step + later changes, prompt auto-filled
+          Rollback will: undo selected operation + all later changes, auto-fill
+          prompt
         </Text>
       </Box>
       <Box marginBottom={1}>
@@ -221,21 +227,24 @@ export function SnapshotModal({ onClose }: SnapshotModalProps) {
           onSelect={async (item) => {
             // Handle Initial State rollback
             if (item.value === '__INITIAL_STATE__') {
-              // Find the first (oldest) snapshot
-              const firstSnapshot = snapshots[snapshots.length - 1];
+              // Find the first (oldest) operation record
+              const firstRecord = operationRecords[operationRecords.length - 1];
 
-              if (!firstSnapshot) {
-                log('❌ No snapshots to rollback');
+              if (!firstRecord) {
+                log('❌ No operation records to rollback');
                 onClose();
                 return;
               }
 
-              // Rollback to the first snapshot (which will undo it)
-              const result = await bridge.request('session.restoreCode', {
-                cwd,
-                sessionId,
-                targetMessageUuid: firstSnapshot.messageUuid,
-              });
+              // Rollback to the first operation record (which will undo it)
+              const result = await bridge.request(
+                'session.rollbackToOperation',
+                {
+                  cwd,
+                  sessionId,
+                  targetMessageUuid: firstRecord.messageUuid,
+                },
+              );
 
               if (result.success) {
                 const data = result.data;
@@ -281,12 +290,12 @@ export function SnapshotModal({ onClose }: SnapshotModalProps) {
               return;
             }
 
-            // Handle normal snapshot rollback
-            const selectedSnapshot = snapshots.find(
-              (s) => s.messageUuid === item.value,
+            // Handle normal operation record rollback
+            const selectedRecord = operationRecords.find(
+              (r) => r.messageUuid === item.value,
             );
 
-            const result = await bridge.request('session.restoreCode', {
+            const result = await bridge.request('session.rollbackToOperation', {
               cwd,
               sessionId,
               targetMessageUuid: item.value,
@@ -325,9 +334,9 @@ export function SnapshotModal({ onClose }: SnapshotModalProps) {
               // Also log a summary in the logs panel
               const lines: string[] = [];
 
-              if (selectedSnapshot?.userPrompt) {
+              if (selectedRecord?.userPrompt) {
                 lines.push(
-                  `📍 Rolled back to BEFORE: "${selectedSnapshot.userPrompt}"`,
+                  `📍 Rolled back to BEFORE: "${selectedRecord.userPrompt}"`,
                 );
                 lines.push(
                   '💡 Prompt filled in input - edit and Enter to re-run, or Esc to skip',
@@ -363,7 +372,7 @@ export function SnapshotModal({ onClose }: SnapshotModalProps) {
       </Box>
       <Box marginTop={1}>
         <Text color="gray" dimColor>
-          ↑↓: Navigate • Enter: Rollback • Esc: Cancel
+          ↑↓: Navigate • Enter: Rollback to selected operation • Esc: Cancel
         </Text>
       </Box>
     </Box>

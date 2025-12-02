@@ -1644,7 +1644,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'session.restoreCode',
+      'session.rollbackToOperation',
       async (data: {
         cwd: string;
         sessionId: string;
@@ -1657,48 +1657,51 @@ class NodeHandlerRegistry {
         });
 
         const { buildRestoreOperations, restoreFilesFromOperations } =
-          await import('./utils/snapshot');
+          await import('./utils/operationRecord');
         const { loadSessionMessages } = await import('./session');
 
-        // Get all file snapshots
-        const fileSnapshots = sessionConfigManager.config.fileSnapshots || [];
+        // Get all file operation records
+        const fileOperationRecords =
+          sessionConfigManager.config.fileOperationRecords || [];
 
         // Load messages to resolve parent relationships
         const messages = loadSessionMessages({
           logPath: context.paths.getSessionLogPath(sessionId),
         });
 
-        // Get target snapshot to extract user prompt
-        const targetSnapshot = fileSnapshots.find(
-          (s) => s.messageUuid === targetMessageUuid,
+        // Get target operation record to extract user prompt
+        const targetRecord = fileOperationRecords.find(
+          (r) => r.messageUuid === targetMessageUuid,
         );
 
-        if (!targetSnapshot) {
+        if (!targetRecord) {
           return {
             success: false,
             data: {
               restoredFiles: [],
               skippedBashFiles: [],
               skippedLargeFiles: [],
-              errors: [{ file: '', error: 'Target snapshot not found' }],
+              errors: [
+                { file: '', error: 'Target operation record not found' },
+              ],
               userPromptToFill: undefined,
             },
-            error: { message: 'Target snapshot not found' },
+            error: { message: 'Target operation record not found' },
           };
         }
 
-        const userPromptToFill = targetSnapshot.userPrompt;
+        const userPromptToFill = targetRecord.userPrompt;
 
         // Build restore operations (parent state + cleanup files created after)
-        // Pass messages to buildRestoreOperations so it can resolve parent snapshots correctly
+        // Pass messages to buildRestoreOperations so it can resolve parent operation records correctly
         const operations = buildRestoreOperations(
-          fileSnapshots,
+          fileOperationRecords,
           targetMessageUuid,
           messages,
         );
 
         // Get maxFileSize before using it
-        const maxFileSize = context.config.snapshot?.maxFileSize;
+        const maxFileSize = context.config.operationRecord?.maxFileSize;
 
         const fs = await import('fs');
         const path = await import('pathe');
@@ -1707,7 +1710,7 @@ class NodeHandlerRegistry {
         const result = restoreFilesFromOperations(operations, cwd, maxFileSize);
 
         // CRITICAL: Only clean history if file restoration is completely successful
-        // If restoration fails, keep snapshots and history intact for retry
+        // If restoration fails, keep operation records and history intact for retry
         if (!result.success || result.errors.length > 0) {
           return {
             success: false,
@@ -1719,12 +1722,12 @@ class NodeHandlerRegistry {
               userPromptToFill: undefined,
             },
             error: {
-              message: `File restoration failed: ${result.errors.map((e) => e.error).join('; ')}. Snapshots and history preserved for retry.`,
+              message: `File restoration failed: ${result.errors.map((e) => e.error).join('; ')}. Operation records and history preserved for retry.`,
             },
           };
         }
 
-        // File restoration succeeded, now clean conversation history and snapshots
+        // File restoration succeeded, now clean conversation history and operation records
         try {
           // Reuse already loaded messages (no need to reload)
           // const messages is already available from line 1663
@@ -1789,20 +1792,20 @@ class NodeHandlerRegistry {
             timestamp: new Date().toISOString(),
           };
 
-          // Clean snapshots: keep only those created BEFORE target time
-          // IMPORTANT: We keep snapshots BEFORE target (not including target)
+          // Clean operation records: keep only those created BEFORE target time
+          // IMPORTANT: We keep operation records BEFORE target (not including target)
           // because we want to restore to the state BEFORE the target operation
-          if (targetSnapshot) {
-            const targetTime = new Date(targetSnapshot.timestamp).getTime();
+          if (targetRecord) {
+            const targetTime = new Date(targetRecord.timestamp).getTime();
 
-            // Keep all snapshots created BEFORE the target time (excluding target)
-            const cleanedSnapshots = fileSnapshots.filter((snapshot) => {
-              const snapshotTime = new Date(snapshot.timestamp).getTime();
-              return snapshotTime < targetTime;
+            // Keep all operation records created BEFORE the target time (excluding target)
+            const cleanedRecords = fileOperationRecords.filter((record) => {
+              const recordTime = new Date(record.timestamp).getTime();
+              return recordTime < targetTime;
             });
 
-            // Update session config with cleaned snapshots
-            sessionConfigManager.config.fileSnapshots = cleanedSnapshots;
+            // Update session config with cleaned operation records
+            sessionConfigManager.config.fileOperationRecords = cleanedRecords;
           }
 
           // Filter messages: keep only those up to (and including) target message's parent
@@ -1824,7 +1827,7 @@ class NodeHandlerRegistry {
 
           // Write filtered messages back to log file
           const fs = await import('fs');
-          // Preserve config line with cleaned snapshots
+          // Preserve config line with cleaned operation records
           const configLine = JSON.stringify({
             type: 'config',
             config: sessionConfigManager.config,
@@ -1874,7 +1877,7 @@ class NodeHandlerRegistry {
     );
 
     this.messageBus.registerHandler(
-      'session.listSnapshots',
+      'session.listOperationRecords',
       async (data: { cwd: string; sessionId: string }) => {
         const { cwd, sessionId } = data;
         const context = await this.getContext(cwd);
@@ -1884,7 +1887,10 @@ class NodeHandlerRegistry {
         const { loadSessionMessages } = await import('./session');
         const { relative } = await import('pathe');
 
-        const fileSnapshots = sessionConfigManager.config.fileSnapshots || [];
+        const fileOperationRecords =
+          sessionConfigManager.config.fileOperationRecords ||
+          sessionConfigManager.config.fileOperationRecords ||
+          [];
         const messages = loadSessionMessages({
           logPath: context.paths.getSessionLogPath(sessionId),
         });
@@ -1927,22 +1933,20 @@ class NodeHandlerRegistry {
           return undefined;
         };
 
-        // Enrich snapshots with message info
-        const enrichedSnapshots = fileSnapshots.map((snapshot) => {
-          const message = messageMap.get(snapshot.messageUuid);
-          // Prefer userPrompt from snapshot, fallback to getUserPrompt for old snapshots
+        // Enrich operation records with message info
+        const enrichedOperationRecords = fileOperationRecords.map((record) => {
+          const message = messageMap.get(record.messageUuid);
+          // Prefer userPrompt from record, fallback to getUserPrompt for old records
           const userPrompt =
-            snapshot.userPrompt || getUserPrompt(snapshot.messageUuid);
+            record.userPrompt || getUserPrompt(record.messageUuid);
 
           return {
-            messageUuid: snapshot.messageUuid,
-            parentMessageUuid: snapshot.parentMessageUuid,
-            timestamp: snapshot.timestamp,
-            operationCount: snapshot.operations.length,
+            messageUuid: record.messageUuid,
+            parentMessageUuid: record.parentMessageUuid,
+            timestamp: record.timestamp,
+            operationCount: record.operations.length,
             affectedFiles: [
-              ...new Set(
-                snapshot.operations.map((op) => relative(cwd, op.path)),
-              ),
+              ...new Set(record.operations.map((op) => relative(cwd, op.path))),
             ],
             messageRole: message?.role,
             messageTimestamp: message?.timestamp,
@@ -1953,8 +1957,8 @@ class NodeHandlerRegistry {
         return {
           success: true,
           data: {
-            snapshots: enrichedSnapshots,
-            totalSnapshots: fileSnapshots.length,
+            operationRecords: enrichedOperationRecords,
+            totalOperationRecords: fileOperationRecords.length,
           },
         };
       },

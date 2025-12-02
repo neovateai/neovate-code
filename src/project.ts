@@ -14,7 +14,10 @@ import type { ApprovalCategory, Tool, ToolUse } from './tool';
 import { resolveTools, Tools } from './tool';
 import type { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
-import { cleanOldSnapshots, TurnSnapshotCollector } from './utils/snapshot';
+import {
+  cleanOldOperationRecords,
+  TurnOperationRecordCollector,
+} from './utils/operationRecord';
 
 export class Project {
   session: Session;
@@ -281,12 +284,13 @@ export class Project {
 
     const toolsManager = new Tools(tools);
 
-    // Create snapshot collector
-    const snapshotEnabled = this.context.config.snapshot?.enabled !== false;
-    const snapshotCollector = snapshotEnabled
-      ? new TurnSnapshotCollector(
+    // Create operation record collector
+    const operationRecordEnabled =
+      this.context.config.operationRecord?.enabled !== false;
+    const operationRecordCollector = operationRecordEnabled
+      ? new TurnOperationRecordCollector(
           this.context.cwd,
-          sessionConfigManager.config.fileSnapshots || [],
+          sessionConfigManager.config.fileOperationRecords || [],
         )
       : undefined;
 
@@ -431,7 +435,7 @@ export class Project {
           })) ?? false
         );
       },
-      snapshotCollector,
+      operationRecordCollector,
     });
     const endTime = new Date();
     await this.context.apply({
@@ -455,8 +459,8 @@ export class Project {
       this.session.updateHistory(result.data.history);
     }
 
-    // Save snapshot after turn completion
-    if (snapshotCollector && result.success) {
+    // Save operation record after turn completion
+    if (operationRecordCollector && result.success) {
       try {
         // CRITICAL: Reload config to get latest state after potential restore operations
         // The restore operation in nodeBridge.ts may have modified the log file
@@ -476,28 +480,28 @@ export class Project {
               ? message
               : undefined;
 
-          const snapshot = snapshotCollector.createSnapshot(
-            (lastMessage as NormalizedMessage).uuid,
-            (lastMessage as NormalizedMessage).parentUuid,
-            userPromptText,
-          );
-
-          if (snapshot) {
-            const snapshots = sessionConfigManager.config.fileSnapshots || [];
-            snapshots.push(snapshot);
-
-            const maxSnapshots =
-              this.context.config.snapshot?.maxSnapshots || 50;
-            sessionConfigManager.config.fileSnapshots = cleanOldSnapshots(
-              snapshots,
-              maxSnapshots,
+          const operationRecord =
+            operationRecordCollector.createOperationRecord(
+              (lastMessage as NormalizedMessage).uuid,
+              (lastMessage as NormalizedMessage).parentUuid,
+              userPromptText,
             );
+
+          if (operationRecord) {
+            const operationRecords =
+              sessionConfigManager.config.fileOperationRecords || [];
+            operationRecords.push(operationRecord);
+
+            const maxRecords =
+              this.context.config.operationRecord?.maxOperationRecords || 50;
+            sessionConfigManager.config.fileOperationRecords =
+              cleanOldOperationRecords(operationRecords, maxRecords);
             sessionConfigManager.write();
           }
         }
       } catch (error) {
         // Log error but don't fail the entire conversation
-        console.error('Failed to save snapshot:', error);
+        console.error('Failed to save operation record:', error);
       }
     }
 

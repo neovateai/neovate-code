@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'pathe';
-import type { ApprovalMode, SnapshotConfig } from './config';
+import type { ApprovalMode, OperationRecordConfig } from './config';
 import { History } from './history';
 import type { NormalizedMessage } from './message';
 import { Usage } from './usage';
@@ -72,12 +72,12 @@ export type FileOperation = {
   wasExisting: boolean;
 };
 
-export type FileSnapshot = {
+export type FileOperationRecord = {
   messageUuid: string;
   parentMessageUuid: string | null; // Support tree structure
   timestamp: string;
   operations: FileOperation[];
-  userPrompt?: string; // User prompt that triggered this snapshot
+  userPrompt?: string; // User prompt that triggered this operation record
 };
 
 export type SessionConfig = {
@@ -87,8 +87,8 @@ export type SessionConfig = {
   pastedTextMap?: Record<string, string>;
   pastedImageMap?: Record<string, string>;
   additionalDirectories?: string[];
-  snapshotConfig?: SnapshotConfig;
-  fileSnapshots?: FileSnapshot[]; // Track file changes at each message point
+  operationRecordConfig?: OperationRecordConfig;
+  fileOperationRecords?: FileOperationRecord[]; // Track file changes at each message point
 };
 
 const DEFAULT_SESSION_CONFIG: SessionConfig = {
@@ -97,7 +97,7 @@ const DEFAULT_SESSION_CONFIG: SessionConfig = {
   pastedTextMap: {},
   pastedImageMap: {},
   additionalDirectories: [],
-  fileSnapshots: [],
+  fileOperationRecords: [],
 };
 
 export class SessionConfigManager {

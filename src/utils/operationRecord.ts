@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'pathe';
-import type { FileOperation, FileSnapshot } from '../session';
+import type { FileOperation, FileOperationRecord } from '../session';
 
 /**
  * Get max file size from config or use default
@@ -10,17 +10,17 @@ export function getMaxFileSize(configSize?: number): number {
 }
 
 /**
- * Turn-level snapshot collector
+ * Turn-level operation record collector
  * Collects file operations during one assistant turn
  */
-export class TurnSnapshotCollector {
+export class TurnOperationRecordCollector {
   private operations: Map<string, FileOperation> = new Map();
   private cwd: string;
-  private historicalSnapshots: FileSnapshot[];
+  private historicalOperationRecords: FileOperationRecord[];
 
-  constructor(cwd: string, historicalSnapshots?: FileSnapshot[]) {
+  constructor(cwd: string, historicalOperationRecords?: FileOperationRecord[]) {
     this.cwd = cwd;
-    this.historicalSnapshots = historicalSnapshots || [];
+    this.historicalOperationRecords = historicalOperationRecords || [];
   }
 
   /**
@@ -86,8 +86,8 @@ export class TurnSnapshotCollector {
   }
 
   /**
-   * Collect file snapshot from tool execution result
-   * This is the main entry point for collecting snapshots
+   * Collect file operation record from tool execution result
+   * This is the main entry point for collecting operation records
    */
   async collectFromToolResult(
     toolUse: { name: string; params: Record<string, any> },
@@ -100,13 +100,13 @@ export class TurnSnapshotCollector {
         await this.collectFromBashTool(toolResult);
       }
     } catch (error) {
-      console.error('Failed to collect snapshot:', error);
+      console.error('Failed to collect operation record:', error);
     }
   }
 
   /**
    * Determine if a file was originally part of the project (not AI-created)
-   * by checking historical snapshots
+   * by checking historical operation records
    */
   private determineWasExisting(
     filePath: string,
@@ -117,15 +117,15 @@ export class TurnSnapshotCollector {
       return false;
     }
 
-    // Check historical snapshots to find the earliest record of this file
+    // Check historical operation records to find the earliest record of this file
     const relativePath = path.relative(
       this.cwd,
       path.isAbsolute(filePath) ? filePath : path.resolve(this.cwd, filePath),
     );
 
-    // Search through all historical snapshots chronologically
-    for (const snapshot of this.historicalSnapshots) {
-      for (const op of snapshot.operations) {
+    // Search through all historical operation records chronologically
+    for (const record of this.historicalOperationRecords) {
+      for (const op of record.operations) {
         if (op.path === relativePath) {
           // Found the earliest operation on this file
           // If it was created (beforeContent === undefined), it's AI-created
@@ -141,7 +141,7 @@ export class TurnSnapshotCollector {
   }
 
   /**
-   * Collect snapshot from write/edit tool
+   * Collect operation record from write/edit tool
    */
   private async collectFromFileModificationTool(
     toolUse: { name: string; params: Record<string, any> },
@@ -177,7 +177,7 @@ export class TurnSnapshotCollector {
       operationType = 'modify';
     }
 
-    // Determine wasExisting by checking historical snapshots
+    // Determine wasExisting by checking historical operation records
     const wasExisting = this.determineWasExisting(filePath, beforeExists);
 
     this.addOperation({
@@ -191,7 +191,7 @@ export class TurnSnapshotCollector {
   }
 
   /**
-   * Collect snapshot from bash tool
+   * Collect operation record from bash tool
    * Note: bash only records AFTER state, cannot track initial project state
    */
   private async collectFromBashTool(toolResult: {
@@ -222,13 +222,13 @@ export class TurnSnapshotCollector {
   }
 
   /**
-   * Create a snapshot from collected operations
+   * Create an operation record from collected operations
    */
-  createSnapshot(
+  createOperationRecord(
     messageUuid: string,
     parentMessageUuid: string | null,
     userPrompt?: string,
-  ): FileSnapshot | null {
+  ): FileOperationRecord | null {
     if (this.operations.size === 0) {
       return null;
     }
@@ -251,7 +251,7 @@ export class TurnSnapshotCollector {
 }
 
 /**
- * Check if file should be tracked for snapshot
+ * Check if file should be tracked for operation record
  */
 export function shouldTrackFile(
   filePath: string,
@@ -288,7 +288,7 @@ export function shouldTrackFile(
 }
 
 /**
- * Restore files from snapshot operations
+ * Restore files from operation record operations
  */
 export interface RestoreResult {
   success: boolean;
@@ -422,11 +422,13 @@ export function restoreFilesFromOperations(
  * Collect original states of all project files that were modified by AI
  * Returns a map of file path to original content (earliest beforeContent)
  */
-function collectOriginalStates(snapshots: FileSnapshot[]): Map<string, string> {
+function collectOriginalStates(
+  operationRecords: FileOperationRecord[],
+): Map<string, string> {
   const originalStates = new Map<string, string>();
 
-  for (const snapshot of snapshots) {
-    for (const op of snapshot.operations) {
+  for (const record of operationRecords) {
+    for (const op of record.operations) {
       // Collect original state of project files (wasExisting=true)
       // Use the earliest beforeContent as the original state
       if (
@@ -443,20 +445,20 @@ function collectOriginalStates(snapshots: FileSnapshot[]): Map<string, string> {
 }
 
 /**
- * Collect files created by AI in or after target snapshot
+ * Collect files created by AI in or after target operation record
  * Excludes re-creations of original project files
  */
 function collectCreatedFiles(
-  snapshots: FileSnapshot[],
+  operationRecords: FileOperationRecord[],
   targetTime: number,
   originalStates: Map<string, string>,
 ): Set<string> {
   const createdFiles = new Set<string>();
 
-  for (const snapshot of snapshots) {
-    const snapshotTime = new Date(snapshot.timestamp).getTime();
-    if (snapshotTime >= targetTime) {
-      for (const op of snapshot.operations) {
+  for (const record of operationRecords) {
+    const recordTime = new Date(record.timestamp).getTime();
+    if (recordTime >= targetTime) {
+      for (const op of record.operations) {
         // File was created (didn't exist before this operation)
         if (op.beforeContent === undefined && op.afterContent !== undefined) {
           // Only delete if it's NOT a re-creation of an original project file
@@ -475,17 +477,17 @@ function collectCreatedFiles(
 }
 
 /**
- * Build restore operations for initial state (before first snapshot)
+ * Build restore operations for initial state (before first operation record)
  * Restores all project files to original state and deletes AI-created files
  */
 function buildInitialStateRestoreOperations(
-  snapshots: FileSnapshot[],
+  operationRecords: FileOperationRecord[],
   targetTime: number,
 ): FileOperation[] {
   const restoreOps: FileOperation[] = [];
 
   // Collect original states of all project files that were modified by AI
-  const originalStates = collectOriginalStates(snapshots);
+  const originalStates = collectOriginalStates(operationRecords);
 
   // Restore all project files to their original states
   for (const [path, content] of originalStates.entries()) {
@@ -499,10 +501,10 @@ function buildInitialStateRestoreOperations(
     });
   }
 
-  // Delete all files created by AI (in target or later snapshots)
+  // Delete all files created by AI (in target or later operation records)
   // IMPORTANT: Exclude files that are re-creations of original project files
   const createdFiles = collectCreatedFiles(
-    snapshots,
+    operationRecords,
     targetTime,
     originalStates,
   );
@@ -522,11 +524,11 @@ function buildInitialStateRestoreOperations(
 }
 
 /**
- * Analyze operations in target and later snapshots
+ * Analyze operations in target and later operation records
  * Returns tracking data for deletions, files to delete, and files to restore
  */
 function analyzeOperationsInRange(
-  snapshots: FileSnapshot[],
+  operationRecords: FileOperationRecord[],
   targetTime: number,
   parentFiles: Set<string>,
 ): {
@@ -538,12 +540,12 @@ function analyzeOperationsInRange(
   const filesToRestore = new Map<string, string>();
   const deletedInRange = new Map<string, string>();
 
-  for (const snapshot of snapshots) {
-    const snapshotTime = new Date(snapshot.timestamp).getTime();
+  for (const record of operationRecords) {
+    const recordTime = new Date(record.timestamp).getTime();
 
-    // Only look at target and later snapshots
-    if (snapshotTime >= targetTime) {
-      for (const op of snapshot.operations) {
+    // Only look at target and later operation records
+    if (recordTime >= targetTime) {
+      for (const op of record.operations) {
         const path = op.path;
 
         // Track deletions that happen in this range
@@ -623,7 +625,7 @@ function buildFinalOperationsMap(
     // The parent state operation is already in finalOperations, so we do nothing
   }
 
-  // Handle files that were deleted in target or later snapshots
+  // Handle files that were deleted in target or later operation records
   // These need to be restored to their state before deletion
   for (const [path, content] of deletedInRange.entries()) {
     // If file is in parent state, it will be restored via parent operations
@@ -659,51 +661,51 @@ function buildFinalOperationsMap(
 }
 
 /**
- * Build restore operations for snapshot rollback
- * Returns operations to restore to the state BEFORE target snapshot
+ * Build restore operations for operation record rollback
+ * Returns operations to restore to the state BEFORE target operation record
  *
  * Strategy:
- * 1. Build cumulative state from root to target's parent (using buildSnapshotPath)
- * 2. Handle special case: restoring before first snapshot (project initial state)
- * 3. Delete files created in target or later snapshots (that aren't in parent state)
+ * 1. Build cumulative state from root to target's parent (using buildOperationRecordPath)
+ * 2. Handle special case: restoring before first operation record (project initial state)
+ * 3. Delete files created in target or later operation records (that aren't in parent state)
  * 4. Restore project files modified in target or later (that aren't in parent state)
  */
 export function buildRestoreOperations(
-  snapshots: FileSnapshot[],
+  operationRecords: FileOperationRecord[],
   targetMessageUuid: string,
   messages?: any[],
 ): FileOperation[] {
-  const snapshotMap = new Map<string, FileSnapshot>();
-  for (const snapshot of snapshots) {
-    snapshotMap.set(snapshot.messageUuid, snapshot);
+  const recordMap = new Map<string, FileOperationRecord>();
+  for (const record of operationRecords) {
+    recordMap.set(record.messageUuid, record);
   }
 
-  const targetSnapshot = snapshotMap.get(targetMessageUuid);
-  if (!targetSnapshot) {
+  const targetRecord = recordMap.get(targetMessageUuid);
+  if (!targetRecord) {
     return [];
   }
 
-  const targetTime = new Date(targetSnapshot.timestamp).getTime();
+  const targetTime = new Date(targetRecord.timestamp).getTime();
 
-  // Step 1: Build parent state (cumulative state before target snapshot)
-  const parentOperations = buildSnapshotPath(
-    snapshots,
+  // Step 1: Build parent state (cumulative state before target operation record)
+  const parentOperations = buildOperationRecordPath(
+    operationRecords,
     targetMessageUuid,
     messages,
   );
 
-  // Step 2: Special case - restoring to before first snapshot (project initial state)
+  // Step 2: Special case - restoring to before first operation record (project initial state)
   if (parentOperations.length === 0) {
-    return buildInitialStateRestoreOperations(snapshots, targetTime);
+    return buildInitialStateRestoreOperations(operationRecords, targetTime);
   }
 
   // Step 3: Normal case - restore to parent state
   // Track which files exist in parent state
   const parentFiles = new Set(parentOperations.map((op) => op.path));
 
-  // Analyze operations in target and later snapshots
+  // Analyze operations in target and later operation records
   const { deletedInRange, filesToDelete, filesToRestore } =
-    analyzeOperationsInRange(snapshots, targetTime, parentFiles);
+    analyzeOperationsInRange(operationRecords, targetTime, parentFiles);
 
   // Step 4: Build final restore operations
   const finalOperations = buildFinalOperationsMap(
@@ -718,31 +720,31 @@ export function buildRestoreOperations(
 }
 
 /**
- * Build snapshot path from message tree
+ * Build operation record path from message tree
  * Returns cumulative operations from root to target's PARENT (excluding target)
- * This represents the state BEFORE the target snapshot was applied
+ * This represents the state BEFORE the target operation record was applied
  *
  * Operation Merging Rules:
  * - Multiple operations on same file are merged to show cumulative effect
  * - Result shows final state after all parent operations
  */
-export function buildSnapshotPath(
-  snapshots: FileSnapshot[],
+export function buildOperationRecordPath(
+  operationRecords: FileOperationRecord[],
   targetMessageUuid: string,
   messages?: any[],
 ): FileOperation[] {
-  const snapshotMap = new Map<string, FileSnapshot>();
-  for (const snapshot of snapshots) {
-    snapshotMap.set(snapshot.messageUuid, snapshot);
+  const recordMap = new Map<string, FileOperationRecord>();
+  for (const record of operationRecords) {
+    recordMap.set(record.messageUuid, record);
   }
 
-  const targetSnapshot = snapshotMap.get(targetMessageUuid);
-  if (!targetSnapshot) {
+  const targetRecord = recordMap.get(targetMessageUuid);
+  if (!targetRecord) {
     return [];
   }
 
   // If target itself has no parent, return empty (project initial state)
-  if (targetSnapshot.parentMessageUuid === null) {
+  if (targetRecord.parentMessageUuid === null) {
     return [];
   }
 
@@ -751,16 +753,16 @@ export function buildSnapshotPath(
     ? new Map(messages.map((m: any) => [m.uuid, m]))
     : null;
 
-  // Find the parent snapshot by walking up the message tree
-  let parentSnapshot: FileSnapshot | undefined;
+  // Find the parent operation record by walking up the message tree
+  let parentRecord: FileOperationRecord | undefined;
 
   if (messageMap) {
-    let currentMessageUuid = targetSnapshot.parentMessageUuid;
+    let currentMessageUuid = targetRecord.parentMessageUuid;
 
     while (currentMessageUuid) {
-      const snapshot = snapshotMap.get(currentMessageUuid);
-      if (snapshot) {
-        parentSnapshot = snapshot;
+      const record = recordMap.get(currentMessageUuid);
+      if (record) {
+        parentRecord = record;
         break;
       }
 
@@ -774,19 +776,19 @@ export function buildSnapshotPath(
       }
     }
   } else {
-    parentSnapshot = snapshots.find(
-      (s) => s.messageUuid === targetSnapshot.parentMessageUuid,
+    parentRecord = operationRecords.find(
+      (r) => r.messageUuid === targetRecord.parentMessageUuid,
     );
   }
 
-  // If no parent snapshot found, return empty (before first snapshot)
-  if (!parentSnapshot) {
+  // If no parent record found, return empty (before first operation record)
+  if (!parentRecord) {
     return [];
   }
 
-  // Walk backward from parent to root to build snapshot chain
-  const path: FileSnapshot[] = [];
-  let current: FileSnapshot | undefined = parentSnapshot;
+  // Walk backward from parent to root to build operation record chain
+  const path: FileOperationRecord[] = [];
+  let current: FileOperationRecord | undefined = parentRecord;
 
   while (current) {
     path.unshift(current);
@@ -795,15 +797,15 @@ export function buildSnapshotPath(
       break;
     }
 
-    // Find next parent snapshot
-    let nextParent: FileSnapshot | undefined;
+    // Find next parent operation record
+    let nextParent: FileOperationRecord | undefined;
     if (messageMap) {
       let parentMessageUuid = current.parentMessageUuid;
 
       while (parentMessageUuid) {
-        const snapshot = snapshotMap.get(parentMessageUuid);
-        if (snapshot) {
-          nextParent = snapshot;
+        const record = recordMap.get(parentMessageUuid);
+        if (record) {
+          nextParent = record;
           break;
         }
 
@@ -817,8 +819,8 @@ export function buildSnapshotPath(
         }
       }
     } else {
-      nextParent = snapshots.find(
-        (s) => s.messageUuid === current!.parentMessageUuid,
+      nextParent = operationRecords.find(
+        (r) => r.messageUuid === current!.parentMessageUuid,
       );
     }
 
@@ -833,8 +835,8 @@ export function buildSnapshotPath(
   // Key insight: we need final afterContent for each file after all operations
   const finalState = new Map<string, FileOperation>();
 
-  for (const snapshot of path) {
-    for (const operation of snapshot.operations) {
+  for (const record of path) {
+    for (const operation of record.operations) {
       const key = operation.path;
       const existing = finalState.get(key);
 
@@ -887,48 +889,48 @@ export function buildSnapshotPath(
 }
 
 /**
- * Clean old snapshots using smart strategy
- * Preserves snapshot chain integrity by keeping snapshots from newest backwards
+ * Clean old operation records using smart strategy
+ * Preserves operation record chain integrity by keeping records from newest backwards
  * following the parent chain, rather than just by timestamp
  */
-export function cleanOldSnapshots(
-  snapshots: FileSnapshot[],
-  maxSnapshots: number,
-): FileSnapshot[] {
-  if (snapshots.length <= maxSnapshots) {
-    return snapshots;
+export function cleanOldOperationRecords(
+  operationRecords: FileOperationRecord[],
+  maxRecords: number,
+): FileOperationRecord[] {
+  if (operationRecords.length <= maxRecords) {
+    return operationRecords;
   }
 
   // Sort by timestamp descending (newest first)
-  const sorted = [...snapshots].sort(
+  const sorted = [...operationRecords].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
   );
 
-  // Build snapshot map for quick lookup
-  const snapshotMap = new Map<string, FileSnapshot>();
-  for (const snapshot of snapshots) {
-    snapshotMap.set(snapshot.messageUuid, snapshot);
+  // Build operation record map for quick lookup
+  const recordMap = new Map<string, FileOperationRecord>();
+  for (const record of operationRecords) {
+    recordMap.set(record.messageUuid, record);
   }
 
-  // Keep snapshots by following parent chain from newest
+  // Keep operation records by following parent chain from newest
   const toKeep = new Set<string>();
   let count = 0;
 
-  // Start from the newest snapshot and walk backwards following parent chain
-  for (const snapshot of sorted) {
-    if (count >= maxSnapshots) {
+  // Start from the newest operation record and walk backwards following parent chain
+  for (const record of sorted) {
+    if (count >= maxRecords) {
       break;
     }
 
-    // Add this snapshot
-    toKeep.add(snapshot.messageUuid);
+    // Add this operation record
+    toKeep.add(record.messageUuid);
     count++;
 
     // Also add all its ancestors to maintain chain integrity
     // (but don't count them towards the limit if already added)
-    let current = snapshot;
-    while (current.parentMessageUuid && count < maxSnapshots) {
-      const parent = snapshotMap.get(current.parentMessageUuid);
+    let current = record;
+    while (current.parentMessageUuid && count < maxRecords) {
+      const parent = recordMap.get(current.parentMessageUuid);
       if (!parent) {
         break;
       }
@@ -940,6 +942,6 @@ export function cleanOldSnapshots(
     }
   }
 
-  // Return snapshots that should be kept, preserving original order
-  return snapshots.filter((s) => toKeep.has(s.messageUuid));
+  // Return operation records that should be kept, preserving original order
+  return operationRecords.filter((r) => toKeep.has(r.messageUuid));
 }

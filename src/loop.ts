@@ -20,7 +20,7 @@ import type { ToolResult, Tools, ToolUse } from './tool';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
 import { safeParseJson } from './utils/safeParseJson';
-import type { TurnSnapshotCollector } from './utils/snapshot';
+import type { TurnOperationRecordCollector } from './utils/operationRecord';
 
 const DEFAULT_MAX_TURNS = 50;
 const DEFAULT_ERROR_RETRY_TURNS = 10;
@@ -119,7 +119,7 @@ type RunLoopOpts = {
   }) => Promise<void>;
   onToolApprove?: (toolUse: ToolUse) => Promise<boolean>;
   onMessage?: OnMessage;
-  snapshotCollector?: TurnSnapshotCollector;
+  operationRecordCollector?: TurnOperationRecordCollector;
 };
 
 export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
@@ -480,9 +480,9 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
           toolResult = await opts.onToolResult(toolUse, toolResult, approved);
         }
 
-        // Collect file snapshot for write/edit/bash tools
-        if (opts.snapshotCollector && !toolResult.isError) {
-          await opts.snapshotCollector.collectFromToolResult(
+        // Collect file operation record for write/edit/bash tools
+        if (opts.operationRecordCollector && !toolResult.isError) {
+          await opts.operationRecordCollector.collectFromToolResult(
             toolUse,
             toolResult,
           );

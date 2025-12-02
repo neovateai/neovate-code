@@ -133,7 +133,7 @@ export class Tools {
       };
     }
     const result = await tool.execute(argsObj, argsObj);
-    // Attach the modified rawParams to the result for snapshot tracking
+    // Attach the modified rawParams to the result for operation record tracking
     if (argsObj) {
       result._rawParams = argsObj;
     }
@@ -267,7 +267,7 @@ export type ToolResult = {
   llmContent: string | (TextPart | ImagePart)[];
   returnDisplay?: ReturnDisplay;
   isError?: boolean;
-  _affectedFiles?: string[]; // Internal: files affected by bash tool for snapshot tracking
+  _affectedFiles?: string[]; // Internal: files affected by bash tool for operation record tracking
   [key: string]: any; // Allow additional internal properties
 };
 

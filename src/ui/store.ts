@@ -135,7 +135,7 @@ interface AppState {
   forkParentUuid: string | null;
   restoreCounter: number;
 
-  snapshotModalVisible: boolean;
+  operationRecordModalVisible: boolean;
 
   bashBackgroundPrompt: BashPromptBackgroundEvent | null;
   thinking: { effort: 'low' | 'medium' | 'high' } | undefined;
@@ -204,11 +204,11 @@ interface AppActions {
   resetInput: () => void;
   setPastedTextMap: (map: Record<string, string>) => Promise<void>;
   setPastedImageMap: (map: Record<string, string>) => Promise<void>;
-  restoreSnapshot: (targetMessageUuid: string) => Promise<void>;
+  restoreOperationRecord: (targetMessageUuid: string) => Promise<void>;
   incrementRestoreCounter: () => void;
-  showSnapshotModal: () => void;
-  hideSnapshotModal: () => void;
-  isRestoringSnapshot: boolean;
+  showOperationRecordModal: () => void;
+  hideOperationRecordModal: () => void;
+  isRestoringOperationRecord: boolean;
   setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => void;
   clearBashBackgroundPrompt: () => void;
   toggleThinking: () => void;
@@ -267,8 +267,8 @@ export const useAppStore = create<AppStore>()(
       restoreCounter: 0,
       thinking: undefined,
 
-      snapshotModalVisible: false,
-      isRestoringSnapshot: false,
+      operationRecordModalVisible: false,
+      isRestoringOperationRecord: false,
 
       bashBackgroundPrompt: null,
 
@@ -997,39 +997,42 @@ export const useAppStore = create<AppStore>()(
         }
       },
 
-      showSnapshotModal: () => {
-        set({ snapshotModalVisible: true });
+      showOperationRecordModal: () => {
+        set({ operationRecordModalVisible: true });
       },
 
-      hideSnapshotModal: () => {
-        set({ snapshotModalVisible: false });
+      hideOperationRecordModal: () => {
+        set({ operationRecordModalVisible: false });
       },
 
-      restoreSnapshot: async (targetMessageUuid: string) => {
-        const { bridge, cwd, sessionId, isRestoringSnapshot } = get();
+      restoreOperationRecord: async (targetMessageUuid: string) => {
+        const { bridge, cwd, sessionId, isRestoringOperationRecord } = get();
 
         // Prevent concurrent restore operations
-        if (isRestoringSnapshot) {
+        if (isRestoringOperationRecord) {
           get().log(
             '⚠️  A restore operation is already in progress. Please wait.',
           );
           return;
         }
 
-        set({ isRestoringSnapshot: true });
+        set({ isRestoringOperationRecord: true });
 
         try {
-          const restoreResponse = await bridge.request('session.restoreCode', {
-            cwd,
-            sessionId,
-            targetMessageUuid,
-          });
+          const restoreResponse = await bridge.request(
+            'session.rollbackToOperation',
+            {
+              cwd,
+              sessionId,
+              targetMessageUuid,
+            },
+          );
 
           if (restoreResponse.success) {
             const { restoredFiles, skippedBashFiles, userPromptToFill } =
               restoreResponse.data;
 
-            // Fill the user prompt from snapshot if available
+            // Fill the user prompt from operation record if available
             if (userPromptToFill) {
               set({
                 inputValue: userPromptToFill,
@@ -1068,7 +1071,7 @@ export const useAppStore = create<AppStore>()(
           get().log(`Error during restore: ${error.message}`);
           return;
         } finally {
-          set({ isRestoringSnapshot: false });
+          set({ isRestoringOperationRecord: false });
         }
 
         get().incrementRestoreCounter();

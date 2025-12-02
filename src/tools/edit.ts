@@ -40,7 +40,7 @@ Usage:
 
         const fileExists = fs.existsSync(fullFilePath);
 
-        // Store old content for snapshot tracking
+        // Store old content for operation record tracking
         if (rawParams && fileExists) {
           try {
             const beforeContent = fs.readFileSync(fullFilePath, 'utf-8');

@@ -27,7 +27,7 @@ export function createWriteTool(opts: { cwd: string }) {
           ? fs.readFileSync(fullFilePath, 'utf-8')
           : '';
 
-        // Store old content for snapshot tracking
+        // Store old content for operation record tracking
         if (rawParams) {
           (rawParams as any)._beforeContent = oldFileExists
             ? oldContent

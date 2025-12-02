@@ -37,8 +37,8 @@ export function ChatInput() {
     bashBackgroundPrompt,
     bridge,
     thinking,
-    showSnapshotModal,
-    snapshotModalVisible,
+    showOperationRecordModal,
+    operationRecordModalVisible,
   } = useAppStore();
   const { columns } = useTerminalSize();
   const { handleExternalEdit } = useExternalEditor({
@@ -171,7 +171,7 @@ export function ChatInput() {
   if (memoryModal) {
     return <MemoryModal />;
   }
-  if (snapshotModalVisible) {
+  if (operationRecordModalVisible) {
     return null;
   }
   if (status === 'exit') {
@@ -225,8 +225,8 @@ export function ChatInput() {
               }
             }}
             onDoubleEscape={() => {
-              // ESC-ESC triggers snapshot modal
-              showSnapshotModal();
+              // ESC-ESC triggers operation record modal
+              showOperationRecordModal();
             }}
             onImagePaste={handlers.handleImagePaste}
             onPaste={handlers.handlePaste}
