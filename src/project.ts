@@ -284,7 +284,10 @@ export class Project {
     // Create snapshot collector
     const snapshotEnabled = this.context.config.snapshot?.enabled !== false;
     const snapshotCollector = snapshotEnabled
-      ? new TurnSnapshotCollector(this.context.cwd)
+      ? new TurnSnapshotCollector(
+          this.context.cwd,
+          sessionConfigManager.config.fileSnapshots || [],
+        )
       : undefined;
 
     const result = await runLoop({

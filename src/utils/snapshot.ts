@@ -16,9 +16,11 @@ export function getMaxFileSize(configSize?: number): number {
 export class TurnSnapshotCollector {
   private operations: Map<string, FileOperation> = new Map();
   private cwd: string;
+  private historicalSnapshots: FileSnapshot[];
 
-  constructor(cwd: string) {
+  constructor(cwd: string, historicalSnapshots?: FileSnapshot[]) {
     this.cwd = cwd;
+    this.historicalSnapshots = historicalSnapshots || [];
   }
 
   /**
@@ -103,6 +105,42 @@ export class TurnSnapshotCollector {
   }
 
   /**
+   * Determine if a file was originally part of the project (not AI-created)
+   * by checking historical snapshots
+   */
+  private determineWasExisting(
+    filePath: string,
+    beforeExists: boolean,
+  ): boolean {
+    // If file doesn't exist now, use the beforeExists flag
+    if (!beforeExists) {
+      return false;
+    }
+
+    // Check historical snapshots to find the earliest record of this file
+    const relativePath = path.relative(
+      this.cwd,
+      path.isAbsolute(filePath) ? filePath : path.resolve(this.cwd, filePath),
+    );
+
+    // Search through all historical snapshots chronologically
+    for (const snapshot of this.historicalSnapshots) {
+      for (const op of snapshot.operations) {
+        if (op.path === relativePath) {
+          // Found the earliest operation on this file
+          // If it was created (beforeContent === undefined), it's AI-created
+          // If it was modified (beforeContent !== undefined), it's a project file
+          return op.beforeContent !== undefined;
+        }
+      }
+    }
+
+    // No historical record found, use current state
+    // If file exists before this operation, assume it's a project file
+    return beforeExists;
+  }
+
+  /**
    * Collect snapshot from write/edit tool
    */
   private async collectFromFileModificationTool(
@@ -139,13 +177,16 @@ export class TurnSnapshotCollector {
       operationType = 'modify';
     }
 
+    // Determine wasExisting by checking historical snapshots
+    const wasExisting = this.determineWasExisting(filePath, beforeExists);
+
     this.addOperation({
       type: operationType,
       path: filePath,
       source: toolUse.name as 'write' | 'edit',
       beforeContent: beforeContent,
       afterContent: afterContent,
-      wasExisting: beforeExists, // If file existed before, it's an existing project file
+      wasExisting: wasExisting,
     });
   }
 
