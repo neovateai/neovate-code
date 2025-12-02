@@ -13,11 +13,12 @@ describe('read tool file size and token limits', () => {
       fs.mkdirSync(testDir, { recursive: true });
     }
 
-    const largeSizeContent = 'a'.repeat(262145);
+    const longLine = 'a'.repeat(50000);
+    const largeSizeContent = Array(10).fill(longLine).join('\n');
     fs.writeFileSync(largeSizeFile, largeSizeContent, 'utf-8');
 
-    const tokenWord = 'token ';
-    const highTokenContent = tokenWord.repeat(26000);
+    const tokenLine = 'token '.repeat(5000);
+    const highTokenContent = Array(10).fill(tokenLine).join('\n');
     fs.writeFileSync(highTokenFile, highTokenContent, 'utf-8');
   });
 
@@ -31,7 +32,7 @@ describe('read tool file size and token limits', () => {
     }
   });
 
-  test('should throw MaxFileReadLengthExceededError when file size exceeds limit', async () => {
+  test('should throw MaxFileReadLengthExceededError when selected content exceeds limit', async () => {
     const readTool = createReadTool({
       cwd: process.cwd(),
       productName: 'test',
@@ -39,19 +40,21 @@ describe('read tool file size and token limits', () => {
 
     const result = await readTool.execute({
       file_path: largeSizeFile,
+      offset: 1,
+      limit: 6,
     });
 
     expect(result.isError).toBe(true);
     expect(typeof result.llmContent).toBe('string');
     expect(result.llmContent).toContain(
-      'File content (262145 characters) exceeds maximum allowed length (262144 characters)',
+      'characters) exceeds maximum allowed length (262144 characters)',
     );
     expect(result.llmContent).toContain(
       'Please use offset and limit parameters',
     );
   });
 
-  test('should throw MaxFileReadTokenExceededError when token count exceeds limit', async () => {
+  test('should throw MaxFileReadTokenExceededError when selected content exceeds token limit', async () => {
     const readTool = createReadTool({
       cwd: process.cwd(),
       productName: 'test',
@@ -59,6 +62,8 @@ describe('read tool file size and token limits', () => {
 
     const result = await readTool.execute({
       file_path: highTokenFile,
+      offset: 1,
+      limit: 6,
     });
 
     expect(result.isError).toBe(true);
@@ -95,7 +100,7 @@ describe('read tool file size and token limits', () => {
     fs.unlinkSync(normalFile);
   });
 
-  test('should allow reading large file with offset and limit parameters', async () => {
+  test('should successfully read large file with small offset and limit', async () => {
     const readTool = createReadTool({
       cwd: process.cwd(),
       productName: 'test',
@@ -104,13 +109,61 @@ describe('read tool file size and token limits', () => {
     const result = await readTool.execute({
       file_path: largeSizeFile,
       offset: 1,
-      limit: 10,
+      limit: 2,
     });
 
-    expect(result.isError).toBe(true);
+    expect(result.isError).toBeUndefined();
     expect(typeof result.llmContent).toBe('string');
-    expect(result.llmContent).toContain(
-      'File content (262145 characters) exceeds maximum allowed length (262144 characters)',
-    );
+
+    const contentObj = JSON.parse(result.llmContent as string);
+    expect(contentObj.actualLinesRead).toBe(2);
+    expect(contentObj.content.split('\n').length).toBe(2);
+    expect(contentObj.offset).toBe(1);
+    expect(contentObj.limit).toBe(2);
+  });
+
+  test('should successfully read high token file with small limit', async () => {
+    const readTool = createReadTool({
+      cwd: process.cwd(),
+      productName: 'test',
+    });
+
+    const result = await readTool.execute({
+      file_path: highTokenFile,
+      offset: 1,
+      limit: 4,
+    });
+
+    expect(result.isError).toBeUndefined();
+    expect(typeof result.llmContent).toBe('string');
+
+    const contentObj = JSON.parse(result.llmContent as string);
+    expect(contentObj.actualLinesRead).toBe(4);
+    expect(contentObj.content.split('\n').length).toBe(4);
+  });
+
+  test('should handle invalid offset and limit parameters', async () => {
+    const readTool = createReadTool({
+      cwd: process.cwd(),
+      productName: 'test',
+    });
+
+    const result1 = await readTool.execute({
+      file_path: largeSizeFile,
+      offset: 0,
+      limit: 5,
+    });
+
+    expect(result1.isError).toBe(true);
+    expect(result1.llmContent).toContain('Offset must be >= 1');
+
+    const result2 = await readTool.execute({
+      file_path: largeSizeFile,
+      offset: 1,
+      limit: 0,
+    });
+
+    expect(result2.isError).toBe(true);
+    expect(result2.llmContent).toContain('Limit must be >= 1');
   });
 });

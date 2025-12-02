@@ -155,10 +155,18 @@ Usage:
         }
 
         // Handle text files
-        const content = fs.readFileSync(fullFilePath, 'utf-8');
-        const allLines = content.split(/\r?\n/);
-
-        const totalLines = allLines.length;
+        const {
+          content,
+          totalLines,
+          startLine,
+          actualLimit,
+          selectedLines,
+          endLine,
+        } = readFileWithOffsetLimit(
+          fullFilePath,
+          offset ?? 1,
+          limit ?? MAX_LINES_TO_READ,
+        );
 
         if (content.length > MAX_FILE_LENGTH) {
           throw new MaxFileReadLengthExceededError(
@@ -172,13 +180,6 @@ Usage:
         if (tokenCount > MAX_TOKENS) {
           throw new MaxFileReadTokenExceededError(tokenCount, MAX_TOKENS);
         }
-
-        // Apply offset and limit with defaults
-        const actualOffset = offset ?? 1;
-        const actualLimit = limit ?? MAX_LINES_TO_READ;
-        const startLine = Math.max(0, actualOffset - 1); // Convert 1-based to 0-based
-        const endLine = Math.min(totalLines, startLine + actualLimit);
-        const selectedLines = allLines.slice(startLine, endLine);
 
         // Truncate long lines
         const truncatedLines = selectedLines.map((line) =>
@@ -216,4 +217,31 @@ Usage:
       category: 'read',
     },
   });
+}
+
+function readFileWithOffsetLimit(
+  filePath: string,
+  offset: number = 1,
+  limit: number = MAX_LINES_TO_READ,
+) {
+  const fileContent = fs.readFileSync(filePath, { encoding: 'utf8' });
+  const allLines = fileContent.split(/\r?\n/);
+  const totalLines = allLines.length;
+
+  // Apply offset and limit with defaults
+  const actualOffset = offset ?? 1;
+  const actualLimit = limit ?? MAX_LINES_TO_READ;
+  const startLine = Math.max(0, actualOffset - 1); // Convert 1-based to 0-based
+  const endLine = Math.min(totalLines, startLine + actualLimit);
+  const selectedLines = allLines.slice(startLine, endLine);
+
+  return {
+    content: selectedLines.join('\n'),
+    lineCount: selectedLines.length,
+    startLine,
+    endLine,
+    actualLimit,
+    totalLines,
+    selectedLines,
+  };
 }
