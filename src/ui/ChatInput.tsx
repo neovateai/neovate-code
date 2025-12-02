@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink';
-import React, { useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { SPACING, UI_COLORS } from './constants';
 import { DebugRandomNumber } from './Debug';
 import { MemoryModal } from './MemoryModal';
@@ -254,16 +254,16 @@ export function ChatInput() {
             selectedIndex={reverseSearch.selectedIndex}
             maxVisible={10}
           >
-            {(suggestion, isSelected, visibleSuggestions) => {
+            {(suggestion, isSelected, _visibleSuggestions) => {
               const maxNameLength = Math.max(
-                ...visibleSuggestions.map((s) => s.length),
+                ...reverseSearch.matches.map((s) => s.length),
               );
               return (
                 <SuggestionItem
                   name={suggestion}
                   description={''}
                   isSelected={isSelected}
-                  firstColumnWidth={maxNameLength + 4}
+                  firstColumnWidth={Math.min(maxNameLength + 4, columns - 10)}
                 />
               );
             }}
@@ -279,16 +279,16 @@ export function ChatInput() {
           selectedIndex={slashCommands.selectedIndex}
           maxVisible={10}
         >
-          {(suggestion, isSelected, visibleSuggestions) => {
+          {(suggestion, isSelected, _visibleSuggestions) => {
             const maxNameLength = Math.max(
-              ...visibleSuggestions.map((s) => s.command.name.length),
+              ...slashCommands.suggestions.map((s) => s.command.name.length),
             );
             return (
               <SuggestionItem
                 name={`/${suggestion.command.name}`}
                 description={suggestion.command.description}
                 isSelected={isSelected}
-                firstColumnWidth={maxNameLength + 4}
+                firstColumnWidth={Math.min(maxNameLength + 4, columns - 10)}
               />
             );
           }}
@@ -300,16 +300,16 @@ export function ChatInput() {
           selectedIndex={fileSuggestion.selectedIndex}
           maxVisible={10}
         >
-          {(suggestion, isSelected, visibleSuggestions) => {
+          {(suggestion, isSelected, _visibleSuggestions) => {
             const maxNameLength = Math.max(
-              ...visibleSuggestions.map((s) => s.length),
+              ...fileSuggestion.matchedPaths.map((s) => s.length),
             );
             return (
               <SuggestionItem
                 name={suggestion}
                 description={''}
                 isSelected={isSelected}
-                firstColumnWidth={maxNameLength + 4}
+                firstColumnWidth={Math.min(maxNameLength + 4, columns - 10)}
               />
             );
           }}
