@@ -48,7 +48,6 @@ Usage:
           fullFilePath,
           old_string,
           new_string,
-          'search-replace',
           replace_all,
         );
         const dir = path.dirname(fullFilePath);

@@ -16,10 +16,6 @@ export interface Hunk {
   lines: string[];
 }
 
-function detectFileEncoding(filePath: string): BufferEncoding {
-  return 'utf-8';
-}
-
 function applyStringReplace(
   content: string,
   oldStr: string,
@@ -53,10 +49,9 @@ export function applyEdits(
 ): { patch: any; updatedFile: string } {
   const fullFilePath = isAbsolute(filePath) ? filePath : resolve(cwd, filePath);
 
-  const enc = detectFileEncoding(fullFilePath);
   let fileContents = '';
   try {
-    fileContents = readFileSync(fullFilePath, enc);
+    fileContents = readFileSync(fullFilePath, 'utf-8');
   } catch (error: any) {
     if (
       error.code === 'ENOENT' &&
@@ -132,14 +127,7 @@ export function applyEdit(
   filePath: string,
   old_string: string,
   new_string: string,
-  mode: 'search-replace' | 'whole-file' = 'search-replace',
   replace_all = false,
 ): { patch: any; updatedFile: string } {
-  if (mode === 'whole-file') {
-    return applyEdits(cwd, filePath, [
-      { old_string: '', new_string, replace_all: false },
-    ]);
-  }
-
   return applyEdits(cwd, filePath, [{ old_string, new_string, replace_all }]);
 }

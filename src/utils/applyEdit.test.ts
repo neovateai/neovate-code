@@ -33,14 +33,7 @@ describe('applyEdit', () => {
   test('should apply global replacement when replace_all is true', () => {
     mockReadFileSync.mockReturnValue('Hello World\nHello Universe');
 
-    const result = applyEdit(
-      '/',
-      'test.txt',
-      'Hello',
-      'Hi',
-      'search-replace',
-      true,
-    );
+    const result = applyEdit('/', 'test.txt', 'Hello', 'Hi', true);
 
     expect(result.updatedFile).toBe('Hi World\nHi Universe');
   });
@@ -93,14 +86,7 @@ describe('applyEdit', () => {
   test('should handle special characters in search string with replace_all', () => {
     mockReadFileSync.mockReturnValue('a+b=c\na+b=d');
 
-    const result = applyEdit(
-      '/',
-      'test.txt',
-      'a+b',
-      'x',
-      'search-replace',
-      true,
-    );
+    const result = applyEdit('/', 'test.txt', 'a+b', 'x', true);
 
     expect(result.updatedFile).toBe('x=c\nx=d');
   });
