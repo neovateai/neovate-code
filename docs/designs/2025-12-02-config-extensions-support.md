@@ -204,33 +204,6 @@ neo config remove extensions.myAgent.timeout
 - Recommend third parties add configuration validation in their own code
 - Invalid JSON formats will be caught during loading
 
-### Test Suggestions
-
-```typescript
-// Basic read/write
-test('should set and get extensions config', () => {
-  configManager.setConfig(false, 'extensions.myAgent.key', 'value');
-  expect(configManager.getConfig(false, 'extensions.myAgent.key')).toBe('value');
-});
-
-// Configuration merging
-test('should merge extensions from global and project config', () => {
-  // Verify merging behavior between global and project configurations
-});
-
-// Remove operation
-test('should remove extensions config', () => {
-  configManager.removeConfig(false, 'extensions.myAgent.key');
-  expect(configManager.getConfig(false, 'extensions.myAgent.key')).toBeUndefined();
-});
-
-// Deep nesting
-test('should support deep nested extensions', () => {
-  configManager.setConfig(false, 'extensions.a.b.c.d', 'deep');
-  expect(configManager.getConfig(false, 'extensions.a.b.c.d')).toBe('deep');
-});
-```
-
 ### Documentation Update Suggestions
 
 Need to clarify in user documentation:
