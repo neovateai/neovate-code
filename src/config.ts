@@ -66,6 +66,11 @@ export type Config = {
   browser?: boolean;
   temperature?: number;
   httpProxy?: string;
+  /**
+   * Extensions configuration for third-party custom agents.
+   * Allows arbitrary nested configuration without validation.
+   */
+  extensions?: Record<string, any>;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -80,6 +85,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   outputFormat: 'text',
   autoUpdate: true,
   browser: false,
+  extensions: {},
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -97,9 +103,10 @@ const VALID_CONFIG_KEYS = [
   'browser',
   'temperature',
   'httpProxy',
+  'extensions',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
-const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider'];
+const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider', 'extensions'];
 const BOOLEAN_CONFIG_KEYS = [
   'quiet',
   'todo',
