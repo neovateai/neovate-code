@@ -53,6 +53,13 @@ export type Config = {
   systemPrompt?: string;
   todo?: boolean;
   /**
+   * Controls whether to enable the askUserQuestion tool.
+   * When set to false, the tool will not be registered and unavailable.
+   *
+   * @default true
+   */
+  askUserQuestion?: boolean;
+  /**
    * Controls whether automatic conversation compression is enabled.
    * When set to false, conversation history will accumulate and context limit will be exceeded.
    *
@@ -81,6 +88,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   mcpServers: {},
   provider: {},
   todo: true,
+  askUserQuestion: true,
   autoCompact: true,
   outputFormat: 'text',
   autoUpdate: true,
@@ -95,6 +103,7 @@ const VALID_CONFIG_KEYS = [
   'visionModel',
   'systemPrompt',
   'todo',
+  'askUserQuestion',
   'autoCompact',
   'commit',
   'outputStyle',
@@ -110,6 +119,7 @@ const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider', 'extensions'];
 const BOOLEAN_CONFIG_KEYS = [
   'quiet',
   'todo',
+  'askUserQuestion',
   'autoCompact',
   'autoUpdate',
   'browser',

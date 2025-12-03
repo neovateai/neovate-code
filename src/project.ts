@@ -50,6 +50,7 @@ export class Project {
       sessionId: this.session.id,
       write: true,
       todo: true,
+      askUserQuestion: this.context.config.askUserQuestion,
     });
     tools = await this.context.apply({
       hook: 'tool',
@@ -102,6 +103,7 @@ export class Project {
       sessionId: this.session.id,
       write: false,
       todo: false,
+      askUserQuestion: this.context.config.askUserQuestion,
     });
     tools = await this.context.apply({
       hook: 'tool',
@@ -371,18 +373,21 @@ export class Project {
         });
       },
       onToolApprove: async (toolUse) => {
-        // TODO: if quiet return true
-        // 1. if yolo return true
-        const approvalMode = this.context.config.approvalMode;
-        if (approvalMode === 'yolo') {
-          return true;
-        }
         // 2. if category is read return true
         const tool = toolsManager.get(toolUse.name);
         if (!tool) {
           // Let the tool invoke handle the `tool not found` error
           return true;
         }
+
+        // TODO: if quiet return true
+        // 1. if yolo return true
+        const approvalMode = this.context.config.approvalMode;
+        // Tools that require clarifying user input must always prompt the user, even in yolo mode
+        if (approvalMode === 'yolo' && tool.approval?.category !== 'ask') {
+          return true;
+        }
+
         if (tool.approval?.category === 'read') {
           return true;
         }

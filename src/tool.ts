@@ -4,6 +4,7 @@ import * as z from 'zod';
 import type { Context } from './context';
 import type { ImagePart, TextPart } from './message';
 import { resolveModelWithContext } from './model';
+import { createAskUserQuestionTool } from './tools/askUserQuestion';
 import {
   createBashOutputTool,
   createBashTool,
@@ -23,6 +24,7 @@ type ResolveToolsOpts = {
   sessionId: string;
   write?: boolean;
   todo?: boolean;
+  askUserQuestion?: boolean;
 };
 
 export async function resolveTools(opts: ResolveToolsOpts) {
@@ -38,6 +40,9 @@ export async function resolveTools(opts: ResolveToolsOpts) {
     createGrepTool({ cwd }),
     createFetchTool({ model }),
   ];
+  const askUserQuestionTools = opts.askUserQuestion
+    ? [createAskUserQuestionTool()]
+    : [];
   const writeTools = opts.write
     ? [
         createWriteTool({ cwd }),
@@ -69,6 +74,7 @@ export async function resolveTools(opts: ResolveToolsOpts) {
   const mcpTools = await getMcpTools(opts.context);
   return [
     ...readonlyTools,
+    ...askUserQuestionTools,
     ...writeTools,
     ...todoTools,
     ...backgroundTools,
@@ -223,7 +229,7 @@ type ApprovalContext = {
   context: any;
 };
 
-export type ApprovalCategory = 'read' | 'write' | 'command' | 'network';
+export type ApprovalCategory = 'read' | 'write' | 'command' | 'network' | 'ask';
 
 type ToolApprovalInfo = {
   needsApproval?: (context: ApprovalContext) => Promise<boolean> | boolean;
