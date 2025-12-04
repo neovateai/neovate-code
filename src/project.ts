@@ -50,7 +50,7 @@ export class Project {
       sessionId: this.session.id,
       write: true,
       todo: true,
-      quiet: this.context.config.quiet,
+      askUserQuestion: !this.context.config.quiet,
     });
     tools = await this.context.apply({
       hook: 'tool',
@@ -103,7 +103,7 @@ export class Project {
       sessionId: this.session.id,
       write: false,
       todo: false,
-      quiet: this.context.config.quiet,
+      askUserQuestion: !this.context.config.quiet,
     });
     tools = await this.context.apply({
       hook: 'tool',

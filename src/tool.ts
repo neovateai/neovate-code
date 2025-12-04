@@ -24,7 +24,7 @@ type ResolveToolsOpts = {
   sessionId: string;
   write?: boolean;
   todo?: boolean;
-  quiet?: boolean;
+  askUserQuestion?: boolean;
 };
 
 export async function resolveTools(opts: ResolveToolsOpts) {
@@ -40,7 +40,9 @@ export async function resolveTools(opts: ResolveToolsOpts) {
     createGrepTool({ cwd }),
     createFetchTool({ model }),
   ];
-  const askUserQuestionTools = !opts.quiet ? [createAskUserQuestionTool()] : [];
+  const askUserQuestionTools = opts.askUserQuestion
+    ? [createAskUserQuestionTool()]
+    : [];
   const writeTools = opts.write
     ? [
         createWriteTool({ cwd }),
