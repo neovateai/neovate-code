@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
-import type { LoopResult, StreamResult } from '../loop';
+import type { LoopResult, StreamResult, ThinkingConfig } from '../loop';
 import type { Message, NormalizedMessage, UserMessage } from '../message';
 import type { ModelInfo, ProvidersMap } from '../model';
 import { Paths } from '../paths';
@@ -138,7 +138,7 @@ interface AppState {
   operationRecordModalVisible: boolean;
 
   bashBackgroundPrompt: BashPromptBackgroundEvent | null;
-  thinking: { effort: 'low' | 'medium' | 'high' } | undefined;
+  thinking: ThinkingConfig | undefined;
 }
 
 type InitializeOpts = {
@@ -634,12 +634,13 @@ export const useAppStore = create<AppStore>()(
             // don't await this
             (async () => {
               try {
-                const queryResult = await bridge.request('utils.quickQuery', {
-                  cwd,
-                  systemPrompt:
-                    "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with one fields: 'title' (string). Only include these fields, no other text.",
-                  userPrompt: message,
-                });
+                const queryResult = await bridge.request(
+                  'utils.summarizeMessage',
+                  {
+                    cwd,
+                    message,
+                  },
+                );
 
                 if (queryResult.success && queryResult.data?.text) {
                   try {
@@ -1154,7 +1155,7 @@ export const useAppStore = create<AppStore>()(
         const { thinking: current, model } = get();
         if (!model) return;
         if (!model.thinkingConfig) return;
-        let next: { effort: 'low' | 'medium' | 'high' } | undefined;
+        let next: ThinkingConfig | undefined;
         if (!current) {
           next = { effort: 'low' };
         } else if (current.effort === 'low') {

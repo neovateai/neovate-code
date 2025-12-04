@@ -15,7 +15,7 @@ import type {
 } from './message';
 import type { ModelInfo } from './model';
 import { addPromptCache } from './promptCache';
-import { getThinkingConfig } from './thinking-config';
+import { getThinkingConfig, type ReasoningEffort } from './thinking-config';
 import type { ToolResult, Tools, ToolUse } from './tool';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
@@ -86,6 +86,19 @@ export type StreamResult = StreamResultBase & {
   error?: any;
 };
 
+export type ResponseFormat =
+  | {
+      type: 'text';
+    }
+  | {
+      type: 'json';
+      schema?: any;
+      name?: string;
+      description?: string;
+    };
+export type ThinkingConfig = {
+  effort: ReasoningEffort;
+};
 type RunLoopOpts = {
   input: string | NormalizedMessage[];
   model: ModelInfo;
@@ -97,10 +110,9 @@ type RunLoopOpts = {
   signal?: AbortSignal;
   llmsContexts?: string[];
   autoCompact?: boolean;
-  thinking?: {
-    effort: 'low' | 'medium' | 'high';
-  };
+  thinking?: ThinkingConfig;
   temperature?: number;
+  responseFormat?: ResponseFormat;
   onTextDelta?: (text: string) => Promise<void>;
   onText?: (text: string) => Promise<void>;
   onReasoning?: (text: string) => Promise<void>;
@@ -256,6 +268,9 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
           ...thinkingConfig,
           ...(opts.temperature !== undefined && {
             temperature: opts.temperature,
+          }),
+          ...(opts.responseFormat !== undefined && {
+            responseFormat: opts.responseFormat,
           }),
         });
         opts.onStreamResult?.({

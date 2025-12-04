@@ -1,5 +1,4 @@
 import assert from 'assert';
-import fm from 'front-matter';
 import fs from 'fs';
 import { glob } from 'glob';
 import path from 'pathe';
@@ -10,6 +9,7 @@ import {
 } from './output-style/builtin';
 import type { Paths } from './paths';
 import { PluginHookType } from './plugin';
+import { safeFrontMatter } from './utils/safeFrontMatter';
 import { kebabToTitleCase } from './utils/string';
 
 export type OutputStyleOpts = {
@@ -195,11 +195,14 @@ export function loadPolishedMarkdownFiles(
   });
 }
 
-function loadMarkdownFile(path: string): MarkdownFile {
-  const content = fs.readFileSync(path, 'utf-8');
-  const { attributes, body } = fm<Record<string, string>>(content);
+export function loadMarkdownFile(filePath: string): MarkdownFile {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const { attributes, body } = safeFrontMatter<Record<string, string>>(
+    content,
+    filePath,
+  );
   return {
-    path,
+    path: filePath,
     attributes,
     body,
   };

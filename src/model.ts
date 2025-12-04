@@ -165,6 +165,32 @@ export const models: ModelMap = {
     open_weights: true,
     limit: { context: 131072, output: 65536 },
   },
+  'deepseek-v3.2': {
+    name: 'DeepSeek V3.2',
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-12',
+    release_date: '2025-12-01',
+    last_updated: '2025-12-01',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 131072, output: 65536 },
+  },
+  'deepseek-v3.2-speciale': {
+    name: 'DeepSeek V3.2 Speciale',
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: false,
+    knowledge: '2025-12',
+    release_date: '2025-12-01',
+    last_updated: '2025-12-01',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 131072, output: 131072 },
+  },
   'deepseek-r1-0528': {
     name: 'DeepSeek-R1-0528',
     shortName: 'DeepSeek R1',
@@ -989,21 +1015,28 @@ function getProviderApiKey(provider: Provider) {
   return key;
 }
 
-export const defaultModelCreatorCompatible = (
-  name: string,
-  provider: Provider,
-): LanguageModelV2 => {
-  if (provider.id !== 'openai') {
-    assert(provider.api, `Provider ${provider.id} must have an api`);
-  }
-  const baseURL = getProviderBaseURL(provider);
-  const apiKey = getProviderApiKey(provider);
-  assert(baseURL, 'baseURL is required');
-  return createOpenAICompatible({
-    name: provider.id,
-    baseURL,
-    apiKey,
-  })(name);
+export const createModelCreatorCompatible = (opts?: {
+  headers?: Record<string, string>;
+}) => {
+  return (name: string, provider: Provider): LanguageModelV2 => {
+    if (provider.id !== 'openai') {
+      assert(provider.api, `Provider ${provider.id} must have an api`);
+    }
+    const baseURL = getProviderBaseURL(provider);
+    const apiKey = getProviderApiKey(provider);
+    assert(baseURL, 'baseURL is required');
+    return createOpenAICompatible(
+      withProxyConfig(
+        {
+          name: provider.id,
+          baseURL,
+          apiKey,
+          headers: opts?.headers,
+        },
+        provider,
+      ),
+    )(name);
+  };
 };
 
 export const defaultModelCreator = (
@@ -1015,10 +1048,15 @@ export const defaultModelCreator = (
   }
   const baseURL = getProviderBaseURL(provider);
   const apiKey = getProviderApiKey(provider);
-  return createOpenAI({
-    baseURL,
-    apiKey,
-  }).chat(name);
+  return createOpenAI(
+    withProxyConfig(
+      {
+        baseURL,
+        apiKey,
+      },
+      provider,
+    ),
+  ).chat(name);
 };
 
 export const providers: ProvidersMap = {
@@ -1231,7 +1269,17 @@ export const providers: ProvidersMap = {
     },
     createModel(name, provider) {
       const apiKey = getProviderApiKey(provider);
-      return createAihubmix(withProxyConfig({ apiKey }, provider)).chat(name);
+      return createAihubmix(
+        withProxyConfig(
+          {
+            apiKey,
+            headers: {
+              'APP-Code': 'TPQW7551',
+            },
+          },
+          provider,
+        ),
+      ).chat(name);
     },
   },
   openrouter: {
@@ -1253,6 +1301,8 @@ export const providers: ProvidersMap = {
       'deepseek/deepseek-chat-v3.1': models['deepseek-v3-1'],
       'deepseek/deepseek-v3.1-terminus': models['deepseek-v3-1-terminus'],
       'deepseek/deepseek-v3.2-exp': models['deepseek-v3-2-exp'],
+      'deepseek/deepseek-v3.2': models['deepseek-v3.2'],
+      'deepseek/deepseek-v3.2-speciale': models['deepseek-v3.2-speciale'],
       'openai/gpt-4.1': models['gpt-4.1'],
       'openai/gpt-4': models['gpt-4'],
       'openai/gpt-4o': models['gpt-4o'],
@@ -1318,7 +1368,7 @@ export const providers: ProvidersMap = {
       'glm-4.6': models['glm-4.6'],
       'qwen3-max': models['qwen3-max'],
     },
-    createModel: defaultModelCreatorCompatible,
+    createModel: createModelCreatorCompatible(),
   },
   moonshotai: {
     id: 'moonshotai',
@@ -1512,8 +1562,16 @@ export const providers: ProvidersMap = {
       'anthropic/claude-sonnet-4.5': models['claude-4-5-sonnet'],
       'anthropic/claude-opus-4.1': models['claude-4.1-opus'],
       'anthropic/claude-opus-4.5': models['claude-opus-4-5'],
+      'deepseek/deepseek-v3.2-speciale': models['deepseek-v3.2-speciale'],
+      'deepseek/deepseek-chat': models['deepseek-v3-2-exp'],
+      'deepseek/deepseek-reasoner': models['deepseek-r1-0528'],
     },
-    createModel: defaultModelCreatorCompatible,
+    createModel: createModelCreatorCompatible({
+      headers: {
+        'X-Title': 'Neovate Code',
+        'HTTP-Referer': 'https://neovateai.dev/',
+      },
+    }),
   },
   minimax: {
     id: 'minimax',
@@ -1543,7 +1601,17 @@ export const providers: ProvidersMap = {
     },
     createModel(name, provider) {
       const apiKey = getProviderApiKey(provider);
-      return createCerebras(withProxyConfig({ apiKey }, provider))(name);
+      return createCerebras(
+        withProxyConfig(
+          {
+            apiKey,
+            headers: {
+              'X-Cerebras-3rd-Party-Integration': 'cline',
+            },
+          },
+          provider,
+        ),
+      )(name);
     },
   },
   poe: {
@@ -1566,7 +1634,7 @@ export const providers: ProvidersMap = {
       },
       'Grok-4.1-Fast': models['grok-4.1-fast'],
     },
-    createModel: defaultModelCreatorCompatible,
+    createModel: createModelCreatorCompatible(),
   },
   antigravity: {
     id: 'antigravity',

@@ -176,9 +176,9 @@ export type MessageHandler = (data: any) => Promise<any>;
 export type EventHandler = (data: any) => void;
 
 export class MessageBus extends EventEmitter {
+  public messageHandlers = new Map<string, MessageHandler>();
   private transport?: MessageTransport;
   private pendingRequests = new Map<MessageId, PendingRequest>();
-  private messageHandlers = new Map<string, MessageHandler>();
   private eventHandlers = new Map<string, Set<EventHandler>>();
   constructor() {
     super();

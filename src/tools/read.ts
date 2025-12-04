@@ -1,8 +1,13 @@
 import fs from 'fs';
+import { countTokens } from 'gpt-tokenizer';
 import path from 'pathe';
 import { z } from 'zod';
 import { IMAGE_EXTENSIONS } from '../constants';
 import { createTool, type ToolResult } from '../tool';
+import {
+  MaxFileReadLengthExceededError,
+  MaxFileReadTokenExceededError,
+} from '../utils/error';
 import { safeStringify } from '../utils/safeStringify';
 
 type ImageMediaType =
@@ -75,6 +80,8 @@ async function processImage(
 
 const MAX_LINES_TO_READ = 2000;
 const MAX_LINE_LENGTH = 2000;
+const MAX_FILE_LENGTH = 262144;
+const MAX_TOKENS = 25000;
 
 export function createReadTool(opts: { cwd: string; productName: string }) {
   const productName = opts.productName.toLowerCase();
@@ -148,21 +155,36 @@ Usage:
         }
 
         // Handle text files
-        const content = fs.readFileSync(fullFilePath, 'utf-8');
-        const allLines = content.split(/\r?\n/);
-        const totalLines = allLines.length;
+        const {
+          content,
+          totalLines,
+          startLine,
+          actualLimit,
+          selectedLines,
+          endLine,
+        } = readFileWithOffsetLimit(
+          fullFilePath,
+          offset ?? 1,
+          limit ?? MAX_LINES_TO_READ,
+        );
 
-        // Apply offset and limit with defaults
-        const actualOffset = offset ?? 1;
-        const actualLimit = limit ?? MAX_LINES_TO_READ;
-        const startLine = Math.max(0, actualOffset - 1); // Convert 1-based to 0-based
-        const endLine = Math.min(totalLines, startLine + actualLimit);
-        const selectedLines = allLines.slice(startLine, endLine);
+        if (content.length > MAX_FILE_LENGTH) {
+          throw new MaxFileReadLengthExceededError(
+            content.length,
+            MAX_FILE_LENGTH,
+          );
+        }
+
+        // token validation
+        const tokenCount = countTokens(content);
+        if (tokenCount > MAX_TOKENS) {
+          throw new MaxFileReadTokenExceededError(tokenCount, MAX_TOKENS);
+        }
 
         // Truncate long lines
         const truncatedLines = selectedLines.map((line) =>
           line.length > MAX_LINE_LENGTH
-            ? line.substring(0, MAX_LINE_LENGTH) + '...'
+            ? `${line.substring(0, MAX_LINE_LENGTH)}...`
             : line,
         );
 
@@ -195,4 +217,31 @@ Usage:
       category: 'read',
     },
   });
+}
+
+function readFileWithOffsetLimit(
+  filePath: string,
+  offset: number = 1,
+  limit: number = MAX_LINES_TO_READ,
+) {
+  const fileContent = fs.readFileSync(filePath, { encoding: 'utf8' });
+  const allLines = fileContent.split(/\r?\n/);
+  const totalLines = allLines.length;
+
+  // Apply offset and limit with defaults
+  const actualOffset = offset ?? 1;
+  const actualLimit = limit ?? MAX_LINES_TO_READ;
+  const startLine = Math.max(0, actualOffset - 1); // Convert 1-based to 0-based
+  const endLine = Math.min(totalLines, startLine + actualLimit);
+  const selectedLines = allLines.slice(startLine, endLine);
+
+  return {
+    content: selectedLines.join('\n'),
+    lineCount: selectedLines.length,
+    startLine,
+    endLine,
+    actualLimit,
+    totalLines,
+    selectedLines,
+  };
 }

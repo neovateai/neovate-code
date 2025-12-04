@@ -23,6 +23,7 @@ export enum TOOL_NAMES {
   BASH = 'bash',
   BASH_OUTPUT = 'bash_output',
   KILL_BASH = 'kill_bash',
+  GREP = 'grep',
 }
 
 export const BASH_EVENTS = {

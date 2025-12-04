@@ -73,6 +73,11 @@ export type Config = {
   temperature?: number;
   operationRecord?: OperationRecordConfig;
   httpProxy?: string;
+  /**
+   * Extensions configuration for third-party custom agents.
+   * Allows arbitrary nested configuration without validation.
+   */
+  extensions?: Record<string, any>;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -92,6 +97,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
     maxOperationRecords: 50,
     maxFileSize: 512000, // 500KB
   },
+  extensions: {},
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -110,6 +116,7 @@ const VALID_CONFIG_KEYS = [
   'temperature',
   'operationRecord',
   'httpProxy',
+  'extensions',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = [
@@ -117,6 +124,7 @@ const OBJECT_CONFIG_KEYS = [
   'commit',
   'provider',
   'operationRecord',
+  'extensions',
 ];
 const BOOLEAN_CONFIG_KEYS = [
   'quiet',

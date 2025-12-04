@@ -1,3 +1,4 @@
+import z from 'zod';
 import { compact } from './compact';
 import {
   type ApprovalMode,
@@ -7,7 +8,7 @@ import {
 import { CANCELED_MESSAGE_TEXT } from './constants';
 import { Context } from './context';
 import { JsonlLogger } from './jsonl';
-import type { StreamResult } from './loop';
+import type { ResponseFormat, StreamResult, ThinkingConfig } from './loop';
 import type {
   ImagePart,
   Message,
@@ -1283,9 +1284,7 @@ class NodeHandlerRegistry {
         model?: string;
         attachments?: ImagePart[];
         parentUuid?: string;
-        thinking?: {
-          effort: 'low' | 'medium' | 'high';
-        };
+        thinking?: ThinkingConfig;
       }) => {
         const { message, cwd, sessionId, model, attachments, parentUuid } =
           data;
@@ -2162,13 +2161,23 @@ class NodeHandlerRegistry {
         userPrompt: string;
         cwd: string;
         systemPrompt?: string;
+        model?: string;
+        thinking?: ThinkingConfig;
+        responseFormat?: ResponseFormat;
       }) => {
         const { userPrompt, cwd, systemPrompt } = data;
         const context = await this.getContext(cwd);
+        const { model } = await resolveModelWithContext(
+          data.model || context.config.model || null,
+          context,
+        );
         const result = await query({
           userPrompt,
           context,
           systemPrompt,
+          model: model!,
+          thinking: data.thinking,
+          responseFormat: data.responseFormat,
         });
         return result;
       },
@@ -2180,19 +2189,42 @@ class NodeHandlerRegistry {
         userPrompt: string;
         cwd: string;
         systemPrompt?: string;
+        model?: string;
+        thinking?: ThinkingConfig;
+        responseFormat?: ResponseFormat;
       }) => {
-        const { userPrompt, cwd, systemPrompt } = data;
+        const { cwd } = data;
         const context = await this.getContext(cwd);
-        const { model } = await resolveModelWithContext(
-          context.config.smallModel || null,
-          context,
-        );
-        const result = await query({
-          userPrompt,
-          model: model!,
-          systemPrompt,
+        return await this.messageBus.messageHandlers.get('utils.query')?.({
+          userPrompt: data.userPrompt,
+          cwd,
+          systemPrompt: data.systemPrompt,
+          model: data.model || context.config.smallModel || null,
+          thinking: data.thinking,
+          responseFormat: data.responseFormat,
         });
-        return result;
+      },
+    );
+
+    this.messageBus.registerHandler(
+      'utils.summarizeMessage',
+      async (data: { message: string; cwd: string; model?: string }) => {
+        const { message, cwd, model } = data;
+        return await this.messageBus.messageHandlers.get('utils.quickQuery')?.({
+          model,
+          userPrompt: message,
+          cwd,
+          systemPrompt:
+            "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with one field: 'title' (string).",
+          responseFormat: {
+            type: 'json',
+            schema: z.toJSONSchema(
+              z.object({
+                title: z.string().nullable(),
+              }),
+            ),
+          },
+        });
       },
     );
 

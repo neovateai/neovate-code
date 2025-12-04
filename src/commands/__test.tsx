@@ -1,34 +1,9 @@
-/**
- * __test Command - NodeBridge Handler Testing Tool
- *
- * A development/debugging command for manually testing nodeBridge handlers.
- * Provides an interactive UI to select and execute handlers, displaying
- * verbose output including request payloads, responses, timing, and errors.
- *
- * Usage:
- *   bun ./src/cli.ts __test
- *
- * Features:
- * - Interactive handler selection with PaginatedSelectInput
- * - Verbose debugging output (request, response, timing, errors)
- * - Support for testing multiple handlers in a loop
- * - ESC to exit, any key to continue after viewing results
- *
- * Currently supports testing:
- * - project.getRepoInfo
- * - project.workspaces.list
- * - project.workspaces.get
- * - project.workspaces.create
- * - project.workspaces.delete
- * - project.workspaces.merge
- * - project.workspaces.createGithubPR
- */
 import { Box, render, Text, useInput } from 'ink';
 import React, { useEffect, useState } from 'react';
 import type { Context } from '../context';
 import { DirectTransport, MessageBus } from '../messageBus';
 import { NodeBridge } from '../nodeBridge';
-import PaginatedSelectInput from '../ui/PaginatedSelectInput';
+import PaginatedGroupSelectInput from '../ui/PaginatedGroupSelectInput';
 
 interface TestHandler {
   label: string;
@@ -90,6 +65,30 @@ const TEST_HANDLERS: TestHandler[] = [
       name: 'test-workspace',
       title: 'Test PR',
       description: 'Test PR description',
+    }),
+  },
+  {
+    label: 'Utils: Quick Query',
+    handler: 'utils.quickQuery',
+    getData: (cwd: string) => ({
+      cwd,
+      userPrompt: 'What is 2+2?',
+      systemPrompt: 'You are a helpful assistant. Answer concisely.',
+      // model: 'openrouter/moonshotai/kimi-k2-thinking',
+      model: 'cerebras/zai-glm-4.6',
+      thinking: {
+        effort: 'low',
+      },
+    }),
+  },
+  {
+    label: 'Utils: Summarize Message',
+    handler: 'utils.summarizeMessage',
+    getData: (cwd: string) => ({
+      cwd,
+      message: 'I want to refactor the authentication system to use JWT tokens',
+      // model: 'openrouter/moonshotai/kimi-k2-thinking',
+      model: 'cerebras/zai-glm-4.6',
     }),
   },
 ];
@@ -240,7 +239,11 @@ const TestUI: React.FC<TestUIProps> = ({ messageBus, cwd }) => {
     setState('displaying');
   };
 
-  const handleSelect = (item: { label: string; value: string }) => {
+  const handleSelect = (item: {
+    name: string;
+    modelId: string;
+    value: string;
+  }) => {
     const testHandler = TEST_HANDLERS.find((h) => h.handler === item.value);
     if (testHandler) {
       executeHandler(testHandler);
@@ -253,10 +256,30 @@ const TestUI: React.FC<TestUIProps> = ({ messageBus, cwd }) => {
   };
 
   if (state === 'selecting') {
-    const items = TEST_HANDLERS.map((h) => ({
-      label: h.label,
-      value: h.handler,
-    }));
+    const groups = [
+      {
+        provider: 'Project Handlers',
+        providerId: 'project',
+        models: TEST_HANDLERS.filter((h) =>
+          h.handler.startsWith('project.'),
+        ).map((h) => ({
+          name: h.label,
+          modelId: h.handler,
+          value: h.handler,
+        })),
+      },
+      {
+        provider: 'Utils Handlers',
+        providerId: 'utils',
+        models: TEST_HANDLERS.filter((h) => h.handler.startsWith('utils.')).map(
+          (h) => ({
+            name: h.label,
+            modelId: h.handler,
+            value: h.handler,
+          }),
+        ),
+      },
+    ];
 
     return (
       <Box flexDirection="column">
@@ -266,7 +289,12 @@ const TestUI: React.FC<TestUIProps> = ({ messageBus, cwd }) => {
         <Text color="gray" dimColor>
           Select a handler to test (ESC to exit)
         </Text>
-        <PaginatedSelectInput items={items} onSelect={handleSelect} />
+        <PaginatedGroupSelectInput
+          groups={groups}
+          enableSearch={true}
+          onSelect={handleSelect}
+          onCancel={() => setShouldExit(true)}
+        />
       </Box>
     );
   }
