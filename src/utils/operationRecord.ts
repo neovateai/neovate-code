@@ -17,6 +17,7 @@ export class TurnOperationRecordCollector {
   private operations: Map<string, FileOperation> = new Map();
   private cwd: string;
   private historicalOperationRecords: FileOperationRecord[];
+  private wasExistingCache: Map<string, boolean> = new Map();
 
   constructor(cwd: string, historicalOperationRecords?: FileOperationRecord[]) {
     this.cwd = cwd;
@@ -123,21 +124,35 @@ export class TurnOperationRecordCollector {
       path.isAbsolute(filePath) ? filePath : path.resolve(this.cwd, filePath),
     );
 
+    // Check cache first
+    const cacheKey = relativePath;
+    if (this.wasExistingCache.has(cacheKey)) {
+      return this.wasExistingCache.get(cacheKey)!;
+    }
+
     // Search through all historical operation records chronologically
+    // We don't filter by timestamp here because historicalOperationRecords
+    // should only contain records that are already committed (before current turn)
     for (const record of this.historicalOperationRecords) {
       for (const op of record.operations) {
         if (op.path === relativePath) {
           // Found the earliest operation on this file
           // If it was created (beforeContent === undefined), it's AI-created
           // If it was modified (beforeContent !== undefined), it's a project file
-          return op.beforeContent !== undefined;
+          const result = op.beforeContent !== undefined;
+          // Cache the result for future lookups
+          this.wasExistingCache.set(cacheKey, result);
+          return result;
         }
       }
     }
 
     // No historical record found, use current state
     // If file exists before this operation, assume it's a project file
-    return beforeExists;
+    const result = beforeExists;
+    // Cache the result
+    this.wasExistingCache.set(cacheKey, result);
+    return result;
   }
 
   /**
@@ -247,6 +262,7 @@ export class TurnOperationRecordCollector {
    */
   clear(): void {
     this.operations.clear();
+    this.wasExistingCache.clear(); // Clear cache to ensure fresh lookups for new turn
   }
 }
 
@@ -755,11 +771,21 @@ export function buildOperationRecordPath(
 
   // Find the parent operation record by walking up the message tree
   let parentRecord: FileOperationRecord | undefined;
+  const visited = new Set<string>(); // Track visited message UUIDs to prevent cycles
 
   if (messageMap) {
     let currentMessageUuid = targetRecord.parentMessageUuid;
 
     while (currentMessageUuid) {
+      // Check for cycles
+      if (visited.has(currentMessageUuid)) {
+        console.error(
+          `Cycle detected in message tree at UUID: ${currentMessageUuid}`,
+        );
+        break;
+      }
+      visited.add(currentMessageUuid);
+
       const record = recordMap.get(currentMessageUuid);
       if (record) {
         parentRecord = record;
@@ -789,8 +815,18 @@ export function buildOperationRecordPath(
   // Walk backward from parent to root to build operation record chain
   const path: FileOperationRecord[] = [];
   let current: FileOperationRecord | undefined = parentRecord;
+  const visitedRecords = new Set<string>(); // Track visited record UUIDs for cycle detection
 
   while (current) {
+    // Check for cycles
+    if (visitedRecords.has(current.messageUuid)) {
+      console.error(
+        `Cycle detected in operation record chain at UUID: ${current.messageUuid}`,
+      );
+      break;
+    }
+    visitedRecords.add(current.messageUuid);
+
     path.unshift(current);
 
     if (current.parentMessageUuid === null) {
