@@ -28,6 +28,7 @@ Transform rough ideas into fully-formed designs through structured questioning a
 ### Phase 1: Understanding
 - Check current project state in working directory
 - Ask ONE question at a time to refine the idea
+- **IMPORTANT: Use AskUserQuestion tool when asking clarification questions**
 - Prefer multiple choice when possible
 - Gather: Purpose, constraints, success criteria
 
