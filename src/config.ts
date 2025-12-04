@@ -71,6 +71,11 @@ export type Config = {
    * Allows arbitrary nested configuration without validation.
    */
   extensions?: Record<string, any>;
+  /**
+   * Tools configuration for enabling/disabling specific tools.
+   * Key is the tool name, value is boolean (false to disable).
+   */
+  tools?: Record<string, boolean>;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -86,6 +91,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   autoUpdate: true,
   browser: false,
   extensions: {},
+  tools: {},
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -104,9 +110,16 @@ const VALID_CONFIG_KEYS = [
   'temperature',
   'httpProxy',
   'extensions',
+  'tools',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
-const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider', 'extensions'];
+const OBJECT_CONFIG_KEYS = [
+  'mcpServers',
+  'commit',
+  'provider',
+  'extensions',
+  'tools',
+];
 const BOOLEAN_CONFIG_KEYS = [
   'quiet',
   'todo',
