@@ -65,7 +65,10 @@ class UIHandlerRegistry {
           toolUse,
           category,
         });
-        return { approved: result };
+        return {
+          approved: result.approved,
+          params: result.params,
+        };
       },
     );
 

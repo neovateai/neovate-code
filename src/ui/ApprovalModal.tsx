@@ -94,11 +94,15 @@ export function ApprovalModal() {
       <AskQuestionModal
         questions={questions}
         onResolve={(result, updatedAnswers) => {
-          if (result === 'approve_once' && updatedAnswers) {
-            // Update the toolUse params with answers before resolving
-            approvalModal.toolUse.params.answers = updatedAnswers;
-          }
-          approvalModal.resolve(result);
+          const shouldUpdateParams = updatedAnswers && result !== 'deny';
+          const newParams: Record<string, unknown> | undefined =
+            shouldUpdateParams
+              ? {
+                  ...approvalModal.toolUse.params,
+                  answers: updatedAnswers,
+                }
+              : undefined;
+          approvalModal.resolve(result, newParams);
         }}
       />
     );

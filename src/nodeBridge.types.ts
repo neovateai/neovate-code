@@ -643,8 +643,10 @@ type ToolApprovalInput = {
   toolUse: ToolUse;
   category?: ApprovalCategory;
 };
+
 type ToolApprovalOutput = {
-  approved: any;
+  approved: boolean;
+  params?: Record<string, unknown>;
 };
 
 // ============================================================================

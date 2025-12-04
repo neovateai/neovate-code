@@ -98,6 +98,15 @@ export type ResponseFormat =
 export type ThinkingConfig = {
   effort: ReasoningEffort;
 };
+
+export type ToolParams = Record<string, unknown>;
+
+export type ToolApprovalResult =
+  | boolean
+  | {
+      approved: boolean;
+      params?: ToolParams;
+    };
 type RunLoopOpts = {
   input: string | NormalizedMessage[];
   model: ModelInfo;
@@ -128,7 +137,7 @@ type RunLoopOpts = {
     startTime: Date;
     endTime: Date;
   }) => Promise<void>;
-  onToolApprove?: (toolUse: ToolUse) => Promise<boolean>;
+  onToolApprove?: (toolUse: ToolUse) => Promise<ToolApprovalResult>;
   onMessage?: OnMessage;
 };
 
@@ -480,11 +489,24 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       if (opts.onToolUse) {
         toolUse = await opts.onToolUse(toolUse as ToolUse);
       }
-      const approved = opts.onToolApprove
-        ? await opts.onToolApprove(toolUse as ToolUse)
-        : true;
+      let approved = true;
+      let updatedParams: ToolParams | undefined = undefined;
+
+      if (opts.onToolApprove) {
+        const approvalResult = await opts.onToolApprove(toolUse as ToolUse);
+        if (typeof approvalResult === 'object') {
+          approved = approvalResult.approved;
+          updatedParams = approvalResult.params;
+        } else {
+          approved = approvalResult;
+        }
+      }
+
       if (approved) {
         toolCallsCount++;
+        if (updatedParams) {
+          toolUse.params = { ...toolUse.params, ...updatedParams };
+        }
         let toolResult = await opts.tools.invoke(
           toolUse.name,
           JSON.stringify(toolUse.params),
