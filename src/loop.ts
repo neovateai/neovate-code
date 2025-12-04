@@ -16,7 +16,13 @@ import type {
 import type { ModelInfo } from './model';
 import { addPromptCache } from './promptCache';
 import { getThinkingConfig, type ReasoningEffort } from './thinking-config';
-import type { ToolResult, Tools, ToolUse } from './tool';
+import type {
+  ToolApprovalResult,
+  ToolParams,
+  ToolResult,
+  Tools,
+  ToolUse,
+} from './tool';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
 import { safeParseJson } from './utils/safeParseJson';
@@ -99,14 +105,6 @@ export type ThinkingConfig = {
   effort: ReasoningEffort;
 };
 
-export type ToolParams = Record<string, unknown>;
-
-export type ToolApprovalResult =
-  | boolean
-  | {
-      approved: boolean;
-      params?: ToolParams;
-    };
 type RunLoopOpts = {
   input: string | NormalizedMessage[];
   model: ModelInfo;

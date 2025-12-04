@@ -302,3 +302,12 @@ export function createTool<TSchema extends z.ZodTypeAny>(config: {
     approval: config.approval,
   };
 }
+
+export type ToolParams = Record<string, unknown>;
+
+export type ToolApprovalResult =
+  | boolean
+  | {
+      approved: boolean;
+      params?: ToolParams;
+    };

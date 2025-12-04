@@ -1242,18 +1242,9 @@ class NodeHandlerRegistry {
             category,
           });
 
-          if (typeof result === 'boolean') {
-            return result;
-          }
-
-          if (result && typeof result === 'object' && 'approved' in result) {
-            return result.params
-              ? { approved: result.approved, params: result.params }
-              : result.approved;
-          }
-
-          console.warn('Unexpected tool approval result:', result);
-          return false;
+          return result.params
+            ? { approved: result.approved, params: result.params }
+            : result.approved;
         },
         onStreamResult: async (result: StreamResult) => {
           await this.messageBus.emitEvent('streamResult', {
