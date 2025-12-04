@@ -50,7 +50,7 @@ export class Project {
       sessionId: this.session.id,
       write: true,
       todo: true,
-      askUserQuestion: this.context.config.askUserQuestion,
+      quiet: this.context.config.quiet,
     });
     tools = await this.context.apply({
       hook: 'tool',
@@ -103,7 +103,7 @@ export class Project {
       sessionId: this.session.id,
       write: false,
       todo: false,
-      askUserQuestion: this.context.config.askUserQuestion,
+      quiet: this.context.config.quiet,
     });
     tools = await this.context.apply({
       hook: 'tool',
@@ -373,7 +373,6 @@ export class Project {
         });
       },
       onToolApprove: async (toolUse) => {
-        // 2. if category is read return true
         const tool = toolsManager.get(toolUse.name);
         if (!tool) {
           // Let the tool invoke handle the `tool not found` error
@@ -388,6 +387,7 @@ export class Project {
           return true;
         }
 
+        // 2. if category is read return true
         if (tool.approval?.category === 'read') {
           return true;
         }

@@ -58,7 +58,6 @@ const AskUserQuestionInputSchema = z
   })
   .refine(
     (data) => {
-      // 检查问题文本唯一性
       const questionTexts = data.questions.map((q) => q.question);
       return questionTexts.length === new Set(questionTexts).size;
     },
@@ -69,7 +68,6 @@ const AskUserQuestionInputSchema = z
   )
   .refine(
     (data) => {
-      // 检查每个问题内选项标签唯一性
       for (const question of data.questions) {
         const labels = question.options.map((o) => o.label);
         if (labels.length !== new Set(labels).size) {
@@ -83,7 +81,6 @@ const AskUserQuestionInputSchema = z
     },
   );
 
-// 导出类型
 export type QuestionOption = z.infer<typeof QuestionOptionSchema>;
 export type Question = z.infer<typeof QuestionSchema>;
 export type AskUserQuestionInput = z.infer<typeof AskUserQuestionInputSchema>;
