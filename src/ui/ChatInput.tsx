@@ -1,5 +1,6 @@
 import { Box, Text } from 'ink';
 import { useCallback, useMemo } from 'react';
+import os from 'os';
 import { SPACING, UI_COLORS } from './constants';
 import { DebugRandomNumber } from './Debug';
 import { MemoryModal } from './MemoryModal';
@@ -23,6 +24,12 @@ export function ChatInput() {
     reverseSearch,
   } = useInputHandlers();
   const { currentTip } = useTryTips();
+
+  // Memoize platform-specific modifier key to avoid repeated os.platform() calls
+  const modifierKey = useMemo(
+    () => (os.platform() === 'darwin' ? 'option+up' : 'alt+up'),
+    [],
+  );
   const {
     log,
     setExitMessage,
@@ -64,7 +71,8 @@ export function ChatInput() {
       return reverseSearch.placeholderText;
     }
     if (queuedMessages.length > 0) {
-      return 'Press option+up to edit queued messages';
+      // Show platform-appropriate keyboard shortcut text
+      return `Press ${modifierKey} to edit queued messages`;
     }
     if (currentTip) {
       return currentTip;
