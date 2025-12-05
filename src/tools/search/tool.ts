@@ -23,7 +23,7 @@ export function createSearchTool(opts: { context: Context }) {
 Search the web for current information, documentation, and answers.
 
 Features:
-- Search provider: Tavily
+- Search provider: ${provider}
 - Support for general search, news, and code search
 - AI-generated answers
 
