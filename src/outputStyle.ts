@@ -227,8 +227,20 @@ function loadPolishedMarkdownFile(
   if (!description) {
     const lines = file.body.split('\n');
     const firstLine = lines.find((line) => line.trim())?.trim();
-    if (firstLine && /^[a-zA-Z]/.test(firstLine)) {
-      description = firstLine;
+    if (firstLine) {
+      // Handle title lines starting with # (supports multiple #)
+      if (firstLine.startsWith('#')) {
+        // Remove all # symbols and clean up
+        description = firstLine.replace(/^#+\s*/, '').trim();
+      } else {
+        // Use directly for any other starting character (including ```, ##, *, -, etc.)
+        description = firstLine;
+      }
+
+      // Limit length to 50 characters, truncate and add ellipsis if exceeds
+      if (description.length > 50) {
+        description = `${description.substring(0, 50)}...`;
+      }
     }
   }
   if (!description) {
