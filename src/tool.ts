@@ -18,6 +18,7 @@ import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
 import { createTodoTool, type TodoItem } from './tools/todo';
 import { createWriteTool } from './tools/write';
+import { isZodObject, validateToolParams } from './utils/zod';
 
 type ResolveToolsOpts = {
   context: Context;
@@ -133,14 +134,8 @@ export class Tools {
         isError: true,
       };
     }
-    // // @ts-expect-error
-    // const result = validateToolParams(tool.parameters, args);
-    // if (!result.success) {
-    //   return {
-    //     llmContent: `Invalid tool parameters: ${result.error}`,
-    //     isError: true,
-    //   };
-    // }
+
+    // Parse JSON parameters
     let argsObj: any;
     try {
       argsObj = JSON.parse(args);
@@ -150,6 +145,21 @@ export class Tools {
         isError: true,
       };
     }
+
+    // Validate only non-MCP tools with Zod parameters
+    const isMCP = toolName.startsWith('mcp__');
+    const hasZodSchema = isZodObject(tool.parameters);
+
+    if (!isMCP && hasZodSchema) {
+      const validationResult = validateToolParams(tool.parameters, argsObj);
+      if (!validationResult.success) {
+        return {
+          llmContent: validationResult.error,
+          isError: true,
+        };
+      }
+    }
+
     return await tool.execute(argsObj);
   }
 
@@ -177,34 +187,6 @@ export class Tools {
     });
   }
 }
-
-// function validateToolParams(schema: z.ZodObject<any>, params: string) {
-//   try {
-//     if (isZodObject(schema)) {
-//       const parsedParams = JSON.parse(params);
-//       const result = schema.safeParse(parsedParams);
-//       if (!result.success) {
-//         return {
-//           success: false,
-//           error: `Parameter validation failed: ${result.error.message}`,
-//         };
-//       }
-//       return {
-//         success: true,
-//         message: 'Tool parameters validated successfully',
-//       };
-//     }
-//     return {
-//       success: true,
-//       message: 'Tool parameters validated successfully',
-//     };
-//   } catch (error) {
-//     return {
-//       success: false,
-//       error: error,
-//     };
-//   }
-// }
 
 export type ToolUse = {
   name: string;
