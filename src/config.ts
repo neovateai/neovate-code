@@ -39,6 +39,12 @@ export type CommitConfig = {
 
 export type ProviderConfig = Partial<Omit<Provider, 'createModel'>>;
 
+export type SearchConfig = {
+  provider?: 'tavily';
+  maxResults?: number;
+  timeout?: number;
+};
+
 export type Config = {
   model: string;
   planModel: string;
@@ -66,6 +72,10 @@ export type Config = {
   browser?: boolean;
   temperature?: number;
   httpProxy?: string;
+  /**
+   * Web search configuration
+   */
+  search?: SearchConfig;
   /**
    * Extensions configuration for third-party custom agents.
    * Allows arbitrary nested configuration without validation.
@@ -103,10 +113,17 @@ const VALID_CONFIG_KEYS = [
   'browser',
   'temperature',
   'httpProxy',
+  'search',
   'extensions',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
-const OBJECT_CONFIG_KEYS = ['mcpServers', 'commit', 'provider', 'extensions'];
+const OBJECT_CONFIG_KEYS = [
+  'mcpServers',
+  'commit',
+  'provider',
+  'search',
+  'extensions',
+];
 const BOOLEAN_CONFIG_KEYS = [
   'quiet',
   'todo',
