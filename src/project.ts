@@ -10,7 +10,12 @@ import { generatePlanSystemPrompt } from './planSystemPrompt';
 import { PluginHookType } from './plugin';
 import { Session, SessionConfigManager, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
-import type { ApprovalCategory, Tool, ToolUse } from './tool';
+import type {
+  ApprovalCategory,
+  Tool,
+  ToolApprovalResult,
+  ToolUse,
+} from './tool';
 import { resolveTools, Tools } from './tool';
 import type { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
@@ -33,7 +38,9 @@ export class Project {
     opts: {
       model?: string;
       onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
-      onToolApprove?: (opts: { toolUse: ToolUse }) => Promise<boolean>;
+      onToolApprove?: (opts: {
+        toolUse: ToolUse;
+      }) => Promise<boolean | ToolApprovalResult>;
       onTextDelta?: (text: string) => Promise<void>;
       onChunk?: (chunk: any, requestId: string) => Promise<void>;
       onStreamResult?: (result: StreamResult) => Promise<void>;
@@ -48,6 +55,7 @@ export class Project {
       sessionId: this.session.id,
       write: true,
       todo: true,
+      askUserQuestion: !this.context.config.quiet,
     });
     tools = await this.context.apply({
       hook: 'tool',
@@ -98,6 +106,7 @@ export class Project {
       sessionId: this.session.id,
       write: false,
       todo: false,
+      askUserQuestion: !this.context.config.quiet,
     });
     tools = await this.context.apply({
       hook: 'tool',
@@ -133,7 +142,7 @@ export class Project {
       onToolApprove?: (opts: {
         toolUse: ToolUse;
         category?: ApprovalCategory;
-      }) => Promise<boolean>;
+      }) => Promise<boolean | ToolApprovalResult>;
       onTextDelta?: (text: string) => Promise<void>;
       onChunk?: (chunk: any, requestId: string) => Promise<void>;
       onStreamResult?: (result: StreamResult) => Promise<void>;
@@ -365,18 +374,21 @@ export class Project {
         });
       },
       onToolApprove: async (toolUse) => {
-        // TODO: if quiet return true
-        // 1. if yolo return true
-        const approvalMode = this.context.config.approvalMode;
-        if (approvalMode === 'yolo') {
-          return true;
-        }
-        // 2. if category is read return true
         const tool = toolsManager.get(toolUse.name);
         if (!tool) {
           // Let the tool invoke handle the `tool not found` error
           return true;
         }
+
+        // TODO: if quiet return true
+        // 1. if yolo return true
+        const approvalMode = this.context.config.approvalMode;
+        // Tools that require clarifying user input must always prompt the user, even in yolo mode
+        if (approvalMode === 'yolo' && tool.approval?.category !== 'ask') {
+          return true;
+        }
+
+        // 2. if category is read return true
         if (tool.approval?.category === 'read') {
           return true;
         }

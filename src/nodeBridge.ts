@@ -1,20 +1,11 @@
 import z from 'zod';
 import { compact } from './compact';
-import {
-  type ApprovalMode,
-  ConfigManager,
-  type McpServerConfig,
-} from './config';
+import { ConfigManager, type McpServerConfig } from './config';
 import { CANCELED_MESSAGE_TEXT } from './constants';
 import { Context } from './context';
 import { JsonlLogger } from './jsonl';
-import type { ResponseFormat, StreamResult, ThinkingConfig } from './loop';
-import type {
-  ImagePart,
-  Message,
-  NormalizedMessage,
-  UserMessage,
-} from './message';
+import type { StreamResult } from './loop';
+import type { Message, NormalizedMessage, UserMessage } from './message';
 import { MessageBus } from './messageBus';
 import {
   type Model,
@@ -28,6 +19,7 @@ import { Project } from './project';
 import { query } from './query';
 import { SessionConfigManager } from './session';
 import { SlashCommandManager } from './slashCommand';
+import type { ApprovalCategory, ToolUse } from './tool';
 import { getFiles } from './utils/files';
 import { listDirectory } from './utils/list';
 import { randomUUID } from './utils/randomUUID';
@@ -179,724 +171,663 @@ class NodeHandlerRegistry {
   private registerHandlers() {
     //////////////////////////////////////////////
     // config
-    this.messageBus.registerHandler(
-      'config.get',
-      async (data: { cwd: string; isGlobal: boolean; key: string }) => {
-        const { cwd, key, isGlobal } = data;
-        const context = await this.getContext(cwd);
-        const configManager = new ConfigManager(
-          cwd,
-          context.productName,
-          context.argvConfig,
-        );
-        const value = configManager.getConfig(isGlobal, key);
-        return {
-          success: true,
-          data: {
-            value,
-          },
-        };
-      },
-    );
+    this.messageBus.registerHandler('config.get', async (data) => {
+      const { cwd, key, isGlobal } = data;
+      const context = await this.getContext(cwd);
+      const configManager = new ConfigManager(
+        cwd,
+        context.productName,
+        context.argvConfig,
+      );
+      const value = configManager.getConfig(isGlobal, key);
+      return {
+        success: true,
+        data: {
+          value,
+        },
+      };
+    });
 
-    this.messageBus.registerHandler(
-      'config.set',
-      async (data: {
-        cwd: string;
-        isGlobal: boolean;
-        key: string;
-        value: string;
-      }) => {
-        const { cwd, key, value, isGlobal } = data;
-        const context = await this.getContext(cwd);
-        const configManager = new ConfigManager(cwd, context.productName, {});
-        configManager.setConfig(isGlobal, key, value);
-        if (this.contexts.has(cwd)) {
-          await context.destroy();
-          this.contexts.delete(cwd);
-        }
-        return {
-          success: true,
-        };
-      },
-    );
+    this.messageBus.registerHandler('config.set', async (data) => {
+      const { cwd, key, value, isGlobal } = data;
+      const context = await this.getContext(cwd);
+      const configManager = new ConfigManager(cwd, context.productName, {});
+      configManager.setConfig(isGlobal, key, value);
+      if (this.contexts.has(cwd)) {
+        await context.destroy();
+        this.contexts.delete(cwd);
+      }
+      return {
+        success: true,
+      };
+    });
 
-    this.messageBus.registerHandler(
-      'config.remove',
-      async (data: {
-        cwd: string;
-        isGlobal: boolean;
-        key: string;
-        values?: string[];
-      }) => {
-        const { cwd, key, isGlobal, values } = data;
-        const context = await this.getContext(cwd);
-        const configManager = new ConfigManager(cwd, context.productName, {});
-        configManager.removeConfig(isGlobal, key, values);
-        if (this.contexts.has(cwd)) {
-          await context.destroy();
-          this.contexts.delete(cwd);
-        }
-        return {
-          success: true,
-        };
-      },
-    );
+    this.messageBus.registerHandler('config.remove', async (data) => {
+      const { cwd, key, isGlobal, values } = data;
+      const context = await this.getContext(cwd);
+      const configManager = new ConfigManager(cwd, context.productName, {});
+      configManager.removeConfig(isGlobal, key, values);
+      if (this.contexts.has(cwd)) {
+        await context.destroy();
+        this.contexts.delete(cwd);
+      }
+      return {
+        success: true,
+      };
+    });
 
-    this.messageBus.registerHandler(
-      'config.list',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
-        const context = await this.getContext(cwd);
-        return {
-          success: true,
-          data: {
-            globalConfigDir: context.paths.globalConfigDir,
-            projectConfigDir: context.paths.projectConfigDir,
-            config: context.config,
-          },
-        };
-      },
-    );
+    this.messageBus.registerHandler('config.list', async (data) => {
+      const { cwd } = data;
+      const context = await this.getContext(cwd);
+      return {
+        success: true,
+        data: {
+          globalConfigDir: context.paths.globalConfigDir,
+          projectConfigDir: context.paths.projectConfigDir,
+          config: context.config,
+        },
+      };
+    });
 
     //////////////////////////////////////////////
     // mcp
-    this.messageBus.registerHandler(
-      'mcp.getStatus',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
+    this.messageBus.registerHandler('mcp.getStatus', async (data) => {
+      const { cwd } = data;
+      const context = await this.getContext(cwd);
+      const mcpManager = context.mcpManager;
+
+      interface ServerData {
+        status: string;
+        error?: string;
+        toolCount: number;
+        tools: string[];
+      }
+
+      const configuredServers = context.config.mcpServers || {};
+      const allServerStatus = await mcpManager.getAllServerStatus();
+      const servers: Record<string, ServerData> = {};
+
+      // Get detailed status for each configured server
+      for (const serverName of mcpManager.getServerNames()) {
+        const serverStatus = allServerStatus[serverName];
+        let tools: string[] = [];
+
+        if (serverStatus && serverStatus.status === 'connected') {
+          try {
+            const serverTools = await mcpManager.getTools([serverName]);
+            tools = serverTools.map((tool) => tool.name);
+          } catch (err) {
+            console.warn(
+              `Failed to fetch tools for server ${serverName}:`,
+              err,
+            );
+          }
+        }
+
+        servers[serverName] = {
+          status: serverStatus?.status || 'disconnected',
+          error: serverStatus?.error,
+          toolCount: serverStatus?.toolCount || 0,
+          tools,
+        };
+      }
+
+      // Get config paths
+      const configManager = new ConfigManager(cwd, context.productName, {});
+
+      return {
+        success: true,
+        data: {
+          servers,
+          configs: configuredServers,
+          globalConfigPath: configManager.globalConfigPath,
+          projectConfigPath: configManager.projectConfigPath,
+          isReady: mcpManager.isReady(),
+          isLoading: mcpManager.isLoading(),
+        },
+      };
+    });
+
+    this.messageBus.registerHandler('mcp.reconnect', async (data) => {
+      const { cwd, serverName } = data;
+      try {
         const context = await this.getContext(cwd);
         const mcpManager = context.mcpManager;
 
-        interface ServerData {
-          status: string;
-          error?: string;
-          toolCount: number;
-          tools: string[];
-        }
-
-        const configuredServers = context.config.mcpServers || {};
-        const allServerStatus = await mcpManager.getAllServerStatus();
-        const servers: Record<string, ServerData> = {};
-
-        // Get detailed status for each configured server
-        for (const serverName of mcpManager.getServerNames()) {
-          const serverStatus = allServerStatus[serverName];
-          let tools: string[] = [];
-
-          if (serverStatus && serverStatus.status === 'connected') {
-            try {
-              const serverTools = await mcpManager.getTools([serverName]);
-              tools = serverTools.map((tool) => tool.name);
-            } catch (err) {
-              console.warn(
-                `Failed to fetch tools for server ${serverName}:`,
-                err,
-              );
-            }
-          }
-
-          servers[serverName] = {
-            status: serverStatus?.status || 'disconnected',
-            error: serverStatus?.error,
-            toolCount: serverStatus?.toolCount || 0,
-            tools,
-          };
-        }
-
-        // Get config paths
-        const configManager = new ConfigManager(cwd, context.productName, {});
-
-        return {
-          success: true,
-          data: {
-            servers,
-            configs: configuredServers,
-            globalConfigPath: configManager.globalConfigPath,
-            projectConfigPath: configManager.projectConfigPath,
-            isReady: mcpManager.isReady(),
-            isLoading: mcpManager.isLoading(),
-          },
-        };
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'mcp.reconnect',
-      async (data: { cwd: string; serverName: string }) => {
-        const { cwd, serverName } = data;
-        try {
-          const context = await this.getContext(cwd);
-          const mcpManager = context.mcpManager;
-
-          if (!mcpManager) {
-            return {
-              success: false,
-              error: 'No MCP manager available',
-            };
-          }
-
-          await mcpManager.retryConnection(serverName);
-
-          return {
-            success: true,
-            message: `Successfully initiated reconnection for ${serverName}`,
-          };
-        } catch (error) {
+        if (!mcpManager) {
           return {
             success: false,
-            error: error instanceof Error ? error.message : String(error),
+            error: 'No MCP manager available',
           };
         }
-      },
-    );
 
-    this.messageBus.registerHandler(
-      'mcp.list',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
-        const context = await this.getContext(cwd);
-        const configManager = new ConfigManager(cwd, context.productName, {});
-
-        const projectConfig = configManager.projectConfig;
-        const projectServers = projectConfig.mcpServers || {};
-        const globalConfig = configManager.globalConfig;
-        const globalServers = globalConfig.mcpServers || {};
-
-        const mcpManager = context.mcpManager;
-        const allServerStatus = await mcpManager.getAllServerStatus();
-
-        // Merge active servers (project takes priority)
-        const activeServers: Record<
-          string,
-          {
-            status:
-              | 'pending'
-              | 'connecting'
-              | 'connected'
-              | 'failed'
-              | 'disconnected';
-            config: McpServerConfig;
-            error?: string;
-            toolCount?: number;
-            tools: string[];
-            scope: 'global' | 'project';
-          }
-        > = {};
-
-        for (const [name, config] of Object.entries(globalServers)) {
-          if (!config.disable) {
-            activeServers[name] = {
-              config,
-              status: allServerStatus[name]?.status || 'disconnected',
-              error: allServerStatus[name]?.error,
-              toolCount: allServerStatus[name]?.toolCount || 0,
-              tools: [],
-              scope: 'global',
-            };
-          }
-        }
-
-        for (const [name, config] of Object.entries(projectServers)) {
-          if (!config.disable) {
-            activeServers[name] = {
-              config,
-              status: allServerStatus[name]?.status || 'disconnected',
-              error: allServerStatus[name]?.error,
-              toolCount: allServerStatus[name]?.toolCount || 0,
-              tools: [],
-              scope: 'project',
-            };
-          }
-        }
-
-        for (const [name, server] of Object.entries(activeServers)) {
-          if (server.status === 'connected') {
-            try {
-              const serverTools = await mcpManager.getTools([name]);
-              server.tools = serverTools.map((tool) => tool.name);
-            } catch (err) {
-              console.warn(`Failed to fetch tools for server ${name}:`, err);
-            }
-          }
-        }
+        await mcpManager.retryConnection(serverName);
 
         return {
           success: true,
-          data: {
-            projectServers,
-            globalServers,
-            activeServers,
-            projectConfigPath: configManager.projectConfigPath,
-            globalConfigPath: configManager.globalConfigPath,
-            isReady: mcpManager.isReady(),
-            isLoading: mcpManager.isLoading(),
-          },
+          message: `Successfully initiated reconnection for ${serverName}`,
         };
-      },
-    );
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    });
+
+    this.messageBus.registerHandler('mcp.list', async (data) => {
+      const { cwd } = data;
+      const context = await this.getContext(cwd);
+      const configManager = new ConfigManager(cwd, context.productName, {});
+
+      const projectConfig = configManager.projectConfig;
+      const projectServers = projectConfig.mcpServers || {};
+      const globalConfig = configManager.globalConfig;
+      const globalServers = globalConfig.mcpServers || {};
+
+      const mcpManager = context.mcpManager;
+      const allServerStatus = await mcpManager.getAllServerStatus();
+
+      // Merge active servers (project takes priority)
+      const activeServers: Record<
+        string,
+        {
+          status:
+            | 'pending'
+            | 'connecting'
+            | 'connected'
+            | 'failed'
+            | 'disconnected';
+          config: McpServerConfig;
+          error?: string;
+          toolCount?: number;
+          tools: string[];
+          scope: 'global' | 'project';
+        }
+      > = {};
+
+      for (const [name, config] of Object.entries(globalServers)) {
+        if (!config.disable) {
+          activeServers[name] = {
+            config,
+            status: allServerStatus[name]?.status || 'disconnected',
+            error: allServerStatus[name]?.error,
+            toolCount: allServerStatus[name]?.toolCount || 0,
+            tools: [],
+            scope: 'global',
+          };
+        }
+      }
+
+      for (const [name, config] of Object.entries(projectServers)) {
+        if (!config.disable) {
+          activeServers[name] = {
+            config,
+            status: allServerStatus[name]?.status || 'disconnected',
+            error: allServerStatus[name]?.error,
+            toolCount: allServerStatus[name]?.toolCount || 0,
+            tools: [],
+            scope: 'project',
+          };
+        }
+      }
+
+      for (const [name, server] of Object.entries(activeServers)) {
+        if (server.status === 'connected') {
+          try {
+            const serverTools = await mcpManager.getTools([name]);
+            server.tools = serverTools.map((tool) => tool.name);
+          } catch (err) {
+            console.warn(`Failed to fetch tools for server ${name}:`, err);
+          }
+        }
+      }
+
+      return {
+        success: true,
+        data: {
+          projectServers,
+          globalServers,
+          activeServers,
+          projectConfigPath: configManager.projectConfigPath,
+          globalConfigPath: configManager.globalConfigPath,
+          isReady: mcpManager.isReady(),
+          isLoading: mcpManager.isLoading(),
+        },
+      };
+    });
 
     //////////////////////////////////////////////
     // models
-    this.messageBus.registerHandler(
-      'models.list',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
-        const context = await this.getContext(cwd);
-        const { providers, model } = await resolveModelWithContext(
-          null,
-          context,
-        );
-        const currentModel = model;
-        const currentModelInfo = model
-          ? {
-              providerName: model.provider.name,
-              modelName: model.model.name,
-              modelId: model.model.id,
-              modelContextLimit: model.model.limit.context,
-            }
-          : null;
-        const groupedModels = Object.values(
-          providers as Record<string, Provider>,
-        ).map((provider) => ({
-          provider: provider.name,
-          providerId: provider.id,
-          models: Object.entries(provider.models).map(([modelId, model]) => ({
-            name: (model as ModelData).name,
-            modelId: modelId,
-            value: `${provider.id}/${modelId}`,
-          })),
-        }));
-        return {
-          success: true,
-          data: {
-            groupedModels,
-            currentModel,
-            currentModelInfo,
-          },
-        };
-      },
-    );
+    this.messageBus.registerHandler('models.list', async (data) => {
+      const { cwd } = data;
+      const context = await this.getContext(cwd);
+      const { providers, model } = await resolveModelWithContext(null, context);
+      const currentModel = model;
+      const currentModelInfo = model
+        ? {
+            providerName: model.provider.name,
+            modelName: model.model.name,
+            modelId: model.model.id,
+            modelContextLimit: model.model.limit.context,
+          }
+        : null;
+      const groupedModels = Object.values(
+        providers as Record<string, Provider>,
+      ).map((provider) => ({
+        provider: provider.name,
+        providerId: provider.id,
+        models: Object.entries(provider.models).map(([modelId, model]) => ({
+          name: (model as ModelData).name,
+          modelId: modelId,
+          value: `${provider.id}/${modelId}`,
+        })),
+      }));
+      return {
+        success: true,
+        data: {
+          groupedModels,
+          currentModel,
+          currentModelInfo,
+        },
+      };
+    });
 
     //////////////////////////////////////////////
     // outputStyles
-    this.messageBus.registerHandler(
-      'outputStyles.list',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
-        const context = await this.getContext(cwd);
-        const outputStyleManager = await OutputStyleManager.create(context);
-        return {
-          success: true,
-          data: {
-            outputStyles: outputStyleManager.outputStyles.map((style) => ({
-              name: style.name,
-              description: style.description,
-            })),
-            currentOutputStyle: context.config.outputStyle,
-          },
-        };
-      },
-    );
+    this.messageBus.registerHandler('outputStyles.list', async (data) => {
+      const { cwd } = data;
+      const context = await this.getContext(cwd);
+      const outputStyleManager = await OutputStyleManager.create(context);
+      return {
+        success: true,
+        data: {
+          outputStyles: outputStyleManager.outputStyles.map((style) => ({
+            name: style.name,
+            description: style.description,
+          })),
+          currentOutputStyle: context.config.outputStyle,
+        },
+      };
+    });
 
     //////////////////////////////////////////////
     // project
-    this.messageBus.registerHandler(
-      'project.addHistory',
-      async (data: { cwd: string; history: string }) => {
-        const { cwd, history } = data;
+    this.messageBus.registerHandler('project.addHistory', async (data) => {
+      const { cwd, history } = data;
+      const context = await this.getContext(cwd);
+      const { GlobalData } = await import('./globalData');
+      const globalDataPath = context.paths.getGlobalDataPath();
+      const globalData = new GlobalData({
+        globalDataPath,
+      });
+      globalData.addProjectHistory({
+        cwd,
+        history,
+      });
+      return {
+        success: true,
+      };
+    });
+
+    this.messageBus.registerHandler('project.clearContext', async (data) => {
+      await this.clearContext(data.cwd);
+      return {
+        success: true,
+      };
+    });
+
+    this.messageBus.registerHandler('project.addMemory', async (data) => {
+      const { cwd, global: isGlobal, rule } = data;
+      const context = await this.getContext(cwd);
+      const { appendFileSync } = await import('fs');
+      const { join } = await import('path');
+
+      const memoryFile = isGlobal
+        ? join(context.paths.globalConfigDir, 'AGENTS.md')
+        : join(cwd, 'AGENTS.md');
+
+      appendFileSync(memoryFile, `- ${rule}\n`, 'utf-8');
+
+      return {
+        success: true,
+      };
+    });
+
+    this.messageBus.registerHandler('project.analyzeContext', async (data) => {
+      const { cwd, sessionId } = data;
+      try {
         const context = await this.getContext(cwd);
-        const { GlobalData } = await import('./globalData');
-        const globalDataPath = context.paths.getGlobalDataPath();
-        const globalData = new GlobalData({
-          globalDataPath,
-        });
-        globalData.addProjectHistory({
-          cwd,
-          history,
-        });
-        return {
-          success: true,
-        };
-      },
-    );
+        const { loadSessionMessages } = await import('./session');
+        const { countTokens } = await import('./utils/tokenCounter');
+        const { existsSync, readFileSync } = await import('fs');
+        const { join } = await import('pathe');
 
-    this.messageBus.registerHandler(
-      'project.clearContext',
-      async (data: { cwd?: string }) => {
-        await this.clearContext(data.cwd);
-        return {
-          success: true,
-        };
-      },
-    );
+        // Load session messages to find the latest assistant message
+        const logPath = context.paths.getSessionLogPath(sessionId);
+        const messages = loadSessionMessages({ logPath });
 
-    this.messageBus.registerHandler(
-      'project.addMemory',
-      async (data: { cwd: string; global: boolean; rule: string }) => {
-        const { cwd, global: isGlobal, rule } = data;
-        const context = await this.getContext(cwd);
-        const { appendFileSync } = await import('fs');
-        const { join } = await import('path');
+        // Find the last assistant message UUID
+        const lastAssistantMessage = messages
+          .slice()
+          .reverse()
+          .find((msg) => msg.role === 'assistant');
 
-        const memoryFile = isGlobal
-          ? join(context.paths.globalConfigDir, 'AGENTS.md')
-          : join(cwd, 'AGENTS.md');
-
-        appendFileSync(memoryFile, `- ${rule}\n`, 'utf-8');
-
-        return {
-          success: true,
-        };
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'project.analyzeContext',
-      async (data: { cwd: string; sessionId: string }) => {
-        const { cwd, sessionId } = data;
-        try {
-          const context = await this.getContext(cwd);
-          const { loadSessionMessages } = await import('./session');
-          const { countTokens } = await import('./utils/tokenCounter');
-          const { existsSync, readFileSync } = await import('fs');
-          const { join } = await import('pathe');
-
-          // Load session messages to find the latest assistant message
-          const logPath = context.paths.getSessionLogPath(sessionId);
-          const messages = loadSessionMessages({ logPath });
-
-          // Find the last assistant message UUID
-          const lastAssistantMessage = messages
-            .slice()
-            .reverse()
-            .find((msg) => msg.role === 'assistant');
-
-          if (!lastAssistantMessage) {
-            return {
-              success: false,
-              error:
-                'No context available - send a message first to analyze context usage',
-            };
-          }
-
-          const requestId = lastAssistantMessage.uuid;
-          const requestsDir = join(context.paths.globalProjectDir, 'requests');
-          const requestLogPath = join(requestsDir, `${requestId}.jsonl`);
-
-          if (!existsSync(requestLogPath)) {
-            return {
-              success: false,
-              error: 'Request log file not found',
-            };
-          }
-
-          // Read the first line of the JSONL file (the metadata)
-          const content = readFileSync(requestLogPath, 'utf-8');
-          const lines = content.split('\n').filter(Boolean);
-          if (lines.length === 0) {
-            return {
-              success: false,
-              error: 'Request log is empty',
-            };
-          }
-
-          let metadata: any;
-          try {
-            metadata = JSON.parse(lines[0]);
-          } catch {
-            return {
-              success: false,
-              error: 'Failed to parse request log',
-            };
-          }
-
-          const requestBody = metadata.request?.body;
-          if (!requestBody) {
-            return {
-              success: false,
-              error: 'Invalid request log format',
-            };
-          }
-
-          // Get the model context window size
-          const { model } = metadata;
-          if (!model || !model.model || !model.model.limit) {
-            return {
-              success: false,
-              error: 'Failed to resolve model context window',
-            };
-          }
-
-          const totalContextWindow = model.model.limit.context;
-
-          // Count tokens for each category
-          const systemPromptTokens = (() => {
-            const systemPrompt = requestBody.system || [];
-            const messages = requestBody.messages || [];
-            for (const message of messages) {
-              if (message.role === 'system') {
-                systemPrompt.push(message);
-              }
-            }
-            if (!systemPrompt.length) return 0;
-            return countTokens(JSON.stringify(systemPrompt));
-          })();
-
-          const tools = requestBody.tools || [];
-          const systemTools: any[] = [];
-          const mcpTools: any[] = [];
-
-          for (const tool of tools) {
-            if (tool.name?.startsWith('mcp__')) {
-              mcpTools.push(tool);
-            } else {
-              systemTools.push(tool);
-            }
-          }
-
-          const systemToolsTokens = systemTools.length
-            ? countTokens(JSON.stringify(systemTools))
-            : 0;
-          const mcpToolsTokens = mcpTools.length
-            ? countTokens(JSON.stringify(mcpTools))
-            : 0;
-
-          const messagesTokens = (() => {
-            const messages = (requestBody.messages || []).filter(
-              (item: any) => item.role !== 'system',
-            );
-            return countTokens(JSON.stringify(messages));
-          })();
-
-          const totalUsed =
-            systemPromptTokens +
-            systemToolsTokens +
-            mcpToolsTokens +
-            messagesTokens;
-          const freeSpaceTokens = Math.max(0, totalContextWindow - totalUsed);
-
-          // Calculate percentages
-          const calculatePercentage = (tokens: number) =>
-            (tokens / totalContextWindow) * 100;
-
-          return {
-            success: true,
-            data: {
-              systemPrompt: {
-                tokens: systemPromptTokens,
-                percentage: calculatePercentage(systemPromptTokens),
-              },
-              systemTools: {
-                tokens: systemToolsTokens,
-                percentage: calculatePercentage(systemToolsTokens),
-              },
-              mcpTools: {
-                tokens: mcpToolsTokens,
-                percentage: calculatePercentage(mcpToolsTokens),
-              },
-              messages: {
-                tokens: messagesTokens,
-                percentage: calculatePercentage(messagesTokens),
-              },
-              freeSpace: {
-                tokens: freeSpaceTokens,
-                percentage: calculatePercentage(freeSpaceTokens),
-              },
-              totalContextWindow,
-            },
-          };
-        } catch (error) {
+        if (!lastAssistantMessage) {
           return {
             success: false,
             error:
-              error instanceof Error
-                ? error.message
-                : 'Failed to analyze context',
+              'No context available - send a message first to analyze context usage',
           };
         }
-      },
-    );
 
-    this.messageBus.registerHandler(
-      'project.getRepoInfo',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
+        const requestId = lastAssistantMessage.uuid;
+        const requestsDir = join(context.paths.globalProjectDir, 'requests');
+        const requestLogPath = join(requestsDir, `${requestId}.jsonl`);
+
+        if (!existsSync(requestLogPath)) {
+          return {
+            success: false,
+            error: 'Request log file not found',
+          };
+        }
+
+        // Read the first line of the JSONL file (the metadata)
+        const content = readFileSync(requestLogPath, 'utf-8');
+        const lines = content.split('\n').filter(Boolean);
+        if (lines.length === 0) {
+          return {
+            success: false,
+            error: 'Request log is empty',
+          };
+        }
+
+        let metadata: any;
         try {
-          const context = await this.getContext(cwd);
-          const { getGitRoot, listWorktrees, isGitRepository } = await import(
-            './worktree'
-          );
-          const { getGitRemoteUrl, getDefaultBranch, getGitSyncStatus } =
-            await import('./utils/git');
-          const { GlobalData } = await import('./globalData');
-          const { basename } = await import('pathe');
+          metadata = JSON.parse(lines[0]);
+        } catch {
+          return {
+            success: false,
+            error: 'Failed to parse request log',
+          };
+        }
 
-          // Check if it's a git repository
-          const isGit = await isGitRepository(cwd);
-          if (!isGit) {
-            return {
-              success: false,
-              error: 'Not a git repository',
-            };
+        const requestBody = metadata.request?.body;
+        if (!requestBody) {
+          return {
+            success: false,
+            error: 'Invalid request log format',
+          };
+        }
+
+        // Get the model context window size
+        const { model } = metadata;
+        if (!model || !model.model || !model.model.limit) {
+          return {
+            success: false,
+            error: 'Failed to resolve model context window',
+          };
+        }
+
+        const totalContextWindow = model.model.limit.context;
+
+        // Count tokens for each category
+        const systemPromptTokens = (() => {
+          const systemPrompt = requestBody.system || [];
+          const messages = requestBody.messages || [];
+          for (const message of messages) {
+            if (message.role === 'system') {
+              systemPrompt.push(message);
+            }
           }
+          if (!systemPrompt.length) return 0;
+          return countTokens(JSON.stringify(systemPrompt));
+        })();
 
-          // Get git root path
-          const gitRoot = await getGitRoot(cwd);
+        const tools = requestBody.tools || [];
+        const systemTools: any[] = [];
+        const mcpTools: any[] = [];
 
-          // Get git remote information
-          const originUrl = await getGitRemoteUrl(gitRoot);
-          const defaultBranch = await getDefaultBranch(gitRoot);
-          const syncStatus = await getGitSyncStatus(gitRoot);
+        for (const tool of tools) {
+          if (tool.name?.startsWith('mcp__')) {
+            mcpTools.push(tool);
+          } else {
+            systemTools.push(tool);
+          }
+        }
 
-          // Get workspace names
-          const worktrees = await listWorktrees(gitRoot);
-          const workspaceIds = worktrees.map((w) => w.name);
+        const systemToolsTokens = systemTools.length
+          ? countTokens(JSON.stringify(systemTools))
+          : 0;
+        const mcpToolsTokens = mcpTools.length
+          ? countTokens(JSON.stringify(mcpTools))
+          : 0;
 
-          // Get last accessed timestamp from GlobalData
-          const globalDataPath = context.paths.getGlobalDataPath();
-          const globalData = new GlobalData({ globalDataPath });
-          const lastAccessed =
-            globalData.getProjectLastAccessed({ cwd: gitRoot }) || Date.now();
+        const messagesTokens = (() => {
+          const messages = (requestBody.messages || []).filter(
+            (item: any) => item.role !== 'system',
+          );
+          return countTokens(JSON.stringify(messages));
+        })();
 
-          // Update last accessed time
-          globalData.updateProjectLastAccessed({ cwd: gitRoot });
+        const totalUsed =
+          systemPromptTokens +
+          systemToolsTokens +
+          mcpToolsTokens +
+          messagesTokens;
+        const freeSpaceTokens = Math.max(0, totalContextWindow - totalUsed);
 
-          // Get project settings from config
-          const settings = context.config;
+        // Calculate percentages
+        const calculatePercentage = (tokens: number) =>
+          (tokens / totalContextWindow) * 100;
 
-          const repoData = {
-            path: gitRoot,
-            name: basename(gitRoot),
-            workspaceIds,
-            metadata: {
-              lastAccessed,
-              settings,
+        return {
+          success: true,
+          data: {
+            systemPrompt: {
+              tokens: systemPromptTokens,
+              percentage: calculatePercentage(systemPromptTokens),
             },
-            gitRemote: {
-              originUrl,
-              defaultBranch,
-              syncStatus,
+            systemTools: {
+              tokens: systemToolsTokens,
+              percentage: calculatePercentage(systemToolsTokens),
             },
-          };
+            mcpTools: {
+              tokens: mcpToolsTokens,
+              percentage: calculatePercentage(mcpToolsTokens),
+            },
+            messages: {
+              tokens: messagesTokens,
+              percentage: calculatePercentage(messagesTokens),
+            },
+            freeSpace: {
+              tokens: freeSpaceTokens,
+              percentage: calculatePercentage(freeSpaceTokens),
+            },
+            totalContextWindow,
+          },
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Failed to analyze context',
+        };
+      }
+    });
 
-          return {
-            success: true,
-            data: { repoData },
-          };
-        } catch (error: any) {
-          return {
-            success: false,
-            error: error.message || 'Failed to get repository info',
-          };
-        }
-      },
-    );
+    this.messageBus.registerHandler('project.getRepoInfo', async (data) => {
+      const { cwd } = data;
+      try {
+        const context = await this.getContext(cwd);
+        const { getGitRoot, listWorktrees, isGitRepository } = await import(
+          './worktree'
+        );
+        const { getGitRemoteUrl, getDefaultBranch, getGitSyncStatus } =
+          await import('./utils/git');
+        const { GlobalData } = await import('./globalData');
+        const { basename } = await import('pathe');
 
-    this.messageBus.registerHandler(
-      'project.workspaces.list',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
-        try {
-          const context = await this.getContext(cwd);
-          const { getGitRoot, listWorktrees, isGitRepository } = await import(
-            './worktree'
-          );
-
-          // Check if it's a git repository
-          const isGit = await isGitRepository(cwd);
-          if (!isGit) {
-            return {
-              success: false,
-              error: 'Not a git repository',
-            };
-          }
-
-          // Get git root path
-          const gitRoot = await getGitRoot(cwd);
-
-          // Get all worktrees
-          const worktrees = await listWorktrees(gitRoot);
-
-          // Build workspace data for each worktree using the helper
-          const workspacesData = await Promise.all(
-            worktrees.map((worktree) =>
-              this.buildWorkspaceData(worktree, context, gitRoot),
-            ),
-          );
-
-          return {
-            success: true,
-            data: { workspaces: workspacesData },
-          };
-        } catch (error: any) {
+        // Check if it's a git repository
+        const isGit = await isGitRepository(cwd);
+        if (!isGit) {
           return {
             success: false,
-            error: error.message || 'Failed to get workspaces info',
+            error: 'Not a git repository',
           };
         }
-      },
-    );
 
-    this.messageBus.registerHandler(
-      'project.workspaces.get',
-      async (data: { cwd: string; workspaceId: string }) => {
-        const { cwd, workspaceId } = data;
-        try {
-          const context = await this.getContext(cwd);
-          const { getGitRoot, listWorktrees, isGitRepository } = await import(
-            './worktree'
-          );
+        // Get git root path
+        const gitRoot = await getGitRoot(cwd);
 
-          // Check if it's a git repository
-          const isGit = await isGitRepository(cwd);
-          if (!isGit) {
-            return {
-              success: false,
-              error: 'Not a git repository',
-            };
-          }
+        // Get git remote information
+        const originUrl = await getGitRemoteUrl(gitRoot);
+        const defaultBranch = await getDefaultBranch(gitRoot);
+        const syncStatus = await getGitSyncStatus(gitRoot);
 
-          // Get git root path
-          const gitRoot = await getGitRoot(cwd);
+        // Get workspace names
+        const worktrees = await listWorktrees(gitRoot);
+        const workspaceIds = worktrees.map((w) => w.name);
 
-          // Get all worktrees
-          const worktrees = await listWorktrees(gitRoot);
+        // Get last accessed timestamp from GlobalData
+        const globalDataPath = context.paths.getGlobalDataPath();
+        const globalData = new GlobalData({ globalDataPath });
+        const lastAccessed =
+          globalData.getProjectLastAccessed({ cwd: gitRoot }) || Date.now();
 
-          // Find the worktree matching the workspace ID
-          const worktree = worktrees.find((w) => w.name === workspaceId);
-          if (!worktree) {
-            return {
-              success: false,
-              error: `Workspace '${workspaceId}' not found`,
-            };
-          }
+        // Update last accessed time
+        globalData.updateProjectLastAccessed({ cwd: gitRoot });
 
-          // Build workspace data for the single worktree using the helper
-          const workspaceData = await this.buildWorkspaceData(
-            worktree,
-            context,
-            gitRoot,
-          );
+        // Get project settings from config
+        const settings = context.config;
 
-          return {
-            success: true,
-            data: workspaceData,
-          };
-        } catch (error: any) {
+        const repoData = {
+          path: gitRoot,
+          name: basename(gitRoot),
+          workspaceIds,
+          metadata: {
+            lastAccessed,
+            settings,
+          },
+          gitRemote: {
+            originUrl,
+            defaultBranch,
+            syncStatus,
+          },
+        };
+
+        return {
+          success: true,
+          data: { repoData },
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message || 'Failed to get repository info',
+        };
+      }
+    });
+
+    this.messageBus.registerHandler('project.workspaces.list', async (data) => {
+      const { cwd } = data;
+      try {
+        const context = await this.getContext(cwd);
+        const { getGitRoot, listWorktrees, isGitRepository } = await import(
+          './worktree'
+        );
+
+        // Check if it's a git repository
+        const isGit = await isGitRepository(cwd);
+        if (!isGit) {
           return {
             success: false,
-            error: error.message || 'Failed to get workspace info',
+            error: 'Not a git repository',
           };
         }
-      },
-    );
+
+        // Get git root path
+        const gitRoot = await getGitRoot(cwd);
+
+        // Get all worktrees
+        const worktrees = await listWorktrees(gitRoot);
+
+        // Build workspace data for each worktree using the helper
+        const workspacesData = await Promise.all(
+          worktrees.map((worktree) =>
+            this.buildWorkspaceData(worktree, context, gitRoot),
+          ),
+        );
+
+        return {
+          success: true,
+          data: { workspaces: workspacesData },
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message || 'Failed to get workspaces info',
+        };
+      }
+    });
+
+    this.messageBus.registerHandler('project.workspaces.get', async (data) => {
+      const { cwd, workspaceId } = data;
+      try {
+        const context = await this.getContext(cwd);
+        const { getGitRoot, listWorktrees, isGitRepository } = await import(
+          './worktree'
+        );
+
+        // Check if it's a git repository
+        const isGit = await isGitRepository(cwd);
+        if (!isGit) {
+          return {
+            success: false,
+            error: 'Not a git repository',
+          };
+        }
+
+        // Get git root path
+        const gitRoot = await getGitRoot(cwd);
+
+        // Get all worktrees
+        const worktrees = await listWorktrees(gitRoot);
+
+        // Find the worktree matching the workspace ID
+        const worktree = worktrees.find((w) => w.name === workspaceId);
+        if (!worktree) {
+          return {
+            success: false,
+            error: `Workspace '${workspaceId}' not found`,
+          };
+        }
+
+        // Build workspace data for the single worktree using the helper
+        const workspaceData = await this.buildWorkspaceData(
+          worktree,
+          context,
+          gitRoot,
+        );
+
+        return {
+          success: true,
+          data: workspaceData,
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message || 'Failed to get workspace info',
+        };
+      }
+    });
 
     //////////////////////////////////////////////
     // workspaces operations
     this.messageBus.registerHandler(
       'project.workspaces.create',
-      async (data: { cwd: string; name?: string; skipUpdate?: boolean }) => {
+      async (data) => {
         const { cwd, name, skipUpdate = false } = data;
         try {
           const context = await this.getContext(cwd);
@@ -972,7 +903,7 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'project.workspaces.delete',
-      async (data: { cwd: string; name: string; force?: boolean }) => {
+      async (data) => {
         const { cwd, name, force = false } = data;
         try {
           await this.getContext(cwd);
@@ -1009,7 +940,7 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'project.workspaces.merge',
-      async (data: { cwd: string; name: string }) => {
+      async (data) => {
         const { cwd, name } = data;
         try {
           await this.getContext(cwd);
@@ -1056,13 +987,7 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'project.workspaces.createGithubPR',
-      async (data: {
-        cwd: string;
-        name: string;
-        title?: string;
-        description?: string;
-        baseBranch?: string;
-      }) => {
+      async (data) => {
         const { cwd, name, title, description = '', baseBranch } = data;
         try {
           await this.getContext(cwd);
@@ -1189,309 +1114,274 @@ class NodeHandlerRegistry {
 
     //////////////////////////////////////////////
     // providers
-    this.messageBus.registerHandler(
-      'providers.list',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
-        const context = await this.getContext(cwd);
-        const { providers } = await resolveModelWithContext(null, context);
-        return {
-          success: true,
-          data: {
-            providers: normalizeProviders(providers, context),
-          },
-        };
-      },
-    );
+    this.messageBus.registerHandler('providers.list', async (data) => {
+      const { cwd } = data;
+      const context = await this.getContext(cwd);
+      const { providers } = await resolveModelWithContext(null, context);
+      return {
+        success: true,
+        data: {
+          providers: normalizeProviders(providers, context),
+        },
+      };
+    });
 
     //////////////////////////////////////////////
     // session
-    this.messageBus.registerHandler(
-      'session.initialize',
-      async (data: { cwd: string; sessionId?: string }) => {
-        const context = await this.getContext(data.cwd);
-        await context.apply({
-          hook: 'initialized',
-          args: [{ cwd: data.cwd, quiet: false }],
-          type: PluginHookType.Series,
-        });
-        const { model, providers, error } = await resolveModelWithContext(
-          null,
-          context,
-        );
+    this.messageBus.registerHandler('session.initialize', async (data) => {
+      const context = await this.getContext(data.cwd);
+      await context.apply({
+        hook: 'initialized',
+        args: [{ cwd: data.cwd, quiet: false }],
+        type: PluginHookType.Series,
+      });
+      const { model, providers, error } = await resolveModelWithContext(
+        null,
+        context,
+      );
 
-        // Get session config if sessionId is provided
-        let sessionSummary: string | undefined;
-        let pastedTextMap: Record<string, string> = {};
-        let pastedImageMap: Record<string, string> = {};
-        if (data.sessionId) {
-          try {
-            const sessionConfigManager = new SessionConfigManager({
-              logPath: context.paths.getSessionLogPath(data.sessionId),
-            });
-            sessionSummary = sessionConfigManager.config.summary;
-            pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
-            pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
-          } catch {
-            // Silently ignore if session config not available
-          }
+      // Get session config if sessionId is provided
+      let sessionSummary: string | undefined;
+      let pastedTextMap: Record<string, string> = {};
+      let pastedImageMap: Record<string, string> = {};
+      if (data.sessionId) {
+        try {
+          const sessionConfigManager = new SessionConfigManager({
+            logPath: context.paths.getSessionLogPath(data.sessionId),
+          });
+          sessionSummary = sessionConfigManager.config.summary;
+          pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
+          pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
+        } catch {
+          // Silently ignore if session config not available
         }
+      }
 
-        return {
-          success: true,
-          data: {
-            productName: context.productName,
-            productASCIIArt: context.productASCIIArt,
-            version: context.version,
-            model,
-            planModel: context.config.planModel,
-            initializeModelError: error instanceof Error ? error.message : null,
-            providers: normalizeProviders(providers, context),
-            approvalMode: context.config.approvalMode,
-            sessionSummary,
-            pastedTextMap,
-            pastedImageMap,
-          },
-        };
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'session.messages.list',
-      async (data: { cwd: string; sessionId: string }) => {
-        const { cwd, sessionId } = data;
-        const context = await this.getContext(cwd);
-        const { loadSessionMessages } = await import('./session');
-        const messages = loadSessionMessages({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
-        return {
-          success: true,
-          data: {
-            messages,
-          },
-        };
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'session.send',
-      async (data: {
-        message: string | null;
-        cwd: string;
-        sessionId: string | undefined;
-        planMode: boolean;
-        model?: string;
-        attachments?: ImagePart[];
-        parentUuid?: string;
-        thinking?: ThinkingConfig;
-      }) => {
-        const { message, cwd, sessionId, model, attachments, parentUuid } =
-          data;
-        const context = await this.getContext(cwd);
-        const project = new Project({
-          sessionId,
-          context,
-        });
-
-        const abortController = new AbortController();
-        const key = buildSignalKey(cwd, project.session.id);
-        this.abortControllers.set(key, abortController);
-
-        const fn = data.planMode ? project.plan : project.send;
-        const result = await fn.call(project, message, {
-          attachments,
+      return {
+        success: true,
+        data: {
+          productName: context.productName,
+          productASCIIArt: context.productASCIIArt,
+          version: context.version,
           model,
-          parentUuid,
-          thinking: data.thinking,
-          onMessage: async (opts) => {
-            await this.messageBus.emitEvent('message', {
-              message: opts.message,
-              sessionId,
-              cwd,
-            });
-          },
-          onTextDelta: async (text) => {
-            await this.messageBus.emitEvent('textDelta', {
-              text,
-              sessionId,
-              cwd,
-            });
-          },
-          onChunk: async (chunk, requestId) => {
-            await this.messageBus.emitEvent('chunk', {
-              chunk,
-              requestId,
-              sessionId,
-              cwd,
-            });
-          },
-          onToolApprove: async ({ toolUse, category }: any) => {
-            const result = await this.messageBus.request('toolApproval', {
-              toolUse,
-              category,
-            });
-            return result.approved;
-          },
-          onStreamResult: async (result: StreamResult) => {
-            await this.messageBus.emitEvent('streamResult', {
-              result,
-              sessionId,
-              cwd,
-            });
-          },
-          signal: abortController.signal,
-        });
-        this.abortControllers.delete(key);
-        return result;
-      },
-    );
+          planModel: context.config.planModel,
+          initializeModelError: error instanceof Error ? error.message : null,
+          providers: normalizeProviders(providers, context),
+          approvalMode: context.config.approvalMode,
+          sessionSummary,
+          pastedTextMap,
+          pastedImageMap,
+        },
+      };
+    });
 
-    this.messageBus.registerHandler(
-      'session.cancel',
-      async (data: { cwd: string; sessionId: string }) => {
-        const { cwd, sessionId } = data;
-        const key = buildSignalKey(cwd, sessionId);
-        const abortController = this.abortControllers.get(key);
-        abortController?.abort();
-        this.abortControllers.delete(key);
+    this.messageBus.registerHandler('session.messages.list', async (data) => {
+      const { cwd, sessionId } = data;
+      const context = await this.getContext(cwd);
+      const { loadSessionMessages } = await import('./session');
+      const messages = loadSessionMessages({
+        logPath: context.paths.getSessionLogPath(sessionId),
+      });
+      return {
+        success: true,
+        data: {
+          messages,
+        },
+      };
+    });
 
-        const context = await this.getContext(cwd);
-        const jsonlLogger = new JsonlLogger({
-          filePath: context.paths.getSessionLogPath(sessionId),
-        });
+    this.messageBus.registerHandler('session.send', async (data) => {
+      const { message, cwd, sessionId, model, attachments, parentUuid } = data;
+      const context = await this.getContext(cwd);
+      const project = new Project({
+        sessionId,
+        context,
+      });
 
-        // Load current messages to check for incomplete tool_uses
-        const { loadSessionMessages } = await import('./session');
-        const { findIncompleteToolUses } = await import('./message');
+      const abortController = new AbortController();
+      const key = buildSignalKey(cwd, project.session.id);
+      this.abortControllers.set(key, abortController);
 
-        const messages = loadSessionMessages({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
+      const fn = data.planMode ? project.plan : project.send;
+      const result = await fn.call(project, message, {
+        attachments,
+        model,
+        parentUuid,
+        thinking: data.thinking,
+        onMessage: async (opts) => {
+          await this.messageBus.emitEvent('message', {
+            message: opts.message,
+            sessionId,
+            cwd,
+          });
+        },
+        onTextDelta: async (text) => {
+          await this.messageBus.emitEvent('textDelta', {
+            text,
+            sessionId,
+            cwd,
+          });
+        },
+        onChunk: async (chunk, requestId) => {
+          await this.messageBus.emitEvent('chunk', {
+            chunk,
+            requestId,
+            sessionId,
+            cwd,
+          });
+        },
+        onToolApprove: async ({
+          toolUse,
+          category,
+        }: {
+          toolUse: ToolUse;
+          category?: ApprovalCategory;
+        }) => {
+          const result = await this.messageBus.request('toolApproval', {
+            toolUse,
+            category,
+          });
 
-        // Check for incomplete tool_uses and add tool_result messages
-        const incompleteResult = findIncompleteToolUses(messages);
-        if (incompleteResult) {
-          const { assistantMessage, incompleteToolUses } = incompleteResult;
+          return result.params
+            ? { approved: result.approved, params: result.params }
+            : result.approved;
+        },
+        onStreamResult: async (result: StreamResult) => {
+          await this.messageBus.emitEvent('streamResult', {
+            result,
+            sessionId,
+            cwd,
+          });
+        },
+        signal: abortController.signal,
+      });
+      this.abortControllers.delete(key);
+      return result;
+    });
 
-          // Add a tool_result message for each incomplete tool_use
-          for (const toolUse of incompleteToolUses) {
-            const normalizedToolResultMessage: NormalizedMessage & {
-              sessionId: string;
-            } = {
-              parentUuid: assistantMessage.uuid,
-              uuid: randomUUID(),
-              role: 'tool',
-              content: [
-                {
-                  type: 'tool-result',
-                  toolCallId: toolUse.id,
-                  toolName: toolUse.name,
-                  input: toolUse.input,
-                  result: {
-                    llmContent: CANCELED_MESSAGE_TEXT,
-                    returnDisplay: 'Tool execution was canceled by user.',
-                    isError: true,
-                  },
-                },
-              ],
-              type: 'message',
-              timestamp: new Date().toISOString(),
-              sessionId,
-            };
+    this.messageBus.registerHandler('session.cancel', async (data) => {
+      const { cwd, sessionId } = data;
+      const key = buildSignalKey(cwd, sessionId);
+      const abortController = this.abortControllers.get(key);
+      abortController?.abort();
+      this.abortControllers.delete(key);
 
-            await this.messageBus.emitEvent('message', {
-              message: jsonlLogger.addMessage({
-                message: normalizedToolResultMessage,
-              }),
-            });
-          }
+      const context = await this.getContext(cwd);
+      const jsonlLogger = new JsonlLogger({
+        filePath: context.paths.getSessionLogPath(sessionId),
+      });
 
-          return {
-            success: true,
-          };
-        }
+      // Load current messages to check for incomplete tool_uses
+      const { loadSessionMessages } = await import('./session');
+      const { findIncompleteToolUses } = await import('./message');
 
-        // Always add the user cancellation message
-        await this.messageBus.emitEvent('message', {
-          message: jsonlLogger.addUserMessage(CANCELED_MESSAGE_TEXT, sessionId),
-        });
+      const messages = loadSessionMessages({
+        logPath: context.paths.getSessionLogPath(sessionId),
+      });
 
-        return {
-          success: true,
-        };
-      },
-    );
+      // Check for incomplete tool_uses and add tool_result messages
+      const incompleteResult = findIncompleteToolUses(messages);
+      if (incompleteResult) {
+        const { assistantMessage, incompleteToolUses } = incompleteResult;
 
-    this.messageBus.registerHandler(
-      'session.addMessages',
-      async (data: {
-        cwd: string;
-        sessionId: string;
-        messages: Message[];
-        parentUuid?: string;
-      }) => {
-        const { cwd, sessionId, messages, parentUuid } = data;
-        const context = await this.getContext(cwd);
-        const jsonlLogger = new JsonlLogger({
-          filePath: context.paths.getSessionLogPath(sessionId),
-        });
-
-        let previousUuid = parentUuid ?? jsonlLogger.getLatestUuid();
-
-        for (const message of messages) {
-          const normalizedMessage = {
-            // @ts-expect-error
-            parentUuid: message.parentUuid ?? previousUuid,
+        // Add a tool_result message for each incomplete tool_use
+        for (const toolUse of incompleteToolUses) {
+          const normalizedToolResultMessage: NormalizedMessage & {
+            sessionId: string;
+          } = {
+            parentUuid: assistantMessage.uuid,
             uuid: randomUUID(),
-            ...message,
-            type: 'message' as const,
+            role: 'tool',
+            content: [
+              {
+                type: 'tool-result',
+                toolCallId: toolUse.id,
+                toolName: toolUse.name,
+                input: toolUse.input,
+                result: {
+                  llmContent: CANCELED_MESSAGE_TEXT,
+                  returnDisplay: 'Tool execution was canceled by user.',
+                  isError: true,
+                },
+              },
+            ],
+            type: 'message',
             timestamp: new Date().toISOString(),
             sessionId,
           };
+
           await this.messageBus.emitEvent('message', {
             message: jsonlLogger.addMessage({
-              message: normalizedMessage,
+              message: normalizedToolResultMessage,
             }),
           });
-          previousUuid = normalizedMessage.uuid;
         }
-        return {
-          success: true,
-        };
-      },
-    );
 
-    this.messageBus.registerHandler(
-      'session.compact',
-      async (data: {
-        cwd: string;
-        sessionId: string;
-        messages: NormalizedMessage[];
-      }) => {
-        const { cwd, messages } = data;
-        const context = await this.getContext(cwd);
-        const model = (await resolveModelWithContext(null, context)).model!;
-        const summary = await compact({
-          messages,
-          model,
-        });
         return {
           success: true,
-          data: {
-            summary,
-          },
         };
-      },
-    );
+      }
+
+      // Always add the user cancellation message
+      await this.messageBus.emitEvent('message', {
+        message: jsonlLogger.addUserMessage(CANCELED_MESSAGE_TEXT, sessionId),
+      });
+
+      return {
+        success: true,
+      };
+    });
+
+    this.messageBus.registerHandler('session.addMessages', async (data) => {
+      const { cwd, sessionId, messages, parentUuid } = data;
+      const context = await this.getContext(cwd);
+      const jsonlLogger = new JsonlLogger({
+        filePath: context.paths.getSessionLogPath(sessionId),
+      });
+
+      let previousUuid = parentUuid ?? jsonlLogger.getLatestUuid();
+
+      for (const message of messages) {
+        const normalizedMessage = {
+          // @ts-expect-error
+          parentUuid: message.parentUuid ?? previousUuid,
+          uuid: randomUUID(),
+          ...message,
+          type: 'message' as const,
+          timestamp: new Date().toISOString(),
+          sessionId,
+        };
+        await this.messageBus.emitEvent('message', {
+          message: jsonlLogger.addMessage({
+            message: normalizedMessage,
+          }),
+        });
+        previousUuid = normalizedMessage.uuid;
+      }
+      return {
+        success: true,
+      };
+    });
+
+    this.messageBus.registerHandler('session.compact', async (data) => {
+      const { cwd, messages } = data;
+      const context = await this.getContext(cwd);
+      const model = (await resolveModelWithContext(null, context)).model!;
+      const summary = await compact({
+        messages,
+        model,
+      });
+      return {
+        success: true,
+        data: {
+          summary,
+        },
+      };
+    });
 
     this.messageBus.registerHandler(
       'session.config.setApprovalMode',
-      async (data: {
-        cwd: string;
-        sessionId: string;
-        approvalMode: ApprovalMode;
-      }) => {
+      async (data) => {
         const { cwd, sessionId, approvalMode } = data;
         const context = await this.getContext(cwd);
         const sessionConfigManager = new SessionConfigManager({
@@ -1507,11 +1397,7 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'session.config.addApprovalTools',
-      async (data: {
-        cwd: string;
-        sessionId: string;
-        approvalTool: string;
-      }) => {
+      async (data) => {
         const { cwd, sessionId, approvalTool } = data;
         const context = await this.getContext(cwd);
         const sessionConfigManager = new SessionConfigManager({
@@ -1529,7 +1415,7 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'session.config.setSummary',
-      async (data: { cwd: string; sessionId: string; summary: string }) => {
+      async (data) => {
         const { cwd, sessionId, summary } = data;
         const context = await this.getContext(cwd);
         const sessionConfigManager = new SessionConfigManager({
@@ -1545,11 +1431,7 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'session.config.setPastedTextMap',
-      async (data: {
-        cwd: string;
-        sessionId: string;
-        pastedTextMap: Record<string, string>;
-      }) => {
+      async (data) => {
         const { cwd, sessionId, pastedTextMap } = data;
         const context = await this.getContext(cwd);
         const sessionConfigManager = new SessionConfigManager({
@@ -1565,11 +1447,7 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'session.config.setPastedImageMap',
-      async (data: {
-        cwd: string;
-        sessionId: string;
-        pastedImageMap: Record<string, string>;
-      }) => {
+      async (data) => {
         const { cwd, sessionId, pastedImageMap } = data;
         const context = await this.getContext(cwd);
         const sessionConfigManager = new SessionConfigManager({
@@ -1585,7 +1463,7 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'session.config.getAdditionalDirectories',
-      async (data: { cwd: string; sessionId: string }) => {
+      async (data) => {
         const { cwd, sessionId } = data;
         const context = await this.getContext(cwd);
         const sessionConfigManager = new SessionConfigManager({
@@ -1603,7 +1481,7 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'session.config.addDirectory',
-      async (data: { cwd: string; sessionId: string; directory: string }) => {
+      async (data) => {
         const { cwd, sessionId, directory } = data;
         const context = await this.getContext(cwd);
         const sessionConfigManager = new SessionConfigManager({
@@ -1624,7 +1502,7 @@ class NodeHandlerRegistry {
 
     this.messageBus.registerHandler(
       'session.config.removeDirectory',
-      async (data: { cwd: string; sessionId: string; directory: string }) => {
+      async (data) => {
         const { cwd, sessionId, directory } = data;
         const context = await this.getContext(cwd);
         const sessionConfigManager = new SessionConfigManager({
@@ -1644,362 +1522,297 @@ class NodeHandlerRegistry {
 
     //////////////////////////////////////////////
     // sessions
-    this.messageBus.registerHandler(
-      'sessions.list',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
-        const context = await this.getContext(cwd);
-        const sessions = context.paths.getAllSessions();
-        return {
-          success: true,
-          data: {
-            sessions,
-          },
-        };
-      },
-    );
+    this.messageBus.registerHandler('sessions.list', async (data) => {
+      const { cwd } = data;
+      const context = await this.getContext(cwd);
+      const sessions = context.paths.getAllSessions();
+      return {
+        success: true,
+        data: {
+          sessions,
+        },
+      };
+    });
 
-    this.messageBus.registerHandler(
-      'sessions.resume',
-      async (data: { cwd: string; sessionId: string }) => {
-        const { cwd, sessionId } = data;
-        const context = await this.getContext(cwd);
-        return {
-          success: true,
-          data: {
-            sessionId,
-            logFile: context.paths.getSessionLogPath(sessionId),
-          },
-        };
-      },
-    );
+    this.messageBus.registerHandler('sessions.resume', async (data) => {
+      const { cwd, sessionId } = data;
+      const context = await this.getContext(cwd);
+      return {
+        success: true,
+        data: {
+          sessionId,
+          logFile: context.paths.getSessionLogPath(sessionId),
+        },
+      };
+    });
 
     //////////////////////////////////////////////
     // slashCommand
-    this.messageBus.registerHandler(
-      'slashCommand.list',
-      async (data: { cwd: string }) => {
-        const { cwd } = data;
-        const context = await this.getContext(cwd);
-        const slashCommandManager = await SlashCommandManager.create(context);
+    this.messageBus.registerHandler('slashCommand.list', async (data) => {
+      const { cwd } = data;
+      const context = await this.getContext(cwd);
+      const slashCommandManager = await SlashCommandManager.create(context);
+      return {
+        success: true,
+        data: {
+          slashCommands: slashCommandManager.getAll(),
+        },
+      };
+    });
+
+    this.messageBus.registerHandler('slashCommand.get', async (data) => {
+      const { cwd, command } = data;
+      const context = await this.getContext(cwd);
+      const slashCommandManager = await SlashCommandManager.create(context);
+      const commandEntry = slashCommandManager.get(command);
+      return {
+        success: true,
+        data: {
+          commandEntry,
+        },
+      };
+    });
+
+    this.messageBus.registerHandler('slashCommand.execute', async (data) => {
+      const { cwd, command, args } = data;
+      const context = await this.getContext(cwd);
+      const slashCommandManager = await SlashCommandManager.create(context);
+      const commandEntry = slashCommandManager.get(command);
+      if (!commandEntry) {
         return {
           success: true,
           data: {
-            slashCommands: slashCommandManager.getAll(),
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: `Command ${command} not found` },
+                ],
+              },
+            ],
           },
         };
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'slashCommand.get',
-      async (data: { cwd: string; command: string }) => {
-        const { cwd, command } = data;
-        const context = await this.getContext(cwd);
-        const slashCommandManager = await SlashCommandManager.create(context);
-        const commandEntry = slashCommandManager.get(command);
+      }
+      const type = commandEntry.command.type;
+      if (type === 'local') {
+        const result = await commandEntry.command.call(args, context as any);
         return {
           success: true,
           data: {
-            commandEntry,
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  {
+                    type: 'text',
+                    text: result,
+                  },
+                ],
+              },
+            ],
           },
         };
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'slashCommand.execute',
-      async (data: {
-        cwd: string;
-        sessionId: string;
-        command: string;
-        args: string;
-      }) => {
-        const { cwd, command, args } = data;
-        const context = await this.getContext(cwd);
-        const slashCommandManager = await SlashCommandManager.create(context);
-        const commandEntry = slashCommandManager.get(command);
-        if (!commandEntry) {
-          return {
-            success: true,
-            data: {
-              messages: [
-                {
-                  role: 'user',
-                  content: [
-                    { type: 'text', text: `Command ${command} not found` },
-                  ],
-                },
-              ],
-            },
-          };
-        }
-        const type = commandEntry.command.type;
-        if (type === 'local') {
-          const result = await commandEntry.command.call(args, context as any);
-          return {
-            success: true,
-            data: {
-              messages: [
-                {
-                  role: 'user',
-                  content: [
-                    {
-                      type: 'text',
-                      text: result,
-                    },
-                  ],
-                },
-              ],
-            },
-          };
-        } else if (type === 'prompt') {
-          const messages = (await commandEntry.command.getPromptForCommand(
-            args,
-          )) as Message[];
-          for (const message of messages) {
-            if (message.role === 'user') {
-              (message as UserMessage).hidden = true;
-            }
-            if (
-              message.role === 'user' &&
-              typeof message.content === 'string'
-            ) {
-              message.content = [
-                {
-                  type: 'text',
-                  text: message.content,
-                },
-              ];
-            }
+      } else if (type === 'prompt') {
+        const messages = (await commandEntry.command.getPromptForCommand(
+          args,
+        )) as Message[];
+        for (const message of messages) {
+          if (message.role === 'user') {
+            (message as UserMessage).hidden = true;
           }
-          return {
-            success: true,
-            data: {
-              messages,
-            },
-          };
-        } else {
-          return {
-            success: true,
-            data: {
-              messages: [
-                {
-                  role: 'user',
-                  content: [
-                    {
-                      type: 'text',
-                      text: `Unknown slash command type: ${type}`,
-                    },
-                  ],
-                },
-              ],
-            },
-          };
+          if (message.role === 'user' && typeof message.content === 'string') {
+            message.content = [
+              {
+                type: 'text',
+                text: message.content,
+              },
+            ];
+          }
         }
-      },
-    );
+        return {
+          success: true,
+          data: {
+            messages,
+          },
+        };
+      } else {
+        return {
+          success: true,
+          data: {
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  {
+                    type: 'text',
+                    text: `Unknown slash command type: ${type}`,
+                  },
+                ],
+              },
+            ],
+          },
+        };
+      }
+    });
 
     //////////////////////////////////////////////
     // status
-    this.messageBus.registerHandler(
-      'status.get',
-      async (data: { cwd: string; sessionId: string }) => {
-        const { cwd, sessionId } = data;
-        const context = await this.getContext(cwd);
-        const memo = {
-          [`${context.productName}`]: {
-            description: `v${context.version}`,
-            items: [context.paths.getSessionLogPath(sessionId)],
-          },
-          'Working Directory': {
-            items: [cwd],
-          },
-          Model: {
-            items: [context.config.model],
-          },
-        };
-        const status = await context.apply({
-          hook: 'status',
-          args: [],
-          memo,
-          type: PluginHookType.SeriesMerge,
-        });
-        return {
-          success: true,
-          data: {
-            status,
-          },
-        };
-      },
-    );
+    this.messageBus.registerHandler('status.get', async (data) => {
+      const { cwd, sessionId } = data;
+      const context = await this.getContext(cwd);
+      const memo = {
+        [`${context.productName}`]: {
+          description: `v${context.version}`,
+          items: [context.paths.getSessionLogPath(sessionId)],
+        },
+        'Working Directory': {
+          items: [cwd],
+        },
+        Model: {
+          items: [context.config.model],
+        },
+      };
+      const status = await context.apply({
+        hook: 'status',
+        args: [],
+        memo,
+        type: PluginHookType.SeriesMerge,
+      });
+      return {
+        success: true,
+        data: {
+          status,
+        },
+      };
+    });
 
     //////////////////////////////////////////////
     // utils
-    this.messageBus.registerHandler(
-      'utils.query',
-      async (data: {
-        userPrompt: string;
-        cwd: string;
-        systemPrompt?: string;
-        model?: string;
-        thinking?: ThinkingConfig;
-        responseFormat?: ResponseFormat;
-      }) => {
-        const { userPrompt, cwd, systemPrompt } = data;
-        const context = await this.getContext(cwd);
-        const { model } = await resolveModelWithContext(
-          data.model || context.config.model || null,
-          context,
-        );
-        const result = await query({
-          userPrompt,
-          context,
-          systemPrompt,
-          model: model!,
-          thinking: data.thinking,
-          responseFormat: data.responseFormat,
-        });
-        return result;
-      },
-    );
+    this.messageBus.registerHandler('utils.query', async (data) => {
+      const { userPrompt, cwd, systemPrompt } = data;
+      const context = await this.getContext(cwd);
+      const { model } = await resolveModelWithContext(
+        data.model || context.config.model || null,
+        context,
+      );
+      const result = await query({
+        userPrompt,
+        context,
+        systemPrompt,
+        model: model!,
+        thinking: data.thinking,
+        responseFormat: data.responseFormat,
+      });
+      return result;
+    });
 
-    this.messageBus.registerHandler(
-      'utils.quickQuery',
-      async (data: {
-        userPrompt: string;
-        cwd: string;
-        systemPrompt?: string;
-        model?: string;
-        thinking?: ThinkingConfig;
-        responseFormat?: ResponseFormat;
-      }) => {
-        const { cwd } = data;
-        const context = await this.getContext(cwd);
-        return await this.messageBus.messageHandlers.get('utils.query')?.({
-          userPrompt: data.userPrompt,
-          cwd,
-          systemPrompt: data.systemPrompt,
-          model: data.model || context.config.smallModel || null,
-          thinking: data.thinking,
-          responseFormat: data.responseFormat,
-        });
-      },
-    );
+    this.messageBus.registerHandler('utils.quickQuery', async (data) => {
+      const { cwd } = data;
+      const context = await this.getContext(cwd);
+      return await this.messageBus.messageHandlers.get('utils.query')?.({
+        userPrompt: data.userPrompt,
+        cwd,
+        systemPrompt: data.systemPrompt,
+        model: data.model || context.config.smallModel || null,
+        thinking: data.thinking,
+        responseFormat: data.responseFormat,
+      });
+    });
 
-    this.messageBus.registerHandler(
-      'utils.summarizeMessage',
-      async (data: { message: string; cwd: string; model?: string }) => {
-        const { message, cwd, model } = data;
-        return await this.messageBus.messageHandlers.get('utils.quickQuery')?.({
-          model,
-          userPrompt: message,
-          cwd,
-          systemPrompt:
-            "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with one field: 'title' (string).",
-          responseFormat: {
-            type: 'json',
-            schema: z.toJSONSchema(
-              z.object({
-                title: z.string().nullable(),
-              }),
-            ),
-          },
-        });
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'utils.getPaths',
-      async (data: { cwd: string; maxFiles?: number }) => {
-        const { cwd, maxFiles = 6000 } = data;
-        const context = await this.getContext(cwd);
-        const result = listDirectory(
-          context.cwd,
-          context.cwd,
-          context.productName,
-          maxFiles,
-        );
-        return {
-          success: true,
-          data: {
-            paths: result,
-          },
-        };
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'utils.telemetry',
-      async (data: {
-        cwd: string;
-        name: string;
-        payload: Record<string, any>;
-      }) => {
-        const { cwd, name, payload } = data;
-        const context = await this.getContext(cwd);
-        await context.apply({
-          hook: 'telemetry',
-          args: [
-            {
-              name,
-              payload,
-            },
-          ],
-          type: PluginHookType.Parallel,
-        });
-        return {
-          success: true,
-        };
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'utils.files.list',
-      async (data: { cwd: string; query?: string }) => {
-        const { cwd, query } = data;
-        const context = await this.getContext(cwd);
-        return {
-          success: true,
-          data: {
-            files: await getFiles({
-              cwd,
-              maxSize: 50,
-              productName: context.productName,
-              query: query || '',
+    this.messageBus.registerHandler('utils.summarizeMessage', async (data) => {
+      const { message, cwd, model } = data;
+      return await this.messageBus.messageHandlers.get('utils.quickQuery')?.({
+        model,
+        userPrompt: message,
+        cwd,
+        systemPrompt:
+          "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with one field: 'title' (string).",
+        responseFormat: {
+          type: 'json',
+          schema: z.toJSONSchema(
+            z.object({
+              title: z.string().nullable(),
             }),
+          ),
+        },
+      });
+    });
+
+    this.messageBus.registerHandler('utils.getPaths', async (data) => {
+      const { cwd, maxFiles = 6000 } = data;
+      const context = await this.getContext(cwd);
+      const result = listDirectory(
+        context.cwd,
+        context.cwd,
+        context.productName,
+        maxFiles,
+      );
+      return {
+        success: true,
+        data: {
+          paths: result,
+        },
+      };
+    });
+
+    this.messageBus.registerHandler('utils.telemetry', async (data) => {
+      const { cwd, name, payload } = data;
+      const context = await this.getContext(cwd);
+      await context.apply({
+        hook: 'telemetry',
+        args: [
+          {
+            name,
+            payload,
+          },
+        ],
+        type: PluginHookType.Parallel,
+      });
+      return {
+        success: true,
+      };
+    });
+
+    this.messageBus.registerHandler('utils.files.list', async (data) => {
+      const { cwd, query } = data;
+      const context = await this.getContext(cwd);
+      return {
+        success: true,
+        data: {
+          files: await getFiles({
+            cwd,
+            maxSize: 50,
+            productName: context.productName,
+            query: query || '',
+          }),
+        },
+      };
+    });
+
+    this.messageBus.registerHandler('utils.tool.executeBash', async (data) => {
+      const { cwd, command } = data;
+      const { createBashTool } = await import('./tools/bash');
+      const context = await this.getContext(cwd);
+      const bashTool = createBashTool({
+        cwd,
+        backgroundTaskManager: context.backgroundTaskManager,
+      });
+
+      try {
+        const result = await bashTool.execute({ command });
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: {
+            message: error instanceof Error ? error.message : String(error),
           },
         };
-      },
-    );
-
-    this.messageBus.registerHandler(
-      'utils.tool.executeBash',
-      async (data: { cwd: string; command: string }) => {
-        const { cwd, command } = data;
-        const { createBashTool } = await import('./tools/bash');
-        const context = await this.getContext(cwd);
-        const bashTool = createBashTool({
-          cwd,
-          backgroundTaskManager: context.backgroundTaskManager,
-        });
-
-        try {
-          const result = await bashTool.execute({ command });
-          return {
-            success: true,
-            data: result,
-          };
-        } catch (error) {
-          return {
-            success: false,
-            error: {
-              message: error instanceof Error ? error.message : String(error),
-            },
-          };
-        }
-      },
-    );
+      }
+    });
   }
 }
 

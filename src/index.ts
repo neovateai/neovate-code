@@ -55,6 +55,7 @@ type Argv = {
   visionModel?: string;
   resume?: string;
   systemPrompt?: string;
+  tools?: string;
   // array
   plugin: string[];
   mcpConfig: string[];
@@ -91,6 +92,7 @@ async function parseArgs(argv: any) {
       'visionModel',
       'resume',
       'systemPrompt',
+      'tools',
     ],
   }) as Argv;
   if (args.resume && args.continue) {
@@ -129,10 +131,13 @@ Options:
   --output-style <style>        Output style (name or path)
   --approval-mode <mode>        Tool approval mode, default, autoEdit, yolo
   --mcp-config <config>         MCP server configuration (JSON string with "mcpServers" object or file path)
+  --tools <json>                Tools configuration (JSON object with tool names as keys and boolean values)
 
 Examples:
   ${p} "Refactor this file to use hooks."
   ${p} -m gpt-4o "Add tests for the following code."
+  ${p} --tools '{"write":false}' "analyze this code"
+  ${p} --tools '{"bash":false,"write":false}' "explain the logic"
 
 Commands:
   config                        Manage configuration
@@ -292,6 +297,29 @@ export async function runNeovate(opts: {
   // Parse MCP config if provided
   const mcpServers = parseMcpConfig(argv.mcpConfig || [], cwd);
 
+  let toolsConfig: Record<string, boolean> | undefined;
+  if (argv.tools) {
+    try {
+      toolsConfig = JSON.parse(argv.tools);
+      if (typeof toolsConfig !== 'object' || Array.isArray(toolsConfig)) {
+        throw new Error('must be a JSON object like {"write":false}');
+      }
+      for (const [name, value] of Object.entries(toolsConfig)) {
+        if (typeof value !== 'boolean') {
+          throw new Error(
+            `tool "${name}" must be true or false, got: ${value}`,
+          );
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('Error: Invalid --tools parameter');
+      console.error(`  ${message}`);
+      console.error(`  Example: --tools '{"write":false,"bash":false}'`);
+      process.exit(1);
+    }
+  }
+
   const contextCreateOpts = {
     productName: opts.productName,
     productASCIIArt: opts.productASCIIArt,
@@ -311,6 +339,7 @@ export async function runNeovate(opts: {
       approvalMode: argv.approvalMode,
       mcpServers,
       browser: argv.browser,
+      tools: toolsConfig,
     },
     plugins: opts.plugins,
   };

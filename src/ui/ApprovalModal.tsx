@@ -3,7 +3,10 @@ import { Box, Text, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import path from 'pathe';
 import React, { useMemo } from 'react';
+import { TOOL_NAMES } from '../constants';
 import type { ToolUse as ToolUseType } from '../tool';
+import type { Question } from '../tools/askUserQuestion';
+import { AskQuestionModal } from './AskQuestionModal';
 import { UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
 import { type ApprovalResult, useAppStore } from './store';
@@ -64,6 +67,47 @@ export function ApprovalModal() {
   if (!approvalModal) {
     return null;
   }
+
+  // Special handling for askUserQuestion tool
+  if (approvalModal?.toolUse.name === TOOL_NAMES.ASK_USER_QUESTION) {
+    const questions = (approvalModal?.toolUse.params.questions ||
+      []) as Question[];
+
+    // Validate questions
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return (
+        <Box
+          flexDirection="column"
+          padding={1}
+          borderStyle="round"
+          borderColor="red"
+        >
+          <Text color="red" bold>
+            Invalid Questions
+          </Text>
+          <Text>No questions provided to askUserQuestion tool</Text>
+        </Box>
+      );
+    }
+
+    return (
+      <AskQuestionModal
+        questions={questions}
+        onResolve={(result, updatedAnswers) => {
+          const shouldUpdateParams = updatedAnswers && result !== 'deny';
+          const newParams: Record<string, unknown> | undefined =
+            shouldUpdateParams
+              ? {
+                  ...approvalModal.toolUse.params,
+                  answers: updatedAnswers,
+                }
+              : undefined;
+          approvalModal.resolve(result, newParams);
+        }}
+      />
+    );
+  }
+
   return <ApprovalModalContent />;
 }
 

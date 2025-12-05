@@ -4,6 +4,7 @@ import * as z from 'zod';
 import type { Context } from './context';
 import type { ImagePart, TextPart } from './message';
 import { resolveModelWithContext } from './model';
+import { createAskUserQuestionTool } from './tools/askUserQuestion';
 import {
   createBashOutputTool,
   createBashTool,
@@ -24,6 +25,7 @@ type ResolveToolsOpts = {
   sessionId: string;
   write?: boolean;
   todo?: boolean;
+  askUserQuestion?: boolean;
 };
 
 export async function resolveTools(opts: ResolveToolsOpts) {
@@ -40,6 +42,9 @@ export async function resolveTools(opts: ResolveToolsOpts) {
     createFetchTool({ model }),
     createSearchTool({ context: opts.context }),
   ];
+  const askUserQuestionTools = opts.askUserQuestion
+    ? [createAskUserQuestionTool()]
+    : [];
   const writeTools = opts.write
     ? [
         createWriteTool({ cwd }),
@@ -69,13 +74,26 @@ export async function resolveTools(opts: ResolveToolsOpts) {
       ]
     : [];
   const mcpTools = await getMcpTools(opts.context);
-  return [
+
+  const allTools = [
     ...readonlyTools,
+    ...askUserQuestionTools,
     ...writeTools,
     ...todoTools,
     ...backgroundTools,
     ...mcpTools,
   ];
+
+  const toolsConfig = opts.context.config.tools;
+  if (!toolsConfig || Object.keys(toolsConfig).length === 0) {
+    return allTools;
+  }
+
+  return allTools.filter((tool) => {
+    // Check if the tool is disabled (only explicitly set to false will disable)
+    const isDisabled = toolsConfig[tool.name] === false;
+    return !isDisabled;
+  });
 }
 
 async function getMcpTools(context: Context): Promise<Tool[]> {
@@ -225,7 +243,7 @@ type ApprovalContext = {
   context: any;
 };
 
-export type ApprovalCategory = 'read' | 'write' | 'command' | 'network';
+export type ApprovalCategory = 'read' | 'write' | 'command' | 'network' | 'ask';
 
 type ToolApprovalInfo = {
   needsApproval?: (context: ApprovalContext) => Promise<boolean> | boolean;
@@ -286,3 +304,12 @@ export function createTool<TSchema extends z.ZodTypeAny>(config: {
     approval: config.approval,
   };
 }
+
+export type ToolParams = Record<string, unknown>;
+
+export type ToolApprovalResult =
+  | boolean
+  | {
+      approved: boolean;
+      params?: ToolParams;
+    };

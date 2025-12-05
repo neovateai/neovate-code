@@ -167,6 +167,20 @@ export async function ensureCleanWorkingDirectory(cwd: string): Promise<void> {
 }
 
 /**
+ * Verify that a branch exists
+ */
+export async function verifyBranchExists(
+  cwd: string,
+  branch: string,
+): Promise<void> {
+  try {
+    await execGit(cwd, `rev-parse --verify ${branch}`);
+  } catch {
+    throw new Error(`Branch '${branch}' does not exist.`);
+  }
+}
+
+/**
  * Detect main branch (main or master)
  */
 export async function detectMainBranch(cwd: string): Promise<string> {

@@ -1,4 +1,5 @@
 import EventEmitter from 'events';
+import type { HandlerMap } from './nodeBridge.types';
 import { randomUUID } from './utils/randomUUID';
 
 export type MessageId = string;
@@ -199,11 +200,25 @@ export class MessageBus extends EventEmitter {
   isConnected() {
     return this.transport?.isConnected() ?? false;
   }
+
+  // Typed overload for known handler methods
+  async request<K extends keyof HandlerMap>(
+    method: K,
+    params: HandlerMap[K]['input'],
+    options?: { timeout?: number },
+  ): Promise<HandlerMap[K]['output']>;
+  // Untyped overload for dynamic/unknown handler methods
+  async request(
+    method: string,
+    params: any,
+    options?: { timeout?: number },
+  ): Promise<any>;
+  // Implementation
   async request(
     method: string,
     params: any,
     options: { timeout?: number } = {},
-  ) {
+  ): Promise<any> {
     if (!this.transport) {
       throw new Error('No transport available');
     }
@@ -244,6 +259,14 @@ export class MessageBus extends EventEmitter {
       throw error;
     }
   }
+  // Typed overload for known handler methods
+  registerHandler<K extends keyof HandlerMap>(
+    method: K,
+    handler: (data: HandlerMap[K]['input']) => Promise<HandlerMap[K]['output']>,
+  ): void;
+  // Untyped overload for dynamic/unknown handler methods
+  registerHandler(method: string, handler: MessageHandler): void;
+  // Implementation
   registerHandler(method: string, handler: MessageHandler) {
     this.messageHandlers.set(method, handler);
   }

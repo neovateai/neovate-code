@@ -1,5 +1,6 @@
-import { type EventHandler, MessageBus } from './messageBus';
 import { BASH_EVENTS } from './constants';
+import { type EventHandler, MessageBus } from './messageBus';
+import type { HandlerMap } from './nodeBridge.types';
 import type { ApprovalCategory, ToolUse } from './tool';
 import type { AppStore, BashPromptBackgroundEvent } from './ui/store';
 
@@ -11,6 +12,19 @@ export class UIBridge {
     this.messageBus = new MessageBus();
     new UIHandlerRegistry(this.messageBus, this.appStore);
   }
+  // Typed overload for known handler methods
+  request<K extends keyof HandlerMap>(
+    method: K,
+    params: HandlerMap[K]['input'],
+    options?: { timeout?: number },
+  ): Promise<HandlerMap[K]['output']>;
+  // Untyped overload for dynamic/unknown handler methods
+  request(
+    method: string,
+    params: any,
+    options?: { timeout?: number },
+  ): Promise<any>;
+  // Implementation
   request(method: string, params: any, options: { timeout?: number } = {}) {
     return this.messageBus.request(method, params, options);
   }
@@ -51,7 +65,10 @@ class UIHandlerRegistry {
           toolUse,
           category,
         });
-        return { approved: result };
+        return {
+          approved: result.approved,
+          params: result.params,
+        };
       },
     );
 

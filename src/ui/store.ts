@@ -122,7 +122,10 @@ interface AppState {
   approvalModal: {
     toolUse: ToolUse;
     category?: ApprovalCategory;
-    resolve: (result: ApprovalResult) => Promise<void>;
+    resolve: (
+      result: ApprovalResult,
+      params?: Record<string, unknown>,
+    ) => Promise<void>;
   } | null;
 
   memoryModal: {
@@ -180,7 +183,7 @@ interface AppActions {
   }: {
     toolUse: ToolUse;
     category?: ApprovalCategory;
-  }) => Promise<ApprovalResult>;
+  }) => Promise<{ approved: boolean; params?: Record<string, unknown> }>;
   showMemoryModal: (rule: string) => Promise<'project' | 'global' | null>;
   addToQueue: (message: string) => void;
   clearQueue: () => void;
@@ -931,12 +934,18 @@ export const useAppStore = create<AppStore>()(
         category?: ApprovalCategory;
       }) => {
         const { bridge, cwd, sessionId } = get();
-        return new Promise<boolean>((resolve) => {
+        return new Promise<{
+          approved: boolean;
+          params?: Record<string, unknown>;
+        }>((resolve) => {
           set({
             approvalModal: {
               toolUse,
               category,
-              resolve: async (result: ApprovalResult) => {
+              resolve: async (
+                result: ApprovalResult,
+                params?: Record<string, unknown>,
+              ) => {
                 set({ approvalModal: null });
                 const isApproved = result !== 'deny';
                 if (result === 'approve_always_edit') {
@@ -952,7 +961,10 @@ export const useAppStore = create<AppStore>()(
                     approvalTool: toolUse.name,
                   });
                 }
-                resolve(isApproved);
+                resolve({
+                  approved: isApproved,
+                  params: isApproved ? params : undefined,
+                });
               },
             },
           });

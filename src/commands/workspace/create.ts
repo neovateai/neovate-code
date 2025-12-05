@@ -10,6 +10,7 @@ import {
   getCurrentBranch,
   getGitRoot,
   updateMainBranch,
+  verifyBranchExists,
 } from '../../worktree';
 import { WorkspaceSuccessMessage } from './components';
 
@@ -21,13 +22,22 @@ export async function runCreate(context: Context, argv: any) {
     // Step 1: Ensure clean working directory
     await ensureCleanWorkingDirectory(cwd);
 
-    // Step 2: Detect main branch
-    const mainBranch = await detectMainBranch(cwd);
+    // Step 2: Determine base branch (user-specified or detect main branch)
+    let baseBranch: string;
+    if (argv.branch) {
+      // Verify the specified branch exists
+      await verifyBranchExists(cwd, argv.branch);
+      baseBranch = argv.branch;
+      console.log(`Using branch '${baseBranch}' as base...`);
+    } else {
+      // Detect main branch
+      baseBranch = await detectMainBranch(cwd);
 
-    // Step 3: Update main branch from remote (unless --skip-update)
-    if (!argv['skip-update']) {
-      console.log(`Updating ${mainBranch} branch from remote...`);
-      await updateMainBranch(cwd, mainBranch, argv['skip-update']);
+      // Step 3: Update main branch from remote (unless --skip-update)
+      if (!argv['skip-update']) {
+        console.log(`Updating ${baseBranch} branch from remote...`);
+        await updateMainBranch(cwd, baseBranch, argv['skip-update']);
+      }
     }
 
     // Step 4: Get current branch to save as original
@@ -39,7 +49,7 @@ export async function runCreate(context: Context, argv: any) {
     // Step 6: Create worktree
     console.log(`Creating workspace '${name}'...`);
     const worktree = await createWorktree(cwd, name, {
-      baseBranch: mainBranch,
+      baseBranch,
       workspacesDir: `.${productName}-workspaces`,
     });
 
@@ -66,7 +76,7 @@ export async function runCreate(context: Context, argv: any) {
     metadata[name] = {
       originalBranch,
       createdAt: new Date().toISOString(),
-      baseBranch: mainBranch,
+      baseBranch,
     };
 
     // Ensure .neovate-workspaces directory exists
