@@ -177,7 +177,7 @@ function ApprovalModalContent() {
 }
 
 function getDiffParams(toolUse: ToolUseType, cwd: string) {
-  const { content = '', file_path } = toolUse.params;
+  const { file_path } = toolUse.params;
   const fullFilePath = path.isAbsolute(file_path)
     ? file_path
     : path.resolve(cwd, file_path);
@@ -188,15 +188,38 @@ function getDiffParams(toolUse: ToolUseType, cwd: string) {
     const oldContent = existsSync(fullFilePath)
       ? readFileSync(fullFilePath, 'utf-8')
       : '';
+
+    let newContent: string;
+
+    if (toolUse.name === 'edit') {
+      // For edit tool, use old_string and new_string parameters
+      const { old_string = '', new_string = '' } = toolUse.params;
+      newContent = oldContent.replace(old_string, new_string);
+    } else {
+      // For write tool, use content parameter
+      const { content = '' } = toolUse.params;
+      newContent = content;
+    }
+
     return {
       originalContent: oldContent,
-      newContent: content,
+      newContent: newContent,
       fileName: relativeFilePath,
     };
   } catch (error) {
+    let newContent: string;
+
+    if (toolUse.name === 'edit') {
+      const { new_string = '' } = toolUse.params;
+      newContent = new_string;
+    } else {
+      const { content = '' } = toolUse.params;
+      newContent = content;
+    }
+
     return {
       originalContent: '',
-      newContent: content,
+      newContent: newContent,
       fileName: relativeFilePath,
     };
   }
