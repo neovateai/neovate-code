@@ -64,6 +64,14 @@ function StatusMain() {
       }
     }, 0);
   }, [messages]);
+
+  const tokenUsedDisplay = useMemo(() => {
+    if (tokenUsed > 1000000) {
+      return `${(tokenUsed / 1000000).toFixed(2)}M`;
+    }
+    return `${(tokenUsed / 1000).toFixed(1)}K`;
+  }, [tokenUsed]);
+
   const lastAssistantTokenUsed = useMemo(() => {
     // Find the last message with parentUuid === null (start of last conversation turn)
     let lastTurnStartIndex = -1;
@@ -129,8 +137,7 @@ function StatusMain() {
         ) : (
           <Text color="red">use /model to select a model</Text>
         )}
-        <ThinkingIndicator />] | {folderName} | {(tokenUsed / 1000).toFixed(1)}K
-        |{' '}
+        <ThinkingIndicator />] | {folderName} | {tokenUsedDisplay} |{' '}
         <Text color={getContextLeftColor(contextLeftPercentage)}>
           {contextLeftPercentage}%
         </Text>{' '}
