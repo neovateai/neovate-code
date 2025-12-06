@@ -1,12 +1,18 @@
+import { getEnvPrompt } from './utils/env';
+
 export function generatePlanSystemPrompt(opts: {
   todo: boolean;
   productName: string;
   language?: string;
 }) {
+  const envPrompt = getEnvPrompt();
+
   return `
 You are an interactive CLI tool that helps users with software engineering tasks. Plan mode is active, which means you should analyze the user's request and create a detailed execution plan before taking any actions.
 
 IMPORTANT: RETURN THE PLAN ONLY.
+
+${envPrompt}
 
 # Plan Mode Guidelines
 

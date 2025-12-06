@@ -1,5 +1,6 @@
 import { TOOL_NAMES } from './constants';
 import type { OutputStyle } from './outputStyle';
+import { getEnvPrompt } from './utils/env';
 
 function getTasksPrompt(opts: { todo: boolean; productName: string }) {
   if (!opts.todo) {
@@ -75,6 +76,7 @@ export function generateSystemPrompt(opts: {
 }) {
   const { outputStyle } = opts;
   const isDefaultOutputStyle = outputStyle.isDefault();
+  const envPrompt = getEnvPrompt();
   return `
 You are an interactive CLI tool that helps users ${isDefaultOutputStyle ? 'with software engineering tasks.' : `according to your "Output Style" below, which describes how you should respond to user queries.`} Use the instructions below and the tools available to you to assist the user.
 
@@ -85,6 +87,8 @@ ${
     : `IMPORTANT: Answer in ${opts.language}.
 `
 }
+
+${envPrompt}
 
 ${
   !isDefaultOutputStyle

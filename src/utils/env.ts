@@ -88,3 +88,23 @@ export async function getEnv() {
     terminal: getTerminal(),
   };
 }
+
+export function getEnvPrompt() {
+  const terminal = getTerminal();
+  const shell = process.platform === 'win32' ? 'PowerShell' : 'Bash';
+  const platform =
+    process.platform === 'win32'
+      ? 'windows'
+      : process.platform === 'darwin'
+        ? 'macos'
+        : 'linux';
+
+  return `
+# Runtime Environment
+- Platform: ${platform}
+- Terminal: ${terminal || 'unknown'}
+- Shell: ${shell}
+- Node Version: ${process.version}
+- Architecture: ${process.arch}
+  `;
+}
