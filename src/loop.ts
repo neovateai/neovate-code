@@ -26,11 +26,42 @@ import type {
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
 import { safeParseJson } from './utils/safeParseJson';
+import { groupToolCallsForParallelExecution } from './utils/toolGrouping';
 
 const DEFAULT_MAX_TURNS = 50;
 const DEFAULT_ERROR_RETRY_TURNS = 10;
 
 const debug = createDebug('neovate:loop');
+
+/**
+ * Tool execution result with unified type structure
+ */
+type ToolExecutionResult = {
+  toolCallId: string;
+  toolName: string;
+  input: any;
+  result: ToolResult;
+  approved: boolean;
+  deniedToolUse?: ToolUse;
+};
+
+/**
+ * Tool call input structure from AI model
+ */
+type ToolCallInput = {
+  toolCallId: string;
+  toolName: string;
+  input: string;
+  providerMetadata?: any;
+};
+
+/**
+ * Tool call parameters structure
+ */
+type ToolCallParams = {
+  file_path?: string;
+  [key: string]: any;
+};
 
 async function exponentialBackoffWithCancellation(
   attempt: number,
@@ -238,12 +269,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
 
     let text = '';
     let reasoning = '';
-    const toolCalls: Array<{
-      providerMetadata?: any;
-      toolCallId: string;
-      toolName: string;
-      input: string;
-    }> = [];
+    const toolCalls: ToolCallInput[] = [];
 
     const requestId = randomUUID();
     const m: LanguageModelV2 = await opts.model._mCreator();
@@ -477,8 +503,48 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       break;
     }
 
-    const toolResults: any[] = [];
-    for (const toolCall of toolCalls) {
+    const toolResults: ToolExecutionResult[] = [];
+
+    // Helper function to add tool results to history
+    const addToolResultsToHistory = async (
+      results: ToolExecutionResult[],
+    ): Promise<void> => {
+      await history.addMessage({
+        role: 'tool',
+        content: results.map((tr) => ({
+          type: 'tool-result' as const,
+          toolCallId: tr.toolCallId,
+          toolName: tr.toolName,
+          input: tr.input,
+          result: tr.result,
+        })),
+      } as any);
+    };
+
+    // Helper function to handle tool denial
+    const handleToolDenial = async (
+      results: ToolExecutionResult[],
+      deniedResult: ToolExecutionResult,
+    ): Promise<LoopResult> => {
+      await addToolResultsToHistory(results);
+      return {
+        success: false,
+        error: {
+          type: 'tool_denied',
+          message: 'Error: Tool execution was denied by user.',
+          details: {
+            toolUse: deniedResult.deniedToolUse,
+            history,
+            usage: totalUsage,
+          },
+        },
+      };
+    };
+
+    // Helper function to execute a single tool call
+    const executeSingleToolCall = async (
+      toolCall: ToolCallInput,
+    ): Promise<ToolExecutionResult> => {
       let toolUse: ToolUse = {
         name: toolCall.toolName,
         params: safeParseJson(toolCall.input),
@@ -501,7 +567,6 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       }
 
       if (approved) {
-        toolCallsCount++;
         if (updatedParams) {
           toolUse.params = { ...toolUse.params, ...updatedParams };
         }
@@ -512,14 +577,13 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         if (opts.onToolResult) {
           toolResult = await opts.onToolResult(toolUse, toolResult, approved);
         }
-        toolResults.push({
+        return {
           toolCallId: toolUse.callId,
           toolName: toolUse.name,
           input: toolUse.params,
           result: toolResult,
-        });
-        // Prevent normal turns from being terminated due to exceeding the limit
-        turnsCount--;
+          approved: true,
+        };
       } else {
         const message = 'Error: Tool execution was denied by user.';
         let toolResult: ToolResult = {
@@ -529,51 +593,97 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         if (opts.onToolResult) {
           toolResult = await opts.onToolResult(toolUse, toolResult, approved);
         }
-        toolResults.push({
+        return {
           toolCallId: toolUse.callId,
           toolName: toolUse.name,
           input: toolUse.params,
           result: toolResult,
-        });
-        await history.addMessage({
-          role: 'tool',
-          content: toolResults.map((tr) => {
-            return {
-              type: 'tool-result',
-              toolCallId: tr.toolCallId,
-              toolName: tr.toolName,
-              input: tr.input,
-              result: tr.result,
-            };
-          }),
-        } as any);
-        return {
-          success: false,
-          error: {
-            type: 'tool_denied',
-            message,
-            details: {
-              toolUse,
-              history,
-              usage: totalUsage,
-            },
-          },
+          approved: false,
+          deniedToolUse: toolUse,
         };
+      }
+    };
+
+    // Group tool calls for parallel execution
+    const toolGroups = groupToolCallsForParallelExecution(
+      toolCalls.map((tc) => ({
+        ...tc,
+        params: safeParseJson(tc.input) as ToolCallParams,
+      })),
+    );
+
+    // Debug: Log grouping information
+    debug(
+      'Tool calls grouped: %d total calls -> %d groups',
+      toolCalls.length,
+      toolGroups.length,
+    );
+    toolGroups.forEach((group, index) => {
+      debug(
+        'Group %d: %s, %d tools [%s]',
+        index,
+        group.canExecuteInParallel
+          ? group.isReadOnly
+            ? 'parallel/read-only'
+            : 'parallel/write'
+          : 'sequential',
+        group.toolCalls.length,
+        group.toolCalls.map((tc) => tc.toolName).join(', '),
+      );
+    });
+
+    for (const group of toolGroups) {
+      // Execute based on canExecuteInParallel flag
+      // The grouping logic already handles read-only vs write conflicts
+      if (!group.canExecuteInParallel) {
+        // Execute sequentially
+        debug('Executing group sequentially: %d tools', group.toolCalls.length);
+        for (const toolCall of group.toolCalls) {
+          const result = await executeSingleToolCall(toolCall);
+
+          if (result.approved) {
+            toolCallsCount++;
+            toolResults.push(result);
+            // Prevent normal turns from being terminated due to exceeding the limit
+            turnsCount--;
+          } else {
+            toolResults.push(result);
+            return handleToolDenial(toolResults, result);
+          }
+        }
+      } else {
+        // Execute in parallel
+        debug(
+          'Executing group in parallel: %d tools [%s]',
+          group.toolCalls.length,
+          group.toolCalls.map((tc) => tc.toolName).join(', '),
+        );
+        const groupStartTime = Date.now();
+        const groupResults = await Promise.all(
+          group.toolCalls.map((toolCall) => executeSingleToolCall(toolCall)),
+        );
+        const groupDuration = Date.now() - groupStartTime;
+        debug(
+          'Parallel execution completed in %dms: %d tools',
+          groupDuration,
+          groupResults.length,
+        );
+
+        // Check if any tool was denied
+        const denied = groupResults.find((r) => !r.approved);
+        if (denied) {
+          toolResults.push(...groupResults);
+          return handleToolDenial(toolResults, denied);
+        }
+
+        // All tools succeeded
+        toolCallsCount += groupResults.length;
+        turnsCount -= groupResults.length;
+        toolResults.push(...groupResults);
       }
     }
     if (toolResults.length) {
-      await history.addMessage({
-        role: 'tool',
-        content: toolResults.map((tr) => {
-          return {
-            type: 'tool-result',
-            toolCallId: tr.toolCallId,
-            toolName: tr.toolName,
-            input: tr.input,
-            result: tr.result,
-          };
-        }),
-      } as any);
+      await addToolResultsToHistory(toolResults);
     }
   }
   const duration = Date.now() - startTime;
