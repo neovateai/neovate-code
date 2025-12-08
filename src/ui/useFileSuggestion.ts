@@ -13,31 +13,56 @@ interface MatchResult {
   triggerType: TriggerType;
 }
 
-export function usePaths() {
+export function usePaths(query: string, hasQuery: boolean) {
   const { bridge, cwd } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
   const [paths, setPaths] = useState<string[]>([]);
   const [lastLoadTime, setLastLoadTime] = useState(0);
-  const loadPaths = useCallback(() => {
-    setIsLoading(true);
-    // TODO: improve this
-    // Now it's load only once
-    if (Date.now() - lastLoadTime < 600000000000) {
-      setIsLoading(false);
-      return;
+  const prevQueryRef = useRef('');
+
+  const loadPaths = useCallback(
+    (forceReload = false) => {
+      if (isLoading) {
+        return;
+      }
+
+      const CACHE_TIME = 60000;
+      if (!forceReload && Date.now() - lastLoadTime < CACHE_TIME) {
+        return;
+      }
+
+      setIsLoading(true);
+      bridge
+        .request('utils.getPaths', { cwd })
+        .then((res) => {
+          setPaths(res.data.paths);
+          setIsLoading(false);
+          setLastLoadTime(Date.now());
+        })
+        .catch((error) => {
+          console.error('Failed to get paths:', error);
+          setIsLoading(false);
+        });
+    },
+    [bridge, cwd, lastLoadTime, isLoading],
+  );
+
+  useEffect(() => {
+    if (prevQueryRef.current !== '' && query === '' && hasQuery) {
+      loadPaths(true);
     }
-    bridge
-      .request('utils.getPaths', { cwd })
-      .then((res) => {
-        setPaths(res.data.paths);
-        setIsLoading(false);
-        setLastLoadTime(Date.now());
-      })
-      .catch((error) => {
-        console.error('Failed to get paths:', error);
-        setIsLoading(false);
-      });
-  }, [bridge, cwd, lastLoadTime]);
+    prevQueryRef.current = query;
+  }, [query, hasQuery, loadPaths]);
+
+  useEffect(() => {
+    if (
+      hasQuery &&
+      (paths.length === 0 || Date.now() - lastLoadTime >= 60000)
+    ) {
+      loadPaths(false);
+    }
+  }, [hasQuery, paths.length, lastLoadTime, loadPaths]);
+
   return {
     paths,
     isLoading,
@@ -209,14 +234,14 @@ export function useFileSuggestion(
   inputState: InputState,
   forceTabTrigger = false,
 ) {
-  const { paths, isLoading, loadPaths } = usePaths();
-
   const atMatch = useAtTriggeredPaths(inputState);
   const tabMatch = useTabTriggeredPaths(inputState, forceTabTrigger);
 
-  // Prioritize @ trigger over tab trigger
   const activeMatch = atMatch.hasQuery ? atMatch : tabMatch;
   const { hasQuery, fullMatch, query, startIndex, triggerType } = activeMatch;
+
+  const queryForPaths = triggerType === 'at' ? query : '';
+  const { paths, isLoading, loadPaths } = usePaths(queryForPaths, hasQuery);
 
   const matchedPaths = useMemo(() => {
     if (!hasQuery) return [];
@@ -225,12 +250,6 @@ export function useFileSuggestion(
       return path.toLowerCase().includes(query.toLowerCase());
     });
   }, [paths, hasQuery, query]);
-
-  useEffect(() => {
-    if (hasQuery) {
-      loadPaths();
-    }
-  }, [hasQuery, query]);
 
   // Use common list navigation logic
   const navigation = useListNavigation(matchedPaths);
