@@ -84,12 +84,38 @@ export function normalizeFilePath(filePath: string | undefined): string | null {
 /**
  * Group tool calls for parallel execution
  *
- * Grouping rules:
- * 1. Global effect tools (bash, todo_write, etc.) are isolated into separate groups
- * 2. File write tools are grouped together if they don't conflict
- * 3. Safe parallel tools (read, ls, etc.) are grouped separately from write tools
- * 4. Same file write operations must be in different groups (sequential)
- * 5. Track the last group index for each file to ensure proper ordering
+ * This function implements intelligent tool grouping to maximize parallel execution
+ * while maintaining correctness and proper ordering.
+ *
+ * Grouping Strategy:
+ * 1. **Safe Parallel Tools** (read-only): Grouped together for maximum parallelism
+ *    - Examples: read, ls, glob, grep, fetch, todo_read
+ *
+ * 2. **File Write Tools**: Grouped based on file conflicts
+ *    - Different files: Execute in parallel within same group
+ *    - Same file: Split into separate sequential groups to maintain ordering
+ *    - File path normalization ensures accurate conflict detection
+ *
+ * 3. **Global Effect Tools**: Always isolated into separate sequential groups
+ *    - Examples: bash, todo_write, kill_bash, ask_user_question
+ *    - These tools have side effects beyond file system
+ *
+ * 4. **MCP Tools**: Treated as global effect tools (sequential)
+ *
+ * File Tracking:
+ * - Maintains a map of file -> last group index that touched it
+ * - When a file is accessed again, creates new group to preserve ordering
+ * - Normalized paths prevent false conflicts (e.g., ./file vs file)
+ *
+ * Example Flow:
+ * Input: [read(a), read(b), write(c), write(d), write(c)]
+ * Groups:
+ *   1. [read(a), read(b)] - parallel safe reads
+ *   2. [write(c), write(d)] - parallel writes to different files
+ *   3. [write(c)] - new group because 'c' was accessed in group 2
+ *
+ * @param toolCalls - Array of tool calls with parsed parameters
+ * @returns Array of tool call groups with parallel execution flags
  */
 export function groupToolCallsForParallelExecution(
   toolCalls: ToolCall[],
@@ -150,8 +176,10 @@ export function groupToolCallsForParallelExecution(
 
     // File write tools → check file conflicts
     if (category === 'file_write') {
-      // Finalize read-only group before starting write operations
-      finalizeReadOnlyGroup();
+      // Only finalize read-only group if it exists (avoid unnecessary splits)
+      if (currentReadOnlyGroup.length > 0) {
+        finalizeReadOnlyGroup();
+      }
 
       const filePath = normalizeFilePath(toolCall.params?.file_path);
 
@@ -182,8 +210,10 @@ export function groupToolCallsForParallelExecution(
     }
 
     // Safe parallel tools (read-only) → add to read-only group
-    // Finalize write group first to keep reads and writes separate
-    finalizeWriteGroup();
+    // Only finalize write group if it exists (avoid unnecessary splits)
+    if (currentWriteGroup.length > 0) {
+      finalizeWriteGroup();
+    }
     currentReadOnlyGroup.push(toolCall);
   }
 

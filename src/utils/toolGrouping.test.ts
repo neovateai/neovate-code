@@ -414,5 +414,160 @@ describe('toolGrouping', () => {
       expect(groups[2].toolCalls).toHaveLength(1);
       expect(groups[2].toolCalls[0].toolCallId).toBe('4');
     });
+
+    it('should group multiple consecutive read operations together', () => {
+      const toolCalls: ToolCall[] = [
+        {
+          toolName: 'read',
+          toolCallId: '1',
+          input: '',
+          params: { file_path: '/path/to/file1.txt' },
+        },
+        {
+          toolName: 'read',
+          toolCallId: '2',
+          input: '',
+          params: { file_path: '/path/to/file2.txt' },
+        },
+        {
+          toolName: 'read',
+          toolCallId: '3',
+          input: '',
+          params: { file_path: '/path/to/file3.txt' },
+        },
+      ];
+
+      const groups = groupToolCallsForParallelExecution(toolCalls);
+
+      expect(groups).toHaveLength(1);
+      expect(groups[0].canExecuteInParallel).toBe(true);
+      expect(groups[0].isReadOnly).toBe(true);
+      expect(groups[0].toolCalls).toHaveLength(3);
+      expect(groups[0].toolCalls.map((tc) => tc.toolCallId)).toEqual([
+        '1',
+        '2',
+        '3',
+      ]);
+    });
+
+    it('should group multiple consecutive write operations to different files together', () => {
+      const toolCalls: ToolCall[] = [
+        {
+          toolName: 'write',
+          toolCallId: '1',
+          input: '',
+          params: { file_path: '/path/to/file4.txt' },
+        },
+        {
+          toolName: 'write',
+          toolCallId: '2',
+          input: '',
+          params: { file_path: '/path/to/file5.txt' },
+        },
+        {
+          toolName: 'write',
+          toolCallId: '3',
+          input: '',
+          params: { file_path: '/path/to/file6.txt' },
+        },
+        {
+          toolName: 'write',
+          toolCallId: '4',
+          input: '',
+          params: { file_path: '/path/to/file7.txt' },
+        },
+        {
+          toolName: 'write',
+          toolCallId: '5',
+          input: '',
+          params: { file_path: '/path/to/file8.txt' },
+        },
+        {
+          toolName: 'write',
+          toolCallId: '6',
+          input: '',
+          params: { file_path: '/path/to/file9.txt' },
+        },
+        {
+          toolName: 'write',
+          toolCallId: '7',
+          input: '',
+          params: { file_path: '/path/to/file10.txt' },
+        },
+      ];
+
+      const groups = groupToolCallsForParallelExecution(toolCalls);
+
+      expect(groups).toHaveLength(1);
+      expect(groups[0].canExecuteInParallel).toBe(true);
+      expect(groups[0].isReadOnly).toBe(false);
+      expect(groups[0].toolCalls).toHaveLength(7);
+      expect(groups[0].toolCalls.map((tc) => tc.toolCallId)).toEqual([
+        '1',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '7',
+      ]);
+    });
+
+    it('should handle read-then-write-then-todoWrite pattern correctly', () => {
+      const toolCalls: ToolCall[] = [
+        {
+          toolName: 'read',
+          toolCallId: '1',
+          input: '',
+          params: { file_path: '/path/to/file1.txt' },
+        },
+        {
+          toolName: 'read',
+          toolCallId: '2',
+          input: '',
+          params: { file_path: '/path/to/file2.txt' },
+        },
+        {
+          toolName: 'read',
+          toolCallId: '3',
+          input: '',
+          params: { file_path: '/path/to/file3.txt' },
+        },
+        { toolName: 'todo_write', toolCallId: '4', input: '', params: {} },
+        {
+          toolName: 'write',
+          toolCallId: '5',
+          input: '',
+          params: { file_path: '/path/to/file4.txt' },
+        },
+        {
+          toolName: 'write',
+          toolCallId: '6',
+          input: '',
+          params: { file_path: '/path/to/file5.txt' },
+        },
+        { toolName: 'todo_write', toolCallId: '7', input: '', params: {} },
+      ];
+
+      const groups = groupToolCallsForParallelExecution(toolCalls);
+
+      expect(groups).toHaveLength(4);
+      // Group 0: 3 reads (parallel)
+      expect(groups[0].canExecuteInParallel).toBe(true);
+      expect(groups[0].isReadOnly).toBe(true);
+      expect(groups[0].toolCalls).toHaveLength(3);
+      // Group 1: todo_write (sequential)
+      expect(groups[1].canExecuteInParallel).toBe(false);
+      expect(groups[1].toolCalls).toHaveLength(1);
+      expect(groups[1].toolCalls[0].toolCallId).toBe('4');
+      // Group 2: 2 writes (parallel)
+      expect(groups[2].canExecuteInParallel).toBe(true);
+      expect(groups[2].isReadOnly).toBe(false);
+      expect(groups[2].toolCalls).toHaveLength(2);
+      // Group 3: todo_write (sequential)
+      expect(groups[3].canExecuteInParallel).toBe(false);
+      expect(groups[3].toolCalls).toHaveLength(1);
+      expect(groups[3].toolCalls[0].toolCallId).toBe('7');
+    });
   });
 });

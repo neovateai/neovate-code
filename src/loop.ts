@@ -68,7 +68,7 @@ async function exponentialBackoffWithCancellation(
   signal?: AbortSignal,
 ): Promise<void> {
   const baseDelay = 1000;
-  const delay = baseDelay * Math.pow(2, attempt - 1);
+  const delay = baseDelay * 2 ** (attempt - 1);
   const checkInterval = 100;
 
   const startTime = Date.now();
@@ -276,7 +276,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     const tools = opts.tools.toLanguageV2Tools();
 
     // Get thinking config based on model's reasoning capability
-    let thinkingConfig: Record<string, any> | undefined = undefined;
+    let thinkingConfig: Record<string, any> | undefined;
     if (shouldThinking && opts.thinking) {
       thinkingConfig = getThinkingConfig(opts.model, opts.thinking.effort);
       shouldThinking = false;
@@ -481,7 +481,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         toolUse.displayName = displayName;
       }
       if (toolCall.providerMetadata) {
-        // @ts-ignore
+        // @ts-expect-error
         toolUse.providerMetadata = toolCall.providerMetadata;
       }
       assistantContent.push(toolUse);
@@ -554,7 +554,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         toolUse = await opts.onToolUse(toolUse as ToolUse);
       }
       let approved = true;
-      let updatedParams: ToolParams | undefined = undefined;
+      let updatedParams: ToolParams | undefined;
 
       if (opts.onToolApprove) {
         const approvalResult = await opts.onToolApprove(toolUse as ToolUse);
@@ -652,31 +652,108 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
           }
         }
       } else {
-        // Execute in parallel
+        // Execute in parallel - use group-level approval
         debug(
           'Executing group in parallel: %d tools [%s]',
           group.toolCalls.length,
           group.toolCalls.map((tc) => tc.toolName).join(', '),
         );
+        // First, get approval for the first tool in the group
+        // This will also handle session-level approval settings (autoEdit, etc.)
+        const firstToolCall = group.toolCalls[0];
+        let firstToolUse: ToolUse = {
+          name: firstToolCall.toolName,
+          params: safeParseJson(firstToolCall.input),
+          callId: firstToolCall.toolCallId,
+        };
+        if (opts.onToolUse) {
+          firstToolUse = await opts.onToolUse(firstToolUse as ToolUse);
+        }
+
+        let groupApproved = true;
+        let updatedParams: ToolParams | undefined;
+
+        if (opts.onToolApprove) {
+          const approvalResult = await opts.onToolApprove(
+            firstToolUse as ToolUse,
+          );
+          if (typeof approvalResult === 'object') {
+            groupApproved = approvalResult.approved;
+            updatedParams = approvalResult.params;
+          } else {
+            groupApproved = approvalResult;
+          }
+        }
+
+        // If group is denied, create error result and return
+        if (!groupApproved) {
+          const message = 'Error: Tool execution was denied by user.';
+          let toolResult: ToolResult = {
+            llmContent: message,
+            isError: true,
+          };
+          if (opts.onToolResult) {
+            toolResult = await opts.onToolResult(
+              firstToolUse,
+              toolResult,
+              false,
+            );
+          }
+          const deniedResult: ToolExecutionResult = {
+            toolCallId: firstToolUse.callId,
+            toolName: firstToolUse.name,
+            input: firstToolUse.params,
+            result: toolResult,
+            approved: false,
+            deniedToolUse: firstToolUse,
+          };
+          toolResults.push(deniedResult);
+          return handleToolDenial(toolResults, deniedResult);
+        }
+
+        // Group is approved - execute all tools in parallel without individual approval
         const groupStartTime = Date.now();
         const groupResults = await Promise.all(
-          group.toolCalls.map((toolCall) => executeSingleToolCall(toolCall)),
+          group.toolCalls.map(async (toolCall, index) => {
+            let toolUse: ToolUse = {
+              name: toolCall.toolName,
+              params: safeParseJson(toolCall.input),
+              callId: toolCall.toolCallId,
+            };
+            if (opts.onToolUse) {
+              toolUse = await opts.onToolUse(toolUse as ToolUse);
+            }
+
+            // Apply updated params to first tool if provided
+            if (index === 0 && updatedParams) {
+              toolUse.params = { ...toolUse.params, ...updatedParams };
+            }
+
+            // Execute without approval check (group already approved)
+            let toolResult = await opts.tools.invoke(
+              toolUse.name,
+              JSON.stringify(toolUse.params),
+            );
+            if (opts.onToolResult) {
+              toolResult = await opts.onToolResult(toolUse, toolResult, true);
+            }
+            return {
+              toolCallId: toolUse.callId,
+              toolName: toolUse.name,
+              input: toolUse.params,
+              result: toolResult,
+              approved: true,
+            };
+          }),
         );
+
+        // All tools succeeded
         const groupDuration = Date.now() - groupStartTime;
         debug(
           'Parallel execution completed in %dms: %d tools',
           groupDuration,
           groupResults.length,
         );
-
-        // Check if any tool was denied
-        const denied = groupResults.find((r) => !r.approved);
-        if (denied) {
-          toolResults.push(...groupResults);
-          return handleToolDenial(toolResults, denied);
-        }
-
-        // All tools succeeded
         toolCallsCount += groupResults.length;
         turnsCount -= groupResults.length;
         toolResults.push(...groupResults);
