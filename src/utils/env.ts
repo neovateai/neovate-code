@@ -1,4 +1,4 @@
-function getTerminal() {
+export function getTerminal() {
   if (process.env.CURSOR_TRACE_ID) return 'cursor';
   if (process.env.VSCODE_GIT_ASKPASS_MAIN?.includes('/.cursor-server/bin/'))
     return 'cursor';
