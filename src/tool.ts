@@ -17,6 +17,7 @@ import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
 import { createSearchTool } from './tools/search';
+import { getProviderApiKey } from './tools/search/config';
 import { createTodoTool, type TodoItem } from './tools/todo';
 import { createWriteTool } from './tools/write';
 
@@ -34,13 +35,30 @@ export async function resolveTools(opts: ResolveToolsOpts) {
   const model = (
     await resolveModelWithContext(opts.context.config.model, opts.context)
   ).model!;
+
+  // Search tool - only register if search is configured and API key is available
+  const searchTools = (() => {
+    const searchConfig = opts.context.config.search;
+    if (!searchConfig) return [];
+
+    const provider = searchConfig.provider || 'tavily';
+    const apiKey = getProviderApiKey(provider);
+
+    if (!apiKey) {
+      // Silent skip if no API key configured
+      return [];
+    }
+
+    return [createSearchTool({ context: opts.context })];
+  })();
+
   const readonlyTools = [
     createReadTool({ cwd, productName }),
     createLSTool({ cwd, productName }),
     createGlobTool({ cwd }),
     createGrepTool({ cwd }),
     createFetchTool({ model }),
-    createSearchTool({ context: opts.context }),
+    ...searchTools,
   ];
   const askUserQuestionTools = opts.askUserQuestion
     ? [createAskUserQuestionTool()]
