@@ -1,5 +1,6 @@
 import { Box, Text } from 'ink';
-import React, { useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
+import os from 'os';
 import { SPACING, UI_COLORS } from './constants';
 import { DebugRandomNumber } from './Debug';
 import { MemoryModal } from './MemoryModal';
@@ -23,6 +24,12 @@ export function ChatInput() {
     reverseSearch,
   } = useInputHandlers();
   const { currentTip } = useTryTips();
+
+  // Memoize platform-specific modifier key to avoid repeated os.platform() calls
+  const modifierKey = useMemo(
+    () => (os.platform() === 'darwin' ? 'option+up' : 'alt+up'),
+    [],
+  );
   const {
     log,
     setExitMessage,
@@ -64,7 +71,8 @@ export function ChatInput() {
       return reverseSearch.placeholderText;
     }
     if (queuedMessages.length > 0) {
-      return 'Press option+up to edit queued messages';
+      // Show platform-appropriate keyboard shortcut text
+      return `Press ${modifierKey} to edit queued messages`;
     }
     if (currentTip) {
       return currentTip;
@@ -254,16 +262,16 @@ export function ChatInput() {
             selectedIndex={reverseSearch.selectedIndex}
             maxVisible={10}
           >
-            {(suggestion, isSelected, visibleSuggestions) => {
+            {(suggestion, isSelected, _visibleSuggestions) => {
               const maxNameLength = Math.max(
-                ...visibleSuggestions.map((s) => s.length),
+                ...reverseSearch.matches.map((s) => s.length),
               );
               return (
                 <SuggestionItem
                   name={suggestion}
                   description={''}
                   isSelected={isSelected}
-                  firstColumnWidth={maxNameLength + 4}
+                  firstColumnWidth={Math.min(maxNameLength + 4, columns - 10)}
                 />
               );
             }}
@@ -279,16 +287,16 @@ export function ChatInput() {
           selectedIndex={slashCommands.selectedIndex}
           maxVisible={10}
         >
-          {(suggestion, isSelected, visibleSuggestions) => {
+          {(suggestion, isSelected, _visibleSuggestions) => {
             const maxNameLength = Math.max(
-              ...visibleSuggestions.map((s) => s.command.name.length),
+              ...slashCommands.suggestions.map((s) => s.command.name.length),
             );
             return (
               <SuggestionItem
                 name={`/${suggestion.command.name}`}
                 description={suggestion.command.description}
                 isSelected={isSelected}
-                firstColumnWidth={maxNameLength + 4}
+                firstColumnWidth={Math.min(maxNameLength + 4, columns - 10)}
               />
             );
           }}
@@ -300,16 +308,16 @@ export function ChatInput() {
           selectedIndex={fileSuggestion.selectedIndex}
           maxVisible={10}
         >
-          {(suggestion, isSelected, visibleSuggestions) => {
+          {(suggestion, isSelected, _visibleSuggestions) => {
             const maxNameLength = Math.max(
-              ...visibleSuggestions.map((s) => s.length),
+              ...fileSuggestion.matchedPaths.map((s) => s.length),
             );
             return (
               <SuggestionItem
                 name={suggestion}
                 description={''}
                 isSelected={isSelected}
-                firstColumnWidth={maxNameLength + 4}
+                firstColumnWidth={Math.min(maxNameLength + 4, columns - 10)}
               />
             );
           }}

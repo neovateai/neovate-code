@@ -1,6 +1,10 @@
+import { TOOL_NAMES } from '../../../constants';
 import type { PromptCommand } from '../../types';
 
-export function brainstormCommand(language: string): PromptCommand {
+export function brainstormCommand(
+  language: string,
+  askUserQuestion?: boolean,
+): PromptCommand {
   return {
     type: 'prompt',
     name: 'spec:brainstorm',
@@ -28,6 +32,13 @@ Transform rough ideas into fully-formed designs through structured questioning a
 ### Phase 1: Understanding
 - Check current project state in working directory
 - Ask ONE question at a time to refine the idea
+${
+  askUserQuestion
+    ? `
+- **IMPORTANT: Use ${TOOL_NAMES.ASK_USER_QUESTION} tool when asking clarification questions**
+`
+    : ''
+}
 - Prefer multiple choice when possible
 - Gather: Purpose, constraints, success criteria
 

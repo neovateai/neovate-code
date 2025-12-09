@@ -19,6 +19,11 @@ Commands:
   complete                      Complete workspace and merge changes (run from root)
   help                          Show help
 
+Create Options:
+  --name <name>                 Custom workspace name
+  --branch, -b <branch>         Base branch to create worktree from (default: main)
+  --skip-update                 Skip updating base branch from remote
+
 Workflow:
   1. Create a workspace:     ${p} workspace create
   2. Work in isolation:      cd .${p}-workspaces/<name>
@@ -29,6 +34,7 @@ Workflow:
 Examples:
   ${p} workspace create                    Create new workspace with random city name
   ${p} workspace create --name feature-x   Create workspace with custom name
+  ${p} workspace create -b develop         Create workspace based on develop branch
   ${p} workspace create --skip-update      Create without updating main branch
   ${p} workspace list                      Show all active workspaces
   ${p} workspace delete tokyo              Delete workspace named 'tokyo'
@@ -52,9 +58,10 @@ export async function runWorkspace(context: Context) {
       help: 'h',
       force: 'f',
       verbose: 'v',
+      branch: 'b',
     },
     boolean: ['help', 'force', 'verbose', 'skip-update'],
-    string: ['name'],
+    string: ['name', 'branch'],
   });
   const command = argv._[0];
 

@@ -10,7 +10,7 @@ const DEFAULT_LIMIT = 1000;
 
 export function createGrepTool(opts: { cwd: string }) {
   return createTool({
-    name: 'grep',
+    name: TOOL_NAMES.GREP,
     description: `
     Search for a pattern in a file or directory.
 

@@ -1,6 +1,6 @@
 import assert from 'assert';
 import type { Context } from './context';
-import { runLoop } from './loop';
+import { type ResponseFormat, runLoop, type ThinkingConfig } from './loop';
 import type { NormalizedMessage } from './message';
 import { type ModelInfo, resolveModelWithContext } from './model';
 import { Tools } from './tool';
@@ -13,11 +13,8 @@ export async function query(opts: {
   model?: ModelInfo;
   systemPrompt?: string;
   onMessage?: (message: NormalizedMessage) => Promise<void>;
-  thinking?:
-    | false
-    | {
-        effort: 'low' | 'medium' | 'high';
-      };
+  thinking?: ThinkingConfig | false;
+  responseFormat?: ResponseFormat;
 }) {
   const messages: NormalizedMessage[] = [
     ...(opts.messages || []),
@@ -44,5 +41,6 @@ export async function query(opts: {
     },
     autoCompact: false,
     thinking: opts.thinking !== false ? opts.thinking : undefined,
+    responseFormat: opts.responseFormat,
   });
 }

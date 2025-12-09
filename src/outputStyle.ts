@@ -1,5 +1,4 @@
 import assert from 'assert';
-import fm from 'front-matter';
 import fs from 'fs';
 import { glob } from 'glob';
 import path from 'pathe';
@@ -10,6 +9,7 @@ import {
 } from './output-style/builtin';
 import type { Paths } from './paths';
 import { PluginHookType } from './plugin';
+import { safeFrontMatter } from './utils/safeFrontMatter';
 import { kebabToTitleCase } from './utils/string';
 
 export type OutputStyleOpts = {
@@ -195,11 +195,14 @@ export function loadPolishedMarkdownFiles(
   });
 }
 
-function loadMarkdownFile(path: string): MarkdownFile {
-  const content = fs.readFileSync(path, 'utf-8');
-  const { attributes, body } = fm<Record<string, string>>(content);
+export function loadMarkdownFile(filePath: string): MarkdownFile {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const { attributes, body } = safeFrontMatter<Record<string, string>>(
+    content,
+    filePath,
+  );
   return {
-    path,
+    path: filePath,
     attributes,
     body,
   };
@@ -224,8 +227,20 @@ function loadPolishedMarkdownFile(
   if (!description) {
     const lines = file.body.split('\n');
     const firstLine = lines.find((line) => line.trim())?.trim();
-    if (firstLine && /^[a-zA-Z]/.test(firstLine)) {
-      description = firstLine;
+    if (firstLine) {
+      // Handle title lines starting with # (supports multiple #)
+      if (firstLine.startsWith('#')) {
+        // Remove all # symbols and clean up
+        description = firstLine.replace(/^#+\s*/, '').trim();
+      } else {
+        // Use directly for any other starting character (including ```, ##, *, -, etc.)
+        description = firstLine;
+      }
+
+      // Limit length to 50 characters, truncate and add ellipsis if exceeds
+      if (description.length > 50) {
+        description = `${description.substring(0, 50)}...`;
+      }
     }
   }
   if (!description) {

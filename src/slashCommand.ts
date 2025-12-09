@@ -19,6 +19,7 @@ export type SlashCommandManagerOpts = {
   slashCommands: SlashCommand[];
   argvConfig: Record<string, any>;
   language: string;
+  askUserQuestion?: boolean;
 };
 
 export type CommandEntry = {
@@ -36,6 +37,7 @@ export class SlashCommandManager {
       productName,
       argvConfig: opts.argvConfig,
       language: opts.language,
+      askUserQuestion: opts.askUserQuestion,
     });
     builtin.forEach((command) => {
       commands.set(command.name, { command, source: CommandSource.Builtin });
@@ -74,6 +76,7 @@ export class SlashCommandManager {
       slashCommands: pluginSlashCommands,
       argvConfig: context.argvConfig,
       language: context.config.language,
+      askUserQuestion: !context.config.quiet,
     });
   }
 

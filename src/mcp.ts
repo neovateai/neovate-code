@@ -1,4 +1,5 @@
 import { experimental_createMCPClient } from '@ai-sdk/mcp';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import createDebug from 'debug';
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'pathe';
@@ -345,14 +346,25 @@ export class MCPManager {
     } else if (config.url) {
       // HTTP or SSE transport
       const transportType = config.type || 'http'; // Default to HTTP
-
-      return experimental_createMCPClient({
-        transport: {
-          type: transportType === 'sse' ? 'sse' : 'http',
-          url: config.url,
-          headers: config.headers,
-        },
-      });
+      if (transportType === 'sse') {
+        // SSE transport
+        return experimental_createMCPClient({
+          transport: {
+            type: 'sse',
+            url: config.url,
+            headers: config.headers,
+          },
+        });
+      } else {
+        // HTTP transport
+        return experimental_createMCPClient({
+          transport: new StreamableHTTPClientTransport(new URL(config.url), {
+            requestInit: {
+              headers: config.headers,
+            },
+          }),
+        });
+      }
     } else {
       throw new Error('MCP config must have either command or url configured');
     }

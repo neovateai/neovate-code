@@ -28,7 +28,7 @@ export type Props = {
   readonly onHistoryUp?: () => void;
 
   /**
-   * Optional callback for handling queued messages on option+up arrow
+   * Optional callback for handling queued messages on alt+up arrow (option+up on macOS)
    */
   readonly onQueuedMessagesUp?: () => void;
 

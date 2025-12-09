@@ -274,11 +274,10 @@ function GettingStartedTips() {
       <Text>Tips to getting started:</Text>
       <Text>1. Input a task</Text>
       <Text>
-        2. <Text bold>/init</Text> to create a {productName.toUpperCase()}.md
-        file
+        2. <Text bold>/init</Text> to create a AGENTS.md file
       </Text>
       <Text>
-        3. <Text bold>shift + tab</Text> to swith to plan mode
+        3. <Text bold>shift + tab</Text> to switch to plan mode
       </Text>
       <Text>
         4. <Text bold>/help</Text> for more information

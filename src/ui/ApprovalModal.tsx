@@ -3,7 +3,10 @@ import { Box, Text, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import path from 'pathe';
 import React, { useMemo } from 'react';
+import { TOOL_NAMES } from '../constants';
 import type { ToolUse as ToolUseType } from '../tool';
+import type { Question } from '../tools/askUserQuestion';
+import { AskQuestionModal } from './AskQuestionModal';
 import { UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
 import { type ApprovalResult, useAppStore } from './store';
@@ -64,6 +67,47 @@ export function ApprovalModal() {
   if (!approvalModal) {
     return null;
   }
+
+  // Special handling for askUserQuestion tool
+  if (approvalModal?.toolUse.name === TOOL_NAMES.ASK_USER_QUESTION) {
+    const questions = (approvalModal?.toolUse.params.questions ||
+      []) as Question[];
+
+    // Validate questions
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return (
+        <Box
+          flexDirection="column"
+          padding={1}
+          borderStyle="round"
+          borderColor="red"
+        >
+          <Text color="red" bold>
+            Invalid Questions
+          </Text>
+          <Text>No questions provided to askUserQuestion tool</Text>
+        </Box>
+      );
+    }
+
+    return (
+      <AskQuestionModal
+        questions={questions}
+        onResolve={(result, updatedAnswers) => {
+          const shouldUpdateParams = updatedAnswers && result !== 'deny';
+          const newParams: Record<string, unknown> | undefined =
+            shouldUpdateParams
+              ? {
+                  ...approvalModal.toolUse.params,
+                  answers: updatedAnswers,
+                }
+              : undefined;
+          approvalModal.resolve(result, newParams);
+        }}
+      />
+    );
+  }
+
   return <ApprovalModalContent />;
 }
 
@@ -133,7 +177,7 @@ function ApprovalModalContent() {
 }
 
 function getDiffParams(toolUse: ToolUseType, cwd: string) {
-  const { content = '', file_path } = toolUse.params;
+  const { file_path } = toolUse.params;
   const fullFilePath = path.isAbsolute(file_path)
     ? file_path
     : path.resolve(cwd, file_path);
@@ -144,15 +188,38 @@ function getDiffParams(toolUse: ToolUseType, cwd: string) {
     const oldContent = existsSync(fullFilePath)
       ? readFileSync(fullFilePath, 'utf-8')
       : '';
+
+    let newContent: string;
+
+    if (toolUse.name === 'edit') {
+      // For edit tool, use old_string and new_string parameters
+      const { old_string = '', new_string = '' } = toolUse.params;
+      newContent = oldContent.replace(old_string, new_string);
+    } else {
+      // For write tool, use content parameter
+      const { content = '' } = toolUse.params;
+      newContent = content;
+    }
+
     return {
       originalContent: oldContent,
-      newContent: content,
+      newContent: newContent,
       fileName: relativeFilePath,
     };
   } catch (error) {
+    let newContent: string;
+
+    if (toolUse.name === 'edit') {
+      const { new_string = '' } = toolUse.params;
+      newContent = new_string;
+    } else {
+      const { content = '' } = toolUse.params;
+      newContent = content;
+    }
+
     return {
       originalContent: '',
-      newContent: content,
+      newContent: newContent,
       fileName: relativeFilePath,
     };
   }

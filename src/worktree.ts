@@ -6,6 +6,7 @@ import { promisify } from 'util';
 const execAsync = promisify(exec);
 
 export type Worktree = {
+  id: string;
   name: string;
   path: string;
   branch: string;
@@ -167,6 +168,20 @@ export async function ensureCleanWorkingDirectory(cwd: string): Promise<void> {
 }
 
 /**
+ * Verify that a branch exists
+ */
+export async function verifyBranchExists(
+  cwd: string,
+  branch: string,
+): Promise<void> {
+  try {
+    await execGit(cwd, `rev-parse --verify ${branch}`);
+  } catch {
+    throw new Error(`Branch '${branch}' does not exist.`);
+  }
+}
+
+/**
  * Detect main branch (main or master)
  */
 export async function detectMainBranch(cwd: string): Promise<string> {
@@ -293,6 +308,7 @@ export async function createWorktree(
     );
 
     return {
+      id: `${gitRoot}:${name}`,
       name,
       path: worktreePath,
       branch: branchName,
@@ -326,6 +342,7 @@ export async function listWorktrees(cwd: string): Promise<Worktree[]> {
           currentWorktree.path = worktreePath;
           const name = path.basename(worktreePath);
           currentWorktree.name = name;
+          currentWorktree.id = `${gitRoot}:${name}`;
         } else {
           currentWorktree = {};
         }

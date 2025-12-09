@@ -29,6 +29,7 @@ export enum TOOL_NAMES {
   WRITE = 'write',
   GREP = 'grep',
   EDIT = 'edit',
+  ASK_USER_QUESTION = 'AskUserQuestion',
 }
 
 export enum AGENT_TYPE {
