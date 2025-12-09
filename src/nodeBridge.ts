@@ -1418,10 +1418,12 @@ class NodeHandlerRegistry {
     this.messageBus.registerHandler('session.compact', async (data) => {
       const { cwd, messages, sessionId } = data;
       const context = await this.getContext(cwd);
-      const m = (await this.messageBus.request('session.getModel', {
-        cwd,
-        sessionId,
-      }))!.data.model;
+      const m = (
+        await this.messageBus.messageHandlers.get('session.getModel')?.({
+          cwd,
+          sessionId,
+        })
+      )?.data.model;
       const model = (await resolveModelWithContext(m, context)).model!;
       const summary = await compact({
         messages,
