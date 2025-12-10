@@ -164,8 +164,9 @@ function isSegmentHighRisk(segment: string): boolean {
  * - First check the full command
  * - If command contains pipes, evaluate each segment separately
  * - If any segment is high risk, the entire command is high risk
+ * @internal exported for testing
  */
-function isHighRiskCommand(command: string): boolean {
+export function isHighRiskCommand(command: string): boolean {
   // Legacy patterns for specific dangerous combinations
   const legacyDangerousCombinations = [/curl.*\|.*sh/i, /wget.*\|.*sh/i];
 
