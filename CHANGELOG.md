@@ -1,3 +1,9 @@
+## 0.19.1
+
+`2025-12-10`
+
+- fix: upgrade @ai-sdk/google to v2.0.45 to fix Gemini 3 Pro Preview thought_signature error with MCP tools by [@copilot](https://github.com/copilot)
+
 ## 0.19.0
 
 `2025-12-05`
