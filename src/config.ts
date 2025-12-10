@@ -84,6 +84,11 @@ export type Config = {
    * Key is the tool name, value is boolean (false to disable).
    */
   tools?: Record<string, boolean>;
+  /**
+   * Providers configuration for enabling/disabling specific providers.
+   * Key is the provider ID, value is boolean (false to disable).
+   */
+  providers?: Record<string, boolean>;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -100,6 +105,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   browser: false,
   extensions: {},
   tools: {},
+  providers: {},
   desktop: {
     theme: 'light',
     sendMessageWith: 'enter',
@@ -123,6 +129,7 @@ const VALID_CONFIG_KEYS = [
   'httpProxy',
   'extensions',
   'tools',
+  'providers',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = [
@@ -131,6 +138,7 @@ const OBJECT_CONFIG_KEYS = [
   'provider',
   'extensions',
   'tools',
+  'providers',
   'desktop',
 ];
 const BOOLEAN_CONFIG_KEYS = [

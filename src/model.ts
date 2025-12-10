@@ -1816,6 +1816,17 @@ export async function resolveModelWithContext(
     );
   }
 
+  // Filter out disabled providers based on configuration
+  if (context.config.providers) {
+    finalProviders = Object.fromEntries(
+      Object.entries(finalProviders).filter(([providerId, provider]) => {
+        // If provider is explicitly disabled in config, filter it out
+        const isDisabled = context.config.providers![providerId] === false;
+        return !isDisabled;
+      }),
+    );
+  }
+
   const hookedModelAlias = await context.apply({
     hook: 'modelAlias',
     args: [],
