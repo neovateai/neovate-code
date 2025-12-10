@@ -50,6 +50,6 @@ jobs:
 
       - name: Run CLI integration test
         run: |
-          output=$(node ./dist/cli.mjs -m iflow/qwen3-coder-plus -q --output-format json "hello")
+          output=$(node ./dist/cli.mjs -m cerebras/zai-glm-4.6 -q --output-format json "hello")
           echo "$output"
           echo "$output" | node -e "JSON.parse(require('fs').readFileSync(0, 'utf-8'))"
