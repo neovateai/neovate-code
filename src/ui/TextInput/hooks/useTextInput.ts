@@ -44,10 +44,7 @@ type UseTextInputProps = {
   invert: (text: string) => string;
   themeText: (text: string) => string;
   columns: number;
-  onImagePaste?: (
-    base64Image: string,
-    filename?: string,
-  ) => Promise<{ prompt?: string }> | void;
+  onImagePaste?: (base64Image: string) => void;
   disableCursorMovementForUpDownKeys?: boolean;
   externalOffset: number;
   onOffsetChange: (offset: number) => void;
@@ -174,6 +171,7 @@ export function useTextInput({
     base64Image: string,
   ): Promise<void> => {
     const result = await onImagePaste?.(base64Image);
+    // @ts-expect-error - result is not typed
     const content = result?.prompt || IMAGE_PLACEHOLDER;
     const newCursor = cursor.insert(content);
     setOffset(newCursor.offset);

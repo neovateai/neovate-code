@@ -328,8 +328,8 @@ export function useInputHandlers() {
   );
 
   const handleImagePaste = useCallback(
-    async (base64Data: string, filename?: string) => {
-      const result = await imageManager.handleImagePaste(base64Data, filename);
+    async (base64Data: string) => {
+      const result = await imageManager.handleImagePaste(base64Data);
       if (result.success && result.prompt) {
         return { prompt: result.prompt };
       }

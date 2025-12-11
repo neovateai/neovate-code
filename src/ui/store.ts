@@ -712,11 +712,11 @@ export const useAppStore = create<AppStore>()(
         const attachments = [];
         // Handle pasted images
         if (message && Object.keys(pastedImageMap).length > 0) {
-          const pastedImageRegex = /\[Image \d+X\d+ [^\]]+#(\d+)\]/g;
+          const pastedImageRegex = /\[Image (#\d+)\]/g;
           const imageMatches = [...message.matchAll(pastedImageRegex)];
 
           for (const match of imageMatches) {
-            const imageId = `#${match[1]}`;
+            const imageId = match[1];
             const imageData = pastedImageMap[imageId];
             if (imageData) {
               const mimeType = detectImageFormat(imageData);
