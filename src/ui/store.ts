@@ -366,7 +366,7 @@ export const useAppStore = create<AppStore>()(
               isGlobal: true,
               key: 'autoUpdate',
             });
-            const autoUpdate = autoUpdateResponse.data.value ?? true;
+            const autoUpdate = autoUpdateResponse.data.value;
             if (autoUpdate) {
               const upgrade = new Upgrade(opts.upgrade);
               const result = await upgrade.check();
