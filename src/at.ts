@@ -71,6 +71,9 @@ export class At {
           };
         }
         const content = fs.readFileSync(fc, 'utf-8');
+        if (content === undefined || content === null) {
+          throw new Error(`Failed to read file: ${fc}`);
+        }
         const result = this.processFileContent(content);
         return {
           content: result.content,

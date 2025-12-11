@@ -16,7 +16,7 @@ export function BackgroundPrompt() {
   const { currentOutput } = bashBackgroundPrompt;
 
   // Truncate output to avoid overwhelming the display
-  const outputLines = currentOutput.replace(/^\n/, '').split('\n');
+  const outputLines = (currentOutput || '').replace(/^\n/, '').split('\n');
   const lines = outputLines.slice(0, MAX_OUTPUT_LINES);
   const displayOutput = lines
     .map((line) =>

@@ -57,7 +57,7 @@ export class MarkdownTaskLogger {
   }
 
   private parseText(text: string): string {
-    const lines = text.split('\n');
+    const lines = (text || '').split('\n');
     const currentLineCount = lines.length;
     const lastLine = lines[currentLineCount - 1];
 
