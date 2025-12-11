@@ -144,6 +144,19 @@ interface AppState {
 
   bashBackgroundPrompt: BashPromptBackgroundEvent | null;
   thinking: ThinkingConfig | undefined;
+
+  // Agent progress tracking
+  agentProgressMap: Record<
+    string,
+    {
+      status: 'running' | 'completed';
+      agentId: string;
+      agentType?: string;
+      messages: NormalizedMessage[];
+      lastUpdate: number;
+      startTime: number;
+    }
+  >;
 }
 
 type InitializeOpts = {
@@ -216,6 +229,16 @@ interface AppActions {
   setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => void;
   clearBashBackgroundPrompt: () => void;
   toggleThinking: () => void;
+
+  // Agent progress actions
+  updateAgentProgress: (data: {
+    agentId: string;
+    agentType?: string;
+    message: NormalizedMessage;
+    status: 'running' | 'completed';
+  }) => void;
+  clearAgentProgress: (agentId: string) => void;
+  loadAgentMessages: (agentId: string) => Promise<void>;
 }
 
 export type AppStore = AppState & AppActions;
@@ -273,6 +296,9 @@ export const useAppStore = create<AppStore>()(
       thinking: undefined,
 
       bashBackgroundPrompt: null,
+
+      // Agent progress state
+      agentProgressMap: {},
 
       // Actions
       initialize: async (opts) => {
@@ -355,6 +381,18 @@ export const useAppStore = create<AppStore>()(
             set({ retryInfo: null });
           }
         });
+
+        // Listen for SubAgent progress events
+        bridge.onEvent('agent_progress', (data) => {
+          const { agentId, agentType, message, status } = data;
+          get().updateAgentProgress({
+            agentId,
+            agentType,
+            message,
+            status: status || 'running',
+          });
+        });
+
         setImmediate(async () => {
           if (opts.initialPrompt) {
             get().send(opts.initialPrompt);
@@ -1147,6 +1185,83 @@ export const useAppStore = create<AppStore>()(
           next = undefined;
         }
         set({ thinking: next });
+      },
+
+      // Agent progress methods
+      updateAgentProgress: (data) => {
+        const { agentId, agentType, message, status } = data;
+        const { agentProgressMap } = get();
+
+        const existing = agentProgressMap[agentId];
+
+        // Limit messages to last 100 to prevent memory issues
+        const MAX_MESSAGES = 100;
+        const newMessages = existing
+          ? [...existing.messages, message].slice(-MAX_MESSAGES)
+          : [message];
+
+        set({
+          agentProgressMap: {
+            ...agentProgressMap,
+            [agentId]: {
+              status,
+              agentId,
+              agentType,
+              messages: newMessages,
+              lastUpdate: Date.now(),
+              startTime: existing?.startTime || Date.now(),
+            },
+          },
+        });
+      },
+
+      clearAgentProgress: (agentId) => {
+        const { agentProgressMap } = get();
+        const newMap = { ...agentProgressMap };
+        delete newMap[agentId];
+        set({ agentProgressMap: newMap });
+      },
+
+      loadAgentMessages: async (agentId) => {
+        const { bridge, cwd, agentProgressMap } = get();
+
+        // If we already have messages, skip loading
+        if (agentProgressMap[agentId]?.messages?.length > 0) {
+          return;
+        }
+
+        try {
+          const response = await bridge.request('agent.getMessages', {
+            cwd,
+            agentId,
+          });
+
+          if (response.success) {
+            const messages = response.data.messages;
+            // Try to infer agentType from the first message metadata if available
+            // or just leave it undefined
+            let agentType: string | undefined;
+            if (messages.length > 0 && messages[0].metadata?.agentType) {
+              agentType = messages[0].metadata.agentType;
+            }
+
+            set({
+              agentProgressMap: {
+                ...get().agentProgressMap,
+                [agentId]: {
+                  status: 'completed',
+                  agentId,
+                  agentType,
+                  messages,
+                  lastUpdate: Date.now(),
+                  startTime: 0, // Unknown start time
+                },
+              },
+            });
+          }
+        } catch (error) {
+          // console.error('Failed to load agent messages', error);
+        }
       },
     }),
     { name: 'app-store' },

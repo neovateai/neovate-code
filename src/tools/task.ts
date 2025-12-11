@@ -1,16 +1,17 @@
 import { z } from 'zod';
 import { TOOL_NAMES } from '../constants';
 import type { Context } from '../context';
+import type { NormalizedMessage } from '../message';
 import { createTool, type Tool } from '../tool';
 
 export function createTaskTool(opts: {
   context: Context;
   tools: Tool[];
+  sessionId: string;
   signal?: AbortSignal;
 }) {
-  const { signal } = opts;
-  const { cwd, agentManager } = opts.context;
-
+  const { signal, sessionId } = opts;
+  const { cwd, agentManager, messageBus } = opts.context;
   const agentDescriptions = agentManager?.getAgentDescriptions();
 
   return createTool({
@@ -119,9 +120,48 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
           cwd,
           signal,
           tools: opts.tools,
+          async onProgress(message: NormalizedMessage, agentId: string) {
+            try {
+              if (messageBus) {
+                await messageBus.emitEvent('agent_progress', {
+                  sessionId,
+                  cwd,
+                  agentId,
+                  agentType: params.subagent_type,
+                  message,
+                  status: 'running',
+                  timestamp: Date.now(),
+                });
+              }
+            } catch (error) {
+              console.error(
+                '[createTaskTool] Failed to emit progress event:',
+                error,
+              );
+            }
+          },
           // TODO: get forkContextMessages from context
           // forkContextMessages: [],
         });
+
+        // Emit completion event to close the UI overlay
+        if (messageBus) {
+          await messageBus.emitEvent('agent_progress', {
+            sessionId,
+            cwd,
+            agentId: result.agentId,
+            agentType: params.subagent_type,
+            message: {
+              role: 'assistant',
+              content:
+                result.status === 'completed'
+                  ? 'Task completed'
+                  : 'Task failed',
+            } as NormalizedMessage,
+            status: result.status === 'completed' ? 'completed' : 'failed',
+            timestamp: Date.now(),
+          });
+        }
 
         const duration = Date.now() - startTime;
 
@@ -137,6 +177,10 @@ Tool Calls: ${result.totalToolCalls}
 Duration: ${duration}ms
 Tokens: ${result.usage.inputTokens} input, ${result.usage.outputTokens} output`,
             isError: false,
+            metadata: {
+              agentId: result.agentId,
+              agentType: params.subagent_type,
+            },
           };
         }
         return {
@@ -148,6 +192,10 @@ ${result.content}
 Agent ID: ${result.agentId}
 Duration: ${duration}ms`,
           isError: true,
+          metadata: {
+            agentId: result.agentId,
+            agentType: params.subagent_type,
+          },
         };
       } catch (error) {
         return {

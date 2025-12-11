@@ -43,4 +43,35 @@ export interface AgentExecuteOptions {
   forkContextMessages?: NormalizedMessage[];
   cwd: string;
   signal?: AbortSignal;
+  onProgress?: (
+    message: NormalizedMessage,
+    agentId: string,
+  ) => void | Promise<void>;
+}
+
+/**
+ * Real-time progress data for SubAgent execution
+ * Used to track and display SubAgent progress in the UI
+ */
+export interface AgentProgressData {
+  /** The tool use ID that triggered this SubAgent (e.g., "task-1") */
+  toolUseID: string;
+  /** Unique identifier for the SubAgent instance */
+  agentId: string;
+  /** The latest message produced by the SubAgent */
+  message: NormalizedMessage;
+  /** Timestamp when this progress update was created */
+  timestamp: number;
+}
+
+/**
+ * Event payload for agent_progress events sent through MessageBus
+ */
+export interface AgentProgressEvent {
+  /** Session ID of the parent agent */
+  sessionId: string;
+  /** Current working directory */
+  cwd: string;
+  /** Progress data payload */
+  progressData: AgentProgressData;
 }

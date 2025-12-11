@@ -56,6 +56,10 @@ export class AgentManager {
       cwd: string;
       signal?: AbortSignal;
       forkContextMessages?: NormalizedMessage[];
+      onProgress?: (
+        message: NormalizedMessage,
+        agentId: string,
+      ) => void | Promise<void>;
     },
   ): Promise<AgentExecutionResult> {
     const definition = this.agents.get(input.subagent_type);
@@ -77,6 +81,7 @@ export class AgentManager {
         : undefined,
       cwd: context.cwd,
       signal: context.signal,
+      onProgress: context.onProgress,
     };
 
     return executeAgent(executeOptions);

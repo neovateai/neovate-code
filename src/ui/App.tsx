@@ -2,6 +2,7 @@ import { Box, Text } from 'ink';
 import SelectInput from 'ink-select-input';
 import React, { useCallback } from 'react';
 import { ActivityIndicator } from './ActivityIndicator';
+import { AgentProgressOverlay } from './AgentProgressOverlay';
 import { ApprovalModal } from './ApprovalModal';
 import { BackgroundPrompt } from './BackgroundPrompt';
 import { ChatInput } from './ChatInput';
@@ -110,6 +111,7 @@ export function App() {
       key={`${forceRerender}-${forkParentUuid}-${forkCounter}`}
     >
       <Messages />
+      <AgentProgressOverlay />
       <BackgroundPrompt />
       <PlanResult />
       <ActivityIndicator />

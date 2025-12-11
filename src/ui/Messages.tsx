@@ -1,6 +1,6 @@
 import { Box, Static, Text } from 'ink';
 import pc from 'picocolors';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type {
   AssistantMessage,
   NormalizedMessage,
@@ -11,6 +11,7 @@ import type {
   ToolResultPart,
   ToolUsePart,
   UserMessage,
+  ToolResultPart2,
 } from '../message';
 import {
   getMessageText,
@@ -20,6 +21,11 @@ import {
   isUserBashOutputMessage,
   toolResultPart2ToToolResultPart,
 } from '../message';
+import {
+  AgentProgressOverlay,
+  formatToolUse,
+  NestedAgentMessage,
+} from './AgentProgressOverlay';
 import { SPACING, UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
 import { GradientString } from './GradientString';
@@ -428,9 +434,103 @@ function AssistantText({
   );
 }
 
+function SubAgentToolResult({ toolResult }: { toolResult: ToolResultPart }) {
+  const { loadAgentMessages, agentProgressMap } = useAppStore();
+  const agentId = toolResult.agentId;
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (agentId) {
+      loadAgentMessages(agentId);
+    }
+  }, [agentId, loadAgentMessages]);
+
+  const progress = agentId ? agentProgressMap[agentId] : undefined;
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    if (!progress || !progress.messages) {
+      return { toolCalls: 0, tokens: 0 };
+    }
+
+    const messages = progress.messages;
+    const toolCalls = messages.filter((msg) => {
+      if (msg.role === 'assistant' && Array.isArray(msg.content)) {
+        return msg.content.some((p) => p.type === 'tool_use');
+      }
+      return false;
+    }).length;
+
+    const tokens = messages.reduce((sum, msg) => {
+      if (msg.role === 'assistant' && 'usage' in msg) {
+        const usage = (msg as AssistantMessage).usage;
+        return sum + (usage?.input_tokens || 0) + (usage?.output_tokens || 0);
+      }
+      return sum;
+    }, 0);
+
+    // Format tokens
+    const formattedTokens =
+      tokens > 1000 ? `${(tokens / 1000).toFixed(1)}k` : tokens;
+
+    return { toolCalls, tokens: formattedTokens };
+  }, [progress]);
+
+  if (!agentId) {
+    return <ToolResultItem part={toolResult} />;
+  }
+
+  if (!progress) {
+    return <Text color="gray">Loading agent details...</Text>;
+  }
+
+  return (
+    <Box flexDirection="column">
+      {!expanded ? (
+        <Box>
+          <Text color="gray">└ </Text>
+          <Text color="white">Done </Text>
+          <Text color="gray" dimColor>
+            ({stats.toolCalls} tool uses · {stats.tokens} tokens)
+          </Text>
+          <Text color="gray" dimColor>
+            {' '}
+            (ctrl+o to expand)
+          </Text>
+        </Box>
+      ) : (
+        <Box flexDirection="column">
+          <Box>
+            <Text color="gray">└ </Text>
+            <Text color="white">Done </Text>
+            <Text color="gray" dimColor>
+              ({stats.toolCalls} tool uses · {stats.tokens} tokens)
+            </Text>
+            <Text color="gray" dimColor>
+              {' '}
+              (ctrl+o to collapse)
+            </Text>
+          </Box>
+          <Box
+            flexDirection="column"
+            paddingLeft={1}
+            borderStyle="round"
+            borderColor="gray"
+          >
+            {progress.messages.map((msg, idx) => (
+              <NestedAgentMessage key={idx} message={msg} />
+            ))}
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 function ToolUse({ part }: { part: ToolUsePart }) {
   const { name, displayName } = part;
   const description = part.description;
+
   return (
     <Box marginTop={SPACING.MESSAGE_MARGIN_TOP}>
       <Text bold color={UI_COLORS.TOOL}>
@@ -444,6 +544,22 @@ function ToolUse({ part }: { part: ToolUsePart }) {
 }
 
 function ToolPair({ pair }: { pair: ToolPair }) {
+  if (pair.toolUse.name === 'task') {
+    return (
+      <Box flexDirection="column">
+        {/* Render ToolUse */}
+        <ToolUse part={pair.toolUse} />
+
+        {/* Render ToolResult if available */}
+        {pair.toolResult && (
+          <Box marginTop={0} marginLeft={2}>
+            <SubAgentToolResult toolResult={pair.toolResult} />
+          </Box>
+        )}
+      </Box>
+    );
+  }
+
   return (
     <Box flexDirection="column">
       {/* Render ToolUse */}
@@ -565,6 +681,7 @@ function Thinking({ text }: { text: string }) {
 
 function ToolResultItem({ part }: { part: ToolResultPart }) {
   const { result, input } = part;
+
   if (result.isError) {
     let text = result.returnDisplay || result.llmContent;
     if (typeof text !== 'string') {

@@ -27,6 +27,7 @@ type ResolveToolsOpts = {
   todo?: boolean;
   getCurrentMessages?: () => NormalizedMessage[];
   askUserQuestion?: boolean;
+  signal?: AbortSignal;
 };
 
 export async function resolveTools(opts: ResolveToolsOpts) {
@@ -104,6 +105,8 @@ export async function resolveTools(opts: ResolveToolsOpts) {
       createTaskTool({
         context: opts.context,
         tools: availableTools,
+        sessionId: opts.sessionId,
+        signal: opts.signal,
       }),
     ];
   })();
@@ -294,6 +297,11 @@ export type ToolResult = {
   llmContent: string | (TextPart | ImagePart)[];
   returnDisplay?: ReturnDisplay;
   isError?: boolean;
+  metadata?: {
+    agentId?: string;
+    agentType?: string;
+    [key: string]: any;
+  };
 };
 
 export function createTool<TSchema extends z.ZodTypeAny>(config: {

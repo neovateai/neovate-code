@@ -11,6 +11,7 @@ import { History, type OnMessage } from './history';
 import type {
   AssistantContent,
   NormalizedMessage,
+  ToolResultPart2,
   ToolUsePart,
 } from './message';
 import type { ModelInfo } from './model';
@@ -477,7 +478,12 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       break;
     }
 
-    const toolResults: any[] = [];
+    const toolResults: {
+      toolCallId: string;
+      toolName: string;
+      input: Record<string, any>;
+      result: ToolResult;
+    }[] = [];
     for (const toolCall of toolCalls) {
       let toolUse: ToolUse = {
         name: toolCall.toolName,
@@ -538,15 +544,23 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         await history.addMessage({
           role: 'tool',
           content: toolResults.map((tr) => {
-            return {
+            const resultPart: ToolResultPart2 = {
               type: 'tool-result',
               toolCallId: tr.toolCallId,
               toolName: tr.toolName,
               input: tr.input,
               result: tr.result,
             };
+
+            // 提升 agentId 到 tool-result 层级
+            if (tr.result.metadata?.agentId) {
+              resultPart.agentId = tr.result.metadata.agentId;
+              resultPart.agentType = tr.result.metadata.agentType;
+            }
+
+            return resultPart;
           }),
-        } as any);
+        });
         return {
           success: false,
           error: {
@@ -565,15 +579,23 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       await history.addMessage({
         role: 'tool',
         content: toolResults.map((tr) => {
-          return {
+          const resultPart: ToolResultPart2 = {
             type: 'tool-result',
             toolCallId: tr.toolCallId,
             toolName: tr.toolName,
             input: tr.input,
             result: tr.result,
           };
+
+          // 提升 agentId 到 tool-result 层级
+          if (tr.result.metadata?.agentId) {
+            resultPart.agentId = tr.result.metadata.agentId;
+            resultPart.agentType = tr.result.metadata.agentType;
+          }
+
+          return resultPart;
         }),
-      } as any);
+      });
     }
   }
   const duration = Date.now() - startTime;

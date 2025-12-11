@@ -1,3 +1,4 @@
+import { JsonlLogger } from '../jsonl';
 import { runLoop } from '../loop';
 import type { NormalizedMessage } from '../message';
 import { resolveModelWithContext } from '../model';
@@ -23,10 +24,16 @@ export async function executeAgent(
     forkContextMessages,
     cwd,
     signal,
+    onProgress,
   } = options;
 
   const startTime = Date.now();
-  const agentId = randomUUID();
+  // 生成唯一的 agentId (8位十六进制)
+  const agentId = randomUUID().slice(0, 8);
+
+  // 创建独立的 agent session log
+  const agentLogPath = context.paths.getAgentLogPath(agentId);
+  const agentLogger = new JsonlLogger({ filePath: agentLogPath });
 
   try {
     // Validate Agent definition
@@ -74,6 +81,34 @@ export async function executeAgent(
       );
     }
 
+    // Emit initial messages to logger and progress
+    for (const message of messages) {
+      const normalizedMessage: NormalizedMessage & { sessionId: string } = {
+        ...message,
+        sessionId: agentId,
+        metadata: {
+          ...(message.metadata || {}),
+          agentId,
+          agentType: definition.agentType,
+        },
+      };
+
+      // Write to agent log
+      agentLogger.addMessage({ message: normalizedMessage });
+
+      // Notify progress
+      if (onProgress) {
+        try {
+          await onProgress(normalizedMessage, agentId);
+        } catch (error) {
+          console.error(
+            '[executeAgent] Failed to send initial progress:',
+            error,
+          );
+        }
+      }
+    }
+
     // Execute loop
     const loopResult = await runLoop({
       input: messages,
@@ -83,6 +118,30 @@ export async function executeAgent(
       systemPrompt: definition.systemPrompt,
       signal,
       maxTurns: 50,
+      onMessage: async (message) => {
+        // 添加 metadata
+        const normalizedMessage: NormalizedMessage & { sessionId: string } = {
+          ...message,
+          sessionId: agentId, // 使用 agentId 作为 sessionId
+          metadata: {
+            ...(message.metadata || {}),
+            agentId,
+            agentType: definition.agentType,
+          },
+        };
+
+        // 写入独立的 agent log
+        agentLogger.addMessage({ message: normalizedMessage });
+
+        // 实时通知父级
+        if (onProgress) {
+          try {
+            await onProgress(normalizedMessage, agentId);
+          } catch (error) {
+            console.error('[executeAgent] Failed to send progress:', error);
+          }
+        }
+      },
     });
 
     // Handle result
