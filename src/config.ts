@@ -289,26 +289,34 @@ export class ConfigManager {
   getConfig(global: boolean, key: string): any {
     const config = global ? this.globalConfig : this.projectConfig;
 
-    if (!key.includes('.')) {
-      return config[key as keyof Config];
-    }
-
-    const keys = key.split('.');
-    const rootKey = keys[0];
-
-    if (!VALID_CONFIG_KEYS.includes(rootKey)) {
-      throw new Error(`Invalid config key: ${rootKey}`);
-    }
-
-    let current: any = config[rootKey as keyof Config];
-    for (let i = 1; i < keys.length; i++) {
-      if (current === undefined || current === null) {
-        return undefined;
+    const getValue = (conf: Partial<Config>) => {
+      if (!key.includes('.')) {
+        return conf[key as keyof Config];
       }
-      current = current[keys[i]];
-    }
 
-    return current;
+      const keys = key.split('.');
+      const rootKey = keys[0];
+
+      if (!VALID_CONFIG_KEYS.includes(rootKey)) {
+        throw new Error(`Invalid config key: ${rootKey}`);
+      }
+
+      let current: any = conf[rootKey as keyof Config];
+      for (let i = 1; i < keys.length; i++) {
+        if (current === undefined || current === null) {
+          return undefined;
+        }
+        current = current[keys[i]];
+      }
+
+      return current;
+    };
+
+    const value = getValue(config);
+    if (value !== undefined) {
+      return value;
+    }
+    return getValue(DEFAULT_CONFIG);
   }
 
   setConfig(global: boolean, key: string, value: string) {
