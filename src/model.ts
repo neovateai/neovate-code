@@ -739,7 +739,7 @@ export const models: ModelMap = {
     limit: { context: 200000, output: 100000 },
   },
   'glm-4.5': {
-    name: 'GLM 4.5',
+    name: 'GLM-4.5',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -778,7 +778,7 @@ export const models: ModelMap = {
     limit: { context: 131072, output: 98304 },
   },
   'glm-4.5v': {
-    name: 'GLM 4.5V',
+    name: 'GLM-4.5V',
     attachment: true,
     reasoning: true,
     temperature: true,
