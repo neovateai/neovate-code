@@ -46,6 +46,13 @@ class NodeHandlerRegistry {
   private contextCreateOpts: any;
   private contexts = new Map<string, Context>();
   private abortControllers = new Map<string, AbortController>();
+
+  // Git URL validation patterns - defined once to avoid regex recompilation
+  private readonly GIT_HTTPS_PATTERN =
+    /^https?:\/\/(?:[a-zA-Z0-9_.~-]+@)?[a-zA-Z0-9_.~-]+(?:\.[a-zA-Z0-9_.~-]+)*(?::\d+)?\/[a-zA-Z0-9_.~/-]+(\.git)?$/;
+  private readonly GIT_SSH_PATTERN =
+    /^git@[a-zA-Z0-9_.~-]+(?:\.[a-zA-Z0-9_.~-]+)*:[a-zA-Z0-9_.~/-]+(\.git)?$/;
+
   constructor(messageBus: MessageBus, contextCreateOpts: any) {
     this.messageBus = messageBus;
     this.contextCreateOpts = contextCreateOpts;
@@ -1130,6 +1137,420 @@ class NodeHandlerRegistry {
     );
 
     //////////////////////////////////////////////
+    // git operations
+    this.messageBus.registerHandler('git.clone', async (data) => {
+      const { url, destination, taskId } = data;
+
+      // Import modules at handler scope so both try and catch can access them
+      const { promisify } = await import('util');
+      const { spawn, execFile } = await import('child_process');
+      const { existsSync, mkdirSync, rmSync } = await import('fs');
+      const { join, resolve } = await import('pathe');
+
+      // Declare clonePath at function scope so catch block can access it for cleanup
+      let clonePath = '';
+
+      try {
+        // Validate inputs
+        if (!url || !destination) {
+          return {
+            success: false,
+            error: 'Git URL and destination are required',
+          };
+        }
+
+        // Sanitize Git URL to prevent command injection
+        const sanitizedUrl = url
+          .split(/[;&|`$()]/)[0] // Remove shell special characters
+          .trim();
+
+        // Check if Git is available
+        try {
+          const execFilePromise = promisify(execFile);
+          await execFilePromise('git', ['--version']);
+        } catch (_gitError) {
+          return {
+            success: false,
+            error:
+              'Git is not installed or not available in PATH. Please install Git and try again.',
+          };
+        }
+
+        // Validate URL format with stricter pattern
+        // Support URLs with ports, usernames, and common special characters in repo names
+        if (
+          !this.GIT_HTTPS_PATTERN.test(sanitizedUrl) &&
+          !this.GIT_SSH_PATTERN.test(sanitizedUrl)
+        ) {
+          return {
+            success: false,
+            error:
+              'Invalid Git repository URL format. Please use HTTPS or SSH format.',
+          };
+        }
+
+        // Ensure destination directory exists
+        if (!existsSync(destination)) {
+          mkdirSync(destination, { recursive: true });
+        }
+
+        // Validate destination path security
+        const normalizedDest = resolve(destination);
+        const dangerousPaths = [
+          '/etc',
+          '/usr',
+          '/bin',
+          '/sbin',
+          '/var',
+          '/System',
+          'C:\\Windows',
+          'C:\\Program Files',
+        ];
+
+        if (dangerousPaths.some((p) => normalizedDest.startsWith(p))) {
+          return {
+            success: false,
+            error: 'Cannot clone to system directories',
+          };
+        }
+
+        // Extract repo name from URL
+        const repoNameMatch = sanitizedUrl.match(/\/([^/]+?)(\.git)?$/);
+        const repoName = repoNameMatch
+          ? repoNameMatch[1]
+          : `repo-${Date.now()}`;
+        clonePath = join(destination, repoName);
+
+        // Check if directory already exists
+        if (existsSync(clonePath)) {
+          return {
+            success: false,
+            error: `Directory '${repoName}' already exists at destination`,
+          };
+        }
+
+        // Clone the repository using spawn for better error handling
+        // spawn doesn't use a shell, preventing command injection
+        let gitProcess: ReturnType<typeof spawn> | null = null;
+        let isCancelled = false; // Track if user cancelled the operation
+        const clonePromise = new Promise<void>((resolve, reject) => {
+          // Use GIT_SSH_COMMAND to auto-accept SSH host keys on first connection
+          // This prevents interactive prompts that would hang the clone process
+          const env: Record<string, string> = {
+            ...process.env,
+            GIT_SSH_COMMAND: 'ssh -o StrictHostKeyChecking=accept-new',
+          };
+
+          // TODO: Implement HTTPS authentication with username/password
+          // Currently only supports:
+          // 1. Public HTTPS repos (no auth needed)
+          // 2. SSH repos with pre-configured keys
+          // Future: Add credential input dialog for private HTTPS repos
+
+          gitProcess = spawn(
+            'git',
+            ['clone', '--progress', sanitizedUrl, clonePath],
+            { env },
+          );
+          let stderr = '';
+          let currentStage = '';
+          const stageProgress = { receiving: 0, resolving: 0, checking: 0 };
+          let lastOverallPercent = 0; // Track last emitted progress to prevent regression
+
+          // Set up abort controller for cancellation
+          if (taskId) {
+            const abortController = new AbortController();
+            this.abortControllers.set(taskId, abortController);
+
+            abortController.signal.addEventListener('abort', async () => {
+              isCancelled = true; // Mark as cancelled
+              if (gitProcess) {
+                // Clean up event listeners to prevent memory leaks
+                gitProcess.stdout?.removeAllListeners();
+                gitProcess.stderr?.removeAllListeners();
+                gitProcess.removeAllListeners();
+
+                // Try graceful shutdown first
+                gitProcess.kill('SIGTERM');
+                // Wait 1 second for graceful shutdown, then force kill
+                setTimeout(() => {
+                  if (gitProcess && !gitProcess.killed) {
+                    gitProcess.kill('SIGKILL');
+                  }
+                }, 1000);
+              }
+              reject(new Error('Clone operation cancelled by user'));
+            });
+          }
+
+          // Git outputs progress to stderr
+          gitProcess.stderr?.on('data', (data: Buffer) => {
+            const output = data.toString();
+            stderr += output;
+
+            // Parse and emit progress events
+            // Git clone has multiple stages with varying durations depending on repo size
+            // We use adaptive progress tracking based on which stages actually occur
+            // Support both English and Chinese Git output
+            const progressMatch = output.match(/(\d+)%/);
+            if (progressMatch) {
+              const percent = Number.parseInt(progressMatch[1], 10);
+
+              // Detect current stage and update stage progress
+              // Support both English and Chinese (接收对象中 = Receiving objects, 处理 delta 中 = Resolving deltas, 检出文件中 = Checking out files)
+              if (
+                output.includes('Receiving objects') ||
+                output.includes('接收对象中')
+              ) {
+                currentStage = 'receiving';
+                stageProgress.receiving = percent;
+              } else if (
+                output.includes('Resolving deltas') ||
+                output.includes('处理 delta 中')
+              ) {
+                // Mark receiving as complete when resolving starts
+                if (stageProgress.receiving === 0) {
+                  stageProgress.receiving = 100;
+                }
+
+                // Reset lastOverallPercent when transitioning to new stage
+                // This prevents the monotonic check from blocking legitimate progress decrease
+                // when switching from single-stage (receiving 100%) to multi-stage calculation
+                if (currentStage !== 'resolving') {
+                  lastOverallPercent = 0;
+                }
+
+                currentStage = 'resolving';
+                stageProgress.resolving = percent;
+              } else if (
+                output.includes('Checking out files') ||
+                output.includes('检出文件中')
+              ) {
+                // Mark previous stages as complete
+                if (stageProgress.receiving === 0) {
+                  stageProgress.receiving = 100;
+                }
+                if (stageProgress.resolving === 0) {
+                  stageProgress.resolving = 100;
+                }
+
+                // Reset lastOverallPercent when transitioning to new stage
+                if (currentStage !== 'checking') {
+                  lastOverallPercent = 0;
+                }
+
+                currentStage = 'checking';
+                stageProgress.checking = percent;
+              } else {
+                // Unknown stage with percentage - skip to avoid noise
+                // This filters out non-progress lines like "remote: Counting objects: 10%"
+                return;
+              }
+
+              // Calculate overall progress (0-100%)
+              // Use adaptive weighting based on which stages are active
+              let overallPercent = 0;
+
+              // Determine active stages
+              const hasResolving =
+                stageProgress.resolving > 0 || currentStage === 'resolving';
+              const hasChecking =
+                stageProgress.checking > 0 || currentStage === 'checking';
+
+              if (hasResolving && hasChecking) {
+                // All three stages: Receiving(0-70%), Resolving(70-90%), Checking(90-100%)
+                overallPercent =
+                  Math.floor((stageProgress.receiving * 70) / 100) +
+                  Math.floor((stageProgress.resolving * 20) / 100) +
+                  Math.floor((stageProgress.checking * 10) / 100);
+              } else if (hasResolving) {
+                // Two stages: Receiving(0-80%), Resolving(80-100%)
+                overallPercent =
+                  Math.floor((stageProgress.receiving * 80) / 100) +
+                  Math.floor((stageProgress.resolving * 20) / 100);
+              } else {
+                // Single stage (small repos): Receiving(0-100%)
+                overallPercent = stageProgress.receiving;
+              }
+
+              // Ensure progress only increases (monotonic progress)
+              // This prevents UI from showing progress regression when stages transition
+              overallPercent = Math.max(overallPercent, lastOverallPercent);
+              lastOverallPercent = overallPercent;
+
+              this.messageBus.emitEvent('git.clone.progress', {
+                taskId,
+                percent: overallPercent,
+                message: output.trim(),
+              });
+            }
+          });
+
+          gitProcess.on('error', (error) => {
+            reject(error);
+          });
+
+          gitProcess.on('close', (code) => {
+            // If user cancelled, the abort handler already rejected with proper message
+            // Don't reject again with stderr to avoid overwriting the cancellation message
+            if (isCancelled) {
+              return;
+            }
+
+            if (code === 0) {
+              // Send 100% progress on successful completion
+              this.messageBus.emitEvent('git.clone.progress', {
+                taskId,
+                percent: 100,
+                message: 'Clone completed',
+              });
+              resolve();
+            } else {
+              reject(new Error(stderr || `Git clone exited with code ${code}`));
+            }
+          });
+        });
+
+        // Add timeout with configurable duration (default 30 minutes)
+        // Can be overridden via environment variable GIT_CLONE_TIMEOUT_MINUTES
+        const timeoutMinutes = process.env.GIT_CLONE_TIMEOUT_MINUTES
+          ? Number.parseInt(process.env.GIT_CLONE_TIMEOUT_MINUTES, 10)
+          : 30;
+        const CLONE_TIMEOUT = timeoutMinutes * 60 * 1000;
+        let timeoutId: NodeJS.Timeout | null = null;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            // Kill the git process on timeout
+            if (gitProcess) {
+              gitProcess.kill('SIGTERM');
+            }
+            reject(
+              new Error(
+                'Clone operation timed out. The repository might be too large or the connection is slow.',
+              ),
+            );
+          }, CLONE_TIMEOUT);
+        });
+
+        try {
+          await Promise.race([clonePromise, timeoutPromise]);
+        } finally {
+          // Clean up timeout regardless of success or failure
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+          // Clean up abort controller if exists
+          if (taskId && this.abortControllers.has(taskId)) {
+            this.abortControllers.delete(taskId);
+          }
+        }
+
+        return {
+          success: true,
+          data: {
+            clonePath,
+            repoName,
+          },
+        };
+      } catch (error: any) {
+        // Clean up abort controller in catch block as well (for early returns)
+        if (taskId && this.abortControllers.has(taskId)) {
+          this.abortControllers.delete(taskId);
+        }
+
+        // Clean up incomplete clone directory on failure
+        // Reuse the clonePath variable from outer scope to avoid duplication
+        if (clonePath && existsSync(clonePath)) {
+          try {
+            rmSync(clonePath, { recursive: true, force: true });
+          } catch (_cleanupError) {
+            // Cleanup failed, ignore
+          }
+        }
+
+        // Handle common git clone errors
+        const errorMessage = error.message || 'Unknown error';
+
+        // SSH-related errors
+        if (
+          errorMessage.includes('Host key verification failed') ||
+          errorMessage.includes('Permission denied (publickey)')
+        ) {
+          return {
+            success: false,
+            error:
+              'SSH authentication failed. Please ensure your SSH keys are properly configured.',
+            errorCode: 'SSH_AUTH_FAILED',
+          };
+        }
+
+        // HTTPS authentication errors
+        if (
+          errorMessage.includes('Authentication failed') ||
+          errorMessage.includes('could not read Username') ||
+          errorMessage.includes('could not read Password')
+        ) {
+          return {
+            success: false,
+            error:
+              'Authentication required. Please provide username and password.',
+            errorCode: 'AUTH_REQUIRED',
+            needsCredentials: true,
+          };
+        }
+
+        if (errorMessage.includes('Could not resolve hostname')) {
+          return {
+            success: false,
+            error:
+              'Could not resolve hostname. Please check your internet connection and the repository URL.',
+          };
+        }
+
+        if (
+          errorMessage.includes('not found') ||
+          errorMessage.includes('404')
+        ) {
+          return {
+            success: false,
+            error: 'Repository not found or access denied',
+          };
+        }
+
+        // User cancelled the operation
+        if (errorMessage.includes('cancelled by user')) {
+          return {
+            success: false,
+            error: 'Clone operation cancelled by user',
+            errorCode: 'CANCELLED',
+          };
+        }
+
+        return {
+          success: false,
+          error:
+            'Failed to clone repository. Please check the URL and try again.',
+        };
+      }
+    });
+
+    // Cancel git clone operation
+    this.messageBus.registerHandler('git.clone.cancel', async (data) => {
+      const { taskId } = data;
+      const controller = this.abortControllers.get(taskId);
+
+      if (controller) {
+        controller.abort();
+        this.abortControllers.delete(taskId);
+        return { success: true };
+      }
+      return {
+        success: false,
+        error: 'Clone task not found or already completed',
+      };
+    });
+
+    //////////////////////////////////////////////
     // providers
     this.messageBus.registerHandler('providers.list', async (data) => {
       const { cwd } = data;
@@ -1245,10 +1666,12 @@ class NodeHandlerRegistry {
       const resolvedModel =
         // e.g. model from slash command or agent
         model ||
-        (await this.messageBus.messageHandlers.get('session.getModel')?.({
-          cwd,
-          sessionId,
-        }))!.data.model;
+        (
+          await this.messageBus.messageHandlers.get('session.getModel')?.({
+            cwd,
+            sessionId,
+          })
+        )?.data.model;
 
       const abortController = new AbortController();
       const key = buildSignalKey(cwd, project.session.id);
