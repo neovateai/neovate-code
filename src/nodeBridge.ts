@@ -1264,20 +1264,34 @@ class NodeHandlerRegistry {
 
             abortController.signal.addEventListener('abort', async () => {
               isCancelled = true; // Mark as cancelled
-              if (gitProcess) {
+              if (gitProcess && !gitProcess.killed) {
                 // Clean up event listeners to prevent memory leaks
                 gitProcess.stdout?.removeAllListeners();
                 gitProcess.stderr?.removeAllListeners();
                 gitProcess.removeAllListeners();
 
-                // Try graceful shutdown first
+                // Try graceful shutdown first with SIGTERM
                 gitProcess.kill('SIGTERM');
-                // Wait 1 second for graceful shutdown, then force kill
-                setTimeout(() => {
-                  if (gitProcess && !gitProcess.killed) {
-                    gitProcess.kill('SIGKILL');
+
+                // Wait for process to exit gracefully
+                const processRef = gitProcess;
+                const exitPromise = new Promise<void>((resolve) => {
+                  processRef.once('exit', () => resolve());
+                  // Also resolve if process is already killed
+                  if (processRef.killed) {
+                    resolve();
+                  }
+                });
+
+                // Wait up to 1 second for graceful shutdown, then force kill
+                const timeout = setTimeout(() => {
+                  if (processRef && !processRef.killed) {
+                    processRef.kill('SIGKILL');
                   }
                 }, 1000);
+
+                // Clean up timeout when process exits
+                await exitPromise.then(() => clearTimeout(timeout));
               }
               reject(new Error('Clone operation cancelled by user'));
             });
@@ -1422,7 +1436,20 @@ class NodeHandlerRegistry {
           timeoutId = setTimeout(() => {
             // Kill the git process on timeout
             if (gitProcess) {
+              // Clean up event listeners
+              gitProcess.stdout?.removeAllListeners();
+              gitProcess.stderr?.removeAllListeners();
+              gitProcess.removeAllListeners();
+
+              // Try graceful shutdown
               gitProcess.kill('SIGTERM');
+
+              // Force kill after 1 second if still running
+              setTimeout(() => {
+                if (gitProcess && !gitProcess.killed) {
+                  gitProcess.kill('SIGKILL');
+                }
+              }, 1000);
             }
             reject(
               new Error(
