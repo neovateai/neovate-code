@@ -99,6 +99,7 @@ type GitStatusOutput = {
     hasStagedChanges: boolean;
     isGitInstalled: boolean;
     isUserConfigured: { name: boolean; email: boolean };
+    isMerging: boolean;
   };
   error?: string;
 };

@@ -29,6 +29,7 @@ interface GitStatusData {
   hasStagedChanges: boolean;
   isGitInstalled: boolean;
   isUserConfigured: { name: boolean; email: boolean };
+  isMerging: boolean;
 }
 
 interface ExecutionResult {
@@ -315,6 +316,21 @@ const CommitUI: React.FC<CommitUIProps> = ({ messageBus, cwd, options }) => {
           phase: 'error',
           error:
             'Git user email is not configured. Please run: git config --global user.email "your.email@example.com"',
+        });
+        return;
+      }
+
+      if (status.isMerging) {
+        setState({
+          phase: 'error',
+          error: `Merge state detected.
+
+Please use the following commands to complete the merge:
+  git status    # Check conflict status
+  git commit    # Create merge commit
+
+Using neo commit would create an improper commit message
+and may require re-resolving conflicts.`,
         });
         return;
       }

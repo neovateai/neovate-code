@@ -1222,6 +1222,9 @@ ${diff}
           isGitUserConfigured,
         } = await import('./utils/git');
         const { getStagedFileList } = await import('./utils/git');
+        const { existsSync } = await import('fs');
+        const { join } = await import('path');
+        const { getGitRoot } = await import('./worktree');
 
         // Check if git is installed
         const gitInstalled = await isGitInstalled();
@@ -1234,6 +1237,7 @@ ${diff}
               hasStagedChanges: false,
               isGitInstalled: false,
               isUserConfigured: { name: false, email: false },
+              isMerging: false,
             },
           };
         }
@@ -1249,16 +1253,22 @@ ${diff}
               hasStagedChanges: false,
               isGitInstalled: true,
               isUserConfigured: { name: false, email: false },
+              isMerging: false,
             },
           };
         }
 
         // Get all status information in parallel
-        const [hasChanges, userConfig, stagedFiles] = await Promise.all([
-          hasUncommittedChanges(cwd),
-          isGitUserConfigured(cwd),
-          getStagedFileList(cwd),
-        ]);
+        const [hasChanges, userConfig, stagedFiles, gitRoot] =
+          await Promise.all([
+            hasUncommittedChanges(cwd),
+            isGitUserConfigured(cwd),
+            getStagedFileList(cwd),
+            getGitRoot(cwd),
+          ]);
+
+        // Check if repository is in merge state
+        const isMerging = existsSync(join(gitRoot, '.git', 'MERGE_HEAD'));
 
         return {
           success: true,
@@ -1268,6 +1278,7 @@ ${diff}
             hasStagedChanges: stagedFiles.length > 0,
             isGitInstalled: true,
             isUserConfigured: userConfig,
+            isMerging,
           },
         };
       } catch (error: any) {
