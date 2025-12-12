@@ -803,6 +803,7 @@ export const useAppStore = create<AppStore>()(
         if (!isExecuting(status)) {
           return;
         }
+
         await bridge.request('session.cancel', {
           cwd,
           sessionId,
@@ -813,6 +814,7 @@ export const useAppStore = create<AppStore>()(
           processingTokens: 0,
           retryInfo: null,
           bashBackgroundPrompt: null,
+          agentProgressMap: {},
         });
       },
 

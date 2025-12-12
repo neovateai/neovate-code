@@ -166,10 +166,13 @@ export function AgentProgressItem({
   }, [progress]);
 
   const progressText = useMemo(() => {
+    if (taskDescription) {
+      return taskDescription;
+    }
     const typeLabel = agentType
       ? `${agentType.charAt(0).toUpperCase() + agentType.slice(1)}`
       : 'Agent';
-    return `${typeLabel}(${taskDescription})`;
+    return typeLabel;
   }, [agentType, taskDescription]);
 
   const highlightIndex = useTextGradientAnimation(
@@ -192,9 +195,12 @@ export function AgentProgressItem({
     <Box flexDirection="column" width="100%">
       {/* Header Line */}
       <Box>
-        <Text color="white" bold>
-          {progressText}
-        </Text>
+        <GradientText
+          text={progressText}
+          highlightIndex={highlightIndex}
+          baseColor="green"
+          highlightColor="white"
+        />
       </Box>
 
       {/* Content box */}
@@ -223,7 +229,7 @@ export function AgentProgressItem({
                 {/* Tool Use Line */}
                 <Box>
                   <Text color="gray">└ </Text>
-                  <Text color="white" bold>
+                  <Text color="cyan">
                     {formatToolUse(latestActivity.toolUse)}
                   </Text>
                 </Box>
@@ -250,13 +256,9 @@ export function AgentProgressItem({
             )}
 
             {/* Footer / More info */}
-            <Box marginTop={0}>
-              {hiddenToolUses > 0 && (
-                <Text color="gray" dimColor>
-                  +{hiddenToolUses} more tool uses{' '}
-                </Text>
-              )}
+            <Box marginTop={0} marginLeft={2}>
               <Text color="gray" dimColor>
+                {hiddenToolUses > 0 ? `+${hiddenToolUses} more tool uses ` : ''}
                 (ctrl+o to expand)
               </Text>
             </Box>

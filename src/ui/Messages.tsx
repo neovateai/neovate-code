@@ -9,9 +9,9 @@ import type {
   ToolMessage,
   ToolMessage2,
   ToolResultPart,
+  ToolResultPart2,
   ToolUsePart,
   UserMessage,
-  ToolResultPart2,
 } from '../message';
 import {
   getMessageText,
@@ -476,6 +476,12 @@ function SubAgentToolResult({ toolResult }: { toolResult: ToolResultPart }) {
     return { toolCalls, tokens: formattedTokens };
   }, [progress]);
 
+  // Extract description or prompt from input
+  const taskDescription = useMemo(() => {
+    if (!toolResult.input) return null;
+    return toolResult.input['description'] || toolResult.input['prompt'];
+  }, [toolResult.input]);
+
   if (!agentId) {
     return <ToolResultItem part={toolResult} />;
   }
@@ -490,6 +496,14 @@ function SubAgentToolResult({ toolResult }: { toolResult: ToolResultPart }) {
         <Box>
           <Text color="gray">└ </Text>
           <Text color="white">Done </Text>
+          {taskDescription && (
+            <Text color="gray" dimColor>
+              -{' '}
+              {taskDescription.length > 50
+                ? taskDescription.slice(0, 50) + '...'
+                : taskDescription}{' '}
+            </Text>
+          )}
           <Text color="gray" dimColor>
             ({stats.toolCalls} tool uses · {stats.tokens} tokens)
           </Text>
@@ -503,6 +517,14 @@ function SubAgentToolResult({ toolResult }: { toolResult: ToolResultPart }) {
           <Box>
             <Text color="gray">└ </Text>
             <Text color="white">Done </Text>
+            {taskDescription && (
+              <Text color="gray" dimColor>
+                -{' '}
+                {taskDescription.length > 50
+                  ? taskDescription.slice(0, 50) + '...'
+                  : taskDescription}{' '}
+              </Text>
+            )}
             <Text color="gray" dimColor>
               ({stats.toolCalls} tool uses · {stats.tokens} tokens)
             </Text>
@@ -528,8 +550,25 @@ function SubAgentToolResult({ toolResult }: { toolResult: ToolResultPart }) {
 }
 
 function ToolUse({ part }: { part: ToolUsePart }) {
-  const { name, displayName } = part;
+  const { name, displayName, input } = part;
   const description = part.description;
+
+  if (name === 'task' && input) {
+    const subagentType = input['subagent_type'];
+
+    if (subagentType && typeof subagentType === 'string') {
+      const capitalizedType =
+        subagentType.charAt(0).toUpperCase() + subagentType.slice(1);
+
+      return (
+        <Box marginTop={SPACING.MESSAGE_MARGIN_TOP}>
+          <Text bold color={UI_COLORS.TOOL}>
+            Task({capitalizedType})
+          </Text>
+        </Box>
+      );
+    }
+  }
 
   return (
     <Box marginTop={SPACING.MESSAGE_MARGIN_TOP}>
