@@ -29,7 +29,7 @@ describe('splitMessages', () => {
     expect(result.pendingMessages).toHaveLength(0);
   });
 
-  test('should put all in completed when all tools have results', () => {
+  test('should keep last tool group in pending even if completed', () => {
     const messages = [
       createMockMessage(
         'assistant',
@@ -51,8 +51,8 @@ describe('splitMessages', () => {
       ),
     ];
     const result = splitMessages(messages);
-    expect(result.completedMessages).toHaveLength(2);
-    expect(result.pendingMessages).toHaveLength(0);
+    expect(result.completedMessages).toHaveLength(0);
+    expect(result.pendingMessages).toHaveLength(2);
   });
 
   test('should split when tools are pending', () => {
@@ -140,8 +140,8 @@ describe('splitMessages', () => {
       ),
     ];
     const result = splitMessages(messages);
-    expect(result.completedMessages).toHaveLength(4);
-    expect(result.pendingMessages).toHaveLength(0);
+    expect(result.completedMessages).toHaveLength(2);
+    expect(result.pendingMessages).toHaveLength(2);
   });
 
   test('should split at last pending tool_use group', () => {
