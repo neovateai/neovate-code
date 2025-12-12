@@ -15,14 +15,26 @@ import { NodeBridge } from '../nodeBridge';
 type RunState =
   | { phase: 'idle' }
   | { phase: 'generating'; prompt: string }
-  | { phase: 'displaying'; command: string }
-  | { phase: 'editing'; command: string; editedCommand: string }
+  | { phase: 'displaying'; command: string; prompt: string }
+  | { phase: 'editing'; command: string; prompt: string; editedCommand: string }
+  | {
+      phase: 'editingPrompt';
+      command: string;
+      prompt: string;
+      editedPrompt: string;
+    }
   | { phase: 'executing'; command: string }
   | { phase: 'success'; command: string; output: string }
-  | { phase: 'error'; command: string; error: string }
+  | { phase: 'error'; command: string; prompt: string; error: string }
   | { phase: 'cancelled' };
 
-type RunAction = 'execute' | 'copy' | 'edit' | 'cancel' | 'retry';
+type RunAction =
+  | 'execute'
+  | 'copy'
+  | 'edit'
+  | 'regenerate'
+  | 'cancel'
+  | 'retry';
 
 interface RunOptions {
   model?: string;
@@ -138,6 +150,7 @@ const ACTIONS: ActionItem[] = [
   { value: 'execute', label: 'Execute command', icon: '▶️' },
   { value: 'copy', label: 'Copy to clipboard', icon: '📋' },
   { value: 'edit', label: 'Edit command', icon: '✏️' },
+  { value: 'regenerate', label: 'Edit prompt & regenerate', icon: '🔁' },
   { value: 'cancel', label: 'Cancel', icon: '❌' },
 ];
 
@@ -319,7 +332,18 @@ const RunUI: React.FC<RunUIProps> = ({
         setShouldExit(true);
       } else if (state.phase === 'editing') {
         // Cancel editing, go back to displaying
-        setState({ phase: 'displaying', command: state.command });
+        setState({
+          phase: 'displaying',
+          command: state.command,
+          prompt: state.prompt,
+        });
+      } else if (state.phase === 'editingPrompt') {
+        // Cancel prompt editing, go back to displaying
+        setState({
+          phase: 'displaying',
+          command: state.command,
+          prompt: state.prompt,
+        });
       } else if (
         state.phase === 'displaying' ||
         state.phase === 'success' ||
@@ -349,6 +373,7 @@ const RunUI: React.FC<RunUIProps> = ({
           setState({
             phase: 'error',
             command: '',
+            prompt,
             error: result.error || 'Failed to generate command from AI',
           });
           return;
@@ -371,16 +396,18 @@ const RunUI: React.FC<RunUIProps> = ({
             setState({
               phase: 'error',
               command,
+              prompt,
               error: execResult.output,
             });
           }
         } else {
-          setState({ phase: 'displaying', command });
+          setState({ phase: 'displaying', command, prompt });
         }
       } catch (error: any) {
         setState({
           phase: 'error',
           command: '',
+          prompt,
           error: error.message || 'Failed to generate command',
         });
       }
@@ -409,8 +436,8 @@ const RunUI: React.FC<RunUIProps> = ({
     async (action: RunAction) => {
       if (state.phase !== 'displaying' && state.phase !== 'error') return;
 
-      const command =
-        state.phase === 'displaying' ? state.command : state.command;
+      const command = state.command;
+      const prompt = state.prompt;
 
       switch (action) {
         case 'execute':
@@ -428,6 +455,7 @@ const RunUI: React.FC<RunUIProps> = ({
             setState({
               phase: 'error',
               command,
+              prompt,
               error: result.output,
             });
           }
@@ -449,7 +477,18 @@ const RunUI: React.FC<RunUIProps> = ({
           setState({
             phase: 'editing',
             command,
+            prompt,
             editedCommand: command,
+          });
+          break;
+        }
+
+        case 'regenerate': {
+          setState({
+            phase: 'editingPrompt',
+            command,
+            prompt,
+            editedPrompt: prompt,
           });
           break;
         }
@@ -465,10 +504,28 @@ const RunUI: React.FC<RunUIProps> = ({
   );
 
   // Handle edit submission
-  const handleEditSubmit = useCallback((value: string) => {
-    if (!value.trim()) return;
-    setState({ phase: 'displaying', command: value.trim() });
-  }, []);
+  const handleEditSubmit = useCallback(
+    (value: string) => {
+      if (!value.trim()) return;
+      if (state.phase === 'editing') {
+        setState({
+          phase: 'displaying',
+          command: value.trim(),
+          prompt: state.prompt,
+        });
+      }
+    },
+    [state],
+  );
+
+  // Handle prompt edit submission
+  const handlePromptEditSubmit = useCallback(
+    (value: string) => {
+      if (!value.trim()) return;
+      generateCommand(value.trim());
+    },
+    [generateCommand],
+  );
 
   // Render based on current state
   return (
@@ -558,6 +615,35 @@ const RunUI: React.FC<RunUIProps> = ({
         </Box>
       )}
 
+      {/* Editing Prompt Phase */}
+      {state.phase === 'editingPrompt' && (
+        <Box flexDirection="column">
+          <CommandCard command={state.command} />
+          <Box marginTop={1} flexDirection="column">
+            <Text bold>Edit prompt to regenerate:</Text>
+            <Box marginTop={1}>
+              <Text color="magenta">{'> '}</Text>
+              <TextInput
+                value={state.editedPrompt}
+                onChange={(value) =>
+                  setState((prev) =>
+                    prev.phase === 'editingPrompt'
+                      ? { ...prev, editedPrompt: value }
+                      : prev,
+                  )
+                }
+                onSubmit={handlePromptEditSubmit}
+              />
+            </Box>
+            <Box marginTop={1}>
+              <Text color="gray" dimColor>
+                Press Enter to regenerate command, Esc to cancel
+              </Text>
+            </Box>
+          </Box>
+        </Box>
+      )}
+
       {/* Executing Phase */}
       {state.phase === 'executing' && (
         <Box flexDirection="column">
@@ -595,12 +681,25 @@ const RunUI: React.FC<RunUIProps> = ({
       {state.phase === 'error' && state.command && (
         <Box flexDirection="column">
           <CommandCard command={state.command} />
+          <Box
+            marginTop={1}
+            flexDirection="column"
+            borderStyle="round"
+            borderColor="red"
+            paddingX={1}
+          >
+            <Text bold color="red">
+              ❌ Execution Failed
+            </Text>
+            <Box marginTop={1}>
+              <Text color="red">{state.error}</Text>
+            </Box>
+          </Box>
           <Box marginTop={1}>
-            <ErrorDisplay
-              error={state.error}
-              onRetry={() => handleAction('retry')}
-              onEdit={() => handleAction('edit')}
-              onExit={() => setShouldExit(true)}
+            <RunActionSelector
+              onSelect={handleAction}
+              onCancel={() => setShouldExit(true)}
+              showRetry={true}
             />
           </Box>
         </Box>
