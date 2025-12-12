@@ -1,5 +1,5 @@
-import { Box, Text } from 'ink';
-import React, { useEffect, useMemo, useState } from 'react';
+import { Box, Text, useInput } from 'ink';
+import React, { useMemo, useState } from 'react';
 import type {
   AssistantMessage,
   NormalizedMessage,
@@ -18,6 +18,13 @@ import { useTextGradientAnimation } from './useTextGradientAnimation';
  */
 export function AgentProgressOverlay() {
   const agentProgressMap = useAppStore((state) => state.agentProgressMap);
+  const [expanded, setExpanded] = useState(false);
+
+  useInput((input, key) => {
+    if (key.ctrl && input === 'o') {
+      setExpanded((prev) => !prev);
+    }
+  });
 
   // Filter running agents and sort by start time
   const runningAgents = useMemo(() => {
@@ -40,6 +47,7 @@ export function AgentProgressOverlay() {
                 agentId={agent.agentId}
                 agentType={agent.agentType}
                 isLast={true}
+                expanded={expanded}
               />
             </Box>
           );
@@ -53,6 +61,7 @@ interface AgentProgressItemProps {
   agentId: string;
   agentType?: string;
   isLast: boolean;
+  expanded: boolean;
 }
 
 /**
@@ -63,25 +72,9 @@ export function AgentProgressItem({
   agentId,
   agentType,
   isLast,
+  expanded,
 }: AgentProgressItemProps) {
   const progress = useAppStore((state) => state.agentProgressMap[agentId]);
-  const [expanded, setExpanded] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-
-  // Track elapsed time
-  useEffect(() => {
-    if (!progress) return;
-
-    const updateElapsed = () => {
-      const elapsed = Math.floor((Date.now() - progress.lastUpdate) / 1000);
-      setElapsedSeconds(elapsed);
-    };
-
-    updateElapsed();
-    const interval = setInterval(updateElapsed, 1000);
-    return () => clearInterval(interval);
-  }, [progress?.lastUpdate]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -210,7 +203,7 @@ export function AgentProgressItem({
           <Box flexDirection="column">
             {progress.messages.map((msg, idx) => (
               <NestedAgentMessage
-                key={idx}
+                key={msg.uuid}
                 message={msg}
                 isLast={idx === progress.messages.length - 1}
               />
@@ -360,6 +353,9 @@ export function NestedAgentMessage({
   message: NormalizedMessage;
   isLast?: boolean;
 }) {
+  // Common left border style
+  const border = <Text color="gray">│ </Text>;
+
   if (message.role === 'user') {
     const content =
       typeof message.content === 'string'
@@ -367,9 +363,11 @@ export function NestedAgentMessage({
         : JSON.stringify(message.content);
     return (
       <Box>
-        <Text color="cyan">│ </Text>
-        <Text color="blue">User: </Text>
-        <Text>
+        {border}
+        <Text color="blue" bold>
+          User:{' '}
+        </Text>
+        <Text color="gray">
           {content.length > 60 ? `${content.slice(0, 60)}...` : content}
         </Text>
       </Box>
@@ -383,8 +381,7 @@ export function NestedAgentMessage({
     if (typeof assistantMsg.content === 'string') {
       return (
         <Box>
-          <Text color="cyan">│ </Text>
-          <Text color="white">Assistant: </Text>
+          {border}
           <Text>
             {assistantMsg.content.length > 60
               ? `${assistantMsg.content.slice(0, 60)}...`
@@ -406,9 +403,9 @@ export function NestedAgentMessage({
           {textParts.map((part, idx) => {
             if ('text' in part) {
               return (
+                // biome-ignore lint/suspicious/noArrayIndexKey: text parts have no unique id
                 <Box key={`text-${idx}`}>
-                  <Text color="cyan">│ </Text>
-                  <Text color="white">Assistant: </Text>
+                  {border}
                   <Text>
                     {part.text.length > 60
                       ? `${part.text.slice(0, 60)}...`
@@ -419,14 +416,13 @@ export function NestedAgentMessage({
             }
             return null;
           })}
-          {toolUses.map((toolUse, idx) => {
+          {toolUses.map((toolUse) => {
             if ('name' in toolUse) {
               return (
-                <Box key={`tool-${idx}`}>
-                  <Text color="cyan">│ </Text>
-                  {/* <Text color="white">Assistant: </Text> */}
+                <Box key={toolUse.id}>
+                  {border}
                   <Text color="gray">└ </Text>
-                  <Text color={UI_COLORS.TOOL}>
+                  <Text color="cyan">
                     {formatToolUse(toolUse as ToolUsePart)}
                   </Text>
                 </Box>
@@ -440,13 +436,11 @@ export function NestedAgentMessage({
   }
 
   if (message.role === 'tool') {
-    // We might want to show tool results in expanded view too
-    // But usually tool results are verbose.
+    // Tool Results
     return (
       <Box>
-        <Text color="cyan">│ </Text>
-        <Text color="green"> </Text>
-        <Text color={UI_COLORS.TOOL_RESULT}>✓ Tool results</Text>
+        {border}
+        <Text color="gray"> Result</Text>
       </Box>
     );
   }

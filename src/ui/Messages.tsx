@@ -1,4 +1,4 @@
-import { Box, Static, Text } from 'ink';
+import { Box, Static, Text, useInput } from 'ink';
 import pc from 'picocolors';
 import React, { useEffect, useMemo, useState } from 'react';
 import type {
@@ -150,14 +150,12 @@ export function splitMessages(messages: NormalizedMessage[]): {
   // 5. Check if all tools are completed
   const allToolsCompleted = toolUseIds.every((id) => toolResults.has(id));
 
-  if (allToolsCompleted) {
-    return { completedMessages: messages, pendingMessages: [] };
-  } else {
-    return {
-      completedMessages: messages.slice(0, lastToolUseIndex),
-      pendingMessages: messages.slice(lastToolUseIndex),
-    };
-  }
+  // Always keep the last tool interaction sequence dynamic to allow interaction (e.g. expanding sub-agent details)
+  // Even if completed, we want to allow users to toggle expansion with ctrl+o
+  return {
+    completedMessages: messages.slice(0, lastToolUseIndex),
+    pendingMessages: messages.slice(lastToolUseIndex),
+  };
 }
 
 export function pairToolsWithResults(
@@ -438,6 +436,12 @@ function SubAgentToolResult({ toolResult }: { toolResult: ToolResultPart }) {
   const { loadAgentMessages, agentProgressMap } = useAppStore();
   const agentId = toolResult.agentId;
   const [expanded, setExpanded] = useState(false);
+
+  useInput((input, key) => {
+    if (key.ctrl && input === 'o') {
+      setExpanded((prev) => !prev);
+    }
+  });
 
   useEffect(() => {
     if (agentId) {
