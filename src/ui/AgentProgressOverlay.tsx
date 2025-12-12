@@ -4,6 +4,7 @@ import type {
   AssistantMessage,
   NormalizedMessage,
   TextPart,
+  ToolMessage2,
   ToolResultPart2,
   ToolUsePart,
 } from '../message';
@@ -436,13 +437,25 @@ export function NestedAgentMessage({
   }
 
   if (message.role === 'tool') {
+    const toolMsg = message as ToolMessage2;
     // Tool Results
-    return (
-      <Box>
-        {border}
-        <Text color="gray"> Result</Text>
-      </Box>
-    );
+    if (Array.isArray(toolMsg.content)) {
+      return (
+        <Box flexDirection="column">
+          {toolMsg.content.map((part, idx) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: tool results have no unique id
+            <Box key={idx}>
+              {border}
+              <Text color="gray" dimColor>
+                {' '}
+                ↳{' '}
+              </Text>
+              <Text color="gray">{formatToolResult(part)}</Text>
+            </Box>
+          ))}
+        </Box>
+      );
+    }
   }
 
   return null;

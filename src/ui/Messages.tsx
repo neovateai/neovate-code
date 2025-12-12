@@ -1,6 +1,6 @@
 import { Box, Static, Text, useInput } from 'ink';
 import pc from 'picocolors';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import type {
   AssistantMessage,
   NormalizedMessage,
@@ -21,11 +21,6 @@ import {
   isUserBashOutputMessage,
   toolResultPart2ToToolResultPart,
 } from '../message';
-import {
-  AgentProgressOverlay,
-  formatToolUse,
-  NestedAgentMessage,
-} from './AgentProgressOverlay';
 import { SPACING, UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
 import { GradientString } from './GradientString';
@@ -433,8 +428,8 @@ function AssistantText({
 }
 
 function SubAgentToolResult({ toolResult }: { toolResult: ToolResultPart }) {
-  const { loadAgentMessages, agentProgressMap } = useAppStore();
-  const agentId = toolResult.agentId;
+  const { input, result } = toolResult;
+  const prompt = input['prompt'] || input['description'];
   const [expanded, setExpanded] = useState(false);
 
   useInput((input, key) => {
@@ -443,109 +438,90 @@ function SubAgentToolResult({ toolResult }: { toolResult: ToolResultPart }) {
     }
   });
 
-  useEffect(() => {
-    if (agentId) {
-      loadAgentMessages(agentId);
+  // Extract content from llmContent
+  let response = result.llmContent;
+  const stats = { toolCalls: 0, tokens: '0' };
+
+  if (typeof response === 'string') {
+    // Try to extract clean content from the formatted string in task.ts
+    // Format: Sub-agent (...) completed successfully:\n\n${content}\n\n---
+    const successMatch = response.match(
+      /Sub-agent \(.*\) completed successfully:\n\n([\s\S]*?)\n\n---/,
+    );
+    const failMatch = response.match(
+      /Sub-agent \(.*\) failed:\n\n([\s\S]*?)\n\n---/,
+    );
+
+    if (successMatch) {
+      response = successMatch[1];
+    } else if (failMatch) {
+      response = failMatch[1];
     }
-  }, [agentId, loadAgentMessages]);
 
-  const progress = agentId ? agentProgressMap[agentId] : undefined;
+    // Extract stats
+    if (typeof result.llmContent === 'string') {
+      const toolCallsMatch = result.llmContent.match(/Tool Calls: (\d+)/);
+      const tokensMatch = result.llmContent.match(
+        /Tokens: (\d+) input, (\d+) output/,
+      );
 
-  // Calculate stats
-  const stats = useMemo(() => {
-    if (!progress || !progress.messages) {
-      return { toolCalls: 0, tokens: 0 };
+      if (toolCallsMatch) {
+        stats.toolCalls = parseInt(toolCallsMatch[1], 10);
+      }
+      if (tokensMatch) {
+        const tokens =
+          parseInt(tokensMatch[1], 10) + parseInt(tokensMatch[2], 10);
+        stats.tokens =
+          tokens > 1000 ? `${(tokens / 1000).toFixed(1)}k` : `${tokens}`;
+      }
     }
-
-    const messages = progress.messages;
-    const toolCalls = messages.filter((msg) => {
-      if (msg.role === 'assistant' && Array.isArray(msg.content)) {
-        return msg.content.some((p) => p.type === 'tool_use');
-      }
-      return false;
-    }).length;
-
-    const tokens = messages.reduce((sum, msg) => {
-      if (msg.role === 'assistant' && 'usage' in msg) {
-        const usage = (msg as AssistantMessage).usage;
-        return sum + (usage?.input_tokens || 0) + (usage?.output_tokens || 0);
-      }
-      return sum;
-    }, 0);
-
-    // Format tokens
-    const formattedTokens =
-      tokens > 1000 ? `${(tokens / 1000).toFixed(1)}k` : tokens;
-
-    return { toolCalls, tokens: formattedTokens };
-  }, [progress]);
-
-  // Extract description or prompt from input
-  const taskDescription = useMemo(() => {
-    if (!toolResult.input) return null;
-    return toolResult.input['description'] || toolResult.input['prompt'];
-  }, [toolResult.input]);
-
-  if (!agentId) {
-    return <ToolResultItem part={toolResult} />;
+  } else if (Array.isArray(response)) {
+    response = response
+      .map((p) => (p.type === 'text' ? p.text : '[Image]'))
+      .join('');
   }
 
-  if (!progress) {
-    return <Text color="gray">Loading agent details...</Text>;
-  }
+  const header = (
+    <Box flexDirection="row">
+      <Text color="gray">└ </Text>
+      <Text color="white">Done </Text>
+      <Text color="gray" dimColor wrap="truncate-end">
+        {' '}
+        ({stats.toolCalls} tool uses · {stats.tokens} tokens) (ctrl+o to{' '}
+        {expanded ? 'collapse' : 'expand'})
+      </Text>
+    </Box>
+  );
 
   return (
     <Box flexDirection="column">
-      {!expanded ? (
-        <Box>
-          <Text color="gray">└ </Text>
-          <Text color="white">Done </Text>
-          {taskDescription && (
-            <Text color="gray" dimColor>
-              -{' '}
-              {taskDescription.length > 50
-                ? taskDescription.slice(0, 50) + '...'
-                : taskDescription}{' '}
-            </Text>
-          )}
-          <Text color="gray" dimColor>
-            ({stats.toolCalls} tool uses · {stats.tokens} tokens)
-          </Text>
-          <Text color="gray" dimColor>
-            {' '}
-            (ctrl+o to expand)
-          </Text>
-        </Box>
-      ) : (
-        <Box flexDirection="column">
+      {header}
+      {expanded && (
+        <Box flexDirection="column" marginTop={0}>
           <Box>
             <Text color="gray">└ </Text>
-            <Text color="white">Done </Text>
-            {taskDescription && (
-              <Text color="gray" dimColor>
-                -{' '}
-                {taskDescription.length > 50
-                  ? taskDescription.slice(0, 50) + '...'
-                  : taskDescription}{' '}
-              </Text>
-            )}
-            <Text color="gray" dimColor>
-              ({stats.toolCalls} tool uses · {stats.tokens} tokens)
-            </Text>
-            <Text color="gray" dimColor>
-              {' '}
-              (ctrl+o to collapse)
+            <Text bold color={UI_COLORS.TOOL}>
+              Prompt:
             </Text>
           </Box>
-          <Box
-            flexDirection="column"
-            paddingLeft={1}
-            borderStyle="round"
-            borderColor="gray"
-          >
-            {progress.messages.map((msg, idx) => (
-              <NestedAgentMessage key={idx} message={msg} />
-            ))}
+          <Box marginLeft={2}>
+            <Text color={UI_COLORS.TOOL_RESULT}>
+              {typeof prompt === 'string' ? prompt : JSON.stringify(prompt)}
+            </Text>
+          </Box>
+
+          <Box>
+            <Text color="gray">└ </Text>
+            <Text bold color={UI_COLORS.TOOL}>
+              Response:
+            </Text>
+          </Box>
+          <Box marginLeft={2}>
+            <Text color={UI_COLORS.TOOL_RESULT}>
+              {typeof response === 'string'
+                ? response
+                : JSON.stringify(response)}
+            </Text>
           </Box>
         </Box>
       )}
