@@ -1,5 +1,6 @@
 import { TOOL_NAMES } from './constants';
 import type { OutputStyle } from './outputStyle';
+import { type SkillMetadata, renderSkillsSection } from './skill';
 
 function getTasksPrompt(opts: { todo: boolean; productName: string }) {
   if (!opts.todo) {
@@ -72,8 +73,9 @@ export function generateSystemPrompt(opts: {
   language?: string;
   appendSystemPrompt?: string;
   outputStyle: OutputStyle;
+  skills?: SkillMetadata[];
 }) {
-  const { outputStyle } = opts;
+  const { outputStyle, skills = [] } = opts;
   const isDefaultOutputStyle = outputStyle.isDefault();
   return `
 You are an interactive CLI tool that helps users ${isDefaultOutputStyle ? 'with software engineering tasks.' : `according to your "Output Style" below, which describes how you should respond to user queries.`} Use the instructions below and the tools available to you to assist the user.
@@ -143,6 +145,7 @@ ${getTasksPrompt(opts)}`
     : ''
 }
 
+${renderSkillsSection(skills)}
 ${opts.appendSystemPrompt ? opts.appendSystemPrompt : ''}
 `.trim();
 }

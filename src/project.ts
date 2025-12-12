@@ -73,6 +73,7 @@ export class Project {
       productName: this.context.productName,
       language: this.context.config.language,
       outputStyle,
+      skills: this.context.skillManager.getSkills(),
     });
     systemPrompt = await this.context.apply({
       hook: 'systemPrompt',

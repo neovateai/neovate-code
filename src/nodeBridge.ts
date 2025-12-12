@@ -1585,6 +1585,31 @@ ${diff}
         context,
       });
 
+      // Inject skill bodies if skill mentions are found in the message
+      let processedMessage = message;
+      if (message) {
+        const skillManager = context.skillManager;
+        const mentionedSkills = skillManager.findSkillMentions(message);
+        if (mentionedSkills.length > 0) {
+          const skillInjections: string[] = [];
+          for (const skill of mentionedSkills) {
+            try {
+              const body = await skillManager.readSkillBody(skill);
+              skillInjections.push(
+                skillManager.formatSkillInjection(skill.name, skill.path, body),
+              );
+            } catch (error) {
+              console.warn(
+                `[skill] Warning: Failed to read skill ${skill.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              );
+            }
+          }
+          if (skillInjections.length > 0) {
+            processedMessage = `${message}\n\n${skillInjections.join('\n\n')}`;
+          }
+        }
+      }
+
       const resolvedModel =
         // e.g. model from slash command or agent
         model ||
@@ -1600,7 +1625,7 @@ ${diff}
       this.abortControllers.set(key, abortController);
 
       const fn = data.planMode ? project.plan : project.send;
-      const result = await fn.call(project, message, {
+      const result = await fn.call(project, processedMessage, {
         attachments,
         model: resolvedModel,
         parentUuid,

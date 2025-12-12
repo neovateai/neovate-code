@@ -13,6 +13,7 @@ import {
   PluginHookType,
   PluginManager,
 } from './plugin';
+import { SkillManager } from './skill';
 
 type ContextOpts = {
   cwd: string;
@@ -25,6 +26,7 @@ type ContextOpts = {
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
+  skillManager: SkillManager;
   messageBus?: MessageBus;
 };
 
@@ -49,6 +51,7 @@ export class Context {
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
+  skillManager: SkillManager;
   messageBus?: MessageBus;
 
   constructor(opts: ContextOpts) {
@@ -62,6 +65,7 @@ export class Context {
     this.#pluginManager = opts.pluginManager;
     this.argvConfig = opts.argvConfig;
     this.backgroundTaskManager = opts.backgroundTaskManager;
+    this.skillManager = opts.skillManager;
     this.messageBus = opts.messageBus;
   }
 
@@ -132,6 +136,14 @@ export class Context {
     };
     const mcpManager = MCPManager.create(mcpServers);
     const backgroundTaskManager = new BackgroundTaskManager();
+    const skillManager = new SkillManager({
+      paths,
+      productName,
+    });
+    // Log skill loading errors (non-blocking)
+    for (const error of skillManager.getErrors()) {
+      console.warn(`[skill] Warning: ${error.path}: ${error.message}`);
+    }
     return new Context({
       cwd,
       productName,
@@ -143,6 +155,7 @@ export class Context {
       paths,
       mcpManager,
       backgroundTaskManager,
+      skillManager,
       messageBus: opts.messageBus,
     });
   }
