@@ -1,6 +1,7 @@
 import { Box, Text } from 'ink';
 import Spinner from 'ink-spinner';
 import React, { useEffect, useState } from 'react';
+import type { AssistantMessage } from '../../message';
 import { GradientText } from '../../ui/GradientText';
 import { useAppStore } from '../../ui/store';
 import { useTextGradientAnimation } from '../../ui/useTextGradientAnimation';
@@ -54,35 +55,27 @@ function getLatencyBar(ms: number, maxWidth = 20): string {
   return '█'.repeat(filled) + '░'.repeat(maxWidth - filled);
 }
 
-function formatFinalResults(results: PingResult[]): string {
+function formatResultsText(results: PingResult[]): string {
   const sorted = [...results].sort((a, b) => {
     if (a.status === 'success' && b.status === 'failed') return -1;
     if (a.status === 'failed' && b.status === 'success') return 1;
     return (a.responseTime || 0) - (b.responseTime || 0);
   });
 
-  const lines: string[] = [
-    '╭─────────────────────────────────────────────────────────╮',
-    '│              Network Latency Test Results               │',
-    '├─────────────────────────────────────────────────────────┤',
-  ];
+  const lines: string[] = ['**Network Latency Test Results**\n'];
 
   for (const result of sorted) {
-    const name = result.providerName.padEnd(15).slice(0, 15);
+    const name = result.providerName;
     if (result.status === 'success' && result.responseTime !== undefined) {
       const ms = result.responseTime;
       const icon = ms < 200 ? '🟢' : ms < 500 ? '🟡' : ms < 1000 ? '🟠' : '🔴';
-      const time = `${ms}ms`.padStart(7);
-      const bar = getLatencyBar(ms, 15);
-      lines.push(`│ ${icon} ${name} ${time}  ${bar} │`);
+      lines.push(`${icon} **${name}**: ${ms}ms`);
     } else {
-      lines.push(`│ ❌ ${name}  Failed  ${result.error?.slice(0, 20) || ''} │`);
+      lines.push(`❌ **${name}**: Failed - ${result.error || 'Unknown error'}`);
     }
   }
 
-  lines.push('╰─────────────────────────────────────────────────────────╯');
-  lines.push('');
-  lines.push('Legend: 🟢 <200ms  🟡 200-500ms  🟠 500-1000ms  🔴 >1000ms');
+  lines.push('\n_Legend: 🟢 <200ms  🟡 200-500ms  🟠 500-1000ms  🔴 >1000ms_');
 
   return lines.join('\n');
 }
@@ -93,7 +86,7 @@ export const pingCommand: LocalJSXCommand = {
   description: 'Test network latency to configured AI service providers',
   async call(onDone) {
     return React.createElement(() => {
-      const { bridge, cwd } = useAppStore();
+      const { bridge, cwd, addMessage } = useAppStore();
       const [results, setResults] = useState<PingResult[]>([]);
       const [loading, setLoading] = useState(true);
       const [error, setError] = useState<string | null>(null);
@@ -166,12 +159,27 @@ export const pingCommand: LocalJSXCommand = {
 
       useEffect(() => {
         if (completed && results.length > 0) {
+          // Add result as assistant message
+          const resultText = formatResultsText(results);
+          const assistantMessage: AssistantMessage = {
+            role: 'assistant',
+            content: resultText,
+            text: resultText,
+            model: 'system',
+            usage: {
+              input_tokens: 0,
+              output_tokens: 0,
+            },
+          };
+          addMessage(assistantMessage);
+
+          // Signal completion
           const timer = setTimeout(() => {
-            onDone(formatFinalResults(results));
-          }, 800);
+            onDone('');
+          }, 100);
           return () => clearTimeout(timer);
         }
-      }, [completed, results, onDone]);
+      }, [completed, results, onDone, addMessage]);
 
       if (error) {
         return (
@@ -186,24 +194,24 @@ export const pingCommand: LocalJSXCommand = {
       ).length;
       const totalCount = results.length;
 
+      // Show completed message briefly before results appear as assistant message
+      if (completed) {
+        return (
+          <Box marginTop={1}>
+            <Text color="green">✓ Test completed</Text>
+          </Box>
+        );
+      }
+
+      // Show progress while testing
       return (
         <Box flexDirection="column" marginTop={1}>
-          {/* Header */}
           <Box marginBottom={1}>
             <Text bold>
-              {loading ? (
-                <>
-                  <Spinner type="dots" />{' '}
-                  <GradientText
-                    text={titleText}
-                    highlightIndex={highlightIndex}
-                  />
-                </>
-              ) : (
-                <Text color="green">✓ Test Completed</Text>
-              )}
+              <Spinner type="dots" />{' '}
+              <GradientText text={titleText} highlightIndex={highlightIndex} />
             </Text>
-            {loading && totalCount > 0 && (
+            {totalCount > 0 && (
               <Text color="gray">
                 {' '}
                 ({completedCount}/{totalCount})
@@ -211,11 +219,9 @@ export const pingCommand: LocalJSXCommand = {
             )}
           </Box>
 
-          {/* Progress Table */}
           <Box flexDirection="column" paddingLeft={2}>
             {results.map((result) => (
               <Box key={result.providerId}>
-                {/* Status Icon */}
                 <Box width={3}>
                   {result.status === 'testing' ? (
                     <Text color="cyan">
@@ -230,7 +236,6 @@ export const pingCommand: LocalJSXCommand = {
                   )}
                 </Box>
 
-                {/* Provider Name */}
                 <Box width={18}>
                   <Text
                     color={
@@ -246,7 +251,6 @@ export const pingCommand: LocalJSXCommand = {
                   </Text>
                 </Box>
 
-                {/* Latency Bar & Time */}
                 <Box>
                   {result.status === 'success' &&
                     result.responseTime !== undefined && (
