@@ -436,6 +436,62 @@ class NodeHandlerRegistry {
       };
     });
 
+    // test a specific model
+    this.messageBus.registerHandler('models.test', async (data) => {
+      const { cwd, modelId } = data;
+      const context = await this.getContext(cwd);
+      const startTime = Date.now();
+
+      try {
+        const { model, error } = await resolveModelWithContext(
+          modelId,
+          context,
+        );
+
+        if (error || !model) {
+          return {
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : error || 'Model not found',
+            responseTime: Date.now() - startTime,
+          };
+        }
+
+        const m = await model._mCreator();
+        const result = await m.doGenerate({
+          prompt: [
+            {
+              role: 'user',
+              content: [{ type: 'text', text: 'Hi' }],
+            },
+          ],
+        });
+
+        const hasResponse = result.content?.some(
+          (c) => c.type === 'text' && (c as { text: string }).text,
+        );
+
+        return {
+          success: true,
+          data: {
+            modelId,
+            providerName: model.provider.name,
+            modelName: model.model.name,
+            responseTime: Date.now() - startTime,
+            hasResponse,
+          },
+        };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : 'Unknown error',
+          responseTime: Date.now() - startTime,
+        };
+      }
+    });
+
     //////////////////////////////////////////////
     // outputStyles
     this.messageBus.registerHandler('outputStyles.list', async (data) => {

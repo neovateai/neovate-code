@@ -230,6 +230,23 @@ type ModelsListOutput = {
   };
 };
 
+type ModelsTestInput = {
+  cwd: string;
+  modelId: string;
+};
+type ModelsTestOutput = {
+  success: boolean;
+  error?: string;
+  responseTime: number;
+  data?: {
+    modelId: string;
+    providerName: string;
+    modelName: string;
+    responseTime: number;
+    hasResponse: boolean;
+  };
+};
+
 // ============================================================================
 // Output Styles Handlers
 // ============================================================================
@@ -864,6 +881,7 @@ export type HandlerMap = {
 
   // Models handlers
   'models.list': { input: ModelsListInput; output: ModelsListOutput };
+  'models.test': { input: ModelsTestInput; output: ModelsTestOutput };
 
   // Output styles handlers
   'outputStyles.list': {
