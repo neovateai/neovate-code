@@ -441,8 +441,15 @@ function SubAgentToolResult({ toolResult }: { toolResult: ToolResultPart }) {
   // Extract content from llmContent
   let response = result.llmContent;
   const stats = { toolCalls: 0, tokens: '0' };
+  let isFailed = result.isError;
+  let isCanceled = false;
 
   if (typeof response === 'string') {
+    if (response.includes('Operation was canceled')) {
+      isFailed = true;
+      isCanceled = true;
+    }
+
     // Try to extract clean content from the formatted string in task.ts
     // Format: Sub-agent (...) completed successfully:\n\n${content}\n\n---
     const successMatch = response.match(
@@ -456,6 +463,7 @@ function SubAgentToolResult({ toolResult }: { toolResult: ToolResultPart }) {
       response = successMatch[1];
     } else if (failMatch) {
       response = failMatch[1];
+      isFailed = true;
     }
 
     // Extract stats
@@ -481,10 +489,13 @@ function SubAgentToolResult({ toolResult }: { toolResult: ToolResultPart }) {
       .join('');
   }
 
+  const statusText = isCanceled ? 'Canceled ' : isFailed ? 'Failed ' : 'Done ';
+  const statusColor = isFailed || isCanceled ? UI_COLORS.ERROR : 'white';
+
   const header = (
     <Box flexDirection="row">
       <Text color="gray">└ </Text>
-      <Text color="white">Done </Text>
+      <Text color={statusColor}>{statusText}</Text>
       <Text color="gray" dimColor wrap="truncate-end">
         {' '}
         ({stats.toolCalls} tool uses · {stats.tokens} tokens) (ctrl+o to{' '}
