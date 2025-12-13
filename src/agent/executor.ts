@@ -28,10 +28,8 @@ export async function executeAgent(
   } = options;
 
   const startTime = Date.now();
-  // 生成唯一的 agentId (8位十六进制)
   const agentId = randomUUID().slice(0, 8);
 
-  // 创建独立的 agent session log
   const agentLogPath = context.paths.getAgentLogPath(agentId);
   const agentLogger = new JsonlLogger({ filePath: agentLogPath });
 

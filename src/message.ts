@@ -119,6 +119,28 @@ export function toolResultPart2ToToolResultPart(
   };
 }
 
+export function createToolResultPart2(
+  toolCallId: string,
+  toolName: string,
+  input: Record<string, any>,
+  result: ToolResult,
+): ToolResultPart2 {
+  const part: ToolResultPart2 = {
+    type: 'tool-result',
+    toolCallId,
+    toolName,
+    input,
+    result,
+  };
+
+  if (result.metadata?.agentId) {
+    part.agentId = result.metadata.agentId;
+    part.agentType = result.metadata.agentType;
+  }
+
+  return part;
+}
+
 export function createUserMessage(
   content: string,
   parentUuid: string | null,

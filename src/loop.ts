@@ -8,11 +8,11 @@ import type {
 import createDebug from 'debug';
 import { At } from './at';
 import { History, type OnMessage } from './history';
-import type {
-  AssistantContent,
-  NormalizedMessage,
-  ToolResultPart2,
-  ToolUsePart,
+import {
+  type AssistantContent,
+  createToolResultPart2,
+  type NormalizedMessage,
+  type ToolUsePart,
 } from './message';
 import type { ModelInfo } from './model';
 import { addPromptCache } from './promptCache';
@@ -543,23 +543,14 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         });
         await history.addMessage({
           role: 'tool',
-          content: toolResults.map((tr) => {
-            const resultPart: ToolResultPart2 = {
-              type: 'tool-result',
-              toolCallId: tr.toolCallId,
-              toolName: tr.toolName,
-              input: tr.input,
-              result: tr.result,
-            };
-
-            // 提升 agentId 到 tool-result 层级
-            if (tr.result.metadata?.agentId) {
-              resultPart.agentId = tr.result.metadata.agentId;
-              resultPart.agentType = tr.result.metadata.agentType;
-            }
-
-            return resultPart;
-          }),
+          content: toolResults.map((tr) =>
+            createToolResultPart2(
+              tr.toolCallId,
+              tr.toolName,
+              tr.input,
+              tr.result,
+            ),
+          ),
         });
         return {
           success: false,
@@ -578,23 +569,14 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
     if (toolResults.length) {
       await history.addMessage({
         role: 'tool',
-        content: toolResults.map((tr) => {
-          const resultPart: ToolResultPart2 = {
-            type: 'tool-result',
-            toolCallId: tr.toolCallId,
-            toolName: tr.toolName,
-            input: tr.input,
-            result: tr.result,
-          };
-
-          // 提升 agentId 到 tool-result 层级
-          if (tr.result.metadata?.agentId) {
-            resultPart.agentId = tr.result.metadata.agentId;
-            resultPart.agentType = tr.result.metadata.agentType;
-          }
-
-          return resultPart;
-        }),
+        content: toolResults.map((tr) =>
+          createToolResultPart2(
+            tr.toolCallId,
+            tr.toolName,
+            tr.input,
+            tr.result,
+          ),
+        ),
       });
     }
   }
