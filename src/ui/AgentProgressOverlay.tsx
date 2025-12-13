@@ -192,7 +192,7 @@ export function AgentProgressItem({
         <GradientText
           text={progressText}
           highlightIndex={highlightIndex}
-          baseColor="green"
+          baseColor="cyan"
           highlightColor="white"
         />
       </Box>

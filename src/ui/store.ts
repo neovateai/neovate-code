@@ -238,7 +238,6 @@ interface AppActions {
     status: 'running' | 'completed';
   }) => void;
   clearAgentProgress: (agentId: string) => void;
-  loadAgentMessages: (agentId: string) => Promise<void>;
 }
 
 export type AppStore = AppState & AppActions;
@@ -1216,54 +1215,11 @@ export const useAppStore = create<AppStore>()(
           },
         });
       },
-
       clearAgentProgress: (agentId) => {
         const { agentProgressMap } = get();
         const newMap = { ...agentProgressMap };
         delete newMap[agentId];
         set({ agentProgressMap: newMap });
-      },
-
-      loadAgentMessages: async (agentId) => {
-        const { bridge, cwd, agentProgressMap } = get();
-
-        // If we already have messages, skip loading
-        if (agentProgressMap[agentId]?.messages?.length > 0) {
-          return;
-        }
-
-        try {
-          const response = await bridge.request('agent.getMessages', {
-            cwd,
-            agentId,
-          });
-
-          if (response.success) {
-            const messages = response.data.messages;
-            // Try to infer agentType from the first message metadata if available
-            // or just leave it undefined
-            let agentType: string | undefined;
-            if (messages.length > 0 && messages[0].metadata?.agentType) {
-              agentType = messages[0].metadata.agentType;
-            }
-
-            set({
-              agentProgressMap: {
-                ...get().agentProgressMap,
-                [agentId]: {
-                  status: 'completed',
-                  agentId,
-                  agentType,
-                  messages,
-                  lastUpdate: Date.now(),
-                  startTime: 0, // Unknown start time
-                },
-              },
-            });
-          }
-        } catch (error) {
-          // console.error('Failed to load agent messages', error);
-        }
       },
     }),
     { name: 'app-store' },

@@ -123,41 +123,11 @@ export class Paths {
   }
 
   /**
-   * 获取 sub-agent 的独立 log 路径
-   * 格式: ~/.neovate/projects/{project}/agent-{agentId}.jsonl
+   * Get the dedicated log path for a sub-agent.
+   * Format: ~/.neovate/projects/{project}/agent-{agentId}.jsonl
    */
   getAgentLogPath(agentId: string): string {
     return path.join(this.globalProjectDir, `agent-${agentId}.jsonl`);
-  }
-
-  /**
-   * 获取所有 agent sessions
-   */
-  getAllAgentSessions(): Array<{
-    agentId: string;
-    path: string;
-    mtime: number;
-  }> {
-    if (!fs.existsSync(this.globalProjectDir)) {
-      return [];
-    }
-
-    const files = fs.readdirSync(this.globalProjectDir);
-    const agentSessions = files
-      .filter((file) => file.startsWith('agent-') && file.endsWith('.jsonl'))
-      .map((file) => {
-        const agentId = file.replace('agent-', '').replace('.jsonl', '');
-        const filePath = path.join(this.globalProjectDir, file);
-        const stats = fs.statSync(filePath);
-        return {
-          agentId,
-          path: filePath,
-          mtime: stats.mtimeMs,
-        };
-      })
-      .sort((a, b) => b.mtime - a.mtime);
-
-    return agentSessions;
   }
 }
 

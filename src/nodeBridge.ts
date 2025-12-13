@@ -1996,41 +1996,7 @@ class NodeHandlerRegistry {
 
       const targetApps = appsToCheck || [...allApps];
       const installedApps = targetApps.filter(checkApp);
-
       return { success: true, data: { apps: installedApps } };
-    });
-
-    //////////////////////////////////////////////
-    // agent
-    this.messageBus.registerHandler('agent.getMessages', async (data) => {
-      const { cwd, agentId } = data;
-      try {
-        const context = await this.getContext(cwd);
-        const agentLogPath = context.paths.getAgentLogPath(agentId);
-        const { existsSync } = await import('fs');
-        const { loadSessionMessages } = await import('./session');
-
-        if (!existsSync(agentLogPath)) {
-          return {
-            success: false,
-            error: `Agent session ${agentId} not found`,
-          };
-        }
-
-        const messages = loadSessionMessages({ logPath: agentLogPath });
-        return {
-          success: true,
-          data: {
-            messages,
-            agentId,
-          },
-        };
-      } catch (error: any) {
-        return {
-          success: false,
-          error: error.message || 'Failed to get agent messages',
-        };
-      }
     });
   }
 }
