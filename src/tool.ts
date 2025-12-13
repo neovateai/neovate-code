@@ -101,14 +101,16 @@ export async function resolveTools(opts: ResolveToolsOpts) {
 
   const taskTools = (() => {
     if (!opts.context.agentManager) return [];
-    return [
-      createTaskTool({
-        context: opts.context,
-        tools: availableTools,
-        sessionId: opts.sessionId,
-        signal: opts.signal,
-      }),
-    ];
+    const tool = createTaskTool({
+      context: opts.context,
+      tools: availableTools,
+      sessionId: opts.sessionId,
+      signal: opts.signal,
+    });
+    if (toolsConfig && toolsConfig[tool.name] === false) {
+      return [];
+    }
+    return [tool];
   })();
 
   return [...availableTools, ...taskTools];
