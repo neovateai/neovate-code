@@ -102,23 +102,13 @@ export function AgentProgressItem({
   }, [progress]);
 
   const taskDescription = useMemo(() => {
-    if (!progress || progress.messages.length === 0) return '';
-    const firstMsg = progress.messages[0];
-    if (firstMsg.role === 'user') {
-      const content =
-        typeof firstMsg.content === 'string'
-          ? firstMsg.content
-          : (
-              firstMsg.content.find((p) => p.type === 'text') as
-                | TextPart
-                | undefined
-            )?.text || '';
-      // Get first line or first 30 chars
-      const firstLine = content.split('\n')[0];
-      const summary =
-        firstLine.length > 30 ? `${firstLine.slice(0, 30)}...` : firstLine;
-      return summary;
+    if (!progress) return '';
+
+    if (progress.prompt) {
+      const firstLine = progress.prompt.split('\n')[0];
+      return firstLine.length > 30 ? `${firstLine.slice(0, 30)}...` : firstLine;
     }
+
     return '';
   }, [progress]);
 

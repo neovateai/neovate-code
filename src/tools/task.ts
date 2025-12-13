@@ -90,13 +90,6 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
         .string()
         .describe('The type of specialized agent to use for this task'),
 
-      // model: z
-      //   .string()
-      //   .optional()
-      //   .describe(
-      //     'Optional model to use for this agent. If not specified, inherits from parent.',
-      //   ),
-
       resume: z
         .string()
         .optional()
@@ -128,6 +121,7 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
                   cwd,
                   agentId,
                   agentType: params.subagent_type,
+                  prompt: params.prompt,
                   message,
                   status: 'running',
                   timestamp: Date.now(),
@@ -151,6 +145,7 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
             cwd,
             agentId: result.agentId,
             agentType: params.subagent_type,
+            prompt: params.prompt,
             message: {
               role: 'assistant',
               content:

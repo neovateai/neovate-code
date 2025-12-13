@@ -152,6 +152,7 @@ interface AppState {
       status: 'running' | 'completed';
       agentId: string;
       agentType?: string;
+      prompt?: string;
       messages: NormalizedMessage[];
       lastUpdate: number;
       startTime: number;
@@ -234,6 +235,7 @@ interface AppActions {
   updateAgentProgress: (data: {
     agentId: string;
     agentType?: string;
+    prompt?: string;
     message: NormalizedMessage;
     status: 'running' | 'completed';
   }) => void;
@@ -383,10 +385,11 @@ export const useAppStore = create<AppStore>()(
 
         // Listen for SubAgent progress events
         bridge.onEvent('agent_progress', (data) => {
-          const { agentId, agentType, message, status } = data;
+          const { agentId, agentType, prompt, message, status } = data;
           get().updateAgentProgress({
             agentId,
             agentType,
+            prompt,
             message,
             status: status || 'running',
           });
@@ -1190,7 +1193,7 @@ export const useAppStore = create<AppStore>()(
 
       // Agent progress methods
       updateAgentProgress: (data) => {
-        const { agentId, agentType, message, status } = data;
+        const { agentId, agentType, prompt, message, status } = data;
         const { agentProgressMap } = get();
 
         const existing = agentProgressMap[agentId];
@@ -1208,6 +1211,7 @@ export const useAppStore = create<AppStore>()(
               status,
               agentId,
               agentType,
+              prompt: prompt || existing?.prompt,
               messages: newMessages,
               lastUpdate: Date.now(),
               startTime: existing?.startTime || Date.now(),

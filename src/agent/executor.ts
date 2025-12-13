@@ -79,34 +79,6 @@ export async function executeAgent(
       );
     }
 
-    // Emit initial messages to logger and progress
-    for (const message of messages) {
-      const normalizedMessage: NormalizedMessage & { sessionId: string } = {
-        ...message,
-        sessionId: agentId,
-        metadata: {
-          ...(message.metadata || {}),
-          agentId,
-          agentType: definition.agentType,
-        },
-      };
-
-      // Write to agent log
-      agentLogger.addMessage({ message: normalizedMessage });
-
-      // Notify progress
-      if (onProgress) {
-        try {
-          await onProgress(normalizedMessage, agentId);
-        } catch (error) {
-          console.error(
-            '[executeAgent] Failed to send initial progress:',
-            error,
-          );
-        }
-      }
-    }
-
     // Execute loop
     const loopResult = await runLoop({
       input: messages,
