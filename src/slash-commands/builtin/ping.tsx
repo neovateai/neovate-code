@@ -57,25 +57,42 @@ function getLatencyBar(ms: number, maxWidth = 20): string {
 
 function formatResultsText(results: PingResult[]): string {
   const sorted = [...results].sort((a, b) => {
+    // Success first, then failed
     if (a.status === 'success' && b.status === 'failed') return -1;
     if (a.status === 'failed' && b.status === 'success') return 1;
+    // Within success, sort by response time
     return (a.responseTime || 0) - (b.responseTime || 0);
   });
 
-  const lines: string[] = ['**Network Latency Test Results**\n'];
+  const successResults = sorted.filter((r) => r.status === 'success');
+  const fastestResult = successResults[0];
 
+  // Find max provider name length for alignment
+  const maxNameLen = Math.max(...sorted.map((r) => r.providerName.length));
+
+  const lines: string[] = [];
+
+  // Header
+  lines.push(`📡 Ping`);
+  lines.push('');
+
+  // All results in one list
   for (const result of sorted) {
-    const name = result.providerName;
+    const paddedName = result.providerName.padEnd(maxNameLen);
     if (result.status === 'success' && result.responseTime !== undefined) {
       const ms = result.responseTime;
       const icon = ms < 200 ? '🟢' : ms < 500 ? '🟡' : ms < 1000 ? '🟠' : '🔴';
-      lines.push(`${icon} **${name}**: ${ms}ms`);
+      const badge =
+        fastestResult?.providerId === result.providerId ? ' ⚡' : '';
+      lines.push(`${icon} ${paddedName}  ${ms}ms${badge}`);
     } else {
-      lines.push(`❌ **${name}**: Failed - ${result.error || 'Unknown error'}`);
+      lines.push(`❌ ${paddedName}  ${result.error || 'Failed'}`);
     }
   }
 
-  lines.push('\n_Legend: 🟢 <200ms  🟡 200-500ms  🟠 500-1000ms  🔴 >1000ms_');
+  // Legend
+  lines.push('');
+  lines.push('🟢 <200ms  🟡 200-500ms  🟠 500-1000ms  🔴 >1000ms');
 
   return lines.join('\n');
 }
@@ -114,27 +131,22 @@ export const pingCommand: LocalJSXCommand = {
               return;
             }
 
+            // Initialize all as testing (concurrent)
             const initialResults: PingResult[] = providersWithApi.map((p) => ({
               providerId: p.id,
               providerName: p.name,
-              status: 'pending' as const,
+              status: 'testing' as const,
             }));
             setResults(initialResults);
 
-            for (let i = 0; i < providersWithApi.length; i++) {
-              const provider = providersWithApi[i];
-
-              setResults((prev) =>
-                prev.map((r, idx) =>
-                  idx === i ? { ...r, status: 'testing' as const } : r,
-                ),
-              );
-
+            // Run all pings concurrently
+            const pingPromises = providersWithApi.map(async (provider, idx) => {
               const pingResult = await pingEndpoint(provider.api || '');
 
+              // Update result as soon as it completes
               setResults((prev) =>
-                prev.map((r, idx) =>
-                  idx === i
+                prev.map((r, i) =>
+                  i === idx
                     ? {
                         ...r,
                         status: pingResult.status,
@@ -144,7 +156,12 @@ export const pingCommand: LocalJSXCommand = {
                     : r,
                 ),
               );
-            }
+
+              return pingResult;
+            });
+
+            // Wait for all pings to complete
+            await Promise.all(pingPromises);
 
             setLoading(false);
             setCompleted(true);

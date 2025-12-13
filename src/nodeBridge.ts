@@ -2356,6 +2356,17 @@ function buildSignalKey(cwd: string, sessionId: string) {
   return `${cwd}/${sessionId}`;
 }
 
+// Default API endpoints for providers that use SDK defaults
+const DEFAULT_PROVIDER_ENDPOINTS: Record<string, string> = {
+  openai: 'https://api.openai.com',
+  google: 'https://generativelanguage.googleapis.com',
+  xai: 'https://api.x.ai',
+  anthropic: 'https://api.anthropic.com',
+  openrouter: 'https://openrouter.ai',
+  cerebras: 'https://api.cerebras.ai',
+  antigravity: 'https://antigravity.google',
+};
+
 function normalizeProviders(providers: ProvidersMap, context: Context) {
   return Object.values(providers as Record<string, Provider>).map(
     (provider) => {
@@ -2382,13 +2393,16 @@ function normalizeProviders(providers: ProvidersMap, context: Context) {
         provider.options?.apiKey ||
         context.config.provider?.[provider.id]?.options?.apiKey
       );
+      // Use provider.api or fallback to default endpoint
+      const api =
+        provider.api || DEFAULT_PROVIDER_ENDPOINTS[provider.id] || undefined;
       return {
         id: provider.id,
         name: provider.name,
         doc: provider.doc,
         env: provider.env,
         apiEnv: provider.apiEnv,
-        api: provider.api,
+        api,
         validEnvs,
         hasApiKey,
       };
