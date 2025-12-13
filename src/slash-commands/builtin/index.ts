@@ -12,6 +12,7 @@ import { createLogoutCommand } from './logout';
 import { createMcpCommand } from './mcp';
 import { createModelCommand } from './model';
 import { createOutputStyleCommand } from './output-style';
+import { pingCommand } from './ping';
 import { createResumeCommand } from './resume';
 import { createReviewCommand } from './review';
 import { brainstormCommand } from './spec/brainstorm';
@@ -38,6 +39,7 @@ export function createBuiltinCommands(opts: {
     createMcpCommand(opts),
     createModelCommand(opts),
     createOutputStyleCommand(),
+    pingCommand,
     createResumeCommand(),
     createReviewCommand(opts.language),
     createTerminalSetupCommand(),

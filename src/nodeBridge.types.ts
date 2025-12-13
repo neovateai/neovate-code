@@ -435,6 +435,7 @@ type ProvidersListOutput = {
       doc?: string;
       env?: string[];
       apiEnv?: string[];
+      api?: string;
       validEnvs: string[];
       hasApiKey: boolean;
     }>;

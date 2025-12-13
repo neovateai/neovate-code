@@ -2388,6 +2388,7 @@ function normalizeProviders(providers: ProvidersMap, context: Context) {
         doc: provider.doc,
         env: provider.env,
         apiEnv: provider.apiEnv,
+        api: provider.api,
         validEnvs,
         hasApiKey,
       };
