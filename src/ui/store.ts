@@ -149,7 +149,7 @@ interface AppState {
   agentProgressMap: Record<
     string,
     {
-      status: 'running' | 'completed';
+      status: 'running' | 'completed' | 'failed';
       agentId: string;
       agentType?: string;
       prompt?: string;
@@ -237,7 +237,7 @@ interface AppActions {
     agentType?: string;
     prompt?: string;
     message: NormalizedMessage;
-    status: 'running' | 'completed';
+    status: 'running' | 'completed' | 'failed';
   }) => void;
   clearAgentProgress: (agentId: string) => void;
 }

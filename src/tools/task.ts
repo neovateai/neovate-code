@@ -3,6 +3,7 @@ import { TOOL_NAMES } from '../constants';
 import type { Context } from '../context';
 import type { NormalizedMessage } from '../message';
 import { createTool, type Tool } from '../tool';
+import { randomUUID } from '../utils/randomUUID';
 
 export function createTaskTool(opts: {
   context: Context;
@@ -151,6 +152,10 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
                 result.status === 'completed'
                   ? 'Task completed'
                   : 'Task failed',
+              type: 'message',
+              uuid: randomUUID(),
+              timestamp: new Date().toISOString(),
+              parentUuid: null,
             } as NormalizedMessage,
             status: result.status === 'completed' ? 'completed' : 'failed',
             timestamp: Date.now(),
