@@ -37,6 +37,7 @@ function normalizeMessagesForSubAgent(
   availableToolNames: string[],
 ): NormalizedMessage[] {
   const availableToolSet = new Set(availableToolNames);
+  const keptToolUseIds = new Set<string>();
 
   return messages
     .map((message) => {
@@ -46,7 +47,11 @@ function normalizeMessagesForSubAgent(
             return true;
           }
           if (part.type === 'tool_use') {
-            return availableToolSet.has(part.name);
+            const isAvailable = availableToolSet.has(part.name);
+            if (isAvailable) {
+              keptToolUseIds.add(part.id);
+            }
+            return isAvailable;
           }
           return false;
         });
@@ -66,11 +71,21 @@ function normalizeMessagesForSubAgent(
         return { ...message, content: filteredContent };
       }
 
+      if (message.role === 'tool' && Array.isArray(message.content)) {
+        const filteredContent = message.content.filter((part) => {
+          return keptToolUseIds.has(part.toolCallId);
+        });
+        return { ...message, content: filteredContent };
+      }
+
       return message;
     })
     .filter((message) => {
       if (typeof message.content === 'string') {
         return message.content.trim().length > 0;
+      }
+      if (Array.isArray(message.content)) {
+        return message.content.length > 0;
       }
       return true;
     });
