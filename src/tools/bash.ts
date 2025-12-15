@@ -59,7 +59,7 @@ function truncateOutput(output: string, maxLines: number = 20): string {
   const visibleLines = lines.slice(0, maxLines);
   const remainingCount = lines.length - maxLines;
 
-  return visibleLines.join('\n') + `\n… +${remainingCount} lines`;
+  return `${visibleLines.join('\n')}\n… +${remainingCount} lines`;
 }
 
 function getCommandRoot(command: string): string | undefined {
@@ -71,12 +71,70 @@ function getCommandRoot(command: string): string | undefined {
     .pop();
 }
 
-function isHighRiskCommand(command: string): boolean {
+/**
+ * Split command by pipe segments, handling quoted strings correctly
+ * Example: "echo 'test|value' | grep test" => ["echo 'test|value'", "grep test"]
+ */
+function splitPipelineSegments(command: string): string[] {
+  const segments: string[] = [];
+  let current = '';
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let escaped = false;
+
+  for (let i = 0; i < command.length; i++) {
+    const char = command[i];
+
+    if (escaped) {
+      current += char;
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      escaped = true;
+      current += char;
+      continue;
+    }
+
+    if (char === "'" && !inDoubleQuote) {
+      inSingleQuote = !inSingleQuote;
+      current += char;
+      continue;
+    }
+
+    if (char === '"' && !inSingleQuote) {
+      inDoubleQuote = !inDoubleQuote;
+      current += char;
+      continue;
+    }
+
+    if (char === '|' && !inSingleQuote && !inDoubleQuote) {
+      if (current.trim()) {
+        segments.push(current.trim());
+      }
+      current = '';
+      continue;
+    }
+
+    current += char;
+  }
+
+  if (current.trim()) {
+    segments.push(current.trim());
+  }
+
+  return segments;
+}
+
+/**
+ * Check if a single command segment is high risk
+ * This is used as a fallback evaluation for each pipeline segment
+ */
+function isSegmentHighRisk(segment: string): boolean {
   const highRiskPatterns = [
     /rm\s+.*(-rf|--recursive)/i,
     /sudo/i,
-    /curl.*\|.*sh/i,
-    /wget.*\|.*sh/i,
     /dd\s+if=/i,
     /mkfs/i,
     /fdisk/i,
@@ -85,19 +143,55 @@ function isHighRiskCommand(command: string): boolean {
   ];
 
   // Check for command substitution
-  if (command.includes('$(') || command.includes('`')) {
+  if (segment.includes('$(') || segment.includes('`')) {
     return true;
   }
 
-  const commandRoot = getCommandRoot(command);
+  const commandRoot = getCommandRoot(segment);
   if (!commandRoot) {
     return true;
   }
 
   return (
-    highRiskPatterns.some((pattern) => pattern.test(command)) ||
+    highRiskPatterns.some((pattern) => pattern.test(segment)) ||
     BANNED_COMMANDS.includes(commandRoot.toLowerCase())
   );
+}
+
+/**
+ * Check if command is high risk with pipeline segment fallback evaluation
+ * Implements the same approach as codex PR #7544:
+ * - First check the full command
+ * - If command contains pipes, evaluate each segment separately
+ * - If any segment is high risk, the entire command is high risk
+ * @internal exported for testing
+ */
+export function isHighRiskCommand(command: string): boolean {
+  // Legacy patterns for specific dangerous combinations
+  const legacyDangerousCombinations = [/curl.*\|.*sh/i, /wget.*\|.*sh/i];
+
+  // Quick check for legacy dangerous combinations
+  if (legacyDangerousCombinations.some((pattern) => pattern.test(command))) {
+    return true;
+  }
+
+  // Check if command contains pipeline
+  if (command.includes('|')) {
+    // Split by pipeline and evaluate each segment
+    const segments = splitPipelineSegments(command);
+
+    // Fallback evaluation: check each segment independently
+    for (const segment of segments) {
+      if (isSegmentHighRisk(segment)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // For non-pipeline commands, use segment risk check
+  return isSegmentHighRisk(command);
 }
 
 function validateCommand(command: string): string | null {
@@ -429,7 +523,9 @@ async function executeCommand(
   };
 
   const isWindows = os.platform() === 'win32';
-  const tempFileName = `shell_pgrep_${crypto.randomBytes(6).toString('hex')}.tmp`;
+  const tempFileName = `shell_pgrep_${crypto
+    .randomBytes(6)
+    .toString('hex')}.tmp`;
   const tempFilePath = path.join(os.tmpdir(), tempFileName);
 
   const wrappedCommand = isWindows
@@ -686,11 +782,15 @@ export function createBashTool(opts: {
 
 Background Execution:
 - Set run_in_background=true to force background execution
-- Background tasks return a task_id for use with ${TOOL_NAMES.BASH_OUTPUT} and ${TOOL_NAMES.KILL_BASH} tools
+- Background tasks return a task_id for use with ${
+        TOOL_NAMES.BASH_OUTPUT
+      } and ${TOOL_NAMES.KILL_BASH} tools
 - Initial output shown when moved to background
 
 Before using this tool, please follow these steps:
-- Verify that the command is not one of the banned commands: ${BANNED_COMMANDS.join(', ')}.
+- Verify that the command is not one of the banned commands: ${BANNED_COMMANDS.join(
+        ', ',
+      )}.
 - Always quote file paths that contain spaces with double quotes (e.g., cd "path with spaces/file.txt")
 - Capture the output of the command.
 
@@ -732,7 +832,7 @@ cd /foo/bar && pytest tests
         return 'No command provided';
       }
       const command = params.command.trim();
-      return command.length > 100 ? command.substring(0, 97) + '...' : command;
+      return command.length > 100 ? `${command.substring(0, 97)}...` : command;
     },
     execute: async ({
       command,

@@ -46,14 +46,36 @@ export class SlashCommandManager {
     (opts.slashCommands || []).forEach((command) => {
       commands.set(command.name, { command, source: CommandSource.Plugin });
     });
-    // 3. global
+    // 3. global (.claude)
+    const globalClaude = this.#loadGlobal(
+      path.join(
+        path.dirname(opts.paths.globalConfigDir),
+        '.claude',
+        'commands',
+      ),
+    );
+    globalClaude.forEach((command) => {
+      commands.set(command.command.name, command);
+    });
+    // 4. global (.{productName})
     const global = this.#loadGlobal(
       path.join(opts.paths.globalConfigDir, 'commands'),
     );
     global.forEach((command) => {
       commands.set(command.command.name, command);
     });
-    // 4. project
+    // 5. project (.claude)
+    const projectClaude = this.#loadProject(
+      path.join(
+        path.dirname(opts.paths.projectConfigDir),
+        '.claude',
+        'commands',
+      ),
+    );
+    projectClaude.forEach((command) => {
+      commands.set(command.command.name, command);
+    });
+    // 6. project (.{productName})
     const project = this.#loadProject(
       path.join(opts.paths.projectConfigDir, 'commands'),
     );

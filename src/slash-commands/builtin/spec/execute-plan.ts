@@ -1,6 +1,8 @@
 import type { PromptCommand } from '../../types';
+import { getLanguageInstruction } from '../../../utils/language';
 
 export function executePlanCommand(language: string): PromptCommand {
+  const languageInstruction = getLanguageInstruction(language);
   return {
     type: 'prompt',
     name: 'spec:execute-plan',
@@ -21,7 +23,7 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 
 **Announce at start:** "I'm implementing this plan."
 
-**Language:** Please communicate in ${language}.
+${languageInstruction}
 
 ## The Process
 

@@ -114,16 +114,15 @@ export type Props = {
   readonly onHistoryReset?: () => void;
 
   /**
-   * Number of columns to wrap text at
+   * Number of columns to wrap text at (optional, defaults to 80)
    */
-  readonly columns: number;
+  readonly columns?: number;
 
   /**
    * Optional callback when an image is pasted
    */
   readonly onImagePaste?: (
     base64Image: string,
-    filename?: string,
   ) => Promise<{ prompt?: string }> | void;
 
   /**
@@ -141,12 +140,15 @@ export type Props = {
    */
   readonly disableCursorMovementForUpDownKeys?: boolean;
 
-  readonly cursorOffset: number;
+  /**
+   * Current cursor offset position (optional, managed internally if not provided)
+   */
+  readonly cursorOffset?: number;
 
   /**
-   * Callback to set the offset of the cursor
+   * Callback to set the offset of the cursor (optional, managed internally if not provided)
    */
-  onChangeCursorOffset: (offset: number) => void;
+  onChangeCursorOffset?: (offset: number) => void;
 
   /**
    * Function to call when `Tab` is pressed for auto-suggestion navigation.
@@ -174,6 +176,8 @@ export type Props = {
   readonly onReverseSearchPrevious?: () => void;
 
   onCtrlBBackground?: () => void;
+
+  onFocusChange?: (focused: boolean) => void;
 };
 
 export default function TextInput({
@@ -195,20 +199,31 @@ export default function TextInput({
   onEscape,
   onDoubleEscape,
   onHistoryReset,
-  columns,
+  columns = 80,
   onImagePaste,
   onPaste,
   isDimmed = false,
   disableCursorMovementForUpDownKeys = false,
-  cursorOffset,
-  onChangeCursorOffset,
+  cursorOffset: externalCursorOffset,
+  onChangeCursorOffset: externalOnChangeCursorOffset,
   onTabPress,
   onDelete,
   onExternalEdit,
   onReverseSearch,
   onReverseSearchPrevious,
   onCtrlBBackground,
+  onFocusChange,
 }: Props): React.JSX.Element {
+  // Internal cursor state when external control is not provided
+  const [internalCursorOffset, setInternalCursorOffset] = React.useState(
+    originalValue.length,
+  );
+
+  // Use external or internal cursor state
+  const cursorOffset = externalCursorOffset ?? internalCursorOffset;
+  const onChangeCursorOffset =
+    externalOnChangeCursorOffset ?? setInternalCursorOffset;
+
   const { onInput, renderedValue } = useTextInput({
     value: originalValue,
     onChange,
@@ -307,10 +322,7 @@ export default function TextInput({
           try {
             const imageResult = await processImageFromPath(mergedInput);
             if (imageResult) {
-              const imagePromptResult = await onImagePaste(
-                imageResult.base64,
-                imageResult.filename,
-              );
+              const imagePromptResult = await onImagePaste(imageResult.base64);
               if (imagePromptResult?.prompt) {
                 const { newValue, newCursorOffset } = insertTextAtCursor(
                   imagePromptResult.prompt,
@@ -388,6 +400,14 @@ export default function TextInput({
   };
 
   const wrappedOnInput = (input: string, key: Key): void => {
+    // Terminal focus tracking: when enabled via \x1b[?1004h, terminals send
+    // \x1b[I (focus gained) and \x1b[O (focus lost). Ink strips the \x1b prefix,
+    // leaving '[I' and '[O' which we intercept to update focus state.
+    if (input === '[I' || input === '[O') {
+      onFocusChange?.(input === '[I');
+      return;
+    }
+
     // Handle double-ESC for conversation forking
     if (key.escape && onDoubleEscape) {
       const now = Date.now();

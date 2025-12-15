@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { CursorAction } from './ReverseSearchInput';
 import { useAppStore } from './store';
 import { useFileSuggestion } from './useFileSuggestion';
 import { useImagePasteManager } from './useImagePasteManager';
@@ -97,6 +98,45 @@ export function useInputHandlers() {
     setReverseSearchActive(false);
     setHistoryIndex(null);
   }, [reverseSearch, inputState, setHistoryIndex]);
+
+  // Handle reverse search exit with cursor action
+  const handleReverseSearchExit = useCallback(
+    (match: string, cursorAction?: CursorAction) => {
+      // Set input to matched command (or keep original if no match)
+      if (match) {
+        inputState.setValue(match);
+        // Apply cursor action
+        switch (cursorAction) {
+          case 'start':
+            inputState.setCursorPosition(0);
+            break;
+          case 'end':
+            inputState.setCursorPosition(match.length);
+            break;
+          case 'left':
+            // Position cursor at end minus 1 (simulating left arrow from end)
+            inputState.setCursorPosition(Math.max(0, match.length - 1));
+            break;
+          case 'right':
+            // Position cursor at end (right arrow from end stays at end)
+            inputState.setCursorPosition(match.length);
+            break;
+          default:
+            inputState.setCursorPosition(match.length);
+        }
+      }
+      setReverseSearchActive(false);
+      setHistoryIndex(null);
+    },
+    [inputState, setHistoryIndex],
+  );
+
+  // Handle reverse search cancel (escape)
+  const handleReverseSearchCancel = useCallback(() => {
+    // Just exit search mode without changing the input
+    setReverseSearchActive(false);
+    setHistoryIndex(null);
+  }, [setHistoryIndex]);
 
   const handleSubmit = useCallback(async () => {
     // In reverse search mode, select the current match
@@ -328,8 +368,8 @@ export function useInputHandlers() {
   );
 
   const handleImagePaste = useCallback(
-    async (base64Data: string, filename?: string) => {
-      const result = await imageManager.handleImagePaste(base64Data, filename);
+    async (base64Data: string) => {
+      const result = await imageManager.handleImagePaste(base64Data);
       if (result.success && result.prompt) {
         return { prompt: result.prompt };
       }
@@ -389,6 +429,8 @@ export function useInputHandlers() {
       handleEscape,
       handleReverseSearch,
       handleReverseSearchPrevious,
+      handleReverseSearchExit,
+      handleReverseSearchCancel,
     },
     slashCommands,
     fileSuggestion,
@@ -399,7 +441,7 @@ export function useInputHandlers() {
       query: reverseSearch.query,
       matches: reverseSearch.matches,
       selectedIndex: reverseSearch.selectedIndex,
-      placeholderText: reverseSearch.placeholderText,
+      history, // Expose history for ReverseSearchInput
     },
   };
 }

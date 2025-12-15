@@ -1,4 +1,4 @@
-let currentIndex = 0;
+let lastSelectedIndex = -1;
 
 export function rotateApiKey(apiKey: string): string {
   if (!apiKey || !apiKey.includes(',')) {
@@ -10,12 +10,15 @@ export function rotateApiKey(apiKey: string): string {
     return '';
   }
 
-  const selectedKey = keys[currentIndex % keys.length];
-  currentIndex++;
+  let randomIndex: number;
+  do {
+    randomIndex = Math.floor(Math.random() * keys.length);
+  } while (keys.length > 1 && randomIndex === lastSelectedIndex);
 
-  return selectedKey;
+  lastSelectedIndex = randomIndex;
+  return keys[randomIndex];
 }
 
 export function resetRotationIndex(): void {
-  currentIndex = 0;
+  lastSelectedIndex = -1;
 }

@@ -47,17 +47,6 @@ export function useReverseHistorySearch({
     return navigation.getSelected() || '';
   }, [navigation]);
 
-  // Generate placeholder text for UI
-  const placeholderText = useMemo(() => {
-    if (!active) return '';
-    const matchCount = matches.length;
-    if (matchCount === 0) {
-      return 'No matches found';
-    }
-    const currentMatch = matches[navigation.selectedIndex];
-    return `(reverse-i-search): ${matchCount} match${matchCount > 1 ? 'es' : ''} - ${currentMatch || ''}`;
-  }, [active, matches, navigation.selectedIndex]);
-
   const updateQuery = useCallback((newQuery: string) => {
     setQuery(newQuery);
   }, []);
@@ -71,6 +60,5 @@ export function useReverseHistorySearch({
     getSelected,
     updateQuery,
     hasMatches: navigation.hasItems,
-    placeholderText,
   };
 }

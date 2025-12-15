@@ -1,6 +1,10 @@
 import type { PromptCommand } from '../types';
+import { isEnglish } from '../../utils/language';
 
 export function createReviewCommand(language: string) {
+  const languageInstruction = isEnglish(language)
+    ? ''
+    : ` Please communicate in ${language}.`;
   return {
     type: 'prompt',
     name: 'review',
@@ -20,7 +24,7 @@ export function createReviewCommand(language: string) {
       return [
         {
           role: 'user',
-          content: `You are an expert code reviewer. Please communicate in ${language}.
+          content: `You are an expert code reviewer.${languageInstruction}
 
 Follow these steps:
 

@@ -1,6 +1,6 @@
 import { Box, Text, useInput } from 'ink';
-import TextInput from 'ink-text-input';
 import React, { useCallback, useState } from 'react';
+import TextInput from './TextInput';
 import { UI_COLORS } from './constants';
 
 export type SelectOption = {

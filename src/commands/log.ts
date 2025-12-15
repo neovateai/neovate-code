@@ -1,6 +1,6 @@
 import { exec } from 'child_process';
 import fs from 'fs';
-import { render, Box, Text } from 'ink';
+import { Box, render, Text } from 'ink';
 import { platform } from 'os';
 import path from 'pathe';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -515,6 +515,33 @@ async function generateHtmlForSession(context: Context, sessionId: string) {
   return outPath;
 }
 
+async function generateHtmlForFile(filePath: string) {
+  // Extract session ID from filename for display
+  const sessionId = path.basename(filePath, '.jsonl');
+  const messages = loadAllSessionMessages(filePath);
+  const activeMessages = filterMessages(messages as any);
+  const activeUuids = new Set(activeMessages.map((m) => m.uuid));
+  // Locate requests/ directory relative to the session file
+  const requestsDir = path.join(path.dirname(filePath), 'requests');
+  const requestLogs = loadAllRequestLogs(requestsDir, messages);
+
+  const html = buildHtml({
+    sessionId,
+    sessionLogPath: filePath,
+    messages,
+    requestLogs,
+    activeUuids,
+  });
+
+  const outDir = path.join(process.cwd(), '.log-outputs');
+  if (!fs.existsSync(outDir)) {
+    fs.mkdirSync(outDir, { recursive: true });
+  }
+  const outPath = path.join(outDir, `session-${sessionId}.html`);
+  fs.writeFileSync(outPath, html, 'utf-8');
+  return outPath;
+}
+
 const LogUI: React.FC<{ context: Context }> = ({ context }) => {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -664,7 +691,36 @@ const LogUI: React.FC<{ context: Context }> = ({ context }) => {
   );
 };
 
-export async function runLog(context: Context) {
+export async function runLog(context: Context, filePath?: string) {
+  // If file path is provided, generate HTML directly without interactive UI
+  if (filePath) {
+    const resolvedPath = path.isAbsolute(filePath)
+      ? filePath
+      : path.resolve(process.cwd(), filePath);
+
+    if (!fs.existsSync(resolvedPath)) {
+      console.error(`Session file not found: ${filePath}`);
+      process.exit(1);
+    }
+
+    try {
+      const outPath = await generateHtmlForFile(resolvedPath);
+      console.log(`HTML generated: ${outPath}`);
+
+      const result = await openFile(outPath);
+      if (result.success) {
+        console.log('✓ HTML file opened in browser');
+      } else {
+        console.log(result.message || 'Please manually open the HTML file');
+      }
+    } catch (e: any) {
+      console.error(`Error generating HTML: ${e.message}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  // Fall back to interactive UI when no file path is provided
   render(React.createElement(LogUI, { context }), {
     patchConsole: true,
     exitOnCtrlC: true,

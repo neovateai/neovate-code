@@ -225,7 +225,7 @@ function loadPolishedMarkdownFile(
   }
   let description = file.attributes.description?.trim();
   if (!description) {
-    const lines = file.body.split('\n');
+    const lines = (file.body || '').split('\n');
     const firstLine = lines.find((line) => line.trim())?.trim();
     if (firstLine) {
       // Handle title lines starting with # (supports multiple #)

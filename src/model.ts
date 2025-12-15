@@ -647,6 +647,32 @@ export const models: ModelMap = {
     open_weights: false,
     limit: { context: 128000, output: 64000 },
   },
+  'gpt-5.2': {
+    name: 'GPT-5.2',
+    attachment: true,
+    reasoning: true,
+    temperature: false,
+    knowledge: '2025-08-31',
+    tool_call: true,
+    release_date: '2025-12-11',
+    last_updated: '2025-12-11',
+    modalities: { input: ['text', 'image'], output: ['text', 'image'] },
+    open_weights: false,
+    limit: { context: 400000, output: 128000 },
+  },
+  'gpt-5.2-pro': {
+    name: 'GPT-5.2 Pro',
+    attachment: true,
+    reasoning: true,
+    temperature: false,
+    knowledge: '2025-08-31',
+    tool_call: true,
+    release_date: '2025-12-11',
+    last_updated: '2025-12-11',
+    modalities: { input: ['text', 'image'], output: ['text'] },
+    open_weights: false,
+    limit: { context: 400000, output: 128000 },
+  },
   'gpt-4.1': {
     name: 'GPT-4.1',
     attachment: true,
@@ -739,7 +765,7 @@ export const models: ModelMap = {
     limit: { context: 200000, output: 100000 },
   },
   'glm-4.5': {
-    name: 'GLM 4.5',
+    name: 'GLM-4.5',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -778,7 +804,7 @@ export const models: ModelMap = {
     limit: { context: 131072, output: 98304 },
   },
   'glm-4.5v': {
-    name: 'GLM 4.5V',
+    name: 'GLM-4.5V',
     attachment: true,
     reasoning: true,
     temperature: true,
@@ -802,6 +828,19 @@ export const models: ModelMap = {
     modalities: { input: ['text'], output: ['text'] },
     open_weights: true,
     limit: { context: 204800, output: 131072 },
+  },
+  'glm-4.6v': {
+    name: 'GLM-4.6V',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-04',
+    release_date: '2025-12-08',
+    last_updated: '2025-12-08',
+    modalities: { input: ['text', 'image', 'video'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 131072, output: 24000 },
   },
   'sonoma-dusk-alpha': {
     name: 'Sonoma Dusk Alpha',
@@ -1055,7 +1094,9 @@ export const createModelCreatorCompatible = (opts?: {
   };
 };
 
-export const defaultModelCreator = (
+export const defaultModelCreator = createModelCreatorCompatible();
+
+const openaiModelCreator = (
   name: string,
   provider: Provider,
 ): LanguageModelV2 => {
@@ -1106,6 +1147,7 @@ export const providers: ProvidersMap = {
       'claude-3.7-sonnet-thought': models['claude-3-7-sonnet'],
       'claude-sonnet-4.5': models['claude-4-5-sonnet'],
       'claude-opus-4-5': models['claude-opus-4-5'],
+      'gpt-5.2': models['gpt-5.2'],
     },
     async createModel(name, provider, options) {
       const apiKey = provider.options?.apiKey;
@@ -1164,8 +1206,10 @@ export const providers: ProvidersMap = {
       'gpt-5': models['gpt-5'],
       'gpt-5-mini': models['gpt-5-mini'],
       'gpt-5-codex': models['gpt-5-codex'],
+      'gpt-5.2': models['gpt-5.2'],
+      'gpt-5.2-pro': models['gpt-5.2-pro'],
     },
-    createModel: defaultModelCreator,
+    createModel: openaiModelCreator,
   },
   google: {
     id: 'google',
@@ -1335,6 +1379,8 @@ export const providers: ProvidersMap = {
       'openai/gpt-5': models['gpt-5'],
       'openai/gpt-5-mini': models['gpt-5-mini'],
       'openai/gpt-5-codex': models['gpt-5-codex'],
+      'openai/gpt-5.2': models['gpt-5.2'],
+      'openai/gpt-5.2-pro': models['gpt-5.2-pro'],
       'google/gemini-3-pro-preview': models['gemini-3-pro-preview'],
       'moonshotai/kimi-k2': models['kimi-k2'],
       'moonshotai/kimi-k2-0905': models['kimi-k2-0905'],
@@ -1348,6 +1394,7 @@ export const providers: ProvidersMap = {
       'z-ai/glm-4.5': models['glm-4.5'],
       'z-ai/glm-4.5v': models['glm-4.5v'],
       'z-ai/glm-4.6': models['glm-4.6'],
+      'z-ai/glm-4.6v': models['glm-4.6v'],
       'minimax/minimax-m2': models['minimax-m2'],
       'openrouter/sherlock-dash-alpha': models['sherlock-dash-alpha'],
       'openrouter/sherlock-think-alpha': models['sherlock-think-alpha'],
@@ -1386,7 +1433,7 @@ export const providers: ProvidersMap = {
       'glm-4.6': models['glm-4.6'],
       'qwen3-max': models['qwen3-max'],
     },
-    createModel: createModelCreatorCompatible(),
+    createModel: defaultModelCreator,
   },
   moonshotai: {
     id: 'moonshotai',
@@ -1528,6 +1575,7 @@ export const providers: ProvidersMap = {
       'glm-4.5-air': models['glm-4.5-air'],
       'glm-4.5v': models['glm-4.5v'],
       'glm-4.6': models['glm-4.6'],
+      'glm-4.6v': models['glm-4.6v'],
     },
     createModel: defaultModelCreator,
   },
@@ -1543,6 +1591,7 @@ export const providers: ProvidersMap = {
       'glm-4.5-air': models['glm-4.5-air'],
       'glm-4.5': models['glm-4.5'],
       'glm-4.5-flash': models['glm-4.5-flash'],
+      'glm-4.6v': models['glm-4.6v'],
     },
     createModel: defaultModelCreator,
   },
@@ -1558,6 +1607,7 @@ export const providers: ProvidersMap = {
       'glm-4.5-air': models['glm-4.5-air'],
       'glm-4.5': models['glm-4.5'],
       'glm-4.5-flash': models['glm-4.5-flash'],
+      'glm-4.6v': models['glm-4.6v'],
     },
     createModel: defaultModelCreator,
   },
@@ -1579,9 +1629,14 @@ export const providers: ProvidersMap = {
       'openai/gpt-5.1': models['gpt-5.1'],
       'openai/gpt-5.1-codex': models['gpt-5.1-codex'],
       'openai/gpt-5.1-codex-mini': models['gpt-5.1-codex-mini'],
+      'openai/gpt-5.2': models['gpt-5.2'],
+      'openai/gpt-5.2-pro': models['gpt-5.2-pro'],
       'anthropic/claude-sonnet-4.5': models['claude-4-5-sonnet'],
       'anthropic/claude-opus-4.1': models['claude-4.1-opus'],
       'anthropic/claude-opus-4.5': models['claude-opus-4-5'],
+      'z-ai/glm-4.6': models['glm-4.6'],
+      'z-ai/glm-4.6v': models['glm-4.6v'],
+      'z-ai/glm-4.6v-flash': models['glm-4.6v'],
       'deepseek/deepseek-v3.2-speciale': models['deepseek-v3.2-speciale'],
       'deepseek/deepseek-chat': models['deepseek-v3-2-exp'],
       'deepseek/deepseek-reasoner': models['deepseek-r1-0528'],
@@ -1654,7 +1709,7 @@ export const providers: ProvidersMap = {
       },
       'Grok-4.1-Fast': models['grok-4.1-fast'],
     },
-    createModel: createModelCreatorCompatible(),
+    createModel: defaultModelCreator,
   },
   antigravity: {
     id: 'antigravity',
@@ -1662,11 +1717,16 @@ export const providers: ProvidersMap = {
     name: 'Antigravity',
     doc: 'https://antigravity.google/',
     models: {
-      'gemini-2.5-pro': models['gemini-2.5-pro'],
+      'gemini-2.5-flash-lite': models['gemini-2.5-flash-lite-preview-06-17'],
       'gemini-2.5-flash': models['gemini-2.5-flash'],
+      'gemini-2.5-flash-thinking': models['gemini-2.5-flash'],
+      'gemini-2.5-pro': models['gemini-2.5-pro'],
       'gemini-3-pro-low': models['gemini-3-pro-preview'],
       'gemini-3-pro-high': models['gemini-3-pro-preview'],
+      'claude-sonnet-4-5': models['claude-4-5-sonnet'],
       'claude-sonnet-4-5-thinking': models['claude-4-5-sonnet'],
+      'claude-opus-4-5-thinking': models['claude-opus-4-5'],
+      'gpt-oss-120b-medium': models['gpt-oss-120b'],
     },
     async createModel(name, provider, options) {
       const apiKey = provider.options?.apiKey;

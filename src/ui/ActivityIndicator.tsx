@@ -19,14 +19,15 @@ export function ActivityIndicator() {
 
   const text = useMemo(() => {
     if (status === 'processing') return 'Processing...';
-    if (status === 'failed') return `Failed: ${error}`;
+    if (status === 'failed' || (status === 'exit' && error))
+      return `Failed: ${error}`;
     return `Unknown status: ${status}`;
   }, [status, error, seconds]);
 
   const color = useMemo(() => {
-    if (status === 'failed') return 'red';
+    if (status === 'failed' || (status === 'exit' && error)) return 'red';
     return 'gray';
-  }, [status]);
+  }, [status, error]);
 
   const highlightIndex = useTextGradientAnimation(
     text,
@@ -62,7 +63,8 @@ export function ActivityIndicator() {
   }, [processingTokens, retryInfo]);
 
   if (status === 'idle') return null;
-  if (status === 'exit') return null;
+  // Don't hide error message when exiting - only hide if there's no error
+  if (status === 'exit' && !error) return null;
   if (planResult) return null;
   if (approvalModal) return null;
 

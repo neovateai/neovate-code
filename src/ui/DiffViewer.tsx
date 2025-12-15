@@ -133,7 +133,11 @@ function generateDiffLines(
     return [];
   }
 
-  const diffContent = generateFileDiff(originalContent, newContent, filePath);
+  let diffContent = generateFileDiff(originalContent, newContent, filePath);
+  // createTwoFilesPatch in generateFileDiff can return undefined
+  if (diffContent === undefined || diffContent === null) {
+    diffContent = `[Error] Failed to generate diff for file: ${filePath}`;
+  }
   return parseDiffWithLineNumbers(diffContent);
 }
 

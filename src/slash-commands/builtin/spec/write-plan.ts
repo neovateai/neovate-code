@@ -1,6 +1,8 @@
 import type { PromptCommand } from '../../types';
+import { getLanguageInstruction } from '../../../utils/language';
 
 export function writePlanCommand(language: string): PromptCommand {
+  const languageInstruction = getLanguageInstruction(language);
   return {
     type: 'prompt',
     name: 'spec:write-plan',
@@ -21,7 +23,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Announce at start:** "I'm creating the implementation plan."
 
-**Language:** Please communicate in ${language}.
+${languageInstruction}
 
 **Save plans to:** \`docs/plans/YYYY-MM-DD-\<feature-name\>.md\`
 

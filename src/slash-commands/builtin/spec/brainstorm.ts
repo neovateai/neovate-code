@@ -1,10 +1,12 @@
 import { TOOL_NAMES } from '../../../constants';
 import type { PromptCommand } from '../../types';
+import { getLanguageInstruction } from '../../../utils/language';
 
 export function brainstormCommand(
   language: string,
   askUserQuestion?: boolean,
 ): PromptCommand {
+  const languageInstruction = getLanguageInstruction(language);
   return {
     type: 'prompt',
     name: 'spec:brainstorm',
@@ -25,7 +27,7 @@ Transform rough ideas into fully-formed designs through structured questioning a
 
 **Announce at start:** "I'm refining your idea into a design."
 
-**Language:** Please communicate in ${language}.
+${languageInstruction}
 
 ## The Process
 

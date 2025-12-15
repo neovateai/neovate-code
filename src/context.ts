@@ -28,6 +28,7 @@ type ContextOpts = {
   backgroundTaskManager: BackgroundTaskManager;
   messageBus?: MessageBus;
   agentManager?: AgentManager;
+  plugins: (string | Plugin)[];
 };
 
 export type ContextCreateOpts = {
@@ -53,7 +54,7 @@ export class Context {
   backgroundTaskManager: BackgroundTaskManager;
   messageBus?: MessageBus;
   agentManager?: AgentManager;
-
+  plugins: (string | Plugin)[];
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName;
@@ -67,6 +68,7 @@ export class Context {
     this.backgroundTaskManager = opts.backgroundTaskManager;
     this.messageBus = opts.messageBus;
     this.agentManager = opts.agentManager;
+    this.plugins = opts.plugins;
   }
 
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {
@@ -150,6 +152,7 @@ export class Context {
       mcpManager,
       backgroundTaskManager,
       messageBus: opts.messageBus,
+      plugins: pluginsConfigs,
     });
 
     // Create and attach AgentManager

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { sortFilePaths } from './sortFilePaths';
 import { useAppStore } from './store';
 import { useListNavigation } from './useListNavigation';
 import type { InputState } from './useInputState';
@@ -245,10 +246,13 @@ export function useFileSuggestion(
 
   const matchedPaths = useMemo(() => {
     if (!hasQuery) return [];
-    if (query === '') return paths;
-    return paths.filter((path) => {
-      return path.toLowerCase().includes(query.toLowerCase());
-    });
+    const filtered =
+      query === ''
+        ? paths
+        : paths.filter((path) =>
+            path.toLowerCase().includes(query.toLowerCase()),
+          );
+    return sortFilePaths(filtered, query);
   }, [paths, hasQuery, query]);
 
   // Use common list navigation logic

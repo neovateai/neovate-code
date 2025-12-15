@@ -1,5 +1,33 @@
 import fm from 'front-matter';
 
+const SIMPLE_VALUE_PATTERN = /^[a-zA-Z0-9_.\-\s]+$/;
+
+function isSimpleValue(value: string): boolean {
+  if (!value) return true;
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return true;
+  }
+  return SIMPLE_VALUE_PATTERN.test(trimmed);
+}
+
+function fixFrontmatterValues(frontmatter: string): string {
+  return frontmatter.replace(
+    /^(\s*[a-zA-Z0-9_-]+\s*:\s*)(.+)$/gm,
+    (match, keyPart, valuePart) => {
+      if (isSimpleValue(valuePart)) {
+        return match;
+      }
+      const trimmed = valuePart.trim();
+      return `${keyPart}"${trimmed.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+    },
+  );
+}
+
 /**
  * Safely parse frontmatter from markdown content with automatic error recovery
  * Handles common YAML issues like unquoted colons in values
@@ -15,25 +43,11 @@ export function safeFrontMatter<T = Record<string, string>>(
     const { attributes, body } = fm<T>(content);
     return { attributes, body };
   } catch (error) {
-    // Try to fix common YAML issues
-    // Issue 1: Colon in unquoted value (e.g. "name: OpenSpec: Proposal")
     try {
       const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
       if (frontmatterMatch) {
         const originalFm = frontmatterMatch[1];
-        const fixedFm = originalFm.replace(
-          /^(\s*[a-zA-Z0-9_-]+\s*:\s+)(.*:\s+.*)$/gm,
-          (match, keyPart, valuePart) => {
-            const trimmed = valuePart.trim();
-            if (
-              (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-              (trimmed.startsWith("'") && trimmed.endsWith("'"))
-            ) {
-              return match;
-            }
-            return `${keyPart}"${trimmed.replace(/"/g, '\\"')}"`;
-          },
-        );
+        const fixedFm = fixFrontmatterValues(originalFm);
 
         if (fixedFm !== originalFm) {
           const fixedContent = content.replace(originalFm, fixedFm);

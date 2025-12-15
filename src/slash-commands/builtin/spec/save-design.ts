@@ -1,6 +1,10 @@
 import type { PromptCommand } from '../../types';
+import { getLanguageInstruction, isEnglish } from '../../../utils/language';
 
 export function saveDesignCommand(language: string): PromptCommand {
+  const languageInstruction = isEnglish(language)
+    ? ''
+    : `\n- Respond in ${language}.`;
   return {
     type: 'prompt',
     name: 'spec:save-design',
@@ -50,8 +54,7 @@ Describe technical details, components, flows, and important implementation note
 
 Remember:
 - Base everything only on content after /spec:brainstorm.
-- Do not include raw chat logs; only the distilled design.
-- Respond in ${language}.
+- Do not include raw chat logs; only the distilled design.${languageInstruction}
       `.trim(),
         },
       ];
