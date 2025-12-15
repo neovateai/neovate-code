@@ -16,6 +16,334 @@ export interface Hunk {
   lines: string[];
 }
 
+/**
+ * Calculate Levenshtein distance between two strings
+ * Used for similarity calculation in BlockAnchorReplacer
+ */
+function levenshtein(a: string, b: string): number {
+  const matrix: number[][] = [];
+
+  // Initialize matrix
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  // Fill matrix
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1, // insertion
+          matrix[i - 1][j] + 1, // deletion
+        );
+      }
+    }
+  }
+
+  return matrix[b.length][a.length];
+}
+
+/**
+ * Try line-trimmed matching: ignore leading/trailing whitespace on each line
+ * Solves indentation difference issues
+ */
+function tryLineTrimmedMatch(content: string, oldStr: string): string | null {
+  const contentLines = content.split('\n');
+  const searchLines = oldStr.split('\n');
+
+  for (let i = 0; i <= contentLines.length - searchLines.length; i++) {
+    let matches = true;
+    for (let j = 0; j < searchLines.length; j++) {
+      if (contentLines[i + j].trim() !== searchLines[j].trim()) {
+        matches = false;
+        break;
+      }
+    }
+
+    if (matches) {
+      // Return original content (preserve original indentation)
+      const startIdx =
+        contentLines.slice(0, i).join('\n').length + (i > 0 ? 1 : 0);
+      const matchedLines = contentLines.slice(i, i + searchLines.length);
+      return matchedLines.join('\n');
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Try block anchor matching: use first/last lines as anchors + Levenshtein similarity
+ * Solves code blocks with slight modifications in middle lines
+ * Requires at least 3 lines
+ *
+ * Similarity thresholds:
+ * - Single candidate: 0.0 (more lenient)
+ * - Multiple candidates: 0.3 (more strict)
+ */
+function tryBlockAnchorMatch(content: string, oldStr: string): string | null {
+  const SINGLE_CANDIDATE_SIMILARITY_THRESHOLD = 0.5;
+  const MULTIPLE_CANDIDATES_SIMILARITY_THRESHOLD = 0.3;
+
+  const contentLines = content.split('\n');
+  const searchLines = oldStr.split('\n');
+
+  // Require at least 3 lines for this strategy
+  if (searchLines.length < 3) {
+    return null;
+  }
+
+  const firstLine = searchLines[0].trim();
+  const lastLine = searchLines[searchLines.length - 1].trim();
+
+  // Collect all candidates where first and last lines match
+  const candidates: Array<{ startLine: number; endLine: number }> = [];
+
+  for (let i = 0; i < contentLines.length; i++) {
+    if (contentLines[i].trim() !== firstLine) continue;
+
+    for (let j = i + 2; j < contentLines.length; j++) {
+      if (contentLines[j].trim() === lastLine) {
+        candidates.push({ startLine: i, endLine: j });
+      }
+    }
+  }
+
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  // Helper function to calculate similarity for a candidate
+  const calculateSimilarity = (candidate: {
+    startLine: number;
+    endLine: number;
+  }): number => {
+    const blockSize = candidate.endLine - candidate.startLine + 1;
+    const middleLines = Math.min(blockSize - 2, searchLines.length - 2);
+
+    if (middleLines <= 0) return 1.0; // Only first and last lines, already matched
+
+    let totalSimilarity = 0;
+
+    for (let k = 1; k <= middleLines; k++) {
+      const contentLine = contentLines[candidate.startLine + k];
+      const searchLine = searchLines[k];
+      const maxLen = Math.max(contentLine.length, searchLine.length);
+
+      if (maxLen === 0) {
+        totalSimilarity += 1.0;
+      } else {
+        const distance = levenshtein(contentLine, searchLine);
+        totalSimilarity += 1 - distance / maxLen;
+      }
+    }
+
+    return totalSimilarity / middleLines;
+  };
+
+  // Single candidate scenario - use more lenient threshold
+  if (candidates.length === 1) {
+    const candidate = candidates[0];
+    const similarity = calculateSimilarity(candidate);
+
+    if (similarity >= SINGLE_CANDIDATE_SIMILARITY_THRESHOLD) {
+      const matchedLines = contentLines.slice(
+        candidate.startLine,
+        candidate.endLine + 1,
+      );
+      return matchedLines.join('\n');
+    }
+
+    return null;
+  }
+
+  // Multiple candidates scenario - find best match above threshold
+  let bestMatch: string | null = null;
+  let maxSimilarity = -1;
+
+  for (const candidate of candidates) {
+    const similarity = calculateSimilarity(candidate);
+
+    if (
+      similarity > maxSimilarity &&
+      similarity >= MULTIPLE_CANDIDATES_SIMILARITY_THRESHOLD
+    ) {
+      maxSimilarity = similarity;
+      const matchedLines = contentLines.slice(
+        candidate.startLine,
+        candidate.endLine + 1,
+      );
+      bestMatch = matchedLines.join('\n');
+    }
+  }
+
+  return bestMatch;
+}
+
+/**
+ * Try whitespace-normalized matching: replace all consecutive whitespace with single space
+ * Solves extra spaces and tab mixing issues
+ */
+function tryWhitespaceNormalizedMatch(
+  content: string,
+  oldStr: string,
+): string | null {
+  const normalize = (text: string) => text.replace(/\s+/g, ' ').trim();
+  const normalizedOld = normalize(oldStr);
+  const lines = content.split('\n');
+
+  // Single-line matching
+  for (const line of lines) {
+    if (normalize(line) === normalizedOld) {
+      return line;
+    }
+  }
+
+  // Multi-line matching
+  const oldLines = oldStr.split('\n');
+  if (oldLines.length > 1) {
+    for (let i = 0; i <= lines.length - oldLines.length; i++) {
+      const block = lines.slice(i, i + oldLines.length).join('\n');
+      if (normalize(block) === normalizedOld) {
+        return block;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Unescape string (handle LLM over-escaping issues)
+ * Reference: unescapeStringForGeminiBug in edit-logic-analysis.md
+ */
+function unescapeStringForGeminiBug(inputString: string): string {
+  return inputString.replace(
+    /\\+(n|t|r|'|"|`|\\|\n)/g,
+    (match, capturedChar) => {
+      switch (capturedChar) {
+        case 'n':
+          return '\n';
+        case 't':
+          return '\t';
+        case 'r':
+          return '\r';
+        case "'":
+          return "'";
+        case '"':
+          return '"';
+        case '`':
+          return '`';
+        case '\\':
+          return '\\';
+        case '\n':
+          return '\n';
+        default:
+          return match;
+      }
+    },
+  );
+}
+
+/**
+ * Try escape-normalized matching: handle over-escaped strings
+ * Solves LLM-generated \\n, \\t escape issues
+ */
+function tryEscapeNormalizedMatch(
+  content: string,
+  oldStr: string,
+): string | null {
+  const unescaped = unescapeStringForGeminiBug(oldStr);
+
+  // Direct matching
+  if (content.includes(unescaped)) {
+    return unescaped;
+  }
+
+  // Multi-line block matching
+  const lines = content.split('\n');
+  const unescapedLines = unescaped.split('\n');
+
+  if (unescapedLines.length > 1) {
+    for (let i = 0; i <= lines.length - unescapedLines.length; i++) {
+      const block = lines.slice(i, i + unescapedLines.length).join('\n');
+      if (unescapeStringForGeminiBug(block) === unescaped) {
+        return block;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Remove common indentation from text
+ */
+function removeCommonIndentation(text: string): string {
+  const lines = text.split('\n');
+  const nonEmptyLines = lines.filter((line) => line.trim().length > 0);
+
+  if (nonEmptyLines.length === 0) return text;
+
+  // Find minimum indentation
+  const minIndent = Math.min(
+    ...nonEmptyLines.map((line) => {
+      const match = line.match(/^(\s*)/);
+      return match ? match[1].length : 0;
+    }),
+  );
+
+  // Remove minimum common indentation
+  return lines
+    .map((line) => (line.trim().length === 0 ? line : line.slice(minIndent)))
+    .join('\n');
+}
+
+/**
+ * Try indentation-flexible matching: ignore overall indentation level differences
+ * Solves code block movement to different indentation levels
+ */
+function tryIndentationFlexibleMatch(
+  content: string,
+  oldStr: string,
+): string | null {
+  const normalizedSearch = removeCommonIndentation(oldStr);
+  const contentLines = content.split('\n');
+  const searchLines = oldStr.split('\n');
+
+  for (let i = 0; i <= contentLines.length - searchLines.length; i++) {
+    const block = contentLines.slice(i, i + searchLines.length).join('\n');
+    if (removeCommonIndentation(block) === normalizedSearch) {
+      return block;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Apply string replacement using multiple strategies to improve match success rate
+ * Strategies are tried in priority order, using the first successful one
+ *
+ * Strategy chain (in priority order):
+ * 1. Exact match
+ * 2. Line-trimmed match (ignoring indentation)
+ * 3. Block anchor match (using first/last lines + similarity)
+ * 4. Whitespace-normalized match (handling extra spaces)
+ * 5. Escape-normalized match (handling over-escaping)
+ * 6. Indentation-flexible match (ignoring base indentation level)
+ *
+ * Note: If a strategy finds multiple matches and replace_all=false,
+ * it will continue to the next more precise strategy (but current implementation
+ * performs replacement directly, as subsequent strategies typically find the same
+ * or more matches)
+ */
 function applyStringReplace(
   content: string,
   oldStr: string,
@@ -30,16 +358,57 @@ function applyStringReplace(
     return text.replace(search, () => replace);
   };
 
-  if (newStr !== '') {
-    return performReplace(content, oldStr, newStr);
+  // Strategy 1: Exact match
+  if (content.includes(oldStr)) {
+    if (newStr !== '') {
+      return performReplace(content, oldStr, newStr);
+    }
+
+    const hasTrailingNewline =
+      !oldStr.endsWith('\n') && content.includes(`${oldStr}\n`);
+
+    return hasTrailingNewline
+      ? performReplace(content, `${oldStr}\n`, newStr)
+      : performReplace(content, oldStr, newStr);
   }
 
-  const hasTrailingNewline =
-    !oldStr.endsWith('\n') && content.includes(oldStr + '\n');
+  // Strategy 2: Line-trimmed match
+  const lineTrimmedMatch = tryLineTrimmedMatch(content, oldStr);
+  if (lineTrimmedMatch) {
+    return performReplace(content, lineTrimmedMatch, newStr);
+  }
 
-  return hasTrailingNewline
-    ? performReplace(content, oldStr + '\n', newStr)
-    : performReplace(content, oldStr, newStr);
+  // Strategy 3: Block anchor match (first/last lines + similarity)
+  const blockAnchorMatch = tryBlockAnchorMatch(content, oldStr);
+  if (blockAnchorMatch) {
+    return performReplace(content, blockAnchorMatch, newStr);
+  }
+
+  // Strategy 4: Whitespace-normalized match
+  const whitespaceMatch = tryWhitespaceNormalizedMatch(content, oldStr);
+  if (whitespaceMatch) {
+    return performReplace(content, whitespaceMatch, newStr);
+  }
+
+  // Strategy 5: Escape-normalized match
+  const escapeMatch = tryEscapeNormalizedMatch(content, oldStr);
+  if (escapeMatch) {
+    return performReplace(content, escapeMatch, newStr);
+  }
+
+  // Strategy 6: Indentation-flexible match
+  const indentMatch = tryIndentationFlexibleMatch(content, oldStr);
+  if (indentMatch) {
+    return performReplace(content, indentMatch, newStr);
+  }
+
+  // All strategies failed
+  const truncatedOldStr =
+    oldStr.length > 200 ? `${oldStr.substring(0, 200)}...` : oldStr;
+
+  throw new Error(
+    `The string to be replaced was not found in the file. Please ensure the 'old_string' matches the file content exactly, including indentation and whitespace.\nTarget string (first 200 chars): ${truncatedOldStr}`,
+  );
 }
 
 export function applyEdits(
@@ -52,6 +421,8 @@ export function applyEdits(
   let fileContents = '';
   try {
     fileContents = readFileSync(fullFilePath, 'utf-8');
+    // Normalize line endings: CRLF → LF
+    fileContents = fileContents.replace(/\r\n/g, '\n');
   } catch (error: any) {
     if (
       error.code === 'ENOENT' &&
