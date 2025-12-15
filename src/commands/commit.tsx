@@ -1119,7 +1119,7 @@ export async function runCommit(context: Context) {
         productName: context.productName,
         version: context.version,
         argvConfig: {},
-        plugins: [],
+        plugins: context.plugins,
       },
     });
 

@@ -26,6 +26,7 @@ type ContextOpts = {
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
   messageBus?: MessageBus;
+  plugins: (string | Plugin)[];
 };
 
 export type ContextCreateOpts = {
@@ -50,6 +51,7 @@ export class Context {
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
   messageBus?: MessageBus;
+  plugins: (string | Plugin)[];
 
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
@@ -63,6 +65,7 @@ export class Context {
     this.argvConfig = opts.argvConfig;
     this.backgroundTaskManager = opts.backgroundTaskManager;
     this.messageBus = opts.messageBus;
+    this.plugins = opts.plugins;
   }
 
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {
@@ -144,6 +147,7 @@ export class Context {
       mcpManager,
       backgroundTaskManager,
       messageBus: opts.messageBus,
+      plugins: pluginsConfigs,
     });
   }
 }
