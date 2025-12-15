@@ -818,7 +818,6 @@ cd /foo/bar && pytest tests
       timeout: z
         .number()
         .optional()
-        .nullable()
         .describe(`Optional timeout in milliseconds (max ${MAX_TIMEOUT})`),
       run_in_background: z
         .boolean()

@@ -22,15 +22,10 @@ export function createGrepTool(opts: { cwd: string }) {
     `,
     parameters: z.object({
       pattern: z.string().describe('The pattern to search for'),
-      search_path: z
-        .string()
-        .optional()
-        .nullable()
-        .describe('The path to search in'),
+      search_path: z.string().optional().describe('The path to search in'),
       include: z
         .string()
         .optional()
-        .nullable()
         .describe('The file pattern to include in the search'),
       limit: z
         .number()

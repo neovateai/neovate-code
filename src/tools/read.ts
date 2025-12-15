@@ -101,14 +101,12 @@ Usage:
       offset: z
         .number()
         .optional()
-        .nullable()
         .describe(
           'The line number to start reading from. Only provide if the file is too large to read at once',
         ),
       limit: z
         .number()
         .optional()
-        .nullable()
         .describe(
           `The number of lines to read. Only provide if the file is too large to read at once`,
         ),
