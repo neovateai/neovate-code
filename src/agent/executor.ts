@@ -2,6 +2,7 @@ import { JsonlLogger } from '../jsonl';
 import { runLoop } from '../loop';
 import type { NormalizedMessage } from '../message';
 import { resolveModelWithContext } from '../model';
+import { loadSessionMessages, Session } from '../session';
 import { Tools } from '../tool';
 import { randomUUID } from '../utils/randomUUID';
 import { prepareForkMessages } from './contextFork';
@@ -25,10 +26,17 @@ export async function executeAgent(
     cwd,
     signal,
     onProgress,
+    resume,
   } = options;
 
   const startTime = Date.now();
-  const agentId = randomUUID().slice(0, 8);
+
+  const agentId = (() => {
+    if (resume) {
+      return resume;
+    }
+    return Session.createSessionId();
+  })();
 
   const agentLogPath = context.paths.getAgentLogPath(agentId);
   const agentLogger = new JsonlLogger({ filePath: agentLogPath });
@@ -54,12 +62,10 @@ export async function executeAgent(
     const toolNames = filteredToolList.map((t) => t.name);
 
     // Prepare messages
-    const messages = prepareMessages(
-      prompt,
-      definition,
-      forkContextMessages,
-      toolNames,
-    );
+    const messages = [
+      ...loadSessionMessages({ logPath: agentLogPath }),
+      ...prepareMessages(prompt, definition, forkContextMessages, toolNames),
+    ];
 
     // Resolve model
     const modelName = model || definition.model;
@@ -80,6 +86,7 @@ export async function executeAgent(
     }
 
     // Execute loop
+    // TODO: Can we directly reuse project.send?
     const loopResult = await runLoop({
       input: messages,
       model: resolvedModelResult.model,
@@ -89,10 +96,9 @@ export async function executeAgent(
       signal,
       maxTurns: 50,
       onMessage: async (message) => {
-        // 添加 metadata
         const normalizedMessage: NormalizedMessage & { sessionId: string } = {
           ...message,
-          sessionId: agentId, // 使用 agentId 作为 sessionId
+          sessionId: agentId,
           metadata: {
             ...(message.metadata || {}),
             agentId,
@@ -100,10 +106,8 @@ export async function executeAgent(
           },
         };
 
-        // 写入独立的 agent log
         agentLogger.addMessage({ message: normalizedMessage });
 
-        // 实时通知父级
         if (onProgress) {
           try {
             await onProgress(normalizedMessage, agentId);

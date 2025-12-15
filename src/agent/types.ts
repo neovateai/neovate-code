@@ -43,6 +43,7 @@ export interface AgentExecuteOptions {
   forkContextMessages?: NormalizedMessage[];
   cwd: string;
   signal?: AbortSignal;
+  resume?: string;
   onProgress?: (
     message: NormalizedMessage,
     agentId: string,

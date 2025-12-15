@@ -76,6 +76,7 @@ export class AgentManager {
       tools: context.tools,
       context: this.context,
       model: input.model,
+      resume: input.resume,
       forkContextMessages: definition.forkContext
         ? context.forkContextMessages
         : undefined,
