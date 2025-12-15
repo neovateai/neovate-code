@@ -127,8 +127,8 @@ export async function executeAgent(
         totalToolCalls: loopResult.metadata.toolCallsCount,
         totalDuration: Date.now() - startTime,
         usage: {
-          inputTokens: loopResult.data.usage?.inputTokens || 0,
-          outputTokens: loopResult.data.usage?.outputTokens || 0,
+          inputTokens: loopResult.data.usage?.promptTokens || 0,
+          outputTokens: loopResult.data.usage?.completionTokens || 0,
         },
       };
     }
