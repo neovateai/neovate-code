@@ -12,7 +12,7 @@
  * Usage: npm test -- src/ui/agent-progress.test.ts
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('SubAgent Progress Display - E2E', () => {
   it('should have AgentProgressOverlay component exported', async () => {

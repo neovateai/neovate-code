@@ -4,7 +4,6 @@ import type {
   AssistantMessage,
   NormalizedMessage,
   TextPart,
-  ToolMessage2,
   ToolResultPart2,
   ToolUsePart,
 } from '../message';
@@ -196,6 +195,8 @@ export function AgentProgressItem({
               <NestedAgentMessage
                 key={msg.uuid}
                 message={msg}
+                messages={progress.messages}
+                index={idx}
                 isLast={idx === progress.messages.length - 1}
               />
             ))}
@@ -307,7 +308,14 @@ export function formatToolUse(toolUse: ToolUsePart): string {
 
 function formatToolResult(result: ToolResultPart2): string {
   if (result.result.isError) {
-    return 'Failed';
+    const errorMsg =
+      typeof result.result.llmContent === 'string'
+        ? result.result.llmContent
+        : 'Error';
+    const cleanError = errorMsg.split('\n')[0] || 'Error'; // Take first line of error
+    return cleanError.length > 50
+      ? `Failed: ${cleanError.slice(0, 50)}...`
+      : `Failed: ${cleanError}`;
   }
 
   let content = '';
@@ -340,12 +348,16 @@ function formatToolResult(result: ToolResultPart2): string {
  */
 export function NestedAgentMessage({
   message,
+  messages,
+  index,
 }: {
   message: NormalizedMessage;
+  messages?: NormalizedMessage[];
+  index?: number;
   isLast?: boolean;
 }) {
   // Common left border style
-  const border = <Text color="gray">│ </Text>;
+  // const border = <Text color="gray">│ </Text>;
 
   if (message.role === 'user') {
     const content =
@@ -354,7 +366,6 @@ export function NestedAgentMessage({
         : JSON.stringify(message.content);
     return (
       <Box>
-        {border}
         <Text color="blue" bold>
           User:{' '}
         </Text>
@@ -372,7 +383,6 @@ export function NestedAgentMessage({
     if (typeof assistantMsg.content === 'string') {
       return (
         <Box>
-          {border}
           <Text>
             {assistantMsg.content.length > 60
               ? `${assistantMsg.content.slice(0, 60)}...`
@@ -393,14 +403,13 @@ export function NestedAgentMessage({
         <Box flexDirection="column">
           {textParts.map((part, idx) => {
             if ('text' in part) {
+              const text = part.text.trim();
+              if (!text) return null;
               return (
                 // biome-ignore lint/suspicious/noArrayIndexKey: text parts have no unique id
                 <Box key={`text-${idx}`}>
-                  {border}
                   <Text>
-                    {part.text.length > 60
-                      ? `${part.text.slice(0, 60)}...`
-                      : part.text}
+                    {text.length > 60 ? `${text.slice(0, 60)}...` : text}
                   </Text>
                 </Box>
               );
@@ -409,13 +418,45 @@ export function NestedAgentMessage({
           })}
           {toolUses.map((toolUse) => {
             if ('name' in toolUse) {
+              // Find result in subsequent messages
+              let resultText = '';
+              if (messages && index !== undefined) {
+                const resultMsg = messages.find(
+                  (m, i) =>
+                    i > index &&
+                    m.role === 'tool' &&
+                    Array.isArray(m.content) &&
+                    m.content.some(
+                      (p) =>
+                        p.type === 'tool-result' &&
+                        p.toolCallId === (toolUse as ToolUsePart).id,
+                    ),
+                );
+
+                if (resultMsg && Array.isArray(resultMsg.content)) {
+                  const resultPart = resultMsg.content.find(
+                    (p) =>
+                      p.type === 'tool-result' &&
+                      p.toolCallId === (toolUse as ToolUsePart).id,
+                  ) as ToolResultPart2;
+                  if (resultPart) {
+                    resultText = formatToolResult(resultPart);
+                  }
+                }
+              }
+
               return (
                 <Box key={toolUse.id}>
-                  {border}
                   <Text color="gray">└ </Text>
                   <Text color="cyan">
                     {formatToolUse(toolUse as ToolUsePart)}
                   </Text>
+                  {resultText && (
+                    <Text color="gray" dimColor>
+                      {' '}
+                      · {resultText}
+                    </Text>
+                  )}
                 </Box>
               );
             }
@@ -426,26 +467,9 @@ export function NestedAgentMessage({
     }
   }
 
+  // Tool messages are handled within the assistant message
   if (message.role === 'tool') {
-    const toolMsg = message as ToolMessage2;
-    // Tool Results
-    if (Array.isArray(toolMsg.content)) {
-      return (
-        <Box flexDirection="column">
-          {toolMsg.content.map((part, idx) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: tool results have no unique id
-            <Box key={idx}>
-              {border}
-              <Text color="gray" dimColor>
-                {' '}
-                ↳{' '}
-              </Text>
-              <Text color="gray">{formatToolResult(part)}</Text>
-            </Box>
-          ))}
-        </Box>
-      );
-    }
+    return null;
   }
 
   return null;
