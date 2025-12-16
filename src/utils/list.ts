@@ -8,6 +8,9 @@ export const TRUNCATED_MESSAGE = `There are more than ${MAX_FILES} files in the 
 
 const debug = createDebug('neovate:utils:list');
 
+// List of product names to check for ignore files
+const PRODUCT_NAMES = ['neovate', 'takumi', 'kwaipilot'];
+
 export function listDirectory(
   initialPath: string,
   cwd: string,
@@ -43,8 +46,9 @@ export function listDirectory(
 
       const childPath = join(path, child.name);
 
-      // Skip if ignored by gitignore or takumiignore
-      if (isIgnored(childPath, cwd, productName)) {
+      // Skip if ignored by any of the product-specific ignore files
+      const productNames = new Set([...PRODUCT_NAMES, productName]);
+      if ([...productNames].some((pName) => isIgnored(childPath, cwd, pName))) {
         continue;
       }
 
@@ -85,8 +89,15 @@ export function listRootDirectory(
 
       const childPath = join(rootPath, child.name);
 
-      // Skip if ignored by gitignore or takumiignore
-      if (isIgnored(childPath, rootPath, productName)) {
+      // Skip if ignored by any of the product-specific ignore files
+      let shouldIgnore = false;
+      for (const pName of PRODUCT_NAMES) {
+        if (isIgnored(childPath, rootPath, pName)) {
+          shouldIgnore = true;
+          break;
+        }
+      }
+      if (shouldIgnore) {
         continue;
       }
 

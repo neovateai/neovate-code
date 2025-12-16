@@ -11,11 +11,9 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export class At {
   private userPrompt: string;
   private cwd: string;
-  private productName: string;
-  constructor(opts: { userPrompt: string; cwd: string; productName?: string }) {
+  constructor(opts: { userPrompt: string; cwd: string }) {
     this.userPrompt = opts.userPrompt;
     this.cwd = opts.cwd;
-    this.productName = opts.productName || 'neovate-code';
   }
 
   getContent() {
@@ -75,7 +73,7 @@ export class At {
     for (const dir of directories) {
       try {
         // Get file list using existing utility
-        const fileList = listDirectory(dir, this.cwd, this.productName).sort();
+        const fileList = listDirectory(dir, this.cwd).sort();
 
         // Handle empty directories
         if (fileList.length === 0) {
@@ -202,7 +200,6 @@ export class At {
   static normalizeLanguageV2Prompt(opts: {
     input: LanguageModelV2Prompt;
     cwd: string;
-    productName?: string;
   }): LanguageModelV2Prompt {
     const lastUserMessage = [...opts.input].reverse().find((item) => {
       return 'role' in item && item.role === 'user';
@@ -217,7 +214,6 @@ export class At {
         const at = new At({
           userPrompt,
           cwd: opts.cwd,
-          productName: opts.productName,
         });
         const content = at.getContent();
         if (content) {

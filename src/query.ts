@@ -35,7 +35,6 @@ export async function query(opts: {
     model,
     tools: new Tools([]),
     cwd: '',
-    productName: opts.context?.productName,
     systemPrompt: opts.systemPrompt || '',
     onMessage: async (message) => {
       await opts.onMessage?.(message);
