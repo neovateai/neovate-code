@@ -20,6 +20,7 @@ import {
   isUserBashOutputMessage,
   toolResultPart2ToToolResultPart,
 } from '../message';
+import { symbols } from '../utils/symbols';
 import { SPACING, UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
 import { GradientString } from './GradientString';
@@ -76,7 +77,7 @@ function BashOutputMessage({ message }: { message: NormalizedMessage }) {
   return (
     <Box flexDirection="column" marginLeft={SPACING.MESSAGE_MARGIN_LEFT_USER}>
       <Text color={isError ? UI_COLORS.ERROR : UI_COLORS.TOOL_RESULT}>
-        ↳ {output}
+        {symbols.arrowDown} {output}
       </Text>
     </Box>
   );
@@ -284,7 +285,9 @@ function GettingStartedTips() {
       </Text>
       {initializeModelError && (
         <Box marginTop={1}>
-          <Text color="red">⚠ {initializeModelError}</Text>
+          <Text color="red">
+            {symbols.warning} {initializeModelError}
+          </Text>
         </Box>
       )}
     </Box>
@@ -324,20 +327,22 @@ function ModelConfigurationWarning() {
             enrichedProvider.validEnvs.length > 0
           ) {
             descriptions.push(
-              `✓ Envs: ${enrichedProvider.validEnvs.join(', ')}`,
+              `${symbols.tick} Envs: ${enrichedProvider.validEnvs.join(', ')}`,
             );
           }
 
           // Add API key status
           if (enrichedProvider.hasApiKey) {
-            descriptions.push('✓ Logged');
+            descriptions.push(`${symbols.tick} Logged`);
           }
 
           const description = descriptions.join(' | ');
 
           return (
             <Box key={enrichedProvider.id}>
-              <Text color="cyan">• {enrichedProvider.name}</Text>
+              <Text color="cyan">
+                {symbols.bullet} {enrichedProvider.name}
+              </Text>
               {description && <Text> → {pc.gray(`(${description})`)}</Text>}
             </Box>
           );
@@ -347,14 +352,14 @@ function ModelConfigurationWarning() {
         <Text>Suggested actions:</Text>
         <Box marginTop={1} flexDirection="column">
           <Text>
-            •{' '}
+            {symbols.bullet}{' '}
             <Text bold color="cyan">
               /login
             </Text>{' '}
             - Configure API key for a provider
           </Text>
           <Text>
-            •{' '}
+            {symbols.bullet}{' '}
             <Text bold color="cyan">
               /model
             </Text>{' '}
@@ -616,7 +621,11 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
   if (typeof text !== 'string') {
     text = JSON.stringify(text);
   }
-  return <Text color={UI_COLORS.TOOL_RESULT}>↳ {text}</Text>;
+  return (
+    <Text color={UI_COLORS.TOOL_RESULT}>
+      {symbols.arrowDown} {text}
+    </Text>
+  );
 }
 
 function ToolResult({ message }: { message: ToolMessage }) {

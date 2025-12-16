@@ -28,6 +28,7 @@ type ContextOpts = {
   backgroundTaskManager: BackgroundTaskManager;
   skillManager: SkillManager;
   messageBus?: MessageBus;
+  plugins: (string | Plugin)[];
 };
 
 export type ContextCreateOpts = {
@@ -53,6 +54,7 @@ export class Context {
   backgroundTaskManager: BackgroundTaskManager;
   skillManager: SkillManager;
   messageBus?: MessageBus;
+  plugins: (string | Plugin)[];
 
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
@@ -67,6 +69,7 @@ export class Context {
     this.backgroundTaskManager = opts.backgroundTaskManager;
     this.skillManager = opts.skillManager;
     this.messageBus = opts.messageBus;
+    this.plugins = opts.plugins;
   }
 
   async apply(applyOpts: Omit<PluginApplyOpts, 'pluginContext'>) {
@@ -157,6 +160,7 @@ export class Context {
       backgroundTaskManager,
       skillManager,
       messageBus: opts.messageBus,
+      plugins: pluginsConfigs,
     });
   }
 }

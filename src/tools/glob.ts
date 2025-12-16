@@ -17,11 +17,7 @@ Glob
 `.trim(),
     parameters: z.object({
       pattern: z.string().describe('The glob pattern to match files against'),
-      path: z
-        .string()
-        .optional()
-        .nullable()
-        .describe('The directory to search in'),
+      path: z.string().optional().describe('The directory to search in'),
     }),
     getDescription: ({ params }) => {
       if (!params.pattern || typeof params.pattern !== 'string') {

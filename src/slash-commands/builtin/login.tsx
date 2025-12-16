@@ -19,6 +19,7 @@ interface Provider {
 
 interface LoginSelectProps {
   onExit: (message: string) => void;
+  initialProviderId?: string;
 }
 
 type LoginStep = 'provider-selection' | 'api-key-input' | 'oauth-auth';
@@ -184,7 +185,10 @@ interface OAuthState {
   cleanup?: () => void;
 }
 
-export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
+export const LoginSelect: React.FC<LoginSelectProps> = ({
+  onExit,
+  initialProviderId,
+}) => {
   const { bridge, cwd } = useAppStore();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [groupedProviders, setGroupedProviders] = useState<
@@ -239,91 +243,105 @@ export const LoginSelect: React.FC<LoginSelectProps> = ({ onExit }) => {
           ];
 
           setGroupedProviders(groups);
+
+          if (initialProviderId) {
+            const provider = providersData.find(
+              (p) => p.id === initialProviderId,
+            );
+            if (provider) {
+              setProviders(providersData);
+              setLoading(false);
+              handleProviderSelectWithProvider(provider);
+              return;
+            } else {
+              onExit(`Provider '${initialProviderId}' not found`);
+              return;
+            }
+          }
+
           setLoading(false);
         }
       })
       .catch(() => {
         onExit('Failed to load providers');
       });
-  }, [cwd, bridge, onExit]);
+  }, [cwd, bridge, onExit, initialProviderId]);
+
+  const handleProviderSelectWithProvider = async (provider: Provider) => {
+    if (provider.id === 'github-copilot') {
+      const configResult = await bridge.request('config.get', {
+        cwd,
+        isGlobal: true,
+        key: 'provider.github-copilot.options.apiKey',
+      });
+      if (configResult.success && configResult.data.value) {
+        onExit('✓ GitHub Copilot is already logged in');
+        return;
+      }
+
+      try {
+        const githubProvider = new GithubProvider();
+        const auth = await githubProvider.initAuth(300000);
+
+        if (!auth.verificationUri) {
+          onExit('✗ Failed to get authorization URL');
+          return;
+        }
+
+        setOauthState({
+          provider: 'github-copilot',
+          authUrl: auth.verificationUri,
+          userCode: auth.userCode,
+          githubProvider,
+          tokenPromise: auth.tokenPromise,
+        });
+        setSelectedProvider(provider);
+        setStep('oauth-auth');
+      } catch (error) {
+        onExit(`✗ Failed to start GitHub OAuth: ${error}`);
+      }
+    } else if (provider.id === 'antigravity') {
+      const configResult = await bridge.request('config.get', {
+        cwd,
+        isGlobal: true,
+        key: 'provider.antigravity.options.apiKey',
+      });
+      if (configResult.success && configResult.data.value) {
+        onExit('✓ Antigravity is already logged in');
+        return;
+      }
+
+      try {
+        const antigravityProvider = new AntigravityProvider();
+        const auth = await antigravityProvider.initAuth(300000);
+
+        if (!auth.authUrl) {
+          onExit('✗ Failed to get authorization URL');
+          return;
+        }
+
+        setOauthState({
+          provider: 'antigravity',
+          authUrl: auth.authUrl,
+          antigravityProvider,
+          tokenPromise: auth.tokenPromise,
+          cleanup: auth.cleanup,
+        });
+        setSelectedProvider(provider);
+        setStep('oauth-auth');
+      } catch (error) {
+        onExit(`✗ Failed to start OAuth server: ${error}`);
+      }
+    } else {
+      setSelectedProvider(provider);
+      setStep('api-key-input');
+    }
+  };
 
   const handleProviderSelect = async (item: { value: string }) => {
     const provider = providers.find((p) => p.id === item.value);
     if (provider) {
-      if (provider.id === 'github-copilot') {
-        // GitHub Copilot OAuth flow (device code)
-        // Check if already logged in
-        const configResult = await bridge.request('config.get', {
-          cwd,
-          isGlobal: true,
-          key: 'provider.github-copilot.options.apiKey',
-        });
-        if (configResult.success && configResult.data.value) {
-          onExit('✓ GitHub Copilot is already logged in');
-          return;
-        }
-
-        try {
-          // Initialize OAuth flow with new GithubProvider API
-          const githubProvider = new GithubProvider();
-          const auth = await githubProvider.initAuth(300000); // 5 minute timeout
-
-          if (!auth.verificationUri) {
-            onExit('✗ Failed to get authorization URL');
-            return;
-          }
-
-          setOauthState({
-            provider: 'github-copilot',
-            authUrl: auth.verificationUri,
-            userCode: auth.userCode,
-            githubProvider,
-            tokenPromise: auth.tokenPromise,
-          });
-          setSelectedProvider(provider);
-          setStep('oauth-auth');
-        } catch (error) {
-          onExit(`✗ Failed to start GitHub OAuth: ${error}`);
-        }
-      } else if (provider.id === 'antigravity') {
-        // Antigravity OAuth flow (redirect-based)
-        // Check if already logged in
-        const configResult = await bridge.request('config.get', {
-          cwd,
-          isGlobal: true,
-          key: 'provider.antigravity.options.apiKey',
-        });
-        if (configResult.success && configResult.data.value) {
-          onExit('✓ Antigravity is already logged in');
-          return;
-        }
-
-        try {
-          // Initialize OAuth flow with new AntigravityProvider API
-          const antigravityProvider = new AntigravityProvider();
-          const auth = await antigravityProvider.initAuth(300000); // 5 minute timeout
-
-          if (!auth.authUrl) {
-            onExit('✗ Failed to get authorization URL');
-            return;
-          }
-
-          setOauthState({
-            provider: 'antigravity',
-            authUrl: auth.authUrl,
-            antigravityProvider,
-            tokenPromise: auth.tokenPromise,
-            cleanup: auth.cleanup,
-          });
-          setSelectedProvider(provider);
-          setStep('oauth-auth');
-        } catch (error) {
-          onExit(`✗ Failed to start OAuth server: ${error}`);
-        }
-      } else {
-        setSelectedProvider(provider);
-        setStep('api-key-input');
-      }
+      handleProviderSelectWithProvider(provider);
     }
   };
 
@@ -548,13 +566,14 @@ export function createLoginCommand(): LocalJSXCommand {
     type: 'local-jsx',
     name: 'login',
     description: 'Configure API key for a provider',
-    async call(onDone) {
+    async call(onDone, _context, args) {
       const LoginComponent = () => {
         return (
           <LoginSelect
             onExit={(message) => {
               onDone(message);
             }}
+            initialProviderId={args?.trim() || undefined}
           />
         );
       };

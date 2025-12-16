@@ -69,3 +69,50 @@ Body`;
     safeFrontMatter(invalidContent);
   }).toThrow(/Failed to parse frontmatter/);
 });
+
+test('should auto-fix values with parentheses and special chars', () => {
+  const content = `---
+description: Git rollback command
+allowed-tools: Read(**), Exec(git fetch, git log), Write()
+argument-hint: [--branch <branch>] [--mode reset|revert]
+---
+Body content`;
+
+  const result = safeFrontMatter(content);
+
+  expect(result.attributes).toEqual({
+    description: 'Git rollback command',
+    'allowed-tools': 'Read(**), Exec(git fetch, git log), Write()',
+    'argument-hint': '[--branch <branch>] [--mode reset|revert]',
+  });
+  expect(result.body.trim()).toBe('Body content');
+});
+
+test('should preserve comments in frontmatter', () => {
+  const content = `---
+name: Test
+# this is a comment
+description: A description
+---
+Body`;
+
+  const result = safeFrontMatter(content);
+
+  expect(result.attributes).toEqual({
+    name: 'Test',
+    description: 'A description',
+  });
+});
+
+test('should handle values with internal quotes', () => {
+  const content = `---
+name: Test with "quotes" inside
+---
+Body`;
+
+  const result = safeFrontMatter(content);
+
+  expect(result.attributes).toEqual({
+    name: 'Test with "quotes" inside',
+  });
+});

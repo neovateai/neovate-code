@@ -7,6 +7,7 @@ export type CommitAction =
   | 'commit'
   | 'push'
   | 'checkout'
+  | 'checkoutPush'
   | 'edit'
   | 'editBranch'
   | 'cancel';
@@ -22,6 +23,11 @@ const ACTIONS: ActionItem[] = [
   { value: 'commit', label: 'Commit changes', icon: '✅' },
   { value: 'push', label: 'Commit and push', icon: '🚀' },
   { value: 'checkout', label: 'Create branch and commit', icon: '🌿' },
+  {
+    value: 'checkoutPush',
+    label: 'Create branch and commit and push',
+    icon: '🌿',
+  },
   { value: 'edit', label: 'Edit commit message', icon: '✏️' },
   { value: 'editBranch', label: 'Edit branch name', icon: '🌿' },
   { value: 'cancel', label: 'Cancel', icon: '❌' },

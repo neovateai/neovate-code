@@ -1,12 +1,12 @@
 import { execSync } from 'child_process';
 import clipboardy from 'clipboardy';
 import { Box, render, Text, useInput } from 'ink';
-import TextInput from '../ui/TextInput';
 import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import type { Context } from '../context';
 import { DirectTransport, MessageBus } from '../messageBus';
 import { NodeBridge } from '../nodeBridge';
+import TextInput from '../ui/TextInput';
 
 // ============================================================================
 // Types
@@ -785,7 +785,7 @@ export async function runRun(context: Context) {
         productName: context.productName,
         version: context.version,
         argvConfig: {},
-        plugins: [],
+        plugins: context.plugins,
       },
     });
 

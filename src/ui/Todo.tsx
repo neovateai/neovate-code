@@ -2,6 +2,7 @@ import { Box, Text } from 'ink';
 import type React from 'react';
 import { useMemo } from 'react';
 import type { TodoItem as TodoItemType } from '../tools/todo';
+import { symbols } from '../utils/symbols';
 
 // TodoList
 const statusWeights = {
@@ -51,7 +52,9 @@ function TodoItem({
     <Box flexDirection="row">
       <Box minWidth={2}>
         <Text color={color} bold={isCurrent}>
-          {todo.status === 'completed' ? '☑' : '☐'}
+          {todo.status === 'completed'
+            ? symbols.checkboxOn
+            : symbols.checkboxOff}
         </Text>
       </Box>
       <Box>
@@ -87,7 +90,7 @@ interface IndentedContainerProps {
 function IndentedContainer({ children, height }: IndentedContainerProps) {
   return (
     <Box flexDirection="row" height={height} overflowY="hidden">
-      <Text> ⎿ </Text>
+      <Text> {symbols.line} </Text>
       {children}
     </Box>
   );

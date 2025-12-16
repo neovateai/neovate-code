@@ -106,7 +106,7 @@ function generateSuggestions(exampleFile?: string): string[] {
 }
 
 export function useTryTips() {
-  const { cwd, productName, status, messages } = useAppStore();
+  const { cwd, status, messages } = useAppStore();
   const [currentTip, setCurrentTip] = useState<string | null>(null);
 
   // Check if we should show try tips (when input is empty and app is idle)
@@ -124,7 +124,7 @@ export function useTryTips() {
 
     const generateTip = async () => {
       try {
-        const files = listDirectory(cwd, cwd, productName);
+        const files = listDirectory(cwd, cwd);
 
         // Filter out directories and get actual files
         const actualFiles = files.filter((file) => !file.endsWith('/'));
@@ -143,7 +143,7 @@ export function useTryTips() {
     };
 
     generateTip();
-  }, [shouldShowTips, cwd, productName]);
+  }, [shouldShowTips, cwd]);
 
   return {
     currentTip: shouldShowTips ? currentTip : null,

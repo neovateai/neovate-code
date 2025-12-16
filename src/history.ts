@@ -121,7 +121,13 @@ export class History {
             if (part.type === 'text') {
               return { type: 'text', text: part.text };
             } else if (part.type === 'reasoning') {
-              return { type: 'reasoning', text: part.text };
+              return {
+                type: 'reasoning',
+                text: part.text,
+                ...(part.providerMetadata && {
+                  providerMetadata: part.providerMetadata,
+                }),
+              };
             } else if (part.type === 'tool_use') {
               return {
                 type: 'tool-call',

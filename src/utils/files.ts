@@ -50,14 +50,13 @@ async function getGitStatusItems(cwd: string, query?: string) {
 export async function getFiles(opts: {
   cwd: string;
   maxSize: number;
-  productName: string;
   query: string;
 }) {
-  const { cwd, query, maxSize, productName } = opts;
+  const { cwd, query, maxSize } = opts;
   let items = await getGitStatusItems(cwd, query);
   if (items.length < maxSize) {
     const remainingSize = maxSize - items.length;
-    const result = listDirectory(cwd, cwd, productName, 6000).filter(
+    const result = listDirectory(cwd, cwd, 6000).filter(
       (item) => !query || item.toLowerCase().includes(query.toLowerCase()),
     );
     const remainingItems = result

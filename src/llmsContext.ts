@@ -35,7 +35,6 @@ export class LlmsContext {
     if (isProject) {
       const LSTool = createLSTool({
         cwd: opts.context.cwd,
-        productName: opts.context.productName,
       });
       const result = await LSTool.execute({ dir_path: '.' });
       if (result) {

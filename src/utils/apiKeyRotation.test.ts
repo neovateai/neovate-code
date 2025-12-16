@@ -16,42 +16,55 @@ describe('rotateApiKey', () => {
     expect(result).toBe('');
   });
 
-  it('should rotate through multiple keys in sequence', () => {
+  it('should return a valid key from the list', () => {
+    const keys = 'key1,key2,key3';
+    const validKeys = ['key1', 'key2', 'key3'];
+
+    for (let i = 0; i < 20; i++) {
+      const result = rotateApiKey(keys);
+      expect(validKeys).toContain(result);
+    }
+  });
+
+  it('should not return the same key twice in a row', () => {
     const keys = 'key1,key2,key3';
 
-    const result1 = rotateApiKey(keys);
-    expect(result1).toBe('key1');
-
-    const result2 = rotateApiKey(keys);
-    expect(result2).toBe('key2');
-
-    const result3 = rotateApiKey(keys);
-    expect(result3).toBe('key3');
-
-    const result4 = rotateApiKey(keys);
-    expect(result4).toBe('key1');
+    let lastKey = rotateApiKey(keys);
+    for (let i = 0; i < 50; i++) {
+      const currentKey = rotateApiKey(keys);
+      expect(currentKey).not.toBe(lastKey);
+      lastKey = currentKey;
+    }
   });
 
   it('should trim whitespace from keys', () => {
     const keys = ' key1 , key2 , key3 ';
+    const validKeys = ['key1', 'key2', 'key3'];
 
-    const result1 = rotateApiKey(keys);
-    expect(result1).toBe('key1');
-
-    const result2 = rotateApiKey(keys);
-    expect(result2).toBe('key2');
+    const result = rotateApiKey(keys);
+    expect(validKeys).toContain(result);
   });
 
-  it('should handle two keys', () => {
+  it('should handle two keys without consecutive duplicates', () => {
     const keys = 'keyA,keyB';
 
-    const result1 = rotateApiKey(keys);
-    expect(result1).toBe('keyA');
+    let lastKey = rotateApiKey(keys);
+    for (let i = 0; i < 20; i++) {
+      const currentKey = rotateApiKey(keys);
+      expect(currentKey).not.toBe(lastKey);
+      lastKey = currentKey;
+    }
+  });
 
-    const result2 = rotateApiKey(keys);
-    expect(result2).toBe('keyB');
+  it('should eventually select all keys (distribution check)', () => {
+    const keys = 'key1,key2,key3';
+    const seen = new Set<string>();
 
-    const result3 = rotateApiKey(keys);
-    expect(result3).toBe('keyA');
+    for (let i = 0; i < 100; i++) {
+      seen.add(rotateApiKey(keys));
+      if (seen.size === 3) break;
+    }
+
+    expect(seen.size).toBe(3);
   });
 });

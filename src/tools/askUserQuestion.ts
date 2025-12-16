@@ -52,7 +52,7 @@ const AskUserQuestionInputSchema = z
       .max(4)
       .describe('Questions to ask the user (1-4 questions)'),
     answers: z
-      .record(z.string(), z.string())
+      .array(z.object({ question: z.string(), answer: z.string() }))
       .optional()
       .describe('User answers collected by the permission component'),
   })
@@ -105,15 +105,15 @@ export function createAskUserQuestionTool() {
     description: TOOL_DESCRIPTION,
     parameters: AskUserQuestionInputSchema,
     async execute({ questions, answers }) {
-      if (!answers || Object.keys(answers).length === 0) {
+      if (!answers || answers.length === 0) {
         return {
           isError: true,
           llmContent: 'No answers provided by user',
         };
       }
 
-      const answerSummary = Object.entries(answers)
-        .map(([question, answer]) => `"${question}" = "${answer}"`)
+      const answerSummary = answers
+        .map(({ question, answer }) => `"${question}" = "${answer}"`)
         .join(', ');
 
       return {

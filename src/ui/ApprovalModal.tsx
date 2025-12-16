@@ -94,12 +94,19 @@ export function ApprovalModal() {
       <AskQuestionModal
         questions={questions}
         onResolve={(result, updatedAnswers) => {
-          const shouldUpdateParams = updatedAnswers && result !== 'deny';
+          // Convert Record<string, string> to array format for tool schema
+          const answersArray = updatedAnswers
+            ? Object.entries(updatedAnswers).map(([question, answer]) => ({
+                question,
+                answer,
+              }))
+            : undefined;
+          const shouldUpdateParams = answersArray && result !== 'deny';
           const newParams: Record<string, unknown> | undefined =
             shouldUpdateParams
               ? {
                   ...approvalModal.toolUse.params,
-                  answers: updatedAnswers,
+                  answers: answersArray,
                 }
               : undefined;
           approvalModal.resolve(result, newParams);

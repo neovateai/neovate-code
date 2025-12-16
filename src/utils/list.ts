@@ -8,10 +8,12 @@ export const TRUNCATED_MESSAGE = `There are more than ${MAX_FILES} files in the 
 
 const debug = createDebug('neovate:utils:list');
 
+// List of product names to check for ignore files
+const PRODUCT_NAMES = ['neovate', 'takumi', 'kwaipilot'];
+
 export function listDirectory(
   initialPath: string,
   cwd: string,
-  productName: string = PRODUCT_NAME,
   maxFiles: number = MAX_FILES,
 ) {
   const results: string[] = [];
@@ -43,8 +45,8 @@ export function listDirectory(
 
       const childPath = join(path, child.name);
 
-      // Skip if ignored by gitignore or takumiignore
-      if (isIgnored(childPath, cwd, productName)) {
+      // Skip if ignored by any of the product-specific ignore files
+      if (isIgnored(childPath, cwd, PRODUCT_NAMES)) {
         continue;
       }
 
@@ -71,10 +73,7 @@ function skip(path: string) {
   return false;
 }
 
-export function listRootDirectory(
-  rootPath: string,
-  productName: string = PRODUCT_NAME,
-): string[] {
+export function listRootDirectory(rootPath: string): string[] {
   const results: string[] = [];
   try {
     const children = fs.readdirSync(rootPath, { withFileTypes: true });
@@ -85,8 +84,8 @@ export function listRootDirectory(
 
       const childPath = join(rootPath, child.name);
 
-      // Skip if ignored by gitignore or takumiignore
-      if (isIgnored(childPath, rootPath, productName)) {
+      // Skip if ignored by any of the product-specific ignore files
+      if (isIgnored(childPath, rootPath, PRODUCT_NAMES)) {
         continue;
       }
 

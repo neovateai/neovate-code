@@ -108,7 +108,7 @@ Please use the following commands to complete the merge:
   git status    # Check conflict status
   git commit    # Create merge commit
 
-Using neo commit would create an improper commit message
+Using commit command would create an improper commit message
 and may require re-resolving conflicts.`,
   });
   return;

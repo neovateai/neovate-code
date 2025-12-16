@@ -1,6 +1,5 @@
 import clipboardy from 'clipboardy';
 import { Box, render, Text, useInput } from 'ink';
-import TextInput from '../ui/TextInput';
 import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import type { Context } from '../context';
@@ -11,6 +10,7 @@ import {
   CommitActionSelector,
 } from '../ui/CommitActionSelector';
 import { CommitResultCard } from '../ui/CommitResultCard';
+import TextInput from '../ui/TextInput';
 
 // ============================================================================
 // Types
@@ -329,7 +329,7 @@ Please use the following commands to complete the merge:
   git status    # Check conflict status
   git commit    # Create merge commit
 
-Using neo commit would create an improper commit message
+Using commit command would create an improper commit message
 and may require re-resolving conflicts.`,
         });
         return;
@@ -613,6 +613,90 @@ and may require re-resolving conflicts.`,
               error: commitResult.error || 'Commit failed',
               data,
             });
+          }
+          break;
+        }
+
+        case 'checkoutPush': {
+          // Create branch
+          setState({
+            phase: 'executing',
+            action: 'checkout',
+            data,
+            outputLines: [],
+          });
+          const branchResult = await messageBus.request('git.createBranch', {
+            cwd,
+            name: data.branchName,
+          });
+
+          if (!branchResult.success) {
+            setState({
+              phase: 'error',
+              error: branchResult.error || 'Failed to create branch',
+              data,
+            });
+            return;
+          }
+
+          const branchName = branchResult.data?.branchName || data.branchName;
+
+          // Then commit
+          setState((prev) => ({
+            phase: 'executing',
+            action: 'commit',
+            data,
+            outputLines:
+              prev.phase === 'executing' && prev.outputLines?.length
+                ? [...prev.outputLines, '']
+                : [],
+          }));
+          const commitResult = await messageBus.request('git.commit', {
+            cwd,
+            message: data.commitMessage,
+            noVerify: options.noVerify,
+          });
+
+          if (!commitResult.success) {
+            setState({
+              phase: 'error',
+              error: commitResult.error || 'Commit failed',
+              data,
+            });
+            return;
+          }
+
+          // Then push
+          setState((prev) => ({
+            phase: 'executing',
+            action: 'push',
+            data,
+            outputLines:
+              prev.phase === 'executing' && prev.outputLines?.length
+                ? [...prev.outputLines, '']
+                : [],
+          }));
+          const pushResult = await messageBus.request('git.push', { cwd });
+
+          if (pushResult.success) {
+            setState((prev) => ({
+              phase: 'success',
+              message: `Branch '${branchName}' created, committed, and pushed!`,
+              data,
+              outputLines: prev.phase === 'executing' ? prev.outputLines : [],
+            }));
+            setTimeout(() => setShouldExit(true), 1000);
+          } else {
+            const error = pushResult.error || 'Push failed';
+            if (error.includes('rejected')) {
+              setState({
+                phase: 'error',
+                error: `${error}\n\nHint: Run 'git pull' first to sync with remote.`,
+                data,
+              });
+            } else {
+              setState({ phase: 'error', error, data });
+            }
           }
           break;
         }
@@ -1035,7 +1119,7 @@ export async function runCommit(context: Context) {
         productName: context.productName,
         version: context.version,
         argvConfig: {},
-        plugins: [],
+        plugins: context.plugins,
       },
     });
 

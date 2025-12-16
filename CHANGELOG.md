@@ -1,3 +1,90 @@
+## 0.20.2
+
+`2025-12-16`
+
+- refactor: remove productName parameter from listDirectory function by [@sorrycc](https://github.com/sorrycc)
+- feat: change @directory to show tree view instead of file contents by [@阿平](https://github.com/阿平) in [#535](https://github.com/umijs/takumi/pull/535)
+- feat: add enhanced edit tool with 7 replacement strategies by [@阿平](https://github.com/阿平) in [#534](https://github.com/umijs/takumi/pull/534)
+- feat: add unicode symbol support for UI elements by [@sorrycc](https://github.com/sorrycc)
+- Revert "feat: add tool parameter validation with zod and auto-fix suggestions…" by [@阿平](https://github.com/阿平) in [#531](https://github.com/umijs/takumi/pull/531)
+- fix: improve frontmatter parsing with special characters by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.20.1
+
+`2025-12-15`
+
+- refactor: rename and reorganize model creators by [@sorrycc](https://github.com/sorrycc)
+- fix: add missing plugins configuration to commands by [@阿平](https://github.com/阿平) in [#528](https://github.com/umijs/takumi/pull/528)
+- fix: add plugins to context and pass to prompts by [@xierenhong](https://github.com/xierenhong)
+- feat: change API key rotation to random selection by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.20.0
+
+`2025-12-15`
+
+- fix: join all command arguments for initial prompt by [@sorrycc](https://github.com/sorrycc)
+- feat: add provider argument support to login command by [@sorrycc](https://github.com/sorrycc)
+- feat: add window focus tracking to chat input by [@sorrycc](https://github.com/sorrycc)
+- feat: support reasoning provider metadata and update models for antigravity by [@sorrycc](https://github.com/sorrycc)
+- fix: trim reasoning text to remove trailing newlines by [@sorrycc](https://github.com/sorrycc)
+- fix: replace z.record with array for google api compatibility by @chencheng (云谦) in [#527](https://github.com/umijs/takumi/pull/527)
+- feat: add checkout push commit action by [@sorrycc](https://github.com/sorrycc)
+- fix: show error message when exiting with error by [@sorrycc](https://github.com/sorrycc)
+- feat: add support for claude commands directory by [@sorrycc](https://github.com/sorrycc)
+- feat: implement bash-style reverse search UI by [@sorrycc](https://github.com/sorrycc)
+- refactor: replace ink-text-input with custom implementation by [@sorrycc](https://github.com/sorrycc)
+- feat: prioritize code files in path suggestions by [@sorrycc](https://github.com/sorrycc)
+- feat: block commit command during merge state by @chencheng (云谦) in [#524](https://github.com/umijs/takumi/pull/524)
+- refactor: centralize language handling utilities by [@sorrycc](https://github.com/sorrycc)
+- feat(run): add prompt editing and regeneration functionality by [@sorrycc](https://github.com/sorrycc)
+- fix: narrow success response type to true by [@sorrycc](https://github.com/sorrycc)
+- fix: remove exit status check in chat input by [@sorrycc](https://github.com/sorrycc)
+- feat: add git operation type definitions by [@sorrycc](https://github.com/sorrycc)
+- feat: add commit result card to success and error phases by [@sorrycc](https://github.com/sorrycc)
+- fix(commit): improve git push output formatting by [@sorrycc](https://github.com/sorrycc)
+- feat: add real-time git output streaming for commit and push by [@sorrycc](https://github.com/sorrycc)
+- refactor: convert run command to use ink and react by [@sorrycc](https://github.com/sorrycc)
+- feat: display selected model in header by [@sorrycc](https://github.com/sorrycc)
+- feat: refactor commit command to use ink/react by [@sorrycc](https://github.com/sorrycc)
+- feat: add optional file path argument to log command by [@sorrycc](https://github.com/sorrycc)
+- feat: extract git operations from commit command to git utilities by [@sorrycc](https://github.com/sorrycc)
+- feat: add project.generateCommit handler with git utils extraction by [@sorrycc](https://github.com/sorrycc)
+- feat: add tool parameter validation with zod and auto-fix suggestions by [@阿平](https://github.com/阿平) in [#495](https://github.com/umijs/takumi/pull/495)
+- feat: implement Git clone functionality with progress tracking by [@YuwangLiu](https://github.com/YuwangLiu) in [#521](https://github.com/umijs/takumi/pull/521)
+- feat: add gpt-5.2 and gpt-5.2-pro models by [@sorrycc](https://github.com/sorrycc)
+- fix: add null checks for file reading and string operations by @chencheng (云谦) in [#522](https://github.com/umijs/takumi/pull/522)
+- Revert "fix: set default value for autoUpdate to true " by @chencheng (云谦) in [#518](https://github.com/umijs/takumi/pull/518) [#520](https://github.com/umijs/takumi/pull/520)
+- refactor: improve config retrieval with nested key support and fallback by [@阿平](https://github.com/阿平) in [#519](https://github.com/umijs/takumi/pull/519)
+- feat: add sessionId and cwd to logger message by [@sorrycc](https://github.com/sorrycc)
+- fix: set default value for autoUpdate to true by [@阿平](https://github.com/阿平) in [#518](https://github.com/umijs/takumi/pull/518)
+- refactor: simplify image paste handling by removing dimensions and filename by @chencheng (云谦) in [#517](https://github.com/umijs/takumi/pull/517)
+- feat: add z-ai glm models to providers map by [@sorrycc](https://github.com/sorrycc)
+- feat: add glm-4.6v model provider by [@sorrycc](https://github.com/sorrycc)
+- feat(model): add GLM-4.6V multimodal model configuration by [@Huang Qi](https://github.com/Huang Qi) in [#516](https://github.com/umijs/takumi/pull/516)
+- refactor: unify GLM series model names to GLM-X.Y format by [@Huang Qi](https://github.com/Huang Qi) in [#515](https://github.com/umijs/takumi/pull/515)
+- feat: add optional model info to session.getModel handler by [@sorrycc](https://github.com/sorrycc)
+- refactor: reorder and update app list and handling logic by [@sorrycc](https://github.com/sorrycc)
+- feat(bash): implement pipeline segment security check by [@YuwangLiu](https://github.com/YuwangLiu) in [#511](https://github.com/umijs/takumi/pull/511)
+- fix: correct diff preview for edit tool in approval modal by [@Huang Qi](https://github.com/Huang Qi) in [#508](https://github.com/umijs/takumi/pull/508)
+- feat: add AskUserQuestion tool requirement for brainstorm clarification by [@阿平](https://github.com/阿平) in [#494](https://github.com/umijs/takumi/pull/494)
+- refactor: simplify session.getModel request handling in compact handler by [@阿平](https://github.com/阿平) in [#509](https://github.com/umijs/takumi/pull/509)
+- feat: add utils.detectApps handler for detecting installed apps by [@sorrycc](https://github.com/sorrycc)
+- feat: add utils.open handler for launching applications by [@sorrycc](https://github.com/sorrycc)
+- feat: add session config get handler and types by [@sorrycc](https://github.com/sorrycc)
+- feat: Add (Recommended) label usage note for askUserQuestion tool by [@阿平](https://github.com/阿平) in [#507](https://github.com/umijs/takumi/pull/507)
+- fix: update deepseek model references by [@sorrycc](https://github.com/sorrycc)
+- feat: add platform-specific keyboard shortcuts for queued messages by [@Huang Qi](https://github.com/Huang Qi) in [#498](https://github.com/umijs/takumi/pull/498)
+- fix(outputStyle): process header lines starting with # and limit description length by [@QuietlyChan](https://github.com/QuietlyChan) in [#499](https://github.com/umijs/takumi/pull/499)
+- feat: improve token display in status line by [@Huang Qi](https://github.com/Huang Qi) in [#501](https://github.com/umijs/takumi/pull/501)
+- feat: add file suggestion refresh on empty query after non-empty by [@阿平](https://github.com/阿平) in [#505](https://github.com/umijs/takumi/pull/505)
+- feat: add session-level model configuration handlers by [@sorrycc](https://github.com/sorrycc)
+- feat: add unique worktree id using repo and branch by [@sorrycc](https://github.com/sorrycc)
+- feat: add root workspace data to workspaces list by [@sorrycc](https://github.com/sorrycc)
+- feat: add gpt-5.1-codex-max model configuration by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.19.0
 
 `2025-12-05`

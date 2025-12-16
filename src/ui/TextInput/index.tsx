@@ -176,6 +176,8 @@ export type Props = {
   readonly onReverseSearchPrevious?: () => void;
 
   onCtrlBBackground?: () => void;
+
+  onFocusChange?: (focused: boolean) => void;
 };
 
 export default function TextInput({
@@ -210,6 +212,7 @@ export default function TextInput({
   onReverseSearch,
   onReverseSearchPrevious,
   onCtrlBBackground,
+  onFocusChange,
 }: Props): React.JSX.Element {
   // Internal cursor state when external control is not provided
   const [internalCursorOffset, setInternalCursorOffset] = React.useState(
@@ -397,6 +400,14 @@ export default function TextInput({
   };
 
   const wrappedOnInput = (input: string, key: Key): void => {
+    // Terminal focus tracking: when enabled via \x1b[?1004h, terminals send
+    // \x1b[I (focus gained) and \x1b[O (focus lost). Ink strips the \x1b prefix,
+    // leaving '[I' and '[O' which we intercept to update focus state.
+    if (input === '[I' || input === '[O') {
+      onFocusChange?.(input === '[I');
+      return;
+    }
+
     // Handle double-ESC for conversation forking
     if (key.escape && onDoubleEscape) {
       const now = Date.now();

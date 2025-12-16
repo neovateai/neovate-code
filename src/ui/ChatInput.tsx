@@ -14,6 +14,7 @@ import { useExternalEditor } from './useExternalEditor';
 import { useInputHandlers } from './useInputHandlers';
 import { useTerminalSize } from './useTerminalSize';
 import { useTryTips } from './useTryTips';
+import { useWindowFocus } from './useWindowFocus';
 
 export function ChatInput() {
   const {
@@ -25,6 +26,7 @@ export function ChatInput() {
     reverseSearch,
   } = useInputHandlers();
   const { currentTip } = useTryTips();
+  const { isWindowFocused, handleFocusChange } = useWindowFocus();
 
   // Memoize platform-specific modifier key to avoid repeated os.platform() calls
   const modifierKey = useMemo(
@@ -182,6 +184,7 @@ export function ChatInput() {
             </Text>
             <TextInput
               multiline
+              showCursor={isWindowFocused}
               value={displayValue}
               placeholder={placeholderText}
               onChange={handleDisplayChange}
@@ -228,6 +231,7 @@ export function ChatInput() {
               onCtrlBBackground={
                 bashBackgroundPrompt ? handleMoveToBackground : undefined
               }
+              onFocusChange={handleFocusChange}
             />
             <DebugRandomNumber />
           </Box>
