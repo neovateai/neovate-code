@@ -14,7 +14,7 @@ Create a programmatic SDK (`src/sdk.ts`) that allows external npm package consum
 
 **Tool approval:** Auto-approve all tool calls without user interaction, suitable for automated/headless usage.
 
-**Message types:** Simplified view exposing `text`, `tool_use`, `tool_result`, `thinking`, `done`, and `error` - rather than exposing full internal message structures.
+**Message types:** Expose full internal message structures via `SDKMessage = NormalizedMessage | SDKSystemMessage | SDKResultMessage`. Streaming content is accumulated and emitted as complete messages rather than delta events.
 
 ## Approach
 
@@ -30,6 +30,8 @@ Leverage the existing `NodeBridge` + `DirectTransport` pattern (same as `run.tsx
 ### Types
 
 ```typescript
+import type { NormalizedMessage, SDKResultMessage, SDKSystemMessage, UserContent } from './message';
+
 export type SDKSessionOptions = {
   model: string;
   cwd?: string;
@@ -37,21 +39,17 @@ export type SDKSessionOptions = {
 };
 
 export type SDKUserMessage = {
-  text: string;
-  attachments?: Array<{
-    type: 'image';
-    data: string;
-    mimeType: string;
-  }>;
+  type: 'user';
+  message: UserContent;
+  parentUuid: string | null;
+  uuid: string;
+  sessionId: string;
 };
 
 export type SDKMessage =
-  | { type: 'text'; text: string }
-  | { type: 'thinking'; text: string }
-  | { type: 'tool_use'; id: string; name: string; input: Record<string, any> }
-  | { type: 'tool_result'; id: string; name: string; result: any; isError: boolean }
-  | { type: 'done'; usage: { inputTokens: number; outputTokens: number } }
-  | { type: 'error'; message: string };
+  | NormalizedMessage
+  | SDKSystemMessage
+  | SDKResultMessage;
 
 export interface SDKSession {
   readonly sessionId: string;
@@ -63,6 +61,18 @@ export interface SDKSession {
 
 export function createSession(options: SDKSessionOptions): Promise<SDKSession>;
 ```
+
+**SDKUserMessage fields:**
+- `type: 'user'` - discriminator for type narrowing
+- `message: UserContent` - text string or array of TextPart/ImagePart
+- `parentUuid: string | null` - links to parent message for conversation threading
+- `uuid: string` - unique identifier for this message
+- `sessionId: string` - session this message belongs to
+
+**SDKMessage types:**
+- `NormalizedMessage` - full message with role, content, timestamp, uuid, parentUuid
+- `SDKSystemMessage` - session init info (sessionId, model, cwd, tools)
+- `SDKResultMessage` - request completion (success/error, content, usage)
 
 ### Internal Flow
 
@@ -83,23 +93,51 @@ export function createSession(options: SDKSessionOptions): Promise<SDKSession>;
 
 1. **Session creation:** `createSession()` instantiates `NodeBridge`, creates `DirectTransport` pair, generates unique `sessionId`, returns `SDKSession` wrapper
 
-2. **Message queue:** `receive()` uses internal queue collecting events from `messageBus.onEvent()`, yielding as `SDKMessage`
+2. **send() method:**
+   - Accepts `string | SDKUserMessage`
+   - When string: extracts text directly, generates internal uuid/parentUuid
+   - When SDKUserMessage: uses `message` field (UserContent), respects provided `uuid`, `parentUuid`, `sessionId`
 
-3. **Auto-approval:** `onToolApprove` callback always returns `{ approved: true }`
+3. **receive() method:**
+   - Yields complete `SDKMessage` types only
+   - Accumulates streaming text/thinking deltas internally
+   - Emits `NormalizedMessage` when assistant response is complete
+   - Emits `SDKSystemMessage` at session init
+   - Emits `SDKResultMessage` on request completion (success/error)
 
-4. **Cleanup:** `close()` and `[Symbol.asyncDispose]` destroy context and close transports
+4. **Auto-approval:** `onToolApprove` callback always returns `{ approved: true }`
+
+5. **Cleanup:** `close()` and `[Symbol.asyncDispose]` destroy context and close transports
 
 ### Usage Example
 
 ```typescript
+import { createSession, SDKUserMessage } from '@neovate/code/sdk';
+
 const session = await createSession({ model: 'anthropic/claude-sonnet-4-20250514' });
 
+// Simple string message
 await session.send("List files in current directory");
 
 for await (const msg of session.receive()) {
-  if (msg.type === 'text') console.log(msg.text);
-  if (msg.type === 'done') break;
+  if (msg.type === 'message' && msg.role === 'assistant') {
+    console.log('Assistant:', msg.content);
+  }
+  if (msg.type === 'result') {
+    console.log('Done:', msg.subtype);
+    break;
+  }
 }
+
+// Or with full SDKUserMessage for conversation threading
+const userMsg: SDKUserMessage = {
+  type: 'user',
+  message: 'What is in the package.json?',
+  parentUuid: null,
+  uuid: crypto.randomUUID(),
+  sessionId: session.sessionId,
+};
+await session.send(userMsg);
 
 session.close();
 ```

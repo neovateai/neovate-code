@@ -1,3 +1,10 @@
+import type {
+  AssistantMessage,
+  NormalizedMessage,
+  SDKResultMessage,
+  SDKSystemMessage,
+  UserContent,
+} from './message';
 import { DirectTransport, MessageBus } from './messageBus';
 import { NodeBridge } from './nodeBridge';
 import { Session } from './session';
@@ -14,27 +21,17 @@ export type SDKSessionOptions = {
 };
 
 export type SDKUserMessage = {
-  text: string;
-  attachments?: Array<{
-    type: 'image';
-    data: string;
-    mimeType: string;
-  }>;
+  type: 'user';
+  message: UserContent;
+  parentUuid: string | null;
+  uuid: string;
+  sessionId: string;
 };
 
 export type SDKMessage =
-  | { type: 'text'; text: string }
-  | { type: 'thinking'; text: string }
-  | { type: 'tool_use'; id: string; name: string; input: Record<string, any> }
-  | {
-      type: 'tool_result';
-      id: string;
-      name: string;
-      result: any;
-      isError: boolean;
-    }
-  | { type: 'done'; usage: { inputTokens: number; outputTokens: number } }
-  | { type: 'error'; message: string };
+  | NormalizedMessage
+  | SDKSystemMessage
+  | SDKResultMessage;
 
 export interface SDKSession {
   readonly sessionId: string;
@@ -48,13 +45,10 @@ export interface SDKSession {
 // Internal Types
 // ============================================================================
 
-type QueuedEvent =
-  | { type: 'message'; data: any }
-  | { type: 'textDelta'; data: any }
-  | { type: 'chunk'; data: any }
-  | { type: 'streamResult'; data: any }
-  | { type: 'done'; usage: { inputTokens: number; outputTokens: number } }
-  | { type: 'error'; message: string };
+type InternalEvent =
+  | { type: 'message'; data: NormalizedMessage }
+  | { type: 'result'; data: SDKResultMessage }
+  | { type: 'done' };
 
 // ============================================================================
 // Implementation
@@ -66,13 +60,10 @@ class SDKSessionImpl implements SDKSession {
   private nodeBridge: NodeBridge;
   private cwd: string;
   private model: string;
-  private eventQueue: QueuedEvent[] = [];
-  private eventResolvers: Array<(value: QueuedEvent | null) => void> = [];
+  private eventQueue: InternalEvent[] = [];
+  private eventResolvers: Array<(value: InternalEvent | null) => void> = [];
   private isClosed = false;
-  private isProcessing = false;
-  private accumulatedText = '';
-  private accumulatedThinking = '';
-  private totalUsage = { inputTokens: 0, outputTokens: 0 };
+  private currentParentUuid: string | null = null;
 
   constructor(opts: {
     sessionId: string;
@@ -91,32 +82,19 @@ class SDKSessionImpl implements SDKSession {
   }
 
   private setupEventHandlers() {
-    // Listen for message events
     this.messageBus.onEvent('message', (data) => {
       if (data.sessionId !== this.sessionId) return;
-      this.enqueueEvent({ type: 'message', data: data.message });
-    });
-
-    // Listen for text delta events
-    this.messageBus.onEvent('textDelta', (data) => {
-      if (data.sessionId !== this.sessionId) return;
-      this.enqueueEvent({ type: 'textDelta', data });
-    });
-
-    // Listen for chunk events
-    this.messageBus.onEvent('chunk', (data) => {
-      if (data.sessionId !== this.sessionId) return;
-      this.enqueueEvent({ type: 'chunk', data });
-    });
-
-    // Listen for stream result events
-    this.messageBus.onEvent('streamResult', (data) => {
-      if (data.sessionId !== this.sessionId) return;
-      this.enqueueEvent({ type: 'streamResult', data });
+      const msg = data.message as NormalizedMessage;
+      if (msg.type === 'message') {
+        this.enqueueEvent({ type: 'message', data: msg });
+        if (msg.uuid) {
+          this.currentParentUuid = msg.uuid;
+        }
+      }
     });
   }
 
-  private enqueueEvent(event: QueuedEvent) {
+  private enqueueEvent(event: InternalEvent) {
     if (this.eventResolvers.length > 0) {
       const resolver = this.eventResolvers.shift()!;
       resolver(event);
@@ -125,14 +103,14 @@ class SDKSessionImpl implements SDKSession {
     }
   }
 
-  private async waitForEvent(): Promise<QueuedEvent | null> {
+  private async waitForEvent(): Promise<InternalEvent | null> {
     if (this.isClosed) return null;
 
     if (this.eventQueue.length > 0) {
       return this.eventQueue.shift()!;
     }
 
-    return new Promise<QueuedEvent | null>((resolve) => {
+    return new Promise<InternalEvent | null>((resolve) => {
       this.eventResolvers.push(resolve);
     });
   }
@@ -142,172 +120,101 @@ class SDKSessionImpl implements SDKSession {
       throw new Error('Session is closed');
     }
 
-    const text = typeof message === 'string' ? message : message.text;
-    const attachments =
-      typeof message === 'string' ? undefined : message.attachments;
+    let content: UserContent;
+    let parentUuid: string | null;
+    let uuid: string;
 
-    // Reset state for new message
-    this.accumulatedText = '';
-    this.accumulatedThinking = '';
-    this.totalUsage = { inputTokens: 0, outputTokens: 0 };
-    this.isProcessing = true;
+    if (typeof message === 'string') {
+      content = message;
+      parentUuid = this.currentParentUuid;
+      uuid = randomUUID();
+    } else {
+      content = message.message;
+      parentUuid = message.parentUuid;
+      uuid = message.uuid;
+    }
 
-    // Send the message through the message bus
+    this.currentParentUuid = uuid;
+
     try {
       const result = await this.messageBus.request('session.send', {
-        message: text,
+        message: content,
         cwd: this.cwd,
         sessionId: this.sessionId,
         model: this.model,
-        attachments,
+        parentUuid,
+        uuid,
       });
 
-      // After session.send completes, emit done event
       if (result.success) {
         this.enqueueEvent({
-          type: 'done',
-          usage: this.totalUsage,
+          type: 'result',
+          data: {
+            type: 'result',
+            subtype: 'success',
+            isError: false,
+            content: '',
+            sessionId: this.sessionId,
+            usage: result.usage,
+          },
         });
       } else {
         this.enqueueEvent({
-          type: 'error',
-          message: result.error?.message || 'Unknown error occurred',
+          type: 'result',
+          data: {
+            type: 'result',
+            subtype: 'error',
+            isError: true,
+            content: result.error?.message || 'Unknown error occurred',
+            sessionId: this.sessionId,
+          },
         });
       }
     } catch (error) {
       this.enqueueEvent({
-        type: 'error',
-        message: error instanceof Error ? error.message : String(error),
+        type: 'result',
+        data: {
+          type: 'result',
+          subtype: 'error',
+          isError: true,
+          content: error instanceof Error ? error.message : String(error),
+          sessionId: this.sessionId,
+        },
       });
-    } finally {
-      this.isProcessing = false;
     }
+
+    this.enqueueEvent({ type: 'done' });
   }
 
   async *receive(): AsyncGenerator<SDKMessage, void> {
+    const systemMessage: SDKSystemMessage = {
+      type: 'system',
+      subtype: 'init',
+      sessionId: this.sessionId,
+      model: this.model,
+      cwd: this.cwd,
+      tools: [],
+    };
+    yield systemMessage;
+
     while (!this.isClosed) {
       const event = await this.waitForEvent();
       if (!event) break;
 
-      const messages = this.processEvent(event);
-      for (const msg of messages) {
-        yield msg;
-        if (msg.type === 'done' || msg.type === 'error') {
-          return;
-        }
+      if (event.type === 'message') {
+        yield event.data;
+      } else if (event.type === 'result') {
+        yield event.data;
+      } else if (event.type === 'done') {
+        return;
       }
     }
-  }
-
-  private processEvent(event: QueuedEvent): SDKMessage[] {
-    const messages: SDKMessage[] = [];
-
-    switch (event.type) {
-      case 'textDelta': {
-        // Accumulate text deltas and yield them
-        if (event.data.text) {
-          this.accumulatedText += event.data.text;
-          messages.push({ type: 'text', text: event.data.text });
-        }
-        break;
-      }
-
-      case 'chunk': {
-        const chunk = event.data.chunk;
-        if (!chunk) break;
-
-        // Handle different chunk types
-        if (chunk.type === 'text-delta' && chunk.textDelta) {
-          this.accumulatedText += chunk.textDelta;
-          messages.push({ type: 'text', text: chunk.textDelta });
-        } else if (chunk.type === 'reasoning' && chunk.textDelta) {
-          this.accumulatedThinking += chunk.textDelta;
-          messages.push({ type: 'thinking', text: chunk.textDelta });
-        } else if (chunk.type === 'tool-call') {
-          messages.push({
-            type: 'tool_use',
-            id: chunk.toolCallId,
-            name: chunk.toolName,
-            input: chunk.args || {},
-          });
-        }
-        break;
-      }
-
-      case 'message': {
-        const msg = event.data;
-        if (!msg) break;
-
-        // Handle assistant messages with tool_use content
-        if (msg.role === 'assistant' && Array.isArray(msg.content)) {
-          for (const part of msg.content) {
-            if (part.type === 'tool_use') {
-              messages.push({
-                type: 'tool_use',
-                id: part.id,
-                name: part.name,
-                input: part.input || {},
-              });
-            } else if (part.type === 'reasoning' && part.text) {
-              messages.push({ type: 'thinking', text: part.text });
-            }
-          }
-
-          // Update usage stats
-          if (msg.usage) {
-            this.totalUsage.inputTokens += msg.usage.input_tokens || 0;
-            this.totalUsage.outputTokens += msg.usage.output_tokens || 0;
-          }
-        }
-
-        // Handle tool result messages
-        if (msg.role === 'tool' && Array.isArray(msg.content)) {
-          for (const part of msg.content) {
-            if (part.type === 'tool-result') {
-              messages.push({
-                type: 'tool_result',
-                id: part.toolCallId,
-                name: part.toolName,
-                result: part.result?.llmContent || part.result,
-                isError: part.result?.isError || false,
-              });
-            }
-          }
-        }
-        break;
-      }
-
-      case 'streamResult': {
-        // Stream result contains model info and request/response details
-        // We mainly use this for debugging, but can extract usage if needed
-        break;
-      }
-
-      case 'done': {
-        messages.push({
-          type: 'done',
-          usage: event.usage,
-        });
-        break;
-      }
-
-      case 'error': {
-        messages.push({
-          type: 'error',
-          message: event.message,
-        });
-        break;
-      }
-    }
-
-    return messages;
   }
 
   close(): void {
     if (this.isClosed) return;
     this.isClosed = true;
 
-    // Resolve any pending waiters
     for (const resolver of this.eventResolvers) {
       resolver(null);
     }
@@ -324,23 +231,6 @@ class SDKSessionImpl implements SDKSession {
 // Factory Function
 // ============================================================================
 
-/**
- * Creates a new SDK session for programmatic interaction with the AI agent.
- *
- * @example
- * ```typescript
- * const session = await createSession({ model: 'anthropic/claude-sonnet-4-20250514' });
- *
- * await session.send("List files in current directory");
- *
- * for await (const msg of session.receive()) {
- *   if (msg.type === 'text') console.log(msg.text);
- *   if (msg.type === 'done') break;
- * }
- *
- * session.close();
- * ```
- */
 export async function createSession(
   options: SDKSessionOptions,
 ): Promise<SDKSession> {
@@ -348,11 +238,10 @@ export async function createSession(
   const productName = options.productName || 'neovate';
   const sessionId = Session.createSessionId();
 
-  // Create NodeBridge with context creation options
   const nodeBridge = new NodeBridge({
     contextCreateOpts: {
       productName,
-      version: '0.0.0', // SDK sessions don't need version
+      version: '0.0.0',
       argvConfig: {
         model: options.model,
       },
@@ -360,20 +249,16 @@ export async function createSession(
     },
   });
 
-  // Create paired DirectTransport for communication
   const [sdkTransport, nodeTransport] = DirectTransport.createPair();
 
-  // Create message bus for the SDK side
   const messageBus = new MessageBus();
   messageBus.setTransport(sdkTransport);
   nodeBridge.messageBus.setTransport(nodeTransport);
 
-  // Register tool approval handler that auto-approves everything
   messageBus.registerHandler('toolApproval', async () => {
     return { approved: true };
   });
 
-  // Initialize the session
   await messageBus.request('session.initialize', {
     cwd,
     sessionId,
