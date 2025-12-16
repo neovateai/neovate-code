@@ -60,6 +60,9 @@ export interface SDKSession {
 }
 
 export function createSession(options: SDKSessionOptions): Promise<SDKSession>;
+
+// One-shot convenience function
+export function prompt(message: string, options: SDKSessionOptions): Promise<SDKResultMessage>;
 ```
 
 **SDKUserMessage fields:**
@@ -140,4 +143,12 @@ const userMsg: SDKUserMessage = {
 await session.send(userMsg);
 
 session.close();
+
+// One-shot usage with prompt()
+import { prompt } from '@neovate/code/sdk';
+
+const result = await prompt("List files in current directory", {
+  model: 'anthropic/claude-sonnet-4-20250514'
+});
+console.log('Success:', !result.isError);
 ```

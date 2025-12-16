@@ -1653,6 +1653,21 @@ ${diff}
         signal: abortController.signal,
       });
       this.abortControllers.delete(key);
+
+      // Emit session.done event for real-time streaming support
+      this.messageBus.emitEvent('session.done', {
+        sessionId,
+        result: {
+          type: 'result',
+          subtype: result.success ? 'success' : 'error',
+          isError: !result.success,
+          content: result.success
+            ? result.data?.text || ''
+            : result.error?.message || 'Unknown error',
+          sessionId,
+        },
+      });
+
       return result;
     });
 

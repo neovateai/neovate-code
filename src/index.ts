@@ -28,6 +28,8 @@ export { query as _query } from './query';
 // SDK exports for programmatic usage
 export {
   createSession,
+  prompt,
+  resumeSession,
   type SDKMessage,
   type SDKSession,
   type SDKSessionOptions,

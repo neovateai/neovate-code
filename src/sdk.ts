@@ -1,5 +1,4 @@
 import type {
-  AssistantMessage,
   NormalizedMessage,
   SDKResultMessage,
   SDKSystemMessage,
@@ -71,12 +70,14 @@ class SDKSessionImpl implements SDKSession {
     nodeBridge: NodeBridge;
     cwd: string;
     model: string;
+    initialParentUuid?: string | null;
   }) {
     this.sessionId = opts.sessionId;
     this.messageBus = opts.messageBus;
     this.nodeBridge = opts.nodeBridge;
     this.cwd = opts.cwd;
     this.model = opts.model;
+    this.currentParentUuid = opts.initialParentUuid ?? null;
 
     this.setupEventHandlers();
   }
@@ -91,6 +92,13 @@ class SDKSessionImpl implements SDKSession {
           this.currentParentUuid = msg.uuid;
         }
       }
+    });
+
+    // Handle session completion event for real-time streaming
+    this.messageBus.onEvent('session.done', (data) => {
+      if (data.sessionId !== this.sessionId) return;
+      this.enqueueEvent({ type: 'result', data: data.result });
+      this.enqueueEvent({ type: 'done' });
     });
   }
 
@@ -136,54 +144,32 @@ class SDKSessionImpl implements SDKSession {
 
     this.currentParentUuid = uuid;
 
-    try {
-      const result = await this.messageBus.request('session.send', {
+    // Fire request without awaiting - runs in background
+    this.messageBus
+      .request('session.send', {
         message: content,
         cwd: this.cwd,
         sessionId: this.sessionId,
         model: this.model,
         parentUuid,
         uuid,
-      });
-
-      if (result.success) {
-        this.enqueueEvent({
-          type: 'result',
-          data: {
-            type: 'result',
-            subtype: 'success',
-            isError: false,
-            content: '',
-            sessionId: this.sessionId,
-            usage: result.usage,
-          },
-        });
-      } else {
+      })
+      .catch((error) => {
+        // Fallback if session.done event not received
         this.enqueueEvent({
           type: 'result',
           data: {
             type: 'result',
             subtype: 'error',
             isError: true,
-            content: result.error?.message || 'Unknown error occurred',
+            content: error instanceof Error ? error.message : String(error),
             sessionId: this.sessionId,
           },
         });
-      }
-    } catch (error) {
-      this.enqueueEvent({
-        type: 'result',
-        data: {
-          type: 'result',
-          subtype: 'error',
-          isError: true,
-          content: error instanceof Error ? error.message : String(error),
-          sessionId: this.sessionId,
-        },
+        this.enqueueEvent({ type: 'done' });
       });
-    }
 
-    this.enqueueEvent({ type: 'done' });
+    // Returns immediately
   }
 
   async *receive(): AsyncGenerator<SDKMessage, void> {
@@ -231,12 +217,28 @@ class SDKSessionImpl implements SDKSession {
 // Factory Function
 // ============================================================================
 
-export async function createSession(
+export async function prompt(
+  message: string,
   options: SDKSessionOptions,
-): Promise<SDKSession> {
-  const cwd = options.cwd || process.cwd();
+): Promise<SDKResultMessage> {
+  await using session = await createSession(options);
+  await session.send(message);
+  for await (const msg of session.receive()) {
+    if (msg.type === 'result') {
+      return msg;
+    }
+  }
+  throw new Error('No result received');
+}
+
+/**
+ * Internal helper to create the NodeBridge/MessageBus pair
+ */
+function createBridgePair(options: SDKSessionOptions): {
+  nodeBridge: NodeBridge;
+  messageBus: MessageBus;
+} {
   const productName = options.productName || 'neovate';
-  const sessionId = Session.createSessionId();
 
   const nodeBridge = new NodeBridge({
     contextCreateOpts: {
@@ -259,6 +261,17 @@ export async function createSession(
     return { approved: true };
   });
 
+  return { nodeBridge, messageBus };
+}
+
+export async function createSession(
+  options: SDKSessionOptions,
+): Promise<SDKSession> {
+  const cwd = options.cwd || process.cwd();
+  const sessionId = Session.createSessionId();
+
+  const { nodeBridge, messageBus } = createBridgePair(options);
+
   await messageBus.request('session.initialize', {
     cwd,
     sessionId,
@@ -270,5 +283,50 @@ export async function createSession(
     nodeBridge,
     cwd,
     model: options.model,
+  });
+}
+
+export async function resumeSession(
+  sessionId: string,
+  options: SDKSessionOptions,
+): Promise<SDKSession> {
+  const cwd = options.cwd || process.cwd();
+
+  const { nodeBridge, messageBus } = createBridgePair(options);
+
+  await messageBus.request('session.initialize', {
+    cwd,
+    sessionId,
+  });
+
+  // Load messages to validate session exists and get last UUID
+  const messagesResult = await messageBus.request('session.messages.list', {
+    cwd,
+    sessionId,
+  });
+
+  if (!messagesResult.success) {
+    throw new Error(`Session '${sessionId}' not found`);
+  }
+
+  const messages = messagesResult.data?.messages || [];
+
+  // If no messages found, the session doesn't exist
+  // (session.initialize creates a new session if it doesn't exist)
+  if (messages.length === 0) {
+    throw new Error(`Session '${sessionId}' not found`);
+  }
+
+  // Extract the last message UUID for proper chaining
+  const lastMessage = messages[messages.length - 1];
+  const lastUuid = lastMessage?.uuid || null;
+
+  return new SDKSessionImpl({
+    sessionId,
+    messageBus,
+    nodeBridge,
+    cwd,
+    model: options.model,
+    initialParentUuid: lastUuid,
   });
 }
