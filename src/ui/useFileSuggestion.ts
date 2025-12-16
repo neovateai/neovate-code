@@ -71,6 +71,102 @@ export function usePaths(query: string, hasQuery: boolean) {
   };
 }
 
+function useSearchPaths(query: string, hasQuery: boolean) {
+  const { bridge, cwd } = useAppStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const [paths, setPaths] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const preloadedRef = useRef(false);
+
+  const searchPaths = useCallback(
+    async (searchQuery: string) => {
+      // Cancel previous search
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // Create new AbortController
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      setIsLoading(true);
+
+      try {
+        const res = await bridge.request('utils.searchFiles', {
+          cwd,
+          pattern: searchQuery,
+          maxResults: 100,
+        });
+
+        // Check if not aborted
+        if (!controller.signal.aborted) {
+          if (res.success) {
+            setPaths(res.data.paths);
+            setError(null);
+          } else {
+            console.error('Search failed:', res.error);
+            setError(res.error || 'Search failed');
+            setPaths([]);
+          }
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error('Failed to search files:', error);
+          setError(error instanceof Error ? error.message : 'Unknown error');
+          setPaths([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    },
+    [bridge, cwd],
+  );
+
+  // Preload cache on mount (warm up the cache in background)
+  useEffect(() => {
+    if (!preloadedRef.current) {
+      preloadedRef.current = true;
+      // Preload with empty pattern to build file list cache
+      // This runs in background without blocking UI
+      bridge
+        .request('utils.searchFiles', {
+          cwd,
+          pattern: '',
+          maxResults: 10, // Small result set for preload
+        })
+        .catch((err) => {
+          console.debug('Preload cache failed (non-critical):', err);
+        });
+    }
+  }, [bridge, cwd]);
+
+  // Trigger search when query changes (with debounce)
+  useEffect(() => {
+    if (!hasQuery) {
+      setPaths([]);
+      setError(null);
+      return;
+    }
+
+    // Shorter debounce for better responsiveness
+    const timeoutId = setTimeout(() => {
+      searchPaths(query);
+    }, 100); // 100ms debounce (reduced from 150ms)
+
+    return () => clearTimeout(timeoutId);
+  }, [query, hasQuery, searchPaths]);
+
+  return {
+    paths,
+    isLoading,
+    error,
+    searchPaths,
+  };
+}
+
 function useAtTriggeredPaths(inputState: InputState): MatchResult {
   const { value, cursorPosition } = inputState;
 
@@ -241,18 +337,14 @@ export function useFileSuggestion(
   const activeMatch = atMatch.hasQuery ? atMatch : tabMatch;
   const { hasQuery, fullMatch, query, startIndex, triggerType } = activeMatch;
 
-  const queryForPaths = triggerType === 'at' ? query : '';
-  const { paths, isLoading, loadPaths } = usePaths(queryForPaths, hasQuery);
+  // Both @ and tab triggers should use the query for searching
+  const { paths, isLoading } = useSearchPaths(query, hasQuery);
 
   const matchedPaths = useMemo(() => {
     if (!hasQuery) return [];
-    const filtered =
-      query === ''
-        ? paths
-        : paths.filter((path) =>
-            path.toLowerCase().includes(query.toLowerCase()),
-          );
-    return sortFilePaths(filtered, query);
+
+    // Backend already does fuzzy search, just sort the results
+    return sortFilePaths(paths, query);
   }, [paths, hasQuery, query]);
 
   // Use common list navigation logic

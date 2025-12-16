@@ -13,6 +13,7 @@ import {
   type ProvidersMap,
   resolveModelWithContext,
 } from './model';
+import type { HandlerInput } from './nodeBridge.types';
 import { OutputStyleManager } from './outputStyle';
 import { PluginHookType } from './plugin';
 import { Project } from './project';
@@ -2197,6 +2198,43 @@ ${diff}
         },
       };
     });
+
+    this.messageBus.registerHandler(
+      'utils.searchFiles',
+      async (input: HandlerInput<'utils.searchFiles'>) => {
+        const { cwd, pattern, maxResults = 100 } = input;
+
+        try {
+          // Dynamic import of fileSearch module
+          const { searchFiles } = await import('./utils/fileSearch');
+
+          const result = await searchFiles(
+            {
+              cwd,
+              maxFiles: 50000,
+              cache: { ttl: 60000, maxSize: 100 },
+              useGitignore: true,
+              disableFuzzy: false,
+            },
+            {
+              pattern,
+              maxResults,
+            },
+          );
+
+          return {
+            success: true,
+            data: result,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            data: { paths: [], hasMore: false, totalMatched: 0 },
+          };
+        }
+      },
+    );
 
     this.messageBus.registerHandler('utils.telemetry', async (data) => {
       const { cwd, name, payload } = data;

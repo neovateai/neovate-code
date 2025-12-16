@@ -750,6 +750,22 @@ type UtilsGetPathsOutput = {
   };
 };
 
+type UtilsSearchFilesInput = {
+  cwd: string;
+  pattern: string;
+  maxResults?: number;
+};
+
+type UtilsSearchFilesOutput = {
+  success: boolean;
+  data: {
+    paths: string[];
+    hasMore: boolean;
+    totalMatched: number;
+  };
+  error?: string;
+};
+
 type UtilsTelemetryInput = {
   cwd: string;
   name: string;
@@ -1026,6 +1042,10 @@ export type HandlerMap = {
     output: UtilsSummarizeMessageOutput;
   };
   'utils.getPaths': { input: UtilsGetPathsInput; output: UtilsGetPathsOutput };
+  'utils.searchFiles': {
+    input: UtilsSearchFilesInput;
+    output: UtilsSearchFilesOutput;
+  };
   'utils.telemetry': { input: UtilsTelemetryInput; output: SuccessResponse };
   'utils.files.list': {
     input: UtilsFilesListInput;

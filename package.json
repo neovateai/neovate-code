@@ -109,6 +109,7 @@
     "fastify": "^5.6.2",
     "fastmcp": "^3.25.4",
     "front-matter": "^4.0.2",
+    "fzf": "^0.5.2",
     "glob": "^13.0.0",
     "gpt-tokenizer": "^3.4.0",
     "gradient-string": "^3.0.0",
