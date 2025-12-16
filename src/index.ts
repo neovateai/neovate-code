@@ -25,6 +25,16 @@ import type { UpgradeOptions } from './upgrade';
 export { z as _zod } from 'zod';
 export { ConfigManager as _ConfigManager } from './config';
 export { query as _query } from './query';
+// SDK exports for programmatic usage
+export {
+  createSession,
+  prompt,
+  resumeSession,
+  type SDKMessage,
+  type SDKSession,
+  type SDKSessionOptions,
+  type SDKUserMessage,
+} from './sdk';
 export { createTool } from './tool';
 
 export type { Plugin, Context };

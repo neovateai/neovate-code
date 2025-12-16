@@ -312,11 +312,32 @@ function QuestionView({
           { textInputValue: value },
           question.multiSelect ?? false,
         );
+
+        // Update answer if the "Other" option is currently selected
+        // We check current state to decide whether to update the final answer
+        const isSelected = question.multiSelect
+          ? Array.isArray(state?.selectedValue) &&
+            state?.selectedValue.includes('__other__')
+          : state?.selectedValue === '__other__';
+
+        if (isSelected) {
+          if (question.multiSelect) {
+            const values = Array.isArray(state?.selectedValue)
+              ? state!.selectedValue
+              : [];
+            const finalValues = values
+              .filter((v: string) => v !== '__other__')
+              .concat(value ? [value] : []);
+            onAnswer(questionText, finalValues, undefined, false);
+          } else {
+            onAnswer(questionText, '__other__', value);
+          }
+        }
       },
     };
 
     return [...predefinedOptions, otherOption];
-  }, [question, questionStates, onUpdateQuestionState]);
+  }, [question, questionStates, onUpdateQuestionState, onAnswer]);
 
   const questionText = question.question;
   const state = questionStates[questionText];

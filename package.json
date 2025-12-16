@@ -1,6 +1,6 @@
 {
   "name": "@neovate/code",
-  "version": "0.20.1",
+  "version": "0.20.2",
   "type": "module",
   "files": [
     "dist",
@@ -116,6 +116,7 @@
     "ink": "^6.5.1",
     "ink-select-input": "^6.2.0",
     "ink-spinner": "^5.0.0",
+    "is-unicode-supported": "^2.1.0",
     "jiti": "^2.6.1",
     "js-yaml": "^4.1.1",
     "jsonrepair": "^3.13.1",

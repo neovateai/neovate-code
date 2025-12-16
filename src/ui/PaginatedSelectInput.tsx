@@ -2,6 +2,7 @@ import { Box, Text, useInput } from 'ink';
 import pc from 'picocolors';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import { symbols } from '../utils/symbols';
 
 interface PaginatedSelectInputProps {
   items: Array<{ label: string; value: string }>;
@@ -102,7 +103,7 @@ const PaginatedSelectInput: React.FC<PaginatedSelectInputProps> = ({
                 color={isSelected ? 'cyan' : undefined}
                 inverse={isSelected}
               >
-                {isSelected ? pc.cyan('> ') : '  '}
+                {isSelected ? pc.cyan(`${symbols.pointer} `) : '  '}
                 {item.label}
               </Text>
             </Box>

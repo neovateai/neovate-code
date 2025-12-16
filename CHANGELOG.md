@@ -1,3 +1,15 @@
+## 0.20.2
+
+`2025-12-16`
+
+- refactor: remove productName parameter from listDirectory function by [@sorrycc](https://github.com/sorrycc)
+- feat: change @directory to show tree view instead of file contents by [@阿平](https://github.com/阿平) in [#535](https://github.com/umijs/takumi/pull/535)
+- feat: add enhanced edit tool with 7 replacement strategies by [@阿平](https://github.com/阿平) in [#534](https://github.com/umijs/takumi/pull/534)
+- feat: add unicode symbol support for UI elements by [@sorrycc](https://github.com/sorrycc)
+- Revert "feat: add tool parameter validation with zod and auto-fix suggestions…" by [@阿平](https://github.com/阿平) in [#531](https://github.com/umijs/takumi/pull/531)
+- fix: improve frontmatter parsing with special characters by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.20.1
 
 `2025-12-15`

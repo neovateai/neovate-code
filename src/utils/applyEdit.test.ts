@@ -71,7 +71,7 @@ describe('applyEdit', () => {
       applyEdits('/', 'test.txt', [
         { old_string: 'Universe', new_string: 'Galaxy' },
       ]);
-    }).toThrow(/String not found in file/);
+    }).toThrow(/The string to be replaced was not found in the file/);
   });
 
   test('should throw specific error if old_string equals new_string', () => {
@@ -168,5 +168,183 @@ describe('applyEdit', () => {
 
     const result = applyEdits('/', 'test.txt', edits);
     expect(result.updatedFile).toBe('Alpha\nB\nCharlie');
+  });
+
+  test('should normalize CRLF to LF before matching', () => {
+    mockReadFileSync.mockReturnValue('const x = 1;\r\nconst y = 2;\r\n');
+
+    const result = applyEdits('/', 'test.ts', [
+      {
+        old_string: 'const x = 1;\nconst y = 2;',
+        new_string: 'const a = 1;\nconst b = 2;',
+      },
+    ]);
+
+    expect(result.updatedFile).toBe('const a = 1;\nconst b = 2;\n');
+  });
+
+  test('should match despite indentation differences (line-trimmed)', () => {
+    mockReadFileSync.mockReturnValue('  function foo() {\n    return 42;\n  }');
+
+    const result = applyEdits('/', 'test.ts', [
+      {
+        old_string: 'function foo() {\n  return 42;\n}',
+        new_string: 'function bar() {\n  return 100;\n}',
+      },
+    ]);
+
+    expect(result.updatedFile).toContain('function bar');
+  });
+
+  test('should match despite extra spaces (whitespace-normalized)', () => {
+    mockReadFileSync.mockReturnValue('const   value    =     100;');
+
+    const result = applyEdits('/', 'test.ts', [
+      { old_string: 'const value = 100;', new_string: 'const value = 200;' },
+    ]);
+
+    expect(result.updatedFile).toContain('= 200');
+  });
+
+  test('should handle over-escaped strings from LLM (escape-normalized)', () => {
+    // The file contains a real newline
+    mockReadFileSync.mockReturnValue('console.log("Hello\nWorld");');
+
+    const result = applyEdits('/', 'test.ts', [
+      // LLM might over-escape, describing the real newline as \\n
+      {
+        old_string: 'console.log(\\"Hello\\\\nWorld\\");',
+        new_string: 'console.log("Hi");',
+      },
+    ]);
+
+    expect(result.updatedFile).toContain('console.log("Hi")');
+  });
+
+  test('should match code blocks with different base indentation (indentation-flexible)', () => {
+    // The file has 4 space base indentation + 2 space relative indentation
+    mockReadFileSync.mockReturnValue(
+      '    if (condition) {\n      doSomething();\n      doMore();\n    }',
+    );
+
+    const result = applyEdits('/', 'test.ts', [
+      {
+        // old_string is 2 space base indentation + 2 space relative indentation
+        // The relative indentation structure is the same, but the absolute indentation is different
+        old_string:
+          '  if (condition) {\n    doSomething();\n    doMore();\n  }',
+        new_string: '  if (newCondition) {\n    doOther();\n  }',
+      },
+    ]);
+
+    expect(result.updatedFile).toContain('newCondition');
+  });
+
+  test('should provide helpful error message when string not found', () => {
+    mockReadFileSync.mockReturnValue('function original() {}');
+
+    expect(() => {
+      applyEdits('/', 'test.ts', [
+        {
+          old_string: 'function notFound() {}',
+          new_string: 'function new() {}',
+        },
+      ]);
+    }).toThrow(/The string to be replaced was not found in the file/);
+  });
+
+  test('should use exact match strategy first even if other strategies might match', () => {
+    // The first line has extra indentation, the second line matches exactly
+    mockReadFileSync.mockReturnValue('    const x = 1;\nconst x = 1;');
+
+    const result = applyEdits('/', 'test.ts', [
+      { old_string: 'const x = 1;', new_string: 'const y = 2;' },
+    ]);
+
+    // Strategy 1 (exact match) will find and replace the first occurrence (either as a substring in the first line, or as an entire second line)
+    // JavaScript replace() will replace the first match, which is the substring in the first line
+    expect(result.updatedFile).toBe('    const y = 2;\nconst x = 1;');
+  });
+
+  test('should match code block with slight modifications using block anchor strategy (single candidate)', () => {
+    // File has a code block where middle line is slightly different
+    mockReadFileSync.mockReturnValue(
+      'function calculate() {\n  const result = x + y;  // actual code\n  return result;\n}',
+    );
+
+    const result = applyEdits('/', 'test.ts', [
+      {
+        // old_string has different middle line but same first/last lines
+        old_string:
+          'function calculate() {\n  const sum = x + y;     // AI generated\n  return result;\n}',
+        new_string: 'function newCalc() {\n  return x + y;\n}',
+      },
+    ]);
+
+    expect(result.updatedFile).toContain('function newCalc');
+  });
+
+  test('should select best match among multiple candidates using block anchor strategy', () => {
+    // File has two similar blocks, but one is more similar
+    mockReadFileSync.mockReturnValue(
+      'function foo() {\n  const a = 1;\n  return a;\n}\n\nfunction foo() {\n  const x = 1;\n  return x;\n}',
+    );
+
+    const result = applyEdits('/', 'test.ts', [
+      {
+        // This matches second block better (x vs a)
+        old_string: 'function foo() {\n  const x = 1;\n  return x;\n}',
+        new_string: 'function bar() {\n  return 1;\n}',
+      },
+    ]);
+
+    // Should replace the second occurrence (better similarity)
+    expect(result.updatedFile).toContain('const a = 1');
+    expect(result.updatedFile).toContain('function bar');
+  });
+
+  test('should not use block anchor strategy for blocks with less than 3 lines', () => {
+    mockReadFileSync.mockReturnValue('if (x) {\n  doSomething();\n}');
+
+    // Block anchor requires at least 3 lines, so this should fail with all strategies
+    expect(() => {
+      applyEdits('/', 'test.ts', [
+        {
+          old_string: 'if (y) {\n  doSomething();\n}',
+          new_string: 'if (z) {\n  doOther();\n}',
+        },
+      ]);
+    }).toThrow(/The string to be replaced was not found in the file/);
+  });
+
+  test('should handle multi-occurrence matching with replace_all', () => {
+    mockReadFileSync.mockReturnValue(
+      'const x = 10;\nconsole.log(x);\nreturn x;',
+    );
+
+    const result = applyEdits('/', 'test.ts', [
+      { old_string: 'x', new_string: 'value', replace_all: true },
+    ]);
+
+    // All occurrences of 'x' should be replaced
+    expect(result.updatedFile).toBe(
+      'const value = 10;\nconsole.log(value);\nreturn value;',
+    );
+  });
+
+  test('should fail multi-occurrence without replace_all flag', () => {
+    mockReadFileSync.mockReturnValue(
+      'const x = 10;\nconsole.log(x);\nreturn x;',
+    );
+
+    // Without replace_all, if there are multiple occurrences, exact match will only replace first
+    const result = applyEdits('/', 'test.ts', [
+      { old_string: 'x', new_string: 'value', replace_all: false },
+    ]);
+
+    // Only first occurrence should be replaced
+    expect(result.updatedFile).toBe(
+      'const value = 10;\nconsole.log(x);\nreturn x;',
+    );
   });
 });

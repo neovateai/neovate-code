@@ -1,5 +1,6 @@
 import { Box, Text, useInput } from 'ink';
 import React, { useCallback, useState } from 'react';
+import { symbols } from '../utils/symbols';
 import TextInput from './TextInput';
 import { UI_COLORS } from './constants';
 
@@ -143,7 +144,7 @@ export function SelectInput({
         // For input type options, show as regular option until selected
         const displayLabel =
           option.type === 'input'
-            ? option.placeholder || 'Type something.'
+            ? option.initialValue || option.placeholder || 'Type something.'
             : option.label;
 
         return (
@@ -153,7 +154,7 @@ export function SelectInput({
               // When input option is selected, show the text input inline
               <Box>
                 <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : undefined}>
-                  {`> `}
+                  {isSelected ? '> ' : '  '}
                 </Text>
                 <Text
                   dimColor
@@ -171,7 +172,7 @@ export function SelectInput({
                           : undefined
                     }
                   >
-                    {isChecked ? '[✓] ' : '[ ] '}
+                    {isChecked ? `[${symbols.tick}] ` : '[ ] '}
                   </Text>
                 )}
                 <TextInput
@@ -181,10 +182,28 @@ export function SelectInput({
                     setFocusedInputValue(value);
                     option.onChange?.(value);
                     onFocus?.(option.value);
+
+                    // Auto-deselect if input becomes empty in multi-select mode
+                    if (mode === 'multi' && value.length === 0) {
+                      if (selectedValues.includes(option.value)) {
+                        const newValues = selectedValues.filter(
+                          (v) => v !== option.value,
+                        );
+                        setSelectedValues(newValues);
+                        onChange(newValues);
+                      }
+                    }
                   }}
                   onSubmit={() => {
                     if (mode === 'single') {
                       handleSingleSelect(selectedIndex);
+                    } else if (mode === 'multi') {
+                      if (!selectedValues.includes(option.value)) {
+                        const newValues = [...selectedValues, option.value];
+                        setSelectedValues(newValues);
+                        onChange(newValues);
+                      }
+                      onSubmit?.();
                     }
                   }}
                 />
@@ -211,7 +230,7 @@ export function SelectInput({
                           : undefined
                     }
                   >
-                    {isChecked ? '[✓] ' : '[ ] '}
+                    {isChecked ? `[${symbols.tick}] ` : '[ ] '}
                   </Text>
                 )}
                 <Text
@@ -229,7 +248,9 @@ export function SelectInput({
                   {displayLabel}
                 </Text>
                 {mode === 'single' && isAnswered && (
-                  <Text color={UI_COLORS.ASK_SUCCESS}>{' ✓'}</Text>
+                  <Text
+                    color={UI_COLORS.ASK_SUCCESS}
+                  >{` ${symbols.tick}`}</Text>
                 )}
               </Box>
             )}

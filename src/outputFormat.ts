@@ -1,4 +1,5 @@
 import type { LoopResult } from './loop';
+import type { SDKResultMessage, SDKSystemMessage } from './message';
 import type { ModelInfo } from './model';
 import type { Tool } from './tool';
 
@@ -29,7 +30,7 @@ export class OutputFormat {
       return;
     }
     const model = `${opts.model.provider.id}/${opts.model.model.id}`;
-    const data = {
+    const data: SDKSystemMessage = {
       type: 'system',
       subtype: 'init',
       sessionId: opts.sessionId,
@@ -60,7 +61,7 @@ export class OutputFormat {
     }
     const isError = !opts.result.success;
     const subtype = isError ? 'error' : 'success';
-    const data: any = {
+    const data: SDKResultMessage = {
       type: 'result',
       subtype,
       isError,

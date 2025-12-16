@@ -9,7 +9,7 @@ import {
   TRUNCATED_MESSAGE,
 } from '../utils/list';
 
-export function createLSTool(opts: { cwd: string; productName: string }) {
+export function createLSTool(opts: { cwd: string }) {
   return createTool({
     name: 'ls',
     description: 'Lists files and directories in a given path.',
@@ -27,11 +27,7 @@ export function createLSTool(opts: { cwd: string; productName: string }) {
       const fullFilePath = path.isAbsolute(dir_path)
         ? dir_path
         : path.resolve(opts.cwd, dir_path);
-      const result = listDirectory(
-        fullFilePath,
-        opts.cwd,
-        opts.productName,
-      ).sort();
+      const result = listDirectory(fullFilePath, opts.cwd).sort();
       const tree = createFileTree(result);
       const userTree = printTree(opts.cwd, tree);
       if (result.length < MAX_FILES) {

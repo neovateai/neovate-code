@@ -1653,6 +1653,21 @@ ${diff}
         signal: abortController.signal,
       });
       this.abortControllers.delete(key);
+
+      // Emit session.done event for real-time streaming support
+      this.messageBus.emitEvent('session.done', {
+        sessionId,
+        result: {
+          type: 'result',
+          subtype: result.success ? 'success' : 'error',
+          isError: !result.success,
+          content: result.success
+            ? result.data?.text || ''
+            : result.error?.message || 'Unknown error',
+          sessionId,
+        },
+      });
+
       return result;
     });
 
@@ -2189,12 +2204,7 @@ ${diff}
     this.messageBus.registerHandler('utils.getPaths', async (data) => {
       const { cwd, maxFiles = 6000 } = data;
       const context = await this.getContext(cwd);
-      const result = listDirectory(
-        context.cwd,
-        context.cwd,
-        context.productName,
-        maxFiles,
-      );
+      const result = listDirectory(context.cwd, context.cwd, maxFiles);
       return {
         success: true,
         data: {
@@ -2223,14 +2233,12 @@ ${diff}
 
     this.messageBus.registerHandler('utils.files.list', async (data) => {
       const { cwd, query } = data;
-      const context = await this.getContext(cwd);
       return {
         success: true,
         data: {
           files: await getFiles({
             cwd,
             maxSize: 50,
-            productName: context.productName,
             query: query || '',
           }),
         },

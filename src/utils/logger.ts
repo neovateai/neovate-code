@@ -1,6 +1,7 @@
 import * as p from '@umijs/clack-prompts';
 import pc from 'picocolors';
 import { MarkdownTaskLogger } from './markdown';
+import { symbols } from './symbols';
 
 export function logIntro(opts: { productName: string; version: string }) {
   console.log();
@@ -12,7 +13,7 @@ export function logIntro(opts: { productName: string; version: string }) {
 
 export function logGeneralInfo(opts: { infos: Record<string, string> }) {
   const infos = Object.entries(opts.infos)
-    .map(([key, value]) => `↳ ${key}: ${value}`)
+    .map(([key, value]) => `${symbols.arrowDown} ${key}: ${value}`)
     .join('\n');
   p.note(infos, 'General Info');
 }
@@ -107,7 +108,7 @@ export function logTool(opts: {
   task.text = `args: ${JSON.stringify(opts.toolUse.arguments)}\n`;
   return {
     result: (result: string) => {
-      task.text = `↳ ${result}`;
+      task.text = `${symbols.arrowDown} ${result}`;
     },
   };
 }

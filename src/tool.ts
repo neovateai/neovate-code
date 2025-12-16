@@ -39,7 +39,7 @@ export async function resolveTools(opts: ResolveToolsOpts) {
   ).model!;
   const readonlyTools = [
     createReadTool({ cwd, productName }),
-    createLSTool({ cwd, productName }),
+    createLSTool({ cwd }),
     createGlobTool({ cwd }),
     createGrepTool({ cwd }),
     createFetchTool({ model }),
