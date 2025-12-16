@@ -35,16 +35,12 @@ function getRepoExcludePath(rootPath: string): string {
 
 function parseIgnoreFiles(
   rootPath: string,
-  productName: string,
+  productNames: string[],
 ): {
   patterns: string[];
   negationPatterns: string[];
 } {
   const gitignorePath = join(rootPath, '.gitignore');
-  const productIgnorePath = join(
-    rootPath,
-    `.${productName.toLowerCase()}ignore`,
-  );
   const globalGitignorePath = getGlobalGitignorePath();
   const repoExcludePath = getRepoExcludePath(rootPath);
 
@@ -90,17 +86,23 @@ function parseIgnoreFiles(
     // .gitignore doesn't exist or can't be read
   }
 
-  // Parse .takumiignore last (highest precedence)
-  try {
-    const takumiIgnoreContent = fs.readFileSync(productIgnorePath, 'utf8');
-    const {
-      patterns: takumiPatterns,
-      negationPatterns: takumiNegationPatterns,
-    } = parseIgnoreContent(takumiIgnoreContent);
-    patterns.push(...takumiPatterns);
-    negationPatterns.push(...takumiNegationPatterns);
-  } catch (_e) {
-    // .takumiignore doesn't exist or can't be read
+  // Parse all product-specific ignore files (highest precedence)
+  for (const productName of productNames) {
+    const productIgnorePath = join(
+      rootPath,
+      `.${productName.toLowerCase()}ignore`,
+    );
+    try {
+      const productIgnoreContent = fs.readFileSync(productIgnorePath, 'utf8');
+      const {
+        patterns: productPatterns,
+        negationPatterns: productNegationPatterns,
+      } = parseIgnoreContent(productIgnoreContent);
+      patterns.push(...productPatterns);
+      negationPatterns.push(...productNegationPatterns);
+    } catch (_e) {
+      // Product-specific ignore file doesn't exist or can't be read
+    }
   }
 
   return { patterns, negationPatterns };
@@ -198,11 +200,11 @@ function matchesPattern(filePath: string, pattern: string): boolean {
 export function isIgnored(
   filePath: string,
   rootPath: string,
-  productName: string = 'neovate',
+  productNames: string[] = ['neovate'],
 ): boolean {
   const { patterns, negationPatterns } = parseIgnoreFiles(
     rootPath,
-    productName,
+    productNames,
   );
 
   // If no patterns, nothing is ignored

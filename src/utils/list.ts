@@ -47,8 +47,8 @@ export function listDirectory(
       const childPath = join(path, child.name);
 
       // Skip if ignored by any of the product-specific ignore files
-      const productNames = new Set([...PRODUCT_NAMES, productName]);
-      if ([...productNames].some((pName) => isIgnored(childPath, cwd, pName))) {
+      const productNames = [...new Set([...PRODUCT_NAMES, productName])];
+      if (isIgnored(childPath, cwd, productNames)) {
         continue;
       }
 
@@ -90,14 +90,7 @@ export function listRootDirectory(
       const childPath = join(rootPath, child.name);
 
       // Skip if ignored by any of the product-specific ignore files
-      let shouldIgnore = false;
-      for (const pName of PRODUCT_NAMES) {
-        if (isIgnored(childPath, rootPath, pName)) {
-          shouldIgnore = true;
-          break;
-        }
-      }
-      if (shouldIgnore) {
+      if (isIgnored(childPath, rootPath, PRODUCT_NAMES)) {
         continue;
       }
 
