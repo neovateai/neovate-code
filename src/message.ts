@@ -96,6 +96,25 @@ export type NormalizedMessage = Message & {
   uiContent?: string;
 };
 
+export type SDKSystemMessage = {
+  type: 'system';
+  subtype: 'init';
+  sessionId: string;
+  model: string;
+  cwd: string;
+  tools: string[];
+};
+
+export type SDKResultMessage = {
+  type: 'result';
+  subtype: 'success' | 'error';
+  isError: boolean;
+  content: string;
+  sessionId: string;
+  __result?: any;
+  usage?: { input_tokens: number; output_tokens: number };
+};
+
 export function toolResultPart2ToToolResultPart(
   part: ToolResultPart2,
 ): ToolResultPart {
