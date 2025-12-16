@@ -400,6 +400,123 @@ class NodeHandlerRegistry {
       };
     });
 
+    this.messageBus.registerHandler('mcp.updateConfig', async (data) => {
+      const { cwd, name, config, global = false } = data;
+      try {
+        const context = await this.getContext(cwd);
+        const configManager = new ConfigManager(cwd, context.productName, {});
+
+        // Validate server name
+        if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+          return {
+            success: false,
+            error:
+              'Invalid server name. Only alphanumeric, dash and underscore are allowed.',
+          };
+        }
+
+        // Validate config based on type
+        if ('command' in config && config.command) {
+          // stdio type validation
+          if (!config.command.trim()) {
+            return {
+              success: false,
+              error: 'Command is required for stdio type',
+            };
+          }
+        } else if ('url' in config && config.url) {
+          // HTTP/SSE type validation
+          if (!/^https?:\/\/.+/.test(config.url)) {
+            return {
+              success: false,
+              error: 'Invalid URL format. Must start with http:// or https://',
+            };
+          }
+        } else {
+          return {
+            success: false,
+            error: 'Either command or url must be provided',
+          };
+        }
+
+        // Read existing mcpServers object
+        const mcpServers = configManager.getConfig(global, 'mcpServers') || {};
+
+        // Check for duplicate server name (only for new servers)
+        // Note: We can't reliably detect "new" vs "update" without additional flag,
+        // but we can warn if overwriting existing config
+        if (mcpServers[name]) {
+          // Server exists, this is an update (allowed)
+          // Could add logging here if needed
+        }
+
+        // Update/add the specific server
+        mcpServers[name] = config;
+
+        // Write back the complete object
+        configManager.setConfig(
+          global,
+          'mcpServers',
+          JSON.stringify(mcpServers),
+        );
+
+        // Destroy context to trigger rebuild
+        if (this.contexts.has(cwd)) {
+          await context.destroy();
+          this.contexts.delete(cwd);
+        }
+
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    });
+
+    this.messageBus.registerHandler('mcp.removeConfig', async (data) => {
+      const { cwd, name, global = false } = data;
+      try {
+        const context = await this.getContext(cwd);
+        const configManager = new ConfigManager(cwd, context.productName, {});
+
+        // Read existing mcpServers object
+        const mcpServers = configManager.getConfig(global, 'mcpServers') || {};
+
+        // Check if server exists
+        if (!mcpServers[name]) {
+          return {
+            success: false,
+            error: `Server '${name}' not found in ${global ? 'global' : 'project'} configuration`,
+          };
+        }
+
+        // Remove the server
+        delete mcpServers[name];
+
+        // Write back the complete object
+        configManager.setConfig(
+          global,
+          'mcpServers',
+          JSON.stringify(mcpServers),
+        );
+
+        // Destroy context to trigger rebuild
+        if (this.contexts.has(cwd)) {
+          await context.destroy();
+          this.contexts.delete(cwd);
+        }
+
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    });
+
     //////////////////////////////////////////////
     // models
     this.messageBus.registerHandler('models.list', async (data) => {
