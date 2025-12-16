@@ -144,7 +144,7 @@ export function SelectInput({
         // For input type options, show as regular option until selected
         const displayLabel =
           option.type === 'input'
-            ? option.placeholder || 'Type something.'
+            ? option.initialValue || option.placeholder || 'Type something.'
             : option.label;
 
         return (
@@ -182,10 +182,28 @@ export function SelectInput({
                     setFocusedInputValue(value);
                     option.onChange?.(value);
                     onFocus?.(option.value);
+
+                    // Auto-deselect if input becomes empty in multi-select mode
+                    if (mode === 'multi' && value.length === 0) {
+                      if (selectedValues.includes(option.value)) {
+                        const newValues = selectedValues.filter(
+                          (v) => v !== option.value,
+                        );
+                        setSelectedValues(newValues);
+                        onChange(newValues);
+                      }
+                    }
                   }}
                   onSubmit={() => {
                     if (mode === 'single') {
                       handleSingleSelect(selectedIndex);
+                    } else if (mode === 'multi') {
+                      if (!selectedValues.includes(option.value)) {
+                        const newValues = [...selectedValues, option.value];
+                        setSelectedValues(newValues);
+                        onChange(newValues);
+                      }
+                      onSubmit?.();
                     }
                   }}
                 />
