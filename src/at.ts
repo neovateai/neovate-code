@@ -2,6 +2,7 @@ import type { LanguageModelV2Prompt } from '@ai-sdk/provider';
 import fs from 'fs';
 import path from 'pathe';
 import { IMAGE_EXTENSIONS } from './constants';
+import { createFileTree, listDirectory, printTree } from './utils/list';
 
 const MAX_LINE_LENGTH_TEXT_FILE = 2000;
 const MAX_LINES_TO_READ = 2000;
@@ -10,32 +11,43 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export class At {
   private userPrompt: string;
   private cwd: string;
-  constructor(opts: { userPrompt: string; cwd: string }) {
+  private productName: string;
+  constructor(opts: { userPrompt: string; cwd: string; productName?: string }) {
     this.userPrompt = opts.userPrompt;
     this.cwd = opts.cwd;
+    this.productName = opts.productName || 'neovate-code';
   }
 
   getContent() {
     const prompt = this.userPrompt || '';
     const ats = this.extractAtPaths(prompt);
     const files: string[] = [];
+    const directories: string[] = [];
+
+    // Step 1: Classify files vs directories
     for (const at of ats) {
       const filePath = path.resolve(this.cwd, at);
       if (fs.existsSync(filePath)) {
         if (fs.statSync(filePath).isFile()) {
           files.push(filePath);
         } else if (fs.statSync(filePath).isDirectory()) {
-          const dirFiles = this.getAllFilesInDirectory(filePath);
-          files.push(...dirFiles);
+          directories.push(filePath);
         } else {
           throw new Error(`${filePath} is not a file or directory`);
         }
       }
     }
+
+    // Step 2: Process separately and merge
+    let result = '';
     if (files.length > 0) {
-      return this.renderFilesToXml(files);
+      result += this.renderFilesToXml(files);
     }
-    return null;
+    if (directories.length > 0) {
+      result += this.renderDirectoriesToTree(directories);
+    }
+
+    return result || null;
   }
 
   private extractAtPaths(prompt: string): string[] {
@@ -55,6 +67,34 @@ export class At {
       match = regex.exec(prompt);
     }
     return [...new Set(paths)];
+  }
+
+  private renderDirectoriesToTree(directories: string[]): string {
+    let treeOutput = '';
+
+    for (const dir of directories) {
+      try {
+        // Get file list using existing utility
+        const fileList = listDirectory(dir, this.cwd, this.productName).sort();
+
+        // Handle empty directories
+        if (fileList.length === 0) {
+          treeOutput += `\n<directory_structure path="${path.relative(this.cwd, dir)}">\n(Empty directory)\n</directory_structure>`;
+          continue;
+        }
+
+        // Build and format tree
+        const tree = createFileTree(fileList);
+        const treeString = printTree(dir, tree);
+
+        treeOutput += `\n<directory_structure path="${path.relative(this.cwd, dir)}">\n<!-- This is a directory listing. Content is not included. -->\n${treeString}\n</directory_structure>`;
+      } catch (error) {
+        // Handle permission errors gracefully
+        treeOutput += `\n<directory_structure path="${path.relative(this.cwd, dir)}">\nError: Unable to read directory\n</directory_structure>`;
+      }
+    }
+
+    return treeOutput;
   }
 
   renderFilesToXml(files: string[]): string {
@@ -162,6 +202,7 @@ export class At {
   static normalizeLanguageV2Prompt(opts: {
     input: LanguageModelV2Prompt;
     cwd: string;
+    productName?: string;
   }): LanguageModelV2Prompt {
     const lastUserMessage = [...opts.input].reverse().find((item) => {
       return 'role' in item && item.role === 'user';
@@ -176,6 +217,7 @@ export class At {
         const at = new At({
           userPrompt,
           cwd: opts.cwd,
+          productName: opts.productName,
         });
         const content = at.getContent();
         if (content) {

@@ -110,6 +110,7 @@ type RunLoopOpts = {
   model: ModelInfo;
   tools: Tools;
   cwd: string;
+  productName?: string;
   systemPrompt?: string;
   maxTurns?: number;
   errorRetryTurns?: number;
@@ -230,6 +231,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       prompt = At.normalizeLanguageV2Prompt({
         input: prompt,
         cwd: opts.cwd,
+        productName: opts.productName,
       });
       shouldAtNormalize = false;
     }

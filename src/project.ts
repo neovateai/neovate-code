@@ -287,6 +287,7 @@ export class Project {
       model: resolvedModel,
       tools: toolsManager,
       cwd: this.context.cwd,
+      productName: this.context.productName,
       systemPrompt: opts.systemPrompt,
       llmsContexts: llmsContext.messages,
       signal: opts.signal,
