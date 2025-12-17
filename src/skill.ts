@@ -66,7 +66,9 @@ export class SkillManager {
 
   async readSkillBody(skill: SkillMetadata): Promise<string> {
     try {
-      return fs.readFileSync(skill.path, 'utf-8');
+      const content = fs.readFileSync(skill.path, 'utf-8');
+      const { body } = safeFrontMatter(content, skill.path);
+      return body;
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unknown error reading skill';

@@ -38,7 +38,10 @@ export function createSkillTool(opts: { skillManager: SkillManager }) {
       return params.skill;
     },
     async execute({ skill }) {
-      const skillName = skill.trim();
+      const trimmed = skill.trim();
+      const skillName = trimmed.startsWith('/')
+        ? trimmed.substring(1)
+        : trimmed;
       const foundSkill = opts.skillManager.getSkill(skillName);
 
       if (!foundSkill) {
