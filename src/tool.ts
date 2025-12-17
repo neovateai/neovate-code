@@ -134,14 +134,8 @@ export class Tools {
         isError: true,
       };
     }
-    // // @ts-expect-error
-    // const result = validateToolParams(tool.parameters, args);
-    // if (!result.success) {
-    //   return {
-    //     llmContent: `Invalid tool parameters: ${result.error}`,
-    //     isError: true,
-    //   };
-    // }
+
+    // Parse JSON arguments
     let argsObj: any;
     try {
       argsObj = JSON.parse(args);
@@ -151,6 +145,27 @@ export class Tools {
         isError: true,
       };
     }
+
+    // Validate parameters using Zod schema (skip for MCP tools)
+    const isMcpTool = toolName.startsWith('mcp__');
+    if (!isMcpTool) {
+      const { validateToolParams, sanitizeToolParams } = await import(
+        './utils/validateToolParams'
+      );
+
+      // Try to sanitize parameters first (auto-fix common issues)
+      argsObj = sanitizeToolParams(tool.parameters, argsObj);
+
+      // Validate after sanitization
+      const validationResult = validateToolParams(tool.parameters, argsObj);
+      if (!validationResult.success) {
+        return {
+          llmContent: validationResult.error,
+          isError: true,
+        };
+      }
+    }
+
     return await tool.execute(argsObj);
   }
 

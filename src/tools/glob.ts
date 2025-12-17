@@ -23,7 +23,11 @@ Glob
       if (!params.pattern || typeof params.pattern !== 'string') {
         return 'No pattern provided';
       }
-      return params.pattern;
+      try {
+        return String(params.pattern);
+      } catch (error) {
+        return 'Invalid pattern';
+      }
     },
     execute: async ({ pattern, path }) => {
       try {

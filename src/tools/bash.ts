@@ -654,7 +654,11 @@ Usage:
       if (!params.task_id || typeof params.task_id !== 'string') {
         return 'Read background task output';
       }
-      return `Read output from task: ${params.task_id}`;
+      try {
+        return `Read output from task: ${String(params.task_id)}`;
+      } catch (error) {
+        return 'Read background task output';
+      }
     },
     execute: async ({ task_id }) => {
       const task = backgroundTaskManager.getTask(task_id);
@@ -713,7 +717,11 @@ Usage:
       if (!params.task_id || typeof params.task_id !== 'string') {
         return 'Terminate background task';
       }
-      return `Terminate task: ${params.task_id}`;
+      try {
+        return `Terminate task: ${String(params.task_id)}`;
+      } catch (error) {
+        return 'Terminate background task';
+      }
     },
     execute: async ({ task_id }) => {
       const task = backgroundTaskManager.getTask(task_id);
@@ -830,8 +838,14 @@ cd /foo/bar && pytest tests
       if (!params.command || typeof params.command !== 'string') {
         return 'No command provided';
       }
-      const command = params.command.trim();
-      return command.length > 100 ? `${command.substring(0, 97)}...` : command;
+      try {
+        const command = String(params.command).trim();
+        return command.length > 100
+          ? `${command.substring(0, 97)}...`
+          : command;
+      } catch (error) {
+        return 'Invalid command';
+      }
     },
     execute: async ({
       command,
