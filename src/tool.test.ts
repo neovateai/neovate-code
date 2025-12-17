@@ -32,6 +32,9 @@ describe('resolveTools with tools config', () => {
         initAsync: vi.fn().mockResolvedValue(undefined),
         getAllTools: vi.fn().mockResolvedValue([]),
       },
+      skillManager: {
+        getSkills: vi.fn().mockResolvedValue([]),
+      },
       apply: vi.fn().mockResolvedValue({}),
     } as any;
   };
