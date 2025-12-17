@@ -39,6 +39,12 @@ export type CommitConfig = {
 
 export type ProviderConfig = Partial<Omit<Provider, 'createModel'>>;
 
+export type SearchConfig = {
+  provider?: 'tavily';
+  maxResults?: number;
+  timeout?: number;
+};
+
 export type DesktopConfig = {
   theme?: 'light' | 'dark' | 'system';
   sendMessageWith?: 'enter' | 'cmdEnter';
@@ -74,6 +80,10 @@ export type Config = {
   temperature?: number;
   httpProxy?: string;
   desktop?: DesktopConfig;
+  /**
+   * Web search configuration
+   */
+  search?: SearchConfig;
   /**
    * Extensions configuration for third-party custom agents.
    * Allows arbitrary nested configuration without validation.
@@ -121,6 +131,7 @@ const VALID_CONFIG_KEYS = [
   'browser',
   'temperature',
   'httpProxy',
+  'search',
   'extensions',
   'tools',
 ];
@@ -129,6 +140,7 @@ const OBJECT_CONFIG_KEYS = [
   'mcpServers',
   'commit',
   'provider',
+  'search',
   'extensions',
   'tools',
   'desktop',
