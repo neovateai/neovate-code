@@ -589,11 +589,11 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
         const originalContentValue =
           typeof originalContent === 'string'
             ? originalContent
-            : input[originalContent.inputKey];
+            : (input[originalContent.inputKey] ?? '');
         const newContentValue =
           typeof newContent === 'string'
             ? newContent
-            : input[newContent.inputKey];
+            : (input[newContent.inputKey] ?? '');
         return (
           <DiffViewer
             originalContent={originalContentValue}

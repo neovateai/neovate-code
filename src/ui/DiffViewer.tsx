@@ -34,6 +34,9 @@ function generateFileDiff(
   newContent: string,
   filePath: string,
 ): string {
+  // Defensive check: diff library crashes if input is not a string
+  if (typeof originalContent !== 'string') originalContent = '';
+  if (typeof newContent !== 'string') newContent = '';
   return createTwoFilesPatch(
     `${filePath} (original)`,
     `${filePath} (modified)`,
