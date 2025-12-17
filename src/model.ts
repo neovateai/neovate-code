@@ -1037,6 +1037,19 @@ export const models: ModelMap = {
     open_weights: false,
     limit: { context: 1840000, output: 64000 },
   },
+  'mimo-v2-flash': {
+    name: 'MiMo V2 Flash',
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-12',
+    release_date: '2025-12-17',
+    last_updated: '2025-12-17',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 131072, output: 32768 },
+  },
 };
 
 function getProviderBaseURL(provider: Provider) {
@@ -1398,6 +1411,7 @@ export const providers: ProvidersMap = {
       'minimax/minimax-m2': models['minimax-m2'],
       'openrouter/sherlock-dash-alpha': models['sherlock-dash-alpha'],
       'openrouter/sherlock-think-alpha': models['sherlock-think-alpha'],
+      'xiaomi/mimo-v2-flash:free': models['mimo-v2-flash'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
@@ -1664,6 +1678,17 @@ export const providers: ProvidersMap = {
         withProxyConfig({ baseURL, apiKey }, provider),
       ).chat(name);
     },
+  },
+  xiaomi: {
+    id: 'xiaomi',
+    env: ['MIMO_API_KEY'],
+    name: 'Xiaomi Mimo',
+    api: 'https://api.xiaomimimo.com/v1',
+    doc: 'https://platform.xiaomimimo.com/',
+    models: {
+      'mimo-v2-flash': models['mimo-v2-flash'],
+    },
+    createModel: createModelCreatorCompatible({}),
   },
   cerebras: {
     id: 'cerebras',
