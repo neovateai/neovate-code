@@ -49,21 +49,6 @@ export class SkillManager {
     return this.errors;
   }
 
-  findSkillMentions(text: string): SkillMetadata[] {
-    const mentions: SkillMetadata[] = [];
-    const matches = text.matchAll(SKILL_MENTION_REGEX);
-
-    for (const match of matches) {
-      const skillName = match[1];
-      const skill = this.skillsMap.get(skillName);
-      if (skill && !mentions.find((m) => m.name === skill.name)) {
-        mentions.push(skill);
-      }
-    }
-
-    return mentions;
-  }
-
   async readSkillBody(skill: SkillMetadata): Promise<string> {
     try {
       const content = fs.readFileSync(skill.path, 'utf-8');

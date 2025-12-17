@@ -5,9 +5,6 @@ import { createTool } from '../tool';
 import { safeStringify } from '../utils/safeStringify';
 
 function renderAvailableSkills(skills: SkillMetadata[]): string {
-  if (skills.length === 0) {
-    return 'No skills available.';
-  }
   return skills
     .map(
       (skill) =>
