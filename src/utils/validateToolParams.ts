@@ -54,21 +54,47 @@ export function validateToolParams(
           issue.path && issue.path.length > 0
             ? issue.path.map(String).join('.')
             : 'root';
-        let message = `${index + 1}. `;
+        let message = `${index + 1}. Field '${path}': `;
 
         if (issue.code === 'invalid_type') {
           const received = (issue as any).received;
+          const expected = (issue as any).expected;
+
           if (received === 'undefined') {
-            message += `Field '${path}' is required but missing`;
+            message += `Required field is missing`;
+            message += `\n   Expected type: ${expected}`;
+            message += `\n   Suggestion: Provide a valid ${expected} value`;
           } else {
-            message += `Field '${path}' expected ${(issue as any).expected}, got ${received}`;
+            message += `Type mismatch`;
+            message += `\n   Expected: ${expected}`;
+            message += `\n   Received: ${received}`;
+            // Add specific suggestions for common type conversions
+            if (expected === 'string' && received === 'number') {
+              message += `\n   Suggestion: Convert to string (e.g., "${received}" instead of ${received})`;
+            } else if (expected === 'number' && received === 'string') {
+              message += `\n   Suggestion: Convert to number (remove quotes)`;
+            } else if (expected === 'boolean' && received === 'string') {
+              message += `\n   Suggestion: Use boolean value (true or false without quotes)`;
+            }
           }
         } else if (issue.code === 'too_small') {
-          message += `Field '${path}' is too small (minimum: ${(issue as any).minimum})`;
+          const minimum = (issue as any).minimum;
+          message += `Value is too small`;
+          message += `\n   Minimum allowed: ${minimum}`;
+          message += `\n   Suggestion: Provide a value >= ${minimum}`;
         } else if (issue.code === 'too_big') {
-          message += `Field '${path}' is too big (maximum: ${(issue as any).maximum})`;
+          const maximum = (issue as any).maximum;
+          message += `Value is too large`;
+          message += `\n   Maximum allowed: ${maximum}`;
+          message += `\n   Suggestion: Provide a value <= ${maximum}`;
         } else {
-          message += `Field '${path}': ${issue.message || 'validation failed'}`;
+          // Handle other validation errors including enum values
+          message += issue.message || 'validation failed';
+          // Add allowed values hint for enum-like errors if available
+          const options = (issue as any).options;
+          if (options && Array.isArray(options)) {
+            message += `\n   Allowed values: ${options.join(', ')}`;
+          }
         }
 
         return message;
@@ -78,7 +104,7 @@ export function validateToolParams(
       }
     });
 
-    const errorMessage = `Parameter validation failed:\n\n${errorMessages.join('\n')}\n\nPlease fix the parameters according to the tool's schema and try again.`;
+    const errorMessage = `Parameter validation failed:\n\n${errorMessages.join('\n\n')}\n\nPlease correct these parameters according to the tool's schema and try again.`;
 
     return {
       success: false,

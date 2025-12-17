@@ -25,11 +25,7 @@ Remembers:
       if (!params.url || typeof params.url !== 'string') {
         return 'No URL provided';
       }
-      try {
-        return String(params.url);
-      } catch (error) {
-        return 'Invalid URL';
-      }
+      return String(params.url);
     },
     execute: async ({ url, prompt }) => {
       try {

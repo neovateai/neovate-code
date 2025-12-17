@@ -32,11 +32,7 @@ export function createGrepTool(opts: { cwd: string }) {
       if (!params.pattern || typeof params.pattern !== 'string') {
         return 'No pattern provided';
       }
-      try {
-        return String(params.pattern);
-      } catch (error) {
-        return 'Invalid pattern';
-      }
+      return String(params.pattern);
     },
     execute: async ({ pattern, search_path, include, limit }) => {
       try {

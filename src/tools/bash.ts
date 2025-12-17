@@ -654,11 +654,7 @@ Usage:
       if (!params.task_id || typeof params.task_id !== 'string') {
         return 'Read background task output';
       }
-      try {
-        return `Read output from task: ${String(params.task_id)}`;
-      } catch (error) {
-        return 'Read background task output';
-      }
+      return `Read output from task: ${String(params.task_id)}`;
     },
     execute: async ({ task_id }) => {
       const task = backgroundTaskManager.getTask(task_id);
@@ -717,11 +713,7 @@ Usage:
       if (!params.task_id || typeof params.task_id !== 'string') {
         return 'Terminate background task';
       }
-      try {
-        return `Terminate task: ${String(params.task_id)}`;
-      } catch (error) {
-        return 'Terminate background task';
-      }
+      return `Terminate task: ${String(params.task_id)}`;
     },
     execute: async ({ task_id }) => {
       const task = backgroundTaskManager.getTask(task_id);

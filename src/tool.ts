@@ -159,6 +159,11 @@ export class Tools {
       // Validate after sanitization
       const validationResult = validateToolParams(tool.parameters, argsObj);
       if (!validationResult.success) {
+        // TODO: Add retry limit to prevent infinite loops when LLM repeatedly fails
+        // Current behavior: LLM will retry up to maxTurns (default 50) times
+        // Future improvement: Track consecutive identical parameter errors and fail fast after 3 attempts
+        // This should be implemented in loop.ts by detecting repeated tool+params failures
+        // Example: if (consecutiveSameErrors >= 3) { return 'repeated_tool_error' }
         return {
           llmContent: validationResult.error,
           isError: true,
