@@ -39,9 +39,7 @@ export function createSkillTool(opts: { skillManager: SkillManager }) {
     },
     async execute({ skill }) {
       const skillName = skill.trim();
-      const foundSkill = opts.skillManager
-        .getSkills()
-        .find((s) => s.name === skillName);
+      const foundSkill = opts.skillManager.getSkill(skillName);
 
       if (!foundSkill) {
         return {

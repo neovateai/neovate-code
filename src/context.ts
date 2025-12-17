@@ -140,6 +140,7 @@ export class Context {
     const mcpManager = MCPManager.create(mcpServers);
     const backgroundTaskManager = new BackgroundTaskManager();
     const skillManager = new SkillManager({ paths });
+    await skillManager.loadSkills();
     return new Context({
       cwd,
       productName,
