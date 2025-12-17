@@ -16,6 +16,7 @@ import { createGlobTool } from './tools/glob';
 import { createGrepTool } from './tools/grep';
 import { createLSTool } from './tools/ls';
 import { createReadTool } from './tools/read';
+import { createSkillTool } from './tools/skill';
 import { createTodoTool, type TodoItem } from './tools/todo';
 import { createWriteTool } from './tools/write';
 
@@ -34,12 +35,16 @@ export async function resolveTools(opts: ResolveToolsOpts) {
   const model = (
     await resolveModelWithContext(opts.context.config.model, opts.context)
   ).model!;
+  const hasSkills = opts.context.skillManager.getSkills().length > 0;
   const readonlyTools = [
     createReadTool({ cwd, productName }),
     createLSTool({ cwd }),
     createGlobTool({ cwd }),
     createGrepTool({ cwd }),
     createFetchTool({ model }),
+    ...(hasSkills
+      ? [createSkillTool({ skillManager: opts.context.skillManager })]
+      : []),
   ];
   const askUserQuestionTools = opts.askUserQuestion
     ? [createAskUserQuestionTool()]

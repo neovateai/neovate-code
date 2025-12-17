@@ -7,6 +7,7 @@ import { type Config, ConfigManager } from './config';
 import { MCPManager } from './mcp';
 import type { MessageBus } from './messageBus';
 import { Paths } from './paths';
+import { SkillManager } from './skill';
 import {
   type Plugin,
   type PluginApplyOpts,
@@ -25,6 +26,7 @@ type ContextOpts = {
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
+  skillManager: SkillManager;
   messageBus?: MessageBus;
   plugins: (string | Plugin)[];
 };
@@ -50,6 +52,7 @@ export class Context {
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
+  skillManager: SkillManager;
   messageBus?: MessageBus;
   plugins: (string | Plugin)[];
 
@@ -64,6 +67,7 @@ export class Context {
     this.#pluginManager = opts.pluginManager;
     this.argvConfig = opts.argvConfig;
     this.backgroundTaskManager = opts.backgroundTaskManager;
+    this.skillManager = opts.skillManager;
     this.messageBus = opts.messageBus;
     this.plugins = opts.plugins;
   }
@@ -135,6 +139,7 @@ export class Context {
     };
     const mcpManager = MCPManager.create(mcpServers);
     const backgroundTaskManager = new BackgroundTaskManager();
+    const skillManager = new SkillManager({ paths });
     return new Context({
       cwd,
       productName,
@@ -146,6 +151,7 @@ export class Context {
       paths,
       mcpManager,
       backgroundTaskManager,
+      skillManager,
       messageBus: opts.messageBus,
       plugins: pluginsConfigs,
     });

@@ -157,7 +157,6 @@ export class At {
             file: entry.filePath,
           };
         }
-        console.log(`Reading file: ${entry.filePath}`);
         const content = fs.readFileSync(entry.filePath, 'utf-8');
         if (content === undefined || content === null) {
           throw new Error(`Failed to read file: ${entry.filePath}`);
