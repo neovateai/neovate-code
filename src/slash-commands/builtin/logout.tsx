@@ -1,9 +1,6 @@
-import fs from 'fs';
 import { Box, Text, useInput } from 'ink';
-import path from 'pathe';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { Paths } from '../../paths';
 import PaginatedSelectInput from '../../ui/PaginatedSelectInput';
 import { useAppStore } from '../../ui/store';
 import type { LocalJSXCommand } from '../types';
