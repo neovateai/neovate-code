@@ -6,6 +6,7 @@ import type {
 } from './message';
 import { DirectTransport, MessageBus } from './messageBus';
 import { NodeBridge } from './nodeBridge';
+import type { Plugin } from './plugin';
 import { Session } from './session';
 import { randomUUID } from './utils/randomUUID';
 
@@ -17,6 +18,7 @@ export type SDKSessionOptions = {
   model: string;
   cwd?: string;
   productName?: string;
+  plugins?: Plugin[];
 };
 
 export type SDKUserMessage = {
@@ -247,7 +249,7 @@ function createBridgePair(options: SDKSessionOptions): {
       argvConfig: {
         model: options.model,
       },
-      plugins: [],
+      plugins: options.plugins || [],
     },
   });
 
