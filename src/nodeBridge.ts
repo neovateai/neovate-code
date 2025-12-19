@@ -440,6 +440,7 @@ class NodeHandlerRegistry {
         }
 
         // Read existing mcpServers object
+        // Use getConfig to properly fallback to DEFAULT_CONFIG if needed
         const mcpServers = configManager.getConfig(global, 'mcpServers') || {};
 
         // Check for duplicate server name (only for new servers)
@@ -482,6 +483,7 @@ class NodeHandlerRegistry {
         const configManager = new ConfigManager(cwd, context.productName, {});
 
         // Read existing mcpServers object
+        // Use getConfig to properly fallback to DEFAULT_CONFIG if needed
         const mcpServers = configManager.getConfig(global, 'mcpServers') || {};
 
         // Check if server exists
