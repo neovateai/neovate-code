@@ -1,7 +1,7 @@
 import type { LanguageModelV2Prompt } from '@ai-sdk/provider';
 import fs from 'fs';
 import path from 'pathe';
-import { IMAGE_EXTENSIONS } from './constants';
+import { IMAGE_EXTENSIONS, PDF_EXTENSIONS } from './constants';
 import { createFileTree, listDirectory, printTree } from './utils/list';
 
 const MAX_LINE_LENGTH_TEXT_FILE = 2000;
@@ -145,7 +145,9 @@ export class At {
     const processedFiles = fileEntries
       .filter(
         (entry) =>
-          !IMAGE_EXTENSIONS.has(path.extname(entry.filePath).toLowerCase()),
+          ![...IMAGE_EXTENSIONS, ...PDF_EXTENSIONS].includes(
+            path.extname(entry.filePath).toLowerCase(),
+          ),
       )
       .map((entry) => {
         // Single file size limit cannot exceed 10MB

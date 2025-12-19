@@ -2,7 +2,7 @@ import fs from 'fs';
 import { countTokens } from 'gpt-tokenizer';
 import path from 'pathe';
 import { z } from 'zod';
-import { IMAGE_EXTENSIONS } from '../constants';
+import { IMAGE_EXTENSIONS, PDF_EXTENSIONS, MAX_PDF_SIZE } from '../constants';
 import { createTool, type ToolResult } from '../tool';
 import {
   MaxFileReadLengthExceededError,
@@ -73,6 +73,51 @@ async function processImage(
         `Maximum supported size is ${Math.round((MAX_IMAGE_SIZE / 1024 / 1024) * 100) / 100}MB. ` +
         `Please resize the image and try again.`,
     );
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function processPDF(filePath: string, cwd: string): Promise<ToolResult> {
+  try {
+    const stats = fs.statSync(filePath);
+
+    // Security: Validate file path to prevent traversal attacks
+    const resolvedPath = path.resolve(filePath);
+    if (!resolvedPath.startsWith(cwd)) {
+      throw new Error('Invalid file path: path traversal detected');
+    }
+
+    // Check if file is empty
+    if (stats.size === 0) {
+      throw new Error(`PDF file is empty: ${filePath}`);
+    }
+
+    // Check file size limit (32MB)
+    if (stats.size > MAX_PDF_SIZE) {
+      const sizeMB = Math.round((stats.size / 1024 / 1024) * 100) / 100;
+      const maxSizeMB = Math.round((MAX_PDF_SIZE / 1024 / 1024) * 100) / 100;
+      throw new Error(
+        `PDF file size (${sizeMB}MB) exceeds maximum allowed size (${maxSizeMB}MB). ` +
+          `PDF files must be less than 32MB.`,
+      );
+    }
+
+    // Read file and convert to base64
+    const buffer = fs.readFileSync(filePath);
+    const base64 = buffer.toString('base64');
+
+    return {
+      llmContent: [
+        {
+          type: 'file',
+          data: base64,
+          mimeType: 'application/pdf',
+          filename: path.basename(filePath),
+        },
+      ],
+      returnDisplay: 'Read PDF file successfully.',
+    };
   } catch (error) {
     throw error;
   }
@@ -149,6 +194,12 @@ Usage:
         // Handle image files
         if (IMAGE_EXTENSIONS.has(ext)) {
           const result = await processImage(fullFilePath, opts.cwd);
+          return result;
+        }
+
+        // Handle PDF files
+        if (PDF_EXTENSIONS.has(ext)) {
+          const result = await processPDF(fullFilePath, opts.cwd);
           return result;
         }
 

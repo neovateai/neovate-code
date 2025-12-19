@@ -24,7 +24,7 @@ export type FilePart = {
   mimeType: string;
 };
 
-export type UserContent = string | Array<TextPart | ImagePart>;
+export type UserContent = string | Array<TextPart | ImagePart | FilePart>;
 
 export type ToolUsePart = {
   type: 'tool_use';

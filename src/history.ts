@@ -174,6 +174,13 @@ export class History {
                         ? part.data.split(';base64,')[1]
                         : part.data;
                       return { type: 'media', data, mediaType: part.mimeType };
+                    } else if (part.type === 'file') {
+                      // ref https://ai-sdk.dev/providers/ai-sdk-providers/openai#pdf-support
+                      return {
+                        type: 'file',
+                        data: part.data,
+                        mediaType: part.mimeType,
+                      };
                     } else {
                       throw new Error(
                         `Not implemented with type: ${(part as any).type} of role: tool`,

@@ -2,7 +2,7 @@ import type { LanguageModelV2FunctionTool } from '@ai-sdk/provider';
 import path from 'pathe';
 import * as z from 'zod';
 import type { Context } from './context';
-import type { ImagePart, TextPart } from './message';
+import type { ImagePart, TextPart, FilePart } from './message';
 import { resolveModelWithContext } from './model';
 import { createAskUserQuestionTool } from './tools/askUserQuestion';
 import {
@@ -280,7 +280,7 @@ export type ReturnDisplay =
   | TodoWriteReturnDisplay;
 
 export type ToolResult = {
-  llmContent: string | (TextPart | ImagePart)[];
+  llmContent: string | (TextPart | ImagePart | FilePart)[];
   returnDisplay?: ReturnDisplay;
   isError?: boolean;
 };

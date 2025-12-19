@@ -15,6 +15,7 @@ export const IMAGE_EXTENSIONS = new Set([
   '.tiff',
   '.tif',
 ]);
+export const PDF_EXTENSIONS = new Set(['.pdf']);
 export const CANCELED_MESSAGE_TEXT = '[Request interrupted by user]';
 
 export enum TOOL_NAMES {
@@ -37,3 +38,5 @@ export const BASH_EVENTS = {
 export const MIN_TOKEN_THRESHOLD = 32_000 * 0.8;
 
 export const BACKGROUND_THRESHOLD_MS = 2000;
+
+export const MAX_PDF_SIZE = 32 * 1024 * 1024; // 32MB
