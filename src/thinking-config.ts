@@ -10,6 +10,18 @@ export function getThinkingConfig(
     return undefined;
   }
 
+  if (model.provider.id === 'xiaomi') {
+    return {
+      providerOptions: {
+        xiaomi: {
+          thinking: {
+            type: 'enabled',
+          },
+        },
+      },
+    };
+  }
+
   if (model.provider.id === 'xai') {
     return {
       providerOptions: {

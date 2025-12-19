@@ -14,6 +14,7 @@ import {
   PluginHookType,
   PluginManager,
 } from './plugin';
+import { SkillManager } from './skill';
 
 type ContextOpts = {
   cwd: string;
@@ -26,6 +27,7 @@ type ContextOpts = {
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
+  skillManager: SkillManager;
   messageBus?: MessageBus;
   agentManager?: AgentManager;
   plugins: (string | Plugin)[];
@@ -52,6 +54,7 @@ export class Context {
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
+  skillManager: SkillManager;
   messageBus?: MessageBus;
   agentManager?: AgentManager;
   plugins: (string | Plugin)[];
@@ -66,6 +69,7 @@ export class Context {
     this.#pluginManager = opts.pluginManager;
     this.argvConfig = opts.argvConfig;
     this.backgroundTaskManager = opts.backgroundTaskManager;
+    this.skillManager = opts.skillManager;
     this.messageBus = opts.messageBus;
     this.agentManager = opts.agentManager;
     this.plugins = opts.plugins;
@@ -140,6 +144,9 @@ export class Context {
     const backgroundTaskManager = new BackgroundTaskManager();
 
     // Create Context first without AgentManager
+    const skillManager = new SkillManager({ paths });
+    await skillManager.loadSkills();
+
     const context = new Context({
       cwd,
       productName,
@@ -151,6 +158,7 @@ export class Context {
       paths,
       mcpManager,
       backgroundTaskManager,
+      skillManager,
       messageBus: opts.messageBus,
       plugins: pluginsConfigs,
     });

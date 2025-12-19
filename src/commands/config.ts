@@ -38,7 +38,7 @@ Examples:
   ${p} config get model               Get current model setting
   ${p} config set model gpt-4o        Set model for current project
   ${p} config set -g model gpt-4o     Set model globally
-  ${p} config set httpProxy http://127.0.0.1:7890 Set global proxy
+  ${p} config set -g httpProxy http://127.0.0.1:7890 Set global proxy
   ${p} config set provider.openai.options.baseURL https://api.openai.com/v1  Set custom API endpoint
   ${p} config set provider.deepseek.options.httpProxy http://127.0.0.1:8888  Set provider-specific proxy
   ${p} config list                    Show all current config values

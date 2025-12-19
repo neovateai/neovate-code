@@ -8,6 +8,14 @@ const MAX_LINE_LENGTH_TEXT_FILE = 2000;
 const MAX_LINES_TO_READ = 2000;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
+interface AtPath {
+  path: string;
+  lineRange?: {
+    start: number; // 起始行号（包含）
+    end?: number; // 结束行号（包含），undefined 表示只读取单行
+  };
+}
+
 export class At {
   private userPrompt: string;
   private cwd: string;
@@ -19,17 +27,25 @@ export class At {
   getContent() {
     const prompt = this.userPrompt || '';
     const ats = this.extractAtPaths(prompt);
-    const files: string[] = [];
+    const fileEntries: Array<{
+      filePath: string;
+      lineRange?: { start: number; end?: number };
+    }> = [];
     const directories: string[] = [];
 
     // Step 1: Classify files vs directories
     for (const at of ats) {
-      const filePath = path.resolve(this.cwd, at);
+      const filePath = path.resolve(this.cwd, at.path);
       if (fs.existsSync(filePath)) {
         if (fs.statSync(filePath).isFile()) {
-          files.push(filePath);
+          fileEntries.push({ filePath, lineRange: at.lineRange });
         } else if (fs.statSync(filePath).isDirectory()) {
           directories.push(filePath);
+          const dirFiles = this.getAllFilesInDirectory(filePath);
+          // For directories, don't apply line ranges
+          for (const dirFile of dirFiles) {
+            fileEntries.push({ filePath: dirFile });
+          }
         } else {
           throw new Error(`${filePath} is not a file or directory`);
         }
@@ -38,8 +54,8 @@ export class At {
 
     // Step 2: Process separately and merge
     let result = '';
-    if (files.length > 0) {
-      result += this.renderFilesToXml(files);
+    if (fileEntries.length > 0) {
+      result += this.renderFilesToXml(fileEntries);
     }
     if (directories.length > 0) {
       result += this.renderDirectoriesToTree(directories);
@@ -48,23 +64,48 @@ export class At {
     return result || null;
   }
 
-  private extractAtPaths(prompt: string): string[] {
-    const paths: string[] = [];
-    const regex = /@("[^"]+"|(?:[^\\ ]|\\ )+)/g;
+  private extractAtPaths(prompt: string): AtPath[] {
+    const pathsMap = new Map<string, AtPath>();
+    // Match @path or @"path" optionally followed by :lineRange
+    // The unquoted group should not match ':' to allow line range parsing
+    const regex =
+      /@("(?<quoted>[^"]+)"|(?<unquoted>(?:[^\\ :]|\\ )+))(?::(?<lineRange>\d+(?:-\d+)?))?/g;
     let match: RegExpExecArray | null = regex.exec(prompt);
     while (match !== null) {
-      let path = match[1];
-      // Remove quotes if present
-      if (path.startsWith('"') && path.endsWith('"')) {
-        path = path.slice(1, -1);
-      } else {
-        // Unescape spaces
-        path = path.replace(/\\ /g, ' ');
+      const groups = match.groups;
+      if (!groups) {
+        match = regex.exec(prompt);
+        continue;
       }
-      paths.push(path);
+
+      let filePath = groups.quoted || groups.unquoted;
+      // Unescape spaces for unquoted paths
+      if (groups.unquoted) {
+        filePath = filePath.replace(/\\ /g, ' ');
+      }
+
+      // Parse line range if present
+      let lineRange: { start: number; end?: number } | undefined;
+      if (groups.lineRange) {
+        const rangeMatch = groups.lineRange.match(/^(\d+)(?:-(\d+))?$/);
+        if (rangeMatch) {
+          const start = Number.parseInt(rangeMatch[1], 10);
+          const end = rangeMatch[2]
+            ? Number.parseInt(rangeMatch[2], 10)
+            : start;
+          lineRange = { start, end };
+        }
+      }
+
+      // Create unique key based on path and line range
+      const key = `${filePath}:${lineRange ? `${lineRange.start}-${lineRange.end}` : 'all'}`;
+      if (!pathsMap.has(key)) {
+        pathsMap.set(key, { path: filePath, lineRange });
+      }
+
       match = regex.exec(prompt);
     }
-    return [...new Set(paths)];
+    return Array.from(pathsMap.values());
   }
 
   private renderDirectoriesToTree(directories: string[]): string {
@@ -95,28 +136,36 @@ export class At {
     return treeOutput;
   }
 
-  renderFilesToXml(files: string[]): string {
-    const processedFiles = files
-      .filter((fc) => !IMAGE_EXTENSIONS.has(path.extname(fc).toLowerCase()))
-      .map((fc) => {
+  renderFilesToXml(
+    fileEntries: Array<{
+      filePath: string;
+      lineRange?: { start: number; end?: number };
+    }>,
+  ): string {
+    const processedFiles = fileEntries
+      .filter(
+        (entry) =>
+          !IMAGE_EXTENSIONS.has(path.extname(entry.filePath).toLowerCase()),
+      )
+      .map((entry) => {
         // Single file size limit cannot exceed 10MB
-        const stat = fs.statSync(fc);
+        const stat = fs.statSync(entry.filePath);
         if (stat.size > MAX_FILE_SIZE) {
           return {
             content: '// File too large to display',
             metadata: `File size: ${Math.round(stat.size / 1024 / 1024)}MB (skipped)`,
-            file: fc,
+            file: entry.filePath,
           };
         }
-        const content = fs.readFileSync(fc, 'utf-8');
+        const content = fs.readFileSync(entry.filePath, 'utf-8');
         if (content === undefined || content === null) {
-          throw new Error(`Failed to read file: ${fc}`);
+          throw new Error(`Failed to read file: ${entry.filePath}`);
         }
-        const result = this.processFileContent(content);
+        const result = this.processFileContent(content, entry.lineRange);
         return {
           content: result.content,
           metadata: result.metadata,
-          file: fc,
+          file: entry.filePath,
         };
       });
 
@@ -171,12 +220,52 @@ export class At {
     return line.substring(0, MAX_LINE_LENGTH_TEXT_FILE) + '... [truncated]';
   }
 
-  private processFileContent(content: string): {
+  private processFileContent(
+    content: string,
+    lineRange?: { start: number; end?: number },
+  ): {
     content: string;
     metadata: string;
   } {
     const allLines = content.split(/\r?\n/);
     const totalLines = allLines.length;
+
+    // Handle line range if specified
+    if (lineRange) {
+      const { start, end } = lineRange;
+
+      // Validate line numbers
+      if (start < 1 || (end !== undefined && end < start)) {
+        return {
+          content: '',
+          metadata: 'Invalid line range',
+        };
+      }
+
+      // Convert to 0-based indexing and clamp to file bounds
+      const startIdx = Math.max(0, start - 1);
+      const endIdx = Math.min(totalLines, end ?? start);
+
+      // Extract the specified lines
+      const selectedLines = allLines.slice(startIdx, endIdx);
+
+      // Truncate long lines
+      const processedLines = selectedLines.map((line) =>
+        this.truncateLine(line),
+      );
+
+      const actualStart = startIdx + 1;
+      const actualEnd = endIdx;
+      const displayRange =
+        actualStart === actualEnd
+          ? `Line ${actualStart}`
+          : `Lines ${actualStart}-${actualEnd}`;
+
+      return {
+        content: processedLines.join('\n'),
+        metadata: `${displayRange} of ${totalLines} total lines`,
+      };
+    }
 
     // If file doesn't exceed limit, process all lines
     if (totalLines <= MAX_LINES_TO_READ) {

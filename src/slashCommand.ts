@@ -50,6 +50,7 @@ export class SlashCommandManager {
     const globalClaude = this.#loadGlobal(
       path.join(
         path.dirname(opts.paths.globalConfigDir),
+        '..',
         '.claude',
         'commands',
       ),

@@ -419,6 +419,22 @@ export const models: ModelMap = {
     open_weights: false,
     limit: { context: 200000, output: 65536 },
   },
+  'gemini-3-flash-preview': {
+    name: 'Gemini 3 Flash Preview',
+    attachment: true,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-01',
+    release_date: '2025-12-17',
+    last_updated: '2025-12-17',
+    modalities: {
+      input: ['text', 'image', 'video', 'audio', 'pdf'],
+      output: ['text'],
+    },
+    open_weights: false,
+    limit: { context: 1048576, output: 65536 },
+  },
   'grok-4': {
     name: 'Grok 4',
     attachment: false,
@@ -1037,6 +1053,19 @@ export const models: ModelMap = {
     open_weights: false,
     limit: { context: 1840000, output: 64000 },
   },
+  'mimo-v2-flash': {
+    name: 'MiMo V2 Flash',
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '2025-12',
+    release_date: '2025-12-17',
+    last_updated: '2025-12-17',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 131072, output: 32768 },
+  },
 };
 
 function getProviderBaseURL(provider: Provider) {
@@ -1224,6 +1253,7 @@ export const providers: ProvidersMap = {
       'gemini-2.5-flash-lite': models['gemini-2.5-flash-lite-preview-06-17'],
       'gemini-2.5-pro': models['gemini-2.5-pro'],
       'gemini-3-pro-preview': models['gemini-3-pro-preview'],
+      'gemini-3-flash-preview': models['gemini-3-flash-preview'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
@@ -1381,6 +1411,7 @@ export const providers: ProvidersMap = {
       'openai/gpt-5-codex': models['gpt-5-codex'],
       'openai/gpt-5.2': models['gpt-5.2'],
       'openai/gpt-5.2-pro': models['gpt-5.2-pro'],
+      'google/gemini-3-flash-preview': models['gemini-3-flash-preview'],
       'google/gemini-3-pro-preview': models['gemini-3-pro-preview'],
       'moonshotai/kimi-k2': models['kimi-k2'],
       'moonshotai/kimi-k2-0905': models['kimi-k2-0905'],
@@ -1398,6 +1429,7 @@ export const providers: ProvidersMap = {
       'minimax/minimax-m2': models['minimax-m2'],
       'openrouter/sherlock-dash-alpha': models['sherlock-dash-alpha'],
       'openrouter/sherlock-think-alpha': models['sherlock-think-alpha'],
+      'xiaomi/mimo-v2-flash:free': models['mimo-v2-flash'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
@@ -1624,6 +1656,8 @@ export const providers: ProvidersMap = {
       'inclusionai/ling-flash-2.0': models['ling-flash-2.0'],
       'inclusionai/ring-mini-2.0': models['ring-mini-2.0'],
       'inclusionai/ling-mini-2.0': models['ling-mini-2.0'],
+      'google/gemini-3-flash-preview-free': models['gemini-3-flash-preview'],
+      'google/gemini-3-flash-preview': models['gemini-3-flash-preview'],
       'google/gemini-3-pro-preview-free': models['gemini-3-pro-preview'],
       'google/gemini-3-pro-preview': models['gemini-3-pro-preview'],
       'openai/gpt-5.1': models['gpt-5.1'],
@@ -1664,6 +1698,17 @@ export const providers: ProvidersMap = {
         withProxyConfig({ baseURL, apiKey }, provider),
       ).chat(name);
     },
+  },
+  xiaomi: {
+    id: 'xiaomi',
+    env: ['MIMO_API_KEY'],
+    name: 'Xiaomi Mimo',
+    api: 'https://api.xiaomimimo.com/v1',
+    doc: 'https://platform.xiaomimimo.com/',
+    models: {
+      'mimo-v2-flash': models['mimo-v2-flash'],
+    },
+    createModel: createModelCreatorCompatible({}),
   },
   cerebras: {
     id: 'cerebras',
@@ -1721,6 +1766,7 @@ export const providers: ProvidersMap = {
       'gemini-2.5-flash': models['gemini-2.5-flash'],
       'gemini-2.5-flash-thinking': models['gemini-2.5-flash'],
       'gemini-2.5-pro': models['gemini-2.5-pro'],
+      'gemini-3-flash': models['gemini-3-flash-preview'],
       'gemini-3-pro-low': models['gemini-3-pro-preview'],
       'gemini-3-pro-high': models['gemini-3-pro-preview'],
       'claude-sonnet-4-5': models['claude-4-5-sonnet'],
