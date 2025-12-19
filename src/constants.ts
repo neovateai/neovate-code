@@ -9,10 +9,7 @@ export const IMAGE_EXTENSIONS = new Set([
   '.jpg',
   '.jpeg',
   '.gif',
-  '.bmp',
   '.webp',
-  '.tiff',
-  '.tif',
 ]);
 export const CANCELED_MESSAGE_TEXT = '[Request interrupted by user]';
 
