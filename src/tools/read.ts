@@ -129,6 +129,11 @@ Usage:
 
         const ext = path.extname(file_path).toLowerCase();
 
+        // Handle PDF files
+        if ('.pdf' === ext) {
+          throw new Error('PDF files are not supported yet');
+        }
+
         const fullFilePath = (() => {
           if (path.isAbsolute(file_path)) {
             return file_path;
