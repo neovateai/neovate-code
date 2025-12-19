@@ -441,7 +441,10 @@ class NodeHandlerRegistry {
 
         // Read existing mcpServers object
         // Use getConfig to properly fallback to DEFAULT_CONFIG if needed
-        const mcpServers = configManager.getConfig(global, 'mcpServers') || {};
+        // Deep clone to prevent DEFAULT_CONFIG mutation
+        const existingServers =
+          configManager.getConfig(global, 'mcpServers') || {};
+        const mcpServers = JSON.parse(JSON.stringify(existingServers));
 
         // Check for duplicate server name (only for new servers)
         // Note: We can't reliably detect "new" vs "update" without additional flag,
@@ -484,7 +487,10 @@ class NodeHandlerRegistry {
 
         // Read existing mcpServers object
         // Use getConfig to properly fallback to DEFAULT_CONFIG if needed
-        const mcpServers = configManager.getConfig(global, 'mcpServers') || {};
+        // Deep clone to prevent DEFAULT_CONFIG mutation
+        const existingServers =
+          configManager.getConfig(global, 'mcpServers') || {};
+        const mcpServers = JSON.parse(JSON.stringify(existingServers));
 
         // Check if server exists
         if (!mcpServers[name]) {
