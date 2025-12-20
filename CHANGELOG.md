@@ -1,3 +1,11 @@
+## 0.22.1
+
+`2025-12-20`
+
+- refactor: use default model creator for moonshot providers by [@sorrycc](https://github.com/sorrycc)
+- feat: add fork app support to node bridge by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.22.0
 
 `2025-12-19`
