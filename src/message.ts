@@ -72,6 +72,8 @@ export type ToolResultPart2 = {
   toolName: string;
   input: Record<string, any>;
   result: ToolResult;
+  agentId?: string;
+  agentType?: string;
 };
 export type ToolContent = Array<ToolResultPart>;
 export type ToolResultPart = {
@@ -80,6 +82,8 @@ export type ToolResultPart = {
   name: string;
   input: Record<string, any>;
   result: ToolResult;
+  agentId?: string;
+  agentType?: string;
 };
 
 export type Message =
@@ -94,6 +98,11 @@ export type NormalizedMessage = Message & {
   uuid: string;
   parentUuid: string | null;
   uiContent?: string;
+  metadata?: {
+    agentId?: string;
+    agentType?: string;
+    [key: string]: any;
+  };
 };
 
 export type SDKSystemMessage = {
@@ -124,7 +133,31 @@ export function toolResultPart2ToToolResultPart(
     name: part.toolName,
     input: part.input,
     result: part.result,
+    agentId: part.agentId,
+    agentType: part.agentType,
   };
+}
+
+export function createToolResultPart2(
+  toolCallId: string,
+  toolName: string,
+  input: Record<string, any>,
+  result: ToolResult,
+): ToolResultPart2 {
+  const part: ToolResultPart2 = {
+    type: 'tool-result',
+    toolCallId,
+    toolName,
+    input,
+    result,
+  };
+
+  if (result.metadata?.agentId) {
+    part.agentId = result.metadata.agentId;
+    part.agentType = result.metadata.agentType;
+  }
+
+  return part;
 }
 
 export function createUserMessage(

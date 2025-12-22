@@ -2,18 +2,19 @@ import fs from 'fs';
 import { createJiti } from 'jiti';
 import path from 'pathe';
 import resolve from 'resolve';
+import { AgentManager } from './agent';
 import { BackgroundTaskManager } from './backgroundTaskManager';
 import { type Config, ConfigManager } from './config';
 import { MCPManager } from './mcp';
 import type { MessageBus } from './messageBus';
 import { Paths } from './paths';
-import { SkillManager } from './skill';
 import {
   type Plugin,
   type PluginApplyOpts,
   PluginHookType,
   PluginManager,
 } from './plugin';
+import { SkillManager } from './skill';
 
 type ContextOpts = {
   cwd: string;
@@ -28,6 +29,7 @@ type ContextOpts = {
   backgroundTaskManager: BackgroundTaskManager;
   skillManager: SkillManager;
   messageBus?: MessageBus;
+  agentManager?: AgentManager;
   plugins: (string | Plugin)[];
 };
 
@@ -54,8 +56,8 @@ export class Context {
   backgroundTaskManager: BackgroundTaskManager;
   skillManager: SkillManager;
   messageBus?: MessageBus;
+  agentManager?: AgentManager;
   plugins: (string | Plugin)[];
-
   constructor(opts: ContextOpts) {
     this.cwd = opts.cwd;
     this.productName = opts.productName;
@@ -69,6 +71,7 @@ export class Context {
     this.backgroundTaskManager = opts.backgroundTaskManager;
     this.skillManager = opts.skillManager;
     this.messageBus = opts.messageBus;
+    this.agentManager = opts.agentManager;
     this.plugins = opts.plugins;
   }
 
@@ -139,9 +142,12 @@ export class Context {
     };
     const mcpManager = MCPManager.create(mcpServers);
     const backgroundTaskManager = new BackgroundTaskManager();
+
+    // Create Context first without AgentManager
     const skillManager = new SkillManager({ paths });
     await skillManager.loadSkills();
-    return new Context({
+
+    const context = new Context({
       cwd,
       productName,
       productASCIIArt,
@@ -156,6 +162,12 @@ export class Context {
       messageBus: opts.messageBus,
       plugins: pluginsConfigs,
     });
+
+    // Create and attach AgentManager
+    const agentManager = new AgentManager({ context });
+    context.agentManager = agentManager;
+
+    return context;
   }
 }
 
@@ -186,7 +198,7 @@ function scanPlugins(pluginDir: string): string[] {
     return files
       .filter((file) => file.endsWith('.js') || file.endsWith('.ts'))
       .map((file) => path.join(pluginDir, file));
-  } catch (error) {
+  } catch (_error) {
     return [];
   }
 }

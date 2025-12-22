@@ -26,6 +26,7 @@ export enum TOOL_NAMES {
   WRITE = 'write',
   EDIT = 'edit',
   LS = 'ls',
+  TASK = 'task',
 }
 
 export const BASH_EVENTS = {
@@ -38,3 +39,8 @@ export const BASH_EVENTS = {
 export const MIN_TOKEN_THRESHOLD = 32_000 * 0.8;
 
 export const BACKGROUND_THRESHOLD_MS = 2000;
+
+export enum AGENT_TYPE {
+  EXPLORE = 'Explore',
+  PLAN = 'Plan',
+}

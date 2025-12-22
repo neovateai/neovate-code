@@ -1,0 +1,96 @@
+import type { Context } from '../context';
+import type { NormalizedMessage } from '../message';
+import type { Tool } from '../tool';
+
+export interface AgentDefinition {
+  agentType: string;
+  whenToUse: string;
+  systemPrompt: string;
+  model: string;
+  source:
+    | 'built-in'
+    | 'plugin'
+    | 'user'
+    | 'project-claude'
+    | 'project'
+    | 'global-claude'
+    | 'global';
+  tools?: string[];
+  disallowedTools?: string[];
+  forkContext?: boolean;
+  color?: string;
+  path?: string;
+}
+
+export interface TaskToolInput {
+  description: string;
+  prompt: string;
+  subagent_type: string;
+  model?: string;
+  resume?: string;
+}
+
+export interface AgentExecutionResult {
+  status: 'completed' | 'failed';
+  agentId: string;
+  content: string;
+  totalToolCalls: number;
+  totalDuration: number;
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+  };
+}
+
+export interface AgentExecuteOptions {
+  definition: AgentDefinition;
+  prompt: string;
+  tools: Tool[];
+  context: Context;
+  model?: string;
+  forkContextMessages?: NormalizedMessage[];
+  cwd: string;
+  signal?: AbortSignal;
+  resume?: string;
+  onProgress?: (
+    message: NormalizedMessage,
+    agentId: string,
+  ) => void | Promise<void>;
+}
+
+/**
+ * Real-time progress data for SubAgent execution
+ * Used to track and display SubAgent progress in the UI
+ */
+export interface AgentProgressData {
+  /** The tool use ID that triggered this SubAgent (e.g., "task-1") */
+  toolUseID: string;
+  /** Unique identifier for the SubAgent instance */
+  agentId: string;
+  /** The latest message produced by the SubAgent */
+  message: NormalizedMessage;
+  /** Timestamp when this progress update was created */
+  timestamp: number;
+}
+
+/**
+ * Event payload for agent_progress events sent through MessageBus
+ */
+export interface AgentProgressEvent {
+  /** Session ID of the parent agent */
+  sessionId: string;
+  /** Current working directory */
+  cwd: string;
+  /** Progress data payload */
+  progressData: AgentProgressData;
+}
+
+export enum AgentSource {
+  BuiltIn = 'built-in',
+  Plugin = 'plugin',
+  User = 'user',
+  ProjectClaude = 'project-claude',
+  Project = 'project',
+  GlobalClaude = 'global-claude',
+  Global = 'global',
+}

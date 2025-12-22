@@ -5,6 +5,7 @@ import { resolveTools } from './tool';
 describe('resolveTools with tools config', () => {
   const createMockContext = (
     toolsConfig?: Record<string, boolean>,
+    agentManager?: any,
   ): Context => {
     return {
       cwd: '/test',
@@ -25,6 +26,7 @@ describe('resolveTools with tools config', () => {
         tools: toolsConfig,
       },
       backgroundTaskManager: {} as any,
+      agentManager: agentManager,
       messageBus: {
         onEvent: vi.fn(),
       } as any,
@@ -143,5 +145,43 @@ describe('resolveTools with tools config', () => {
     const toolNames = tools.map((t) => t.name);
     expect(toolNames).toContain('read');
     expect(toolNames).toContain('write');
+  });
+
+  test('should filter out task tool if disabled', async () => {
+    const context = createMockContext(
+      {
+        task: false,
+      },
+      {
+        getAgentDescriptions: () => 'test agent',
+      },
+    );
+    const tools = await resolveTools({
+      context,
+      sessionId: 'test-session',
+      write: true,
+      todo: true,
+    });
+
+    const toolNames = tools.map((t) => t.name);
+    expect(toolNames).not.toContain('task');
+  });
+
+  test('should include task tool if enabled and agentManager present', async () => {
+    const context = createMockContext(
+      {},
+      {
+        getAgentDescriptions: () => 'test agent',
+      },
+    );
+    const tools = await resolveTools({
+      context,
+      sessionId: 'test-session',
+      write: true,
+      todo: true,
+    });
+
+    const toolNames = tools.map((t) => t.name);
+    expect(toolNames).toContain('task');
   });
 });
