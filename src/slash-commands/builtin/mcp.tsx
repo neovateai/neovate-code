@@ -3,16 +3,9 @@ import Spinner from 'ink-spinner';
 import pc from 'picocolors';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import type { McpServerConfig } from '../../config';
 import { useAppStore } from '../../ui/store';
 import type { LocalJSXCommand } from '../types';
-
-interface McpServerConfig {
-  type?: string;
-  command?: string;
-  url?: string;
-  disable?: boolean;
-  [key: string]: any;
-}
 
 interface McpServerStatus {
   name: string;

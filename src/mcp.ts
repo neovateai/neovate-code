@@ -3,23 +3,10 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import createDebug from 'debug';
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'pathe';
+import type { McpServerConfig } from './config';
 import type { ImagePart, TextPart } from './message';
 import type { Tool } from './tool';
 import { safeStringify } from './utils/safeStringify';
-
-export interface MCPConfig {
-  type?: 'stdio' | 'sse' | 'http';
-  command?: string;
-  args?: string[];
-  env?: Record<string, string>;
-  url?: string;
-  disable?: boolean;
-  /**
-   * The timeout for tool calls in milliseconds.
-   */
-  timeout?: number;
-  headers?: Record<string, string>;
-}
 
 const debug = createDebug('neovate:mcp');
 
@@ -31,7 +18,7 @@ type MCPServerStatus =
   | 'disconnected';
 
 interface ServerState {
-  config: MCPConfig;
+  config: McpServerConfig;
   status: MCPServerStatus;
   error?: string;
   tools?: Record<string, any>;
@@ -42,12 +29,12 @@ interface ServerState {
 
 export class MCPManager {
   private servers: Map<string, ServerState> = new Map();
-  private configs: Record<string, MCPConfig> = {};
+  private configs: Record<string, McpServerConfig> = {};
   private isInitialized: boolean = false;
   private initPromise?: Promise<void>;
   private initLock: boolean = false;
 
-  static create(mcpServers: Record<string, MCPConfig>): MCPManager {
+  static create(mcpServers: Record<string, McpServerConfig>): MCPManager {
     debug('create MCPManager', mcpServers);
     const manager = new MCPManager();
     manager.configs = mcpServers || {};
@@ -117,7 +104,10 @@ export class MCPManager {
     debug('MCP initialization completed');
   }
 
-  private async _connectServer(key: string, config: MCPConfig): Promise<void> {
+  private async _connectServer(
+    key: string,
+    config: McpServerConfig,
+  ): Promise<void> {
     const serverState = this.servers.get(key);
     if (!serverState) return;
 
@@ -324,8 +314,8 @@ export class MCPManager {
     debug(`Successfully reconnected MCP server: ${serverName}`);
   }
 
-  private async _createClient(config: MCPConfig) {
-    if (config.command) {
+  private async _createClient(config: McpServerConfig) {
+    if ('command' in config && config.command) {
       // Stdio transport (for local servers only)
       const env = config.env
         ? { ...config.env, PATH: process.env.PATH || '' }
@@ -343,7 +333,7 @@ export class MCPManager {
           env,
         }),
       });
-    } else if (config.url) {
+    } else if ('url' in config && config.url) {
       // HTTP or SSE transport
       const transportType = config.type || 'http'; // Default to HTTP
       if (transportType === 'sse') {
@@ -371,7 +361,7 @@ export class MCPManager {
   }
 
   private async _testConnectionAndFetchTools(
-    config: MCPConfig,
+    config: McpServerConfig,
   ): Promise<{ client: any; tools: Record<string, any> }> {
     const client = await this._createClient(config);
     try {
@@ -440,7 +430,7 @@ export class MCPManager {
     toolName: string,
     toolDef: any,
     serverName: string,
-    config: MCPConfig,
+    config: McpServerConfig,
   ): Tool {
     return {
       name: `mcp__${serverName.replace(/[^a-zA-Z0-9_-]/g, '')}__${toolName}`,
@@ -478,8 +468,8 @@ export class MCPManager {
 export function parseMcpConfig(
   mcpConfigArgs: string[],
   cwd: string,
-): Record<string, MCPConfig> {
-  const mcpServers: Record<string, MCPConfig> = {};
+): Record<string, McpServerConfig> {
+  const mcpServers: Record<string, McpServerConfig> = {};
   for (const configItem of mcpConfigArgs) {
     let configData: unknown;
     try {
@@ -510,7 +500,7 @@ export function parseMcpConfig(
     }
     Object.assign(
       mcpServers,
-      configObj.mcpServers as Record<string, MCPConfig>,
+      configObj.mcpServers as Record<string, McpServerConfig>,
     );
   }
 
@@ -613,4 +603,92 @@ export function convertMcpResultToLlmContent(
   }
 
   return llmContent;
+}
+
+/**
+ * Validate MCP server name and configuration
+ */
+export function validateMcpServerConfig(
+  name: string,
+  config: McpServerConfig,
+): { valid: boolean; error?: string } {
+  // Validate server name
+  if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+    return {
+      valid: false,
+      error:
+        'Invalid server name. Only alphanumeric, dash and underscore are allowed.',
+    };
+  }
+
+  // Validate config based on type
+  if ('command' in config && config.command) {
+    // stdio type validation
+    if (!config.command.trim()) {
+      return {
+        valid: false,
+        error: 'Command is required for stdio type',
+      };
+    }
+  } else if ('url' in config && config.url) {
+    // HTTP/SSE type validation
+    if (!/^https?:\/\/.+/.test(config.url)) {
+      return {
+        valid: false,
+        error: 'Invalid URL format. Must start with http:// or https://',
+      };
+    }
+  } else {
+    return {
+      valid: false,
+      error: 'Either command or url must be provided',
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Update or add MCP server configuration
+ */
+export function updateMcpServerInConfig(
+  existingServers: Record<string, McpServerConfig>,
+  name: string,
+  config: McpServerConfig,
+): Record<string, McpServerConfig> {
+  // Deep clone to prevent mutation
+  const mcpServers = JSON.parse(JSON.stringify(existingServers));
+
+  // Update/add the specific server
+  mcpServers[name] = config;
+
+  return mcpServers;
+}
+
+/**
+ * Remove MCP server configuration
+ */
+export function removeMcpServerFromConfig(
+  existingServers: Record<string, McpServerConfig>,
+  name: string,
+): {
+  success: boolean;
+  servers?: Record<string, McpServerConfig>;
+  error?: string;
+} {
+  // Deep clone to prevent mutation
+  const mcpServers = JSON.parse(JSON.stringify(existingServers));
+
+  // Check if server exists
+  if (!mcpServers[name]) {
+    return {
+      success: false,
+      error: `Server '${name}' not found`,
+    };
+  }
+
+  // Remove the server
+  delete mcpServers[name];
+
+  return { success: true, servers: mcpServers };
 }

@@ -1,4 +1,4 @@
-import type { MCPConfig } from '../src/mcp';
+import type { McpServerConfig } from '../src/config';
 import { MCPManager, parseMcpConfig } from '../src/mcp';
 
 async function testMCPManager() {
@@ -6,7 +6,7 @@ async function testMCPManager() {
 
   // Test 1: Create MCP Manager with config
   console.log('Test 1: Creating MCP Manager...');
-  const mcpServers: Record<string, MCPConfig> = {
+  const mcpServers: Record<string, McpServerConfig> = {
     'exa-code': {
       url: 'https://mcp.exa.ai/mcp?exaApiKey=dd6f16da-15f5-46ca-8794-6cc29b8b9c44',
       type: 'http',

@@ -8,6 +8,11 @@ import type { StreamResult } from './loop';
 import type { Message, NormalizedMessage, UserMessage } from './message';
 import { MessageBus } from './messageBus';
 import {
+  validateMcpServerConfig,
+  updateMcpServerInConfig,
+  removeMcpServerFromConfig,
+} from './mcp';
+import {
   type Model,
   type Provider,
   type ProvidersMap,
@@ -442,56 +447,25 @@ class NodeHandlerRegistry {
         const context = await this.getContext(cwd);
         const configManager = new ConfigManager(cwd, context.productName, {});
 
-        // Validate server name
-        if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+        // Validate server name and config
+        const validation = validateMcpServerConfig(name, config);
+        if (!validation.valid) {
           return {
             success: false,
-            error:
-              'Invalid server name. Only alphanumeric, dash and underscore are allowed.',
-          };
-        }
-
-        // Validate config based on type
-        if ('command' in config && config.command) {
-          // stdio type validation
-          if (!config.command.trim()) {
-            return {
-              success: false,
-              error: 'Command is required for stdio type',
-            };
-          }
-        } else if ('url' in config && config.url) {
-          // HTTP/SSE type validation
-          if (!/^https?:\/\/.+/.test(config.url)) {
-            return {
-              success: false,
-              error: 'Invalid URL format. Must start with http:// or https://',
-            };
-          }
-        } else {
-          return {
-            success: false,
-            error: 'Either command or url must be provided',
+            error: validation.error,
           };
         }
 
         // Read existing mcpServers object
-        // Use getConfig to properly fallback to DEFAULT_CONFIG if needed
-        // Deep clone to prevent DEFAULT_CONFIG mutation
         const existingServers =
           configManager.getConfig(global, 'mcpServers') || {};
-        const mcpServers = JSON.parse(JSON.stringify(existingServers));
 
-        // Check for duplicate server name (only for new servers)
-        // Note: We can't reliably detect "new" vs "update" without additional flag,
-        // but we can warn if overwriting existing config
-        if (mcpServers[name]) {
-          // Server exists, this is an update (allowed)
-          // Could add logging here if needed
-        }
-
-        // Update/add the specific server
-        mcpServers[name] = config;
+        // Update the configuration
+        const mcpServers = updateMcpServerInConfig(
+          existingServers,
+          name,
+          config,
+        );
 
         // Write back the complete object
         configManager.setConfig(
@@ -529,28 +503,23 @@ class NodeHandlerRegistry {
         const configManager = new ConfigManager(cwd, context.productName, {});
 
         // Read existing mcpServers object
-        // Use getConfig to properly fallback to DEFAULT_CONFIG if needed
-        // Deep clone to prevent DEFAULT_CONFIG mutation
         const existingServers =
           configManager.getConfig(global, 'mcpServers') || {};
-        const mcpServers = JSON.parse(JSON.stringify(existingServers));
-
-        // Check if server exists
-        if (!mcpServers[name]) {
-          return {
-            success: false,
-            error: `Server '${name}' not found in ${global ? 'global' : 'project'} configuration`,
-          };
-        }
 
         // Remove the server
-        delete mcpServers[name];
+        const result = removeMcpServerFromConfig(existingServers, name);
+        if (!result.success) {
+          return {
+            success: false,
+            error: `${result.error} in ${global ? 'global' : 'project'} configuration`,
+          };
+        }
 
         // Write back the complete object
         configManager.setConfig(
           global,
           'mcpServers',
-          JSON.stringify(mcpServers),
+          JSON.stringify(result.servers),
         );
 
         // Destroy context to trigger rebuild
