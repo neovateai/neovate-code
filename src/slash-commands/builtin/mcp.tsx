@@ -307,13 +307,13 @@ const McpManagerComponent: React.FC<McpManagerProps> = ({ onExit }) => {
                   ) : (
                     <Text color="gray">
                       Server configuration:
-                      {server.config.command && (
+                      {'command' in server.config && server.config.command && (
                         <Text color="gray">
                           {' '}
                           • Command: {server.config.command}
                         </Text>
                       )}
-                      {server.config.url && (
+                      {'url' in server.config && server.config.url && (
                         <Text color="gray"> • URL: {server.config.url}</Text>
                       )}
                       {server.config.type && (
