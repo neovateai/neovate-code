@@ -79,6 +79,32 @@ class NodeHandlerRegistry {
   }
 
   /**
+   * Emit MCP status change event to notify connected clients (e.g., Desktop)
+   * This is called after MCP config changes to push updates immediately
+   */
+  private async emitMcpStatusChange(cwd: string) {
+    try {
+      // Get the latest MCP list data
+      const listHandler = this.messageBus.messageHandlers.get('mcp.list');
+      if (!listHandler) {
+        return;
+      }
+
+      const listData = await listHandler({ cwd });
+
+      // Emit event to all connected clients with proper structure
+      const eventData = {
+        cwd,
+        success: listData.success,
+        data: listData.data,
+      };
+      await this.messageBus.emitEvent('mcp.statusChanged', eventData);
+    } catch (error) {
+      // Silent failure - event emission is best-effort
+    }
+  }
+
+  /**
    * Build workspace data for a single worktree
    * Used by both project.workspaces.list and project.workspaces.get
    */
@@ -306,11 +332,21 @@ class NodeHandlerRegistry {
 
         await mcpManager.retryConnection(serverName);
 
+        // Emit event to notify Desktop of status change (success)
+        await this.emitMcpStatusChange(cwd);
+
         return {
           success: true,
           message: `Successfully initiated reconnection for ${serverName}`,
         };
       } catch (error) {
+        // Even on error, emit event to update UI with failed status
+        try {
+          await this.emitMcpStatusChange(cwd);
+        } catch (emitError) {
+          // Silent failure
+        }
+
         return {
           success: false,
           error: error instanceof Error ? error.message : String(error),
@@ -470,6 +506,13 @@ class NodeHandlerRegistry {
           this.contexts.delete(cwd);
         }
 
+        // Recreate context to get updated MCP servers and wait for initialization
+        const newContext = await this.getContext(cwd);
+        await newContext.mcpManager.initAsync();
+
+        // Emit event to notify Desktop of config change
+        await this.emitMcpStatusChange(cwd);
+
         return { success: true };
       } catch (error) {
         return {
@@ -515,6 +558,13 @@ class NodeHandlerRegistry {
           await context.destroy();
           this.contexts.delete(cwd);
         }
+
+        // Recreate context to get updated MCP servers and wait for initialization
+        const newContext = await this.getContext(cwd);
+        await newContext.mcpManager.initAsync();
+
+        // Emit event to notify Desktop of config change
+        await this.emitMcpStatusChange(cwd);
 
         return { success: true };
       } catch (error) {
