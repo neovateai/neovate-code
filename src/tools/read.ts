@@ -2,7 +2,7 @@ import fs from 'fs';
 import { countTokens } from 'gpt-tokenizer';
 import path from 'pathe';
 import { z } from 'zod';
-import { IMAGE_EXTENSIONS } from '../constants';
+import { IMAGE_EXTENSIONS, TOOL_NAMES } from '../constants';
 import { createTool, type ToolResult } from '../tool';
 import {
   MaxFileReadLengthExceededError,
@@ -86,7 +86,7 @@ const MAX_TOKENS = 25000;
 export function createReadTool(opts: { cwd: string; productName: string }) {
   const productName = opts.productName.toLowerCase();
   return createTool({
-    name: 'read',
+    name: TOOL_NAMES.READ,
     description: `
 Reads a file from the local filesystem. You can access any file directly by using this tool.
 

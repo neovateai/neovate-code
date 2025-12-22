@@ -1,5 +1,6 @@
 import path from 'pathe';
 import { z } from 'zod';
+import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
 import {
   createFileTree,
@@ -11,7 +12,7 @@ import {
 
 export function createLSTool(opts: { cwd: string }) {
   return createTool({
-    name: 'ls',
+    name: TOOL_NAMES.LS,
     description: 'Lists files and directories in a given path.',
     parameters: z.object({
       dir_path: z.string().describe('The path to the directory to list.'),

@@ -1,11 +1,12 @@
 import fs from 'fs';
 import path from 'pathe';
 import { z } from 'zod';
+import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
 
 export function createWriteTool(opts: { cwd: string }) {
   return createTool({
-    name: 'write',
+    name: TOOL_NAMES.WRITE,
     description: 'Write a file to the local filesystem',
     parameters: z.object({
       file_path: z.string(),

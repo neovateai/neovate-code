@@ -21,6 +21,11 @@ export enum TOOL_NAMES {
   KILL_BASH = 'kill_bash',
   GREP = 'grep',
   ASK_USER_QUESTION = 'AskUserQuestion',
+  READ = 'read',
+  GLOB = 'glob',
+  WRITE = 'write',
+  EDIT = 'edit',
+  LS = 'ls',
 }
 
 export const BASH_EVENTS = {

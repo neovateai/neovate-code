@@ -1,12 +1,13 @@
 import fs from 'fs';
 import path from 'pathe';
 import { z } from 'zod';
+import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
 import { applyEdits } from '../utils/applyEdit';
 
 export function createEditTool(opts: { cwd: string }) {
   return createTool({
-    name: 'edit',
+    name: TOOL_NAMES.EDIT,
     description: `
 Edit files in the local filesystem.
 Usage:
