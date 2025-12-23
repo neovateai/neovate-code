@@ -8,11 +8,6 @@ import type { StreamResult } from './loop';
 import type { Message, NormalizedMessage, UserMessage } from './message';
 import { MessageBus } from './messageBus';
 import {
-  validateMcpServerConfig,
-  updateMcpServerInConfig,
-  removeMcpServerFromConfig,
-} from './mcp';
-import {
   type Model,
   type Provider,
   type ProvidersMap,
@@ -439,109 +434,6 @@ class NodeHandlerRegistry {
           isLoading: mcpManager.isLoading(),
         },
       };
-    });
-
-    this.messageBus.registerHandler('mcp.updateConfig', async (data) => {
-      const { cwd, name, config, global = false } = data;
-      try {
-        const context = await this.getContext(cwd);
-        const configManager = new ConfigManager(cwd, context.productName, {});
-
-        // Validate server name and config
-        const validation = validateMcpServerConfig(name, config);
-        if (!validation.valid) {
-          return {
-            success: false,
-            error: validation.error,
-          };
-        }
-
-        // Read existing mcpServers object
-        const existingServers =
-          configManager.getConfig(global, 'mcpServers') || {};
-
-        // Update the configuration
-        const mcpServers = updateMcpServerInConfig(
-          existingServers,
-          name,
-          config,
-        );
-
-        // Write back the complete object
-        configManager.setConfig(
-          global,
-          'mcpServers',
-          JSON.stringify(mcpServers),
-        );
-
-        // Destroy context to trigger rebuild
-        if (this.contexts.has(cwd)) {
-          await context.destroy();
-          this.contexts.delete(cwd);
-        }
-
-        // Recreate context to get updated MCP servers and wait for initialization
-        const newContext = await this.getContext(cwd);
-        await newContext.mcpManager.initAsync();
-
-        // Emit event to notify Desktop of config change
-        await this.emitMcpStatusChange(cwd);
-
-        return { success: true };
-      } catch (error) {
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
-    });
-
-    this.messageBus.registerHandler('mcp.removeConfig', async (data) => {
-      const { cwd, name, global = false } = data;
-      try {
-        const context = await this.getContext(cwd);
-        const configManager = new ConfigManager(cwd, context.productName, {});
-
-        // Read existing mcpServers object
-        const existingServers =
-          configManager.getConfig(global, 'mcpServers') || {};
-
-        // Remove the server
-        const result = removeMcpServerFromConfig(existingServers, name);
-        if (!result.success) {
-          return {
-            success: false,
-            error: `${result.error} in ${global ? 'global' : 'project'} configuration`,
-          };
-        }
-
-        // Write back the complete object
-        configManager.setConfig(
-          global,
-          'mcpServers',
-          JSON.stringify(result.servers),
-        );
-
-        // Destroy context to trigger rebuild
-        if (this.contexts.has(cwd)) {
-          await context.destroy();
-          this.contexts.delete(cwd);
-        }
-
-        // Recreate context to get updated MCP servers and wait for initialization
-        const newContext = await this.getContext(cwd);
-        await newContext.mcpManager.initAsync();
-
-        // Emit event to notify Desktop of config change
-        await this.emitMcpStatusChange(cwd);
-
-        return { success: true };
-      } catch (error) {
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
     });
 
     //////////////////////////////////////////////
