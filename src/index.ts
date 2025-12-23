@@ -138,7 +138,7 @@ Options:
   --cwd <path>                  Specify the working directory
   --system-prompt <prompt>      Custom system prompt for code agent
   --output-format <format>      Output format, text, stream-json, json
-  --output-style <style>        Output style (name or path)
+  --output-style <style>        Output style (name, path, or JSON)
   --approval-mode <mode>        Tool approval mode, default, autoEdit, yolo
   --mcp-config <config>         MCP server configuration (JSON string with "mcpServers" object or file path)
   --tools <json>                Tools configuration (JSON object with tool names as keys and boolean values)

@@ -117,7 +117,7 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
           cwd,
           signal,
           tools: opts.tools,
-          async onProgress(message: NormalizedMessage, agentId: string) {
+          async onMessage(message: NormalizedMessage, agentId: string) {
             try {
               if (messageBus) {
                 await messageBus.emitEvent('agent.progress', {

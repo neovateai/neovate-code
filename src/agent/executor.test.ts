@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { Context } from '../context';
 import type { Tool } from '../tool';
 import { executeAgent } from './executor';
-import type { AgentDefinition } from './types';
+import { type AgentDefinition, AgentSource } from './types';
 
 describe('executeAgent', () => {
   test('should return error if agent has no available tools', async () => {
@@ -19,7 +19,7 @@ describe('executeAgent', () => {
       whenToUse: 'Test',
       systemPrompt: 'Test',
       model: 'test-model',
-      source: 'built-in',
+      source: AgentSource.BuiltIn,
       disallowedTools: ['read', 'write', 'glob', 'grep'],
     };
 

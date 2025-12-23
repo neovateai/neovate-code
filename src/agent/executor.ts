@@ -11,6 +11,14 @@ import type {
   AgentExecutionResult,
 } from './types';
 
+const MAX_TURNS = 50;
+const MODEL_INHERIT = 'inherit';
+
+enum AgentStatus {
+  Completed = 'completed',
+  Failed = 'failed',
+}
+
 export async function executeAgent(
   options: AgentExecuteOptions,
 ): Promise<AgentExecutionResult> {
@@ -23,7 +31,7 @@ export async function executeAgent(
     forkContextMessages,
     cwd,
     signal,
-    onProgress,
+    onMessage,
     resume,
   } = options;
 
@@ -69,7 +77,7 @@ export async function executeAgent(
     let modelName = model || definition.model;
 
     // If model is 'inherit', use the model from context.config
-    if (modelName === 'inherit') {
+    if (modelName === MODEL_INHERIT) {
       modelName = context.config.model;
     }
 
@@ -89,7 +97,6 @@ export async function executeAgent(
     }
 
     // Execute loop
-    // TODO: Can we directly reuse project.send?
     const loopResult = await runLoop({
       input: messages,
       model: resolvedModelResult.model,
@@ -97,7 +104,7 @@ export async function executeAgent(
       cwd,
       systemPrompt: definition.systemPrompt,
       signal,
-      maxTurns: 50,
+      maxTurns: MAX_TURNS,
       onMessage: async (message) => {
         const normalizedMessage: NormalizedMessage & { sessionId: string } = {
           ...message,
@@ -111,11 +118,11 @@ export async function executeAgent(
 
         agentLogger.addMessage({ message: normalizedMessage });
 
-        if (onProgress) {
+        if (onMessage) {
           try {
-            await onProgress(normalizedMessage, agentId);
+            await onMessage(normalizedMessage, agentId);
           } catch (error) {
-            console.error('[executeAgent] Failed to send progress:', error);
+            console.error('[executeAgent] Failed to send message:', error);
           }
         }
       },
@@ -124,7 +131,7 @@ export async function executeAgent(
     // Handle result
     if (loopResult.success) {
       return {
-        status: 'completed',
+        status: AgentStatus.Completed,
         agentId,
         content: extractFinalContent(loopResult.data),
         totalToolCalls: loopResult.metadata.toolCallsCount,
@@ -136,7 +143,7 @@ export async function executeAgent(
       };
     }
     return {
-      status: 'failed',
+      status: AgentStatus.Failed,
       agentId,
       content: `Agent execution failed: ${loopResult.error.message}`,
       totalToolCalls: 0,
@@ -145,7 +152,7 @@ export async function executeAgent(
     };
   } catch (error) {
     return {
-      status: 'failed',
+      status: AgentStatus.Failed,
       agentId,
       content: `Agent execution error: ${error instanceof Error ? error.message : String(error)}`,
       totalToolCalls: 0,
