@@ -157,7 +157,7 @@ export class Tools {
   async invoke(
     toolName: string,
     args: string,
-    toolCallId?: string,
+    toolCallId: string,
   ): Promise<ToolResult> {
     const tool = this.tools[toolName];
     if (!tool) {
@@ -325,7 +325,10 @@ export function createTool<TSchema extends z.ZodTypeAny>(config: {
   displayName?: string;
   description: string;
   parameters: TSchema;
-  execute: (params: z.output<TSchema>) => Promise<ToolResult> | ToolResult;
+  execute: (
+    params: z.output<TSchema>,
+    toolCallId?: string,
+  ) => Promise<ToolResult> | ToolResult;
   approval?: ToolApprovalInfo;
   getDescription?: ({
     params,
