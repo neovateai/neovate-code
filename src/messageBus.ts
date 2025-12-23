@@ -276,18 +276,25 @@ export class MessageBus extends EventEmitter {
     }
   }
   async emitEvent(event: string, data: any) {
-    if (!this.transport) {
-      return;
-    }
-    if (!this.transport.isConnected()) {
-      return;
-    }
-    const id = randomUUID();
-    const message = createEvent(id, event, data);
-    try {
+    // If transport is available and connected, send through transport (cross-process communication)
+    if (this.transport?.isConnected()) {
+      const id = randomUUID();
+      const message = createEvent(id, event, data);
       await this.transport.send(message);
-    } catch (error) {
-      throw error;
+      return;
+    }
+
+    // If no transport, trigger local event handlers directly (same-process communication)
+    // This allows quiet mode to work without transport setup
+    const handlers = this.eventHandlers.get(event);
+    if (handlers && handlers.size > 0) {
+      for (const handler of handlers) {
+        try {
+          handler(data);
+        } catch (error) {
+          this.emit('eventHandlerError', error, event, data);
+        }
+      }
     }
   }
   onEvent(event: string, handler: EventHandler) {

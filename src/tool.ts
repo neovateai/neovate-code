@@ -154,7 +154,11 @@ export class Tools {
     return Object.keys(this.tools).length;
   }
 
-  async invoke(toolName: string, args: string): Promise<ToolResult> {
+  async invoke(
+    toolName: string,
+    args: string,
+    toolCallId?: string,
+  ): Promise<ToolResult> {
     const tool = this.tools[toolName];
     if (!tool) {
       return {
@@ -179,7 +183,7 @@ export class Tools {
         isError: true,
       };
     }
-    return await tool.execute(argsObj);
+    return await tool.execute(argsObj, toolCallId);
   }
 
   toLanguageV2Tools(): LanguageModelV2FunctionTool[] {
@@ -258,7 +262,10 @@ export interface Tool<TSchema extends z.ZodTypeAny = z.ZodTypeAny> {
     cwd: string;
   }) => string;
   displayName?: string;
-  execute: (params: z.output<TSchema>) => Promise<ToolResult> | ToolResult;
+  execute: (
+    params: z.output<TSchema>,
+    toolCallId?: string,
+  ) => Promise<ToolResult> | ToolResult;
   approval?: ToolApprovalInfo;
   parameters: TSchema;
 }
