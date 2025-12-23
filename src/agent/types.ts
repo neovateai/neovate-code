@@ -7,14 +7,7 @@ export interface AgentDefinition {
   whenToUse: string;
   systemPrompt: string;
   model: string;
-  source:
-    | 'built-in'
-    | 'plugin'
-    | 'user'
-    | 'project-claude'
-    | 'project'
-    | 'global-claude'
-    | 'global';
+  source: AgentSource;
   tools?: string[];
   disallowedTools?: string[];
   forkContext?: boolean;

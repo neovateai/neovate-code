@@ -1,6 +1,6 @@
 import { AGENT_TYPE } from '../../constants';
 import type { Context } from '../../context';
-import type { AgentDefinition } from '../types';
+import { type AgentDefinition, AgentSource } from '../types';
 import {
   buildDisallowedTools,
   CONTEXT_NOTES,
@@ -45,7 +45,7 @@ RESTRICTIONS:
 `,
 
     model: context.config.smallModel || context.config.model,
-    source: 'built-in',
+    source: AgentSource.BuiltIn,
     disallowedTools: buildDisallowedTools([TASK_TOOL_NAME], EDIT_TOOLS),
     forkContext: false,
     color: 'blue',
