@@ -56,7 +56,7 @@ export class AgentManager {
       cwd: string;
       signal?: AbortSignal;
       forkContextMessages?: NormalizedMessage[];
-      onProgress?: (
+      onMessage?: (
         message: NormalizedMessage,
         agentId: string,
       ) => void | Promise<void>;
@@ -82,7 +82,7 @@ export class AgentManager {
         : undefined,
       cwd: context.cwd,
       signal: context.signal,
-      onProgress: context.onProgress,
+      onMessage: context.onMessage,
     };
 
     return executeAgent(executeOptions);

@@ -51,7 +51,7 @@ export interface AgentExecuteOptions {
   cwd: string;
   signal?: AbortSignal;
   resume?: string;
-  onProgress?: (
+  onMessage?: (
     message: NormalizedMessage,
     agentId: string,
   ) => void | Promise<void>;
