@@ -62,8 +62,6 @@ export class OutputFormat {
   onAgentProgress(opts: {
     message: NormalizedMessage;
     parentToolUseId: string;
-    agentId: string;
-    agentType: string;
   }) {
     if (!this.quiet) {
       return;

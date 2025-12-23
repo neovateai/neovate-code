@@ -183,8 +183,6 @@ export class Project {
         outputFormat.onAgentProgress({
           message: data.message,
           parentToolUseId: data.parentToolUseId,
-          agentId: data.agentId,
-          agentType: data.agentType,
         });
       } catch (error) {
         console.error('[Project] Failed to output agent progress:', error);
@@ -195,12 +193,12 @@ export class Project {
     const isSubAgentProgressEvent =
       this.context.messageBus && this.context.config.quiet;
     if (isSubAgentProgressEvent) {
-      this.context.messageBus!.onEvent('agent.progress', agentProgressHandler);
+      this.context.messageBus?.onEvent('agent.progress', agentProgressHandler);
     }
 
     const cleanup = () => {
       if (isSubAgentProgressEvent) {
-        this.context.messageBus!.offEvent(
+        this.context.messageBus?.offEvent(
           'agent.progress',
           agentProgressHandler,
         );
