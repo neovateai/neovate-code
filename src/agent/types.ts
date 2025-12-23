@@ -19,7 +19,6 @@ export interface AgentDefinition {
   disallowedTools?: string[];
   forkContext?: boolean;
   color?: string;
-  path?: string;
 }
 
 export interface TaskToolInput {
