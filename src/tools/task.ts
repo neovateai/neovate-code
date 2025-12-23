@@ -94,8 +94,16 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
         ),
     }),
 
-    execute: async (params) => {
+    execute: async (params, toolCallId?: string) => {
       const startTime = Date.now();
+      const parentToolUseId = toolCallId;
+
+      if (!toolCallId) {
+        return {
+          llmContent: 'Tool call ID is required',
+          isError: true,
+        };
+      }
 
       if (!agentManager) {
         return {
@@ -119,6 +127,7 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
                   agentType: params.subagent_type,
                   prompt: params.prompt,
                   message,
+                  parentToolUseId,
                   status: 'running',
                   timestamp: Date.now(),
                 });
@@ -153,6 +162,7 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
               timestamp: new Date().toISOString(),
               parentUuid: null,
             } as NormalizedMessage,
+            parentToolUseId,
             status: result.status === 'completed' ? 'completed' : 'failed',
             timestamp: Date.now(),
           });

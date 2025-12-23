@@ -6,7 +6,7 @@ import { runServer } from './commands/server/server';
 import { Context } from './context';
 import { GlobalData } from './globalData';
 import { parseMcpConfig } from './mcp';
-import { DirectTransport } from './messageBus';
+import { DirectTransport, MessageBus } from './messageBus';
 import { NodeBridge } from './nodeBridge';
 import { Paths } from './paths';
 import { type Plugin, PluginHookType } from './plugin';
@@ -436,9 +436,12 @@ export async function runNeovate(opts: {
   }
 
   if (argv.quiet) {
+    // Create MessageBus for event-driven architecture in quiet mode
+    const messageBus = new MessageBus();
     const context = await Context.create({
       cwd,
       ...contextCreateOpts,
+      messageBus,
     });
     await context.apply({
       hook: 'initialized',

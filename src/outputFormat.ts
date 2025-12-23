@@ -1,5 +1,9 @@
 import type { LoopResult } from './loop';
-import type { SDKResultMessage, SDKSystemMessage } from './message';
+import type {
+  NormalizedMessage,
+  SDKResultMessage,
+  SDKSystemMessage,
+} from './message';
 import type { ModelInfo } from './model';
 import type { Tool } from './tool';
 
@@ -49,6 +53,26 @@ export class OutputFormat {
       return;
     }
     const data = { ...opts.message };
+    if (this.format === 'stream-json') {
+      console.log(JSON.stringify(data));
+    } else if (this.format === 'json') {
+      this.dataArr.push(data);
+    }
+  }
+  onAgentProgress(opts: {
+    message: NormalizedMessage;
+    parentToolUseId: string;
+    agentId: string;
+    agentType: string;
+  }) {
+    if (!this.quiet) {
+      return;
+    }
+    const data = {
+      ...opts.message,
+      parentToolUseId: opts.parentToolUseId,
+      type: 'agent_progress',
+    };
     if (this.format === 'stream-json') {
       console.log(JSON.stringify(data));
     } else if (this.format === 'json') {

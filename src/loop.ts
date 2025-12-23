@@ -530,6 +530,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         let toolResult = await opts.tools.invoke(
           toolUse.name,
           JSON.stringify(toolUse.params),
+          toolUse.callId,
         );
         if (opts.onToolResult) {
           toolResult = await opts.onToolResult(toolUse, toolResult, approved);
