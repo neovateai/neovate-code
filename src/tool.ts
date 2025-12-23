@@ -2,7 +2,7 @@ import type { LanguageModelV2FunctionTool } from '@ai-sdk/provider';
 import path from 'pathe';
 import * as z from 'zod';
 import type { Context } from './context';
-import type { ImagePart, NormalizedMessage, TextPart } from './message';
+import type { ImagePart, TextPart } from './message';
 import { resolveModelWithContext } from './model';
 import { createAskUserQuestionTool } from './tools/askUserQuestion';
 import {
@@ -28,6 +28,7 @@ type ResolveToolsOpts = {
   todo?: boolean;
   askUserQuestion?: boolean;
   signal?: AbortSignal;
+  task?: boolean;
 };
 
 export async function resolveTools(opts: ResolveToolsOpts) {
@@ -104,9 +105,9 @@ export async function resolveTools(opts: ResolveToolsOpts) {
   })();
 
   const taskTools = (() => {
-    if (!opts.context.agentManager) return [];
     // Task tool is only available in quiet mode
-    if (!opts.context.argvConfig.quiet) return [];
+    if (!opts.task) return [];
+    if (!opts.context.agentManager) return [];
     const tool = createTaskTool({
       context: opts.context,
       tools: availableTools,

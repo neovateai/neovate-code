@@ -58,6 +58,7 @@ export class Project {
       todo: true,
       askUserQuestion: !this.context.config.quiet,
       signal: opts.signal,
+      task: this.context.config.quiet,
     });
     tools = await this.context.apply({
       hook: 'tool',
@@ -112,6 +113,7 @@ export class Project {
       todo: false,
       askUserQuestion: !this.context.config.quiet,
       signal: opts.signal,
+      task: false,
     });
     tools = await this.context.apply({
       hook: 'tool',

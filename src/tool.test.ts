@@ -179,6 +179,7 @@ describe('resolveTools with tools config', () => {
       sessionId: 'test-session',
       write: true,
       todo: true,
+      task: true,
     });
 
     const toolNames = tools.map((t) => t.name);
