@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import type { AgentManager } from '../agent';
+import type { AgentManager } from '../agent/agentManager';
 import type { Context } from '../context';
 import { createTaskTool } from './task';
 
