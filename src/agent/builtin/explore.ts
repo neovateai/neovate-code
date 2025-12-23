@@ -45,13 +45,9 @@ RESTRICTIONS:
 `,
 
     model: context.config.smallModel || context.config.model,
-
     source: 'built-in',
-
     disallowedTools: buildDisallowedTools([TASK_TOOL_NAME], EDIT_TOOLS),
-
     forkContext: false,
-
     color: 'blue',
   };
 }
