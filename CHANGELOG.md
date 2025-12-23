@@ -1,3 +1,16 @@
+## 0.22.2
+
+`2025-12-23`
+
+- feat: add glm-4.7 model support and update provider mappings by @chencheng (云谦) in [#557](https://github.com/umijs/takumi/pull/557)
+- feat: add PDF file support detection by [@阿平](https://github.com/阿平) in [#547](https://github.com/umijs/takumi/pull/547)
+- refactor: standardize tool naming with constants by [@阿平](https://github.com/阿平) in [#553](https://github.com/umijs/takumi/pull/553)
+- feat: add plugins option to SDK session configuration by [@阿平](https://github.com/阿平) in [#548](https://github.com/umijs/takumi/pull/548)
+- fix: remove svg from image extensions by [@阿平](https://github.com/阿平) in [#545](https://github.com/umijs/takumi/pull/545)
+- refactor: use default model creator for moonshot providers by [@sorrycc](https://github.com/sorrycc)
+- feat: add fork app support to node bridge by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.22.1
 
 `2025-12-20`
