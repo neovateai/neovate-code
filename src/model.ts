@@ -1,6 +1,7 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createCerebras } from '@ai-sdk/cerebras';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createHuggingFace } from '@ai-sdk/huggingface';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createXai } from '@ai-sdk/xai';
@@ -1726,6 +1727,24 @@ export const providers: ProvidersMap = {
           provider,
         ),
       )(name);
+    },
+  },
+  huggingface: {
+    id: 'huggingface',
+    env: ['HUGGINGFACE_API_KEY'],
+    name: 'Hugging Face',
+    doc: 'https://huggingface.co/docs/inference-providers/index',
+    models: {
+      'zai-org/GLM-4.7': models['glm-4.7'],
+      'XiaomiMiMo/MiMo-V2-Flash': models['mimo-v2-flash'],
+      'Qwen/Qwen3-Coder-480B-A35B-Instruct':
+        models['qwen3-coder-480b-a35b-instruct'],
+    },
+    createModel(name, provider) {
+      const apiKey = getProviderApiKey(provider);
+      return createHuggingFace({
+        apiKey,
+      }).languageModel(name) as unknown as LanguageModelV2;
     },
   },
   poe: {

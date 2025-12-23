@@ -27,6 +27,9 @@ importers:
       '@ai-sdk/google':
         specifier: ^2.0.46
         version: 2.0.46(zod@4.1.13)
+      '@ai-sdk/huggingface':
+        specifier: ^0.0.12
+        version: 0.0.12(zod@4.1.13)
       '@ai-sdk/mcp':
         specifier: ^0.0.12
         version: 0.0.12(zod@4.1.13)
@@ -337,6 +340,12 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/huggingface@0.0.12':
+    resolution: {integrity: sha512-74b6R5ZIyzPruTuXD0RiVuj3ouwZ3t+MW6iH1aBPZZkCRyhJZxCs8pmI6LjMV6Rq8fWxt4NWA0CegNJG1f9EaA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4
 
   '@ai-sdk/mcp@0.0.12':
     resolution: {integrity: sha512-hyf31U2CmgGexqOLgLfno525pjbqidJLu9pU+XcEwW/PkMcfTFuRq1iD3wbqtAmURRW0qJITiKV+in1B4I23gA==}
@@ -1746,6 +1755,9 @@ packages:
 
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
+
+  '@standard-schema/spec@1.1.0':
+    resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
   '@swc/core-darwin-arm64@1.12.1':
     resolution: {integrity: sha512-nUjWVcJ3YS2N40ZbKwYO2RJ4+o2tWYRzNOcIQp05FqW0+aoUCVMdAUUzQinPDynfgwVshDAXCKemY8X7nN5MaA==}
@@ -5641,6 +5653,13 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.19(zod@4.1.13)
       zod: 4.1.13
 
+  '@ai-sdk/huggingface@0.0.12(zod@4.1.13)':
+    dependencies:
+      '@ai-sdk/openai-compatible': 1.0.29(zod@4.1.13)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.19(zod@4.1.13)
+      zod: 4.1.13
+
   '@ai-sdk/mcp@0.0.12(zod@4.1.13)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
@@ -5669,7 +5688,7 @@ snapshots:
   '@ai-sdk/provider-utils@3.0.19(zod@4.1.13)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 4.1.13
 
@@ -7040,6 +7059,8 @@ snapshots:
       - utf-8-validate
 
   '@standard-schema/spec@1.0.0': {}
+
+  '@standard-schema/spec@1.1.0': {}
 
   '@swc/core-darwin-arm64@1.12.1':
     optional: true

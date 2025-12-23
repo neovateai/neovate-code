@@ -66,6 +66,7 @@
     "@ai-sdk/cerebras": "^1.0.33",
     "@ai-sdk/deepseek": "^1.0.32",
     "@ai-sdk/google": "^2.0.46",
+    "@ai-sdk/huggingface": "^0.0.12",
     "@ai-sdk/mcp": "^0.0.12",
     "@ai-sdk/openai": "^2.0.86",
     "@ai-sdk/openai-compatible": "^1.0.29",
