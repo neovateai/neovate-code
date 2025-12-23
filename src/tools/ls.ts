@@ -17,11 +17,20 @@ export function createLSTool(opts: { cwd: string }) {
     parameters: z.object({
       dir_path: z.string().describe('The path to the directory to list.'),
     }),
-    getDescription: ({ params }) => {
+    getDescription: ({ params, cwd }) => {
       if (!params.dir_path || typeof params.dir_path !== 'string') {
         return '.';
       }
-      return path.relative(opts.cwd, params.dir_path);
+      // Ensure cwd is a string to prevent .trim() errors in path.relative()
+      if (typeof cwd !== 'string') {
+        return params.dir_path;
+      }
+      try {
+        return path.relative(cwd, params.dir_path);
+      } catch (error) {
+        // Fallback if path.relative fails
+        return params.dir_path;
+      }
     },
     execute: async (params) => {
       const { dir_path } = params;

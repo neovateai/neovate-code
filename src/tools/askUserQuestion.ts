@@ -58,6 +58,10 @@ const AskUserQuestionInputSchema = z
   })
   .refine(
     (data) => {
+      // Defensive check: ensure questions is an array
+      if (!Array.isArray(data.questions)) {
+        return false;
+      }
       const questionTexts = data.questions.map((q) => q.question);
       return questionTexts.length === new Set(questionTexts).size;
     },
@@ -68,7 +72,14 @@ const AskUserQuestionInputSchema = z
   )
   .refine(
     (data) => {
+      // Defensive check: ensure questions is an array
+      if (!Array.isArray(data.questions)) {
+        return false;
+      }
       for (const question of data.questions) {
+        if (!question.options || !Array.isArray(question.options)) {
+          return false;
+        }
         const labels = question.options.map((o) => o.label);
         if (labels.length !== new Set(labels).size) {
           return false;

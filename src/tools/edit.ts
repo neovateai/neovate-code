@@ -35,7 +35,16 @@ Usage:
       if (!params.file_path || typeof params.file_path !== 'string') {
         return 'No file path provided';
       }
-      return path.relative(cwd, params.file_path);
+      // Ensure cwd is a string to prevent .trim() errors in path.relative()
+      if (typeof cwd !== 'string') {
+        return params.file_path;
+      }
+      try {
+        return path.relative(cwd, params.file_path);
+      } catch (error) {
+        // Fallback if path.relative fails
+        return params.file_path;
+      }
     },
     execute: async ({ file_path, old_string, new_string, replace_all }) => {
       try {

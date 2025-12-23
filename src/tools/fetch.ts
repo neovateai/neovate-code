@@ -25,7 +25,7 @@ Remembers:
       if (!params.url || typeof params.url !== 'string') {
         return 'No URL provided';
       }
-      return params.url;
+      return String(params.url);
     },
     execute: async ({ url, prompt }) => {
       try {

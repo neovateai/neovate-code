@@ -24,7 +24,7 @@ Glob
       if (!params.pattern || typeof params.pattern !== 'string') {
         return 'No pattern provided';
       }
-      return params.pattern;
+      return String(params.pattern);
     },
     execute: async ({ pattern, path }) => {
       try {
