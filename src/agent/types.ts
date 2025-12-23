@@ -74,7 +74,7 @@ export interface AgentProgressData {
 }
 
 /**
- * Event payload for agent_progress events sent through MessageBus
+ * Event payload for agent.progress events sent through MessageBus
  */
 export interface AgentProgressEvent {
   /** Session ID of the parent agent */

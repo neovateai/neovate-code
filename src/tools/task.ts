@@ -32,7 +32,6 @@ When NOT to use the Agent tool:
 - If you are searching for code within a specific file or set of 2-3 files, use the ${TOOL_NAMES.READ} tool instead of the Agent tool, to find the match more quickly
 - Other tasks that are not related to the agent descriptions above
 
-
 Usage notes:
 - Launch multiple agents concurrently whenever possible, to maximize performance; to do that, use a single message with multiple tool uses
 - When the agent is done, it will return a single message back to you. The result returned by the agent is not visible to the user. To show the user the result, you should send a text message back to the user with a concise summary of the result.
@@ -83,13 +82,10 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
       description: z
         .string()
         .describe('A short (3-5 word) description of task'),
-
       prompt: z.string().describe('The task for the agent to perform'),
-
       subagent_type: z
         .string()
         .describe('The type of specialized agent to use for this task'),
-
       resume: z
         .string()
         .optional()
@@ -116,7 +112,7 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
           async onProgress(message: NormalizedMessage, agentId: string) {
             try {
               if (messageBus) {
-                await messageBus.emitEvent('agent_progress', {
+                await messageBus.emitEvent('agent.progress', {
                   sessionId,
                   cwd,
                   agentId,
@@ -140,7 +136,7 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
 
         // Emit completion event to close the UI overlay
         if (messageBus) {
-          await messageBus.emitEvent('agent_progress', {
+          await messageBus.emitEvent('agent.progress', {
             sessionId,
             cwd,
             agentId: result.agentId,

@@ -82,7 +82,7 @@ describe('Task Tool', () => {
     expect(result.llmContent).toContain('failed');
   });
 
-  test('should emit agent_progress completed event on success', async () => {
+  test('should emit agent.progress completed event on success', async () => {
     const mockAgentManager = {
       executeTask: vi.fn().mockResolvedValue({
         status: 'completed',
@@ -118,7 +118,7 @@ describe('Task Tool', () => {
     });
 
     expect(mockMessageBus.emitEvent).toHaveBeenCalledWith(
-      'agent_progress',
+      'agent.progress',
       expect.objectContaining({
         status: 'completed',
         agentId: 'test-id',
