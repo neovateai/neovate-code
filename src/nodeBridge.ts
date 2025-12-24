@@ -1983,6 +1983,42 @@ ${diff}
       };
     });
 
+    this.messageBus.registerHandler('session.getSnapshot', async (data) => {
+      const { cwd, sessionId, messageUuid } = data;
+      const context = await this.getContext(cwd);
+      const sessionConfigManager = new SessionConfigManager({
+        logPath: context.paths.getSessionLogPath(sessionId),
+      });
+      const snapshotManager = sessionConfigManager.getSnapshotManager();
+      const snapshot = snapshotManager.getSnapshot(messageUuid);
+      return {
+        success: true,
+        data: {
+          snapshot: snapshot || null,
+        },
+      };
+    });
+
+    this.messageBus.registerHandler('session.restoreSnapshot', async (data) => {
+      const { cwd, sessionId, messageUuid } = data;
+      const context = await this.getContext(cwd);
+      const sessionConfigManager = new SessionConfigManager({
+        logPath: context.paths.getSessionLogPath(sessionId),
+      });
+      const snapshotManager = sessionConfigManager.getSnapshotManager();
+      if (!snapshotManager.hasSnapshot(messageUuid)) {
+        return {
+          success: false,
+          error: 'No snapshot found for this message',
+        };
+      }
+      await snapshotManager.restoreSnapshot(messageUuid);
+      await sessionConfigManager.saveSnapshots();
+      return {
+        success: true,
+      };
+    });
+
     //////////////////////////////////////////////
     // sessions
     this.messageBus.registerHandler('sessions.list', async (data) => {

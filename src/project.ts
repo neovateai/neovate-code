@@ -11,6 +11,9 @@ import { generatePlanSystemPrompt } from './planSystemPrompt';
 import { PluginHookType } from './plugin';
 import { Session, SessionConfigManager, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
+import { TOOL_NAMES } from './constants';
+import pathe from 'pathe';
+import { createToolSnapshot } from './utils/snapshot';
 import type {
   ApprovalCategory,
   Tool,
@@ -24,6 +27,10 @@ import { randomUUID } from './utils/randomUUID';
 export class Project {
   session: Session;
   context: Context;
+  private sessionConfigManager: SessionConfigManager | null = null;
+  private sessionConfigManagerInitialized = false;
+  private currentAssistantUuid: string | null = null;
+
   constructor(opts: { sessionId?: SessionId; context: Context }) {
     this.session = opts.sessionId
       ? Session.resume({
@@ -32,6 +39,16 @@ export class Project {
         })
       : Session.create();
     this.context = opts.context;
+  }
+
+  private getSessionConfigManager(): SessionConfigManager {
+    if (!this.sessionConfigManagerInitialized) {
+      this.sessionConfigManager = new SessionConfigManager({
+        logPath: this.context.paths.getSessionLogPath(this.session.id),
+      });
+      this.sessionConfigManagerInitialized = true;
+    }
+    return this.sessionConfigManager!;
   }
 
   async send(
@@ -186,9 +203,7 @@ export class Project {
         type: PluginHookType.SeriesLast,
       });
     }
-    const sessionConfigManager = new SessionConfigManager({
-      logPath: this.context.paths.getSessionLogPath(this.session.id),
-    });
+    const sessionConfigManager = this.getSessionConfigManager();
     const additionalDirectories =
       sessionConfigManager.config.additionalDirectories || [];
 
@@ -306,6 +321,10 @@ export class Project {
           ...message,
           sessionId: this.session.id,
         };
+        this.session.history.messages.push(normalizedMessage);
+        if (normalizedMessage.role === 'assistant') {
+          this.currentAssistantUuid = normalizedMessage.uuid;
+        }
         outputFormat.onMessage({
           message: normalizedMessage,
         });
@@ -338,6 +357,36 @@ export class Project {
       onText: async (text) => {},
       onReasoning: async (text) => {},
       onToolUse: async (toolUse) => {
+        if (
+          toolUse.name === TOOL_NAMES.WRITE ||
+          toolUse.name === TOOL_NAMES.EDIT
+        ) {
+          const filePath = toolUse.params.file_path;
+          const fullFilePath = pathe.isAbsolute(filePath)
+            ? filePath
+            : pathe.join(this.context.cwd, filePath);
+
+          const sessionConfigManager = this.getSessionConfigManager();
+
+          if (this.currentAssistantUuid) {
+            try {
+              await createToolSnapshot(
+                [fullFilePath],
+                sessionConfigManager,
+                this.currentAssistantUuid,
+              );
+              console.log(
+                `[Snapshot] Created snapshot for ${fullFilePath} (message: ${this.currentAssistantUuid})`,
+              );
+            } catch (error) {
+              console.error(
+                `[Snapshot] Failed to create snapshot for ${fullFilePath}:`,
+                error,
+              );
+            }
+          }
+        }
+
         return await this.context.apply({
           hook: 'toolUse',
           args: [
@@ -350,18 +399,18 @@ export class Project {
         });
       },
       onToolResult: async (toolUse, toolResult, approved) => {
-        return await this.context.apply({
+        const result = await this.context.apply({
           hook: 'toolResult',
           args: [
             {
-              toolUse,
-              approved,
               sessionId: this.session.id,
             },
           ],
           memo: toolResult,
           type: PluginHookType.SeriesLast,
         });
+
+        return result;
       },
       onTurn: async (turn: {
         usage: Usage;
@@ -414,9 +463,7 @@ export class Project {
           }
         }
         // 4. if category is edit check autoEdit config (including session config)
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: this.context.paths.getSessionLogPath(this.session.id),
-        });
+        const sessionConfigManager = this.getSessionConfigManager();
         if (tool.approval?.category === 'write') {
           if (
             sessionConfigManager.config.approvalMode === 'autoEdit' ||
