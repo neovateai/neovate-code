@@ -34,6 +34,8 @@ export interface BashPromptBackgroundEvent {
   currentOutput: string;
 }
 
+export type SnapshotCheckMap = Record<string, boolean>;
+
 type Theme = 'light' | 'dark';
 type AppStatus =
   | 'idle'
@@ -1021,8 +1023,8 @@ export const useAppStore = create<AppStore>()(
 
       fork: async (targetMessageUuid: string) => {
         const { bridge, cwd, sessionId, messages } = get();
+        console.log(`[Fork DEBUG] Starting fork for message ${targetMessageUuid}`);
 
-        // Find the target message
         const targetMessage = messages.find(
           (m) => (m as NormalizedMessage).uuid === targetMessageUuid,
         );
@@ -1031,13 +1033,106 @@ export const useAppStore = create<AppStore>()(
           return;
         }
 
-        // Filter messages up to and including the target
-        const messageIndex = messages.findIndex(
+        const targetIndex = messages.findIndex(
           (m) => (m as NormalizedMessage).uuid === targetMessageUuid,
         );
-        const filteredMessages = messages.slice(0, messageIndex);
 
-        // Extract content from target message
+        const assistantMessage = messages.find(
+          (m) => (m as NormalizedMessage).parentUuid === targetMessageUuid && (m as NormalizedMessage).role === 'assistant',
+        );
+
+        const snapshotTargetUuid = assistantMessage
+          ? (assistantMessage as NormalizedMessage).uuid
+          : targetMessageUuid;
+
+        console.log(`[Fork DEBUG] Target user message UUID: ${targetMessageUuid}`);
+        console.log(`[Fork DEBUG] Assistant message UUID: ${assistantMessage ? (assistantMessage as NormalizedMessage).uuid : 'not found'}`);
+        console.log(`[Fork DEBUG] Will check snapshot for UUID: ${snapshotTargetUuid}`);
+
+        const messagesAfterTarget = messages.slice(targetIndex + 1).filter(
+          (m) => (m as NormalizedMessage).role === 'assistant',
+        );
+        console.log(`[Fork DEBUG] Found ${messagesAfterTarget.length} assistant messages after target`);
+
+        for (const message of messagesAfterTarget.reverse()) {
+          const uuid = (message as NormalizedMessage).uuid;
+          console.log(`[Fork DEBUG] Checking snapshot for subsequent message ${uuid}...`);
+          const snapshotResponse = await bridge.request('session.getSnapshot', {
+            cwd,
+            sessionId,
+            messageUuid: uuid,
+          });
+
+          if (snapshotResponse.success && snapshotResponse.data?.snapshot) {
+            console.log(`[Fork DEBUG] Restoring snapshot for ${uuid} (${snapshotResponse.data.snapshot.files.length} files)`);
+            const restoreResponse = await bridge.request(
+              'session.restoreSnapshot',
+              {
+                cwd,
+                sessionId,
+                messageUuid: uuid,
+              },
+            );
+
+            if (restoreResponse.success) {
+              get().log(
+                `Fork: Restored snapshot for message ${uuid} (${snapshotResponse.data.snapshot.files.length} files)`,
+              );
+            } else {
+              get().log(
+                `Fork: Failed to restore snapshot for message ${uuid}: ${restoreResponse.error || 'Unknown error'}`,
+              );
+            }
+          } else {
+            console.log(`[Fork DEBUG] No snapshot found for ${uuid}`);
+          }
+        }
+
+        console.log(`[Fork DEBUG] Checking snapshot for target message ${snapshotTargetUuid}...`);
+        get().log(`Fork: Checking snapshot for message ${snapshotTargetUuid}...`);
+        const snapshotResponse = await bridge.request('session.getSnapshot', {
+          cwd,
+          sessionId,
+          messageUuid: snapshotTargetUuid,
+        });
+
+        console.log(`[Fork DEBUG] Snapshot response:`, snapshotResponse);
+
+        if (snapshotResponse.success && snapshotResponse.data?.snapshot) {
+          console.log(`[Fork DEBUG] Found snapshot with ${snapshotResponse.data.snapshot.files.length} files`);
+          get().log(
+            `Fork: Restoring snapshot for message ${snapshotTargetUuid} (${snapshotResponse.data.snapshot.files.length} files)`,
+          );
+          const restoreResponse = await bridge.request(
+            'session.restoreSnapshot',
+            {
+              cwd,
+              sessionId,
+              messageUuid: snapshotTargetUuid,
+            },
+          );
+
+          console.log(`[Fork DEBUG] Restore response:`, restoreResponse);
+
+          if (!restoreResponse.success) {
+            get().log(
+              `Fork: Failed to restore snapshot for message ${snapshotTargetUuid}: ${restoreResponse.error || 'Unknown error'}`,
+            );
+            return;
+          }
+          console.log(`[Fork DEBUG] Snapshot restored successfully`);
+          get().log(
+            `Fork: Snapshot restored successfully for message ${snapshotTargetUuid}`,
+          );
+        } else {
+          console.log(`[Fork DEBUG] No snapshot found for message ${snapshotTargetUuid}`);
+          get().log(
+            `Fork: No snapshot found for message ${snapshotTargetUuid}`,
+          );
+        }
+
+        const filteredMessages = messages.slice(0, targetIndex);
+
         let contentText = '';
         if (typeof targetMessage.content === 'string') {
           contentText = targetMessage.content;
@@ -1048,7 +1143,6 @@ export const useAppStore = create<AppStore>()(
           contentText = textParts.join('');
         }
 
-        // Update store state
         set({
           messages: filteredMessages,
           forkParentUuid: (targetMessage as NormalizedMessage).parentUuid,

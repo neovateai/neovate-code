@@ -5,6 +5,7 @@ import { History } from './history';
 import type { NormalizedMessage } from './message';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
+import { SnapshotManager } from './utils/snapshot';
 
 export type SessionId = string;
 
@@ -52,6 +53,7 @@ export type SessionConfig = {
   pastedTextMap?: Record<string, string>;
   pastedImageMap?: Record<string, string>;
   additionalDirectories?: string[];
+  snapshots?: string;
 };
 
 const DEFAULT_SESSION_CONFIG: SessionConfig = {
@@ -65,9 +67,35 @@ const DEFAULT_SESSION_CONFIG: SessionConfig = {
 export class SessionConfigManager {
   logPath: string;
   config: SessionConfig;
+  private snapshotManager: SnapshotManager | null = null;
   constructor(opts: { logPath: string }) {
     this.logPath = opts.logPath;
     this.config = this.load(opts.logPath);
+  }
+
+  getSnapshotManager(): SnapshotManager {
+    if (!this.snapshotManager) {
+      if (this.config.snapshots) {
+        console.log(`[Snapshot Manager] Loading from config with data`);
+        this.snapshotManager = SnapshotManager.deserialize(
+          this.config.snapshots,
+        );
+      } else {
+        console.log(`[Snapshot Manager] Creating new instance`);
+        this.snapshotManager = new SnapshotManager();
+      }
+    }
+    return this.snapshotManager;
+  }
+
+  async saveSnapshots(): Promise<void> {
+    if (this.snapshotManager) {
+      const snapshots = this.snapshotManager.getSnapshots();
+      this.config.snapshots = this.snapshotManager.serialize();
+      console.log(`[Snapshot] Saving config with ${snapshots.length} snapshots`);
+      this.write();
+      console.log(`[Snapshot] Config saved to ${this.logPath}`);
+    }
   }
 
   load(logPath: string): SessionConfig {

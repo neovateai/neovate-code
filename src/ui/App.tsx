@@ -1,4 +1,5 @@
 import { Box, Text } from 'ink';
+import type { NormalizedMessage } from '../message';
 import SelectInput from 'ink-select-input';
 import React, { useCallback } from 'react';
 import { ActivityIndicator } from './ActivityIndicator';
@@ -81,12 +82,27 @@ export function App() {
     sessionId,
     cwd,
   } = useAppStore();
-  const [forkMessages, setForkMessages] = React.useState<any[]>([]);
+  const [forkMessages, setForkMessages] = React.useState<NormalizedMessage[]>(
+    [],
+  );
   const [forkLoading, setForkLoading] = React.useState(false);
+  const [snapshotCache, setSnapshotCache] = React.useState<
+    Record<string, boolean>
+  >({});
+
+  const hasSnapshot = React.useCallback(
+    (uuid: string) => {
+      if (!bridge || !cwd || !sessionId) return false;
+      return snapshotCache[uuid] ?? false;
+    },
+    [bridge, cwd, sessionId, snapshotCache],
+  );
+
   React.useEffect(() => {
     if (!forkModalVisible) return;
     if (!bridge || !cwd || !sessionId) {
       setForkMessages([]);
+      setSnapshotCache({});
       return;
     }
     setForkLoading(true);
@@ -96,9 +112,46 @@ export function App() {
           cwd,
           sessionId,
         });
-        setForkMessages(res.data?.messages || []);
+        const messages = res.data?.messages || [];
+        setForkMessages(messages);
+
+        const userMessages = messages.filter(
+          (m) => (m as NormalizedMessage).role === 'user',
+        );
+
+        const newSnapshotCache: Record<string, boolean> = {};
+
+        for (const userMessage of userMessages) {
+          const userUuid = (userMessage as NormalizedMessage).uuid;
+          if (!userUuid) continue;
+
+          const assistantMessage = messages.find(
+            (m) =>
+              (m as NormalizedMessage).parentUuid === userUuid &&
+              (m as NormalizedMessage).role === 'assistant',
+          );
+
+          const targetUuid = assistantMessage
+            ? (assistantMessage as NormalizedMessage).uuid
+            : null;
+
+          if (targetUuid) {
+            const snapshotRes = await bridge.request('session.getSnapshot', {
+              cwd,
+              sessionId,
+              messageUuid: targetUuid,
+            });
+            newSnapshotCache[userUuid] =
+              snapshotRes.success && snapshotRes.data?.snapshot !== null;
+          } else {
+            newSnapshotCache[userUuid] = false;
+          }
+        }
+
+        setSnapshotCache(newSnapshotCache);
       } catch (_e) {
         setForkMessages([]);
+        setSnapshotCache({});
       } finally {
         setForkLoading(false);
       }
@@ -126,6 +179,8 @@ export function App() {
           onClose={() => {
             hideForkModal();
           }}
+          hasSnapshot={hasSnapshot}
+          snapshotCache={snapshotCache}
         />
       )}
       <ExitHint />
