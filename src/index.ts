@@ -184,10 +184,6 @@ async function runQuiet(argv: Argv, contextCreateOpts: any, cwd: string) {
       return { approved: true };
     });
 
-    // messageBus.onEvent('agent.progress', (data) => {
-    //   console.log('agentProgressHandler 333 ====>', data);
-    // });
-
     const prompt = argv._[0];
     assert(prompt, 'Prompt is required in quiet mode');
     let input = String(prompt) as string;
