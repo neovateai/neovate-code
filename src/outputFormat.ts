@@ -1,9 +1,5 @@
 import type { LoopResult } from './loop';
-import type {
-  NormalizedMessage,
-  SDKResultMessage,
-  SDKSystemMessage,
-} from './message';
+import type { SDKResultMessage, SDKSystemMessage } from './message';
 import type { ModelInfo } from './model';
 import type { Tool } from './tool';
 
