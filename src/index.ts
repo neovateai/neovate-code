@@ -9,13 +9,12 @@ import { parseMcpConfig } from './mcp';
 import { DirectTransport, MessageBus } from './messageBus';
 import { NodeBridge } from './nodeBridge';
 import { Paths } from './paths';
-import { type Plugin, PluginHookType } from './plugin';
-import { Project } from './project';
+import type { Plugin } from './plugin';
 import { loadSessionMessages, Session } from './session';
 import {
+  type CommandEntry,
   isSlashCommand,
   parseSlashCommand,
-  SlashCommandManager,
 } from './slashCommand';
 import { App } from './ui/App';
 import { useAppStore } from './ui/store';
@@ -161,21 +160,45 @@ Commands:
   );
 }
 
-async function runQuiet(argv: Argv, context: Context) {
+async function runQuiet(argv: Argv, contextCreateOpts: any, cwd: string) {
   try {
     const exit = () => {
       process.exit(0);
     };
     process.on('SIGINT', exit);
     process.on('SIGTERM', exit);
+
+    // Create MessageBus for event-driven architecture in quiet mode
+    const nodeBridge = new NodeBridge({
+      contextCreateOpts,
+    });
+    const [quietTransport, nodeTransport] = DirectTransport.createPair();
+    const messageBus = new MessageBus();
+    messageBus.setTransport(quietTransport);
+    nodeBridge.messageBus.setTransport(nodeTransport);
+
+    // Pass local messageBus to Context for task.ts and project.ts communication
+    contextCreateOpts.uiMessageBus = messageBus;
+
+    messageBus.registerHandler('toolApproval', async () => {
+      return { approved: true };
+    });
+
+    // messageBus.onEvent('agent.progress', (data) => {
+    //   console.log('agentProgressHandler 333 ====>', data);
+    // });
+
     const prompt = argv._[0];
     assert(prompt, 'Prompt is required in quiet mode');
     let input = String(prompt) as string;
     let model: string | undefined;
     if (isSlashCommand(input)) {
       const parsed = parseSlashCommand(input);
-      const slashCommandManager = await SlashCommandManager.create(context);
-      const commandEntry = slashCommandManager.get(parsed.command);
+      const result = await messageBus.request('slashCommand.get', {
+        cwd,
+        command: parsed.command,
+      });
+      const commandEntry = result.data?.commandEntry as CommandEntry;
       if (commandEntry) {
         const { command } = commandEntry;
         // TODO: support other slash command types
@@ -195,33 +218,33 @@ async function runQuiet(argv: Argv, context: Context) {
         }
       }
     }
-    let sessionId = argv.resume;
-    if (argv.continue) {
-      sessionId = context.paths.getLatestSessionId();
-    }
 
-    await context.apply({
-      hook: 'telemetry',
-      args: [
-        {
-          name: 'send',
-          payload: {
-            message: input,
-            sessionId,
-          },
-        },
-      ],
-      type: PluginHookType.Parallel,
+    const paths = new Paths({
+      productName: contextCreateOpts.productName,
+      cwd,
     });
+    const sessionId = (() => {
+      if (argv.resume) {
+        return argv.resume;
+      }
+      if (argv.continue) {
+        return paths.getLatestSessionId() || Session.createSessionId();
+      }
+      return Session.createSessionId();
+    })();
 
-    const project = new Project({
-      context,
+    await messageBus.request('session.initialize', {
+      cwd,
       sessionId,
     });
-    await project.send(input, {
+
+    await messageBus.request('session.send', {
+      message: input,
+      cwd,
+      sessionId,
       model,
-      onToolApprove: () => Promise.resolve(true),
     });
+
     process.exit(0);
   } catch (e: any) {
     console.error(`Error: ${e.message}`);
@@ -436,19 +459,7 @@ export async function runNeovate(opts: {
   }
 
   if (argv.quiet) {
-    // Create MessageBus for event-driven architecture in quiet mode
-    const messageBus = new MessageBus();
-    const context = await Context.create({
-      cwd,
-      ...contextCreateOpts,
-      messageBus,
-    });
-    await context.apply({
-      hook: 'initialized',
-      args: [{ cwd, quiet: true }],
-      type: PluginHookType.Series,
-    });
-    await runQuiet(argv, context);
+    await runQuiet(argv, contextCreateOpts, cwd);
   } else {
     let upgrade = opts.upgrade;
     if (process.env.NEOVATE_SELF_UPDATE === 'none') {

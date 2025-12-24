@@ -59,24 +59,6 @@ export class OutputFormat {
       this.dataArr.push(data);
     }
   }
-  onAgentProgress(opts: {
-    message: NormalizedMessage;
-    parentToolUseId: string;
-  }) {
-    if (!this.quiet) {
-      return;
-    }
-    const data = {
-      ...opts.message,
-      parentToolUseId: opts.parentToolUseId,
-      type: 'agent_progress',
-    };
-    if (this.format === 'stream-json') {
-      console.log(JSON.stringify(data));
-    } else if (this.format === 'json') {
-      this.dataArr.push(data);
-    }
-  }
   onEnd(opts: { result: LoopResult; sessionId: string }) {
     if (!this.quiet) {
       return;

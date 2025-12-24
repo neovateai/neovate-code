@@ -176,334 +176,318 @@ export class Project {
       agentId: string;
       agentType: string;
     }) => {
-      try {
-        // Filter events for current session
-        if (data.sessionId !== this.session.id) return;
-
-        outputFormat.onAgentProgress({
-          message: data.message,
+      // Filter events for current session
+      if (data.sessionId !== this.session.id) return;
+      outputFormat.onMessage({
+        message: {
+          ...data.message,
           parentToolUseId: data.parentToolUseId,
-        });
-      } catch (error) {
-        console.error('[Project] Failed to output agent progress:', error);
-      }
+        },
+      });
     };
 
     // Register event listener
     const isSubAgentProgressEvent =
-      this.context.messageBus && this.context.config.quiet;
+      this.context.uiMessageBus && this.context.config.quiet;
     if (isSubAgentProgressEvent) {
-      this.context.messageBus?.onEvent('agent.progress', agentProgressHandler);
+      this.context.uiMessageBus?.onEvent(
+        'agent.progress',
+        agentProgressHandler,
+      );
     }
 
-    const cleanup = () => {
-      if (isSubAgentProgressEvent) {
-        this.context.messageBus?.offEvent(
-          'agent.progress',
-          agentProgressHandler,
-        );
-      }
-    };
+    const jsonlLogger = new JsonlLogger({
+      filePath: this.context.paths.getSessionLogPath(this.session.id),
+    });
+    const requestLogger = new RequestLogger({
+      globalProjectDir: this.context.paths.globalProjectDir,
+    });
+    if (message !== null) {
+      message = await this.context.apply({
+        hook: 'userPrompt',
+        memo: message,
+        args: [
+          {
+            sessionId: this.session.id,
+          },
+        ],
+        type: PluginHookType.SeriesLast,
+      });
+    }
+    const sessionConfigManager = new SessionConfigManager({
+      logPath: this.context.paths.getSessionLogPath(this.session.id),
+    });
+    const additionalDirectories =
+      sessionConfigManager.config.additionalDirectories || [];
 
-    try {
-      const jsonlLogger = new JsonlLogger({
-        filePath: this.context.paths.getSessionLogPath(this.session.id),
+    const llmsContext = await LlmsContext.create({
+      context: this.context,
+      sessionId: this.session.id,
+      userPrompt: message,
+      additionalDirectories,
+    });
+    let userMessage: NormalizedMessage | null = null;
+    if (message !== null) {
+      const lastMessageUuid =
+        opts.parentUuid ||
+        this.session.history.messages[this.session.history.messages.length - 1]
+          ?.uuid;
+
+      let content: UserContent = message;
+      if (opts.attachments?.length) {
+        content = [
+          {
+            type: 'text' as const,
+            text: message,
+          },
+          ...opts.attachments,
+        ];
+      }
+
+      userMessage = {
+        parentUuid: lastMessageUuid || null,
+        uuid: randomUUID(),
+        role: 'user',
+        content,
+        type: 'message',
+        timestamp: new Date().toISOString(),
+      };
+      const userMessageWithSessionId = {
+        ...userMessage,
+        sessionId: this.session.id,
+      };
+      jsonlLogger.addMessage({
+        message: userMessageWithSessionId,
       });
-      const requestLogger = new RequestLogger({
-        globalProjectDir: this.context.paths.globalProjectDir,
+      await opts.onMessage?.({
+        message: userMessage,
       });
-      if (message !== null) {
-        message = await this.context.apply({
-          hook: 'userPrompt',
-          memo: message,
+    }
+    const historyMessages = opts.parentUuid
+      ? this.session.history.getMessagesToUuid(opts.parentUuid)
+      : this.session.history.messages;
+    const input =
+      historyMessages.length > 0
+        ? [...historyMessages, userMessage]
+        : [userMessage];
+    const filteredInput = input.filter((message) => message !== null);
+
+    // Check if conversation history contains any images
+    const hasImagesInHistory = filteredInput.some((msg) => {
+      if (msg.role === 'user' && Array.isArray(msg.content)) {
+        return msg.content.some((part: any) => part.type === 'image');
+      }
+      return false;
+    });
+
+    // Model selection priority (high to low):
+    // 1. opts.model - explicitly specified for this call
+    // 2. visionModel - if images present and visionModel is configured
+    // 3. default model - resolved from context
+    let modelToUse = opts.model;
+
+    // Auto-select visionModel when:
+    // - No explicit model for this call (opts.model is undefined)
+    // - Conversation contains images
+    // - visionModel is configured and different from the base model
+    if (!modelToUse && hasImagesInHistory) {
+      const visionModel = this.context.config.visionModel;
+      const baseModel = this.context.config.model;
+
+      // Check if visionModel was explicitly configured (not just a fallback)
+      // by comparing against what the base model would be
+      if (visionModel && visionModel !== baseModel) {
+        modelToUse = visionModel;
+      }
+    }
+
+    // Resolve the final model (only once)
+    const resolvedModel = (
+      await resolveModelWithContext(modelToUse || null, this.context)
+    ).model!;
+
+    // Output model info for initial message
+    if (message !== null) {
+      outputFormat.onInit({
+        text: message,
+        sessionId: this.session.id,
+        tools,
+        model: resolvedModel,
+        cwd: this.context.cwd,
+      });
+    }
+
+    const toolsManager = new Tools(tools);
+    const result = await runLoop({
+      input: filteredInput,
+      model: resolvedModel,
+      tools: toolsManager,
+      cwd: this.context.cwd,
+      systemPrompt: opts.systemPrompt,
+      llmsContexts: llmsContext.messages,
+      signal: opts.signal,
+      autoCompact: this.context.config.autoCompact,
+      thinking: opts.thinking,
+      temperature: this.context.config.temperature,
+      onMessage: async (message) => {
+        const normalizedMessage = {
+          ...message,
+          sessionId: this.session.id,
+        };
+        outputFormat.onMessage({
+          message: normalizedMessage,
+        });
+        jsonlLogger.addMessage({
+          message: normalizedMessage,
+        });
+        await opts.onMessage?.({
+          message: normalizedMessage,
+        });
+      },
+      onTextDelta: async (text) => {
+        await opts.onTextDelta?.(text);
+      },
+      onStreamResult: async (result) => {
+        requestLogger.logMetadata({
+          requestId: result.requestId,
+          prompt: result.prompt,
+          model: result.model,
+          tools: result.tools,
+          request: result.request,
+          response: result.response,
+          error: result.error,
+        });
+        await opts.onStreamResult?.(result);
+      },
+      onChunk: async (chunk, requestId) => {
+        requestLogger.logChunk(requestId, chunk);
+        await opts.onChunk?.(chunk, requestId);
+      },
+      onText: async (text) => {},
+      onReasoning: async (text) => {},
+      onToolUse: async (toolUse) => {
+        return await this.context.apply({
+          hook: 'toolUse',
           args: [
             {
               sessionId: this.session.id,
             },
           ],
+          memo: toolUse,
           type: PluginHookType.SeriesLast,
         });
-      }
-      const sessionConfigManager = new SessionConfigManager({
-        logPath: this.context.paths.getSessionLogPath(this.session.id),
-      });
-      const additionalDirectories =
-        sessionConfigManager.config.additionalDirectories || [];
-
-      const llmsContext = await LlmsContext.create({
-        context: this.context,
-        sessionId: this.session.id,
-        userPrompt: message,
-        additionalDirectories,
-      });
-      let userMessage: NormalizedMessage | null = null;
-      if (message !== null) {
-        const lastMessageUuid =
-          opts.parentUuid ||
-          this.session.history.messages[
-            this.session.history.messages.length - 1
-          ]?.uuid;
-
-        let content: UserContent = message;
-        if (opts.attachments?.length) {
-          content = [
+      },
+      onToolResult: async (toolUse, toolResult, approved) => {
+        return await this.context.apply({
+          hook: 'toolResult',
+          args: [
             {
-              type: 'text' as const,
-              text: message,
+              toolUse,
+              approved,
+              sessionId: this.session.id,
             },
-            ...opts.attachments,
-          ];
+          ],
+          memo: toolResult,
+          type: PluginHookType.SeriesLast,
+        });
+      },
+      onTurn: async (turn: {
+        usage: Usage;
+        startTime: Date;
+        endTime: Date;
+      }) => {
+        await this.context.apply({
+          hook: 'query',
+          args: [
+            {
+              startTime: turn.startTime,
+              endTime: turn.endTime,
+              usage: turn.usage,
+              sessionId: this.session.id,
+            },
+          ],
+          type: PluginHookType.Series,
+        });
+      },
+      onToolApprove: async (toolUse) => {
+        const tool = toolsManager.get(toolUse.name);
+        if (!tool) {
+          // Let the tool invoke handle the `tool not found` error
+          return true;
         }
 
-        userMessage = {
-          parentUuid: lastMessageUuid || null,
-          uuid: randomUUID(),
-          role: 'user',
-          content,
-          type: 'message',
-          timestamp: new Date().toISOString(),
-        };
-        const userMessageWithSessionId = {
-          ...userMessage,
-          sessionId: this.session.id,
-        };
-        jsonlLogger.addMessage({
-          message: userMessageWithSessionId,
-        });
-        await opts.onMessage?.({
-          message: userMessage,
-        });
-      }
-      const historyMessages = opts.parentUuid
-        ? this.session.history.getMessagesToUuid(opts.parentUuid)
-        : this.session.history.messages;
-      const input =
-        historyMessages.length > 0
-          ? [...historyMessages, userMessage]
-          : [userMessage];
-      const filteredInput = input.filter((message) => message !== null);
-
-      // Check if conversation history contains any images
-      const hasImagesInHistory = filteredInput.some((msg) => {
-        if (msg.role === 'user' && Array.isArray(msg.content)) {
-          return msg.content.some((part: any) => part.type === 'image');
+        // TODO: if quiet return true
+        // 1. if yolo return true
+        const approvalMode = this.context.config.approvalMode;
+        // Tools that require clarifying user input must always prompt the user, even in yolo mode
+        if (approvalMode === 'yolo' && tool.approval?.category !== 'ask') {
+          return true;
         }
-        return false;
-      });
 
-      // Model selection priority (high to low):
-      // 1. opts.model - explicitly specified for this call
-      // 2. visionModel - if images present and visionModel is configured
-      // 3. default model - resolved from context
-      let modelToUse = opts.model;
-
-      // Auto-select visionModel when:
-      // - No explicit model for this call (opts.model is undefined)
-      // - Conversation contains images
-      // - visionModel is configured and different from the base model
-      if (!modelToUse && hasImagesInHistory) {
-        const visionModel = this.context.config.visionModel;
-        const baseModel = this.context.config.model;
-
-        // Check if visionModel was explicitly configured (not just a fallback)
-        // by comparing against what the base model would be
-        if (visionModel && visionModel !== baseModel) {
-          modelToUse = visionModel;
+        // 2. if category is read return true
+        if (tool.approval?.category === 'read') {
+          return true;
         }
-      }
-
-      // Resolve the final model (only once)
-      const resolvedModel = (
-        await resolveModelWithContext(modelToUse || null, this.context)
-      ).model!;
-
-      // Output model info for initial message
-      if (message !== null) {
-        outputFormat.onInit({
-          text: message,
-          sessionId: this.session.id,
-          tools,
-          model: resolvedModel,
-          cwd: this.context.cwd,
+        // 3. run tool should approve if true return true
+        const needsApproval = tool.approval?.needsApproval;
+        if (needsApproval) {
+          const needsApprovalResult = await needsApproval({
+            toolName: toolUse.name,
+            params: toolUse.params,
+            approvalMode: this.context.config.approvalMode,
+            context: this.context,
+          });
+          if (!needsApprovalResult) {
+            return true;
+          }
+        }
+        // 4. if category is edit check autoEdit config (including session config)
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: this.context.paths.getSessionLogPath(this.session.id),
         });
-      }
-
-      const toolsManager = new Tools(tools);
-      const result = await runLoop({
-        input: filteredInput,
-        model: resolvedModel,
-        tools: toolsManager,
-        cwd: this.context.cwd,
-        systemPrompt: opts.systemPrompt,
-        llmsContexts: llmsContext.messages,
-        signal: opts.signal,
-        autoCompact: this.context.config.autoCompact,
-        thinking: opts.thinking,
-        temperature: this.context.config.temperature,
-        onMessage: async (message) => {
-          const normalizedMessage = {
-            ...message,
-            sessionId: this.session.id,
-          };
-          outputFormat.onMessage({
-            message: normalizedMessage,
-          });
-          jsonlLogger.addMessage({
-            message: normalizedMessage,
-          });
-          await opts.onMessage?.({
-            message: normalizedMessage,
-          });
-        },
-        onTextDelta: async (text) => {
-          await opts.onTextDelta?.(text);
-        },
-        onStreamResult: async (result) => {
-          requestLogger.logMetadata({
-            requestId: result.requestId,
-            prompt: result.prompt,
-            model: result.model,
-            tools: result.tools,
-            request: result.request,
-            response: result.response,
-            error: result.error,
-          });
-          await opts.onStreamResult?.(result);
-        },
-        onChunk: async (chunk, requestId) => {
-          requestLogger.logChunk(requestId, chunk);
-          await opts.onChunk?.(chunk, requestId);
-        },
-        onText: async (text) => {},
-        onReasoning: async (text) => {},
-        onToolUse: async (toolUse) => {
-          return await this.context.apply({
-            hook: 'toolUse',
-            args: [
-              {
-                sessionId: this.session.id,
-              },
-            ],
-            memo: toolUse,
-            type: PluginHookType.SeriesLast,
-          });
-        },
-        onToolResult: async (toolUse, toolResult, approved) => {
-          return await this.context.apply({
-            hook: 'toolResult',
-            args: [
-              {
-                toolUse,
-                approved,
-                sessionId: this.session.id,
-              },
-            ],
-            memo: toolResult,
-            type: PluginHookType.SeriesLast,
-          });
-        },
-        onTurn: async (turn: {
-          usage: Usage;
-          startTime: Date;
-          endTime: Date;
-        }) => {
-          await this.context.apply({
-            hook: 'query',
-            args: [
-              {
-                startTime: turn.startTime,
-                endTime: turn.endTime,
-                usage: turn.usage,
-                sessionId: this.session.id,
-              },
-            ],
-            type: PluginHookType.Series,
-          });
-        },
-        onToolApprove: async (toolUse) => {
-          const tool = toolsManager.get(toolUse.name);
-          if (!tool) {
-            // Let the tool invoke handle the `tool not found` error
-            return true;
-          }
-
-          // TODO: if quiet return true
-          // 1. if yolo return true
-          const approvalMode = this.context.config.approvalMode;
-          // Tools that require clarifying user input must always prompt the user, even in yolo mode
-          if (approvalMode === 'yolo' && tool.approval?.category !== 'ask') {
-            return true;
-          }
-
-          // 2. if category is read return true
-          if (tool.approval?.category === 'read') {
-            return true;
-          }
-          // 3. run tool should approve if true return true
-          const needsApproval = tool.approval?.needsApproval;
-          if (needsApproval) {
-            const needsApprovalResult = await needsApproval({
-              toolName: toolUse.name,
-              params: toolUse.params,
-              approvalMode: this.context.config.approvalMode,
-              context: this.context,
-            });
-            if (!needsApprovalResult) {
-              return true;
-            }
-          }
-          // 4. if category is edit check autoEdit config (including session config)
-          const sessionConfigManager = new SessionConfigManager({
-            logPath: this.context.paths.getSessionLogPath(this.session.id),
-          });
-          if (tool.approval?.category === 'write') {
-            if (
-              sessionConfigManager.config.approvalMode === 'autoEdit' ||
-              approvalMode === 'autoEdit'
-            ) {
-              return true;
-            }
-          }
-          // 5. check session config's approvalTools config
+        if (tool.approval?.category === 'write') {
           if (
-            sessionConfigManager.config.approvalTools.includes(toolUse.name)
+            sessionConfigManager.config.approvalMode === 'autoEdit' ||
+            approvalMode === 'autoEdit'
           ) {
             return true;
           }
-          // 6. request user approval
-          return (
-            (await opts.onToolApprove?.({
-              toolUse,
-              category: tool.approval?.category,
-            })) ?? false
-          );
+        }
+        // 5. check session config's approvalTools config
+        if (sessionConfigManager.config.approvalTools.includes(toolUse.name)) {
+          return true;
+        }
+        // 6. request user approval
+        return (
+          (await opts.onToolApprove?.({
+            toolUse,
+            category: tool.approval?.category,
+          })) ?? false
+        );
+      },
+    });
+    const endTime = new Date();
+    await this.context.apply({
+      hook: 'conversation',
+      args: [
+        {
+          userPrompt: message,
+          result,
+          startTime,
+          endTime,
+          sessionId: this.session.id,
         },
-      });
-      const endTime = new Date();
-      await this.context.apply({
-        hook: 'conversation',
-        args: [
-          {
-            userPrompt: message,
-            result,
-            startTime,
-            endTime,
-            sessionId: this.session.id,
-          },
-        ],
-        type: PluginHookType.Series,
-      });
-      outputFormat.onEnd({
-        result,
-        sessionId: this.session.id,
-      });
-      if (result.success && result.data.history) {
-        this.session.updateHistory(result.data.history);
-      }
-
-      return result;
-    } finally {
-      cleanup();
+      ],
+      type: PluginHookType.Series,
+    });
+    outputFormat.onEnd({
+      result,
+      sessionId: this.session.id,
+    });
+    if (result.success && result.data.history) {
+      this.session.updateHistory(result.data.history);
     }
+
+    return result;
   }
 }
