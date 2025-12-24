@@ -1,6 +1,7 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createCerebras } from '@ai-sdk/cerebras';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createHuggingFace } from '@ai-sdk/huggingface';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createXai } from '@ai-sdk/xai';
@@ -1079,6 +1080,19 @@ export const models: ModelMap = {
     open_weights: true,
     limit: { context: 131072, output: 32768 },
   },
+  'minimax-m2.1': {
+    name: 'MiniMax-M2.1',
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '',
+    release_date: '2025-12-23',
+    last_updated: '2025-12-23',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 204800, output: 131072 },
+  },
 };
 
 function getProviderBaseURL(provider: Provider) {
@@ -1680,10 +1694,29 @@ export const providers: ProvidersMap = {
     id: 'minimax',
     env: ['MINIMAX_API_KEY'],
     name: 'Minimax',
+    api: 'https://api.minimaxi.io/anthropic/v1',
+    doc: 'https://platform.minimaxi.io/docs/guides/quickstart',
+    models: {
+      'minimax-m2': models['minimax-m2'],
+      'minimax-m2.1': models['minimax-m2.1'],
+    },
+    createModel(name, provider) {
+      const baseURL = getProviderBaseURL(provider);
+      const apiKey = getProviderApiKey(provider);
+      return createAnthropic(
+        withProxyConfig({ baseURL, apiKey }, provider),
+      ).chat(name);
+    },
+  },
+  'minimax-cn': {
+    id: 'minimax-cn',
+    env: ['MINIMAX_API_KEY'],
+    name: 'Minimax CN',
     api: 'https://api.minimaxi.com/anthropic/v1',
     doc: 'https://platform.minimaxi.com/docs/guides/quickstart',
     models: {
       'minimax-m2': models['minimax-m2'],
+      'minimax-m2.1': models['minimax-m2.1'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
@@ -1726,6 +1759,24 @@ export const providers: ProvidersMap = {
           provider,
         ),
       )(name);
+    },
+  },
+  huggingface: {
+    id: 'huggingface',
+    env: ['HUGGINGFACE_API_KEY'],
+    name: 'Hugging Face',
+    doc: 'https://huggingface.co/docs/inference-providers/index',
+    models: {
+      'zai-org/GLM-4.7': models['glm-4.7'],
+      'XiaomiMiMo/MiMo-V2-Flash': models['mimo-v2-flash'],
+      'Qwen/Qwen3-Coder-480B-A35B-Instruct':
+        models['qwen3-coder-480b-a35b-instruct'],
+    },
+    createModel(name, provider) {
+      const apiKey = getProviderApiKey(provider);
+      return createHuggingFace({
+        apiKey,
+      }).languageModel(name) as unknown as LanguageModelV2;
     },
   },
   poe: {

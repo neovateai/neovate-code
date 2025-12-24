@@ -72,6 +72,57 @@ function getCommandRoot(command: string): string | undefined {
 }
 
 /**
+ * Check if command contains command substitution ($() or backticks) outside of safe contexts.
+ * Safe contexts:
+ * - Inside single quotes (everything is literal)
+ * - Escaped backticks inside double quotes
+ * @internal exported for testing
+ */
+export function hasCommandSubstitution(command: string): boolean {
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let escaped = false;
+
+  for (let i = 0; i < command.length; i++) {
+    const char = command[i];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+
+    if (char === "'" && !inDoubleQuote) {
+      inSingleQuote = !inSingleQuote;
+      continue;
+    }
+
+    if (char === '"' && !inSingleQuote) {
+      inDoubleQuote = !inDoubleQuote;
+      continue;
+    }
+
+    if (inSingleQuote) {
+      continue;
+    }
+
+    if (char === '`') {
+      return true;
+    }
+
+    if (char === '$' && command[i + 1] === '(') {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Split command by pipe segments, handling quoted strings correctly
  * Example: "echo 'test|value' | grep test" => ["echo 'test|value'", "grep test"]
  */
@@ -142,8 +193,7 @@ function isSegmentHighRisk(segment: string): boolean {
     /del\s+.*\/[qs]/i,
   ];
 
-  // Check for command substitution
-  if (segment.includes('$(') || segment.includes('`')) {
+  if (hasCommandSubstitution(segment)) {
     return true;
   }
 
@@ -204,8 +254,7 @@ function validateCommand(command: string): string | null {
     return 'Could not identify command root.';
   }
 
-  // Check for command substitution
-  if (command.includes('$(') || command.includes('`')) {
+  if (hasCommandSubstitution(command)) {
     return 'Command substitution is not allowed for security reasons.';
   }
 
