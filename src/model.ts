@@ -1080,6 +1080,19 @@ export const models: ModelMap = {
     open_weights: true,
     limit: { context: 131072, output: 32768 },
   },
+  'minimax-m2.1': {
+    name: 'MiniMax-M2.1',
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '',
+    release_date: '2025-12-23',
+    last_updated: '2025-12-23',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 204800, output: 131072 },
+  },
 };
 
 function getProviderBaseURL(provider: Provider) {
@@ -1681,10 +1694,29 @@ export const providers: ProvidersMap = {
     id: 'minimax',
     env: ['MINIMAX_API_KEY'],
     name: 'Minimax',
+    api: 'https://api.minimaxi.io/anthropic/v1',
+    doc: 'https://platform.minimaxi.io/docs/guides/quickstart',
+    models: {
+      'minimax-m2': models['minimax-m2'],
+      'minimax-m2.1': models['minimax-m2.1'],
+    },
+    createModel(name, provider) {
+      const baseURL = getProviderBaseURL(provider);
+      const apiKey = getProviderApiKey(provider);
+      return createAnthropic(
+        withProxyConfig({ baseURL, apiKey }, provider),
+      ).chat(name);
+    },
+  },
+  'minimax-cn': {
+    id: 'minimax-cn',
+    env: ['MINIMAX_API_KEY'],
+    name: 'Minimax CN',
     api: 'https://api.minimaxi.com/anthropic/v1',
     doc: 'https://platform.minimaxi.com/docs/guides/quickstart',
     models: {
       'minimax-m2': models['minimax-m2'],
+      'minimax-m2.1': models['minimax-m2.1'],
     },
     createModel(name, provider) {
       const baseURL = getProviderBaseURL(provider);
