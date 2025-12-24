@@ -29,7 +29,6 @@ type ContextOpts = {
   backgroundTaskManager: BackgroundTaskManager;
   skillManager: SkillManager;
   messageBus?: MessageBus;
-  uiMessageBus?: MessageBus;
   agentManager?: AgentManager;
   plugins: (string | Plugin)[];
 };
@@ -42,7 +41,6 @@ export type ContextCreateOpts = {
   argvConfig: Record<string, any>;
   plugins: (string | Plugin)[];
   messageBus?: MessageBus;
-  uiMessageBus?: MessageBus;
 };
 
 export class Context {
@@ -58,7 +56,6 @@ export class Context {
   backgroundTaskManager: BackgroundTaskManager;
   skillManager: SkillManager;
   messageBus?: MessageBus;
-  uiMessageBus?: MessageBus;
   agentManager?: AgentManager;
   plugins: (string | Plugin)[];
   constructor(opts: ContextOpts) {
@@ -74,7 +71,6 @@ export class Context {
     this.backgroundTaskManager = opts.backgroundTaskManager;
     this.skillManager = opts.skillManager;
     this.messageBus = opts.messageBus;
-    this.uiMessageBus = opts.uiMessageBus;
     this.agentManager = opts.agentManager;
     this.plugins = opts.plugins;
   }
@@ -164,7 +160,6 @@ export class Context {
       backgroundTaskManager,
       skillManager,
       messageBus: opts.messageBus,
-      uiMessageBus: opts.uiMessageBus,
       plugins: pluginsConfigs,
     });
 

@@ -8,6 +8,7 @@ import { GlobalData } from './globalData';
 import { parseMcpConfig } from './mcp';
 import { DirectTransport, MessageBus } from './messageBus';
 import { NodeBridge } from './nodeBridge';
+import { OutputFormat } from './outputFormat';
 import { Paths } from './paths';
 import type { Plugin } from './plugin';
 import { loadSessionMessages, Session } from './session';
@@ -177,11 +178,26 @@ async function runQuiet(argv: Argv, contextCreateOpts: any, cwd: string) {
     messageBus.setTransport(quietTransport);
     nodeBridge.messageBus.setTransport(nodeTransport);
 
-    // Pass local messageBus to Context for task.ts and project.ts communication
-    contextCreateOpts.uiMessageBus = messageBus;
-
     messageBus.registerHandler('toolApproval', async () => {
       return { approved: true };
+    });
+
+    // Listen for agent.progress events to stream sub-agent logs
+    const outputFormat = new OutputFormat({
+      format: (argv.outputFormat || 'stream-json') as
+        | 'text'
+        | 'stream-json'
+        | 'json',
+      quiet: true,
+    });
+    messageBus.onEvent('agent.progress', (data) => {
+      outputFormat.onMessage({
+        message: {
+          parentToolUseId: data.parentToolUseId,
+          ...data.message,
+          timestamp: data.timestamp,
+        },
+      });
     });
 
     const prompt = argv._[0];

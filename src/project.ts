@@ -168,34 +168,6 @@ export class Project {
       quiet: this.context.config.quiet,
     });
 
-    // Listen for agent.progress events to stream sub-agent logs
-    const agentProgressHandler = (data: {
-      sessionId: string;
-      message: NormalizedMessage;
-      parentToolUseId: string;
-      agentId: string;
-      agentType: string;
-    }) => {
-      // Filter events for current session
-      if (data.sessionId !== this.session.id) return;
-      outputFormat.onMessage({
-        message: {
-          ...data.message,
-          parentToolUseId: data.parentToolUseId,
-        },
-      });
-    };
-
-    // Register event listener
-    const isSubAgentProgressEvent =
-      this.context.uiMessageBus && this.context.config.quiet;
-    if (isSubAgentProgressEvent) {
-      this.context.uiMessageBus?.onEvent(
-        'agent.progress',
-        agentProgressHandler,
-      );
-    }
-
     const jsonlLogger = new JsonlLogger({
       filePath: this.context.paths.getSessionLogPath(this.session.id),
     });
