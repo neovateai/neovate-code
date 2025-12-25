@@ -1,6 +1,7 @@
 import { Box, Text, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import React, { useCallback } from 'react';
+import { clearTerminal } from '../utils/terminal';
 import { ActivityIndicator } from './ActivityIndicator';
 import { ApprovalModal } from './ApprovalModal';
 import { BackgroundPrompt } from './BackgroundPrompt';
@@ -89,6 +90,7 @@ export function App() {
   useInput((input, key) => {
     // Ctrl+O: Toggle transcript mode
     if (key.ctrl && input === 'o') {
+      clearTerminal();
       toggleTranscriptMode();
       return;
     }
@@ -96,6 +98,7 @@ export function App() {
     // In transcript mode, Escape or Ctrl+C to exit
     if (transcriptMode) {
       if (key.escape || (key.ctrl && input === 'c')) {
+        clearTerminal();
         toggleTranscriptMode();
       }
       return;
