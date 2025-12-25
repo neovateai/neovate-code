@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import type { ToolResultPart, ToolUsePart } from '../../message';
 import { useAppStore } from '../store';
 import {
@@ -13,13 +12,8 @@ interface AgentProgressProps {
 }
 
 export function AgentProgress({ toolUse, toolResult }: AgentProgressProps) {
-  const { agentProgressMap, setFocusedAgent } = useAppStore();
+  const { agentProgressMap } = useAppStore();
   const progressData = agentProgressMap[toolUse.id];
-
-  useEffect(() => {
-    setFocusedAgent(toolUse.id);
-    return () => setFocusedAgent(null);
-  }, [toolUse.id, setFocusedAgent]);
 
   if (progressData && progressData.status === 'running') {
     return <AgentInProgress toolUse={toolUse} progressData={progressData} />;

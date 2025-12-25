@@ -246,7 +246,6 @@ interface AppActions {
     status: 'running' | 'completed' | 'failed';
   }) => void;
   clearAgentProgress: (toolUseId: string) => void;
-  setFocusedAgent: (toolUseId: string | null) => void;
   toggleTranscriptMode: () => void;
 }
 
