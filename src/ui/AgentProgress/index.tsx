@@ -12,10 +12,6 @@ interface AgentProgressProps {
   toolResult?: ToolResultPart;
 }
 
-/**
- * SubAgent 进度展示主组件
- * 根据状态路由到不同的子组件
- */
 export function AgentProgress({ toolUse, toolResult }: AgentProgressProps) {
   const { agentProgressMap, setFocusedAgent } = useAppStore();
   const progressData = agentProgressMap[toolUse.id];

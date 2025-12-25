@@ -451,7 +451,7 @@ function ToolUse({ part }: { part: ToolUsePart }) {
 }
 
 function ToolPair({ pair }: { pair: ToolPair }) {
-  // 如果是 Task tool，使用 AgentProgress 组件
+  // If it's a Task tool, use AgentProgress component
   if (pair.toolUse.name === TOOL_NAMES.TASK) {
     return (
       <AgentProgress toolUse={pair.toolUse} toolResult={pair.toolResult} />

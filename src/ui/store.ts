@@ -160,7 +160,6 @@ interface AppState {
 
   // SubAgent progress tracking (indexed by parentToolUseId)
   agentProgressMap: Record<string, AgentProgressState>;
-  focusedAgentToolUseId: string | null;
 
   // Transcript mode for agent progress display
   transcriptMode: boolean;
@@ -307,7 +306,6 @@ export const useAppStore = create<AppStore>()(
 
       // SubAgent progress state
       agentProgressMap: {},
-      focusedAgentToolUseId: null,
       transcriptMode: false,
 
       bashBackgroundPrompt: null,
@@ -863,9 +861,8 @@ export const useAppStore = create<AppStore>()(
           retryInfo: null,
           forkParentUuid: null,
           forkModalVisible: false,
-          // 清理 SubAgent 进度数据
+          // Clear SubAgent progress data
           agentProgressMap: {},
-          focusedAgentToolUseId: null,
           transcriptMode: false,
         });
         return {
@@ -967,9 +964,8 @@ export const useAppStore = create<AppStore>()(
           pastedImageMap,
           forkParentUuid: null,
           forkModalVisible: false,
-          // 清理 SubAgent 进度数据
+          // Clear SubAgent progress data
           agentProgressMap: {},
-          focusedAgentToolUseId: null,
           transcriptMode: false,
         });
       },
@@ -1248,10 +1244,6 @@ export const useAppStore = create<AppStore>()(
         const newMap = { ...agentProgressMap };
         delete newMap[toolUseId];
         set({ agentProgressMap: newMap });
-      },
-
-      setFocusedAgent: (toolUseId) => {
-        set({ focusedAgentToolUseId: toolUseId });
       },
 
       toggleTranscriptMode: () => {

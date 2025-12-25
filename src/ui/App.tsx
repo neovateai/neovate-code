@@ -86,20 +86,19 @@ export function App() {
   const [forkMessages, setForkMessages] = React.useState<any[]>([]);
   const [forkLoading, setForkLoading] = React.useState(false);
 
-  // 全局快捷键监听
   useInput((input, key) => {
-    // Ctrl+O: 切换 transcript 模式
+    // Ctrl+O: Toggle transcript mode
     if (key.ctrl && input === 'o') {
       toggleTranscriptMode();
       return;
     }
 
-    // 在 transcript 模式下，Escape 或 Ctrl+C 退出
+    // In transcript mode, Escape or Ctrl+C to exit
     if (transcriptMode) {
       if (key.escape || (key.ctrl && input === 'c')) {
         toggleTranscriptMode();
       }
-      return; // 阻止所有其他输入
+      return;
     }
   });
 
