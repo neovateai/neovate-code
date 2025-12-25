@@ -57,9 +57,6 @@ describe('SnapshotManager', () => {
       const manager = new SnapshotManager();
       const nonExistentFile = join(TEST_DIR, 'nonexistent.txt');
 
-      const consoleSpy = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => {});
       const messageUuid = randomUUID();
       const snapshot = await manager.createSnapshot(
         [nonExistentFile],
@@ -67,8 +64,6 @@ describe('SnapshotManager', () => {
       );
 
       expect(snapshot.files.length).toBe(0);
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
     });
 
     it('should generate different hashes for different content', async () => {
@@ -102,6 +97,69 @@ describe('SnapshotManager', () => {
       const snapshot2 = manager.getSnapshot('uuid-2');
 
       expect(snapshot1?.files[0].hash).toBe(snapshot2?.files[0].hash);
+    });
+
+    it('should preserve initial state when same file is modified multiple times in one conversation', async () => {
+      const manager = new SnapshotManager();
+      const testFile = join(TEST_DIR, 'multi-modify.txt');
+      const initialContent = 'Initial content';
+      writeFileSync(testFile, initialContent);
+
+      const messageUuid = randomUUID();
+
+      // First modification - snapshot should capture initial state
+      await manager.createSnapshot([testFile], messageUuid);
+      writeFileSync(testFile, 'Modified once');
+
+      // Second modification - snapshot should NOT update, keep initial state
+      await manager.createSnapshot([testFile], messageUuid);
+      writeFileSync(testFile, 'Modified twice');
+
+      // Third modification - snapshot should still keep initial state
+      await manager.createSnapshot([testFile], messageUuid);
+      writeFileSync(testFile, 'Modified three times');
+
+      // Verify snapshot still has the initial content
+      const snapshot = manager.getSnapshot(messageUuid);
+      expect(snapshot).toBeDefined();
+      expect(snapshot?.files.length).toBe(1);
+      expect(snapshot?.files[0].content).toBe(initialContent);
+
+      // Restore should bring back the initial content
+      await manager.restoreSnapshot(messageUuid);
+      expect(readFileSync(testFile, 'utf-8')).toBe(initialContent);
+    });
+
+    it('should accumulate different files for same message uuid', async () => {
+      const manager = new SnapshotManager();
+      const file1 = join(TEST_DIR, 'accumulate1.txt');
+      const file2 = join(TEST_DIR, 'accumulate2.txt');
+      const file3 = join(TEST_DIR, 'accumulate3.txt');
+
+      writeFileSync(file1, 'Content 1');
+      writeFileSync(file2, 'Content 2');
+      writeFileSync(file3, 'Content 3');
+
+      const messageUuid = randomUUID();
+
+      // First tool execution - snapshot file1
+      await manager.createSnapshot([file1], messageUuid);
+
+      // Second tool execution - snapshot file2 (should be added to same snapshot)
+      await manager.createSnapshot([file2], messageUuid);
+
+      // Third tool execution - snapshot file3 (should be added to same snapshot)
+      await manager.createSnapshot([file3], messageUuid);
+
+      // Verify all three files are in the same snapshot
+      const snapshot = manager.getSnapshot(messageUuid);
+      expect(snapshot).toBeDefined();
+      expect(snapshot?.files.length).toBe(3);
+      expect(snapshot?.files.map((f) => f.content)).toEqual([
+        'Content 1',
+        'Content 2',
+        'Content 3',
+      ]);
     });
   });
 

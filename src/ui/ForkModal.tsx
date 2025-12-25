@@ -8,7 +8,7 @@ type MessageWithUuid = Message & NormalizedMessage;
 
 interface ForkModalProps {
   messages: MessageWithUuid[];
-  onSelect: (uuid: string) => void;
+  onSelect: (uuid: string, message: MessageWithUuid) => void;
   onClose: () => void;
   hasSnapshot?: (uuid: string) => boolean | Promise<boolean>;
   snapshotCache?: Record<string, boolean>;
@@ -66,7 +66,10 @@ export function ForkModal({
       setSelectedIndex((prev) => Math.min(userMessages.length - 1, prev + 1));
     } else if (key.return) {
       if (userMessages[selectedIndex]) {
-        onSelect(userMessages[selectedIndex].uuid!);
+        onSelect(
+          userMessages[selectedIndex].uuid!,
+          userMessages[selectedIndex],
+        );
       }
     }
   });
