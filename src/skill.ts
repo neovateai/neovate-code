@@ -73,7 +73,6 @@ export class SkillManager {
 
     const globalClaudeDir = path.join(
       path.dirname(this.paths.globalConfigDir),
-      '..',
       '.claude',
       'skills',
     );
