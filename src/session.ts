@@ -74,15 +74,30 @@ export class SessionConfigManager {
   }
 
   getSnapshotManager(): SnapshotManager {
-    if (!this.snapshotManager) {
-      if (this.config.snapshots) {
-        console.log(`[Snapshot Manager] Loading from config with data`);
-        this.snapshotManager = SnapshotManager.deserialize(
-          this.config.snapshots,
+    // Reload config from disk to ensure we have the latest snapshots
+    // This is necessary because Project.ts and nodeBridge.ts use separate SessionConfigManager instances
+    const DEBUG = process.env.NEOVATE_SNAPSHOT_DEBUG === 'true';
+    if (DEBUG) {
+      console.log(
+        '[SessionConfigManager.getSnapshotManager] Reloading config from disk',
+      );
+    }
+    this.config = this.load(this.logPath);
+
+    if (this.config.snapshots) {
+      this.snapshotManager = SnapshotManager.deserialize(this.config.snapshots);
+      if (DEBUG) {
+        console.log(
+          '[SessionConfigManager.getSnapshotManager] Deserialized snapshots:',
+          Array.from(this.snapshotManager['snapshots'].keys()),
         );
-      } else {
-        console.log(`[Snapshot Manager] Creating new instance`);
-        this.snapshotManager = new SnapshotManager();
+      }
+    } else {
+      this.snapshotManager = new SnapshotManager();
+      if (DEBUG) {
+        console.log(
+          '[SessionConfigManager.getSnapshotManager] No snapshots in config, created new manager',
+        );
       }
     }
     return this.snapshotManager;
@@ -90,11 +105,8 @@ export class SessionConfigManager {
 
   async saveSnapshots(): Promise<void> {
     if (this.snapshotManager) {
-      const snapshots = this.snapshotManager.getSnapshots();
       this.config.snapshots = this.snapshotManager.serialize();
-      console.log(`[Snapshot] Saving config with ${snapshots.length} snapshots`);
       this.write();
-      console.log(`[Snapshot] Config saved to ${this.logPath}`);
     }
   }
 

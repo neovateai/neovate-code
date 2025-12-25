@@ -178,6 +178,10 @@ export class Project {
       thinking?: ThinkingConfig;
     } = {},
   ) {
+    // Reset assistant UUID for this conversation turn
+    // It will be set to the first assistant message's UUID
+    let turnAssistantUuid: string | null = null;
+
     const startTime = new Date();
     const tools = opts.tools || [];
     const outputFormat = new OutputFormat({
@@ -323,7 +327,14 @@ export class Project {
         };
         this.session.history.messages.push(normalizedMessage);
         if (normalizedMessage.role === 'assistant') {
-          this.currentAssistantUuid = normalizedMessage.uuid;
+          // Lock to the first assistant message UUID for this turn
+          if (!turnAssistantUuid) {
+            turnAssistantUuid = normalizedMessage.uuid;
+            this.currentAssistantUuid = turnAssistantUuid;
+            console.log(
+              `[Project] Locked turnAssistantUuid to ${turnAssistantUuid} (first assistant message)`,
+            );
+          }
         }
         outputFormat.onMessage({
           message: normalizedMessage,
@@ -357,6 +368,7 @@ export class Project {
       onText: async (text) => {},
       onReasoning: async (text) => {},
       onToolUse: async (toolUse) => {
+        // Create snapshot BEFORE write/edit tool execution to capture pre-modification state
         if (
           toolUse.name === TOOL_NAMES.WRITE ||
           toolUse.name === TOOL_NAMES.EDIT
@@ -370,20 +382,28 @@ export class Project {
 
           if (this.currentAssistantUuid) {
             try {
+              const DEBUG = process.env.NEOVATE_SNAPSHOT_DEBUG === 'true';
+              if (DEBUG) {
+                console.log(
+                  `[Snapshot] Creating snapshot for ${fullFilePath} (message: ${this.currentAssistantUuid})`,
+                );
+              }
               await createToolSnapshot(
                 [fullFilePath],
                 sessionConfigManager,
                 this.currentAssistantUuid,
-              );
-              console.log(
-                `[Snapshot] Created snapshot for ${fullFilePath} (message: ${this.currentAssistantUuid})`,
               );
             } catch (error) {
               console.error(
                 `[Snapshot] Failed to create snapshot for ${fullFilePath}:`,
                 error,
               );
+              // Don't throw - continue with tool execution
             }
+          } else {
+            console.warn(
+              `[Snapshot] currentAssistantUuid is null, cannot create snapshot`,
+            );
           }
         }
 

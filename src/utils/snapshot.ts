@@ -17,27 +17,94 @@ export interface MessageSnapshot {
 
 export class SnapshotManager {
   private snapshots: Map<string, MessageSnapshot> = new Map();
+  private readonly DEBUG = process.env.NEOVATE_SNAPSHOT_DEBUG === 'true';
 
   async createSnapshot(
     filePaths: string[],
     messageUuid: string,
   ): Promise<MessageSnapshot> {
     const existingSnapshot = this.snapshots.get(messageUuid);
-    const existingFiles = existingSnapshot?.files || [];
 
-    const existingPaths = new Set(existingFiles.map((f) => f.path));
-    const newPaths = filePaths.filter((path) => !existingPaths.has(path));
+    if (existingSnapshot) {
+      // Build map of existing file paths to their indices for efficient lookup
+      const existingFileMap = new Map(
+        existingSnapshot.files.map((f, idx) => [f.path, idx]),
+      );
+      const newFiles: FileSnapshot[] = [];
+      let hasChanges = false;
 
-    const files: FileSnapshot[] = [...existingFiles];
+      for (const filePath of filePaths) {
+        try {
+          const existingIndex = existingFileMap.get(filePath);
+          if (existingIndex !== undefined) {
+            // File already exists in snapshot - keep the original (first) version
+            // Do NOT update it, as we want to preserve the initial state before any modifications
+            if (this.DEBUG) {
+              console.log(
+                `[Snapshot] File already in snapshot, keeping original: ${filePath}`,
+              );
+            }
+          } else {
+            // New file - add to snapshot
+            const content = await readFile(filePath, 'utf-8');
+            const hash = createHash('md5').update(content).digest('hex');
+            const fileSnapshot: FileSnapshot = {
+              path: filePath,
+              content,
+              hash,
+            };
+            newFiles.push(fileSnapshot);
+            hasChanges = true;
+            if (this.DEBUG) {
+              console.log(`[Snapshot] Added new file: ${filePath}`);
+            }
+          }
+        } catch (error) {
+          if (this.DEBUG) {
+            console.warn(
+              `[Snapshot] Failed to read file, skipping: ${filePath}`,
+              error,
+            );
+          }
+        }
+      }
 
-    for (const filePath of newPaths) {
+      if (!hasChanges) {
+        // No changes detected, return existing snapshot
+        return existingSnapshot;
+      }
+
+      const updatedSnapshot: MessageSnapshot = {
+        ...existingSnapshot,
+        files: [...existingSnapshot.files, ...newFiles],
+      };
+
+      this.snapshots.set(messageUuid, updatedSnapshot);
+      return updatedSnapshot;
+    }
+
+    // Create new snapshot
+    const files: FileSnapshot[] = [];
+    for (const filePath of filePaths) {
       try {
         const content = await readFile(filePath, 'utf-8');
         const hash = createHash('md5').update(content).digest('hex');
         files.push({ path: filePath, content, hash });
       } catch (error) {
+        if (this.DEBUG) {
+          console.warn(
+            `[Snapshot] Failed to read file, skipping: ${filePath}`,
+            error,
+          );
+        }
+      }
+    }
+
+    if (files.length === 0) {
+      // Only warn if we expected to snapshot files but couldn't read any
+      if (filePaths.length > 0) {
         console.warn(
-          `[Snapshot] File not found or cannot read, skipping: ${filePath}`,
+          `[Snapshot] No files could be read for message ${messageUuid}. Check if files exist and are accessible.`,
         );
       }
     }
@@ -56,31 +123,91 @@ export class SnapshotManager {
   async restoreSnapshot(messageUuid: string): Promise<void> {
     const snapshot = this.snapshots.get(messageUuid);
     if (!snapshot) {
-      console.log(`[Snapshot] No snapshot found for message ${messageUuid}`);
+      if (this.DEBUG) {
+        console.log(`[Snapshot] No snapshot found for message ${messageUuid}`);
+      }
       return;
     }
 
-    console.log(`[Snapshot] Restoring ${snapshot.files.length} files for message ${messageUuid}`);
+    let successCount = 0;
+    let failCount = 0;
+
     for (const file of snapshot.files) {
       try {
         await writeFile(file.path, file.content, 'utf-8');
-        console.log(`[Snapshot] Restored: ${file.path}`);
+        successCount++;
+        if (this.DEBUG) {
+          console.log(`[Snapshot] Restored: ${file.path}`);
+        }
       } catch (error) {
+        failCount++;
         console.error(`[Snapshot] Failed to restore ${file.path}:`, error);
       }
     }
+
+    if (snapshot.files.length > 0) {
+      console.log(
+        `[Snapshot] Restored ${successCount}/${snapshot.files.length} files for message ${messageUuid}`,
+      );
+    }
+  }
+
+  /**
+   * Restore specific files from a snapshot by file paths
+   * @param messageUuid The snapshot UUID to restore from
+   * @param filePaths Array of file paths to restore
+   * @returns Number of successfully restored files
+   */
+  async restoreSnapshotFiles(
+    messageUuid: string,
+    filePaths: string[],
+  ): Promise<number> {
+    const snapshot = this.snapshots.get(messageUuid);
+    if (!snapshot) {
+      if (this.DEBUG) {
+        console.log(`[Snapshot] No snapshot found for message ${messageUuid}`);
+      }
+      return 0;
+    }
+
+    const filePathSet = new Set(filePaths);
+    let successCount = 0;
+
+    for (const file of snapshot.files) {
+      if (filePathSet.has(file.path)) {
+        try {
+          await writeFile(file.path, file.content, 'utf-8');
+          successCount++;
+          if (this.DEBUG) {
+            console.log(
+              `[Snapshot] Restored file: ${file.path} from snapshot ${messageUuid}`,
+            );
+          }
+        } catch (error) {
+          console.error(`[Snapshot] Failed to restore ${file.path}:`, error);
+        }
+      }
+    }
+
+    return successCount;
   }
 
   hasSnapshot(messageUuid: string): boolean {
-    const has = this.snapshots.has(messageUuid);
-    console.log(`[Snapshot Manager] hasSnapshot(${messageUuid}): ${has}`);
-    return has;
+    return this.snapshots.has(messageUuid);
   }
 
   getSnapshot(messageUuid: string): MessageSnapshot | undefined {
     const snapshot = this.snapshots.get(messageUuid);
-    console.log(`[Snapshot Manager] getSnapshot(${messageUuid}): ${snapshot ? `found (${snapshot.files.length} files)` : 'not found'}`);
-    console.log(`[Snapshot Manager] All UUIDs:`, Array.from(this.snapshots.keys()));
+    if (this.DEBUG) {
+      console.log(
+        `[SnapshotManager.getSnapshot] Querying ${messageUuid}:`,
+        snapshot ? `Found (${snapshot.files.length} files)` : 'Not found',
+      );
+      console.log(
+        `[SnapshotManager.getSnapshot] All snapshot UUIDs:`,
+        Array.from(this.snapshots.keys()),
+      );
+    }
     return snapshot;
   }
 
@@ -94,11 +221,14 @@ export class SnapshotManager {
     try {
       const decompressed = zlib.gunzipSync(Buffer.from(data, 'base64'));
       const snapshots: MessageSnapshot[] = JSON.parse(decompressed.toString());
-      console.log(`[Snapshot deserialize] Loaded ${snapshots.length} snapshots from config`);
       for (const snapshot of snapshots) {
         manager.snapshots.set(snapshot.messageUuid, snapshot);
       }
-      console.log(`[Snapshot deserialize] Snapshot UUIDs:`, Array.from(manager.snapshots.keys()));
+      if (manager.DEBUG) {
+        console.log(
+          `[Snapshot deserialize] Loaded ${snapshots.length} snapshots`,
+        );
+      }
     } catch (error) {
       console.error('[Snapshot deserialize] Failed:', error);
     }
@@ -115,9 +245,27 @@ export async function createToolSnapshot(
   sessionConfigManager: SessionConfigManager,
   messageUuid: string,
 ): Promise<void> {
-  const snapshotManager = sessionConfigManager.getSnapshotManager();
+  const DEBUG = process.env.NEOVATE_SNAPSHOT_DEBUG === 'true';
 
+  if (DEBUG) {
+    console.log(
+      `[createToolSnapshot] Called with messageUuid: ${messageUuid}, files:`,
+      filePaths,
+    );
+  }
+
+  const snapshotManager = sessionConfigManager.getSnapshotManager();
   const snapshot = await snapshotManager.createSnapshot(filePaths, messageUuid);
 
+  if (DEBUG) {
+    console.log(
+      `[createToolSnapshot] Snapshot created with ${snapshot.files.length} files`,
+    );
+  }
+
   await sessionConfigManager.saveSnapshots();
+
+  if (DEBUG) {
+    console.log(`[createToolSnapshot] Snapshots saved to disk`);
+  }
 }
