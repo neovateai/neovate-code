@@ -51,6 +51,50 @@ export class Project {
     return this.sessionConfigManager!;
   }
 
+  /**
+   * Create snapshot before write/edit tool execution to capture pre-modification state
+   */
+  private async createSnapshotBeforeToolUse(toolUse: ToolUse): Promise<void> {
+    if (toolUse.name !== TOOL_NAMES.WRITE && toolUse.name !== TOOL_NAMES.EDIT) {
+      return;
+    }
+
+    if (!this.currentAssistantUuid) {
+      console.warn(
+        '[Snapshot] currentAssistantUuid is null, cannot create snapshot',
+      );
+      return;
+    }
+
+    const filePath = toolUse.params.file_path;
+    const fullFilePath = pathe.isAbsolute(filePath)
+      ? filePath
+      : pathe.join(this.context.cwd, filePath);
+
+    const sessionConfigManager = this.getSessionConfigManager();
+
+    try {
+      const DEBUG = process.env.NEOVATE_SNAPSHOT_DEBUG === 'true';
+      if (DEBUG) {
+        console.log(
+          `[Snapshot] Creating snapshot for ${fullFilePath} (message: ${this.currentAssistantUuid})`,
+        );
+      }
+
+      await createToolSnapshot(
+        [fullFilePath],
+        sessionConfigManager,
+        this.currentAssistantUuid,
+      );
+    } catch (error) {
+      console.error(
+        `[Snapshot] Failed to create snapshot for ${fullFilePath}:`,
+        error,
+      );
+      // Don't throw - continue with tool execution
+    }
+  }
+
   async send(
     message: string | null,
     opts: {
@@ -368,44 +412,7 @@ export class Project {
       onText: async (text) => {},
       onReasoning: async (text) => {},
       onToolUse: async (toolUse) => {
-        // Create snapshot BEFORE write/edit tool execution to capture pre-modification state
-        if (
-          toolUse.name === TOOL_NAMES.WRITE ||
-          toolUse.name === TOOL_NAMES.EDIT
-        ) {
-          const filePath = toolUse.params.file_path;
-          const fullFilePath = pathe.isAbsolute(filePath)
-            ? filePath
-            : pathe.join(this.context.cwd, filePath);
-
-          const sessionConfigManager = this.getSessionConfigManager();
-
-          if (this.currentAssistantUuid) {
-            try {
-              const DEBUG = process.env.NEOVATE_SNAPSHOT_DEBUG === 'true';
-              if (DEBUG) {
-                console.log(
-                  `[Snapshot] Creating snapshot for ${fullFilePath} (message: ${this.currentAssistantUuid})`,
-                );
-              }
-              await createToolSnapshot(
-                [fullFilePath],
-                sessionConfigManager,
-                this.currentAssistantUuid,
-              );
-            } catch (error) {
-              console.error(
-                `[Snapshot] Failed to create snapshot for ${fullFilePath}:`,
-                error,
-              );
-              // Don't throw - continue with tool execution
-            }
-          } else {
-            console.warn(
-              `[Snapshot] currentAssistantUuid is null, cannot create snapshot`,
-            );
-          }
-        }
+        await this.createSnapshotBeforeToolUse(toolUse);
 
         return await this.context.apply({
           hook: 'toolUse',
