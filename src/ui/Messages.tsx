@@ -1,6 +1,7 @@
 import { Box, Static, Text } from 'ink';
 import pc from 'picocolors';
 import React, { useMemo } from 'react';
+import { TOOL_NAMES } from '../constants';
 import type {
   AssistantMessage,
   NormalizedMessage,
@@ -21,6 +22,7 @@ import {
   toolResultPart2ToToolResultPart,
 } from '../message';
 import { symbols } from '../utils/symbols';
+import { AgentProgress } from './AgentProgress';
 import { SPACING, UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
 import { GradientString } from './GradientString';
@@ -449,6 +451,13 @@ function ToolUse({ part }: { part: ToolUsePart }) {
 }
 
 function ToolPair({ pair }: { pair: ToolPair }) {
+  // 如果是 Task tool，使用 AgentProgress 组件
+  if (pair.toolUse.name === TOOL_NAMES.TASK) {
+    return (
+      <AgentProgress toolUse={pair.toolUse} toolResult={pair.toolResult} />
+    );
+  }
+
   return (
     <Box flexDirection="column">
       {/* Render ToolUse */}

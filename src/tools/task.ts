@@ -172,16 +172,25 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
 
         if (result.status === 'completed') {
           return {
-            llmContent: `Sub-agent (${params.subagent_type}) completed successfully:
-
-${result.content}
-
----
-Agent ID: ${result.agentId}
-Tool Calls: ${result.totalToolCalls}
-Duration: ${duration}ms
-Tokens: ${result.usage.inputTokens} input, ${result.usage.outputTokens} output`,
+            llmContent: `Sub-agent (${params.subagent_type}) completed successfully:\n\n${result.content}\n\n---\nAgent ID: ${result.agentId}`,
             isError: false,
+            returnDisplay: {
+              type: 'agent_result',
+              agentId: result.agentId,
+              agentType: params.subagent_type,
+              description: params.description,
+              prompt: params.prompt,
+              content: result.content,
+              stats: {
+                toolCalls: result.totalToolCalls,
+                duration,
+                tokens: {
+                  input: result.usage.inputTokens,
+                  output: result.usage.outputTokens,
+                },
+              },
+              status: 'completed',
+            },
             metadata: {
               agentId: result.agentId,
               agentType: params.subagent_type,
@@ -189,14 +198,25 @@ Tokens: ${result.usage.inputTokens} input, ${result.usage.outputTokens} output`,
           };
         }
         return {
-          llmContent: `Sub-agent (${params.subagent_type}) failed:
-
-${result.content}
-
----
-Agent ID: ${result.agentId}
-Duration: ${duration}ms`,
+          llmContent: `Sub-agent (${params.subagent_type}) failed:\n\n${result.content}\n\n---\nAgent ID: ${result.agentId}`,
           isError: true,
+          returnDisplay: {
+            type: 'agent_result',
+            agentId: result.agentId,
+            agentType: params.subagent_type,
+            description: params.description,
+            prompt: params.prompt,
+            content: result.content,
+            stats: {
+              toolCalls: 0,
+              duration,
+              tokens: {
+                input: 0,
+                output: 0,
+              },
+            },
+            status: 'failed',
+          },
           metadata: {
             agentId: result.agentId,
             agentType: params.subagent_type,

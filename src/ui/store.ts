@@ -49,6 +49,19 @@ type AppStatus =
   | 'help'
   | 'exit';
 
+/**
+ * SubAgent progress state for real-time UI display
+ * Indexed by parentToolUseId (the tool use ID that triggered the agent)
+ */
+export interface AgentProgressState {
+  agentId: string;
+  agentType: string;
+  prompt: string;
+  messages: NormalizedMessage[];
+  status: 'running' | 'completed' | 'failed';
+  lastUpdate: number;
+}
+
 function isExecuting(status: AppStatus) {
   return (
     status === 'processing' ||
@@ -144,6 +157,13 @@ interface AppState {
 
   bashBackgroundPrompt: BashPromptBackgroundEvent | null;
   thinking: ThinkingConfig | undefined;
+
+  // SubAgent progress tracking (indexed by parentToolUseId)
+  agentProgressMap: Record<string, AgentProgressState>;
+  focusedAgentToolUseId: string | null;
+
+  // Transcript mode for agent progress display
+  transcriptMode: boolean;
 }
 
 type InitializeOpts = {
@@ -216,6 +236,19 @@ interface AppActions {
   setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => void;
   clearBashBackgroundPrompt: () => void;
   toggleThinking: () => void;
+
+  // SubAgent progress management
+  updateAgentProgress: (data: {
+    parentToolUseId: string;
+    agentId: string;
+    agentType: string;
+    prompt: string;
+    message: NormalizedMessage;
+    status: 'running' | 'completed' | 'failed';
+  }) => void;
+  clearAgentProgress: (toolUseId: string) => void;
+  setFocusedAgent: (toolUseId: string | null) => void;
+  toggleTranscriptMode: () => void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -271,6 +304,11 @@ export const useAppStore = create<AppStore>()(
       forkParentUuid: null,
       forkCounter: 0,
       thinking: undefined,
+
+      // SubAgent progress state
+      agentProgressMap: {},
+      focusedAgentToolUseId: null,
+      transcriptMode: false,
 
       bashBackgroundPrompt: null,
 
@@ -355,6 +393,31 @@ export const useAppStore = create<AppStore>()(
             set({ retryInfo: null });
           }
         });
+
+        // Listen for SubAgent progress events
+        bridge.onEvent('agent.progress', (data) => {
+          // Only process events for current session
+          if (data.sessionId === get().sessionId && data.cwd === get().cwd) {
+            const {
+              parentToolUseId,
+              agentId,
+              agentType,
+              prompt,
+              message,
+              status,
+            } = data;
+
+            get().updateAgentProgress({
+              parentToolUseId,
+              agentId,
+              agentType,
+              prompt,
+              message,
+              status,
+            });
+          }
+        });
+
         setImmediate(async () => {
           if (opts.initialPrompt) {
             get().send(opts.initialPrompt);
@@ -800,6 +863,10 @@ export const useAppStore = create<AppStore>()(
           retryInfo: null,
           forkParentUuid: null,
           forkModalVisible: false,
+          // 清理 SubAgent 进度数据
+          agentProgressMap: {},
+          focusedAgentToolUseId: null,
+          transcriptMode: false,
         });
         return {
           sessionId,
@@ -900,6 +967,10 @@ export const useAppStore = create<AppStore>()(
           pastedImageMap,
           forkParentUuid: null,
           forkModalVisible: false,
+          // 清理 SubAgent 进度数据
+          agentProgressMap: {},
+          focusedAgentToolUseId: null,
+          transcriptMode: false,
         });
       },
 
@@ -1147,6 +1218,44 @@ export const useAppStore = create<AppStore>()(
           next = undefined;
         }
         set({ thinking: next });
+      },
+
+      // SubAgent progress management actions
+      updateAgentProgress: (data) => {
+        const { parentToolUseId, agentId, agentType, prompt, message, status } =
+          data;
+        const { agentProgressMap } = get();
+
+        const existing = agentProgressMap[parentToolUseId];
+
+        set({
+          agentProgressMap: {
+            ...agentProgressMap,
+            [parentToolUseId]: {
+              agentId,
+              agentType,
+              prompt,
+              messages: existing ? [...existing.messages, message] : [message],
+              status,
+              lastUpdate: Date.now(),
+            },
+          },
+        });
+      },
+
+      clearAgentProgress: (toolUseId) => {
+        const { agentProgressMap } = get();
+        const newMap = { ...agentProgressMap };
+        delete newMap[toolUseId];
+        set({ agentProgressMap: newMap });
+      },
+
+      setFocusedAgent: (toolUseId) => {
+        set({ focusedAgentToolUseId: toolUseId });
+      },
+
+      toggleTranscriptMode: () => {
+        set({ transcriptMode: !get().transcriptMode });
       },
     }),
     { name: 'app-store' },

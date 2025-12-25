@@ -1,4 +1,4 @@
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import React, { useCallback } from 'react';
 import { ActivityIndicator } from './ActivityIndicator';
@@ -12,6 +12,7 @@ import { Markdown } from './Markdown';
 import { Messages } from './Messages';
 import { QueueDisplay } from './QueueDisplay';
 import { useAppStore } from './store';
+import { TranscriptModeIndicator } from './TranscriptModeIndicator';
 import { useTerminalRefresh } from './useTerminalRefresh';
 
 function SlashCommandJSX() {
@@ -72,7 +73,6 @@ export function App() {
   const { forceRerender } = useTerminalRefresh();
   const {
     forkModalVisible,
-    messages,
     fork,
     hideForkModal,
     forkParentUuid,
@@ -80,9 +80,29 @@ export function App() {
     bridge,
     sessionId,
     cwd,
+    transcriptMode,
+    toggleTranscriptMode,
   } = useAppStore();
   const [forkMessages, setForkMessages] = React.useState<any[]>([]);
   const [forkLoading, setForkLoading] = React.useState(false);
+
+  // 全局快捷键监听
+  useInput((input, key) => {
+    // Ctrl+O: 切换 transcript 模式
+    if (key.ctrl && input === 'o') {
+      toggleTranscriptMode();
+      return;
+    }
+
+    // 在 transcript 模式下，Escape 或 Ctrl+C 退出
+    if (transcriptMode) {
+      if (key.escape || (key.ctrl && input === 'c')) {
+        toggleTranscriptMode();
+      }
+      return; // 阻止所有其他输入
+    }
+  });
+
   React.useEffect(() => {
     if (!forkModalVisible) return;
     if (!bridge || !cwd || !sessionId) {
@@ -107,14 +127,14 @@ export function App() {
   return (
     <Box
       flexDirection="column"
-      key={`${forceRerender}-${forkParentUuid}-${forkCounter}`}
+      key={`${forceRerender}-${forkParentUuid}-${forkCounter}-${transcriptMode}`}
     >
       <Messages />
       <BackgroundPrompt />
       <PlanResult />
       <ActivityIndicator />
       <QueueDisplay />
-      <ChatInput />
+      {transcriptMode ? <TranscriptModeIndicator /> : <ChatInput />}
       <SlashCommandJSX />
       <ApprovalModal />
       {forkModalVisible && (
