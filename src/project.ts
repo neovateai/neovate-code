@@ -11,7 +11,6 @@ import { generatePlanSystemPrompt } from './planSystemPrompt';
 import { PluginHookType } from './plugin';
 import { Session, SessionConfigManager, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
-import { TOOL_NAMES } from './constants';
 import pathe from 'pathe';
 import { createToolSnapshot } from './utils/snapshot';
 import type {
