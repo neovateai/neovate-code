@@ -6,6 +6,7 @@ import { compactCommand } from './compact';
 import { contextCommand } from './context';
 import { exitCommand } from './exit';
 import { helpCommand } from './help';
+import { shortcutsCommand } from './shortcuts';
 import { createInitCommand } from './init';
 import { createLoginCommand } from './login';
 import { createLogoutCommand } from './logout';
@@ -32,6 +33,7 @@ export function createBuiltinCommands(opts: {
     contextCommand,
     exitCommand,
     helpCommand,
+    shortcutsCommand,
     createInitCommand(opts),
     createLoginCommand(),
     createLogoutCommand(),
