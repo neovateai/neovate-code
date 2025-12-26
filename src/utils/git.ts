@@ -85,6 +85,13 @@ export async function hasRemote(cwd: string): Promise<boolean> {
 }
 
 /**
+ * Check if origin remote is configured
+ */
+export async function hasOriginRemote(cwd: string): Promise<boolean> {
+  return gitCheck(cwd, ['remote', 'get-url', 'origin']);
+}
+
+/**
  * Check if a branch exists
  */
 export async function branchExists(

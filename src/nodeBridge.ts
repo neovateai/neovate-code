@@ -1326,14 +1326,14 @@ ${diff}
     this.messageBus.registerHandler('git.push', async (data) => {
       const { cwd } = data;
       try {
-        const { gitPush, hasRemote } = await import('./utils/git');
+        const { gitPush, hasOriginRemote } = await import('./utils/git');
 
-        // Check if remote exists
-        const remoteExists = await hasRemote(cwd);
+        // Check if origin remote exists
+        const remoteExists = await hasOriginRemote(cwd);
         if (!remoteExists) {
           return {
             success: false,
-            error: 'No remote repository configured',
+            error: 'No origin remote configured',
           };
         }
 

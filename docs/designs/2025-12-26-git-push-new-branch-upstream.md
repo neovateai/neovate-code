@@ -43,8 +43,25 @@ const gitProcess = spawn('git', ['push', '-u', 'origin', 'HEAD', '--progress'], 
 ## Why This Works
 
 - `-u` (or `--set-upstream`): Sets the upstream tracking reference
-- `origin`: Pushes to the default remote (already checked by `hasRemote` before calling `gitPush`)
+- `origin`: Pushes to the origin remote (checked by `hasOriginRemote` before calling `gitPush`)
 - `HEAD`: Refers to the current branch without needing to look up the branch name
+
+## Additional Changes
+
+### File: `src/utils/git.ts`
+
+Added `hasOriginRemote` function to specifically check for origin remote:
+```typescript
+export async function hasOriginRemote(cwd: string): Promise<boolean> {
+  return gitCheck(cwd, ['remote', 'get-url', 'origin']);
+}
+```
+
+### File: `src/nodeBridge.ts`
+
+Updated `git.push` handler to use `hasOriginRemote` instead of `hasRemote`:
+- This ensures we check specifically for `origin` remote before pushing to it
+- Provides a clearer error message: "No origin remote configured"
 
 ## Impact
 
