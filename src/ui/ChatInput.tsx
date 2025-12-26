@@ -1,6 +1,6 @@
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import os from 'os';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { SPACING, UI_COLORS } from './constants';
 import { DebugRandomNumber } from './Debug';
 import { MemoryModal } from './MemoryModal';
@@ -15,6 +15,73 @@ import { useInputHandlers } from './useInputHandlers';
 import { useTerminalSize } from './useTerminalSize';
 import { useTryTips } from './useTryTips';
 import { useWindowFocus } from './useWindowFocus';
+
+function ShortcutsDisplay() {
+  const { toggleShortcutsPanel } = useAppStore();
+  const { columns } = useTerminalSize();
+
+  useInput((input, key) => {
+    if (key.escape) {
+      toggleShortcutsPanel();
+    }
+  });
+
+  const allShortcuts = [
+    { keys: ['Escape'], description: 'Close shortcuts' },
+    { keys: ['Ctrl+C'], description: 'Exit (double press)' },
+    { keys: ['Ctrl+C'], description: 'Clear input (single press with text)' },
+    {
+      keys: ['Ctrl+D'],
+      description: 'Delete character / Exit (double press)',
+    },
+    { keys: ['Ctrl+T'], description: 'Toggle thinking mode' },
+    { keys: ['Ctrl+G'], description: 'Open external editor' },
+    { keys: ['Ctrl+R'], description: 'Reverse search history' },
+    { keys: ['Ctrl+V'], description: 'Paste image' },
+    { keys: ['Meta+Up'], description: 'Edit queued messages' },
+    { keys: ['Double Esc'], description: 'Fork conversation' },
+    { keys: ['Ctrl+A/E'], description: 'Start/End of line' },
+    { keys: ['Ctrl+B/F'], description: 'Move cursor left/right' },
+    { keys: ['Ctrl+N/P'], description: 'Next/Previous history' },
+    { keys: ['Ctrl+H'], description: 'Backspace' },
+    { keys: ['Ctrl+K'], description: 'Delete to end of line' },
+    { keys: ['Ctrl+U'], description: 'Delete to start of line' },
+    { keys: ['Ctrl+L'], description: 'Clear input' },
+    { keys: ['Ctrl+W'], description: 'Delete word before' },
+    { keys: ['Meta+B/F'], description: 'Move by word' },
+  ];
+
+  const columnCount = useMemo(() => {
+    if (columns >= 120) return 3;
+    if (columns >= 80) return 2;
+    return 1;
+  }, [columns]);
+
+  const chunks = useMemo(() => {
+    const chunkSize = Math.ceil(allShortcuts.length / columnCount);
+    const result = [];
+    for (let i = 0; i < allShortcuts.length; i += chunkSize) {
+      result.push(allShortcuts.slice(i, i + chunkSize));
+    }
+    return result;
+  }, [allShortcuts, columnCount]);
+
+  return (
+    <Box flexDirection="column" paddingY={1}>
+      <Box flexDirection="row" gap={2}>
+        {chunks.map((chunk, columnIndex) => (
+          <Box key={columnIndex} flexDirection="column" flexGrow={1}>
+            {chunk.map((s, i) => (
+              <Box key={i}>
+                <Text>{`  ${s.keys.join(' / ').padEnd(20)} ${s.description}`}</Text>
+              </Box>
+            ))}
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+}
 
 export function ChatInput() {
   const {
@@ -48,6 +115,8 @@ export function ChatInput() {
     bashBackgroundPrompt,
     bridge,
     thinking,
+    showShortcutsPanel,
+    showShortcutsHint,
   } = useAppStore();
   const { columns } = useTerminalSize();
   const { handleExternalEdit } = useExternalEditor({
@@ -68,14 +137,22 @@ export function ChatInput() {
     fileSuggestion.matchedPaths.length > 0;
   const placeholderText = useMemo(() => {
     if (queuedMessages.length > 0) {
-      // Show platform-appropriate keyboard shortcut text
       return `Press ${modifierKey} to edit queued messages`;
     }
     if (currentTip) {
       return currentTip;
     }
+    if (showShortcutsHint && !inputState.state.value) {
+      return '? for shortcuts';
+    }
     return '';
-  }, [currentTip, queuedMessages, modifierKey]);
+  }, [
+    currentTip,
+    queuedMessages,
+    modifierKey,
+    showShortcutsHint,
+    inputState.state.value,
+  ]);
 
   // Display value - slice prefix for bash/memory modes
   const displayValue = useMemo(() => {
@@ -155,6 +232,16 @@ export function ChatInput() {
   }
   if (forkModalVisible) {
     return null;
+  }
+
+  if (showShortcutsPanel) {
+    return (
+      <Box flexDirection="column" marginTop={SPACING.CHAT_INPUT_MARGIN_TOP}>
+        <ShortcutsDisplay />
+        <Text color={borderColor}>{'─'.repeat(Math.max(0, columns))}</Text>
+        <StatusLine hasSuggestions={false} />
+      </Box>
+    );
   }
 
   return (
@@ -239,6 +326,58 @@ export function ChatInput() {
         <Text color={borderColor}>{'─'.repeat(Math.max(0, columns))}</Text>
       </Box>
       <StatusLine hasSuggestions={showSuggestions} />
+      {inputState.state.value === '?' && (
+        <Box flexDirection="column">
+          <Box flexDirection="row" gap={2}>
+            {(() => {
+              const allShortcuts = [
+                { keys: 'Escape', description: 'Cancel / Close help' },
+                { keys: 'Ctrl+C', description: 'Exit (double press)' },
+                {
+                  keys: 'Ctrl+C',
+                  description: 'Clear input (single press with text)',
+                },
+                {
+                  keys: 'Ctrl+D',
+                  description: 'Delete character / Exit (double press)',
+                },
+                { keys: 'Ctrl+T', description: 'Toggle thinking mode' },
+                { keys: 'Ctrl+G', description: 'Open external editor' },
+                { keys: 'Ctrl+R', description: 'Reverse search history' },
+                { keys: 'Ctrl+V', description: 'Paste image' },
+                { keys: 'Meta+Up', description: 'Edit queued messages' },
+                { keys: 'Double Esc', description: 'Fork conversation' },
+                { keys: 'Ctrl+A/E', description: 'Start/End of line' },
+                { keys: 'Ctrl+B/F', description: 'Move cursor left/right' },
+                { keys: 'Ctrl+N/P', description: 'Next/Previous history' },
+                { keys: 'Ctrl+H', description: 'Backspace' },
+                { keys: 'Ctrl+K', description: 'Delete to end of line' },
+                { keys: 'Ctrl+U', description: 'Delete to start of line' },
+                { keys: 'Ctrl+L', description: 'Clear input' },
+                { keys: 'Ctrl+W', description: 'Delete word before' },
+                { keys: 'Meta+B/F', description: 'Move by word' },
+              ];
+
+              const columnCount = columns >= 120 ? 3 : columns >= 80 ? 2 : 1;
+              const chunkSize = Math.ceil(allShortcuts.length / columnCount);
+              const chunks = [];
+              for (let i = 0; i < allShortcuts.length; i += chunkSize) {
+                chunks.push(allShortcuts.slice(i, i + chunkSize));
+              }
+
+              return chunks.map((chunk, columnIndex) => (
+                <Box key={columnIndex} flexDirection="column" flexGrow={1}>
+                  {chunk.map((s, i) => (
+                    <Box key={i}>
+                      <Text>{`  ${s.keys.padEnd(20)} ${s.description}`}</Text>
+                    </Box>
+                  ))}
+                </Box>
+              ));
+            })()}
+          </Box>
+        </Box>
+      )}
       {slashCommands.suggestions.length > 0 && (
         <Suggestion
           suggestions={slashCommands.suggestions}

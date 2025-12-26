@@ -29,6 +29,8 @@ export function useInputHandlers() {
     toggleMode,
     clearQueue,
     setBashMode,
+    toggleShortcutsPanel,
+    setShortcutsHint,
   } = useAppStore();
 
   const inputState = useInputState();
@@ -247,8 +249,17 @@ export function useInputHandlers() {
 
       setHistoryIndex(null);
       inputState.setValue(val);
+
+      // Show/hide shortcuts hint based on input
+      setShortcutsHint(val === '');
     },
-    [inputState, setHistoryIndex, reverseSearchActive, reverseSearch],
+    [
+      inputState,
+      setHistoryIndex,
+      reverseSearchActive,
+      reverseSearch,
+      setShortcutsHint,
+    ],
   );
 
   const handleQueuedMessagesUp = useCallback(() => {
