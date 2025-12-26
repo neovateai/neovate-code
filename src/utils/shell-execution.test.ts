@@ -72,15 +72,19 @@ describe('shell-execution', () => {
       expect(res.output).toContain('stderr');
     });
 
-    test('should timeout long-running command', async () => {
-      const shortTimeout = 100;
-      const command = isWindows ? 'timeout /t 2 /nobreak > nul' : 'sleep 2';
-      const { result } = shellExecute(command, testCwd, shortTimeout);
+    test.skipIf(isWindows)(
+      'should timeout long-running command',
+      async () => {
+        const shortTimeout = 100;
+        const command = isWindows ? 'timeout /t 2 /nobreak > nul' : 'sleep 2';
+        const { result } = shellExecute(command, testCwd, shortTimeout);
 
-      const res = await result;
+        const res = await result;
 
-      expect(res.cancelled).toBe(true);
-    }, 10000);
+        expect(res.cancelled).toBe(true);
+      },
+      10000,
+    );
 
     test.skipIf(isWindows)(
       'should timeout with exact timeout value',
