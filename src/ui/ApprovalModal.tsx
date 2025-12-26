@@ -1,10 +1,12 @@
 import { existsSync, readFileSync } from 'fs';
 import { Box, Text } from 'ink';
 import path from 'pathe';
-import React, { useCallback, useMemo } from 'react';
+import type React from 'react';
+import { useCallback, useMemo } from 'react';
 import { TOOL_NAMES } from '../constants';
 import type { ToolUse as ToolUseType } from '../tool';
 import type { Question } from '../tools/askUserQuestion';
+import { safeStringify } from '../utils/safeStringify';
 import { AskQuestionModal } from './AskQuestionModal';
 import { UI_COLORS } from './constants';
 import { DashedDivider } from './DashedDivider';
@@ -114,11 +116,10 @@ function ToolPreview({ toolUse, cwd }: ToolPreviewProps) {
     );
   }
 
-  // 其他工具显示参数
   return (
     <Box flexDirection="column" marginBottom={1}>
       <Box marginLeft={2}>
-        <Text dimColor>{JSON.stringify(params, null, 2)}</Text>
+        <Text dimColor>{formatParamsDescription(params)}</Text>
       </Box>
     </Box>
   );
@@ -206,20 +207,19 @@ function getQuestionText(toolUse: ToolUseType, cwd: string): string {
 }
 
 function ApprovalModalContent() {
-  const { approvalModal, cwd } = useAppStore();
+  const { approvalModal, cwd, productName } = useAppStore();
 
   const selectOptions = useMemo(() => {
-    const { name, params } = approvalModal!.toolUse;
+    const { name } = approvalModal!.toolUse;
     const category = approvalModal!.category;
 
-    // 选项 1：Yes
     const option1: SelectOption = {
       type: 'text',
       value: 'approve_once',
       label: 'Yes',
     };
 
-    // 选项 2：根据 category 动态生成
+    // Option 2: Dynamic based on category
     const option2: SelectOption =
       category === 'write'
         ? {
@@ -233,24 +233,24 @@ function ApprovalModalContent() {
             label: `Yes, and don't ask again for ${name} commands in ${cwd}`,
           };
 
-    // 选项 3：拒绝选项（bash/edit/write 支持输入）
+    // Option 3: Deny option (bash/edit/write supports input)
     const supportsDenyInput = ['bash', 'edit', 'write'].includes(name);
     const option3: SelectOption = supportsDenyInput
       ? {
           type: 'input',
           value: 'deny',
-          label: 'Type here to tell Claude what to do differently',
-          placeholder: 'Type here to tell Claude what to do differently',
+          label: `Type here to tell ${productName} what to do differently`,
+          placeholder: `Type here to tell ${productName} what to do differently`,
           initialValue: '',
         }
       : {
           type: 'text',
           value: 'deny',
-          label: 'No, and tell Claude what to do differently (esc)',
+          label: `No, and tell ${productName} what to do differently (esc)`,
         };
 
     return [option1, option2, option3];
-  }, [approvalModal, cwd]);
+  }, [approvalModal, cwd, productName]);
 
   const questionText = useMemo(
     () => getQuestionText(approvalModal!.toolUse, cwd),
@@ -367,4 +367,20 @@ function getDiffParams(toolUse: ToolUseType, cwd: string) {
 
 function getRelativePath(filePath: string, cwd: string): string {
   return path.isAbsolute(filePath) ? path.relative(cwd, filePath) : filePath;
+}
+
+function formatParamsDescription(params: Record<string, any>): string {
+  if (!params || typeof params !== 'object') {
+    return '';
+  }
+  const entries = Object.entries(params);
+  if (entries.length === 0) {
+    return '';
+  }
+  return entries
+    .filter(([key, value]) => value !== null && value !== undefined)
+    .map(([key, value]) => {
+      return `${key}: ${safeStringify(value)}`;
+    })
+    .join(', ');
 }
