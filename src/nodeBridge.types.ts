@@ -823,6 +823,7 @@ type ToolApprovalInput = {
 type ToolApprovalOutput = {
   approved: boolean;
   params?: Record<string, unknown>;
+  denyReason?: string;
 };
 
 // ============================================================================
