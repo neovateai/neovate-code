@@ -1,4 +1,6 @@
+import type { AnthropicProvider } from '@ai-sdk/anthropic';
 import type { OpenAIProvider } from '@ai-sdk/openai';
+import type { OpenAICompatibleProvider } from '@ai-sdk/openai-compatible';
 import type { LanguageModelV2 } from '@openrouter/ai-sdk-provider';
 import defu from 'defu';
 import type { Config } from './config';
@@ -9,7 +11,6 @@ import type { OutputStyle } from './outputStyle';
 import type { SlashCommand } from './slash-commands/types';
 import type { Tool, ToolResult, ToolUse } from './tool';
 import type { Usage } from './usage';
-import type { OpenAICompatibleProvider } from '@ai-sdk/openai-compatible';
 
 export enum PluginHookType {
   First = 'first',
@@ -154,6 +155,7 @@ export type Plugin = {
       ) => LanguageModelV2;
       createOpenAI: (options: any) => OpenAIProvider;
       createOpenAICompatible: (options: any) => OpenAICompatibleProvider;
+      createAnthropic: (options: any) => AnthropicProvider;
     },
   ) => Promise<ProvidersMap> | ProvidersMap;
   modelAlias?: (
@@ -248,26 +250,4 @@ export type Plugin = {
       payload: Record<string, any>;
     },
   ) => Promise<void> | void;
-
-  // server
-  _serverAppData?: (
-    this: PluginContext,
-    opts: { context: any; cwd: string },
-  ) => Promise<any> | any;
-  _serverRoutes?: (
-    this: PluginContext,
-    opts: { app: any; prefix: string; opts: any },
-  ) => Promise<any> | any;
-  _serverRouteCompletions?: (
-    this: PluginContext,
-    opts: {
-      message: {
-        role: 'user';
-        content: string;
-        attachedContexts: any[];
-        contextContent: string;
-      };
-      attachedContexts: any[];
-    },
-  ) => Promise<any> | any;
 };

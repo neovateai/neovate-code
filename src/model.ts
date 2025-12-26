@@ -1163,7 +1163,7 @@ export const createModelCreatorCompatible = (opts?: {
   };
 };
 
-export const defaultModelCreator = createModelCreatorCompatible();
+const defaultModelCreator = createModelCreatorCompatible();
 
 const openaiModelCreator = (
   name: string,
@@ -1980,6 +1980,7 @@ export async function resolveModelWithContext(
         defaultModelCreator,
         createOpenAI,
         createOpenAICompatible,
+        createAnthropic,
       },
     ],
     memo: providers,
