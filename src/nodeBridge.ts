@@ -1654,9 +1654,15 @@ ${diff}
             category,
           });
 
-          return result.params
-            ? { approved: result.approved, params: result.params }
-            : result.approved;
+          if (result.params || result.denyReason) {
+            return {
+              approved: result.approved,
+              params: result.params,
+              denyReason: result.denyReason,
+            };
+          }
+
+          return result.approved;
         },
         onStreamResult: async (result: StreamResult) => {
           await this.messageBus.emitEvent('streamResult', {

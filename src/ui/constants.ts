@@ -29,7 +29,7 @@ export const UI_COLORS = {
   MODE_INDICATOR_TEXT: 'magentaBright',
   MODE_INDICATOR_DESCRIPTION: 'gray',
   // Ask/Select Component Colors
-  ASK_PRIMARY: 'blue',
+  ASK_PRIMARY: 'rgb(177,185,249)',
   ASK_SUCCESS: 'green',
   ASK_SECONDARY: 'gray',
   ASK_WARNING: 'yellow',

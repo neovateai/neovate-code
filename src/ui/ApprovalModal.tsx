@@ -7,6 +7,7 @@ import type { ToolUse as ToolUseType } from '../tool';
 import type { Question } from '../tools/askUserQuestion';
 import { AskQuestionModal } from './AskQuestionModal';
 import { UI_COLORS } from './constants';
+import { DashedDivider } from './DashedDivider';
 import { DiffViewer } from './DiffViewer';
 import { SelectInput, type SelectOption } from './SelectInput';
 import { type ApprovalResult, useAppStore } from './store';
@@ -20,20 +21,9 @@ interface ToolPreviewProps {
 function TopDivider() {
   const { columns } = useTerminalSize();
   return (
-    <Box marginBottom={1}>
-      <Text color={UI_COLORS.CHAT_BORDER}>
-        {'─'.repeat(Math.max(0, columns))}
-      </Text>
-    </Box>
-  );
-}
-
-function DottedDivider() {
-  const { columns } = useTerminalSize();
-  return (
     <Box>
-      <Text dimColor color="gray">
-        {'·'.repeat(Math.max(0, columns))}
+      <Text color={UI_COLORS.ASK_PRIMARY} bold>
+        {'─'.repeat(Math.max(0, columns))}
       </Text>
     </Box>
   );
@@ -45,7 +35,7 @@ function renderTitle(toolUse: ToolUseType, cwd: string): React.ReactNode {
   if (name === 'edit') {
     const relativeFilePath = getRelativePath(params.file_path, cwd);
     return (
-      <Box marginBottom={1}>
+      <Box>
         <Text bold color={UI_COLORS.ASK_PRIMARY}>
           Edit file{' '}
         </Text>
@@ -63,7 +53,7 @@ function renderTitle(toolUse: ToolUseType, cwd: string): React.ReactNode {
     const action = isNew ? 'Create file ' : 'Update ';
 
     return (
-      <Box marginBottom={1}>
+      <Box>
         <Text bold color={UI_COLORS.ASK_PRIMARY}>
           {action}
         </Text>
@@ -74,7 +64,7 @@ function renderTitle(toolUse: ToolUseType, cwd: string): React.ReactNode {
 
   if (name === 'bash') {
     return (
-      <Box marginBottom={1}>
+      <Box>
         <Text bold color={UI_COLORS.ASK_PRIMARY}>
           Bash command
         </Text>
@@ -84,7 +74,7 @@ function renderTitle(toolUse: ToolUseType, cwd: string): React.ReactNode {
 
   // 其他工具
   return (
-    <Box marginBottom={1}>
+    <Box>
       <Text bold color={UI_COLORS.ASK_PRIMARY}>
         Tool use
       </Text>
@@ -103,13 +93,13 @@ function ToolPreview({ toolUse, cwd }: ToolPreviewProps) {
 
     return (
       <Box flexDirection="column" marginBottom={1}>
-        <DottedDivider />
+        <DashedDivider />
         <DiffViewer
           originalContent={originalContent}
           newContent={newContent}
           fileName={fileName}
         />
-        <DottedDivider />
+        <DashedDivider />
       </Box>
     );
   }
@@ -270,14 +260,24 @@ function ApprovalModalContent() {
   const handleChange = useCallback(
     (value: string | string[]) => {
       if (typeof value === 'string') {
-        // 判断是否是输入类型的拒绝选项
+        // Check if it's one of the approval options
+        if (
+          value === 'approve_once' ||
+          value === 'approve_always_edit' ||
+          value === 'approve_always_tool'
+        ) {
+          approvalModal!.resolve(value as ApprovalResult);
+          return;
+        }
+
+        // Check if it is an input type deny option
         const denyOption = selectOptions.find((opt) => opt.value === 'deny');
         if (denyOption?.type === 'input' && value !== 'deny') {
-          // value 是用户输入的拒绝理由
+          // value is the rejection reason entered by the user
           approvalModal!.resolve('deny', { denyReason: value });
         } else {
-          // 普通选择
-          approvalModal!.resolve(value as ApprovalResult);
+          // Normal selection (value === 'deny') or no input
+          approvalModal!.resolve('deny');
         }
       }
     },
