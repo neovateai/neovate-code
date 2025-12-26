@@ -74,7 +74,6 @@ function renderTitle(toolUse: ToolUseType, cwd: string): React.ReactNode {
     );
   }
 
-  // 其他工具
   return (
     <Box>
       <Text bold color={UI_COLORS.ASK_PRIMARY}>
