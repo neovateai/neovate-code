@@ -1228,6 +1228,7 @@ ${diff}
           isGitRepository,
           hasUncommittedChanges,
           isGitUserConfigured,
+          getUnstagedFiles,
         } = await import('./utils/git');
         const { getStagedFileList } = await import('./utils/git');
         const { existsSync } = await import('fs');
@@ -1246,6 +1247,7 @@ ${diff}
               isGitInstalled: false,
               isUserConfigured: { name: false, email: false },
               isMerging: false,
+              unstagedFiles: [],
             },
           };
         }
@@ -1262,17 +1264,19 @@ ${diff}
               isGitInstalled: true,
               isUserConfigured: { name: false, email: false },
               isMerging: false,
+              unstagedFiles: [],
             },
           };
         }
 
         // Get all status information in parallel
-        const [hasChanges, userConfig, stagedFiles, gitRoot] =
+        const [hasChanges, userConfig, stagedFiles, gitRoot, unstagedFiles] =
           await Promise.all([
             hasUncommittedChanges(cwd),
             isGitUserConfigured(cwd),
             getStagedFileList(cwd),
             getGitRoot(cwd),
+            getUnstagedFiles(cwd),
           ]);
 
         // Check if repository is in merge state
@@ -1287,6 +1291,7 @@ ${diff}
             isGitInstalled: true,
             isUserConfigured: userConfig,
             isMerging,
+            unstagedFiles,
           },
         };
       } catch (error: any) {

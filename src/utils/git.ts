@@ -77,6 +77,31 @@ export async function hasUncommittedChanges(cwd: string): Promise<boolean> {
 }
 
 /**
+ * Get list of unstaged files with their status
+ * Returns files that have changes not yet staged (working tree changes)
+ */
+export async function getUnstagedFiles(
+  cwd: string,
+): Promise<Array<{ status: string; file: string }>> {
+  const output = await gitOutput(cwd, ['status', '--porcelain']);
+  if (!output) return [];
+
+  const files: Array<{ status: string; file: string }> = [];
+  for (const line of output.split('\n')) {
+    if (!line) continue;
+    const indexStatus = line[0];
+    const workTreeStatus = line[1];
+    const file = line.substring(3);
+    if (indexStatus === '?' && workTreeStatus === '?') {
+      files.push({ status: '?', file });
+    } else if (workTreeStatus !== ' ' && workTreeStatus !== undefined) {
+      files.push({ status: workTreeStatus, file });
+    }
+  }
+  return files;
+}
+
+/**
  * Check if any remote is configured
  */
 export async function hasRemote(cwd: string): Promise<boolean> {
