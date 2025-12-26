@@ -88,11 +88,15 @@ Reply: "find . -type f ( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" ) -
 
 /**
  * Sanitize command by removing Markdown formatting (code blocks, inline code)
+ * and think tags from AI responses
  * @param rawCommand - Raw command string possibly containing Markdown syntax
  * @returns Cleaned command string
  */
 function sanitizeCommand(rawCommand: string): string {
   let cleaned = rawCommand;
+
+  // Step 0: Remove think tags from AI responses
+  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/g, '');
 
   // Step 1: Remove code block formatting (```bash\n...\n``` or ```\n...\n```)
   cleaned = cleaned.replace(
