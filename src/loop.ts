@@ -588,6 +588,10 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
               },
             },
           };
+        } else {
+          // When denyReason is provided, we should break out of the tool loop
+          // to let the model react to the rejection before continuing
+          break;
         }
       }
     }
