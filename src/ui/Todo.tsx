@@ -54,7 +54,7 @@ function TodoItem({
         <Text color={color} bold={isCurrent}>
           {todo.status === 'completed'
             ? symbols.checkboxOn
-            : symbols.checkboxOff}
+            : symbols.checkboxOff}{' '}
         </Text>
       </Box>
       <Box>
