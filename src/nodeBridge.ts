@@ -1191,7 +1191,15 @@ ${diff}
         }
 
         // Parse the JSON response
-        const jsonResponse = JSON.parse(result.data.text);
+        let jsonResponse;
+        try {
+          jsonResponse = JSON.parse(result.data.text);
+        } catch (parseError: any) {
+          return {
+            success: false,
+            error: `Failed to parse commit message response: ${parseError.message}\n\nRaw response:\n${result.data.text}`,
+          };
+        }
 
         return {
           success: true,
