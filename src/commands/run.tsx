@@ -95,11 +95,18 @@ function sanitizeCommand(rawCommand: string): string {
   let cleaned = rawCommand;
 
   // Step 1: Remove code block formatting (```bash\n...\n``` or ```\n...\n```)
-  cleaned = cleaned.replace(/^```(?:bash|sh|shell)?\s*\n([\s\S]*?)\n```$/g, '$1');
+  cleaned = cleaned.replace(
+    /^```(?:bash|sh|shell)?\s*\n([\s\S]*?)\n```$/g,
+    '$1',
+  );
 
   // Step 2: Remove inline code formatting (`...`)
   // Be careful: shell backticks are valid, only remove when entire string is wrapped
-  if (cleaned.startsWith('`') && cleaned.endsWith('`') && cleaned.split('`').length === 3) {
+  if (
+    cleaned.startsWith('`') &&
+    cleaned.endsWith('`') &&
+    cleaned.split('`').length === 3
+  ) {
     cleaned = cleaned.slice(1, -1);
   }
 
