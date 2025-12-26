@@ -115,6 +115,9 @@ interface AppState {
   // Pasted image storage
   pastedImageMap: Record<string, string>;
 
+  showShortcutsPanel: boolean;
+  showShortcutsHint: boolean;
+
   logs: string[];
   exitMessage: string | null;
   debugMode: boolean;
@@ -216,6 +219,8 @@ interface AppActions {
   setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => void;
   clearBashBackgroundPrompt: () => void;
   toggleThinking: () => void;
+  toggleShortcutsPanel: () => void;
+  setShortcutsHint: (show: boolean) => void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -271,6 +276,8 @@ export const useAppStore = create<AppStore>()(
       forkParentUuid: null,
       forkCounter: 0,
       thinking: undefined,
+      showShortcutsPanel: false,
+      showShortcutsHint: true,
 
       bashBackgroundPrompt: null,
 
@@ -1147,6 +1154,14 @@ export const useAppStore = create<AppStore>()(
           next = undefined;
         }
         set({ thinking: next });
+      },
+
+      toggleShortcutsPanel: () => {
+        set({ showShortcutsPanel: !get().showShortcutsPanel });
+      },
+
+      setShortcutsHint: (show: boolean) => {
+        set({ showShortcutsHint: show });
       },
     }),
     { name: 'app-store' },

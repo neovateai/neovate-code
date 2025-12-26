@@ -50,6 +50,7 @@ function StatusMain() {
     messages,
     sessionId,
     approvalMode,
+    showShortcutsHint,
   } = useAppStore();
   const tokenUsed = useMemo(() => {
     return messages.reduce((acc, message) => {
@@ -129,7 +130,7 @@ function StatusMain() {
   return (
     <Box>
       <Text color="gray">
-        [
+        {showShortcutsHint && '? for shortcuts | '}[
         {model ? (
           `${modelDesc}${
             '' // planModel && planModel !== modelDesc ? ` | plan: ${planModel}` : ''
