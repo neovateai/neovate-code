@@ -65,8 +65,21 @@ export function listDirectory(
   return results;
 }
 
+const SKIP_DOT_FILES = new Set([
+  '.git',
+  '.env',
+  '.vscode',
+  '.idea',
+  '.bashrc',
+  '.bash_profile',
+  '.zshrc',
+  '.zprofile',
+  '.profile',
+]);
+
 function skip(path: string) {
-  if (path !== '.' && basename(path).startsWith('.')) {
+  const name = basename(path);
+  if (path !== '.' && SKIP_DOT_FILES.has(name)) {
     return true;
   }
   return false;
