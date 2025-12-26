@@ -114,6 +114,8 @@ export function AgentInProgress({
     : logItems.slice(-VISIBLE_MESSAGE_LIMIT);
   const hiddenCount = logItems.length - visibleItems.length;
 
+  const prompt = toolUse.input?.prompt;
+
   return (
     <Box flexDirection="column">
       {/* Header */}
@@ -126,6 +128,21 @@ export function AgentInProgress({
             <Text color={COLORS.HINT} dimColor>
               ... {hiddenCount} more items
             </Text>
+          </Box>
+        )}
+
+        {/* Show prompt in transcript mode */}
+        {transcriptMode && prompt && (
+          <Box flexDirection="column" marginLeft={2} marginTop={1}>
+            <Box flexDirection="column" marginBottom={1}>
+              <Box>
+                <Text color="gray">↳ </Text>
+                <Text bold color="cyan">
+                  Prompt:
+                </Text>
+              </Box>
+              <Text color="gray">{prompt}</Text>
+            </Box>
           </Box>
         )}
 

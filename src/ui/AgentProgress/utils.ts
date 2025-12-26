@@ -58,7 +58,7 @@ export function groupMessages(messages: NormalizedMessage[]): LogItem[] {
   const items: LogItem[] = [];
   const toolUseMap = new Map<string, LogItem & { type: 'tool' }>();
 
-  for (const msg of messages) {
+  for (const [messageIndex, msg] of messages.entries()) {
     if (msg.role === 'user') {
       let content = '...';
       if (typeof msg.content === 'string') {
@@ -73,7 +73,7 @@ export function groupMessages(messages: NormalizedMessage[]): LogItem[] {
       items.push({
         type: 'user',
         content,
-        id: msg.uuid || `user-${items.length}`,
+        id: msg.uuid || `user-${messageIndex}`,
       });
     } else if (msg.role === 'assistant') {
       const content = msg.content;
@@ -81,15 +81,18 @@ export function groupMessages(messages: NormalizedMessage[]): LogItem[] {
         items.push({
           type: 'text',
           content,
-          id: msg.uuid || `text-${items.length}`,
+          id: msg.uuid || `text-${messageIndex}`,
         });
       } else if (Array.isArray(content)) {
-        for (const part of content) {
+        for (const [partIndex, part] of content.entries()) {
           if (part.type === 'text') {
+            const id = msg.uuid
+              ? `${msg.uuid}-text-${partIndex}`
+              : `text-${messageIndex}-${partIndex}`;
             items.push({
               type: 'text',
               content: part.text,
-              id: `text-${items.length}-${Math.random()}`,
+              id,
             });
           } else if (part.type === 'tool_use') {
             const item: LogItem & { type: 'tool' } = {
