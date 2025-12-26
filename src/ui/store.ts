@@ -948,6 +948,14 @@ export const useAppStore = create<AppStore>()(
               ) => {
                 set({ approvalModal: null });
                 const isApproved = result !== 'deny';
+
+                // 处理拒绝理由（如果存在）
+                if (result === 'deny' && params?.denyReason) {
+                  // TODO: 将拒绝理由传递给 LLM
+                  // 暂时记录到日志
+                  get().log(`Tool denied with reason: ${params.denyReason}`);
+                }
+
                 if (result === 'approve_always_edit') {
                   await bridge.request('session.config.setApprovalMode', {
                     cwd,

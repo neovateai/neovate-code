@@ -1,19 +1,95 @@
 import { existsSync, readFileSync } from 'fs';
-import { Box, Text, useInput } from 'ink';
-import SelectInput from 'ink-select-input';
+import { Box, Text } from 'ink';
 import path from 'pathe';
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { TOOL_NAMES } from '../constants';
 import type { ToolUse as ToolUseType } from '../tool';
 import type { Question } from '../tools/askUserQuestion';
 import { AskQuestionModal } from './AskQuestionModal';
 import { UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
+import { SelectInput, type SelectOption } from './SelectInput';
 import { type ApprovalResult, useAppStore } from './store';
+import { useTerminalSize } from './useTerminalSize';
 
 interface ToolPreviewProps {
   toolUse: ToolUseType;
   cwd: string;
+}
+
+function TopDivider() {
+  const { columns } = useTerminalSize();
+  return (
+    <Box marginBottom={1}>
+      <Text color={UI_COLORS.CHAT_BORDER}>
+        {'─'.repeat(Math.max(0, columns))}
+      </Text>
+    </Box>
+  );
+}
+
+function DottedDivider() {
+  const { columns } = useTerminalSize();
+  return (
+    <Box>
+      <Text dimColor color="gray">
+        {'·'.repeat(Math.max(0, columns))}
+      </Text>
+    </Box>
+  );
+}
+
+function renderTitle(toolUse: ToolUseType, cwd: string): React.ReactNode {
+  const { name, params } = toolUse;
+
+  if (name === 'edit') {
+    const relativeFilePath = getRelativePath(params.file_path, cwd);
+    return (
+      <Box marginBottom={1}>
+        <Text bold color={UI_COLORS.ASK_PRIMARY}>
+          Edit file{' '}
+        </Text>
+        <Text>{relativeFilePath}</Text>
+      </Box>
+    );
+  }
+
+  if (name === 'write') {
+    const relativeFilePath = getRelativePath(params.file_path, cwd);
+    const fullPath = path.isAbsolute(params.file_path)
+      ? params.file_path
+      : path.resolve(cwd, params.file_path);
+    const isNew = !existsSync(fullPath);
+    const action = isNew ? 'Create file ' : 'Update ';
+
+    return (
+      <Box marginBottom={1}>
+        <Text bold color={UI_COLORS.ASK_PRIMARY}>
+          {action}
+        </Text>
+        <Text>{relativeFilePath}</Text>
+      </Box>
+    );
+  }
+
+  if (name === 'bash') {
+    return (
+      <Box marginBottom={1}>
+        <Text bold color={UI_COLORS.ASK_PRIMARY}>
+          Bash command
+        </Text>
+      </Box>
+    );
+  }
+
+  // 其他工具
+  return (
+    <Box marginBottom={1}>
+      <Text bold color={UI_COLORS.ASK_PRIMARY}>
+        Tool use
+      </Text>
+    </Box>
+  );
 }
 
 function ToolPreview({ toolUse, cwd }: ToolPreviewProps) {
@@ -26,37 +102,33 @@ function ToolPreview({ toolUse, cwd }: ToolPreviewProps) {
     );
 
     return (
-      <Box flexDirection="column">
-        <Box marginY={1}>
-          <Text bold color={UI_COLORS.TOOL}>
-            {name}
-          </Text>
-          <Text color="gray"> {fileName}</Text>
-        </Box>
+      <Box flexDirection="column" marginBottom={1}>
+        <DottedDivider />
         <DiffViewer
           originalContent={originalContent}
           newContent={newContent}
           fileName={fileName}
         />
+        <DottedDivider />
       </Box>
     );
   }
 
-  return (
-    <Box flexDirection="column">
-      <Box marginY={1}>
-        <Text bold color={UI_COLORS.TOOL}>
-          {name}
-        </Text>
+  if (name === 'bash') {
+    return (
+      <Box flexDirection="column" marginBottom={1}>
+        <Box marginLeft={2}>
+          <Text>{params.command}</Text>
+        </Box>
       </Box>
-      <Box
-        flexDirection="column"
-        borderStyle="round"
-        borderColor="gray"
-        padding={1}
-      >
-        <Text bold>Parameters:</Text>
-        <Text color="gray">{JSON.stringify(params, null, 2)}</Text>
+    );
+  }
+
+  // 其他工具显示参数
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      <Box marginLeft={2}>
+        <Text dimColor>{JSON.stringify(params, null, 2)}</Text>
       </Box>
     </Box>
   );
@@ -118,67 +190,128 @@ export function ApprovalModal() {
   return <ApprovalModalContent />;
 }
 
+function getQuestionText(toolUse: ToolUseType, cwd: string): string {
+  const { name, params } = toolUse;
+
+  switch (name) {
+    case 'bash':
+      return 'Do you want to proceed?';
+    case 'edit': {
+      const fileName = path.basename(params.file_path);
+      return `Do you want to make this edit to ${fileName}?`;
+    }
+    case 'write': {
+      const fullPath = path.isAbsolute(params.file_path)
+        ? params.file_path
+        : path.resolve(cwd, params.file_path);
+      const isNew = !existsSync(fullPath);
+      const fileName = path.basename(params.file_path);
+      return isNew
+        ? `Do you want to create ${fileName}?`
+        : `Do you want to update ${fileName}?`;
+    }
+    default:
+      return 'Do you want to proceed?';
+  }
+}
+
 function ApprovalModalContent() {
   const { approvalModal, cwd } = useAppStore();
 
   const selectOptions = useMemo(() => {
-    const options = [
-      { label: 'Yes (once)', value: 'approve_once' },
-      ...(approvalModal!.category === 'write'
-        ? [
-            {
-              label: `Yes, allow all edits during this session`,
-              value: 'approve_always_edit',
-            },
-          ]
-        : []),
-      {
-        label: `Yes, allow ${approvalModal!.toolUse.name} during this session`,
-        value: 'approve_always_tool',
-      },
-      { label: 'No, and suggest changes (esc)', value: 'deny' },
-    ].map((option, index) => ({
-      label: `${index + 1}. ${option.label}`,
-      value: option.value,
-    }));
-    return options;
+    const { name, params } = approvalModal!.toolUse;
+    const category = approvalModal!.category;
+
+    // 选项 1：Yes
+    const option1: SelectOption = {
+      type: 'text',
+      value: 'approve_once',
+      label: 'Yes',
+    };
+
+    // 选项 2：根据 category 动态生成
+    const option2: SelectOption =
+      category === 'write'
+        ? {
+            type: 'text',
+            value: 'approve_always_edit',
+            label: 'Yes, allow all edits during this session',
+          }
+        : {
+            type: 'text',
+            value: 'approve_always_tool',
+            label: `Yes, and don't ask again for ${name} commands in ${cwd}`,
+          };
+
+    // 选项 3：拒绝选项（bash/edit/write 支持输入）
+    const supportsDenyInput = ['bash', 'edit', 'write'].includes(name);
+    const option3: SelectOption = supportsDenyInput
+      ? {
+          type: 'input',
+          value: 'deny',
+          label: 'Type here to tell Claude what to do differently',
+          placeholder: 'Type here to tell Claude what to do differently',
+          initialValue: '',
+        }
+      : {
+          type: 'text',
+          value: 'deny',
+          label: 'No, and tell Claude what to do differently (esc)',
+        };
+
+    return [option1, option2, option3];
+  }, [approvalModal, cwd]);
+
+  const questionText = useMemo(
+    () => getQuestionText(approvalModal!.toolUse, cwd),
+    [approvalModal, cwd],
+  );
+
+  const handleChange = useCallback(
+    (value: string | string[]) => {
+      if (typeof value === 'string') {
+        // 判断是否是输入类型的拒绝选项
+        const denyOption = selectOptions.find((opt) => opt.value === 'deny');
+        if (denyOption?.type === 'input' && value !== 'deny') {
+          // value 是用户输入的拒绝理由
+          approvalModal!.resolve('deny', { denyReason: value });
+        } else {
+          // 普通选择
+          approvalModal!.resolve(value as ApprovalResult);
+        }
+      }
+    },
+    [selectOptions, approvalModal],
+  );
+
+  const handleCancel = useCallback(() => {
+    approvalModal!.resolve('deny');
   }, [approvalModal]);
 
-  useInput((input, key) => {
-    const inputNum = parseInt(input, 10);
-    if (key.escape) {
-      approvalModal!.resolve('deny');
-    } else if (inputNum >= 1 && inputNum <= selectOptions.length) {
-      const value = selectOptions[parseInt(input) - 1].value as ApprovalResult;
-      approvalModal!.resolve(value);
-    } else if (key.ctrl && input === 'c') {
-      approvalModal!.resolve('deny');
-    }
-  });
-
   return (
-    <Box
-      flexDirection="column"
-      padding={1}
-      borderStyle="round"
-      borderColor={UI_COLORS.WARNING}
-    >
-      <Text color={UI_COLORS.WARNING} bold>
-        Tool Approval Required
-      </Text>
+    <Box flexDirection="column">
+      <TopDivider />
+
+      {renderTitle(approvalModal!.toolUse, cwd)}
 
       <ToolPreview toolUse={approvalModal!.toolUse} cwd={cwd} />
 
-      <Box marginY={1}>
-        <Text bold>Approval Options:</Text>
+      <Box marginBottom={1}>
+        <Text>{questionText}</Text>
       </Box>
 
       <SelectInput
-        items={selectOptions}
-        onSelect={(item) =>
-          approvalModal!.resolve(item.value as ApprovalResult)
-        }
+        options={selectOptions}
+        mode="single"
+        onChange={handleChange}
+        onCancel={handleCancel}
       />
+
+      <Box marginTop={1}>
+        <Text dimColor color={UI_COLORS.ASK_SECONDARY}>
+          Esc to exit
+        </Text>
+      </Box>
     </Box>
   );
 }
