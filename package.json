@@ -10,8 +10,7 @@
   "types": "./dist/index.d.ts",
   "source": "./src/index.ts",
   "bin": {
-    "neovate": "./dist/cli.mjs",
-    "neo": "./dist/cli.mjs"
+    "neovate": "./dist/cli.mjs"
   },
   "scripts": {
     "dev": "bun ./src/cli.ts",
