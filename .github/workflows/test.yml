@@ -58,6 +58,7 @@ jobs:
         run: pnpm test
 
       - name: Run CLI integration test
+        shell: bash
         run: |
           output=$(node ./dist/cli.mjs -m cerebras/zai-glm-4.6 -q --output-format json "hello")
           echo "$output"
