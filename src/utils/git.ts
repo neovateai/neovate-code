@@ -83,7 +83,8 @@ export async function hasUncommittedChanges(cwd: string): Promise<boolean> {
 export async function getUnstagedFiles(
   cwd: string,
 ): Promise<Array<{ status: string; file: string }>> {
-  const output = await gitOutput(cwd, ['status', '--porcelain']);
+  const { stdout } = await gitExec(cwd, ['status', '--porcelain']);
+  const output = stdout.trimEnd();
   if (!output) return [];
 
   const files: Array<{ status: string; file: string }> = [];
