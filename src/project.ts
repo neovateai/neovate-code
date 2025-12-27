@@ -147,7 +147,7 @@ export class Project {
     });
   }
 
-  private async sendWithSystemPromptAndTools(
+  async sendWithSystemPromptAndTools(
     message: string | null,
     opts: {
       model?: string;
