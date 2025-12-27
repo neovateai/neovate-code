@@ -39,8 +39,6 @@ export async function executeAgent(
     return Session.createSessionId();
   })();
 
-  const agentLogPath = context.paths.getAgentLogPath(agentId);
-
   try {
     // Validate Agent definition
     if (!definition.agentType) {
@@ -72,9 +70,8 @@ export async function executeAgent(
 
     // Create Project instance with agent log path
     const project = new Project({
-      sessionId: agentId,
+      sessionId: `agent-${agentId}`,
       context,
-      logPath: agentLogPath,
     });
 
     // Execute using Project.send

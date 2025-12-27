@@ -27,14 +27,11 @@ export class Project {
   constructor(opts: {
     sessionId?: SessionId;
     context: Context;
-    logPath?: string;
   }) {
     this.session = opts.sessionId
       ? Session.resume({
           id: opts.sessionId,
-          logPath:
-            opts.logPath ||
-            opts.context.paths.getSessionLogPath(opts.sessionId),
+          logPath: opts.context.paths.getSessionLogPath(opts.sessionId),
         })
       : Session.create();
     this.context = opts.context;

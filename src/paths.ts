@@ -121,14 +121,6 @@ export class Paths {
   getGlobalDataPath() {
     return path.join(this.globalConfigDir, 'data.json');
   }
-
-  /**
-   * Get the dedicated log path for a sub-agent.
-   * Format: ~/.neovate/projects/{project}/agent-{agentId}.jsonl
-   */
-  getAgentLogPath(agentId: string): string {
-    return path.join(this.globalProjectDir, `agent-${agentId}.jsonl`);
-  }
 }
 
 function normalizeSummary(summary: string): string {
