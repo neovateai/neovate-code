@@ -2,7 +2,13 @@ import { z } from 'zod';
 import { TOOL_NAMES } from '../constants';
 import type { Context } from '../context';
 import type { NormalizedMessage } from '../message';
-import { createTool, type Tool } from '../tool';
+import {
+  createTool,
+  type ApprovalCategory,
+  type Tool,
+  type ToolApprovalResult,
+  type ToolUse,
+} from '../tool';
 import { randomUUID } from '../utils/randomUUID';
 
 export function createTaskTool(opts: {
@@ -112,11 +118,45 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
         };
       }
 
+      // Create onToolApprove callback to handle tool approval requests from agent
+      const onToolApprove = async (opts: {
+        toolUse: ToolUse;
+        category?: ApprovalCategory;
+      }): Promise<boolean | ToolApprovalResult> => {
+        // If messageBus is not available, fallback to auto-approve
+        if (!messageBus) {
+          return true;
+        }
+
+        try {
+          const result = await messageBus.request('toolApproval', {
+            toolUse: opts.toolUse,
+            category: opts.category,
+          });
+
+          // Handle both boolean and ToolApprovalResult return types
+          if (result.params || result.denyReason) {
+            return {
+              approved: result.approved,
+              params: result.params,
+              denyReason: result.denyReason,
+            };
+          }
+
+          return result.approved;
+        } catch (error) {
+          console.error('[createTaskTool] onToolApprove error:', error);
+          // On error, fallback to auto-approve
+          return true;
+        }
+      };
+
       try {
         const result = await agentManager.executeTask(params, {
           cwd,
           signal,
           tools: opts.tools,
+          onToolApprove,
           async onMessage(message: NormalizedMessage, agentId: string) {
             try {
               if (messageBus) {
