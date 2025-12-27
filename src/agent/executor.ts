@@ -1,7 +1,7 @@
 import type { NormalizedMessage } from '../message';
+import { Project } from '../project';
 import { Session } from '../session';
 import type { Tool } from '../tool';
-import { Project } from '../project';
 import type {
   AgentDefinition,
   AgentExecuteOptions,
@@ -12,6 +12,9 @@ enum AgentStatus {
   Completed = 'completed',
   Failed = 'failed',
 }
+
+// Resolve model
+const MODEL_INHERIT = 'inherit';
 
 export async function executeAgent(
   options: AgentExecuteOptions,
@@ -56,8 +59,6 @@ export async function executeAgent(
       );
     }
 
-    // Resolve model
-    const MODEL_INHERIT = 'inherit';
     let modelName = options.model || definition.model;
 
     // If model is 'inherit', use the model from context.config

@@ -3,8 +3,8 @@ import { TOOL_NAMES } from '../constants';
 import type { Context } from '../context';
 import type { NormalizedMessage } from '../message';
 import {
-  createTool,
   type ApprovalCategory,
+  createTool,
   type Tool,
   type ToolApprovalResult,
   type ToolUse,
