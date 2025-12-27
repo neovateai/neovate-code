@@ -1,6 +1,11 @@
 import type { Context } from '../context';
 import type { NormalizedMessage } from '../message';
-import type { Tool } from '../tool';
+import type {
+  ApprovalCategory,
+  Tool,
+  ToolApprovalResult,
+  ToolUse,
+} from '../tool';
 
 export interface AgentDefinition {
   agentType: string;
@@ -48,6 +53,10 @@ export interface AgentExecuteOptions {
     message: NormalizedMessage,
     agentId: string,
   ) => void | Promise<void>;
+  onToolApprove?: (opts: {
+    toolUse: ToolUse;
+    category?: ApprovalCategory;
+  }) => Promise<boolean | ToolApprovalResult>;
 }
 
 /**
