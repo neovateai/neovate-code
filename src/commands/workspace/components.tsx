@@ -1,6 +1,7 @@
 import { Box, Text, useApp, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import React, { useState } from 'react';
+import { PRODUCT_NAME } from '../../constants';
 import type { Worktree } from '../../worktree';
 
 // Success message after creating a workspace
@@ -55,7 +56,7 @@ export function WorkspaceSuccessMessage({
 export function WorkspaceList({
   worktrees,
   verbose,
-  productName = 'neo',
+  productName = PRODUCT_NAME.toLowerCase(),
 }: {
   worktrees: (Worktree & { createdAt?: string })[];
   verbose?: boolean;

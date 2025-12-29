@@ -11,7 +11,7 @@ import { ConfirmPrompt } from './components';
 
 export async function runDelete(context: Context, argv: any) {
   const cwd = process.cwd();
-  const productName = context.productName.toLowerCase();
+  const productName = context.productName;
 
   try {
     const gitRoot = await getGitRoot(cwd);
@@ -61,7 +61,7 @@ export async function runDelete(context: Context, argv: any) {
 
             // Remove from metadata
             const fs = await import('fs');
-            const metadataPath = `${gitRoot}/.${productName}-workspaces/.metadata`;
+            const metadataPath = `${gitRoot}/.${productName.toLowerCase()}-workspaces/.metadata`;
             if (fs.existsSync(metadataPath)) {
               try {
                 const metadata = JSON.parse(

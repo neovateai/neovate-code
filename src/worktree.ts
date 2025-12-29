@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'pathe';
 import { promisify } from 'util';
+import { PRODUCT_NAME } from './constants';
 
 const execAsync = promisify(exec);
 
@@ -268,9 +269,10 @@ export async function getCurrentBranch(cwd: string): Promise<string> {
  */
 export async function generateWorkspaceName(
   cwd: string,
-  productName: string = 'neovate',
+  productName: string,
 ): Promise<string> {
-  const existing = await listWorktrees(cwd, productName);
+  const normalizedProductName = productName.toLowerCase();
+  const existing = await listWorktrees(cwd, normalizedProductName);
   const existingNames = new Set(existing.map((w) => w.name));
 
   const available = CITY_NAMES.filter((name) => !existingNames.has(name));
@@ -290,14 +292,15 @@ export async function createWorktree(
   cwd: string,
   name: string,
   opts: WorktreeCreateOptions,
-  productName: string = 'neovate',
+  productName: string,
 ): Promise<Worktree> {
+  const normalizedProductName = productName.toLowerCase();
   const gitRoot = await getGitRoot(cwd);
   const worktreePath = path.join(gitRoot, opts.workspacesDir, name);
   const branchName = `workspace/${name}`;
 
   // Check if worktree already exists
-  const existing = await listWorktrees(gitRoot, productName);
+  const existing = await listWorktrees(gitRoot, normalizedProductName);
   if (existing.some((w) => w.name === name)) {
     throw new Error(
       `Workspace '${name}' already exists. Use a different name or delete it first.`,
@@ -329,8 +332,9 @@ export async function createWorktree(
  */
 export async function listWorktrees(
   cwd: string,
-  productName: string = 'neovate',
+  productName: string,
 ): Promise<Worktree[]> {
+  const normalizedProductName = productName.toLowerCase();
   try {
     const gitRoot = await getGitRoot(cwd);
     const { stdout } = await execGit(gitRoot, 'worktree list --porcelain');
@@ -345,7 +349,7 @@ export async function listWorktrees(
         const worktreePath = line.substring('worktree '.length);
 
         // Only include worktrees in the product-specific workspaces directory
-        if (worktreePath.includes(`.${productName}-workspaces`)) {
+        if (worktreePath.includes(`.${normalizedProductName}-workspaces`)) {
           currentWorktree.path = worktreePath;
           const name = path.basename(worktreePath);
           currentWorktree.name = name;
@@ -395,15 +399,16 @@ export async function deleteWorktree(
   cwd: string,
   name: string,
   force = false,
-  productName: string = 'neovate',
+  productName: string,
 ): Promise<void> {
+  const normalizedProductName = productName.toLowerCase();
   const gitRoot = await getGitRoot(cwd);
-  const worktrees = await listWorktrees(gitRoot, productName);
+  const worktrees = await listWorktrees(gitRoot, normalizedProductName);
   const worktree = worktrees.find((w) => w.name === name);
 
   if (!worktree) {
     throw new Error(
-      `Workspace '${name}' not found. Use workspace list to see active workspaces.`,
+      `Workspace '${name}' not found. Use '${normalizedProductName} workspace list' to see active workspaces.`,
     );
   }
 
@@ -466,8 +471,9 @@ async function findBranchWorktree(
 export async function mergeWorktree(
   cwd: string,
   worktree: Worktree,
-  productName: string = 'neovate',
+  productName: string,
 ): Promise<void> {
+  const normalizedProductName = productName.toLowerCase();
   const gitRoot = await getGitRoot(cwd);
 
   try {
@@ -513,7 +519,7 @@ export async function mergeWorktree(
   } catch (error: any) {
     if (error.message?.includes('CONFLICT')) {
       throw new Error(
-        `Merge conflict occurred. Please resolve conflicts manually:\n1. cd ${gitRoot}\n2. Resolve conflicts\n3. git commit\n4. Run '${productName} workspace delete ${worktree.name}' to clean up`,
+        `Merge conflict occurred. Please resolve conflicts manually:\n1. cd ${gitRoot}\n2. Resolve conflicts\n3. git commit\n4. Run '${normalizedProductName} workspace delete ${worktree.name}' to clean up`,
       );
     }
     throw new Error(`Failed to merge worktree: ${error.message}`);
@@ -525,8 +531,9 @@ export async function mergeWorktree(
  */
 export async function addToGitExclude(
   cwd: string,
-  productName: string = 'neovate',
+  productName: string,
 ): Promise<void> {
+  const normalizedProductName = productName.toLowerCase();
   try {
     const gitRoot = await getGitRoot(cwd);
     const excludePath = path.join(gitRoot, '.git', 'info', 'exclude');
@@ -536,7 +543,7 @@ export async function addToGitExclude(
       content = fs.readFileSync(excludePath, 'utf-8');
     }
 
-    const pattern = `/.${productName}-workspaces`;
+    const pattern = `/.${normalizedProductName}-workspaces`;
     if (!content.includes(pattern)) {
       content += `\n${pattern}\n`;
       fs.writeFileSync(excludePath, content);
@@ -554,10 +561,11 @@ export async function addToGitExclude(
  */
 export async function getWorktreeFromPath(
   cwd: string,
-  productName: string = 'neovate',
+  productName: string,
 ): Promise<Worktree> {
+  const normalizedProductName = productName.toLowerCase();
   const gitRoot = await getGitRoot(cwd);
-  const worktrees = await listWorktrees(gitRoot, productName);
+  const worktrees = await listWorktrees(gitRoot, normalizedProductName);
 
   // Check if current path is inside a worktree
   for (const worktree of worktrees) {

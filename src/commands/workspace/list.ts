@@ -6,7 +6,7 @@ import { WorkspaceList } from './components';
 
 export async function runList(context: Context, argv: any) {
   const cwd = process.cwd();
-  const productName = context.productName.toLowerCase();
+  const productName = context.productName;
 
   try {
     const gitRoot = await getGitRoot(cwd);
@@ -14,7 +14,7 @@ export async function runList(context: Context, argv: any) {
 
     // Load metadata to get original branches
     const fs = await import('fs');
-    const metadataPath = `${gitRoot}/.${productName}-workspaces/.metadata`;
+    const metadataPath = `${gitRoot}/.${productName.toLowerCase()}-workspaces/.metadata`;
     let metadata: Record<string, any> = {};
     if (fs.existsSync(metadataPath)) {
       try {
@@ -43,7 +43,7 @@ export async function runList(context: Context, argv: any) {
       React.createElement(WorkspaceList, {
         worktrees: enrichedWorktrees,
         verbose: argv.verbose,
-        productName: context.productName.toLowerCase(),
+        productName: productName.toLowerCase(),
       }),
     );
 

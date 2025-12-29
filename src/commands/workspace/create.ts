@@ -16,7 +16,7 @@ import { WorkspaceSuccessMessage } from './components';
 
 export async function runCreate(context: Context, argv: any) {
   const cwd = process.cwd();
-  const productName = context.productName.toLowerCase();
+  const productName = context.productName;
 
   try {
     // Step 1: Ensure clean working directory
@@ -53,7 +53,7 @@ export async function runCreate(context: Context, argv: any) {
       name,
       {
         baseBranch,
-        workspacesDir: `.${productName}-workspaces`,
+        workspacesDir: `.${productName.toLowerCase()}-workspaces`,
       },
       productName,
     );
@@ -63,7 +63,7 @@ export async function runCreate(context: Context, argv: any) {
 
     // Step 7: Save metadata for later use
     const gitRoot = await getGitRoot(cwd);
-    const metadataPath = `${gitRoot}/.${productName}-workspaces/.metadata`;
+    const metadataPath = `${gitRoot}/.${productName.toLowerCase()}-workspaces/.metadata`;
     const fs = await import('fs');
     const path = await import('pathe');
 
@@ -85,7 +85,10 @@ export async function runCreate(context: Context, argv: any) {
     };
 
     // Ensure workspaces directory exists
-    const workspacesDir = path.join(gitRoot, `.${productName}-workspaces`);
+    const workspacesDir = path.join(
+      gitRoot,
+      `.${productName.toLowerCase()}-workspaces`,
+    );
     if (!fs.existsSync(workspacesDir)) {
       fs.mkdirSync(workspacesDir, { recursive: true });
     }
