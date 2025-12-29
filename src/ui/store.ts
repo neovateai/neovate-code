@@ -245,6 +245,7 @@ async function restoreCodeToTargetPoint(
   targetIndex: number,
   targetMessageUuid: string,
   logFn: (message: string) => void,
+  deleteSnapshotsAfterRestore: boolean = false,
 ): Promise<void> {
   const targetAssistantMessage = findTargetAssistantMessage(
     messages,
@@ -285,6 +286,21 @@ async function restoreCodeToTargetPoint(
     logFn(`Fork: Successfully restored ${totalFilesRestored} file(s)`);
   } else {
     logFn('Fork: No files to restore (no snapshots found)');
+  }
+
+  // Delete snapshots after restoration if requested (code-only restore mode)
+  if (deleteSnapshotsAfterRestore) {
+    logFn('Fork: Cleaning up snapshots after code restoration');
+    for (const snapshotInfo of snapshotsToProcess) {
+      await bridge.request('session.deleteSnapshot', {
+        cwd,
+        sessionId,
+        messageUuid: snapshotInfo.messageUuid,
+      });
+    }
+    logFn(
+      `Fork: Deleted ${snapshotsToProcess.length} snapshot(s) after restoration`,
+    );
   }
 }
 
@@ -1139,6 +1155,10 @@ export const useAppStore = create<AppStore>()(
 
         // Restore code if requested
         if (restoreCode) {
+          // When restoring code without conversation, delete snapshots after restoration
+          // because the code is now in sync with the snapshot state
+          const shouldDeleteSnapshots = !restoreConversation;
+
           await restoreCodeToTargetPoint(
             bridge,
             cwd,
@@ -1147,6 +1167,7 @@ export const useAppStore = create<AppStore>()(
             targetIndex,
             targetMessageUuid,
             get().log,
+            shouldDeleteSnapshots,
           );
         } else {
           get().log('Fork: Code restoration skipped');

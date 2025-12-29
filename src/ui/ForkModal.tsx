@@ -81,7 +81,7 @@ export function ForkModal({
               >
                 {isSelected ? '> ' : '  '}
                 {timestamp} | {preview}
-                {messageHasSnapshot && <Text color="green"> 📁</Text>}
+                {messageHasSnapshot && <Text dimColor> (code changed)</Text>}
               </Text>
             </Box>
           );

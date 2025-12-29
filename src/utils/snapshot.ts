@@ -238,6 +238,20 @@ export class SnapshotManager {
   getSnapshots(): MessageSnapshot[] {
     return Array.from(this.snapshots.values());
   }
+
+  /**
+   * Delete a snapshot by message UUID
+   * @param messageUuid The snapshot UUID to delete
+   * @returns true if snapshot was deleted, false if it didn't exist
+   */
+  deleteSnapshot(messageUuid: string): boolean {
+    const existed = this.snapshots.has(messageUuid);
+    this.snapshots.delete(messageUuid);
+    if (this.DEBUG && existed) {
+      console.log(`[Snapshot] Deleted snapshot for message ${messageUuid}`);
+    }
+    return existed;
+  }
 }
 
 export async function createToolSnapshot(

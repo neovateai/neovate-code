@@ -335,4 +335,41 @@ describe('SnapshotManager', () => {
       expect(manager.getSnapshots()).toEqual([]);
     });
   });
+
+  describe('deleteSnapshot', () => {
+    it('should delete an existing snapshot', async () => {
+      const manager = new SnapshotManager();
+      const file = join(TEST_DIR, 'test.txt');
+      writeFileSync(file, 'Content');
+
+      const messageUuid = randomUUID();
+      await manager.createSnapshot([file], messageUuid);
+      expect(manager.hasSnapshot(messageUuid)).toBe(true);
+
+      const deleted = manager.deleteSnapshot(messageUuid);
+      expect(deleted).toBe(true);
+      expect(manager.hasSnapshot(messageUuid)).toBe(false);
+    });
+
+    it('should return false when deleting non-existent snapshot', () => {
+      const manager = new SnapshotManager();
+      const deleted = manager.deleteSnapshot('non-existent');
+      expect(deleted).toBe(false);
+    });
+
+    it('should remove snapshot from getSnapshots() list', async () => {
+      const manager = new SnapshotManager();
+      const file = join(TEST_DIR, 'test.txt');
+      writeFileSync(file, 'Content');
+
+      await manager.createSnapshot([file], 'uuid-1');
+      await manager.createSnapshot([file], 'uuid-2');
+      expect(manager.getSnapshots().length).toBe(2);
+
+      manager.deleteSnapshot('uuid-1');
+      const snapshots = manager.getSnapshots();
+      expect(snapshots.length).toBe(1);
+      expect(snapshots[0].messageUuid).toBe('uuid-2');
+    });
+  });
 });

@@ -654,6 +654,18 @@ type SessionRestoreSnapshotFilesOutput = {
   error?: string;
 };
 
+type SessionDeleteSnapshotInput = {
+  cwd: string;
+  sessionId: string;
+  messageUuid: string;
+};
+type SessionDeleteSnapshotOutput = {
+  success: boolean;
+  data?: {
+    deleted: boolean;
+  };
+};
+
 // ============================================================================
 // Sessions Handlers
 // ============================================================================
@@ -1039,6 +1051,10 @@ export type HandlerMap = {
   'session.restoreSnapshotFiles': {
     input: SessionRestoreSnapshotFilesInput;
     output: SessionRestoreSnapshotFilesOutput;
+  };
+  'session.deleteSnapshot': {
+    input: SessionDeleteSnapshotInput;
+    output: SessionDeleteSnapshotOutput;
   };
 
   // Sessions handlers

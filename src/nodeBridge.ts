@@ -2106,6 +2106,29 @@ ${diff}
       },
     );
 
+    this.messageBus.registerHandler('session.deleteSnapshot', async (data) => {
+      const { cwd, sessionId, messageUuid } = data;
+      const context = await this.getContext(cwd);
+      const sessionConfigManager = await this.getSessionConfigManager(
+        context,
+        sessionId,
+      );
+      const snapshotManager = sessionConfigManager.getSnapshotManager();
+      const deleted = snapshotManager.deleteSnapshot(messageUuid);
+
+      // Save the updated snapshots to disk
+      if (deleted) {
+        await sessionConfigManager.saveSnapshots();
+      }
+
+      return {
+        success: true,
+        data: {
+          deleted,
+        },
+      };
+    });
+
     //////////////////////////////////////////////
     // sessions
     this.messageBus.registerHandler('sessions.list', async (data) => {
