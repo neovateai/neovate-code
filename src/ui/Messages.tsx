@@ -612,7 +612,6 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
             newContent={newContentValue}
             fileName={filePath}
             maxHeight={transcriptMode ? Infinity : 10}
-            useCodeHighlight={true}
           />
         );
       }

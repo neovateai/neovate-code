@@ -101,7 +101,6 @@ function ToolPreview({ toolUse, cwd }: ToolPreviewProps) {
           newContent={newContent}
           fileName={fileName}
           maxHeight={transcriptMode ? Infinity : 500}
-          useCodeHighlight={true}
         />
         <DashedDivider />
       </Box>
