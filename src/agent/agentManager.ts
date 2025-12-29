@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'pathe';
+import { TOOL_NAMES } from '../constants';
 import type { Context } from '../context';
 import type { NormalizedMessage } from '../message';
 import type {
@@ -25,18 +26,18 @@ const MAX_DESCRIPTION_LENGTH = 1024;
 
 // Claude Code -> Neovate
 const CLAUDE_TO_NEOVATE_TOOL_MAP: Record<string, string> = {
-  Task: 'task',
-  Bash: 'bash',
+  Task: TOOL_NAMES.TASK,
+  Bash: TOOL_NAMES.BASH,
   Glob: 'glob',
   Grep: 'grep',
-  Read: 'read',
-  Edit: 'edit',
-  Write: 'write',
+  Read: TOOL_NAMES.READ,
+  Edit: TOOL_NAMES.EDIT,
+  Write: TOOL_NAMES.WRITE,
   WebFetch: 'fetch',
-  TodoWrite: 'todoWrite',
-  BashOutput: 'bashOutput',
-  KillShell: 'killBash',
-  AskUserQuestion: 'askUserQuestion',
+  TodoWrite: TOOL_NAMES.TODO_WRITE,
+  BashOutput: TOOL_NAMES.BASH_OUTPUT,
+  KillShell: TOOL_NAMES.KILL_BASH,
+  AskUserQuestion: TOOL_NAMES.ASK_USER_QUESTION,
   Skill: 'skill',
 };
 
