@@ -1,4 +1,4 @@
-import { highlight } from 'cli-highlight';
+import { highlight, supportsLanguage } from 'cli-highlight';
 import crypto from 'crypto';
 import { createTwoFilesPatch } from 'diff';
 import { Box, Text } from 'ink';
@@ -216,7 +216,12 @@ function CodeHighlightRenderer({
     );
   }
 
-  const language = inferLanguage(fileName);
+  const inferredLanguage = inferLanguage(fileName);
+  // Guard against unsupported languages by falling back to auto-detect
+  // cli-highlight will throw if the language is not supported
+  const language = supportsLanguage(inferredLanguage)
+    ? inferredLanguage
+    : undefined;
 
   const lines = content.split('\n');
   const effectiveMaxLines =
