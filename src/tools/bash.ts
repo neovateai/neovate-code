@@ -874,6 +874,22 @@ cd /foo/bar && pytest tests
         .describe(
           'Set to true to run this command in the background. Use bash_output to read output later.',
         ),
+      description: z
+        .string()
+        .optional()
+        .describe(`Clear, concise description of what this command does in 5-10 words, in active voice. Examples:
+Input: ls
+Output: List files in current directory
+
+Input: git status
+Output: Show working tree status
+
+Input: npm install
+Output: Install package dependencies
+
+Input: mkdir foo
+Output: Create directory 'foo'
+          `),
     }),
     getDescription: ({ params }) => {
       if (!params.command || typeof params.command !== 'string') {

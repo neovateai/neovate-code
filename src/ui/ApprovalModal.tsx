@@ -111,6 +111,11 @@ function ToolPreview({ toolUse, cwd }: ToolPreviewProps) {
         <Box marginLeft={2}>
           <Text>{params.command}</Text>
         </Box>
+        {params.description && (
+          <Box marginLeft={2}>
+            <Text color={UI_COLORS.ASK_SECONDARY}>{params.description}</Text>
+          </Box>
+        )}
       </Box>
     );
   }
