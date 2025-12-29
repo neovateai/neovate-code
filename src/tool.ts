@@ -303,11 +303,30 @@ type DiffViewerReturnDisplay = {
   [key: string]: any;
 };
 
+type AgentResultReturnDisplay = {
+  type: 'agent_result';
+  agentId: string;
+  agentType: string;
+  description: string;
+  prompt: string;
+  content: string;
+  stats: {
+    toolCalls: number;
+    duration: number;
+    tokens: {
+      input: number;
+      output: number;
+    };
+  };
+  status: 'completed' | 'failed';
+};
+
 export type ReturnDisplay =
   | string
   | DiffViewerReturnDisplay
   | TodoReadReturnDisplay
-  | TodoWriteReturnDisplay;
+  | TodoWriteReturnDisplay
+  | AgentResultReturnDisplay;
 
 export type ToolResult = {
   llmContent: string | (TextPart | ImagePart)[];
@@ -356,4 +375,5 @@ export type ToolApprovalResult =
   | {
       approved: boolean;
       params?: ToolParams;
+      denyReason?: string;
     };

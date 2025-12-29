@@ -511,12 +511,14 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       }
       let approved = true;
       let updatedParams: ToolParams | undefined = undefined;
+      let denyReason: string | undefined = undefined;
 
       if (opts.onToolApprove) {
         const approvalResult = await opts.onToolApprove(toolUse as ToolUse);
         if (typeof approvalResult === 'object') {
           approved = approvalResult.approved;
           updatedParams = approvalResult.params;
+          denyReason = approvalResult.denyReason;
         } else {
           approved = approvalResult;
         }
@@ -544,7 +546,10 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         // Prevent normal turns from being terminated due to exceeding the limit
         turnsCount--;
       } else {
-        const message = 'Error: Tool execution was denied by user.';
+        let message = 'Error: Tool execution was denied by user.';
+        if (denyReason) {
+          message = `Tool use rejected with user message: ${denyReason}`;
+        }
         let toolResult: ToolResult = {
           llmContent: message,
           isError: true,
@@ -558,29 +563,36 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
           input: toolUse.params,
           result: toolResult,
         });
-        await history.addMessage({
-          role: 'tool',
-          content: toolResults.map((tr) =>
-            createToolResultPart2(
-              tr.toolCallId,
-              tr.toolName,
-              tr.input,
-              tr.result,
+
+        if (!denyReason) {
+          await history.addMessage({
+            role: 'tool',
+            content: toolResults.map((tr) =>
+              createToolResultPart2(
+                tr.toolCallId,
+                tr.toolName,
+                tr.input,
+                tr.result,
+              ),
             ),
-          ),
-        });
-        return {
-          success: false,
-          error: {
-            type: 'tool_denied',
-            message,
-            details: {
-              toolUse,
-              history,
-              usage: totalUsage,
+          });
+          return {
+            success: false,
+            error: {
+              type: 'tool_denied',
+              message,
+              details: {
+                toolUse,
+                history,
+                usage: totalUsage,
+              },
             },
-          },
-        };
+          };
+        } else {
+          // When denyReason is provided, we should break out of the tool loop
+          // to let the model react to the rejection before continuing
+          break;
+        }
       }
     }
     if (toolResults.length) {

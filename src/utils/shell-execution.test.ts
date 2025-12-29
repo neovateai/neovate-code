@@ -72,36 +72,48 @@ describe('shell-execution', () => {
       expect(res.output).toContain('stderr');
     });
 
-    test('should timeout long-running command', async () => {
-      const shortTimeout = 100;
-      const command = isWindows ? 'timeout /t 2 /nobreak > nul' : 'sleep 2';
-      const { result } = shellExecute(command, testCwd, shortTimeout);
+    test.skipIf(isWindows)(
+      'should timeout long-running command',
+      async () => {
+        const shortTimeout = 100;
+        const command = isWindows ? 'timeout /t 2 /nobreak > nul' : 'sleep 2';
+        const { result } = shellExecute(command, testCwd, shortTimeout);
 
-      const res = await result;
+        const res = await result;
 
-      expect(res.cancelled).toBe(true);
-    }, 10000);
+        expect(res.cancelled).toBe(true);
+      },
+      10000,
+    );
 
-    test('should timeout with exact timeout value', async () => {
-      const exactTimeout = 500;
-      const command = isWindows ? 'timeout /t 1 /nobreak > nul' : 'sleep 1';
-      const { result } = shellExecute(command, testCwd, exactTimeout);
+    test.skipIf(isWindows)(
+      'should timeout with exact timeout value',
+      async () => {
+        const exactTimeout = 500;
+        const command = isWindows ? 'timeout /t 1 /nobreak > nul' : 'sleep 1';
+        const { result } = shellExecute(command, testCwd, exactTimeout);
 
-      const res = await result;
+        const res = await result;
 
-      expect(res.cancelled).toBe(true);
-    }, 3000);
+        expect(res.cancelled).toBe(true);
+      },
+      3000,
+    );
 
-    test('should not timeout when command completes within timeout', async () => {
-      const longTimeout = 2000;
-      const command = isWindows ? 'timeout /t 1 /nobreak > nul' : 'sleep 0.5';
-      const { result } = shellExecute(command, testCwd, longTimeout);
+    test.skipIf(isWindows)(
+      'should not timeout when command completes within timeout',
+      async () => {
+        const longTimeout = 2000;
+        const command = isWindows ? 'timeout /t 1 /nobreak > nul' : 'sleep 0.5';
+        const { result } = shellExecute(command, testCwd, longTimeout);
 
-      const res = await result;
+        const res = await result;
 
-      expect(res.cancelled).toBe(false);
-      expect(res.exitCode).toBe(0);
-    }, 3000);
+        expect(res.cancelled).toBe(false);
+        expect(res.exitCode).toBe(0);
+      },
+      3000,
+    );
 
     // test('should handle zero timeout gracefully', async () => {
     //   const zeroTimeout = 0;
@@ -168,7 +180,7 @@ describe('shell-execution', () => {
       expect(outputEvents.some((event) => event.type === 'data')).toBe(true);
     });
 
-    test('should detect binary output', async () => {
+    test.skipIf(isWindows)('should detect binary output', async () => {
       const outputEvents: any[] = [];
       const onOutputEvent = vi.fn((event) => {
         outputEvents.push(event);

@@ -30,7 +30,10 @@ export class Project {
   private sessionConfigManagerInitialized = false;
   private currentAssistantUuid: string | null = null;
 
-  constructor(opts: { sessionId?: SessionId; context: Context }) {
+  constructor(opts: {
+    sessionId?: SessionId;
+    context: Context;
+  }) {
     this.session = opts.sessionId
       ? Session.resume({
           id: opts.sessionId,

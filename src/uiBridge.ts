@@ -68,6 +68,7 @@ class UIHandlerRegistry {
         return {
           approved: result.approved,
           params: result.params,
+          denyReason: result.denyReason,
         };
       },
     );

@@ -82,7 +82,7 @@ $ pnpm release:minor
 $ pnpm release:major
 ```
 
-Since npm has updated it's security policy, you need to run `npm login` before and run `npm publish` after the release temporarily. Later we will update the release script to do this automatically or use github actions to publish the package.
+Since npm has [updated it's security policy](https://github.blog/changelog/2025-12-09-npm-classic-tokens-revoked-session-based-auth-and-cli-token-management-now-available/), you need to run `npm login` before and run `npm publish` after the release temporarily. Later we will update the release script to do this automatically or use github actions to publish the package.
 
 ```bash
 $ npm login && pnpm release && npm publish

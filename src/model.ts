@@ -1163,7 +1163,7 @@ export const createModelCreatorCompatible = (opts?: {
   };
 };
 
-export const defaultModelCreator = createModelCreatorCompatible();
+const defaultModelCreator = createModelCreatorCompatible();
 
 const openaiModelCreator = (
   name: string,
@@ -1879,20 +1879,12 @@ export const providers: ProvidersMap = {
 // value format: provider/model
 export type ModelAlias = Record<string, string>;
 export const modelAlias: ModelAlias = {
-  deepseek: 'deepseek/deepseek-chat',
-  r1: 'deepseek/deepseek-reasoner',
-  '41': 'openai/gpt-4.1',
-  '4': 'openai/gpt-4',
-  '4o': 'openai/gpt-4o',
   flash: 'google/gemini-2.5-flash',
-  gemini: 'google/gemini-2.5-pro',
+  gemini: 'google/gemini-3-pro-preview',
   grok: 'xai/grok-4-1-fast',
-  'grok-code': 'xai/grok-code-fast-1',
   sonnet: 'anthropic/claude-sonnet-4-5-20250929',
   haiku: 'anthropic/claude-haiku-4-5',
   opus: 'anthropic/claude-opus-4-5',
-  k2: 'moonshotai-cn/kimi-k2-thinking',
-  'k2-turbo': 'moonshotai-cn/kimi-k2-thinking-turbo',
 };
 
 export type ModelInfo = {
@@ -1980,6 +1972,7 @@ export async function resolveModelWithContext(
         defaultModelCreator,
         createOpenAI,
         createOpenAICompatible,
+        createAnthropic,
       },
     ],
     memo: providers,

@@ -8,10 +8,18 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       matrix:
-        node-version: [18, 20, 22]
+        include:
+          - os: blacksmith-4vcpu-ubuntu-2404
+            node-version: 18
+          - os: blacksmith-4vcpu-ubuntu-2404
+            node-version: 20
+          - os: blacksmith-4vcpu-ubuntu-2404
+            node-version: 22
+          - os: windows-latest
+            node-version: 20
+    runs-on: ${{ matrix.os }}
     env:
       IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
 
@@ -43,12 +51,14 @@ jobs:
         run: pnpm typecheck
 
       - name: Check formatting
+        if: runner.os != 'Windows'
         run: pnpm format
 
       - name: Run tests
         run: pnpm test
 
       - name: Run CLI integration test
+        shell: bash
         run: |
           output=$(node ./dist/cli.mjs -m cerebras/zai-glm-4.6 -q --output-format json "hello")
           echo "$output"

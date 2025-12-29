@@ -2,7 +2,13 @@ import { z } from 'zod';
 import { TOOL_NAMES } from '../constants';
 import type { Context } from '../context';
 import type { NormalizedMessage } from '../message';
-import { createTool, type Tool } from '../tool';
+import {
+  type ApprovalCategory,
+  createTool,
+  type Tool,
+  type ToolApprovalResult,
+  type ToolUse,
+} from '../tool';
 import { randomUUID } from '../utils/randomUUID';
 
 export function createTaskTool(opts: {
@@ -112,11 +118,45 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
         };
       }
 
+      // Create onToolApprove callback to handle tool approval requests from agent
+      const onToolApprove = async (opts: {
+        toolUse: ToolUse;
+        category?: ApprovalCategory;
+      }): Promise<boolean | ToolApprovalResult> => {
+        // If messageBus is not available, fallback to auto-approve
+        if (!messageBus) {
+          return true;
+        }
+
+        try {
+          const result = await messageBus.request('toolApproval', {
+            toolUse: opts.toolUse,
+            category: opts.category,
+          });
+
+          // Handle both boolean and ToolApprovalResult return types
+          if (result.params || result.denyReason) {
+            return {
+              approved: result.approved,
+              params: result.params,
+              denyReason: result.denyReason,
+            };
+          }
+
+          return result.approved;
+        } catch (error) {
+          console.error('[createTaskTool] onToolApprove error:', error);
+          // On error, fallback to auto-approve
+          return true;
+        }
+      };
+
       try {
         const result = await agentManager.executeTask(params, {
           cwd,
           signal,
           tools: opts.tools,
+          onToolApprove,
           async onMessage(message: NormalizedMessage, agentId: string) {
             try {
               if (messageBus) {
@@ -172,16 +212,25 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
 
         if (result.status === 'completed') {
           return {
-            llmContent: `Sub-agent (${params.subagent_type}) completed successfully:
-
-${result.content}
-
----
-Agent ID: ${result.agentId}
-Tool Calls: ${result.totalToolCalls}
-Duration: ${duration}ms
-Tokens: ${result.usage.inputTokens} input, ${result.usage.outputTokens} output`,
+            llmContent: `Sub-agent (${params.subagent_type}) completed successfully:\n\n${result.content}\n\n---\nAgent ID: ${result.agentId}`,
             isError: false,
+            returnDisplay: {
+              type: 'agent_result',
+              agentId: result.agentId,
+              agentType: params.subagent_type,
+              description: params.description,
+              prompt: params.prompt,
+              content: result.content,
+              stats: {
+                toolCalls: result.totalToolCalls,
+                duration,
+                tokens: {
+                  input: result.usage.inputTokens,
+                  output: result.usage.outputTokens,
+                },
+              },
+              status: 'completed',
+            },
             metadata: {
               agentId: result.agentId,
               agentType: params.subagent_type,
@@ -189,14 +238,25 @@ Tokens: ${result.usage.inputTokens} input, ${result.usage.outputTokens} output`,
           };
         }
         return {
-          llmContent: `Sub-agent (${params.subagent_type}) failed:
-
-${result.content}
-
----
-Agent ID: ${result.agentId}
-Duration: ${duration}ms`,
+          llmContent: `Sub-agent (${params.subagent_type}) failed:\n\n${result.content}\n\n---\nAgent ID: ${result.agentId}`,
           isError: true,
+          returnDisplay: {
+            type: 'agent_result',
+            agentId: result.agentId,
+            agentType: params.subagent_type,
+            description: params.description,
+            prompt: params.prompt,
+            content: result.content,
+            stats: {
+              toolCalls: 0,
+              duration,
+              tokens: {
+                input: 0,
+                output: 0,
+              },
+            },
+            status: 'failed',
+          },
           metadata: {
             agentId: result.agentId,
             agentType: params.subagent_type,

@@ -1,3 +1,4 @@
+import os from 'os';
 import { describe, expect, test } from 'vitest';
 import { BackgroundTaskManager } from '../backgroundTaskManager';
 import type { ToolResult } from '../tool';
@@ -115,37 +116,41 @@ describe('bash tool with run_in_background', () => {
     expect(result.llmContent).toContain('Command cannot be empty');
   });
 
-  test('should automatically move to background when run_in_background=true', async () => {
-    const backgroundTaskManager = new BackgroundTaskManager();
-    const bashTool = createBashTool({
-      cwd: process.cwd(),
-      backgroundTaskManager,
-    });
+  test.skipIf(os.platform() === 'win32')(
+    'should automatically move to background when run_in_background=true',
+    async () => {
+      const backgroundTaskManager = new BackgroundTaskManager();
+      const bashTool = createBashTool({
+        cwd: process.cwd(),
+        backgroundTaskManager,
+      });
 
-    const command =
-      'echo "line 1"; sleep 2; echo "line 2"; sleep 2; echo "line 3"';
+      const command =
+        'echo "line 1"; sleep 2; echo "line 2"; sleep 2; echo "line 3"';
 
-    const startTime = Date.now();
-    const result = (await bashTool.execute({
-      command,
-      run_in_background: true,
-    })) as ToolResult & { backgroundTaskId: string };
-    const elapsed = Date.now() - startTime;
+      const startTime = Date.now();
+      const result = (await bashTool.execute({
+        command,
+        run_in_background: true,
+      })) as ToolResult & { backgroundTaskId: string };
+      const elapsed = Date.now() - startTime;
 
-    expect(elapsed).toBeLessThan(5000);
-    expect(result.backgroundTaskId).toBeTruthy();
-    expect(result.llmContent).toContain('moved to background');
-    expect(result.llmContent).toContain('Task ID:');
+      expect(elapsed).toBeLessThan(5000);
+      expect(result.backgroundTaskId).toBeTruthy();
+      expect(result.llmContent).toContain('moved to background');
+      expect(result.llmContent).toContain('Task ID:');
 
-    if (result.backgroundTaskId) {
-      const task = backgroundTaskManager.getTask(result.backgroundTaskId);
-      expect(task).toBeTruthy();
-      expect(task?.command).toBe(command);
-      expect(task?.status).toBe('running');
+      if (result.backgroundTaskId) {
+        const task = backgroundTaskManager.getTask(result.backgroundTaskId);
+        expect(task).toBeTruthy();
+        expect(task?.command).toBe(command);
+        expect(task?.status).toBe('running');
 
-      await backgroundTaskManager.killTask(result.backgroundTaskId);
-    }
-  }, 15000);
+        await backgroundTaskManager.killTask(result.backgroundTaskId);
+      }
+    },
+    15000,
+  );
 
   test('should work with immediate return for short commands', async () => {
     const backgroundTaskManager = new BackgroundTaskManager();

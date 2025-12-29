@@ -77,11 +77,44 @@ export async function hasUncommittedChanges(cwd: string): Promise<boolean> {
 }
 
 /**
+ * Get list of unstaged files with their status
+ * Returns files that have changes not yet staged (working tree changes)
+ */
+export async function getUnstagedFiles(
+  cwd: string,
+): Promise<Array<{ status: string; file: string }>> {
+  const { stdout } = await gitExec(cwd, ['status', '--porcelain']);
+  const output = stdout.trimEnd();
+  if (!output) return [];
+
+  const files: Array<{ status: string; file: string }> = [];
+  for (const line of output.split('\n')) {
+    if (!line) continue;
+    const indexStatus = line[0];
+    const workTreeStatus = line[1];
+    const file = line.substring(3);
+    if (indexStatus === '?' && workTreeStatus === '?') {
+      files.push({ status: '?', file });
+    } else if (workTreeStatus !== ' ' && workTreeStatus !== undefined) {
+      files.push({ status: workTreeStatus, file });
+    }
+  }
+  return files;
+}
+
+/**
  * Check if any remote is configured
  */
 export async function hasRemote(cwd: string): Promise<boolean> {
   const output = await gitOutput(cwd, ['remote']);
   return output.length > 0;
+}
+
+/**
+ * Check if origin remote is configured
+ */
+export async function hasOriginRemote(cwd: string): Promise<boolean> {
+  return gitCheck(cwd, ['remote', 'get-url', 'origin']);
 }
 
 /**
@@ -218,7 +251,12 @@ export async function gitPush(
 ): Promise<void> {
   // If no output callback, use the simple exec approach
   if (!onOutput) {
-    const { code, stderr } = await gitExec(cwd, ['push']);
+    const { code, stderr } = await gitExec(cwd, [
+      'push',
+      '-u',
+      'origin',
+      'HEAD',
+    ]);
     if (code !== 0) {
       throw new Error(stderr || 'Push failed');
     }
@@ -230,7 +268,12 @@ export async function gitPush(
 
   return new Promise((resolve, reject) => {
     // Use --progress to ensure git outputs progress info
-    const gitProcess = spawn('git', ['push', '--progress'], { cwd });
+    // Use -u origin HEAD to auto-set upstream for new branches
+    const gitProcess = spawn(
+      'git',
+      ['push', '-u', 'origin', 'HEAD', '--progress'],
+      { cwd },
+    );
     let stderr = '';
 
     // Process output, handling \r (carriage return) for in-place progress updates

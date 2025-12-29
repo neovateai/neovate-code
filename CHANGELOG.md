@@ -1,3 +1,19 @@
+## 0.22.4
+
+`2025-12-26`
+
+- feat: add anthropic provider support and example plugin by @chencheng (云谦) in [#581](https://github.com/umijs/takumi/pull/581)
+- fix(commit): strip think tags from AI response before JSON parsing by @chencheng (云谦) in [#579](https://github.com/umijs/takumi/pull/579)
+- feat(commit): suggest staging unstaged files in commit command by @chencheng (云谦) in [#578](https://github.com/umijs/takumi/pull/578)
+- fix(commit): add error handling for JSON parsing in nodeBridge by @chencheng (云谦) in [#577](https://github.com/umijs/takumi/pull/577)
+- fix: set upstream when pushing new branches by @chencheng (云谦) in [#575](https://github.com/umijs/takumi/pull/575)
+- refactor: optimize dot file skipping in listDirectory by @chencheng (云谦) in [#576](https://github.com/umijs/takumi/pull/576)
+- feat: add markdown command sanitization for ai responses by [@Peach](https://github.com/Peach) in [#573](https://github.com/umijs/takumi/pull/573)
+- feat: enhance tool use display with description by [@sorrycc](https://github.com/sorrycc)
+- fix: add space after checkbox symbol in todo items by @chencheng (云谦) in [#572](https://github.com/umijs/takumi/pull/572)
+- refactor: simplify global command path resolution by [@阿平](https://github.com/阿平) in [#567](https://github.com/umijs/takumi/pull/567)
+
+
 ## 0.22.3
 
 `2025-12-25`

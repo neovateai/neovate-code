@@ -1,23 +1,20 @@
-import { JsonlLogger } from '../jsonl';
-import { runLoop } from '../loop';
 import type { NormalizedMessage } from '../message';
-import { resolveModelWithContext } from '../model';
-import { loadSessionMessages, Session } from '../session';
-import { type Tool, Tools } from '../tool';
-import { randomUUID } from '../utils/randomUUID';
+import { Project } from '../project';
+import { Session } from '../session';
+import type { Tool } from '../tool';
 import type {
   AgentDefinition,
   AgentExecuteOptions,
   AgentExecutionResult,
 } from './types';
 
-const MAX_TURNS = 50;
-const MODEL_INHERIT = 'inherit';
-
 enum AgentStatus {
   Completed = 'completed',
   Failed = 'failed',
 }
+
+// Resolve model
+const MODEL_INHERIT = 'inherit';
 
 export async function executeAgent(
   options: AgentExecuteOptions,
@@ -27,11 +24,9 @@ export async function executeAgent(
     prompt,
     tools,
     context,
-    model,
-    forkContextMessages,
-    cwd,
     signal,
     onMessage,
+    onToolApprove,
     resume,
   } = options;
 
@@ -43,9 +38,6 @@ export async function executeAgent(
     }
     return Session.createSessionId();
   })();
-
-  const agentLogPath = context.paths.getAgentLogPath(agentId);
-  const agentLogger = new JsonlLogger({ filePath: agentLogPath });
 
   try {
     // Validate Agent definition
@@ -65,16 +57,7 @@ export async function executeAgent(
       );
     }
 
-    const toolNames = filteredToolList.map((t) => t.name);
-
-    // Prepare messages
-    const messages = [
-      ...loadSessionMessages({ logPath: agentLogPath }),
-      ...prepareMessages(prompt, definition, forkContextMessages, toolNames),
-    ];
-
-    // Resolve model
-    let modelName = model || definition.model;
+    let modelName = options.model || definition.model;
 
     // If model is 'inherit', use the model from context.config
     if (modelName === MODEL_INHERIT) {
@@ -85,30 +68,22 @@ export async function executeAgent(
       throw new Error(`No model specified for agent '${definition.agentType}'`);
     }
 
-    const resolvedModelResult = await resolveModelWithContext(
-      modelName,
+    // Create Project instance with agent log path
+    const project = new Project({
+      sessionId: `agent-${agentId}`,
       context,
-    );
+    });
 
-    if (!resolvedModelResult.model) {
-      throw new Error(
-        `Failed to resolve model '${modelName}' for agent '${definition.agentType}'`,
-      );
-    }
-
-    // Execute loop
-    const loopResult = await runLoop({
-      input: messages,
-      model: resolvedModelResult.model,
-      tools: new Tools(filteredToolList),
-      cwd,
+    // Execute using Project.send
+    const result = await project.sendWithSystemPromptAndTools(prompt, {
+      model: modelName,
       systemPrompt: definition.systemPrompt,
+      tools: filteredToolList,
       signal,
-      maxTurns: MAX_TURNS,
-      onMessage: async (message) => {
-        const normalizedMessage: NormalizedMessage & { sessionId: string } = {
+      onMessage: async ({ message }) => {
+        // Add agent metadata
+        const enhancedMessage: NormalizedMessage = {
           ...message,
-          sessionId: agentId,
           metadata: {
             ...(message.metadata || {}),
             agentId,
@@ -116,36 +91,35 @@ export async function executeAgent(
           },
         };
 
-        agentLogger.addMessage({ message: normalizedMessage });
-
         if (onMessage) {
           try {
-            await onMessage(normalizedMessage, agentId);
+            await onMessage(enhancedMessage, agentId);
           } catch (error) {
             console.error('[executeAgent] Failed to send message:', error);
           }
         }
       },
+      onToolApprove,
     });
 
     // Handle result
-    if (loopResult.success) {
+    if (result.success) {
       return {
         status: AgentStatus.Completed,
         agentId,
-        content: extractFinalContent(loopResult.data),
-        totalToolCalls: loopResult.metadata.toolCallsCount,
+        content: extractFinalContent(result.data),
+        totalToolCalls: result.metadata?.toolCallsCount || 0,
         totalDuration: Date.now() - startTime,
         usage: {
-          inputTokens: loopResult.data.usage?.promptTokens || 0,
-          outputTokens: loopResult.data.usage?.completionTokens || 0,
+          inputTokens: result.data.usage?.promptTokens || 0,
+          outputTokens: result.data.usage?.completionTokens || 0,
         },
       };
     }
     return {
       status: AgentStatus.Failed,
       agentId,
-      content: `Agent execution failed: ${loopResult.error.message}`,
+      content: `Agent execution failed: ${result.error.message}`,
       totalToolCalls: 0,
       totalDuration: Date.now() - startTime,
       usage: { inputTokens: 0, outputTokens: 0 },
@@ -160,29 +134,6 @@ export async function executeAgent(
       usage: { inputTokens: 0, outputTokens: 0 },
     };
   }
-}
-
-function prepareMessages(
-  prompt: string,
-  definition: AgentDefinition,
-  forkContextMessages: NormalizedMessage[] | undefined,
-  availableToolNames: string[],
-): NormalizedMessage[] {
-  if (definition.forkContext && forkContextMessages) {
-    // TODO: Implement fork context
-    // return prepareForkMessages(forkContextMessages, prompt, availableToolNames);
-  }
-
-  return [
-    {
-      role: 'user',
-      content: prompt,
-      type: 'message',
-      timestamp: new Date().toISOString(),
-      uuid: randomUUID(),
-      parentUuid: null,
-    },
-  ];
 }
 
 function extractFinalContent(data: Record<string, unknown>): string {

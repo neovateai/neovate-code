@@ -1,19 +1,86 @@
 import { existsSync, readFileSync } from 'fs';
-import { Box, Text, useInput } from 'ink';
-import SelectInput from 'ink-select-input';
+import { Box, Text } from 'ink';
 import path from 'pathe';
-import React, { useMemo } from 'react';
+import type React from 'react';
+import { useCallback, useMemo } from 'react';
 import { TOOL_NAMES } from '../constants';
 import type { ToolUse as ToolUseType } from '../tool';
 import type { Question } from '../tools/askUserQuestion';
+import { safeStringify } from '../utils/safeStringify';
 import { AskQuestionModal } from './AskQuestionModal';
 import { UI_COLORS } from './constants';
+import { DashedDivider } from './DashedDivider';
 import { DiffViewer } from './DiffViewer';
+import { SelectInput, type SelectOption } from './SelectInput';
 import { type ApprovalResult, useAppStore } from './store';
+import { useTerminalSize } from './useTerminalSize';
 
 interface ToolPreviewProps {
   toolUse: ToolUseType;
   cwd: string;
+}
+
+function TopDivider() {
+  const { columns } = useTerminalSize();
+  return (
+    <Box>
+      <Text color={UI_COLORS.ASK_PRIMARY} bold>
+        {'─'.repeat(Math.max(0, columns))}
+      </Text>
+    </Box>
+  );
+}
+
+function renderTitle(toolUse: ToolUseType, cwd: string): React.ReactNode {
+  const { name, params } = toolUse;
+
+  if (name === 'edit') {
+    const relativeFilePath = getRelativePath(params.file_path, cwd);
+    return (
+      <Box>
+        <Text bold color={UI_COLORS.ASK_PRIMARY}>
+          Edit file{' '}
+        </Text>
+        <Text>{relativeFilePath}</Text>
+      </Box>
+    );
+  }
+
+  if (name === 'write') {
+    const relativeFilePath = getRelativePath(params.file_path, cwd);
+    const fullPath = path.isAbsolute(params.file_path)
+      ? params.file_path
+      : path.resolve(cwd, params.file_path);
+    const isNew = !existsSync(fullPath);
+    const action = isNew ? 'Create file ' : 'Update ';
+
+    return (
+      <Box>
+        <Text bold color={UI_COLORS.ASK_PRIMARY}>
+          {action}
+        </Text>
+        <Text>{relativeFilePath}</Text>
+      </Box>
+    );
+  }
+
+  if (name === 'bash') {
+    return (
+      <Box>
+        <Text bold color={UI_COLORS.ASK_PRIMARY}>
+          Bash command
+        </Text>
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      <Text bold color={UI_COLORS.ASK_PRIMARY}>
+        Tool use
+      </Text>
+    </Box>
+  );
 }
 
 function ToolPreview({ toolUse, cwd }: ToolPreviewProps) {
@@ -26,37 +93,37 @@ function ToolPreview({ toolUse, cwd }: ToolPreviewProps) {
     );
 
     return (
-      <Box flexDirection="column">
-        <Box marginY={1}>
-          <Text bold color={UI_COLORS.TOOL}>
-            {name}
-          </Text>
-          <Text color="gray"> {fileName}</Text>
-        </Box>
+      <Box flexDirection="column" marginBottom={1}>
+        <DashedDivider />
         <DiffViewer
           originalContent={originalContent}
           newContent={newContent}
           fileName={fileName}
         />
+        <DashedDivider />
+      </Box>
+    );
+  }
+
+  if (name === 'bash') {
+    return (
+      <Box flexDirection="column" marginBottom={1}>
+        <Box marginLeft={2}>
+          <Text>{params.command}</Text>
+        </Box>
+        {params.description && (
+          <Box marginLeft={2}>
+            <Text color={UI_COLORS.ASK_SECONDARY}>{params.description}</Text>
+          </Box>
+        )}
       </Box>
     );
   }
 
   return (
-    <Box flexDirection="column">
-      <Box marginY={1}>
-        <Text bold color={UI_COLORS.TOOL}>
-          {name}
-        </Text>
-      </Box>
-      <Box
-        flexDirection="column"
-        borderStyle="round"
-        borderColor="gray"
-        padding={1}
-      >
-        <Text bold>Parameters:</Text>
-        <Text color="gray">{JSON.stringify(params, null, 2)}</Text>
+    <Box flexDirection="column" marginBottom={1}>
+      <Box marginLeft={2}>
+        <Text dimColor>{formatParamsDescription(params)}</Text>
       </Box>
     </Box>
   );
@@ -118,67 +185,137 @@ export function ApprovalModal() {
   return <ApprovalModalContent />;
 }
 
+function getQuestionText(toolUse: ToolUseType, cwd: string): string {
+  const { name, params } = toolUse;
+
+  switch (name) {
+    case 'bash':
+      return 'Do you want to proceed?';
+    case 'edit': {
+      const fileName = path.basename(params.file_path);
+      return `Do you want to make this edit to ${fileName}?`;
+    }
+    case 'write': {
+      const fullPath = path.isAbsolute(params.file_path)
+        ? params.file_path
+        : path.resolve(cwd, params.file_path);
+      const isNew = !existsSync(fullPath);
+      const fileName = path.basename(params.file_path);
+      return isNew
+        ? `Do you want to create ${fileName}?`
+        : `Do you want to update ${fileName}?`;
+    }
+    default:
+      return 'Do you want to proceed?';
+  }
+}
+
 function ApprovalModalContent() {
-  const { approvalModal, cwd } = useAppStore();
+  const { approvalModal, cwd, productName } = useAppStore();
 
   const selectOptions = useMemo(() => {
-    const options = [
-      { label: 'Yes (once)', value: 'approve_once' },
-      ...(approvalModal!.category === 'write'
-        ? [
-            {
-              label: `Yes, allow all edits during this session`,
-              value: 'approve_always_edit',
-            },
-          ]
-        : []),
-      {
-        label: `Yes, allow ${approvalModal!.toolUse.name} during this session`,
-        value: 'approve_always_tool',
-      },
-      { label: 'No, and suggest changes (esc)', value: 'deny' },
-    ].map((option, index) => ({
-      label: `${index + 1}. ${option.label}`,
-      value: option.value,
-    }));
-    return options;
+    const { name } = approvalModal!.toolUse;
+    const category = approvalModal!.category;
+
+    const option1: SelectOption = {
+      type: 'text',
+      value: 'approve_once',
+      label: 'Yes',
+    };
+
+    // Option 2: Dynamic based on category
+    const option2: SelectOption =
+      category === 'write'
+        ? {
+            type: 'text',
+            value: 'approve_always_edit',
+            label: 'Yes, allow all edits during this session',
+          }
+        : {
+            type: 'text',
+            value: 'approve_always_tool',
+            label: `Yes, and don't ask again for ${name} commands in ${cwd}`,
+          };
+
+    // Option 3: Deny option (bash/edit/write supports input)
+    const supportsDenyInput = ['bash', 'edit', 'write'].includes(name);
+    const option3: SelectOption = supportsDenyInput
+      ? {
+          type: 'input',
+          value: 'deny',
+          label: `Type here to tell ${productName} what to do differently`,
+          placeholder: `Type here to tell ${productName} what to do differently`,
+          initialValue: '',
+        }
+      : {
+          type: 'text',
+          value: 'deny',
+          label: `No, and tell ${productName} what to do differently (esc)`,
+        };
+
+    return [option1, option2, option3];
+  }, [approvalModal, cwd, productName]);
+
+  const questionText = useMemo(
+    () => getQuestionText(approvalModal!.toolUse, cwd),
+    [approvalModal, cwd],
+  );
+
+  const handleChange = useCallback(
+    (value: string | string[]) => {
+      if (typeof value === 'string') {
+        // Check if it's one of the approval options
+        if (
+          value === 'approve_once' ||
+          value === 'approve_always_edit' ||
+          value === 'approve_always_tool'
+        ) {
+          approvalModal!.resolve(value as ApprovalResult);
+          return;
+        }
+
+        // Check if it is an input type deny option
+        const denyOption = selectOptions.find((opt) => opt.value === 'deny');
+        if (denyOption?.type === 'input' && value !== 'deny') {
+          // value is the rejection reason entered by the user
+          approvalModal!.resolve('deny', { denyReason: value });
+        } else {
+          // Normal selection (value === 'deny') or no input
+          approvalModal!.resolve('deny');
+        }
+      }
+    },
+    [selectOptions, approvalModal],
+  );
+
+  const handleCancel = useCallback(() => {
+    approvalModal!.resolve('deny');
   }, [approvalModal]);
 
-  useInput((input, key) => {
-    const inputNum = parseInt(input, 10);
-    if (key.escape) {
-      approvalModal!.resolve('deny');
-    } else if (inputNum >= 1 && inputNum <= selectOptions.length) {
-      const value = selectOptions[parseInt(input) - 1].value as ApprovalResult;
-      approvalModal!.resolve(value);
-    } else if (key.ctrl && input === 'c') {
-      approvalModal!.resolve('deny');
-    }
-  });
-
   return (
-    <Box
-      flexDirection="column"
-      padding={1}
-      borderStyle="round"
-      borderColor={UI_COLORS.WARNING}
-    >
-      <Text color={UI_COLORS.WARNING} bold>
-        Tool Approval Required
-      </Text>
+    <Box flexDirection="column">
+      <TopDivider />
+
+      {renderTitle(approvalModal!.toolUse, cwd)}
 
       <ToolPreview toolUse={approvalModal!.toolUse} cwd={cwd} />
 
-      <Box marginY={1}>
-        <Text bold>Approval Options:</Text>
+      <Box marginBottom={1}>
+        <Text>{questionText}</Text>
       </Box>
 
       <SelectInput
-        items={selectOptions}
-        onSelect={(item) =>
-          approvalModal!.resolve(item.value as ApprovalResult)
-        }
+        options={selectOptions}
+        mode="single"
+        onChange={handleChange}
+        onCancel={handleCancel}
       />
+
+      <Box marginTop={1}>
+        <Text dimColor color={UI_COLORS.ASK_SECONDARY}>
+          Esc to exit
+        </Text>
+      </Box>
     </Box>
   );
 }
@@ -234,4 +371,20 @@ function getDiffParams(toolUse: ToolUseType, cwd: string) {
 
 function getRelativePath(filePath: string, cwd: string): string {
   return path.isAbsolute(filePath) ? path.relative(cwd, filePath) : filePath;
+}
+
+function formatParamsDescription(params: Record<string, any>): string {
+  if (!params || typeof params !== 'object') {
+    return '';
+  }
+  const entries = Object.entries(params);
+  if (entries.length === 0) {
+    return '';
+  }
+  return entries
+    .filter(([key, value]) => value !== null && value !== undefined)
+    .map(([key, value]) => {
+      return `${key}: ${safeStringify(value)}`;
+    })
+    .join(', ');
 }

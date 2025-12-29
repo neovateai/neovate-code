@@ -1,6 +1,11 @@
 import type { Context } from '../context';
 import type { NormalizedMessage } from '../message';
-import type { Tool } from '../tool';
+import type {
+  ApprovalCategory,
+  Tool,
+  ToolApprovalResult,
+  ToolUse,
+} from '../tool';
 import { getBuiltinAgents } from './builtin';
 import { executeAgent } from './executor';
 import type {
@@ -60,6 +65,10 @@ export class AgentManager {
         message: NormalizedMessage,
         agentId: string,
       ) => void | Promise<void>;
+      onToolApprove?: (opts: {
+        toolUse: ToolUse;
+        category?: ApprovalCategory;
+      }) => Promise<boolean | ToolApprovalResult>;
     },
   ): Promise<AgentExecutionResult> {
     const definition = this.agents.get(input.subagent_type);
@@ -83,6 +92,7 @@ export class AgentManager {
       cwd: context.cwd,
       signal: context.signal,
       onMessage: context.onMessage,
+      onToolApprove: context.onToolApprove,
     };
 
     return executeAgent(executeOptions);

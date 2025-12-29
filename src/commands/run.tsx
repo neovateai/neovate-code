@@ -86,6 +86,40 @@ Reply: "find . -type f ( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" ) -
 // Helper Functions
 // ============================================================================
 
+/**
+ * Sanitize command by removing Markdown formatting (code blocks, inline code)
+ * and think tags from AI responses
+ * @param rawCommand - Raw command string possibly containing Markdown syntax
+ * @returns Cleaned command string
+ */
+function sanitizeCommand(rawCommand: string): string {
+  let cleaned = rawCommand;
+
+  // Step 0: Remove think tags from AI responses
+  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/g, '');
+
+  // Step 1: Remove code block formatting (```bash\n...\n``` or ```\n...\n```)
+  cleaned = cleaned.replace(
+    /^```(?:bash|sh|shell)?\s*\n([\s\S]*?)\n```$/g,
+    '$1',
+  );
+
+  // Step 2: Remove inline code formatting (`...`)
+  // Be careful: shell backticks are valid, only remove when entire string is wrapped
+  if (
+    cleaned.startsWith('`') &&
+    cleaned.endsWith('`') &&
+    cleaned.split('`').length === 3
+  ) {
+    cleaned = cleaned.slice(1, -1);
+  }
+
+  // Step 3: Clean whitespace
+  cleaned = cleaned.trim();
+
+  return cleaned;
+}
+
 function executeShell(
   command: string,
   cwd: string,
@@ -367,7 +401,8 @@ const RunUI: React.FC<RunUIProps> = ({
           model: options.model,
         });
 
-        const command = result.success ? result.data?.text?.trim() : null;
+        const rawCommand = result.success ? result.data?.text : null;
+        const command = rawCommand ? sanitizeCommand(rawCommand) : null;
 
         if (!command) {
           setState({

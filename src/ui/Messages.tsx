@@ -1,6 +1,7 @@
 import { Box, Static, Text } from 'ink';
 import pc from 'picocolors';
 import React, { useMemo } from 'react';
+import { TOOL_NAMES } from '../constants';
 import type {
   AssistantMessage,
   NormalizedMessage,
@@ -21,6 +22,7 @@ import {
   toolResultPart2ToToolResultPart,
 } from '../message';
 import { symbols } from '../utils/symbols';
+import { AgentProgress } from './AgentProgress';
 import { SPACING, UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
 import { GradientString } from './GradientString';
@@ -438,17 +440,26 @@ function ToolUse({ part }: { part: ToolUsePart }) {
   const description = part.description;
   return (
     <Box marginTop={SPACING.MESSAGE_MARGIN_TOP}>
-      <Text bold color={UI_COLORS.TOOL}>
-        {displayName || name}
+      <Text>
+        <Text bold color={UI_COLORS.TOOL}>
+          {displayName || name}
+        </Text>
+        {description && (
+          <Text color={UI_COLORS.TOOL_DESCRIPTION}>({description})</Text>
+        )}
       </Text>
-      {description && (
-        <Text color={UI_COLORS.TOOL_DESCRIPTION}>({description})</Text>
-      )}
     </Box>
   );
 }
 
 function ToolPair({ pair }: { pair: ToolPair }) {
+  // If it's a Task tool, use AgentProgress component
+  if (pair.toolUse.name === TOOL_NAMES.TASK) {
+    return (
+      <AgentProgress toolUse={pair.toolUse} toolResult={pair.toolResult} />
+    );
+  }
+
   return (
     <Box flexDirection="column">
       {/* Render ToolUse */}

@@ -30,6 +30,7 @@ interface GitStatusData {
   isGitInstalled: boolean;
   isUserConfigured: { name: boolean; email: boolean };
   isMerging: boolean;
+  unstagedFiles: Array<{ status: string; file: string }>;
 }
 
 interface ExecutionResult {
@@ -42,6 +43,10 @@ interface ExecutionResult {
 type CommitState =
   | { phase: 'validating' }
   | { phase: 'staging' }
+  | {
+      phase: 'suggest-stage';
+      unstagedFiles: Array<{ status: string; file: string }>;
+    }
   | { phase: 'generating' }
   | { phase: 'displaying'; data: GenerateCommitData }
   | { phase: 'editing'; data: GenerateCommitData; editedMessage: string }
@@ -133,7 +138,8 @@ const CommitUI: React.FC<CommitUIProps> = ({ messageBus, cwd, options }) => {
       if (
         state.phase === 'validating' ||
         state.phase === 'staging' ||
-        state.phase === 'generating'
+        state.phase === 'generating' ||
+        state.phase === 'suggest-stage'
       ) {
         setShouldExit(true);
       } else if (state.phase === 'editing') {
@@ -359,6 +365,13 @@ and may require re-resolving conflicts.`,
           return;
         }
       } else if (!status.hasStagedChanges) {
+        if (status.unstagedFiles.length > 0) {
+          setState({
+            phase: 'suggest-stage',
+            unstagedFiles: status.unstagedFiles,
+          });
+          return;
+        }
         setState({
           phase: 'error',
           error:
@@ -404,6 +417,56 @@ and may require re-resolving conflicts.`,
       });
     }
   }, [messageBus, cwd, options, executeNonInteractiveActions]);
+
+  const handleConfirmStage = useCallback(async () => {
+    if (state.phase !== 'suggest-stage') return;
+
+    setState({ phase: 'staging' });
+    const stageResult = await messageBus.request('git.stage', {
+      cwd,
+      all: true,
+    });
+
+    if (!stageResult.success) {
+      setState({
+        phase: 'error',
+        error: stageResult.error || 'Failed to stage changes',
+      });
+      return;
+    }
+
+    setState({ phase: 'generating' });
+    const generateResult = await messageBus.request('project.generateCommit', {
+      cwd,
+      language: options.language || 'English',
+      model: options.model,
+    });
+
+    if (!generateResult.success) {
+      setState({
+        phase: 'error',
+        error: generateResult.error || 'Failed to generate commit message',
+        recoveryAction: () => runWorkflow(),
+      });
+      return;
+    }
+
+    const data = generateResult.data as GenerateCommitData;
+
+    if (!options.interactive) {
+      await executeNonInteractiveActions(data);
+      return;
+    }
+
+    setState({ phase: 'displaying', data });
+  }, [
+    state,
+    messageBus,
+    cwd,
+    options,
+    runWorkflow,
+    executeNonInteractiveActions,
+  ]);
 
   // Main workflow
   useEffect(() => {
@@ -779,6 +842,15 @@ and may require re-resolving conflicts.`,
         </Box>
       )}
 
+      {/* Suggest Stage Phase */}
+      {state.phase === 'suggest-stage' && (
+        <SuggestStagePrompt
+          unstagedFiles={state.unstagedFiles}
+          onConfirm={handleConfirmStage}
+          onCancel={() => setShouldExit(true)}
+        />
+      )}
+
       {/* Generating Phase */}
       {state.phase === 'generating' && (
         <Box>
@@ -968,6 +1040,60 @@ and may require re-resolving conflicts.`,
           />
         </Box>
       )}
+    </Box>
+  );
+};
+
+// ============================================================================
+// Suggest Stage Prompt Component
+// ============================================================================
+
+interface SuggestStagePromptProps {
+  unstagedFiles: Array<{ status: string; file: string }>;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+const SuggestStagePrompt: React.FC<SuggestStagePromptProps> = ({
+  unstagedFiles,
+  onConfirm,
+  onCancel,
+}) => {
+  useInput((input, key) => {
+    if (key.escape || input === 'n' || input === 'N') {
+      onCancel();
+    }
+    if (input === 'y' || input === 'Y' || key.return) {
+      onConfirm();
+    }
+  });
+
+  const maxFilesToShow = 10;
+  const filesToShow = unstagedFiles.slice(0, maxFilesToShow);
+  const remainingCount = unstagedFiles.length - maxFilesToShow;
+
+  return (
+    <Box flexDirection="column">
+      <Text color="yellow">
+        No staged changes found. The following files have modifications:
+      </Text>
+      <Box flexDirection="column" marginY={1} paddingLeft={2}>
+        {filesToShow.map((f, i) => (
+          <Text key={i}>
+            <Text color="cyan">{f.status}</Text> {f.file}
+          </Text>
+        ))}
+        {remainingCount > 0 && (
+          <Text dimColor>... and {remainingCount} more files</Text>
+        )}
+      </Box>
+      <Text>
+        Stage all files and continue? (
+        <Text color="green" bold>
+          y
+        </Text>
+        /N)
+      </Text>
     </Box>
   );
 };

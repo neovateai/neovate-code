@@ -23,6 +23,7 @@ import type { ApprovalCategory, ToolUse } from './tool';
 import { getFiles } from './utils/files';
 import { listDirectory } from './utils/list';
 import { randomUUID } from './utils/randomUUID';
+import { stripThinkTags } from './utils/safeParseJson';
 import { getCurrentBranch } from './worktree';
 
 type ModelData = Omit<Model, 'id' | 'cost'>;
@@ -1206,7 +1207,16 @@ ${diff}
         }
 
         // Parse the JSON response
-        const jsonResponse = JSON.parse(result.data.text);
+        let jsonResponse;
+        try {
+          const cleanedText = stripThinkTags(result.data.text);
+          jsonResponse = JSON.parse(cleanedText);
+        } catch (parseError: any) {
+          return {
+            success: false,
+            error: `Failed to parse commit message response: ${parseError.message}\n\nRaw response:\n${result.data.text}`,
+          };
+        }
 
         return {
           success: true,
@@ -1235,6 +1245,7 @@ ${diff}
           isGitRepository,
           hasUncommittedChanges,
           isGitUserConfigured,
+          getUnstagedFiles,
         } = await import('./utils/git');
         const { getStagedFileList } = await import('./utils/git');
         const { existsSync } = await import('fs');
@@ -1253,6 +1264,7 @@ ${diff}
               isGitInstalled: false,
               isUserConfigured: { name: false, email: false },
               isMerging: false,
+              unstagedFiles: [],
             },
           };
         }
@@ -1269,17 +1281,19 @@ ${diff}
               isGitInstalled: true,
               isUserConfigured: { name: false, email: false },
               isMerging: false,
+              unstagedFiles: [],
             },
           };
         }
 
         // Get all status information in parallel
-        const [hasChanges, userConfig, stagedFiles, gitRoot] =
+        const [hasChanges, userConfig, stagedFiles, gitRoot, unstagedFiles] =
           await Promise.all([
             hasUncommittedChanges(cwd),
             isGitUserConfigured(cwd),
             getStagedFileList(cwd),
             getGitRoot(cwd),
+            getUnstagedFiles(cwd),
           ]);
 
         // Check if repository is in merge state
@@ -1294,6 +1308,7 @@ ${diff}
             isGitInstalled: true,
             isUserConfigured: userConfig,
             isMerging,
+            unstagedFiles,
           },
         };
       } catch (error: any) {
@@ -1341,14 +1356,14 @@ ${diff}
     this.messageBus.registerHandler('git.push', async (data) => {
       const { cwd } = data;
       try {
-        const { gitPush, hasRemote } = await import('./utils/git');
+        const { gitPush, hasOriginRemote } = await import('./utils/git');
 
-        // Check if remote exists
-        const remoteExists = await hasRemote(cwd);
+        // Check if origin remote exists
+        const remoteExists = await hasOriginRemote(cwd);
         if (!remoteExists) {
           return {
             success: false,
-            error: 'No remote repository configured',
+            error: 'No origin remote configured',
           };
         }
 
@@ -1656,9 +1671,15 @@ ${diff}
             category,
           });
 
-          return result.params
-            ? { approved: result.approved, params: result.params }
-            : result.approved;
+          if (result.params || result.denyReason) {
+            return {
+              approved: result.approved,
+              params: result.params,
+              denyReason: result.denyReason,
+            };
+          }
+
+          return result.approved;
         },
         onStreamResult: async (result: StreamResult) => {
           await this.messageBus.emitEvent('streamResult', {
