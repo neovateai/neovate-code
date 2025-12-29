@@ -59,9 +59,11 @@ export class Project {
     }
 
     if (!this.currentAssistantUuid) {
-      console.warn(
-        '[Snapshot] currentAssistantUuid is null, cannot create snapshot',
-      );
+      if (process.env.NEOVATE_SNAPSHOT_DEBUG === 'true') {
+        console.warn(
+          '[Snapshot] currentAssistantUuid is null, cannot create snapshot',
+        );
+      }
       return;
     }
 
@@ -73,13 +75,6 @@ export class Project {
     const sessionConfigManager = this.getSessionConfigManager();
 
     try {
-      const DEBUG = process.env.NEOVATE_SNAPSHOT_DEBUG === 'true';
-      if (DEBUG) {
-        console.log(
-          `[Snapshot] Creating snapshot for ${fullFilePath} (message: ${this.currentAssistantUuid})`,
-        );
-      }
-
       await createToolSnapshot(
         [fullFilePath],
         sessionConfigManager,
@@ -374,9 +369,6 @@ export class Project {
           if (!turnAssistantUuid) {
             turnAssistantUuid = normalizedMessage.uuid;
             this.currentAssistantUuid = turnAssistantUuid;
-            console.log(
-              `[Project] Locked turnAssistantUuid to ${turnAssistantUuid} (first assistant message)`,
-            );
           }
         }
         outputFormat.onMessage({

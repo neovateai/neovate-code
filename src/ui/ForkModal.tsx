@@ -3,6 +3,7 @@ import React from 'react';
 import type { Message, NormalizedMessage } from '../message';
 import { isCanceledMessage } from '../message';
 import { CANCELED_MESSAGE_TEXT } from '../constants';
+import { getMessagePreview, getMessageTimestamp } from './utils/messageUtils';
 
 type MessageWithUuid = Message & NormalizedMessage;
 
@@ -22,30 +23,6 @@ export function ForkModal({
   snapshotCache,
 }: ForkModalProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
-
-  const getMessagePreview = (message: Message): string => {
-    let text = '';
-    if (typeof message.content === 'string') {
-      text = message.content;
-    } else if (Array.isArray(message.content)) {
-      const textParts = message.content
-        .filter((part) => part.type === 'text')
-        .map((part) => part.text);
-      text = textParts.join(' ');
-    }
-    return text.length > 80 ? text.slice(0, 80) + '...' : text;
-  };
-
-  const getTimestamp = (message: MessageWithUuid): string => {
-    if (!message.timestamp) return '';
-    const date = new Date(message.timestamp);
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   const userMessages = messages
     .filter(
@@ -91,7 +68,7 @@ export function ForkModal({
         {userMessages.map((message, index) => {
           const isSelected = index === selectedIndex;
           const preview = getMessagePreview(message);
-          const timestamp = getTimestamp(message);
+          const timestamp = getMessageTimestamp(message);
           const messageHasSnapshot =
             snapshotCache && message.uuid && snapshotCache[message.uuid];
 

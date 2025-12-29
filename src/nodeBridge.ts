@@ -2013,9 +2013,6 @@ ${diff}
 
     this.messageBus.registerHandler('session.getSnapshot', async (data) => {
       const { cwd, sessionId, messageUuid } = data;
-      console.log(
-        `[session.getSnapshot] Querying snapshot for messageUuid: ${messageUuid}`,
-      );
       const context = await this.getContext(cwd);
       const sessionConfigManager = await this.getSessionConfigManager(
         context,
@@ -2023,10 +2020,6 @@ ${diff}
       );
       const snapshotManager = sessionConfigManager.getSnapshotManager();
       const snapshot = snapshotManager.getSnapshot(messageUuid);
-      console.log(
-        `[session.getSnapshot] Result for ${messageUuid}:`,
-        snapshot ? `Found (${snapshot.files.length} files)` : 'Not found',
-      );
       return {
         success: true,
         data: {
@@ -2034,6 +2027,35 @@ ${diff}
         },
       };
     });
+
+    this.messageBus.registerHandler(
+      'session.getSnapshotSummary',
+      async (data) => {
+        const { cwd, sessionId } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = await this.getSessionConfigManager(
+          context,
+          sessionId,
+        );
+        const snapshotManager = sessionConfigManager.getSnapshotManager();
+        const snapshots = snapshotManager.getSnapshots();
+
+        // Build a map of messageUuid -> file count
+        const snapshotSummary: Record<string, { fileCount: number }> = {};
+        for (const snapshot of snapshots) {
+          snapshotSummary[snapshot.messageUuid] = {
+            fileCount: snapshot.files.length,
+          };
+        }
+
+        return {
+          success: true,
+          data: {
+            snapshotSummary,
+          },
+        };
+      },
+    );
 
     this.messageBus.registerHandler('session.restoreSnapshot', async (data) => {
       const { cwd, sessionId, messageUuid } = data;

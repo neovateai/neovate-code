@@ -16,6 +16,7 @@ import { Messages } from './Messages';
 import { QueueDisplay } from './QueueDisplay';
 import { useAppStore } from './store';
 import { useTerminalRefresh } from './useTerminalRefresh';
+import { getMessagePreview, getRelativeTimestamp } from './utils/messageUtils';
 
 function SlashCommandJSX() {
   const { slashCommandJSX } = useAppStore();
@@ -91,57 +92,19 @@ export function App() {
   const [snapshotCache, setSnapshotCache] = React.useState<
     Record<string, boolean>
   >({});
+  const [snapshotFileCounts, setSnapshotFileCounts] = React.useState<
+    Record<string, number>
+  >({});
   const [showRestoreOptions, setShowRestoreOptions] = React.useState(false);
   const [selectedMessage, setSelectedMessage] = React.useState<{
     uuid: string;
     message: Message & NormalizedMessage;
   } | null>(null);
 
-  const getMessagePreview = (message: Message): string => {
-    let text = '';
-    if (typeof message.content === 'string') {
-      text = message.content;
-    } else if (Array.isArray(message.content)) {
-      const textParts = message.content
-        .filter((part) => part.type === 'text')
-        .map((part) => part.text);
-      text = textParts.join(' ');
-    }
-    return text.length > 80 ? text.slice(0, 80) + '...' : text;
-  };
-
-  const getTimestamp = (message: Message & NormalizedMessage): string => {
-    if (!message.timestamp) return '';
-    const date = new Date(message.timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHour = Math.floor(diffMin / 60);
-    const diffDay = Math.floor(diffHour / 24);
-
-    if (diffSec < 60) return `${diffSec}s ago`;
-    if (diffMin < 60) return `${diffMin}m ago`;
-    if (diffHour < 24) return `${diffHour}h ago`;
-    if (diffDay < 7) return `${diffDay}d ago`;
-
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   const handleForkSelect = (
     uuid: string,
     message: Message & NormalizedMessage,
   ) => {
-    console.log(`[handleForkSelect] Selected user message UUID: ${uuid}`);
-    console.log(`[handleForkSelect] snapshotCache:`, snapshotCache);
-    console.log(
-      `[handleForkSelect] hasSnapshot for this UUID: ${snapshotCache[uuid]}`,
-    );
     setSelectedMessage({ uuid, message });
     setShowRestoreOptions(true);
   };
@@ -167,15 +130,12 @@ export function App() {
   };
 
   const getSnapshotFileCount = (uuid: string): number => {
-    // This would need to be enhanced to actually track file counts
-    // For now, we just indicate whether a snapshot exists
-    return snapshotCache[uuid] ? 1 : 0;
+    return snapshotFileCounts[uuid] || 0;
   };
 
   React.useEffect(() => {
     if (!forkModalVisible) return;
     // Use messages from current state instead of loading from file
-    // This ensures fork modal shows the truncated message list after a fork operation
     setForkMessages(messages as NormalizedMessage[]);
 
     if (!bridge || !cwd || !sessionId) {
@@ -186,51 +146,46 @@ export function App() {
     setForkLoading(true);
     (async () => {
       try {
-        const userMessages = (messages as NormalizedMessage[]).filter(
-          (m) => m.role === 'user',
-        );
-
-        // Parallel query for all snapshots
-        const snapshotPromises = userMessages.map(async (userMessage) => {
-          const userUuid = userMessage.uuid;
-          if (!userUuid) return { userUuid: '', hasSnapshot: false };
-
-          const assistantMessage = (messages as NormalizedMessage[]).find(
-            (m) => m.parentUuid === userUuid && m.role === 'assistant',
-          );
-
-          const targetUuid = assistantMessage ? assistantMessage.uuid : null;
-
-          if (targetUuid) {
-            const snapshotRes = await bridge.request('session.getSnapshot', {
-              cwd,
-              sessionId,
-              messageUuid: targetUuid,
-            });
-            return {
-              userUuid,
-              hasSnapshot:
-                snapshotRes.success && snapshotRes.data?.snapshot !== null,
-            };
-          }
-          return { userUuid, hasSnapshot: false };
+        // Use the new snapshot summary API for better performance
+        const summaryRes = await bridge.request('session.getSnapshotSummary', {
+          cwd,
+          sessionId,
         });
 
-        const snapshotResults = await Promise.all(snapshotPromises);
-        const newSnapshotCache: Record<string, boolean> = {};
-        for (const { userUuid, hasSnapshot } of snapshotResults) {
-          if (userUuid) {
-            newSnapshotCache[userUuid] = hasSnapshot;
-            console.log(
-              `[SnapshotCache] User ${userUuid}: hasSnapshot = ${hasSnapshot}`,
-            );
-          }
-        }
+        if (summaryRes.success && summaryRes.data?.snapshotSummary) {
+          const snapshotSummary = summaryRes.data.snapshotSummary as Record<
+            string,
+            { fileCount: number }
+          >;
+          const newSnapshotCache: Record<string, boolean> = {};
+          const newSnapshotFileCounts: Record<string, number> = {};
 
-        console.log('[SnapshotCache] Final cache:', newSnapshotCache);
-        setSnapshotCache(newSnapshotCache);
+          // Map assistant message UUIDs to user message UUIDs
+          for (const m of messages as NormalizedMessage[]) {
+            if (m.role === 'user' && m.uuid) {
+              // Find the assistant message that responds to this user message
+              const assistantMessage = (messages as NormalizedMessage[]).find(
+                (am) => am.parentUuid === m.uuid && am.role === 'assistant',
+              );
+              if (assistantMessage?.uuid) {
+                const snapshotInfo = snapshotSummary[assistantMessage.uuid];
+                if (snapshotInfo) {
+                  newSnapshotCache[m.uuid] = true;
+                  newSnapshotFileCounts[m.uuid] = snapshotInfo.fileCount;
+                }
+              }
+            }
+          }
+
+          setSnapshotCache(newSnapshotCache);
+          setSnapshotFileCounts(newSnapshotFileCounts);
+        } else {
+          setSnapshotCache({});
+          setSnapshotFileCounts({});
+        }
       } catch (_e) {
         setSnapshotCache({});
+        setSnapshotFileCounts({});
       } finally {
         setForkLoading(false);
       }
@@ -264,7 +219,7 @@ export function App() {
       {showRestoreOptions && selectedMessage && (
         <RestoreOptionsModal
           messagePreview={getMessagePreview(selectedMessage.message)}
-          timestamp={getTimestamp(selectedMessage.message)}
+          timestamp={getRelativeTimestamp(selectedMessage.message)}
           hasSnapshot={snapshotCache[selectedMessage.uuid] ?? false}
           fileCount={getSnapshotFileCount(selectedMessage.uuid)}
           onSelect={handleRestoreOptionSelect}

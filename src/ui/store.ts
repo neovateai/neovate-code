@@ -21,6 +21,15 @@ import { clearTerminal } from '../utils/terminal';
 import { countTokens } from '../utils/tokenCounter';
 import { getUsername } from '../utils/username';
 import { detectImageFormat } from './TextInput/utils/imagePaste';
+import {
+  collectSnapshots,
+  buildFileRestorationPlan,
+  groupFilesBySnapshot,
+  restoreFilesFromSnapshots,
+  extractMessageText,
+  truncateHistory,
+  findTargetAssistantMessage,
+} from './utils/forkHelpers';
 
 export type ApprovalResult =
   | 'approve_once'
@@ -224,6 +233,84 @@ interface AppActions {
 }
 
 export type AppStore = AppState & AppActions;
+
+/**
+ * Restore code to the target point by collecting and restoring snapshots
+ */
+async function restoreCodeToTargetPoint(
+  bridge: UIBridge,
+  cwd: string,
+  sessionId: string,
+  messages: Message[],
+  targetIndex: number,
+  targetMessageUuid: string,
+  logFn: (message: string) => void,
+): Promise<void> {
+  const targetAssistantMessage = findTargetAssistantMessage(
+    messages,
+    targetMessageUuid,
+  );
+
+  // Collect all snapshots (target + all after target)
+  const snapshotsToProcess = await collectSnapshots(
+    bridge,
+    cwd,
+    sessionId,
+    messages,
+    targetIndex,
+    targetAssistantMessage,
+  );
+
+  if (snapshotsToProcess.length === 0) {
+    logFn('Fork: No snapshots found, skipping code restoration');
+    return;
+  }
+
+  // Build file restoration plan
+  const fileRestorationPlan = buildFileRestorationPlan(snapshotsToProcess);
+
+  // Group files by snapshot for efficient restoration
+  const restoreGroups = groupFilesBySnapshot(fileRestorationPlan);
+
+  // Execute restoration
+  const totalFilesRestored = await restoreFilesFromSnapshots(
+    bridge,
+    cwd,
+    sessionId,
+    restoreGroups,
+    logFn,
+  );
+
+  if (totalFilesRestored > 0) {
+    logFn(`Fork: Successfully restored ${totalFilesRestored} file(s)`);
+  } else {
+    logFn('Fork: No files to restore (no snapshots found)');
+  }
+}
+
+/**
+ * Restore conversation state to the target point
+ */
+function restoreConversationToTargetPoint(
+  messages: Message[],
+  targetIndex: number,
+  targetMessage: Message,
+  currentHistory: string[],
+  set: (state: Partial<AppState>) => void,
+): void {
+  const filteredMessages = messages.slice(0, targetIndex);
+  const contentText = extractMessageText(targetMessage);
+  const truncatedHistory = truncateHistory(filteredMessages, currentHistory);
+
+  set({
+    messages: filteredMessages,
+    forkParentUuid: (targetMessage as NormalizedMessage).parentUuid,
+    inputValue: contentText,
+    inputCursorPosition: contentText.length,
+    forkModalVisible: false,
+    history: truncatedHistory,
+  });
+}
 
 export const useAppStore = create<AppStore>()(
   devtools(
@@ -1029,15 +1116,14 @@ export const useAppStore = create<AppStore>()(
         options?: { restoreCode?: boolean; restoreConversation?: boolean },
       ) => {
         const { bridge, cwd, sessionId, messages } = get();
+
+        if (!cwd || !sessionId) {
+          get().log('Fork error: Invalid session state');
+          return;
+        }
+
         const restoreCode = options?.restoreCode ?? true;
         const restoreConversation = options?.restoreConversation ?? true;
-
-        console.log(
-          `[Fork DEBUG] Starting fork for message ${targetMessageUuid}`,
-        );
-        console.log(
-          `[Fork DEBUG] Restore code: ${restoreCode}, Restore conversation: ${restoreConversation}`,
-        );
 
         const targetMessage = messages.find(
           (m) => (m as NormalizedMessage).uuid === targetMessageUuid,
@@ -1051,238 +1137,34 @@ export const useAppStore = create<AppStore>()(
           (m) => (m as NormalizedMessage).uuid === targetMessageUuid,
         );
 
-        console.log(
-          `[Fork DEBUG] Target user message UUID: ${targetMessageUuid}`,
-        );
-
-        // Only restore code if restoreCode is true
+        // Restore code if requested
         if (restoreCode) {
-          // Strategy: Restore files to their state at the target point
-          // For each file, we need to find what its state was at the target time:
-          // 1. If file was modified at/before target: restore from target snapshot
-          // 2. If file was modified AFTER target: restore from the earliest snapshot after target
-          //
-          // Example timeline:
-          // Step1 → modifies fileA → snapshot1(fileA_v0)
-          // Step2 → modifies fileB → snapshot2(fileB_v0)
-          // Step3 → modifies fileA again → snapshot3(fileA_v1, where v1 = state after step1)
-          //
-          // When forking to Step2:
-          // - fileA should be v1 (after step1, before step3) → use snapshot3's fileA
-          // - fileB should be v0 (before step2) → use snapshot2's fileB
-          //
-          // When forking to Step1:
-          // - fileA should be v0 (before step1) → use snapshot1's fileA
-          // - fileB should be v0 (before step2) → use snapshot2's fileB
-
-          // Find the assistant message that is a response to the target user message
-          const targetAssistantMessage = messages.find(
-            (m) =>
-              (m as NormalizedMessage).parentUuid === targetMessageUuid &&
-              (m as NormalizedMessage).role === 'assistant',
+          await restoreCodeToTargetPoint(
+            bridge,
+            cwd,
+            sessionId,
+            messages,
+            targetIndex,
+            targetMessageUuid,
+            get().log,
           );
-
-          console.log(
-            `[Fork DEBUG] Target assistant message: ${targetAssistantMessage ? (targetAssistantMessage as NormalizedMessage).uuid : 'none'}`,
-          );
-
-          // Collect all snapshots (target + all after target), in chronological order
-          const snapshotsToProcess: Array<{
-            messageUuid: string;
-            snapshot: any;
-            isTarget: boolean;
-          }> = [];
-
-          // Get target snapshot
-          if (targetAssistantMessage) {
-            const targetSnapshotUuid = (
-              targetAssistantMessage as NormalizedMessage
-            ).uuid;
-            const targetSnapshotResponse = await bridge.request(
-              'session.getSnapshot',
-              {
-                cwd,
-                sessionId,
-                messageUuid: targetSnapshotUuid,
-              },
-            );
-
-            if (
-              targetSnapshotResponse.success &&
-              targetSnapshotResponse.data?.snapshot
-            ) {
-              snapshotsToProcess.push({
-                messageUuid: targetSnapshotUuid,
-                snapshot: targetSnapshotResponse.data.snapshot,
-                isTarget: true,
-              });
-            }
-          }
-
-          // Get all snapshots after target
-          const messagesAfterTarget = messages.slice(targetIndex + 1);
-          const assistantMessagesAfterTarget = messagesAfterTarget.filter(
-            (m) =>
-              (m as NormalizedMessage).role === 'assistant' &&
-              (m as NormalizedMessage).uuid,
-          );
-
-          console.log(
-            `[Fork DEBUG] Found ${assistantMessagesAfterTarget.length} assistant messages after target`,
-          );
-
-          for (const msg of assistantMessagesAfterTarget) {
-            const messageUuid = (msg as NormalizedMessage).uuid!;
-            const snapshotResponse = await bridge.request(
-              'session.getSnapshot',
-              {
-                cwd,
-                sessionId,
-                messageUuid,
-              },
-            );
-
-            if (snapshotResponse.success && snapshotResponse.data?.snapshot) {
-              snapshotsToProcess.push({
-                messageUuid,
-                snapshot: snapshotResponse.data.snapshot,
-                isTarget: false,
-              });
-            }
-          }
-
-          console.log(
-            `[Fork DEBUG] Total snapshots to process: ${snapshotsToProcess.length}`,
-          );
-
-          // Build file restoration plan by processing snapshots in REVERSE order
-          // Map: filePath -> { messageUuid, isFromTarget }
-          const fileRestorationPlan = new Map<
-            string,
-            { messageUuid: string; isFromTarget: boolean }
-          >();
-
-          // Process snapshots in reverse (from latest to target)
-          // For each file, we want the snapshot that represents its state at the target time:
-          // - If file appears in target snapshot: use target (file state before target modification)
-          // - If file appears only in later snapshots: use the FIRST (earliest) later snapshot (file state before first modification after target)
-          for (let i = snapshotsToProcess.length - 1; i >= 0; i--) {
-            const { messageUuid, snapshot, isTarget } = snapshotsToProcess[i];
-
-            for (const file of snapshot.files) {
-              // Always update with earlier snapshot (we're going backwards in time)
-              // This ensures we get the state closest to (but before) the target time
-              fileRestorationPlan.set(file.path, {
-                messageUuid,
-                isFromTarget: isTarget,
-              });
-              console.log(
-                `[Fork DEBUG] File ${file.path} will be restored from snapshot ${messageUuid} (${isTarget ? 'target' : 'later'})`,
-              );
-            }
-          }
-
-          // Group files by their source snapshot for efficient restoration
-          const restoreGroups = new Map<string, string[]>();
-          for (const [
-            filePath,
-            { messageUuid },
-          ] of fileRestorationPlan.entries()) {
-            if (!restoreGroups.has(messageUuid)) {
-              restoreGroups.set(messageUuid, []);
-            }
-            restoreGroups.get(messageUuid)!.push(filePath);
-          }
-
-          console.log(
-            `[Fork DEBUG] Restore groups: ${Array.from(restoreGroups.entries())
-              .map(([uuid, files]) => `${uuid}: ${files.length} files`)
-              .join(', ')}`,
-          );
-
-          // Execute restoration
-          let totalFilesRestored = 0;
-
-          for (const [messageUuid, filePaths] of restoreGroups.entries()) {
-            get().log(
-              `Fork: Restoring ${filePaths.length} file(s) from snapshot ${messageUuid}`,
-            );
-
-            const restoreResponse = await bridge.request(
-              'session.restoreSnapshotFiles',
-              {
-                cwd,
-                sessionId,
-                messageUuid,
-                filePaths,
-              },
-            );
-
-            if (!restoreResponse.success) {
-              get().log(
-                `Fork: Failed to restore files from snapshot ${messageUuid}: ${restoreResponse.error || 'Unknown error'}`,
-              );
-            } else if (restoreResponse.data) {
-              totalFilesRestored += restoreResponse.data.restoredCount;
-            }
-          }
-
-          if (totalFilesRestored > 0) {
-            get().log(
-              `Fork: Successfully restored ${totalFilesRestored} file(s)`,
-            );
-          } else {
-            get().log('Fork: No files to restore (no snapshots found)');
-          }
         } else {
-          console.log(`[Fork DEBUG] Skipping code restoration`);
           get().log('Fork: Code restoration skipped');
         }
 
-        // Only restore conversation if restoreConversation is true
+        // Restore conversation if requested
         if (restoreConversation) {
-          const filteredMessages = messages.slice(0, targetIndex);
-
-          let contentText = '';
-          if (typeof targetMessage.content === 'string') {
-            contentText = targetMessage.content;
-          } else if (Array.isArray(targetMessage.content)) {
-            const textParts = targetMessage.content
-              .filter((part) => part.type === 'text')
-              .map((part) => part.text);
-            contentText = textParts.join('');
-          }
-
-          // Truncate history to match the forked messages
-          // Count user messages up to the target index to determine history cutoff point
-          const userMessagesBeforeTarget = filteredMessages.filter(
-            (m) => (m as NormalizedMessage).role === 'user',
-          ).length;
-          const currentHistory = get().history;
-          const truncatedHistory = currentHistory.slice(
-            0,
-            userMessagesBeforeTarget,
+          restoreConversationToTargetPoint(
+            messages,
+            targetIndex,
+            targetMessage,
+            get().history,
+            set,
           );
-
-          console.log(
-            `[Fork DEBUG] Truncating history: original=${currentHistory.length}, truncated=${truncatedHistory.length}`,
-          );
-
-          set({
-            messages: filteredMessages,
-            forkParentUuid: (targetMessage as NormalizedMessage).parentUuid,
-            inputValue: contentText,
-            inputCursorPosition: contentText.length,
-            forkModalVisible: false,
-            history: truncatedHistory,
-          });
           get().incrementForkCounter();
         } else {
-          console.log(`[Fork DEBUG] Skipping conversation restoration`);
           get().log('Fork: Conversation restoration skipped');
-          set({
-            forkModalVisible: false,
-          });
+          set({ forkModalVisible: false });
         }
       },
 
