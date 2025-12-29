@@ -17,13 +17,14 @@ const execAsync = promisify(exec);
 
 export async function runComplete(context: Context, argv: any) {
   const cwd = process.cwd();
+  const productName = context.productName.toLowerCase();
 
   try {
     const gitRoot = await getGitRoot(cwd);
 
     // Check if we're in a workspace directory
     try {
-      const worktreeInPath = await getWorktreeFromPath(cwd);
+      const worktreeInPath = await getWorktreeFromPath(cwd, productName);
       // If we found a worktree, we're inside one - this is not allowed
       console.error(
         `Error: Please run this command from the repository root directory, not from inside a workspace.`,
@@ -39,7 +40,7 @@ export async function runComplete(context: Context, argv: any) {
     }
 
     // List all available workspaces
-    const worktrees = await listWorktrees(gitRoot);
+    const worktrees = await listWorktrees(gitRoot, productName);
 
     if (worktrees.length === 0) {
       console.error('Error: No active workspaces found. Create one with:');
@@ -82,7 +83,7 @@ export async function runComplete(context: Context, argv: any) {
 
     // Load metadata to get original branch
     const fs = await import('fs');
-    const metadataPath = `${gitRoot}/.${context.productName.toLowerCase()}-workspaces/.metadata`;
+    const metadataPath = `${gitRoot}/.${productName}-workspaces/.metadata`;
     let metadata: Record<string, any> = {};
     if (fs.existsSync(metadataPath)) {
       try {
@@ -114,7 +115,7 @@ export async function runComplete(context: Context, argv: any) {
             console.log(
               `\nMerging workspace '${worktree.name}' to '${originalBranch}'...`,
             );
-            await mergeWorktree(gitRoot, worktree);
+            await mergeWorktree(gitRoot, worktree, productName);
 
             // Remove from metadata
             if (fs.existsSync(metadataPath)) {

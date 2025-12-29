@@ -10,7 +10,7 @@ export async function runList(context: Context, argv: any) {
 
   try {
     const gitRoot = await getGitRoot(cwd);
-    const worktrees = await listWorktrees(gitRoot);
+    const worktrees = await listWorktrees(gitRoot, productName);
 
     // Load metadata to get original branches
     const fs = await import('fs');
@@ -43,6 +43,7 @@ export async function runList(context: Context, argv: any) {
       React.createElement(WorkspaceList, {
         worktrees: enrichedWorktrees,
         verbose: argv.verbose,
+        productName: context.productName.toLowerCase(),
       }),
     );
 

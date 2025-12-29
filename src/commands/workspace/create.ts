@@ -44,14 +44,19 @@ export async function runCreate(context: Context, argv: any) {
     const originalBranch = await getCurrentBranch(cwd);
 
     // Step 5: Generate or use provided workspace name
-    const name = argv.name || (await generateWorkspaceName(cwd));
+    const name = argv.name || (await generateWorkspaceName(cwd, productName));
 
     // Step 6: Create worktree
     console.log(`Creating workspace '${name}'...`);
-    const worktree = await createWorktree(cwd, name, {
-      baseBranch,
-      workspacesDir: `.${productName}-workspaces`,
-    });
+    const worktree = await createWorktree(
+      cwd,
+      name,
+      {
+        baseBranch,
+        workspacesDir: `.${productName}-workspaces`,
+      },
+      productName,
+    );
 
     // Update worktree object with original branch
     worktree.originalBranch = originalBranch;
@@ -79,7 +84,7 @@ export async function runCreate(context: Context, argv: any) {
       baseBranch,
     };
 
-    // Ensure .neovate-workspaces directory exists
+    // Ensure workspaces directory exists
     const workspacesDir = path.join(gitRoot, `.${productName}-workspaces`);
     if (!fs.existsSync(workspacesDir)) {
       fs.mkdirSync(workspacesDir, { recursive: true });
@@ -89,7 +94,7 @@ export async function runCreate(context: Context, argv: any) {
     fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
 
     // Step 8: Add to git exclude
-    await addToGitExclude(cwd);
+    await addToGitExclude(cwd, productName);
 
     // Step 9: Show success message
     const { waitUntilExit } = render(

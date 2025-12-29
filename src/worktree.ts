@@ -266,8 +266,11 @@ export async function getCurrentBranch(cwd: string): Promise<string> {
 /**
  * Generate random city name that doesn't already exist
  */
-export async function generateWorkspaceName(cwd: string): Promise<string> {
-  const existing = await listWorktrees(cwd);
+export async function generateWorkspaceName(
+  cwd: string,
+  productName: string = 'neovate',
+): Promise<string> {
+  const existing = await listWorktrees(cwd, productName);
   const existingNames = new Set(existing.map((w) => w.name));
 
   const available = CITY_NAMES.filter((name) => !existingNames.has(name));
@@ -287,13 +290,14 @@ export async function createWorktree(
   cwd: string,
   name: string,
   opts: WorktreeCreateOptions,
+  productName: string = 'neovate',
 ): Promise<Worktree> {
   const gitRoot = await getGitRoot(cwd);
   const worktreePath = path.join(gitRoot, opts.workspacesDir, name);
   const branchName = `workspace/${name}`;
 
   // Check if worktree already exists
-  const existing = await listWorktrees(gitRoot);
+  const existing = await listWorktrees(gitRoot, productName);
   if (existing.some((w) => w.name === name)) {
     throw new Error(
       `Workspace '${name}' already exists. Use a different name or delete it first.`,
@@ -321,9 +325,12 @@ export async function createWorktree(
 }
 
 /**
- * List all worktrees in .neovate-workspaces
+ * List all worktrees in workspaces directory
  */
-export async function listWorktrees(cwd: string): Promise<Worktree[]> {
+export async function listWorktrees(
+  cwd: string,
+  productName: string = 'neovate',
+): Promise<Worktree[]> {
   try {
     const gitRoot = await getGitRoot(cwd);
     const { stdout } = await execGit(gitRoot, 'worktree list --porcelain');
@@ -337,8 +344,8 @@ export async function listWorktrees(cwd: string): Promise<Worktree[]> {
       if (line.startsWith('worktree ')) {
         const worktreePath = line.substring('worktree '.length);
 
-        // Only include worktrees in .neovate-workspaces
-        if (worktreePath.includes('.neovate-workspaces')) {
+        // Only include worktrees in the product-specific workspaces directory
+        if (worktreePath.includes(`.${productName}-workspaces`)) {
           currentWorktree.path = worktreePath;
           const name = path.basename(worktreePath);
           currentWorktree.name = name;
@@ -388,14 +395,15 @@ export async function deleteWorktree(
   cwd: string,
   name: string,
   force = false,
+  productName: string = 'neovate',
 ): Promise<void> {
   const gitRoot = await getGitRoot(cwd);
-  const worktrees = await listWorktrees(gitRoot);
+  const worktrees = await listWorktrees(gitRoot, productName);
   const worktree = worktrees.find((w) => w.name === name);
 
   if (!worktree) {
     throw new Error(
-      `Workspace '${name}' not found. Use 'neo workspace list' to see active workspaces.`,
+      `Workspace '${name}' not found. Use workspace list to see active workspaces.`,
     );
   }
 
@@ -458,6 +466,7 @@ async function findBranchWorktree(
 export async function mergeWorktree(
   cwd: string,
   worktree: Worktree,
+  productName: string = 'neovate',
 ): Promise<void> {
   const gitRoot = await getGitRoot(cwd);
 
@@ -504,7 +513,7 @@ export async function mergeWorktree(
   } catch (error: any) {
     if (error.message?.includes('CONFLICT')) {
       throw new Error(
-        `Merge conflict occurred. Please resolve conflicts manually:\n1. cd ${gitRoot}\n2. Resolve conflicts\n3. git commit\n4. Run 'neo workspace delete ${worktree.name}' to clean up`,
+        `Merge conflict occurred. Please resolve conflicts manually:\n1. cd ${gitRoot}\n2. Resolve conflicts\n3. git commit\n4. Run '${productName} workspace delete ${worktree.name}' to clean up`,
       );
     }
     throw new Error(`Failed to merge worktree: ${error.message}`);
@@ -512,9 +521,12 @@ export async function mergeWorktree(
 }
 
 /**
- * Add .neovate-workspaces to .git/info/exclude
+ * Add workspaces directory to .git/info/exclude
  */
-export async function addToGitExclude(cwd: string): Promise<void> {
+export async function addToGitExclude(
+  cwd: string,
+  productName: string = 'neovate',
+): Promise<void> {
   try {
     const gitRoot = await getGitRoot(cwd);
     const excludePath = path.join(gitRoot, '.git', 'info', 'exclude');
@@ -524,8 +536,9 @@ export async function addToGitExclude(cwd: string): Promise<void> {
       content = fs.readFileSync(excludePath, 'utf-8');
     }
 
-    if (!content.includes('/.neovate-workspaces')) {
-      content += '\n/.neovate-workspaces\n';
+    const pattern = `/.${productName}-workspaces`;
+    if (!content.includes(pattern)) {
+      content += `\n${pattern}\n`;
       fs.writeFileSync(excludePath, content);
     }
   } catch (error: any) {
@@ -539,9 +552,12 @@ export async function addToGitExclude(cwd: string): Promise<void> {
 /**
  * Get worktree from current directory
  */
-export async function getWorktreeFromPath(cwd: string): Promise<Worktree> {
+export async function getWorktreeFromPath(
+  cwd: string,
+  productName: string = 'neovate',
+): Promise<Worktree> {
   const gitRoot = await getGitRoot(cwd);
-  const worktrees = await listWorktrees(gitRoot);
+  const worktrees = await listWorktrees(gitRoot, productName);
 
   // Check if current path is inside a worktree
   for (const worktree of worktrees) {

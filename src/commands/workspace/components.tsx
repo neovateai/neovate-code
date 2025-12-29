@@ -55,9 +55,11 @@ export function WorkspaceSuccessMessage({
 export function WorkspaceList({
   worktrees,
   verbose,
+  productName = 'neo',
 }: {
   worktrees: (Worktree & { createdAt?: string })[];
   verbose?: boolean;
+  productName?: string;
 }) {
   const { exit } = useApp();
 
@@ -105,7 +107,8 @@ export function WorkspaceList({
       </Box>
       <Box marginTop={1}>
         <Text dimColor>
-          Complete a workspace: cd into it and run 'neo workspace complete'
+          Complete a workspace: cd into it and run '{productName} workspace
+          complete'
         </Text>
       </Box>
     </Box>
