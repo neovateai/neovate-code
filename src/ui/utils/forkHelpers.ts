@@ -195,17 +195,3 @@ export function extractMessageText(message: Message): string {
   }
   return '';
 }
-
-/**
- * Truncate history to match the forked messages
- */
-export function truncateHistory(
-  filteredMessages: Message[],
-  currentHistory: string[],
-): string[] {
-  const userMessagesBeforeTarget = filteredMessages.filter(
-    (m) => (m as NormalizedMessage).role === 'user',
-  ).length;
-
-  return currentHistory.slice(0, userMessagesBeforeTarget);
-}

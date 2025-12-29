@@ -27,7 +27,6 @@ import {
   groupFilesBySnapshot,
   restoreFilesFromSnapshots,
   extractMessageText,
-  truncateHistory,
   findTargetAssistantMessage,
 } from './utils/forkHelpers';
 
@@ -351,7 +350,6 @@ function restoreConversationToTargetPoint(
 ): void {
   const filteredMessages = messages.slice(0, targetIndex);
   const contentText = extractMessageText(targetMessage);
-  const truncatedHistory = truncateHistory(filteredMessages, currentHistory);
 
   set({
     messages: filteredMessages,
@@ -359,7 +357,7 @@ function restoreConversationToTargetPoint(
     inputValue: contentText,
     inputCursorPosition: contentText.length,
     forkModalVisible: false,
-    history: truncatedHistory,
+    history: currentHistory, // Keep full history instead of truncating
   });
 }
 
