@@ -17,6 +17,7 @@ export interface AgentDefinition {
   disallowedTools?: string[];
   forkContext?: boolean;
   color?: string;
+  path?: string;
 }
 
 export interface TaskToolInput {
@@ -94,4 +95,9 @@ export enum AgentSource {
   Project = 'project',
   GlobalClaude = 'global-claude',
   Global = 'global',
+}
+
+export interface AgentLoadError {
+  path: string;
+  message: string;
 }
