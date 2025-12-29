@@ -155,6 +155,7 @@ Commands:
   log [file]                    View session logs in HTML (optional file path)
   mcp                           Manage MCP servers
   run                           Run a command
+  skill                         Manage skills
   update                        Check for and apply updates
   workspace                     Manage workspaces
     `.trimEnd(),
@@ -406,6 +407,7 @@ export async function runNeovate(opts: {
     'log',
     'run',
     'server',
+    'skill',
     'update',
     'workspace',
   ];
@@ -438,6 +440,11 @@ export async function runNeovate(opts: {
       case 'run': {
         const { runRun } = await import('./commands/run');
         await runRun(context);
+        break;
+      }
+      case 'skill': {
+        const { runSkill } = await import('./commands/skill');
+        await runSkill(context);
         break;
       }
       case 'commit': {
