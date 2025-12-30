@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'pathe';
-import type { NormalizedMessage } from './message';
+import type { NormalizedMessage, SnapshotMessage } from './message';
 import { createUserMessage } from './message';
 import type { StreamResult } from './loop';
 
@@ -45,6 +45,69 @@ export class JsonlLogger {
     return this.addMessage({
       message,
     });
+  }
+
+  /**
+   * Add a snapshot message to the log file
+   * This records file history snapshot information similar to Claude Code
+   */
+  addSnapshotMessage(opts: {
+    messageId: string;
+    timestamp: string;
+    trackedFileBackups: Record<
+      string,
+      {
+        backupFileName: string | null;
+        backupTime: string;
+        version: number;
+      }
+    >;
+    isSnapshotUpdate: boolean;
+  }) {
+    const dir = path.dirname(this.filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    const snapshotMessage: SnapshotMessage = {
+      type: 'file-history-snapshot',
+      messageId: opts.messageId,
+      snapshot: {
+        messageId: opts.messageId,
+        timestamp: opts.timestamp,
+        trackedFileBackups: opts.trackedFileBackups,
+      },
+      isSnapshotUpdate: opts.isSnapshotUpdate,
+    };
+
+    // Read existing file to remove old snapshot with same messageId
+    if (fs.existsSync(this.filePath)) {
+      const content = fs.readFileSync(this.filePath, 'utf-8');
+      const lines = content.split('\n').filter(Boolean);
+      const filteredLines = lines.filter((line) => {
+        try {
+          const entry = JSON.parse(line);
+          // Keep all entries except snapshots with the same messageId
+          return !(
+            entry.type === 'file-history-snapshot' &&
+            entry.messageId === opts.messageId
+          );
+        } catch {
+          return true; // Keep invalid lines
+        }
+      });
+
+      // Add the new snapshot
+      filteredLines.push(JSON.stringify(snapshotMessage));
+
+      // Rewrite the file
+      fs.writeFileSync(this.filePath, filteredLines.join('\n') + '\n');
+    } else {
+      // File doesn't exist, just append
+      fs.appendFileSync(this.filePath, JSON.stringify(snapshotMessage) + '\n');
+    }
+
+    return snapshotMessage;
   }
 }
 

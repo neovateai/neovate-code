@@ -86,6 +86,28 @@ export type ToolResultPart = {
   agentType?: string;
 };
 
+/**
+ * Snapshot message type for tracking file history snapshots
+ * Similar to Claude Code's file-history-snapshot message
+ */
+export type SnapshotMessage = {
+  type: 'file-history-snapshot';
+  messageId: string;
+  snapshot: {
+    messageId: string;
+    timestamp: string;
+    trackedFileBackups: Record<
+      string,
+      {
+        backupFileName: string | null;
+        backupTime: string;
+        version: number;
+      }
+    >;
+  };
+  isSnapshotUpdate: boolean;
+};
+
 export type Message =
   | SystemMessage
   | UserMessage

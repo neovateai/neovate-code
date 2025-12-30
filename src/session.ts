@@ -5,7 +5,7 @@ import { History } from './history';
 import type { NormalizedMessage } from './message';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
-import { SnapshotManager } from './utils/snapshot';
+import { SnapshotManager, type SnapshotEntry } from './utils/snapshot';
 
 export type SessionId = string;
 
@@ -68,8 +68,13 @@ export class SessionConfigManager {
   logPath: string;
   config: SessionConfig;
   private snapshotManager: SnapshotManager | null = null;
-  constructor(opts: { logPath: string }) {
+  private readonly cwd: string;
+  private readonly sessionId: string;
+
+  constructor(opts: { logPath: string; cwd: string; sessionId: string }) {
     this.logPath = opts.logPath;
+    this.cwd = opts.cwd;
+    this.sessionId = opts.sessionId;
     this.config = this.load(opts.logPath);
   }
 
@@ -85,7 +90,13 @@ export class SessionConfigManager {
     this.config = this.load(this.logPath);
 
     if (this.config.snapshots) {
-      this.snapshotManager = SnapshotManager.deserialize(this.config.snapshots);
+      this.snapshotManager = SnapshotManager.deserialize(
+        this.config.snapshots,
+        {
+          cwd: this.cwd,
+          sessionId: this.sessionId,
+        },
+      );
       if (DEBUG) {
         console.log(
           '[SessionConfigManager.getSnapshotManager] Deserialized snapshots:',
@@ -93,13 +104,29 @@ export class SessionConfigManager {
         );
       }
     } else {
-      this.snapshotManager = new SnapshotManager();
+      this.snapshotManager = new SnapshotManager({
+        cwd: this.cwd,
+        sessionId: this.sessionId,
+      });
       if (DEBUG) {
         console.log(
           '[SessionConfigManager.getSnapshotManager] No snapshots in config, created new manager',
         );
       }
     }
+
+    // Load snapshot entries from JSONL log and rebuild state
+    // This handles the isSnapshotUpdate flag correctly
+    const snapshotEntries = loadSnapshotEntries({ logPath: this.logPath });
+    if (snapshotEntries.length > 0) {
+      this.snapshotManager.loadSnapshotEntries(snapshotEntries);
+      if (DEBUG) {
+        console.log(
+          `[SessionConfigManager.getSnapshotManager] Loaded ${snapshotEntries.length} snapshot entries from JSONL`,
+        );
+      }
+    }
+
     return this.snapshotManager;
   }
 
@@ -224,4 +251,41 @@ export function loadSessionMessages(opts: {
       }
     });
   return filterMessages(messages);
+}
+
+/**
+ * Load snapshot entries from JSONL log file
+ * Parses file-history-snapshot entries for snapshot reconstruction
+ */
+export function loadSnapshotEntries(opts: {
+  logPath: string;
+}): SnapshotEntry[] {
+  if (!fs.existsSync(opts.logPath)) {
+    return [];
+  }
+
+  const content = fs.readFileSync(opts.logPath, 'utf-8');
+  const snapshotEntries: SnapshotEntry[] = [];
+
+  content
+    .split('\n')
+    .filter(Boolean)
+    .forEach((line, index) => {
+      try {
+        const entry = JSON.parse(line);
+
+        // Check if it's a file-history-snapshot entry
+        if (entry.type === 'file-history-snapshot') {
+          snapshotEntries.push({
+            snapshot: entry.snapshot,
+            isSnapshotUpdate: entry.isSnapshotUpdate,
+          });
+        }
+      } catch (e: any) {
+        // Silently skip parse errors for non-snapshot entries
+        // Only throw if we know it should be a snapshot but failed to parse
+      }
+    });
+
+  return snapshotEntries;
 }

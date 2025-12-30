@@ -111,9 +111,10 @@ export function buildFileRestorationPlan(
   for (let i = snapshotsToProcess.length - 1; i >= 0; i--) {
     const { messageUuid, snapshot, isTarget } = snapshotsToProcess[i];
 
-    for (const file of snapshot.files) {
+    // snapshot.trackedFileBackups is a Record<string, FileBackup>
+    for (const filePath of Object.keys(snapshot.trackedFileBackups)) {
       // Always update with earlier snapshot (we're going backwards in time)
-      fileRestorationPlan.set(file.path, {
+      fileRestorationPlan.set(filePath, {
         messageUuid,
         isFromTarget: isTarget,
       });

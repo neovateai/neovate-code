@@ -29,6 +29,7 @@ export class Project {
   private sessionConfigManager: SessionConfigManager | null = null;
   private sessionConfigManagerInitialized = false;
   private currentAssistantUuid: string | null = null;
+  private jsonlLogger: JsonlLogger | null = null;
 
   constructor(opts: {
     sessionId?: SessionId;
@@ -47,6 +48,8 @@ export class Project {
     if (!this.sessionConfigManagerInitialized) {
       this.sessionConfigManager = new SessionConfigManager({
         logPath: this.context.paths.getSessionLogPath(this.session.id),
+        cwd: this.context.cwd,
+        sessionId: this.session.id,
       });
       this.sessionConfigManagerInitialized = true;
     }
@@ -82,6 +85,7 @@ export class Project {
         [fullFilePath],
         sessionConfigManager,
         this.currentAssistantUuid,
+        this.jsonlLogger || undefined,
       );
     } catch (error) {
       console.error(
@@ -233,6 +237,8 @@ export class Project {
     const jsonlLogger = new JsonlLogger({
       filePath: this.context.paths.getSessionLogPath(this.session.id),
     });
+    // Store jsonlLogger for snapshot recording
+    this.jsonlLogger = jsonlLogger;
     const requestLogger = new RequestLogger({
       globalProjectDir: this.context.paths.globalProjectDir,
     });

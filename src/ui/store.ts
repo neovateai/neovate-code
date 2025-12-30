@@ -1039,9 +1039,12 @@ export const useAppStore = create<AppStore>()(
 
       resumeSession: async (sessionId: string, logFile: string) => {
         await clearTerminal();
+        const { cwd } = get();
         const messages = loadSessionMessages({ logPath: logFile });
         const sessionConfigManager = new SessionConfigManager({
           logPath: logFile,
+          cwd: cwd || process.cwd(),
+          sessionId,
         });
         const pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
         const pastedImageMap = sessionConfigManager.config.pastedImageMap || {};

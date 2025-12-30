@@ -7,6 +7,7 @@ import { SessionConfigManager } from './session';
 import type { NormalizedMessage } from './message';
 
 const TEST_DIR = join(process.cwd(), '.test-snapshot-integration');
+const TEST_SESSION_ID = 'test-session';
 
 describe('Snapshot Integration Tests', () => {
   let testDir: string;
@@ -25,6 +26,8 @@ describe('Snapshot Integration Tests', () => {
       const testLogPath = join(testDir, 'test-persist.log');
       const sessionConfigManager1 = new SessionConfigManager({
         logPath: testLogPath,
+        cwd: testDir,
+        sessionId: TEST_SESSION_ID,
       });
       const snapshotManager1 = sessionConfigManager1.getSnapshotManager();
 
@@ -40,6 +43,8 @@ describe('Snapshot Integration Tests', () => {
 
       const sessionConfigManager2 = new SessionConfigManager({
         logPath: testLogPath,
+        cwd: testDir,
+        sessionId: TEST_SESSION_ID,
       });
       const snapshotManager2 = sessionConfigManager2.getSnapshotManager();
 
@@ -64,6 +69,8 @@ describe('Snapshot Integration Tests', () => {
 
       const sessionConfigManager = new SessionConfigManager({
         logPath: testLogPath,
+        cwd: testDir,
+        sessionId: TEST_SESSION_ID,
       });
       const snapshotManager = sessionConfigManager.getSnapshotManager();
 
@@ -76,6 +83,8 @@ describe('Snapshot Integration Tests', () => {
       const testLogPath = join(testDir, 'test-fork.log');
       const sessionConfigManager = new SessionConfigManager({
         logPath: testLogPath,
+        cwd: testDir,
+        sessionId: TEST_SESSION_ID,
       });
       const snapshotManager = sessionConfigManager.getSnapshotManager();
 
@@ -112,6 +121,8 @@ describe('Snapshot Integration Tests', () => {
       const testLogPath = join(testDir, 'test-independent.log');
       const sessionConfigManager = new SessionConfigManager({
         logPath: testLogPath,
+        cwd: testDir,
+        sessionId: TEST_SESSION_ID,
       });
       const snapshotManager = sessionConfigManager.getSnapshotManager();
 
@@ -147,6 +158,8 @@ describe('Snapshot Integration Tests', () => {
       const testLogPath = join(testDir, 'test-delete.log');
       const sessionConfigManager = new SessionConfigManager({
         logPath: testLogPath,
+        cwd: testDir,
+        sessionId: TEST_SESSION_ID,
       });
       const snapshotManager = sessionConfigManager.getSnapshotManager();
 
@@ -167,6 +180,8 @@ describe('Snapshot Integration Tests', () => {
       const testLogPath = join(testDir, 'test-partial.log');
       const sessionConfigManager = new SessionConfigManager({
         logPath: testLogPath,
+        cwd: testDir,
+        sessionId: TEST_SESSION_ID,
       });
       const snapshotManager = sessionConfigManager.getSnapshotManager();
 
@@ -188,34 +203,91 @@ describe('Snapshot Integration Tests', () => {
   });
 
   describe('snapshot data integrity', () => {
-    it('should preserve file hashes across serialization', async () => {
-      const testLogPath = join(testDir, 'test-hash.log');
+    it('should preserve backup metadata across serialization', async () => {
+      const testLogPath = join(testDir, 'test-metadata.log');
       const sessionConfigManager1 = new SessionConfigManager({
         logPath: testLogPath,
+        cwd: testDir,
+        sessionId: TEST_SESSION_ID,
       });
       const snapshotManager1 = sessionConfigManager1.getSnapshotManager();
 
-      const file = join(testDir, 'hash-test.txt');
-      const content = 'Test content for hash verification';
+      const file = join(testDir, 'metadata-test.txt');
+      const content = 'Test content for metadata verification';
       writeFileSync(file, content);
 
       const messageUuid = randomUUID();
       await snapshotManager1.createSnapshot([file], messageUuid);
 
       const snapshot1 = snapshotManager1.getSnapshot(messageUuid);
-      const originalHash = snapshot1?.files[0].hash;
+      const originalBackup = snapshot1?.trackedFileBackups['metadata-test.txt'];
 
       await sessionConfigManager1.saveSnapshots();
 
       const sessionConfigManager2 = new SessionConfigManager({
         logPath: testLogPath,
+        cwd: testDir,
+        sessionId: TEST_SESSION_ID,
       });
       const snapshotManager2 = sessionConfigManager2.getSnapshotManager();
 
       const snapshot2 = snapshotManager2.getSnapshot(messageUuid);
-      const restoredHash = snapshot2?.files[0].hash;
+      const restoredBackup = snapshot2?.trackedFileBackups['metadata-test.txt'];
 
-      expect(restoredHash).toBe(originalHash);
+      expect(restoredBackup?.backupFileName).toBe(
+        originalBackup?.backupFileName,
+      );
+      expect(restoredBackup?.version).toBe(originalBackup?.version);
+      expect(restoredBackup?.backupTime).toBe(originalBackup?.backupTime);
+    });
+  });
+
+  describe('relative path handling', () => {
+    it('should store paths as relative to cwd', async () => {
+      const testLogPath = join(testDir, 'test-relative.log');
+      const sessionConfigManager = new SessionConfigManager({
+        logPath: testLogPath,
+        cwd: testDir,
+        sessionId: TEST_SESSION_ID,
+      });
+      const snapshotManager = sessionConfigManager.getSnapshotManager();
+
+      const file = join(testDir, 'relative-test.txt');
+      writeFileSync(file, 'Test content');
+
+      const messageUuid = randomUUID();
+      await snapshotManager.createSnapshot([file], messageUuid);
+
+      const snapshot = snapshotManager.getSnapshot(messageUuid);
+      const paths = Object.keys(snapshot!.trackedFileBackups);
+
+      // Should contain the file we just created
+      expect(paths).toContain('relative-test.txt');
+      // Paths should be relative (not absolute)
+      expect(paths.some((p) => p.includes(testDir))).toBe(false);
+    });
+
+    it('should restore files using absolute paths', async () => {
+      const testLogPath = join(testDir, 'test-absolute.log');
+      const sessionConfigManager = new SessionConfigManager({
+        logPath: testLogPath,
+        cwd: testDir,
+        sessionId: TEST_SESSION_ID,
+      });
+      const snapshotManager = sessionConfigManager.getSnapshotManager();
+
+      const file = join(testDir, 'absolute-test.txt');
+      const content = 'Original content';
+      writeFileSync(file, content);
+
+      const messageUuid = randomUUID();
+      await snapshotManager.createSnapshot([file], messageUuid);
+
+      writeFileSync(file, 'Modified');
+
+      // Should restore even though stored as relative path
+      await snapshotManager.restoreSnapshot(messageUuid);
+      expect(readFileSync(file, 'utf-8')).toBe(content);
     });
   });
 });

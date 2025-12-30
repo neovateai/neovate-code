@@ -1,6 +1,7 @@
-import { Box, Text, useInput } from 'ink';
-import React from 'react';
+import { Box, Text } from 'ink';
+import React, { useMemo, useCallback } from 'react';
 import { UI_COLORS } from './constants';
+import { SelectInput, type SelectOption } from './SelectInput';
 
 export type RestoreMode = 'both' | 'conversation' | 'code' | 'cancel';
 
@@ -21,58 +22,54 @@ export function RestoreOptionsModal({
   onSelect,
   onClose,
 }: RestoreOptionsModalProps) {
-  const [selectedIndex, setSelectedIndex] = React.useState(0);
+  // Build SelectInput options from restore modes
+  const selectOptions = useMemo<SelectOption[]>(() => {
+    const allOptions = [
+      {
+        type: 'text' as const,
+        value: 'both',
+        label: 'Restore code and conversation',
+        description: 'Fork conversation and restore snapshot',
+        available: hasSnapshot,
+      },
+      {
+        type: 'text' as const,
+        value: 'conversation',
+        label: 'Restore conversation',
+        description: 'Fork conversation only, keep current code',
+        available: true,
+      },
+      {
+        type: 'text' as const,
+        value: 'code',
+        label: 'Restore code',
+        description: 'Restore snapshot only, keep conversation',
+        available: hasSnapshot,
+      },
+      {
+        type: 'text' as const,
+        value: 'cancel',
+        label: 'Never mind',
+        description: 'Cancel and return',
+        available: true,
+      },
+    ];
 
-  const options = [
-    {
-      value: 'both' as RestoreMode,
-      label: 'Restore code and conversation',
-      description: 'Fork conversation and restore snapshot',
-      available: hasSnapshot,
-    },
-    {
-      value: 'conversation' as RestoreMode,
-      label: 'Restore conversation',
-      description: 'Fork conversation only, keep current code',
-      available: true,
-    },
-    {
-      value: 'code' as RestoreMode,
-      label: 'Restore code',
-      description: 'Restore snapshot only, keep conversation',
-      available: hasSnapshot,
-    },
-    {
-      value: 'cancel' as RestoreMode,
-      label: 'Never mind',
-      description: 'Cancel and return',
-      available: true,
-    },
-  ];
+    return allOptions.filter((opt) => opt.available);
+  }, [hasSnapshot]);
 
-  const availableOptions = options.filter((opt) => opt.available);
-
-  useInput((input, key) => {
-    if (key.escape) {
-      onClose();
-    } else if (key.upArrow) {
-      setSelectedIndex((prev) => Math.max(0, prev - 1));
-    } else if (key.downArrow) {
-      setSelectedIndex((prev) =>
-        Math.min(availableOptions.length - 1, prev + 1),
-      );
-    } else if (key.return) {
-      if (availableOptions[selectedIndex]) {
-        onSelect(availableOptions[selectedIndex].value);
+  const handleChange = useCallback(
+    (value: string | string[]) => {
+      if (typeof value === 'string') {
+        onSelect(value as RestoreMode);
       }
-    } else {
-      // Number key shortcuts (1-4)
-      const num = parseInt(input, 10);
-      if (num >= 1 && num <= availableOptions.length) {
-        onSelect(availableOptions[num - 1].value);
-      }
-    }
-  });
+    },
+    [onSelect],
+  );
+
+  const handleCancel = useCallback(() => {
+    onClose();
+  }, [onClose]);
 
   return (
     <Box
@@ -121,23 +118,12 @@ export function RestoreOptionsModal({
         </Box>
       )}
 
-      <Box flexDirection="column">
-        {availableOptions.map((option, index) => {
-          const isSelected = index === selectedIndex;
-          return (
-            <Box key={option.value} marginBottom={0}>
-              <Text
-                color={isSelected ? 'cyan' : undefined}
-                bold={isSelected}
-                inverse={isSelected}
-              >
-                {isSelected ? '❯ ' : '  '}
-                {index + 1}. {option.label}
-              </Text>
-            </Box>
-          );
-        })}
-      </Box>
+      <SelectInput
+        options={selectOptions}
+        mode="single"
+        onChange={handleChange}
+        onCancel={handleCancel}
+      />
 
       <Box marginTop={1}>
         <Text dimColor>
@@ -146,7 +132,7 @@ export function RestoreOptionsModal({
       </Box>
 
       <Box marginTop={1}>
-        <Text dimColor>
+        <Text dimColor color={UI_COLORS.ASK_SECONDARY}>
           Use ↑/↓ to navigate, Enter to select, Esc to cancel
         </Text>
       </Box>

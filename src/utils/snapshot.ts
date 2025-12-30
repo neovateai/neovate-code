@@ -1,162 +1,592 @@
 import { createHash } from 'crypto';
 import zlib from 'zlib';
-import { readFile, writeFile } from 'fs/promises';
+import {
+  readFile,
+  writeFile,
+  mkdir,
+  link,
+  stat,
+  unlink,
+  chmod,
+} from 'fs/promises';
+import { existsSync, readFileSync, statSync } from 'fs';
 import type { SessionConfigManager } from '../session';
+import type { JsonlLogger } from '../jsonl';
+import pathe from 'pathe';
+import os from 'os';
 
-export interface FileSnapshot {
-  path: string;
-  content: string;
-  hash: string;
+/**
+ * File backup metadata stored in snapshot
+ */
+export interface FileBackup {
+  backupFileName: string | null; // null means file should be deleted
+  version: number;
+  backupTime: string;
 }
 
+/**
+ * New format with physical file backups (Claude Code style)
+ */
 export interface MessageSnapshot {
   messageUuid: string;
   timestamp: string;
-  files: FileSnapshot[];
+  trackedFileBackups: Record<string, FileBackup>;
 }
 
+/**
+ * Snapshot entry with update flag (for JSONL storage and reconstruction)
+ */
+export interface SnapshotEntry {
+  snapshot: MessageSnapshot;
+  isSnapshotUpdate: boolean;
+}
+
+/**
+ * Result of snapshot restore operation
+ */
+export interface RestoreResult {
+  filesChanged: string[];
+  insertions: number;
+  deletions: number;
+}
+
+/**
+ * Improved SnapshotManager with physical backup files
+ * Inspired by Claude Code's file-history-snapshot mechanism
+ */
 export class SnapshotManager {
   private snapshots: Map<string, MessageSnapshot> = new Map();
+  private snapshotEntries: Map<string, SnapshotEntry> = new Map(); // Track update status
+  private trackedFiles: Set<string> = new Set(); // Global tracked files set (Claude Code style)
   private readonly DEBUG = process.env.NEOVATE_SNAPSHOT_DEBUG === 'true';
+  private readonly cwd: string;
+  private readonly sessionId: string;
 
-  async createSnapshot(
+  constructor(opts: { cwd: string; sessionId: string }) {
+    this.cwd = opts.cwd;
+    this.sessionId = opts.sessionId;
+  }
+
+  /**
+   * Get backup directory for this session
+   */
+  private getBackupDir(): string {
+    const productName = 'neovate';
+    const globalConfigDir = pathe.join(os.homedir(), `.${productName}`);
+    return pathe.join(globalConfigDir, 'file-history', this.sessionId);
+  }
+
+  /**
+   * Convert absolute path to relative path
+   */
+  private toRelativePath(absolutePath: string): string {
+    if (!pathe.isAbsolute(absolutePath)) {
+      return absolutePath;
+    }
+    if (absolutePath.startsWith(this.cwd)) {
+      return pathe.relative(this.cwd, absolutePath);
+    }
+    return absolutePath;
+  }
+
+  /**
+   * Convert relative path to absolute path
+   */
+  private toAbsolutePath(relativePath: string): string {
+    if (pathe.isAbsolute(relativePath)) {
+      return relativePath;
+    }
+    return pathe.join(this.cwd, relativePath);
+  }
+
+  /**
+   * Generate backup filename: {hash16}@v{version}
+   */
+  private generateBackupFileName(filePath: string, version: number): string {
+    const hash = createHash('sha256')
+      .update(filePath)
+      .digest('hex')
+      .slice(0, 16);
+    return `${hash}@v${version}`;
+  }
+
+  /**
+   * Get full backup file path
+   */
+  private getBackupFilePath(backupFileName: string): string {
+    return pathe.join(this.getBackupDir(), backupFileName);
+  }
+
+  /**
+   * Find the maximum version and previous backup for a file
+   */
+  private findMaxVersionAndBackup(relativePath: string): {
+    maxVersion: number;
+    previousBackup?: FileBackup;
+  } {
+    let maxVersion = 0;
+    let previousBackup: FileBackup | undefined;
+
+    for (const existingSnapshot of this.snapshots.values()) {
+      const existingBackup = existingSnapshot.trackedFileBackups[relativePath];
+      if (existingBackup && existingBackup.version > maxVersion) {
+        maxVersion = existingBackup.version;
+        previousBackup = existingBackup;
+      }
+    }
+
+    return { maxVersion, previousBackup };
+  }
+
+  /**
+   * Rebuild trackedFiles set from snapshots
+   */
+  private rebuildTrackedFilesSet(snapshots: MessageSnapshot[]): void {
+    this.trackedFiles.clear();
+    for (const snapshot of snapshots) {
+      for (const relativePath of Object.keys(snapshot.trackedFileBackups)) {
+        this.trackedFiles.add(relativePath);
+      }
+    }
+  }
+
+  /**
+   * Create file backup entry (handles both existing and deleted files)
+   */
+  private async createFileBackupEntry(
+    absolutePath: string,
+    relativePath: string,
+  ): Promise<FileBackup> {
+    const { maxVersion } = this.findMaxVersionAndBackup(relativePath);
+    const newVersion = maxVersion + 1;
+
+    if (!existsSync(absolutePath)) {
+      // File has been deleted
+      return {
+        backupFileName: null,
+        version: newVersion,
+        backupTime: new Date().toISOString(),
+      };
+    }
+
+    // File exists, create physical backup
+    return await this.createBackupFile(absolutePath, newVersion);
+  }
+
+  /**
+   * Check if file has changed compared to backup
+   */
+  private async hasFileChanged(
+    filePath: string,
+    backupFileName: string,
+  ): Promise<boolean> {
+    const backupPath = this.getBackupFilePath(backupFileName);
+
+    // Check existence
+    const fileExists = existsSync(filePath);
+    const backupExists = existsSync(backupPath);
+    if (fileExists !== backupExists) return true;
+    if (!fileExists) return false;
+
+    // Compare metadata
+    const fileStats = statSync(filePath);
+    const backupStats = statSync(backupPath);
+    if (
+      fileStats.mode !== backupStats.mode ||
+      fileStats.size !== backupStats.size
+    ) {
+      return true;
+    }
+    if (fileStats.mtimeMs < backupStats.mtimeMs) {
+      return false; // File is older than backup
+    }
+
+    // Compare content
+    const fileContent = readFileSync(filePath, 'utf-8');
+    const backupContent = readFileSync(backupPath, 'utf-8');
+    return fileContent !== backupContent;
+  }
+
+  /**
+   * Create physical backup file
+   */
+  private async createBackupFile(
+    filePath: string,
+    version: number,
+  ): Promise<FileBackup> {
+    const backupFileName = this.generateBackupFileName(filePath, version);
+    const backupPath = this.getBackupFilePath(backupFileName);
+
+    // Ensure backup directory exists
+    const backupDir = this.getBackupDir();
+    if (!existsSync(backupDir)) {
+      await mkdir(backupDir, { recursive: true });
+    }
+
+    try {
+      // Read file content
+      const content = await readFile(filePath, 'utf-8');
+
+      // Write backup file
+      await writeFile(backupPath, content, { encoding: 'utf-8' });
+
+      // Copy file permissions
+      const fileStats = await stat(filePath);
+      await chmod(backupPath, fileStats.mode);
+
+      if (this.DEBUG) {
+        console.log(
+          `[Snapshot] Created backup: ${backupFileName} for ${filePath}`,
+        );
+      }
+
+      return {
+        backupFileName,
+        version,
+        backupTime: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error(
+        `[Snapshot] Failed to create backup for ${filePath}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Track file modification (Claude Code VIA equivalent)
+   * Updates the latest snapshot by adding new file backups
+   */
+  async trackFileEdit(
     filePaths: string[],
     messageUuid: string,
-  ): Promise<MessageSnapshot> {
+  ): Promise<{ snapshot: MessageSnapshot; isUpdate: boolean }> {
     const existingSnapshot = this.snapshots.get(messageUuid);
 
-    if (existingSnapshot) {
-      // Build map of existing file paths to their indices for efficient lookup
-      const existingFileMap = new Map(
-        existingSnapshot.files.map((f, idx) => [f.path, idx]),
-      );
-      const newFiles: FileSnapshot[] = [];
-      let hasChanges = false;
+    if (!existingSnapshot) {
+      const snapshot = await this.createNewSnapshot(filePaths, messageUuid);
+      this.snapshotEntries.set(messageUuid, {
+        snapshot,
+        isSnapshotUpdate: false,
+      });
+      return { snapshot, isUpdate: false };
+    }
 
-      for (const filePath of filePaths) {
+    const trackedFileBackups = { ...existingSnapshot.trackedFileBackups };
+    let hasChanges = false;
+
+    for (const absolutePath of filePaths) {
+      const relativePath = this.toRelativePath(absolutePath);
+
+      if (!this.trackedFiles.has(relativePath)) {
+        this.trackedFiles.add(relativePath);
+      }
+
+      if (trackedFileBackups[relativePath]) {
+        if (this.DEBUG) {
+          console.log(
+            `[Snapshot] File already in snapshot, keeping original: ${relativePath}`,
+          );
+        }
+      } else {
         try {
-          const existingIndex = existingFileMap.get(filePath);
-          if (existingIndex !== undefined) {
-            // File already exists in snapshot - keep the original (first) version
-            // Do NOT update it, as we want to preserve the initial state before any modifications
-            if (this.DEBUG) {
-              console.log(
-                `[Snapshot] File already in snapshot, keeping original: ${filePath}`,
-              );
-            }
-          } else {
-            // New file - add to snapshot
-            const content = await readFile(filePath, 'utf-8');
-            const hash = createHash('md5').update(content).digest('hex');
-            const fileSnapshot: FileSnapshot = {
-              path: filePath,
-              content,
-              hash,
-            };
-            newFiles.push(fileSnapshot);
-            hasChanges = true;
-            if (this.DEBUG) {
-              console.log(`[Snapshot] Added new file: ${filePath}`);
-            }
-          }
+          const backup = await this.createFileBackupEntry(
+            absolutePath,
+            relativePath,
+          );
+          trackedFileBackups[relativePath] = backup;
+          hasChanges = true;
         } catch (error) {
           if (this.DEBUG) {
             console.warn(
-              `[Snapshot] Failed to read file, skipping: ${filePath}`,
+              `[Snapshot] Failed to backup file, skipping: ${relativePath}`,
               error,
             );
           }
         }
       }
-
-      if (!hasChanges) {
-        // No changes detected, return existing snapshot
-        return existingSnapshot;
-      }
-
-      const updatedSnapshot: MessageSnapshot = {
-        ...existingSnapshot,
-        files: [...existingSnapshot.files, ...newFiles],
-      };
-
-      this.snapshots.set(messageUuid, updatedSnapshot);
-      return updatedSnapshot;
     }
 
-    // Create new snapshot
-    const files: FileSnapshot[] = [];
-    for (const filePath of filePaths) {
+    if (!hasChanges) {
+      return { snapshot: existingSnapshot, isUpdate: false };
+    }
+
+    const updatedSnapshot: MessageSnapshot = {
+      ...existingSnapshot,
+      trackedFileBackups,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.snapshots.set(messageUuid, updatedSnapshot);
+    this.snapshotEntries.set(messageUuid, {
+      snapshot: updatedSnapshot,
+      isSnapshotUpdate: true,
+    });
+
+    if (this.DEBUG) {
+      console.log(
+        `[Snapshot] Updated snapshot for message ${messageUuid}, added ${Object.keys(trackedFileBackups).length - Object.keys(existingSnapshot.trackedFileBackups).length} files`,
+      );
+    }
+
+    return { snapshot: updatedSnapshot, isUpdate: true };
+  }
+
+  /**
+   * Create a new snapshot for a message (Claude Code FIA equivalent)
+   * Creates a complete snapshot of all tracked files at this point in time
+   * This ensures each message snapshot contains the full state of all tracked files
+   */
+  private async createNewSnapshot(
+    filePaths: string[],
+    messageUuid: string,
+  ): Promise<MessageSnapshot> {
+    const trackedFileBackups: Record<string, FileBackup> = {};
+
+    // Add new files to global tracked set
+    for (const absolutePath of filePaths) {
+      const relativePath = this.toRelativePath(absolutePath);
+      if (!this.trackedFiles.has(relativePath)) {
+        this.trackedFiles.add(relativePath);
+      }
+    }
+
+    // Iterate through ALL tracked files (Claude Code FIA behavior)
+    // This ensures the snapshot contains complete state of all files
+    for (const relativePath of this.trackedFiles) {
+      const absolutePath = this.toAbsolutePath(relativePath);
+
       try {
-        const content = await readFile(filePath, 'utf-8');
-        const hash = createHash('md5').update(content).digest('hex');
-        files.push({ path: filePath, content, hash });
+        if (!existsSync(absolutePath)) {
+          // File has been deleted
+          const { maxVersion } = this.findMaxVersionAndBackup(relativePath);
+          trackedFileBackups[relativePath] = {
+            backupFileName: null,
+            version: maxVersion + 1,
+            backupTime: new Date().toISOString(),
+          };
+        } else {
+          // Find the highest version number for this file across all snapshots
+          const { maxVersion, previousBackup } =
+            this.findMaxVersionAndBackup(relativePath);
+
+          // Check if file has changed compared to previous backup
+          if (
+            previousBackup &&
+            previousBackup.backupFileName !== null &&
+            !(await this.hasFileChanged(
+              absolutePath,
+              previousBackup.backupFileName,
+            ))
+          ) {
+            // File unchanged, reuse previous backup
+            trackedFileBackups[relativePath] = previousBackup;
+            if (this.DEBUG) {
+              console.log(
+                `[Snapshot] File unchanged, reusing backup v${previousBackup.version}: ${relativePath}`,
+              );
+            }
+            continue;
+          }
+
+          // File has changed, create new backup
+          const newVersion = maxVersion + 1;
+          const backup = await this.createBackupFile(absolutePath, newVersion);
+          trackedFileBackups[relativePath] = backup;
+          if (this.DEBUG) {
+            console.log(
+              `[Snapshot] File changed, created new backup v${newVersion}: ${relativePath}`,
+            );
+          }
+        }
       } catch (error) {
         if (this.DEBUG) {
           console.warn(
-            `[Snapshot] Failed to read file, skipping: ${filePath}`,
+            `[Snapshot] Failed to backup file, skipping: ${relativePath}`,
             error,
           );
         }
       }
     }
 
-    if (files.length === 0) {
-      // Only warn if we expected to snapshot files but couldn't read any
-      if (filePaths.length > 0) {
-        console.warn(
-          `[Snapshot] No files could be read for message ${messageUuid}. Check if files exist and are accessible.`,
-        );
-      }
+    if (
+      Object.keys(trackedFileBackups).length === 0 &&
+      this.trackedFiles.size > 0
+    ) {
+      console.warn(
+        `[Snapshot] No files could be backed up for message ${messageUuid}`,
+      );
     }
 
     const snapshot: MessageSnapshot = {
       messageUuid,
       timestamp: new Date().toISOString(),
-      files,
+      trackedFileBackups,
     };
 
     this.snapshots.set(messageUuid, snapshot);
 
+    if (this.DEBUG) {
+      console.log(
+        `[Snapshot] Created new snapshot for message ${messageUuid} with ${Object.keys(trackedFileBackups).length} files (${this.trackedFiles.size} total tracked)`,
+      );
+    }
+
     return snapshot;
   }
 
-  async restoreSnapshot(messageUuid: string): Promise<void> {
+  /**
+   * Backward compatible createSnapshot method
+   * Delegates to trackFileEdit for the new implementation
+   */
+  async createSnapshot(
+    filePaths: string[],
+    messageUuid: string,
+  ): Promise<MessageSnapshot> {
+    const result = await this.trackFileEdit(filePaths, messageUuid);
+    return result.snapshot;
+  }
+
+  /**
+   * Calculate diff statistics between two file contents
+   */
+  private calculateDiff(
+    oldContent: string,
+    newContent: string,
+  ): { insertions: number; deletions: number } {
+    const oldLines = oldContent.split('\n');
+    const newLines = newContent.split('\n');
+
+    // Simple line-based diff
+    const maxLines = Math.max(oldLines.length, newLines.length);
+    let insertions = 0;
+    let deletions = 0;
+
+    if (newLines.length > oldLines.length) {
+      insertions = newLines.length - oldLines.length;
+    } else if (oldLines.length > newLines.length) {
+      deletions = oldLines.length - newLines.length;
+    }
+
+    // Count modified lines
+    const minLines = Math.min(oldLines.length, newLines.length);
+    for (let i = 0; i < minLines; i++) {
+      if (oldLines[i] !== newLines[i]) {
+        insertions++;
+        deletions++;
+      }
+    }
+
+    return { insertions, deletions };
+  }
+
+  /**
+   * Restore files from snapshot
+   */
+  async restoreSnapshot(
+    messageUuid: string,
+    dryRun = false,
+  ): Promise<RestoreResult> {
     const snapshot = this.snapshots.get(messageUuid);
     if (!snapshot) {
       if (this.DEBUG) {
         console.log(`[Snapshot] No snapshot found for message ${messageUuid}`);
       }
-      return;
+      return { filesChanged: [], insertions: 0, deletions: 0 };
     }
 
     let successCount = 0;
     let failCount = 0;
+    const filesChanged: string[] = [];
+    let totalInsertions = 0;
+    let totalDeletions = 0;
 
-    for (const file of snapshot.files) {
+    for (const [relativePath, backup] of Object.entries(
+      snapshot.trackedFileBackups,
+    )) {
+      const absolutePath = this.toAbsolutePath(relativePath);
+
       try {
-        await writeFile(file.path, file.content, 'utf-8');
-        successCount++;
-        if (this.DEBUG) {
-          console.log(`[Snapshot] Restored: ${file.path}`);
+        if (backup.backupFileName === null) {
+          // File should be deleted
+          if (existsSync(absolutePath)) {
+            if (dryRun) {
+              // Calculate deletions for preview
+              const currentContent = readFileSync(absolutePath, 'utf-8');
+              totalDeletions += currentContent.split('\n').length;
+            } else {
+              await unlink(absolutePath);
+            }
+            filesChanged.push(absolutePath);
+            successCount++;
+            if (this.DEBUG) {
+              console.log(
+                `[Snapshot] ${dryRun ? 'Would delete' : 'Deleted'}: ${absolutePath}`,
+              );
+            }
+          }
+        } else {
+          // Restore file from backup
+          const backupPath = this.getBackupFilePath(backup.backupFileName);
+          if (!existsSync(backupPath)) {
+            console.error(
+              `[Snapshot] Backup file not found: ${backup.backupFileName}`,
+            );
+            failCount++;
+            continue;
+          }
+
+          const backupContent = await readFile(backupPath, 'utf-8');
+
+          // Calculate diff if file exists
+          if (existsSync(absolutePath)) {
+            const currentContent = readFileSync(absolutePath, 'utf-8');
+            if (currentContent !== backupContent) {
+              const diff = this.calculateDiff(currentContent, backupContent);
+              totalInsertions += diff.insertions;
+              totalDeletions += diff.deletions;
+              filesChanged.push(absolutePath);
+            }
+          } else {
+            // New file being created
+            totalInsertions += backupContent.split('\n').length;
+            filesChanged.push(absolutePath);
+          }
+
+          if (!dryRun) {
+            await writeFile(absolutePath, backupContent, 'utf-8');
+          }
+          successCount++;
+
+          if (this.DEBUG) {
+            console.log(
+              `[Snapshot] ${dryRun ? 'Would restore' : 'Restored'}: ${absolutePath}`,
+            );
+          }
         }
       } catch (error) {
         failCount++;
-        console.error(`[Snapshot] Failed to restore ${file.path}:`, error);
+        console.error(`[Snapshot] Failed to restore ${absolutePath}:`, error);
       }
     }
 
-    if (snapshot.files.length > 0) {
+    const totalFiles = Object.keys(snapshot.trackedFileBackups).length;
+    if (totalFiles > 0 && !dryRun) {
       console.log(
-        `[Snapshot] Restored ${successCount}/${snapshot.files.length} files for message ${messageUuid}`,
+        `[Snapshot] Restored ${successCount}/${totalFiles} files for message ${messageUuid}`,
       );
     }
+
+    return {
+      filesChanged,
+      insertions: totalInsertions,
+      deletions: totalDeletions,
+    };
   }
 
   /**
-   * Restore specific files from a snapshot by file paths
-   * @param messageUuid The snapshot UUID to restore from
-   * @param filePaths Array of file paths to restore
-   * @returns Number of successfully restored files
+   * Restore specific files from a snapshot
    */
   async restoreSnapshotFiles(
     messageUuid: string,
@@ -170,21 +600,39 @@ export class SnapshotManager {
       return 0;
     }
 
-    const filePathSet = new Set(filePaths);
+    const relativePathSet = new Set(
+      filePaths.map((p) => this.toRelativePath(p)),
+    );
     let successCount = 0;
 
-    for (const file of snapshot.files) {
-      if (filePathSet.has(file.path)) {
+    for (const [relativePath, backup] of Object.entries(
+      snapshot.trackedFileBackups,
+    )) {
+      if (relativePathSet.has(relativePath)) {
+        const absolutePath = this.toAbsolutePath(relativePath);
+
         try {
-          await writeFile(file.path, file.content, 'utf-8');
-          successCount++;
-          if (this.DEBUG) {
-            console.log(
-              `[Snapshot] Restored file: ${file.path} from snapshot ${messageUuid}`,
-            );
+          if (backup.backupFileName === null) {
+            if (existsSync(absolutePath)) {
+              await unlink(absolutePath);
+              successCount++;
+            }
+          } else {
+            const backupPath = this.getBackupFilePath(backup.backupFileName);
+            if (existsSync(backupPath)) {
+              const content = await readFile(backupPath, 'utf-8');
+              await writeFile(absolutePath, content, 'utf-8');
+              successCount++;
+
+              if (this.DEBUG) {
+                console.log(
+                  `[Snapshot] Restored file: ${absolutePath} from snapshot ${messageUuid}`,
+                );
+              }
+            }
           }
         } catch (error) {
-          console.error(`[Snapshot] Failed to restore ${file.path}:`, error);
+          console.error(`[Snapshot] Failed to restore ${absolutePath}:`, error);
         }
       }
     }
@@ -201,7 +649,9 @@ export class SnapshotManager {
     if (this.DEBUG) {
       console.log(
         `[SnapshotManager.getSnapshot] Querying ${messageUuid}:`,
-        snapshot ? `Found (${snapshot.files.length} files)` : 'Not found',
+        snapshot
+          ? `Found (${Object.keys(snapshot.trackedFileBackups).length} files)`
+          : 'Not found',
       );
       console.log(
         `[SnapshotManager.getSnapshot] All snapshot UUIDs:`,
@@ -216,17 +666,24 @@ export class SnapshotManager {
     return zlib.gzipSync(JSON.stringify(data)).toString('base64');
   }
 
-  static deserialize(data: string): SnapshotManager {
-    const manager = new SnapshotManager();
+  static deserialize(
+    data: string,
+    opts: { cwd: string; sessionId: string },
+  ): SnapshotManager {
+    const manager = new SnapshotManager(opts);
     try {
       const decompressed = zlib.gunzipSync(Buffer.from(data, 'base64'));
       const snapshots: MessageSnapshot[] = JSON.parse(decompressed.toString());
       for (const snapshot of snapshots) {
         manager.snapshots.set(snapshot.messageUuid, snapshot);
       }
+
+      // Rebuild tracked files set using unified method
+      manager.rebuildTrackedFilesSet(snapshots);
+
       if (manager.DEBUG) {
         console.log(
-          `[Snapshot deserialize] Loaded ${snapshots.length} snapshots`,
+          `[Snapshot deserialize] Loaded ${snapshots.length} snapshots, tracking ${manager.trackedFiles.size} files`,
         );
       }
     } catch (error) {
@@ -235,14 +692,19 @@ export class SnapshotManager {
     return manager;
   }
 
+  /**
+   * Get the set of all tracked files
+   */
+  getTrackedFiles(): Set<string> {
+    return new Set(this.trackedFiles);
+  }
+
   getSnapshots(): MessageSnapshot[] {
     return Array.from(this.snapshots.values());
   }
 
   /**
    * Delete a snapshot by message UUID
-   * @param messageUuid The snapshot UUID to delete
-   * @returns true if snapshot was deleted, false if it didn't exist
    */
   deleteSnapshot(messageUuid: string): boolean {
     const existed = this.snapshots.has(messageUuid);
@@ -252,12 +714,188 @@ export class SnapshotManager {
     }
     return existed;
   }
+
+  /**
+   * Get file count in snapshot
+   */
+  getSnapshotFileCount(messageUuid: string): number {
+    const snapshot = this.snapshots.get(messageUuid);
+    return snapshot ? Object.keys(snapshot.trackedFileBackups).length : 0;
+  }
+
+  /**
+   * Rebuild snapshot state from snapshot entries (Claude Code qH0 equivalent)
+   * Used when loading snapshots from JSONL log during fork/resume operations
+   *
+   * @param snapshotEntries - Array of snapshot entries with isSnapshotUpdate flag
+   * @returns Rebuilt snapshot array in chronological order
+   */
+  static rebuildSnapshotState(
+    snapshotEntries: SnapshotEntry[],
+  ): MessageSnapshot[] {
+    const rebuiltSnapshots: MessageSnapshot[] = [];
+
+    for (const entry of snapshotEntries) {
+      if (!entry.isSnapshotUpdate) {
+        // New snapshot: directly append
+        rebuiltSnapshots.push(entry.snapshot);
+      } else {
+        // Snapshot update: find and replace the corresponding snapshot
+        // Find from the end to get the latest occurrence
+        let targetIndex = -1;
+        for (let i = rebuiltSnapshots.length - 1; i >= 0; i--) {
+          if (rebuiltSnapshots[i].messageUuid === entry.snapshot.messageUuid) {
+            targetIndex = i;
+            break;
+          }
+        }
+
+        if (targetIndex === -1) {
+          // Original snapshot not found, treat as new
+          rebuiltSnapshots.push(entry.snapshot);
+        } else {
+          // Replace the old snapshot with updated one
+          rebuiltSnapshots[targetIndex] = entry.snapshot;
+        }
+      }
+    }
+
+    return rebuiltSnapshots;
+  }
+
+  /**
+   * Load snapshot entries from JSONL log (used during session resume)
+   */
+  loadSnapshotEntries(entries: SnapshotEntry[]): void {
+    // Store raw entries
+    for (const entry of entries) {
+      this.snapshotEntries.set(entry.snapshot.messageUuid, entry);
+    }
+
+    // Rebuild snapshot state
+    const rebuiltSnapshots = SnapshotManager.rebuildSnapshotState(entries);
+
+    // Load into snapshots map
+    for (const snapshot of rebuiltSnapshots) {
+      this.snapshots.set(snapshot.messageUuid, snapshot);
+    }
+
+    // Rebuild global tracked files set using unified method
+    this.rebuildTrackedFilesSet(rebuiltSnapshots);
+
+    if (this.DEBUG) {
+      console.log(
+        `[SnapshotManager] Loaded ${entries.length} snapshot entries, rebuilt to ${rebuiltSnapshots.length} snapshots, tracking ${this.trackedFiles.size} files`,
+      );
+    }
+  }
+
+  /**
+   * Get snapshot entry with update flag
+   */
+  getSnapshotEntry(messageUuid: string): SnapshotEntry | undefined {
+    return this.snapshotEntries.get(messageUuid);
+  }
+
+  /**
+   * Copy backup files from another session (for session resume/continuation)
+   * Uses hard links when possible to save disk space
+   */
+  async copyBackupsFromSession(
+    snapshots: MessageSnapshot[],
+    sourceSessionId: string,
+  ): Promise<void> {
+    if (sourceSessionId === this.sessionId) {
+      // Same session, no need to copy
+      if (this.DEBUG) {
+        console.log(
+          '[Snapshot] Source and target session are the same, skipping copy',
+        );
+      }
+      return;
+    }
+
+    const sourceBackupDir = pathe.join(
+      os.homedir(),
+      '.neovate',
+      'file-history',
+      sourceSessionId,
+    );
+    const targetBackupDir = this.getBackupDir();
+
+    // Ensure target directory exists
+    if (!existsSync(targetBackupDir)) {
+      await mkdir(targetBackupDir, { recursive: true });
+    }
+
+    let copyCount = 0;
+    let linkCount = 0;
+    let skipCount = 0;
+
+    for (const snapshot of snapshots) {
+      for (const backup of Object.values(snapshot.trackedFileBackups)) {
+        if (!backup.backupFileName) continue;
+
+        const sourceFile = pathe.join(sourceBackupDir, backup.backupFileName);
+        const targetFile = pathe.join(targetBackupDir, backup.backupFileName);
+
+        // Skip if target already exists
+        if (existsSync(targetFile)) {
+          skipCount++;
+          continue;
+        }
+
+        // Skip if source doesn't exist
+        if (!existsSync(sourceFile)) {
+          if (this.DEBUG) {
+            console.warn(
+              `[Snapshot] Source backup file not found: ${backup.backupFileName}`,
+            );
+          }
+          continue;
+        }
+
+        try {
+          // Try hard link first (saves space)
+          await link(sourceFile, targetFile);
+          linkCount++;
+          if (this.DEBUG) {
+            console.log(
+              `[Snapshot] Hard linked backup: ${backup.backupFileName}`,
+            );
+          }
+        } catch (error) {
+          // Fallback to regular copy
+          try {
+            const content = await readFile(sourceFile);
+            await writeFile(targetFile, content);
+            copyCount++;
+            if (this.DEBUG) {
+              console.log(`[Snapshot] Copied backup: ${backup.backupFileName}`);
+            }
+          } catch (copyError) {
+            console.error(
+              `[Snapshot] Failed to copy backup ${backup.backupFileName}:`,
+              copyError,
+            );
+          }
+        }
+      }
+    }
+
+    if (this.DEBUG || linkCount > 0 || copyCount > 0) {
+      console.log(
+        `[Snapshot] Backup copy complete: ${linkCount} hard-linked, ${copyCount} copied, ${skipCount} skipped`,
+      );
+    }
+  }
 }
 
 export async function createToolSnapshot(
   filePaths: string[],
   sessionConfigManager: SessionConfigManager,
   messageUuid: string,
+  jsonlLogger?: JsonlLogger,
 ): Promise<void> {
   const DEBUG = process.env.NEOVATE_SNAPSHOT_DEBUG === 'true';
 
@@ -269,11 +907,16 @@ export async function createToolSnapshot(
   }
 
   const snapshotManager = sessionConfigManager.getSnapshotManager();
-  const snapshot = await snapshotManager.createSnapshot(filePaths, messageUuid);
+
+  // Use new trackFileEdit API to get both snapshot and update status
+  const { snapshot, isUpdate } = await snapshotManager.trackFileEdit(
+    filePaths,
+    messageUuid,
+  );
 
   if (DEBUG) {
     console.log(
-      `[createToolSnapshot] Snapshot created with ${snapshot.files.length} files`,
+      `[createToolSnapshot] Snapshot ${isUpdate ? 'updated' : 'created'} with ${Object.keys(snapshot.trackedFileBackups).length} files`,
     );
   }
 
@@ -281,5 +924,20 @@ export async function createToolSnapshot(
 
   if (DEBUG) {
     console.log(`[createToolSnapshot] Snapshots saved to disk`);
+  }
+
+  if (jsonlLogger && Object.keys(snapshot.trackedFileBackups).length > 0) {
+    jsonlLogger.addSnapshotMessage({
+      messageId: messageUuid,
+      timestamp: snapshot.timestamp,
+      trackedFileBackups: snapshot.trackedFileBackups,
+      isSnapshotUpdate: isUpdate,
+    });
+
+    if (DEBUG) {
+      console.log(
+        `[createToolSnapshot] Snapshot message written to log for ${Object.keys(snapshot.trackedFileBackups).length} files`,
+      );
+    }
   }
 }

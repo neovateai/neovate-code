@@ -78,6 +78,8 @@ class NodeHandlerRegistry {
     if (!this.sessionConfigManagers.has(key)) {
       const manager = new SessionConfigManager({
         logPath: context.paths.getSessionLogPath(sessionId),
+        cwd: context.cwd,
+        sessionId,
       });
       this.sessionConfigManagers.set(key, manager);
     }
@@ -2065,7 +2067,7 @@ ${diff}
         const snapshotSummary: Record<string, { fileCount: number }> = {};
         for (const snapshot of snapshots) {
           snapshotSummary[snapshot.messageUuid] = {
-            fileCount: snapshot.files.length,
+            fileCount: Object.keys(snapshot.trackedFileBackups).length,
           };
         }
 
