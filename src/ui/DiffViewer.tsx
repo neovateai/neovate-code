@@ -5,6 +5,7 @@ import { Box, Text } from 'ink';
 import type React from 'react';
 import { useMemo } from 'react';
 import { useAppStore } from './store';
+import { useTerminalSize } from './useTerminalSize';
 
 interface DiffProps {
   originalContent: string;
@@ -28,9 +29,9 @@ interface DiffStats {
 }
 
 const DEFAULT_TAB_WIDTH = 4;
-const DEFAULT_TERMINAL_WIDTH = 80;
 const DEFAULT_MAX_HEIGHT = 20;
 const MAX_CONTEXT_LINES_WITHOUT_GAP = 5;
+const DEFAULT_TERMINAL_WIDTH = 80;
 
 function inferLanguage(fileName?: string): string {
   if (!fileName) return 'text';
@@ -437,10 +438,10 @@ export function DiffViewer({
   newContent,
   fileName,
   maxHeight = DEFAULT_MAX_HEIGHT,
-  terminalWidth = DEFAULT_TERMINAL_WIDTH,
   useCodeHighlight = true,
 }: DiffProps) {
   const { transcriptMode } = useAppStore();
+  const { columns: terminalWidth } = useTerminalSize();
 
   const effectiveMaxHeight = transcriptMode ? Infinity : maxHeight;
 
