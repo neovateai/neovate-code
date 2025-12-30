@@ -197,14 +197,11 @@ export class SnapshotManager {
       return true;
     }
 
-    // If file's mtime is older than backup, file hasn't changed
-    // (This handles cases where backup was created after the file was last modified)
-    if (fileStats.mtimeMs <= backupStats.mtimeMs) {
-      return false;
-    }
-
-    // File's mtime is newer than backup, need to compare content
-    // Use synchronous read for consistency (Claude Code style)
+    // Always compare content for accuracy
+    // Note: We removed mtime optimization because it can be unreliable in:
+    // - Fast consecutive writes (test scenarios)
+    // - Filesystems with low time precision
+    // - Clock adjustments
     const fileContent = readFileSync(filePath, 'utf-8');
     const backupContent = readFileSync(backupPath, 'utf-8');
     return fileContent !== backupContent;
