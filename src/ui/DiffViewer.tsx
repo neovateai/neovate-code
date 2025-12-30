@@ -367,7 +367,7 @@ function RenderDiffContent(
           ) {
             acc.push(
               <Box key={`gap-${index}`}>
-                <Text>{'═'.repeat(Math.min(terminalWidth - 4, 60))}</Text>
+                <Text color="gray">...</Text>
               </Box>,
             );
           }
