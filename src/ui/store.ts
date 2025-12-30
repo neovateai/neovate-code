@@ -1039,7 +1039,7 @@ export const useAppStore = create<AppStore>()(
 
       resumeSession: async (sessionId: string, logFile: string) => {
         await clearTerminal();
-        const { cwd } = get();
+        const { cwd, sessionId: currentSessionId } = get();
         const messages = loadSessionMessages({ logPath: logFile });
         const sessionConfigManager = new SessionConfigManager({
           logPath: logFile,
@@ -1048,6 +1048,35 @@ export const useAppStore = create<AppStore>()(
         });
         const pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
         const pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
+
+        // Copy backup files from resumed session to current session if different
+        // This is similar to Claude Code's H81 function
+        if (currentSessionId && sessionId !== currentSessionId) {
+          try {
+            const snapshotManager = sessionConfigManager.getSnapshotManager();
+            const snapshots = snapshotManager.getSnapshots();
+
+            if (snapshots.length > 0) {
+              const { copySessionBackups } = await import('../utils/snapshot');
+              await copySessionBackups(
+                sessionId,
+                currentSessionId,
+                snapshots,
+                cwd || process.cwd(),
+              );
+              get().log(
+                `Copied ${snapshots.length} snapshot(s) from resumed session`,
+              );
+            }
+          } catch (error) {
+            console.error(
+              '[resumeSession] Failed to copy session backups:',
+              error,
+            );
+            // Don't fail resume if backup copy fails
+          }
+        }
+
         set({
           sessionId,
           logFile,

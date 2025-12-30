@@ -79,12 +79,23 @@ export class SessionConfigManager {
   }
 
   getSnapshotManager(): SnapshotManager {
-    // Reload config from disk to ensure we have the latest snapshots
-    // This is necessary because Project.ts and nodeBridge.ts use separate SessionConfigManager instances
     const DEBUG = process.env.NEOVATE_SNAPSHOT_DEBUG === 'true';
+
+    // Return cached instance if already initialized
+    if (this.snapshotManager) {
+      if (DEBUG) {
+        console.log(
+          '[SessionConfigManager.getSnapshotManager] Returning cached SnapshotManager',
+        );
+      }
+      return this.snapshotManager;
+    }
+
+    // First time initialization: reload config from disk to ensure we have the latest snapshots
+    // This is necessary because Project.ts and nodeBridge.ts use separate SessionConfigManager instances
     if (DEBUG) {
       console.log(
-        '[SessionConfigManager.getSnapshotManager] Reloading config from disk',
+        '[SessionConfigManager.getSnapshotManager] Initializing SnapshotManager from disk',
       );
     }
     this.config = this.load(this.logPath);

@@ -387,17 +387,17 @@ describe('SnapshotManager', () => {
       await manager.createSnapshot([file], messageUuid);
       expect(manager.hasSnapshot(messageUuid)).toBe(true);
 
-      const deleted = manager.deleteSnapshot(messageUuid);
+      const deleted = await manager.deleteSnapshot(messageUuid);
       expect(deleted).toBe(true);
       expect(manager.hasSnapshot(messageUuid)).toBe(false);
     });
 
-    it('should return false when deleting non-existent snapshot', () => {
+    it('should return false when deleting non-existent snapshot', async () => {
       const manager = new SnapshotManager({
         cwd: TEST_DIR,
         sessionId: TEST_SESSION_ID,
       });
-      const deleted = manager.deleteSnapshot('non-existent');
+      const deleted = await manager.deleteSnapshot('non-existent');
       expect(deleted).toBe(false);
     });
 
@@ -413,7 +413,7 @@ describe('SnapshotManager', () => {
       await manager.createSnapshot([file], 'uuid-2');
       expect(manager.getSnapshots().length).toBe(2);
 
-      manager.deleteSnapshot('uuid-1');
+      await manager.deleteSnapshot('uuid-1');
       const snapshots = manager.getSnapshots();
       expect(snapshots.length).toBe(1);
       expect(snapshots[0].messageUuid).toBe('uuid-2');

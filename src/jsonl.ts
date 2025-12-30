@@ -50,6 +50,11 @@ export class JsonlLogger {
   /**
    * Add a snapshot message to the log file
    * This records file history snapshot information similar to Claude Code
+   *
+   * IMPORTANT: This method only appends to the log file, never deletes.
+   * The isSnapshotUpdate flag is used during reconstruction (see session.ts loadSnapshotEntries)
+   * to determine whether to create a new snapshot or update an existing one.
+   * This follows Claude Code's design pattern.
    */
   addSnapshotMessage(opts: {
     messageId: string;
@@ -80,32 +85,10 @@ export class JsonlLogger {
       isSnapshotUpdate: opts.isSnapshotUpdate,
     };
 
-    // Read existing file to remove old snapshot with same messageId
-    if (fs.existsSync(this.filePath)) {
-      const content = fs.readFileSync(this.filePath, 'utf-8');
-      const lines = content.split('\n').filter(Boolean);
-      const filteredLines = lines.filter((line) => {
-        try {
-          const entry = JSON.parse(line);
-          // Keep all entries except snapshots with the same messageId
-          return !(
-            entry.type === 'file-history-snapshot' &&
-            entry.messageId === opts.messageId
-          );
-        } catch {
-          return true; // Keep invalid lines
-        }
-      });
-
-      // Add the new snapshot
-      filteredLines.push(JSON.stringify(snapshotMessage));
-
-      // Rewrite the file
-      fs.writeFileSync(this.filePath, filteredLines.join('\n') + '\n');
-    } else {
-      // File doesn't exist, just append
-      fs.appendFileSync(this.filePath, JSON.stringify(snapshotMessage) + '\n');
-    }
+    // Simply append the snapshot message to the log file
+    // Do NOT delete old snapshots - the reconstruction logic in loadSnapshotEntries
+    // and rebuildSnapshotState will handle updates correctly using the isSnapshotUpdate flag
+    fs.appendFileSync(this.filePath, JSON.stringify(snapshotMessage) + '\n');
 
     return snapshotMessage;
   }

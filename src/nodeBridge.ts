@@ -2137,7 +2137,7 @@ ${diff}
         sessionId,
       );
       const snapshotManager = sessionConfigManager.getSnapshotManager();
-      const deleted = snapshotManager.deleteSnapshot(messageUuid);
+      const deleted = await snapshotManager.deleteSnapshot(messageUuid);
 
       // Save the updated snapshots to disk
       if (deleted) {

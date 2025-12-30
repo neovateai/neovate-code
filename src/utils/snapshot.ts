@@ -175,11 +175,10 @@ export class SnapshotManager {
 
   /**
    * Check if file has changed compared to backup
+   * Uses intelligent comparison: existence -> metadata -> content
+   * This is a synchronous method for performance (Claude Code style)
    */
-  private async hasFileChanged(
-    filePath: string,
-    backupFileName: string,
-  ): Promise<boolean> {
+  private hasFileChanged(filePath: string, backupFileName: string): boolean {
     const backupPath = this.getBackupFilePath(backupFileName);
 
     // Check existence
@@ -188,7 +187,7 @@ export class SnapshotManager {
     if (fileExists !== backupExists) return true;
     if (!fileExists) return false;
 
-    // Compare metadata
+    // Compare metadata (fast)
     const fileStats = statSync(filePath);
     const backupStats = statSync(backupPath);
     if (
@@ -197,11 +196,15 @@ export class SnapshotManager {
     ) {
       return true;
     }
-    if (fileStats.mtimeMs < backupStats.mtimeMs) {
-      return false; // File is older than backup
+
+    // If file's mtime is older than backup, file hasn't changed
+    // (This handles cases where backup was created after the file was last modified)
+    if (fileStats.mtimeMs <= backupStats.mtimeMs) {
+      return false;
     }
 
-    // Compare content
+    // File's mtime is newer than backup, need to compare content
+    // Use synchronous read for consistency (Claude Code style)
     const fileContent = readFileSync(filePath, 'utf-8');
     const backupContent = readFileSync(backupPath, 'utf-8');
     return fileContent !== backupContent;
@@ -375,10 +378,7 @@ export class SnapshotManager {
           if (
             previousBackup &&
             previousBackup.backupFileName !== null &&
-            !(await this.hasFileChanged(
-              absolutePath,
-              previousBackup.backupFileName,
-            ))
+            !this.hasFileChanged(absolutePath, previousBackup.backupFileName)
           ) {
             // File unchanged, reuse previous backup
             trackedFileBackups[relativePath] = previousBackup;
@@ -556,6 +556,25 @@ export class SnapshotManager {
 
           if (!dryRun) {
             await writeFile(absolutePath, backupContent, 'utf-8');
+
+            // Restore file permissions (following Claude Code pattern)
+            try {
+              const backupStats = await stat(backupPath);
+              await chmod(absolutePath, backupStats.mode);
+              if (this.DEBUG) {
+                console.log(
+                  `[Snapshot] Restored permissions for ${absolutePath}: ${backupStats.mode.toString(8)}`,
+                );
+              }
+            } catch (permError) {
+              // Don't fail restore if permission copy fails
+              if (this.DEBUG) {
+                console.warn(
+                  `[Snapshot] Failed to restore permissions for ${absolutePath}:`,
+                  permError,
+                );
+              }
+            }
           }
           successCount++;
 
@@ -622,6 +641,20 @@ export class SnapshotManager {
             if (existsSync(backupPath)) {
               const content = await readFile(backupPath, 'utf-8');
               await writeFile(absolutePath, content, 'utf-8');
+
+              // Restore file permissions
+              try {
+                const backupStats = await stat(backupPath);
+                await chmod(absolutePath, backupStats.mode);
+              } catch (permError) {
+                if (this.DEBUG) {
+                  console.warn(
+                    `[Snapshot] Failed to restore permissions for ${absolutePath}:`,
+                    permError,
+                  );
+                }
+              }
+
               successCount++;
 
               if (this.DEBUG) {
@@ -705,14 +738,57 @@ export class SnapshotManager {
 
   /**
    * Delete a snapshot by message UUID
+   * IMPORTANT: This also deletes the physical backup files to prevent disk space leaks
    */
-  deleteSnapshot(messageUuid: string): boolean {
-    const existed = this.snapshots.has(messageUuid);
-    this.snapshots.delete(messageUuid);
-    if (this.DEBUG && existed) {
-      console.log(`[Snapshot] Deleted snapshot for message ${messageUuid}`);
+  async deleteSnapshot(messageUuid: string): Promise<boolean> {
+    const snapshot = this.snapshots.get(messageUuid);
+    if (!snapshot) {
+      if (this.DEBUG) {
+        console.log(`[Snapshot] No snapshot found for message ${messageUuid}`);
+      }
+      return false;
     }
-    return existed;
+
+    // Delete physical backup files to prevent disk space leaks
+    let deletedFilesCount = 0;
+    let failedFilesCount = 0;
+
+    for (const [relativePath, backup] of Object.entries(
+      snapshot.trackedFileBackups,
+    )) {
+      if (backup.backupFileName) {
+        try {
+          const backupPath = this.getBackupFilePath(backup.backupFileName);
+          if (existsSync(backupPath)) {
+            await unlink(backupPath);
+            deletedFilesCount++;
+            if (this.DEBUG) {
+              console.log(
+                `[Snapshot] Deleted backup file: ${backup.backupFileName}`,
+              );
+            }
+          }
+        } catch (error) {
+          failedFilesCount++;
+          console.warn(
+            `[Snapshot] Failed to delete backup file ${backup.backupFileName}:`,
+            error,
+          );
+        }
+      }
+    }
+
+    // Delete metadata
+    this.snapshots.delete(messageUuid);
+    this.snapshotEntries.delete(messageUuid);
+
+    if (this.DEBUG) {
+      console.log(
+        `[Snapshot] Deleted snapshot for message ${messageUuid}: ${deletedFilesCount} backup files deleted, ${failedFilesCount} failed`,
+      );
+    }
+
+    return true;
   }
 
   /**
@@ -939,5 +1015,108 @@ export async function createToolSnapshot(
         `[createToolSnapshot] Snapshot message written to log for ${Object.keys(snapshot.trackedFileBackups).length} files`,
       );
     }
+  }
+}
+
+/**
+ * Copy backup files from one session to another
+ * This is used when resuming/continuing a session (Claude Code H81 equivalent)
+ * Uses hard links to save disk space when possible
+ */
+export async function copySessionBackups(
+  fromSessionId: string,
+  toSessionId: string,
+  snapshots: MessageSnapshot[],
+  cwd: string,
+): Promise<void> {
+  const DEBUG = process.env.NEOVATE_SNAPSHOT_DEBUG === 'true';
+
+  if (fromSessionId === toSessionId) {
+    if (DEBUG) {
+      console.log('[copySessionBackups] Same session, skipping backup copy');
+    }
+    return;
+  }
+
+  const productName = 'neovate';
+  const globalConfigDir = pathe.join(os.homedir(), `.${productName}`);
+  const fromDir = pathe.join(globalConfigDir, 'file-history', fromSessionId);
+  const toDir = pathe.join(globalConfigDir, 'file-history', toSessionId);
+
+  // Ensure target directory exists
+  if (!existsSync(toDir)) {
+    await mkdir(toDir, { recursive: true });
+  }
+
+  let copiedCount = 0;
+  let skippedCount = 0;
+  let failedCount = 0;
+
+  for (const snapshot of snapshots) {
+    for (const [relativePath, backup] of Object.entries(
+      snapshot.trackedFileBackups,
+    )) {
+      if (!backup.backupFileName) continue;
+
+      const fromPath = pathe.join(fromDir, backup.backupFileName);
+      const toPath = pathe.join(toDir, backup.backupFileName);
+
+      // Skip if target already exists
+      if (existsSync(toPath)) {
+        skippedCount++;
+        continue;
+      }
+
+      // Skip if source doesn't exist
+      if (!existsSync(fromPath)) {
+        if (DEBUG) {
+          console.warn(
+            `[copySessionBackups] Source backup not found: ${backup.backupFileName}`,
+          );
+        }
+        failedCount++;
+        continue;
+      }
+
+      try {
+        // Try hard link first (saves space)
+        await link(fromPath, toPath);
+        copiedCount++;
+        if (DEBUG) {
+          console.log(
+            `[copySessionBackups] Hard linked: ${backup.backupFileName}`,
+          );
+        }
+      } catch (linkError) {
+        // Hard link failed, try regular copy
+        try {
+          const content = await readFile(fromPath);
+          await writeFile(toPath, content);
+
+          // Copy permissions
+          const stats = await stat(fromPath);
+          await chmod(toPath, stats.mode);
+
+          copiedCount++;
+          if (DEBUG) {
+            console.log(
+              `[copySessionBackups] Copied: ${backup.backupFileName}`,
+            );
+          }
+        } catch (copyError) {
+          console.error(
+            `[copySessionBackups] Failed to copy ${backup.backupFileName}:`,
+            copyError,
+          );
+          failedCount++;
+        }
+      }
+    }
+  }
+
+  if (DEBUG || copiedCount > 0) {
+    console.log(
+      `[copySessionBackups] Completed: ${copiedCount} copied, ${skippedCount} skipped, ${failedCount} failed`,
+    );
   }
 }
