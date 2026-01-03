@@ -32,7 +32,7 @@ async function main() {
   // Step 2: Run full build process
   console.log('📦 Building project...');
   try {
-    await $`rm -rf dist dist-dts && npm run build:cli && npm run build:index && npm run build:dts && npm run build:mcps && npm run build:post`.quiet();
+    await $`rm -rf dist dist-dts && npm run build:cli && npm run build:index && npm run build:dts && npm run build:post`.quiet();
     console.log('✅ Build completed successfully\n');
   } catch (error) {
     console.error('❌ Build failed:', error);
