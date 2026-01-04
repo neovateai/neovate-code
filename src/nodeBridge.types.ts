@@ -148,6 +148,7 @@ type GitDetectGitHubOutput = {
 type GitCreatePRInput = {
   cwd: string;
   branchName: string;
+  body?: string;
 };
 type GitCreatePROutput = {
   success: boolean;

@@ -1440,19 +1440,20 @@ ${diff}
     });
 
     this.messageBus.registerHandler('git.createPR', async (data) => {
-      const { cwd, branchName } = data;
+      const { cwd, branchName, body } = data;
       try {
         const { spawn } = await import('child_process');
 
+        const args = ['pr', 'create', '--fill', '--head', branchName];
+        if (body) {
+          args.push('--body', body);
+        }
+
         return new Promise((resolve) => {
-          const ghProcess = spawn(
-            'gh',
-            ['pr', 'create', '--fill', '--head', branchName],
-            {
-              cwd,
-              stdio: ['ignore', 'pipe', 'pipe'],
-            },
-          );
+          const ghProcess = spawn('gh', args, {
+            cwd,
+            stdio: ['ignore', 'pipe', 'pipe'],
+          });
 
           let stdout = '';
           let stderr = '';

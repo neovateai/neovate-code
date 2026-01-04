@@ -876,6 +876,7 @@ and may require re-resolving conflicts.`,
           const prResult = await messageBus.request('git.createPR', {
             cwd,
             branchName: branchNamePR,
+            body: data.summary,
           });
 
           if (prResult.success) {
