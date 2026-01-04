@@ -1374,6 +1374,7 @@ export const providers: ProvidersMap = {
       'claude-opus-4-5': models['claude-opus-4-5'],
     },
     createModelType: 'anthropic',
+    createModel: defaultAnthropicModelCreator,
   },
   aihubmix: {
     id: 'aihubmix',
@@ -1932,6 +1933,7 @@ export const providers: ProvidersMap = {
       'claude-opus-4-5': models['claude-opus-4-5'],
     },
     createModelType: 'anthropic',
+    createModel: defaultAnthropicModelCreator,
   },
 };
 
