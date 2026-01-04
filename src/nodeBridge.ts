@@ -23,7 +23,7 @@ import type { ApprovalCategory, ToolUse } from './tool';
 import { getFiles } from './utils/files';
 import { listDirectory } from './utils/list';
 import { randomUUID } from './utils/randomUUID';
-import { stripThinkTags } from './utils/safeParseJson';
+import { sanitizeAIResponse } from './utils/sanitizeAIResponse';
 import { getCurrentBranch } from './worktree';
 
 type ModelData = Omit<Model, 'id' | 'cost'>;
@@ -1194,7 +1194,7 @@ ${diff}
         // Parse the JSON response
         let jsonResponse;
         try {
-          const cleanedText = stripThinkTags(result.data.text);
+          const cleanedText = sanitizeAIResponse(result.data.text);
           jsonResponse = JSON.parse(cleanedText);
         } catch (parseError: any) {
           return {
