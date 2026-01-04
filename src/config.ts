@@ -33,8 +33,6 @@ export type ApprovalMode = 'default' | 'autoEdit' | 'yolo';
 export type AgentConfig = {
   model?: string;
   // Reserved for future extensions
-  temperature?: number;
-  systemPrompt?: string;
 };
 
 export type CommitConfig = {
