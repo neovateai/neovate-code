@@ -473,13 +473,6 @@ export const useAppStore = create<AppStore>()(
           pastedTextMap,
         } = get();
 
-        if (brainstormMode) {
-          message = `/spec:brainstorm ${message}`;
-          set({
-            brainstormMode: false,
-          });
-        }
-
         bridge.request('utils.telemetry', {
           cwd,
           name: 'send',
@@ -521,6 +514,14 @@ export const useAppStore = create<AppStore>()(
           await bridge.request('project.addHistory', {
             cwd,
             history: message,
+          });
+        }
+
+        // Apply brainstorm mode wrapper if not a slash command
+        if (brainstormMode && !isSlashCommand(expandedMessage)) {
+          expandedMessage = `/spec:brainstorm ${expandedMessage}`;
+          set({
+            brainstormMode: false,
           });
         }
 
