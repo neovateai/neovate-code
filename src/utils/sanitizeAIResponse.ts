@@ -19,7 +19,7 @@ export function stripThinkTags(text: string): string {
  */
 export function stripCodeBlocks(text: string): string {
   const trimmed = text.trim();
-  return trimmed.replace(/^```(?:bash|sh|shell)?\s*\n([\s\S]*?)\n```$/g, '$1');
+  return trimmed.replace(/^```\w*\s*\n([\s\S]*?)\n```$/g, '$1');
 }
 
 /**
