@@ -43,4 +43,5 @@ export const BACKGROUND_THRESHOLD_MS = 2000;
 export enum AGENT_TYPE {
   EXPLORE = 'Explore',
   PLAN = 'Plan',
+  GENERAL_PURPOSE = 'GeneralPurpose',
 }
