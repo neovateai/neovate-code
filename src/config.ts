@@ -30,6 +30,13 @@ export type McpServerConfig =
 
 export type ApprovalMode = 'default' | 'autoEdit' | 'yolo';
 
+export type AgentConfig = {
+  model?: string;
+  // Reserved for future extensions
+  temperature?: number;
+  systemPrompt?: string;
+};
+
 export type CommitConfig = {
   language: string;
   systemPrompt?: string;
@@ -82,6 +89,11 @@ export type Config = {
    * Key is the tool name, value is boolean (false to disable).
    */
   tools?: Record<string, boolean>;
+  /**
+   * Agent configuration for customizing agent behavior per agent type.
+   * Example: { explore: { model: "anthropic/claude-haiku-4" } }
+   */
+  agent?: Record<string, AgentConfig>;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -97,6 +109,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   autoUpdate: true,
   extensions: {},
   tools: {},
+  agent: {},
   desktop: {
     theme: 'light',
     sendMessageWith: 'enter',
@@ -119,6 +132,7 @@ const VALID_CONFIG_KEYS = [
   'httpProxy',
   'extensions',
   'tools',
+  'agent',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = [
@@ -128,6 +142,7 @@ const OBJECT_CONFIG_KEYS = [
   'extensions',
   'tools',
   'desktop',
+  'agent',
 ];
 const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact', 'autoUpdate'];
 export const GLOBAL_ONLY_KEYS = ['desktop'];
