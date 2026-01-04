@@ -1,6 +1,6 @@
 import { Box, Text, useInput } from 'ink';
 import type React from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 export type CommitAction =
   | 'copy'
@@ -8,6 +8,7 @@ export type CommitAction =
   | 'push'
   | 'checkout'
   | 'checkoutPush'
+  | 'checkoutPushPR'
   | 'edit'
   | 'editBranch'
   | 'cancel';
@@ -18,7 +19,7 @@ interface ActionItem {
   icon: string;
 }
 
-const ACTIONS: ActionItem[] = [
+const BASE_ACTIONS: ActionItem[] = [
   { value: 'copy', label: 'Copy to clipboard', icon: '📋' },
   { value: 'commit', label: 'Commit changes', icon: '✅' },
   { value: 'push', label: 'Commit and push', icon: '🚀' },
@@ -28,6 +29,15 @@ const ACTIONS: ActionItem[] = [
     label: 'Create branch and commit and push',
     icon: '🌿',
   },
+];
+
+const PR_ACTION: ActionItem = {
+  value: 'checkoutPushPR',
+  label: 'Create branch, commit, push and create PR',
+  icon: '🔀',
+};
+
+const TAIL_ACTIONS: ActionItem[] = [
   { value: 'edit', label: 'Edit commit message', icon: '✏️' },
   { value: 'editBranch', label: 'Edit branch name', icon: '🌿' },
   { value: 'cancel', label: 'Cancel', icon: '❌' },
@@ -38,6 +48,8 @@ export interface CommitActionSelectorProps {
   onCancel: () => void;
   disabled?: boolean;
   defaultAction?: CommitAction;
+  hasGhCli?: boolean;
+  isGitHubRemote?: boolean;
 }
 
 export const CommitActionSelector: React.FC<CommitActionSelectorProps> = ({
@@ -45,8 +57,19 @@ export const CommitActionSelector: React.FC<CommitActionSelectorProps> = ({
   onCancel,
   disabled = false,
   defaultAction = 'push', // Default to "Commit and push"
+  hasGhCli = false,
+  isGitHubRemote = false,
 }) => {
-  const defaultIndex = ACTIONS.findIndex((a) => a.value === defaultAction);
+  // Build actions list dynamically based on GitHub detection
+  const actions = useMemo(() => {
+    const showPRAction = hasGhCli && isGitHubRemote;
+    if (showPRAction) {
+      return [...BASE_ACTIONS, PR_ACTION, ...TAIL_ACTIONS];
+    }
+    return [...BASE_ACTIONS, ...TAIL_ACTIONS];
+  }, [hasGhCli, isGitHubRemote]);
+
+  const defaultIndex = actions.findIndex((a) => a.value === defaultAction);
   const [selectedIndex, setSelectedIndex] = useState(
     defaultIndex >= 0 ? defaultIndex : 2,
   );
@@ -61,24 +84,24 @@ export const CommitActionSelector: React.FC<CommitActionSelectorProps> = ({
       }
 
       if (key.return) {
-        onSelect(ACTIONS[selectedIndex].value);
+        onSelect(actions[selectedIndex].value);
         return;
       }
 
       if (key.upArrow) {
-        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : ACTIONS.length - 1));
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : actions.length - 1));
         return;
       }
 
       if (key.downArrow) {
-        setSelectedIndex((prev) => (prev < ACTIONS.length - 1 ? prev + 1 : 0));
+        setSelectedIndex((prev) => (prev < actions.length - 1 ? prev + 1 : 0));
         return;
       }
 
-      // Quick select by number (1-6)
+      // Quick select by number (1-9)
       const num = Number.parseInt(input, 10);
-      if (num >= 1 && num <= ACTIONS.length) {
-        onSelect(ACTIONS[num - 1].value);
+      if (num >= 1 && num <= actions.length) {
+        onSelect(actions[num - 1].value);
       }
     },
     { isActive: !disabled },
@@ -88,7 +111,7 @@ export const CommitActionSelector: React.FC<CommitActionSelectorProps> = ({
     <Box flexDirection="column">
       <Text bold>What would you like to do?</Text>
       <Box flexDirection="column" marginTop={1}>
-        {ACTIONS.map((action, index) => {
+        {actions.map((action, index) => {
           const isSelected = index === selectedIndex;
           return (
             <Box key={action.value}>
