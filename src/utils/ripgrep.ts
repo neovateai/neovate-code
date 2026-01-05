@@ -38,7 +38,7 @@ function ripgrepPath() {
   }
 }
 
-export async function ripGrepRaw(
+export async function ripGrep(
   args: string[],
   target: string,
 ): Promise<RipGrepResult> {

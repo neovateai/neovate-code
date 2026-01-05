@@ -3,7 +3,7 @@ import path from 'pathe';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
-import { ripGrepRaw } from '../utils/ripgrep';
+import { ripGrep } from '../utils/ripgrep';
 import { safeStringify } from '../utils/safeStringify';
 
 const DEFAULT_LIMIT = 1000;
@@ -218,7 +218,7 @@ Usage:
             : path.resolve(opts.cwd, search_path)
           : opts.cwd;
 
-        const result = await ripGrepRaw(args, absolutePath);
+        const result = await ripGrep(args, absolutePath);
 
         if (!result.success && result.exitCode !== 1) {
           return {
