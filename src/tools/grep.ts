@@ -3,7 +3,7 @@ import path from 'pathe';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
-import { ripGrep, ripGrepRaw } from '../utils/ripgrep';
+import { ripGrepRaw } from '../utils/ripgrep';
 import { safeStringify } from '../utils/safeStringify';
 
 const DEFAULT_LIMIT = 1000;
