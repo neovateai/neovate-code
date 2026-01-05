@@ -7,6 +7,13 @@ import { isLocal } from './isLocal';
 
 const debug = createDebug('neovate:utils:ripgrep');
 
+export interface RipGrepResult {
+  success: boolean;
+  lines: string[];
+  exitCode: number | null;
+  stderr: string;
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -47,6 +54,46 @@ export async function ripGrep(
           resolve([]);
         } else {
           resolve(stdout.trim().split('\n').filter(Boolean));
+        }
+      },
+    );
+  });
+}
+
+export async function ripGrepRaw(
+  args: string[],
+  target: string,
+): Promise<RipGrepResult> {
+  const rg = ripgrepPath();
+  return new Promise((resolve) => {
+    execFile(
+      rg,
+      [...args, target],
+      {
+        maxBuffer: 10_000_000,
+        timeout: 60_000,
+      },
+      (err, stdout, stderr) => {
+        if (err) {
+          const exitCode = 'code' in err ? (err.code as number) : null;
+          if (exitCode === 1) {
+            resolve({ success: true, lines: [], exitCode: 1, stderr: '' });
+          } else {
+            debug(`[Ripgrep] Error: ${err}`);
+            resolve({
+              success: false,
+              lines: stdout.trim().split('\n').filter(Boolean),
+              exitCode,
+              stderr: stderr || String(err),
+            });
+          }
+        } else {
+          resolve({
+            success: true,
+            lines: stdout.trim().split('\n').filter(Boolean),
+            exitCode: 0,
+            stderr: '',
+          });
         }
       },
     );
