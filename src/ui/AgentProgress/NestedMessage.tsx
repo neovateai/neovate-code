@@ -18,9 +18,6 @@ function extractResultText(
     // For now we assume string representation is handled by specific tools
     // or we might need to stringify some objects
     if ('type' in result.returnDisplay) {
-      if (result.returnDisplay.type === 'todo_read') {
-        return `Read ${result.returnDisplay.todos.length} todos`;
-      }
       if (result.returnDisplay.type === 'todo_write') {
         return `Updated todos`;
       }

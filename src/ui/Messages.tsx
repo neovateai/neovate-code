@@ -28,7 +28,7 @@ import { DiffViewer } from './DiffViewer';
 import { GradientString } from './GradientString';
 import { Markdown } from './Markdown';
 import { useAppStore } from './store';
-import { TodoList, TodoRead } from './Todo';
+import { TodoList } from './Todo';
 
 interface EnrichedProvider {
   id: string;
@@ -615,8 +615,6 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
           />
         );
       }
-      case 'todo_read':
-        return <TodoRead todos={result.returnDisplay.todos} />;
       case 'todo_write':
         return (
           <TodoList

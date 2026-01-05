@@ -132,7 +132,3 @@ export function TodoList({
     </Box>
   );
 }
-
-export function TodoRead({ todos }: { todos: TodoItemType[] }) {
-  return <TodoList oldTodos={[]} newTodos={todos} verbose={false} />;
-}

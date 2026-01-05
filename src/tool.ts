@@ -65,10 +65,10 @@ export async function resolveTools(opts: ResolveToolsOpts) {
     : [];
   const todoTools = (() => {
     if (!opts.todo) return [];
-    const { todoWriteTool, todoReadTool } = createTodoTool({
+    const { todoWriteTool } = createTodoTool({
       filePath: path.join(paths.globalConfigDir, 'todos', `${sessionId}.json`),
     });
-    return [todoReadTool, todoWriteTool];
+    return [todoWriteTool];
   })();
   const backgroundTools = opts.write
     ? [
@@ -284,11 +284,6 @@ type ToolApprovalInfo = {
   category?: ApprovalCategory;
 };
 
-type TodoReadReturnDisplay = {
-  type: 'todo_read';
-  todos: TodoItem[];
-};
-
 type TodoWriteReturnDisplay = {
   type: 'todo_write';
   oldTodos: TodoItem[];
@@ -324,7 +319,6 @@ type AgentResultReturnDisplay = {
 export type ReturnDisplay =
   | string
   | DiffViewerReturnDisplay
-  | TodoReadReturnDisplay
   | TodoWriteReturnDisplay
   | AgentResultReturnDisplay;
 
