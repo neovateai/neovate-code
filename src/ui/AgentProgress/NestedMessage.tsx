@@ -46,7 +46,37 @@ function extractResultText(
   return '...';
 }
 
-function formatToolArgs(args: Record<string, unknown>): string {
+function formatToolArgs(
+  toolName: string,
+  args: Record<string, unknown>,
+): string {
+  if (toolName === 'todoWrite') {
+    const todos = args.todos as Array<{ content: string; status: string }>;
+    if (Array.isArray(todos)) {
+      const inProgressTodo = todos.find((t) => t.status === 'in_progress');
+      const completed = todos.filter((t) => t.status === 'completed').length;
+      const pending = todos.filter((t) => t.status === 'pending').length;
+      if (inProgressTodo) {
+        const taskName =
+          inProgressTodo.content.length > 40
+            ? `${inProgressTodo.content.substring(0, 40)}...`
+            : inProgressTodo.content;
+        return `"${taskName}" [${completed}/${todos.length}]`;
+      }
+      return `${todos.length} todos: ${completed} done, ${pending} pending`;
+    }
+  }
+
+  if (toolName === 'bash') {
+    const cmd = args.command as string;
+    if (cmd) {
+      const firstLine = cmd.split('\n')[0];
+      const truncated =
+        firstLine.length > 60 ? `${firstLine.substring(0, 60)}...` : firstLine;
+      return cmd.includes('\n') ? `${truncated}` : truncated;
+    }
+  }
+
   const values = Object.values(args);
   if (values.length === 0) return '';
   return values
@@ -54,7 +84,11 @@ function formatToolArgs(args: Record<string, unknown>): string {
       if (v === undefined || v === null || v === '') {
         return '';
       }
-      return JSON.stringify(v);
+      const str = JSON.stringify(v);
+      if (str.length > 80) {
+        return `${str.substring(0, 80)}...`;
+      }
+      return str;
     })
     .join(', ');
 }
@@ -79,7 +113,8 @@ export function LogItemRenderer({ item }: LogItemRendererProps) {
   if (item.type === 'tool') {
     const { toolUse, toolResult } = item;
     // Use the new formatter for arguments
-    const args = toolUse.description || formatToolArgs(toolUse.input);
+    const args =
+      toolUse.description || formatToolArgs(toolUse.name, toolUse.input);
     const resultText = toolResult
       ? extractResultText(toolResult).trim()
       : '...';
