@@ -278,14 +278,6 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
       }
     },
 
-    approval: {
-      category: 'command',
-      needsApproval: async (context) => {
-        if (context.approvalMode === 'yolo') {
-          return false;
-        }
-        return true;
-      },
-    },
+    approval: { category: 'read' },
   });
 }
