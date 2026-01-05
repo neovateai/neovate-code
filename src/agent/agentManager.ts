@@ -91,6 +91,7 @@ export class AgentManager {
       onMessage?: (
         message: NormalizedMessage,
         agentId: string,
+        model: string,
       ) => void | Promise<void>;
       onToolApprove?: (opts: {
         toolUse: ToolUse;

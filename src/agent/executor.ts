@@ -128,7 +128,7 @@ export async function executeAgent(
 
         if (onMessage) {
           try {
-            await onMessage(enhancedMessage, agentId);
+            await onMessage(enhancedMessage, agentId, modelName);
           } catch (error) {
             console.error('[executeAgent] Failed to send message:', error);
           }
@@ -145,6 +145,7 @@ export async function executeAgent(
         content: extractFinalContent(result.data),
         totalToolCalls: result.metadata?.toolCallsCount || 0,
         totalDuration: Date.now() - startTime,
+        model: modelName,
         usage: {
           inputTokens: result.data.usage?.promptTokens || 0,
           outputTokens: result.data.usage?.completionTokens || 0,
@@ -157,6 +158,7 @@ export async function executeAgent(
       content: `Agent execution failed: ${result.error.message}`,
       totalToolCalls: 0,
       totalDuration: Date.now() - startTime,
+      model: modelName,
       usage: { inputTokens: 0, outputTokens: 0 },
     };
   } catch (error) {

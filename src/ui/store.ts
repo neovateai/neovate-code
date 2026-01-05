@@ -60,6 +60,7 @@ export interface AgentProgressState {
   messages: NormalizedMessage[];
   status: 'running' | 'completed' | 'failed';
   lastUpdate: number;
+  model?: string;
 }
 
 function isExecuting(status: AppStatus) {
@@ -248,6 +249,7 @@ interface AppActions {
     prompt: string;
     message: NormalizedMessage;
     status: 'running' | 'completed' | 'failed';
+    model?: string;
   }) => void;
   clearAgentProgress: (toolUseId: string) => void;
   toggleTranscriptMode: () => void;
@@ -406,6 +408,7 @@ export const useAppStore = create<AppStore>()(
               prompt,
               message,
               status,
+              model,
             } = data;
 
             get().updateAgentProgress({
@@ -415,6 +418,7 @@ export const useAppStore = create<AppStore>()(
               prompt,
               message,
               status,
+              model,
             });
           }
         });
@@ -1237,8 +1241,15 @@ export const useAppStore = create<AppStore>()(
 
       // SubAgent progress management actions
       updateAgentProgress: (data) => {
-        const { parentToolUseId, agentId, agentType, prompt, message, status } =
-          data;
+        const {
+          parentToolUseId,
+          agentId,
+          agentType,
+          prompt,
+          message,
+          status,
+          model,
+        } = data;
         const { agentProgressMap } = get();
 
         const existing = agentProgressMap[parentToolUseId];
@@ -1253,6 +1264,7 @@ export const useAppStore = create<AppStore>()(
               messages: existing ? [...existing.messages, message] : [message],
               status,
               lastUpdate: Date.now(),
+              model,
             },
           },
         });

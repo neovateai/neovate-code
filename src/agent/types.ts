@@ -34,6 +34,7 @@ export interface AgentExecutionResult {
   content: string;
   totalToolCalls: number;
   totalDuration: number;
+  model?: string;
   usage: {
     inputTokens: number;
     outputTokens: number;
@@ -53,6 +54,7 @@ export interface AgentExecuteOptions {
   onMessage?: (
     message: NormalizedMessage,
     agentId: string,
+    model: string,
   ) => void | Promise<void>;
   onToolApprove?: (opts: {
     toolUse: ToolUse;
