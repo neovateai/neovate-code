@@ -17,9 +17,12 @@ export interface RipGrepResult {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const rootDir = isLocal()
-  ? path.resolve(__dirname, '../../')
-  : path.resolve(__dirname, '../');
+// In local dev (Bun) and test environments, source files are in src/
+// In production, compiled files are in dist/
+const rootDir =
+  isLocal() || process.env.NODE_ENV === 'test'
+    ? path.resolve(__dirname, '../../')
+    : path.resolve(__dirname, '../');
 
 function ripgrepPath() {
   const { cmd } = findActualExecutable('rg', []);
