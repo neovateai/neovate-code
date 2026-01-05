@@ -38,31 +38,6 @@ function ripgrepPath() {
   }
 }
 
-export async function ripGrep(
-  args: string[],
-  target: string,
-): Promise<string[]> {
-  const rg = ripgrepPath();
-  return new Promise((resolve) => {
-    execFile(
-      rg,
-      [...args, target],
-      {
-        maxBuffer: 1_000_000,
-        timeout: 20_000,
-      },
-      (err, stdout) => {
-        if (err) {
-          debug(`[Ripgrep] Error: ${err}`);
-          resolve([]);
-        } else {
-          resolve(stdout.trim().split('\n').filter(Boolean));
-        }
-      },
-    );
-  });
-}
-
 export async function ripGrepRaw(
   args: string[],
   target: string,
