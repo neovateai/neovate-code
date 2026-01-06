@@ -12,6 +12,15 @@ interface FileRestorationPlan {
   isFromTarget: boolean;
 }
 
+export interface RestoreConversationState {
+  messages: Message[];
+  forkParentUuid: string | null;
+  inputValue: string;
+  inputCursorPosition: number;
+  forkModalVisible: boolean;
+  history: string[];
+}
+
 /**
  * Find the assistant message that is a response to the target user message
  */
@@ -195,4 +204,90 @@ export function extractMessageText(message: Message): string {
     return textParts.join('');
   }
   return '';
+}
+
+/**
+ * Restore code to the target point by collecting and restoring snapshots
+ */
+export async function restoreCodeToTargetPoint(
+  bridge: UIBridge,
+  cwd: string,
+  sessionId: string,
+  messages: Message[],
+  targetIndex: number,
+  targetMessageUuid: string,
+  logFn: (message: string) => void,
+  deleteSnapshotsAfterRestore: boolean = false,
+): Promise<void> {
+  const targetAssistantMessage = findTargetAssistantMessage(
+    messages,
+    targetMessageUuid,
+  );
+
+  const snapshotsToProcess = await collectSnapshots(
+    bridge,
+    cwd,
+    sessionId,
+    messages,
+    targetIndex,
+    targetAssistantMessage,
+  );
+
+  if (snapshotsToProcess.length === 0) {
+    logFn('Fork: No snapshots found, skipping code restoration');
+    return;
+  }
+
+  const fileRestorationPlan = buildFileRestorationPlan(snapshotsToProcess);
+  const restoreGroups = groupFilesBySnapshot(fileRestorationPlan);
+
+  const totalFilesRestored = await restoreFilesFromSnapshots(
+    bridge,
+    cwd,
+    sessionId,
+    restoreGroups,
+    logFn,
+  );
+
+  if (totalFilesRestored > 0) {
+    logFn(`Fork: Successfully restored ${totalFilesRestored} file(s)`);
+  } else {
+    logFn('Fork: No files to restore (no snapshots found)');
+  }
+
+  if (deleteSnapshotsAfterRestore) {
+    logFn('Fork: Cleaning up snapshots after code restoration');
+    for (const snapshotInfo of snapshotsToProcess) {
+      await bridge.request('session.deleteSnapshot', {
+        cwd,
+        sessionId,
+        messageUuid: snapshotInfo.messageUuid,
+      });
+    }
+    logFn(
+      `Fork: Deleted ${snapshotsToProcess.length} snapshot(s) after restoration`,
+    );
+  }
+}
+
+/**
+ * Build restore conversation state object
+ */
+export function buildRestoreConversationState(
+  messages: Message[],
+  targetIndex: number,
+  targetMessage: Message,
+  currentHistory: string[],
+): RestoreConversationState {
+  const filteredMessages = messages.slice(0, targetIndex);
+  const contentText = extractMessageText(targetMessage);
+
+  return {
+    messages: filteredMessages,
+    forkParentUuid: (targetMessage as NormalizedMessage).parentUuid,
+    inputValue: contentText,
+    inputCursorPosition: contentText.length,
+    forkModalVisible: false,
+    history: currentHistory,
+  };
 }

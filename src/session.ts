@@ -5,7 +5,7 @@ import { History } from './history';
 import type { NormalizedMessage } from './message';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
-import { SnapshotManager, type SnapshotEntry } from './utils/snapshot';
+import { SnapshotManager, loadSnapshotEntries } from './utils/snapshot';
 
 export type SessionId = string;
 
@@ -262,41 +262,4 @@ export function loadSessionMessages(opts: {
       }
     });
   return filterMessages(messages);
-}
-
-/**
- * Load snapshot entries from JSONL log file
- * Parses file-history-snapshot entries for snapshot reconstruction
- */
-export function loadSnapshotEntries(opts: {
-  logPath: string;
-}): SnapshotEntry[] {
-  if (!fs.existsSync(opts.logPath)) {
-    return [];
-  }
-
-  const content = fs.readFileSync(opts.logPath, 'utf-8');
-  const snapshotEntries: SnapshotEntry[] = [];
-
-  content
-    .split('\n')
-    .filter(Boolean)
-    .forEach((line, index) => {
-      try {
-        const entry = JSON.parse(line);
-
-        // Check if it's a file-history-snapshot entry
-        if (entry.type === 'file-history-snapshot') {
-          snapshotEntries.push({
-            snapshot: entry.snapshot,
-            isSnapshotUpdate: entry.isSnapshotUpdate,
-          });
-        }
-      } catch (e: any) {
-        // Silently skip parse errors for non-snapshot entries
-        // Only throw if we know it should be a snapshot but failed to parse
-      }
-    });
-
-  return snapshotEntries;
 }

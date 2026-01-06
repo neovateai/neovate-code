@@ -9,7 +9,7 @@ import {
   unlink,
   chmod,
 } from 'fs/promises';
-import { existsSync, readFileSync, statSync } from 'fs';
+import fs, { existsSync, readFileSync, statSync } from 'fs';
 import type { SessionConfigManager } from '../session';
 import type { JsonlLogger } from '../jsonl';
 import pathe from 'pathe';
@@ -1111,4 +1111,32 @@ export async function copySessionBackups(
       `[copySessionBackups] Completed: ${copiedCount} copied, ${skippedCount} skipped, ${failedCount} failed`,
     );
   }
+}
+
+export function loadSnapshotEntries(opts: {
+  logPath: string;
+}): SnapshotEntry[] {
+  if (!fs.existsSync(opts.logPath)) {
+    return [];
+  }
+
+  const content = fs.readFileSync(opts.logPath, 'utf-8');
+  const snapshotEntries: SnapshotEntry[] = [];
+
+  content
+    .split('\n')
+    .filter(Boolean)
+    .forEach((line) => {
+      try {
+        const entry = JSON.parse(line);
+        if (entry.type === 'file-history-snapshot') {
+          snapshotEntries.push({
+            snapshot: entry.snapshot,
+            isSnapshotUpdate: entry.isSnapshotUpdate,
+          });
+        }
+      } catch {}
+    });
+
+  return snapshotEntries;
 }

@@ -22,12 +22,8 @@ import { countTokens } from '../utils/tokenCounter';
 import { getUsername } from '../utils/username';
 import { detectImageFormat } from './TextInput/utils/imagePaste';
 import {
-  collectSnapshots,
-  buildFileRestorationPlan,
-  groupFilesBySnapshot,
-  restoreFilesFromSnapshots,
-  extractMessageText,
-  findTargetAssistantMessage,
+  restoreCodeToTargetPoint,
+  buildRestoreConversationState,
 } from './utils/forkHelpers';
 
 export type ApprovalResult =
@@ -269,99 +265,6 @@ interface AppActions {
 }
 
 export type AppStore = AppState & AppActions;
-
-/**
- * Restore code to the target point by collecting and restoring snapshots
- */
-async function restoreCodeToTargetPoint(
-  bridge: UIBridge,
-  cwd: string,
-  sessionId: string,
-  messages: Message[],
-  targetIndex: number,
-  targetMessageUuid: string,
-  logFn: (message: string) => void,
-  deleteSnapshotsAfterRestore: boolean = false,
-): Promise<void> {
-  const targetAssistantMessage = findTargetAssistantMessage(
-    messages,
-    targetMessageUuid,
-  );
-
-  // Collect all snapshots (target + all after target)
-  const snapshotsToProcess = await collectSnapshots(
-    bridge,
-    cwd,
-    sessionId,
-    messages,
-    targetIndex,
-    targetAssistantMessage,
-  );
-
-  if (snapshotsToProcess.length === 0) {
-    logFn('Fork: No snapshots found, skipping code restoration');
-    return;
-  }
-
-  // Build file restoration plan
-  const fileRestorationPlan = buildFileRestorationPlan(snapshotsToProcess);
-
-  // Group files by snapshot for efficient restoration
-  const restoreGroups = groupFilesBySnapshot(fileRestorationPlan);
-
-  // Execute restoration
-  const totalFilesRestored = await restoreFilesFromSnapshots(
-    bridge,
-    cwd,
-    sessionId,
-    restoreGroups,
-    logFn,
-  );
-
-  if (totalFilesRestored > 0) {
-    logFn(`Fork: Successfully restored ${totalFilesRestored} file(s)`);
-  } else {
-    logFn('Fork: No files to restore (no snapshots found)');
-  }
-
-  // Delete snapshots after restoration if requested (code-only restore mode)
-  if (deleteSnapshotsAfterRestore) {
-    logFn('Fork: Cleaning up snapshots after code restoration');
-    for (const snapshotInfo of snapshotsToProcess) {
-      await bridge.request('session.deleteSnapshot', {
-        cwd,
-        sessionId,
-        messageUuid: snapshotInfo.messageUuid,
-      });
-    }
-    logFn(
-      `Fork: Deleted ${snapshotsToProcess.length} snapshot(s) after restoration`,
-    );
-  }
-}
-
-/**
- * Restore conversation state to the target point
- */
-function restoreConversationToTargetPoint(
-  messages: Message[],
-  targetIndex: number,
-  targetMessage: Message,
-  currentHistory: string[],
-  set: (state: Partial<AppState>) => void,
-): void {
-  const filteredMessages = messages.slice(0, targetIndex);
-  const contentText = extractMessageText(targetMessage);
-
-  set({
-    messages: filteredMessages,
-    forkParentUuid: (targetMessage as NormalizedMessage).parentUuid,
-    inputValue: contentText,
-    inputCursorPosition: contentText.length,
-    forkModalVisible: false,
-    history: currentHistory, // Keep full history instead of truncating
-  });
-}
 
 export const useAppStore = create<AppStore>()(
   devtools(
@@ -1295,13 +1198,13 @@ export const useAppStore = create<AppStore>()(
 
         // Restore conversation if requested
         if (restoreConversation) {
-          restoreConversationToTargetPoint(
+          const newState = buildRestoreConversationState(
             messages,
             targetIndex,
             targetMessage,
             get().history,
-            set,
           );
+          set(newState);
           get().incrementForkCounter();
         } else {
           get().log('Fork: Conversation restoration skipped');
