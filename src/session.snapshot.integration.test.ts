@@ -2,9 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, rmSync, writeFileSync, readFileSync } from 'fs';
 import { join } from 'pathe';
 import { randomUUID } from './utils/randomUUID';
-import { SnapshotManager } from './utils/snapshot';
 import { SessionConfigManager } from './session';
-import type { NormalizedMessage } from './message';
 
 const TEST_DIR = join(process.cwd(), '.test-snapshot-integration');
 const TEST_SESSION_ID = 'test-session';

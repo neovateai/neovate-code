@@ -456,7 +456,6 @@ export class SnapshotManager {
     const newLines = newContent.split('\n');
 
     // Simple line-based diff
-    const maxLines = Math.max(oldLines.length, newLines.length);
     let insertions = 0;
     let deletions = 0;
 
@@ -750,9 +749,7 @@ export class SnapshotManager {
     let deletedFilesCount = 0;
     let failedFilesCount = 0;
 
-    for (const [relativePath, backup] of Object.entries(
-      snapshot.trackedFileBackups,
-    )) {
+    for (const backup of Object.values(snapshot.trackedFileBackups)) {
       if (backup.backupFileName) {
         try {
           const backupPath = this.getBackupFilePath(backup.backupFileName);
@@ -1050,9 +1047,7 @@ export async function copySessionBackups(
   let failedCount = 0;
 
   for (const snapshot of snapshots) {
-    for (const [relativePath, backup] of Object.entries(
-      snapshot.trackedFileBackups,
-    )) {
+    for (const backup of Object.values(snapshot.trackedFileBackups)) {
       if (!backup.backupFileName) continue;
 
       const fromPath = pathe.join(fromDir, backup.backupFileName);
