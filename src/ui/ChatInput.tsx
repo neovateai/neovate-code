@@ -226,7 +226,7 @@ export function ChatInput() {
               onTabPress={handlers.handleTabPress}
               onDelete={handleDelete}
               onExternalEdit={handleExternalEdit}
-              columns={columns - 6}
+              columns={{ useTerminalSize: true, prefix: 2, suffix: 4 }}
               isDimmed={false}
               onCtrlBBackground={
                 bashBackgroundPrompt ? handleMoveToBackground : undefined

@@ -2,9 +2,22 @@ import chalk from 'chalk';
 import { type Key, Text, useInput } from 'ink';
 import React from 'react';
 import { PASTE_CONFIG } from '../constants';
+import { useTerminalSize } from '../useTerminalSize';
 import { darkTheme } from './constant';
 import { useTextInput } from './hooks/useTextInput';
 import { isImagePath, processImageFromPath } from './utils/imagePaste';
+
+/**
+ * Extended columns configuration for terminal-aware width
+ */
+export type ColumnsConfig = {
+  /** Enable terminal-aware width calculation */
+  useTerminalSize: true;
+  /** Width of prefix content (e.g., list indicators like "> 1. ") */
+  prefix?: number;
+  /** Width of suffix content (e.g., status indicators) */
+  suffix?: number;
+};
 
 // Helper function to insert text at cursor position
 function insertTextAtCursor(
@@ -114,9 +127,22 @@ export type Props = {
   readonly onHistoryReset?: () => void;
 
   /**
-   * Number of columns to wrap text at (optional, defaults to 80)
+   * Number of columns to wrap text at.
+   * Can be a fixed number or a configuration object for terminal-aware width.
+   *
+   * @example
+   * // Fixed width
+   * columns={60}
+   *
+   * @example
+   * // Terminal-aware with prefix offset (e.g., for list items "> 1. ")
+   * columns={{ useTerminalSize: true, prefix: 5 }}
+   *
+   * @example
+   * // Terminal-aware with both prefix and suffix
+   * columns={{ useTerminalSize: true, prefix: 8, suffix: 2 }}
    */
-  readonly columns?: number;
+  readonly columns?: number | ColumnsConfig;
 
   /**
    * Optional callback when an image is pasted
@@ -214,6 +240,24 @@ export default function TextInput({
   onCtrlBBackground,
   onFocusChange,
 }: Props): React.JSX.Element {
+  const { columns: terminalWidth } = useTerminalSize();
+
+  // Calculate effective columns based on the columns prop type
+  const effectiveColumns = React.useMemo(() => {
+    if (typeof columns === 'number') {
+      return columns; // Manual override takes priority
+    }
+
+    if (columns?.useTerminalSize) {
+      const prefixWidth = columns.prefix ?? 0;
+      const suffixWidth = columns.suffix ?? 0;
+      const width = terminalWidth - prefixWidth - suffixWidth;
+      return Math.max(width, 10); // Minimum 10 columns
+    }
+
+    return 80; // Default fallback
+  }, [columns, terminalWidth]);
+
   // Internal cursor state when external control is not provided
   const [internalCursorOffset, setInternalCursorOffset] = React.useState(
     originalValue.length,
@@ -245,7 +289,7 @@ export default function TextInput({
     highlightPastedText,
     invert: chalk.inverse,
     themeText: (text: string) => chalk.hex(darkTheme.text)(text),
-    columns,
+    columns: effectiveColumns,
     onImagePaste,
     disableCursorMovementForUpDownKeys,
     externalOffset: cursorOffset,
