@@ -3,6 +3,7 @@ import path from 'pathe';
 import { TOOL_NAMES } from '../constants';
 import type { Context } from '../context';
 import type { NormalizedMessage } from '../message';
+import { PluginHookType } from '../plugin';
 import type {
   ApprovalCategory,
   Tool,
@@ -136,8 +137,11 @@ export class AgentManager {
     return `${descriptions}`;
   }
 
-  async loadAgentsFromFiles(): Promise<void> {
+  async loadAgents(): Promise<void> {
     this.errors = [];
+
+    // Plugins
+    await this.loadAgentsFromPlugins();
 
     // GlobalClaude
     const globalClaudeDir = path.join(
@@ -163,6 +167,23 @@ export class AgentManager {
     // Project
     const projectDir = path.join(this.context.paths.projectConfigDir, 'agents');
     this.loadAgentsFromDirectory(projectDir, AgentSource.Project);
+  }
+
+  private async loadAgentsFromPlugins(): Promise<void> {
+    const pluginAgents = await this.context.apply({
+      hook: 'agent',
+      args: [],
+      memo: [],
+      type: PluginHookType.SeriesMerge,
+    });
+
+    for (const agent of pluginAgents) {
+      this.agents.set(agent.agentType, {
+        ...agent,
+        model: agent.model || 'inherit',
+        source: AgentSource.Plugin,
+      });
+    }
   }
 
   getErrors(): AgentLoadError[] {

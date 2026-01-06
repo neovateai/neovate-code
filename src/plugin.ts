@@ -3,6 +3,7 @@ import type { OpenAIProvider } from '@ai-sdk/openai';
 import type { OpenAICompatibleProvider } from '@ai-sdk/openai-compatible';
 import type { LanguageModelV2 } from '@openrouter/ai-sdk-provider';
 import defu from 'defu';
+import type { PluginAgentDefinition } from './agent/types';
 import type { Config } from './config';
 import type { Context, ContextCreateOpts } from './context';
 import type { LoopResult } from './loop';
@@ -241,6 +242,11 @@ export type Plugin = {
   // slash commands
   // /status
   status?: (this: PluginContext) => Promise<Status> | Status;
+
+  // agent
+  agent?: (
+    this: PluginContext,
+  ) => Promise<PluginAgentDefinition[]> | PluginAgentDefinition[];
 
   // Telemetry hook for collecting usage analytics
   telemetry?: (

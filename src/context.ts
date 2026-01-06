@@ -166,7 +166,7 @@ export class Context {
     // Create and attach AgentManager
     const agentManager = new AgentManager({ context });
     // Load agents from files
-    await agentManager.loadAgentsFromFiles();
+    await agentManager.loadAgents();
     context.agentManager = agentManager;
 
     return context;
