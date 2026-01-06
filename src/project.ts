@@ -262,10 +262,9 @@ export class Project {
     let modelToUse = opts.model;
 
     // Auto-select visionModel when:
-    // - No explicit model for this call (opts.model is undefined)
     // - Conversation contains images
     // - visionModel is configured and different from the base model
-    if (!modelToUse && hasImagesInHistory) {
+    if (hasImagesInHistory) {
       const visionModel = this.context.config.visionModel;
       const baseModel = this.context.config.model;
 
