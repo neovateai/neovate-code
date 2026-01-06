@@ -140,6 +140,9 @@ export function createNeovateCodeGuideAgent(opts: {
     whenToUse: `Use this agent when the user asks questions ("Can Neovate...", "Does Neovate...", "How do I...") about Neovate Code (the CLI tool) - features, hooks, skills, MCP servers, settings, IDE integrations, keyboard shortcuts. **IMPORTANT:** Before spawning a new agent, check if there is already a running or recently completed neovate-code-guide agent that you can resume using the "resume" parameter.`,
 
     systemPrompt: buildSystemPrompt(context),
+    isEnabled(context) {
+      return context.productName === 'neovate';
+    },
 
     model: context.config.smallModel || context.config.model,
     source: AgentSource.BuiltIn,

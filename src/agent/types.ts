@@ -18,6 +18,12 @@ export interface AgentDefinition {
   forkContext?: boolean;
   color?: string;
   path?: string;
+  /**
+   * Controls whether the agent is available for use.
+   * - boolean: Static toggle (default: true)
+   * - function: Dynamic check based on context
+   */
+  isEnabled?: boolean | ((context: Context) => boolean);
 }
 
 export interface TaskToolInput {

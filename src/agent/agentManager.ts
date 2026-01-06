@@ -69,16 +69,35 @@ export class AgentManager {
     this.agents.set(definition.agentType, definition);
   }
 
+  isAgentEnabled(agent: AgentDefinition): boolean {
+    if (agent.isEnabled === undefined) {
+      return true;
+    }
+    if (typeof agent.isEnabled === 'boolean') {
+      return agent.isEnabled;
+    }
+    if (typeof agent.isEnabled === 'function') {
+      return agent.isEnabled(this.context);
+    }
+    return true;
+  }
+
   getAgent(agentType: string): AgentDefinition | undefined {
-    return this.agents.get(agentType);
+    const agent = this.agents.get(agentType);
+    if (agent && this.isAgentEnabled(agent)) {
+      return agent;
+    }
+    return undefined;
   }
 
   getAllAgents(): AgentDefinition[] {
-    return Array.from(this.agents.values());
+    return Array.from(this.agents.values()).filter((agent) =>
+      this.isAgentEnabled(agent),
+    );
   }
 
   getAgentTypes(): string[] {
-    return Array.from(this.agents.keys());
+    return this.getAllAgents().map((agent) => agent.agentType);
   }
 
   async executeTask(
@@ -99,7 +118,7 @@ export class AgentManager {
       }) => Promise<boolean | ToolApprovalResult>;
     },
   ): Promise<AgentExecutionResult> {
-    const definition = this.agents.get(input.subagent_type);
+    const definition = this.getAgent(input.subagent_type);
     if (!definition) {
       const availableTypes = this.getAgentTypes().join(', ');
       throw new Error(
