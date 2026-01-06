@@ -133,8 +133,8 @@ function ToolPreview({ toolUse, cwd }: ToolPreviewProps) {
 
 function InvalidQuestionsError({ onDismiss }: { onDismiss: () => void }) {
   useInput((_input, key) => {
-    // Allow Escape, Enter, or any char key to dismiss
-    if (key.escape || key.return || _input) {
+    // Only allow Escape or Enter to dismiss
+    if (key.escape || key.return) {
       onDismiss();
     }
   });
@@ -151,7 +151,7 @@ function InvalidQuestionsError({ onDismiss }: { onDismiss: () => void }) {
       </Text>
       <Text>No questions provided to askUserQuestion tool</Text>
       <Box marginTop={1}>
-        <Text dimColor>Press any key to cancel</Text>
+        <Text dimColor>Press enter or esc to cancel</Text>
       </Box>
     </Box>
   );
