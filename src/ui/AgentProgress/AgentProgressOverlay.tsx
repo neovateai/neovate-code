@@ -172,8 +172,8 @@ export function AgentInProgress({
       <Box paddingLeft={1} marginTop={0}>
         <Text color="gray" dimColor>
           {' '}
-          (ctrl+o to toggle details) · {stats.toolCalls} tool uses ·{' '}
-          {formatTokens(stats.tokens)} tokens
+          {!transcriptMode && '(Press ctrl+o to expand) · '}
+          {stats.toolCalls} tool uses · {formatTokens(stats.tokens)} tokens
         </Text>
       </Box>
     </Box>
@@ -286,7 +286,7 @@ export function AgentCompletedResult({
       {!transcriptMode && (
         <Box marginLeft={2}>
           <Text color="gray" dimColor>
-            ctrl+o to toggle details
+            Press ctrl+o to expand
           </Text>
         </Box>
       )}
