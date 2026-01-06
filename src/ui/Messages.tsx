@@ -28,7 +28,7 @@ import { DiffViewer } from './DiffViewer';
 import { GradientString } from './GradientString';
 import { Markdown } from './Markdown';
 import { useAppStore } from './store';
-import { TodoList, TodoRead } from './Todo';
+import { TodoList } from './Todo';
 
 interface EnrichedProvider {
   id: string;
@@ -580,6 +580,7 @@ function Thinking({ text }: { text: string }) {
 }
 
 function ToolResultItem({ part }: { part: ToolResultPart }) {
+  const { transcriptMode } = useAppStore();
   const { result, input } = part;
   if (result.isError) {
     let text = result.returnDisplay || result.llmContent;
@@ -610,11 +611,10 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
             originalContent={originalContentValue}
             newContent={newContentValue}
             fileName={filePath}
+            maxHeight={transcriptMode ? Infinity : 10}
           />
         );
       }
-      case 'todo_read':
-        return <TodoRead todos={result.returnDisplay.todos} />;
       case 'todo_write':
         return (
           <TodoList

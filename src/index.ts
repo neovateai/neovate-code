@@ -51,7 +51,6 @@ type Argv = {
   quiet: boolean;
   continue?: boolean;
   version: boolean;
-  browser?: boolean;
   // string
   appendSystemPrompt?: string;
   approvalMode?: string;
@@ -87,7 +86,7 @@ async function parseArgs(argv: any) {
       mcpConfig: [],
     },
     array: ['plugin', 'mcpConfig'],
-    boolean: ['help', 'mcp', 'quiet', 'continue', 'version', 'browser'],
+    boolean: ['help', 'mcp', 'quiet', 'continue', 'version'],
     string: [
       'appendSystemPrompt',
       'approvalMode',
@@ -134,7 +133,6 @@ Options:
   -r, --resume <session-id>     Resume a session
   -c, --continue                Continue the latest session
   -q, --quiet                   Quiet mode, non interactive
-  --browser                     Enable browser integration
   --cwd <path>                  Specify the working directory
   --system-prompt <prompt>      Custom system prompt for code agent
   --output-format <format>      Output format, text, stream-json, json
@@ -155,6 +153,7 @@ Commands:
   log [file]                    View session logs in HTML (optional file path)
   mcp                           Manage MCP servers
   run                           Run a command
+  skill                         Manage skills
   update                        Check for and apply updates
   workspace                     Manage workspaces
     `.trimEnd(),
@@ -383,7 +382,6 @@ export async function runNeovate(opts: {
       outputStyle: argv.outputStyle,
       approvalMode: argv.approvalMode,
       mcpServers,
-      browser: argv.browser,
       tools: toolsConfig,
     },
     plugins: opts.plugins,
@@ -406,6 +404,7 @@ export async function runNeovate(opts: {
     'log',
     'run',
     'server',
+    'skill',
     'update',
     'workspace',
   ];
@@ -438,6 +437,11 @@ export async function runNeovate(opts: {
       case 'run': {
         const { runRun } = await import('./commands/run');
         await runRun(context);
+        break;
+      }
+      case 'skill': {
+        const { runSkill } = await import('./commands/skill');
+        await runSkill(context);
         break;
       }
       case 'commit': {

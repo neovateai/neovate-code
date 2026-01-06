@@ -54,10 +54,7 @@ export function getThinkingConfig(
     };
   }
 
-  if (
-    model.model.id.startsWith('claude-') ||
-    model.model.id.startsWith('anthropic/')
-  ) {
+  if (model.provider.createModelType === 'anthropic' && model.model.reasoning) {
     return {
       providerOptions: {
         anthropic: {

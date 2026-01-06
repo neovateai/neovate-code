@@ -1,4 +1,5 @@
-// when run in local, it's should be runned with bun
+// Determine whether running in local development environment
+// - Bun: Local development environment
 export function isLocal(): boolean {
   return typeof Bun !== 'undefined';
 }

@@ -24,20 +24,23 @@ You are creating documentation for this codebase using **progressive disclosure 
 
 ### Phase 1: Discovery & Analysis
 
-First, analyze the codebase to understand:
+**IMPORTANT: Use the Explore subagent to analyze the codebase thoroughly.**
+
+Launch the Explore subagent with "very thorough" level to understand:
 
 1. **Package/Build Configuration**
-   - Read \`package.json\`, \`Cargo.toml\`, \`pyproject.toml\`, or similar
+   - Find and read \`package.json\`, \`Cargo.toml\`, \`pyproject.toml\`, or similar
    - Extract: scripts/commands, dependencies, project metadata
 
 2. **Existing Documentation**
-   - Check for existing \`${ruleFile}\`, \`CLAUDE.md\`, \`.cursorrules\`
+   - Search for existing \`${ruleFile}\`, \`CLAUDE.md\`, \`.cursorrules\`
    - Read \`README.md\` for project overview
    - Check \`docs/\` directory for existing documentation
 
 3. **Source Code Patterns**
    - Identify key architectural patterns (not exhaustive file listings)
    - Look for plugin systems, configuration patterns, data flow
+   - Understand the project structure and module organization
 
 4. **Test Infrastructure**
    - Identify test framework, test locations, testing patterns

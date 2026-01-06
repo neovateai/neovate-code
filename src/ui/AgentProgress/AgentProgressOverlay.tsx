@@ -27,12 +27,25 @@ const COLORS = {
 function AgentToolUse({
   toolUse,
   status,
+  model,
 }: {
   toolUse: ToolUsePart;
   status: 'starting' | 'running' | 'completed' | 'failed';
+  model?: string;
 }) {
+  const { model: mainModel } = useAppStore();
   const agentType = toolUse.input?.subagent_type || toolUse.name;
   const description = toolUse.input?.description;
+
+  const showModel = model && mainModel?.model?.id !== model;
+
+  const descText = useMemo(() => {
+    if (!description && !showModel) return null;
+    const parts: string[] = [];
+    if (description) parts.push(description);
+    if (showModel) parts.push(`with ${model}`);
+    return parts.join(' ');
+  }, [description, showModel, model]);
 
   const color = useMemo(() => {
     if (status === 'starting') return COLORS.RUNNING;
@@ -52,7 +65,7 @@ function AgentToolUse({
       <Text bold color={color}>
         {agentType}
       </Text>
-      {description && <Text color={descColor}> ({description})</Text>}
+      {descText && <Text color={descColor}> ({descText})</Text>}
     </Box>
   );
 }
@@ -119,7 +132,11 @@ export function AgentInProgress({
   return (
     <Box flexDirection="column">
       {/* Header */}
-      <AgentToolUse toolUse={toolUse} status="running" />
+      <AgentToolUse
+        toolUse={toolUse}
+        status="running"
+        model={progressData.model}
+      />
 
       {/* Message list */}
       <Box flexDirection="column">
@@ -175,6 +192,7 @@ interface AgentResultDisplay {
   description: string;
   prompt: string;
   content: string;
+  model?: string;
   stats: {
     toolCalls: number;
     duration: number;
@@ -234,6 +252,7 @@ export function AgentCompletedResult({
       <AgentToolUse
         toolUse={toolUse}
         status={isError ? 'failed' : 'completed'}
+        model={returnDisplay?.model}
       />
 
       {StatsDisplay}

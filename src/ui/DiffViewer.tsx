@@ -1,8 +1,11 @@
+import { highlight, supportsLanguage } from 'cli-highlight';
 import crypto from 'crypto';
 import { createTwoFilesPatch } from 'diff';
 import { Box, Text } from 'ink';
 import type React from 'react';
 import { useMemo } from 'react';
+import { useAppStore } from './store';
+import { useTerminalSize } from './useTerminalSize';
 
 interface DiffProps {
   originalContent: string;
@@ -10,6 +13,7 @@ interface DiffProps {
   fileName?: string;
   maxHeight?: number;
   terminalWidth?: number;
+  useCodeHighlight?: boolean;
 }
 
 interface DiffLine {
@@ -25,9 +29,48 @@ interface DiffStats {
 }
 
 const DEFAULT_TAB_WIDTH = 4;
-const DEFAULT_TERMINAL_WIDTH = 80;
 const DEFAULT_MAX_HEIGHT = 20;
 const MAX_CONTEXT_LINES_WITHOUT_GAP = 5;
+const DEFAULT_TERMINAL_WIDTH = 80;
+
+function inferLanguage(fileName?: string): string {
+  if (!fileName) return 'text';
+
+  const ext = fileName.split('.').pop()?.toLowerCase() || 'text';
+  const languageMap: Record<string, string> = {
+    ts: 'typescript',
+    tsx: 'tsx',
+    js: 'javascript',
+    jsx: 'jsx',
+    py: 'python',
+    go: 'go',
+    rs: 'rust',
+    java: 'java',
+    cpp: 'cpp',
+    c: 'c',
+    css: 'css',
+    html: 'html',
+    json: 'json',
+    md: 'markdown',
+    yaml: 'yaml',
+    yml: 'yaml',
+    sh: 'bash',
+    rb: 'ruby',
+    php: 'php',
+    swift: 'swift',
+    kt: 'kotlin',
+    sql: 'sql',
+  };
+
+  return languageMap[ext] || ext;
+}
+
+function extractNewFileContent(parsedLines: DiffLine[]): string {
+  return parsedLines
+    .filter((line) => line.type === 'add')
+    .map((line) => line.content)
+    .join('\n');
+}
 
 function generateFileDiff(
   originalContent: string,
@@ -155,17 +198,45 @@ function isNewFile(parsedLines: DiffLine[]): boolean {
   );
 }
 
-function RenderNewFileContent(
-  parsedLines: DiffLine[],
-  fileName: string | undefined,
-  terminalWidth: number,
-): React.ReactNode {
-  const addedContent = parsedLines
-    .filter((line) => line.type === 'add')
-    .map((line) => line.content)
-    .join('\n');
+function CodeHighlightRenderer({
+  content,
+  fileName,
+  maxHeight,
+  terminalWidth,
+}: {
+  content: string;
+  fileName?: string;
+  maxHeight: number;
+  terminalWidth: number;
+}): React.ReactNode {
+  if (!content || content.trim() === '') {
+    return (
+      <Box paddingX={1}>
+        <Text dimColor>Empty file</Text>
+      </Box>
+    );
+  }
 
-  const lines = addedContent.split('\n');
+  const inferredLanguage = inferLanguage(fileName);
+  // Guard against unsupported languages by falling back to auto-detect
+  // cli-highlight will throw if the language is not supported
+  const language = supportsLanguage(inferredLanguage)
+    ? inferredLanguage
+    : undefined;
+
+  const lines = content.split('\n');
+  const effectiveMaxLines =
+    maxHeight === Infinity ? Infinity : Math.max(5, maxHeight - 2);
+  const shouldTruncate = lines.length > effectiveMaxLines;
+  const visibleLines = shouldTruncate
+    ? lines.slice(0, effectiveMaxLines)
+    : lines;
+  const hiddenCount = lines.length - visibleLines.length;
+
+  const highlightedContent = highlight(visibleLines.join('\n'), {
+    language,
+    ignoreIllegals: true,
+  });
 
   return (
     <Box
@@ -176,20 +247,23 @@ function RenderNewFileContent(
         <Box paddingX={1} justifyContent="space-between">
           <Box>
             <Text bold>{fileName}</Text>
-            <Text> (new file)</Text>
+            <Text color="green"> (new file +{lines.length})</Text>
           </Box>
         </Box>
       )}
 
-      <Box flexDirection="column">
-        {lines.map((line, index) => (
-          <Box key={index}>
-            <Text color="gray">{(index + 1).toString().padStart(4)} </Text>
-            <Text color="green">+ </Text>
-            <Text color="green">{line}</Text>
-          </Box>
-        ))}
+      <Box paddingX={1}>
+        <Text>{highlightedContent}</Text>
       </Box>
+
+      {shouldTruncate && (
+        <Box paddingX={1}>
+          <Text color="gray">
+            ... {hiddenCount} more line{hiddenCount === 1 ? '' : 's'} hidden
+            (Press Ctrl+O to expand) ...
+          </Text>
+        </Box>
+      )}
     </Box>
   );
 }
@@ -293,7 +367,7 @@ function RenderDiffContent(
           ) {
             acc.push(
               <Box key={`gap-${index}`}>
-                <Text>{'═'.repeat(Math.min(terminalWidth - 4, 60))}</Text>
+                <Text color="gray">...</Text>
               </Box>,
             );
           }
@@ -350,7 +424,7 @@ function RenderDiffContent(
             <Text color="gray">
               ... {displayableLines.length - visibleLines.length} more line
               {displayableLines.length - visibleLines.length === 1 ? '' : 's'}{' '}
-              hidden ...
+              hidden (Press Ctrl+O to expand) ...
             </Text>
           </Box>
         )}
@@ -364,8 +438,13 @@ export function DiffViewer({
   newContent,
   fileName,
   maxHeight = DEFAULT_MAX_HEIGHT,
-  terminalWidth = DEFAULT_TERMINAL_WIDTH,
+  useCodeHighlight = true,
 }: DiffProps) {
+  const { transcriptMode } = useAppStore();
+  const { columns: terminalWidth } = useTerminalSize();
+
+  const effectiveMaxHeight = transcriptMode ? Infinity : maxHeight;
+
   const diffLines = useMemo(
     () => generateDiffLines(originalContent, newContent, fileName),
     [originalContent, newContent, fileName],
@@ -386,9 +465,22 @@ export function DiffViewer({
     );
   }
 
-  if (isNewFile(diffLines)) {
-    return RenderNewFileContent(diffLines, fileName, terminalWidth);
+  if (isNewFile(diffLines) && useCodeHighlight) {
+    const content = extractNewFileContent(diffLines);
+    return (
+      <CodeHighlightRenderer
+        content={content}
+        fileName={fileName}
+        maxHeight={effectiveMaxHeight}
+        terminalWidth={terminalWidth}
+      />
+    );
   }
 
-  return RenderDiffContent(diffLines, fileName, maxHeight, terminalWidth);
+  return RenderDiffContent(
+    diffLines,
+    fileName,
+    effectiveMaxHeight,
+    terminalWidth,
+  );
 }

@@ -157,7 +157,11 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
           signal,
           tools: opts.tools,
           onToolApprove,
-          async onMessage(message: NormalizedMessage, agentId: string) {
+          async onMessage(
+            message: NormalizedMessage,
+            agentId: string,
+            model: string,
+          ) {
             try {
               if (messageBus) {
                 await messageBus.emitEvent('agent.progress', {
@@ -169,6 +173,7 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
                   message,
                   parentToolUseId,
                   status: 'running',
+                  model,
                   timestamp: Date.now(),
                 });
               }
@@ -204,6 +209,7 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
             } as NormalizedMessage,
             parentToolUseId,
             status: result.status === 'completed' ? 'completed' : 'failed',
+            model: result.model,
             timestamp: Date.now(),
           });
         }
@@ -221,6 +227,7 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
               description: params.description,
               prompt: params.prompt,
               content: result.content,
+              model: result.model,
               stats: {
                 toolCalls: result.totalToolCalls,
                 duration,
@@ -247,6 +254,7 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
             description: params.description,
             prompt: params.prompt,
             content: result.content,
+            model: result.model,
             stats: {
               toolCalls: 0,
               duration,
@@ -270,14 +278,6 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
       }
     },
 
-    approval: {
-      category: 'command',
-      needsApproval: async (context) => {
-        if (context.approvalMode === 'yolo') {
-          return false;
-        }
-        return true;
-      },
-    },
+    approval: { category: 'read' },
   });
 }

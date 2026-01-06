@@ -27,8 +27,6 @@ Ready to try Neovate Code? Getting started is simple:
 ```bash
 npm install -g @neovate/code
 neovate
-# Or use the shorter alias
-neo
 ```
 
 We respect the API KEY environment variable for all providers. If you don't have an API Key, enter `/login`, select a provider, open the website, and enter the API Key.

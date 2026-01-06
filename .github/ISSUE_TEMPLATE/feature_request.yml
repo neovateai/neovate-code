@@ -35,7 +35,7 @@ body:
       options:
         - nice to have
         - would make my life easier
-        - i cannot use TNF without it
+        - i cannot use @neovate/code without it
     validations:
       required: true
   - type: textarea

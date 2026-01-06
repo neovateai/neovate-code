@@ -33,12 +33,19 @@ interface GitStatusData {
   unstagedFiles: Array<{ status: string; file: string }>;
 }
 
+interface GitHubDetectionData {
+  hasGhCli: boolean;
+  isGitHubRemote: boolean;
+}
+
 interface ExecutionResult {
   committed: boolean;
   pushed: boolean;
   copied: boolean;
   branchCreated?: string;
 }
+
+type ExecutingAction = CommitAction | 'pr';
 
 type CommitState =
   | { phase: 'validating' }
@@ -53,7 +60,7 @@ type CommitState =
   | { phase: 'editingBranch'; data: GenerateCommitData; editedBranch: string }
   | {
       phase: 'executing';
-      action: CommitAction;
+      action: ExecutingAction;
       data: GenerateCommitData;
       outputLines?: string[];
     }
@@ -104,6 +111,10 @@ const MAX_OUTPUT_LINES = 50;
 const CommitUI: React.FC<CommitUIProps> = ({ messageBus, cwd, options }) => {
   const [state, setState] = useState<CommitState>({ phase: 'validating' });
   const [shouldExit, setShouldExit] = useState(false);
+  const [gitHubDetection, setGitHubDetection] = useState<GitHubDetectionData>({
+    hasGhCli: false,
+    isGitHubRemote: false,
+  });
 
   // Handle exit
   useEffect(() => {
@@ -125,10 +136,12 @@ const CommitUI: React.FC<CommitUIProps> = ({ messageBus, cwd, options }) => {
 
     messageBus.onEvent('git.commit.output', handleGitOutput);
     messageBus.onEvent('git.push.output', handleGitOutput);
+    messageBus.onEvent('git.pr.output', handleGitOutput);
 
     return () => {
       messageBus.offEvent('git.commit.output', handleGitOutput);
       messageBus.offEvent('git.push.output', handleGitOutput);
+      messageBus.offEvent('git.pr.output', handleGitOutput);
     };
   }, [messageBus]);
 
@@ -276,9 +289,14 @@ const CommitUI: React.FC<CommitUIProps> = ({ messageBus, cwd, options }) => {
 
   const runWorkflow = useCallback(async () => {
     try {
-      // Phase 1: Validate git status
+      // Phase 1: Validate git status and detect GitHub
       setState({ phase: 'validating' });
-      const statusResult = await messageBus.request('git.status', { cwd });
+
+      // Run git status and GitHub detection in parallel
+      const [statusResult, gitHubResult] = await Promise.all([
+        messageBus.request('git.status', { cwd }),
+        messageBus.request('git.detectGitHub', { cwd }),
+      ]);
 
       if (!statusResult.success) {
         setState({
@@ -286,6 +304,11 @@ const CommitUI: React.FC<CommitUIProps> = ({ messageBus, cwd, options }) => {
           error: statusResult.error || 'Failed to get git status',
         });
         return;
+      }
+
+      // Update GitHub detection state
+      if (gitHubResult.success && gitHubResult.data) {
+        setGitHubDetection(gitHubResult.data as GitHubDetectionData);
       }
 
       const status = statusResult.data as GitStatusData;
@@ -764,6 +787,117 @@ and may require re-resolving conflicts.`,
           break;
         }
 
+        case 'checkoutPushPR': {
+          // Create branch
+          setState({
+            phase: 'executing',
+            action: 'checkout',
+            data,
+            outputLines: [],
+          });
+          const branchResultPR = await messageBus.request('git.createBranch', {
+            cwd,
+            name: data.branchName,
+          });
+
+          if (!branchResultPR.success) {
+            setState({
+              phase: 'error',
+              error: branchResultPR.error || 'Failed to create branch',
+              data,
+            });
+            return;
+          }
+
+          const branchNamePR =
+            branchResultPR.data?.branchName || data.branchName;
+
+          // Then commit
+          setState((prev) => ({
+            phase: 'executing',
+            action: 'commit',
+            data,
+            outputLines:
+              prev.phase === 'executing' && prev.outputLines?.length
+                ? [...prev.outputLines, '']
+                : [],
+          }));
+          const commitResultPR = await messageBus.request('git.commit', {
+            cwd,
+            message: data.commitMessage,
+            noVerify: options.noVerify,
+          });
+
+          if (!commitResultPR.success) {
+            setState({
+              phase: 'error',
+              error: commitResultPR.error || 'Commit failed',
+              data,
+            });
+            return;
+          }
+
+          // Then push
+          setState((prev) => ({
+            phase: 'executing',
+            action: 'push',
+            data,
+            outputLines:
+              prev.phase === 'executing' && prev.outputLines?.length
+                ? [...prev.outputLines, '']
+                : [],
+          }));
+          const pushResultPR = await messageBus.request('git.push', { cwd });
+
+          if (!pushResultPR.success) {
+            const error = pushResultPR.error || 'Push failed';
+            if (error.includes('rejected')) {
+              setState({
+                phase: 'error',
+                error: `${error}\n\nHint: Run 'git pull' first to sync with remote.`,
+                data,
+              });
+            } else {
+              setState({ phase: 'error', error, data });
+            }
+            return;
+          }
+
+          // Then create PR
+          setState((prev) => ({
+            phase: 'executing',
+            action: 'pr',
+            data,
+            outputLines:
+              prev.phase === 'executing' && prev.outputLines?.length
+                ? [...prev.outputLines, '']
+                : [],
+          }));
+          const prResult = await messageBus.request('git.createPR', {
+            cwd,
+            branchName: branchNamePR,
+            body: data.summary,
+          });
+
+          if (prResult.success) {
+            const prUrl = prResult.data?.prUrl || '';
+            setState((prev) => ({
+              phase: 'success',
+              message: `Branch '${branchNamePR}' created, committed, pushed, and PR created!${prUrl ? `\n${prUrl}` : ''}`,
+              data,
+              outputLines: prev.phase === 'executing' ? prev.outputLines : [],
+            }));
+            setTimeout(() => setShouldExit(true), 2000);
+          } else {
+            setState({
+              phase: 'error',
+              error: prResult.error || 'Failed to create PR',
+              data,
+            });
+          }
+          break;
+        }
+
         case 'edit': {
           setState({
             phase: 'editing',
@@ -866,6 +1000,8 @@ and may require re-resolving conflicts.`,
             <CommitActionSelector
               onSelect={handleAction}
               onCancel={() => setShouldExit(true)}
+              hasGhCli={gitHubDetection.hasGhCli}
+              isGitHubRemote={gitHubDetection.isGitHubRemote}
             />
           </Box>
         </Box>
@@ -942,7 +1078,9 @@ and may require re-resolving conflicts.`,
                   ? 'Pushing to remote...'
                   : state.action === 'checkout'
                     ? 'Creating branch...'
-                    : 'Executing...'}
+                    : state.action === 'pr'
+                      ? 'Creating pull request...'
+                      : 'Executing...'}
             </Text>
             {state.outputLines && state.outputLines.length > 0 && (
               <Box flexDirection="column" marginTop={1} paddingLeft={2}>

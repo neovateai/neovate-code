@@ -183,8 +183,6 @@ The assistant did not use the todo list because this is a single command executi
 When in doubt, use this tool. Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully.
 `;
 
-const TODO_READ_PROMPT = `Use this tool to read your todo list`;
-
 const TodoItemSchema = z.object({
   id: z.string(),
   content: z.string().min(1, 'Content cannot be empty'),
@@ -265,37 +263,7 @@ export function createTodoTool(opts: { filePath: string }) {
     },
   });
 
-  const todoReadTool = createTool({
-    name: TOOL_NAMES.TODO_READ,
-    description: TODO_READ_PROMPT,
-    parameters: z.object({}).passthrough(),
-    async execute() {
-      try {
-        const todos = await readTodos();
-        return {
-          llmContent:
-            todos.length === 0
-              ? 'Todo list is empty'
-              : `Found ${todos.length} todos`,
-          returnDisplay: { type: 'todo_read', todos },
-        };
-      } catch (error) {
-        return {
-          isError: true,
-          llmContent:
-            error instanceof Error
-              ? `Failed to read todos: ${error.message}`
-              : 'Unknown error',
-        };
-      }
-    },
-    approval: {
-      category: 'read',
-    },
-  });
-
   return {
     todoWriteTool,
-    todoReadTool,
   };
 }

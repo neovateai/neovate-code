@@ -35,7 +35,7 @@ body:
       options:
         - annoyance
         - serious, but I can work around it
-        - blocking all usage of TNF
+        - blocking all usage of @neovate/code
     validations:
       required: true
   - type: textarea

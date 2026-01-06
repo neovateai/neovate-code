@@ -134,6 +134,31 @@ type GitCreateBranchOutput = {
   error?: string;
 };
 
+type GitDetectGitHubInput = {
+  cwd: string;
+};
+type GitDetectGitHubOutput = {
+  success: boolean;
+  data?: {
+    hasGhCli: boolean;
+    isGitHubRemote: boolean;
+  };
+  error?: string;
+};
+
+type GitCreatePRInput = {
+  cwd: string;
+  branchName: string;
+  body?: string;
+};
+type GitCreatePROutput = {
+  success: boolean;
+  data?: {
+    prUrl: string;
+  };
+  error?: string;
+};
+
 // ============================================================================
 // MCP Handlers
 // ============================================================================
@@ -906,6 +931,14 @@ export type HandlerMap = {
   'git.createBranch': {
     input: GitCreateBranchInput;
     output: GitCreateBranchOutput;
+  };
+  'git.detectGitHub': {
+    input: GitDetectGitHubInput;
+    output: GitDetectGitHubOutput;
+  };
+  'git.createPR': {
+    input: GitCreatePRInput;
+    output: GitCreatePROutput;
   };
 
   // MCP handlers

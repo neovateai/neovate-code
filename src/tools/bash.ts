@@ -42,7 +42,7 @@ const BANNED_COMMANDS = [
   'zsh',
 ];
 
-const DEFAULT_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+const DEFAULT_TIMEOUT = 2 * 60 * 1000; // 2 minutes
 const MAX_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 const BACKGROUND_CHECK_INTERVAL = 500; // ms
 

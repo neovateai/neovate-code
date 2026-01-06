@@ -84,6 +84,7 @@ function renderTitle(toolUse: ToolUseType, cwd: string): React.ReactNode {
 }
 
 function ToolPreview({ toolUse, cwd }: ToolPreviewProps) {
+  const { transcriptMode } = useAppStore();
   const { name, params } = toolUse;
 
   if (name === 'edit' || name === 'write') {
@@ -99,6 +100,7 @@ function ToolPreview({ toolUse, cwd }: ToolPreviewProps) {
           originalContent={originalContent}
           newContent={newContent}
           fileName={fileName}
+          maxHeight={transcriptMode ? Infinity : 500}
         />
         <DashedDivider />
       </Box>

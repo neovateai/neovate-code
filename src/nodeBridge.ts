@@ -23,7 +23,7 @@ import type { ApprovalCategory, ToolUse } from './tool';
 import { getFiles } from './utils/files';
 import { listDirectory } from './utils/list';
 import { randomUUID } from './utils/randomUUID';
-import { stripThinkTags } from './utils/safeParseJson';
+import { sanitizeAIResponse } from './utils/sanitizeAIResponse';
 import { getCurrentBranch } from './worktree';
 
 type ModelData = Omit<Model, 'id' | 'cost'>;
@@ -1211,7 +1211,7 @@ ${diff}
         // Parse the JSON response
         let jsonResponse;
         try {
-          const cleanedText = stripThinkTags(result.data.text);
+          const cleanedText = sanitizeAIResponse(result.data.text);
           jsonResponse = JSON.parse(cleanedText);
         } catch (parseError: any) {
           return {
@@ -1410,6 +1410,131 @@ ${diff}
         return {
           success: false,
           error: error.message || 'Failed to create branch',
+        };
+      }
+    });
+
+    this.messageBus.registerHandler('git.detectGitHub', async (data) => {
+      const { cwd } = data;
+      try {
+        const { execSync } = await import('child_process');
+
+        // Check if gh CLI is installed
+        let hasGhCli = false;
+        try {
+          execSync('which gh', { stdio: 'ignore' });
+          hasGhCli = true;
+        } catch {
+          // gh CLI not installed
+        }
+
+        // Check if remote is GitHub
+        let isGitHubRemote = false;
+        try {
+          const remoteUrl = execSync('git config remote.origin.url', {
+            cwd,
+            encoding: 'utf-8',
+          }).trim();
+          // Match github.com in various URL formats
+          isGitHubRemote = /(github\.com|github:|git@github)/.test(remoteUrl);
+        } catch {
+          // No remote or git error
+        }
+
+        return {
+          success: true,
+          data: {
+            hasGhCli,
+            isGitHubRemote,
+          },
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message || 'Failed to detect GitHub',
+        };
+      }
+    });
+
+    this.messageBus.registerHandler('git.createPR', async (data) => {
+      const { cwd, branchName, body } = data;
+      try {
+        const { spawn } = await import('child_process');
+
+        const args = ['pr', 'create', '--fill', '--head', branchName];
+        if (body) {
+          args.push('--body', body);
+        }
+
+        return new Promise((resolve) => {
+          const ghProcess = spawn('gh', args, {
+            cwd,
+            stdio: ['ignore', 'pipe', 'pipe'],
+          });
+
+          let stdout = '';
+          let stderr = '';
+
+          ghProcess.stdout.on('data', (chunk) => {
+            const line = chunk.toString();
+            stdout += line;
+            this.messageBus.emitEvent('git.pr.output', {
+              line: line.trim(),
+              stream: 'stdout',
+            });
+          });
+
+          ghProcess.stderr.on('data', (chunk) => {
+            const line = chunk.toString();
+            stderr += line;
+            this.messageBus.emitEvent('git.pr.output', {
+              line: line.trim(),
+              stream: 'stderr',
+            });
+          });
+
+          ghProcess.on('close', (code) => {
+            if (code === 0) {
+              // Extract PR URL from stdout (gh pr create outputs the URL)
+              const prUrl = stdout.trim();
+              resolve({
+                success: true,
+                data: { prUrl },
+              });
+            } else {
+              let errorMessage = stderr.trim() || 'Failed to create PR';
+              let hint = '';
+
+              // Provide helpful hints for common errors
+              if (
+                errorMessage.includes('not logged') ||
+                errorMessage.includes('auth')
+              ) {
+                hint =
+                  '\n\nHint: Run `gh auth login` to authenticate with GitHub.';
+              } else if (errorMessage.includes('already exists')) {
+                hint =
+                  '\n\nHint: A pull request already exists for this branch.';
+              }
+
+              resolve({
+                success: false,
+                error: errorMessage + hint,
+              });
+            }
+          });
+
+          ghProcess.on('error', (err) => {
+            resolve({
+              success: false,
+              error: `Failed to run gh CLI: ${err.message}\n\nHint: Make sure gh CLI is installed and in your PATH.`,
+            });
+          });
+        });
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message || 'Failed to create PR',
         };
       }
     });

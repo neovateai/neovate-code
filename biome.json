@@ -16,11 +16,7 @@
     "lineEnding": "lf",
     "lineWidth": 80,
     "attributePosition": "auto",
-    "includes": [
-      "**/*",
-      "!browser/src/routeTree.gen.ts",
-      "!browser/src/global.css"
-    ]
+    "includes": ["**/*"]
   },
   "linter": {
     "enabled": true,
@@ -57,20 +53,5 @@
     "parser": {
       "cssModules": true
     }
-  },
-  "overrides": [
-    {
-      "includes": ["browser/src/**/*"],
-      "linter": {
-        "rules": {
-          "correctness": {
-            "useExhaustiveDependencies": "off"
-          },
-          "suspicious": {
-            "noUnknownAtRules": "off"
-          }
-        }
-      }
-    }
-  ]
+  }
 }

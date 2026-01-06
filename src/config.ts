@@ -2,7 +2,6 @@ import defu from 'defu';
 import fs from 'fs';
 import { homedir } from 'os';
 import path from 'pathe';
-import { mergeBrowserMcpServers } from './browser';
 import type { Provider } from './model';
 
 export type McpStdioServerConfig = {
@@ -30,6 +29,11 @@ export type McpServerConfig =
   | McpHttpServerConfig;
 
 export type ApprovalMode = 'default' | 'autoEdit' | 'yolo';
+
+export type AgentConfig = {
+  model?: string;
+  // Reserved for future extensions
+};
 
 export type CommitConfig = {
   language: string;
@@ -70,7 +74,6 @@ export type Config = {
   outputStyle?: string;
   outputFormat?: 'text' | 'stream-json' | 'json';
   autoUpdate?: boolean;
-  browser?: boolean;
   temperature?: number;
   httpProxy?: string;
   desktop?: DesktopConfig;
@@ -84,6 +87,11 @@ export type Config = {
    * Key is the tool name, value is boolean (false to disable).
    */
   tools?: Record<string, boolean>;
+  /**
+   * Agent configuration for customizing agent behavior per agent type.
+   * Example: { explore: { model: "anthropic/claude-haiku-4" } }
+   */
+  agent?: Record<string, AgentConfig>;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -97,9 +105,9 @@ const DEFAULT_CONFIG: Partial<Config> = {
   autoCompact: true,
   outputFormat: 'text',
   autoUpdate: true,
-  browser: false,
   extensions: {},
   tools: {},
+  agent: {},
   desktop: {
     theme: 'light',
     sendMessageWith: 'enter',
@@ -118,11 +126,11 @@ const VALID_CONFIG_KEYS = [
   'outputStyle',
   'autoUpdate',
   'provider',
-  'browser',
   'temperature',
   'httpProxy',
   'extensions',
   'tools',
+  'agent',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = [
@@ -132,14 +140,9 @@ const OBJECT_CONFIG_KEYS = [
   'extensions',
   'tools',
   'desktop',
+  'agent',
 ];
-const BOOLEAN_CONFIG_KEYS = [
-  'quiet',
-  'todo',
-  'autoCompact',
-  'autoUpdate',
-  'browser',
-];
+const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact', 'autoUpdate'];
 export const GLOBAL_ONLY_KEYS = ['desktop'];
 
 function assertGlobalAllowed(global: boolean, key: string) {
@@ -191,12 +194,6 @@ export class ConfigManager {
     config.planModel = config.planModel || config.model;
     config.smallModel = config.smallModel || config.model;
     config.visionModel = config.visionModel || config.model;
-    if (config.browser) {
-      config.mcpServers = mergeBrowserMcpServers(
-        config.mcpServers,
-        config.browser,
-      );
-    }
     return config;
   }
 

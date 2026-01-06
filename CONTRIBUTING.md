@@ -1,5 +1,16 @@
 # CONTRIBUTING
 
+For development workflow and best practices, see [DEVELOPMENT.md](./DEVELOPMENT.md).
+
+## Reporting Issues
+
+Found a bug or have a feature request? You can use our built-in slash commands to create GitHub issues directly from the CLI:
+
+- `/bug-report` - Report a bug with automated context collection
+- `/feature-request` - Suggest a new feature or enhancement
+
+These commands will guide you through providing the necessary information and create a properly formatted GitHub issue.
+
 ## Prepare
 
 Setup the API keys for the LLMs providers, use the env variables in your bashrc/zshrc/fishrc files or use `/login` the select a provider and enter the API Key.
@@ -34,7 +45,7 @@ $ alias t="bun /path/to/neovate/src/cli.ts"
 $ t
 ```
 
-Note: After installation, you can use either `neovate` or the shorter alias `neo` to run the CLI.
+Note: After installation, you can use either `neovate` to run the CLI.
 
 Before you commit, you need to run the `ready` script to check if the code is ready to be committed.
 

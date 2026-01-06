@@ -7,6 +7,7 @@ import type { Context } from '../context';
 import { DirectTransport, MessageBus } from '../messageBus';
 import { NodeBridge } from '../nodeBridge';
 import TextInput from '../ui/TextInput';
+import { sanitizeAIResponse } from '../utils/sanitizeAIResponse';
 
 // ============================================================================
 // Types
@@ -39,6 +40,7 @@ type RunAction =
 interface RunOptions {
   model?: string;
   yes: boolean;
+  quiet: boolean;
 }
 
 interface RunUIProps {
@@ -85,40 +87,6 @@ Reply: "find . -type f ( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" ) -
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
-/**
- * Sanitize command by removing Markdown formatting (code blocks, inline code)
- * and think tags from AI responses
- * @param rawCommand - Raw command string possibly containing Markdown syntax
- * @returns Cleaned command string
- */
-function sanitizeCommand(rawCommand: string): string {
-  let cleaned = rawCommand;
-
-  // Step 0: Remove think tags from AI responses
-  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/g, '');
-
-  // Step 1: Remove code block formatting (```bash\n...\n``` or ```\n...\n```)
-  cleaned = cleaned.replace(
-    /^```(?:bash|sh|shell)?\s*\n([\s\S]*?)\n```$/g,
-    '$1',
-  );
-
-  // Step 2: Remove inline code formatting (`...`)
-  // Be careful: shell backticks are valid, only remove when entire string is wrapped
-  if (
-    cleaned.startsWith('`') &&
-    cleaned.endsWith('`') &&
-    cleaned.split('`').length === 3
-  ) {
-    cleaned = cleaned.slice(1, -1);
-  }
-
-  // Step 3: Clean whitespace
-  cleaned = cleaned.trim();
-
-  return cleaned;
-}
 
 function executeShell(
   command: string,
@@ -402,7 +370,7 @@ const RunUI: React.FC<RunUIProps> = ({
         });
 
         const rawCommand = result.success ? result.data?.text : null;
-        const command = rawCommand ? sanitizeCommand(rawCommand) : null;
+        const command = rawCommand ? sanitizeAIResponse(rawCommand) : null;
 
         if (!command) {
           setState({
@@ -773,14 +741,66 @@ Arguments:
 Options:
   -h, --help            Show help
   -m, --model <model>   Specify model to use
+  -q, --quiet           Quiet mode, output only the command (requires prompt)
   --yes                 Execute the command without confirmation
 
 Examples:
   ${productName} run "list all files in current directory"
   ${productName} run "find all .js files modified in last 7 days"
   ${productName} run --yes "update all npm dependencies"
+  ${productName} run -q "compress all images" | pbcopy
     `.trim(),
   );
+}
+
+// ============================================================================
+// Quiet Mode
+// ============================================================================
+
+async function runQuiet(
+  context: Context,
+  prompt: string,
+  options: RunOptions,
+): Promise<void> {
+  try {
+    // Initialize NodeBridge and message bus
+    const nodeBridge = new NodeBridge({
+      contextCreateOpts: {
+        productName: context.productName,
+        version: context.version,
+        argvConfig: {},
+        plugins: context.plugins,
+      },
+    });
+
+    const [quietTransport, nodeTransport] = DirectTransport.createPair();
+    const messageBus = new MessageBus();
+    messageBus.setTransport(quietTransport);
+    nodeBridge.messageBus.setTransport(nodeTransport);
+
+    // Generate command via AI
+    const result = await messageBus.request('utils.quickQuery', {
+      cwd: context.cwd,
+      userPrompt: prompt,
+      systemPrompt: SHELL_COMMAND_SYSTEM_PROMPT,
+      model: options.model,
+    });
+
+    const rawCommand = result.success ? result.data?.text : null;
+    const command = rawCommand ? sanitizeAIResponse(rawCommand) : null;
+
+    if (!command) {
+      console.error(result.error || 'Failed to generate command from AI');
+      process.exit(1);
+    }
+
+    // Output plain text command to stdout
+    console.log(command);
+    process.exit(0);
+  } catch (error: any) {
+    console.error(error.message || 'Failed to generate command');
+    process.exit(1);
+  }
 }
 
 // ============================================================================
@@ -794,8 +814,9 @@ export async function runRun(context: Context) {
       model: 'm',
       help: 'h',
       yes: 'y',
+      quiet: 'q',
     },
-    boolean: ['help', 'yes'],
+    boolean: ['help', 'yes', 'quiet'],
     string: ['model'],
   });
 
@@ -811,7 +832,18 @@ export async function runRun(context: Context) {
   const options: RunOptions = {
     model: argv.model || context.config.smallModel || context.config.model,
     yes: argv.yes || false,
+    quiet: argv.quiet || false,
   };
+
+  // Quiet mode: output only the command, no UI
+  if (options.quiet) {
+    if (!initialPrompt?.trim()) {
+      console.error('Error: Prompt is required in quiet mode');
+      process.exit(1);
+    }
+    await runQuiet(context, initialPrompt.trim(), options);
+    return;
+  }
 
   try {
     // Initialize NodeBridge and message bus

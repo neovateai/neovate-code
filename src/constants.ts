@@ -15,7 +15,6 @@ export const CANCELED_MESSAGE_TEXT = '[Request interrupted by user]';
 
 export enum TOOL_NAMES {
   TODO_WRITE = 'todoWrite',
-  TODO_READ = 'todoRead',
   BASH = 'bash',
   BASH_OUTPUT = 'bash_output',
   KILL_BASH = 'kill_bash',
@@ -43,4 +42,5 @@ export const BACKGROUND_THRESHOLD_MS = 2000;
 export enum AGENT_TYPE {
   EXPLORE = 'Explore',
   PLAN = 'Plan',
+  GENERAL_PURPOSE = 'GeneralPurpose',
 }

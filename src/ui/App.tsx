@@ -16,6 +16,7 @@ import { Markdown } from './Markdown';
 import { Messages } from './Messages';
 import { QueueDisplay } from './QueueDisplay';
 import { useAppStore } from './store';
+import { TerminalSizeProvider } from './TerminalSizeContext';
 import { useTerminalRefresh } from './useTerminalRefresh';
 import { TranscriptModeIndicator } from './TranscriptModeIndicator';
 import { getMessagePreview, getRelativeTimestamp } from './utils/messageUtils';
@@ -215,41 +216,43 @@ export function App() {
   }, [forkModalVisible, messages, bridge, cwd, sessionId]);
 
   return (
-    <Box
-      flexDirection="column"
-      key={`${forceRerender}-${forkParentUuid}-${forkCounter}-${transcriptMode}`}
-    >
-      <Messages />
-      <BackgroundPrompt />
-      <PlanResult />
-      <ActivityIndicator />
-      <QueueDisplay />
-      {transcriptMode ? <TranscriptModeIndicator /> : <ChatInput />}
-      <SlashCommandJSX />
-      <ApprovalModal />
-      {forkModalVisible && !showRestoreOptions && (
-        <ForkModal
-          messages={forkMessages as any}
-          onSelect={handleForkSelect}
-          onClose={() => {
-            hideForkModal();
-          }}
-          hasSnapshot={(uuid) => snapshotCache[uuid] ?? false}
-          snapshotCache={snapshotCache}
-        />
-      )}
-      {showRestoreOptions && selectedMessage && (
-        <RestoreOptionsModal
-          messagePreview={getMessagePreview(selectedMessage.message)}
-          timestamp={getRelativeTimestamp(selectedMessage.message)}
-          hasSnapshot={snapshotCache[selectedMessage.uuid] ?? false}
-          fileCount={getSnapshotFileCount(selectedMessage.uuid)}
-          onSelect={handleRestoreOptionSelect}
-          onClose={handleRestoreOptionsClose}
-        />
-      )}
-      <ExitHint />
-      <Debug />
-    </Box>
+    <TerminalSizeProvider>
+      <Box
+        flexDirection="column"
+        key={`${forceRerender}-${forkParentUuid}-${forkCounter}-${transcriptMode}`}
+      >
+        <Messages />
+        <BackgroundPrompt />
+        <PlanResult />
+        <ActivityIndicator />
+        <QueueDisplay />
+        {transcriptMode ? <TranscriptModeIndicator /> : <ChatInput />}
+        <SlashCommandJSX />
+        <ApprovalModal />
+        {forkModalVisible && !showRestoreOptions && (
+          <ForkModal
+            messages={forkMessages as any}
+            onSelect={handleForkSelect}
+            onClose={() => {
+              hideForkModal();
+            }}
+            hasSnapshot={(uuid) => snapshotCache[uuid] ?? false}
+            snapshotCache={snapshotCache}
+          />
+        )}
+        {showRestoreOptions && selectedMessage && (
+          <RestoreOptionsModal
+            messagePreview={getMessagePreview(selectedMessage.message)}
+            timestamp={getRelativeTimestamp(selectedMessage.message)}
+            hasSnapshot={snapshotCache[selectedMessage.uuid] ?? false}
+            fileCount={getSnapshotFileCount(selectedMessage.uuid)}
+            onSelect={handleRestoreOptionSelect}
+            onClose={handleRestoreOptionsClose}
+          />
+        )}
+        <ExitHint />
+        <Debug />
+      </Box>
+    </TerminalSizeProvider>
   );
 }

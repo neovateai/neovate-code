@@ -400,7 +400,8 @@ function QuestionView({
       {/* Operation hints */}
       <Box marginTop={1}>
         <Text dimColor color={UI_COLORS.ASK_SECONDARY}>
-          Enter to select · Tab/Arrow keys to navigate · Esc to cancel
+          {question.multiSelect ? 'Space' : 'Enter'} to select · Tab/Arrow keys
+          to navigate · Esc to cancel
         </Text>
       </Box>
     </Box>

@@ -1,3 +1,44 @@
+## 0.22.7
+
+`2026-01-04`
+
+- refactor: consolidate AI response sanitization utilities by @chencheng (云谦) in [#610](https://github.com/umijs/takumi/pull/610)
+
+
+## 0.22.6
+
+`2026-01-04`
+
+- fix: add missing createModel property to anthropic provider config by @chencheng (云谦) in [#607](https://github.com/umijs/takumi/pull/607)
+- feat: add modelwatch provider integration by [@sorrycc](https://github.com/sorrycc)
+
+
+## 0.22.5
+
+`2026-01-04`
+
+- feat: add reasoning middleware to nvidia provider by [@sorrycc](https://github.com/sorrycc)
+- feat: add nvidia and canopywave provider support by @chencheng (云谦) in [#604](https://github.com/umijs/takumi/pull/604)
+- feat: add GitHub PR creation to commit workflow by @chencheng (云谦) in [#601](https://github.com/umijs/takumi/pull/601)
+- refactor: implement terminal size context provider to fix max listeners warning by @chencheng (云谦) in [#598](https://github.com/umijs/takumi/pull/598)
+- feat: remove browser integration and chrome-devtools-mcp support by @chencheng (云谦) in [#597](https://github.com/umijs/takumi/pull/597)
+- fix: add non-null assertion for provider.createModel by [@sorrycc](https://github.com/sorrycc)
+- refactor: update provider model creation with type-based approach by [@sorrycc](https://github.com/sorrycc)
+- feat: add system message prepending middleware for Anthropic models by [@sorrycc](https://github.com/sorrycc)
+- fix: improve git repository path parsing for tree URLs by [@sorrycc](https://github.com/sorrycc)
+- feat: add multi-directory SubAgent file loading support by [@阿平](https://github.com/阿平) in [#593](https://github.com/umijs/takumi/pull/593)
+- fix: replace diff gap indicator with ellipsis by [@阿平](https://github.com/阿平) in [#594](https://github.com/umijs/takumi/pull/594)
+- feat: enhance diff viewer with syntax highlighting and smart display by [@阿平](https://github.com/阿平) in [#591](https://github.com/umijs/takumi/pull/591)
+- feat: add skill command with add list remove subcommands by @chencheng (云谦) in [#589](https://github.com/umijs/takumi/pull/589)
+- fix: update operation hints for multi-select questions by [@sorrycc](https://github.com/sorrycc)
+- feat: add tool approval support for task tool by [@阿平](https://github.com/阿平) in [#583](https://github.com/umijs/takumi/pull/583)
+- feat: add command description field to bash tool by [@阿平](https://github.com/阿平) in [#587](https://github.com/umijs/takumi/pull/587)
+- feat: add minimal output style option by @chencheng (云谦) in [#586](https://github.com/umijs/takumi/pull/586)
+- fix: update git status command implementation by @chencheng (云谦) in [#584](https://github.com/umijs/takumi/pull/584)
+- feat: redesign ApprovalModal UI with inline deny input by [@阿平](https://github.com/阿平) in [#582](https://github.com/umijs/takumi/pull/582)
+- feat: add agent progress overlay and transcript mode by [@阿平](https://github.com/阿平) in [#570](https://github.com/umijs/takumi/pull/570)
+
+
 ## 0.22.4
 
 `2025-12-26`
