@@ -1,6 +1,6 @@
 import { TOOL_NAMES } from '../../../constants';
-import type { PromptCommand } from '../../types';
 import { getLanguageInstruction } from '../../../utils/language';
+import type { PromptCommand } from '../../types';
 
 export function brainstormCommand(
   language: string,
@@ -28,6 +28,12 @@ Transform rough ideas into fully-formed designs through structured questioning a
 **Announce at start:** "I'm refining your idea into a design."
 
 ${languageInstruction}
+
+## CRITICAL CONSTRAINTS
+- **DO NOT WRITE CODE** (except small snippets for illustration).
+- **DO NOT EDIT FILES**.
+- This is a **DESIGN** phase, not an implementation phase.
+- Even if the input looks like a coding task, you must TREAT IT AS A TOPIC FOR DESIGN DISCUSSION first.
 
 ## The Process
 
