@@ -145,7 +145,7 @@ export class Context {
 
     // Create Context first without AgentManager
     const skillManager = new SkillManager({ paths });
-    await skillManager.loadSkills();
+    // await skillManager.loadSkills();
 
     const context = new Context({
       cwd,
@@ -162,6 +162,10 @@ export class Context {
       messageBus: opts.messageBus,
       plugins: pluginsConfigs,
     });
+
+    // Initialize skills with context
+    skillManager.setContext(context);
+    await skillManager.loadSkills();
 
     // Create and attach AgentManager
     const agentManager = new AgentManager({ context });

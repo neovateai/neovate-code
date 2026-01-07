@@ -143,6 +143,7 @@ export type Plugin = {
   slashCommand?: (
     this: PluginContext,
   ) => Promise<SlashCommand[]> | SlashCommand[];
+  skill?: (this: PluginContext) => Promise<string[]> | string[];
   outputStyle?: (this: PluginContext) => Promise<OutputStyle[]> | OutputStyle[];
   provider?: (
     this: PluginContext,
