@@ -1711,9 +1711,19 @@ ${diff}
         // ignore
       }
 
+      const modelStr =
+        (
+          await this.messageBus.messageHandlers.get('session.getModel')?.({
+            cwd,
+            sessionId,
+          })
+        )?.data.model || null;
+
       const content = renderSessionMarkdown({
         sessionId,
         title: summary,
+        projectPath: cwd,
+        model: modelStr,
         messages,
         createdAt: stats.birthtime,
         updatedAt: stats.mtime,
