@@ -504,6 +504,23 @@ type SessionMessagesListOutput = {
   };
 };
 
+type SessionExportSessionMarkdownInput = {
+  cwd: string;
+  sessionId: string | undefined;
+};
+
+type SessionExportSessionMarkdownOutput =
+  | {
+      success: true;
+      data: {
+        filePath: string;
+      };
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
 type SessionGetModelInput = {
   cwd: string;
   sessionId: string;
@@ -967,6 +984,10 @@ export type HandlerMap = {
   'session.messages.list': {
     input: SessionMessagesListInput;
     output: SessionMessagesListOutput;
+  };
+  'session.export.sessionMarkdown': {
+    input: SessionExportSessionMarkdownInput;
+    output: SessionExportSessionMarkdownOutput;
   };
   'session.getModel': {
     input: SessionGetModelInput;

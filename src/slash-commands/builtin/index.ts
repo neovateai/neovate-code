@@ -18,6 +18,7 @@ import { brainstormCommand } from './spec/brainstorm';
 import { executePlanCommand } from './spec/execute-plan';
 import { saveDesignCommand } from './spec/save-design';
 import { writePlanCommand } from './spec/write-plan';
+import { exportCommand } from './export';
 import { statusCommand } from './status';
 import { createTerminalSetupCommand } from './terminal-setup';
 
@@ -44,6 +45,7 @@ export function createBuiltinCommands(opts: {
     createBugCommand(),
     compactCommand,
     statusCommand,
+    exportCommand,
     createAddDirCommand(),
     brainstormCommand(opts.language, opts.askUserQuestion),
     writePlanCommand(opts.language),
