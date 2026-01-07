@@ -49,21 +49,18 @@ const MAX_NAME_LENGTH = 64;
 const MAX_DESCRIPTION_LENGTH = 1024;
 
 export interface SkillManagerOpts {
-  paths: Paths;
+  context: Context;
 }
 
 export class SkillManager {
   private skillsMap: Map<string, SkillMetadata> = new Map();
   private errors: SkillError[] = [];
   private paths: Paths;
-  private context?: Context;
+  private context: Context;
 
   constructor(opts: SkillManagerOpts) {
-    this.paths = opts.paths;
-  }
-
-  setContext(context: Context) {
-    this.context = context;
+    this.context = opts.context;
+    this.paths = opts.context.paths;
   }
 
   getSkills(): SkillMetadata[] {
@@ -94,31 +91,30 @@ export class SkillManager {
     this.skillsMap.clear();
     this.errors = [];
 
-    if (this.context) {
-      const pluginSkills = await this.context.apply({
-        hook: 'skill',
-        args: [],
-        type: PluginHookType.SeriesMerge,
-      });
+    const pluginSkills = await this.context.apply({
+      hook: 'skill',
+      args: [],
+      memo: [],
+      type: PluginHookType.SeriesMerge,
+    });
 
-      if (Array.isArray(pluginSkills)) {
-        for (const skillPath of pluginSkills) {
-          if (typeof skillPath !== 'string') {
-            this.errors.push({
-              path: String(skillPath),
-              message: 'Invalid skill path type: expected string',
-            });
-            continue;
-          }
-          if (!fs.existsSync(skillPath)) {
-            this.errors.push({
-              path: skillPath,
-              message: 'Skill file not found',
-            });
-            continue;
-          }
-          this.loadSkillFile(skillPath, SkillSource.Plugin);
+    if (Array.isArray(pluginSkills)) {
+      for (const skillPath of pluginSkills) {
+        if (typeof skillPath !== 'string') {
+          this.errors.push({
+            path: String(skillPath),
+            message: 'Invalid skill path type: expected string',
+          });
+          continue;
         }
+        if (!fs.existsSync(skillPath)) {
+          this.errors.push({
+            path: skillPath,
+            message: 'Skill file not found',
+          });
+          continue;
+        }
+        this.loadSkillFile(skillPath, SkillSource.Plugin);
       }
     }
 

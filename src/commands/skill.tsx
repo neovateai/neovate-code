@@ -367,7 +367,7 @@ export async function runSkill(context: Context) {
     cwd: context.cwd,
   });
 
-  const skillManager = new SkillManager({ paths });
+  const skillManager = new SkillManager({ context });
 
   if (command === 'add') {
     const source = argv._[1] as string | undefined;
