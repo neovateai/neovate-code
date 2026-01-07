@@ -1675,45 +1675,59 @@ ${diff}
       };
     });
 
-    this.messageBus.registerHandler(
-      'session.export.sessionMarkdown',
-      async (data) => {
-        const { cwd, sessionId } = data;
-        const context = await this.getContext(cwd);
+    this.messageBus.registerHandler('session.export', async (data) => {
+      const { cwd, sessionId } = data;
+      const context = await this.getContext(cwd);
 
-        const { loadSessionMessages } = await import('./session');
-        const { renderSessionMarkdown } = await import(
-          './utils/renderSessionMarkdown'
-        );
-        const { join } = await import('pathe');
-        const { writeFileSync, existsSync, mkdirSync } = await import(
-          'node:fs'
-        );
+      const { loadSessionMessages } = await import('./session');
+      const { renderSessionMarkdown } = await import(
+        './utils/renderSessionMarkdown'
+      );
+      const { join } = await import('pathe');
+      const { writeFileSync, existsSync, mkdirSync } = await import('node:fs');
 
-        if (!sessionId) {
-          return { success: false, error: 'No active session' };
-        }
+      if (!sessionId) {
+        return { success: false, error: 'No active session' };
+      }
 
-        const messages = loadSessionMessages({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
+      const logPath = context.paths.getSessionLogPath(sessionId);
 
-        if (!messages || messages.length === 0) {
-          return { success: false, error: 'No messages to export' };
-        }
+      const messages = loadSessionMessages({
+        logPath,
+      });
 
-        const content = renderSessionMarkdown({ sessionId, messages });
-        const outDir = join(cwd, '.log-outputs');
-        if (!existsSync(outDir)) {
-          mkdirSync(outDir, { recursive: true });
-        }
-        const filePath = join(outDir, `session-${sessionId.slice(0, 8)}.md`);
+      if (!messages || messages.length === 0) {
+        return { success: false, error: 'No messages to export' };
+      }
 
-        writeFileSync(filePath, content, 'utf-8');
+      const { statSync } = await import('node:fs');
+      const stats = statSync(logPath);
 
-        return { success: true, data: { filePath } };
-      },
-    );
+      let summary = '';
+      try {
+        const sessionConfigManager = new SessionConfigManager({ logPath });
+        summary = sessionConfigManager.config.summary || '';
+      } catch {
+        // ignore
+      }
+
+      const content = renderSessionMarkdown({
+        sessionId,
+        title: summary,
+        messages,
+        createdAt: stats.birthtime,
+        updatedAt: stats.mtime,
+      });
+      const outDir = join(cwd, '.log-outputs');
+      if (!existsSync(outDir)) {
+        mkdirSync(outDir, { recursive: true });
+      }
+      const filePath = join(outDir, `session-${sessionId.slice(0, 8)}.md`);
+
+      writeFileSync(filePath, content, 'utf-8');
+
+      return { success: true, data: { filePath } };
+    });
 
     this.messageBus.registerHandler('session.getModel', async (data) => {
       const { cwd, sessionId, includeModelInfo = false } = data;

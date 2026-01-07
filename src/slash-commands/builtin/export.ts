@@ -12,7 +12,7 @@ export const exportCommand: LocalJSXCommand = {
 
       React.useEffect(() => {
         bridge
-          .request('session.export.sessionMarkdown', { cwd, sessionId })
+          .request('session.export', { cwd, sessionId })
           .then((res) => {
             if (res.success) {
               onDone(`Exported to ${res.data.filePath}`);
