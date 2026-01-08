@@ -1784,6 +1784,23 @@ ${diff}
     this.messageBus.registerHandler('session.send', async (data) => {
       const { message, cwd, sessionId, model, attachments, parentUuid } = data;
       const context = await this.getContext(cwd);
+
+      context
+        .apply({
+          hook: 'telemetry',
+          args: [
+            {
+              name: 'send',
+              payload: {
+                message,
+                sessionId,
+              },
+            },
+          ],
+          type: PluginHookType.Parallel,
+        })
+        .catch(() => {});
+
       const project = new Project({
         sessionId,
         context,
