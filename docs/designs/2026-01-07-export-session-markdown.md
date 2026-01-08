@@ -27,11 +27,11 @@
 
 实现 `/export` 斜杠指令，通过以下流程完成导出：
 1. 用户输入 `/export`
-2. 前端从 `useAppStore()` 获取 `cwd` 与 `sessionId`（参考 `src/slash-commands/builtin/status.ts`）
-3. 前端调用 node bridge：`bridge.request('session.export.sessionMarkdown', { cwd, sessionId })`
+2. 前端从 `useAppStore()` 获取 `cwd` 与 `sessionId`
+3. 前端调用 node bridge：`bridge.request('session.export', { cwd, sessionId })`
 4. node bridge 内部使用 `loadSessionMessages({ logPath: context.paths.getSessionLogPath(sessionId) })` 读取完整消息历史
-5. node bridge 内部渲染为 Markdown 并写入 `${cwd}/session-{前8位}.md`（覆盖同名文件）
-6. 前端显示成功提示（导出文件路径等）
+5. node bridge 内部渲染为 Markdown 并写入 `${cwd}/.log-outputs/session-{sessionId前8位}.md`（覆盖同名文件）
+6. 前端显示成功提示：`Exported to {filePath}`
 
 ## Architecture
 
@@ -41,28 +41,35 @@
 - **指令类型**：`local-jsx`（前端只发起 bridge 请求并输出结果）
 
 ### Markdown 格式结构
-文件头部包含会话元数据（ID、创建/更新时间、消息数、总 token），然后按时间顺序展示对话记录：
-- 用户消息：显示内容和时间戳
-- 助手回复：显示内容、时间、使用的模型、token 消耗、成本
-- 工具调用：单独展示每个工具（bash、edit、read、write、fetch 等），包括输入参数和执行结果
+文件头部包含会话元数据：
+- Session ID
+- Project（导出时的 cwd）
+- Model（当前会话 model 字符串）
+- Created / Updated（从会话日志文件 stat 的 birthtime / mtime 推导）
+
+正文按消息顺序展示（忽略 system 消息），并按角色分段：
+- `## User` / `## Assistant`：渲染消息文本；如果包含 reasoning，会以 `_Thinking:_` 段落展示
+- `## Tool`：渲染工具结果（tool_result）为：Tool 名称 + Input(JSON) + Output(文本)。当 tool 为 `task` 且其返回里包含 agent 模型信息时，会在工具块内额外展示 `**Model:** {toolModel}`（与主 model 不同才显示）
 
 ### 数据流处理
-1. 前端获取 `cwd/sessionId`：参考 `src/slash-commands/builtin/status.ts`，从 `useAppStore()` 读取 `cwd` 与 `sessionId`
-2. 前端请求导出：调用 `bridge.request('session.export.sessionMarkdown', { cwd, sessionId })`
+1. 前端获取 `cwd/sessionId`：从 `useAppStore()` 读取 `cwd` 与 `sessionId`
+2. 前端请求导出：调用 `bridge.request('session.export', { cwd, sessionId })`
 3. node bridge 加载消息：在 `src/nodeBridge.ts` 的 handler 内，调用 `loadSessionMessages({ logPath: context.paths.getSessionLogPath(sessionId) })`
-4. node bridge 渲染 Markdown：调用 `renderSessionMarkdown`（建议放在 `src/utils/renderSessionMarkdown.ts`）
-5. node bridge 写文件：写入 `${cwd}/.log-outputs/session-{sessionId前8位}.md`，若已存在则覆盖，并将 `filePath` 返回给前端
+4. node bridge 获取 summary / model：
+   - summary：尝试从 `SessionConfigManager({ logPath }).config.summary` 获取（失败则忽略）
+   - model：复用 handler `session.getModel` 获取 model 字符串
+5. node bridge 渲染 Markdown：调用 `renderSessionMarkdown`（实现位于 `src/utils/renderSessionMarkdown.ts`）
+6. node bridge 写文件：确保 `${cwd}/.log-outputs` 存在，然后写入 `session-{sessionId前8位}.md`（覆盖），并将 `filePath` 返回给前端
 
 ### 错误处理
-- 会话不存在：提示 "No active session"
-- 消息获取失败：捕获异常并显示错误信息
-- 文件写入失败：显示文件系统错误信息
-- 无消息可导出：提示 "No messages to export"
+- 会话不存在（sessionId 为空）：返回 `No active session`
+- 无消息可导出：返回 `No messages to export`
+- 前端对 bridge 请求异常：显示 `Export failed: {error}`
 
-执行完成后显示成功提示，包括导出文件路径、消息数量、文件大小。
+执行完成后显示成功提示：`Exported to {filePath}`。
 
 ### 技术约定
 - 遵循现有代码约定（使用 pathe 处理路径、遵循 Biome 格式化）
-- 导出逻辑尽量收敛在 node bridge：前端只负责触发与展示结果
-- Markdown 渲染函数放在 `src/utils/renderSessionMarkdown.ts` 便于复用
-- node bridge handler 命名采用分层：`session.export.sessionMarkdown`
+- 导出逻辑收敛在 node bridge：前端只负责触发与展示结果
+- Markdown 渲染函数位于 `src/utils/renderSessionMarkdown.ts` 便于复用
+- node bridge handler：`session.export`

@@ -985,7 +985,7 @@ export type HandlerMap = {
     input: SessionMessagesListInput;
     output: SessionMessagesListOutput;
   };
-  'session.export.sessionMarkdown': {
+  'session.export': {
     input: SessionExportSessionMarkdownInput;
     output: SessionExportSessionMarkdownOutput;
   };
