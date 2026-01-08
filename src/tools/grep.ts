@@ -196,6 +196,13 @@ Usage:
       offset,
     }) => {
       try {
+        if (!pattern) {
+          return {
+            isError: true,
+            llmContent: 'Missing required parameter: pattern',
+          };
+        }
+
         const start = Date.now();
         const mode = output_mode ?? 'files_with_matches';
 
