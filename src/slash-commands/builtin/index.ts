@@ -2,6 +2,7 @@ import type { SlashCommand } from '../types';
 import { createAddDirCommand } from './add-dir';
 import { createBugCommand } from './bug';
 import { clearCommand } from './clear';
+import { createCommitCommand } from './commit';
 import { compactCommand } from './compact';
 import { contextCommand } from './context';
 import { exitCommand } from './exit';
@@ -41,6 +42,7 @@ export function createBuiltinCommands(opts: {
     createOutputStyleCommand(),
     createResumeCommand(),
     createReviewCommand(opts.language),
+    createCommitCommand(opts.language),
     createTerminalSetupCommand(),
     createBugCommand(),
     compactCommand,
