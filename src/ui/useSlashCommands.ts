@@ -9,7 +9,7 @@ export function useSlashCommands(input: string) {
   const [isLoading, setIsLoading] = useState(false);
 
   const suggestions = useMemo(() => {
-    if (!input.startsWith('/')) {
+    if (!input.startsWith('/') || input.includes('\n')) {
       return [];
     }
     const commandPrefix = input.slice(1);
