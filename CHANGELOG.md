@@ -1,3 +1,30 @@
+## 0.23.0
+
+`2026-01-09`
+
+- feat: add tool call tracking to activity indicator by [@sorrycc](https://github.com/sorrycc)
+- fix: suppress duplicate error messages for tool denial by @chencheng (云谦) in [#644](https://github.com/neovateai/neovate-code/pull/644)
+- fix: adjust shell execution based on TTY availability by [@sorrycc](https://github.com/sorrycc)
+- fix: move approval modal to correct position in app component by @chencheng (云谦) in [#643](https://github.com/neovateai/neovate-code/pull/643)
+- fix: validate pattern parameter in grep tool by [@阿平](https://github.com/阿平) in [#642](https://github.com/neovateai/neovate-code/pull/642)
+- feat: add shell environment access for bash commands by [@sorrycc](https://github.com/sorrycc)
+- fix: improve reverse search input display and cursor handling by [@sorrycc](https://github.com/sorrycc)
+- feat: add glm-4.7 model support by [@sorrycc](https://github.com/sorrycc)
+- fix: update staged changes validation logic by [@sorrycc](https://github.com/sorrycc)
+- feat: add line number offset to edit tool diff viewer by [@sorrycc](https://github.com/sorrycc)
+- fix: update regex to handle multiline @ mentions in file suggestions by [@sorrycc](https://github.com/sorrycc)
+- feat: add retry delay tracking and countdown timer by [@sorrycc](https://github.com/sorrycc)
+- fix: remove slash command check from history saving by [@sorrycc](https://github.com/sorrycc)
+- refactor: move window focus handling to app store by [@sorrycc](https://github.com/sorrycc)
+- fix: preserve slash command input on terminal resize by [@sorrycc](https://github.com/sorrycc)
+- fix: update save-design command to use conversation history when no brainstorm command found by [@sorrycc](https://github.com/sorrycc)
+- refactor: update init command with task tool and improved file handling by [@sorrycc](https://github.com/sorrycc)
+- fix: improve pr creation for forked repos by [@Din](https://github.com/Din) in [#640](https://github.com/neovateai/neovate-code/pull/640)
+- fix: add condition check for createModel in anthropic provider by [@sorrycc](https://github.com/sorrycc)
+- Revert "chore: add antigravity system prompt plugin" by [@sorrycc](https://github.com/sorrycc)
+- refactor: unify telemetry send trigger location by [@阿平](https://github.com/阿平) in [#639](https://github.com/neovateai/neovate-code/pull/639)
+
+
 ## 0.22.10
 
 `2026-01-08`
