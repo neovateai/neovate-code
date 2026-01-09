@@ -139,7 +139,6 @@ export function App() {
         <ActivityIndicator />
         <QueueDisplay />
         {transcriptMode ? <TranscriptModeIndicator /> : <ChatInput />}
-        <ApprovalModal />
         {forkModalVisible && (
           <ForkModal
             messages={forkMessages as any}
@@ -154,6 +153,7 @@ export function App() {
         <ExitHint />
         <Debug />
       </Box>
+      <ApprovalModal />
       <SlashCommandJSX />
     </TerminalSizeProvider>
   );
