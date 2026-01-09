@@ -821,14 +821,24 @@ export const useAppStore = create<AppStore>()(
             forkParentUuid: null,
           });
         } else {
-          set({
-            status: 'failed',
-            error: response.error.message,
-            processingStartTime: null,
-            processingTokens: 0,
-            retryInfo: null,
-            forkParentUuid: null,
-          });
+          if (response.error.type === 'tool_denied') {
+            set({
+              status: 'idle',
+              processingStartTime: null,
+              processingTokens: 0,
+              retryInfo: null,
+              forkParentUuid: null,
+            });
+          } else {
+            set({
+              status: 'failed',
+              error: response.error.message,
+              processingStartTime: null,
+              processingTokens: 0,
+              retryInfo: null,
+              forkParentUuid: null,
+            });
+          }
         }
         return response;
       },
