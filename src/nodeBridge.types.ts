@@ -10,6 +10,7 @@ import type { ResponseFormat, ThinkingConfig } from './loop';
 import type { ImagePart, Message, NormalizedMessage } from './message';
 import type { ModelInfo, ProvidersMap } from './model';
 import type { ApprovalCategory, ToolUse } from './tool';
+import type { MessageSnapshot } from './utils/snapshot';
 
 // ============================================================================
 // Common Response Types
@@ -660,6 +661,54 @@ type SessionConfigRemoveInput = {
   key: string;
 };
 
+type SessionGetSnapshotInput = {
+  cwd: string;
+  sessionId: string;
+  messageUuid: string;
+};
+type SessionGetSnapshotOutput = {
+  success: boolean;
+  data?: {
+    snapshot: MessageSnapshot | null;
+  };
+};
+
+type SessionRestoreSnapshotInput = {
+  cwd: string;
+  sessionId: string;
+  messageUuid: string;
+};
+type SessionRestoreSnapshotOutput = {
+  success: boolean;
+  error?: string;
+};
+
+type SessionRestoreSnapshotFilesInput = {
+  cwd: string;
+  sessionId: string;
+  messageUuid: string;
+  filePaths: string[];
+};
+type SessionRestoreSnapshotFilesOutput = {
+  success: boolean;
+  data?: {
+    restoredCount: number;
+  };
+  error?: string;
+};
+
+type SessionDeleteSnapshotInput = {
+  cwd: string;
+  sessionId: string;
+  messageUuid: string;
+};
+type SessionDeleteSnapshotOutput = {
+  success: boolean;
+  data?: {
+    deleted: boolean;
+  };
+};
+
 // ============================================================================
 // Sessions Handlers
 // ============================================================================
@@ -1046,6 +1095,22 @@ export type HandlerMap = {
   'session.config.remove': {
     input: SessionConfigRemoveInput;
     output: SuccessResponse;
+  };
+  'session.getSnapshot': {
+    input: SessionGetSnapshotInput;
+    output: SessionGetSnapshotOutput;
+  };
+  'session.restoreSnapshot': {
+    input: SessionRestoreSnapshotInput;
+    output: SessionRestoreSnapshotOutput;
+  };
+  'session.restoreSnapshotFiles': {
+    input: SessionRestoreSnapshotFilesInput;
+    output: SessionRestoreSnapshotFilesOutput;
+  };
+  'session.deleteSnapshot': {
+    input: SessionDeleteSnapshotInput;
+    output: SessionDeleteSnapshotOutput;
   };
 
   // Sessions handlers

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'pathe';
-import type { NormalizedMessage } from './message';
+import type { NormalizedMessage, SnapshotMessage } from './message';
 import { createUserMessage } from './message';
 import type { StreamResult } from './loop';
 
@@ -45,6 +45,52 @@ export class JsonlLogger {
     return this.addMessage({
       message,
     });
+  }
+
+  /**
+   * Add a snapshot message to the log file
+   * This records file history snapshot information similar to Claude Code
+   *
+   * IMPORTANT: This method only appends to the log file, never deletes.
+   * The isSnapshotUpdate flag is used during reconstruction (see session.ts loadSnapshotEntries)
+   * to determine whether to create a new snapshot or update an existing one.
+   * This follows Claude Code's design pattern.
+   */
+  addSnapshotMessage(opts: {
+    messageId: string;
+    timestamp: string;
+    trackedFileBackups: Record<
+      string,
+      {
+        backupFileName: string | null;
+        backupTime: string;
+        version: number;
+      }
+    >;
+    isSnapshotUpdate: boolean;
+  }) {
+    const dir = path.dirname(this.filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    const snapshotMessage: SnapshotMessage = {
+      type: 'file-history-snapshot',
+      messageId: opts.messageId,
+      snapshot: {
+        messageId: opts.messageId,
+        timestamp: opts.timestamp,
+        trackedFileBackups: opts.trackedFileBackups,
+      },
+      isSnapshotUpdate: opts.isSnapshotUpdate,
+    };
+
+    // Simply append the snapshot message to the log file
+    // Do NOT delete old snapshots - the reconstruction logic in loadSnapshotEntries
+    // and rebuildSnapshotState will handle updates correctly using the isSnapshotUpdate flag
+    fs.appendFileSync(this.filePath, JSON.stringify(snapshotMessage) + '\n');
+
+    return snapshotMessage;
   }
 }
 

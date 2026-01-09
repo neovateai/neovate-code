@@ -5,6 +5,7 @@ import { History } from './history';
 import type { NormalizedMessage } from './message';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
+import { SnapshotManager, loadSnapshotEntries } from './utils/snapshot';
 
 export type SessionId = string;
 
@@ -52,6 +53,7 @@ export type SessionConfig = {
   pastedTextMap?: Record<string, string>;
   pastedImageMap?: Record<string, string>;
   additionalDirectories?: string[];
+  snapshots?: string;
 };
 
 const DEFAULT_SESSION_CONFIG: SessionConfig = {
@@ -65,9 +67,85 @@ const DEFAULT_SESSION_CONFIG: SessionConfig = {
 export class SessionConfigManager {
   logPath: string;
   config: SessionConfig;
-  constructor(opts: { logPath: string }) {
+  private snapshotManager: SnapshotManager | null = null;
+  private readonly cwd: string;
+  private readonly sessionId: string;
+
+  constructor(opts: { logPath: string; cwd: string; sessionId: string }) {
     this.logPath = opts.logPath;
+    this.cwd = opts.cwd;
+    this.sessionId = opts.sessionId;
     this.config = this.load(opts.logPath);
+  }
+
+  getSnapshotManager(): SnapshotManager {
+    const DEBUG = process.env.NEOVATE_SNAPSHOT_DEBUG === 'true';
+
+    // Return cached instance if already initialized
+    if (this.snapshotManager) {
+      if (DEBUG) {
+        console.log(
+          '[SessionConfigManager.getSnapshotManager] Returning cached SnapshotManager',
+        );
+      }
+      return this.snapshotManager;
+    }
+
+    // First time initialization: reload config from disk to ensure we have the latest snapshots
+    // This is necessary because Project.ts and nodeBridge.ts use separate SessionConfigManager instances
+    if (DEBUG) {
+      console.log(
+        '[SessionConfigManager.getSnapshotManager] Initializing SnapshotManager from disk',
+      );
+    }
+    this.config = this.load(this.logPath);
+
+    if (this.config.snapshots) {
+      this.snapshotManager = SnapshotManager.deserialize(
+        this.config.snapshots,
+        {
+          cwd: this.cwd,
+          sessionId: this.sessionId,
+        },
+      );
+      if (DEBUG) {
+        console.log(
+          '[SessionConfigManager.getSnapshotManager] Deserialized snapshots:',
+          Array.from(this.snapshotManager['snapshots'].keys()),
+        );
+      }
+    } else {
+      this.snapshotManager = new SnapshotManager({
+        cwd: this.cwd,
+        sessionId: this.sessionId,
+      });
+      if (DEBUG) {
+        console.log(
+          '[SessionConfigManager.getSnapshotManager] No snapshots in config, created new manager',
+        );
+      }
+    }
+
+    // Load snapshot entries from JSONL log and rebuild state
+    // This handles the isSnapshotUpdate flag correctly
+    const snapshotEntries = loadSnapshotEntries({ logPath: this.logPath });
+    if (snapshotEntries.length > 0) {
+      this.snapshotManager.loadSnapshotEntries(snapshotEntries);
+      if (DEBUG) {
+        console.log(
+          `[SessionConfigManager.getSnapshotManager] Loaded ${snapshotEntries.length} snapshot entries from JSONL`,
+        );
+      }
+    }
+
+    return this.snapshotManager;
+  }
+
+  async saveSnapshots(): Promise<void> {
+    if (this.snapshotManager) {
+      this.config.snapshots = this.snapshotManager.serialize();
+      this.write();
+    }
   }
 
   load(logPath: string): SessionConfig {

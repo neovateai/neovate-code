@@ -47,6 +47,7 @@ class NodeHandlerRegistry {
   private contextCreateOpts: any;
   private contexts = new Map<string, Context>();
   private abortControllers = new Map<string, AbortController>();
+  private sessionConfigManagers = new Map<string, SessionConfigManager>();
 
   constructor(messageBus: MessageBus, contextCreateOpts: any) {
     this.messageBus = messageBus;
@@ -67,6 +68,22 @@ class NodeHandlerRegistry {
     context.mcpManager.initAsync();
     this.contexts.set(cwd, context);
     return context;
+  }
+
+  private async getSessionConfigManager(
+    context: Context,
+    sessionId: string,
+  ): Promise<SessionConfigManager> {
+    const key = `${context.cwd}:${sessionId}`;
+    if (!this.sessionConfigManagers.has(key)) {
+      const manager = new SessionConfigManager({
+        logPath: context.paths.getSessionLogPath(sessionId),
+        cwd: context.cwd,
+        sessionId,
+      });
+      this.sessionConfigManagers.set(key, manager);
+    }
+    return this.sessionConfigManagers.get(key)!;
   }
 
   private async clearContext(cwd?: string) {
@@ -1644,9 +1661,10 @@ ${diff}
       let pastedImageMap: Record<string, string> = {};
       if (data.sessionId) {
         try {
-          const sessionConfigManager = new SessionConfigManager({
-            logPath: context.paths.getSessionLogPath(data.sessionId),
-          });
+          const sessionConfigManager = await this.getSessionConfigManager(
+            context,
+            data.sessionId,
+          );
           sessionSummary = sessionConfigManager.config.summary;
           pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
           pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
@@ -1755,9 +1773,10 @@ ${diff}
     this.messageBus.registerHandler('session.getModel', async (data) => {
       const { cwd, sessionId, includeModelInfo = false } = data;
       const context = await this.getContext(cwd);
-      const sessionConfigManager = new SessionConfigManager({
-        logPath: context.paths.getSessionLogPath(sessionId),
-      });
+      const sessionConfigManager = await this.getSessionConfigManager(
+        context,
+        sessionId,
+      );
       const modelStr =
         // 1. model from argv config
         context.argvConfig?.model ||
@@ -2044,9 +2063,10 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, approvalMode } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
+        const sessionConfigManager = await this.getSessionConfigManager(
+          context,
+          sessionId,
+        );
         sessionConfigManager.config.approvalMode = approvalMode;
         sessionConfigManager.write();
         return {
@@ -2060,9 +2080,10 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, approvalTool } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
+        const sessionConfigManager = await this.getSessionConfigManager(
+          context,
+          sessionId,
+        );
         if (!sessionConfigManager.config.approvalTools.includes(approvalTool)) {
           sessionConfigManager.config.approvalTools.push(approvalTool);
           sessionConfigManager.write();
@@ -2078,9 +2099,10 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, summary } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
+        const sessionConfigManager = await this.getSessionConfigManager(
+          context,
+          sessionId,
+        );
         sessionConfigManager.config.summary = summary;
         sessionConfigManager.write();
         return {
@@ -2094,9 +2116,10 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, pastedTextMap } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
+        const sessionConfigManager = await this.getSessionConfigManager(
+          context,
+          sessionId,
+        );
         sessionConfigManager.config.pastedTextMap = pastedTextMap;
         sessionConfigManager.write();
         return {
@@ -2110,9 +2133,10 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, pastedImageMap } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
+        const sessionConfigManager = await this.getSessionConfigManager(
+          context,
+          sessionId,
+        );
         sessionConfigManager.config.pastedImageMap = pastedImageMap;
         sessionConfigManager.write();
         return {
@@ -2126,9 +2150,10 @@ ${diff}
       async (data) => {
         const { cwd, sessionId } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
+        const sessionConfigManager = await this.getSessionConfigManager(
+          context,
+          sessionId,
+        );
         return {
           success: true,
           data: {
@@ -2144,9 +2169,10 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, directory } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
+        const sessionConfigManager = await this.getSessionConfigManager(
+          context,
+          sessionId,
+        );
         const directories =
           sessionConfigManager.config.additionalDirectories || [];
         if (!directories.includes(directory)) {
@@ -2165,9 +2191,10 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, directory } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(sessionId),
-        });
+        const sessionConfigManager = await this.getSessionConfigManager(
+          context,
+          sessionId,
+        );
         const directories =
           sessionConfigManager.config.additionalDirectories || [];
         sessionConfigManager.config.additionalDirectories = directories.filter(
@@ -2183,9 +2210,10 @@ ${diff}
     this.messageBus.registerHandler('session.config.set', async (data) => {
       const { cwd, sessionId, key, value } = data;
       const context = await this.getContext(cwd);
-      const sessionConfigManager = new SessionConfigManager({
-        logPath: context.paths.getSessionLogPath(sessionId),
-      });
+      const sessionConfigManager = await this.getSessionConfigManager(
+        context,
+        sessionId,
+      );
       (sessionConfigManager.config as any)[key] = value;
       sessionConfigManager.write();
       return {
@@ -2196,9 +2224,10 @@ ${diff}
     this.messageBus.registerHandler('session.config.get', async (data) => {
       const { cwd, sessionId, key } = data;
       const context = await this.getContext(cwd);
-      const sessionConfigManager = new SessionConfigManager({
-        logPath: context.paths.getSessionLogPath(sessionId),
-      });
+      const sessionConfigManager = await this.getSessionConfigManager(
+        context,
+        sessionId,
+      );
       const value = key
         ? (sessionConfigManager.config as any)[key]
         : sessionConfigManager.config;
@@ -2213,13 +2242,132 @@ ${diff}
     this.messageBus.registerHandler('session.config.remove', async (data) => {
       const { cwd, sessionId, key } = data;
       const context = await this.getContext(cwd);
-      const sessionConfigManager = new SessionConfigManager({
-        logPath: context.paths.getSessionLogPath(sessionId),
-      });
+      const sessionConfigManager = await this.getSessionConfigManager(
+        context,
+        sessionId,
+      );
       delete (sessionConfigManager.config as any)[key];
       sessionConfigManager.write();
       return {
         success: true,
+      };
+    });
+
+    this.messageBus.registerHandler('session.getSnapshot', async (data) => {
+      const { cwd, sessionId, messageUuid } = data;
+      const context = await this.getContext(cwd);
+      const sessionConfigManager = await this.getSessionConfigManager(
+        context,
+        sessionId,
+      );
+      const snapshotManager = sessionConfigManager.getSnapshotManager();
+      const snapshot = snapshotManager.getSnapshot(messageUuid);
+      return {
+        success: true,
+        data: {
+          snapshot: snapshot || null,
+        },
+      };
+    });
+
+    this.messageBus.registerHandler(
+      'session.getSnapshotSummary',
+      async (data) => {
+        const { cwd, sessionId } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = await this.getSessionConfigManager(
+          context,
+          sessionId,
+        );
+        const snapshotManager = sessionConfigManager.getSnapshotManager();
+        const snapshots = snapshotManager.getSnapshots();
+
+        // Build a map of messageUuid -> file count
+        const snapshotSummary: Record<string, { fileCount: number }> = {};
+        for (const snapshot of snapshots) {
+          snapshotSummary[snapshot.messageUuid] = {
+            fileCount: Object.keys(snapshot.trackedFileBackups).length,
+          };
+        }
+
+        return {
+          success: true,
+          data: {
+            snapshotSummary,
+          },
+        };
+      },
+    );
+
+    this.messageBus.registerHandler('session.restoreSnapshot', async (data) => {
+      const { cwd, sessionId, messageUuid } = data;
+      const context = await this.getContext(cwd);
+      const sessionConfigManager = await this.getSessionConfigManager(
+        context,
+        sessionId,
+      );
+      const snapshotManager = sessionConfigManager.getSnapshotManager();
+      if (!snapshotManager.hasSnapshot(messageUuid)) {
+        return {
+          success: false,
+          error: 'No snapshot found for this message',
+        };
+      }
+      await snapshotManager.restoreSnapshot(messageUuid);
+      return {
+        success: true,
+      };
+    });
+
+    this.messageBus.registerHandler(
+      'session.restoreSnapshotFiles',
+      async (data) => {
+        const { cwd, sessionId, messageUuid, filePaths } = data;
+        const context = await this.getContext(cwd);
+        const sessionConfigManager = await this.getSessionConfigManager(
+          context,
+          sessionId,
+        );
+        const snapshotManager = sessionConfigManager.getSnapshotManager();
+        if (!snapshotManager.hasSnapshot(messageUuid)) {
+          return {
+            success: false,
+            error: 'No snapshot found for this message',
+          };
+        }
+        const restoredCount = await snapshotManager.restoreSnapshotFiles(
+          messageUuid,
+          filePaths,
+        );
+        return {
+          success: true,
+          data: {
+            restoredCount,
+          },
+        };
+      },
+    );
+
+    this.messageBus.registerHandler('session.deleteSnapshot', async (data) => {
+      const { cwd, sessionId, messageUuid } = data;
+      const context = await this.getContext(cwd);
+      const sessionConfigManager = await this.getSessionConfigManager(
+        context,
+        sessionId,
+      );
+      const snapshotManager = sessionConfigManager.getSnapshotManager();
+      const deleted = await snapshotManager.deleteSnapshot(messageUuid);
+
+      // Save the updated snapshots to disk
+      if (deleted) {
+        await sessionConfigManager.saveSnapshots();
+      }
+
+      return {
+        success: true,
+        data: {
+          deleted,
+        },
       };
     });
 

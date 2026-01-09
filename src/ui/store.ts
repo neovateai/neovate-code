@@ -21,6 +21,10 @@ import { clearTerminal } from '../utils/terminal';
 import { countTokens } from '../utils/tokenCounter';
 import { getUsername } from '../utils/username';
 import { detectImageFormat } from './TextInput/utils/imagePaste';
+import {
+  restoreCodeToTargetPoint,
+  buildRestoreConversationState,
+} from './utils/forkHelpers';
 
 export type ApprovalResult =
   | 'approve_once'
@@ -33,6 +37,8 @@ export interface BashPromptBackgroundEvent {
   command: string;
   currentOutput: string;
 }
+
+export type SnapshotCheckMap = Record<string, boolean>;
 
 type Theme = 'light' | 'dark';
 type AppStatus =
@@ -242,7 +248,10 @@ interface AppActions {
   setPastedImageMap: (map: Record<string, string>) => Promise<void>;
   showForkModal: () => void;
   hideForkModal: () => void;
-  fork: (targetMessageUuid: string) => Promise<void>;
+  fork: (
+    targetMessageUuid: string,
+    options?: { restoreCode?: boolean; restoreConversation?: boolean },
+  ) => Promise<void>;
   incrementForkCounter: () => void;
   setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => void;
   clearBashBackgroundPrompt: () => void;
@@ -942,12 +951,44 @@ export const useAppStore = create<AppStore>()(
 
       resumeSession: async (sessionId: string, logFile: string) => {
         await clearTerminal();
+        const { cwd, sessionId: currentSessionId } = get();
         const messages = loadSessionMessages({ logPath: logFile });
         const sessionConfigManager = new SessionConfigManager({
           logPath: logFile,
+          cwd: cwd || process.cwd(),
+          sessionId,
         });
         const pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
         const pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
+
+        // Copy backup files from resumed session to current session if different
+        // This is similar to Claude Code's H81 function
+        if (currentSessionId && sessionId !== currentSessionId) {
+          try {
+            const snapshotManager = sessionConfigManager.getSnapshotManager();
+            const snapshots = snapshotManager.getSnapshots();
+
+            if (snapshots.length > 0) {
+              const { copySessionBackups } = await import('../utils/snapshot');
+              await copySessionBackups(
+                sessionId,
+                currentSessionId,
+                snapshots,
+                cwd || process.cwd(),
+              );
+              get().log(
+                `Copied ${snapshots.length} snapshot(s) from resumed session`,
+              );
+            }
+          } catch (error) {
+            console.error(
+              '[resumeSession] Failed to copy session backups:',
+              error,
+            );
+            // Don't fail resume if backup copy fails
+          }
+        }
+
         set({
           sessionId,
           logFile,
@@ -1114,10 +1155,20 @@ export const useAppStore = create<AppStore>()(
         set({ forkModalVisible: false });
       },
 
-      fork: async (targetMessageUuid: string) => {
+      fork: async (
+        targetMessageUuid: string,
+        options?: { restoreCode?: boolean; restoreConversation?: boolean },
+      ) => {
         const { bridge, cwd, sessionId, messages } = get();
 
-        // Find the target message
+        if (!cwd || !sessionId) {
+          get().log('Fork error: Invalid session state');
+          return;
+        }
+
+        const restoreCode = options?.restoreCode ?? true;
+        const restoreConversation = options?.restoreConversation ?? true;
+
         const targetMessage = messages.find(
           (m) => (m as NormalizedMessage).uuid === targetMessageUuid,
         );
@@ -1126,32 +1177,44 @@ export const useAppStore = create<AppStore>()(
           return;
         }
 
-        // Filter messages up to and including the target
-        const messageIndex = messages.findIndex(
+        const targetIndex = messages.findIndex(
           (m) => (m as NormalizedMessage).uuid === targetMessageUuid,
         );
-        const filteredMessages = messages.slice(0, messageIndex);
 
-        // Extract content from target message
-        let contentText = '';
-        if (typeof targetMessage.content === 'string') {
-          contentText = targetMessage.content;
-        } else if (Array.isArray(targetMessage.content)) {
-          const textParts = targetMessage.content
-            .filter((part) => part.type === 'text')
-            .map((part) => part.text);
-          contentText = textParts.join('');
+        // Restore code if requested
+        if (restoreCode) {
+          // When restoring code without conversation, delete snapshots after restoration
+          // because the code is now in sync with the snapshot state
+          const shouldDeleteSnapshots = !restoreConversation;
+
+          await restoreCodeToTargetPoint(
+            bridge,
+            cwd,
+            sessionId,
+            messages,
+            targetIndex,
+            targetMessageUuid,
+            get().log,
+            shouldDeleteSnapshots,
+          );
+        } else {
+          get().log('Fork: Code restoration skipped');
         }
 
-        // Update store state
-        set({
-          messages: filteredMessages,
-          forkParentUuid: (targetMessage as NormalizedMessage).parentUuid,
-          inputValue: contentText,
-          inputCursorPosition: contentText.length,
-          forkModalVisible: false,
-        });
-        get().incrementForkCounter();
+        // Restore conversation if requested
+        if (restoreConversation) {
+          const newState = buildRestoreConversationState(
+            messages,
+            targetIndex,
+            targetMessage,
+            get().history,
+          );
+          set(newState);
+          get().incrementForkCounter();
+        } else {
+          get().log('Fork: Conversation restoration skipped');
+          set({ forkModalVisible: false });
+        }
       },
 
       incrementForkCounter: () => {

@@ -84,6 +84,17 @@ type NormalizedMessage = {
   uiContent?: string;
 };
 
+type SnapshotMessage = {
+  type: 'file-history-snapshot';
+  messageId: string;
+  snapshot: {
+    messageId: string;
+    timestamp: string;
+    trackedFileBackups: Record<string, any>;
+  };
+  isSnapshotUpdate: boolean;
+};
+
 type RequestLogEntry =
   | ({ type: 'metadata'; timestamp: string; requestId: string } & AnyJson)
   | ({ type: 'chunk'; timestamp: string; requestId: string } & AnyJson);
@@ -106,6 +117,13 @@ function readJsonlFile(filePath: string): AnyJson[] {
 function loadAllSessionMessages(logPath: string): NormalizedMessage[] {
   const items = readJsonlFile(logPath);
   return items.filter((i) => i && i.type === 'message') as NormalizedMessage[];
+}
+
+function loadAllSnapshots(logPath: string): SnapshotMessage[] {
+  const items = readJsonlFile(logPath);
+  return items.filter(
+    (i) => i && i.type === 'file-history-snapshot',
+  ) as SnapshotMessage[];
 }
 
 function loadAllRequestLogs(
@@ -174,9 +192,22 @@ type RenderableItem =
       name: string;
       result: any;
       isError: boolean;
+    }
+  | {
+      type: 'snapshot';
+      indent: true;
+      messageId: string;
+      fileCount: number;
+      timestamp: string;
+      isUpdate: boolean;
+      snapshotIndex: number;
+      snapshotData: SnapshotMessage;
     };
 
-function buildRenderableItems(messages: NormalizedMessage[]): RenderableItem[] {
+function buildRenderableItems(
+  messages: NormalizedMessage[],
+  snapshots: SnapshotMessage[],
+): RenderableItem[] {
   const items: RenderableItem[] = [];
   const toolResultsMap = new Map<
     string,
@@ -213,42 +244,80 @@ function buildRenderableItems(messages: NormalizedMessage[]): RenderableItem[] {
     }
   }
 
+  type TimelineItem =
+    | { type: 'message'; time: number; message: NormalizedMessage }
+    | {
+        type: 'snapshot';
+        time: number;
+        snapshot: SnapshotMessage;
+        index: number;
+      };
+
+  const timeline: TimelineItem[] = [];
+
   for (const msg of messages) {
-    items.push({ type: 'message', message: msg, indent: false });
+    const time = msg.timestamp ? new Date(msg.timestamp).getTime() : 0;
+    timeline.push({ type: 'message', time, message: msg });
+  }
 
-    if (msg.role === 'assistant' && Array.isArray(msg.content)) {
-      const toolUses = msg.content.filter(
-        (
-          part,
-        ): part is {
-          type: 'tool_use';
-          id: string;
-          name: string;
-          input: Record<string, any>;
-        } => part.type === 'tool_use',
-      );
+  for (let i = 0; i < snapshots.length; i++) {
+    const snapshot = snapshots[i]!;
+    const time = new Date(snapshot.snapshot.timestamp).getTime();
+    timeline.push({ type: 'snapshot', time, snapshot, index: i });
+  }
 
-      for (const toolUse of toolUses) {
-        items.push({
-          type: 'tool-call',
-          indent: true,
-          id: toolUse.id,
-          name: toolUse.name,
-          input: toolUse.input,
-        });
+  timeline.sort((a, b) => a.time - b.time);
+  for (const item of timeline) {
+    if (item.type === 'message') {
+      const msg = item.message;
+      items.push({ type: 'message', message: msg, indent: false });
 
-        const resultData = toolResultsMap.get(toolUse.id);
-        if (resultData) {
+      if (msg.role === 'assistant' && Array.isArray(msg.content)) {
+        const toolUses = msg.content.filter(
+          (
+            part,
+          ): part is {
+            type: 'tool_use';
+            id: string;
+            name: string;
+            input: Record<string, any>;
+          } => part.type === 'tool_use',
+        );
+
+        for (const toolUse of toolUses) {
           items.push({
-            type: 'tool-result',
+            type: 'tool-call',
             indent: true,
             id: toolUse.id,
-            name: resultData.name,
-            result: resultData.result,
-            isError: resultData.isError,
+            name: toolUse.name,
+            input: toolUse.input,
           });
+
+          const resultData = toolResultsMap.get(toolUse.id);
+          if (resultData) {
+            items.push({
+              type: 'tool-result',
+              indent: true,
+              id: toolUse.id,
+              name: resultData.name,
+              result: resultData.result,
+              isError: resultData.isError,
+            });
+          }
         }
       }
+    } else if (item.type === 'snapshot') {
+      const snapshot = item.snapshot;
+      items.push({
+        type: 'snapshot',
+        indent: true,
+        messageId: snapshot.messageId,
+        fileCount: Object.keys(snapshot.snapshot.trackedFileBackups).length,
+        timestamp: snapshot.snapshot.timestamp,
+        isUpdate: snapshot.isSnapshotUpdate,
+        snapshotIndex: item.index,
+        snapshotData: snapshot,
+      });
     }
   }
 
@@ -261,6 +330,7 @@ function buildHtml(opts: {
   messages: NormalizedMessage[];
   requestLogs: ReturnType<typeof loadAllRequestLogs>;
   activeUuids: Set<string>;
+  snapshots?: SnapshotMessage[];
 }) {
   const { sessionId, sessionLogPath, messages, requestLogs, activeUuids } =
     opts;
@@ -284,7 +354,8 @@ function buildHtml(opts: {
     messagesMap[m.uuid] = m as AnyJson;
   }
 
-  const renderableItems = buildRenderableItems(messages);
+  const snapshots = opts.snapshots || [];
+  const renderableItems = buildRenderableItems(messages, snapshots);
 
   const messagesHtml = renderableItems
     .map((item) => {
@@ -351,6 +422,16 @@ function buildHtml(opts: {
   <div class="meta">${statusLabel} Tool Result: ${escapeHtml(item.name)}</div>
   <div class="content"><pre>${resultStr}</pre></div>
 </div>`;
+      } else if (item.type === 'snapshot') {
+        const ts = formatDate(new Date(item.timestamp));
+        const updateLabel = item.isUpdate ? '🔄 Updated' : '📸 Created';
+        const snapshotStr = escapeHtml(pretty(item.snapshotData));
+        const uuidBadge = `<div class="uuid-badge">${escapeHtml(item.messageId.slice(0, 8))}</div>`;
+        return `<div class="msg snapshot indented">
+  ${uuidBadge}
+  <div class="meta">${updateLabel} Snapshot · ${item.fileCount} file(s) · ${escapeHtml(ts)}</div>
+  <div class="content"><pre>${snapshotStr}</pre></div>
+</div>`;
       }
       return '';
     })
@@ -372,11 +453,13 @@ function buildHtml(opts: {
     .msg.tool-call { background: #fffbf0; border-left: 3px solid #f59e0b; }
     .msg.tool-result { background: #f0fdf4; border-left: 3px solid #10b981; }
     .msg.tool-result.error { background: #fef2f2; border-left: 3px solid #ef4444; }
+    .msg.snapshot { background: #faf5ff; border-left: 3px solid #a855f7; font-size: 11px; padding: 6px 10px; }
     .uuid-badge { position: absolute; top: 8px; right: 10px; font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #999; background: rgba(255, 255, 255, 0.8); padding: 2px 6px; border-radius: 3px; }
     .msg.disabled { opacity: 0.4; }
     .msg.disabled.tool-call,
     .msg.disabled.tool-result { opacity: 0.4; }
     .msg.tool-call pre, .msg.tool-result pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 12px; }
+    .msg.snapshot pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 11px; color: #666; }
     .details code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .details pre { background: #fafafa; border: 1px solid #eee; padding: 8px; border-radius: 6px; overflow: auto; }
     .muted { color: #777; }
@@ -493,6 +576,7 @@ function buildHtml(opts: {
 async function generateHtmlForSession(context: Context, sessionId: string) {
   const sessionLogPath = context.paths.getSessionLogPath(sessionId);
   const messages = loadAllSessionMessages(sessionLogPath);
+  const snapshots = loadAllSnapshots(sessionLogPath);
   const activeMessages = filterMessages(messages as any);
   const activeUuids = new Set(activeMessages.map((m) => m.uuid));
   const requestsDir = path.join(path.dirname(sessionLogPath), 'requests');
@@ -504,6 +588,7 @@ async function generateHtmlForSession(context: Context, sessionId: string) {
     messages,
     requestLogs,
     activeUuids,
+    snapshots,
   });
 
   const outDir = path.join(process.cwd(), '.log-outputs');
@@ -519,6 +604,7 @@ async function generateHtmlForFile(filePath: string) {
   // Extract session ID from filename for display
   const sessionId = path.basename(filePath, '.jsonl');
   const messages = loadAllSessionMessages(filePath);
+  const snapshots = loadAllSnapshots(filePath);
   const activeMessages = filterMessages(messages as any);
   const activeUuids = new Set(activeMessages.map((m) => m.uuid));
   // Locate requests/ directory relative to the session file
@@ -531,6 +617,7 @@ async function generateHtmlForFile(filePath: string) {
     messages,
     requestLogs,
     activeUuids,
+    snapshots,
   });
 
   const outDir = path.join(process.cwd(), '.log-outputs');

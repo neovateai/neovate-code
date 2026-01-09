@@ -1,4 +1,6 @@
 import { Box, Text, useInput } from 'ink';
+import type { NormalizedMessage } from '../message';
+import type { Message } from '../message';
 import SelectInput from 'ink-select-input';
 import React, { useCallback } from 'react';
 import { clearTerminal } from '../utils/terminal';
@@ -9,13 +11,15 @@ import { ChatInput } from './ChatInput';
 import { Debug } from './Debug';
 import { ExitHint } from './ExitHint';
 import { ForkModal } from './ForkModal';
+import { RestoreOptionsModal, type RestoreMode } from './RestoreOptionsModal';
 import { Markdown } from './Markdown';
 import { Messages } from './Messages';
 import { QueueDisplay } from './QueueDisplay';
 import { useAppStore } from './store';
 import { TerminalSizeProvider } from './TerminalSizeContext';
-import { TranscriptModeIndicator } from './TranscriptModeIndicator';
 import { useTerminalRefresh } from './useTerminalRefresh';
+import { TranscriptModeIndicator } from './TranscriptModeIndicator';
+import { getMessagePreview, getRelativeTimestamp } from './utils/messageUtils';
 
 function SlashCommandJSX() {
   const { slashCommandJSX } = useAppStore();
@@ -75,6 +79,7 @@ export function App() {
   const { forceRerender } = useTerminalRefresh();
   const {
     forkModalVisible,
+    messages,
     fork,
     hideForkModal,
     forkParentUuid,
@@ -85,8 +90,53 @@ export function App() {
     transcriptMode,
     toggleTranscriptMode,
   } = useAppStore();
-  const [forkMessages, setForkMessages] = React.useState<any[]>([]);
+  const [forkMessages, setForkMessages] = React.useState<NormalizedMessage[]>(
+    [],
+  );
   const [forkLoading, setForkLoading] = React.useState(false);
+  const [snapshotCache, setSnapshotCache] = React.useState<
+    Record<string, boolean>
+  >({});
+  const [snapshotFileCounts, setSnapshotFileCounts] = React.useState<
+    Record<string, number>
+  >({});
+  const [showRestoreOptions, setShowRestoreOptions] = React.useState(false);
+  const [selectedMessage, setSelectedMessage] = React.useState<{
+    uuid: string;
+    message: Message & NormalizedMessage;
+  } | null>(null);
+
+  const handleForkSelect = (
+    uuid: string,
+    message: Message & NormalizedMessage,
+  ) => {
+    setSelectedMessage({ uuid, message });
+    setShowRestoreOptions(true);
+  };
+
+  const handleRestoreOptionSelect = async (mode: RestoreMode) => {
+    if (mode === 'cancel' || !selectedMessage) {
+      setShowRestoreOptions(false);
+      setSelectedMessage(null);
+      return;
+    }
+
+    const restoreCode = mode === 'both' || mode === 'code';
+    const restoreConversation = mode === 'both' || mode === 'conversation';
+
+    await fork(selectedMessage.uuid, { restoreCode, restoreConversation });
+    setShowRestoreOptions(false);
+    setSelectedMessage(null);
+  };
+
+  const handleRestoreOptionsClose = () => {
+    setShowRestoreOptions(false);
+    setSelectedMessage(null);
+  };
+
+  const getSnapshotFileCount = (uuid: string): number => {
+    return snapshotFileCounts[uuid] || 0;
+  };
 
   useInput((input, key) => {
     // Ctrl+O: Toggle transcript mode
@@ -108,25 +158,63 @@ export function App() {
 
   React.useEffect(() => {
     if (!forkModalVisible) return;
+    // Use messages from current state instead of loading from file
+    setForkMessages(messages as NormalizedMessage[]);
+
     if (!bridge || !cwd || !sessionId) {
-      setForkMessages([]);
+      setSnapshotCache({});
       return;
     }
+
     setForkLoading(true);
     (async () => {
       try {
-        const res = await bridge.request('session.messages.list', {
+        // Use the new snapshot summary API for better performance
+        const summaryRes = await bridge.request('session.getSnapshotSummary', {
           cwd,
           sessionId,
         });
-        setForkMessages(res.data?.messages || []);
+
+        if (summaryRes.success && summaryRes.data?.snapshotSummary) {
+          const snapshotSummary = summaryRes.data.snapshotSummary as Record<
+            string,
+            { fileCount: number }
+          >;
+          const newSnapshotCache: Record<string, boolean> = {};
+          const newSnapshotFileCounts: Record<string, number> = {};
+
+          // Map assistant message UUIDs to user message UUIDs
+          for (const m of messages as NormalizedMessage[]) {
+            if (m.role === 'user' && m.uuid) {
+              // Find the assistant message that responds to this user message
+              const assistantMessage = (messages as NormalizedMessage[]).find(
+                (am) => am.parentUuid === m.uuid && am.role === 'assistant',
+              );
+              if (assistantMessage?.uuid) {
+                const snapshotInfo = snapshotSummary[assistantMessage.uuid];
+                if (snapshotInfo) {
+                  newSnapshotCache[m.uuid] = true;
+                  newSnapshotFileCounts[m.uuid] = snapshotInfo.fileCount;
+                }
+              }
+            }
+          }
+
+          setSnapshotCache(newSnapshotCache);
+          setSnapshotFileCounts(newSnapshotFileCounts);
+        } else {
+          setSnapshotCache({});
+          setSnapshotFileCounts({});
+        }
       } catch (_e) {
-        setForkMessages([]);
+        setSnapshotCache({});
+        setSnapshotFileCounts({});
       } finally {
         setForkLoading(false);
       }
     })();
-  }, [forkModalVisible, bridge, cwd, sessionId]);
+  }, [forkModalVisible, messages, bridge, cwd, sessionId]);
+
   return (
     <TerminalSizeProvider>
       <Box
@@ -140,15 +228,25 @@ export function App() {
         <QueueDisplay />
         {transcriptMode ? <TranscriptModeIndicator /> : <ChatInput />}
         <ApprovalModal />
-        {forkModalVisible && (
+        {forkModalVisible && !showRestoreOptions && (
           <ForkModal
             messages={forkMessages as any}
-            onSelect={(uuid) => {
-              fork(uuid);
-            }}
+            onSelect={handleForkSelect}
             onClose={() => {
               hideForkModal();
             }}
+            hasSnapshot={(uuid) => snapshotCache[uuid] ?? false}
+            snapshotCache={snapshotCache}
+          />
+        )}
+        {showRestoreOptions && selectedMessage && (
+          <RestoreOptionsModal
+            messagePreview={getMessagePreview(selectedMessage.message)}
+            timestamp={getRelativeTimestamp(selectedMessage.message)}
+            hasSnapshot={snapshotCache[selectedMessage.uuid] ?? false}
+            fileCount={getSnapshotFileCount(selectedMessage.uuid)}
+            onSelect={handleRestoreOptionSelect}
+            onClose={handleRestoreOptionsClose}
           />
         )}
         <ExitHint />

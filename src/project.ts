@@ -11,6 +11,8 @@ import { generatePlanSystemPrompt } from './planSystemPrompt';
 import { PluginHookType } from './plugin';
 import { Session, SessionConfigManager, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
+import pathe from 'pathe';
+import { createToolSnapshot } from './utils/snapshot';
 import type {
   ApprovalCategory,
   Tool,
@@ -24,6 +26,11 @@ import { randomUUID } from './utils/randomUUID';
 export class Project {
   session: Session;
   context: Context;
+  private sessionConfigManager: SessionConfigManager | null = null;
+  private sessionConfigManagerInitialized = false;
+  private currentAssistantUuid: string | null = null;
+  private jsonlLogger: JsonlLogger | null = null;
+
   constructor(opts: {
     sessionId?: SessionId;
     context: Context;
@@ -35,6 +42,58 @@ export class Project {
         })
       : Session.create();
     this.context = opts.context;
+  }
+
+  private getSessionConfigManager(): SessionConfigManager {
+    if (!this.sessionConfigManagerInitialized) {
+      this.sessionConfigManager = new SessionConfigManager({
+        logPath: this.context.paths.getSessionLogPath(this.session.id),
+        cwd: this.context.cwd,
+        sessionId: this.session.id,
+      });
+      this.sessionConfigManagerInitialized = true;
+    }
+    return this.sessionConfigManager!;
+  }
+
+  /**
+   * Create snapshot before write/edit tool execution to capture pre-modification state
+   */
+  private async createSnapshotBeforeToolUse(toolUse: ToolUse): Promise<void> {
+    if (toolUse.name !== TOOL_NAMES.WRITE && toolUse.name !== TOOL_NAMES.EDIT) {
+      return;
+    }
+
+    if (!this.currentAssistantUuid) {
+      if (process.env.NEOVATE_SNAPSHOT_DEBUG === 'true') {
+        console.warn(
+          '[Snapshot] currentAssistantUuid is null, cannot create snapshot',
+        );
+      }
+      return;
+    }
+
+    const filePath = toolUse.params.file_path;
+    const fullFilePath = pathe.isAbsolute(filePath)
+      ? filePath
+      : pathe.join(this.context.cwd, filePath);
+
+    const sessionConfigManager = this.getSessionConfigManager();
+
+    try {
+      await createToolSnapshot(
+        [fullFilePath],
+        sessionConfigManager,
+        this.currentAssistantUuid,
+        this.jsonlLogger || undefined,
+      );
+    } catch (error) {
+      console.error(
+        `[Snapshot] Failed to create snapshot for ${fullFilePath}:`,
+        error,
+      );
+      // Don't throw - continue with tool execution
+    }
   }
 
   async send(
@@ -61,7 +120,7 @@ export class Project {
       todo: true,
       askUserQuestion: !this.context.config.quiet,
       signal: opts.signal,
-      task: true,
+      task: this.context.config.quiet,
     });
     tools = await this.context.apply({
       hook: 'tool',
@@ -164,6 +223,10 @@ export class Project {
       thinking?: ThinkingConfig;
     } = {},
   ) {
+    // Reset assistant UUID for this conversation turn
+    // It will be set to the first assistant message's UUID
+    let turnAssistantUuid: string | null = null;
+
     const startTime = new Date();
     const tools = opts.tools || [];
     const outputFormat = new OutputFormat({
@@ -174,6 +237,8 @@ export class Project {
     const jsonlLogger = new JsonlLogger({
       filePath: this.context.paths.getSessionLogPath(this.session.id),
     });
+    // Store jsonlLogger for snapshot recording
+    this.jsonlLogger = jsonlLogger;
     const requestLogger = new RequestLogger({
       globalProjectDir: this.context.paths.globalProjectDir,
     });
@@ -189,9 +254,7 @@ export class Project {
         type: PluginHookType.SeriesLast,
       });
     }
-    const sessionConfigManager = new SessionConfigManager({
-      logPath: this.context.paths.getSessionLogPath(this.session.id),
-    });
+    const sessionConfigManager = this.getSessionConfigManager();
     const additionalDirectories =
       sessionConfigManager.config.additionalDirectories || [];
 
@@ -308,6 +371,14 @@ export class Project {
           ...message,
           sessionId: this.session.id,
         };
+        this.session.history.messages.push(normalizedMessage);
+        if (normalizedMessage.role === 'assistant') {
+          // Lock to the first assistant message UUID for this turn
+          if (!turnAssistantUuid) {
+            turnAssistantUuid = normalizedMessage.uuid;
+            this.currentAssistantUuid = turnAssistantUuid;
+          }
+        }
         outputFormat.onMessage({
           message: normalizedMessage,
         });
@@ -340,6 +411,8 @@ export class Project {
       onText: async (text) => {},
       onReasoning: async (text) => {},
       onToolUse: async (toolUse) => {
+        await this.createSnapshotBeforeToolUse(toolUse);
+
         return await this.context.apply({
           hook: 'toolUse',
           args: [
@@ -352,18 +425,18 @@ export class Project {
         });
       },
       onToolResult: async (toolUse, toolResult, approved) => {
-        return await this.context.apply({
+        const result = await this.context.apply({
           hook: 'toolResult',
           args: [
             {
-              toolUse,
-              approved,
               sessionId: this.session.id,
             },
           ],
           memo: toolResult,
           type: PluginHookType.SeriesLast,
         });
+
+        return result;
       },
       onTurn: async (turn: {
         usage: Usage;
@@ -416,9 +489,7 @@ export class Project {
           }
         }
         // 4. if category is edit check autoEdit config (including session config)
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: this.context.paths.getSessionLogPath(this.session.id),
-        });
+        const sessionConfigManager = this.getSessionConfigManager();
         if (tool.approval?.category === 'write') {
           if (
             sessionConfigManager.config.approvalMode === 'autoEdit' ||
