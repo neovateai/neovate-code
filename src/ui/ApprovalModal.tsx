@@ -6,6 +6,7 @@ import { useCallback, useMemo } from 'react';
 import { TOOL_NAMES } from '../constants';
 import type { ToolUse as ToolUseType } from '../tool';
 import type { Question } from '../tools/askUserQuestion';
+import { applyEdits } from '../utils/applyEdit';
 import { safeStringify } from '../utils/safeStringify';
 import { AskQuestionModal } from './AskQuestionModal';
 import { UI_COLORS } from './constants';
@@ -360,9 +361,15 @@ function getDiffParams(toolUse: ToolUseType, cwd: string) {
     let newContent: string;
 
     if (toolUse.name === 'edit') {
-      // For edit tool, use old_string and new_string parameters
-      const { old_string = '', new_string = '' } = toolUse.params;
-      newContent = oldContent.replace(old_string, new_string);
+      const { old_string = '', new_string = '', replace_all } = toolUse.params;
+      try {
+        const { updatedFile } = applyEdits(cwd, fullFilePath, [
+          { old_string, new_string, replace_all },
+        ]);
+        newContent = updatedFile;
+      } catch {
+        newContent = oldContent.replace(old_string, new_string);
+      }
     } else {
       // For write tool, use content parameter
       const { content = '' } = toolUse.params;
