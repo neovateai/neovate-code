@@ -1,11 +1,14 @@
 import os from 'os';
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test } from 'vitest';
 import { BackgroundTaskManager } from '../backgroundTaskManager';
 import type { ToolResult } from '../tool';
 import {
   createBashTool,
+  getMaxOutputLimit,
   hasCommandSubstitution,
   isHighRiskCommand,
+  trimEmptyLines,
+  truncateOutput,
 } from './bash';
 
 describe('bash tool with run_in_background', () => {
@@ -167,6 +170,117 @@ describe('bash tool with run_in_background', () => {
     expect(result.backgroundTaskId).toBeFalsy();
     expect(result.llmContent).toContain('quick test');
   }, 5000);
+});
+
+describe('trimEmptyLines', () => {
+  test('should remove leading empty lines', () => {
+    expect(trimEmptyLines('\n\n\nhello')).toBe('hello');
+  });
+
+  test('should remove trailing empty lines', () => {
+    expect(trimEmptyLines('hello\n\n\n')).toBe('hello');
+  });
+
+  test('should remove both leading and trailing empty lines', () => {
+    expect(trimEmptyLines('\n\n  hello\nworld  \n\n')).toBe('  hello\nworld  ');
+  });
+
+  test('should preserve middle empty lines', () => {
+    expect(trimEmptyLines('line1\n\nline3')).toBe('line1\n\nline3');
+  });
+
+  test('should preserve indentation', () => {
+    expect(trimEmptyLines('\n  indented\n')).toBe('  indented');
+  });
+
+  test('should handle empty string', () => {
+    expect(trimEmptyLines('')).toBe('');
+  });
+
+  test('should handle whitespace-only lines as empty', () => {
+    expect(trimEmptyLines('   \n\thello\n   ')).toBe('\thello');
+  });
+});
+
+describe('getMaxOutputLimit', () => {
+  const originalEnv = process.env.BASH_MAX_OUTPUT_LENGTH;
+
+  afterEach(() => {
+    if (originalEnv === undefined) {
+      delete process.env.BASH_MAX_OUTPUT_LENGTH;
+    } else {
+      process.env.BASH_MAX_OUTPUT_LENGTH = originalEnv;
+    }
+  });
+
+  test('should return default 30000 when env not set', () => {
+    delete process.env.BASH_MAX_OUTPUT_LENGTH;
+    expect(getMaxOutputLimit()).toBe(30_000);
+  });
+
+  test('should read valid env value', () => {
+    process.env.BASH_MAX_OUTPUT_LENGTH = '50000';
+    expect(getMaxOutputLimit()).toBe(50_000);
+  });
+
+  test('should fallback to default for invalid value', () => {
+    process.env.BASH_MAX_OUTPUT_LENGTH = 'invalid';
+    expect(getMaxOutputLimit()).toBe(30_000);
+  });
+
+  test('should fallback to default for zero', () => {
+    process.env.BASH_MAX_OUTPUT_LENGTH = '0';
+    expect(getMaxOutputLimit()).toBe(30_000);
+  });
+
+  test('should fallback to default for negative value', () => {
+    process.env.BASH_MAX_OUTPUT_LENGTH = '-100';
+    expect(getMaxOutputLimit()).toBe(30_000);
+  });
+
+  test('should cap at 150000 for values exceeding max', () => {
+    process.env.BASH_MAX_OUTPUT_LENGTH = '200000';
+    expect(getMaxOutputLimit()).toBe(150_000);
+  });
+});
+
+describe('truncateOutput', () => {
+  test('should return content unchanged when under limit', () => {
+    const content = 'short content';
+    expect(truncateOutput(content, 1000)).toBe('short content');
+  });
+
+  test('should trim empty lines before checking limit', () => {
+    const content = '\n\n  hello  \n\n';
+    expect(truncateOutput(content, 1000)).toBe('  hello  ');
+  });
+
+  test('should truncate and show line count when over limit', () => {
+    const content = 'a'.repeat(100);
+    const result = truncateOutput(content, 50);
+    expect(result).toContain('a'.repeat(50));
+    expect(result).toContain('... [1 lines truncated] ...');
+  });
+
+  test('should correctly count dropped lines', () => {
+    const content = 'line1\nline2\nline3\nline4\nline5';
+    const result = truncateOutput(content, 12);
+    expect(result).toContain('lines truncated');
+  });
+
+  test('should handle multiline truncation', () => {
+    const lines = Array.from({ length: 100 }, (_, i) => `line ${i + 1}`).join(
+      '\n',
+    );
+    const result = truncateOutput(lines, 50);
+    expect(result).toContain('lines truncated');
+  });
+
+  test('should use default limit when not specified', () => {
+    const content = 'x'.repeat(100);
+    const result = truncateOutput(content);
+    expect(result).toBe(content);
+  });
 });
 
 describe('isHighRiskCommand', () => {

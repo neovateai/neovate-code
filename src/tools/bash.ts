@@ -46,20 +46,49 @@ const DEFAULT_TIMEOUT = 2 * 60 * 1000; // 2 minutes
 const MAX_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 const BACKGROUND_CHECK_INTERVAL = 500; // ms
 
-/**
- * Truncate output by line count, showing maximum 20 lines
- */
-function truncateOutput(output: string, maxLines: number = 20): string {
-  const lines = output.split('\n');
+const DEFAULT_OUTPUT_LIMIT = 30_000;
+const MAX_OUTPUT_LIMIT = 150_000;
+const ENV_OUTPUT_LIMIT = 'BASH_MAX_OUTPUT_LENGTH';
 
-  if (lines.length <= maxLines) {
-    return output;
+export function trimEmptyLines(content: string): string {
+  const lines = content.split('\n');
+
+  let start = 0;
+  while (start < lines.length && lines[start].trim() === '') {
+    start++;
   }
 
-  const visibleLines = lines.slice(0, maxLines);
-  const remainingCount = lines.length - maxLines;
+  let end = lines.length - 1;
+  while (end > start && lines[end].trim() === '') {
+    end--;
+  }
 
-  return `${visibleLines.join('\n')}\n… +${remainingCount} lines`;
+  return lines.slice(start, end + 1).join('\n');
+}
+
+export function getMaxOutputLimit(): number {
+  const envValue = process.env[ENV_OUTPUT_LIMIT];
+  if (!envValue) return DEFAULT_OUTPUT_LIMIT;
+
+  const limit = parseInt(envValue, 10);
+  if (isNaN(limit) || limit <= 0) return DEFAULT_OUTPUT_LIMIT;
+
+  return Math.min(limit, MAX_OUTPUT_LIMIT);
+}
+
+export function truncateOutput(content: string, limit?: number): string {
+  const trimmed = trimEmptyLines(content);
+  const maxLimit = limit ?? getMaxOutputLimit();
+
+  if (trimmed.length <= maxLimit) {
+    return trimmed;
+  }
+
+  const kept = trimmed.slice(0, maxLimit);
+  const droppedContent = trimmed.slice(maxLimit);
+  const droppedLines = droppedContent.split('\n').length;
+
+  return `${kept}\n\n... [${droppedLines} lines truncated] ...`;
 }
 
 function getCommandRoot(command: string): string | undefined {
