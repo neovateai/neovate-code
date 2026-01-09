@@ -25,6 +25,7 @@ import { symbols } from '../utils/symbols';
 import { AgentProgress } from './AgentProgress';
 import { SPACING, UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
+import { ExpandableOutput } from './ExpandableOutput';
 import { GradientString } from './GradientString';
 import { Markdown } from './Markdown';
 import { useAppStore } from './store';
@@ -78,9 +79,7 @@ function BashOutputMessage({ message }: { message: NormalizedMessage }) {
 
   return (
     <Box flexDirection="column" marginLeft={SPACING.MESSAGE_MARGIN_LEFT_USER}>
-      <Text color={isError ? UI_COLORS.ERROR : UI_COLORS.TOOL_RESULT}>
-        {symbols.arrowDown} {output}
-      </Text>
+      <ExpandableOutput content={output} isError={isError} />
     </Box>
   );
 }
@@ -634,6 +633,10 @@ function ToolResultItem({ part }: { part: ToolResultPart }) {
   if (typeof text !== 'string') {
     text = JSON.stringify(text);
   }
+  if (part.name === 'bash') {
+    return <ExpandableOutput content={text} />;
+  }
+
   return (
     <Text color={UI_COLORS.TOOL_RESULT}>
       {symbols.arrowDown} {text}
