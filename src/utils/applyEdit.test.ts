@@ -347,4 +347,42 @@ describe('applyEdit', () => {
       'const value = 10;\nconsole.log(x);\nreturn x;',
     );
   });
+
+  test('should reject fuzzy match when multiple candidates exist (line-trimmed)', () => {
+    mockReadFileSync.mockReturnValue(
+      'function foo() {\n  const x = 1;\n}\n\nfunction bar() {\n    const x = 1;\n}',
+    );
+
+    expect(() => {
+      applyEdits('/', 'test.ts', [
+        {
+          old_string: '      const x = 1;',
+          new_string: '      const y = 2;',
+        },
+      ]);
+    }).toThrow(/The string to be replaced was not found in the file/);
+  });
+
+  test('should reject fuzzy match when multiple candidates exist (whitespace-normalized)', () => {
+    mockReadFileSync.mockReturnValue('const  x = 1;\nconst   x = 1;');
+
+    expect(() => {
+      applyEdits('/', 'test.ts', [
+        { old_string: 'const x = 1;', new_string: 'const y = 2;' },
+      ]);
+    }).toThrow(/The string to be replaced was not found in the file/);
+  });
+
+  test('should reject fuzzy match when multiple candidates exist (indentation-flexible)', () => {
+    mockReadFileSync.mockReturnValue('  foo\n  bar\n\n    foo\n    bar');
+
+    expect(() => {
+      applyEdits('/', 'test.ts', [
+        {
+          old_string: '      foo\n      bar',
+          new_string: 'baz\nqux',
+        },
+      ]);
+    }).toThrow(/The string to be replaced was not found in the file/);
+  });
 });

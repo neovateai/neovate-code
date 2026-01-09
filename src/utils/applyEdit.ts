@@ -52,27 +52,30 @@ function levenshtein(a: string, b: string): number {
 /**
  * Try line-trimmed matching: ignore leading/trailing whitespace on each line
  * Solves indentation difference issues
+ * Returns null if multiple matches found to avoid ambiguity
  */
 function tryLineTrimmedMatch(content: string, oldStr: string): string | null {
   const contentLines = content.split('\n');
   const searchLines = oldStr.split('\n');
+  const matches: string[] = [];
 
   for (let i = 0; i <= contentLines.length - searchLines.length; i++) {
-    let matches = true;
+    let isMatch = true;
     for (let j = 0; j < searchLines.length; j++) {
       if (contentLines[i + j].trim() !== searchLines[j].trim()) {
-        matches = false;
+        isMatch = false;
         break;
       }
     }
 
-    if (matches) {
-      // Return original content (preserve original indentation)
-      const startIdx =
-        contentLines.slice(0, i).join('\n').length + (i > 0 ? 1 : 0);
+    if (isMatch) {
       const matchedLines = contentLines.slice(i, i + searchLines.length);
-      return matchedLines.join('\n');
+      matches.push(matchedLines.join('\n'));
     }
+  }
+
+  if (matches.length === 1) {
+    return matches[0];
   }
 
   return null;
@@ -189,6 +192,7 @@ function tryBlockAnchorMatch(content: string, oldStr: string): string | null {
 /**
  * Try whitespace-normalized matching: replace all consecutive whitespace with single space
  * Solves extra spaces and tab mixing issues
+ * Returns null if multiple matches found to avoid ambiguity
  */
 function tryWhitespaceNormalizedMatch(
   content: string,
@@ -197,22 +201,31 @@ function tryWhitespaceNormalizedMatch(
   const normalize = (text: string) => text.replace(/\s+/g, ' ').trim();
   const normalizedOld = normalize(oldStr);
   const lines = content.split('\n');
+  const matches: string[] = [];
 
   // Single-line matching
   for (const line of lines) {
     if (normalize(line) === normalizedOld) {
-      return line;
+      matches.push(line);
     }
+  }
+
+  if (matches.length === 1) {
+    return matches[0];
   }
 
   // Multi-line matching
   const oldLines = oldStr.split('\n');
   if (oldLines.length > 1) {
+    const multiLineMatches: string[] = [];
     for (let i = 0; i <= lines.length - oldLines.length; i++) {
       const block = lines.slice(i, i + oldLines.length).join('\n');
       if (normalize(block) === normalizedOld) {
-        return block;
+        multiLineMatches.push(block);
       }
+    }
+    if (multiLineMatches.length === 1) {
+      return multiLineMatches[0];
     }
   }
 
@@ -308,6 +321,7 @@ function removeCommonIndentation(text: string): string {
 /**
  * Try indentation-flexible matching: ignore overall indentation level differences
  * Solves code block movement to different indentation levels
+ * Returns null if multiple matches found to avoid ambiguity
  */
 function tryIndentationFlexibleMatch(
   content: string,
@@ -316,12 +330,17 @@ function tryIndentationFlexibleMatch(
   const normalizedSearch = removeCommonIndentation(oldStr);
   const contentLines = content.split('\n');
   const searchLines = oldStr.split('\n');
+  const matches: string[] = [];
 
   for (let i = 0; i <= contentLines.length - searchLines.length; i++) {
     const block = contentLines.slice(i, i + searchLines.length).join('\n');
     if (removeCommonIndentation(block) === normalizedSearch) {
-      return block;
+      matches.push(block);
     }
+  }
+
+  if (matches.length === 1) {
+    return matches[0];
   }
 
   return null;
