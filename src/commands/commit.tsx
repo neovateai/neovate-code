@@ -10,6 +10,7 @@ import {
   CommitActionSelector,
 } from '../ui/CommitActionSelector';
 import { CommitResultCard } from '../ui/CommitResultCard';
+import { TerminalSizeProvider } from '../ui/TerminalSizeContext';
 import TextInput from '../ui/TextInput';
 
 // ============================================================================
@@ -1025,6 +1026,8 @@ and may require re-resolving conflicts.`,
                   )
                 }
                 onSubmit={handleEditSubmit}
+                // Account for "> " prefix (2) + outer padding (1)
+                columns={{ useTerminalSize: true, prefix: 3 }}
               />
             </Box>
             <Box marginTop={1}>
@@ -1054,6 +1057,8 @@ and may require re-resolving conflicts.`,
                   )
                 }
                 onSubmit={handleBranchEditSubmit}
+                // Account for "> " prefix (2) + outer padding (1)
+                columns={{ useTerminalSize: true, prefix: 3 }}
               />
             </Box>
             <Box marginTop={1}>
@@ -1394,11 +1399,13 @@ export async function runCommit(context: Context) {
 
     // Render the UI
     render(
-      <CommitUI
-        messageBus={uiMessageBus}
-        cwd={context.cwd}
-        options={options}
-      />,
+      <TerminalSizeProvider>
+        <CommitUI
+          messageBus={uiMessageBus}
+          cwd={context.cwd}
+          options={options}
+        />
+      </TerminalSizeProvider>,
       {
         patchConsole: true,
         exitOnCtrlC: true,

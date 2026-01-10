@@ -3,6 +3,7 @@ import path from 'pathe';
 import { TOOL_NAMES } from '../constants';
 import type { Context } from '../context';
 import type { NormalizedMessage } from '../message';
+import { PluginHookType } from '../plugin';
 import type {
   ApprovalCategory,
   Tool,
@@ -69,16 +70,35 @@ export class AgentManager {
     this.agents.set(definition.agentType, definition);
   }
 
+  isAgentEnabled(agent: AgentDefinition): boolean {
+    if (agent.isEnabled === undefined) {
+      return true;
+    }
+    if (typeof agent.isEnabled === 'boolean') {
+      return agent.isEnabled;
+    }
+    if (typeof agent.isEnabled === 'function') {
+      return agent.isEnabled(this.context);
+    }
+    return true;
+  }
+
   getAgent(agentType: string): AgentDefinition | undefined {
-    return this.agents.get(agentType);
+    const agent = this.agents.get(agentType);
+    if (agent && this.isAgentEnabled(agent)) {
+      return agent;
+    }
+    return undefined;
   }
 
   getAllAgents(): AgentDefinition[] {
-    return Array.from(this.agents.values());
+    return Array.from(this.agents.values()).filter((agent) =>
+      this.isAgentEnabled(agent),
+    );
   }
 
   getAgentTypes(): string[] {
-    return Array.from(this.agents.keys());
+    return this.getAllAgents().map((agent) => agent.agentType);
   }
 
   async executeTask(
@@ -99,7 +119,7 @@ export class AgentManager {
       }) => Promise<boolean | ToolApprovalResult>;
     },
   ): Promise<AgentExecutionResult> {
-    const definition = this.agents.get(input.subagent_type);
+    const definition = this.getAgent(input.subagent_type);
     if (!definition) {
       const availableTypes = this.getAgentTypes().join(', ');
       throw new Error(
@@ -136,8 +156,11 @@ export class AgentManager {
     return `${descriptions}`;
   }
 
-  async loadAgentsFromFiles(): Promise<void> {
+  async loadAgents(): Promise<void> {
     this.errors = [];
+
+    // Plugins
+    await this.loadAgentsFromPlugins();
 
     // GlobalClaude
     const globalClaudeDir = path.join(
@@ -163,6 +186,23 @@ export class AgentManager {
     // Project
     const projectDir = path.join(this.context.paths.projectConfigDir, 'agents');
     this.loadAgentsFromDirectory(projectDir, AgentSource.Project);
+  }
+
+  private async loadAgentsFromPlugins(): Promise<void> {
+    const pluginAgents = await this.context.apply({
+      hook: 'agent',
+      args: [],
+      memo: [],
+      type: PluginHookType.SeriesMerge,
+    });
+
+    for (const agent of pluginAgents) {
+      this.agents.set(agent.agentType, {
+        ...agent,
+        model: agent.model || 'inherit',
+        source: AgentSource.Plugin,
+      });
+    }
   }
 
   getErrors(): AgentLoadError[] {

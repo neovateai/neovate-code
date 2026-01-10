@@ -2,10 +2,13 @@ import degit from 'degit';
 import fs from 'fs';
 import os from 'os';
 import path from 'pathe';
+import type { Context } from './context';
 import type { Paths } from './paths';
+import { PluginHookType } from './plugin';
 import { safeFrontMatter } from './utils/safeFrontMatter';
 
 export enum SkillSource {
+  Plugin = 'plugin',
   GlobalClaude = 'global-claude',
   Global = 'global',
   ProjectClaude = 'project-claude',
@@ -46,16 +49,18 @@ const MAX_NAME_LENGTH = 64;
 const MAX_DESCRIPTION_LENGTH = 1024;
 
 export interface SkillManagerOpts {
-  paths: Paths;
+  context: Context;
 }
 
 export class SkillManager {
   private skillsMap: Map<string, SkillMetadata> = new Map();
   private errors: SkillError[] = [];
   private paths: Paths;
+  private context: Context;
 
   constructor(opts: SkillManagerOpts) {
-    this.paths = opts.paths;
+    this.context = opts.context;
+    this.paths = opts.context.paths;
   }
 
   getSkills(): SkillMetadata[] {
@@ -85,6 +90,33 @@ export class SkillManager {
   async loadSkills(): Promise<void> {
     this.skillsMap.clear();
     this.errors = [];
+
+    const pluginSkills = await this.context.apply({
+      hook: 'skill',
+      args: [],
+      memo: [],
+      type: PluginHookType.SeriesMerge,
+    });
+
+    if (Array.isArray(pluginSkills)) {
+      for (const skillPath of pluginSkills) {
+        if (typeof skillPath !== 'string') {
+          this.errors.push({
+            path: String(skillPath),
+            message: 'Invalid skill path type: expected string',
+          });
+          continue;
+        }
+        if (!fs.existsSync(skillPath)) {
+          this.errors.push({
+            path: skillPath,
+            message: 'Skill file not found',
+          });
+          continue;
+        }
+        this.loadSkillFile(skillPath, SkillSource.Plugin);
+      }
+    }
 
     const globalClaudeDir = path.join(
       path.dirname(this.paths.globalConfigDir),

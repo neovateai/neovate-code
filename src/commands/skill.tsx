@@ -145,6 +145,7 @@ const sourceLabels: Record<SkillSource, string> = {
   [SkillSource.Global]: 'global',
   [SkillSource.ProjectClaude]: 'project-claude',
   [SkillSource.Project]: 'project',
+  [SkillSource.Plugin]: 'plugin',
 };
 
 const sourceColors: Record<SkillSource, string> = {
@@ -152,6 +153,7 @@ const sourceColors: Record<SkillSource, string> = {
   [SkillSource.Global]: 'cyan',
   [SkillSource.ProjectClaude]: 'magenta',
   [SkillSource.Project]: 'green',
+  [SkillSource.Plugin]: 'blueBright',
 };
 
 const SkillListUI: React.FC<SkillListUIProps> = ({ skillManager }) => {
@@ -365,7 +367,7 @@ export async function runSkill(context: Context) {
     cwd: context.cwd,
   });
 
-  const skillManager = new SkillManager({ paths });
+  const skillManager = new SkillManager({ context });
 
   if (command === 'add') {
     const source = argv._[1] as string | undefined;

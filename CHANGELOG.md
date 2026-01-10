@@ -1,3 +1,45 @@
+## 0.22.10
+
+`2026-01-08`
+
+- feat: enhance session export markdown formatting by [@阿平](https://github.com/阿平) in [#637](https://github.com/umijs/takumi/pull/637)
+- fix: update gemini-3-flash model name in providers map by [@sorrycc](https://github.com/sorrycc)
+- Fix/select input dynamic columns by [@Din](https://github.com/Din) in [#636](https://github.com/umijs/takumi/pull/636)
+
+
+## 0.22.9
+
+`2026-01-07`
+
+- feat: prevent code execution in brainstorm command by [@阿平](https://github.com/阿平) in [#635](https://github.com/umijs/takumi/pull/635)
+
+
+## 0.22.8
+
+`2026-01-07`
+
+- feat: add skill plugin hook support by [@阿平](https://github.com/阿平) in [#633](https://github.com/umijs/takumi/pull/633)
+- fix: use dynamic column width for SelectInput text input by [@Din](https://github.com/Din) in [#590](https://github.com/umijs/takumi/pull/590)
+- feat: add plugin support for subagent registration by [@阿平](https://github.com/阿平) in [#631](https://github.com/umijs/takumi/pull/631)
+- feat: add isEnabled property to subagent definitions by [@阿平](https://github.com/阿平) in [#632](https://github.com/umijs/takumi/pull/632)
+- refactor: extract InvalidQuestionsError component by [@阿平](https://github.com/阿平) in [#630](https://github.com/umijs/takumi/pull/630)
+- feat: add neovate code guide subagent by [@sorrycc](https://github.com/sorrycc)
+- fix: always use vision model for images by [@阿平](https://github.com/阿平) in [#629](https://github.com/umijs/takumi/pull/629)
+- refactor: simplify agent progress overlay text and improve UX by [@阿平](https://github.com/阿平) in [#627](https://github.com/umijs/takumi/pull/627)
+- fix: update keyboard shortcut display to lowercase by [@阿平](https://github.com/阿平) in [#628](https://github.com/umijs/takumi/pull/628)
+- fix: improve model comparison logic in AgentToolUse by [@阿平](https://github.com/阿平) in [#626](https://github.com/umijs/takumi/pull/626)
+- feat: add comprehensive grep tool functionality by [@阿平](https://github.com/阿平) in [#624](https://github.com/umijs/takumi/pull/624)
+- feat: add quiet mode to run command by @chencheng (云谦) in [#623](https://github.com/umijs/takumi/pull/623)
+- refactor: remove todoRead tool and related UI components by [@阿平](https://github.com/阿平) in [#622](https://github.com/umijs/takumi/pull/622)
+- refactor: remove approval check from task tool by [@阿平](https://github.com/阿平) in [#620](https://github.com/umijs/takumi/pull/620)
+- feat: enhance tool argument formatting with tool-specific display by [@阿平](https://github.com/阿平) in [#621](https://github.com/umijs/takumi/pull/621)
+- feat: add model tracking to agent progress and execution by [@阿平](https://github.com/阿平) in [#617](https://github.com/umijs/takumi/pull/617)
+- feat: add agent subagent model configuration support by [@阿平](https://github.com/阿平) in [#615](https://github.com/umijs/takumi/pull/615)
+- feat: add general-purpose subagent with full tool access by @chencheng (云谦) in [#614](https://github.com/umijs/takumi/pull/614)
+- feat: add replace_all option and validation to edit tool by [@sorrycc](https://github.com/sorrycc)
+- fix: reduce default bash command timeout from 30 minutes to 2 minutes by [@sorrycc](https://github.com/sorrycc)
+
+
 ## 0.22.7
 
 `2026-01-04`

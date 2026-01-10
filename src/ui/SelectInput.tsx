@@ -1,8 +1,8 @@
 import { Box, Text, useInput } from 'ink';
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { symbols } from '../utils/symbols';
-import TextInput from './TextInput';
 import { UI_COLORS } from './constants';
+import TextInput from './TextInput';
 
 export type SelectOption = {
   type: 'text' | 'input';
@@ -176,6 +176,11 @@ export function SelectInput({
                   </Text>
                 )}
                 <TextInput
+                  columns={{
+                    useTerminalSize: true,
+                    // Prefix width: "> N. " = 5 chars, "> N. [ ] " = 9 chars for multi
+                    prefix: mode === 'multi' ? 9 : 5,
+                  }}
                   value={focusedInputValue || option.initialValue || ''}
                   placeholder={option.placeholder}
                   onChange={(value) => {

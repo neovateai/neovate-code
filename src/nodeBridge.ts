@@ -1693,6 +1693,70 @@ ${diff}
       };
     });
 
+    this.messageBus.registerHandler('session.export', async (data) => {
+      const { cwd, sessionId } = data;
+      const context = await this.getContext(cwd);
+
+      const { loadSessionMessages } = await import('./session');
+      const { renderSessionMarkdown } = await import(
+        './utils/renderSessionMarkdown'
+      );
+      const { join } = await import('pathe');
+      const { writeFileSync, existsSync, mkdirSync } = await import('node:fs');
+
+      if (!sessionId) {
+        return { success: false, error: 'No active session' };
+      }
+
+      const logPath = context.paths.getSessionLogPath(sessionId);
+
+      const messages = loadSessionMessages({
+        logPath,
+      });
+
+      if (!messages || messages.length === 0) {
+        return { success: false, error: 'No messages to export' };
+      }
+
+      const { statSync } = await import('node:fs');
+      const stats = statSync(logPath);
+
+      let summary = '';
+      try {
+        const sessionConfigManager = new SessionConfigManager({ logPath });
+        summary = sessionConfigManager.config.summary || '';
+      } catch {
+        // ignore
+      }
+
+      const modelStr =
+        (
+          await this.messageBus.messageHandlers.get('session.getModel')?.({
+            cwd,
+            sessionId,
+          })
+        )?.data.model || null;
+
+      const content = renderSessionMarkdown({
+        sessionId,
+        title: summary,
+        projectPath: cwd,
+        model: modelStr,
+        messages,
+        createdAt: stats.birthtime,
+        updatedAt: stats.mtime,
+      });
+      const outDir = join(cwd, '.log-outputs');
+      if (!existsSync(outDir)) {
+        mkdirSync(outDir, { recursive: true });
+      }
+      const filePath = join(outDir, `session-${sessionId.slice(0, 8)}.md`);
+
+      writeFileSync(filePath, content, 'utf-8');
+
+      return { success: true, data: { filePath } };
+    });
+
     this.messageBus.registerHandler('session.getModel', async (data) => {
       const { cwd, sessionId, includeModelInfo = false } = data;
       const context = await this.getContext(cwd);
@@ -1739,6 +1803,23 @@ ${diff}
     this.messageBus.registerHandler('session.send', async (data) => {
       const { message, cwd, sessionId, model, attachments, parentUuid } = data;
       const context = await this.getContext(cwd);
+
+      context
+        .apply({
+          hook: 'telemetry',
+          args: [
+            {
+              name: 'send',
+              payload: {
+                message,
+                sessionId,
+              },
+            },
+          ],
+          type: PluginHookType.Parallel,
+        })
+        .catch(() => {});
+
       const project = new Project({
         sessionId,
         context,

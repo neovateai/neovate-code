@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'fs';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import path from 'pathe';
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
@@ -131,6 +131,32 @@ function ToolPreview({ toolUse, cwd }: ToolPreviewProps) {
   );
 }
 
+function InvalidQuestionsError({ onDismiss }: { onDismiss: () => void }) {
+  useInput((_input, key) => {
+    // Only allow Escape or Enter to dismiss
+    if (key.escape || key.return) {
+      onDismiss();
+    }
+  });
+
+  return (
+    <Box
+      flexDirection="column"
+      padding={1}
+      borderStyle="round"
+      borderColor="red"
+    >
+      <Text color="red" bold>
+        Invalid Questions
+      </Text>
+      <Text>No questions provided to askUserQuestion tool</Text>
+      <Box marginTop={1}>
+        <Text dimColor>Press enter or esc to cancel</Text>
+      </Box>
+    </Box>
+  );
+}
+
 export function ApprovalModal() {
   const { approvalModal } = useAppStore();
   if (!approvalModal) {
@@ -145,17 +171,13 @@ export function ApprovalModal() {
     // Validate questions
     if (!Array.isArray(questions) || questions.length === 0) {
       return (
-        <Box
-          flexDirection="column"
-          padding={1}
-          borderStyle="round"
-          borderColor="red"
-        >
-          <Text color="red" bold>
-            Invalid Questions
-          </Text>
-          <Text>No questions provided to askUserQuestion tool</Text>
-        </Box>
+        <InvalidQuestionsError
+          onDismiss={() => {
+            approvalModal.resolve('deny', {
+              denyReason: 'Invalid questions provided to askUserQuestion tool',
+            });
+          }}
+        />
       );
     }
 

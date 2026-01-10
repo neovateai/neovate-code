@@ -493,12 +493,6 @@ export const useAppStore = create<AppStore>()(
           });
         }
 
-        bridge.request('utils.telemetry', {
-          cwd,
-          name: 'send',
-          payload: { message, sessionId },
-        });
-
         // Check if processing, queue the message
         if (isExecuting(status)) {
           get().addToQueue(message);

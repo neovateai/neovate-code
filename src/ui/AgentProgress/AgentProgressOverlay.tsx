@@ -37,7 +37,19 @@ function AgentToolUse({
   const agentType = toolUse.input?.subagent_type || toolUse.name;
   const description = toolUse.input?.description;
 
-  const showModel = model && mainModel?.model?.id !== model;
+  const showModel = useMemo(() => {
+    if (!model) return false;
+    if (!mainModel?.model) return true;
+
+    // Check for exact match with ID
+    if (mainModel.model.id === model) return false;
+
+    // Check for match with Full ID (provider/model)
+    const fullId = `${mainModel.provider.id}/${mainModel.model.id}`;
+    if (fullId === model) return false;
+
+    return true;
+  }, [model, mainModel]);
 
   const descText = useMemo(() => {
     if (!description && !showModel) return null;
@@ -172,8 +184,8 @@ export function AgentInProgress({
       <Box paddingLeft={1} marginTop={0}>
         <Text color="gray" dimColor>
           {' '}
-          (Press ctrl+o to expand) · {stats.toolCalls} tool uses ·{' '}
-          {formatTokens(stats.tokens)} tokens
+          {!transcriptMode && '(Press ctrl+o to expand) · '}
+          {stats.toolCalls} tool uses · {formatTokens(stats.tokens)} tokens
         </Text>
       </Box>
     </Box>

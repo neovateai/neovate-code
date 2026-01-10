@@ -43,4 +43,5 @@ export enum AGENT_TYPE {
   EXPLORE = 'Explore',
   PLAN = 'Plan',
   GENERAL_PURPOSE = 'GeneralPurpose',
+  NEOVATE_CODE_GUIDE = 'neovate-code-guide',
 }

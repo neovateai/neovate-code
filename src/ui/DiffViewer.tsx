@@ -260,7 +260,7 @@ function CodeHighlightRenderer({
         <Box paddingX={1}>
           <Text color="gray">
             ... {hiddenCount} more line{hiddenCount === 1 ? '' : 's'} hidden
-            (Press Ctrl+O to expand) ...
+            (Press ctrl+o to expand) ...
           </Text>
         </Box>
       )}
@@ -424,7 +424,7 @@ function RenderDiffContent(
             <Text color="gray">
               ... {displayableLines.length - visibleLines.length} more line
               {displayableLines.length - visibleLines.length === 1 ? '' : 's'}{' '}
-              hidden (Press Ctrl+O to expand) ...
+              hidden (Press ctrl+o to expand) ...
             </Text>
           </Box>
         )}

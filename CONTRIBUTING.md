@@ -98,3 +98,12 @@ Since npm has [updated it's security policy](https://github.blog/changelog/2025-
 ```bash
 $ npm login && pnpm release && npm publish
 ```
+
+## Join the Team
+
+If you frequently contribute to Neovate Code (bug fixes, features, documentation, etc.), you may be invited to:
+
+- Join the **Developer Team** as a core contributor
+- Join our **DingTalk group** for real-time communication and collaboration
+
+We appreciate all contributions and look forward to working with passionate developers!

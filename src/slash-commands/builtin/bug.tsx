@@ -127,7 +127,8 @@ function Bug({ onDone }: BugProps) {
         onExit={() => {
           onDone('Bug report cancelled');
         }}
-        columns={process.stdout.columns || 80}
+        // Account for box border (1) + paddingX (1) on each side
+        columns={{ useTerminalSize: true, prefix: 2, suffix: 2 }}
         cursorOffset={cursorOffset}
         onChangeCursorOffset={setCursorOffset}
       />

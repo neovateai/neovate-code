@@ -14,6 +14,7 @@ import {
   PluginHookType,
   PluginManager,
 } from './plugin';
+import { antigravitySystemPromptPlugin } from './plugins/antigravitySystemPrompt';
 import { SkillManager } from './skill';
 
 type ContextOpts = {
@@ -27,7 +28,7 @@ type ContextOpts = {
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
-  skillManager: SkillManager;
+  skillManager?: SkillManager;
   messageBus?: MessageBus;
   agentManager?: AgentManager;
   plugins: (string | Plugin)[];
@@ -54,7 +55,7 @@ export class Context {
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
-  skillManager: SkillManager;
+  skillManager?: SkillManager;
   messageBus?: MessageBus;
   agentManager?: AgentManager;
   plugins: (string | Plugin)[];
@@ -104,7 +105,7 @@ export class Context {
       opts.argvConfig || {},
     );
     const initialConfig = configManager.config;
-    const buildInPlugins: Plugin[] = [];
+    const buildInPlugins: Plugin[] = [antigravitySystemPromptPlugin];
     const globalPlugins = scanPlugins(
       path.join(paths.globalConfigDir, 'plugins'),
     );
@@ -143,10 +144,6 @@ export class Context {
     const mcpManager = MCPManager.create(mcpServers);
     const backgroundTaskManager = new BackgroundTaskManager();
 
-    // Create Context first without AgentManager
-    const skillManager = new SkillManager({ paths });
-    await skillManager.loadSkills();
-
     const context = new Context({
       cwd,
       productName,
@@ -158,15 +155,19 @@ export class Context {
       paths,
       mcpManager,
       backgroundTaskManager,
-      skillManager,
       messageBus: opts.messageBus,
       plugins: pluginsConfigs,
     });
 
+    // Create and attach SkillManager
+    const skillManager = new SkillManager({ context });
+    await skillManager.loadSkills();
+    context.skillManager = skillManager;
+
     // Create and attach AgentManager
     const agentManager = new AgentManager({ context });
     // Load agents from files
-    await agentManager.loadAgentsFromFiles();
+    await agentManager.loadAgents();
     context.agentManager = agentManager;
 
     return context;

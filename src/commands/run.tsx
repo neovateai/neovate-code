@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Context } from '../context';
 import { DirectTransport, MessageBus } from '../messageBus';
 import { NodeBridge } from '../nodeBridge';
+import { TerminalSizeProvider } from '../ui/TerminalSizeContext';
 import TextInput from '../ui/TextInput';
 import { sanitizeAIResponse } from '../utils/sanitizeAIResponse';
 
@@ -556,6 +557,8 @@ const RunUI: React.FC<RunUIProps> = ({
               onChange={setPromptInput}
               onSubmit={handlePromptSubmit}
               placeholder="Describe what you want to do..."
+              // Account for "> " prefix (2) + outer padding (1)
+              columns={{ useTerminalSize: true, prefix: 3 }}
             />
           </Box>
           <Box marginTop={1}>
@@ -607,6 +610,8 @@ const RunUI: React.FC<RunUIProps> = ({
                   )
                 }
                 onSubmit={handleEditSubmit}
+                // Account for "> " prefix (2) + outer padding (1)
+                columns={{ useTerminalSize: true, prefix: 3 }}
               />
             </Box>
             <Box marginTop={1}>
@@ -636,6 +641,8 @@ const RunUI: React.FC<RunUIProps> = ({
                   )
                 }
                 onSubmit={handlePromptEditSubmit}
+                // Account for "> " prefix (2) + outer padding (1)
+                columns={{ useTerminalSize: true, prefix: 3 }}
               />
             </Box>
             <Box marginTop={1}>
@@ -863,12 +870,14 @@ export async function runRun(context: Context) {
 
     // Render the UI
     render(
-      <RunUI
-        messageBus={uiMessageBus}
-        cwd={context.cwd}
-        options={options}
-        initialPrompt={initialPrompt?.trim()}
-      />,
+      <TerminalSizeProvider>
+        <RunUI
+          messageBus={uiMessageBus}
+          cwd={context.cwd}
+          options={options}
+          initialPrompt={initialPrompt?.trim()}
+        />
+      </TerminalSizeProvider>,
       {
         patchConsole: true,
         exitOnCtrlC: true,
