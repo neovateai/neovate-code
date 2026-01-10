@@ -2,7 +2,7 @@ import fs from 'fs';
 import { countTokens } from 'gpt-tokenizer';
 import path from 'pathe';
 import { z } from 'zod';
-import { IMAGE_EXTENSIONS, TOOL_NAMES } from '../constants';
+import { BINARY_EXTENSIONS, IMAGE_EXTENSIONS, TOOL_NAMES } from '../constants';
 import { createTool, type ToolResult } from '../tool';
 import {
   MaxFileReadLengthExceededError,
@@ -155,6 +155,30 @@ Usage:
         if (IMAGE_EXTENSIONS.has(ext)) {
           const result = await processImage(fullFilePath, opts.cwd);
           return result;
+        }
+
+        // Handle binary/restricted files
+        if (BINARY_EXTENSIONS.has(ext)) {
+          throw new Error(
+            `Cannot read file "${path.basename(file_path)}": Extension "${ext}" is restricted as a binary/system file.`,
+          );
+        }
+
+        // Handle empty files
+        const stats = fs.statSync(fullFilePath);
+        if (stats.size === 0) {
+          return {
+            returnDisplay: 'File is empty.',
+            llmContent: safeStringify({
+              type: 'text',
+              filePath: file_path,
+              content: '',
+              totalLines: 0,
+              offset: 1,
+              limit: 0,
+              actualLinesRead: 0,
+            }),
+          };
         }
 
         // Handle text files

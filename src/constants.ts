@@ -11,6 +11,42 @@ export const IMAGE_EXTENSIONS = new Set([
   '.gif',
   '.webp',
 ]);
+
+export const BINARY_EXTENSIONS = new Set([
+  // Executables
+  '.exe',
+  '.dll',
+  '.so',
+  '.dylib',
+  '.bin',
+  '.class',
+  '.o',
+  '.obj',
+  // Archives
+  '.zip',
+  '.tar',
+  '.gz',
+  '.rar',
+  '.7z',
+  '.jar',
+  '.war',
+  // Database
+  '.db',
+  '.sqlite',
+  '.sqlite3',
+  '.parquet',
+  '.h5',
+  // Media (Non-image)
+  '.mp3',
+  '.mp4',
+  '.wav',
+  '.avi',
+  '.mov',
+  '.mkv',
+  // System
+  '.ds_store',
+  'thumbs.db',
+]);
 export const CANCELED_MESSAGE_TEXT = '[Request interrupted by user]';
 
 export enum TOOL_NAMES {
