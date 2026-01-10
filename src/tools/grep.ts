@@ -104,9 +104,11 @@ export function createGrepTool(opts: { cwd: string }) {
     description: `A powerful search tool built on ripgrep.
 
 Usage:
+- ALWAYS use ${TOOL_NAMES.GREP} for search tasks. NEVER invoke \`grep\` or \`rg\` as a ${TOOL_NAMES.BASH} command. The ${TOOL_NAMES.GREP} tool has been optimized for correct permissions and access.
 - Supports full regex syntax (e.g., "log.*Error", "function\\s+\\w+")
 - Filter files with include parameter (e.g., "*.js", "**/*.tsx") or type parameter (e.g., "js", "py", "rust")
 - Output modes: "content" shows matching lines, "files_with_matches" shows only file paths (default), "count" shows match counts
+- Use ${TOOL_NAMES.TASK} tool for open-ended searches requiring multiple rounds
 - Pattern syntax: Uses ripgrep (not grep) - literal braces need escaping
 - Multiline matching: For cross-line patterns, use multiline: true`,
     parameters: z.object({
