@@ -62,6 +62,12 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
           </Text>
         </Text>
       </Box>
+      <Box marginBottom={1}>
+        <Text color="gray">
+          Only models that are available after logging in are provided. If you
+          cannot find the model, please execute `/login` first
+        </Text>
+      </Box>
       <Box>
         <PaginatedGroupSelectInput
           groups={groupedModels}
