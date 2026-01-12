@@ -92,6 +92,13 @@ export type Config = {
    * Example: { explore: { model: "anthropic/claude-haiku-4" } }
    */
   agent?: Record<string, AgentConfig>;
+  /**
+   * Notification sound configuration.
+   * - true: play default sound (Funk/warning)
+   * - false: disabled
+   * - string: custom sound name (e.g., "Glass", "Ping")
+   */
+  notificationSound?: boolean | string;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -131,6 +138,7 @@ const VALID_CONFIG_KEYS = [
   'extensions',
   'tools',
   'agent',
+  'notificationSound',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = [
@@ -142,7 +150,13 @@ const OBJECT_CONFIG_KEYS = [
   'desktop',
   'agent',
 ];
-const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact', 'autoUpdate'];
+const BOOLEAN_CONFIG_KEYS = [
+  'quiet',
+  'todo',
+  'autoCompact',
+  'autoUpdate',
+  'notificationSound',
+];
 export const GLOBAL_ONLY_KEYS = ['desktop'];
 
 function assertGlobalAllowed(global: boolean, key: string) {

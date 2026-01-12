@@ -14,6 +14,7 @@ import {
   PluginHookType,
   PluginManager,
 } from './plugin';
+import { notificationSoundPlugin } from './plugins/notificationSound';
 import { SkillManager } from './skill';
 
 type ContextOpts = {
@@ -104,9 +105,7 @@ export class Context {
       opts.argvConfig || {},
     );
     const initialConfig = configManager.config;
-    const buildInPlugins: Plugin[] = [
-      /*hookLoggerPlugin*/
-    ];
+    const buildInPlugins: Plugin[] = [notificationSoundPlugin];
     const globalPlugins = scanPlugins(
       path.join(paths.globalConfigDir, 'plugins'),
     );
