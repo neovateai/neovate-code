@@ -148,7 +148,7 @@ export class SessionConfigManager {
     }
   }
 
-  load(logPath: string): SessionConfig {
+  static loadConfig(logPath: string): SessionConfig {
     if (!fs.existsSync(logPath)) {
       return DEFAULT_SESSION_CONFIG;
     }
@@ -167,6 +167,10 @@ export class SessionConfigManager {
     } catch {
       return DEFAULT_SESSION_CONFIG;
     }
+  }
+
+  load(logPath: string): SessionConfig {
+    return SessionConfigManager.loadConfig(logPath);
   }
   write() {
     // TODO: add write lock

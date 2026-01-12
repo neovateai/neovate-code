@@ -17,7 +17,7 @@ import { OutputStyleManager } from './outputStyle';
 import { PluginHookType } from './plugin';
 import { Project } from './project';
 import { query } from './query';
-import { SessionConfigManager } from './session';
+import { type SessionConfig, SessionConfigManager } from './session';
 import { SlashCommandManager } from './slashCommand';
 import type { ApprovalCategory, ToolUse } from './tool';
 import { getFiles } from './utils/files';
@@ -47,7 +47,6 @@ class NodeHandlerRegistry {
   private contextCreateOpts: any;
   private contexts = new Map<string, Context>();
   private abortControllers = new Map<string, AbortController>();
-  private sessionConfigManagers = new Map<string, SessionConfigManager>();
 
   constructor(messageBus: MessageBus, contextCreateOpts: any) {
     this.messageBus = messageBus;
@@ -70,20 +69,12 @@ class NodeHandlerRegistry {
     return context;
   }
 
-  private async getSessionConfigManager(
+  private loadSessionConfig(
     context: Context,
     sessionId: string,
-  ): Promise<SessionConfigManager> {
-    const key = `${context.cwd}:${sessionId}`;
-    if (!this.sessionConfigManagers.has(key)) {
-      const manager = new SessionConfigManager({
-        logPath: context.paths.getSessionLogPath(sessionId),
-        cwd: context.cwd,
-        sessionId,
-      });
-      this.sessionConfigManagers.set(key, manager);
-    }
-    return this.sessionConfigManagers.get(key)!;
+  ): SessionConfig {
+    const logPath = context.paths.getSessionLogPath(sessionId);
+    return SessionConfigManager.loadConfig(logPath);
   }
 
   private async clearContext(cwd?: string) {
@@ -1648,13 +1639,10 @@ ${diff}
       let pastedImageMap: Record<string, string> = {};
       if (data.sessionId) {
         try {
-          const sessionConfigManager = await this.getSessionConfigManager(
-            context,
-            data.sessionId,
-          );
-          sessionSummary = sessionConfigManager.config.summary;
-          pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
-          pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
+          const config = this.loadSessionConfig(context, data.sessionId);
+          sessionSummary = config.summary;
+          pastedTextMap = config.pastedTextMap || {};
+          pastedImageMap = config.pastedImageMap || {};
         } catch {
           // Silently ignore if session config not available
         }
@@ -1723,7 +1711,11 @@ ${diff}
 
       let summary = '';
       try {
-        const sessionConfigManager = new SessionConfigManager({ logPath });
+        const sessionConfigManager = new SessionConfigManager({
+          logPath,
+          cwd,
+          sessionId,
+        });
         summary = sessionConfigManager.config.summary || '';
       } catch {
         // ignore
@@ -1760,15 +1752,12 @@ ${diff}
     this.messageBus.registerHandler('session.getModel', async (data) => {
       const { cwd, sessionId, includeModelInfo = false } = data;
       const context = await this.getContext(cwd);
-      const sessionConfigManager = await this.getSessionConfigManager(
-        context,
-        sessionId,
-      );
+      const config = this.loadSessionConfig(context, sessionId);
       const modelStr =
         // 1. model from argv config
         context.argvConfig?.model ||
         // 2. model from session config
-        sessionConfigManager.config.model ||
+        config.model ||
         // 3. model from context config
         context.config.model;
       if (includeModelInfo) {
@@ -2050,10 +2039,11 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, approvalMode } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = await this.getSessionConfigManager(
-          context,
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+          cwd: context.cwd,
           sessionId,
-        );
+        });
         sessionConfigManager.config.approvalMode = approvalMode;
         sessionConfigManager.write();
         return {
@@ -2067,10 +2057,11 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, approvalTool } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = await this.getSessionConfigManager(
-          context,
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+          cwd: context.cwd,
           sessionId,
-        );
+        });
         if (!sessionConfigManager.config.approvalTools.includes(approvalTool)) {
           sessionConfigManager.config.approvalTools.push(approvalTool);
           sessionConfigManager.write();
@@ -2086,10 +2077,11 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, summary } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = await this.getSessionConfigManager(
-          context,
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+          cwd: context.cwd,
           sessionId,
-        );
+        });
         sessionConfigManager.config.summary = summary;
         sessionConfigManager.write();
         return {
@@ -2103,10 +2095,11 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, pastedTextMap } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = await this.getSessionConfigManager(
-          context,
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+          cwd: context.cwd,
           sessionId,
-        );
+        });
         sessionConfigManager.config.pastedTextMap = pastedTextMap;
         sessionConfigManager.write();
         return {
@@ -2120,10 +2113,11 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, pastedImageMap } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = await this.getSessionConfigManager(
-          context,
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+          cwd: context.cwd,
           sessionId,
-        );
+        });
         sessionConfigManager.config.pastedImageMap = pastedImageMap;
         sessionConfigManager.write();
         return {
@@ -2137,15 +2131,11 @@ ${diff}
       async (data) => {
         const { cwd, sessionId } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = await this.getSessionConfigManager(
-          context,
-          sessionId,
-        );
+        const config = this.loadSessionConfig(context, sessionId);
         return {
           success: true,
           data: {
-            directories:
-              sessionConfigManager.config.additionalDirectories || [],
+            directories: config.additionalDirectories || [],
           },
         };
       },
@@ -2156,10 +2146,11 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, directory } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = await this.getSessionConfigManager(
-          context,
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+          cwd: context.cwd,
           sessionId,
-        );
+        });
         const directories =
           sessionConfigManager.config.additionalDirectories || [];
         if (!directories.includes(directory)) {
@@ -2178,10 +2169,11 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, directory } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = await this.getSessionConfigManager(
-          context,
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+          cwd: context.cwd,
           sessionId,
-        );
+        });
         const directories =
           sessionConfigManager.config.additionalDirectories || [];
         sessionConfigManager.config.additionalDirectories = directories.filter(
@@ -2197,11 +2189,15 @@ ${diff}
     this.messageBus.registerHandler('session.config.set', async (data) => {
       const { cwd, sessionId, key, value } = data;
       const context = await this.getContext(cwd);
-      const sessionConfigManager = await this.getSessionConfigManager(
-        context,
+      const sessionConfigManager = new SessionConfigManager({
+        logPath: context.paths.getSessionLogPath(sessionId),
+        cwd: context.cwd,
         sessionId,
-      );
-      (sessionConfigManager.config as any)[key] = value;
+      });
+      sessionConfigManager.config = {
+        ...sessionConfigManager.config,
+        [key]: value,
+      } as SessionConfig & Record<string, unknown>;
       sessionConfigManager.write();
       return {
         success: true,
@@ -2211,13 +2207,10 @@ ${diff}
     this.messageBus.registerHandler('session.config.get', async (data) => {
       const { cwd, sessionId, key } = data;
       const context = await this.getContext(cwd);
-      const sessionConfigManager = await this.getSessionConfigManager(
-        context,
-        sessionId,
-      );
+      const config = this.loadSessionConfig(context, sessionId);
       const value = key
-        ? (sessionConfigManager.config as any)[key]
-        : sessionConfigManager.config;
+        ? (config as SessionConfig & Record<string, unknown>)[key]
+        : config;
       return {
         success: true,
         data: {
@@ -2229,11 +2222,14 @@ ${diff}
     this.messageBus.registerHandler('session.config.remove', async (data) => {
       const { cwd, sessionId, key } = data;
       const context = await this.getContext(cwd);
-      const sessionConfigManager = await this.getSessionConfigManager(
-        context,
+      const sessionConfigManager = new SessionConfigManager({
+        logPath: context.paths.getSessionLogPath(sessionId),
+        cwd: context.cwd,
         sessionId,
-      );
-      delete (sessionConfigManager.config as any)[key];
+      });
+      const { [key]: _, ...restConfig } =
+        sessionConfigManager.config as SessionConfig & Record<string, unknown>;
+      sessionConfigManager.config = restConfig as SessionConfig;
       sessionConfigManager.write();
       return {
         success: true,
@@ -2243,10 +2239,11 @@ ${diff}
     this.messageBus.registerHandler('session.getSnapshot', async (data) => {
       const { cwd, sessionId, messageUuid } = data;
       const context = await this.getContext(cwd);
-      const sessionConfigManager = await this.getSessionConfigManager(
-        context,
+      const sessionConfigManager = new SessionConfigManager({
+        logPath: context.paths.getSessionLogPath(sessionId),
+        cwd: context.cwd,
         sessionId,
-      );
+      });
       const snapshotManager = sessionConfigManager.getSnapshotManager();
       const snapshot = snapshotManager.getSnapshot(messageUuid);
       return {
@@ -2262,10 +2259,11 @@ ${diff}
       async (data) => {
         const { cwd, sessionId } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = await this.getSessionConfigManager(
-          context,
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+          cwd: context.cwd,
           sessionId,
-        );
+        });
         const snapshotManager = sessionConfigManager.getSnapshotManager();
         const snapshots = snapshotManager.getSnapshots();
 
@@ -2289,10 +2287,11 @@ ${diff}
     this.messageBus.registerHandler('session.restoreSnapshot', async (data) => {
       const { cwd, sessionId, messageUuid } = data;
       const context = await this.getContext(cwd);
-      const sessionConfigManager = await this.getSessionConfigManager(
-        context,
+      const sessionConfigManager = new SessionConfigManager({
+        logPath: context.paths.getSessionLogPath(sessionId),
+        cwd: context.cwd,
         sessionId,
-      );
+      });
       const snapshotManager = sessionConfigManager.getSnapshotManager();
       if (!snapshotManager.hasSnapshot(messageUuid)) {
         return {
@@ -2311,10 +2310,11 @@ ${diff}
       async (data) => {
         const { cwd, sessionId, messageUuid, filePaths } = data;
         const context = await this.getContext(cwd);
-        const sessionConfigManager = await this.getSessionConfigManager(
-          context,
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: context.paths.getSessionLogPath(sessionId),
+          cwd: context.cwd,
           sessionId,
-        );
+        });
         const snapshotManager = sessionConfigManager.getSnapshotManager();
         if (!snapshotManager.hasSnapshot(messageUuid)) {
           return {
@@ -2338,10 +2338,11 @@ ${diff}
     this.messageBus.registerHandler('session.deleteSnapshot', async (data) => {
       const { cwd, sessionId, messageUuid } = data;
       const context = await this.getContext(cwd);
-      const sessionConfigManager = await this.getSessionConfigManager(
-        context,
+      const sessionConfigManager = new SessionConfigManager({
+        logPath: context.paths.getSessionLogPath(sessionId),
+        cwd: context.cwd,
         sessionId,
-      );
+      });
       const snapshotManager = sessionConfigManager.getSnapshotManager();
       const deleted = await snapshotManager.deleteSnapshot(messageUuid);
 
