@@ -34,11 +34,15 @@ Default sound: **Funk** (warning preset) - distinct enough to be noticed without
 
 Available macOS system sounds: Basso, Blow, Bottle, Frog, Funk, Glass, Hero, Morse, Ping, Pop, Purr, Sosumi, Submarine, Tink.
 
+### Config Naming
+
+The config key is named `notification` (not `notificationSound`) to allow future extension for other notification types (e.g., URL webhooks).
+
 ## Approach
 
 1. Create reusable sound utilities in `src/utils/sound.ts`
 2. Create a built-in plugin `notificationSoundPlugin` with a `stop` hook
-3. Add `notificationSound` config option supporting boolean or custom sound name
+3. Add `notification` config option supporting boolean or custom sound name
 4. Register the plugin in `context.ts` as a built-in plugin
 
 ## Architecture
@@ -51,7 +55,7 @@ src/
 │   └── sound.ts              # Sound utilities (playSound, beep, presets)
 ├── plugins/
 │   └── notificationSound.ts  # Built-in plugin with stop hook
-├── config.ts                 # Added notificationSound config option
+├── config.ts                 # Added notification config option
 └── context.ts                # Registered plugin in buildInPlugins
 ```
 
@@ -61,21 +65,22 @@ src/
 type Config = {
   // ...existing fields
   /**
-   * Notification sound configuration.
+   * Notification configuration.
    * - true: play default sound (Funk/warning)
    * - false: disabled
    * - string: custom sound name (e.g., "Glass", "Ping")
+   * - object: extended notification config (reserved for future use, e.g., url)
    */
-  notificationSound?: boolean | string;
+  notification?: boolean | string;
 };
 ```
 
 ### Usage Examples
 
 ```json
-{ "notificationSound": true }        // Enable with default sound (Funk)
-{ "notificationSound": "Glass" }     // Custom sound
-{ "notificationSound": false }       // Disabled (default behavior)
+{ "notification": true }        // Enable with default sound (Funk)
+{ "notification": "Glass" }     // Custom sound
+{ "notification": false }       // Disabled (default behavior)
 ```
 
 ### Sound Utilities API
@@ -108,8 +113,8 @@ export const notificationSoundPlugin: Plugin = {
   name: 'notificationSound',
 
   async stop() {
-    const config = this.config.notificationSound;
-    if (config === false || config === undefined) {
+    const config = this.config.notification;
+    if (config === false) {
       return;
     }
 

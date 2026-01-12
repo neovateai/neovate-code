@@ -93,12 +93,13 @@ export type Config = {
    */
   agent?: Record<string, AgentConfig>;
   /**
-   * Notification sound configuration.
+   * Notification configuration.
    * - true: play default sound (Funk/warning)
    * - false: disabled
    * - string: custom sound name (e.g., "Glass", "Ping")
+   * - object: extended notification config (reserved for future use, e.g., url)
    */
-  notificationSound?: boolean | string;
+  notification?: boolean | string;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -138,7 +139,7 @@ const VALID_CONFIG_KEYS = [
   'extensions',
   'tools',
   'agent',
-  'notificationSound',
+  'notification',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins'];
 const OBJECT_CONFIG_KEYS = [
@@ -155,7 +156,7 @@ const BOOLEAN_CONFIG_KEYS = [
   'todo',
   'autoCompact',
   'autoUpdate',
-  'notificationSound',
+  'notification',
 ];
 export const GLOBAL_ONLY_KEYS = ['desktop'];
 

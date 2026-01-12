@@ -5,7 +5,7 @@ export const notificationSoundPlugin: Plugin = {
   name: 'notificationSound',
 
   async stop() {
-    const config = this.config.notificationSound;
+    const config = this.config.notification;
     if (config === false) {
       return;
     }
