@@ -11,17 +11,17 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: blacksmith-4vcpu-ubuntu-2404
             node-version: 18
-          - os: ubuntu-latest
+          - os: blacksmith-4vcpu-ubuntu-2404
             node-version: 20
-          - os: ubuntu-latest
+          - os: blacksmith-4vcpu-ubuntu-2404
             node-version: 22
           - os: windows-latest
             node-version: 20
     runs-on: ${{ matrix.os }}
     env:
-      IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
+      MODELWATCH_API_KEY: ${{ secrets.MODELWATCH_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4
