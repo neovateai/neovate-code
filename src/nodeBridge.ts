@@ -2466,6 +2466,117 @@ ${diff}
       };
     });
 
+    this.messageBus.registerHandler('utils.searchPaths', async (data) => {
+      const { cwd, query, maxResults = 100 } = data;
+      const context = await this.getContext(cwd);
+
+      if (!query) {
+        const { listRootDirectory } = await import('./utils/list');
+        const rootPaths = listRootDirectory(context.cwd);
+        return {
+          success: true,
+          data: {
+            paths: rootPaths,
+            truncated: false,
+          },
+        };
+      }
+
+      const { spawn } = await import('child_process');
+      const { ripgrepPath } = await import('./utils/ripgrep');
+      const { relative } = await import('pathe');
+      const { parseProductIgnorePatterns, matchesAnyPattern } = await import(
+        './utils/ignore'
+      );
+
+      const productPatterns = parseProductIgnorePatterns(context.cwd, [
+        'neovate',
+        'takumi',
+        'kwaipilot',
+      ]);
+
+      const { sep, normalize } = await import('pathe');
+      const rgPath = ripgrepPath();
+      let globPatterns: string[];
+      if (query.includes(sep) || query.includes('/')) {
+        const normalizedQuery = normalize(query).replace(/\\/g, '/');
+        globPatterns = [`**/${normalizedQuery}**`];
+      } else {
+        globPatterns = [`**/*${query}*`, `**/*${query}*/**`];
+      }
+      const args = [
+        '--files',
+        '--hidden',
+        '--glob',
+        '!.git',
+        '--glob',
+        '!node_modules',
+        ...globPatterns.flatMap((p) => ['--iglob', p]),
+        context.cwd,
+      ];
+
+      return new Promise((resolve) => {
+        const rg = spawn(rgPath, args, {
+          cwd: context.cwd,
+          stdio: ['ignore', 'pipe', 'pipe'],
+        });
+
+        const matches: string[] = [];
+        const lowerQuery = query.toLowerCase();
+        let buffer = '';
+        let killed = false;
+
+        rg.stdout.on('data', (chunk: Buffer) => {
+          if (killed) return;
+          buffer += chunk.toString();
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (!line || killed) continue;
+
+            if (matches.length >= maxResults) {
+              killed = true;
+              rg.kill();
+              return;
+            }
+
+            const relativePath = relative(context.cwd, line);
+
+            if (matchesAnyPattern(relativePath, productPatterns)) continue;
+
+            matches.push(relativePath);
+          }
+        });
+
+        rg.on('close', () => {
+          const sorted = matches.sort((a, b) => {
+            const aLower = a.toLowerCase();
+            const bLower = b.toLowerCase();
+            const aIndex = aLower.indexOf(lowerQuery);
+            const bIndex = bLower.indexOf(lowerQuery);
+            if (aIndex !== bIndex) return aIndex - bIndex;
+            return a.length - b.length;
+          });
+
+          resolve({
+            success: true,
+            data: {
+              paths: sorted.slice(0, maxResults),
+              truncated: matches.length >= maxResults,
+            },
+          });
+        });
+
+        rg.on('error', () => {
+          resolve({
+            success: true,
+            data: { paths: [], truncated: false },
+          });
+        });
+      });
+    });
+
     this.messageBus.registerHandler('utils.telemetry', async (data) => {
       const { cwd, name, payload } = data;
       const context = await this.getContext(cwd);

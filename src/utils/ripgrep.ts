@@ -24,7 +24,7 @@ const rootDir =
     ? path.resolve(__dirname, '../../')
     : path.resolve(__dirname, '../');
 
-function ripgrepPath() {
+export function ripgrepPath() {
   const { cmd } = findActualExecutable('rg', []);
   if (cmd !== 'rg') {
     return cmd;

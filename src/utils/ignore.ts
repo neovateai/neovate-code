@@ -241,3 +241,35 @@ export function isIgnored(
 
   return true; // Ignored by pattern and no negation applies
 }
+
+export function parseProductIgnorePatterns(
+  rootPath: string,
+  productNames: string[],
+): string[] {
+  const patterns: string[] = [];
+
+  for (const productName of productNames) {
+    const ignorePath = join(rootPath, `.${productName.toLowerCase()}ignore`);
+    try {
+      const content = fs.readFileSync(ignorePath, 'utf8');
+      const { patterns: parsed } = parseIgnoreContent(content);
+      patterns.push(...parsed);
+    } catch (_e) {
+      // File doesn't exist
+    }
+  }
+
+  return patterns;
+}
+
+export function matchesAnyPattern(
+  filePath: string,
+  patterns: string[],
+): boolean {
+  for (const pattern of patterns) {
+    if (matchesPattern(filePath, pattern)) {
+      return true;
+    }
+  }
+  return false;
+}

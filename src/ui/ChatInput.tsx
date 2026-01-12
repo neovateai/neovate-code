@@ -293,6 +293,11 @@ export function ChatInput() {
           }}
         </Suggestion>
       )}
+      {fileSuggestion.isLoading && fileSuggestion.matchedPaths.length === 0 && (
+        <Box marginLeft={2}>
+          <Text color="dim">Searching...</Text>
+        </Box>
+      )}
     </Box>
   );
 }
