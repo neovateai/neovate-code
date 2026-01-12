@@ -11,11 +11,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: blacksmith-4vcpu-ubuntu-2404
+          - os: ubuntu-latest
             node-version: 18
-          - os: blacksmith-4vcpu-ubuntu-2404
+          - os: ubuntu-latest
             node-version: 20
-          - os: blacksmith-4vcpu-ubuntu-2404
+          - os: ubuntu-latest
             node-version: 22
           - os: windows-latest
             node-version: 20
@@ -57,9 +57,9 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-      # - name: Run CLI integration test
-      #   shell: bash
-      #   run: |
-      #     output=$(node ./dist/cli.mjs -m modelwatch/glm-4.7 -q --output-format json "hello")
-      #     echo "$output"
-      #     echo "$output" | node -e "JSON.parse(require('fs').readFileSync(0, 'utf-8'))"
+      - name: Run CLI integration test
+        shell: bash
+        run: |
+          output=$(node ./dist/cli.mjs -m modelwatch/glm-4.7 -q --output-format json "hello")
+          echo "$output"
+          echo "$output" | node -e "JSON.parse(require('fs').readFileSync(0, 'utf-8'))"
