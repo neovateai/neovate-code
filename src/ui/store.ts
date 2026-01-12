@@ -832,7 +832,10 @@ export const useAppStore = create<AppStore>()(
             forkParentUuid: null,
           });
         } else {
-          if (response.error.type === 'tool_denied') {
+          if (
+            response.error.type === 'tool_denied' ||
+            response.error.type === 'canceled'
+          ) {
             set({
               status: 'idle',
               processingStartTime: null,
