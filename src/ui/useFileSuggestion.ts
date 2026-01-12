@@ -20,8 +20,16 @@ export function usePaths(query: string, hasQuery: boolean) {
   const [isLoading, setIsLoading] = useState(false);
   const [paths, setPaths] = useState<string[]>([]);
   const requestIdRef = useRef(0);
+  const lastQueryRef = useRef(query);
 
   const debouncedQuery = useDebounce(query, 150);
+
+  useEffect(() => {
+    if (query !== lastQueryRef.current) {
+      lastQueryRef.current = query;
+      setPaths([]);
+    }
+  }, [query]);
 
   useEffect(() => {
     if (!hasQuery) {

@@ -2500,18 +2500,18 @@ ${diff}
       let globPatterns: string[];
       if (query.includes(sep) || query.includes('/')) {
         const normalizedQuery = normalize(query).replace(/\\/g, '/');
-        globPatterns = [`**/${normalizedQuery}**`];
+        globPatterns = [`**/${normalizedQuery}*`, `**/${normalizedQuery}*/**`];
       } else {
         globPatterns = [`**/*${query}*`, `**/*${query}*/**`];
       }
       const args = [
         '--files',
         '--hidden',
-        '--glob',
-        '!.git',
-        '--glob',
-        '!node_modules',
         ...globPatterns.flatMap((p) => ['--iglob', p]),
+        '--iglob',
+        '!**/.git/**',
+        '--iglob',
+        '!**/node_modules/**',
         context.cwd,
       ];
 

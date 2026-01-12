@@ -3,6 +3,7 @@ import os from 'os';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SPACING, UI_COLORS } from './constants';
 import { DebugRandomNumber } from './Debug';
+import { GradientText } from './GradientText';
 import { MemoryModal } from './MemoryModal';
 import { ModeIndicator } from './ModeIndicator';
 import { ReverseSearchInput } from './ReverseSearchInput';
@@ -13,7 +14,18 @@ import TextInput from './TextInput';
 import { useExternalEditor } from './useExternalEditor';
 import { useInputHandlers } from './useInputHandlers';
 import { useTerminalSize } from './useTerminalSize';
+import { useTextGradientAnimation } from './useTextGradientAnimation';
 import { useTryTips } from './useTryTips';
+
+function SearchingIndicator() {
+  const text = 'Searching...';
+  const highlightIndex = useTextGradientAnimation(text, true);
+  return (
+    <Box marginLeft={2}>
+      <GradientText text={text} highlightIndex={highlightIndex} />
+    </Box>
+  );
+}
 
 export function ChatInput() {
   const {
@@ -294,9 +306,7 @@ export function ChatInput() {
         </Suggestion>
       )}
       {fileSuggestion.isLoading && fileSuggestion.matchedPaths.length === 0 && (
-        <Box marginLeft={2}>
-          <Text color="dim">Searching...</Text>
-        </Box>
+        <SearchingIndicator />
       )}
     </Box>
   );
