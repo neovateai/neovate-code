@@ -151,13 +151,7 @@ const OBJECT_CONFIG_KEYS = [
   'desktop',
   'agent',
 ];
-const BOOLEAN_CONFIG_KEYS = [
-  'quiet',
-  'todo',
-  'autoCompact',
-  'autoUpdate',
-  'notification',
-];
+const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact', 'autoUpdate'];
 export const GLOBAL_ONLY_KEYS = ['desktop'];
 
 function assertGlobalAllowed(global: boolean, key: string) {
