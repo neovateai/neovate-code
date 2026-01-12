@@ -58,9 +58,4 @@ jobs:
         run: pnpm test
 
       - name: Run CLI integration test
-        shell: bash
-        run: |
-          output=$(node ./dist/cli.mjs -m modelwatch/glm-4.7 -q --output-format json "hello")
-          output=$(echo "$output" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-          echo "$output"
-          echo "$output" | node -e "JSON.parse(require('fs').readFileSync(0, 'utf-8').trim())"
+        run: bun scripts/cli-integration-test.ts
