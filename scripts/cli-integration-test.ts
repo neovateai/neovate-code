@@ -57,6 +57,14 @@ Examples:
 `);
 }
 
+function stripInvisibleChars(str: string): string {
+  return str
+    .replace(/\x1b\[[0-9;]*m/g, '')
+    .replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    .replace(/^\uFEFF/, '')
+    .trim();
+}
+
 async function runCli(model: string, prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const proc = spawn(
@@ -101,7 +109,7 @@ async function main(): Promise<void> {
   console.log('');
 
   const output = await runCli(args.model, args.prompt);
-  const trimmedOutput = output.trim();
+  const trimmedOutput = stripInvisibleChars(output);
 
   console.log('Output:');
   console.log(trimmedOutput);
