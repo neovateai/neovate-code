@@ -19,7 +19,7 @@ Options:
   -h, --help                            Show help
   -g, --global                          Use global config instead of project config
   -e, --env <json>                      Environment variables as JSON string
-  --sse                                 Use SSE transport for URL-based servers
+  --transport <type>                    Transport type (stdio, sse, http)
 
 Commands:
   get [options] <name>                  Get an MCP server configuration
@@ -34,8 +34,8 @@ Examples:
   ${p} mcp get my-server              Get configuration for my-server
   ${p} mcp add my-server npx @example/mcp-server  Add stdio MCP server
   ${p} mcp add -g my-server npx @example/mcp-server  Add stdio MCP server globally
-  ${p} mcp add my-http http://localhost:3000  Add HTTP MCP server
-  ${p} mcp add --sse my-sse http://localhost:3000  Add SSE MCP server
+  ${p} mcp add --transport http my-http http://localhost:3000  Add HTTP MCP server
+  ${p} mcp add --transport sse my-sse http://localhost:3000  Add SSE MCP server
   ${p} mcp add -e '{"API_KEY":"123"}' my-server npx @example/mcp-server  Add server with env vars
   ${p} mcp list                       Show all project MCP servers
   ${p} mcp ls -g                      Show all global MCP servers
