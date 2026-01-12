@@ -156,6 +156,7 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
           cwd,
           signal,
           tools: opts.tools,
+          parentSessionId: sessionId,
           onToolApprove,
           async onMessage(
             message: NormalizedMessage,

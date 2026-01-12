@@ -104,7 +104,9 @@ export class Context {
       opts.argvConfig || {},
     );
     const initialConfig = configManager.config;
-    const buildInPlugins: Plugin[] = [];
+    const buildInPlugins: Plugin[] = [
+      /*hookLoggerPlugin*/
+    ];
     const globalPlugins = scanPlugins(
       path.join(paths.globalConfigDir, 'plugins'),
     );

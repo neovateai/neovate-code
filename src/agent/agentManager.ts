@@ -107,6 +107,7 @@ export class AgentManager {
       tools: Tool[];
       cwd: string;
       signal?: AbortSignal;
+      parentSessionId?: string;
       forkContextMessages?: NormalizedMessage[];
       onMessage?: (
         message: NormalizedMessage,
@@ -134,6 +135,7 @@ export class AgentManager {
       context: this.context,
       model: input.model,
       resume: input.resume,
+      parentSessionId: context.parentSessionId,
       forkContextMessages: definition.forkContext
         ? context.forkContextMessages
         : undefined,

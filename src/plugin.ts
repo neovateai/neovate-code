@@ -3,7 +3,10 @@ import type { OpenAIProvider } from '@ai-sdk/openai';
 import type { OpenAICompatibleProvider } from '@ai-sdk/openai-compatible';
 import type { LanguageModelV2 } from '@openrouter/ai-sdk-provider';
 import defu from 'defu';
-import type { PluginAgentDefinition } from './agent/types';
+import type {
+  AgentExecutionResult,
+  PluginAgentDefinition,
+} from './agent/types';
 import type { Config } from './config';
 import type { Context, ContextCreateOpts } from './context';
 import type { LoopResult } from './loop';
@@ -255,6 +258,33 @@ export type Plugin = {
     opts: {
       name: string;
       payload: Record<string, any>;
+    },
+  ) => Promise<void> | void;
+
+  stop?: (
+    this: PluginContext,
+    opts: {
+      sessionId: string;
+      result: LoopResult;
+      usage: Usage;
+      turnsCount: number;
+      toolCallsCount: number;
+      duration: number;
+      model: string;
+    },
+  ) => Promise<void> | void;
+
+  subagentStop?: (
+    this: PluginContext,
+    opts: {
+      parentSessionId: string;
+      agentId: string;
+      agentType: string;
+      result: AgentExecutionResult;
+      usage: { inputTokens: number; outputTokens: number };
+      totalToolCalls: number;
+      totalDuration: number;
+      model: string;
     },
   ) => Promise<void> | void;
 };

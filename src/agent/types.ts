@@ -64,6 +64,7 @@ export interface AgentExecuteOptions {
   cwd: string;
   signal?: AbortSignal;
   resume?: string;
+  parentSessionId?: string;
   onMessage?: (
     message: NormalizedMessage,
     agentId: string,

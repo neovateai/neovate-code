@@ -18,7 +18,7 @@ import type {
   ToolUse,
 } from './tool';
 import { resolveTools, Tools } from './tool';
-import type { Usage } from './usage';
+import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
 
 export class Project {
@@ -162,6 +162,7 @@ export class Project {
       attachments?: ImagePart[];
       parentUuid?: string;
       thinking?: ThinkingConfig;
+      skipStopHook?: boolean;
     } = {},
   ) {
     const startTime = new Date();
@@ -454,6 +455,23 @@ export class Project {
       ],
       type: PluginHookType.Series,
     });
+    if (!opts.skipStopHook) {
+      await this.context.apply({
+        hook: 'stop',
+        args: [
+          {
+            sessionId: this.session.id,
+            result,
+            usage: result.success ? result.data.usage : Usage.empty(),
+            turnsCount: result.success ? result.metadata.turnsCount : 0,
+            toolCallsCount: result.success ? result.metadata.toolCallsCount : 0,
+            duration: result.success ? result.metadata.duration : 0,
+            model: `${resolvedModel.provider.id}/${resolvedModel.model.id}`,
+          },
+        ],
+        type: PluginHookType.Series,
+      });
+    }
     outputFormat.onEnd({
       result,
       sessionId: this.session.id,
