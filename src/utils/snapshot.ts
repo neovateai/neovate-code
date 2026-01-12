@@ -14,6 +14,58 @@ import type { SessionConfigManager } from '../session';
 import type { JsonlLogger } from '../jsonl';
 import pathe from 'pathe';
 import os from 'os';
+import {
+  getCachedEncodingForBufferSync,
+  detectEncodingFromBuffer,
+} from './system-encoding';
+
+/**
+ * List of supported Node.js BufferEncodings
+ * Used to validate encoding detection results
+ */
+const VALID_BUFFER_ENCODINGS: readonly string[] = [
+  'ascii',
+  'utf8',
+  'utf-8',
+  'utf16le',
+  'ucs2',
+  'ucs-2',
+  'base64',
+  'latin1',
+  'binary',
+  'hex',
+];
+
+/**
+ * Validate and normalize encoding to ensure it's compatible with Node.js Buffer API
+ */
+function validateEncoding(encoding: string | null): BufferEncoding {
+  if (!encoding) return 'utf-8';
+
+  // Try exact match first
+  if (VALID_BUFFER_ENCODINGS.includes(encoding)) {
+    return encoding as BufferEncoding;
+  }
+
+  // Try lowercase match
+  const lowerEncoding = encoding.toLowerCase();
+  if (VALID_BUFFER_ENCODINGS.includes(lowerEncoding)) {
+    return lowerEncoding as BufferEncoding;
+  }
+
+  // Common aliases mapping
+  const aliases: Record<string, BufferEncoding> = {
+    'iso-8859-1': 'latin1',
+    iso88591: 'latin1',
+    'latin-1': 'latin1',
+    'windows-1252': 'latin1',
+    utf8: 'utf-8',
+    ucs2: 'utf16le',
+    'ucs-2': 'utf16le',
+  };
+
+  return aliases[lowerEncoding] || 'utf-8';
+}
 
 /**
  * File backup metadata stored in snapshot
@@ -69,11 +121,27 @@ export class SnapshotManager {
 
   /**
    * Get backup directory for this session
+   * Supports custom directory via NEOVATE_BACKUP_DIR environment variable
+   * for cross-platform consistency between CLI and desktop apps
    */
   private getBackupDir(): string {
     const productName = 'neovate';
+    const customDir = process.env.NEOVATE_BACKUP_DIR;
+
+    if (customDir) {
+      return pathe.join(customDir, 'file-history', this.sessionId);
+    }
+
     const globalConfigDir = pathe.join(os.homedir(), `.${productName}`);
     return pathe.join(globalConfigDir, 'file-history', this.sessionId);
+  }
+
+  /**
+   * Normalize line endings to LF for cross-platform compatibility
+   * This ensures backup files are consistent across Windows, macOS, and Linux
+   */
+  private normalizeLineEndings(content: string): string {
+    return content.replace(/\r\n/g, '\n');
   }
 
   /**
@@ -202,9 +270,24 @@ export class SnapshotManager {
     // - Fast consecutive writes (test scenarios)
     // - Filesystems with low time precision
     // - Clock adjustments
-    const fileContent = readFileSync(filePath, 'utf-8');
-    const backupContent = readFileSync(backupPath, 'utf-8');
-    return fileContent !== backupContent;
+
+    // Use encoding detection for cross-platform compatibility
+    const fileBuffer = readFileSync(filePath);
+    const backupBuffer = readFileSync(backupPath);
+
+    const fileEncoding = validateEncoding(
+      getCachedEncodingForBufferSync(fileBuffer),
+    );
+    const backupEncoding = 'utf-8';
+
+    const fileContent = fileBuffer.toString(fileEncoding);
+    const backupContent = backupBuffer.toString(backupEncoding);
+
+    // Normalize line endings before comparison
+    return (
+      this.normalizeLineEndings(fileContent) !==
+      this.normalizeLineEndings(backupContent)
+    );
   }
 
   /**
@@ -224,19 +307,38 @@ export class SnapshotManager {
     }
 
     try {
-      // Read file content
-      const content = await readFile(filePath, 'utf-8');
+      // Read file content with automatic encoding detection
+      const fileBuffer = await readFile(filePath);
+      const encoding = validateEncoding(
+        detectEncodingFromBuffer(fileBuffer) || 'utf-8',
+      );
+      const content = fileBuffer.toString(encoding);
 
-      // Write backup file
-      await writeFile(backupPath, content, { encoding: 'utf-8' });
+      // Normalize line endings to LF for cross-platform consistency
+      const normalizedContent = this.normalizeLineEndings(content);
 
-      // Copy file permissions
-      const fileStats = await stat(filePath);
-      await chmod(backupPath, fileStats.mode);
+      // Write backup file as UTF-8 with normalized line endings
+      await writeFile(backupPath, normalizedContent, {
+        encoding: 'utf-8',
+      });
+
+      // Copy file permissions (with graceful handling for Windows)
+      try {
+        const fileStats = await stat(filePath);
+        await chmod(backupPath, fileStats.mode);
+      } catch (permError) {
+        // Windows doesn't support Unix-style permissions, ignore this error
+        if (this.DEBUG) {
+          console.warn(
+            `[Snapshot] Failed to copy permissions for ${filePath} (may not be supported on this platform):`,
+            permError,
+          );
+        }
+      }
 
       if (this.DEBUG) {
         console.log(
-          `[Snapshot] Created backup: ${backupFileName} for ${filePath}`,
+          `[Snapshot] Created backup: ${backupFileName} for ${filePath} (detected encoding: ${encoding}, line endings normalized)`,
         );
       }
 
@@ -533,12 +635,18 @@ export class SnapshotManager {
             continue;
           }
 
-          const backupContent = await readFile(backupPath, 'utf-8');
+          const backupBuffer = await readFile(backupPath);
+          const backupContent = backupBuffer.toString('utf-8');
 
           // Calculate diff if file exists
           if (existsSync(absolutePath)) {
-            const currentContent = readFileSync(absolutePath, 'utf-8');
-            if (currentContent !== backupContent) {
+            const currentBuffer = readFileSync(absolutePath);
+            const currentEncoding = validateEncoding(
+              detectEncodingFromBuffer(currentBuffer) || 'utf-8',
+            );
+            const currentContent = currentBuffer.toString(currentEncoding);
+
+            if (this.normalizeLineEndings(currentContent) !== backupContent) {
               const diff = this.calculateDiff(currentContent, backupContent);
               totalInsertions += diff.insertions;
               totalDeletions += diff.deletions;
@@ -551,9 +659,10 @@ export class SnapshotManager {
           }
 
           if (!dryRun) {
+            // Restore file - backup is always UTF-8 with LF line endings
             await writeFile(absolutePath, backupContent, 'utf-8');
 
-            // Restore file permissions (following Claude Code pattern)
+            // Restore file permissions with graceful handling for Windows
             try {
               const backupStats = await stat(backupPath);
               await chmod(absolutePath, backupStats.mode);
@@ -566,7 +675,7 @@ export class SnapshotManager {
               // Don't fail restore if permission copy fails
               if (this.DEBUG) {
                 console.warn(
-                  `[Snapshot] Failed to restore permissions for ${absolutePath}:`,
+                  `[Snapshot] Failed to restore permissions for ${absolutePath} (may not be supported on this platform):`,
                   permError,
                 );
               }
@@ -635,17 +744,18 @@ export class SnapshotManager {
           } else {
             const backupPath = this.getBackupFilePath(backup.backupFileName);
             if (existsSync(backupPath)) {
-              const content = await readFile(backupPath, 'utf-8');
-              await writeFile(absolutePath, content, 'utf-8');
+              const backupBuffer = await readFile(backupPath);
+              const backupContent = backupBuffer.toString('utf-8');
+              await writeFile(absolutePath, backupContent, 'utf-8');
 
-              // Restore file permissions
+              // Restore file permissions with graceful handling for Windows
               try {
                 const backupStats = await stat(backupPath);
                 await chmod(absolutePath, backupStats.mode);
               } catch (permError) {
                 if (this.DEBUG) {
                   console.warn(
-                    `[Snapshot] Failed to restore permissions for ${absolutePath}:`,
+                    `[Snapshot] Failed to restore permissions for ${absolutePath} (may not be supported on this platform):`,
                     permError,
                   );
                 }
@@ -902,6 +1012,15 @@ export class SnapshotManager {
     let linkCount = 0;
     let skipCount = 0;
 
+    // Determine if we can safely use hard links
+    // Hard links don't work well across:
+    // - Different filesystems/drives
+    // - Network drives
+    // - Different containers/virtual machines
+    // - Windows (limited support)
+    const canUseHardLinks =
+      process.platform !== 'win32' && sourceBackupDir !== targetBackupDir;
+
     for (const snapshot of snapshots) {
       for (const backup of Object.values(snapshot.trackedFileBackups)) {
         if (!backup.backupFileName) continue;
@@ -925,30 +1044,40 @@ export class SnapshotManager {
           continue;
         }
 
-        try {
-          // Try hard link first (saves space)
-          await link(sourceFile, targetFile);
-          linkCount++;
-          if (this.DEBUG) {
-            console.log(
-              `[Snapshot] Hard linked backup: ${backup.backupFileName}`,
-            );
-          }
-        } catch (error) {
-          // Fallback to regular copy
+        // Use hard link only when safe, otherwise use copy
+        if (canUseHardLinks) {
           try {
-            const content = await readFile(sourceFile);
-            await writeFile(targetFile, content);
-            copyCount++;
+            await link(sourceFile, targetFile);
+            linkCount++;
             if (this.DEBUG) {
-              console.log(`[Snapshot] Copied backup: ${backup.backupFileName}`);
+              console.log(
+                `[Snapshot] Hard linked backup: ${backup.backupFileName}`,
+              );
             }
-          } catch (copyError) {
-            console.error(
-              `[Snapshot] Failed to copy backup ${backup.backupFileName}:`,
-              copyError,
-            );
+            continue;
+          } catch (linkError) {
+            // Hard link failed, fall through to regular copy
+            if (this.DEBUG) {
+              console.log(
+                `[Snapshot] Hard link failed for ${backup.backupFileName}, falling back to copy`,
+              );
+            }
           }
+        }
+
+        // Regular copy as fallback or default
+        try {
+          const content = await readFile(sourceFile);
+          await writeFile(targetFile, content);
+          copyCount++;
+          if (this.DEBUG) {
+            console.log(`[Snapshot] Copied backup: ${backup.backupFileName}`);
+          }
+        } catch (copyError) {
+          console.error(
+            `[Snapshot] Failed to copy backup ${backup.backupFileName}:`,
+            copyError,
+          );
         }
       }
     }
@@ -1015,7 +1144,7 @@ export async function createToolSnapshot(
 /**
  * Copy backup files from one session to another
  * This is used when resuming/continuing a session (Claude Code H81 equivalent)
- * Uses hard links to save disk space when possible
+ * Uses hard links to save disk space when possible, with cross-platform safety
  */
 export async function copySessionBackups(
   fromSessionId: string,
@@ -1032,10 +1161,21 @@ export async function copySessionBackups(
     return;
   }
 
+  // Support custom backup directory via environment variable
+  const customDir = process.env.NEOVATE_BACKUP_DIR;
   const productName = 'neovate';
-  const globalConfigDir = pathe.join(os.homedir(), `.${productName}`);
-  const fromDir = pathe.join(globalConfigDir, 'file-history', fromSessionId);
-  const toDir = pathe.join(globalConfigDir, 'file-history', toSessionId);
+
+  let fromDir: string;
+  let toDir: string;
+
+  if (customDir) {
+    fromDir = pathe.join(customDir, 'file-history', fromSessionId);
+    toDir = pathe.join(customDir, 'file-history', toSessionId);
+  } else {
+    const globalConfigDir = pathe.join(os.homedir(), `.${productName}`);
+    fromDir = pathe.join(globalConfigDir, 'file-history', fromSessionId);
+    toDir = pathe.join(globalConfigDir, 'file-history', toSessionId);
+  }
 
   // Ensure target directory exists
   if (!existsSync(toDir)) {
@@ -1043,8 +1183,12 @@ export async function copySessionBackups(
   }
 
   let copiedCount = 0;
+  let linkCount = 0;
   let skippedCount = 0;
   let failedCount = 0;
+
+  // Determine if we can safely use hard links
+  const canUseHardLinks = process.platform !== 'win32' && fromDir !== toDir;
 
   for (const snapshot of snapshots) {
     for (const backup of Object.values(snapshot.trackedFileBackups)) {
@@ -1070,45 +1214,62 @@ export async function copySessionBackups(
         continue;
       }
 
-      try {
-        // Try hard link first (saves space)
-        await link(fromPath, toPath);
-        copiedCount++;
-        if (DEBUG) {
-          console.log(
-            `[copySessionBackups] Hard linked: ${backup.backupFileName}`,
-          );
-        }
-      } catch (linkError) {
-        // Hard link failed, try regular copy
+      // Use hard link only when safe, otherwise use copy
+      if (canUseHardLinks) {
         try {
-          const content = await readFile(fromPath);
-          await writeFile(toPath, content);
-
-          // Copy permissions
-          const stats = await stat(fromPath);
-          await chmod(toPath, stats.mode);
-
-          copiedCount++;
+          await link(fromPath, toPath);
+          linkCount++;
           if (DEBUG) {
             console.log(
-              `[copySessionBackups] Copied: ${backup.backupFileName}`,
+              `[copySessionBackups] Hard linked: ${backup.backupFileName}`,
             );
           }
-        } catch (copyError) {
-          console.error(
-            `[copySessionBackups] Failed to copy ${backup.backupFileName}:`,
-            copyError,
-          );
-          failedCount++;
+          continue;
+        } catch (linkError) {
+          // Hard link failed, fall through to regular copy
+          if (DEBUG) {
+            console.log(
+              `[copySessionBackups] Hard link failed for ${backup.backupFileName}, falling back to copy`,
+            );
+          }
         }
+      }
+
+      // Regular copy as fallback or default
+      try {
+        const content = await readFile(fromPath);
+        await writeFile(toPath, content);
+
+        // Copy permissions with graceful handling for Windows
+        try {
+          const stats = await stat(fromPath);
+          await chmod(toPath, stats.mode);
+        } catch (permError) {
+          if (DEBUG) {
+            console.warn(
+              `[copySessionBackups] Failed to copy permissions for ${backup.backupFileName} (may not be supported on this platform)`,
+              permError,
+            );
+          }
+        }
+
+        copiedCount++;
+        if (DEBUG) {
+          console.log(`[copySessionBackups] Copied: ${backup.backupFileName}`);
+        }
+      } catch (copyError) {
+        console.error(
+          `[copySessionBackups] Failed to copy ${backup.backupFileName}:`,
+          copyError,
+        );
+        failedCount++;
       }
     }
   }
 
-  if (DEBUG || copiedCount > 0) {
+  if (DEBUG || copiedCount > 0 || linkCount > 0) {
     console.log(
-      `[copySessionBackups] Completed: ${copiedCount} copied, ${skippedCount} skipped, ${failedCount} failed`,
+      `[copySessionBackups] Completed: ${linkCount} hard-linked, ${copiedCount} copied, ${skippedCount} skipped, ${failedCount} failed`,
     );
   }
 }
@@ -1120,7 +1281,11 @@ export function loadSnapshotEntries(opts: {
     return [];
   }
 
-  const content = fs.readFileSync(opts.logPath, 'utf-8');
+  const fileBuffer = fs.readFileSync(opts.logPath);
+  const encoding = validateEncoding(
+    detectEncodingFromBuffer(fileBuffer) || 'utf-8',
+  );
+  const content = fileBuffer.toString(encoding);
   const snapshotEntries: SnapshotEntry[] = [];
 
   content
