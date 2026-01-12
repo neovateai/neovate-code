@@ -1,8 +1,9 @@
-import { execFile } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import createDebug from 'debug';
 import path from 'pathe';
 import { findActualExecutable } from 'spawn-rx';
 import { fileURLToPath } from 'url';
+import { matchesAnyPattern, parseProductIgnorePatterns } from './ignore';
 import { isLocal } from './isLocal';
 
 const debug = createDebug('neovate:utils:ripgrep');
@@ -75,5 +76,108 @@ export async function ripGrep(
         }
       },
     );
+  });
+}
+
+export interface SearchFilesResult {
+  success: boolean;
+  data: {
+    paths: string[];
+    truncated: boolean;
+  };
+}
+
+export async function searchFiles(
+  cwd: string,
+  query: string,
+  maxResults: number = 100,
+): Promise<SearchFilesResult> {
+  const productPatterns = parseProductIgnorePatterns(cwd, [
+    'neovate',
+    'takumi',
+    'kwaipilot',
+  ]);
+
+  const { sep, normalize, relative } = path;
+  const rgPath = ripgrepPath();
+  let globPatterns: string[];
+  if (query.includes(sep) || query.includes('/')) {
+    const normalizedQuery = normalize(query).replace(/\\/g, '/');
+    globPatterns = [`**/${normalizedQuery}*`, `**/${normalizedQuery}*/**`];
+  } else {
+    globPatterns = [`**/*${query}*`, `**/*${query}*/**`];
+  }
+  const args = [
+    '--files',
+    '--hidden',
+    ...globPatterns.flatMap((p) => ['--iglob', p]),
+    '--iglob',
+    '!**/.git/**',
+    '--iglob',
+    '!**/node_modules/**',
+    cwd,
+  ];
+
+  return new Promise((resolve) => {
+    const rg = spawn(rgPath, args, {
+      cwd,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    const matches: string[] = [];
+    const lowerQuery = query.toLowerCase();
+    let buffer = '';
+    let killed = false;
+
+    if (rg.stdout) {
+      rg.stdout.on('data', (chunk: Buffer) => {
+        if (killed) return;
+        buffer += chunk.toString();
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line || killed) continue;
+
+          if (matches.length >= maxResults) {
+            killed = true;
+            rg.kill();
+            return;
+          }
+
+          const relativePath = relative(cwd, line);
+
+          if (matchesAnyPattern(relativePath, productPatterns)) continue;
+
+          matches.push(relativePath);
+        }
+      });
+    }
+
+    rg.on('close', () => {
+      const sorted = matches.sort((a, b) => {
+        const aLower = a.toLowerCase();
+        const bLower = b.toLowerCase();
+        const aIndex = aLower.indexOf(lowerQuery);
+        const bIndex = bLower.indexOf(lowerQuery);
+        if (aIndex !== bIndex) return aIndex - bIndex;
+        return a.length - b.length;
+      });
+
+      resolve({
+        success: true,
+        data: {
+          paths: sorted.slice(0, maxResults),
+          truncated: matches.length >= maxResults,
+        },
+      });
+    });
+
+    rg.on('error', () => {
+      resolve({
+        success: true,
+        data: { paths: [], truncated: false },
+      });
+    });
   });
 }
