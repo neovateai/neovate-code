@@ -448,7 +448,8 @@ export class MCPManager {
       getDescription: ({ params }) => {
         return formatParamsDescription(params as Record<string, any>);
       },
-      parameters: toolDef.inputSchema.jsonSchema,
+      // Why? Some models do not support null values, so null values need to be removed.
+      parameters: removeNullValues(toolDef.inputSchema.jsonSchema),
       execute: async (params) => {
         try {
           // toolDef is already a Tool from AI SDK with an execute method
@@ -515,6 +516,26 @@ export function parseMcpConfig(
   }
 
   return mcpServers;
+}
+
+function removeNullValues(obj: unknown): any {
+  if (obj === null || obj === undefined) {
+    return undefined;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(removeNullValues).filter((v) => v !== undefined);
+  }
+  if (typeof obj === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      const cleaned = removeNullValues(v);
+      if (cleaned !== undefined) {
+        result[k] = cleaned;
+      }
+    }
+    return result;
+  }
+  return obj;
 }
 
 function formatParamsDescription(params: Record<string, any>): string {
