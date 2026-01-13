@@ -4,7 +4,10 @@ import { WebServer } from './web-server';
 const DEFAULT_PORT = 1024;
 const DEFAULT_HOST = '127.0.0.1';
 
-export async function runServer(opts: { cwd: string; contextCreateOpts: any }) {
+export async function runServer(opts: {
+  cwd: string;
+  contextCreateOpts: any;
+}): Promise<() => Promise<void>> {
   const { default: yargsParser } = await import('yargs-parser');
   const argv = yargsParser(process.argv.slice(2), {
     alias: {
@@ -26,29 +29,12 @@ export async function runServer(opts: { cwd: string; contextCreateOpts: any }) {
     cwd: opts.cwd,
   });
 
-  let isShuttingDown = false;
-
   const shutdown = async () => {
-    if (isShuttingDown) return;
-    isShuttingDown = true;
-
     console.log('\n[WebServer] Shutting down...');
-    try {
-      await server.stop();
-      process.exit(0);
-    } catch (error) {
-      console.error('[WebServer] Error during shutdown:', error);
-      process.exit(1);
-    }
+    await server.stop();
   };
 
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  await server.start();
 
-  try {
-    await server.start();
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
+  return shutdown;
 }

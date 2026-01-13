@@ -13,7 +13,7 @@ const installDir = path.resolve(__dirname, '../');
 
 const argv = await parseArgs(process.argv.slice(2));
 
-runNeovate({
+const { shutdown } = await runNeovate({
   productName: PRODUCT_NAME,
   productASCIIArt: PRODUCT_ASCII_ART,
   version: pkg.version,
@@ -26,6 +26,21 @@ runNeovate({
     files: ['vendor', 'dist', 'package.json'],
   },
   argv,
-}).catch((e) => {
-  console.error(e);
 });
+
+let isShuttingDown = false;
+const handleSignal = async () => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  try {
+    if (shutdown) {
+      await shutdown();
+    }
+    process.exit(0);
+  } catch (error) {
+    console.error('Error during shutdown:', error);
+    process.exit(1);
+  }
+};
+process.on('SIGINT', handleSignal);
+process.on('SIGTERM', handleSignal);

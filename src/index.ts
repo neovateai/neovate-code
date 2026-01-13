@@ -162,12 +162,6 @@ Commands:
 
 async function runQuiet(argv: Argv, contextCreateOpts: any, cwd: string) {
   try {
-    const exit = () => {
-      process.exit(0);
-    };
-    process.on('SIGINT', exit);
-    process.on('SIGTERM', exit);
-
     // Create MessageBus for event-driven architecture in quiet mode
     const nodeBridge = new NodeBridge({
       contextCreateOpts,
@@ -321,11 +315,6 @@ async function runInteractive(
     patchConsole: true,
     exitOnCtrlC: false,
   });
-  const exit = () => {
-    process.exit(0);
-  };
-  process.on('SIGINT', exit);
-  process.on('SIGTERM', exit);
 }
 
 export async function runNeovate(opts: {
@@ -335,7 +324,7 @@ export async function runNeovate(opts: {
   plugins: Plugin[];
   upgrade?: UpgradeOptions;
   argv: Argv;
-}) {
+}): Promise<{ shutdown?: () => Promise<void> }> {
   const argv = opts.argv;
   const cwd = argv.cwd || process.cwd();
 
@@ -391,11 +380,11 @@ export async function runNeovate(opts: {
   // sub commands
   const command = argv._[0];
   if (command === 'server') {
-    await runServer({
+    const shutdown = await runServer({
       cwd,
       contextCreateOpts,
     });
-    return;
+    return { shutdown };
   }
   const validCommands = [
     '__test',
@@ -463,16 +452,16 @@ export async function runNeovate(opts: {
       default:
         throw new Error(`Unsupported command: ${command}`);
     }
-    return;
+    return {};
   }
 
   if (argv.help) {
     printHelp(opts.productName.toLowerCase());
-    return;
+    return {};
   }
   if (argv.version) {
     console.log(opts.version);
-    return;
+    return {};
   }
 
   if (argv.quiet) {
@@ -495,4 +484,6 @@ export async function runNeovate(opts: {
     }
     await runInteractive(argv, contextCreateOpts, cwd, upgrade);
   }
+
+  return {};
 }

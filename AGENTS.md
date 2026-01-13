@@ -72,6 +72,7 @@ src/
 - Use `zod` for runtime type validation
 - Suffix tool classes with 'Tool'
 - Prefer async/await for asynchronous operations
+- Use subagent to run typecheck
 
 Code style is enforced by Biome (see `biome.json`) - don't manually enforce style rules.
 
