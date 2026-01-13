@@ -88,7 +88,8 @@ Provide a concise response based only on the content above. In your response:
         const result = await query({
           userPrompt: input,
           model: opts.model,
-          systemPrompt: '',
+          // why？process.env.NEOVATE_CODE_FETCH_SYSTEM_PROMPT The model used internally by Kuaishou Wanqing requires a system prompt, otherwise it will throw an error.
+          systemPrompt: process.env.NEOVATE_CODE_FETCH_SYSTEM_PROMPT ?? '',
         });
         const llmResult = result.success
           ? result.data.text
