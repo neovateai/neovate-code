@@ -43,7 +43,7 @@ export type { Plugin, Context };
 // https://github.com/yargs/yargs-parser/blob/6d69295/lib/index.ts#L19
 process.env.YARGS_MIN_NODE_VERSION = '18';
 
-type Argv = {
+export type Argv = {
   _: string[];
   // boolean
   help: boolean;
@@ -70,7 +70,7 @@ type Argv = {
   mcpConfig: string[];
 };
 
-async function parseArgs(argv: any) {
+export async function parseArgs(argv: any) {
   const { default: yargsParser } = await import('yargs-parser');
   const args = yargsParser(argv, {
     alias: {
@@ -334,8 +334,9 @@ export async function runNeovate(opts: {
   version: string;
   plugins: Plugin[];
   upgrade?: UpgradeOptions;
+  argv: Argv;
 }) {
-  const argv = await parseArgs(process.argv.slice(2));
+  const argv = opts.argv;
   const cwd = argv.cwd || process.cwd();
 
   // Parse MCP config if provided
