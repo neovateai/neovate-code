@@ -606,11 +606,18 @@ async function executeCommand(
     .toString('hex')}.tmp`;
   const tempFilePath = path.join(os.tmpdir(), tempFileName);
 
+  const shell = process.env.SHELL || '/bin/bash';
+  const isFish = !isWindows && shell.endsWith('/fish');
+
   const wrappedCommand = isWindows
     ? command
     : (() => {
         let cmd = command.trim();
         if (!cmd.endsWith('&')) cmd += ';';
+        if (isFish) {
+          // Fish shell syntax: use 'set' for variable assignment and $status for exit code
+          return `begin; ${cmd} end; set __code $status; pgrep -g 0 >${tempFilePath} 2>&1; exit $__code`;
+        }
         return `{ ${cmd} }; __code=$?; pgrep -g 0 >${tempFilePath} 2>&1; exit $__code;`;
       })();
 
