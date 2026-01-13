@@ -66,7 +66,25 @@ class NodeHandlerRegistry {
     // init mcp manager but don't wait for it
     context.mcpManager.initAsync();
     this.contexts.set(cwd, context);
+
+    await this.applyPluginHandlers(context);
+
     return context;
+  }
+
+  private async applyPluginHandlers(context: Context) {
+    const pluginHandlers = await context.apply({
+      hook: 'nodeBridgeHandler',
+      args: [],
+      memo: {},
+      type: PluginHookType.SeriesMerge,
+    });
+
+    for (const [method, handler] of Object.entries(pluginHandlers)) {
+      this.messageBus.registerHandler(method, async (data: any) => {
+        return await (handler as Function)(data, context);
+      });
+    }
   }
 
   private async clearContext(cwd?: string) {

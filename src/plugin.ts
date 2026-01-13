@@ -11,6 +11,7 @@ import type { Config } from './config';
 import type { Context, ContextCreateOpts } from './context';
 import type { LoopResult } from './loop';
 import type { ModelAlias, ModelMap, Provider, ProvidersMap } from './model';
+import type { NodeBridgeHandlers } from './nodeBridge.types';
 import type { OutputStyle } from './outputStyle';
 import type { SlashCommand } from './slash-commands/types';
 import type { Tool, ToolResult, ToolUse } from './tool';
@@ -287,4 +288,8 @@ export type Plugin = {
       model: string;
     },
   ) => Promise<void> | void;
+
+  nodeBridgeHandler?: (
+    this: PluginContext,
+  ) => Promise<NodeBridgeHandlers> | NodeBridgeHandlers;
 };
