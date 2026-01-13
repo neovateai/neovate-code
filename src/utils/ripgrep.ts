@@ -133,6 +133,11 @@ export async function searchFiles(
       rg.stdout.on('data', (chunk: Buffer) => {
         if (killed) return;
         buffer += chunk.toString();
+        if (buffer.length > 10 * 1024 * 1024) {
+          killed = true;
+          rg.kill();
+          return;
+        }
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
 
@@ -173,7 +178,8 @@ export async function searchFiles(
       });
     });
 
-    rg.on('error', () => {
+    rg.on('error', (err) => {
+      debug(`[SearchFiles] Error: ${err}`);
       resolve({
         success: true,
         data: { paths: [], truncated: false },
