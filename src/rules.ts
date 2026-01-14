@@ -49,7 +49,7 @@ export function getLlmsRules(opts: {
   return {
     rules: reversedRules.join('\n\n'),
     llmsDescription: `
-    The codebase follows strict style guidelines shown below. All code changes must strictly adhere to these guidelines to maintain consistency and quality.
+    Codebase and user instructions are shown below. Be sure to adhere to these instructions. IMPORTANT: These instructions OVERRIDE any default behavior and you MUST follow them exactly as written
 
     ${reversedRules.join('\n\n')}`,
   };
