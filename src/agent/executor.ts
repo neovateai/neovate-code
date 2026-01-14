@@ -107,6 +107,7 @@ export async function executeAgent(
     // Create Project instance with agent log path
     const project = new Project({
       sessionId: `agent-${agentId}`,
+      parentSessionId: options.parentSessionId,
       context,
     });
 

@@ -24,8 +24,11 @@ import { randomUUID } from './utils/randomUUID';
 export class Project {
   session: Session;
   context: Context;
+  // For subagent to inherit parent session config
+  parentSessionId?: string;
   constructor(opts: {
     sessionId?: SessionId;
+    parentSessionId?: string;
     context: Context;
   }) {
     this.session = opts.sessionId
@@ -35,6 +38,7 @@ export class Project {
         })
       : Session.create();
     this.context = opts.context;
+    this.parentSessionId = opts.parentSessionId;
   }
 
   async send(
@@ -417,8 +421,11 @@ export class Project {
           }
         }
         // 4. if category is edit check autoEdit config (including session config)
+        // Read parent session config first, so subagent can inherit parent agent's approval settings
+        // If there is no parent (independent agent), use its own session
+        const sessionIdToCheck = this.parentSessionId || this.session.id;
         const sessionConfigManager = new SessionConfigManager({
-          logPath: this.context.paths.getSessionLogPath(this.session.id),
+          logPath: this.context.paths.getSessionLogPath(sessionIdToCheck),
         });
         if (tool.approval?.category === 'write') {
           if (
