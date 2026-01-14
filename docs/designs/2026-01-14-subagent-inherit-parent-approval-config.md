@@ -96,10 +96,10 @@ Project 实例 (存储 this.parentSessionId)
 
 ### 文件改动清单
 
-**1. `sxecutor.ts` - Subagent 执行器**
+**1. `src/agent/executor.ts` - Subagent 执行器**
 
 ```typescript
-// 创建 Project 时传入 parentSessionId
+// 创建 Project 时传入 parentSessionId（第 107-111 行）
 const project = new Project({
   sessionId: `agent-${agentId}`,
   parentSessionId: options.parentSessionId, // 新增
@@ -110,23 +110,33 @@ const project = new Project({
 **2. `src/project.ts` - Project 类**
 
 ```typescript
-class Project {
+// 第 24-42 行
+export class Project {
+  session: Session;
+  context: Context;
+  // For subagent to inherit parent session config
   parentSessionId?: string; // 新增成员变量
   
   constructor(opts: {
-    sessionId: string;
+    sessionId?: SessionId;
     parentSessionId?: string; // 新增参数
     context: Context;
   }) {
+    this.session = opts.sessionId
+      ? Session.fromId({
+          id: opts.sessionId,
+          logPath: opts.context.paths.getSessionLogPath(opts.sessionId),
+        })
+      : Session.create();
+    this.context = opts.context;
     this.parentSessionId = opts.parentSessionId; // 存储
-    // ...
   }
 }
 ```
 
 **3. `src/project.ts` - 审批检查逻辑调整**
 
-在 `sendWithSystemPromptAndTools` 方法的 `onToolApprove` 回调中（约第 387-438 行）：
+在 `sendWithSystemPromptAndTools` 方法的 `onToolApprove` 回调中（第 417-431 行）：
 
 ```typescript
 onToolApprove: async (toolUse) => {
@@ -160,7 +170,8 @@ onToolApprove: async (toolUse) => {
     }
   }
 
-  // 4. 优先读取 parent session 配置（新增）
+  // 4. Read parent session config first, so subagent can inherit parent agent's approval settings
+  // If there is no parent (independent agent), use its own session
   const sessionIdToCheck = this.parentSessionId || this.session.id;
   const sessionConfigManager = new SessionConfigManager({
     logPath: this.context.paths.getSessionLogPath(sessionIdToCheck),
@@ -191,49 +202,17 @@ onToolApprove: async (toolUse) => {
 },
 ```
 
-**4. `src/tools/task.ts` - 配置保存逻辑**
+**4. 配置保存逻辑**
 
-在 `onToolApprove` 回调中处理配置保存（约第 119-142 行）：
+根据实际实现，配置保存逻辑无需额外修改。当 subagent 中用户选择 "don't ask again" 时，配置会自动保存到 parent session，原因如下：
 
-```typescript
-const onToolApprove = async (opts: {
-  toolUse: ToolUse;
-  category?: ApprovalCategory;
-}): Promise<boolean | ToolApprovalResult> => {
-  if (!messageBus) {
-    return true;
-  }
+1. **task.ts 传递的是 parent sessionId**: 在 `src/tools/task.ts` 的 `createTaskTool` 中，`sessionId` 参数传递的就是 parent agent 的 sessionId（不是 subagent 的 sessionId）
+2. **UI store 使用该 sessionId 保存**: `src/ui/store.ts` 的 `approveToolUse` 方法接收到的 `sessionId` 就是 parent sessionId，因此配置会被保存到正确的位置
+3. **无需代码改动**: 现有的配置保存逻辑已经满足需求，不需要额外修改
 
-  try {
-    const result = await messageBus.request('toolApproval', {
-      toolUse: opts.toolUse,
-      category: opts.category,
-    });
-
-    // 处理配置保存（新增）
-    if (result.approved && result.saveToSession) {
-      const targetSessionId = sessionId; // 使用 parentSessionId（已经是主 agent 的 sessionId）
-      // 保存逻辑由 UI store 处理，这里只需要确保 sessionId 正确
-    }
-
-    // Handle both boolean and ToolApprovalResult return types
-    if (result.params || result.denyReason) {
-      return {
-        approved: result.approved,
-        params: result.params,
-        denyReason: result.denyReason,
-      };
-    }
-
-    return result.approved;
-  } catch (error) {
-    console.error('[createTaskTool] onToolApprove error:', error);
-    return true;
-  }
-};
-```
-
-注：配置保存的实际逻辑在 `src/ui/store.ts` 的 `approveToolUse` 方法中，当前已经通过 `sessionId` 参数决定保存位置，无需修改。
+**关键代码路径（无需修改）：**
+- `task.ts` → `messageBus.request('toolApproval')` → UI store → `approveToolUse(sessionId, ...)`
+- 这里的 `sessionId` 始终是 parent session 的 ID
 
 ### 边界情况处理
 
@@ -288,7 +267,8 @@ const onToolApprove = async (opts: {
 
 ### 影响范围
 
-- **改动文件数**: 2 个核心文件（executor.ts, project.ts）
+- **改动文件数**: 2 个核心文件（`src/agent/executor.ts`, `src/project.ts`）
+- **代码增量**: +9 行，-1 行（总计 +8 行净增加）
 - **UI 改动**: 无需改动
 - **向后兼容性**: 完全兼容，parentSessionId 为可选参数
 - **风险评估**: 低风险，改动范围小且有明确的回退机制
