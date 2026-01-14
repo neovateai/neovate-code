@@ -76,6 +76,8 @@ ${result.llmContent}
 # Context
 As you answer the user's questions, you can use the following context:
 ${Object.entries(llmsContext)
+  // Support disabling default context
+  .filter(([_, value]) => value)
   .map(([key, value]) => `<context name="${key}">${value}</context>`)
   .join('\n')}
     `.trim();
