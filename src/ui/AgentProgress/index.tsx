@@ -15,12 +15,13 @@ export function AgentProgress({ toolUse, toolResult }: AgentProgressProps) {
   const { agentProgressMap } = useAppStore();
   const progressData = agentProgressMap[toolUse.id];
 
-  if (progressData && progressData.status === 'running') {
-    return <AgentInProgress toolUse={toolUse} progressData={progressData} />;
-  }
-
+  // Prioritize toolResult check - if result exists, task is completed
   if (toolResult) {
     return <AgentCompletedResult toolUse={toolUse} toolResult={toolResult} />;
+  }
+
+  if (progressData && progressData.status === 'running') {
+    return <AgentInProgress toolUse={toolUse} progressData={progressData} />;
   }
 
   return <AgentStarting toolUse={toolUse} />;

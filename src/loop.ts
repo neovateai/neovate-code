@@ -600,6 +600,13 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         }
       }
     }
+
+    // Check for cancellation before adding tool results
+    // session.cancel already handles adding tool results for incomplete tools
+    if (opts.signal?.aborted) {
+      return createCancelError();
+    }
+
     if (toolResults.length) {
       await history.addMessage({
         role: 'tool',
