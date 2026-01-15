@@ -10,6 +10,11 @@ export const notificationSoundPlugin: Plugin = {
   name: 'notificationSound',
 
   async stop() {
+    // Skip sound in quiet mode
+    if (this.config.quiet) {
+      return;
+    }
+
     const config = this.config.notification;
     if (config === false) {
       return;
