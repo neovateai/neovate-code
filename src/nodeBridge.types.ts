@@ -101,6 +101,7 @@ type GitStatusOutput = {
     isUserConfigured: { name: boolean; email: boolean };
     isMerging: boolean;
     unstagedFiles: Array<{ status: string; file: string }>;
+    hasRemote: boolean;
   };
   error?: string;
 };
