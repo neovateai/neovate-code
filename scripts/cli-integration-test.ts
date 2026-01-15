@@ -109,14 +109,13 @@ async function main(): Promise<void> {
   console.log('');
 
   const output = await runCli(args.model, args.prompt);
-  const trimmedOutput = stripInvisibleChars(output);
 
   console.log('Output:');
-  console.log(trimmedOutput);
+  console.log(output);
   console.log('');
 
   try {
-    JSON.parse(trimmedOutput);
+    JSON.parse(output);
     console.log('✓ JSON parse successful');
   } catch (err) {
     console.error('✗ JSON parse failed:', (err as Error).message);
