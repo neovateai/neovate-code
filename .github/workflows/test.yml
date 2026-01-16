@@ -11,11 +11,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: blacksmith-4vcpu-ubuntu-2404
+          - os: ubuntu-latest
             node-version: 18
-          - os: blacksmith-4vcpu-ubuntu-2404
+          - os: ubuntu-latest
             node-version: 20
-          - os: blacksmith-4vcpu-ubuntu-2404
+          - os: ubuntu-latest
             node-version: 22
           - os: windows-latest
             node-version: 20
