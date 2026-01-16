@@ -104,6 +104,7 @@ export async function resolveTools(opts: ResolveToolsOpts) {
       return allTools;
     }
     return allTools.filter((tool) => {
+      // Check if the tool is disabled (only explicitly set to false will disable)
       const isDisabled = toolsConfig[tool.name] === false;
       return !isDisabled;
     });
@@ -121,6 +122,7 @@ export async function resolveTools(opts: ResolveToolsOpts) {
   }
 
   const taskTools = (() => {
+    // Task tool is only available in quiet mode
     if (!opts.task) return [];
     if (!opts.context.agentManager) return [];
     const tool = createTaskTool({
