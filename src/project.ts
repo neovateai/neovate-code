@@ -58,7 +58,7 @@ export class Project {
       thinking?: ThinkingConfig;
     } = {},
   ) {
-    let tools = await resolveTools({
+    const tools = await resolveTools({
       context: this.context,
       sessionId: this.session.id,
       write: true,
@@ -66,12 +66,7 @@ export class Project {
       askUserQuestion: !this.context.config.quiet,
       signal: opts.signal,
       task: true,
-    });
-    tools = await this.context.apply({
-      hook: 'tool',
-      args: [{ sessionId: this.session.id }],
-      memo: tools,
-      type: PluginHookType.SeriesMerge,
+      isPlan: false,
     });
     const outputStyleManager = await OutputStyleManager.create(this.context);
     const outputStyle = outputStyleManager.getOutputStyle(
@@ -113,7 +108,7 @@ export class Project {
       thinking?: ThinkingConfig;
     } = {},
   ) {
-    let tools = await resolveTools({
+    const tools = await resolveTools({
       context: this.context,
       sessionId: this.session.id,
       write: false,
@@ -121,12 +116,7 @@ export class Project {
       askUserQuestion: !this.context.config.quiet,
       signal: opts.signal,
       task: false,
-    });
-    tools = await this.context.apply({
-      hook: 'tool',
-      args: [{ isPlan: true, sessionId: this.session.id }],
-      memo: tools,
-      type: PluginHookType.SeriesMerge,
+      isPlan: true,
     });
     let systemPrompt = generatePlanSystemPrompt({
       todo: this.context.config.todo!,
