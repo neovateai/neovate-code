@@ -35,6 +35,7 @@ export {
   type SDKSessionOptions,
   type SDKUserMessage,
 } from './sdk';
+export type { ProviderConfig } from './config';
 export { createTool } from './tool';
 
 export type { Plugin, Context };

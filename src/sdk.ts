@@ -1,3 +1,4 @@
+import type { ProviderConfig } from './config';
 import type {
   NormalizedMessage,
   SDKResultMessage,
@@ -19,6 +20,24 @@ export type SDKSessionOptions = {
   cwd?: string;
   productName?: string;
   plugins?: Plugin[];
+  /**
+   * Custom provider configurations to add or override built-in providers.
+   * Allows specifying custom API endpoints and model definitions.
+   *
+   * @example
+   * ```typescript
+   * providers: {
+   *   "my-custom-provider": {
+   *     api: "https://my-api.example.com/v1",
+   *     env: ["MY_API_KEY"],
+   *     models: {
+   *       "my-model": "deepseek-v3.2" // Reference existing model
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  providers?: Record<string, ProviderConfig>;
 };
 
 export type SDKUserMessage = {
@@ -248,6 +267,8 @@ function createBridgePair(options: SDKSessionOptions): {
       version: '0.0.0',
       argvConfig: {
         model: options.model,
+        // Pass custom providers to be merged with built-in providers
+        provider: options.providers,
       },
       plugins: options.plugins || [],
     },
