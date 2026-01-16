@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
 import { applyEdits } from '../utils/applyEdit';
+import { unescapeString } from '../utils/unescapeString';
 
 export function createEditTool(opts: { cwd: string }) {
   return createTool({
@@ -41,6 +42,11 @@ Usage:
       return path.relative(cwd, params.file_path);
     },
     execute: async ({ file_path, old_string, new_string, replace_all }) => {
+      // Unescape literal escape sequences from LLM output
+      // Some LLMs (e.g., Gemini) may return strings with literal '\n' instead of actual newlines
+      old_string = unescapeString(old_string);
+      new_string = unescapeString(new_string);
+
       if (old_string === new_string) {
         return {
           isError: true,
