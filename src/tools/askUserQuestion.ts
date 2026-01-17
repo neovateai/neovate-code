@@ -122,7 +122,7 @@ export function createAskUserQuestionTool() {
 
       return {
         llmContent: `User has answered your questions: ${answerSummary}. You can now continue with the user's answers in mind.`,
-        returnDisplay: `User answered questions:\n${displayText}`,
+        returnDisplay: `User has answered your questions:\n${displayText}`,
       };
     },
     approval: {
