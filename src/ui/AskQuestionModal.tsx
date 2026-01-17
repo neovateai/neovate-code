@@ -174,7 +174,7 @@ function QuestionNav({
   const isSingleHidden = questions.length === 1 && hideSubmitTab;
 
   return (
-    <Box flexDirection="row" marginBottom={1}>
+    <Box flexDirection="row" marginBottom={1} flexWrap="wrap">
       {!isSingleHidden && (
         <Text
           color={
