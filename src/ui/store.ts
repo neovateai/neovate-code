@@ -164,6 +164,9 @@ interface AppState {
   bashBackgroundPrompt: BashPromptBackgroundEvent | null;
   thinking: ThinkingConfig | undefined;
 
+  // Cancel timeout management
+  cancelTimeoutId: NodeJS.Timeout | null;
+
   // SubAgent progress tracking (indexed by parentToolUseId)
   agentProgressMap: Record<string, AgentProgressState>;
 
@@ -320,6 +323,9 @@ export const useAppStore = create<AppStore>()(
       forkParentUuid: null,
       forkCounter: 0,
       thinking: undefined,
+
+      // Cancel timeout state
+      cancelTimeoutId: null,
 
       // SubAgent progress state
       agentProgressMap: {},
@@ -832,6 +838,13 @@ export const useAppStore = create<AppStore>()(
         });
         const shouldReleaseCancelBarrier = get().status === 'canceling';
 
+        // Clear cancel timeout if it exists
+        const { cancelTimeoutId } = get();
+        if (cancelTimeoutId) {
+          clearTimeout(cancelTimeoutId);
+          set({ cancelTimeoutId: null });
+        }
+
         if (response.success) {
           set({
             status: 'idle',
@@ -844,7 +857,8 @@ export const useAppStore = create<AppStore>()(
         } else {
           if (
             response.error.type === 'tool_denied' ||
-            response.error.type === 'canceled'
+            response.error.type === 'canceled' ||
+            shouldReleaseCancelBarrier
           ) {
             set({
               status: 'idle',
@@ -874,7 +888,7 @@ export const useAppStore = create<AppStore>()(
       },
 
       cancel: async () => {
-        const { bridge, cwd, sessionId, status } = get();
+        const { bridge, cwd, sessionId, status, cancelTimeoutId } = get();
         if (!isExecuting(status)) {
           return;
         }
@@ -883,13 +897,18 @@ export const useAppStore = create<AppStore>()(
           return;
         }
 
+        // Clear any existing timeout
+        if (cancelTimeoutId) {
+          clearTimeout(cancelTimeoutId);
+        }
+
         // Cancellation barrier:
         // - keep UI in an "executing" state so new user input gets queued
         // - release when the in-flight send finishes (success or canceled)
         set({ status: 'canceling' });
 
         // Safety fallback: if cancellation takes too long, force reset
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           if (get().status === 'canceling') {
             set({
               status: 'idle',
@@ -898,10 +917,13 @@ export const useAppStore = create<AppStore>()(
               processingToolCalls: 0,
               retryInfo: null,
               bashBackgroundPrompt: null,
+              cancelTimeoutId: null,
             });
             get().scheduleQueueProcessing();
           }
         }, 5000);
+
+        set({ cancelTimeoutId: timeoutId });
 
         await bridge.request('session.cancel', {
           cwd,
@@ -910,6 +932,12 @@ export const useAppStore = create<AppStore>()(
       },
 
       clear: async () => {
+        // Clear any pending cancel timeout
+        const { cancelTimeoutId } = get();
+        if (cancelTimeoutId) {
+          clearTimeout(cancelTimeoutId);
+        }
+
         const sessionId = Session.createSessionId();
         const paths = new Paths({
           productName: get().productName,
@@ -932,6 +960,7 @@ export const useAppStore = create<AppStore>()(
           retryInfo: null,
           forkParentUuid: null,
           forkModalVisible: false,
+          cancelTimeoutId: null,
           // Clear SubAgent progress data
           agentProgressMap: {},
           transcriptMode: false,
@@ -1000,6 +1029,12 @@ export const useAppStore = create<AppStore>()(
       },
 
       resumeSession: async (sessionId: string, logFile: string) => {
+        // Clear any pending cancel timeout
+        const { cancelTimeoutId } = get();
+        if (cancelTimeoutId) {
+          clearTimeout(cancelTimeoutId);
+        }
+
         await clearTerminal();
         const messages = loadSessionMessages({ logPath: logFile });
         const sessionConfigManager = new SessionConfigManager({
@@ -1036,6 +1071,7 @@ export const useAppStore = create<AppStore>()(
           pastedImageMap,
           forkParentUuid: null,
           forkModalVisible: false,
+          cancelTimeoutId: null,
           // Clear SubAgent progress data
           agentProgressMap: {},
           transcriptMode: false,
