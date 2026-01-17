@@ -116,8 +116,13 @@ export function createAskUserQuestionTool() {
         .map(({ question, answer }) => `"${question}" = "${answer}"`)
         .join(', ');
 
+      const displayText = answers
+        .map(({ question, answer }) => `· ${question} → ${answer}`)
+        .join('\n');
+
       return {
         llmContent: `User has answered your questions: ${answerSummary}. You can now continue with the user's answers in mind.`,
+        returnDisplay: `User answered questions:\n${displayText}`,
       };
     },
     approval: {
