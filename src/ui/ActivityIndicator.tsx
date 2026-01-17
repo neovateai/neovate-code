@@ -21,6 +21,7 @@ export function ActivityIndicator() {
 
   const text = useMemo(() => {
     if (status === 'processing') return 'Processing...';
+    if (status === 'canceling') return 'Canceling...';
     if (status === 'failed' || (status === 'exit' && error))
       return `Failed: ${error}`;
     return `Unknown status: ${status}`;
@@ -33,11 +34,14 @@ export function ActivityIndicator() {
 
   const highlightIndex = useTextGradientAnimation(
     text,
-    status === 'processing',
+    status === 'processing' || status === 'canceling',
   );
 
   useEffect(() => {
-    if (status === 'processing' && processingStartTime) {
+    if (
+      (status === 'processing' || status === 'canceling') &&
+      processingStartTime
+    ) {
       const updateSeconds = () => {
         const elapsed = Math.floor((Date.now() - processingStartTime) / 1000);
         setSeconds(elapsed);
@@ -71,6 +75,10 @@ export function ActivityIndicator() {
   }, [retryInfo?.retryDelayMs, retryInfo?.retryStartTime]);
 
   const statusText = useMemo(() => {
+    if (status === 'canceling') {
+      return '(Please wait…)';
+    }
+
     let text = 'Esc to cancel';
     if (processingTokens > 0) {
       text += `, ↓ ${processingTokens} tokens`;
@@ -89,7 +97,7 @@ export function ActivityIndicator() {
       }
     }
     return `(${text})`;
-  }, [processingTokens, retryInfo, retryRemainingSeconds]);
+  }, [status, processingTokens, retryInfo, retryRemainingSeconds]);
 
   if (status === 'idle') return null;
   // Don't hide error message when exiting - only hide if there's no error
@@ -99,7 +107,7 @@ export function ActivityIndicator() {
 
   return (
     <Box flexDirection="row" marginTop={SPACING.ACTIVITY_INDICATOR_MARGIN_TOP}>
-      {status === 'processing' ? (
+      {status === 'processing' || status === 'canceling' ? (
         <Box>
           <GradientText text={text} highlightIndex={highlightIndex} />
           <Box marginLeft={1}>

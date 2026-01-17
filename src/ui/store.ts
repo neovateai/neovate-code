@@ -45,6 +45,7 @@ type AppStatus =
   | 'compacting'
   | 'failed'
   | 'cancelled'
+  | 'canceling'
   | 'slash_command_executing'
   | 'help'
   | 'exit';
@@ -68,7 +69,8 @@ function isExecuting(status: AppStatus) {
     status === 'processing' ||
     status === 'planning' ||
     status === 'tool_executing' ||
-    status === 'compacting'
+    status === 'compacting' ||
+    status === 'canceling'
   );
 }
 
@@ -828,6 +830,8 @@ export const useAppStore = create<AppStore>()(
           parentUuid: get().forkParentUuid || undefined,
           thinking: get().thinking,
         });
+        const shouldReleaseCancelBarrier = get().status === 'canceling';
+
         if (response.success) {
           set({
             status: 'idle',
@@ -861,6 +865,11 @@ export const useAppStore = create<AppStore>()(
             });
           }
         }
+
+        if (shouldReleaseCancelBarrier) {
+          get().scheduleQueueProcessing();
+        }
+
         return response;
       },
 
@@ -869,17 +878,34 @@ export const useAppStore = create<AppStore>()(
         if (!isExecuting(status)) {
           return;
         }
+
+        if (status === 'canceling') {
+          return;
+        }
+
+        // Cancellation barrier:
+        // - keep UI in an "executing" state so new user input gets queued
+        // - release when the in-flight send finishes (success or canceled)
+        set({ status: 'canceling' });
+
+        // Safety fallback: if cancellation takes too long, force reset
+        setTimeout(() => {
+          if (get().status === 'canceling') {
+            set({
+              status: 'idle',
+              processingStartTime: null,
+              processingTokens: 0,
+              processingToolCalls: 0,
+              retryInfo: null,
+              bashBackgroundPrompt: null,
+            });
+            get().scheduleQueueProcessing();
+          }
+        }, 5000);
+
         await bridge.request('session.cancel', {
           cwd,
           sessionId,
-        });
-        set({
-          status: 'idle',
-          processingStartTime: null,
-          processingTokens: 0,
-          processingToolCalls: 0,
-          retryInfo: null,
-          bashBackgroundPrompt: null,
         });
       },
 
