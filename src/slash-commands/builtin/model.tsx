@@ -36,16 +36,21 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
   const [nullModels, setNullModels] = useState<NullModel[]>([]);
 
   useEffect(() => {
-    bridge.request('models.list', { cwd }).then((result) => {
-      if (result.data.currentModelInfo) {
-        setCurrentModelInfo(result.data.currentModelInfo);
-        setCurrentModel(
-          `${result.data.currentModelInfo.providerName}/${result.data.currentModelInfo.modelId}`,
-        );
-      }
-      setGroupedModels(result.data.groupedModels);
-      setNullModels(result.data.nullModels || []);
-    });
+    bridge
+      .request('models.list', { cwd })
+      .then((result) => {
+        if (result.data.currentModelInfo) {
+          setCurrentModelInfo(result.data.currentModelInfo);
+          setCurrentModel(
+            `${result.data.currentModelInfo.providerName}/${result.data.currentModelInfo.modelId}`,
+          );
+        }
+        setGroupedModels(result.data.groupedModels);
+        setNullModels(result.data.nullModels || []);
+      })
+      .catch((error) => {
+        console.error('models.list failed:', error);
+      });
   }, [cwd]);
 
   return (

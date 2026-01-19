@@ -501,8 +501,21 @@ export const useAppStore = create<AppStore>()(
         } = get();
 
         if (initializeModelError) {
-          get().setInputError(initializeModelError);
-          return;
+          // Allow /model, /login, /logout to bypass the error check
+          // since these commands help users fix their configuration
+          const bypassCommands = ['model', 'login', 'logout'];
+          if (isSlashCommand(message)) {
+            const parsed = parseSlashCommand(message);
+            if (bypassCommands.includes(parsed.command)) {
+              // Allow these commands to proceed
+            } else {
+              get().setInputError(initializeModelError);
+              return;
+            }
+          } else {
+            get().setInputError(initializeModelError);
+            return;
+          }
         }
 
         if (brainstormMode) {
@@ -1035,6 +1048,8 @@ export const useAppStore = create<AppStore>()(
             thinking: currentModel?.thinkingConfig
               ? { effort: 'low' }
               : undefined,
+            // Clear initializeModelError after successfully changing model
+            initializeModelError: null,
           });
         }
       },
