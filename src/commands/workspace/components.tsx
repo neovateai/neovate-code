@@ -1,6 +1,7 @@
 import { Box, Text, useApp, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import React, { useState } from 'react';
+import { PRODUCT_NAME } from '../../constants';
 import type { Worktree } from '../../worktree';
 
 // Success message after creating a workspace
@@ -55,9 +56,11 @@ export function WorkspaceSuccessMessage({
 export function WorkspaceList({
   worktrees,
   verbose,
+  productName = PRODUCT_NAME.toLowerCase(),
 }: {
   worktrees: (Worktree & { createdAt?: string })[];
   verbose?: boolean;
+  productName?: string;
 }) {
   const { exit } = useApp();
 
@@ -105,7 +108,8 @@ export function WorkspaceList({
       </Box>
       <Box marginTop={1}>
         <Text dimColor>
-          Complete a workspace: cd into it and run 'neo workspace complete'
+          Complete a workspace: cd into it and run '{productName} workspace
+          complete'
         </Text>
       </Box>
     </Box>

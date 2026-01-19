@@ -797,7 +797,7 @@ class NodeHandlerRegistry {
         const syncStatus = await getGitSyncStatus(gitRoot);
 
         // Get workspace names
-        const worktrees = await listWorktrees(gitRoot);
+        const worktrees = await listWorktrees(gitRoot, context.productName);
         const workspaceIds = worktrees.map((w) => w.id);
 
         // Get last accessed timestamp from GlobalData
@@ -860,7 +860,7 @@ class NodeHandlerRegistry {
         const gitRoot = await getGitRoot(cwd);
 
         // Get all worktrees
-        const worktrees = await listWorktrees(gitRoot);
+        const worktrees = await listWorktrees(gitRoot, context.productName);
 
         // Build workspace data for each worktree using the helper
         const workspacesData = await Promise.all(
@@ -917,7 +917,7 @@ class NodeHandlerRegistry {
         const gitRoot = await getGitRoot(cwd);
 
         // Get all worktrees
-        const worktrees = await listWorktrees(gitRoot);
+        const worktrees = await listWorktrees(gitRoot, context.productName);
 
         // Find the worktree matching the workspace ID
         const worktree = worktrees.find((w) => w.name === workspaceId);
@@ -986,9 +986,10 @@ class NodeHandlerRegistry {
           await updateMainBranch(gitRoot, mainBranch, skipUpdate);
 
           // Generate or use provided workspace name
-          const workspaceName = name || (await generateWorkspaceName(gitRoot));
+          const workspaceName =
+            name || (await generateWorkspaceName(gitRoot, context.productName));
 
-          // Ensure .neovate-workspaces directory exists
+          // Ensure workspaces directory exists
           const workspacesDir = join(
             gitRoot,
             `.${context.productName}-workspaces`,
@@ -998,13 +999,18 @@ class NodeHandlerRegistry {
           }
 
           // Create worktree
-          const worktree = await createWorktree(gitRoot, workspaceName, {
-            baseBranch: mainBranch,
-            workspacesDir: `.${context.productName}-workspaces`,
-          });
+          const worktree = await createWorktree(
+            gitRoot,
+            workspaceName,
+            {
+              baseBranch: mainBranch,
+              workspacesDir: `.${context.productName}-workspaces`,
+            },
+            context.productName,
+          );
 
           // Add workspaces directory to git exclude
-          await addToGitExclude(gitRoot);
+          await addToGitExclude(gitRoot, context.productName);
 
           return {
             success: true,
@@ -1030,7 +1036,7 @@ class NodeHandlerRegistry {
       async (data) => {
         const { cwd, name, force = false } = data;
         try {
-          await this.getContext(cwd);
+          const context = await this.getContext(cwd);
           const { getGitRoot, isGitRepository, deleteWorktree } = await import(
             './worktree'
           );
@@ -1048,7 +1054,7 @@ class NodeHandlerRegistry {
           const gitRoot = await getGitRoot(cwd);
 
           // Delete worktree
-          await deleteWorktree(gitRoot, name, force);
+          await deleteWorktree(gitRoot, name, force, context.productName);
 
           return {
             success: true,
@@ -1067,7 +1073,7 @@ class NodeHandlerRegistry {
       async (data) => {
         const { cwd, name } = data;
         try {
-          await this.getContext(cwd);
+          const context = await this.getContext(cwd);
           const { getGitRoot, isGitRepository, listWorktrees, mergeWorktree } =
             await import('./worktree');
 
@@ -1084,7 +1090,7 @@ class NodeHandlerRegistry {
           const gitRoot = await getGitRoot(cwd);
 
           // List worktrees to find target workspace
-          const worktrees = await listWorktrees(gitRoot);
+          const worktrees = await listWorktrees(gitRoot, context.productName);
           const worktree = worktrees.find((w) => w.name === name);
 
           if (!worktree) {
@@ -1095,7 +1101,7 @@ class NodeHandlerRegistry {
           }
 
           // Merge worktree back to original branch
-          await mergeWorktree(gitRoot, worktree);
+          await mergeWorktree(gitRoot, worktree, context.productName);
 
           return {
             success: true,
@@ -1114,7 +1120,7 @@ class NodeHandlerRegistry {
       async (data) => {
         const { cwd, name, title, description = '', baseBranch } = data;
         try {
-          await this.getContext(cwd);
+          const context = await this.getContext(cwd);
           const {
             getGitRoot,
             isGitRepository,
@@ -1138,7 +1144,7 @@ class NodeHandlerRegistry {
           const gitRoot = await getGitRoot(cwd);
 
           // List worktrees to find target workspace
-          const worktrees = await listWorktrees(gitRoot);
+          const worktrees = await listWorktrees(gitRoot, context.productName);
           const worktree = worktrees.find((w) => w.name === name);
 
           if (!worktree) {

@@ -11,7 +11,7 @@ import { ConfirmPrompt } from './components';
 
 export async function runDelete(context: Context, argv: any) {
   const cwd = process.cwd();
-  const productName = context.productName.toLowerCase();
+  const productName = context.productName;
 
   try {
     const gitRoot = await getGitRoot(cwd);
@@ -22,7 +22,7 @@ export async function runDelete(context: Context, argv: any) {
     if (!name) {
       // Try to detect from current directory
       try {
-        const worktree = await getWorktreeFromPath(cwd);
+        const worktree = await getWorktreeFromPath(cwd, productName);
         name = worktree.name;
       } catch (error: any) {
         console.error(`Error: ${error.message}`);
@@ -34,12 +34,12 @@ export async function runDelete(context: Context, argv: any) {
     }
 
     // Check if worktree exists
-    const worktrees = await listWorktrees(gitRoot);
+    const worktrees = await listWorktrees(gitRoot, productName);
     const worktree = worktrees.find((w) => w.name === name);
 
     if (!worktree) {
       console.error(
-        `Error: Workspace '${name}' not found. Use 'neo workspace list' to see active workspaces.`,
+        `Error: Workspace '${name}' not found. Use '${context.productName.toLowerCase()} workspace list' to see active workspaces.`,
       );
       process.exit(1);
     }
@@ -57,11 +57,11 @@ export async function runDelete(context: Context, argv: any) {
         message: `Delete workspace '${name}'?${!worktree.isClean ? ' (has uncommitted changes)' : ''}`,
         onConfirm: async () => {
           try {
-            await deleteWorktree(gitRoot, name!, argv.force);
+            await deleteWorktree(gitRoot, name!, argv.force, productName);
 
             // Remove from metadata
             const fs = await import('fs');
-            const metadataPath = `${gitRoot}/.${productName}-workspaces/.metadata`;
+            const metadataPath = `${gitRoot}/.${productName.toLowerCase()}-workspaces/.metadata`;
             if (fs.existsSync(metadataPath)) {
               try {
                 const metadata = JSON.parse(
