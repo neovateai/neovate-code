@@ -505,6 +505,41 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       input: Record<string, any>;
       result: ToolResult;
     }[] = [];
+
+    // Helper function to add denied results for unprocessed tools
+    const addDeniedResultsForRemainingTools = async () => {
+      const processedToolCallIds = new Set(
+        toolResults.map((tr) => tr.toolCallId),
+      );
+      for (const remainingToolCall of toolCalls) {
+        if (!processedToolCallIds.has(remainingToolCall.toolCallId)) {
+          const remainingToolUse: ToolUse = {
+            name: remainingToolCall.toolName,
+            params: safeParseJson(remainingToolCall.input),
+            callId: remainingToolCall.toolCallId,
+          };
+          let remainingToolResult: ToolResult = {
+            llmContent:
+              'Error: Tool execution was skipped due to previous tool denial.',
+            isError: true,
+          };
+          if (opts.onToolResult) {
+            remainingToolResult = await opts.onToolResult(
+              remainingToolUse,
+              remainingToolResult,
+              false,
+            );
+          }
+          toolResults.push({
+            toolCallId: remainingToolCall.toolCallId,
+            toolName: remainingToolCall.toolName,
+            input: safeParseJson(remainingToolCall.input),
+            result: remainingToolResult,
+          });
+        }
+      }
+    };
+
     for (const toolCall of toolCalls) {
       let toolUse: ToolUse = {
         name: toolCall.toolName,
@@ -568,6 +603,9 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
           input: toolUse.params,
           result: toolResult,
         });
+
+        // Add denied results for remaining unprocessed tools
+        await addDeniedResultsForRemainingTools();
 
         if (!denyReason) {
           await history.addMessage({
