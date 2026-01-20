@@ -38,6 +38,19 @@ export type SDKSessionOptions = {
    * ```
    */
   providers?: Record<string, ProviderConfig>;
+  /**
+   * Extra SKILL.md file paths for user-defined skills.
+   * Accepts absolute paths to SKILL.md files or directories containing SKILL.md.
+   *
+   * @example
+   * ```typescript
+   * skills: [
+   *   "/path/to/my-skill/SKILL.md",
+   *   "/path/to/skill-directory"
+   * ]
+   * ```
+   */
+  skills?: string[];
 };
 
 export type SDKUserMessage = {
@@ -269,6 +282,8 @@ function createBridgePair(options: SDKSessionOptions): {
         model: options.model,
         // Pass custom providers to be merged with built-in providers
         provider: options.providers,
+        // Pass custom skills to be loaded
+        skills: options.skills,
       },
       plugins: options.plugins || [],
     },
