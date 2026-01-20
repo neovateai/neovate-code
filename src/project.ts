@@ -134,7 +134,8 @@ export class Project {
       model: opts.model || this.context.config.planModel,
       tools,
       systemPrompt,
-      onToolApprove: () => Promise.resolve(true),
+      // why? askUserQuestion tool will always require user input, so we don't need to approve it
+      // onToolApprove: () => Promise.resolve(true),
     });
   }
 
