@@ -270,15 +270,18 @@ export function ChatInput() {
           maxVisible={10}
         >
           {(suggestion, isSelected, _visibleSuggestions) => {
-            const maxNameLength = Math.max(
-              ...slashCommands.suggestions.map((s) => s.command.name.length),
+            // Use maxNameWidth from hook (+1 for '/' prefix, +3 for spacing)
+            const firstColumnWidth = Math.min(
+              slashCommands.maxNameWidth + 4,
+              columns - 10,
             );
             return (
               <SuggestionItem
                 name={`/${suggestion.command.name}`}
                 description={suggestion.command.description}
                 isSelected={isSelected}
-                firstColumnWidth={Math.min(maxNameLength + 4, columns - 10)}
+                firstColumnWidth={firstColumnWidth}
+                maxWidth={columns}
               />
             );
           }}
@@ -300,6 +303,7 @@ export function ChatInput() {
                 description={''}
                 isSelected={isSelected}
                 firstColumnWidth={Math.min(maxNameLength + 4, columns - 10)}
+                maxWidth={columns}
               />
             );
           }}

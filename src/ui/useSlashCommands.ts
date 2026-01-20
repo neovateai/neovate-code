@@ -21,6 +21,12 @@ export function useSlashCommands(input: string) {
     }
   }, [input, slashCommands]);
 
+  // Calculate the maximum name width from suggestions
+  const maxNameWidth = useMemo(() => {
+    if (suggestions.length === 0) return 0;
+    return Math.max(...suggestions.map((s) => s.command.name.length));
+  }, [suggestions]);
+
   useEffect(() => {
     if (input !== '/') return;
     const start = Date.now();
@@ -66,6 +72,7 @@ export function useSlashCommands(input: string) {
   return {
     suggestions,
     selectedIndex: navigation.selectedIndex,
+    maxNameWidth,
     isLoading,
     navigateNext: navigation.navigateNext,
     navigatePrevious: navigation.navigatePrevious,

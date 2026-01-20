@@ -46,17 +46,59 @@ export function Suggestion<T>({
   );
 }
 
+interface SuggestionItemProps {
+  name: string;
+  description: string;
+  isSelected: boolean;
+  firstColumnWidth: number;
+  maxWidth: number;
+}
+
+const MARGIN_LEFT = 2;
+const SPACING = 1;
+const ELLIPSIS_WIDTH = 3;
+const MIN_DESC_WIDTH = 20;
+const MIN_MAIN_DESC_WIDTH = 10;
+
 export function SuggestionItem({
   name,
   description,
   isSelected,
   firstColumnWidth,
-}: {
-  name: string;
-  description: string;
-  isSelected: boolean;
-  firstColumnWidth: number;
-}) {
+  maxWidth,
+}: SuggestionItemProps) {
+  // Calculate available width for description
+  // Account for: margin + firstColumnWidth + spacing + ellipsis reserve
+  const reservedWidth =
+    MARGIN_LEFT + firstColumnWidth + SPACING + ELLIPSIS_WIDTH;
+  const maxDescriptionWidth = Math.max(
+    MIN_DESC_WIDTH,
+    maxWidth - reservedWidth,
+  );
+
+  // Extract source suffix (content in the last parentheses, e.g., "(global)")
+  const sourceMatch = description.match(/\(([^)]+)\)$/);
+  const sourceSuffix = sourceMatch ? ` ${sourceMatch[0]}` : '';
+  const mainDescription = sourceMatch
+    ? description.slice(0, sourceMatch.index).trim()
+    : description;
+
+  // Truncate description if it exceeds max width, but preserve source suffix
+  let truncatedDescription: string;
+  if (description.length > maxDescriptionWidth) {
+    const availableForMain =
+      maxDescriptionWidth - sourceSuffix.length - ELLIPSIS_WIDTH; // Reserve space for "..." and source
+    if (availableForMain > MIN_MAIN_DESC_WIDTH) {
+      // If we have enough space, truncate main description and append source
+      truncatedDescription = `${mainDescription.slice(0, availableForMain)}...${sourceSuffix}`;
+    } else {
+      // If space is too tight, just truncate everything
+      truncatedDescription = `${description.slice(0, maxDescriptionWidth - ELLIPSIS_WIDTH)}...`;
+    }
+  } else {
+    truncatedDescription = description;
+  }
+
   return (
     <Box key={name} flexDirection="row">
       <Box width={firstColumnWidth}>
@@ -64,7 +106,7 @@ export function SuggestionItem({
       </Box>
       {description && (
         <Text color="dim" dimColor>
-          {description}
+          {truncatedDescription}
         </Text>
       )}
     </Box>
