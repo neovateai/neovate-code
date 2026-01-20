@@ -505,6 +505,13 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       input: Record<string, any>;
       result: ToolResult;
     }[] = [];
+
+    // Track rejection state to handle after loop completes
+    let hasRejectionWithReason = false; // Whether any tool was rejected with a reason
+    let firstDenyReason: string | undefined; // First rejection reason
+    let hasSimpleDeny = false; // Whether any tool was simply cancelled (no reason)
+    let firstDeniedToolUse: ToolUse | undefined; // First denied tool
+
     for (const toolCall of toolCalls) {
       let toolUse: ToolUse = {
         name: toolCall.toolName,
@@ -554,7 +561,17 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         let message = 'Error: Tool execution was denied by user.';
         if (denyReason) {
           message = `Tool use rejected with user message: ${denyReason}`;
+          hasRejectionWithReason = true;
+          if (!firstDenyReason) {
+            firstDenyReason = denyReason;
+          }
+        } else {
+          hasSimpleDeny = true;
+          if (!firstDeniedToolUse) {
+            firstDeniedToolUse = toolUse;
+          }
         }
+
         let toolResult: ToolResult = {
           llmContent: message,
           isError: true,
@@ -569,35 +586,8 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
           result: toolResult,
         });
 
-        if (!denyReason) {
-          await history.addMessage({
-            role: 'tool',
-            content: toolResults.map((tr) =>
-              createToolResultPart2(
-                tr.toolCallId,
-                tr.toolName,
-                tr.input,
-                tr.result,
-              ),
-            ),
-          });
-          return {
-            success: false,
-            error: {
-              type: 'tool_denied',
-              message,
-              details: {
-                toolUse,
-                history,
-                usage: totalUsage,
-              },
-            },
-          };
-        } else {
-          // When denyReason is provided, we should break out of the tool loop
-          // to let the model react to the rejection before continuing
-          break;
-        }
+        // Continue processing remaining tools instead of breaking
+        // Rejection will be handled after the loop completes
       }
     }
 
@@ -607,6 +597,37 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       return createCancelError();
     }
 
+    // Handle rejection cases after all tools have been processed
+    // If there was a simple denial (no denyReason) and no rejection with reason,
+    // return an error to stop the loop
+    if (hasSimpleDeny && !hasRejectionWithReason) {
+      await history.addMessage({
+        role: 'tool',
+        content: toolResults.map((tr) =>
+          createToolResultPart2(
+            tr.toolCallId,
+            tr.toolName,
+            tr.input,
+            tr.result,
+          ),
+        ),
+      });
+      return {
+        success: false,
+        error: {
+          type: 'tool_denied',
+          message: 'Error: Tool execution was denied by user.',
+          details: {
+            toolUse: firstDeniedToolUse,
+            history,
+            usage: totalUsage,
+          },
+        },
+      };
+    }
+
+    // If there was a rejection with a reason, continue the normal flow
+    // to let the AI see the rejection reason and respond
     if (toolResults.length) {
       await history.addMessage({
         role: 'tool',
