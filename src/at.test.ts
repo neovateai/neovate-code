@@ -1,8 +1,8 @@
-import { describe, expect, test, beforeAll, afterAll } from 'vitest';
 import fs from 'fs';
-import path from 'pathe';
-import { At } from './at';
 import os from 'os';
+import path from 'pathe';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { At } from './at';
 
 describe('At class - directory filtering', () => {
   let testDir: string;
