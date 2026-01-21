@@ -97,6 +97,21 @@ export class At {
         }
       }
 
+      // Skip directories - only process files
+      try {
+        const absolutePath = path.resolve(this.cwd, filePath);
+        if (
+          fs.existsSync(absolutePath) &&
+          fs.statSync(absolutePath).isDirectory()
+        ) {
+          match = regex.exec(prompt);
+          continue;
+        }
+      } catch {
+        // If we can't check (e.g., permissions), let it through
+        // and handle the error later in getContent()
+      }
+
       // Create unique key based on path and line range
       const key = `${filePath}:${lineRange ? `${lineRange.start}-${lineRange.end}` : 'all'}`;
       if (!pathsMap.has(key)) {
