@@ -81,7 +81,7 @@ export class At {
       let filePath = groups.quoted || groups.unquoted;
       // Unescape spaces for unquoted paths
       if (groups.unquoted) {
-        filePath = filePath.replace(/\ /g, ' ');
+        filePath = filePath.replace(/\\ /g, ' ');
       }
 
       // Skip directories - only process files
