@@ -8,7 +8,7 @@ import { ripGrep } from '../utils/ripgrep';
 import { safeStringify } from '../utils/safeStringify';
 
 const DEFAULT_LIMIT = 1000;
-const MAX_CONTENT_LINES = 2000;
+const MAX_CONTENT_LINES = 1000;
 const MAX_LINE_LENGTH = 2000;
 const MAX_CONTENT_LENGTH = 262144;
 const MAX_TOKENS = 25000;

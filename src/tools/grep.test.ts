@@ -105,13 +105,15 @@ const hello = "world";`,
       const result = await grepTool.execute({
         pattern: 'test content',
         output_mode: 'content',
+        // Avoid DEFAULT_LIMIT=1000 truncation; force MAX_CONTENT_LINES truncation
+        limit: 3000,
       });
 
       expect(result.isError).toBeFalsy();
       const parsed = JSON.parse(result.llmContent as string);
-      expect(parsed.numLines).toBeLessThanOrEqual(2000);
+      expect(parsed.numLines).toBeLessThanOrEqual(1000);
       expect(parsed.truncated).toBe(true);
-      expect(parsed.totalLinesBeforeTruncation).toBeGreaterThan(2000);
+      expect(parsed.totalLinesBeforeTruncation).toBeGreaterThan(1000);
     });
 
     test('should truncate long lines exceeding MAX_LINE_LENGTH', async () => {
