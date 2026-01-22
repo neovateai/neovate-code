@@ -81,20 +81,7 @@ export class At {
       let filePath = groups.quoted || groups.unquoted;
       // Unescape spaces for unquoted paths
       if (groups.unquoted) {
-        filePath = filePath.replace(/\\ /g, ' ');
-      }
-
-      // Parse line range if present
-      let lineRange: { start: number; end?: number } | undefined;
-      if (groups.lineRange) {
-        const rangeMatch = groups.lineRange.match(/^(\d+)(?:-(\d+))?$/);
-        if (rangeMatch) {
-          const start = Number.parseInt(rangeMatch[1], 10);
-          const end = rangeMatch[2]
-            ? Number.parseInt(rangeMatch[2], 10)
-            : start;
-          lineRange = { start, end };
-        }
+        filePath = filePath.replace(/\ /g, ' ');
       }
 
       // Skip directories - only process files
@@ -110,6 +97,19 @@ export class At {
       } catch {
         // If we can't check (e.g., permissions), let it through
         // and handle the error later in getContent()
+      }
+
+      // Parse line range if present
+      let lineRange: { start: number; end?: number } | undefined;
+      if (groups.lineRange) {
+        const rangeMatch = groups.lineRange.match(/^(\d+)(?:-(\d+))?$/);
+        if (rangeMatch) {
+          const start = Number.parseInt(rangeMatch[1], 10);
+          const end = rangeMatch[2]
+            ? Number.parseInt(rangeMatch[2], 10)
+            : start;
+          lineRange = { start, end };
+        }
       }
 
       // Create unique key based on path and line range
