@@ -1,721 +1,304 @@
-import { execSync } from 'child_process';
-import clipboardy from 'clipboardy';
-import { Box, render, Text, useInput } from 'ink';
-import type React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { spawn } from 'child_process';
+import os from 'os';
+import path from 'path';
+import readline from 'readline';
+import { z } from 'zod';
 import type { Context } from '../context';
 import { DirectTransport, MessageBus } from '../messageBus';
 import { NodeBridge } from '../nodeBridge';
-import { TerminalSizeProvider } from '../ui/TerminalSizeContext';
-import TextInput from '../ui/TextInput';
-import { sanitizeAIResponse } from '../utils/sanitizeAIResponse';
 
-// ============================================================================
-// Types
-// ============================================================================
+// ANSI color codes
+const GREEN = '\x1b[32m';
+const YELLOW = '\x1b[33m';
+const DIM = '\x1b[2m';
+const RESET = '\x1b[0m';
 
-type RunState =
-  | { phase: 'idle' }
-  | { phase: 'generating'; prompt: string }
-  | { phase: 'displaying'; command: string; prompt: string }
-  | { phase: 'editing'; command: string; prompt: string; editedCommand: string }
-  | {
-      phase: 'editingPrompt';
-      command: string;
-      prompt: string;
-      editedPrompt: string;
-    }
-  | { phase: 'executing'; command: string }
-  | { phase: 'success'; command: string; output: string }
-  | { phase: 'error'; command: string; prompt: string; error: string }
-  | { phase: 'cancelled' };
+// Standalone shell commands that should be executed directly
+const SHELL_COMMANDS = [
+  'ls',
+  'pwd',
+  'clear',
+  'exit',
+  'quit',
+  'whoami',
+  'date',
+  'cal',
+  'top',
+  'htop',
+  'history',
+  'which',
+  'man',
+  'touch',
+  'head',
+  'tail',
+  'grep',
+  'find',
+  'sort',
+  'wc',
+  'diff',
+  'tar',
+  'zip',
+  'unzip',
+];
 
-type RunAction =
-  | 'execute'
-  | 'copy'
-  | 'edit'
-  | 'regenerate'
-  | 'cancel'
-  | 'retry';
+// Command prefixes that indicate shell commands
+const SHELL_STARTERS = [
+  'cd ',
+  'ls ',
+  'echo ',
+  'cat ',
+  'mkdir ',
+  'rm ',
+  'cp ',
+  'mv ',
+  'git ',
+  'npm ',
+  'node ',
+  'npx ',
+  'python',
+  'pip ',
+  'brew ',
+  'curl ',
+  'wget ',
+  'chmod ',
+  'chown ',
+  'sudo ',
+  'vi ',
+  'vim ',
+  'nano ',
+  'code ',
+  'open ',
+  'export ',
+  'source ',
+  'docker ',
+  'kubectl ',
+  'aws ',
+  'gcloud ',
+  './',
+  '/',
+  '~',
+  '$',
+  '>',
+  '>>',
+  '|',
+  '&&',
+];
 
-interface RunOptions {
-  model?: string;
-  yes: boolean;
-  quiet: boolean;
+/**
+ * Detect if input is natural language or a shell command.
+ * Returns true if it's natural language (needs AI), false if it's a shell command.
+ */
+function isNaturalLanguage(text: string): boolean {
+  // Exact match for standalone commands
+  if (SHELL_COMMANDS.includes(text)) {
+    return false;
+  }
+  // Check if starts with known shell command patterns
+  if (SHELL_STARTERS.some((starter) => text.startsWith(starter))) {
+    return false;
+  }
+  return true;
 }
-
-interface RunUIProps {
-  messageBus: MessageBus;
-  cwd: string;
-  options: RunOptions;
-  initialPrompt?: string;
-}
-
-// ============================================================================
-// System Prompt
-// ============================================================================
 
 const SHELL_COMMAND_SYSTEM_PROMPT = `
 You are a tool that converts natural language instructions into shell commands.
 Your task is to transform user's natural language requests into precise and effective shell commands.
 
 Please follow these rules:
-1. Output only the shell command, without explanations or additional content
-2. If the user directly provides a shell command, return that command as is
-3. If the user describes a task in natural language, convert it to the most appropriate shell command
-4. Avoid using potentially dangerous commands (such as rm -rf /)
-5. Provide complete commands, avoiding placeholders
-6. Reply with only one command, don't provide multiple options or explanations
-7. When no suitable command can be found, return the recommended command directly
+1. If the user directly provides a shell command, return that command as is
+2. If the user describes a task in natural language, convert it to the most appropriate shell command
+3. Avoid using potentially dangerous commands (such as rm -rf /)
+4. Provide complete commands, avoiding placeholders
+5. Reply with only one command, don't provide multiple options
+6. When no suitable command can be found, return the recommended command directly
 
-Examples:
-User: "List all files in the current directory"
-Reply: "ls -la"
+## Response Format
 
-User: "Create a new directory named test"
-Reply: "mkdir test"
+Respond with valid JSON only, no additional text or markdown formatting.
 
-User: "Find all log files containing 'error'"
-Reply: "find . -name '*.log' -exec grep -l 'error' {} \\\\;"
-
-User: "ls -la" (user directly provided a command)
-Reply: "ls -la"
-
-User: "I want to compress all images in the current directory"
-Reply: "find . -type f ( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" ) -exec mogrify -quality 85% {} \\\\;"
+Example response:
+{
+  "command": "ls -la",
+  "explanation": "List all files including hidden ones with detailed information"
+}
 `;
 
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-function executeShell(
-  command: string,
-  cwd: string,
-): { success: boolean; output: string } {
-  try {
-    const output = execSync(command, {
-      cwd,
-      encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-      timeout: 60000, // 60s timeout
+function askPrompt(rl: readline.Interface, cwd: string): Promise<string> {
+  return new Promise((resolve) => {
+    const dirname = path.basename(cwd);
+    const prompt = `${GREEN}${dirname}${RESET} > `;
+    rl.question(prompt, (answer) => {
+      resolve(answer?.trim() ?? '');
     });
-    return { success: true, output: output?.toString() || '' };
+  });
+}
+
+async function generateCommand(
+  messageBus: MessageBus,
+  prompt: string,
+  cwd: string,
+  model?: string,
+): Promise<{ command: string; explanation: string } | null> {
+  process.stdout.write(`${DIM}Generating with ${model}...${RESET}\r`);
+
+  try {
+    const result = await messageBus.request('utils.quickQuery', {
+      cwd,
+      userPrompt: prompt,
+      systemPrompt: SHELL_COMMAND_SYSTEM_PROMPT,
+      model,
+      responseFormat: {
+        type: 'json',
+        schema: z.toJSONSchema(
+          z.object({
+            command: z.string(),
+            explanation: z.string(),
+          }),
+        ),
+      },
+    });
+
+    // Clear the "Generating..." line
+    process.stdout.write('\x1b[2K\r');
+
+    if (!result.success || !result.data?.text) {
+      console.error('Failed to generate command');
+      return null;
+    }
+
+    const parsed = JSON.parse(result.data.text);
+    return {
+      command: parsed.command,
+      explanation: parsed.explanation,
+    };
   } catch (error: any) {
-    // For execSync errors, stderr is in error.stderr
-    const errorOutput =
-      error.stderr?.toString() ||
-      error.stdout?.toString() ||
-      error.message ||
-      'Command execution failed';
-    return { success: false, output: errorOutput };
+    process.stdout.write('\x1b[2K\r');
+    console.error(`Error: ${error.message || 'Failed to generate command'}`);
+    return null;
   }
 }
 
-// ============================================================================
-// RunActionSelector Component
-// ============================================================================
+function confirmCommand(
+  rl: readline.Interface,
+  command: string,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    const prompt = `${YELLOW}→ ${command}${RESET} ${DIM}[Enter/Esc]${RESET} `;
+    process.stdout.write(prompt);
 
-interface ActionItem {
-  value: RunAction;
-  label: string;
-  key: string;
-}
+    const stdin = process.stdin;
+    const wasRaw = stdin.isRaw;
+    stdin.setRawMode(true);
+    stdin.resume();
 
-const BASE_ACTIONS: ActionItem[] = [
-  { value: 'execute', label: 'Execute', key: '1' },
-  { value: 'copy', label: 'Copy to clipboard', key: '2' },
-  { value: 'edit', label: 'Edit command', key: '3' },
-  { value: 'regenerate', label: 'Edit prompt & regenerate', key: '4' },
-];
+    const cleanup = () => {
+      stdin.removeListener('data', onData);
+      stdin.setRawMode(wasRaw);
+    };
 
-const TAIL_ACTIONS: ActionItem[] = [
-  { value: 'cancel', label: 'Cancel', key: 'q' },
-];
+    const onData = (key: Buffer) => {
+      const char = key.toString();
 
-interface RunActionSelectorProps {
-  onSelect: (action: RunAction) => void;
-  onCancel: () => void;
-  disabled?: boolean;
-  showRetry?: boolean;
-}
-
-const RunActionSelector: React.FC<RunActionSelectorProps> = ({
-  onSelect,
-  onCancel,
-  disabled = false,
-  showRetry = false,
-}) => {
-  const actions = useMemo(() => {
-    const baseActions = showRetry
-      ? [
-          { value: 'retry' as RunAction, label: 'Retry', key: '1' },
-          ...BASE_ACTIONS.slice(1),
-        ]
-      : BASE_ACTIONS;
-    return [...baseActions, ...TAIL_ACTIONS];
-  }, [showRetry]);
-
-  const [selectedIndex, setSelectedIndex] = useState(0);
-
-  useInput(
-    (input, key) => {
-      if (disabled) return;
-
-      if (key.escape || input === 'q') {
-        onCancel();
+      // Enter pressed - execute command
+      if (char === '\r' || char === '\n') {
+        cleanup();
+        resolve(true);
         return;
       }
 
-      if (key.return) {
-        onSelect(actions[selectedIndex].value);
+      // Escape pressed - cancel
+      if (char === '\x1b') {
+        cleanup();
+        process.stdout.write(`\n${DIM}Cancelled${RESET}\n\n`);
+        resolve(false);
         return;
       }
+    };
 
-      if (key.upArrow) {
-        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : actions.length - 1));
-        return;
-      }
-
-      if (key.downArrow) {
-        setSelectedIndex((prev) => (prev < actions.length - 1 ? prev + 1 : 0));
-        return;
-      }
-
-      // Quick select by key
-      const action = actions.find((a) => a.key === input);
-      if (action) {
-        onSelect(action.value);
-      }
-    },
-    { isActive: !disabled },
-  );
-
-  return (
-    <Box flexDirection="column">
-      <Text>Actions:</Text>
-      <Box flexDirection="column">
-        {actions.map((action, index) => {
-          const isSelected = index === selectedIndex;
-          const prefix = isSelected ? '>' : ' ';
-          const keyLabel = `[${action.key}]`;
-
-          return (
-            <Box key={action.value}>
-              <Text color={isSelected ? 'cyan' : undefined} dimColor={disabled}>
-                {prefix} {keyLabel} {action.label}
-              </Text>
-            </Box>
-          );
-        })}
-      </Box>
-      <Text> </Text>
-      <Text dimColor>↑↓ select enter confirm q cancel</Text>
-    </Box>
-  );
-};
-
-// ============================================================================
-// Error Display Component
-// ============================================================================
-
-interface ErrorDisplayProps {
-  error: string;
-  onExit: () => void;
-}
-
-const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onExit }) => {
-  useInput((input, key) => {
-    if (key.escape || input === 'n' || input === 'N') {
-      onExit();
-    }
+    stdin.on('data', onData);
   });
+}
 
-  return (
-    <Box flexDirection="column">
-      <Text color="red">error: {error}</Text>
-      <Text> </Text>
-      <Text dimColor>esc exit</Text>
-    </Box>
-  );
-};
+function executeCommand(
+  command: string,
+  cwd: string,
+): Promise<{ exitCode: number | null }> {
+  return new Promise((resolve) => {
+    const isWindows = os.platform() === 'win32';
+    const shell = isWindows ? 'cmd.exe' : process.env.SHELL || '/bin/bash';
+    const shellArgs = isWindows ? ['/c', command] : ['-c', command];
 
-// ============================================================================
-// Main UI Component
-// ============================================================================
+    const child = spawn(shell, shellArgs, {
+      cwd,
+      stdio: 'inherit',
+    });
 
-const RunUI: React.FC<RunUIProps> = ({
-  messageBus,
-  cwd,
-  options,
-  initialPrompt,
-}) => {
-  const [state, setState] = useState<RunState>(() =>
-    initialPrompt
-      ? { phase: 'generating', prompt: initialPrompt }
-      : { phase: 'idle' },
-  );
-  const [promptInput, setPromptInput] = useState('');
-  const [shouldExit, setShouldExit] = useState(false);
+    child.on('exit', (code) => {
+      resolve({ exitCode: code });
+    });
 
-  // Handle exit
-  useEffect(() => {
-    if (shouldExit) {
-      process.exit(0);
-    }
-  }, [shouldExit]);
-
-  // Handle keyboard input for global actions
-  useInput((_input, key) => {
-    if (key.escape) {
-      if (state.phase === 'idle' || state.phase === 'generating') {
-        setShouldExit(true);
-      } else if (state.phase === 'editing') {
-        // Cancel editing, go back to displaying
-        setState({
-          phase: 'displaying',
-          command: state.command,
-          prompt: state.prompt,
-        });
-      } else if (state.phase === 'editingPrompt') {
-        // Cancel prompt editing, go back to displaying
-        setState({
-          phase: 'displaying',
-          command: state.command,
-          prompt: state.prompt,
-        });
-      } else if (
-        state.phase === 'displaying' ||
-        state.phase === 'success' ||
-        state.phase === 'cancelled'
-      ) {
-        setShouldExit(true);
-      }
-    }
+    child.on('error', (err) => {
+      console.error(`Execution error: ${err.message}`);
+      resolve({ exitCode: 1 });
+    });
   });
+}
 
-  // Generate command from prompt
-  const generateCommand = useCallback(
-    async (prompt: string) => {
-      setState({ phase: 'generating', prompt });
+/**
+ * Try to change directory. Returns new cwd if successful, null otherwise.
+ */
+function tryChangeDirectory(
+  command: string,
+  currentCwd: string,
+): string | null {
+  // Match "cd" or "cd <path>"
+  const cdMatch = command.match(/^cd(?:\s+(.*))?$/);
+  if (!cdMatch) return null;
 
-      try {
-        const result = await messageBus.request('utils.quickQuery', {
-          cwd,
-          userPrompt: prompt,
-          systemPrompt: SHELL_COMMAND_SYSTEM_PROMPT,
-          model: options.model,
-        });
+  let targetPath = cdMatch[1]?.trim();
 
-        const rawCommand = result.success ? result.data?.text : null;
-        const command = rawCommand ? sanitizeAIResponse(rawCommand) : null;
-
-        if (!command) {
-          setState({
-            phase: 'error',
-            command: '',
-            prompt,
-            error: result.error || 'Failed to generate command from AI',
-          });
-          return;
-        }
-
-        // If --yes flag, execute immediately
-        if (options.yes) {
-          setState({ phase: 'executing', command });
-          const execResult = executeShell(command, cwd);
-
-          if (execResult.success) {
-            setState({
-              phase: 'success',
-              command,
-              output: execResult.output,
-            });
-            // Auto-exit after showing result
-            setTimeout(() => setShouldExit(true), 1500);
-          } else {
-            setState({
-              phase: 'error',
-              command,
-              prompt,
-              error: execResult.output,
-            });
-          }
-        } else {
-          setState({ phase: 'displaying', command, prompt });
-        }
-      } catch (error: any) {
-        setState({
-          phase: 'error',
-          command: '',
-          prompt,
-          error: error.message || 'Failed to generate command',
-        });
-      }
-    },
-    [messageBus, cwd, options.yes, options.model],
-  );
-
-  // Auto-generate if initial prompt provided
-  useEffect(() => {
-    if (initialPrompt && state.phase === 'generating') {
-      generateCommand(initialPrompt);
+  // "cd" without args goes to home directory
+  if (!targetPath) {
+    targetPath = os.homedir();
+  } else {
+    // Expand ~ to home directory
+    if (targetPath.startsWith('~')) {
+      targetPath = path.join(os.homedir(), targetPath.slice(1));
     }
-  }, [initialPrompt, generateCommand, state.phase]);
+    // Resolve relative paths
+    if (!path.isAbsolute(targetPath)) {
+      targetPath = path.resolve(currentCwd, targetPath);
+    }
+  }
 
-  // Handle prompt submission
-  const handlePromptSubmit = useCallback(
-    (value: string) => {
-      if (!value.trim()) return;
-      generateCommand(value.trim());
-    },
-    [generateCommand],
-  );
-
-  // Handle action selection
-  const handleAction = useCallback(
-    async (action: RunAction) => {
-      if (state.phase !== 'displaying' && state.phase !== 'error') return;
-
-      const command = state.command;
-      const prompt = state.prompt;
-
-      switch (action) {
-        case 'execute':
-        case 'retry': {
-          setState({ phase: 'executing', command });
-          const result = executeShell(command, cwd);
-
-          if (result.success) {
-            setState({
-              phase: 'success',
-              command,
-              output: result.output,
-            });
-          } else {
-            setState({
-              phase: 'error',
-              command,
-              prompt,
-              error: result.output,
-            });
-          }
-          break;
-        }
-
-        case 'copy': {
-          clipboardy.writeSync(command);
-          setState({
-            phase: 'success',
-            command,
-            output: 'Copied to clipboard',
-          });
-          setTimeout(() => setShouldExit(true), 1000);
-          break;
-        }
-
-        case 'edit': {
-          setState({
-            phase: 'editing',
-            command,
-            prompt,
-            editedCommand: command,
-          });
-          break;
-        }
-
-        case 'regenerate': {
-          setState({
-            phase: 'editingPrompt',
-            command,
-            prompt,
-            editedPrompt: prompt,
-          });
-          break;
-        }
-
-        case 'cancel': {
-          setState({ phase: 'cancelled' });
-          setShouldExit(true);
-          break;
-        }
-      }
-    },
-    [state, cwd],
-  );
-
-  // Handle edit submission
-  const handleEditSubmit = useCallback(
-    (value: string) => {
-      if (!value.trim()) return;
-      if (state.phase === 'editing') {
-        setState({
-          phase: 'displaying',
-          command: value.trim(),
-          prompt: state.prompt,
-        });
-      }
-    },
-    [state],
-  );
-
-  // Handle prompt edit submission
-  const handlePromptEditSubmit = useCallback(
-    (value: string) => {
-      if (!value.trim()) return;
-      generateCommand(value.trim());
-    },
-    [generateCommand],
-  );
-
-  // Render based on current state
-  return (
-    <Box flexDirection="column" padding={1}>
-      {/* Idle Phase - Prompt Input */}
-      {state.phase === 'idle' && (
-        <Box flexDirection="column">
-          <Box>
-            <Text color="cyan">{'> '}</Text>
-            <TextInput
-              value={promptInput}
-              onChange={setPromptInput}
-              onSubmit={handlePromptSubmit}
-              placeholder="Describe what you want to do..."
-              // Account for "> " prefix (2) + outer padding (1)
-              columns={{ useTerminalSize: true, prefix: 3 }}
-            />
-          </Box>
-          <Text> </Text>
-          <Text dimColor>enter submit esc exit</Text>
-        </Box>
-      )}
-
-      {/* Generating Phase */}
-      {state.phase === 'generating' && (
-        <Box>
-          <Text color="yellow">Generating command with {options.model}...</Text>
-        </Box>
-      )}
-
-      {/* Displaying Phase */}
-      {state.phase === 'displaying' && (
-        <Box flexDirection="column">
-          <Text>
-            <Text dimColor>command: </Text>
-            <Text color="yellow">{state.command}</Text>
-          </Text>
-          <Text> </Text>
-          <RunActionSelector
-            onSelect={handleAction}
-            onCancel={() => setShouldExit(true)}
-          />
-        </Box>
-      )}
-
-      {/* Editing Phase */}
-      {state.phase === 'editing' && (
-        <Box flexDirection="column">
-          <Text>
-            <Text dimColor>command: </Text>
-            <Text color="yellow">{state.command}</Text>
-          </Text>
-          <Text> </Text>
-          <Text>Edit command:</Text>
-          <Box>
-            <Text color="cyan">{'> '}</Text>
-            <TextInput
-              value={state.editedCommand}
-              onChange={(value) =>
-                setState((prev) =>
-                  prev.phase === 'editing'
-                    ? { ...prev, editedCommand: value }
-                    : prev,
-                )
-              }
-              onSubmit={handleEditSubmit}
-              // Account for "> " prefix (2) + outer padding (1)
-              columns={{ useTerminalSize: true, prefix: 3 }}
-            />
-          </Box>
-          <Text> </Text>
-          <Text dimColor>enter save esc cancel</Text>
-        </Box>
-      )}
-
-      {/* Editing Prompt Phase */}
-      {state.phase === 'editingPrompt' && (
-        <Box flexDirection="column">
-          <Text>
-            <Text dimColor>command: </Text>
-            <Text color="yellow">{state.command}</Text>
-          </Text>
-          <Text> </Text>
-          <Text>Edit prompt:</Text>
-          <Box>
-            <Text color="cyan">{'> '}</Text>
-            <TextInput
-              value={state.editedPrompt}
-              onChange={(value) =>
-                setState((prev) =>
-                  prev.phase === 'editingPrompt'
-                    ? { ...prev, editedPrompt: value }
-                    : prev,
-                )
-              }
-              onSubmit={handlePromptEditSubmit}
-              // Account for "> " prefix (2) + outer padding (1)
-              columns={{ useTerminalSize: true, prefix: 3 }}
-            />
-          </Box>
-          <Text> </Text>
-          <Text dimColor>enter regenerate esc cancel</Text>
-        </Box>
-      )}
-
-      {/* Executing Phase */}
-      {state.phase === 'executing' && (
-        <Box flexDirection="column">
-          <Text>
-            <Text dimColor>command: </Text>
-            <Text color="yellow">{state.command}</Text>
-          </Text>
-          <Text> </Text>
-          <Text dimColor>Executing...</Text>
-        </Box>
-      )}
-
-      {/* Success Phase */}
-      {state.phase === 'success' && (
-        <Box flexDirection="column">
-          <Text>
-            <Text dimColor>command: </Text>
-            <Text color="yellow">{state.command}</Text>
-          </Text>
-          <Text> </Text>
-          <Text color="green">
-            ok: {state.output || 'Command executed successfully'}
-          </Text>
-          <Text> </Text>
-          <Text dimColor>esc exit</Text>
-        </Box>
-      )}
-
-      {/* Error Phase with command */}
-      {state.phase === 'error' && state.command && (
-        <Box flexDirection="column">
-          <Text>
-            <Text dimColor>command: </Text>
-            <Text color="yellow">{state.command}</Text>
-          </Text>
-          <Text> </Text>
-          <Text color="red">error: {state.error}</Text>
-          <Text> </Text>
-          <RunActionSelector
-            onSelect={handleAction}
-            onCancel={() => setShouldExit(true)}
-            showRetry={true}
-          />
-        </Box>
-      )}
-
-      {/* Error Phase (no command - generation failed) */}
-      {state.phase === 'error' && !state.command && (
-        <ErrorDisplay error={state.error} onExit={() => setShouldExit(true)} />
-      )}
-
-      {/* Cancelled Phase */}
-      {state.phase === 'cancelled' && (
-        <Box>
-          <Text dimColor>Cancelled.</Text>
-        </Box>
-      )}
-    </Box>
-  );
-};
-
-// ============================================================================
-// Help Text
-// ============================================================================
+  try {
+    process.chdir(targetPath);
+    return process.cwd();
+  } catch (err: any) {
+    console.error(`cd: ${err.message}`);
+    return null;
+  }
+}
 
 function printHelp(productName: string) {
   console.log(
     `
 Usage:
-  ${productName} run [options] <prompt>
+  ${productName} run-2 [options]
 
-Convert natural language to shell commands using AI and optionally execute them.
-
-Arguments:
-  prompt                Natural language description of what you want to do
+Interactive shell command generator. Converts natural language to shell commands.
 
 Options:
   -h, --help            Show help
   -m, --model <model>   Specify model to use
-  -q, --quiet           Quiet mode, output only the command (requires prompt)
-  --yes                 Execute the command without confirmation
 
-Examples:
-  ${productName} run "list all files in current directory"
-  ${productName} run "find all .js files modified in last 7 days"
-  ${productName} run --yes "update all npm dependencies"
-  ${productName} run -q "compress all images" | pbcopy
+Controls:
+  dirname > prompt      Type natural language, press Enter to generate command
+  → command [Enter]     Press Enter to execute, Ctrl+C to cancel
+  Ctrl+D                Exit the program
     `.trim(),
   );
 }
-
-// ============================================================================
-// Quiet Mode
-// ============================================================================
-
-async function runQuiet(
-  context: Context,
-  prompt: string,
-  options: RunOptions,
-): Promise<void> {
-  try {
-    // Initialize NodeBridge and message bus
-    const nodeBridge = new NodeBridge({
-      contextCreateOpts: {
-        productName: context.productName,
-        version: context.version,
-        argvConfig: {},
-        plugins: context.plugins,
-      },
-    });
-
-    const [quietTransport, nodeTransport] = DirectTransport.createPair();
-    const messageBus = new MessageBus();
-    messageBus.setTransport(quietTransport);
-    nodeBridge.messageBus.setTransport(nodeTransport);
-
-    // Generate command via AI
-    const result = await messageBus.request('utils.quickQuery', {
-      cwd: context.cwd,
-      userPrompt: prompt,
-      systemPrompt: SHELL_COMMAND_SYSTEM_PROMPT,
-      model: options.model,
-    });
-
-    const rawCommand = result.success ? result.data?.text : null;
-    const command = rawCommand ? sanitizeAIResponse(rawCommand) : null;
-
-    if (!command) {
-      console.error(result.error || 'Failed to generate command from AI');
-      process.exit(1);
-    }
-
-    // Output plain text command to stdout
-    console.log(command);
-    process.exit(0);
-  } catch (error: any) {
-    console.error(error.message || 'Failed to generate command');
-    process.exit(1);
-  }
-}
-
-// ============================================================================
-// Main Entry Point
-// ============================================================================
 
 export async function runRun(context: Context) {
   const { default: yargsParser } = await import('yargs-parser');
@@ -723,81 +306,86 @@ export async function runRun(context: Context) {
     alias: {
       model: 'm',
       help: 'h',
-      yes: 'y',
-      quiet: 'q',
     },
-    boolean: ['help', 'yes', 'quiet'],
+    boolean: ['help'],
     string: ['model'],
   });
 
-  // Help
   if (argv.help) {
     printHelp(context.productName.toLowerCase());
     return;
   }
 
-  // Get initial prompt from CLI args
-  const initialPrompt = argv._[1] as string | undefined;
+  const model = argv.model || context.config.smallModel || context.config.model;
 
-  const options: RunOptions = {
-    model: argv.model || context.config.smallModel || context.config.model,
-    yes: argv.yes || false,
-    quiet: argv.quiet || false,
-  };
+  // Initialize NodeBridge for AI queries
+  const nodeBridge = new NodeBridge({
+    contextCreateOpts: {
+      productName: context.productName,
+      version: context.version,
+      argvConfig: {},
+      plugins: context.plugins,
+    },
+  });
 
-  // Quiet mode: output only the command, no UI
-  if (options.quiet) {
-    if (!initialPrompt?.trim()) {
-      console.error('Error: Prompt is required in quiet mode');
-      process.exit(1);
+  const [clientTransport, nodeTransport] = DirectTransport.createPair();
+  const messageBus = new MessageBus();
+  messageBus.setTransport(clientTransport);
+  nodeBridge.messageBus.setTransport(nodeTransport);
+
+  // Create readline interface
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  // Track current working directory
+  let cwd = context.cwd;
+
+  // Handle Ctrl+D to exit
+  rl.on('close', () => {
+    console.log('\nBye!');
+    process.exit(0);
+  });
+
+  // Main loop
+  while (true) {
+    const userInput = await askPrompt(rl, cwd);
+
+    if (userInput === '') {
+      // Empty input, just continue to next prompt
+      continue;
     }
-    await runQuiet(context, initialPrompt.trim(), options);
-    return;
-  }
 
-  try {
-    // Initialize NodeBridge and message bus
-    const nodeBridge = new NodeBridge({
-      contextCreateOpts: {
-        productName: context.productName,
-        version: context.version,
-        argvConfig: {},
-        plugins: context.plugins,
-      },
-    });
-
-    const [uiTransport, nodeTransport] = DirectTransport.createPair();
-    const uiMessageBus = new MessageBus();
-    uiMessageBus.setTransport(uiTransport);
-    nodeBridge.messageBus.setTransport(nodeTransport);
-
-    // Render the UI
-    render(
-      <TerminalSizeProvider>
-        <RunUI
-          messageBus={uiMessageBus}
-          cwd={context.cwd}
-          options={options}
-          initialPrompt={initialPrompt?.trim()}
-        />
-      </TerminalSizeProvider>,
-      {
-        patchConsole: true,
-        exitOnCtrlC: true,
-      },
-    );
-
-    // Handle process signals
-    const exit = () => {
-      process.exit(0);
-    };
-    process.on('SIGINT', exit);
-    process.on('SIGTERM', exit);
-  } catch (error: any) {
-    console.error('Error initializing run command:', error.message);
-    if (error.stack) {
-      console.error(error.stack);
+    // Check if user directly typed a cd command
+    const newCwd = tryChangeDirectory(userInput, cwd);
+    if (newCwd !== null) {
+      cwd = newCwd;
+      continue;
     }
-    process.exit(1);
+
+    // If it's a shell command, execute directly without AI
+    if (!isNaturalLanguage(userInput)) {
+      await executeCommand(userInput, cwd);
+      console.log();
+      continue;
+    }
+
+    // Natural language: generate command via AI
+    const result = await generateCommand(messageBus, userInput, cwd, model);
+    if (!result) continue;
+
+    const confirmed = await confirmCommand(rl, result.command);
+    if (!confirmed) continue;
+
+    // Check if generated command is cd
+    const cdNewCwd = tryChangeDirectory(result.command, cwd);
+    if (cdNewCwd !== null) {
+      cwd = cdNewCwd;
+      continue;
+    }
+
+    await executeCommand(result.command, cwd);
+    console.log(); // Add spacing after command output
   }
 }
