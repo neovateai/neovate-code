@@ -3,6 +3,7 @@ import type { AgentDefinition } from '../types';
 import { createExploreAgent } from './explore';
 import { createGeneralPurposeAgent } from './general-purpose';
 import { createNeovateCodeGuideAgent } from './neovate-code-guide';
+import { createPlanAgent } from './plan';
 
 export function getBuiltinAgents(opts: {
   context: Context;
@@ -11,5 +12,6 @@ export function getBuiltinAgents(opts: {
     createExploreAgent(opts),
     createGeneralPurposeAgent(opts),
     createNeovateCodeGuideAgent(opts),
+    createPlanAgent(opts),
   ];
 }

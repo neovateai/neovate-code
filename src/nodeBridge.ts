@@ -1,7 +1,11 @@
 import z from 'zod';
 import { compact } from './compact';
 import { ConfigManager, type McpServerConfig } from './config';
-import { CANCELED_MESSAGE_TEXT } from './constants';
+import {
+  CANCELED_MESSAGE_TEXT,
+  PLAN_MODE_EVENTS,
+  TOOL_NAMES,
+} from './constants';
 import { Context } from './context';
 import { JsonlLogger } from './jsonl';
 import type { StreamResult } from './loop';
@@ -1760,7 +1764,7 @@ ${diff}
                 data: { prUrl },
               });
             } else {
-              let errorMessage = stderr.trim() || 'Failed to create PR';
+              const errorMessage = stderr.trim() || 'Failed to create PR';
               let hint = '';
 
               // Provide helpful hints for common errors
@@ -2063,7 +2067,15 @@ ${diff}
     });
 
     this.messageBus.registerHandler('session.send', async (data) => {
-      const { message, cwd, sessionId, model, attachments, parentUuid } = data;
+      const {
+        message,
+        cwd,
+        sessionId,
+        model,
+        attachments,
+        parentUuid,
+        planMode,
+      } = data;
       const context = await this.getContext(cwd);
 
       context
@@ -2101,11 +2113,44 @@ ${diff}
       const key = buildSignalKey(cwd, project.session.id);
       this.abortControllers.set(key, abortController);
 
-      const fn = data.planMode ? project.plan : project.send;
-      const result = await fn.call(project, message, {
+      let prependContent:
+        | Array<{ type: 'text'; text: string; hidden?: boolean }>
+        | undefined;
+
+      if (planMode && message !== null) {
+        const { generatePlanPrompt } = await import('./planPrompt');
+        const { createPlanFileManager } = await import('./planFile');
+
+        // Get plan file path and status
+        const planFileManager = createPlanFileManager({
+          context,
+          sessionId: project.session.id,
+        });
+        const planFilePath = planFileManager.getPlanFilePath();
+        const planExists = planFileManager.planExists();
+
+        const planPrompt = generatePlanPrompt({
+          productName: context.productName,
+          language: context.config.language,
+          planFilePath,
+          planExists,
+          isReentry: planExists,
+        });
+
+        prependContent = [
+          {
+            type: 'text',
+            text: `<system-reminder>\n${planPrompt}\n</system-reminder>`,
+            hidden: true,
+          },
+        ];
+      }
+
+      const result = await project.send(message, {
         attachments,
         model: resolvedModel,
         parentUuid,
+        prependContent,
         thinking: data.thinking,
         onMessage: async (opts) => {
           await this.messageBus.emitEvent('message', {
@@ -2136,6 +2181,31 @@ ${diff}
           toolUse: ToolUse;
           category?: ApprovalCategory;
         }) => {
+          // Special handling for ExitPlanMode: preview plan before approval modal is shown
+          if (toolUse.name === TOOL_NAMES.EXIT_PLAN_MODE) {
+            try {
+              const { createPlanFileManager } = await import('./planFile');
+              const planFileManager = createPlanFileManager({
+                context,
+                sessionId: project.session.id,
+              });
+
+              const planFilePath = planFileManager.getPlanFilePath();
+              const planContent = planFileManager.readPlan();
+
+              // Emit preview event to UI so approval modal can display plan data
+              await this.messageBus.emitEvent(PLAN_MODE_EVENTS.PREVIEW_PLAN, {
+                sessionId: project.session.id,
+                planFilePath,
+                planContent,
+                timestamp: Date.now(),
+              });
+            } catch (error) {
+              console.error('Failed to emit plan.preview event:', error);
+              // Continue with approval flow even if preview fails
+            }
+          }
+
           const result = await this.messageBus.request('toolApproval', {
             toolUse,
             category,

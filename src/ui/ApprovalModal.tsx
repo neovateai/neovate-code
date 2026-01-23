@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { Box, Text, useInput } from 'ink';
 import path from 'pathe';
 import type React from 'react';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { TOOL_NAMES } from '../constants';
 import type { ToolUse as ToolUseType } from '../tool';
 import type { Question } from '../tools/askUserQuestion';
@@ -12,8 +12,10 @@ import { AskQuestionModal } from './AskQuestionModal';
 import { UI_COLORS } from './constants';
 import { DashedDivider } from './DashedDivider';
 import { DiffViewer } from './DiffViewer';
+import { Markdown } from './Markdown';
 import { SelectInput, type SelectOption } from './SelectInput';
 import { type ApprovalResult, useAppStore } from './store';
+import TextInput from './TextInput';
 import { useTerminalSize } from './useTerminalSize';
 
 interface ToolPreviewProps {
@@ -158,10 +160,156 @@ function InvalidQuestionsError({ onDismiss }: { onDismiss: () => void }) {
   );
 }
 
+interface PlanApprovalProps {
+  planFilePath: string;
+  planContent: string | null;
+  onApprove: (mode: 'autoEdit' | 'default') => void;
+  onDeny: (feedback: string) => void;
+}
+
+function PlanApprovalView({
+  planFilePath,
+  planContent,
+  onApprove,
+  onDeny,
+}: PlanApprovalProps) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isInputMode, setIsInputMode] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const { columns } = useTerminalSize();
+  const { productName } = useAppStore();
+
+  const items = [
+    { label: 'Yes, and auto-accept edits (shift+tab)', value: 'autoEdit' },
+    { label: 'Yes, and manually approve edits', value: 'default' },
+    { label: `Type here to tell ${productName} what to change`, value: 'deny' },
+  ];
+
+  useInput((input, key) => {
+    if (isInputMode) {
+      if (key.return && feedback.trim()) {
+        onDeny(feedback);
+        return;
+      }
+      if (key.escape) {
+        setIsInputMode(false);
+        setFeedback('');
+      }
+      return;
+    }
+
+    if (key.upArrow) {
+      setSelectedIndex((prev) => Math.max(0, prev - 1));
+    } else if (key.downArrow) {
+      setSelectedIndex((prev) => Math.min(items.length - 1, prev + 1));
+    } else if (key.escape) {
+      // ESC key rejects the plan
+      onDeny('');
+    } else if (key.return) {
+      const selected = items[selectedIndex];
+      if (selected.value === 'deny') {
+        setIsInputMode(true);
+      } else {
+        onApprove(selected.value as 'autoEdit' | 'default');
+      }
+    }
+  });
+
+  const planPreview = planContent || '(No plan content)';
+
+  return (
+    <Box flexDirection="column">
+      {/* Separator */}
+      <Box marginBottom={1}>
+        <Text color="cyan">{'─'.repeat(Math.max(0, columns))}</Text>
+      </Box>
+
+      {/* Header */}
+      <Box flexDirection="column" marginBottom={1}>
+        <Text>Here is {productName}&apos;s plan:</Text>
+      </Box>
+
+      {/* Plan Content */}
+      <Box flexDirection="column" marginBottom={1} paddingX={2}>
+        <Markdown>{planPreview}</Markdown>
+      </Box>
+
+      {/* Separator */}
+      <Box marginBottom={1}>
+        <Text color="cyan">{'─'.repeat(Math.max(0, columns))}</Text>
+      </Box>
+
+      {isInputMode ? (
+        <Box flexDirection="column">
+          <Box marginBottom={1}>
+            <TextInput
+              value={feedback}
+              onChange={setFeedback}
+              onSubmit={() => {
+                if (feedback.trim()) {
+                  onDeny(feedback);
+                }
+              }}
+              placeholder={`Type here to tell ${productName} what to change`}
+              focus={true}
+            />
+          </Box>
+          <Box>
+            <Text dimColor>ctrl-g to edit in VS Code • {planFilePath}</Text>
+          </Box>
+        </Box>
+      ) : (
+        <Box flexDirection="column">
+          {/* Question */}
+          <Box marginBottom={1}>
+            <Text>How do you like to proceed?</Text>
+          </Box>
+
+          {/* Options */}
+          <Box flexDirection="column" marginBottom={1}>
+            {items.map((item, index) => (
+              <Box key={item.value}>
+                <Text>
+                  {index === selectedIndex ? '> ' : '  '}
+                  {index + 1}. {item.label}
+                </Text>
+              </Box>
+            ))}
+          </Box>
+
+          {/* Help Text */}
+          <Box>
+            <Text dimColor>ctrl-g to edit in VS Code • {planFilePath}</Text>
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 export function ApprovalModal() {
-  const { approvalModal } = useAppStore();
+  const { approvalModal, planFilePath, planContent, productName } =
+    useAppStore();
   if (!approvalModal) {
     return null;
+  }
+
+  if (approvalModal.toolUse.name === TOOL_NAMES.EXIT_PLAN_MODE) {
+    return (
+      <PlanApprovalView
+        planFilePath={planFilePath || '(unknown)'}
+        planContent={planContent}
+        onApprove={(mode) => {
+          approvalModal.resolve('approve_once', { approvalMode: mode });
+        }}
+        onDeny={(feedback) => {
+          const rejectionMessage = feedback
+            ? feedback
+            : `User rejected ${productName}'s plan:`;
+          approvalModal.resolve('deny', { denyReason: rejectionMessage });
+        }}
+      />
+    );
   }
 
   // Special handling for askUserQuestion tool

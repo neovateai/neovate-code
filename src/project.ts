@@ -7,7 +7,6 @@ import type { ImagePart, NormalizedMessage, UserContent } from './message';
 import { resolveModelWithContext } from './model';
 import { OutputFormat } from './outputFormat';
 import { OutputStyleManager } from './outputStyle';
-import { generatePlanSystemPrompt } from './planSystemPrompt';
 import { PluginHookType } from './plugin';
 import { Session, SessionConfigManager, type SessionId } from './session';
 import { generateSystemPrompt } from './systemPrompt';
@@ -54,6 +53,7 @@ export class Project {
       onStreamResult?: (result: StreamResult) => Promise<void>;
       signal?: AbortSignal;
       attachments?: ImagePart[];
+      prependContent?: Array<{ type: 'text'; text: string; hidden?: boolean }>;
       parentUuid?: string;
       thinking?: ThinkingConfig;
     } = {},
@@ -94,51 +94,6 @@ export class Project {
     });
   }
 
-  async plan(
-    message: string | null,
-    opts: {
-      model?: string;
-      onMessage?: (opts: { message: NormalizedMessage }) => Promise<void>;
-      onTextDelta?: (text: string) => Promise<void>;
-      onChunk?: (chunk: any, requestId: string) => Promise<void>;
-      onStreamResult?: (result: StreamResult) => Promise<void>;
-      signal?: AbortSignal;
-      attachments?: ImagePart[];
-      parentUuid?: string;
-      thinking?: ThinkingConfig;
-    } = {},
-  ) {
-    const tools = await resolveTools({
-      context: this.context,
-      sessionId: this.session.id,
-      write: false,
-      todo: false,
-      askUserQuestion: !this.context.config.quiet,
-      signal: opts.signal,
-      task: false,
-      isPlan: true,
-    });
-    let systemPrompt = generatePlanSystemPrompt({
-      todo: this.context.config.todo!,
-      productName: this.context.productName,
-      language: this.context.config.language,
-    });
-    systemPrompt = await this.context.apply({
-      hook: 'systemPrompt',
-      args: [{ isPlan: true, sessionId: this.session.id }],
-      memo: systemPrompt,
-      type: PluginHookType.SeriesLast,
-    });
-    return this.sendWithSystemPromptAndTools(message, {
-      ...opts,
-      model: opts.model || this.context.config.planModel,
-      tools,
-      systemPrompt,
-      // why? askUserQuestion tool will always require user input, so we don't need to approve it
-      // onToolApprove: () => Promise.resolve(true),
-    });
-  }
-
   async sendWithSystemPromptAndTools(
     message: string | null,
     opts: {
@@ -158,6 +113,7 @@ export class Project {
       parentUuid?: string;
       thinking?: ThinkingConfig;
       skipStopHook?: boolean;
+      prependContent?: Array<{ type: 'text'; text: string; hidden?: boolean }>;
     } = {},
   ) {
     const startTime = new Date();
@@ -205,13 +161,15 @@ export class Project {
           ?.uuid;
 
       let content: UserContent = message;
-      if (opts.attachments?.length) {
+
+      if (opts.prependContent?.length || opts.attachments?.length) {
         content = [
+          ...(opts.prependContent ?? []),
           {
             type: 'text' as const,
             text: message,
           },
-          ...opts.attachments,
+          ...(opts.attachments ?? []),
         ];
       }
 

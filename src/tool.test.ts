@@ -12,6 +12,8 @@ describe('resolveTools with tools config', () => {
       productName: 'test',
       paths: {
         globalConfigDir: '/test/.neovate',
+        getSessionLogPath: (sessionId: string) =>
+          `/test/.neovate/projects/test/${sessionId}.jsonl`,
       },
       config: {
         model: 'test-model',

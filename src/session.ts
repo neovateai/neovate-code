@@ -52,6 +52,7 @@ export type SessionConfig = {
   pastedTextMap?: Record<string, string>;
   pastedImageMap?: Record<string, string>;
   additionalDirectories?: string[];
+  planSlug?: string;
 };
 
 const DEFAULT_SESSION_CONFIG: SessionConfig = {

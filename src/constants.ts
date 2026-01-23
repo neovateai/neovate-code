@@ -62,6 +62,7 @@ export enum TOOL_NAMES {
   EDIT = 'edit',
   LS = 'ls',
   TASK = 'task',
+  EXIT_PLAN_MODE = 'ExitPlanMode',
 }
 
 export const BASH_EVENTS = {
@@ -81,3 +82,8 @@ export enum AGENT_TYPE {
   GENERAL_PURPOSE = 'GeneralPurpose',
   NEOVATE_CODE_GUIDE = 'neovate-code-guide',
 }
+
+export const PLAN_MODE_EVENTS = {
+  EXIT_PLAN_MODE: 'plan.exit',
+  PREVIEW_PLAN: 'plan.preview',
+} as const;

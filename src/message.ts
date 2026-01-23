@@ -9,6 +9,7 @@ export type SystemMessage = {
 export type TextPart = {
   type: 'text';
   text: string;
+  hidden?: boolean;
 };
 
 export type ImagePart = {
@@ -229,7 +230,7 @@ export function getMessageText(message: Message) {
   return typeof message.content === 'string'
     ? message.content
     : message.content
-        .filter((c) => c.type === 'text')
+        .filter((c): c is TextPart => c.type === 'text' && c.hidden !== true)
         .map((c) => c.text)
         .join('');
 }

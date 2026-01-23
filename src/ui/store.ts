@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { ApprovalMode } from '../config';
+import { PLAN_MODE_EVENTS, TOOL_NAMES } from '../constants';
 import type { LoopResult, StreamResult, ThinkingConfig } from '../loop';
 import type { Message, NormalizedMessage, UserMessage } from '../message';
 import type { ModelInfo, ProvidersMap } from '../model';
@@ -97,6 +98,10 @@ interface AppState {
   brainstormMode: boolean;
   bashMode: boolean;
   approvalMode: ApprovalMode;
+
+  // Plan Mode state
+  planFilePath: string | null;
+  planContent: string | null;
 
   planResult: string | null;
   processingStartTime: number | null;
@@ -262,6 +267,13 @@ interface AppActions {
   clearAgentProgress: (toolUseId: string) => void;
   toggleTranscriptMode: () => void;
   setWindowFocused: (focused: boolean) => void;
+
+  // Plan Mode actions
+  exitPlanMode: (opts: {
+    approved: boolean;
+    approvalMode?: 'autoEdit';
+    feedback?: string;
+  }) => void;
 }
 
 export type AppStore = AppState & AppActions;
@@ -288,6 +300,10 @@ export const useAppStore = create<AppStore>()(
       brainstormMode: false,
       bashMode: false,
       approvalMode: 'default',
+
+      // Plan Mode initial state
+      planFilePath: null,
+      planContent: null,
       messages: [],
       currentMessage: null,
       queuedMessages: [],
@@ -443,6 +459,23 @@ export const useAppStore = create<AppStore>()(
               model,
             });
           }
+        });
+
+        // Listen for Plan Mode events
+        bridge.onEvent(PLAN_MODE_EVENTS.PREVIEW_PLAN, (data: any) => {
+          // Update preview data before approval modal is shown
+          set({
+            planFilePath: data.planFilePath,
+            planContent: data.planContent,
+          });
+        });
+
+        bridge.onEvent(PLAN_MODE_EVENTS.EXIT_PLAN_MODE, (data: any) => {
+          set({
+            planFilePath: data.planFilePath,
+            planContent: data.planContent,
+          });
+          // Note: Actual exit logic is executed after user approval via exitPlanMode()
         });
 
         setImmediate(async () => {
@@ -1078,6 +1111,18 @@ export const useAppStore = create<AppStore>()(
                 set({ approvalModal: null });
                 const isApproved = result !== 'deny';
 
+                // Special handling: ExitPlanMode approval should exit plan mode in UI
+                if (toolUse.name === TOOL_NAMES.EXIT_PLAN_MODE) {
+                  get().exitPlanMode({
+                    approved: isApproved,
+                    approvalMode:
+                      (params?.approvalMode as 'autoEdit' | undefined) ||
+                      undefined,
+                    feedback:
+                      (params?.denyReason as string | undefined) || undefined,
+                  });
+                }
+
                 // Handle denial reason if it exists
                 if (result === 'deny' && params?.denyReason) {
                   get().log(`Tool denied with reason: ${params.denyReason}`);
@@ -1345,6 +1390,27 @@ export const useAppStore = create<AppStore>()(
 
       setWindowFocused: (focused: boolean) => {
         set({ isWindowFocused: focused });
+      },
+
+      // Plan Mode actions
+      exitPlanMode: (opts) => {
+        if (opts.approved) {
+          set({
+            planMode: false,
+            planFilePath: null,
+            planContent: null,
+            // Note: Actual value is 'autoEdit' not 'auto-edit'
+            approvalMode:
+              opts.approvalMode === 'autoEdit'
+                ? 'autoEdit'
+                : get().approvalMode,
+          });
+        } else {
+          // On rejection, stay in Plan Mode and clear pending content
+          set({
+            planContent: null,
+          });
+        }
       },
     }),
     { name: 'app-store' },
