@@ -269,6 +269,7 @@ interface AppActions {
   setWindowFocused: (focused: boolean) => void;
 
   // Plan Mode actions
+  setPlanContent: (content: string) => void;
   exitPlanMode: (opts: {
     approved: boolean;
     approvalMode?: 'autoEdit';
@@ -1393,6 +1394,10 @@ export const useAppStore = create<AppStore>()(
       },
 
       // Plan Mode actions
+      setPlanContent: (content: string) => {
+        set({ planContent: content });
+      },
+
       exitPlanMode: (opts) => {
         if (opts.approved) {
           set({

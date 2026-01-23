@@ -3,7 +3,7 @@ import { PLAN_MODE_EVENTS, TOOL_NAMES } from '../constants';
 import type { Context } from '../context';
 import type { MessageBus } from '../messageBus';
 import type { PlanFileManager } from '../planFile';
-import { createTool } from '../tool';
+import { createTool, type ToolResult } from '../tool';
 
 export interface CreateExitPlanModeToolOptions {
   context: Context;
@@ -16,30 +16,55 @@ function buildExitPlanModeResponse(
   planContent: string | null,
   planFilePath: string,
   isAgent: boolean,
-): string {
-  if (!planContent) {
-    return `⚠️  Warning: No plan content found at ${planFilePath}
-
-You should write your plan to the file before calling ExitPlanMode.
-The user will not be able to review an empty plan.`;
+): ToolResult {
+  // Scenario 1: Sub-agent completed
+  if (isAgent) {
+    return {
+      llmContent: `User has approved the plan. There is nothing else needed from you now. Please respond with "ok"`,
+      returnDisplay: {
+        type: 'plan_mode_exit',
+        planFilePath,
+        planContent,
+        isAgent: true,
+        scenario: 'agent_completed',
+      },
+    };
   }
 
-  const agentNote = isAgent
-    ? '\n\n📝 Note: This plan was created by a sub-agent.'
-    : '';
+  // Scenario 2: Empty plan warning
+  if (!planContent || planContent.trim() === '') {
+    return {
+      llmContent: `User has approved exiting plan mode. You can now proceed.
 
-  return `✅ Plan ready for user review.
+⚠️  Note: No plan content was found at ${planFilePath}
+This is acceptable for research tasks or simple changes that don't require detailed planning.`,
+      returnDisplay: {
+        type: 'plan_mode_exit',
+        planFilePath,
+        planContent: null,
+        isAgent: false,
+        scenario: 'approved_without_plan',
+      },
+    };
+  }
 
-**Plan file:** ${planFilePath}
-**Plan length:** ${planContent.length} characters${agentNote}
+  // Scenario 3: Normal exit with complete plan
+  return {
+    llmContent: `User has approved your plan. You can now start coding. Start with updating your todo list if applicable.
 
-The user will now review your plan. They can:
-- ✅ Approve it and begin implementation
-- ❌ Request changes with feedback
-- 🔄 Keep planning
+Your plan has been saved to: ${planFilePath}
+You can refer back to it if needed during implementation.
 
-If approved, you can start making code changes based on the plan.
-If changes are requested, you should revise your plan and call ExitPlanMode again.`;
+## Approved Plan:
+${planContent}`,
+    returnDisplay: {
+      type: 'plan_mode_exit',
+      planFilePath,
+      planContent,
+      isAgent: false,
+      scenario: 'approved_with_plan',
+    },
+  };
 }
 
 export function createExitPlanModeTool(opts: CreateExitPlanModeToolOptions) {
@@ -96,18 +121,8 @@ Ensure your plan is complete and unambiguous:
         }
       }
 
-      return {
-        llmContent: buildExitPlanModeResponse(
-          planContent,
-          planFilePath,
-          isAgent,
-        ),
-        returnDisplay: buildExitPlanModeResponse(
-          planContent,
-          planFilePath,
-          isAgent,
-        ),
-      };
+      // Directly return buildExitPlanModeResponse's ToolResult
+      return buildExitPlanModeResponse(planContent, planFilePath, isAgent);
     },
 
     approval: {

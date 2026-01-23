@@ -356,6 +356,7 @@ type PlanModeExitReturnDisplay = {
   planFilePath: string;
   planContent: string | null;
   isAgent: boolean;
+  scenario: 'approved_with_plan' | 'approved_without_plan' | 'agent_completed';
 };
 
 export type ReturnDisplay =

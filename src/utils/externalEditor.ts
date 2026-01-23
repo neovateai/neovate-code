@@ -22,7 +22,7 @@ function getTempFilePath(
  * @param command - Command to check
  * @returns true if command exists, false otherwise
  */
-function commandExists(command: string): boolean {
+export function commandExists(command: string): boolean {
   try {
     const result =
       process.platform === 'win32'
@@ -146,6 +146,51 @@ export async function openExternalEditor(text: string): Promise<string | null> {
     } catch {
       // Ignore cleanup errors
     }
+  }
+}
+
+/**
+ * Directly open a file in an external editor
+ * @param filePath - Path to the file to edit
+ * @returns true if editor was successfully opened, false otherwise
+ */
+export async function openFileInEditor(filePath: string): Promise<boolean> {
+  try {
+    const editorCommand = getEditorCommand();
+    if (!editorCommand) {
+      return false;
+    }
+
+    // Prepare command with proper flags
+    let command = editorCommand;
+    if (['code', 'cursor'].includes(editorCommand)) {
+      command = `${editorCommand} -w`; // -w flag waits for window to close
+    }
+
+    // Switch to alternate screen buffer
+    process.stdout.write('\x1B[?1049h');
+
+    // Clear screen
+    await clearScreen();
+
+    // Launch editor and wait for it to close
+    spawnSync(`${command} "${filePath}"`, {
+      stdio: 'inherit',
+      shell: true,
+    });
+
+    // Restore original screen buffer
+    process.stdout.write('\x1B[?1049l');
+
+    return true;
+  } catch (error) {
+    // Ensure we restore the screen even on error
+    try {
+      process.stdout.write('\x1B[?1049l');
+    } catch {
+      // Ignore restoration errors
+    }
+    return false;
   }
 }
 
