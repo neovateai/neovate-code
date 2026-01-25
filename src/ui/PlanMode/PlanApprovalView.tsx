@@ -5,11 +5,11 @@ import {
   commandExists,
   getEditorName,
   openFileInEditor,
-} from '../utils/externalEditor';
-import { Markdown } from './Markdown';
-import { SelectInput, type SelectOption } from './SelectInput';
-import { useAppStore } from './store';
-import { useTerminalSize } from './useTerminalSize';
+} from '../../utils/externalEditor';
+import { Markdown } from '../Markdown';
+import { SelectInput, type SelectOption } from '../SelectInput';
+import { useAppStore } from '../store';
+import { useTerminalSize } from '../useTerminalSize';
 
 export interface PlanApprovalViewProps {
   planFilePath: string;

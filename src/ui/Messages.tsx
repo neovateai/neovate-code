@@ -25,6 +25,7 @@ import { symbols } from '../utils/symbols';
 import { AgentProgress } from './AgentProgress';
 import { SPACING, UI_COLORS } from './constants';
 import { DiffViewer } from './DiffViewer';
+import { ExitPlanModeDisplay } from './PlanMode/ExitPlanModeDisplay';
 import { ExpandableOutput } from './ExpandableOutput';
 import { GradientString } from './GradientString';
 import { Markdown } from './Markdown';
@@ -471,6 +472,16 @@ function ToolPair({ pair }: { pair: ToolPair }) {
   if (pair.toolUse.name === TOOL_NAMES.TASK) {
     return (
       <AgentProgress toolUse={pair.toolUse} toolResult={pair.toolResult} />
+    );
+  }
+
+  // If it's exitPlanMode tool, use ExitPlanModeDisplay component
+  if (pair.toolUse.name === TOOL_NAMES.EXIT_PLAN_MODE) {
+    return (
+      <ExitPlanModeDisplay
+        toolUse={pair.toolUse}
+        toolResult={pair.toolResult}
+      />
     );
   }
 

@@ -129,9 +129,5 @@ Ensure your plan is complete and unambiguous:
       category: 'ask',
       needsApproval: async () => true,
     },
-
-    getDescription: () => {
-      return 'Exit plan mode and submit plan for user approval';
-    },
   });
 }

@@ -13,7 +13,7 @@ import { UI_COLORS } from './constants';
 import { DashedDivider } from './DashedDivider';
 import { DiffViewer } from './DiffViewer';
 import { Markdown } from './Markdown';
-import { PlanApprovalView } from './PlanApprovalView';
+import { PlanApprovalView } from './PlanMode/PlanApprovalView';
 import { SelectInput, type SelectOption } from './SelectInput';
 import { type ApprovalResult, useAppStore } from './store';
 import { useTerminalSize } from './useTerminalSize';
