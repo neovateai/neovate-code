@@ -80,7 +80,7 @@ export interface Provider {
       setGlobalConfig: (key: string, value: string, isGlobal: boolean) => void;
     },
   ) => Promise<LanguageModelV2> | LanguageModelV2;
-  createModelType?: 'anthropic';
+  createModelType?: 'anthropic' | 'openai' | 'responses';
   options?: {
     baseURL?: string;
     apiKey?: string;
@@ -2027,11 +2027,14 @@ function mergeConfigProviders(
   Object.entries(configProviders).forEach(([providerId, config]) => {
     let provider = mergedProviders[providerId] || {};
     provider = defu(config, provider) as Provider;
-    if (provider.createModelType === 'anthropic' && !provider.createModel) {
-      provider.createModel = defaultAnthropicModelCreator;
-    }
     if (!provider.createModel) {
-      provider.createModel = defaultModelCreator;
+      const creatorMap = {
+        anthropic: defaultAnthropicModelCreator,
+        openai: defaultModelCreator,
+        responses: openaiModelResponseCreator,
+      };
+      const type = provider.createModelType || 'openai';
+      provider.createModel = creatorMap[type];
     }
     if (provider.models) {
       for (const modelId in provider.models) {
