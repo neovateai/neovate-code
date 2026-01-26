@@ -80,7 +80,7 @@ export interface Provider {
       setGlobalConfig: (key: string, value: string, isGlobal: boolean) => void;
     },
   ) => Promise<LanguageModelV2> | LanguageModelV2;
-  createModelType?: 'anthropic' | 'openai' | 'responses';
+  apiFormat?: 'anthropic' | 'openai' | 'responses';
   options?: {
     baseURL?: string;
     apiKey?: string;
@@ -1410,7 +1410,7 @@ export const providers: ProvidersMap = {
       'claude-haiku-4-5': models['claude-haiku-4-5'],
       'claude-opus-4-5': models['claude-opus-4-5'],
     },
-    createModelType: 'anthropic',
+    apiFormat: 'anthropic',
     createModel: defaultAnthropicModelCreator,
   },
   aihubmix: {
@@ -2033,7 +2033,7 @@ function mergeConfigProviders(
         openai: defaultModelCreator,
         responses: openaiModelResponseCreator,
       };
-      const type = provider.createModelType || 'openai';
+      const type = provider.apiFormat || 'openai';
       provider.createModel = creatorMap[type];
     }
     if (provider.models) {
