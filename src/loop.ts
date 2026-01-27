@@ -166,6 +166,16 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
   const maxTurns = opts.maxTurns ?? DEFAULT_MAX_TURNS;
   const abortController = new AbortController();
 
+  // Listen to external signal and synchronize with internal abortController
+  // This ensures that when session.cancel is triggered, the LLM request is immediately aborted
+  if (opts.signal) {
+    opts.signal.addEventListener('abort', () => {
+      if (!abortController.signal.aborted) {
+        abortController.abort();
+      }
+    });
+  }
+
   const createCancelError = (): LoopResult => ({
     success: false,
     error: {
