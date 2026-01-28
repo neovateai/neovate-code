@@ -4,6 +4,8 @@ const DEV_COMMANDS = [
   'npm',
   'pnpm',
   'yarn',
+  'tnpm',
+  'cnpm',
   'node',
   'python',
   'python3',

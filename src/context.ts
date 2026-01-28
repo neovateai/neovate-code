@@ -15,6 +15,7 @@ import {
   PluginManager,
 } from './plugin';
 import { notificationSoundPlugin } from './plugins/notification';
+import { truncationPlugin } from './plugins/truncation';
 import { SkillManager } from './skill';
 
 type ContextOpts = {
@@ -109,7 +110,10 @@ export class Context {
       opts.argvConfig || {},
     );
     const initialConfig = configManager.config;
-    const buildInPlugins: Plugin[] = [notificationSoundPlugin];
+    const buildInPlugins: Plugin[] = [
+      notificationSoundPlugin,
+      truncationPlugin,
+    ];
     const globalPlugins = scanPlugins(
       path.join(paths.globalConfigDir, 'plugins'),
     );

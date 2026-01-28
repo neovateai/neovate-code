@@ -75,7 +75,10 @@ function formatToolArgs(
       const firstLine = cmd.split('\n')[0];
       const truncated =
         firstLine.length > 60 ? `${firstLine.substring(0, 60)}...` : firstLine;
-      return cmd.includes('\n') ? `${truncated}` : truncated;
+      const result = cmd.includes('\n') ? `${truncated}` : truncated;
+
+      // Final length protection to ensure max 200 characters
+      return result.length > 200 ? `${result.substring(0, 200)}...` : result;
     }
   }
 
@@ -122,6 +125,18 @@ export function LogItemRenderer({ item }: LogItemRendererProps) {
       ? toolUse.description || formatToolArgs(toolUse.name, toolUse.input, true)
       : toolUse.description ||
         formatToolArgs(toolUse.name, toolUse.input, false);
+
+    // Final args length protection for normal mode (handle description case)
+    // Also ensure single line display by taking only first line
+    let displayArgs = args;
+    if (!transcriptMode) {
+      const firstLine = args.split('\n')[0];
+      displayArgs =
+        firstLine.length > 200
+          ? `${firstLine.substring(0, 200)}...`
+          : firstLine;
+    }
+
     const resultText = toolResult
       ? extractResultText(toolResult).trim()
       : '...';
@@ -146,7 +161,7 @@ export function LogItemRenderer({ item }: LogItemRendererProps) {
           <Text color="cyan" bold>
             {toolUse.name}
           </Text>
-          <Text color="gray">({args})</Text>
+          <Text color="gray">({displayArgs})</Text>
         </Box>
         {toolResult && (
           <Box paddingLeft={2}>

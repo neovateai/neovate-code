@@ -1986,6 +1986,7 @@ export const providers: ProvidersMap = {
       'z-ai/glm4.7': models['glm-4.7'],
       'minimaxai/minimax-m2.1': models['minimax-m2.1'],
       'moonshotai/kimi-k2-thinking': models['kimi-k2-thinking'],
+      'moonshotai/kimi-k2.5': models['kimi-k2.5'],
       'openai/gpt-oss-120b': models['gpt-oss-120b'],
       'qwen/qwen3-coder-480b-a35b-instruct':
         models['qwen3-coder-480b-a35b-instruct'],
