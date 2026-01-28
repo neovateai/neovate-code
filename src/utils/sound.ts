@@ -28,14 +28,11 @@ export async function playSound(
 
   const soundPath = `${SYSTEM_SOUNDS_DIR}/${name}.aiff`;
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const args = ['-v', String(volume), soundPath];
     const proc = spawn('afplay', args, { stdio: 'ignore' });
-    proc.on('close', (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(`afplay exited with code ${code}`));
-    });
-    proc.on('error', reject);
+    proc.on('close', () => resolve());
+    proc.on('error', () => resolve());
   });
 }
 
