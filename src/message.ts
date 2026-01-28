@@ -74,6 +74,9 @@ export type ToolResultPart2 = {
   result: ToolResult;
   agentId?: string;
   agentType?: string;
+  // Pruning related fields
+  pruned?: boolean; // Whether it has been pruned
+  prunedAt?: number; // Pruning timestamp
 };
 export type ToolContent = Array<ToolResultPart>;
 export type ToolResultPart = {

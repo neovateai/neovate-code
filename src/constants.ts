@@ -81,3 +81,17 @@ export enum AGENT_TYPE {
   GENERAL_PURPOSE = 'GeneralPurpose',
   NEOVATE_CODE_GUIDE = 'neovate-code-guide',
 }
+
+// ============================================
+// Compression Strategy Constants
+// ============================================
+
+// Compaction configuration
+export const COMPACTION_OUTPUT_TOKEN_MAX = 4096;
+export const COMPACTION_TRIGGER_RATIO = 0.7; // Trigger compression at 70% context usage
+
+// Pruning configuration
+export const PRUNE_PROTECT_THRESHOLD = 40_000; // Protect threshold: recent 40k tokens not pruned
+export const PRUNE_MINIMUM = 20_000; // Minimum prune amount: skip if below this
+export const PRUNE_PROTECT_TURNS = 2; // Protect recent 2 conversation turns
+export const PRUNE_PROTECTED_TOOLS = ['skill', 'task']; // Protected tool list
