@@ -63,6 +63,14 @@ export type Config = {
    * @default true
    */
   autoCompact?: boolean;
+  /**
+   * Controls whether automatic tool output truncation is enabled.
+   * When enabled, large tool outputs (>2000 lines or >50KB) will be truncated
+   * and full content saved to a local file.
+   *
+   * @default true
+   */
+  truncation?: boolean;
   commit?: CommitConfig;
   outputStyle?: string;
   outputFormat?: 'text' | 'stream-json' | 'json';
@@ -109,6 +117,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   provider: {},
   todo: true,
   autoCompact: true,
+  truncation: true,
   outputFormat: 'text',
   autoUpdate: true,
   extensions: {},
@@ -124,6 +133,7 @@ const VALID_CONFIG_KEYS = [
   'systemPrompt',
   'todo',
   'autoCompact',
+  'truncation',
   'commit',
   'outputStyle',
   'autoUpdate',
@@ -145,7 +155,13 @@ const OBJECT_CONFIG_KEYS = [
   'tools',
   'agent',
 ];
-const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact', 'autoUpdate'];
+const BOOLEAN_CONFIG_KEYS = [
+  'quiet',
+  'todo',
+  'autoCompact',
+  'autoUpdate',
+  'truncation',
+];
 export const GLOBAL_ONLY_KEYS: string[] = [];
 
 function assertGlobalAllowed(global: boolean, key: string) {

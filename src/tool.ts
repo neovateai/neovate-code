@@ -347,6 +347,9 @@ export type ToolResult = {
     agentType?: string;
     [key: string]: any;
   };
+  // Truncation related fields
+  truncated?: boolean; // Whether the output has been truncated
+  outputPath?: string; // Path to full output file (when truncated)
 };
 
 export function createTool<TSchema extends z.ZodTypeAny>(config: {

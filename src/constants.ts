@@ -81,3 +81,7 @@ export enum AGENT_TYPE {
   GENERAL_PURPOSE = 'GeneralPurpose',
   NEOVATE_CODE_GUIDE = 'neovate-code-guide',
 }
+
+// Truncation configuration
+export const TRUNCATE_MAX_LINES = 2000; // Maximum lines
+export const TRUNCATE_MAX_BYTES = 50 * 1024; // Maximum bytes (50KB)
