@@ -22,6 +22,7 @@ import { UIBridge } from './uiBridge';
 import type { UpgradeOptions } from './upgrade';
 
 export { z as _zod } from 'zod';
+export type { ProviderConfig } from './config';
 export { ConfigManager as _ConfigManager } from './config';
 export { query as _query } from './query';
 // SDK exports for programmatic usage
@@ -34,7 +35,6 @@ export {
   type SDKSessionOptions,
   type SDKUserMessage,
 } from './sdk';
-export type { ProviderConfig } from './config';
 export { createTool } from './tool';
 
 export type { Plugin, Context };
@@ -71,6 +71,7 @@ export type Argv = {
   // array
   plugin: string[];
   mcpConfig: string[];
+  extensions: Record<string, any>;
 };
 
 export async function parseArgs(argv: any) {
@@ -380,6 +381,7 @@ export async function runNeovate(opts: {
       approvalMode: argv.approvalMode,
       mcpServers,
       tools: toolsConfig,
+      extensions: argv.extensions,
     },
     plugins: opts.plugins,
   };
