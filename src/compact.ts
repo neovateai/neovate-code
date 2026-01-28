@@ -1,23 +1,39 @@
 import type { NormalizedMessage } from './message';
 import type { ModelInfo } from './model';
 import { query } from './query';
+import { getLanguageInstruction } from './utils/language';
 import { normalizeMessagesForCompact } from './utils/messageNormalization';
 
 type CompactOptions = {
   messages: NormalizedMessage[];
   model: ModelInfo;
+  language?: string;
 };
 
 export const COMPACT_MESSAGE = `Chat history compacted successfully.`;
 
+/**
+ * Build compact system prompt with optional language instruction.
+ * When language is non-English, appends a language instruction to the prompt.
+ */
+function buildCompactSystemPrompt(language?: string): string {
+  if (!language) return COMPACT_SYSTEM_PROMPT;
+
+  const languageInstruction = getLanguageInstruction(language, 'respond');
+  if (!languageInstruction) return COMPACT_SYSTEM_PROMPT;
+
+  return `${COMPACT_SYSTEM_PROMPT}\n\n${languageInstruction}`;
+}
+
 export async function compact(opts: CompactOptions): Promise<string> {
   // why: The toolConfig field must be defined when using toolUse and toolResult content blocks
   const normalizedMessages = normalizeMessagesForCompact(opts.messages);
+  const systemPrompt = buildCompactSystemPrompt(opts.language);
 
   const result = await query({
     messages: normalizedMessages,
     userPrompt: COMPACT_USER_PROMPT,
-    systemPrompt: COMPACT_SYSTEM_PROMPT,
+    systemPrompt,
     model: opts.model,
   });
   if (result.success) {

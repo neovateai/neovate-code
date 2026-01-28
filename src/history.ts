@@ -276,7 +276,7 @@ export class History {
     return Usage.empty();
   }
 
-  async compress(model: ModelInfo) {
+  async compress(model: ModelInfo, language?: string) {
     if (this.messages.length === 0) {
       return { compressed: false };
     }
@@ -292,6 +292,7 @@ export class History {
       summary = await compact({
         messages: this.messages,
         model,
+        language,
       });
     } catch (error) {
       debug('Compact failed:', error);

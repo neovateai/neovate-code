@@ -117,6 +117,7 @@ type RunLoopOpts = {
   signal?: AbortSignal;
   llmsContexts?: string[];
   autoCompact?: boolean;
+  language?: string;
   thinking?: ThinkingConfig;
   temperature?: number;
   responseFormat?: ResponseFormat;
@@ -221,7 +222,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         };
       }
       if (opts.autoCompact) {
-        const compressed = await history.compress(opts.model);
+        const compressed = await history.compress(opts.model, opts.language);
         if (compressed.compressed) {
           debug('history compressed', compressed);
         }

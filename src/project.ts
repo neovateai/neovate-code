@@ -297,6 +297,7 @@ export class Project {
       llmsContexts: llmsContext.messages,
       signal: opts.signal,
       autoCompact: this.context.config.autoCompact,
+      language: this.context.config.language,
       thinking: opts.thinking,
       temperature: this.context.config.temperature,
       onMessage: async (message) => {
