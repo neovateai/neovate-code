@@ -16,10 +16,22 @@ export class Usage {
   }
 
   static fromEventUsage(eventUsage: any): Usage {
-    const promptTokens =
-      eventUsage?.promptTokens ?? eventUsage?.inputTokens ?? 0;
-    const completionTokens =
-      eventUsage?.completionTokens ?? eventUsage?.outputTokens ?? 0;
+    // Handle AI SDK v6 format (nested objects with total property)
+    // See: LanguageModelV3Usage interface
+    const inputTokens =
+      typeof eventUsage?.inputTokens === 'object'
+        ? eventUsage?.inputTokens?.total
+        : eventUsage?.inputTokens;
+
+    const outputTokens =
+      typeof eventUsage?.outputTokens === 'object'
+        ? eventUsage?.outputTokens?.total
+        : eventUsage?.outputTokens;
+
+    const promptTokens = eventUsage?.promptTokens ?? inputTokens ?? 0;
+
+    const completionTokens = eventUsage?.completionTokens ?? outputTokens ?? 0;
+
     const totalTokens =
       eventUsage?.totalTokens ?? promptTokens + completionTokens;
 
