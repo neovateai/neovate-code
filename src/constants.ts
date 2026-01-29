@@ -62,6 +62,7 @@ export enum TOOL_NAMES {
   EDIT = 'edit',
   LS = 'ls',
   TASK = 'task',
+  SKILL = 'skill',
 }
 
 export const BASH_EVENTS = {
@@ -94,7 +95,7 @@ export const COMPACTION_TRIGGER_RATIO = 0.7; // Trigger compression at 70% conte
 export const PRUNE_PROTECT_THRESHOLD = 40_000; // Protect threshold: recent 40k tokens not pruned
 export const PRUNE_MINIMUM = 20_000; // Minimum prune amount: skip if below this
 export const PRUNE_PROTECT_TURNS = 2; // Protect recent 2 conversation turns
-export const PRUNE_PROTECTED_TOOLS = ['skill', 'task']; // Protected tool list
+export const PRUNE_PROTECTED_TOOLS = [TOOL_NAMES.SKILL, TOOL_NAMES.TASK]; // Protected tool list
 // Truncation configuration
 export const TRUNCATE_MAX_LINES = 2000; // Maximum lines
 export const TRUNCATE_MAX_BYTES = 50 * 1024; // Maximum bytes (50KB)
