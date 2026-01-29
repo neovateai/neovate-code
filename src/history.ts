@@ -1,6 +1,6 @@
 import type {
-  LanguageModelV2Message,
-  LanguageModelV2ToolResultPart,
+  LanguageModelV3Message,
+  LanguageModelV3ToolResultPart,
 } from '@ai-sdk/provider';
 import createDebug from 'debug';
 import { COMPACT_MESSAGE, compact } from './compact';
@@ -73,7 +73,7 @@ export class History {
     return this.messages.filter((msg) => pathUuids.has(msg.uuid));
   }
 
-  toLanguageV2Messages(): LanguageModelV2Message[] {
+  toLanguageV2Messages(): LanguageModelV3Message[] {
     return this.messages.map((message: NormalizedMessage) => {
       if (message.role === 'user') {
         const content = message.content as UserContent;
@@ -81,7 +81,7 @@ export class History {
           return {
             role: 'user',
             content: [{ type: 'text', text: content }],
-          } as LanguageModelV2Message;
+          } as LanguageModelV3Message;
         } else {
           const normalizedContent = content.map((part: any) => {
             if (part.type === 'text') {
@@ -108,14 +108,14 @@ export class History {
           return {
             role: 'user',
             content: normalizedContent,
-          } as LanguageModelV2Message;
+          } as LanguageModelV3Message;
         }
       } else if (message.role === 'assistant') {
         if (typeof message.content === 'string') {
           return {
             role: 'assistant',
             content: [{ type: 'text', text: message.content }],
-          } as LanguageModelV2Message;
+          } as LanguageModelV3Message;
         } else {
           const normalizedContent = message.content.map((part: any) => {
             if (part.type === 'text') {
@@ -147,7 +147,7 @@ export class History {
           return {
             role: 'assistant',
             content: normalizedContent,
-          } as LanguageModelV2Message;
+          } as LanguageModelV3Message;
         }
       } else if (message.role === 'system') {
         return {
@@ -189,8 +189,8 @@ export class History {
               toolName: part.toolName,
               output,
             };
-          }) as LanguageModelV2ToolResultPart[],
-        } as LanguageModelV2Message;
+          }) as LanguageModelV3ToolResultPart[],
+        } as LanguageModelV3Message;
       } else {
         throw new Error(`Unsupported message role: ${message}.`);
       }

@@ -1,4 +1,4 @@
-import type { LanguageModelV2FunctionTool } from '@ai-sdk/provider';
+import type { LanguageModelV3FunctionTool } from '@ai-sdk/provider';
 import path from 'pathe';
 import * as z from 'zod';
 import type { Context } from './context';
@@ -202,7 +202,7 @@ export class Tools {
     return await tool.execute(argsObj, toolCallId);
   }
 
-  toLanguageV2Tools(): LanguageModelV2FunctionTool[] {
+  toLanguageV2Tools(): LanguageModelV3FunctionTool[] {
     return Object.entries(this.tools).map(([key, tool]) => {
       // parameters of mcp tools is not zod object
       const isMCP = key.startsWith('mcp__');

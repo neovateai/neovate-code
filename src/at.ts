@@ -1,4 +1,4 @@
-import type { LanguageModelV2Prompt } from '@ai-sdk/provider';
+import type { LanguageModelV3Prompt } from '@ai-sdk/provider';
 import fs from 'fs';
 import path from 'pathe';
 import { IMAGE_EXTENSIONS } from './constants';
@@ -302,9 +302,9 @@ export class At {
   }
 
   static normalizeLanguageV2Prompt(opts: {
-    input: LanguageModelV2Prompt;
+    input: LanguageModelV3Prompt;
     cwd: string;
-  }): LanguageModelV2Prompt {
+  }): LanguageModelV3Prompt {
     const lastUserMessage = [...opts.input].reverse().find((item) => {
       return 'role' in item && item.role === 'user';
     });

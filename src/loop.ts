@@ -1,9 +1,9 @@
 import type {
-  LanguageModelV2,
-  LanguageModelV2FunctionTool,
-  LanguageModelV2Message,
-  LanguageModelV2Prompt,
-  SharedV2Headers,
+  LanguageModelV3,
+  LanguageModelV3FunctionTool,
+  LanguageModelV3Message,
+  LanguageModelV3Prompt,
+  SharedV3Headers,
 } from '@ai-sdk/provider';
 import createDebug from 'debug';
 import { At } from './at';
@@ -76,16 +76,16 @@ export type LoopResult =
 
 type StreamResultBase = {
   requestId: string;
-  prompt: LanguageModelV2Prompt;
+  prompt: LanguageModelV3Prompt;
   model: ModelInfo;
-  tools: LanguageModelV2FunctionTool[];
+  tools: LanguageModelV3FunctionTool[];
 };
 export type StreamResult = StreamResultBase & {
   request?: {
     body?: unknown;
   };
   response?: {
-    headers?: SharedV2Headers;
+    headers?: SharedV3Headers;
     statusCode?: number;
     body?: unknown;
   };
@@ -232,15 +232,15 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       const systemPromptMessage = {
         role: 'system',
         content: opts.systemPrompt || '',
-      } as LanguageModelV2Message;
+      } as LanguageModelV3Message;
       const llmsContexts = opts.llmsContexts || [];
       const llmsContextMessages = llmsContexts.map((llmsContext) => {
         return {
           role: 'system',
           content: llmsContext,
-        } as LanguageModelV2Message;
+        } as LanguageModelV3Message;
       });
-      let prompt: LanguageModelV2Prompt = [
+      let prompt: LanguageModelV3Prompt = [
         systemPromptMessage,
         ...llmsContextMessages,
         ...history.toLanguageV2Messages(),
@@ -267,7 +267,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       }> = [];
 
       const requestId = randomUUID();
-      const m: LanguageModelV2 = await opts.model._mCreator();
+      const m: LanguageModelV3 = await opts.model._mCreator();
       const tools = opts.tools.toLanguageV2Tools();
 
       // Get thinking config based on model's reasoning capability

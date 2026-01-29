@@ -6,10 +6,8 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createXai } from '@ai-sdk/xai';
 import { createAihubmix } from '@aihubmix/ai-sdk-provider';
-import {
-  createOpenRouter,
-  type LanguageModelV2,
-} from '@openrouter/ai-sdk-provider';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import type { LanguageModelV3 } from '@ai-sdk/provider';
 import {
   extractReasoningMiddleware,
   type LanguageModelMiddleware,
@@ -79,7 +77,7 @@ export interface Provider {
       globalConfigDir: string;
       setGlobalConfig: (key: string, value: string, isGlobal: boolean) => void;
     },
-  ) => Promise<LanguageModelV2> | LanguageModelV2;
+  ) => Promise<LanguageModelV3> | LanguageModelV3;
   apiFormat?: 'anthropic' | 'openai' | 'responses';
   options?: {
     baseURL?: string;
@@ -1169,7 +1167,7 @@ export const createModelCreatorCompatible = (opts?: {
   fetch?: any;
   middlewares?: LanguageModelMiddleware[];
 }) => {
-  return (name: string, provider: Provider): LanguageModelV2 => {
+  return (name: string, provider: Provider): LanguageModelV3 => {
     if (provider.id !== 'openai') {
       assert(provider.api, `Provider ${provider.id} must have an api`);
     }
@@ -1211,7 +1209,7 @@ const defaultAnthropicModelCreator = (name: string, provider: Provider) => {
 const openaiModelCreator = (
   name: string,
   provider: Provider,
-): LanguageModelV2 => {
+): LanguageModelV3 => {
   if (provider.id !== 'openai') {
     assert(provider.api, `Provider ${provider.id} must have an api`);
   }
@@ -1231,7 +1229,7 @@ const openaiModelCreator = (
 const openaiModelResponseCreator = (
   name: string,
   provider: Provider,
-): LanguageModelV2 => {
+): LanguageModelV3 => {
   if (provider.id !== 'openai') {
     assert(provider.api, `Provider ${provider.id} must have an api`);
   }
@@ -1476,7 +1474,7 @@ export const providers: ProvidersMap = {
           },
           provider,
         ),
-      ).chat(name);
+      ).chat(name) as unknown as LanguageModelV3;
     },
   },
   openrouter: {
@@ -1556,7 +1554,7 @@ export const providers: ProvidersMap = {
           },
           provider,
         ),
-      ).chat(name);
+      ).chat(name) as unknown as LanguageModelV3;
     },
   },
   iflow: {
@@ -1906,7 +1904,7 @@ export const providers: ProvidersMap = {
       const apiKey = getProviderApiKey(provider);
       return createHuggingFace({
         apiKey,
-      }).languageModel(name) as unknown as LanguageModelV2;
+      }).languageModel(name) as unknown as LanguageModelV3;
     },
   },
   poe: {
@@ -2063,9 +2061,9 @@ export const modelAlias: ModelAlias = {
 export type ModelInfo = {
   provider: Provider;
   model: Omit<Model, 'cost'>;
-  // m: LanguageModelV2;
+  // m: LanguageModelV3;
   thinkingConfig?: Record<string, any>;
-  _mCreator: () => Promise<LanguageModelV2>;
+  _mCreator: () => Promise<LanguageModelV3>;
 };
 
 function mergeConfigProviders(
@@ -2242,7 +2240,7 @@ export async function resolveModel(
   );
   model.id = modelId;
   const mCreator = async () => {
-    let m: LanguageModelV2 | Promise<LanguageModelV2> = provider.createModel!(
+    let m: LanguageModelV3 | Promise<LanguageModelV3> = provider.createModel!(
       modelId,
       provider,
       {
@@ -2262,6 +2260,6 @@ export async function resolveModel(
   };
 }
 
-function isPromise(m: any): m is Promise<LanguageModelV2> {
+function isPromise(m: any): m is Promise<LanguageModelV3> {
   return m instanceof Promise;
 }

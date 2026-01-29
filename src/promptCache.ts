@@ -1,10 +1,10 @@
-import type { LanguageModelV2Prompt } from '@ai-sdk/provider';
+import type { LanguageModelV3Prompt } from '@ai-sdk/provider';
 import type { ModelInfo } from './model';
 
 export function addPromptCache(
-  prompt: LanguageModelV2Prompt,
+  prompt: LanguageModelV3Prompt,
   model: ModelInfo,
-): LanguageModelV2Prompt {
+): LanguageModelV3Prompt {
   const modelId = model.model.id.toLowerCase();
   const shouldCache = modelId.includes('sonnet') || modelId.includes('opus');
 

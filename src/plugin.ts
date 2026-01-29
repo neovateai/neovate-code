@@ -1,7 +1,7 @@
 import type { AnthropicProvider } from '@ai-sdk/anthropic';
 import type { OpenAIProvider } from '@ai-sdk/openai';
 import type { OpenAICompatibleProvider } from '@ai-sdk/openai-compatible';
-import type { LanguageModelV2 } from '@openrouter/ai-sdk-provider';
+import type { LanguageModelV3 } from '@ai-sdk/provider';
 import defu from 'defu';
 import type {
   AgentExecutionResult,
@@ -158,7 +158,7 @@ export type Plugin = {
       defaultModelCreator: (
         name: string,
         provider: Provider,
-      ) => LanguageModelV2;
+      ) => LanguageModelV3;
       createOpenAI: (options: any) => OpenAIProvider;
       createOpenAICompatible: (options: any) => OpenAICompatibleProvider;
       createAnthropic: (options: any) => AnthropicProvider;
