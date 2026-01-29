@@ -95,6 +95,7 @@ export const COMPACTION_TRIGGER_RATIO = 0.7; // Trigger compression at 70% conte
 export const PRUNE_PROTECT_THRESHOLD = 40_000; // Protect threshold: recent 40k tokens not pruned
 export const PRUNE_MINIMUM = 20_000; // Minimum prune amount: skip if below this
 export const PRUNE_PROTECT_TURNS = 2; // Protect recent 2 conversation turns
+// why we need to protect the following tools? when pruning, protect the following tools, avoid losing main context information when pruning
 export const PRUNE_PROTECTED_TOOLS = [TOOL_NAMES.SKILL, TOOL_NAMES.TASK]; // Protected tool list
 // Truncation configuration
 export const TRUNCATE_MAX_LINES = 2000; // Maximum lines
