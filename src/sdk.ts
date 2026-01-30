@@ -295,7 +295,7 @@ function createBridgePair(options: SDKSessionOptions): {
   messageBus.setTransport(sdkTransport);
   nodeBridge.messageBus.setTransport(nodeTransport);
 
-  messageBus.registerHandler('toolApproval', async () => {
+  messageBus.registerHandler('toolApproval', async (_params) => {
     return { approved: true };
   });
 

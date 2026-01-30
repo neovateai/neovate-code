@@ -1,4 +1,4 @@
-import type { ModelInfo } from './model';
+import type { ModelInfo } from './provider/model';
 
 export type ReasoningEffort = 'low' | 'medium' | 'high';
 
@@ -69,7 +69,7 @@ export function getThinkingConfig(
     (model.provider.id === 'modelwatch' &&
       model.model.id.startsWith('claude-')) ||
     model.model.id.startsWith('gemini-') ||
-    (model.provider.createModelType === 'anthropic' && model.model.reasoning)
+    (model.provider.apiFormat === 'anthropic' && model.model.reasoning)
   ) {
     return {
       providerOptions: {

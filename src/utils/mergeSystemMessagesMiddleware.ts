@@ -1,6 +1,7 @@
 import type { LanguageModelMiddleware } from 'ai';
 
 export const mergeSystemMessagesMiddleware: LanguageModelMiddleware = {
+  specificationVersion: 'v3',
   transformParams: async ({ params }) => {
     const mergedPrompt: typeof params.prompt = [];
     let pendingSystemContent: string[] = [];

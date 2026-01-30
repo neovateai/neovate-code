@@ -95,7 +95,7 @@ bun scripts/test-nodebridge.ts --list
 
 # Test a specific handler with --key=value arguments
 bun scripts/test-nodebridge.ts models.list
-bun scripts/test-nodebridge.ts models.test --model=anthropic/claude-sonnet-4-20250514
+bun scripts/test-nodebridge.ts models.test --model anthropic/claude-sonnet-4-20250514
 bun scripts/test-nodebridge.ts utils.getPaths --cwd /path/to/dir --maxFiles 100
 
 # Pass complex data as JSON (--data takes priority over --key value)

@@ -34,7 +34,7 @@ export const notificationSoundPlugin: Plugin = {
       typeof config === 'string' ? config : SOUND_PRESETS.warning;
 
     try {
-      await playSound(soundName);
+      playSound(soundName);
     } catch {
       beep();
     }

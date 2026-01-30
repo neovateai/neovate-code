@@ -1,5 +1,6 @@
 import { execFile, spawn } from 'child_process';
 import createDebug from 'debug';
+import fs from 'fs';
 import path from 'pathe';
 import { findActualExecutable } from 'spawn-rx';
 import { fileURLToPath } from 'url';
@@ -25,6 +26,14 @@ const rootDir =
     ? path.resolve(__dirname, '../../')
     : path.resolve(__dirname, '../');
 
+function ensureExecutable(filePath: string) {
+  try {
+    fs.accessSync(filePath, fs.constants.X_OK);
+  } catch {
+    fs.chmodSync(filePath, 0o755);
+  }
+}
+
 export function ripgrepPath() {
   const { cmd } = findActualExecutable('rg', []);
   if (cmd !== 'rg') {
@@ -34,7 +43,13 @@ export function ripgrepPath() {
     if (process.platform === 'win32') {
       return path.resolve(rgRoot, 'x64-win32', 'rg.exe');
     } else {
-      return path.resolve(rgRoot, `${process.arch}-${process.platform}`, 'rg');
+      const rgPath = path.resolve(
+        rgRoot,
+        `${process.arch}-${process.platform}`,
+        'rg',
+      );
+      ensureExecutable(rgPath);
+      return rgPath;
     }
   }
 }

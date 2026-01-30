@@ -1,9 +1,10 @@
 import type {
-  LanguageModelV2Message,
-  LanguageModelV2ToolResultPart,
+  LanguageModelV3Message,
+  LanguageModelV3ToolResultPart,
 } from '@ai-sdk/provider';
 import createDebug from 'debug';
 import { COMPACT_MESSAGE, compact } from './compact';
+import { Compression, isOverflow, type CompressionConfig } from './compression';
 import { MIN_TOKEN_THRESHOLD } from './constants';
 import type {
   Message,
@@ -11,7 +12,7 @@ import type {
   ToolResultPart2,
   UserContent,
 } from './message';
-import type { ModelInfo } from './model';
+import type { ModelInfo } from './provider/model';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
 
@@ -19,6 +20,7 @@ export type OnMessage = (message: NormalizedMessage) => Promise<void>;
 export type HistoryOpts = {
   messages: NormalizedMessage[];
   onMessage?: OnMessage;
+  compressionConfig?: Partial<CompressionConfig>;
 };
 
 const debug = createDebug('neovate:history');
@@ -26,9 +28,15 @@ const debug = createDebug('neovate:history');
 export class History {
   messages: NormalizedMessage[];
   onMessage?: OnMessage;
+  compressionConfig: CompressionConfig;
+
   constructor(opts: HistoryOpts) {
     this.messages = opts.messages || [];
     this.onMessage = opts.onMessage;
+    this.compressionConfig = {
+      ...Compression.DEFAULT_CONFIG,
+      ...opts.compressionConfig,
+    };
   }
 
   async addMessage(message: Message, uuid?: string): Promise<void> {
@@ -73,7 +81,7 @@ export class History {
     return this.messages.filter((msg) => pathUuids.has(msg.uuid));
   }
 
-  toLanguageV2Messages(): LanguageModelV2Message[] {
+  toLanguageV2Messages(): LanguageModelV3Message[] {
     return this.messages.map((message: NormalizedMessage) => {
       if (message.role === 'user') {
         const content = message.content as UserContent;
@@ -81,7 +89,7 @@ export class History {
           return {
             role: 'user',
             content: [{ type: 'text', text: content }],
-          } as LanguageModelV2Message;
+          } as LanguageModelV3Message;
         } else {
           const normalizedContent = content.map((part: any) => {
             if (part.type === 'text') {
@@ -108,14 +116,14 @@ export class History {
           return {
             role: 'user',
             content: normalizedContent,
-          } as LanguageModelV2Message;
+          } as LanguageModelV3Message;
         }
       } else if (message.role === 'assistant') {
         if (typeof message.content === 'string') {
           return {
             role: 'assistant',
             content: [{ type: 'text', text: message.content }],
-          } as LanguageModelV2Message;
+          } as LanguageModelV3Message;
         } else {
           const normalizedContent = message.content.map((part: any) => {
             if (part.type === 'text') {
@@ -147,7 +155,7 @@ export class History {
           return {
             role: 'assistant',
             content: normalizedContent,
-          } as LanguageModelV2Message;
+          } as LanguageModelV3Message;
         }
       } else if (message.role === 'system') {
         return {
@@ -189,8 +197,8 @@ export class History {
               toolName: part.toolName,
               output,
             };
-          }) as LanguageModelV2ToolResultPart[],
-        } as LanguageModelV2Message;
+          }) as LanguageModelV3ToolResultPart[],
+        } as LanguageModelV3Message;
       } else {
         throw new Error(`Unsupported message role: ${message}.`);
       }
@@ -201,48 +209,22 @@ export class History {
     if (usage.totalTokens < MIN_TOKEN_THRESHOLD) {
       return false;
     }
-    const { context: contextLimit, output: outputLimit } = model.model.limit;
-    const COMPRESSION_RESERVE_TOKENS = {
-      MINI_CONTEXT: 10_000,
-      SMALL_CONTEXT: 27_000,
-      MEDIUM_CONTEXT: 30_000,
-      LARGE_CONTEXT: 40_000,
-    };
-    const COMPRESSION_RATIO = 0.9;
-    const COMPRESSION_RATIO_SMALL_CONTEXT = 0.8;
-    let maxAllowedSize = contextLimit;
-    switch (contextLimit) {
-      case 32768:
-        maxAllowedSize = contextLimit - COMPRESSION_RESERVE_TOKENS.MINI_CONTEXT;
-        break;
-      case 65536:
-        maxAllowedSize =
-          contextLimit - COMPRESSION_RESERVE_TOKENS.SMALL_CONTEXT;
-        break;
-      case 131072:
-        maxAllowedSize =
-          contextLimit - COMPRESSION_RESERVE_TOKENS.MEDIUM_CONTEXT;
-        break;
-      case 200000:
-        maxAllowedSize =
-          contextLimit - COMPRESSION_RESERVE_TOKENS.LARGE_CONTEXT;
-        break;
-      default:
-        maxAllowedSize = Math.max(
-          contextLimit - COMPRESSION_RESERVE_TOKENS.LARGE_CONTEXT,
-          contextLimit * COMPRESSION_RATIO_SMALL_CONTEXT,
-        );
-        break;
-    }
-    const effectiveOutputLimit = Math.min(outputLimit, 32_000);
-    const compressThreshold = Math.max(
-      (contextLimit - effectiveOutputLimit) * COMPRESSION_RATIO,
-      maxAllowedSize,
+
+    const { context, output } = model.model.limit;
+
+    // Use totalTokens (promptTokens + completionTokens) to match status bar calculation
+    // This represents the actual context window usage after the last assistant response
+    // Next API call will use ~promptTokens + new_user_input, so we need to check total usage
+    const result = isOverflow(
+      {
+        input: usage.totalTokens, // Total tokens used in last turn
+        output: 0, // Not used by isOverflow (it only checks input param)
+      },
+      { context, output },
+      this.compressionConfig,
     );
-    debug(
-      `[compress] ${model.model.id} compressThreshold:${compressThreshold} usage:${usage.totalTokens}`,
-    );
-    return usage.totalTokens >= compressThreshold;
+
+    return result;
   }
 
   #getLastAssistantUsage(): Usage {
@@ -276,22 +258,44 @@ export class History {
     return Usage.empty();
   }
 
-  async compress(model: ModelInfo) {
+  async compress(model: ModelInfo, language?: string) {
     if (this.messages.length === 0) {
       return { compressed: false };
     }
+
     const usage = this.#getLastAssistantUsage();
+
     const shouldCompress = this.#shouldCompress(model, usage);
     if (!shouldCompress) {
       return { compressed: false };
     }
 
-    debug('compressing...');
+    // Step 1: Try Pruning first
+    debug('[compress] Step 1: Attempting pruning...');
+    const pruneResult = Compression.prune(
+      this.messages,
+      this.compressionConfig,
+    );
+    if (pruneResult.pruned) {
+      debug(`[compress] Pruned ${pruneResult.prunedCount} tool outputs`);
+
+      // Recalculate usage, check if Compaction is still needed
+      const newUsage = this.#getLastAssistantUsage();
+      const stillNeedsCompaction = this.#shouldCompress(model, newUsage);
+      if (!stillNeedsCompaction) {
+        debug('[compress] Pruning was sufficient, skipping compaction');
+        return { compressed: false, pruned: true, pruneResult };
+      }
+    }
+
+    // Step 2: Execute Compaction
+    debug('[compress] Step 2: Executing compaction...');
     let summary: string | null = null;
     try {
       summary = await compact({
         messages: this.messages,
         model,
+        language,
       });
     } catch (error) {
       debug('Compact failed:', error);
@@ -315,9 +319,12 @@ export class History {
     this.messages = [summaryMessage];
     await this.onMessage?.(summaryMessage);
     debug('Generated summary:', summary);
+
     return {
       compressed: true,
       summary,
+      pruned: pruneResult.pruned,
+      pruneResult,
     };
   }
 }

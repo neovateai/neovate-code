@@ -57,13 +57,16 @@ class UIHandlerRegistry {
       async ({
         toolUse,
         category,
+        sessionId,
       }: {
         toolUse: ToolUse;
         category?: ApprovalCategory;
+        sessionId: string;
       }) => {
         const result = await this.appStore.approveToolUse({
           toolUse,
           category,
+          sessionId,
         });
         return {
           approved: result.approved,

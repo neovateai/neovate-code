@@ -2,7 +2,7 @@ import defu from 'defu';
 import fs from 'fs';
 import { homedir } from 'os';
 import path from 'pathe';
-import type { Provider } from './model';
+import type { Provider } from './provider/model';
 
 export type McpStdioServerConfig = {
   type: 'stdio';
@@ -43,13 +43,6 @@ export type CommitConfig = {
 
 export type ProviderConfig = Partial<Omit<Provider, 'createModel'>>;
 
-export type DesktopConfig = {
-  theme?: 'light' | 'dark' | 'system';
-  sendMessageWith?: 'enter' | 'cmdEnter';
-  terminalFont?: string;
-  terminalFontSize?: number;
-};
-
 export type Config = {
   model: string;
   planModel: string;
@@ -70,13 +63,20 @@ export type Config = {
    * @default true
    */
   autoCompact?: boolean;
+  /**
+   * Controls whether automatic tool output truncation is enabled.
+   * When enabled, large tool outputs (>2000 lines or >50KB) will be truncated
+   * and full content saved to a local file.
+   *
+   * @default true
+   */
+  truncation?: boolean;
   commit?: CommitConfig;
   outputStyle?: string;
   outputFormat?: 'text' | 'stream-json' | 'json';
   autoUpdate?: boolean;
   temperature?: number;
   httpProxy?: string;
-  desktop?: DesktopConfig;
   /**
    * Extensions configuration for third-party custom agents.
    * Allows arbitrary nested configuration without validation.
@@ -117,15 +117,12 @@ const DEFAULT_CONFIG: Partial<Config> = {
   provider: {},
   todo: true,
   autoCompact: true,
+  truncation: true,
   outputFormat: 'text',
   autoUpdate: true,
   extensions: {},
   tools: {},
   agent: {},
-  desktop: {
-    theme: 'light',
-    sendMessageWith: 'enter',
-  },
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -136,6 +133,7 @@ const VALID_CONFIG_KEYS = [
   'systemPrompt',
   'todo',
   'autoCompact',
+  'truncation',
   'commit',
   'outputStyle',
   'autoUpdate',
@@ -155,11 +153,16 @@ const OBJECT_CONFIG_KEYS = [
   'provider',
   'extensions',
   'tools',
-  'desktop',
   'agent',
 ];
-const BOOLEAN_CONFIG_KEYS = ['quiet', 'todo', 'autoCompact', 'autoUpdate'];
-export const GLOBAL_ONLY_KEYS = ['desktop'];
+const BOOLEAN_CONFIG_KEYS = [
+  'quiet',
+  'todo',
+  'autoCompact',
+  'autoUpdate',
+  'truncation',
+];
+export const GLOBAL_ONLY_KEYS: string[] = [];
 
 function assertGlobalAllowed(global: boolean, key: string) {
   const rootKey = key.split('.')[0];

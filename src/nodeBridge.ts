@@ -16,7 +16,7 @@ import {
   type Provider,
   type ProvidersMap,
   resolveModelWithContext,
-} from './model';
+} from './provider/model';
 import { OutputStyleManager } from './outputStyle';
 import { PluginHookType } from './plugin';
 import { Project } from './project';
@@ -51,6 +51,10 @@ class NodeHandlerRegistry {
   private contextCreateOpts: any;
   private contexts = new Map<string, Context>();
   private abortControllers = new Map<string, AbortController>();
+  private skillPreviews = new Map<
+    string,
+    import('./skill').PreviewSkillsResult
+  >();
 
   constructor(messageBus: MessageBus, contextCreateOpts: any) {
     this.messageBus = messageBus;
@@ -867,6 +871,16 @@ class NodeHandlerRegistry {
     this.messageBus.registerHandler('project.getRepoInfo', async (data) => {
       const { cwd } = data;
       try {
+        const { existsSync } = await import('fs');
+
+        // Check if cwd exists
+        if (!existsSync(cwd)) {
+          return {
+            success: false,
+            error: `Directory does not exist: ${cwd}`,
+          };
+        }
+
         const timings: Record<string, number> = {};
         const startTotal = Date.now();
 
@@ -910,7 +924,7 @@ class NodeHandlerRegistry {
           const repoData = {
             path: cwd,
             name: basename(cwd),
-            workspaceIds: [],
+            workspaceIds: [`${cwd}:default`],
             metadata: {
               lastAccessed,
               settings,
@@ -984,6 +998,16 @@ class NodeHandlerRegistry {
     this.messageBus.registerHandler('project.workspaces.list', async (data) => {
       const { cwd } = data;
       try {
+        const { existsSync, statSync } = await import('fs');
+
+        // Check if cwd exists
+        if (!existsSync(cwd)) {
+          return {
+            success: false,
+            error: `Directory does not exist: ${cwd}`,
+          };
+        }
+
         const context = await this.getContext(cwd);
         const { getGitRoot, listWorktrees, isGitRepository } = await import(
           './worktree'
@@ -992,9 +1016,41 @@ class NodeHandlerRegistry {
         // Check if it's a git repository
         const isGit = await isGitRepository(cwd);
         if (!isGit) {
+          // Return default workspace for non-git directories
+          let createdAt = Date.now();
+          try {
+            const stats = statSync(cwd);
+            createdAt = stats.birthtimeMs || stats.ctimeMs;
+          } catch {
+            // Use current time as fallback
+          }
+
+          const defaultWorkspace = {
+            id: `${cwd}:default`,
+            repoPath: cwd,
+            branch: 'default',
+            worktreePath: cwd,
+            sessionIds: context.paths.getAllSessions().map((s) => s.sessionId),
+            gitState: {
+              currentCommit: '',
+              isDirty: false,
+              pendingChanges: [],
+            },
+            metadata: {
+              createdAt,
+              description: '',
+              status: 'active' as const,
+            },
+            context: {
+              activeFiles: [],
+              settings: context.config,
+              preferences: {},
+            },
+          };
+
           return {
-            success: false,
-            error: 'Not a git repository',
+            success: true,
+            data: { workspaces: [defaultWorkspace] },
           };
         }
 
@@ -2209,6 +2265,7 @@ ${diff}
           const result = await this.messageBus.request('toolApproval', {
             toolUse,
             category,
+            sessionId,
           });
 
           if (result.params || result.denyReason) {
@@ -2534,8 +2591,9 @@ ${diff}
     this.messageBus.registerHandler('session.config.get', async (data) => {
       const { cwd, sessionId, key } = data;
       const context = await this.getContext(cwd);
+      const logPath = context.paths.getSessionLogPath(sessionId);
       const sessionConfigManager = new SessionConfigManager({
-        logPath: context.paths.getSessionLogPath(sessionId),
+        logPath,
       });
       const value = key
         ? (sessionConfigManager.config as any)[key]
@@ -2559,6 +2617,33 @@ ${diff}
       return {
         success: true,
       };
+    });
+
+    this.messageBus.registerHandler('sessions.remove', async (data) => {
+      const { cwd, sessionId } = data;
+      try {
+        const context = await this.getContext(cwd);
+        const { unlinkSync, existsSync } = await import('fs');
+        const logPath = context.paths.getSessionLogPath(sessionId);
+
+        if (!existsSync(logPath)) {
+          return {
+            success: false,
+            error: `Session "${sessionId}" not found`,
+          };
+        }
+
+        unlinkSync(logPath);
+
+        return {
+          success: true,
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message || 'Failed to remove session',
+        };
+      }
     });
 
     //////////////////////////////////////////////
@@ -2585,6 +2670,187 @@ ${diff}
           logFile: context.paths.getSessionLogPath(sessionId),
         },
       };
+    });
+
+    //////////////////////////////////////////////
+    // skills
+    this.messageBus.registerHandler('skills.list', async (data) => {
+      const { cwd } = data;
+      try {
+        const context = await this.getContext(cwd);
+        const { SkillManager } = await import('./skill');
+        const skillManager = new SkillManager({ context });
+        await skillManager.loadSkills();
+        return {
+          success: true,
+          data: {
+            skills: skillManager.getSkills(),
+            errors: skillManager.getErrors(),
+          },
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          data: {
+            skills: [],
+            errors: [
+              { path: cwd, message: error.message || 'Failed to list skills' },
+            ],
+          },
+        };
+      }
+    });
+
+    this.messageBus.registerHandler('skills.get', async (data) => {
+      const { cwd, name } = data;
+      try {
+        const context = await this.getContext(cwd);
+        const { SkillManager } = await import('./skill');
+        const skillManager = new SkillManager({ context });
+        await skillManager.loadSkills();
+        const skill = skillManager.getSkill(name);
+        if (!skill) {
+          return {
+            success: false,
+            error: `Skill "${name}" not found`,
+          };
+        }
+        const body = await skillManager.readSkillBody(skill);
+        return {
+          success: true,
+          data: {
+            skill: { ...skill, body },
+          },
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message || 'Failed to get skill',
+        };
+      }
+    });
+
+    this.messageBus.registerHandler('skills.add', async (data) => {
+      const { cwd, source, global, claude, overwrite, name, targetDir } = data;
+      try {
+        const context = await this.getContext(cwd);
+        const { SkillManager } = await import('./skill');
+        const skillManager = new SkillManager({ context });
+        const result = await skillManager.addSkill(source, {
+          global,
+          claude,
+          overwrite,
+          name,
+          targetDir,
+        });
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message || 'Failed to add skill',
+        };
+      }
+    });
+
+    this.messageBus.registerHandler('skills.remove', async (data) => {
+      const { cwd, name, targetDir } = data;
+      try {
+        const context = await this.getContext(cwd);
+        const { SkillManager } = await import('./skill');
+        const skillManager = new SkillManager({ context });
+        await skillManager.loadSkills();
+        const result = await skillManager.removeSkill(name, targetDir);
+        return result;
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message || 'Failed to remove skill',
+        };
+      }
+    });
+
+    this.messageBus.registerHandler('skills.preview', async (data) => {
+      const { cwd, source } = data;
+      try {
+        const context = await this.getContext(cwd);
+        const { SkillManager } = await import('./skill');
+        const skillManager = new SkillManager({ context });
+        const preview = await skillManager.previewSkills(source);
+        const previewId = randomUUID();
+        this.skillPreviews.set(previewId, preview);
+        return {
+          success: true,
+          data: {
+            previewId,
+            skills: preview.skills.map((s) => ({
+              name: s.name,
+              description: s.description,
+              skillPath: s.skillPath,
+            })),
+            errors: preview.errors,
+          },
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message || 'Failed to preview skills',
+        };
+      }
+    });
+
+    this.messageBus.registerHandler('skills.install', async (data) => {
+      const {
+        cwd,
+        previewId,
+        selectedSkills,
+        source,
+        global,
+        claude,
+        overwrite,
+        name,
+        targetDir,
+      } = data;
+      try {
+        const preview = this.skillPreviews.get(previewId);
+        if (!preview) {
+          return {
+            success: false,
+            error: 'Preview not found or expired',
+          };
+        }
+        const context = await this.getContext(cwd);
+        const { SkillManager } = await import('./skill');
+        const skillManager = new SkillManager({ context });
+        const skillsToInstall = preview.skills.filter((s) =>
+          selectedSkills.includes(s.name),
+        );
+        const result = await skillManager.installFromPreview(
+          preview,
+          skillsToInstall,
+          source,
+          {
+            global,
+            claude,
+            overwrite,
+            name,
+            targetDir,
+          },
+        );
+        skillManager.cleanupPreview(preview);
+        this.skillPreviews.delete(previewId);
+        return {
+          success: true,
+          data: result,
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message || 'Failed to install skills',
+        };
+      }
     });
 
     //////////////////////////////////////////////
@@ -2767,12 +3033,12 @@ ${diff}
         userPrompt: message,
         cwd,
         systemPrompt:
-          "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with one field: 'title' (string).",
+          "Extract a concise 2-5 word title that captures the main topic or intent of this message. Format your response as a JSON object with one field: 'title' (string).",
         responseFormat: {
           type: 'json',
           schema: z.toJSONSchema(
             z.object({
-              title: z.string().nullable(),
+              title: z.string(),
             }),
           ),
         },
@@ -2896,6 +3162,28 @@ ${diff}
       child.unref();
 
       return { success: true };
+    });
+
+    this.messageBus.registerHandler('utils.playSound', async (data) => {
+      const { sound, volume = 1.0 } = data;
+      try {
+        const { playSound, SOUND_PRESETS } = await import('./utils/sound');
+
+        // Check if sound is a preset name
+        const soundName =
+          sound in SOUND_PRESETS
+            ? SOUND_PRESETS[sound as keyof typeof SOUND_PRESETS]
+            : sound;
+
+        await playSound(soundName, volume);
+
+        return { success: true };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message || 'Failed to play sound',
+        };
+      }
     });
 
     this.messageBus.registerHandler('utils.detectApps', async (data) => {
@@ -3041,6 +3329,8 @@ function normalizeProviders(providers: ProvidersMap, context: Context) {
         apiEnv: provider.apiEnv,
         api: provider.api,
         options: provider.options,
+        source: provider.source,
+        apiFormat: provider.apiFormat,
         validEnvs,
         hasApiKey,
         maskedApiKey,

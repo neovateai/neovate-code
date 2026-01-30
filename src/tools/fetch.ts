@@ -1,6 +1,6 @@
 import TurndownService from 'turndown';
 import { z } from 'zod';
-import type { ModelInfo } from '../model';
+import type { ModelInfo } from '../provider/model';
 import { query } from '../query';
 import { createTool } from '../tool';
 import { safeStringify } from '../utils/safeStringify';

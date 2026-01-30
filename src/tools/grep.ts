@@ -1,12 +1,17 @@
 import fs from 'fs';
 import path from 'pathe';
 import { z } from 'zod';
+import { countTokens } from 'gpt-tokenizer';
 import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
 import { ripGrep } from '../utils/ripgrep';
 import { safeStringify } from '../utils/safeStringify';
 
 const DEFAULT_LIMIT = 1000;
+const MAX_CONTENT_LINES = 1000;
+const MAX_LINE_LENGTH = 2000;
+const MAX_CONTENT_LENGTH = 262144;
+const MAX_TOKENS = 25000;
 
 const OUTPUT_MODES = ['content', 'files_with_matches', 'count'] as const;
 type OutputMode = (typeof OUTPUT_MODES)[number];
@@ -242,24 +247,76 @@ Usage:
 
         if (mode === 'content') {
           const allLines = result.lines;
-          const slicedLines = allLines.slice(
+          const totalLinesBeforeTruncation = allLines.length;
+
+          let processedLines = allLines.slice(
             appliedOffset,
             appliedOffset + maxResults,
           );
-          const content = slicedLines.join('\n');
-          const filenames = extractFilenamesFromContent(slicedLines);
+
+          let truncated = false;
+          let truncationReason = '';
+
+          if (processedLines.length > MAX_CONTENT_LINES) {
+            processedLines = processedLines.slice(0, MAX_CONTENT_LINES);
+            truncated = true;
+            truncationReason = 'lines';
+          }
+
+          processedLines = processedLines.map((line) =>
+            line.length > MAX_LINE_LENGTH
+              ? `${line.substring(0, MAX_LINE_LENGTH)}...`
+              : line,
+          );
+
+          let content = processedLines.join('\n');
+          while (
+            content.length > MAX_CONTENT_LENGTH &&
+            processedLines.length > 0
+          ) {
+            processedLines = processedLines.slice(
+              0,
+              Math.floor(processedLines.length * 0.8),
+            );
+            content = processedLines.join('\n');
+            truncated = true;
+            truncationReason = 'length';
+          }
+
+          let tokenCount = countTokens(content);
+          while (tokenCount > MAX_TOKENS && processedLines.length > 0) {
+            processedLines = processedLines.slice(
+              0,
+              Math.floor(processedLines.length * 0.8),
+            );
+            content = processedLines.join('\n');
+            tokenCount = countTokens(content);
+            truncated = true;
+            truncationReason = 'tokens';
+          }
+
+          const filenames = extractFilenamesFromContent(processedLines);
+
+          const returnDisplay = truncated
+            ? `Found ${totalLinesBeforeTruncation} lines, showing ${processedLines.length} (truncated due to ${truncationReason}) in ${filenames.length} files (${durationMs}ms)`
+            : `Found ${totalLinesBeforeTruncation} lines in ${filenames.length} files (${durationMs}ms)`;
 
           return {
-            returnDisplay: `Found ${allLines.length} lines in ${filenames.length} files (${durationMs}ms)`,
+            returnDisplay,
             llmContent: safeStringify({
               mode: 'content',
               numFiles: filenames.length,
               filenames,
               content,
-              numLines: slicedLines.length,
+              numLines: processedLines.length,
               appliedLimit: maxResults,
               appliedOffset,
               durationMs,
+              truncated,
+              ...(truncated && {
+                totalLinesBeforeTruncation,
+                hint: 'Results truncated. Use more specific pattern, add include filter, or use offset parameter.',
+              }),
             }),
           };
         }

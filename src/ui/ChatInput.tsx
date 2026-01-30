@@ -1,4 +1,4 @@
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import os from 'os';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SPACING, UI_COLORS } from './constants';
@@ -46,6 +46,17 @@ export function ChatInput() {
       process.stdout.write('\x1b[?1004l');
     };
   }, []);
+
+  // Global handler for terminal focus events - always active to catch focus
+  // events even when TextInput is not focused (e.g., during modals)
+  useInput(
+    (input) => {
+      if (input === '[I' || input === '[O') {
+        useAppStore.getState().setWindowFocused(input === '[I');
+      }
+    },
+    { isActive: true },
+  );
 
   // Memoize platform-specific modifier key to avoid repeated os.platform() calls
   const modifierKey = useMemo(

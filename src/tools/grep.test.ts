@@ -94,6 +94,86 @@ const hello = "world";`,
       const parsed = JSON.parse(result.llmContent as string);
       expect(parsed.numLines).toBeGreaterThan(1);
     });
+
+    test('should truncate content when lines exceed MAX_CONTENT_LINES', async () => {
+      const manyLines = Array.from(
+        { length: 3000 },
+        (_, i) => `line${i}: test content`,
+      ).join('\n');
+      fs.writeFileSync(path.join(tempDir, 'many-lines.txt'), manyLines);
+
+      const result = await grepTool.execute({
+        pattern: 'test content',
+        output_mode: 'content',
+        // Avoid DEFAULT_LIMIT=1000 truncation; force MAX_CONTENT_LINES truncation
+        limit: 3000,
+      });
+
+      expect(result.isError).toBeFalsy();
+      const parsed = JSON.parse(result.llmContent as string);
+      expect(parsed.numLines).toBeLessThanOrEqual(1000);
+      expect(parsed.truncated).toBe(true);
+      expect(parsed.totalLinesBeforeTruncation).toBeGreaterThan(1000);
+    });
+
+    test('should truncate long lines exceeding MAX_LINE_LENGTH', async () => {
+      const longLine = 'x'.repeat(3000);
+      fs.writeFileSync(
+        path.join(tempDir, 'long-line.txt'),
+        `prefix: ${longLine} :suffix`,
+      );
+
+      const result = await grepTool.execute({
+        pattern: 'prefix',
+        output_mode: 'content',
+      });
+
+      expect(result.isError).toBeFalsy();
+      const parsed = JSON.parse(result.llmContent as string);
+      const lines = parsed.content.split('\n');
+      for (const line of lines) {
+        expect(line.length).toBeLessThanOrEqual(2100);
+      }
+    });
+
+    test('should truncate content when tokens exceed MAX_TOKENS', async () => {
+      const manyTokens = Array.from(
+        { length: 2000 },
+        (_, i) =>
+          `line${i}: the quick brown fox jumps over the lazy dog repeatedly`,
+      ).join('\n');
+      fs.writeFileSync(path.join(tempDir, 'many-tokens.txt'), manyTokens);
+
+      const result = await grepTool.execute({
+        pattern: 'fox',
+        output_mode: 'content',
+        context: 2,
+      });
+
+      expect(result.isError).toBeFalsy();
+      const parsed = JSON.parse(result.llmContent as string);
+      expect(parsed.truncated).toBeDefined();
+    });
+
+    test('should include hint when content is truncated', async () => {
+      const manyLines = Array.from(
+        { length: 3000 },
+        (_, i) => `searchable${i}: data`,
+      ).join('\n');
+      fs.writeFileSync(path.join(tempDir, 'hint-test.txt'), manyLines);
+
+      const result = await grepTool.execute({
+        pattern: 'searchable',
+        output_mode: 'content',
+      });
+
+      expect(result.isError).toBeFalsy();
+      const parsed = JSON.parse(result.llmContent as string);
+      if (parsed.truncated) {
+        expect(parsed.hint).toBeTruthy();
+        expect(parsed.hint).toContain('truncated');
+      }
+    });
   });
 
   describe('count mode', () => {

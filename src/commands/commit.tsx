@@ -975,18 +975,6 @@ and may require re-resolving conflicts.`,
   // Render based on current state
   return (
     <Box flexDirection="column" padding={1}>
-      {/* Header */}
-      <Box marginBottom={1} flexDirection="column">
-        <Text bold color="cyan">
-          🚀 AI Commit Message Generator
-        </Text>
-        {options.model && (
-          <Text dimColor>
-            Model: <Text color="yellow">{options.model}</Text>
-          </Text>
-        )}
-      </Box>
-
       {/* Validating Phase */}
       {state.phase === 'validating' && (
         <Box>
@@ -1013,7 +1001,9 @@ and may require re-resolving conflicts.`,
       {/* Generating Phase */}
       {state.phase === 'generating' && (
         <Box>
-          <Text color="yellow">⏳ Generating commit message with AI...</Text>
+          <Text color="yellow">
+            Generating commit message with {options.model}...
+          </Text>
         </Box>
       )}
 

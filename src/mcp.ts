@@ -334,11 +334,26 @@ export class MCPManager {
       const { Experimental_StdioMCPTransport } = await import(
         '@ai-sdk/mcp/mcp-stdio'
       );
-
+      // Windows: if command is npx/npm/yarn/pnpm/bun/bunx, use cmd.exe to execute, fix: spawn npx ENOENT error
+      const windowsShellCommands = [
+        'npx',
+        'npm',
+        'yarn',
+        'pnpm',
+        'bun',
+        'bunx',
+      ];
+      let command = config.command;
+      let args = config.args;
+      const isWin = process.platform === 'win32';
+      if (isWin && windowsShellCommands.includes(command.toLowerCase())) {
+        args = ['/c', command, ...(args || [])];
+        command = 'cmd.exe';
+      }
       return experimental_createMCPClient({
         transport: new Experimental_StdioMCPTransport({
-          command: config.command,
-          args: config.args,
+          command,
+          args,
           stderr: 'ignore',
           env,
         }),

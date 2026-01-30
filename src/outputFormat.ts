@@ -1,6 +1,6 @@
 import type { LoopResult } from './loop';
 import type { SDKResultMessage, SDKSystemMessage } from './message';
-import type { ModelInfo } from './model';
+import type { ModelInfo } from './provider/model';
 import type { Tool } from './tool';
 
 type Format = 'text' | 'stream-json' | 'json';

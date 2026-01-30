@@ -4,15 +4,35 @@ import path from 'pathe';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import type { Context } from '../context';
+import { DirectTransport, MessageBus } from '../messageBus';
+import { NodeBridge } from '../nodeBridge';
 import { Paths } from '../paths';
-import {
-  type AddSkillResult,
-  type PreviewSkillsResult,
-  SkillManager,
-  type SkillMetadata,
-  type SkillPreview,
-  SkillSource,
-} from '../skill';
+import { SkillSource } from '../skill';
+
+// Types for handler responses
+interface SkillMetadata {
+  name: string;
+  description: string;
+  path: string;
+  source: string;
+}
+
+interface SkillError {
+  path: string;
+  message: string;
+}
+
+interface AddSkillResult {
+  installed: SkillMetadata[];
+  skipped: Array<{ name: string; reason: string }>;
+  errors: SkillError[];
+}
+
+interface PreviewSkill {
+  name: string;
+  description: string;
+  skillPath: string;
+}
 
 type AddState =
   | { phase: 'cloning' }
@@ -21,7 +41,11 @@ type AddState =
 
 type InteractiveAddState =
   | { phase: 'cloning' }
-  | { phase: 'selecting'; preview: PreviewSkillsResult }
+  | {
+      phase: 'selecting';
+      previewId: string;
+      skills: PreviewSkill[];
+    }
   | { phase: 'installing' }
   | { phase: 'done'; result: AddSkillResult }
   | { phase: 'cancelled' }
@@ -39,7 +63,8 @@ type RemoveState =
 
 interface AddSkillUIProps {
   source: string;
-  skillManager: SkillManager;
+  messageBus: MessageBus;
+  cwd: string;
   options: {
     global?: boolean;
     claude?: boolean;
@@ -51,7 +76,8 @@ interface AddSkillUIProps {
 
 const AddSkillUI: React.FC<AddSkillUIProps> = ({
   source,
-  skillManager,
+  messageBus,
+  cwd,
   options,
 }) => {
   const [state, setState] = useState<AddState>({ phase: 'cloning' });
@@ -59,14 +85,21 @@ const AddSkillUI: React.FC<AddSkillUIProps> = ({
   useEffect(() => {
     const run = async () => {
       try {
-        const result = await skillManager.addSkill(source, {
+        const result = await messageBus.request('skills.add', {
+          cwd,
+          source,
           global: options.global,
           claude: options.claude,
           overwrite: options.overwrite,
           name: options.name,
           targetDir: options.target,
         });
-        setState({ phase: 'done', result });
+        if (!result.success) {
+          setState({ phase: 'error', error: result.error || 'Unknown error' });
+          setTimeout(() => process.exit(1), 2000);
+          return;
+        }
+        setState({ phase: 'done', result: result.data });
         setTimeout(() => process.exit(0), 1500);
       } catch (error: any) {
         setState({ phase: 'error', error: error.message });
@@ -74,7 +107,7 @@ const AddSkillUI: React.FC<AddSkillUIProps> = ({
       }
     };
     run();
-  }, [source, skillManager, options]);
+  }, [source, messageBus, cwd, options]);
 
   if (state.phase === 'cloning') {
     return (
@@ -153,7 +186,8 @@ const AddSkillUI: React.FC<AddSkillUIProps> = ({
 };
 
 interface SkillListUIProps {
-  skillManager: SkillManager;
+  messageBus: MessageBus;
+  cwd: string;
 }
 
 const sourceLabels: Record<SkillSource, string> = {
@@ -174,7 +208,17 @@ const sourceColors: Record<SkillSource, string> = {
   [SkillSource.Config]: 'yellow',
 };
 
-const SkillListUI: React.FC<SkillListUIProps> = ({ skillManager }) => {
+// Map source string to SkillSource enum
+const sourceStringToEnum: Record<string, SkillSource> = {
+  'global-claude': SkillSource.GlobalClaude,
+  global: SkillSource.Global,
+  'project-claude': SkillSource.ProjectClaude,
+  project: SkillSource.Project,
+  plugin: SkillSource.Plugin,
+  config: SkillSource.Config,
+};
+
+const SkillListUI: React.FC<SkillListUIProps> = ({ messageBus, cwd }) => {
   const [state, setState] = useState<ListState>({ phase: 'loading' });
 
   useEffect(() => {
@@ -186,15 +230,18 @@ const SkillListUI: React.FC<SkillListUIProps> = ({ skillManager }) => {
   useEffect(() => {
     const run = async () => {
       try {
-        await skillManager.loadSkills();
-        const skills = skillManager.getSkills();
-        setState({ phase: 'done', skills });
+        const result = await messageBus.request('skills.list', { cwd });
+        if (!result.success) {
+          setState({ phase: 'error', error: 'Failed to list skills' });
+          return;
+        }
+        setState({ phase: 'done', skills: result.data.skills });
       } catch (error: any) {
         setState({ phase: 'error', error: error.message });
       }
     };
     run();
-  }, [skillManager]);
+  }, [messageBus, cwd]);
 
   if (state.phase === 'loading') {
     return (
@@ -218,7 +265,10 @@ const SkillListUI: React.FC<SkillListUIProps> = ({ skillManager }) => {
 
   const maxNameLen = Math.max(...skills.map((s) => s.name.length), 4);
   const maxSourceLen = Math.max(
-    ...skills.map((s) => sourceLabels[s.source].length),
+    ...skills.map((s) => {
+      const sourceEnum = sourceStringToEnum[s.source];
+      return sourceEnum ? sourceLabels[sourceEnum].length : s.source.length;
+    }),
     6,
   );
 
@@ -232,14 +282,17 @@ const SkillListUI: React.FC<SkillListUIProps> = ({ skillManager }) => {
         <Text dimColor>{'─'.repeat(maxNameLen + 2)}</Text>
         <Text dimColor>{'─'.repeat(maxSourceLen)}</Text>
       </Box>
-      {skills.map((skill) => (
-        <Box key={`${skill.source}-${skill.name}`}>
-          <Text>{skill.name.padEnd(maxNameLen + 2)}</Text>
-          <Text color={sourceColors[skill.source] as any}>
-            {sourceLabels[skill.source]}
-          </Text>
-        </Box>
-      ))}
+      {skills.map((skill) => {
+        const sourceEnum = sourceStringToEnum[skill.source];
+        const label = sourceEnum ? sourceLabels[sourceEnum] : skill.source;
+        const color = sourceEnum ? sourceColors[sourceEnum] : 'white';
+        return (
+          <Box key={`${skill.source}-${skill.name}`}>
+            <Text>{skill.name.padEnd(maxNameLen + 2)}</Text>
+            <Text color={color as any}>{label}</Text>
+          </Box>
+        );
+      })}
     </Box>
   );
 };
@@ -247,12 +300,14 @@ const SkillListUI: React.FC<SkillListUIProps> = ({ skillManager }) => {
 interface RemoveSkillUIProps {
   name: string;
   targetDir: string;
-  skillManager: SkillManager;
+  messageBus: MessageBus;
+  cwd: string;
 }
 
 interface InteractiveAddSkillUIProps {
   source: string;
-  skillManager: SkillManager;
+  messageBus: MessageBus;
+  cwd: string;
   options: {
     global?: boolean;
     claude?: boolean;
@@ -264,7 +319,8 @@ interface InteractiveAddSkillUIProps {
 
 const InteractiveAddSkillUI: React.FC<InteractiveAddSkillUIProps> = ({
   source,
-  skillManager,
+  messageBus,
+  cwd,
   options,
 }) => {
   const [state, setState] = useState<InteractiveAddState>({ phase: 'cloning' });
@@ -276,36 +332,42 @@ const InteractiveAddSkillUI: React.FC<InteractiveAddSkillUIProps> = ({
   useEffect(() => {
     const run = async () => {
       try {
-        const preview = await skillManager.previewSkills(source);
-        if (preview.skills.length === 0) {
+        const result = await messageBus.request('skills.preview', {
+          cwd,
+          source,
+        });
+        if (!result.success) {
+          setState({ phase: 'error', error: result.error || 'Unknown error' });
+          setTimeout(() => process.exit(1), 2000);
+          return;
+        }
+        const { previewId, skills, errors } = result.data;
+        if (skills.length === 0) {
           setState({
             phase: 'error',
-            error:
-              preview.errors.length > 0
-                ? preview.errors[0].message
-                : 'No skills found',
+            error: errors.length > 0 ? errors[0].message : 'No skills found',
           });
-          skillManager.cleanupPreview(preview);
           setTimeout(() => process.exit(1), 2000);
           return;
         }
         // Pre-select all skills
-        setSelectedIndices(new Set(preview.skills.map((_, i) => i)));
-        setState({ phase: 'selecting', preview });
+        setSelectedIndices(
+          new Set(skills.map((_: PreviewSkill, i: number) => i)),
+        );
+        setState({ phase: 'selecting', previewId, skills });
       } catch (error: any) {
         setState({ phase: 'error', error: error.message });
         setTimeout(() => process.exit(1), 2000);
       }
     };
     run();
-  }, [source, skillManager]);
+  }, [source, messageBus, cwd]);
 
   useInput(
     (input, key) => {
       if (state.phase !== 'selecting') return;
 
-      const { preview } = state;
-      const skills = preview.skills;
+      const { previewId, skills } = state;
 
       if (key.upArrow) {
         setCursorIndex((prev) => (prev > 0 ? prev - 1 : skills.length - 1));
@@ -323,17 +385,22 @@ const InteractiveAddSkillUI: React.FC<InteractiveAddSkillUIProps> = ({
         });
       } else if (key.return) {
         if (selectedIndices.size === 0) {
-          skillManager.cleanupPreview(preview);
           setState({ phase: 'cancelled' });
           setTimeout(() => process.exit(0), 1000);
           return;
         }
 
-        const selectedSkills = skills.filter((_, i) => selectedIndices.has(i));
+        const selectedSkillNames = skills
+          .filter((_: PreviewSkill, i: number) => selectedIndices.has(i))
+          .map((s: PreviewSkill) => s.name);
         setState({ phase: 'installing' });
 
-        skillManager
-          .installFromPreview(preview, selectedSkills, source, {
+        messageBus
+          .request('skills.install', {
+            cwd,
+            previewId,
+            selectedSkills: selectedSkillNames,
+            source,
             global: options.global,
             claude: options.claude,
             overwrite: options.overwrite,
@@ -341,17 +408,22 @@ const InteractiveAddSkillUI: React.FC<InteractiveAddSkillUIProps> = ({
             targetDir: options.target,
           })
           .then((result) => {
-            skillManager.cleanupPreview(preview);
-            setState({ phase: 'done', result });
+            if (!result.success) {
+              setState({
+                phase: 'error',
+                error: result.error || 'Unknown error',
+              });
+              setTimeout(() => process.exit(1), 2000);
+              return;
+            }
+            setState({ phase: 'done', result: result.data });
             setTimeout(() => process.exit(0), 1500);
           })
           .catch((error: any) => {
-            skillManager.cleanupPreview(preview);
             setState({ phase: 'error', error: error.message });
             setTimeout(() => process.exit(1), 2000);
           });
       } else if (key.escape || input === 'q') {
-        skillManager.cleanupPreview(preview);
         setState({ phase: 'cancelled' });
         setTimeout(() => process.exit(0), 1000);
       }
@@ -390,7 +462,7 @@ const InteractiveAddSkillUI: React.FC<InteractiveAddSkillUIProps> = ({
   }
 
   if (state.phase === 'selecting') {
-    const { preview } = state;
+    const { skills } = state;
     return (
       <Box flexDirection="column">
         <Text bold>Select skills to install:</Text>
@@ -398,7 +470,7 @@ const InteractiveAddSkillUI: React.FC<InteractiveAddSkillUIProps> = ({
           (↑/↓ navigate, space toggle, enter confirm, q/esc cancel)
         </Text>
         <Box flexDirection="column" marginTop={1}>
-          {preview.skills.map((skill, i) => {
+          {skills.map((skill: PreviewSkill, i: number) => {
             const isSelected = selectedIndices.has(i);
             const isCursor = cursorIndex === i;
             return (
@@ -417,7 +489,7 @@ const InteractiveAddSkillUI: React.FC<InteractiveAddSkillUIProps> = ({
         </Box>
         <Box marginTop={1}>
           <Text dimColor>
-            {selectedIndices.size} of {preview.skills.length} selected
+            {selectedIndices.size} of {skills.length} selected
           </Text>
         </Box>
       </Box>
@@ -489,14 +561,19 @@ const InteractiveAddSkillUI: React.FC<InteractiveAddSkillUIProps> = ({
 const RemoveSkillUI: React.FC<RemoveSkillUIProps> = ({
   name,
   targetDir,
-  skillManager,
+  messageBus,
+  cwd,
 }) => {
   const [state, setState] = useState<RemoveState>({ phase: 'removing' });
 
   useEffect(() => {
     const run = async () => {
       try {
-        const result = await skillManager.removeSkill(name, targetDir);
+        const result = await messageBus.request('skills.remove', {
+          cwd,
+          name,
+          targetDir,
+        });
         if (result.success) {
           setState({ phase: 'done' });
           setTimeout(() => process.exit(0), 1000);
@@ -510,7 +587,7 @@ const RemoveSkillUI: React.FC<RemoveSkillUIProps> = ({
       }
     };
     run();
-  }, [name, targetDir, skillManager]);
+  }, [name, targetDir, messageBus, cwd]);
 
   if (state.phase === 'removing') {
     return (
@@ -606,6 +683,24 @@ interface SkillArgv {
   name?: string;
 }
 
+function createMessageBus(context: Context): MessageBus {
+  const nodeBridge = new NodeBridge({
+    contextCreateOpts: {
+      productName: context.productName,
+      version: context.version,
+      argvConfig: {},
+      plugins: context.plugins,
+    },
+  });
+
+  const [clientTransport, nodeTransport] = DirectTransport.createPair();
+  const messageBus = new MessageBus();
+  messageBus.setTransport(clientTransport);
+  nodeBridge.messageBus.setTransport(nodeTransport);
+
+  return messageBus;
+}
+
 export async function runSkill(context: Context) {
   const { default: yargsParser } = await import('yargs-parser');
   const productName = context.productName.toLowerCase();
@@ -633,7 +728,8 @@ export async function runSkill(context: Context) {
     cwd: context.cwd,
   });
 
-  const skillManager = new SkillManager({ context });
+  const messageBus = createMessageBus(context);
+  const cwd = context.cwd;
 
   if (command === 'add') {
     const source = argv._[1] as string | undefined;
@@ -647,7 +743,8 @@ export async function runSkill(context: Context) {
       render(
         <InteractiveAddSkillUI
           source={source}
-          skillManager={skillManager}
+          messageBus={messageBus}
+          cwd={cwd}
           options={{
             global: argv.global,
             claude: argv.claude,
@@ -664,7 +761,8 @@ export async function runSkill(context: Context) {
     render(
       <AddSkillUI
         source={source}
-        skillManager={skillManager}
+        messageBus={messageBus}
+        cwd={cwd}
         options={{
           global: argv.global,
           claude: argv.claude,
@@ -680,13 +778,17 @@ export async function runSkill(context: Context) {
 
   if (command === 'list' || command === 'ls') {
     if (argv.json) {
-      await skillManager.loadSkills();
-      const skills = skillManager.getSkills();
-      console.log(JSON.stringify(skills, null, 2));
+      const result = await messageBus.request('skills.list', { cwd });
+      if (result.success) {
+        console.log(JSON.stringify(result.data.skills, null, 2));
+      } else {
+        console.error('Error: Failed to list skills');
+        process.exit(1);
+      }
       return;
     }
 
-    render(<SkillListUI skillManager={skillManager} />, {
+    render(<SkillListUI messageBus={messageBus} cwd={cwd} />, {
       patchConsole: true,
       exitOnCtrlC: true,
     });
@@ -707,7 +809,8 @@ export async function runSkill(context: Context) {
       <RemoveSkillUI
         name={name}
         targetDir={targetDir}
-        skillManager={skillManager}
+        messageBus={messageBus}
+        cwd={cwd}
       />,
       { patchConsole: true, exitOnCtrlC: true },
     );

@@ -3,7 +3,6 @@ import { existsSync } from 'fs';
 import { type Key, Text, useInput } from 'ink';
 import React from 'react';
 import { PASTE_CONFIG } from '../constants';
-import { useAppStore } from '../store';
 import { useTerminalSize } from '../useTerminalSize';
 import { darkTheme } from './constant';
 import { useTextInput } from './hooks/useTextInput';
@@ -442,11 +441,9 @@ export default function TextInput({
   };
 
   const wrappedOnInput = (input: string, key: Key): void => {
-    // Terminal focus tracking: when enabled via \x1b[?1004h, terminals send
-    // \x1b[I (focus gained) and \x1b[O (focus lost). Ink strips the \x1b prefix,
-    // leaving '[I' and '[O' which we intercept to update focus state.
+    // Terminal focus events ([I/[O] are handled globally in ChatInput.tsx
+    // Skip them here to prevent any leakage into input
     if (input === '[I' || input === '[O') {
-      useAppStore.getState().setWindowFocused(input === '[I');
       return;
     }
 

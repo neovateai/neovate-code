@@ -1,7 +1,7 @@
 import type { AnthropicProvider } from '@ai-sdk/anthropic';
 import type { OpenAIProvider } from '@ai-sdk/openai';
 import type { OpenAICompatibleProvider } from '@ai-sdk/openai-compatible';
-import type { LanguageModelV2 } from '@openrouter/ai-sdk-provider';
+import type { LanguageModelV3 } from '@ai-sdk/provider';
 import defu from 'defu';
 import type {
   AgentExecutionResult,
@@ -10,7 +10,12 @@ import type {
 import type { Config } from './config';
 import type { Context, ContextCreateOpts } from './context';
 import type { LoopResult } from './loop';
-import type { ModelAlias, ModelMap, Provider, ProvidersMap } from './model';
+import type {
+  ModelAlias,
+  ModelMap,
+  Provider,
+  ProvidersMap,
+} from './provider/model';
 import type { NodeBridgeHandlers } from './nodeBridge.types';
 import type { OutputStyle } from './outputStyle';
 import type { SlashCommand } from './slash-commands/types';
@@ -158,7 +163,7 @@ export type Plugin = {
       defaultModelCreator: (
         name: string,
         provider: Provider,
-      ) => LanguageModelV2;
+      ) => LanguageModelV3;
       createOpenAI: (options: any) => OpenAIProvider;
       createOpenAICompatible: (options: any) => OpenAICompatibleProvider;
       createAnthropic: (options: any) => AnthropicProvider;

@@ -132,6 +132,7 @@ assistant: "I'm going to use the ${TOOL_NAMES.TASK} tool to launch the with the 
           const result = await messageBus.request('toolApproval', {
             toolUse: opts.toolUse,
             category: opts.category,
+            sessionId,
           });
 
           // Handle both boolean and ToolApprovalResult return types

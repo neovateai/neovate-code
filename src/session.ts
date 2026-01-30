@@ -73,7 +73,7 @@ export class SessionConfigManager {
 
   load(logPath: string): SessionConfig {
     if (!fs.existsSync(logPath)) {
-      return DEFAULT_SESSION_CONFIG;
+      return { ...DEFAULT_SESSION_CONFIG };
     }
     try {
       const content = fs.readFileSync(logPath, 'utf-8');
@@ -86,9 +86,9 @@ export class SessionConfigManager {
           }
         } catch {}
       }
-      return DEFAULT_SESSION_CONFIG;
+      return { ...DEFAULT_SESSION_CONFIG };
     } catch {
-      return DEFAULT_SESSION_CONFIG;
+      return { ...DEFAULT_SESSION_CONFIG };
     }
   }
   write() {

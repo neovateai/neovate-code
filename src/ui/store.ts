@@ -6,7 +6,7 @@ import type { ApprovalMode } from '../config';
 import { PLAN_MODE_EVENTS, TOOL_NAMES } from '../constants';
 import type { LoopResult, StreamResult, ThinkingConfig } from '../loop';
 import type { Message, NormalizedMessage, UserMessage } from '../message';
-import type { ModelInfo, ProvidersMap } from '../model';
+import type { ModelInfo, ProvidersMap } from '../provider/model';
 import { Paths } from '../paths';
 import { loadSessionMessages, Session, SessionConfigManager } from '../session';
 import {
@@ -211,9 +211,11 @@ interface AppActions {
   approveToolUse: ({
     toolUse,
     category,
+    sessionId,
   }: {
     toolUse: ToolUse;
     category?: ApprovalCategory;
+    sessionId: string;
   }) => Promise<{
     approved: boolean;
     params?: Record<string, unknown>;
@@ -364,7 +366,7 @@ export const useAppStore = create<AppStore>()(
           model: response.data.model,
           planModel: response.data.planModel,
           initializeModelError: response.data.initializeModelError,
-          modelContextLimit: response.data.model?.model?.limit.context || 0,
+          modelContextLimit: response.data.model?.model?.limit?.context || 0,
           providers: response.data.providers,
           sessionId: opts.sessionId,
           messages: opts.messages,
@@ -1091,9 +1093,11 @@ export const useAppStore = create<AppStore>()(
       approveToolUse: ({
         toolUse,
         category,
+        sessionId: _sessionId,
       }: {
         toolUse: ToolUse;
         category?: ApprovalCategory;
+        sessionId: string;
       }) => {
         const { bridge, cwd, sessionId } = get();
         return new Promise<{

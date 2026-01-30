@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { SkillManager, SkillMetadata } from '../skill';
 import { createTool } from '../tool';
 import { safeStringify } from '../utils/safeStringify';
+import { TOOL_NAMES } from '../constants';
 
 function renderAvailableSkills(skills: SkillMetadata[]): string {
   return skills
@@ -26,7 +27,7 @@ ${renderAvailableSkills(skills)}
 
 export function createSkillTool(opts: { skillManager: SkillManager }) {
   return createTool({
-    name: 'skill',
+    name: TOOL_NAMES.SKILL,
     description: generateDescription(opts.skillManager),
     parameters: z.object({
       skill: z.string().describe('The skill name to execute'),

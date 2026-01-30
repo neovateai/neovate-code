@@ -61,7 +61,7 @@ export interface AddSkillResult {
 }
 
 const MAX_NAME_LENGTH = 64;
-const MAX_DESCRIPTION_LENGTH = 1024;
+const MAX_DESCRIPTION_LENGTH = 2048;
 
 export interface SkillManagerOpts {
   context: Context;
@@ -300,14 +300,6 @@ export class SkillManager {
         this.errors.push({
           path: skillPath,
           message: `Description exceeds maximum length of ${MAX_DESCRIPTION_LENGTH} characters`,
-        });
-        return null;
-      }
-
-      if (attributes.description.includes('\n')) {
-        this.errors.push({
-          path: skillPath,
-          message: 'Description must be a single line',
         });
         return null;
       }
@@ -579,10 +571,7 @@ export class SkillManager {
         return null;
       }
 
-      if (
-        attributes.description.length > MAX_DESCRIPTION_LENGTH ||
-        attributes.description.includes('\n')
-      ) {
+      if (attributes.description.length > MAX_DESCRIPTION_LENGTH) {
         return null;
       }
 

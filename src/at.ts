@@ -1,4 +1,4 @@
-import type { LanguageModelV2Prompt } from '@ai-sdk/provider';
+import type { LanguageModelV3Prompt } from '@ai-sdk/provider';
 import fs from 'fs';
 import path from 'pathe';
 import { IMAGE_EXTENSIONS } from './constants';
@@ -82,6 +82,21 @@ export class At {
       // Unescape spaces for unquoted paths
       if (groups.unquoted) {
         filePath = filePath.replace(/\\ /g, ' ');
+      }
+
+      // Skip directories - only process files
+      try {
+        const absolutePath = path.resolve(this.cwd, filePath);
+        if (
+          fs.existsSync(absolutePath) &&
+          fs.statSync(absolutePath).isDirectory()
+        ) {
+          match = regex.exec(prompt);
+          continue;
+        }
+      } catch {
+        // If we can't check (e.g., permissions), let it through
+        // and handle the error later in getContent()
       }
 
       // Parse line range if present
@@ -287,9 +302,9 @@ export class At {
   }
 
   static normalizeLanguageV2Prompt(opts: {
-    input: LanguageModelV2Prompt;
+    input: LanguageModelV3Prompt;
     cwd: string;
-  }): LanguageModelV2Prompt {
+  }): LanguageModelV3Prompt {
     const lastUserMessage = [...opts.input].reverse().find((item) => {
       return 'role' in item && item.role === 'user';
     });

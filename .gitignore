@@ -8,7 +8,6 @@
 /.takumi/mcp.json
 /fixtures/*/node_modules
 /dist-browser
-/.claude
 .takumi/todos
 /tmp
 /.conductor

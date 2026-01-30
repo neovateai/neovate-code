@@ -2,7 +2,7 @@ import assert from 'assert';
 import type { Context } from './context';
 import { type ResponseFormat, runLoop, type ThinkingConfig } from './loop';
 import type { NormalizedMessage } from './message';
-import { type ModelInfo, resolveModelWithContext } from './model';
+import { type ModelInfo, resolveModelWithContext } from './provider/model';
 import { Tools } from './tool';
 import { randomUUID } from './utils/randomUUID';
 
