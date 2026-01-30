@@ -18,15 +18,9 @@ importers:
       '@ai-sdk/anthropic':
         specifier: ^3.0.29
         version: 3.0.29(zod@4.3.5)
-      '@ai-sdk/cerebras':
-        specifier: ^2.0.24
-        version: 2.0.24(zod@4.3.5)
       '@ai-sdk/google':
         specifier: ^3.0.16
         version: 3.0.16(zod@4.3.5)
-      '@ai-sdk/huggingface':
-        specifier: ^1.0.23
-        version: 1.0.23(zod@4.3.5)
       '@ai-sdk/mcp':
         specifier: ^1.0.14
         version: 1.0.14(zod@4.3.5)
@@ -39,12 +33,6 @@ importers:
       '@ai-sdk/provider':
         specifier: ^3.0.5
         version: 3.0.5
-      '@ai-sdk/xai':
-        specifier: ^3.0.41
-        version: 3.0.41(zod@4.3.5)
-      '@aihubmix/ai-sdk-provider':
-        specifier: ^1.0.3
-        version: 1.0.3(zod@4.3.5)
       '@biomejs/biome':
         specifier: ^2.3.11
         version: 2.3.11
@@ -266,12 +254,6 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/cerebras@2.0.24':
-    resolution: {integrity: sha512-rfKNmhCeUg4G9qExLmhSEO9+o1vy6tRXrUchwAfUZUXPzG7cw7269ZLGoYzwP0VpI1FrpfvwCfoFA/3wJPuNZQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
   '@ai-sdk/gateway@3.0.27':
     resolution: {integrity: sha512-Pr+ApS9k6/jcR3kNltJNxo60OdYvnVU4DeRhzVtxUAYTXCHx4qO+qTMG9nNRn+El1acJnNRA//Su47srjXkT/w==}
     engines: {node: '>=18'}
@@ -283,12 +265,6 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/huggingface@1.0.23':
-    resolution: {integrity: sha512-GSPXgmIGhfAzQwRbP/7piLtUbWooKvZekaxzeExkuxHOAjtvTYcDKMPaWd4fJISfPONUQJmxu2MEDdDlCIxAUw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4
 
   '@ai-sdk/mcp@1.0.14':
     resolution: {integrity: sha512-Rv8dORNPHH9RddwHfxBf9IBPSgmKa9YsWxnfH24PgnocDFE26Abqq8gPGMmFtN6gjZmC7qGrfqxTww+/dTtMCg==}
@@ -317,18 +293,6 @@ packages:
   '@ai-sdk/provider@3.0.5':
     resolution: {integrity: sha512-2Xmoq6DBJqmSl80U6V9z5jJSJP7ehaJJQMy2iFUqTay06wdCqTnPVBBQbtEL8RCChenL+q5DC5H5WzU3vV3v8w==}
     engines: {node: '>=18'}
-
-  '@ai-sdk/xai@3.0.41':
-    resolution: {integrity: sha512-w925tm7jkWp8Igl8IUngwWdzIgxWyeMVUVEDylBvBCyzLUrLLKMSAqu7OT8a5uC7ax1MeImzIeh3dxo+xHwNAw==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@aihubmix/ai-sdk-provider@1.0.3':
-    resolution: {integrity: sha512-6YSu/3rLkPlY7fqSHTwq6LMiK+0BLVZsbsi/28w+og2MrpUYPNaBhkj7F80K79NE28+HFOqIJROFgAUFmaoh6w==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.0.0
 
   '@alcalzone/ansi-tokenize@0.2.2':
     resolution: {integrity: sha512-mkOh+Wwawzuf5wa30bvc4nA+Qb6DIrGWgBhRR/Pw4T9nsgYait8izvXkNyU78D6Wcu3Z+KUdwCmLCxlWjEotYA==}
@@ -4767,13 +4731,6 @@ snapshots:
       '@ai-sdk/provider-utils': 4.0.10(zod@4.3.5)
       zod: 4.3.5
 
-  '@ai-sdk/cerebras@2.0.24(zod@4.3.5)':
-    dependencies:
-      '@ai-sdk/openai-compatible': 2.0.22(zod@4.3.5)
-      '@ai-sdk/provider': 3.0.5
-      '@ai-sdk/provider-utils': 4.0.10(zod@4.3.5)
-      zod: 4.3.5
-
   '@ai-sdk/gateway@3.0.27(zod@4.3.5)':
     dependencies:
       '@ai-sdk/provider': 3.0.5
@@ -4783,13 +4740,6 @@ snapshots:
 
   '@ai-sdk/google@3.0.16(zod@4.3.5)':
     dependencies:
-      '@ai-sdk/provider': 3.0.5
-      '@ai-sdk/provider-utils': 4.0.10(zod@4.3.5)
-      zod: 4.3.5
-
-  '@ai-sdk/huggingface@1.0.23(zod@4.3.5)':
-    dependencies:
-      '@ai-sdk/openai-compatible': 2.0.22(zod@4.3.5)
       '@ai-sdk/provider': 3.0.5
       '@ai-sdk/provider-utils': 4.0.10(zod@4.3.5)
       zod: 4.3.5
@@ -4823,22 +4773,6 @@ snapshots:
   '@ai-sdk/provider@3.0.5':
     dependencies:
       json-schema: 0.4.0
-
-  '@ai-sdk/xai@3.0.41(zod@4.3.5)':
-    dependencies:
-      '@ai-sdk/openai-compatible': 2.0.22(zod@4.3.5)
-      '@ai-sdk/provider': 3.0.5
-      '@ai-sdk/provider-utils': 4.0.10(zod@4.3.5)
-      zod: 4.3.5
-
-  '@aihubmix/ai-sdk-provider@1.0.3(zod@4.3.5)':
-    dependencies:
-      '@ai-sdk/anthropic': 3.0.29(zod@4.3.5)
-      '@ai-sdk/google': 3.0.16(zod@4.3.5)
-      '@ai-sdk/openai': 3.0.21(zod@4.3.5)
-      '@ai-sdk/provider': 3.0.5
-      '@ai-sdk/provider-utils': 4.0.10(zod@4.3.5)
-      zod: 4.3.5
 
   '@alcalzone/ansi-tokenize@0.2.2':
     dependencies:
