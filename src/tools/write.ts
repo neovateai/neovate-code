@@ -3,6 +3,7 @@ import path from 'pathe';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../constants';
 import { createTool } from '../tool';
+import { isPlanFile } from '../utils/planFileUtils';
 
 export function createWriteTool(opts: { cwd: string }) {
   return createTool({
@@ -59,6 +60,20 @@ Usage:
     },
     approval: {
       category: 'write',
+      needsApproval: async (approvalContext) => {
+        const { params, context, approvalMode } = approvalContext;
+
+        // Calculate plans directory path
+        const plansDir = path.join(context.paths.globalConfigDir, 'plans');
+
+        // Auto-approve for plan files
+        if (isPlanFile(params.file_path, plansDir)) {
+          return false;
+        }
+
+        // Otherwise use default logic: only 'default' mode needs approval
+        return approvalMode === 'default';
+      },
     },
   });
 }
