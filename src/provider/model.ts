@@ -128,7 +128,9 @@ function transformVariants(model: Model, provider: Provider) {
     return {};
   }
 
-  if (provider.apiFormat === ApiFormat.OpenAI) {
+  const apiFormat = model.apiFormat || provider.apiFormat;
+
+  if (apiFormat === ApiFormat.OpenAI) {
     const WIDELY_SUPPORTED_EFFORTS = ['low', 'medium', 'high'];
     return Object.fromEntries(
       WIDELY_SUPPORTED_EFFORTS.map((effort) => [
@@ -142,7 +144,7 @@ function transformVariants(model: Model, provider: Provider) {
     );
   }
 
-  if (provider.apiFormat === ApiFormat.Anthropic) {
+  if (apiFormat === ApiFormat.Anthropic) {
     if (provider.id === 'xiaomi') {
       return {
         on: {
@@ -171,7 +173,7 @@ function transformVariants(model: Model, provider: Provider) {
     };
   }
 
-  if (provider.apiFormat === ApiFormat.Google) {
+  if (apiFormat === ApiFormat.Google) {
     // https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai#gemini-3-models
     if (id.includes('2.5')) {
       return {
@@ -189,6 +191,7 @@ function transformVariants(model: Model, provider: Provider) {
         },
       };
     }
+
     return Object.fromEntries(
       ['low', 'high'].map((effort) => [
         effort,
