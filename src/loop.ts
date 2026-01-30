@@ -16,7 +16,6 @@ import {
 } from './message';
 import type { ModelInfo } from './provider/model';
 import { addPromptCache } from './promptCache';
-import { getThinkingConfig, type ReasoningEffort } from './thinking-config';
 import type {
   ToolApprovalResult,
   ToolParams,
@@ -102,6 +101,7 @@ export type ResponseFormat =
       name?: string;
       description?: string;
     };
+export type ReasoningEffort = 'low' | 'medium' | 'high' | 'max';
 export type ThinkingConfig = {
   effort: ReasoningEffort;
 };
@@ -270,10 +270,12 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       const m: LanguageModelV3 = await opts.model._mCreator();
       const tools = opts.tools.toLanguageV2Tools();
 
-      // Get thinking config based on model's reasoning capability
+      // Get thinking config from model variants
       let thinkingConfig: Record<string, any> | undefined = undefined;
       if (shouldThinking && opts.thinking) {
-        thinkingConfig = getThinkingConfig(opts.model, opts.thinking.effort);
+        thinkingConfig = {
+          providerOptions: opts.model.model.variants?.[opts.thinking.effort],
+        };
         shouldThinking = false;
       }
 

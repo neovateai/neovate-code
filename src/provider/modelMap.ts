@@ -1,4 +1,4 @@
-import type { ModelMap } from './model';
+import type { Model, ModelMap } from './model';
 
 const baseModels: ModelMap = {
   'deepseek-v3-0324': {
@@ -1037,6 +1037,7 @@ export const models = (() => {
   const models = { ...baseModels };
   for (const modelId in models) {
     const model = models[modelId];
+    (model as Model).id = modelId;
     if (model.aliases) {
       for (const alias of model.aliases) {
         models[alias] = model;

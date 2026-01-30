@@ -165,7 +165,7 @@ export function ChatInput() {
 
   // Get border color based on mode
   const borderColor = useMemo(() => {
-    if (thinking?.effort === 'high') return UI_COLORS.CHAT_BORDER_THINKING_HARD;
+    if (thinking?.effort === 'max') return UI_COLORS.CHAT_BORDER_THINKING_HARD;
     if (mode === 'memory') return UI_COLORS.CHAT_BORDER_MEMORY;
     if (mode === 'bash') return UI_COLORS.CHAT_BORDER_BASH;
     return UI_COLORS.CHAT_BORDER;

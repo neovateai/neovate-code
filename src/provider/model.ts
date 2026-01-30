@@ -1,4 +1,4 @@
-import { createAnthropic } from '@ai-sdk/anthropic';
+import { anthropic, createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModelV3 } from '@ai-sdk/provider';
@@ -7,7 +7,6 @@ import defu from 'defu';
 import { ConfigManager, type ProviderConfig } from '../config';
 import type { Context } from '../context';
 import { PluginHookType } from '../plugin';
-import { getThinkingConfig } from '../thinking-config';
 import { models } from './modelMap';
 import {
   ApiFormat,
@@ -43,7 +42,6 @@ const modelAlias: ModelAlias = {
 export type ModelInfo = {
   provider: Provider;
   model: Omit<Model, 'cost'>;
-  thinkingConfig?: Record<string, any>;
   _mCreator: () => Promise<LanguageModelV3>;
 };
 
@@ -82,6 +80,143 @@ function mergeProviders(
   return result;
 }
 
+function normalizeModel(
+  modelId: string,
+  model: Partial<Model> | string,
+  provider: Provider,
+): Model {
+  let actualModel: Partial<Model> = {};
+  let extraInfo: Partial<Model> = {};
+  if (typeof model === 'string') {
+    actualModel = models[model.toLocaleLowerCase()] || {};
+  } else {
+    const splitedModelId = modelId.split('/').slice(-1)[0].toLocaleLowerCase();
+    actualModel = models[splitedModelId];
+    extraInfo = { ...model };
+  }
+  if (!actualModel.limit) {
+    actualModel.limit = {
+      context: 0,
+      output: 0,
+    };
+  }
+  const m = {
+    ...actualModel,
+    ...extraInfo,
+  } as Model;
+  if (!m.variants) {
+    const variants = transformVariants(m, provider);
+    m.variants = variants;
+  }
+  return m;
+}
+
+function transformVariants(model: Model, provider: Provider) {
+  if (!model.reasoning) {
+    return {};
+  }
+
+  const id = (model.id || '').toLowerCase();
+  if (
+    id.includes('deepseek') ||
+    id.includes('minimax') ||
+    id.includes('glm') ||
+    id.includes('mistral') ||
+    // id.includes("kimi") ||
+    id.includes('grok')
+  ) {
+    return {};
+  }
+
+  if (provider.apiFormat === ApiFormat.OpenAI) {
+    const WIDELY_SUPPORTED_EFFORTS = ['low', 'medium', 'high'];
+    return Object.fromEntries(
+      WIDELY_SUPPORTED_EFFORTS.map((effort) => [
+        effort,
+        {
+          [provider.id]: {
+            reasoningEffort: effort,
+          },
+        },
+      ]),
+    );
+  }
+
+  if (provider.apiFormat === ApiFormat.Anthropic) {
+    if (provider.id === 'xiaomi') {
+      return {
+        on: {
+          anthropic: {
+            thinking: {
+              type: 'enabled',
+            },
+          },
+        },
+      };
+    }
+    return {
+      high: {
+        anthropic: {
+          thinking: {
+            type: 'enabled',
+            budgetTokens: Math.min(
+              16_000,
+              Math.floor(model.limit.output / 2 - 1),
+            ),
+          },
+        },
+      },
+      max: {
+        anthropic: {
+          thinking: {
+            type: 'enabled',
+            budgetTokens: Math.min(31_999, model.limit.output - 1),
+          },
+        },
+      },
+    };
+  }
+
+  if (provider.apiFormat === ApiFormat.Google) {
+    // https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai#gemini-3-models
+    if (id.includes('2.5')) {
+      return {
+        high: {
+          google: {
+            thinkingConfig: {
+              includeThoughts: true,
+              thinkingBudget: 16000,
+            },
+          },
+        },
+        max: {
+          google: {
+            thinkingConfig: {
+              includeThoughts: true,
+              thinkingBudget: 24576,
+            },
+          },
+        },
+      };
+    }
+    return Object.fromEntries(
+      ['low', 'high'].map((effort) => [
+        effort,
+        {
+          google: {
+            thinkingConfig: {
+              includeThoughts: true,
+              thinkingLevel: effort,
+            },
+          },
+        },
+      ]),
+    );
+  }
+
+  return {};
+}
+
 /**
  * Step 3: Normalize all providers
  * Ensures every provider has: id, name, createModel, resolved models
@@ -92,42 +227,25 @@ function normalizeProviders(providersMap: ProvidersMap): ProvidersMap {
   for (const [providerId, provider] of Object.entries(providersMap)) {
     const normalized = { ...provider } as Provider;
 
-    // Ensure id
     if (!normalized.id) {
       normalized.id = providerId;
     }
 
-    // Ensure name
     if (!normalized.name) {
       normalized.name = providerId;
     }
 
-    // Resolve model string references
+    if (!normalized.apiFormat && !normalized.createModel) {
+      normalized.apiFormat = ApiFormat.OpenAI;
+    }
+
     if (normalized.models) {
       for (const modelId in normalized.models) {
-        const model = normalized.models[modelId];
-        let actualModel: Partial<Model> = {};
-        let extraInfo: Partial<Model> = {};
-        if (typeof model === 'string') {
-          actualModel = models[model.toLocaleLowerCase()];
-        } else {
-          const splitedModelId = modelId
-            .split('/')
-            .slice(-1)[0]
-            .toLocaleLowerCase();
-          actualModel = models[splitedModelId] || {};
-          extraInfo = { ...model };
-        }
-        if (!actualModel.limit) {
-          actualModel.limit = {
-            context: 0,
-            output: 0,
-          };
-        }
-        normalized.models[modelId] = {
-          ...actualModel,
-          ...extraInfo,
-        };
+        normalized.models[modelId] = normalizeModel(
+          modelId,
+          normalized.models[modelId],
+          normalized,
+        );
       }
     }
 
@@ -221,14 +339,6 @@ export async function resolveModelWithContext(
       : null;
   } catch (err) {
     error = err;
-  }
-
-  // Add thinking config to model if available
-  if (model) {
-    const thinkingConfig = getThinkingConfig(model, 'low');
-    if (thinkingConfig) {
-      model.thinkingConfig = thinkingConfig;
-    }
   }
 
   return {

@@ -1,17 +1,11 @@
-import type { LanguageModelV3 } from '@ai-sdk/provider';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import type { Provider } from './types';
-import {
-  getProviderApiKey,
-  getProviderBaseURL,
-  withProxyConfig,
-} from './utils';
+import { ApiFormat, type Provider } from './types';
 
 export const openrouterProvider: Provider = {
   id: 'openrouter',
   source: 'built-in',
   env: ['OPENROUTER_API_KEY', 'OPEN_ROUTER_API_KEY'],
   name: 'OpenRouter',
+  api: 'https://openrouter.ai/api/v1',
   doc: 'https://openrouter.ai/docs/models',
   models: {
     'anthropic/claude-3.5-sonnet': {},
@@ -66,21 +60,9 @@ export const openrouterProvider: Provider = {
     'z-ai/glm-4.7': {},
     'minimax/minimax-m2': {},
   },
-  createModel(name, provider) {
-    const baseURL = getProviderBaseURL(provider);
-    const apiKey = getProviderApiKey(provider);
-    return createOpenRouter(
-      withProxyConfig(
-        {
-          apiKey,
-          baseURL,
-          headers: {
-            'X-Title': 'Neovate Code',
-            'HTTP-Referer': 'https://neovateai.dev/',
-          },
-        },
-        provider,
-      ),
-    ).chat(name) as unknown as LanguageModelV3;
+  apiFormat: ApiFormat.Anthropic,
+  headers: {
+    'X-Title': 'Neovate Code',
+    'HTTP-Referer': 'https://neovateai.dev/',
   },
 };

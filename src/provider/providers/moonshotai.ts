@@ -1,11 +1,11 @@
-import { type Provider } from './types';
+import { ApiFormat, type Provider } from './types';
 
 export const moonshotaiProvider: Provider = {
   id: 'moonshotai',
   source: 'built-in',
   env: ['MOONSHOT_API_KEY'],
   name: 'Moonshot',
-  api: 'https://api.moonshot.ai/v1',
+  api: 'https://api.moonshot.ai/anthropic/v1',
   doc: 'https://platform.moonshot.ai/docs/api/chat',
   models: {
     'kimi-k2-0905-preview': {},
@@ -14,4 +14,5 @@ export const moonshotaiProvider: Provider = {
     'kimi-k2-thinking-turbo': {},
     'kimi-k2.5': {},
   },
+  apiFormat: ApiFormat.Anthropic,
 };

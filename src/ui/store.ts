@@ -362,9 +362,13 @@ export const useAppStore = create<AppStore>()(
           pastedTextMap: response.data.pastedTextMap || {},
           pastedImageMap: response.data.pastedImageMap || {},
           userName: getUsername() ?? 'user',
-          thinking: response.data.model?.thinkingConfig
-            ? { effort: 'low' }
-            : undefined,
+          thinking: (() => {
+            const variants = response.data.model?.model.variants;
+            if (variants && Object.keys(variants).length > 0) {
+              return { effort: Object.keys(variants)[0] as any };
+            }
+            return undefined;
+          })(),
           // theme: 'light',
         });
 
@@ -1047,9 +1051,13 @@ export const useAppStore = create<AppStore>()(
           set({
             model: currentModel,
             modelContextLimit: currentModel?.model.limit.context || 0,
-            thinking: currentModel?.thinkingConfig
-              ? { effort: 'low' }
-              : undefined,
+            thinking: (() => {
+              const variants = currentModel?.model.variants;
+              if (variants && Object.keys(variants).length > 0) {
+                return { effort: Object.keys(variants)[0] as any };
+              }
+              return undefined;
+            })(),
             // Clear initializeModelError after successfully changing model
             initializeModelError: null,
           });
@@ -1291,16 +1299,19 @@ export const useAppStore = create<AppStore>()(
       toggleThinking: () => {
         const { thinking: current, model } = get();
         if (!model) return;
-        if (!model.thinkingConfig) return;
+        const variants = model.model.variants;
+        if (!variants || Object.keys(variants).length === 0) return;
+        const efforts = Object.keys(variants);
         let next: ThinkingConfig | undefined;
         if (!current) {
-          next = { effort: 'low' };
-        } else if (current.effort === 'low') {
-          next = { effort: 'medium' };
-        } else if (current.effort === 'medium') {
-          next = { effort: 'high' };
+          next = { effort: efforts[0] as any };
         } else {
-          next = undefined;
+          const currentIndex = efforts.indexOf(current.effort);
+          if (currentIndex === -1 || currentIndex >= efforts.length - 1) {
+            next = undefined;
+          } else {
+            next = { effort: efforts[currentIndex + 1] as any };
+          }
         }
         set({ thinking: next });
       },

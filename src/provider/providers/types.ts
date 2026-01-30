@@ -52,6 +52,7 @@ export interface Model {
   apiFormat?: ApiFormat;
   createModel?: CreateModel;
   interleaved?: Interleaved;
+  variants?: Record<string, any>;
 }
 
 export type ProviderModel = string | Partial<Model>;
