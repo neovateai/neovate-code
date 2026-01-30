@@ -115,7 +115,7 @@ function normalizeProviders(providersMap: ProvidersMap): ProvidersMap {
             .split('/')
             .slice(-1)[0]
             .toLocaleLowerCase();
-          actualModel = models[splitedModelId];
+          actualModel = models[splitedModelId] || {};
           extraInfo = { ...model };
         }
         if (!actualModel.limit) {
