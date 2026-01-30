@@ -66,7 +66,6 @@ export function ChatInput() {
   const {
     log,
     setExitMessage,
-    planResult,
     cancel,
     slashCommandJSX,
     approvalModal,
@@ -179,9 +178,6 @@ export function ChatInput() {
   }, [mode]);
 
   if (slashCommandJSX) {
-    return null;
-  }
-  if (planResult) {
     return null;
   }
   if (approvalModal) {

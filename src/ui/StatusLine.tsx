@@ -171,14 +171,11 @@ interface StatusLineProps {
 }
 
 export function StatusLine({ hasSuggestions = false }: StatusLineProps) {
-  const { slashCommandJSX, planResult } = useAppStore();
+  const { slashCommandJSX } = useAppStore();
   if (hasSuggestions) {
     return null;
   }
   if (slashCommandJSX) {
-    return null;
-  }
-  if (planResult) {
     return null;
   }
   return (

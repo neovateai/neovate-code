@@ -9,7 +9,6 @@ export function ActivityIndicator() {
   const {
     error,
     status,
-    planResult,
     approvalModal,
     processingStartTime,
     processingTokens,
@@ -94,7 +93,6 @@ export function ActivityIndicator() {
   if (status === 'idle') return null;
   // Don't hide error message when exiting - only hide if there's no error
   if (status === 'exit' && !error) return null;
-  if (planResult) return null;
   if (approvalModal) return null;
 
   return (

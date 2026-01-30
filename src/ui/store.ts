@@ -103,7 +103,6 @@ interface AppState {
   planFilePath: string | null;
   planContent: string | null;
 
-  planResult: string | null;
   processingStartTime: number | null;
   processingTokens: number;
   processingToolCalls: number;
@@ -204,8 +203,6 @@ interface AppActions {
   setDraftInput: (draftInput: string) => void;
   setHistoryIndex: (historyIndex: number | null) => void;
   toggleMode: () => void;
-  approvePlan: (planResult: string) => void;
-  denyPlan: () => void;
   resumeSession: (sessionId: string, logFile: string) => Promise<void>;
   setModel: (model: string) => void;
   approveToolUse: ({
@@ -316,7 +313,6 @@ export const useAppStore = create<AppStore>()(
       sessionId: null,
       logs: [],
       debugMode: false,
-      planResult: null,
       processingStartTime: null,
       processingTokens: 0,
       processingToolCalls: 0,
@@ -762,11 +758,6 @@ export const useAppStore = create<AppStore>()(
             message: expandedMessage,
             planMode,
           });
-          if (planMode && result.success) {
-            set({
-              planResult: result.data.text,
-            });
-          }
 
           // Update terminal title after successful send
           if (result.success && get().messages.length <= 2) {
@@ -997,31 +988,6 @@ export const useAppStore = create<AppStore>()(
         }
       },
 
-      approvePlan: (planResult: string) => {
-        set({ planResult: null, planMode: false });
-        const bridge = get().bridge;
-        bridge
-          .request('session.addMessages', {
-            cwd: get().cwd,
-            sessionId: get().sessionId,
-            messages: [
-              {
-                role: 'user',
-                content: [{ type: 'text', text: planResult }],
-              },
-            ],
-          })
-          .catch((error) => {
-            console.error('Failed to add messages:', error);
-          });
-        // Use store's model for plan approval - no need to pass explicitly
-        get().sendMessage({ message: null });
-      },
-
-      denyPlan: () => {
-        set({ planResult: null });
-      },
-
       resumeSession: async (sessionId: string, logFile: string) => {
         await clearTerminal();
         const messages = loadSessionMessages({ logPath: logFile });
@@ -1042,7 +1008,6 @@ export const useAppStore = create<AppStore>()(
           draftInput: '',
           logs: [],
           exitMessage: null,
-          planResult: null,
           processingStartTime: null,
           processingTokens: 0,
           processingToolCalls: 0,

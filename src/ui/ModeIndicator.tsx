@@ -4,12 +4,8 @@ import { SPACING, UI_COLORS } from './constants';
 import { useAppStore } from './store';
 
 export function ModeIndicator() {
-  const { planMode, brainstormMode, bashMode, planResult, slashCommandJSX } =
-    useAppStore();
+  const { planMode, brainstormMode, bashMode, slashCommandJSX } = useAppStore();
   if (slashCommandJSX) {
-    return null;
-  }
-  if (planResult) {
     return null;
   }
   const text = planMode ? (
