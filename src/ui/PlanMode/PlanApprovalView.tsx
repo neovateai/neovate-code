@@ -33,7 +33,7 @@ export function PlanApprovalView({
       {
         type: 'text',
         value: 'autoEdit',
-        // TODO 现在还不支持 shift+tab, 切换所以先不展示快捷键
+        // TODO Currently shift+tab switching is not supported, so shortcut key is not displayed for now
         label: 'Yes, and auto-accept edits',
       },
       {
