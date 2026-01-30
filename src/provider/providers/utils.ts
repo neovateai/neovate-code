@@ -63,12 +63,27 @@ export function getProviderApiKey(provider: Provider) {
   return key;
 }
 
+export type UtilsOnRequestHook = (req: {
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body?: unknown;
+}) => void;
+
+export type UtilsOnResponseHook = (res: {
+  url: string;
+  status: number;
+  headers: Record<string, string>;
+}) => void;
+
 export const createModelCreator = (
   modelId: string,
   provider: Provider,
   _options: {
     globalConfigDir: string;
     setGlobalConfig: (key: string, value: string, isGlobal: boolean) => void;
+    onRequest?: UtilsOnRequestHook;
+    onResponse?: UtilsOnResponseHook;
   },
 ): LanguageModelV3 => {
   const baseURL = getProviderBaseURL(provider);
@@ -83,7 +98,7 @@ export const createModelCreator = (
     ...provider.options?.headers,
   };
 
-  const customFetch: any = (url: string, options: any) => {
+  const customFetch: any = async (url: string, options: any) => {
     const f = (() => {
       const proxyUrl = provider.options?.httpProxy;
       if (proxyUrl) {
@@ -92,13 +107,30 @@ export const createModelCreator = (
         return fetch;
       }
     })();
-    return f(url, {
-      ...options,
-      headers: {
-        ...options.headers,
-        ...headers,
-      },
+    const mergedHeaders = {
+      ...options.headers,
+      ...headers,
+    };
+    _options.onRequest?.({
+      url,
+      method: options.method || 'POST',
+      headers: mergedHeaders,
+      body: options.body,
     });
+    const response = await f(url, {
+      ...options,
+      headers: mergedHeaders,
+    });
+    const responseHeaders: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
+    _options.onResponse?.({
+      url,
+      status: response.status,
+      headers: responseHeaders,
+    });
+    return response;
   };
   let m = (() => {
     const name = provider.id;

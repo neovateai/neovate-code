@@ -63,6 +63,44 @@ export class RequestLogger {
     return path.join(requestsDir, `${requestId}.jsonl`);
   }
 
+  logRequest(opts: {
+    requestId: string;
+    url: string;
+    method: string;
+    headers: Record<string, string>;
+    body?: unknown;
+  }) {
+    const filePath = this.getFilePath(opts.requestId);
+    const entry = {
+      type: 'request',
+      requestId: opts.requestId,
+      timestamp: new Date().toISOString(),
+      url: opts.url,
+      method: opts.method,
+      headers: opts.headers,
+      body: opts.body,
+    };
+    fs.appendFileSync(filePath, JSON.stringify(entry) + '\n');
+  }
+
+  logResponse(opts: {
+    requestId: string;
+    url: string;
+    status: number;
+    headers: Record<string, string>;
+  }) {
+    const filePath = this.getFilePath(opts.requestId);
+    const entry = {
+      type: 'response',
+      requestId: opts.requestId,
+      timestamp: new Date().toISOString(),
+      url: opts.url,
+      status: opts.status,
+      headers: opts.headers,
+    };
+    fs.appendFileSync(filePath, JSON.stringify(entry) + '\n');
+  }
+
   logMetadata(opts: {
     requestId: string;
     prompt: StreamResult['prompt'];

@@ -106,6 +106,21 @@ export type ThinkingConfig = {
   effort: ReasoningEffort;
 };
 
+export type OnRequestHook = (req: {
+  requestId: string;
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body?: unknown;
+}) => void;
+
+export type OnResponseHook = (res: {
+  requestId: string;
+  url: string;
+  status: number;
+  headers: Record<string, string>;
+}) => void;
+
 type RunLoopOpts = {
   input: string | NormalizedMessage[];
   model: ModelInfo;
@@ -139,6 +154,8 @@ type RunLoopOpts = {
   }) => Promise<void>;
   onToolApprove?: (toolUse: ToolUse) => Promise<ToolApprovalResult>;
   onMessage?: OnMessage;
+  onRequest?: OnRequestHook;
+  onResponse?: OnResponseHook;
 };
 
 export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
@@ -267,7 +284,14 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
       }> = [];
 
       const requestId = randomUUID();
-      const m: LanguageModelV3 = await opts.model._mCreator();
+      const m: LanguageModelV3 = await opts.model._mCreator({
+        onRequest: opts.onRequest
+          ? (req) => opts.onRequest!({ ...req, requestId })
+          : undefined,
+        onResponse: opts.onResponse
+          ? (res) => opts.onResponse!({ ...res, requestId })
+          : undefined,
+      });
       const tools = opts.tools.toLanguageV2Tools();
 
       // Get thinking config from model variants

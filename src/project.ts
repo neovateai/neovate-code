@@ -334,6 +334,23 @@ export class Project {
         requestLogger.logChunk(requestId, chunk);
         await opts.onChunk?.(chunk, requestId);
       },
+      onRequest: (req) => {
+        requestLogger.logRequest({
+          requestId: req.requestId,
+          url: req.url,
+          method: req.method,
+          headers: req.headers,
+          body: req.body,
+        });
+      },
+      onResponse: (res) => {
+        requestLogger.logResponse({
+          requestId: res.requestId,
+          url: res.url,
+          status: res.status,
+          headers: res.headers,
+        });
+      },
       onText: async (text) => {},
       onReasoning: async (text) => {},
       onToolUse: async (toolUse) => {

@@ -39,10 +39,18 @@ const modelAlias: ModelAlias = {
   opus: 'anthropic/claude-opus-4-5',
 };
 
+import type {
+  UtilsOnRequestHook,
+  UtilsOnResponseHook,
+} from './providers/utils';
+
 export type ModelInfo = {
   provider: Provider;
   model: Omit<Model, 'cost'>;
-  _mCreator: () => Promise<LanguageModelV3>;
+  _mCreator: (hooks?: {
+    onRequest?: UtilsOnRequestHook;
+    onResponse?: UtilsOnResponseHook;
+  }) => Promise<LanguageModelV3>;
 };
 
 /**
@@ -393,12 +401,17 @@ async function resolveModel(
     `Model ${modelId} not found in provider ${providerStr}, valid models: ${Object.keys(provider.models).join(', ')}`,
   );
   model.id = modelId;
-  const mCreator = async () => {
+  const mCreator = async (hooks?: {
+    onRequest?: UtilsOnRequestHook;
+    onResponse?: UtilsOnResponseHook;
+  }) => {
     let m: LanguageModelV3 | Promise<LanguageModelV3> = (
       provider.createModel || createModelCreator
     )(modelId, provider, {
       globalConfigDir,
       setGlobalConfig,
+      onRequest: hooks?.onRequest,
+      onResponse: hooks?.onResponse,
     });
     if (isPromise(m)) {
       m = await m;
