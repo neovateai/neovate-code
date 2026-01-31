@@ -12,7 +12,7 @@ export function getLlmsRules(opts: {
   const globalRuleNames = ['AGENTS.md', `${productName.toUpperCase()}.md`];
   const projectRuleNames = [
     'AGENTS.md',
-    'CLAUDE.md',
+    ...(process.env.NEOVATE_RULES_SHARE_CLAUDE === 'none' ? [] : ['CLAUDE.md']),
     `${productName.toUpperCase()}.md`,
   ];
 
@@ -34,12 +34,14 @@ export function getLlmsRules(opts: {
       rules.push(fs.readFileSync(globalStylePath, 'utf-8'));
     }
   }
-  const globalClaudeRulePath = path.join(
-    opts.globalConfigDir,
-    '../.claude/CLAUDE.md',
-  );
-  if (fs.existsSync(globalClaudeRulePath)) {
-    rules.push(fs.readFileSync(globalClaudeRulePath, 'utf-8'));
+  if (process.env.NEOVATE_RULES_SHARE_CLAUDE !== 'none') {
+    const globalClaudeRulePath = path.join(
+      opts.globalConfigDir,
+      '../.claude/CLAUDE.md',
+    );
+    if (fs.existsSync(globalClaudeRulePath)) {
+      rules.push(fs.readFileSync(globalClaudeRulePath, 'utf-8'));
+    }
   }
 
   if (rules.length === 0) {
