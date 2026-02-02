@@ -14,7 +14,7 @@ import { useTerminalSize } from '../useTerminalSize';
 export interface PlanApprovalViewProps {
   planFilePath: string;
   planContent: string | null;
-  onApprove: (mode: 'autoEdit' | 'default') => void;
+  onApprove: (mode: 'autoEdit' | 'default' | 'yolo') => void;
   onDeny: (feedback: string) => void;
 }
 
@@ -74,8 +74,8 @@ export function PlanApprovalView({
   const handleChange = useCallback(
     (value: string | string[]) => {
       if (typeof value === 'string') {
-        if (value === 'autoEdit' || value === 'default') {
-          onApprove(value as 'autoEdit' | 'default');
+        if (value === 'autoEdit' || value === 'default' || value === 'yolo') {
+          onApprove(value as 'autoEdit' | 'default' | 'yolo');
           return;
         }
 
