@@ -35,7 +35,7 @@ export function PlanApprovalView({
       return [
         {
           type: 'text',
-          value: 'autoEdit',
+          value: approvalMode,
           label: 'Yes',
         },
         {
