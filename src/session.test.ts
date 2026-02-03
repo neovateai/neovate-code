@@ -94,3 +94,218 @@ test('handles multiple null parents - uses latest', () => {
   // Should start from d and walk back to c (the latest null parent)
   expect(result).toEqual([c, d]);
 });
+
+// === Tool Use Cleanup Tests ===
+
+test('should remove assistant message with unmatched tool_use', () => {
+  const messages: NormalizedMessage[] = [
+    {
+      uuid: '1',
+      parentUuid: null,
+      role: 'user',
+      content: 'test',
+      type: 'message',
+      timestamp: '2024-01-01T00:00:00Z',
+    },
+    {
+      uuid: '2',
+      parentUuid: '1',
+      role: 'assistant',
+      content: [
+        {
+          type: 'tool_use',
+          id: 'toolu_001',
+          name: 'read',
+          input: {},
+        },
+      ],
+      type: 'message',
+      timestamp: '2024-01-01T00:00:01Z',
+      text: '',
+      model: 'test',
+      usage: { input_tokens: 0, output_tokens: 0 },
+    },
+    // No tool_result
+  ];
+
+  const result = filterMessages(messages);
+
+  expect(result).toHaveLength(1);
+  expect(result[0].uuid).toBe('1');
+});
+
+test('should keep assistant message when tool_use has matching tool_result', () => {
+  const messages: NormalizedMessage[] = [
+    {
+      uuid: '1',
+      parentUuid: null,
+      role: 'user',
+      content: 'test',
+      type: 'message',
+      timestamp: '2024-01-01T00:00:00Z',
+    },
+    {
+      uuid: '2',
+      parentUuid: '1',
+      role: 'assistant',
+      content: [
+        {
+          type: 'tool_use',
+          id: 'toolu_001',
+          name: 'read',
+          input: {},
+        },
+      ],
+      type: 'message',
+      timestamp: '2024-01-01T00:00:01Z',
+      text: '',
+      model: 'test',
+      usage: { input_tokens: 0, output_tokens: 0 },
+    },
+    {
+      uuid: '3',
+      parentUuid: '2',
+      role: 'tool',
+      content: [
+        {
+          type: 'tool-result',
+          toolCallId: 'toolu_001',
+          toolName: 'read',
+          input: {},
+          result: { llmContent: 'file content' },
+        },
+      ],
+      type: 'message',
+      timestamp: '2024-01-01T00:00:02Z',
+    },
+  ];
+
+  const result = filterMessages(messages);
+
+  expect(result).toHaveLength(3);
+  expect(result.map((m) => m.uuid)).toEqual(['1', '2', '3']);
+});
+
+test('should handle multiple tool_uses with partial matches', () => {
+  const messages: NormalizedMessage[] = [
+    {
+      uuid: '1',
+      parentUuid: null,
+      role: 'assistant',
+      content: [
+        {
+          type: 'tool_use',
+          id: 'toolu_001',
+          name: 'read',
+          input: {},
+        },
+      ],
+      type: 'message',
+      timestamp: '2024-01-01T00:00:00Z',
+      text: '',
+      model: 'test',
+      usage: { input_tokens: 0, output_tokens: 0 },
+    },
+    {
+      uuid: '2',
+      parentUuid: '1',
+      role: 'tool',
+      content: [
+        {
+          type: 'tool-result',
+          toolCallId: 'toolu_001',
+          toolName: 'read',
+          input: {},
+          result: { llmContent: 'ok' },
+        },
+      ],
+      type: 'message',
+      timestamp: '2024-01-01T00:00:01Z',
+    },
+    {
+      uuid: '3',
+      parentUuid: '2',
+      role: 'assistant',
+      content: [
+        {
+          type: 'tool_use',
+          id: 'toolu_002',
+          name: 'write',
+          input: {},
+        },
+      ],
+      type: 'message',
+      timestamp: '2024-01-01T00:00:02Z',
+      text: '',
+      model: 'test',
+      usage: { input_tokens: 0, output_tokens: 0 },
+    },
+    // toolu_002 has no tool_result
+  ];
+
+  const result = filterMessages(messages);
+
+  // Should keep first two, filter out the third
+  expect(result).toHaveLength(2);
+  expect(result[0].uuid).toBe('1');
+  expect(result[1].uuid).toBe('2');
+});
+
+test('should not affect messages without tool_use', () => {
+  const messages: NormalizedMessage[] = [
+    {
+      uuid: '1',
+      parentUuid: null,
+      role: 'user',
+      content: 'hello',
+      type: 'message',
+      timestamp: '2024-01-01T00:00:00Z',
+    },
+    {
+      uuid: '2',
+      parentUuid: '1',
+      role: 'assistant',
+      content: [{ type: 'text', text: 'hi' }],
+      type: 'message',
+      timestamp: '2024-01-01T00:00:01Z',
+      text: 'hi',
+      model: 'test',
+      usage: { input_tokens: 0, output_tokens: 0 },
+    },
+  ];
+
+  const result = filterMessages(messages);
+
+  expect(result).toHaveLength(2);
+  expect(result.map((m) => m.uuid)).toEqual(['1', '2']);
+});
+
+test('should remove assistant message with mixed content when tool_use is unmatched', () => {
+  const messages: NormalizedMessage[] = [
+    {
+      uuid: '1',
+      parentUuid: null,
+      role: 'assistant',
+      content: [
+        { type: 'text', text: 'Let me read the file...' },
+        {
+          type: 'tool_use',
+          id: 'toolu_003',
+          name: 'read',
+          input: {},
+        },
+      ],
+      type: 'message',
+      timestamp: '2024-01-01T00:00:00Z',
+      text: 'Let me read the file...',
+      model: 'test',
+      usage: { input_tokens: 0, output_tokens: 0 },
+    },
+    // No tool_result
+  ];
+
+  const result = filterMessages(messages);
+
+  // Entire message should be filtered (including text part)
+  expect(result).toHaveLength(0);
+});

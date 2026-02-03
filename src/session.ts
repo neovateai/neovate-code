@@ -1,10 +1,13 @@
 import fs from 'fs';
 import path from 'pathe';
+import createDebug from 'debug';
 import type { ApprovalMode } from './config';
 import { History } from './history';
 import type { NormalizedMessage } from './message';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
+
+const debug = createDebug('neovate:session');
 
 export type SessionId = string;
 
@@ -121,6 +124,48 @@ export class SessionConfigManager {
   }
 }
 
+/**
+ * Collect all tool_use IDs that have matching tool_result
+ * @param messages - Filtered message list
+ * @returns Set of tool_use IDs that have matching tool_result
+ */
+function getToolResultIds(messages: NormalizedMessage[]): Set<string> {
+  const ids = new Set<string>();
+
+  for (const message of messages) {
+    if (message.role === 'tool' && Array.isArray(message.content)) {
+      for (const part of message.content) {
+        if (part.type === 'tool-result') {
+          ids.add(part.toolCallId);
+        }
+      }
+    }
+  }
+
+  return ids;
+}
+
+/**
+ * Collect all tool_use IDs
+ * @param messages - Filtered message list
+ * @returns Set of all tool_use IDs
+ */
+function getToolUseIds(messages: NormalizedMessage[]): Set<string> {
+  const ids = new Set<string>();
+
+  for (const message of messages) {
+    if (message.role === 'assistant' && Array.isArray(message.content)) {
+      for (const part of message.content) {
+        if (part.type === 'tool_use') {
+          ids.add(part.id);
+        }
+      }
+    }
+  }
+
+  return ids;
+}
+
 export function filterMessages(
   messages: NormalizedMessage[],
 ): NormalizedMessage[] {
@@ -160,7 +205,43 @@ export function filterMessages(
   }
 
   // Filter original messages to only include those in the active path
-  return messageTypeOnly.filter((message) => activePath.has(message.uuid));
+  const filteredByPath = messageTypeOnly.filter((message) =>
+    activePath.has(message.uuid),
+  );
+
+  // === Clean up unmatched tool_use ===
+  const toolResultIds = getToolResultIds(filteredByPath);
+  const toolUseIds = getToolUseIds(filteredByPath);
+
+  // Calculate unmatched tool_use IDs (set difference)
+  const unmatchedIds = new Set(
+    [...toolUseIds].filter((id) => !toolResultIds.has(id)),
+  );
+
+  // Debug output
+  if (unmatchedIds.size > 0) {
+    debug(
+      `[filterMessages] Found ${unmatchedIds.size} unmatched tool_use(s): ${[...unmatchedIds].join(', ')}`,
+    );
+  }
+
+  // Filter out assistant messages containing unmatched tool_use
+  return filteredByPath.filter((message) => {
+    if (message.role === 'assistant' && Array.isArray(message.content)) {
+      // Check if contains unmatched tool_use
+      const hasUnmatchedToolUse = message.content.some(
+        (part) => part.type === 'tool_use' && unmatchedIds.has(part.id),
+      );
+
+      if (hasUnmatchedToolUse) {
+        debug(
+          `[filterMessages] Filtering out assistant message ${message.uuid} with unmatched tool_use`,
+        );
+        return false;
+      }
+    }
+    return true;
+  });
 }
 
 export function loadSessionMessages(opts: {
