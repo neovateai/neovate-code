@@ -114,7 +114,7 @@ export function createReadTool(opts: {
 
         // Validate and truncate (shared logic)
         const { processedContent, actualLinesRead } =
-          validateAndTruncateContent(content, selectedLines);
+          await validateAndTruncateContent(content, selectedLines);
 
         return createReadResult(
           file_path,

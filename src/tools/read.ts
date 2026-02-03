@@ -2,7 +2,9 @@ import fs from 'fs';
 import path from 'pathe';
 import { TOOL_NAMES } from '../constants';
 import { createTool, type ToolResult } from '../tool';
+import { MaxFileReadLengthExceededError } from '../utils/error';
 import {
+  MAX_FILE_LENGTH,
   MAX_LINES_TO_READ,
   checkFileType,
   createEmptyFileResult,
@@ -37,13 +39,26 @@ export function createReadTool(opts: { cwd: string; productName: string }) {
 
         const fullFilePath = resolveFilePath(file_path, opts.cwd);
 
+        // Get file stats once and reuse throughout
+        const stats = fs.statSync(fullFilePath);
+
+        // Level 1: Pre-check validation (skip for image files or when using offset/limit)
+        const isPartialRead = offset !== undefined || limit !== undefined;
+        if (!isImageFile(ext) && !isPartialRead) {
+          if (stats.size > MAX_FILE_LENGTH) {
+            throw new MaxFileReadLengthExceededError(
+              stats.size,
+              MAX_FILE_LENGTH,
+            );
+          }
+        }
+
         // Handle image files
         if (isImageFile(ext)) {
           return await processImage(fullFilePath, opts.cwd);
         }
 
         // Check if empty
-        const stats = fs.statSync(fullFilePath);
         if (stats.size === 0) {
           return createEmptyFileResult(file_path);
         }
@@ -68,9 +83,9 @@ export function createReadTool(opts: { cwd: string; productName: string }) {
           limit ?? MAX_LINES_TO_READ,
         );
 
-        // Validate and truncate
+        // Validate and truncate (now async with Level 2 & 3 validation)
         const { processedContent, actualLinesRead } =
-          validateAndTruncateContent(content, selectedLines);
+          await validateAndTruncateContent(content, selectedLines);
 
         return createReadResult(
           file_path,

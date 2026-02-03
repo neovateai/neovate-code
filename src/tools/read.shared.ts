@@ -140,21 +140,20 @@ export function processFileContent(
 }
 
 // Content validation and truncation
-export function validateAndTruncateContent(
+export async function validateAndTruncateContent(
   content: string,
   selectedLines: string[],
-): {
+): Promise<{
   processedContent: string;
   actualLinesRead: number;
-} {
+}> {
+  // Level 2: Content length validation
   if (content.length > MAX_FILE_LENGTH) {
     throw new MaxFileReadLengthExceededError(content.length, MAX_FILE_LENGTH);
   }
 
-  const tokenCount = countTokens(content);
-  if (tokenCount > MAX_TOKENS) {
-    throw new MaxFileReadTokenExceededError(tokenCount, MAX_TOKENS);
-  }
+  // Level 3: Progressive token validation
+  await validateTokenCount(content, MAX_TOKENS);
 
   const truncatedLines = selectedLines.map((line) =>
     line.length > MAX_LINE_LENGTH
@@ -197,10 +196,11 @@ Usage:
 - By default, it reads up to ${MAX_LINES_TO_READ} lines starting from the beginning of the file
 - You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters
 - Any lines longer than ${MAX_LINE_LENGTH} characters will be truncated
+- Results are returned using cat -n format, with line numbers starting at 1
 - This tool allows ${lowerProductName} to read images (eg PNG, JPG, etc). When reading an image file the contents are presented visually as ${lowerProductName} is a multimodal LLM.
 - This tool can only read files, not directories. To read a directory, use the ${TOOL_NAMES.LS} tool.
 - You can call multiple tools in a single response. It is always better to speculatively read multiple potentially useful files in parallel.
-
+- If you read a file that exists but has empty contents you will receive a system reminder warning in place of file contents.
       `;
 }
 
@@ -275,4 +275,48 @@ export function checkFileType(ext: string, filePath: string): void {
 // Check if image
 export function isImageFile(ext: string): boolean {
   return IMAGE_EXTENSIONS.has(ext);
+}
+
+/**
+ * Level 1: Pre-check validation - Check if file size exceeds limit
+ * @param filePath - Path to the file to check
+ * @param maxSize - Maximum allowed file size in bytes (default: MAX_FILE_LENGTH)
+ * @returns true if file size is within limit, false otherwise
+ */
+export function validateFileSize(
+  filePath: string,
+  maxSize: number = MAX_FILE_LENGTH,
+): boolean {
+  try {
+    const stats = fs.statSync(filePath);
+    return stats.size <= maxSize;
+  } catch {
+    return false; // File doesn't exist or no permission
+  }
+}
+
+/**
+ * Level 3: Progressive token validation
+ * Uses fast estimation + conditional precise counting strategy
+ * @param content - Content to validate
+ * @param maxTokens - Maximum allowed tokens (default: MAX_TOKENS)
+ */
+export async function validateTokenCount(
+  content: string,
+  maxTokens: number = MAX_TOKENS,
+): Promise<void> {
+  // Step 1: Fast estimation (chars / 4)
+  const estimatedTokens = content.length / 4;
+
+  // Step 2: If below 25% threshold, skip precise counting
+  const threshold = maxTokens / 4; // 6250 tokens
+  if (estimatedTokens <= threshold) {
+    return; // Performance optimization: small files skip counting
+  }
+
+  // Step 3: Precise token counting
+  const actualTokens = countTokens(content);
+  if (actualTokens > maxTokens) {
+    throw new MaxFileReadTokenExceededError(actualTokens, maxTokens);
+  }
 }
