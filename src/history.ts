@@ -82,6 +82,10 @@ export class History {
   }
 
   toLanguageV3Messages(): LanguageModelV3Message[] {
+    // Why? Gemini 3 requires providerMetadata for signing under the OpenAI protocol, so we enable it via environment variable.
+    const enableProviderMetadata =
+      process.env.NEOVATE_HISTORY_ENABLE_PROVIDER_METADATA === 'true';
+
     return this.messages.map((message: NormalizedMessage) => {
       if (message.role === 'user') {
         const content = message.content as UserContent;
@@ -142,6 +146,10 @@ export class History {
                 toolCallId: part.id,
                 toolName: part.name,
                 input: part.input,
+                ...(enableProviderMetadata &&
+                  part.providerMetadata && {
+                    providerMetadata: part.providerMetadata,
+                  }),
               };
             } else {
               throw new Error(
