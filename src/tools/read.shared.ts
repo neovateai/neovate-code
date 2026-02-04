@@ -140,20 +140,20 @@ export function processFileContent(
 }
 
 // Content validation and truncation
-export async function validateAndTruncateContent(
+export function validateAndTruncateContent(
   content: string,
   selectedLines: string[],
-): Promise<{
+): {
   processedContent: string;
   actualLinesRead: number;
-}> {
+} {
   // Level 2: Content length validation
   if (content.length > MAX_FILE_LENGTH) {
     throw new MaxFileReadLengthExceededError(content.length, MAX_FILE_LENGTH);
   }
 
   // Level 3: Progressive token validation
-  await validateTokenCount(content, MAX_TOKENS);
+  validateTokenCount(content, MAX_TOKENS);
 
   const truncatedLines = selectedLines.map((line) =>
     line.length > MAX_LINE_LENGTH
@@ -295,15 +295,57 @@ export function validateFileSize(
 }
 
 /**
+ * Estimate the size of content that will be read based on limit
+ * This helps prevent reading large files into memory when only a small portion is needed
+ * @param filePath - Path to the file
+ * @param limit - Number of lines to read
+ * @returns Estimated size in bytes, or null if estimation is not reliable
+ */
+export function estimatePartialReadSize(
+  filePath: string,
+  limit: number,
+): number | null {
+  try {
+    const stats = fs.statSync(filePath);
+
+    // If file is already small enough, no need to estimate
+    if (stats.size <= MAX_FILE_LENGTH) {
+      return stats.size;
+    }
+
+    // For partial reads, estimate average line length
+    // This is a heuristic: assume uniform line distribution
+    // Read a small sample from the beginning to estimate line length
+    const sampleSize = Math.min(stats.size, 8192); // Read first 8KB for sampling
+    const fd = fs.openSync(filePath, 'r');
+    const buffer = Buffer.alloc(sampleSize);
+    fs.readSync(fd, buffer, 0, sampleSize, 0);
+    fs.closeSync(fd);
+
+    const sampleText = buffer.toString('utf8');
+    const sampleLines = sampleText.split(/\r?\n/);
+    const avgLineLength = sampleSize / sampleLines.length;
+
+    // Estimate total size of the partial read
+    // Add some buffer (20%) for safety since line lengths may vary
+    const estimatedSize = Math.ceil(avgLineLength * limit * 1.2);
+
+    return estimatedSize;
+  } catch {
+    return null; // Cannot estimate, let normal validation handle it
+  }
+}
+
+/**
  * Level 3: Progressive token validation
  * Uses fast estimation + conditional precise counting strategy
  * @param content - Content to validate
  * @param maxTokens - Maximum allowed tokens (default: MAX_TOKENS)
  */
-export async function validateTokenCount(
+export function validateTokenCount(
   content: string,
   maxTokens: number = MAX_TOKENS,
-): Promise<void> {
+): void {
   // Step 1: Fast estimation (chars / 4)
   const estimatedTokens = content.length / 4;
 

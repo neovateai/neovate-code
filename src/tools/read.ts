@@ -9,6 +9,7 @@ import {
   checkFileType,
   createEmptyFileResult,
   createReadResult,
+  estimatePartialReadSize,
   getReadToolDescription,
   isImageFile,
   processFileContent,
@@ -16,6 +17,7 @@ import {
   readToolParameters,
   resolveFilePath,
   validateAndTruncateContent,
+  validateFileSize,
   validateReadParams,
 } from './read.shared';
 
@@ -42,14 +44,32 @@ export function createReadTool(opts: { cwd: string; productName: string }) {
         // Get file stats once and reuse throughout
         const stats = fs.statSync(fullFilePath);
 
-        // Level 1: Pre-check validation (skip for image files or when using offset/limit)
+        // Level 1: Pre-check validation
         const isPartialRead = offset !== undefined || limit !== undefined;
-        if (!isImageFile(ext) && !isPartialRead) {
-          if (stats.size > MAX_FILE_LENGTH) {
-            throw new MaxFileReadLengthExceededError(
-              stats.size,
-              MAX_FILE_LENGTH,
+
+        if (!isImageFile(ext)) {
+          if (isPartialRead) {
+            // For partial reads, estimate the size of content that will be read
+            const estimatedSize = estimatePartialReadSize(
+              fullFilePath,
+              limit ?? MAX_LINES_TO_READ,
             );
+
+            // If we can estimate and it's too large, fail fast
+            if (estimatedSize !== null && estimatedSize > MAX_FILE_LENGTH) {
+              throw new MaxFileReadLengthExceededError(
+                estimatedSize,
+                MAX_FILE_LENGTH,
+              );
+            }
+          } else {
+            // For full file reads, check the actual file size
+            if (!validateFileSize(fullFilePath, MAX_FILE_LENGTH)) {
+              throw new MaxFileReadLengthExceededError(
+                stats.size,
+                MAX_FILE_LENGTH,
+              );
+            }
           }
         }
 
@@ -83,9 +103,9 @@ export function createReadTool(opts: { cwd: string; productName: string }) {
           limit ?? MAX_LINES_TO_READ,
         );
 
-        // Validate and truncate (now async with Level 2 & 3 validation)
+        // Validate and truncate (now synchronous with Level 2 & 3 validation)
         const { processedContent, actualLinesRead } =
-          await validateAndTruncateContent(content, selectedLines);
+          validateAndTruncateContent(content, selectedLines);
 
         return createReadResult(
           file_path,

@@ -112,9 +112,9 @@ export function createReadTool(opts: {
           limit ?? MAX_LINES_TO_READ,
         );
 
-        // Validate and truncate (shared logic)
+        // Validate and truncate (shared logic - now synchronous)
         const { processedContent, actualLinesRead } =
-          await validateAndTruncateContent(content, selectedLines);
+          validateAndTruncateContent(content, selectedLines);
 
         return createReadResult(
           file_path,
