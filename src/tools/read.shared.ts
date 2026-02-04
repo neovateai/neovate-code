@@ -196,7 +196,6 @@ Usage:
 - By default, it reads up to ${MAX_LINES_TO_READ} lines starting from the beginning of the file
 - You can optionally specify a line offset and limit (especially handy for long files), but it's recommended to read the whole file by not providing these parameters
 - Any lines longer than ${MAX_LINE_LENGTH} characters will be truncated
-- Results are returned using cat -n format, with line numbers starting at 1
 - This tool allows ${lowerProductName} to read images (eg PNG, JPG, etc). When reading an image file the contents are presented visually as ${lowerProductName} is a multimodal LLM.
 - This tool can only read files, not directories. To read a directory, use the ${TOOL_NAMES.LS} tool.
 - You can call multiple tools in a single response. It is always better to speculatively read multiple potentially useful files in parallel.
