@@ -147,14 +147,13 @@ export function validateAndTruncateContent(
   processedContent: string;
   actualLinesRead: number;
 } {
+  // Level 2: Content length validation
   if (content.length > MAX_FILE_LENGTH) {
     throw new MaxFileReadLengthExceededError(content.length, MAX_FILE_LENGTH);
   }
 
-  const tokenCount = countTokens(content);
-  if (tokenCount > MAX_TOKENS) {
-    throw new MaxFileReadTokenExceededError(tokenCount, MAX_TOKENS);
-  }
+  // Level 3: Progressive token validation
+  validateTokenCount(content, MAX_TOKENS);
 
   const truncatedLines = selectedLines.map((line) =>
     line.length > MAX_LINE_LENGTH
@@ -200,7 +199,7 @@ Usage:
 - This tool allows ${lowerProductName} to read images (eg PNG, JPG, etc). When reading an image file the contents are presented visually as ${lowerProductName} is a multimodal LLM.
 - This tool can only read files, not directories. To read a directory, use the ${TOOL_NAMES.LS} tool.
 - You can call multiple tools in a single response. It is always better to speculatively read multiple potentially useful files in parallel.
-
+- If you read a file that exists but has empty contents you will receive a system reminder warning in place of file contents.
       `;
 }
 
@@ -275,4 +274,90 @@ export function checkFileType(ext: string, filePath: string): void {
 // Check if image
 export function isImageFile(ext: string): boolean {
   return IMAGE_EXTENSIONS.has(ext);
+}
+
+/**
+ * Level 1: Pre-check validation - Check if file size exceeds limit
+ * @param filePath - Path to the file to check
+ * @param maxSize - Maximum allowed file size in bytes (default: MAX_FILE_LENGTH)
+ * @returns true if file size is within limit, false otherwise
+ */
+export function validateFileSize(
+  filePath: string,
+  maxSize: number = MAX_FILE_LENGTH,
+): boolean {
+  try {
+    const stats = fs.statSync(filePath);
+    return stats.size <= maxSize;
+  } catch {
+    return false; // File doesn't exist or no permission
+  }
+}
+
+/**
+ * Estimate the size of content that will be read based on limit
+ * This helps prevent reading large files into memory when only a small portion is needed
+ * @param filePath - Path to the file
+ * @param limit - Number of lines to read
+ * @returns Estimated size in bytes, or null if estimation is not reliable
+ */
+export function estimatePartialReadSize(
+  filePath: string,
+  limit: number,
+): number | null {
+  try {
+    const stats = fs.statSync(filePath);
+
+    // If file is already small enough, no need to estimate
+    if (stats.size <= MAX_FILE_LENGTH) {
+      return stats.size;
+    }
+
+    // For partial reads, estimate average line length
+    // This is a heuristic: assume uniform line distribution
+    // Read a small sample from the beginning to estimate line length
+    const sampleSize = Math.min(stats.size, 8192); // Read first 8KB for sampling
+    const fd = fs.openSync(filePath, 'r');
+    const buffer = Buffer.alloc(sampleSize);
+    fs.readSync(fd, buffer, 0, sampleSize, 0);
+    fs.closeSync(fd);
+
+    const sampleText = buffer.toString('utf8');
+    const sampleLines = sampleText.split(/\r?\n/);
+    const avgLineLength = sampleSize / sampleLines.length;
+
+    // Estimate total size of the partial read
+    // Add some buffer (20%) for safety since line lengths may vary
+    const estimatedSize = Math.ceil(avgLineLength * limit * 1.2);
+
+    return estimatedSize;
+  } catch {
+    return null; // Cannot estimate, let normal validation handle it
+  }
+}
+
+/**
+ * Level 3: Progressive token validation
+ * Uses fast estimation + conditional precise counting strategy
+ * @param content - Content to validate
+ * @param maxTokens - Maximum allowed tokens (default: MAX_TOKENS)
+ */
+export function validateTokenCount(
+  content: string,
+  maxTokens: number = MAX_TOKENS,
+): void {
+  // Step 1: Fast estimation (chars / 4)
+  const estimatedTokens = content.length / 4;
+
+  // Step 2: If below 25% threshold, skip precise counting
+  const threshold = maxTokens / 4; // 6250 tokens
+  if (estimatedTokens <= threshold) {
+    return; // Performance optimization: small files skip counting
+  }
+
+  // Step 3: Precise token counting
+  const actualTokens = countTokens(content);
+  if (actualTokens > maxTokens) {
+    throw new MaxFileReadTokenExceededError(actualTokens, maxTokens);
+  }
 }

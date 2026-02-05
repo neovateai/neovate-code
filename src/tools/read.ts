@@ -2,11 +2,14 @@ import fs from 'fs';
 import path from 'pathe';
 import { TOOL_NAMES } from '../constants';
 import { createTool, type ToolResult } from '../tool';
+import { MaxFileReadLengthExceededError } from '../utils/error';
 import {
+  MAX_FILE_LENGTH,
   MAX_LINES_TO_READ,
   checkFileType,
   createEmptyFileResult,
   createReadResult,
+  estimatePartialReadSize,
   getReadToolDescription,
   isImageFile,
   processFileContent,
@@ -14,6 +17,7 @@ import {
   readToolParameters,
   resolveFilePath,
   validateAndTruncateContent,
+  validateFileSize,
   validateReadParams,
 } from './read.shared';
 
@@ -37,13 +41,44 @@ export function createReadTool(opts: { cwd: string; productName: string }) {
 
         const fullFilePath = resolveFilePath(file_path, opts.cwd);
 
+        // Get file stats once and reuse throughout
+        const stats = fs.statSync(fullFilePath);
+
+        // Level 1: Pre-check validation
+        const isPartialRead = offset !== undefined || limit !== undefined;
+
+        if (!isImageFile(ext)) {
+          if (isPartialRead) {
+            // For partial reads, estimate the size of content that will be read
+            const estimatedSize = estimatePartialReadSize(
+              fullFilePath,
+              limit ?? MAX_LINES_TO_READ,
+            );
+
+            // If we can estimate and it's too large, fail fast
+            if (estimatedSize !== null && estimatedSize > MAX_FILE_LENGTH) {
+              throw new MaxFileReadLengthExceededError(
+                estimatedSize,
+                MAX_FILE_LENGTH,
+              );
+            }
+          } else {
+            // For full file reads, check the actual file size
+            if (!validateFileSize(fullFilePath, MAX_FILE_LENGTH)) {
+              throw new MaxFileReadLengthExceededError(
+                stats.size,
+                MAX_FILE_LENGTH,
+              );
+            }
+          }
+        }
+
         // Handle image files
         if (isImageFile(ext)) {
           return await processImage(fullFilePath, opts.cwd);
         }
 
         // Check if empty
-        const stats = fs.statSync(fullFilePath);
         if (stats.size === 0) {
           return createEmptyFileResult(file_path);
         }
@@ -68,7 +103,7 @@ export function createReadTool(opts: { cwd: string; productName: string }) {
           limit ?? MAX_LINES_TO_READ,
         );
 
-        // Validate and truncate
+        // Validate and truncate (now synchronous with Level 2 & 3 validation)
         const { processedContent, actualLinesRead } =
           validateAndTruncateContent(content, selectedLines);
 

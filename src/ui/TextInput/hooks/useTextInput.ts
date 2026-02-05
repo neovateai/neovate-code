@@ -342,9 +342,9 @@ export function useTextInput({
       }
       case key.return:
         return () => handleEnter(key);
+      // key.tab is true for both Tab and Shift+Tab, key.shift indicates if Shift was held
       case key.tab:
-      case key.shift && key.tab:
-        return () => onTabPress?.(key.shift && key.tab);
+        return () => onTabPress?.(key.shift);
       case key.upArrow:
         return upOrHistoryUp;
       case key.downArrow:
