@@ -14,6 +14,7 @@ import { registerProvidersHandlers } from './nodeBridge/slices/providers';
 import { registerSessionHandlers } from './nodeBridge/slices/session';
 import { registerSkillsHandlers } from './nodeBridge/slices/skills';
 import { registerSlashCommandHandlers } from './nodeBridge/slices/slashCommand';
+import { registerSnapshotHandlers } from './nodeBridge/slices/snapshot';
 import { registerStatusHandlers } from './nodeBridge/slices/status';
 import { registerUtilsHandlers } from './nodeBridge/slices/utils';
 
@@ -103,6 +104,7 @@ class NodeHandlerRegistry {
     registerSessionHandlers(this.messageBus, getContext, this.abortControllers);
     registerSkillsHandlers(this.messageBus, getContext, this.skillPreviews);
     registerSlashCommandHandlers(this.messageBus, getContext);
+    registerSnapshotHandlers(this.messageBus, getContext, clearContext);
     registerStatusHandlers(this.messageBus, getContext);
     registerUtilsHandlers(this.messageBus, getContext);
   }

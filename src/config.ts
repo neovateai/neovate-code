@@ -112,6 +112,14 @@ export type Config = {
    * - 'maxOrXhigh': Prefer xhigh if available, otherwise max
    */
   thinkingLevel?: 'low' | 'medium' | 'high' | 'max' | 'xhigh' | 'maxOrXhigh';
+  /**
+   * Controls whether rewind checkpoints are enabled.
+   * When enabled, snapshots are created after each AI response to allow
+   * rewinding to previous states with code restoration.
+   *
+   * @default true
+   */
+  checkpoints?: boolean;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -129,6 +137,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   extensions: {},
   tools: {},
   agent: {},
+  checkpoints: true,
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -152,6 +161,7 @@ const VALID_CONFIG_KEYS = [
   'notification',
   'skills',
   'thinkingLevel',
+  'checkpoints',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins', 'skills'];
 const OBJECT_CONFIG_KEYS = [
@@ -168,6 +178,7 @@ const BOOLEAN_CONFIG_KEYS = [
   'autoCompact',
   'autoUpdate',
   'truncation',
+  'checkpoints',
 ];
 export const GLOBAL_ONLY_KEYS: string[] = [];
 

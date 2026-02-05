@@ -5,6 +5,7 @@ import { History } from './history';
 import type { NormalizedMessage } from './message';
 import { Usage } from './usage';
 import { randomUUID } from './utils/randomUUID';
+import type { SerializedSnapshot } from './snapshot/types';
 
 export type SessionId = string;
 
@@ -185,4 +186,65 @@ export function loadSessionMessages(opts: {
       }
     });
   return filterMessages(messages);
+}
+
+/**
+ * Represents a JSONL snapshot entry with additional type field.
+ */
+export type SnapshotEntry = {
+  type: 'snapshot';
+} & SerializedSnapshot;
+
+/**
+ * Result of loading a session with snapshots.
+ */
+export type SessionWithSnapshots = {
+  messages: NormalizedMessage[];
+  snapshots: SerializedSnapshot[];
+};
+
+/**
+ * Loads session data including both messages and snapshots from JSONL file.
+ * Separates entries by type for independent processing.
+ *
+ * @param opts - Options containing the log file path
+ * @returns Object containing filtered messages and all snapshots
+ */
+export function loadSessionWithSnapshots(opts: {
+  logPath: string;
+}): SessionWithSnapshots {
+  if (!fs.existsSync(opts.logPath)) {
+    return { messages: [], snapshots: [] };
+  }
+
+  const content = fs.readFileSync(opts.logPath, 'utf-8');
+  const lines = content.split('\n').filter(Boolean);
+
+  const allMessages: NormalizedMessage[] = [];
+  const snapshots: SerializedSnapshot[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    try {
+      const parsed = JSON.parse(line);
+
+      if (parsed.type === 'snapshot') {
+        // Extract snapshot data without the 'type' field
+        const { type: _, ...snapshotData } = parsed;
+        snapshots.push(snapshotData as SerializedSnapshot);
+      } else if (parsed.type === 'message') {
+        allMessages.push(parsed as NormalizedMessage);
+      }
+      // Ignore other types like 'config'
+    } catch (e: any) {
+      throw new Error(
+        `Failed to parse line ${i + 1} of log file: ${opts.logPath}: ${e.message}`,
+      );
+    }
+  }
+
+  return {
+    messages: filterMessages(allMessages),
+    snapshots,
+  };
 }

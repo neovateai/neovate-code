@@ -16,7 +16,9 @@ import {
   PluginManager,
 } from './plugin';
 import { truncationPlugin } from './plugins/truncation';
+import { checkpointPlugin } from './plugins/checkpoint';
 import { SkillManager } from './skill';
+import { FileHistoryManager } from './snapshot/FileHistoryManager';
 
 type ContextOpts = {
   cwd: string;
@@ -29,6 +31,7 @@ type ContextOpts = {
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
+  fileHistoryManager: FileHistoryManager;
   skillManager?: SkillManager;
   messageBus?: MessageBus;
   agentManager?: AgentManager;
@@ -59,6 +62,7 @@ export class Context {
   argvConfig: Record<string, any>;
   mcpManager: MCPManager;
   backgroundTaskManager: BackgroundTaskManager;
+  fileHistoryManager: FileHistoryManager;
   skillManager?: SkillManager;
   messageBus?: MessageBus;
   agentManager?: AgentManager;
@@ -76,6 +80,7 @@ export class Context {
     this.#pluginManager = opts.pluginManager;
     this.argvConfig = opts.argvConfig;
     this.backgroundTaskManager = opts.backgroundTaskManager;
+    this.fileHistoryManager = opts.fileHistoryManager;
     this.skillManager = opts.skillManager;
     this.messageBus = opts.messageBus;
     this.agentManager = opts.agentManager;
@@ -92,6 +97,7 @@ export class Context {
   }
 
   async destroy() {
+    this.fileHistoryManager.destroy();
     await this.mcpManager.destroy();
     await this.apply({
       hook: 'destroy',
@@ -113,7 +119,7 @@ export class Context {
       opts.argvConfig || {},
     );
     const initialConfig = configManager.config;
-    const buildInPlugins: Plugin[] = [truncationPlugin];
+    const buildInPlugins: Plugin[] = [checkpointPlugin, truncationPlugin];
     const globalPlugins = scanPlugins(
       path.join(paths.globalConfigDir, 'plugins'),
     );
@@ -151,6 +157,10 @@ export class Context {
     };
     const mcpManager = MCPManager.create(mcpServers);
     const backgroundTaskManager = new BackgroundTaskManager();
+    const fileHistoryManager = new FileHistoryManager({
+      cwd,
+      backupRoot: paths.fileHistoryDir,
+    });
 
     const context = new Context({
       cwd,
@@ -163,6 +173,7 @@ export class Context {
       paths,
       mcpManager,
       backgroundTaskManager,
+      fileHistoryManager,
       messageBus: opts.messageBus,
       plugins: pluginsConfigs,
       fetch: opts.fetch,

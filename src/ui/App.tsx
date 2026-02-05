@@ -32,6 +32,9 @@ export function App() {
     forkCounter,
     transcriptMode,
     toggleTranscriptMode,
+    bridge,
+    cwd,
+    sessionId,
   } = useAppStore();
   const messages = useAppStore((s) => s.messages);
 
@@ -63,15 +66,18 @@ export function App() {
         <ActivityIndicator />
         <QueueDisplay />
         {transcriptMode ? <TranscriptModeIndicator /> : <ChatInput />}
-        {forkModalVisible && (
+        {forkModalVisible && sessionId && (
           <ForkModal
             messages={messages as any}
-            onSelect={(uuid) => {
-              fork(uuid);
+            onSelect={(uuid, restoreCode) => {
+              fork(uuid, restoreCode);
             }}
             onClose={() => {
               hideForkModal();
             }}
+            sessionId={sessionId}
+            cwd={cwd}
+            bridge={bridge}
           />
         )}
         <ExitHint />

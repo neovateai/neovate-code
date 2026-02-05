@@ -3,6 +3,7 @@ import path from 'pathe';
 import type { NormalizedMessage } from './message';
 import { createUserMessage } from './message';
 import type { StreamResult } from './loop';
+import type { SerializedSnapshot } from './snapshot/types';
 
 export class JsonlLogger {
   filePath: string;
@@ -45,6 +46,22 @@ export class JsonlLogger {
     return this.addMessage({
       message,
     });
+  }
+
+  /**
+   * Appends a snapshot entry to the JSONL log file.
+   * Snapshots are stored with type: 'snapshot' to distinguish from messages.
+   */
+  addSnapshot(snapshot: SerializedSnapshot): void {
+    const dir = path.dirname(this.filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const entry = {
+      type: 'snapshot' as const,
+      ...snapshot,
+    };
+    fs.appendFileSync(this.filePath, JSON.stringify(entry) + '\n');
   }
 }
 

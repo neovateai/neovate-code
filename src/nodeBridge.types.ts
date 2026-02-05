@@ -1177,6 +1177,98 @@ type UtilsNotifyInput = {
 type UtilsNotifyOutput = SuccessResponse;
 
 // ============================================================================
+// Snapshot Handlers
+// ============================================================================
+
+import type {
+  RewindResult,
+  SerializedSnapshot,
+  SnapshotPreview,
+} from './snapshot/types';
+
+type SnapshotTrackFileInput = {
+  cwd: string;
+  sessionId: string;
+  filePath: string; // Can be absolute or relative path
+};
+
+type SnapshotCreateInput = {
+  cwd: string;
+  sessionId: string;
+  messageId: string; // UUID of the message to associate with this snapshot
+  description?: string;
+};
+type SnapshotCreateOutput = {
+  success: boolean;
+  data: {
+    snapshot: SnapshotPreview | null;
+  };
+};
+
+type SnapshotListInput = {
+  cwd: string;
+  sessionId: string;
+};
+type SnapshotListOutput = {
+  success: boolean;
+  data: {
+    snapshots: SnapshotPreview[];
+  };
+};
+
+type SnapshotHasInput = {
+  cwd: string;
+  sessionId: string;
+  messageId: string;
+};
+type SnapshotHasOutput = {
+  success: boolean;
+  data: {
+    hasSnapshot: boolean;
+  };
+};
+
+type SnapshotRewindInput = {
+  cwd: string;
+  sessionId: string;
+  messageId: string;
+};
+type SnapshotRewindOutput =
+  | {
+      success: true;
+      data: {
+        result: RewindResult;
+      };
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+type SnapshotPreviewRewindInput = {
+  cwd: string;
+  sessionId: string;
+  messageId: string;
+};
+type SnapshotPreviewRewindOutput =
+  | {
+      success: true;
+      data: {
+        result: RewindResult;
+      };
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+type SnapshotLoadFromSessionInput = {
+  cwd: string;
+  sessionId: string;
+  snapshots: SerializedSnapshot[];
+};
+
+// ============================================================================
 // UI Bridge Handlers (from uiBridge.ts)
 // ============================================================================
 
@@ -1481,6 +1573,36 @@ export type HandlerMap = {
 
   // UI Bridge handlers
   toolApproval: { input: ToolApprovalInput; output: ToolApprovalOutput };
+
+  // Snapshot handlers
+  'snapshot.trackFile': {
+    input: SnapshotTrackFileInput;
+    output: SuccessResponse;
+  };
+  'snapshot.create': {
+    input: SnapshotCreateInput;
+    output: SnapshotCreateOutput;
+  };
+  'snapshot.list': {
+    input: SnapshotListInput;
+    output: SnapshotListOutput;
+  };
+  'snapshot.has': {
+    input: SnapshotHasInput;
+    output: SnapshotHasOutput;
+  };
+  'snapshot.rewind': {
+    input: SnapshotRewindInput;
+    output: SnapshotRewindOutput;
+  };
+  'snapshot.previewRewind': {
+    input: SnapshotPreviewRewindInput;
+    output: SnapshotPreviewRewindOutput;
+  };
+  'snapshot.loadFromSession': {
+    input: SnapshotLoadFromSessionInput;
+    output: SuccessResponse;
+  };
 };
 
 // ============================================================================

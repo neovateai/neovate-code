@@ -3,7 +3,12 @@ import React from 'react';
 import { CANCELED_MESSAGE_TEXT } from '../constants';
 import type { Message } from '../message';
 import { isCanceledMessage } from '../message';
+import type { RewindResult } from '../snapshot/types';
 import { UI_COLORS } from './constants';
+import { SelectInput, type SelectOption } from './SelectInput';
+import type { UIBridge } from '../uiBridge';
+import { findLastAssistantAfterUser } from '../utils/messageQuery';
+import { useTerminalSize } from './useTerminalSize';
 
 interface ForkModalProps {
   messages: (Message & {
@@ -11,8 +16,11 @@ interface ForkModalProps {
     parentUuid: string | null;
     timestamp: string;
   })[];
-  onSelect: (uuid: string) => void;
+  onSelect: (uuid: string, restoreCode?: boolean) => void;
   onClose: () => void;
+  sessionId: string;
+  cwd: string;
+  bridge: UIBridge;
 }
 
 const getMessageText = (message: Message): string => {
@@ -37,8 +45,28 @@ const extractBashInput = (text: string): string | null => {
   return match ? match[1] : null;
 };
 
-export function ForkModal({ messages, onSelect, onClose }: ForkModalProps) {
+type ModalView = 'message-list' | 'confirm-rewind';
+
+export function ForkModal({
+  messages,
+  onSelect,
+  onClose,
+  sessionId,
+  cwd,
+  bridge,
+}: ForkModalProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
+  const [view, setView] = React.useState<ModalView>('message-list');
+  const [selectedMessage, setSelectedMessage] = React.useState<
+    (Message & { uuid: string; timestamp: string }) | null
+  >(null);
+  const [rewindPreview, setRewindPreview] = React.useState<RewindResult | null>(
+    null,
+  );
+  const [messageSnapshots, setMessageSnapshots] = React.useState<
+    Map<string, RewindResult | null>
+  >(new Map());
+  const { columns } = useTerminalSize();
 
   // Filter to user messages only and reverse for chronological order (newest first)
   const userMessages = React.useMemo(
@@ -57,16 +85,87 @@ export function ForkModal({ messages, onSelect, onClose }: ForkModalProps) {
     [messages],
   );
 
+  // Preload snapshots for all messages
+  React.useEffect(() => {
+    const loadSnapshots = async () => {
+      const newSnapshots = new Map<string, RewindResult | null>();
+
+      for (const message of userMessages) {
+        const targetAssistantUuid = findLastAssistantAfterUser(
+          messages,
+          message.uuid,
+        );
+
+        if (!targetAssistantUuid) {
+          newSnapshots.set(message.uuid, null);
+          continue;
+        }
+
+        try {
+          const hasResult = await bridge.request('snapshot.has', {
+            cwd,
+            sessionId,
+            messageId: targetAssistantUuid,
+          });
+
+          if (!hasResult.success || !hasResult.data?.hasSnapshot) {
+            newSnapshots.set(message.uuid, null);
+            continue;
+          }
+
+          const previewResult = await bridge.request('snapshot.previewRewind', {
+            cwd,
+            sessionId,
+            messageId: targetAssistantUuid,
+          });
+
+          newSnapshots.set(
+            message.uuid,
+            previewResult.success ? previewResult.data.result : null,
+          );
+        } catch {
+          newSnapshots.set(message.uuid, null);
+        }
+      }
+
+      setMessageSnapshots(newSnapshots);
+    };
+
+    loadSnapshots();
+  }, [userMessages, messages, bridge, cwd, sessionId]);
+
   useInput((input, key) => {
     if (key.escape) {
-      onClose();
+      if (view === 'confirm-rewind') {
+        setView('message-list');
+        setSelectedMessage(null);
+        setRewindPreview(null);
+      } else {
+        onClose();
+      }
     } else if (key.upArrow) {
-      setSelectedIndex((prev) => Math.max(0, prev - 1));
+      if (view === 'message-list') {
+        setSelectedIndex((prev) => Math.max(0, prev - 1));
+      }
     } else if (key.downArrow) {
-      setSelectedIndex((prev) => Math.min(userMessages.length - 1, prev + 1));
+      if (view === 'message-list') {
+        setSelectedIndex((prev) => Math.min(userMessages.length - 1, prev + 1));
+      }
     } else if (key.return) {
-      if (userMessages[selectedIndex]) {
-        onSelect(userMessages[selectedIndex].uuid!);
+      if (view === 'message-list') {
+        if (userMessages[selectedIndex]) {
+          const message = userMessages[selectedIndex];
+          const uuid = message.uuid;
+          const snapshot = messageSnapshots.get(uuid);
+
+          if (snapshot && snapshot.filesChanged.length > 0) {
+            setSelectedMessage(message);
+            setRewindPreview(snapshot);
+            setView('confirm-rewind');
+          } else {
+            onSelect(uuid, false);
+          }
+        }
       }
     }
   });
@@ -78,81 +177,257 @@ export function ForkModal({ messages, onSelect, onClose }: ForkModalProps) {
     const bashInput = extractBashInput(text);
     if (bashInput !== null) {
       text = bashInput.replace(/\s+/g, ' ').trim();
-      const truncated = text.length > 80 ? text.slice(0, 80) + '...' : text;
-      return { text: truncated, isBashInput: true };
+      return { text, isBashInput: true };
     }
     text = text.replace(/\s+/g, ' ').trim();
-    const truncated = text.length > 80 ? text.slice(0, 80) + '...' : text;
-    return { text: truncated, isBashInput: false };
+    return { text, isBashInput: false };
   };
 
-  const getTimestamp = (message: Message & { timestamp: string }): string => {
-    if (!message.timestamp) return '';
-    const date = new Date(message.timestamp);
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${hours}:${minutes}`;
+  const getRelativeTime = (timestamp: string): string => {
+    if (!timestamp) return '';
+    const now = Date.now();
+    const date = new Date(timestamp);
+    const diffMs = now - date.getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+
+    if (diffMinutes < 1) return 'just now';
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
   };
 
+  if (view === 'confirm-rewind' && selectedMessage && rewindPreview) {
+    return (
+      <ConfirmRewindView
+        message={selectedMessage}
+        rewindPreview={rewindPreview}
+        onConfirm={(restoreMode) => {
+          if (restoreMode === 'cancel') {
+            setView('message-list');
+            setSelectedMessage(null);
+            setRewindPreview(null);
+          } else {
+            const restoreCode =
+              restoreMode === 'both' || restoreMode === 'code';
+            onSelect(selectedMessage.uuid, restoreCode);
+          }
+        }}
+        onBack={() => {
+          setView('message-list');
+          setSelectedMessage(null);
+          setRewindPreview(null);
+        }}
+        getMessagePreview={getMessagePreview}
+        getRelativeTime={getRelativeTime}
+      />
+    );
+  }
+
+  // Render message list
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor="cyan"
-      padding={1}
-      width="100%"
-    >
-      <Box marginBottom={1}>
-        <Text bold color="cyan">
-          Jump to Previous Message
+    <Box flexDirection="column">
+      <Box>
+        <Text color={UI_COLORS.ASK_PRIMARY} bold>
+          {'─'.repeat(Math.max(0, columns))}
         </Text>
       </Box>
+
+      <Box marginBottom={1} marginTop={1}>
+        <Text bold color={UI_COLORS.ASK_PRIMARY}>
+          Rewind
+        </Text>
+      </Box>
+
+      <Box marginBottom={1}>
+        <Text>Restore the code and/or conversation to the point before…</Text>
+      </Box>
+
       <Box flexDirection="column">
         {userMessages.length === 0 ? (
-          <Text dimColor>No previous messages to jump to</Text>
+          <Box marginBottom={1}>
+            <Text dimColor>No previous messages to jump to</Text>
+          </Box>
         ) : (
           userMessages.map((message, index) => {
             const isSelected = index === selectedIndex;
-            const { text: preview, isBashInput } = getMessagePreview(message);
-            const timestamp = getTimestamp(message);
+            const isCurrent = index === 0;
+            const { text: preview } = getMessagePreview(message);
+            const snapshot = messageSnapshots.get(message.uuid);
 
             return (
-              <Box key={message.uuid} marginBottom={0}>
-                <Text
-                  color={isSelected ? 'cyan' : 'white'}
-                  bold={isSelected}
-                  backgroundColor={isSelected ? 'blue' : undefined}
-                >
-                  {isSelected ? '> ' : '  '}
-                  {timestamp} |{' '}
-                </Text>
-                {isBashInput && (
-                  <Text
-                    color={UI_COLORS.CHAT_BORDER_BASH}
-                    bold={isSelected}
-                    backgroundColor={isSelected ? 'blue' : undefined}
-                  >
-                    !{' '}
+              <Box key={message.uuid} flexDirection="column" marginBottom={1}>
+                <Box>
+                  <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
+                    {isSelected ? '❯ ' : '  '}
                   </Text>
+                  <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
+                    {preview}
+                  </Text>
+                </Box>
+
+                {snapshot && snapshot.filesChanged.length > 0 && (
+                  <Box paddingLeft={2}>
+                    <Text dimColor>{snapshot.filesChanged.join(', ')}</Text>
+                    <Text color="green"> +{snapshot.insertions}</Text>
+                    <Text color="red"> -{snapshot.deletions}</Text>
+                  </Box>
                 )}
-                <Text
-                  color={isSelected ? 'cyan' : 'white'}
-                  bold={isSelected}
-                  backgroundColor={isSelected ? 'blue' : undefined}
-                >
-                  {preview}
-                </Text>
+
+                {isCurrent && (
+                  <Box paddingLeft={2}>
+                    <Text dimColor italic>
+                      (current)
+                    </Text>
+                  </Box>
+                )}
               </Box>
             );
           })
         )}
       </Box>
+
+      <Box marginTop={1}>
+        <Text dimColor>Enter to continue · Esc to exit</Text>
+      </Box>
+    </Box>
+  );
+}
+
+interface ConfirmRewindViewProps {
+  message: Message & { uuid: string; timestamp: string };
+  rewindPreview: RewindResult;
+  onConfirm: (restoreMode: 'both' | 'conversation' | 'code' | 'cancel') => void;
+  onBack: () => void;
+  getMessagePreview: (message: Message) => {
+    text: string;
+    isBashInput: boolean;
+  };
+  getRelativeTime: (timestamp: string) => string;
+}
+
+function ConfirmRewindView({
+  message,
+  rewindPreview,
+  onConfirm,
+  onBack,
+  getMessagePreview,
+  getRelativeTime,
+}: ConfirmRewindViewProps) {
+  const { text: messagePreview } = getMessagePreview(message);
+  const relativeTime = getRelativeTime(message.timestamp);
+  const { columns } = useTerminalSize();
+
+  const selectOptions: SelectOption[] = [
+    {
+      type: 'text',
+      value: 'both',
+      label: '1. Restore code and conversation',
+    },
+    {
+      type: 'text',
+      value: 'conversation',
+      label: '2. Restore conversation',
+    },
+    {
+      type: 'text',
+      value: 'code',
+      label: '3. Restore code',
+    },
+    {
+      type: 'text',
+      value: 'cancel',
+      label: '4. Never mind',
+    },
+  ];
+
+  const handleChange = (value: string | string[]) => {
+    if (typeof value === 'string') {
+      onConfirm(value as 'both' | 'conversation' | 'code' | 'cancel');
+    }
+  };
+
+  const fileChangeSummary = React.useMemo(() => {
+    const { filesChanged, insertions, deletions } = rewindPreview;
+
+    if (filesChanged.length === 0) {
+      return 'No files to restore.';
+    }
+
+    if (filesChanged.length === 1) {
+      return (
+        <Box>
+          <Text>The code will be restored </Text>
+          <Text color="green">+{insertions}</Text>
+          <Text> </Text>
+          <Text color="red">-{deletions}</Text>
+          <Text> in {filesChanged[0]}.</Text>
+        </Box>
+      );
+    }
+
+    return (
+      <Box>
+        <Text>The code will be restored </Text>
+        <Text color="green">+{insertions}</Text>
+        <Text> </Text>
+        <Text color="red">-{deletions}</Text>
+        <Text> in {filesChanged.length} files.</Text>
+      </Box>
+    );
+  }, [rewindPreview]);
+
+  return (
+    <Box flexDirection="column">
+      <Box>
+        <Text color={UI_COLORS.ASK_PRIMARY} bold>
+          {'─'.repeat(Math.max(0, columns))}
+        </Text>
+      </Box>
+
+      <Box marginBottom={1} marginTop={1}>
+        <Text bold color={UI_COLORS.ASK_PRIMARY}>
+          Rewind
+        </Text>
+      </Box>
+
+      <Box marginBottom={1}>
+        <Text>
+          Confirm you want to restore to the point before you sent this message:
+        </Text>
+      </Box>
+
+      <Box marginBottom={1} flexDirection="column">
+        <Box>
+          <Text dimColor>│ </Text>
+          <Text>{messagePreview}</Text>
+        </Box>
+        <Box>
+          <Text dimColor>│ ({relativeTime})</Text>
+        </Box>
+      </Box>
+
+      <Box marginBottom={1}>
+        <Text>The conversation will be forked.</Text>
+      </Box>
+      <Box marginBottom={1}>{fileChangeSummary}</Box>
+
+      <SelectInput
+        options={selectOptions}
+        mode="single"
+        onChange={handleChange}
+        onCancel={onBack}
+      />
+
       <Box marginTop={1}>
         <Text dimColor>
-          Use ↑/↓ to navigate, Enter to select, Esc to cancel
+          ⚠ Rewinding does not affect files edited manually or via bash.
         </Text>
+      </Box>
+
+      <Box marginTop={1}>
+        <Text dimColor>Enter to continue · Esc to exit</Text>
       </Box>
     </Box>
   );

@@ -21,6 +21,7 @@ import { setTerminalTitle } from '../utils/setTerminalTitle';
 import { clearTerminal } from '../utils/terminal';
 import { countTokens } from '../utils/tokenCounter';
 import { getUsername } from '../utils/username';
+import { findLastAssistantAfterUser } from '../utils/messageQuery';
 import { detectImageFormat } from './TextInput/utils/imagePaste';
 
 export type ApprovalResult =
@@ -247,7 +248,7 @@ interface AppActions {
   setPastedImageMap: (map: Record<string, string>) => Promise<void>;
   showForkModal: () => void;
   hideForkModal: () => void;
-  fork: (targetMessageUuid: string) => Promise<void>;
+  fork: (targetMessageUuid: string, restoreCode?: boolean) => Promise<void>;
   incrementForkCounter: () => void;
   setBashBackgroundPrompt: (prompt: BashPromptBackgroundEvent) => void;
   clearBashBackgroundPrompt: () => void;
@@ -1177,22 +1178,49 @@ export const useAppStore = create<AppStore>()(
         set({ forkModalVisible: false });
       },
 
-      fork: async (targetMessageUuid: string) => {
+      fork: async (targetMessageUuid: string, restoreCode?: boolean) => {
         const { bridge, cwd, sessionId, messages } = get();
 
-        // Find the target message
-        const targetMessage = messages.find(
+        // Find the target message index (single lookup, reused later)
+        const messageIndex = messages.findIndex(
           (m) => (m as NormalizedMessage).uuid === targetMessageUuid,
         );
-        if (!targetMessage) {
+
+        if (messageIndex === -1) {
           get().log(`Fork error: Message ${targetMessageUuid} not found`);
           return;
         }
 
-        // Filter messages up to and including the target
-        const messageIndex = messages.findIndex(
-          (m) => (m as NormalizedMessage).uuid === targetMessageUuid,
-        );
+        const targetMessage = messages[messageIndex];
+
+        // Restore code to checkpoint if requested
+        if (restoreCode && sessionId) {
+          const targetAssistantUuid = findLastAssistantAfterUser(
+            messages,
+            targetMessageUuid,
+          );
+
+          if (targetAssistantUuid) {
+            const hasSnapshotResult = await bridge.request('snapshot.has', {
+              cwd,
+              sessionId,
+              messageId: targetAssistantUuid,
+            });
+
+            if (
+              hasSnapshotResult.success &&
+              hasSnapshotResult.data?.hasSnapshot
+            ) {
+              await bridge.request('snapshot.rewind', {
+                cwd,
+                sessionId,
+                messageId: targetAssistantUuid,
+              });
+            }
+          }
+        }
+
+        // Filter messages up to (but not including) the target
         const filteredMessages = messages.slice(0, messageIndex);
 
         // Extract content from target message

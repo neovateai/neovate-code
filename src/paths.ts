@@ -25,6 +25,7 @@ export class Paths {
   globalConfigDir: string;
   globalProjectDir: string;
   projectConfigDir: string;
+  fileHistoryDir: string;
 
   constructor(opts: { productName: string; cwd: string }) {
     const productName = opts.productName.toLowerCase();
@@ -35,6 +36,7 @@ export class Paths {
       formatPath(opts.cwd),
     );
     this.projectConfigDir = path.join(opts.cwd, `.${productName}`);
+    this.fileHistoryDir = path.join(this.globalProjectDir, 'file-history');
   }
 
   getSessionLogPath(sessionId: string) {

@@ -14,6 +14,7 @@ import { createModelCommand } from './model';
 import { createOutputStyleCommand } from './output-style';
 import { createResumeCommand } from './resume';
 import { createReviewCommand } from './review';
+import { createRewindCommand } from './rewind';
 import { brainstormCommand } from './spec/brainstorm';
 import { executePlanCommand } from './spec/execute-plan';
 import { saveDesignCommand } from './spec/save-design';
@@ -41,6 +42,7 @@ export function createBuiltinCommands(opts: {
     createOutputStyleCommand(),
     createResumeCommand(),
     createReviewCommand(opts.language),
+    createRewindCommand(),
     createTerminalSetupCommand(),
     createBugCommand(),
     compactCommand,
