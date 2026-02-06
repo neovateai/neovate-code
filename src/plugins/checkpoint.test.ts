@@ -48,7 +48,7 @@ describe('checkpointPlugin', () => {
     };
   }
 
-  describe('toolResult hook', () => {
+  describe('toolUse hook', () => {
     test('tracks file on write tool execution', async () => {
       const context = createMockContext();
       const sessionId = 'test-session';
@@ -56,19 +56,17 @@ describe('checkpointPlugin', () => {
       const filePath = path.join(workDir, 'test.ts');
       fs.writeFileSync(filePath, 'content');
 
-      const toolResult = { llmContent: 'File written' };
+      const toolUse = {
+        name: TOOL_NAMES.WRITE,
+        params: { file_path: filePath },
+      };
       const opts = {
-        toolUse: {
-          name: TOOL_NAMES.WRITE,
-          params: { file_path: filePath },
-        },
-        approved: true,
         sessionId,
       };
 
-      await checkpointPlugin.toolResult!.call(
+      await checkpointPlugin.toolUse!.call(
         context as any,
-        toolResult as any,
+        toolUse as any,
         opts as any,
       );
 
@@ -83,19 +81,17 @@ describe('checkpointPlugin', () => {
       const filePath = path.join(workDir, 'edit.ts');
       fs.writeFileSync(filePath, 'original');
 
-      const toolResult = { llmContent: 'File edited' };
+      const toolUse = {
+        name: TOOL_NAMES.EDIT,
+        params: { file_path: filePath },
+      };
       const opts = {
-        toolUse: {
-          name: TOOL_NAMES.EDIT,
-          params: { file_path: filePath },
-        },
-        approved: true,
         sessionId,
       };
 
-      await checkpointPlugin.toolResult!.call(
+      await checkpointPlugin.toolUse!.call(
         context as any,
-        toolResult as any,
+        toolUse as any,
         opts as any,
       );
 
@@ -110,19 +106,17 @@ describe('checkpointPlugin', () => {
       const filePath = path.join(workDir, 'test.ts');
       fs.writeFileSync(filePath, 'content');
 
-      const toolResult = { llmContent: 'File written' };
+      const toolUse = {
+        name: TOOL_NAMES.WRITE,
+        params: { file_path: filePath },
+      };
       const opts = {
-        toolUse: {
-          name: TOOL_NAMES.WRITE,
-          params: { file_path: filePath },
-        },
-        approved: true,
         sessionId,
       };
 
-      await checkpointPlugin.toolResult!.call(
+      await checkpointPlugin.toolUse!.call(
         context as any,
-        toolResult as any,
+        toolUse as any,
         opts as any,
       );
 
@@ -135,21 +129,18 @@ describe('checkpointPlugin', () => {
       const sessionId = 'test-session';
 
       const filePath = path.join(workDir, 'test.ts');
-      fs.writeFileSync(filePath, 'content');
 
-      const toolResult = { llmContent: 'File written' };
+      const toolUse = {
+        name: 'read',
+        params: { file_path: filePath },
+      };
       const opts = {
-        toolUse: {
-          name: TOOL_NAMES.WRITE,
-          params: { file_path: filePath },
-        },
-        approved: false,
         sessionId,
       };
 
-      await checkpointPlugin.toolResult!.call(
+      await checkpointPlugin.toolUse!.call(
         context as any,
-        toolResult as any,
+        toolUse as any,
         opts as any,
       );
 
@@ -161,45 +152,41 @@ describe('checkpointPlugin', () => {
       const context = createMockContext();
       const sessionId = 'test-session';
 
-      const filePath = path.join(workDir, 'test.ts');
+      const filePath = path.join(workDir, 'nonexistent/test.ts');
 
-      const toolResult = { llmContent: 'Error', isError: true };
+      const toolUse = {
+        name: TOOL_NAMES.WRITE,
+        params: { file_path: filePath },
+      };
       const opts = {
-        toolUse: {
-          name: TOOL_NAMES.WRITE,
-          params: { file_path: filePath },
-        },
-        approved: true,
         sessionId,
       };
 
-      await checkpointPlugin.toolResult!.call(
+      await checkpointPlugin.toolUse!.call(
         context as any,
-        toolResult as any,
+        toolUse as any,
         opts as any,
       );
 
       const history = fileHistoryManager.get(sessionId);
-      expect(history).toBeUndefined();
+      expect(history).toBeDefined();
     });
 
     test('skips non-file-modifying tools', async () => {
       const context = createMockContext();
       const sessionId = 'test-session';
 
-      const toolResult = { llmContent: 'Read output' };
+      const toolUse = {
+        name: 'read',
+        params: { file_path: '/some/path' },
+      };
       const opts = {
-        toolUse: {
-          name: 'read',
-          params: { file_path: '/some/path' },
-        },
-        approved: true,
         sessionId,
       };
 
-      await checkpointPlugin.toolResult!.call(
+      await checkpointPlugin.toolUse!.call(
         context as any,
-        toolResult as any,
+        toolUse as any,
         opts as any,
       );
 
@@ -216,19 +203,17 @@ describe('checkpointPlugin', () => {
       const filePath = path.join(workDir, 'test.ts');
       fs.writeFileSync(filePath, 'content');
 
-      const toolResult = { llmContent: 'File written' };
+      const toolUse = {
+        name: TOOL_NAMES.WRITE,
+        params: { file_path: filePath },
+      };
       const opts = {
-        toolUse: {
-          name: TOOL_NAMES.WRITE,
-          params: { file_path: filePath },
-        },
-        approved: true,
         sessionId,
       };
 
-      await checkpointPlugin.toolResult!.call(
+      await checkpointPlugin.toolUse!.call(
         context as any,
-        toolResult as any,
+        toolUse as any,
         opts as any,
       );
 
@@ -245,26 +230,21 @@ describe('checkpointPlugin', () => {
       const filePath = path.join(workDir, 'test.ts');
       fs.writeFileSync(filePath, 'content');
 
-      const toolResult = { llmContent: 'File written' };
+      const toolUse = {
+        name: TOOL_NAMES.WRITE,
+        params: { file_path: filePath },
+      };
 
-      await checkpointPlugin.toolResult!.call(
+      await checkpointPlugin.toolUse!.call(
         context as any,
-        toolResult as any,
-        {
-          toolUse: { name: TOOL_NAMES.WRITE, params: { file_path: filePath } },
-          approved: true,
-          sessionId: 'session-1',
-        } as any,
+        toolUse as any,
+        { sessionId: 'session-1' } as any,
       );
 
-      await checkpointPlugin.toolResult!.call(
+      await checkpointPlugin.toolUse!.call(
         context as any,
-        toolResult as any,
-        {
-          toolUse: { name: TOOL_NAMES.WRITE, params: { file_path: filePath } },
-          approved: true,
-          sessionId: 'session-2',
-        } as any,
+        toolUse as any,
+        { sessionId: 'session-2' } as any,
       );
 
       expect(fileHistoryManager.get('session-1')).toBeDefined();
