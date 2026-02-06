@@ -149,11 +149,13 @@ export function ForkModal({
       }
     } else if (key.downArrow) {
       if (view === 'message-list') {
-        setSelectedIndex((prev) => Math.min(userMessages.length - 1, prev + 1));
+        setSelectedIndex((prev) => Math.min(userMessages.length, prev + 1));
       }
     } else if (key.return) {
       if (view === 'message-list') {
-        if (userMessages[selectedIndex]) {
+        if (selectedIndex === userMessages.length) {
+          onClose();
+        } else if (userMessages[selectedIndex]) {
           const message = userMessages[selectedIndex];
           const uuid = message.uuid;
           const snapshot = messageSnapshots.get(uuid);
@@ -250,41 +252,56 @@ export function ForkModal({
             <Text dimColor>No previous messages to jump to</Text>
           </Box>
         ) : (
-          userMessages.map((message, index) => {
-            const isSelected = index === selectedIndex;
-            const isCurrent = index === 0;
-            const { text: preview } = getMessagePreview(message);
-            const snapshot = messageSnapshots.get(message.uuid);
+          <>
+            {userMessages.map((message, index) => {
+              const isSelected = index === selectedIndex;
+              const { text: preview } = getMessagePreview(message);
+              const snapshot = messageSnapshots.get(message.uuid);
 
-            return (
-              <Box key={message.uuid} flexDirection="column" marginBottom={1}>
-                <Box>
-                  <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
-                    {isSelected ? '❯ ' : '  '}
-                  </Text>
-                  <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
-                    {preview}
-                  </Text>
-                </Box>
-
-                {snapshot && snapshot.filesChanged.length > 0 && (
-                  <Box paddingLeft={2}>
-                    <Text dimColor>{snapshot.filesChanged.join(', ')}</Text>
-                    <Text color="green"> +{snapshot.insertions}</Text>
-                    <Text color="red"> -{snapshot.deletions}</Text>
-                  </Box>
-                )}
-
-                {isCurrent && (
-                  <Box paddingLeft={2}>
-                    <Text dimColor italic>
-                      (current)
+              return (
+                <Box key={message.uuid} flexDirection="column" marginBottom={1}>
+                  <Box>
+                    <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
+                      {isSelected ? '❯ ' : '  '}
+                    </Text>
+                    <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
+                      {preview}
                     </Text>
                   </Box>
-                )}
-              </Box>
-            );
-          })
+
+                  {snapshot && snapshot.filesChanged.length > 0 && (
+                    <Box paddingLeft={2}>
+                      <Text dimColor>{snapshot.filesChanged.join(', ')}</Text>
+                      <Text color="green"> +{snapshot.insertions}</Text>
+                      <Text color="red"> -{snapshot.deletions}</Text>
+                    </Box>
+                  )}
+                </Box>
+              );
+            })}
+            <Box>
+              <Text
+                color={
+                  selectedIndex === userMessages.length
+                    ? UI_COLORS.ASK_PRIMARY
+                    : 'white'
+                }
+              >
+                {selectedIndex === userMessages.length ? '❯ ' : '  '}
+              </Text>
+              <Text
+                color={
+                  selectedIndex === userMessages.length
+                    ? UI_COLORS.ASK_PRIMARY
+                    : 'white'
+                }
+                dimColor={selectedIndex !== userMessages.length}
+                italic
+              >
+                (current)
+              </Text>
+            </Box>
+          </>
         )}
       </Box>
 
