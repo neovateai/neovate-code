@@ -115,6 +115,28 @@ export class FileHistory {
   }
 
   /**
+   * Track a new file (does not exist yet) before it gets created.
+   * Records backupFileName as null to indicate the file was newly created.
+   */
+  trackNewFile(filePath: string): void {
+    const relativePath = path.isAbsolute(filePath)
+      ? path.relative(this.cwd, filePath)
+      : filePath;
+
+    this.trackedFiles.add(relativePath);
+
+    const previousSnapshot = this.snapshots[this.snapshots.length - 1];
+    const previousBackup = previousSnapshot?.trackedFileBackups[relativePath];
+    const version = (previousBackup?.version || 0) + 1;
+
+    this.pendingBackups.set(relativePath, {
+      backupFileName: null,
+      version,
+      backupTime: new Date(),
+    });
+  }
+
+  /**
    * Check if message has a snapshot
    */
   hasSnapshot(messageId: string): boolean {

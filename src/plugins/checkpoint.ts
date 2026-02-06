@@ -9,6 +9,7 @@
  */
 
 import createDebug from 'debug';
+import fs from 'fs';
 import path from 'pathe';
 import { TOOL_NAMES } from '../constants';
 import { JsonlLogger } from '../jsonl';
@@ -76,12 +77,15 @@ export const checkpointPlugin: Plugin = {
         sessionLogPath,
       );
 
-      // Convert to absolute path for tracking (FileHistory will normalize it)
       const absolutePath = path.isAbsolute(filePath)
         ? filePath
         : path.join(this.cwd, filePath);
 
-      fileHistory.trackFile(absolutePath);
+      if (fs.existsSync(absolutePath)) {
+        fileHistory.trackFile(absolutePath);
+      } else {
+        fileHistory.trackNewFile(absolutePath);
+      }
       debug(`[${toolUse.name}] tracked file BEFORE modification: ${filePath}`);
     } catch (err) {
       debug(`Failed to track file: ${err}`);

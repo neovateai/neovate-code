@@ -22,7 +22,12 @@ export function registerSnapshotHandlers(
       data.sessionId,
       sessionLogPath,
     );
-    fileHistory.trackFile(data.filePath);
+
+    if (data.isNewFile) {
+      fileHistory.trackNewFile(data.filePath);
+    } else {
+      fileHistory.trackFile(data.filePath);
+    }
 
     return { success: true };
   });

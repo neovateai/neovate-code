@@ -1190,6 +1190,7 @@ type SnapshotTrackFileInput = {
   cwd: string;
   sessionId: string;
   filePath: string; // Can be absolute or relative path
+  isNewFile?: boolean; // True if the file does not exist yet (will be created)
 };
 
 type SnapshotCreateInput = {
