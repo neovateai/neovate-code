@@ -40,6 +40,13 @@ export function registerSnapshotHandlers(
     );
     const snapshot = fileHistory.createSnapshot(data.messageId);
 
+    if (!snapshot) {
+      return {
+        success: true,
+        data: { snapshot: null },
+      };
+    }
+
     // Persist snapshot to session.jsonl
     const fileCount = Object.keys(snapshot.trackedFileBackups).length;
     if (fileCount > 0) {

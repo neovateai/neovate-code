@@ -137,7 +137,17 @@ export const checkpointPlugin: Plugin = {
         return;
       }
 
+      // Check if any files were modified this turn
+      if (!fileHistory.hasPendingBackups()) {
+        debug('Skipping snapshot: no files modified this turn');
+        return;
+      }
+
       const snapshot = fileHistory.createSnapshot(lastMessage.uuid);
+      if (!snapshot) {
+        debug('Skipping snapshot: createSnapshot returned null');
+        return;
+      }
       const fileCount = Object.keys(snapshot.trackedFileBackups).length;
 
       debug(
@@ -145,17 +155,15 @@ export const checkpointPlugin: Plugin = {
       );
 
       // Persist snapshot to session.jsonl
-      if (fileCount > 0) {
-        try {
-          const logPath = this.paths.getSessionLogPath(opts.sessionId);
-          const jsonlLogger = new JsonlLogger({ filePath: logPath });
-          const serializedSnapshot = serializeSnapshot(snapshot);
-          jsonlLogger.addSnapshot(serializedSnapshot);
-          debug(`Persisted snapshot to session.jsonl: ${logPath}`);
-        } catch (persistErr) {
-          debug(`Failed to persist snapshot to session.jsonl: ${persistErr}`);
-          // Don't fail the stop hook, just log the error
-        }
+      try {
+        const logPath = this.paths.getSessionLogPath(opts.sessionId);
+        const jsonlLogger = new JsonlLogger({ filePath: logPath });
+        const serializedSnapshot = serializeSnapshot(snapshot);
+        jsonlLogger.addSnapshot(serializedSnapshot);
+        debug(`Persisted snapshot to session.jsonl: ${logPath}`);
+      } catch (persistErr) {
+        debug(`Failed to persist snapshot to session.jsonl: ${persistErr}`);
+        // Don't fail the stop hook, just log the error
       }
     } catch (err) {
       debug(`Failed to create snapshot: ${err}`);

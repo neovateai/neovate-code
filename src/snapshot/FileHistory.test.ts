@@ -76,6 +76,9 @@ describe('FileHistory', () => {
         backupRoot: backupDir,
       });
 
+      const filePath = path.join(workDir, 'test.ts');
+      fs.writeFileSync(filePath, 'content');
+      history.trackFile(filePath);
       history.createSnapshot('existing-msg');
       expect(history.hasSnapshot('existing-msg')).toBe(true);
     });
@@ -92,7 +95,7 @@ describe('FileHistory', () => {
   });
 
   describe('createSnapshot', () => {
-    test('creates empty snapshot when no files tracked', () => {
+    test('returns null when no files tracked', () => {
       const history = new FileHistory({
         cwd: workDir,
         sessionId,
@@ -101,9 +104,7 @@ describe('FileHistory', () => {
 
       const snapshot = history.createSnapshot('msg-1');
 
-      expect(snapshot.messageId).toBe('msg-1');
-      expect(snapshot.timestamp).toBeInstanceOf(Date);
-      expect(Object.keys(snapshot.trackedFileBackups)).toHaveLength(0);
+      expect(snapshot).toBeNull();
     });
 
     test('creates backup of tracked file', () => {
@@ -119,8 +120,9 @@ describe('FileHistory', () => {
 
       const snapshot = history.createSnapshot('msg-1');
 
-      expect(Object.keys(snapshot.trackedFileBackups)).toContain('test.ts');
-      const backup = snapshot.trackedFileBackups['test.ts'];
+      expect(snapshot).not.toBeNull();
+      expect(Object.keys(snapshot!.trackedFileBackups)).toContain('test.ts');
+      const backup = snapshot!.trackedFileBackups['test.ts'];
       expect(backup.backupFileName).toMatch(/@v1$/);
       expect(backup.version).toBe(1);
     });
@@ -137,12 +139,15 @@ describe('FileHistory', () => {
       history.trackFile(filePath);
 
       const snapshot1 = history.createSnapshot('msg-1');
-      expect(snapshot1.trackedFileBackups['test.ts'].version).toBe(1);
+      expect(snapshot1).not.toBeNull();
+      expect(snapshot1!.trackedFileBackups['test.ts'].version).toBe(1);
 
       fs.writeFileSync(filePath, 'version 2 content - longer');
+      history.trackFile(filePath);
 
       const snapshot2 = history.createSnapshot('msg-2');
-      expect(snapshot2.trackedFileBackups['test.ts'].version).toBe(2);
+      expect(snapshot2).not.toBeNull();
+      expect(snapshot2!.trackedFileBackups['test.ts'].version).toBe(2);
     });
 
     test('handles deleted file with null backupFileName', () => {
@@ -157,17 +162,20 @@ describe('FileHistory', () => {
       history.trackFile(filePath);
 
       const snapshot1 = history.createSnapshot('msg-1');
+      expect(snapshot1).not.toBeNull();
       expect(
-        snapshot1.trackedFileBackups['deleted.ts'].backupFileName,
+        snapshot1!.trackedFileBackups['deleted.ts'].backupFileName,
       ).not.toBeNull();
 
       fs.unlinkSync(filePath);
+      history.trackFile(filePath);
 
       const snapshot2 = history.createSnapshot('msg-2');
+      expect(snapshot2).not.toBeNull();
       expect(
-        snapshot2.trackedFileBackups['deleted.ts'].backupFileName,
+        snapshot2!.trackedFileBackups['deleted.ts'].backupFileName,
       ).toBeNull();
-      expect(snapshot2.trackedFileBackups['deleted.ts'].version).toBe(2);
+      expect(snapshot2!.trackedFileBackups['deleted.ts'].version).toBe(2);
     });
   });
 
@@ -256,6 +264,33 @@ describe('FileHistory', () => {
       expect(result.filesChanged).toHaveLength(2);
       expect(fs.readFileSync(file1, 'utf-8')).toBe('file1 v1');
       expect(fs.readFileSync(file2, 'utf-8')).toBe('file2 v1');
+    });
+
+    test('counts insertions for newly created files after snapshot', () => {
+      const history = new FileHistory({
+        cwd: workDir,
+        sessionId,
+        backupRoot: backupDir,
+      });
+
+      const existingFile = path.join(workDir, 'existing.ts');
+      fs.writeFileSync(existingFile, 'line1\nline2');
+      history.trackFile(existingFile);
+      history.createSnapshot('msg-1');
+
+      fs.writeFileSync(existingFile, 'line1\nline2\nline3');
+      history.trackFile(existingFile);
+
+      const newFile = path.join(workDir, 'new-file.ts');
+      fs.writeFileSync(newFile, 'new1\nnew2\nnew3\nnew4');
+      history.trackFile(newFile);
+      history.createSnapshot('msg-2');
+
+      const result = history.previewRewind('msg-1');
+
+      expect(result.success).toBe(true);
+      expect(result.filesChanged).toContain('existing.ts');
+      expect(result.insertions).toBeGreaterThan(0);
     });
   });
 });

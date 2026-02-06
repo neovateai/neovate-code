@@ -54,16 +54,17 @@ describe('Snapshot Integration', () => {
 
     // Step 2: Create snapshot for message 'msg-001'
     const snapshot1 = fileHistory.createSnapshot('msg-001');
-    expect(snapshot1.messageId).toBe('msg-001');
-    expect(Object.keys(snapshot1.trackedFileBackups).length).toBe(2);
+    expect(snapshot1).not.toBeNull();
+    expect(snapshot1!.messageId).toBe('msg-001');
+    expect(Object.keys(snapshot1!.trackedFileBackups).length).toBe(2);
 
     // Step 3: Persist snapshot to JSONL
     const jsonlLogger = new JsonlLogger({ filePath: logPath });
     jsonlLogger.addSnapshot({
-      messageId: snapshot1.messageId,
-      timestamp: snapshot1.timestamp.toISOString(),
+      messageId: snapshot1!.messageId,
+      timestamp: snapshot1!.timestamp.toISOString(),
       trackedFileBackups: Object.fromEntries(
-        Object.entries(snapshot1.trackedFileBackups).map(([p, meta]) => [
+        Object.entries(snapshot1!.trackedFileBackups).map(([p, meta]) => [
           p,
           {
             backupFileName: meta.backupFileName,
@@ -77,16 +78,19 @@ describe('Snapshot Integration', () => {
     // Step 4: Modify files
     fs.writeFileSync(file1, 'modified content 1');
     fs.writeFileSync(file2, 'modified content 2');
+    fileHistory.trackFile(file1);
+    fileHistory.trackFile(file2);
 
     // Step 5: Create second snapshot
     const snapshot2 = fileHistory.createSnapshot('msg-002');
-    expect(snapshot2.messageId).toBe('msg-002');
+    expect(snapshot2).not.toBeNull();
+    expect(snapshot2!.messageId).toBe('msg-002');
 
     jsonlLogger.addSnapshot({
-      messageId: snapshot2.messageId,
-      timestamp: snapshot2.timestamp.toISOString(),
+      messageId: snapshot2!.messageId,
+      timestamp: snapshot2!.timestamp.toISOString(),
       trackedFileBackups: Object.fromEntries(
-        Object.entries(snapshot2.trackedFileBackups).map(([p, meta]) => [
+        Object.entries(snapshot2!.trackedFileBackups).map(([p, meta]) => [
           p,
           {
             backupFileName: meta.backupFileName,
@@ -138,9 +142,10 @@ describe('Snapshot Integration', () => {
     fileHistory.trackFile('test.txt');
 
     const snapshot = fileHistory.createSnapshot('msg-001');
+    expect(snapshot).not.toBeNull();
     // Should only have one entry
-    expect(Object.keys(snapshot.trackedFileBackups).length).toBe(1);
-    expect(snapshot.trackedFileBackups['test.txt']).toBeDefined();
+    expect(Object.keys(snapshot!.trackedFileBackups).length).toBe(1);
+    expect(snapshot!.trackedFileBackups['test.txt']).toBeDefined();
   });
 
   it('should handle nested directory files', () => {
@@ -159,9 +164,10 @@ describe('Snapshot Integration', () => {
     fileHistory.trackFile(nestedFile);
 
     const snapshot = fileHistory.createSnapshot('msg-001');
-    expect(Object.keys(snapshot.trackedFileBackups).length).toBe(1);
+    expect(snapshot).not.toBeNull();
+    expect(Object.keys(snapshot!.trackedFileBackups).length).toBe(1);
     expect(
-      snapshot.trackedFileBackups['src/components/Button.tsx'],
+      snapshot!.trackedFileBackups['src/components/Button.tsx'],
     ).toBeDefined();
 
     // Modify file

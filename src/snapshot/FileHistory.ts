@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { diffLines } from 'diff';
 import fs from 'fs';
 import { homedir } from 'os';
 import path from 'pathe';
@@ -211,39 +212,27 @@ export class FileHistory {
   }
 
   /**
-   * Create snapshot using pending backups created by trackFile.
-   * If no pending backup exists for a file, creates one now (fallback).
+   * Check if there are pending backups waiting to be snapshotted.
+   * Use this to determine if a snapshot should be created for this turn.
    */
-  createSnapshot(messageId: string): Snapshot {
+  hasPendingBackups(): boolean {
+    return this.pendingBackups.size > 0;
+  }
+
+  /**
+   * Create snapshot using pending backups created by trackFile.
+   * Only files with pending backups (modified this turn) are included.
+   * Returns null if no files were modified this turn.
+   */
+  createSnapshot(messageId: string): Snapshot | null {
+    if (this.pendingBackups.size === 0) {
+      return null;
+    }
+
     const trackedFileBackups: Record<string, FileBackupMeta> = {};
-    const previousSnapshot = this.snapshots[this.snapshots.length - 1];
 
-    for (const relativePath of this.trackedFiles) {
-      // Check if we have a pending backup from trackFile
-      const pendingBackup = this.pendingBackups.get(relativePath);
-
-      if (pendingBackup) {
-        // Use the backup created before file modification
-        trackedFileBackups[relativePath] = pendingBackup;
-      } else {
-        // Fallback: no pending backup, check if file changed
-        const currentPath = path.join(this.cwd, relativePath);
-        const previousBackup =
-          previousSnapshot?.trackedFileBackups[relativePath];
-        const previousBackupFileName = previousBackup?.backupFileName || null;
-
-        if (this.hasFileChanged(currentPath, previousBackupFileName)) {
-          // File changed, create new backup (this is AFTER modification, less ideal)
-          const version = (previousBackup?.version || 0) + 1;
-          trackedFileBackups[relativePath] = this.createBackup(
-            currentPath,
-            version,
-          );
-        } else {
-          // File unchanged, reuse previous snapshot's backup reference
-          trackedFileBackups[relativePath] = previousBackup!;
-        }
-      }
+    for (const [relativePath, pendingBackup] of this.pendingBackups) {
+      trackedFileBackups[relativePath] = pendingBackup;
     }
 
     // Clear pending backups after snapshot creation
@@ -296,7 +285,7 @@ export class FileHistory {
   }
 
   /**
-   * Calculate file diff (simple line count)
+   * Calculate file diff using real line-by-line comparison
    */
   private calculateDiff(
     currentPath: string,
@@ -313,17 +302,28 @@ export class FileHistory {
         return { insertions: 0, deletions: 0 };
       }
 
-      const currentLines = currentExists
-        ? fs.readFileSync(currentPath, 'utf-8').split('\n').length
-        : 0;
-      const backupLines = backupExists
-        ? fs.readFileSync(backupPath!, 'utf-8').split('\n').length
-        : 0;
+      const currentContent = currentExists
+        ? fs.readFileSync(currentPath, 'utf-8')
+        : '';
+      const backupContent = backupExists
+        ? fs.readFileSync(backupPath!, 'utf-8')
+        : '';
 
-      return {
-        insertions: Math.max(0, backupLines - currentLines),
-        deletions: Math.max(0, currentLines - backupLines),
-      };
+      const changes = diffLines(backupContent, currentContent);
+
+      let insertions = 0;
+      let deletions = 0;
+
+      for (const change of changes) {
+        const lineCount = change.count ?? 0;
+        if (change.added) {
+          insertions += lineCount;
+        } else if (change.removed) {
+          deletions += lineCount;
+        }
+      }
+
+      return { insertions, deletions };
     } catch {
       return { insertions: 0, deletions: 0 };
     }
@@ -402,6 +402,17 @@ export class FileHistory {
         }
 
         filesChanged.push(relativePath);
+      }
+
+      for (const relativePath of this.trackedFiles) {
+        if (!snapshot.trackedFileBackups[relativePath]) {
+          const targetPath = path.join(this.cwd, relativePath);
+          if (fs.existsSync(targetPath)) {
+            const diff = this.calculateDiff(targetPath, null);
+            totalInsertions += diff.insertions;
+            filesChanged.push(relativePath);
+          }
+        }
       }
 
       return {
