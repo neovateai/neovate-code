@@ -371,13 +371,29 @@ function ConfirmRewindView({
     [hasCodeChanges],
   );
 
+  const [focusedValue, setFocusedValue] = React.useState<string>(
+    selectOptions[0].value,
+  );
+
+  React.useEffect(() => {
+    setFocusedValue(selectOptions[0].value);
+  }, [selectOptions]);
+
   const handleChange = (value: string | string[]) => {
     if (typeof value === 'string') {
       onConfirm(value as 'both' | 'conversation' | 'code' | 'cancel');
     }
   };
 
+  const willRestoreConversation =
+    focusedValue === 'both' || focusedValue === 'conversation';
+  const willRestoreCode = focusedValue === 'both' || focusedValue === 'code';
+
   const fileChangeSummary = React.useMemo(() => {
+    if (!willRestoreCode) {
+      return <Text dimColor>The code will be unchanged.</Text>;
+    }
+
     const { filesChanged, insertions, deletions } = rewindPreview;
 
     if (filesChanged.length === 0) {
@@ -405,7 +421,7 @@ function ConfirmRewindView({
         <Text dimColor> in {filesChanged.length} files.</Text>
       </Box>
     );
-  }, [rewindPreview]);
+  }, [rewindPreview, willRestoreCode]);
 
   return (
     <Box flexDirection="column">
@@ -440,7 +456,11 @@ function ConfirmRewindView({
       </Box>
 
       <Box>
-        <Text dimColor>The conversation will be forked.</Text>
+        <Text dimColor>
+          {willRestoreConversation
+            ? 'The conversation will be forked.'
+            : 'The conversation will be unchanged.'}
+        </Text>
       </Box>
       <Box marginBottom={1}>{fileChangeSummary}</Box>
 
@@ -448,6 +468,7 @@ function ConfirmRewindView({
         options={selectOptions}
         mode="single"
         onChange={handleChange}
+        onFocus={setFocusedValue}
         onCancel={onBack}
       />
 
