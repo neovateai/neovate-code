@@ -71,17 +71,15 @@ export function ForkModal({
   // Filter to user messages only and reverse for chronological order (newest first)
   const userMessages = React.useMemo(
     () =>
-      messages
-        .filter((m) => {
-          if (m.role !== 'user') return false;
-          if ('hidden' in m && m.hidden) return false;
-          if (isCanceledMessage(m)) return false;
-          const text = getMessageText(m);
-          if (text === CANCELED_MESSAGE_TEXT) return false;
-          if (hasBashStdout(text)) return false;
-          return true;
-        })
-        .reverse(),
+      messages.filter((m) => {
+        if (m.role !== 'user') return false;
+        if ('hidden' in m && m.hidden) return false;
+        if (isCanceledMessage(m)) return false;
+        const text = getMessageText(m);
+        if (text === CANCELED_MESSAGE_TEXT) return false;
+        if (hasBashStdout(text)) return false;
+        return true;
+      }),
     [messages],
   );
 
@@ -160,13 +158,16 @@ export function ForkModal({
           const uuid = message.uuid;
           const snapshot = messageSnapshots.get(uuid);
 
-          if (snapshot && snapshot.filesChanged.length > 0) {
-            setSelectedMessage(message);
-            setRewindPreview(snapshot);
-            setView('confirm-rewind');
-          } else {
-            onSelect(uuid, false);
-          }
+          setSelectedMessage(message);
+          setRewindPreview(
+            snapshot ?? {
+              success: true,
+              filesChanged: [],
+              insertions: 0,
+              deletions: 0,
+            },
+          );
+          setView('confirm-rewind');
         }
       }
     }
@@ -269,11 +270,15 @@ export function ForkModal({
                     </Text>
                   </Box>
 
-                  {snapshot && snapshot.filesChanged.length > 0 && (
+                  {snapshot && snapshot.filesChanged.length > 0 ? (
                     <Box paddingLeft={2}>
                       <Text dimColor>{snapshot.filesChanged.join(', ')}</Text>
                       <Text color="green"> +{snapshot.insertions}</Text>
                       <Text color="red"> -{snapshot.deletions}</Text>
+                    </Box>
+                  ) : (
+                    <Box paddingLeft={2}>
+                      <Text dimColor>No code changes</Text>
                     </Box>
                   )}
                 </Box>
@@ -336,28 +341,35 @@ function ConfirmRewindView({
   const relativeTime = getRelativeTime(message.timestamp);
   const { columns } = useTerminalSize();
 
-  const selectOptions: SelectOption[] = [
-    {
-      type: 'text',
-      value: 'both',
-      label: '1. Restore code and conversation',
-    },
-    {
-      type: 'text',
-      value: 'conversation',
-      label: '2. Restore conversation',
-    },
-    {
-      type: 'text',
-      value: 'code',
-      label: '3. Restore code',
-    },
-    {
-      type: 'text',
-      value: 'cancel',
-      label: '4. Never mind',
-    },
-  ];
+  const hasCodeChanges = rewindPreview.filesChanged.length > 0;
+
+  const selectOptions: SelectOption[] = React.useMemo(
+    () =>
+      hasCodeChanges
+        ? [
+            {
+              type: 'text',
+              value: 'both',
+              label: 'Restore code and conversation',
+            },
+            {
+              type: 'text',
+              value: 'conversation',
+              label: 'Restore conversation',
+            },
+            { type: 'text', value: 'code', label: 'Restore code' },
+            { type: 'text', value: 'cancel', label: 'Never mind' },
+          ]
+        : [
+            {
+              type: 'text',
+              value: 'conversation',
+              label: 'Restore conversation',
+            },
+            { type: 'text', value: 'cancel', label: 'Never mind' },
+          ],
+    [hasCodeChanges],
+  );
 
   const handleChange = (value: string | string[]) => {
     if (typeof value === 'string') {
@@ -369,28 +381,28 @@ function ConfirmRewindView({
     const { filesChanged, insertions, deletions } = rewindPreview;
 
     if (filesChanged.length === 0) {
-      return 'No files to restore.';
+      return <Text dimColor>The code will be unchanged.</Text>;
     }
 
     if (filesChanged.length === 1) {
       return (
         <Box>
-          <Text>The code will be restored </Text>
+          <Text dimColor>The code will be restored </Text>
           <Text color="green">+{insertions}</Text>
-          <Text> </Text>
+          <Text dimColor> </Text>
           <Text color="red">-{deletions}</Text>
-          <Text> in {filesChanged[0]}.</Text>
+          <Text dimColor> in {filesChanged[0]}.</Text>
         </Box>
       );
     }
 
     return (
       <Box>
-        <Text>The code will be restored </Text>
+        <Text dimColor>The code will be restored </Text>
         <Text color="green">+{insertions}</Text>
-        <Text> </Text>
+        <Text dimColor> </Text>
         <Text color="red">-{deletions}</Text>
-        <Text> in {filesChanged.length} files.</Text>
+        <Text dimColor> in {filesChanged.length} files.</Text>
       </Box>
     );
   }, [rewindPreview]);
@@ -403,30 +415,32 @@ function ConfirmRewindView({
         </Text>
       </Box>
 
-      <Box marginBottom={1} marginTop={1}>
+      <Box marginTop={1} marginBottom={1}>
         <Text bold color={UI_COLORS.ASK_PRIMARY}>
           Rewind
         </Text>
       </Box>
 
-      <Box marginBottom={1}>
+      <Box>
         <Text>
           Confirm you want to restore to the point before you sent this message:
         </Text>
       </Box>
 
-      <Box marginBottom={1} flexDirection="column">
+      <Box flexDirection="column" marginTop={1} marginBottom={1}>
         <Box>
           <Text dimColor>│ </Text>
           <Text>{messagePreview}</Text>
         </Box>
-        <Box>
-          <Text dimColor>│ ({relativeTime})</Text>
-        </Box>
+        {relativeTime && (
+          <Box>
+            <Text dimColor>│ ({relativeTime})</Text>
+          </Box>
+        )}
       </Box>
 
-      <Box marginBottom={1}>
-        <Text>The conversation will be forked.</Text>
+      <Box>
+        <Text dimColor>The conversation will be forked.</Text>
       </Box>
       <Box marginBottom={1}>{fileChangeSummary}</Box>
 
@@ -437,11 +451,13 @@ function ConfirmRewindView({
         onCancel={onBack}
       />
 
-      <Box marginTop={1}>
-        <Text dimColor>
-          ⚠ Rewinding does not affect files edited manually or via bash.
-        </Text>
-      </Box>
+      {hasCodeChanges && (
+        <Box marginTop={1}>
+          <Text dimColor>
+            ⚠ Rewinding does not affect files edited manually or via bash.
+          </Text>
+        </Box>
+      )}
 
       <Box marginTop={1}>
         <Text dimColor>Enter to continue · Esc to exit</Text>
