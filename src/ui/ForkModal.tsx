@@ -270,7 +270,9 @@ export function ForkModal({
                     </Text>
                   </Box>
 
-                  {snapshot && snapshot.filesChanged.length > 0 ? (
+                  {snapshot &&
+                  snapshot.filesChanged.length > 0 &&
+                  (snapshot.insertions > 0 || snapshot.deletions > 0) ? (
                     <Box paddingLeft={2}>
                       <Text dimColor>{snapshot.filesChanged.join(', ')}</Text>
                       <Text color="green"> +{snapshot.insertions}</Text>
@@ -341,7 +343,9 @@ function ConfirmRewindView({
   const relativeTime = getRelativeTime(message.timestamp);
   const { columns } = useTerminalSize();
 
-  const hasCodeChanges = rewindPreview.filesChanged.length > 0;
+  const hasCodeChanges =
+    rewindPreview.filesChanged.length > 0 &&
+    (rewindPreview.insertions > 0 || rewindPreview.deletions > 0);
 
   const selectOptions: SelectOption[] = React.useMemo(
     () =>
