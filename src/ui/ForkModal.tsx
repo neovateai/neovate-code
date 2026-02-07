@@ -3,6 +3,7 @@ import React from 'react';
 import { CANCELED_MESSAGE_TEXT } from '../constants';
 import type { Message } from '../message';
 import { isCanceledMessage } from '../message';
+import { isSlashCommand } from '../slashCommand';
 import type { RewindResult } from '../snapshot/types';
 import { UI_COLORS } from './constants';
 import { SelectInput, type SelectOption } from './SelectInput';
@@ -77,6 +78,7 @@ export function ForkModal({
         if (isCanceledMessage(m)) return false;
         const text = getMessageText(m);
         if (text === CANCELED_MESSAGE_TEXT) return false;
+        if (isSlashCommand(text)) return false;
         if (hasBashStdout(text)) return false;
         return true;
       }),
