@@ -989,6 +989,25 @@ type SkillsInstallOutput =
     };
 
 // ============================================================================
+// Agents Handlers
+// ============================================================================
+
+type AgentsListInput = {
+  cwd: string;
+};
+type AgentsListOutput = {
+  success: boolean;
+  data: {
+    agents: Array<{
+      agentType: string;
+      description: string;
+      color?: string;
+    }>;
+  };
+  error?: string;
+};
+
+// ============================================================================
 // Slash Command Handlers
 // ============================================================================
 
@@ -1543,6 +1562,9 @@ export type HandlerMap = {
   'skills.remove': { input: SkillsRemoveInput; output: SkillsRemoveOutput };
   'skills.preview': { input: SkillsPreviewInput; output: SkillsPreviewOutput };
   'skills.install': { input: SkillsInstallInput; output: SkillsInstallOutput };
+
+  // Agents handlers
+  'agents.list': { input: AgentsListInput; output: AgentsListOutput };
 
   // Slash command handlers
   'slashCommand.list': {

@@ -95,7 +95,7 @@ export function ChatInput() {
 
   const showSuggestions =
     slashCommands.suggestions.length > 0 ||
-    fileSuggestion.matchedPaths.length > 0;
+    fileSuggestion.suggestions.length > 0;
 
   const [reverseSearchMatch, setReverseSearchMatch] = useState('');
 
@@ -295,20 +295,20 @@ export function ChatInput() {
           }}
         </Suggestion>
       )}
-      {fileSuggestion.matchedPaths.length > 0 && (
+      {fileSuggestion.suggestions.length > 0 && (
         <Suggestion
-          suggestions={fileSuggestion.matchedPaths}
+          suggestions={fileSuggestion.suggestions}
           selectedIndex={fileSuggestion.selectedIndex}
           maxVisible={10}
         >
           {(suggestion, isSelected, _visibleSuggestions) => {
             const maxNameLength = Math.max(
-              ...fileSuggestion.matchedPaths.map((s) => s.length),
+              ...fileSuggestion.suggestions.map((s) => s.displayText.length),
             );
             return (
               <SuggestionItem
-                name={suggestion}
-                description={''}
+                name={suggestion.displayText}
+                description={suggestion.description ?? ''}
                 isSelected={isSelected}
                 firstColumnWidth={Math.min(maxNameLength + 4, columns - 10)}
                 maxWidth={columns}
@@ -317,7 +317,7 @@ export function ChatInput() {
           }}
         </Suggestion>
       )}
-      {fileSuggestion.isLoading && fileSuggestion.matchedPaths.length === 0 && (
+      {fileSuggestion.isLoading && fileSuggestion.suggestions.length === 0 && (
         <SearchingIndicator />
       )}
     </Box>
