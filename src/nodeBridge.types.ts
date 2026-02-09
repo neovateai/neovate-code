@@ -1180,11 +1180,37 @@ type UtilsNotifyOutput = SuccessResponse;
 // Snapshot Handlers
 // ============================================================================
 
-import type {
-  RewindResult,
-  SerializedSnapshot,
-  SnapshotPreview,
-} from './snapshot/types';
+type SnapshotPreview = {
+  messageId: string;
+  timestamp: Date;
+  fileCount: number;
+  changes?: {
+    insertions: number;
+    deletions: number;
+    filesChanged: number;
+  };
+};
+
+type RewindResult = {
+  success: boolean;
+  error?: string;
+  filesChanged: string[];
+  insertions: number;
+  deletions: number;
+};
+
+type SerializedSnapshot = {
+  messageId: string;
+  timestamp: string;
+  trackedFileBackups: Record<
+    string,
+    {
+      backupFileName: string | null;
+      version: number;
+      backupTime: string;
+    }
+  >;
+};
 
 type SnapshotTrackFileInput = {
   cwd: string;
