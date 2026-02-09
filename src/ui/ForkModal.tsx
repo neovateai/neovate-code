@@ -82,51 +82,96 @@ export function ForkModal({
     null,
   );
   const [messageSnapshots, setMessageSnapshots] = React.useState<
-    Map<string, RewindResult | null>
+    Map<string, { own: RewindResult | null; cumulative: RewindResult | null }>
   >(new Map());
   const { columns } = useTerminalSize();
 
   // Preload snapshots for all messages
   React.useEffect(() => {
     const loadSnapshots = async () => {
-      const newSnapshots = new Map<string, RewindResult | null>();
+      const newSnapshots = new Map<
+        string,
+        { own: RewindResult | null; cumulative: RewindResult | null }
+      >();
+
+      const userMessageIndex = new Map<string, number>();
+      messages.forEach((m, idx) => {
+        if (m.role === 'user') {
+          userMessageIndex.set(m.uuid, idx);
+        }
+      });
+
+      const assistantsWithSnapshots: { uuid: string; index: number }[] = [];
+      for (let i = 0; i < messages.length; i++) {
+        const m = messages[i];
+        if (m.role === 'assistant') {
+          try {
+            const hasResult = await bridge.request('snapshot.has', {
+              cwd,
+              sessionId,
+              messageId: m.uuid,
+            });
+            if (hasResult.success && hasResult.data?.hasSnapshot) {
+              assistantsWithSnapshots.push({ uuid: m.uuid, index: i });
+            }
+          } catch {}
+        }
+      }
 
       for (const message of userMessages) {
-        const targetAssistantUuid = findLastAssistantAfterUser(
+        const msgIndex = userMessageIndex.get(message.uuid) ?? -1;
+
+        const ownAssistantUuid = findLastAssistantAfterUser(
           messages,
           message.uuid,
         );
+        let ownSnapshot: RewindResult | null = null;
 
-        if (!targetAssistantUuid) {
-          newSnapshots.set(message.uuid, null);
-          continue;
-        }
-
-        try {
-          const hasResult = await bridge.request('snapshot.has', {
-            cwd,
-            sessionId,
-            messageId: targetAssistantUuid,
-          });
-
-          if (!hasResult.success || !hasResult.data?.hasSnapshot) {
-            newSnapshots.set(message.uuid, null);
-            continue;
-          }
-
-          const previewResult = await bridge.request('snapshot.previewRewind', {
-            cwd,
-            sessionId,
-            messageId: targetAssistantUuid,
-          });
-
-          newSnapshots.set(
-            message.uuid,
-            previewResult.success ? previewResult.data.result : null,
+        if (ownAssistantUuid) {
+          const hasOwn = assistantsWithSnapshots.find(
+            (a) => a.uuid === ownAssistantUuid,
           );
-        } catch {
-          newSnapshots.set(message.uuid, null);
+          if (hasOwn) {
+            try {
+              const ownResult = await bridge.request('snapshot.previewRewind', {
+                cwd,
+                sessionId,
+                messageId: ownAssistantUuid,
+                cumulative: false,
+              });
+              ownSnapshot = ownResult.success ? ownResult.data.result : null;
+            } catch {}
+          }
         }
+
+        const firstSnapshotAfter = assistantsWithSnapshots.find(
+          (a) => a.index > msgIndex,
+        );
+
+        let cumulativeSnapshot: RewindResult | null = null;
+
+        if (firstSnapshotAfter) {
+          try {
+            const previewResult = await bridge.request(
+              'snapshot.previewRewind',
+              {
+                cwd,
+                sessionId,
+                messageId: firstSnapshotAfter.uuid,
+                cumulative: true,
+              },
+            );
+
+            cumulativeSnapshot = previewResult.success
+              ? previewResult.data.result
+              : null;
+          } catch {}
+        }
+
+        newSnapshots.set(message.uuid, {
+          own: ownSnapshot,
+          cumulative: cumulativeSnapshot,
+        });
       }
 
       setMessageSnapshots(newSnapshots);
@@ -159,11 +204,11 @@ export function ForkModal({
         } else if (userMessages[selectedIndex]) {
           const message = userMessages[selectedIndex];
           const uuid = message.uuid;
-          const snapshot = messageSnapshots.get(uuid);
+          const snapshotData = messageSnapshots.get(uuid);
 
           setSelectedMessage(message);
           setRewindPreview(
-            snapshot ?? {
+            snapshotData?.cumulative ?? {
               success: true,
               filesChanged: [],
               insertions: 0,
@@ -260,7 +305,8 @@ export function ForkModal({
             {userMessages.map((message, index) => {
               const isSelected = index === selectedIndex;
               const { text: preview } = getMessagePreview(message);
-              const snapshot = messageSnapshots.get(message.uuid);
+              const snapshotData = messageSnapshots.get(message.uuid);
+              const snapshot = snapshotData?.own;
 
               return (
                 <Box key={message.uuid} flexDirection="column" marginBottom={1}>

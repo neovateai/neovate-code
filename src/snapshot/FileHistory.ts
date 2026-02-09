@@ -388,12 +388,16 @@ export class FileHistory {
   }
 
   /**
-   * Rewind to specified message's snapshot
+   * Rewind to specified message's snapshot.
+   * Restores files to the state AT the target snapshot, reverting all changes
+   * made by snapshots after the target.
    */
   rewindToMessage(messageId: string, dryRun: boolean = false): RewindResult {
-    const snapshot = this.snapshots.find((s) => s.messageId === messageId);
+    const snapshotIndex = this.snapshots.findIndex(
+      (s) => s.messageId === messageId,
+    );
 
-    if (!snapshot) {
+    if (snapshotIndex === -1) {
       return {
         success: false,
         error: `Snapshot not found for message: ${messageId}`,
@@ -403,36 +407,39 @@ export class FileHistory {
       };
     }
 
+    const targetSnapshot = this.snapshots[snapshotIndex];
+    const snapshotsAfterTarget = this.snapshots.slice(snapshotIndex + 1);
+
+    const allAffectedFiles = new Set<string>();
+
+    Object.keys(targetSnapshot.trackedFileBackups).forEach((f) =>
+      allAffectedFiles.add(f),
+    );
+    for (const snapshot of snapshotsAfterTarget) {
+      Object.keys(snapshot.trackedFileBackups).forEach((f) =>
+        allAffectedFiles.add(f),
+      );
+    }
+
     const filesChanged: string[] = [];
     let totalInsertions = 0;
     let totalDeletions = 0;
 
     try {
-      for (const [relativePath, backupMeta] of Object.entries(
-        snapshot.trackedFileBackups,
-      )) {
+      for (const relativePath of allAffectedFiles) {
         const targetPath = path.join(this.cwd, relativePath);
+        const targetBackup = targetSnapshot.trackedFileBackups[relativePath];
+        const targetBackupFileName = targetBackup?.backupFileName ?? null;
 
-        // Calculate diff
-        const diff = this.calculateDiff(targetPath, backupMeta.backupFileName);
-        totalInsertions += diff.insertions;
-        totalDeletions += diff.deletions;
+        const diff = this.calculateDiff(targetPath, targetBackupFileName);
 
-        if (!dryRun) {
-          // Execute restore
-          this.restoreFile(targetPath, backupMeta.backupFileName);
-        }
+        if (diff.insertions > 0 || diff.deletions > 0) {
+          totalInsertions += diff.insertions;
+          totalDeletions += diff.deletions;
+          filesChanged.push(relativePath);
 
-        filesChanged.push(relativePath);
-      }
-
-      for (const relativePath of this.trackedFiles) {
-        if (!snapshot.trackedFileBackups[relativePath]) {
-          const targetPath = path.join(this.cwd, relativePath);
-          if (fs.existsSync(targetPath)) {
-            const diff = this.calculateDiff(targetPath, null);
-            totalInsertions += diff.insertions;
-            filesChanged.push(relativePath);
+          if (!dryRun) {
+            this.restoreFile(targetPath, targetBackupFileName);
           }
         }
       }
@@ -456,8 +463,44 @@ export class FileHistory {
 
   /**
    * Preview rewind (dry run)
+   * @param cumulative - If true, calculates changes from this point to current state (for UI display)
+   *                     If false, only shows changes in this specific snapshot
    */
-  previewRewind(messageId: string): RewindResult {
-    return this.rewindToMessage(messageId, true);
+  previewRewind(messageId: string, cumulative: boolean = true): RewindResult {
+    if (cumulative) {
+      return this.rewindToMessage(messageId, true);
+    }
+
+    const snapshot = this.snapshots.find((s) => s.messageId === messageId);
+    if (!snapshot) {
+      return {
+        success: false,
+        error: `Snapshot not found for message: ${messageId}`,
+        filesChanged: [],
+        insertions: 0,
+        deletions: 0,
+      };
+    }
+
+    const filesChanged: string[] = [];
+    let totalInsertions = 0;
+    let totalDeletions = 0;
+
+    for (const [relativePath, backupMeta] of Object.entries(
+      snapshot.trackedFileBackups,
+    )) {
+      const targetPath = path.join(this.cwd, relativePath);
+      const diff = this.calculateDiff(targetPath, backupMeta.backupFileName);
+      totalInsertions += diff.insertions;
+      totalDeletions += diff.deletions;
+      filesChanged.push(relativePath);
+    }
+
+    return {
+      success: true,
+      filesChanged,
+      insertions: totalInsertions,
+      deletions: totalDeletions,
+    };
   }
 }

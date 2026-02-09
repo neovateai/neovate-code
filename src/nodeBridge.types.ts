@@ -1250,6 +1250,7 @@ type SnapshotPreviewRewindInput = {
   cwd: string;
   sessionId: string;
   messageId: string;
+  cumulative?: boolean;
 };
 type SnapshotPreviewRewindOutput =
   | {

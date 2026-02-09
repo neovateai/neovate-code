@@ -158,7 +158,8 @@ export function registerSnapshotHandlers(
       data.sessionId,
       sessionLogPath,
     );
-    const result = fileHistory.previewRewind(data.messageId);
+    const cumulative = data.cumulative !== false;
+    const result = fileHistory.previewRewind(data.messageId, cumulative);
 
     return {
       success: true,
