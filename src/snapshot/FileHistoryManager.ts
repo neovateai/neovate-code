@@ -1,15 +1,6 @@
-/**
- * FileHistoryManager - Manages FileHistory instances lifecycle.
- *
- * Each Context instance has its own FileHistoryManager to manage multiple sessions:
- * - Main user session
- * - Multiple agent sessions (agent-${agentId})
- *
- * @module snapshot/FileHistoryManager
- */
-
 import { FileHistory } from './FileHistory';
 import type { SerializedSnapshot } from './types';
+import { loadSessionWithSnapshots } from '../session';
 
 export interface FileHistoryManagerOpts {
   cwd: string;
@@ -44,7 +35,6 @@ export class FileHistoryManager {
       let existingSnapshots: SerializedSnapshot[] = [];
       if (sessionLogPath) {
         try {
-          const { loadSessionWithSnapshots } = require('../session');
           const { snapshots } = loadSessionWithSnapshots({
             logPath: sessionLogPath,
           });

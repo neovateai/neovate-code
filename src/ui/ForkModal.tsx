@@ -56,20 +56,6 @@ export function ForkModal({
   cwd,
   bridge,
 }: ForkModalProps) {
-  const [selectedIndex, setSelectedIndex] = React.useState(0);
-  const [view, setView] = React.useState<ModalView>('message-list');
-  const [selectedMessage, setSelectedMessage] = React.useState<
-    (Message & { uuid: string; timestamp: string }) | null
-  >(null);
-  const [rewindPreview, setRewindPreview] = React.useState<RewindResult | null>(
-    null,
-  );
-  const [messageSnapshots, setMessageSnapshots] = React.useState<
-    Map<string, RewindResult | null>
-  >(new Map());
-  const { columns } = useTerminalSize();
-
-  // Filter to user messages only and reverse for chronological order (newest first)
   const userMessages = React.useMemo(
     () =>
       messages.filter((m) => {
@@ -84,6 +70,21 @@ export function ForkModal({
       }),
     [messages],
   );
+
+  const [selectedIndex, setSelectedIndex] = React.useState(
+    () => userMessages.length,
+  );
+  const [view, setView] = React.useState<ModalView>('message-list');
+  const [selectedMessage, setSelectedMessage] = React.useState<
+    (Message & { uuid: string; timestamp: string }) | null
+  >(null);
+  const [rewindPreview, setRewindPreview] = React.useState<RewindResult | null>(
+    null,
+  );
+  const [messageSnapshots, setMessageSnapshots] = React.useState<
+    Map<string, RewindResult | null>
+  >(new Map());
+  const { columns } = useTerminalSize();
 
   // Preload snapshots for all messages
   React.useEffect(() => {
