@@ -46,7 +46,7 @@ class NodeHandlerRegistry {
   }
 
   private async getContext(cwd: string) {
-    if (this.contexts.has(cwd)) {
+    if (!this.contextCreateOpts.noContextCache && this.contexts.has(cwd)) {
       return this.contexts.get(cwd)!;
     }
     const context = await Context.create({
@@ -55,7 +55,9 @@ class NodeHandlerRegistry {
       messageBus: this.messageBus,
     });
     context.mcpManager.initAsync();
-    this.contexts.set(cwd, context);
+    if (!this.contextCreateOpts.noContextCache) {
+      this.contexts.set(cwd, context);
+    }
 
     await this.applyPluginHandlers(context);
 

@@ -49,6 +49,7 @@ export type ContextCreateOpts = {
   plugins: (string | Plugin)[];
   messageBus?: MessageBus;
   fetch?: typeof globalThis.fetch;
+  noContextCache?: boolean;
 };
 
 export class Context {
