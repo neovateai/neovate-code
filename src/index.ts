@@ -66,7 +66,7 @@ export type Argv = {
   resume?: string;
   systemPrompt?: string;
   tools?: string;
-  noContextCache: boolean;
+  disableContextCache: boolean;
   // number
   port?: number;
   // array
@@ -91,7 +91,14 @@ export async function parseArgs(argv: any) {
       mcpConfig: [],
     },
     array: ['plugin', 'mcpConfig'],
-    boolean: ['help', 'mcp', 'quiet', 'continue', 'version', 'noContextCache'],
+    boolean: [
+      'help',
+      'mcp',
+      'quiet',
+      'continue',
+      'version',
+      'disableContextCache',
+    ],
     number: ['port'],
     string: [
       'appendSystemPrompt',
@@ -368,7 +375,7 @@ export async function runNeovate(opts: {
     productASCIIArt: opts.productASCIIArt,
     version: opts.version,
     fetch: opts.fetch,
-    noContextCache: argv.noContextCache,
+    noContextCache: argv.disableContextCache,
     argvConfig: {
       model: argv.model,
       planModel: argv.planModel,
