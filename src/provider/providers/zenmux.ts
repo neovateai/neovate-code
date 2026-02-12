@@ -21,6 +21,7 @@ export const zenmuxProvider: Provider = {
     'z-ai/glm-4.6': {},
     'z-ai/glm-4.6v': {},
     'z-ai/glm-4.7': {},
+    'z-ai/glm-5': {},
     'deepseek/deepseek-chat': {},
     'deepseek/deepseek-reasoner': {},
     'moonshotai/kimi-k2.5': {},

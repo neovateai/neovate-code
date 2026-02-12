@@ -15,5 +15,6 @@ export const zaiCodingPlanProvider: Provider = {
     'glm-4.6': {},
     'glm-4.6v': {},
     'glm-4.7': {},
+    'glm-5': {},
   },
 };
