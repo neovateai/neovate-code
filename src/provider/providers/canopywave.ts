@@ -10,6 +10,7 @@ export const canopywaveProvider: Provider = {
   models: {
     'minimax/minimax-m2.1': {},
     'zai/glm-4.7': {},
+    'zai/glm-5': {},
     'moonshotai/kimi-k2-thinking': {},
     'moonshotai/kimi-k2.5': {},
     'deepseek/deepseek-chat-v3.2': {},
