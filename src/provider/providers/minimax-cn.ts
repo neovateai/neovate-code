@@ -10,6 +10,7 @@ export const minimaxCnProvider: Provider = {
   models: {
     'minimax-m2': {},
     'minimax-m2.1': {},
+    'minimax-m2.5': {},
   },
   apiFormat: ApiFormat.Anthropic,
 };
