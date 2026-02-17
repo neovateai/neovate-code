@@ -56,6 +56,7 @@ export class Project {
       prependContent?: Array<{ type: 'text'; text: string; hidden?: boolean }>;
       parentUuid?: string;
       thinking?: ThinkingConfig;
+      outputStyle?: string;
     } = {},
   ) {
     const tools = await resolveTools({
@@ -70,7 +71,7 @@ export class Project {
     });
     const outputStyleManager = await OutputStyleManager.create(this.context);
     const outputStyle = outputStyleManager.getOutputStyle(
-      this.context.config.outputStyle,
+      opts.outputStyle ?? this.context.config.outputStyle,
       this.context.cwd,
     );
     const hasTaskTool = tools.some((t) => t.name === TOOL_NAMES.TASK);

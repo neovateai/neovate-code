@@ -51,6 +51,7 @@ export type SDKSessionOptions = {
    * ```
    */
   skills?: string[];
+  outputStyle?: string;
 };
 
 export type SDKUserMessage = {
@@ -59,6 +60,7 @@ export type SDKUserMessage = {
   parentUuid: string | null;
   uuid: string;
   sessionId: string;
+  outputStyle?: string;
 };
 
 export type SDKMessage =
@@ -93,6 +95,7 @@ class SDKSessionImpl implements SDKSession {
   private nodeBridge: NodeBridge;
   private cwd: string;
   private model: string;
+  private outputStyle?: string;
   private eventQueue: InternalEvent[] = [];
   private eventResolvers: Array<(value: InternalEvent | null) => void> = [];
   private isClosed = false;
@@ -104,6 +107,7 @@ class SDKSessionImpl implements SDKSession {
     nodeBridge: NodeBridge;
     cwd: string;
     model: string;
+    outputStyle?: string;
     initialParentUuid?: string | null;
   }) {
     this.sessionId = opts.sessionId;
@@ -111,6 +115,7 @@ class SDKSessionImpl implements SDKSession {
     this.nodeBridge = opts.nodeBridge;
     this.cwd = opts.cwd;
     this.model = opts.model;
+    this.outputStyle = opts.outputStyle;
     this.currentParentUuid = opts.initialParentUuid ?? null;
 
     this.setupEventHandlers();
@@ -187,6 +192,9 @@ class SDKSessionImpl implements SDKSession {
         model: this.model,
         parentUuid,
         uuid,
+        outputStyle:
+          (typeof message !== 'string' ? message.outputStyle : undefined) ??
+          this.outputStyle,
       })
       .catch((error) => {
         // Fallback if session.done event not received
@@ -321,6 +329,7 @@ export async function createSession(
     nodeBridge,
     cwd,
     model: options.model,
+    outputStyle: options.outputStyle,
   });
 }
 
@@ -365,6 +374,7 @@ export async function resumeSession(
     nodeBridge,
     cwd,
     model: options.model,
+    outputStyle: options.outputStyle,
     initialParentUuid: lastUuid,
   });
 }

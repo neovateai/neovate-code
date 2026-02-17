@@ -229,6 +229,7 @@ export function registerSessionHandlers(
       parentUuid,
       planMode,
       thinking,
+      outputStyle,
     } = data;
     const context = await getContext(cwd);
 
@@ -308,6 +309,7 @@ export function registerSessionHandlers(
       parentUuid,
       prependContent,
       thinking,
+      outputStyle,
       onMessage: async (opts) => {
         await messageBus.emitEvent('message', {
           message: opts.message,

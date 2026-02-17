@@ -718,6 +718,7 @@ type SessionSendInput = {
   attachments?: ImagePart[];
   parentUuid?: string;
   thinking?: ThinkingConfig;
+  outputStyle?: string;
 };
 type SessionSendOutput = any;
 
