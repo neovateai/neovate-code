@@ -1093,6 +1093,7 @@ export async function getStagedDiff(cwd: string): Promise<string> {
   // Exclude lockfiles and common large file types
   const excludePatterns = [
     ':!pnpm-lock.yaml',
+    ':!bun.lock',
     ':!package-lock.json',
     ':!yarn.lock',
     ':!*.min.js',

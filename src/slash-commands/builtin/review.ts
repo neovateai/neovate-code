@@ -16,7 +16,7 @@ export function createReviewCommand(language: string) {
         'pnpm-lock.yaml',
         'package-lock.json',
         'yarn.lock',
-        'bun.lockb',
+        'bun.lock',
         'Gemfile.lock',
         'Cargo.lock',
       ];
