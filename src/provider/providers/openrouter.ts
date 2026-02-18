@@ -17,6 +17,7 @@ export const openrouterProvider: Provider = {
     'anthropic/claude-opus-4': { apiFormat: ApiFormat.Anthropic },
     'anthropic/claude-opus-4.1': { apiFormat: ApiFormat.Anthropic },
     'anthropic/claude-opus-4.5': { apiFormat: ApiFormat.Anthropic },
+    'anthropic/claude-sonnet-4.6': { apiFormat: ApiFormat.Anthropic },
     'anthropic/claude-opus-4.6': { apiFormat: ApiFormat.Anthropic },
     'deepseek/deepseek-r1-0528': {},
     'deepseek/deepseek-chat-v3-0324': {},

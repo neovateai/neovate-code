@@ -17,6 +17,7 @@ export const zenmuxProvider: Provider = {
     'openai/gpt-5.2-pro': {},
     'anthropic/claude-sonnet-4.5': {},
     'anthropic/claude-opus-4.5': {},
+    'anthropic/claude-sonnet-4.6': {},
     'anthropic/claude-opus-4.6': {},
     'z-ai/glm-4.6': {},
     'z-ai/glm-4.6v': {},

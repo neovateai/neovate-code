@@ -17,6 +17,7 @@ export const anthropicProvider: Provider = {
     'claude-3-5-sonnet-20241022': {},
     'claude-haiku-4-5': {},
     'claude-opus-4-5': {},
+    'claude-sonnet-4-6': {},
     'claude-opus-4-6': {},
   },
   apiFormat: ApiFormat.Anthropic,
