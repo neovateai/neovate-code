@@ -72,7 +72,8 @@ export interface SDKSession {
   readonly sessionId: string;
   send(message: string | SDKUserMessage): Promise<void>;
   receive(): AsyncGenerator<SDKMessage, void>;
-  close(): void;
+  abort(): Promise<void>;
+  close(): Promise<void>;
   [Symbol.asyncDispose](): Promise<void>;
 }
 
@@ -239,8 +240,17 @@ class SDKSessionImpl implements SDKSession {
     }
   }
 
-  close(): void {
+  async abort(): Promise<void> {
     if (this.isClosed) return;
+    await this.messageBus.request('session.cancel', {
+      cwd: this.cwd,
+      sessionId: this.sessionId,
+    });
+  }
+
+  async close(): Promise<void> {
+    if (this.isClosed) return;
+    await this.abort();
     this.isClosed = true;
 
     for (const resolver of this.eventResolvers) {
@@ -251,7 +261,7 @@ class SDKSessionImpl implements SDKSession {
   }
 
   async [Symbol.asyncDispose](): Promise<void> {
-    this.close();
+    await this.close();
   }
 }
 
