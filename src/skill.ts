@@ -176,6 +176,27 @@ export class SkillManager {
     this.loadSkillsFromDirectory(projectDir, SkillSource.Project);
   }
 
+  /**
+   * Check if a directory entry is a directory or a symbolic link to a directory.
+   * This is needed because entry.isDirectory() returns false for symlinks.
+   */
+  private isDirectoryEntry(parentDir: string, entry: fs.Dirent): boolean {
+    if (entry.isDirectory()) {
+      return true;
+    }
+    if (entry.isSymbolicLink()) {
+      const targetPath = path.join(parentDir, entry.name);
+      try {
+        const stats = fs.statSync(targetPath);
+        return stats.isDirectory();
+      } catch {
+        // Broken symlink or permission issue, treat as not a directory
+        return false;
+      }
+    }
+    return false;
+  }
+
   private loadSkillsFromDirectory(
     skillsDir: string,
     source: SkillSource,
@@ -188,7 +209,7 @@ export class SkillManager {
       const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
 
       for (const entry of entries) {
-        if (entry.isDirectory()) {
+        if (this.isDirectoryEntry(skillsDir, entry)) {
           const skillPath = path.join(skillsDir, entry.name, 'SKILL.md');
           if (fs.existsSync(skillPath)) {
             this.loadSkillFile(skillPath, source);
@@ -509,7 +530,7 @@ export class SkillManager {
     if (fs.existsSync(skillsDir) && fs.statSync(skillsDir).isDirectory()) {
       const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
       for (const entry of entries) {
-        if (entry.isDirectory()) {
+        if (this.isDirectoryEntry(skillsDir, entry)) {
           const skillPath = path.join(skillsDir, entry.name, 'SKILL.md');
           if (fs.existsSync(skillPath)) {
             skills.push(skillPath);
@@ -523,7 +544,7 @@ export class SkillManager {
 
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
-      if (entry.isDirectory()) {
+      if (this.isDirectoryEntry(dir, entry)) {
         const skillPath = path.join(dir, entry.name, 'SKILL.md');
         if (fs.existsSync(skillPath)) {
           skills.push(skillPath);
@@ -542,7 +563,7 @@ export class SkillManager {
       const srcPath = path.join(src, entry.name);
       const destPath = path.join(dest, entry.name);
 
-      if (entry.isDirectory()) {
+      if (this.isDirectoryEntry(src, entry)) {
         this.copyDirectory(srcPath, destPath);
       } else {
         fs.copyFileSync(srcPath, destPath);
