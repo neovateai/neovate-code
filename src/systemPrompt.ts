@@ -1,7 +1,7 @@
 import { AGENT_TYPE, TOOL_NAMES } from './constants';
 import type { OutputStyle } from './outputStyle';
 
-function getTasksPrompt(opts: { todo: boolean; productName: string }) {
+function getTodosPrompt(opts: { todo: boolean; productName: string }) {
   if (!opts.todo) {
     return '';
   }
@@ -165,7 +165,7 @@ ${
 # Code style
 - IMPORTANT: DO NOT ADD ***ANY*** COMMENTS unless asked
 
-${getTasksPrompt(opts)}`
+${getTodosPrompt(opts)}`
     : ''
 }
 
