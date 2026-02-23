@@ -1,6 +1,6 @@
 {
   "name": "@neovate/code",
-  "version": "0.28.3",
+  "version": "0.28.4",
   "type": "module",
   "files": [
     "dist",
