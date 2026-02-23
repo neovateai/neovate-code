@@ -18,6 +18,7 @@ export const modelwatchProvider: Provider = {
     'gemini-3-flash': {},
     'gemini-3-pro-preview': {},
     'claude-4-5-sonnet': {},
+    'claude-4-6-sonnet': {},
     'claude-haiku-4-5': {},
     'claude-opus-4-5': {},
     'claude-opus-4-6': {},
