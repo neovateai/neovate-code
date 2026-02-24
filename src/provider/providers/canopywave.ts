@@ -8,7 +8,16 @@ export const canopywaveProvider: Provider = {
   api: 'https://inference.canopywave.io/v1',
   doc: 'https://canopywave.io/',
   models: {
-    'minimax/minimax-m2.1': {},
+    'minimax/minimax-m2.1': {
+      interleaved: {
+        tagName: 'think',
+      },
+    },
+    'minimax/minimax-m2.5': {
+      interleaved: {
+        tagName: 'think',
+      },
+    },
     'zai/glm-4.7': {},
     'zai/glm-5': {},
     'moonshotai/kimi-k2-thinking': {},

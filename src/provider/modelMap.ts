@@ -757,7 +757,7 @@ const baseModels: ModelMap = {
     limit: { context: 200000, output: 100000 },
   },
   'glm-4.5': {
-    name: 'GLM-4.5',
+    name: 'GLM 4.5',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -771,7 +771,7 @@ const baseModels: ModelMap = {
     aliases: [],
   },
   'glm-4.5-air': {
-    name: 'GLM-4.5-Air',
+    name: 'GLM 4.5 Air',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -784,7 +784,7 @@ const baseModels: ModelMap = {
     limit: { context: 131072, output: 98304 },
   },
   'glm-4.5-flash': {
-    name: 'GLM-4.5-Flash',
+    name: 'GLM 4.5 Flash',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -797,7 +797,7 @@ const baseModels: ModelMap = {
     limit: { context: 131072, output: 98304 },
   },
   'glm-4.5v': {
-    name: 'GLM-4.5V',
+    name: 'GLM 4.5V',
     attachment: true,
     reasoning: true,
     temperature: true,
@@ -810,7 +810,7 @@ const baseModels: ModelMap = {
     limit: { context: 64000, output: 16384 },
   },
   'glm-4.6': {
-    name: 'GLM-4.6',
+    name: 'GLM 4.6',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -823,7 +823,7 @@ const baseModels: ModelMap = {
     limit: { context: 204800, output: 131072 },
   },
   'glm-4.6v': {
-    name: 'GLM-4.6V',
+    name: 'GLM 4.6V',
     attachment: true,
     reasoning: true,
     temperature: true,
@@ -836,7 +836,7 @@ const baseModels: ModelMap = {
     limit: { context: 131072, output: 24000 },
   },
   'glm-4.7': {
-    name: 'GLM-4.7',
+    name: 'GLM 4.7',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -1063,7 +1063,7 @@ const baseModels: ModelMap = {
     limit: { context: 128000, output: 32000 },
   },
   'minimax-m2': {
-    name: 'Minimax-M2',
+    name: 'Minimax M2',
     attachment: false,
     reasoning: true,
     temperature: true,
@@ -1089,7 +1089,7 @@ const baseModels: ModelMap = {
     limit: { context: 131072, output: 32768 },
   },
   'minimax-m2.1': {
-    name: 'MiniMax-M2.1',
+    name: 'MiniMax M2.1',
     attachment: false,
     reasoning: true,
     temperature: true,
