@@ -200,6 +200,29 @@ function transformVariants(model: Model, provider: Provider) {
     );
   }
 
+  const isKiloClaude = provider.id === 'kilo' && id.includes('claude-');
+  if (apiFormat === ApiFormat.Anthropic || isKiloClaude) {
+    return {
+      high: {
+        thinking: {
+          type: 'enabled',
+          budgetTokens: Math.min(
+            16_000,
+            Math.floor(model.limit.output / 2 - 1),
+          ),
+        },
+        ...(isKiloClaude ? { reasoningEffort: 'medium' } : {}),
+      },
+      max: {
+        thinking: {
+          type: 'enabled',
+          budgetTokens: Math.min(31_999, model.limit.output - 1),
+        },
+        ...(isKiloClaude ? { reasoningEffort: 'high' } : {}),
+      },
+    };
+  }
+
   if (apiFormat === ApiFormat.OpenAI) {
     return Object.fromEntries(
       WIDELY_SUPPORTED_EFFORTS.map((effort) => [
@@ -211,26 +234,6 @@ function transformVariants(model: Model, provider: Provider) {
         },
       ]),
     );
-  }
-
-  if (apiFormat === ApiFormat.Anthropic) {
-    return {
-      high: {
-        thinking: {
-          type: 'enabled',
-          budgetTokens: Math.min(
-            16_000,
-            Math.floor(model.limit.output / 2 - 1),
-          ),
-        },
-      },
-      max: {
-        thinking: {
-          type: 'enabled',
-          budgetTokens: Math.min(31_999, model.limit.output - 1),
-        },
-      },
-    };
   }
 
   if (apiFormat === ApiFormat.Google) {

@@ -49,6 +49,7 @@ export { modelwatchProvider } from './modelwatch';
 export { opencodeZenProvider } from './opencode-zen';
 export { qwenProvider } from './qwen';
 export { codexProvider } from './codex';
+export { kiloProvider } from './kilo';
 
 import type { ProvidersMap } from './types';
 import { githubCopilotProvider } from './github-copilot';
@@ -83,6 +84,7 @@ import { modelwatchProvider } from './modelwatch';
 import { qwenProvider } from './qwen';
 import { codexProvider } from './codex';
 import { kimiCodingPlanProvider } from './kimi-coding-plan';
+import { kiloProvider } from './kilo';
 // import { opencodeZenProvider } from './opencode-zen';
 
 // Combined providers map
@@ -119,5 +121,6 @@ export const providers: ProvidersMap = {
   modelwatch: modelwatchProvider,
   qwen: qwenProvider,
   codex: codexProvider,
+  kilo: kiloProvider,
   // opencode: opencodeZenProvider,
 };
