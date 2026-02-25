@@ -134,7 +134,7 @@ function transformVariants(model: Model, provider: Provider) {
 
   const id = (model.id || '').toLowerCase();
 
-  if (provider.id === 'zenmux') {
+  if (provider.id === 'zenmux' || provider.id === 'bailian-coding-plan') {
     if (id.includes('kimi') || id.includes('minimax') || id.includes('glm')) {
       return {
         on: {
