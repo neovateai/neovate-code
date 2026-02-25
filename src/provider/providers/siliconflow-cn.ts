@@ -16,5 +16,10 @@ export const siliconflowCnProvider: Provider = {
     'deepseek-ai/DeepSeek-V3.1': {},
     'deepseek-ai/DeepSeek-V3': {},
     'zai-org/GLM-4.5': {},
+    'Pro/moonshotai/Kimi-K2.5': {},
+    'Pro/zai-org/GLM-5': {},
+    'Pro/zai-org/GLM-4.7': {},
+    'Pro/MiniMaxAI/MiniMax-M2.5': {},
+    'Pro/deepseek-ai/DeepSeek-V3.2': {},
   },
 };
