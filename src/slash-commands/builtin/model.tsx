@@ -76,6 +76,7 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
           providerId: 'recent',
           models: recentModels
             .filter((m) => allModelsMap.has(m))
+            .slice(0, 5)
             .map((m) => {
               const model = allModelsMap.get(m)!;
               const providerName = providerLookup.get(m) || '';

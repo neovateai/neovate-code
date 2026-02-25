@@ -86,7 +86,7 @@ export class GlobalData {
     const recentModels = data.recentModels || [];
     const filtered = recentModels.filter((m) => m !== model);
     filtered.unshift(model);
-    data.recentModels = filtered.slice(0, 5);
+    data.recentModels = filtered.slice(0, 20);
     this.writeData(data);
   }
 }
