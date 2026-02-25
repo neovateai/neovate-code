@@ -1,5 +1,5 @@
 import { Box, Text, useInput } from 'ink';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { clearTerminal } from '../utils/terminal';
 import { ActivityIndicator } from './ActivityIndicator';
 import { ApprovalModal } from './ApprovalModal';
@@ -24,6 +24,24 @@ function SlashCommandJSX() {
 export function App() {
   const { forceRerender } = useTerminalRefresh();
   useNotification();
+
+  useEffect(() => {
+    if (!process.stdin.isTTY) return;
+    process.stdout.write('\x1b[?1004h');
+    return () => {
+      process.stdout.write('\x1b[?1004l');
+    };
+  }, []);
+
+  useInput(
+    (input) => {
+      if (input === '[I' || input === '[O') {
+        useAppStore.getState().setWindowFocused(input === '[I');
+      }
+    },
+    { isActive: true },
+  );
+
   const {
     forkModalVisible,
     fork,

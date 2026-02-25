@@ -1,6 +1,6 @@
-import { Box, Text, useInput } from 'ink';
+import { Box, Text } from 'ink';
 import os from 'os';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { SPACING, UI_COLORS } from './constants';
 import { DebugRandomNumber } from './Debug';
 import { GradientText } from './GradientText';
@@ -37,26 +37,6 @@ export function ChatInput() {
     reverseSearch,
   } = useInputHandlers();
   const { currentTip } = useTryTips();
-
-  // Enable terminal focus reporting
-  useEffect(() => {
-    if (!process.stdin.isTTY) return;
-    process.stdout.write('\x1b[?1004h');
-    return () => {
-      process.stdout.write('\x1b[?1004l');
-    };
-  }, []);
-
-  // Global handler for terminal focus events - always active to catch focus
-  // events even when TextInput is not focused (e.g., during modals)
-  useInput(
-    (input) => {
-      if (input === '[I' || input === '[O') {
-        useAppStore.getState().setWindowFocused(input === '[I');
-      }
-    },
-    { isActive: true },
-  );
 
   // Memoize platform-specific modifier key to avoid repeated os.platform() calls
   const modifierKey = useMemo(

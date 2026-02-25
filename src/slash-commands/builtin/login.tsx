@@ -63,7 +63,8 @@ const OAuthAuthorizationUI: React.FC<OAuthAuthorizationUIProps> = ({
   waitingMessage = 'Waiting for authorization...',
   onCancel,
 }) => {
-  useInput((_input, key) => {
+  useInput((input, key) => {
+    if (input === '[I' || input === '[O') return;
     if (key.escape) {
       onCancel();
     }
@@ -116,6 +117,8 @@ const ApiKeyInput: React.FC<ApiKeyInputProps> = ({
   const [apiKey, setApiKey] = useState('');
 
   useInput((input, key) => {
+    if (input === '[I' || input === '[O') return;
+
     if (key.escape) {
       onCancel();
       return;
