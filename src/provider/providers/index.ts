@@ -50,6 +50,7 @@ export { opencodeZenProvider } from './opencode-zen';
 export { qwenProvider } from './qwen';
 export { codexProvider } from './codex';
 export { kiloProvider } from './kilo';
+export { bailianCodingPlanProvider } from './bailian-coding-plan';
 
 import type { ProvidersMap } from './types';
 import { githubCopilotProvider } from './github-copilot';
@@ -85,6 +86,7 @@ import { qwenProvider } from './qwen';
 import { codexProvider } from './codex';
 import { kimiCodingPlanProvider } from './kimi-coding-plan';
 import { kiloProvider } from './kilo';
+import { bailianCodingPlanProvider } from './bailian-coding-plan';
 // import { opencodeZenProvider } from './opencode-zen';
 
 // Combined providers map
@@ -108,6 +110,7 @@ export const providers: ProvidersMap = {
   'zai-coding-plan': zaiCodingPlanProvider,
   'zhipuai-coding-plan': zhipuaiCodingPlanProvider,
   'kimi-coding-plan': kimiCodingPlanProvider,
+  'bailian-coding-plan': bailianCodingPlanProvider,
   zhipuai: zhipuaiProvider,
   zenmux: zenmuxProvider,
   minimax: minimaxProvider,
