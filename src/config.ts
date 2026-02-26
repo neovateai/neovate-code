@@ -120,6 +120,7 @@ export type Config = {
    * @default true
    */
   checkpoints?: boolean;
+  recentModels?: number;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -138,6 +139,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   tools: {},
   agent: {},
   checkpoints: true,
+  recentModels: 10,
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -162,6 +164,7 @@ const VALID_CONFIG_KEYS = [
   'skills',
   'thinkingLevel',
   'checkpoints',
+  'recentModels',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins', 'skills'];
 const OBJECT_CONFIG_KEYS = [

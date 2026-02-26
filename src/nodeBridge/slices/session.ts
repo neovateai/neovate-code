@@ -264,7 +264,8 @@ export function registerSessionHandlers(
       )?.data.model;
 
     if (resolvedModel) {
-      context.globalData.addRecentModel(resolvedModel);
+      const maxStorage = (context.config.recentModels ?? 10) + 10;
+      context.globalData.addRecentModel(resolvedModel, maxStorage);
     }
 
     const abortController = new AbortController();

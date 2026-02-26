@@ -20,7 +20,8 @@ export function registerGlobalDataHandlers(
   messageBus.registerHandler('globalData.recentModels.add', async (data) => {
     const { cwd, model } = data;
     const context = await getContext(cwd);
-    context.globalData.addRecentModel(model);
+    const maxStorage = (context.config.recentModels ?? 10) + 10;
+    context.globalData.addRecentModel(model, maxStorage);
     return {
       success: true,
     };

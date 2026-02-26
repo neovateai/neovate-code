@@ -81,12 +81,12 @@ export class GlobalData {
     return data.recentModels || [];
   }
 
-  addRecentModel(model: string): void {
+  addRecentModel(model: string, maxStorage: number): void {
     const data = this.readData();
     const recentModels = data.recentModels || [];
     const filtered = recentModels.filter((m) => m !== model);
     filtered.unshift(model);
-    data.recentModels = filtered.slice(0, 20);
+    data.recentModels = filtered.slice(0, maxStorage);
     this.writeData(data);
   }
 }

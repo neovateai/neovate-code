@@ -36,6 +36,7 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
   const [groupedModels, setGroupedModels] = useState<GroupedData[]>([]);
   const [nullModels, setNullModels] = useState<NullModel[]>([]);
   const [recentModels, setRecentModels] = useState<string[]>([]);
+  const [recentModelsLimit, setRecentModelsLimit] = useState<number>(10);
 
   useEffect(() => {
     bridge
@@ -50,6 +51,7 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
         setGroupedModels(result.data?.groupedModels || []);
         setNullModels(result.data?.nullModels || []);
         setRecentModels(result.data?.recentModels || []);
+        setRecentModelsLimit(result.data?.recentModelsLimit ?? 10);
       })
       .catch((error) => {
         console.error('models.list failed:', error);
@@ -76,7 +78,7 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
           providerId: 'recent',
           models: recentModels
             .filter((m) => allModelsMap.has(m))
-            .slice(0, 5)
+            .slice(0, recentModelsLimit)
             .map((m) => {
               const model = allModelsMap.get(m)!;
               const providerName = providerLookup.get(m) || '';

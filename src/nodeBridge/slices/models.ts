@@ -88,6 +88,7 @@ export function registerModelsHandlers(
         currentModelInfo,
         nullModels,
         recentModels: context.globalData.getRecentModels(),
+        recentModelsLimit: context.config.recentModels ?? 10,
         thinkingLevel,
       },
     };

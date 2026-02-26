@@ -72,6 +72,7 @@ type GlobalDataRecentModelsGetOutput = {
   success: boolean;
   data: {
     recentModels: string[];
+    recentModelsLimit: number;
     thinkingLevel: string | undefined;
   };
 };
@@ -279,6 +280,7 @@ type ModelsListOutput = {
       modelId: string;
     }>;
     recentModels: string[];
+    recentModelsLimit: number;
     thinkingLevel: string | undefined;
   };
 };
