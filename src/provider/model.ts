@@ -161,7 +161,6 @@ function transformVariants(model: Model, provider: Provider) {
     id.includes('minimax') ||
     id.includes('glm') ||
     id.includes('mistral') ||
-    (provider.id === 'iflow' && id.includes('kimi')) ||
     id.includes('grok')
   ) {
     return {};
