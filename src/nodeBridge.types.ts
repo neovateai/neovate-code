@@ -1048,6 +1048,104 @@ type SlashCommandExecuteOutput = {
 };
 
 // ============================================================================
+// Plugin Handlers
+// ============================================================================
+
+type PluginListInput = { cwd: string };
+type PluginListOutput = {
+  success: boolean;
+  data: {
+    plugins: Array<{
+      name: string;
+      version?: string;
+      source: any;
+      scope: 'global' | 'project' | 'local';
+      enabled: boolean;
+      installedAt: string;
+      marketplace?: string;
+    }>;
+  };
+};
+
+type PluginInstallInput = {
+  cwd: string;
+  pluginName: string;
+  marketplaceName: string;
+  scope?: 'user' | 'project' | 'local';
+};
+type PluginInstallOutput = {
+  success: boolean;
+  data?: { name: string; version?: string };
+  error?: string;
+};
+
+type PluginUninstallInput = { cwd: string; pluginName: string };
+type PluginUninstallOutput = { success: boolean; error?: string };
+
+type PluginEnableInput = { cwd: string; pluginName: string };
+type PluginEnableOutput = { success: boolean; error?: string };
+
+type PluginDisableInput = { cwd: string; pluginName: string };
+type PluginDisableOutput = { success: boolean; error?: string };
+
+type PluginDiscoverInput = {
+  cwd: string;
+  marketplaceName?: string;
+};
+type PluginDiscoverOutput = {
+  success: boolean;
+  data: {
+    plugins: Array<{
+      name: string;
+      description?: string;
+      marketplace: string;
+      installs: number;
+      category?: string;
+      tags?: string[];
+      installed: boolean;
+      enabled?: boolean;
+    }>;
+    total: number;
+  };
+};
+
+type PluginMarketplaceListInput = { cwd: string };
+type PluginMarketplaceListOutput = {
+  success: boolean;
+  data: {
+    marketplaces: Array<{
+      name: string;
+      source: any;
+      installLocation: string;
+      lastUpdated: string;
+      pluginCount: number;
+      description?: string;
+      owner?: string;
+    }>;
+  };
+};
+
+type PluginMarketplaceAddInput = {
+  cwd: string;
+  source: string;
+};
+type PluginMarketplaceAddOutput = {
+  success: boolean;
+  data?: { name: string; pluginCount: number };
+  error?: string;
+};
+
+type PluginMarketplaceRemoveInput = { cwd: string; name: string };
+type PluginMarketplaceRemoveOutput = { success: boolean; error?: string };
+
+type PluginMarketplaceUpdateInput = { cwd: string; name: string };
+type PluginMarketplaceUpdateOutput = {
+  success: boolean;
+  data?: { name: string; pluginCount: number };
+  error?: string;
+};
+
+// ============================================================================
 // Status Handlers
 // ============================================================================
 
@@ -1588,6 +1686,36 @@ export type HandlerMap = {
   'slashCommand.execute': {
     input: SlashCommandExecuteInput;
     output: SlashCommandExecuteOutput;
+  };
+
+  // Plugin handlers
+  'plugin.list': { input: PluginListInput; output: PluginListOutput };
+  'plugin.install': { input: PluginInstallInput; output: PluginInstallOutput };
+  'plugin.uninstall': {
+    input: PluginUninstallInput;
+    output: PluginUninstallOutput;
+  };
+  'plugin.enable': { input: PluginEnableInput; output: PluginEnableOutput };
+  'plugin.disable': { input: PluginDisableInput; output: PluginDisableOutput };
+  'plugin.discover': {
+    input: PluginDiscoverInput;
+    output: PluginDiscoverOutput;
+  };
+  'plugin.marketplace.list': {
+    input: PluginMarketplaceListInput;
+    output: PluginMarketplaceListOutput;
+  };
+  'plugin.marketplace.add': {
+    input: PluginMarketplaceAddInput;
+    output: PluginMarketplaceAddOutput;
+  };
+  'plugin.marketplace.remove': {
+    input: PluginMarketplaceRemoveInput;
+    output: PluginMarketplaceRemoveOutput;
+  };
+  'plugin.marketplace.update': {
+    input: PluginMarketplaceUpdateInput;
+    output: PluginMarketplaceUpdateOutput;
   };
 
   // Status handlers

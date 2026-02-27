@@ -1,0 +1,807 @@
+import { Box, Text, useInput } from 'ink';
+import Spinner from 'ink-spinner';
+import pc from 'picocolors';
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { UI_COLORS } from '../../ui/constants';
+import TextInput from '../../ui/TextInput/index.js';
+import { useTerminalSize } from '../../ui/useTerminalSize';
+import { useAppStore } from '../../ui/store';
+import type { LocalJSXCommand } from '../types';
+
+const TABS = ['Discover', 'Installed', 'Marketplaces'] as const;
+type Tab = (typeof TABS)[number];
+
+interface DiscoverPlugin {
+  name: string;
+  description?: string;
+  marketplace: string;
+  installs: number;
+  category?: string;
+  tags?: string[];
+  installed: boolean;
+  enabled?: boolean;
+}
+
+interface InstalledPlugin {
+  name: string;
+  version?: string;
+  source: any;
+  scope: 'global' | 'project' | 'local';
+  enabled: boolean;
+  installedAt: string;
+  marketplace?: string;
+}
+
+interface MarketplaceInfo {
+  name: string;
+  source: any;
+  installLocation: string;
+  lastUpdated: string;
+  pluginCount: number;
+  description?: string;
+  owner?: string;
+}
+
+function formatInstalls(count: number): string {
+  if (count >= 1000) return `${(count / 1000).toFixed(1).replace(/\.0$/, '')}K`;
+  return String(count);
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+}
+
+const Divider: React.FC = () => {
+  const { columns } = useTerminalSize();
+  return (
+    <Box>
+      <Text color={UI_COLORS.ASK_PRIMARY} bold>
+        {'─'.repeat(Math.max(0, columns))}
+      </Text>
+    </Box>
+  );
+};
+
+const TabBar: React.FC<{ activeTab: Tab }> = ({ activeTab }) => (
+  <Box flexDirection="column">
+    <Divider />
+    <Box marginTop={1}>
+      <Text bold color={UI_COLORS.ASK_PRIMARY}>
+        Plugins
+      </Text>
+      <Text> </Text>
+      {TABS.map((tab, i) => (
+        <Box key={tab}>
+          {i > 0 && <Text> </Text>}
+          {activeTab === tab ? (
+            <Text bold backgroundColor={UI_COLORS.ASK_PRIMARY} color="black">
+              {` ${tab} `}
+            </Text>
+          ) : (
+            <Text dimColor>{tab}</Text>
+          )}
+        </Box>
+      ))}
+      <Text dimColor> (←/→ or tab to cycle)</Text>
+    </Box>
+  </Box>
+);
+
+const DETAIL_MENU_ITEMS = [
+  { key: 'user', label: 'Install for you (user scope)' },
+  {
+    key: 'project',
+    label: 'Install for all collaborators on this repository (project scope)',
+  },
+  { key: 'local', label: 'Install for you, in this repo only (local scope)' },
+  { key: 'homepage', label: 'Open homepage' },
+  { key: 'back', label: 'Back to plugin list' },
+] as const;
+
+const PluginDetailView: React.FC<{
+  plugin: DiscoverPlugin;
+  onBack: () => void;
+  onInstall: (scope: 'user' | 'project' | 'local') => void;
+}> = ({ plugin, onBack, onInstall }) => {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useInput((_input, key) => {
+    if (key.escape) {
+      onBack();
+      return;
+    }
+    if (key.upArrow && selectedIndex > 0) {
+      setSelectedIndex(selectedIndex - 1);
+    }
+    if (key.downArrow && selectedIndex < DETAIL_MENU_ITEMS.length - 1) {
+      setSelectedIndex(selectedIndex + 1);
+    }
+    if (key.return) {
+      const item = DETAIL_MENU_ITEMS[selectedIndex];
+      if (item.key === 'back') {
+        onBack();
+      } else if (item.key === 'homepage') {
+        // TODO: open homepage
+      } else {
+        onInstall(item.key);
+      }
+    }
+  });
+
+  return (
+    <Box flexDirection="column">
+      <Box marginBottom={1}>
+        <Text bold>Plugin details</Text>
+      </Box>
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold>{plugin.name}</Text>
+        <Text dimColor>from {plugin.marketplace}</Text>
+      </Box>
+      {plugin.description && (
+        <Box marginBottom={1}>
+          <Text>{plugin.description}</Text>
+        </Box>
+      )}
+      <Box flexDirection="column" marginBottom={1}>
+        <Text color="yellow">
+          {'\u26A0'}Make sure you trust a plugin before installing, updating, or
+          using it. Anthropic does not control what MCP servers, files, or other
+          software are included in plugins and cannot verify that they will work
+          as intended or that they won't change. See each plugin's homepage for
+          more information.
+        </Text>
+      </Box>
+      <Box flexDirection="column">
+        {DETAIL_MENU_ITEMS.map((item, i) => {
+          const isSelected = i === selectedIndex;
+          return (
+            <Box key={item.key}>
+              <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
+                {isSelected ? '> ' : '  '}
+                {item.label}
+              </Text>
+            </Box>
+          );
+        })}
+      </Box>
+      <Box marginTop={1}>
+        <Text dimColor>Select: Enter · Back: Esc</Text>
+      </Box>
+    </Box>
+  );
+};
+
+const DiscoverView: React.FC<{
+  onExit: (msg: string) => void;
+  onSubViewChange?: (active: boolean) => void;
+}> = ({ onExit, onSubViewChange }) => {
+  const { bridge, cwd } = useAppStore();
+  const [plugins, setPlugins] = useState<DiscoverPlugin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [installing, setInstalling] = useState<string | null>(null);
+  const [detailPlugin, setDetailPlugin] = useState<DiscoverPlugin | null>(null);
+
+  const openDetail = (plugin: DiscoverPlugin) => {
+    setDetailPlugin(plugin);
+    onSubViewChange?.(true);
+  };
+
+  const closeDetail = () => {
+    setDetailPlugin(null);
+    onSubViewChange?.(false);
+  };
+
+  const loadPlugins = useCallback(async () => {
+    try {
+      const result = await bridge.request('plugin.discover', { cwd });
+      if (result.success) {
+        setPlugins(result.data.plugins);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [bridge, cwd]);
+
+  useEffect(() => {
+    loadPlugins();
+  }, [loadPlugins]);
+
+  const PAGE_SIZE = 5;
+
+  const filtered = plugins.filter((p) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(q) ||
+      (p.description || '').toLowerCase().includes(q)
+    );
+  });
+
+  const scrollOffset = Math.max(
+    0,
+    Math.min(selectedIndex - PAGE_SIZE + 1, filtered.length - PAGE_SIZE),
+  );
+  const visiblePlugins = filtered.slice(scrollOffset, scrollOffset + PAGE_SIZE);
+
+  useInput(
+    (input, key) => {
+      if (key.upArrow && selectedIndex > 0) {
+        setSelectedIndex(selectedIndex - 1);
+      }
+      if (key.downArrow && selectedIndex < filtered.length - 1) {
+        setSelectedIndex(selectedIndex + 1);
+      }
+      if (key.backspace || key.delete) {
+        setSearchQuery(searchQuery.slice(0, -1));
+        setSelectedIndex(0);
+      }
+      if (key.return && filtered.length > 0) {
+        openDetail(filtered[selectedIndex]);
+      }
+      if (
+        !key.ctrl &&
+        !key.meta &&
+        input &&
+        input.length === 1 &&
+        input !== ' ' &&
+        input.charCodeAt(0) >= 32 &&
+        input.charCodeAt(0) <= 126
+      ) {
+        setSearchQuery(searchQuery + input);
+        setSelectedIndex(0);
+      }
+    },
+    { isActive: !detailPlugin },
+  );
+
+  if (loading) {
+    return (
+      <Box>
+        <Spinner type="dots" />
+        <Text> Loading plugins...</Text>
+      </Box>
+    );
+  }
+
+  if (detailPlugin) {
+    return (
+      <PluginDetailView
+        plugin={detailPlugin}
+        onBack={() => closeDetail()}
+        onInstall={(scope) => {
+          if (detailPlugin.installed) return;
+          setInstalling(`${detailPlugin.name}@${detailPlugin.marketplace}`);
+          closeDetail();
+          bridge
+            .request('plugin.install', {
+              cwd,
+              pluginName: detailPlugin.name,
+              marketplaceName: detailPlugin.marketplace,
+              scope,
+            })
+            .then(() => loadPlugins())
+            .finally(() => setInstalling(null));
+        }}
+      />
+    );
+  }
+
+  return (
+    <Box flexDirection="column">
+      <Box marginBottom={1}>
+        <Text bold>
+          Discover plugins ({selectedIndex + 1}/{filtered.length})
+        </Text>
+      </Box>
+      <Box
+        borderStyle="round"
+        borderColor="gray"
+        paddingLeft={1}
+        paddingRight={1}
+      >
+        <Text color="gray">{'\u{2315}'} </Text>
+        <Text color={searchQuery ? 'white' : 'gray'}>
+          {searchQuery || 'Search\u2026'}
+        </Text>
+      </Box>
+      <Box flexDirection="column" marginTop={1}>
+        {scrollOffset > 0 && <Text dimColor> {'\u2191'} more above</Text>}
+        {visiblePlugins.map((p, i) => {
+          const actualIndex = scrollOffset + i;
+          const isSelected = actualIndex === selectedIndex;
+          const indicator =
+            installing === `${p.name}@${p.marketplace}`
+              ? pc.yellow('\u25D0')
+              : p.installed
+                ? pc.white('\u25CF')
+                : '\u25CB';
+          return (
+            <Box
+              key={`${p.name}-${p.marketplace}`}
+              flexDirection="column"
+              marginTop={i > 0 ? 1 : 0}
+            >
+              <Box>
+                <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
+                  {isSelected ? '\u276F ' : '  '}
+                </Text>
+                <Text>{indicator} </Text>
+                <Text bold color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
+                  {p.name}
+                </Text>
+                <Text dimColor>
+                  {' '}
+                  · {p.marketplace}
+                  {` · ${formatInstalls(p.installs)} installs`}
+                </Text>
+              </Box>
+              {p.description && (
+                <Box marginLeft={6}>
+                  <Text dimColor>
+                    {p.description.length > 70
+                      ? `${p.description.slice(0, 67)}...`
+                      : p.description}
+                  </Text>
+                </Box>
+              )}
+            </Box>
+          );
+        })}
+        {scrollOffset + PAGE_SIZE < filtered.length && (
+          <Text dimColor> {'\u2193'} more below</Text>
+        )}
+      </Box>
+      <Box marginTop={1}>
+        <Text dimColor>
+          Type to search · Enter: details/install · Esc: back
+        </Text>
+      </Box>
+    </Box>
+  );
+};
+
+const InstalledView: React.FC<{ onExit: (msg: string) => void }> = ({
+  onExit,
+}) => {
+  const { bridge, cwd } = useAppStore();
+  const [plugins, setPlugins] = useState<InstalledPlugin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const loadPlugins = useCallback(async () => {
+    try {
+      const result = await bridge.request('plugin.list', { cwd });
+      if (result.success) {
+        setPlugins(result.data.plugins);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [bridge, cwd]);
+
+  useEffect(() => {
+    loadPlugins();
+  }, [loadPlugins]);
+
+  useInput((input, key) => {
+    if (key.upArrow && selectedIndex > 0) {
+      setSelectedIndex(selectedIndex - 1);
+    }
+    if (key.downArrow && selectedIndex < plugins.length - 1) {
+      setSelectedIndex(selectedIndex + 1);
+    }
+    if (input === ' ' && plugins.length > 0) {
+      const plugin = plugins[selectedIndex];
+      const method = plugin.enabled ? 'plugin.disable' : 'plugin.enable';
+      bridge
+        .request(method, { cwd, pluginName: plugin.name })
+        .then(() => loadPlugins());
+    }
+    if (input === 'r' && plugins.length > 0) {
+      const plugin = plugins[selectedIndex];
+      bridge
+        .request('plugin.uninstall', { cwd, pluginName: plugin.name })
+        .then(() => {
+          loadPlugins();
+          setSelectedIndex(Math.max(0, selectedIndex - 1));
+        });
+    }
+  });
+
+  if (loading) {
+    return (
+      <Box>
+        <Spinner type="dots" />
+        <Text> Loading installed plugins...</Text>
+      </Box>
+    );
+  }
+
+  if (plugins.length === 0) {
+    return (
+      <Box flexDirection="column">
+        <Box marginBottom={1}>
+          <Text bold color={UI_COLORS.ASK_PRIMARY}>
+            Installed plugins
+          </Text>
+        </Box>
+        <Text dimColor>No plugins installed.</Text>
+      </Box>
+    );
+  }
+
+  return (
+    <Box flexDirection="column">
+      <Box marginBottom={1}>
+        <Text bold>Installed plugins ({plugins.length})</Text>
+      </Box>
+      <Box flexDirection="column">
+        {plugins.map((p, i) => {
+          const isSelected = i === selectedIndex;
+          const indicator = p.enabled ? pc.white('\u25CF') : pc.gray('\u25CB');
+          return (
+            <Box key={p.name} flexDirection="column" marginTop={i > 0 ? 1 : 0}>
+              <Box>
+                <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
+                  {isSelected ? '\u276F ' : '  '}
+                </Text>
+                <Text>{indicator} </Text>
+                <Text bold color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
+                  {p.name}
+                </Text>
+                <Text dimColor>
+                  {p.version ? ` · v${p.version}` : ''}
+                  {!p.enabled ? ' (disabled)' : ''}
+                </Text>
+              </Box>
+            </Box>
+          );
+        })}
+      </Box>
+      <Box marginTop={1}>
+        <Text dimColor>
+          ↑↓ navigate · Space: enable/disable · r: remove · Esc: back
+        </Text>
+      </Box>
+    </Box>
+  );
+};
+
+const MarketplacesView: React.FC<{
+  onExit: (msg: string) => void;
+  onSubViewChange?: (active: boolean) => void;
+}> = ({ onExit, onSubViewChange }) => {
+  const { bridge, cwd } = useAppStore();
+  const [marketplaces, setMarketplaces] = useState<MarketplaceInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [addMode, setAddMode] = useState(false);
+  const [addInput, setAddInput] = useState('');
+  const [addError, setAddError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+
+  const items = [
+    { type: 'add' as const },
+    ...marketplaces.map((m) => ({ type: 'marketplace' as const, data: m })),
+  ];
+
+  const loadMarketplaces = useCallback(async () => {
+    try {
+      const result = await bridge.request('plugin.marketplace.list', { cwd });
+      if (result.success) {
+        setMarketplaces(result.data.marketplaces);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [bridge, cwd]);
+
+  useEffect(() => {
+    loadMarketplaces();
+  }, [loadMarketplaces]);
+
+  const enterAddMode = () => {
+    setAddMode(true);
+    onSubViewChange?.(true);
+  };
+
+  const exitAddMode = () => {
+    setAddMode(false);
+    setAddInput('');
+    setAddError(null);
+    setAdding(false);
+    onSubViewChange?.(false);
+  };
+
+  useInput(
+    (input, key) => {
+      if (key.upArrow && selectedIndex > 0) {
+        setSelectedIndex(selectedIndex - 1);
+      }
+      if (key.downArrow && selectedIndex < items.length - 1) {
+        setSelectedIndex(selectedIndex + 1);
+      }
+      if (key.return) {
+        const item = items[selectedIndex];
+        if (item.type === 'add') {
+          enterAddMode();
+        }
+      }
+      if (input === 'u' && selectedIndex > 0) {
+        const item = items[selectedIndex];
+        if (item.type === 'marketplace') {
+          bridge
+            .request('plugin.marketplace.update', {
+              cwd,
+              name: item.data.name,
+            })
+            .then(() => loadMarketplaces());
+        }
+      }
+      if (input === 'r' && selectedIndex > 0) {
+        const item = items[selectedIndex];
+        if (item.type === 'marketplace') {
+          bridge
+            .request('plugin.marketplace.remove', {
+              cwd,
+              name: item.data.name,
+            })
+            .then(() => {
+              loadMarketplaces();
+              setSelectedIndex(Math.max(0, selectedIndex - 1));
+            });
+        }
+      }
+    },
+    { isActive: !addMode },
+  );
+
+  useInput(
+    (_input, key) => {
+      if (key.escape) {
+        exitAddMode();
+      }
+    },
+    { isActive: adding },
+  );
+
+  if (loading) {
+    return (
+      <Box>
+        <Spinner type="dots" />
+        <Text> Loading marketplaces...</Text>
+      </Box>
+    );
+  }
+
+  if (addMode) {
+    return (
+      <Box flexDirection="column" width="100%">
+        <Box
+          flexDirection="column"
+          borderStyle="round"
+          borderColor="gray"
+          paddingLeft={1}
+          paddingRight={1}
+          paddingTop={1}
+          paddingBottom={1}
+          width="100%"
+        >
+          <Text bold>Add Marketplace</Text>
+          <Box marginTop={1} flexDirection="column">
+            <Text bold>Enter marketplace source:</Text>
+            <Text dimColor>Examples:</Text>
+            <Text dimColor> {'\u2022'} owner/repo (GitHub)</Text>
+            <Text dimColor>
+              {' '}
+              {'\u2022'} git@github.com:owner/repo.git (SSH)
+            </Text>
+            <Text dimColor>
+              {' '}
+              {'\u2022'} https://example.com/marketplace.json
+            </Text>
+            <Text dimColor> {'\u2022'} ./path/to/marketplace</Text>
+          </Box>
+          <Box marginTop={1}>
+            <TextInput
+              focus={!adding}
+              multiline={false}
+              value={addInput}
+              placeholder=""
+              onChange={(v) => {
+                setAddInput(v.replace(/\n/g, ''));
+                if (addError) setAddError(null);
+              }}
+              onPaste={async (text) => {
+                setAddInput(text.replace(/\n/g, ''));
+                if (addError) setAddError(null);
+                return {};
+              }}
+              onSubmit={() => {
+                if (addInput.trim() && !adding) {
+                  setAdding(true);
+                  setAddError(null);
+                  bridge
+                    .request('plugin.marketplace.add', {
+                      cwd,
+                      source: addInput.trim(),
+                    })
+                    .then((result) => {
+                      if (result.success) {
+                        exitAddMode();
+                        loadMarketplaces();
+                      } else {
+                        setAddError(
+                          result.error || 'Failed to add marketplace.',
+                        );
+                        setAdding(false);
+                      }
+                    })
+                    .catch((err) => {
+                      setAddError(
+                        err instanceof Error ? err.message : String(err),
+                      );
+                      setAdding(false);
+                    });
+                }
+              }}
+              onEscape={() => {
+                exitAddMode();
+              }}
+            />
+          </Box>
+          {adding &&
+            (() => {
+              const src = addInput.trim();
+              const isGit =
+                /^(git@|git:\/\/|https?:\/\/)/.test(src) ||
+                /^[^/]+\/[^/]+$/.test(src);
+              return (
+                <Box marginTop={1}>
+                  <Spinner type="dots" />
+                  <Text>
+                    {isGit
+                      ? ` Cloning repository: ${src}`
+                      : ` Adding marketplace...`}
+                  </Text>
+                </Box>
+              );
+            })()}
+          {addError && (
+            <Box marginTop={1}>
+              <Text color="red">{addError}</Text>
+            </Box>
+          )}
+        </Box>
+        <Box marginTop={1}>
+          <Text dimColor>
+            {adding ? 'escape to cancel' : 'Enter to add · escape to cancel'}
+          </Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  return (
+    <Box flexDirection="column">
+      <Box marginBottom={1}>
+        <Text bold>Manage marketplaces</Text>
+      </Box>
+      <Box flexDirection="column">
+        {items.map((item, i) => {
+          const isSelected = i === selectedIndex;
+          if (item.type === 'add') {
+            return (
+              <Box key="add">
+                <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'green'}>
+                  {isSelected ? '\u276F ' : '  '}+ Add Marketplace
+                </Text>
+              </Box>
+            );
+          }
+          const m = item.data;
+          const sourceStr = m.source.url;
+          return (
+            <Box
+              key={`${m.name}-${sourceStr}`}
+              flexDirection="column"
+              marginTop={1}
+            >
+              <Box>
+                <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
+                  {isSelected ? '\u276F ' : '  '}
+                </Text>
+                <Text>{pc.white('\u25CF')} </Text>
+                <Text bold color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
+                  {m.name}
+                </Text>
+              </Box>
+              <Box marginLeft={6} flexDirection="column">
+                <Text dimColor>{sourceStr}</Text>
+                <Text dimColor>
+                  {m.pluginCount} available · Updated{' '}
+                  {formatDate(m.lastUpdated)}
+                </Text>
+              </Box>
+            </Box>
+          );
+        })}
+      </Box>
+      <Box marginTop={1}>
+        <Text dimColor>
+          ↑↓ navigate · Enter: select · u: update · r: remove · Esc: back
+        </Text>
+      </Box>
+    </Box>
+  );
+};
+
+interface PluginManagerProps {
+  onExit: (result: string) => void;
+}
+
+const PluginManagerComponent: React.FC<PluginManagerProps> = ({ onExit }) => {
+  const [activeTab, setActiveTab] = useState<Tab>('Discover');
+  const [subViewActive, setSubViewActive] = useState(false);
+
+  const cycleTab = (direction: 1 | -1) => {
+    const idx = TABS.indexOf(activeTab);
+    const next = (idx + direction + TABS.length) % TABS.length;
+    setActiveTab(TABS[next]);
+  };
+
+  useInput(
+    (input, key) => {
+      if (key.escape) {
+        onExit('Plugin manager closed.');
+        return;
+      }
+      if (key.tab || key.rightArrow) {
+        cycleTab(1);
+      }
+      if (key.leftArrow) {
+        cycleTab(-1);
+      }
+    },
+    { isActive: !subViewActive },
+  );
+
+  return (
+    <Box flexDirection="column">
+      <TabBar activeTab={activeTab} />
+      <Box marginTop={1}>
+        {activeTab === 'Discover' && (
+          <DiscoverView onExit={onExit} onSubViewChange={setSubViewActive} />
+        )}
+        {activeTab === 'Installed' && <InstalledView onExit={onExit} />}
+        {activeTab === 'Marketplaces' && (
+          <MarketplacesView
+            onExit={onExit}
+            onSubViewChange={setSubViewActive}
+          />
+        )}
+      </Box>
+    </Box>
+  );
+};
+
+export function createPluginCommand(): LocalJSXCommand {
+  return {
+    type: 'local-jsx',
+    name: 'plugin',
+    description: 'Manage plugins: discover, install, and configure',
+    async call(onDone: (result: string) => void) {
+      return <PluginManagerComponent onExit={onDone} />;
+    },
+  };
+}

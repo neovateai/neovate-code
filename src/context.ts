@@ -17,6 +17,8 @@ import {
 } from './plugin';
 import { truncationPlugin } from './plugins/truncation';
 import { checkpointPlugin } from './plugins/checkpoint';
+import { PluginLoader } from './pluginRegistry/loader';
+import { PluginRegistry } from './pluginRegistry/registry';
 import { SkillManager } from './skill';
 import { FileHistoryManager } from './snapshot/FileHistoryManager';
 
@@ -127,8 +129,24 @@ export class Context {
     const projectPlugins = scanPlugins(
       path.join(paths.projectConfigDir, 'plugins'),
     );
+    const registryPath = path.join(
+      paths.globalConfigDir,
+      'installed_plugins.json',
+    );
+    const pluginRegistry = new PluginRegistry({ registryPath });
+    const pluginLoader = new PluginLoader();
+    const registeredPlugins: Plugin[] = [];
+    for (const installed of pluginRegistry.getEnabled()) {
+      try {
+        const plugin = await pluginLoader.loadInstalled(installed);
+        registeredPlugins.push(plugin);
+      } catch (_error) {
+        // skip failed plugins silently
+      }
+    }
     const pluginsConfigs: (string | Plugin)[] = [
       ...buildInPlugins,
+      ...registeredPlugins,
       ...globalPlugins,
       ...projectPlugins,
       ...(initialConfig.plugins || []),

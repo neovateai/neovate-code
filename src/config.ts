@@ -121,6 +121,7 @@ export type Config = {
    */
   checkpoints?: boolean;
   recentModels?: number;
+  enabledPlugins?: Record<string, boolean>;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -165,6 +166,7 @@ const VALID_CONFIG_KEYS = [
   'thinkingLevel',
   'checkpoints',
   'recentModels',
+  'enabledPlugins',
 ];
 const ARRAY_CONFIG_KEYS = ['plugins', 'skills'];
 const OBJECT_CONFIG_KEYS = [
@@ -174,6 +176,7 @@ const OBJECT_CONFIG_KEYS = [
   'extensions',
   'tools',
   'agent',
+  'enabledPlugins',
 ];
 const BOOLEAN_CONFIG_KEYS = [
   'quiet',

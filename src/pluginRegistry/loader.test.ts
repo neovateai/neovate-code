@@ -1,0 +1,155 @@
+import fs from 'fs';
+import os from 'os';
+import path from 'pathe';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { PluginLoader } from './loader';
+import type { InstalledPlugin } from './types';
+
+function createInstalledPlugin(
+  installPath: string,
+  name = 'test-plugin',
+): InstalledPlugin {
+  return {
+    name,
+    source: { type: 'local' as const, path: installPath },
+    scope: 'global' as const,
+    installPath,
+    installedAt: '2026-01-01T00:00:00.000Z',
+    enabled: true,
+  };
+}
+
+describe('PluginLoader', () => {
+  let tempDir: string;
+  let loader: PluginLoader;
+
+  beforeEach(() => {
+    tempDir = path.join(os.tmpdir(), `loader-test-${Date.now()}`);
+    fs.mkdirSync(tempDir, { recursive: true });
+    loader = new PluginLoader();
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  test('loads minimal manifest (name only)', async () => {
+    const pluginDir = path.join(tempDir, 'minimal');
+    fs.mkdirSync(pluginDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, 'plugin.json'),
+      JSON.stringify({ name: 'minimal' }),
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'minimal'),
+    );
+    expect(plugin.name).toBe('minimal');
+  });
+
+  test('loads manifest with skills', async () => {
+    const pluginDir = path.join(tempDir, 'with-skills');
+    fs.mkdirSync(pluginDir, { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'skills'), { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, 'skills', 'SKILL.md'),
+      '# Test Skill',
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, 'plugin.json'),
+      JSON.stringify({
+        name: 'with-skills',
+        skills: ['./skills/SKILL.md'],
+      }),
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'with-skills'),
+    );
+    expect(plugin.skill).toBeDefined();
+
+    const skills = await plugin.skill!.call({} as any);
+    expect(skills).toHaveLength(1);
+    expect(skills[0]).toContain('SKILL.md');
+  });
+
+  test('loads manifest with outputStyles', async () => {
+    const pluginDir = path.join(tempDir, 'with-styles');
+    fs.mkdirSync(pluginDir, { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'styles'), { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, 'styles', 'custom.md'),
+      '# Custom Style\nBe concise.',
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, 'plugin.json'),
+      JSON.stringify({
+        name: 'with-styles',
+        outputStyles: ['./styles/custom.md'],
+      }),
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'with-styles'),
+    );
+    expect(plugin.outputStyle).toBeDefined();
+
+    const styles = await plugin.outputStyle!.call({} as any);
+    expect(styles).toHaveLength(1);
+    expect(styles[0].name).toBe('custom');
+    expect(styles[0].prompt).toContain('Custom Style');
+  });
+
+  test('loads manifest with mcpServers via config hook', async () => {
+    const pluginDir = path.join(tempDir, 'with-mcp');
+    fs.mkdirSync(pluginDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, 'plugin.json'),
+      JSON.stringify({
+        name: 'with-mcp',
+        mcpServers: {
+          github: { type: 'stdio', command: 'npx', args: ['-y', 'foo'] },
+        },
+      }),
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'with-mcp'),
+    );
+    expect(plugin.config).toBeDefined();
+
+    const config = await plugin.config!.call({} as any, {
+      config: {} as any,
+      argvConfig: {},
+    });
+    expect(config.mcpServers).toBeDefined();
+    expect(config.mcpServers!.github).toBeDefined();
+  });
+
+  test('loads manifest with agent paths', async () => {
+    const pluginDir = path.join(tempDir, 'with-agents');
+    fs.mkdirSync(pluginDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, 'plugin.json'),
+      JSON.stringify({
+        name: 'with-agents',
+        agents: ['./agents/reviewer.md'],
+      }),
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'with-agents'),
+    );
+    expect((plugin as any).__agentPaths).toHaveLength(1);
+    expect((plugin as any).__agentPaths[0]).toContain('reviewer.md');
+  });
+
+  test('throws if plugin.json missing', async () => {
+    const pluginDir = path.join(tempDir, 'no-manifest');
+    fs.mkdirSync(pluginDir, { recursive: true });
+
+    await expect(
+      loader.loadInstalled(createInstalledPlugin(pluginDir, 'no-manifest')),
+    ).rejects.toThrow('Plugin manifest not found');
+  });
+});
