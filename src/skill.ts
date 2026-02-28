@@ -7,6 +7,21 @@ import type { Paths } from './paths';
 import { PluginHookType } from './plugin';
 import { safeFrontMatter } from './utils/safeFrontMatter';
 
+/**
+ * Check if a directory entry is a directory or a symlink pointing to a directory.
+ */
+function isDirOrSymlinkToDir(parentDir: string, entry: fs.Dirent): boolean {
+  if (entry.isDirectory()) return true;
+  if (entry.isSymbolicLink()) {
+    try {
+      return fs.statSync(path.join(parentDir, entry.name)).isDirectory();
+    } catch {
+      // broken symlink, skip
+    }
+  }
+  return false;
+}
+
 export enum SkillSource {
   Plugin = 'plugin',
   Config = 'config',
@@ -188,7 +203,7 @@ export class SkillManager {
       const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
 
       for (const entry of entries) {
-        if (entry.isDirectory()) {
+        if (isDirOrSymlinkToDir(skillsDir, entry)) {
           const skillPath = path.join(skillsDir, entry.name, 'SKILL.md');
           if (fs.existsSync(skillPath)) {
             this.loadSkillFile(skillPath, source);
@@ -509,7 +524,7 @@ export class SkillManager {
     if (fs.existsSync(skillsDir) && fs.statSync(skillsDir).isDirectory()) {
       const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
       for (const entry of entries) {
-        if (entry.isDirectory()) {
+        if (isDirOrSymlinkToDir(skillsDir, entry)) {
           const skillPath = path.join(skillsDir, entry.name, 'SKILL.md');
           if (fs.existsSync(skillPath)) {
             skills.push(skillPath);
@@ -523,7 +538,7 @@ export class SkillManager {
 
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
-      if (entry.isDirectory()) {
+      if (isDirOrSymlinkToDir(dir, entry)) {
         const skillPath = path.join(dir, entry.name, 'SKILL.md');
         if (fs.existsSync(skillPath)) {
           skills.push(skillPath);
