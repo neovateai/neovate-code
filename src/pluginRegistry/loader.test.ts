@@ -35,9 +35,9 @@ describe('PluginLoader', () => {
 
   test('loads minimal manifest (name only)', async () => {
     const pluginDir = path.join(tempDir, 'minimal');
-    fs.mkdirSync(pluginDir, { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, '.claude-plugin'), { recursive: true });
     fs.writeFileSync(
-      path.join(pluginDir, 'plugin.json'),
+      path.join(pluginDir, '.claude-plugin', 'plugin.json'),
       JSON.stringify({ name: 'minimal' }),
     );
 
@@ -47,19 +47,19 @@ describe('PluginLoader', () => {
     expect(plugin.name).toBe('minimal');
   });
 
-  test('loads manifest with skills', async () => {
+  test('loads manifest with explicit skill paths', async () => {
     const pluginDir = path.join(tempDir, 'with-skills');
-    fs.mkdirSync(pluginDir, { recursive: true });
-    fs.mkdirSync(path.join(pluginDir, 'skills'), { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, '.claude-plugin'), { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'custom-skills'), { recursive: true });
     fs.writeFileSync(
-      path.join(pluginDir, 'skills', 'SKILL.md'),
+      path.join(pluginDir, 'custom-skills', 'SKILL.md'),
       '# Test Skill',
     );
     fs.writeFileSync(
-      path.join(pluginDir, 'plugin.json'),
+      path.join(pluginDir, '.claude-plugin', 'plugin.json'),
       JSON.stringify({
         name: 'with-skills',
-        skills: ['./skills/SKILL.md'],
+        skills: ['./custom-skills/SKILL.md'],
       }),
     );
 
@@ -75,14 +75,14 @@ describe('PluginLoader', () => {
 
   test('loads manifest with outputStyles', async () => {
     const pluginDir = path.join(tempDir, 'with-styles');
-    fs.mkdirSync(pluginDir, { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, '.claude-plugin'), { recursive: true });
     fs.mkdirSync(path.join(pluginDir, 'styles'), { recursive: true });
     fs.writeFileSync(
       path.join(pluginDir, 'styles', 'custom.md'),
       '# Custom Style\nBe concise.',
     );
     fs.writeFileSync(
-      path.join(pluginDir, 'plugin.json'),
+      path.join(pluginDir, '.claude-plugin', 'plugin.json'),
       JSON.stringify({
         name: 'with-styles',
         outputStyles: ['./styles/custom.md'],
@@ -102,9 +102,9 @@ describe('PluginLoader', () => {
 
   test('loads manifest with mcpServers via config hook', async () => {
     const pluginDir = path.join(tempDir, 'with-mcp');
-    fs.mkdirSync(pluginDir, { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, '.claude-plugin'), { recursive: true });
     fs.writeFileSync(
-      path.join(pluginDir, 'plugin.json'),
+      path.join(pluginDir, '.claude-plugin', 'plugin.json'),
       JSON.stringify({
         name: 'with-mcp',
         mcpServers: {
@@ -126,15 +126,20 @@ describe('PluginLoader', () => {
     expect(config.mcpServers!.github).toBeDefined();
   });
 
-  test('loads manifest with agent paths', async () => {
+  test('loads manifest with agent paths via directory', async () => {
     const pluginDir = path.join(tempDir, 'with-agents');
-    fs.mkdirSync(pluginDir, { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, '.claude-plugin'), { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'agents'), { recursive: true });
     fs.writeFileSync(
-      path.join(pluginDir, 'plugin.json'),
+      path.join(pluginDir, '.claude-plugin', 'plugin.json'),
       JSON.stringify({
         name: 'with-agents',
-        agents: ['./agents/reviewer.md'],
+        agents: './agents',
       }),
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, 'agents', 'reviewer.md'),
+      '---\ndescription: Expert reviewer\n---\nReview code.',
     );
 
     const plugin = await loader.loadInstalled(
@@ -151,5 +156,160 @@ describe('PluginLoader', () => {
     await expect(
       loader.loadInstalled(createInstalledPlugin(pluginDir, 'no-manifest')),
     ).rejects.toThrow('Plugin manifest not found');
+  });
+
+  test('auto-discovers commands from default commands/ directory', async () => {
+    const pluginDir = path.join(tempDir, 'auto-commands');
+    fs.mkdirSync(path.join(pluginDir, '.claude-plugin'), { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'commands'), { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, '.claude-plugin', 'plugin.json'),
+      JSON.stringify({ name: 'auto-commands' }),
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, 'commands', 'review.md'),
+      '---\ndescription: Review code\n---\nReview the code carefully.',
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'auto-commands'),
+    );
+    expect(plugin.slashCommand).toBeDefined();
+
+    const cmds = await plugin.slashCommand!.call({} as any);
+    expect(cmds).toHaveLength(1);
+    expect(cmds[0].name).toBe('review');
+    expect(cmds[0].type).toBe('prompt');
+  });
+
+  test('auto-discovers agents from default agents/ directory', async () => {
+    const pluginDir = path.join(tempDir, 'auto-agents');
+    fs.mkdirSync(path.join(pluginDir, '.claude-plugin'), { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'agents'), { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, '.claude-plugin', 'plugin.json'),
+      JSON.stringify({ name: 'auto-agents' }),
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, 'agents', 'reviewer.md'),
+      '---\ndescription: Expert code reviewer\n---\nYou are an expert reviewer.',
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'auto-agents'),
+    );
+    expect((plugin as any).__agentPaths).toHaveLength(1);
+    expect((plugin as any).__agentPaths[0]).toContain('reviewer.md');
+  });
+
+  test('auto-discovers skills from default skills/ directory', async () => {
+    const pluginDir = path.join(tempDir, 'auto-skills');
+    fs.mkdirSync(path.join(pluginDir, '.claude-plugin'), { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'skills', 'api-testing'), {
+      recursive: true,
+    });
+    fs.writeFileSync(
+      path.join(pluginDir, '.claude-plugin', 'plugin.json'),
+      JSON.stringify({ name: 'auto-skills' }),
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, 'skills', 'api-testing', 'SKILL.md'),
+      '# API Testing Skill',
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'auto-skills'),
+    );
+    expect(plugin.skill).toBeDefined();
+
+    const skills = await plugin.skill!.call({} as any);
+    expect(skills).toHaveLength(1);
+    expect(skills[0]).toContain('SKILL.md');
+  });
+
+  test('auto-discovers mcpServers from .mcp.json', async () => {
+    const pluginDir = path.join(tempDir, 'auto-mcp');
+    fs.mkdirSync(path.join(pluginDir, '.claude-plugin'), { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, '.claude-plugin', 'plugin.json'),
+      JSON.stringify({ name: 'auto-mcp' }),
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, '.mcp.json'),
+      JSON.stringify({
+        mcpServers: {
+          github: { command: 'npx', args: ['-y', 'foo'] },
+        },
+      }),
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'auto-mcp'),
+    );
+    expect(plugin.config).toBeDefined();
+
+    const config = await plugin.config!.call({} as any, {
+      config: {} as any,
+      argvConfig: {},
+    });
+    expect(config.mcpServers?.github).toBeDefined();
+  });
+
+  test('manifest custom paths supplement default directories', async () => {
+    const pluginDir = path.join(tempDir, 'merge-commands');
+    fs.mkdirSync(path.join(pluginDir, '.claude-plugin'), { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'commands'), { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'admin-commands'), { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, '.claude-plugin', 'plugin.json'),
+      JSON.stringify({
+        name: 'merge-commands',
+        commands: './admin-commands',
+      }),
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, 'commands', 'review.md'),
+      '---\ndescription: Review code\n---\nReview.',
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, 'admin-commands', 'admin.md'),
+      '---\ndescription: Admin command\n---\nAdmin.',
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'merge-commands'),
+    );
+    const cmds = await plugin.slashCommand!.call({} as any);
+    expect(cmds).toHaveLength(2);
+    const names = cmds.map((c: any) => c.name).sort();
+    expect(names).toEqual(['admin', 'review']);
+  });
+
+  test('replaces ${CLAUDE_PLUGIN_ROOT} in mcpServers', async () => {
+    const pluginDir = path.join(tempDir, 'plugin-root-var');
+    fs.mkdirSync(path.join(pluginDir, '.claude-plugin'), { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, '.claude-plugin', 'plugin.json'),
+      JSON.stringify({
+        name: 'plugin-root-var',
+        mcpServers: {
+          tool: {
+            command: 'node',
+            args: ['${CLAUDE_PLUGIN_ROOT}/server.js'],
+          },
+        },
+      }),
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'plugin-root-var'),
+    );
+    const config = await plugin.config!.call({} as any, {
+      config: {} as any,
+      argvConfig: {},
+    });
+    expect((config.mcpServers?.tool as any).args[0]).toBe(
+      path.join(pluginDir, 'server.js'),
+    );
   });
 });

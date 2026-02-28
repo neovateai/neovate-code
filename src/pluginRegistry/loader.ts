@@ -1,26 +1,157 @@
 import { createJiti } from 'jiti';
 import fs from 'fs';
+import { glob } from 'glob';
 import path from 'pathe';
-import { OutputStyle } from '../outputStyle';
+import { OutputStyle, loadPolishedMarkdownFiles } from '../outputStyle';
 import type { Plugin } from '../plugin';
+import { fileToPromptCommand } from '../slashCommand';
 import type { InstalledPlugin, PluginManifest } from './types';
 import { PluginManifestSchema } from './types';
 
+interface DiscoveredComponents {
+  commandDirs: string[];
+  agentPaths: string[];
+  skillPaths: string[];
+  mcpConfig: Record<string, any> | null;
+}
+
 export class PluginLoader {
   async loadInstalled(installed: InstalledPlugin): Promise<Plugin> {
-    const manifestPath = path.join(installed.installPath, 'plugin.json');
+    const manifestPath = path.join(
+      installed.installPath,
+      '.claude-plugin',
+      'plugin.json',
+    );
     if (!fs.existsSync(manifestPath)) {
       throw new Error(`Plugin manifest not found: ${manifestPath}`);
     }
     const manifest = PluginManifestSchema.parse(
       JSON.parse(fs.readFileSync(manifestPath, 'utf-8')),
     );
-    return this.#manifestToPlugin(manifest, installed.installPath);
+    const discovered = this.#discoverComponents(installed.installPath);
+    const merged = this.#mergeComponents(
+      discovered,
+      manifest,
+      installed.installPath,
+    );
+    return this.#manifestToPlugin(manifest, installed.installPath, merged);
+  }
+
+  #discoverComponents(pluginRoot: string): DiscoveredComponents {
+    const result: DiscoveredComponents = {
+      commandDirs: [],
+      agentPaths: [],
+      skillPaths: [],
+      mcpConfig: null,
+    };
+
+    const commandsDir = path.join(pluginRoot, 'commands');
+    if (fs.existsSync(commandsDir)) {
+      result.commandDirs.push(commandsDir);
+    }
+
+    const agentsDir = path.join(pluginRoot, 'agents');
+    if (fs.existsSync(agentsDir)) {
+      const files = glob.sync('*.md', { cwd: agentsDir });
+      result.agentPaths = files.map((f) => path.join(agentsDir, f));
+    }
+
+    const skillsDir = path.join(pluginRoot, 'skills');
+    if (fs.existsSync(skillsDir)) {
+      const files = glob.sync('*/SKILL.md', { cwd: skillsDir });
+      result.skillPaths = files.map((f) => path.join(skillsDir, f));
+    }
+
+    const mcpPath = path.join(pluginRoot, '.mcp.json');
+    if (fs.existsSync(mcpPath)) {
+      try {
+        const content = JSON.parse(fs.readFileSync(mcpPath, 'utf-8'));
+        result.mcpConfig = content.mcpServers || content;
+      } catch {}
+    }
+
+    return result;
+  }
+
+  #mergeComponents(
+    discovered: DiscoveredComponents,
+    manifest: PluginManifest,
+    pluginRoot: string,
+  ): DiscoveredComponents {
+    const merged: DiscoveredComponents = {
+      commandDirs: [...discovered.commandDirs],
+      agentPaths: [...discovered.agentPaths],
+      skillPaths: [...discovered.skillPaths],
+      mcpConfig: discovered.mcpConfig ? { ...discovered.mcpConfig } : null,
+    };
+
+    if (manifest.commands) {
+      const customPaths = Array.isArray(manifest.commands)
+        ? manifest.commands
+        : [manifest.commands];
+      for (const p of customPaths) {
+        const absDir = path.resolve(pluginRoot, p);
+        if (fs.existsSync(absDir) && !merged.commandDirs.includes(absDir)) {
+          merged.commandDirs.push(absDir);
+        }
+      }
+    }
+
+    if (manifest.agents) {
+      const customPaths = Array.isArray(manifest.agents)
+        ? manifest.agents
+        : [manifest.agents];
+      for (const p of customPaths) {
+        const absPath = path.resolve(pluginRoot, p);
+        if (fs.existsSync(absPath)) {
+          const stat = fs.statSync(absPath);
+          if (stat.isDirectory()) {
+            const files = glob.sync('*.md', { cwd: absPath });
+            for (const f of files) {
+              const full = path.join(absPath, f);
+              if (!merged.agentPaths.includes(full)) {
+                merged.agentPaths.push(full);
+              }
+            }
+          } else if (!merged.agentPaths.includes(absPath)) {
+            merged.agentPaths.push(absPath);
+          }
+        }
+      }
+    }
+
+    if (manifest.skills) {
+      for (const p of manifest.skills) {
+        const absPath = path.resolve(pluginRoot, p);
+        if (!merged.skillPaths.includes(absPath)) {
+          merged.skillPaths.push(absPath);
+        }
+      }
+    }
+
+    if (typeof manifest.mcpServers === 'string') {
+      const mcpFilePath = path.resolve(pluginRoot, manifest.mcpServers);
+      if (fs.existsSync(mcpFilePath)) {
+        try {
+          const content = JSON.parse(fs.readFileSync(mcpFilePath, 'utf-8'));
+          const fileMcp = content.mcpServers || content;
+          merged.mcpConfig = { ...(merged.mcpConfig || {}), ...fileMcp };
+        } catch {}
+      }
+    } else if (manifest.mcpServers && typeof manifest.mcpServers === 'object') {
+      merged.mcpConfig = {
+        ...(merged.mcpConfig || {}),
+        ...manifest.mcpServers,
+      };
+    }
+
+    return merged;
   }
 
   async #manifestToPlugin(
     manifest: PluginManifest,
     pluginRoot: string,
+    components: DiscoveredComponents,
   ): Promise<Plugin> {
     const plugin: Plugin = { name: manifest.name };
 
@@ -33,14 +164,30 @@ export class PluginLoader {
       Object.assign(plugin, mainPlugin);
     }
 
-    if (manifest.skills?.length) {
-      const skillPaths = manifest.skills.map((s) =>
-        path.resolve(pluginRoot, s),
-      );
+    if (components.commandDirs.length > 0) {
+      const existingSlashCommand = plugin.slashCommand;
+      plugin.slashCommand = async function (this: any) {
+        const base = existingSlashCommand
+          ? await existingSlashCommand.call(this)
+          : [];
+        const cmds = components.commandDirs.flatMap((dir) =>
+          loadPolishedMarkdownFiles(dir).map((f) =>
+            fileToPromptCommand(f, manifest.name),
+          ),
+        );
+        return [...base, ...cmds];
+      };
+    }
+
+    if (components.agentPaths.length > 0) {
+      (plugin as any).__agentPaths = components.agentPaths;
+    }
+
+    if (components.skillPaths.length > 0) {
       const existingSkill = plugin.skill;
       plugin.skill = async function (this: any) {
         const base = existingSkill ? await existingSkill.call(this) : [];
-        return [...base, ...skillPaths];
+        return [...base, ...components.skillPaths];
       };
     }
 
@@ -67,27 +214,8 @@ export class PluginLoader {
       };
     }
 
-    if (manifest.commands?.length) {
-      const cmdPaths = manifest.commands.map((c) =>
-        path.resolve(pluginRoot, c),
-      );
-      const existingSlashCommand = plugin.slashCommand;
-      plugin.slashCommand = async function (this: any) {
-        const base = existingSlashCommand
-          ? await existingSlashCommand.call(this)
-          : [];
-        const jiti = createJiti(import.meta.url);
-        const cmds = await Promise.all(
-          cmdPaths.map(async (p) => {
-            return (await jiti.import(p, { default: true })) as any;
-          }),
-        );
-        return [...base, ...cmds.flat()];
-      };
-    }
-
-    if (manifest.mcpServers && Object.keys(manifest.mcpServers).length > 0) {
-      const mcpConfig = manifest.mcpServers;
+    if (components.mcpConfig) {
+      const mcpConfig = replacePluginRoot(components.mcpConfig, pluginRoot);
       const existingConfig = plugin.config;
       plugin.config = async function (this: any, opts) {
         const base = existingConfig
@@ -103,12 +231,23 @@ export class PluginLoader {
       };
     }
 
-    if (manifest.agents?.length) {
-      (plugin as any).__agentPaths = manifest.agents.map((a) =>
-        path.resolve(pluginRoot, a),
-      );
-    }
-
     return plugin;
   }
+}
+
+function replacePluginRoot(obj: any, pluginRoot: string): any {
+  if (typeof obj === 'string') {
+    return obj.replace(/\$\{CLAUDE_PLUGIN_ROOT\}/g, pluginRoot);
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((item) => replacePluginRoot(item, pluginRoot));
+  }
+  if (obj && typeof obj === 'object') {
+    const result: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = replacePluginRoot(value, pluginRoot);
+    }
+    return result;
+  }
+  return obj;
 }

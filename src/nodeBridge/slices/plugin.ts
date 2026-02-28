@@ -46,10 +46,10 @@ export function registerPluginHandlers(
         plugins: Object.values(all).map((p) => ({
           name: p.name,
           version: p.version,
-          source: p.source,
           scope: p.scope,
           enabled: p.enabled,
           installedAt: p.installedAt,
+          marketplace: p.marketplace,
         })),
       },
     };
@@ -115,7 +115,22 @@ export function registerPluginHandlers(
           marketplaceEntry.installLocation,
           pluginDef.source,
         );
-        installPath = sourcePath;
+        installPath = path.join(
+          getPluginsDir(context),
+          'installed',
+          pluginName,
+        );
+
+        fs.mkdirSync(path.dirname(installPath), { recursive: true });
+        if (fs.existsSync(installPath)) {
+          const stats = fs.lstatSync(installPath);
+          if (stats.isSymbolicLink()) {
+            fs.unlinkSync(installPath);
+          } else {
+            fs.rmSync(installPath, { recursive: true });
+          }
+        }
+        fs.symlinkSync(sourcePath, installPath);
       } else {
         const result = await installer.install({
           name: pluginName,
@@ -149,17 +164,17 @@ export function registerPluginHandlers(
   });
 
   messageBus.registerHandler('plugin.uninstall', async (data) => {
-    const { cwd, pluginName } = data;
+    const { cwd, pluginName, marketplace } = data;
     try {
       const context = await getContext(cwd);
       const registry = getRegistry(context);
-      const installed = registry.get(pluginName);
+      const installed = registry.get(pluginName, marketplace);
       if (!installed) {
         return { success: false, error: `Plugin "${pluginName}" not found.` };
       }
       const installer = getInstaller(context);
       await installer.uninstall(installed.installPath);
-      registry.unregister(pluginName);
+      registry.unregister(pluginName, marketplace);
       return { success: true };
     } catch (error) {
       return {
@@ -170,24 +185,24 @@ export function registerPluginHandlers(
   });
 
   messageBus.registerHandler('plugin.enable', async (data) => {
-    const { cwd, pluginName } = data;
+    const { cwd, pluginName, marketplace } = data;
     const context = await getContext(cwd);
     const registry = getRegistry(context);
-    if (!registry.get(pluginName)) {
+    if (!registry.get(pluginName, marketplace)) {
       return { success: false, error: `Plugin "${pluginName}" not found.` };
     }
-    registry.setEnabled(pluginName, true);
+    registry.setEnabled(pluginName, true, marketplace);
     return { success: true };
   });
 
   messageBus.registerHandler('plugin.disable', async (data) => {
-    const { cwd, pluginName } = data;
+    const { cwd, pluginName, marketplace } = data;
     const context = await getContext(cwd);
     const registry = getRegistry(context);
-    if (!registry.get(pluginName)) {
+    if (!registry.get(pluginName, marketplace)) {
       return { success: false, error: `Plugin "${pluginName}" not found.` };
     }
-    registry.setEnabled(pluginName, false);
+    registry.setEnabled(pluginName, false, marketplace);
     return { success: true };
   });
 
@@ -197,7 +212,6 @@ export function registerPluginHandlers(
     const manager = getMarketplaceManager(context);
     const registry = getRegistry(context);
     const installedPlugins = registry.getAll();
-    const installCounts = manager.getInstallCounts();
 
     const known = manager.getKnownMarketplaces();
     const marketplaceNames = marketplaceName
@@ -208,7 +222,6 @@ export function registerPluginHandlers(
       name: string;
       description?: string;
       marketplace: string;
-      installs: number;
       category?: string;
       tags?: string[];
       installed: boolean;
@@ -222,7 +235,6 @@ export function registerPluginHandlers(
       if (!mktJson) continue;
 
       for (const p of mktJson.plugins) {
-        const countKey = `${p.name}@${mktName}`;
         const installedPlugin = Object.values(installedPlugins).find(
           (ip) => ip.name === p.name && ip.marketplace === mktName,
         );
@@ -230,7 +242,6 @@ export function registerPluginHandlers(
           name: p.name,
           description: p.description,
           marketplace: mktName,
-          installs: installCounts.get(countKey) || 0,
           category: p.category,
           tags: p.tags,
           installed: !!installedPlugin,
@@ -238,8 +249,6 @@ export function registerPluginHandlers(
         });
       }
     }
-
-    plugins.sort((a, b) => b.installs - a.installs);
 
     return {
       success: true,

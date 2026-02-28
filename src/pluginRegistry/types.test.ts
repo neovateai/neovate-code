@@ -105,6 +105,48 @@ describe('PluginManifestSchema', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  test('commands can be a string', () => {
+    const result = PluginManifestSchema.safeParse({
+      name: 'test',
+      commands: './custom-commands',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test('commands can be an array of strings', () => {
+    const result = PluginManifestSchema.safeParse({
+      name: 'test',
+      commands: ['./commands', './admin-commands'],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test('agents can be a string', () => {
+    const result = PluginManifestSchema.safeParse({
+      name: 'test',
+      agents: './custom-agents',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test('mcpServers can be a string path', () => {
+    const result = PluginManifestSchema.safeParse({
+      name: 'test',
+      mcpServers: './.mcp.json',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test('mcpServers can be an inline object', () => {
+    const result = PluginManifestSchema.safeParse({
+      name: 'test',
+      mcpServers: {
+        github: { command: 'npx', args: ['-y', 'foo'] },
+      },
+    });
+    expect(result.success).toBe(true);
+  });
 });
 
 describe('InstalledPluginSchema', () => {

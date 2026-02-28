@@ -131,6 +131,7 @@ export class Context {
     );
     const registryPath = path.join(
       paths.globalConfigDir,
+      'plugins',
       'installed_plugins.json',
     );
     const pluginRegistry = new PluginRegistry({ registryPath });
@@ -144,6 +145,7 @@ export class Context {
         // skip failed plugins silently
       }
     }
+
     const pluginsConfigs: (string | Plugin)[] = [
       ...buildInPlugins,
       ...registeredPlugins,

@@ -40,7 +40,12 @@ export class PluginInstaller {
 
   async uninstall(installPath: string) {
     if (fs.existsSync(installPath)) {
-      fs.rmSync(installPath, { recursive: true });
+      const stats = fs.lstatSync(installPath);
+      if (stats.isSymbolicLink()) {
+        fs.unlinkSync(installPath);
+      } else {
+        fs.rmSync(installPath, { recursive: true });
+      }
     }
   }
 

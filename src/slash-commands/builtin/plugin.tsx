@@ -16,7 +16,6 @@ interface DiscoverPlugin {
   name: string;
   description?: string;
   marketplace: string;
-  installs: number;
   category?: string;
   tags?: string[];
   installed: boolean;
@@ -26,7 +25,6 @@ interface DiscoverPlugin {
 interface InstalledPlugin {
   name: string;
   version?: string;
-  source: any;
   scope: 'global' | 'project' | 'local';
   enabled: boolean;
   installedAt: string;
@@ -41,11 +39,6 @@ interface MarketplaceInfo {
   pluginCount: number;
   description?: string;
   owner?: string;
-}
-
-function formatInstalls(count: number): string {
-  if (count >= 1000) return `${(count / 1000).toFixed(1).replace(/\.0$/, '')}K`;
-  return String(count);
 }
 
 function formatDate(iso: string): string {
@@ -176,7 +169,9 @@ const PluginDetailView: React.FC<{
 const DiscoverView: React.FC<{
   onExit: (msg: string) => void;
   onSubViewChange?: (active: boolean) => void;
-}> = ({ onExit, onSubViewChange }) => {
+  refreshTrigger?: number;
+  onPluginChange?: () => void;
+}> = ({ onExit, onSubViewChange, refreshTrigger, onPluginChange }) => {
   const { bridge, cwd } = useAppStore();
   const [plugins, setPlugins] = useState<DiscoverPlugin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -210,7 +205,7 @@ const DiscoverView: React.FC<{
 
   useEffect(() => {
     loadPlugins();
-  }, [loadPlugins]);
+  }, [loadPlugins, refreshTrigger]);
 
   const PAGE_SIZE = 5;
 
@@ -285,7 +280,10 @@ const DiscoverView: React.FC<{
               marketplaceName: detailPlugin.marketplace,
               scope,
             })
-            .then(() => loadPlugins())
+            .then(() => {
+              loadPlugins();
+              onPluginChange?.();
+            })
             .finally(() => setInstalling(null));
         }}
       />
@@ -335,11 +333,7 @@ const DiscoverView: React.FC<{
                 <Text bold color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
                   {p.name}
                 </Text>
-                <Text dimColor>
-                  {' '}
-                  · {p.marketplace}
-                  {` · ${formatInstalls(p.installs)} installs`}
-                </Text>
+                <Text dimColor> · {p.marketplace}</Text>
               </Box>
               {p.description && (
                 <Box marginLeft={6}>
@@ -366,9 +360,10 @@ const DiscoverView: React.FC<{
   );
 };
 
-const InstalledView: React.FC<{ onExit: (msg: string) => void }> = ({
-  onExit,
-}) => {
+const InstalledView: React.FC<{
+  onExit: (msg: string) => void;
+  onPluginChange?: () => void;
+}> = ({ onExit, onPluginChange }) => {
   const { bridge, cwd } = useAppStore();
   const [plugins, setPlugins] = useState<InstalledPlugin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -402,16 +397,28 @@ const InstalledView: React.FC<{ onExit: (msg: string) => void }> = ({
       const plugin = plugins[selectedIndex];
       const method = plugin.enabled ? 'plugin.disable' : 'plugin.enable';
       bridge
-        .request(method, { cwd, pluginName: plugin.name })
-        .then(() => loadPlugins());
+        .request(method, {
+          cwd,
+          pluginName: plugin.name,
+          marketplace: plugin.marketplace,
+        })
+        .then(() => {
+          loadPlugins();
+          onPluginChange?.();
+        });
     }
     if (input === 'r' && plugins.length > 0) {
       const plugin = plugins[selectedIndex];
       bridge
-        .request('plugin.uninstall', { cwd, pluginName: plugin.name })
+        .request('plugin.uninstall', {
+          cwd,
+          pluginName: plugin.name,
+          marketplace: plugin.marketplace,
+        })
         .then(() => {
           loadPlugins();
           setSelectedIndex(Math.max(0, selectedIndex - 1));
+          onPluginChange?.();
         });
     }
   });
@@ -448,7 +455,11 @@ const InstalledView: React.FC<{ onExit: (msg: string) => void }> = ({
           const isSelected = i === selectedIndex;
           const indicator = p.enabled ? pc.white('\u25CF') : pc.gray('\u25CB');
           return (
-            <Box key={p.name} flexDirection="column" marginTop={i > 0 ? 1 : 0}>
+            <Box
+              key={`${p.name}-${p.marketplace || ''}`}
+              flexDirection="column"
+              marginTop={i > 0 ? 1 : 0}
+            >
               <Box>
                 <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
                   {isSelected ? '\u276F ' : '  '}
@@ -458,7 +469,9 @@ const InstalledView: React.FC<{ onExit: (msg: string) => void }> = ({
                   {p.name}
                 </Text>
                 <Text dimColor>
+                  {p.marketplace ? ` · ${p.marketplace}` : ''}
                   {p.version ? ` · v${p.version}` : ''}
+                  {` · ${p.scope}`}
                   {!p.enabled ? ' (disabled)' : ''}
                 </Text>
               </Box>
@@ -703,7 +716,7 @@ const MarketplacesView: React.FC<{
           if (item.type === 'add') {
             return (
               <Box key="add">
-                <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'green'}>
+                <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
                   {isSelected ? '\u276F ' : '  '}+ Add Marketplace
                 </Text>
               </Box>
@@ -753,6 +766,11 @@ interface PluginManagerProps {
 const PluginManagerComponent: React.FC<PluginManagerProps> = ({ onExit }) => {
   const [activeTab, setActiveTab] = useState<Tab>('Discover');
   const [subViewActive, setSubViewActive] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handlePluginChange = useCallback(() => {
+    setRefreshTrigger((prev) => prev + 1);
+  }, []);
 
   const cycleTab = (direction: 1 | -1) => {
     const idx = TABS.indexOf(activeTab);
@@ -781,9 +799,16 @@ const PluginManagerComponent: React.FC<PluginManagerProps> = ({ onExit }) => {
       <TabBar activeTab={activeTab} />
       <Box marginTop={1}>
         {activeTab === 'Discover' && (
-          <DiscoverView onExit={onExit} onSubViewChange={setSubViewActive} />
+          <DiscoverView
+            onExit={onExit}
+            onSubViewChange={setSubViewActive}
+            refreshTrigger={refreshTrigger}
+            onPluginChange={handlePluginChange}
+          />
         )}
-        {activeTab === 'Installed' && <InstalledView onExit={onExit} />}
+        {activeTab === 'Installed' && (
+          <InstalledView onExit={onExit} onPluginChange={handlePluginChange} />
+        )}
         {activeTab === 'Marketplaces' && (
           <MarketplacesView
             onExit={onExit}

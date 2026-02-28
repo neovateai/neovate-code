@@ -1079,13 +1079,25 @@ type PluginInstallOutput = {
   error?: string;
 };
 
-type PluginUninstallInput = { cwd: string; pluginName: string };
+type PluginUninstallInput = {
+  cwd: string;
+  pluginName: string;
+  marketplace?: string;
+};
 type PluginUninstallOutput = { success: boolean; error?: string };
 
-type PluginEnableInput = { cwd: string; pluginName: string };
+type PluginEnableInput = {
+  cwd: string;
+  pluginName: string;
+  marketplace?: string;
+};
 type PluginEnableOutput = { success: boolean; error?: string };
 
-type PluginDisableInput = { cwd: string; pluginName: string };
+type PluginDisableInput = {
+  cwd: string;
+  pluginName: string;
+  marketplace?: string;
+};
 type PluginDisableOutput = { success: boolean; error?: string };
 
 type PluginDiscoverInput = {

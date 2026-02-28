@@ -55,12 +55,14 @@ export const PluginManifestSchema = z.object({
     ])
     .optional(),
   main: z.string().optional(),
-  commands: z.array(z.string()).optional(),
-  agents: z.array(z.string()).optional(),
+  commands: z.union([z.string(), z.array(z.string())]).optional(),
+  agents: z.union([z.string(), z.array(z.string())]).optional(),
   skills: z.array(z.string()).optional(),
   outputStyles: z.array(z.string()).optional(),
-  mcpServers: z.record(z.string(), z.any()).optional(),
-  hooks: z.record(z.string(), z.array(ManifestHookEntrySchema)).optional(),
+  mcpServers: z.union([z.string(), z.record(z.string(), z.any())]).optional(),
+  hooks: z
+    .union([z.string(), z.record(z.string(), z.array(ManifestHookEntrySchema))])
+    .optional(),
   dependencies: z.record(z.string(), z.string()).optional(),
 });
 export type PluginManifest = z.infer<typeof PluginManifestSchema>;
