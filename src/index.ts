@@ -257,7 +257,7 @@ async function runQuiet(argv: Argv, contextCreateOpts: any, cwd: string) {
       return Session.createSessionId();
     })();
 
-    await messageBus.request('session.initialize', {
+    const response = await messageBus.request('session.initialize', {
       cwd,
       sessionId,
     });
@@ -267,6 +267,9 @@ async function runQuiet(argv: Argv, contextCreateOpts: any, cwd: string) {
       cwd,
       sessionId,
       model,
+      thinking: response.data.thinkingLevel
+        ? { effort: response.data.thinkingLevel }
+        : undefined,
     });
 
     process.exit(0);
