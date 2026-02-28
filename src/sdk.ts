@@ -7,6 +7,7 @@ import type {
 } from './message';
 import { DirectTransport, MessageBus } from './messageBus';
 import { NodeBridge } from './nodeBridge';
+import type { HandlerMap } from './nodeBridge.types';
 import type { Plugin } from './plugin';
 import { Session } from './session';
 import { randomUUID } from './utils/randomUUID';
@@ -14,6 +15,23 @@ import { randomUUID } from './utils/randomUUID';
 // ============================================================================
 // Types
 // ============================================================================
+
+export type SDKClientOptions = {
+  cwd?: string;
+  productName?: string;
+  plugins?: Plugin[];
+  providers?: Record<string, ProviderConfig>;
+  skills?: string[];
+};
+
+export interface SDKClient {
+  request<K extends keyof HandlerMap>(
+    method: K,
+    params: HandlerMap[K]['input'],
+  ): Promise<HandlerMap[K]['output']>;
+  getHandlerNames(): string[];
+  close(): void;
+}
 
 export type SDKSessionOptions = {
   model: string;
@@ -387,4 +405,30 @@ export async function resumeSession(
     outputStyle: options.outputStyle,
     initialParentUuid: lastUuid,
   });
+}
+
+// ============================================================================
+// Client (non-session handler access)
+// ============================================================================
+
+export function createClient(options: SDKClientOptions = {}): SDKClient {
+  const { nodeBridge, messageBus } = createBridgePair({
+    ...options,
+    model: '',
+  });
+
+  return {
+    request<K extends keyof HandlerMap>(
+      method: K,
+      params: HandlerMap[K]['input'],
+    ): Promise<HandlerMap[K]['output']> {
+      return messageBus.request(method, params);
+    },
+    getHandlerNames(): string[] {
+      return Array.from(nodeBridge.messageBus.messageHandlers.keys());
+    },
+    close() {
+      messageBus.messageHandlers.clear();
+    },
+  };
 }
