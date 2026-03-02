@@ -297,11 +297,43 @@ export function registerSessionHandlers(
 
       prependContent = [
         {
-          type: 'text',
+          type: 'text' as const,
           text: `<system-reminder>\n${planPrompt}\n</system-reminder>`,
           hidden: true,
         },
       ];
+    }
+
+    if (message) {
+      const {
+        extractAgentMentions,
+        getAgentTypeFromMention,
+        buildAgentMentionPrompt,
+      } = await import('../../agent/agentMention');
+      const mentions = extractAgentMentions(message);
+
+      if (mentions.length > 0) {
+        const activeAgents = context.agentManager?.getAllAgents() ?? [];
+        const validMentions = mentions.filter((m) => {
+          const agentType = getAgentTypeFromMention(m);
+          return activeAgents.some((a) => a.agentType === agentType);
+        });
+
+        if (validMentions.length > 0) {
+          const agentHints = validMentions.map((m) =>
+            buildAgentMentionPrompt(getAgentTypeFromMention(m)),
+          );
+
+          prependContent = [
+            ...(prependContent || []),
+            ...agentHints.map((hint) => ({
+              type: 'text' as const,
+              text: hint,
+              hidden: true,
+            })),
+          ];
+        }
+      }
     }
 
     const result = await project.send(message, {
