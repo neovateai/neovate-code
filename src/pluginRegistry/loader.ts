@@ -180,7 +180,11 @@ export class PluginLoader {
     }
 
     if (components.agentPaths.length > 0) {
-      (plugin as any).__agentPaths = components.agentPaths;
+      const existingAgent = plugin.agent;
+      plugin.agent = async function (this: any) {
+        const base = existingAgent ? await existingAgent.call(this) : [];
+        return [...base, ...components.agentPaths];
+      };
     }
 
     if (components.skillPaths.length > 0) {

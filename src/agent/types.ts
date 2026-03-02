@@ -33,6 +33,8 @@ export type PluginAgentDefinition = Omit<
   model?: string;
 };
 
+export type PluginAgentDefinitionOrPath = PluginAgentDefinition | string;
+
 export interface TaskToolInput {
   description: string;
   prompt: string;

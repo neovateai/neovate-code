@@ -5,7 +5,7 @@ import type { LanguageModelV3 } from '@ai-sdk/provider';
 import defu from 'defu';
 import type {
   AgentExecutionResult,
-  PluginAgentDefinition,
+  PluginAgentDefinitionOrPath,
 } from './agent/types';
 import type { Config } from './config';
 import type { Context, ContextCreateOpts } from './context';
@@ -256,7 +256,7 @@ export type Plugin = {
   // agent
   agent?: (
     this: PluginContext,
-  ) => Promise<PluginAgentDefinition[]> | PluginAgentDefinition[];
+  ) => Promise<PluginAgentDefinitionOrPath[]> | PluginAgentDefinitionOrPath[];
 
   // Telemetry hook for collecting usage analytics
   telemetry?: (

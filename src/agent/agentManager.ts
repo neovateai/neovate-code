@@ -199,11 +199,15 @@ export class AgentManager {
     });
 
     for (const agent of pluginAgents) {
-      this.agents.set(agent.agentType, {
-        ...agent,
-        model: agent.model || 'inherit',
-        source: AgentSource.Plugin,
-      });
+      if (typeof agent === 'string') {
+        this.loadAgentFile(agent, AgentSource.Plugin);
+      } else {
+        this.agents.set(agent.agentType, {
+          ...agent,
+          model: agent.model || 'inherit',
+          source: AgentSource.Plugin,
+        });
+      }
     }
   }
 
