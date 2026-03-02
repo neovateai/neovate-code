@@ -57,16 +57,15 @@ export function useInputHandlers() {
     const afterMatch = val
       .substring(fileSuggestion.startIndex + fileSuggestion.fullMatch.length)
       .trim();
-    const file = fileSuggestion.getSelected();
+    const selectedText = fileSuggestion.getSelectedText();
 
-    // Add @ prefix only for @ trigger type
     const prefix = fileSuggestion.triggerType === 'at' ? '@' : '';
-    const newValue = `${beforeMatch}${prefix}${file} ${afterMatch}`.trim();
-    const newCursorPos = `${beforeMatch}${prefix}${file} `.length;
+    const newValue =
+      `${beforeMatch}${prefix}${selectedText} ${afterMatch}`.trim();
+    const newCursorPos = `${beforeMatch}${prefix}${selectedText} `.length;
 
     inputState.setValue(newValue);
     inputState.setCursorPosition(newCursorPos);
-    // Reset tab trigger after selection
     resetTabTrigger();
   }, [inputState, fileSuggestion, resetTabTrigger]);
 
@@ -154,8 +153,8 @@ export function useInputHandlers() {
       await send(completedCommand);
       return;
     }
-    // 2. file suggestion
-    if (fileSuggestion.matchedPaths.length > 0) {
+    // 2. file/agent suggestion
+    if (fileSuggestion.suggestions.length > 0) {
       applyFileSuggestion();
       return;
     }
