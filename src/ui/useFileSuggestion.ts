@@ -4,20 +4,8 @@ import { sortFilePaths } from './sortFilePaths';
 import { useAppStore } from './store';
 import { useListNavigation } from './useListNavigation';
 import type { InputState } from './useInputState';
-import { useAgentSuggestion, type AgentInfo } from './useAgentSuggestion';
 
 type TriggerType = 'at' | 'tab';
-
-export type SuggestionItemType = 'file' | 'agent';
-
-export interface SuggestionItem {
-  type: SuggestionItemType;
-  displayText: string;
-  description?: string;
-  path?: string;
-  agentType?: string;
-  color?: string;
-}
 
 interface MatchResult {
   hasQuery: boolean;
@@ -245,72 +233,38 @@ export function useFileSuggestion(
   const activeMatch = atMatch.hasQuery ? atMatch : tabMatch;
   const { hasQuery, fullMatch, query, startIndex, triggerType } = activeMatch;
 
-  const { paths, isLoading: isLoadingPaths } = usePaths(query, hasQuery);
-  const { agents, isLoading: isLoadingAgents } = useAgentSuggestion(
-    query,
-    hasQuery && triggerType === 'at',
-  );
+  const { paths, isLoading } = usePaths(query, hasQuery);
 
-  const suggestions = useMemo((): SuggestionItem[] => {
+  const matchedPaths = useMemo(() => {
     if (!hasQuery) return [];
+    return sortFilePaths(paths, query);
+  }, [paths, hasQuery, query]);
 
-    const fileSuggestions: SuggestionItem[] = sortFilePaths(paths, query).map(
-      (path) => ({
-        type: 'file' as const,
-        displayText: path,
-        path,
-      }),
-    );
+  // Use common list navigation logic
+  const navigation = useListNavigation(matchedPaths);
 
-    if (triggerType !== 'at') {
-      return fileSuggestions;
-    }
-
-    const agentSuggestions: SuggestionItem[] = agents.map((agent) => ({
-      type: 'agent' as const,
-      displayText: `agent-${agent.agentType}`,
-      description: `Agent: ${agent.description}`,
-      agentType: agent.agentType,
-      color: agent.color,
-    }));
-
-    return [...agentSuggestions, ...fileSuggestions].slice(0, 15);
-  }, [paths, agents, hasQuery, query, triggerType]);
-
-  const navigation = useListNavigation(suggestions);
-
-  const prevSuggestionsLengthRef = useRef(suggestions.length);
+  // Track matchedPaths length to reset selection when it changes
+  const prevMatchedPathsLengthRef = useRef(matchedPaths.length);
   useEffect(() => {
-    if (prevSuggestionsLengthRef.current !== suggestions.length) {
+    if (prevMatchedPathsLengthRef.current !== matchedPaths.length) {
       navigation.reset();
-      prevSuggestionsLengthRef.current = suggestions.length;
+      prevMatchedPathsLengthRef.current = matchedPaths.length;
     }
   });
 
-  const getSelected = (): SuggestionItem | null => {
-    return navigation.getSelected();
-  };
-
-  const getSelectedText = (): string => {
+  const getSelected = () => {
     const selected = navigation.getSelected();
     if (!selected) return '';
-
-    if (selected.type === 'agent') {
-      return `agent-${selected.agentType}`;
+    // Wrap in quotes if the path contains spaces
+    if (selected.includes(' ')) {
+      return `"${selected}"`;
     }
-
-    if (selected.path && selected.path.includes(' ')) {
-      return `"${selected.path}"`;
-    }
-    return selected.path ?? '';
+    return selected;
   };
 
   return {
-    suggestions,
-    matchedPaths: suggestions
-      .filter((s) => s.type === 'file')
-      .map((s) => s.path!),
-    isLoading: isLoadingPaths || isLoadingAgents,
+    matchedPaths,
+    isLoading,
     selectedIndex: navigation.selectedIndex,
     startIndex,
     fullMatch,
@@ -318,6 +272,5 @@ export function useFileSuggestion(
     navigateNext: navigation.navigateNext,
     navigatePrevious: navigation.navigatePrevious,
     getSelected,
-    getSelectedText,
   };
 }
