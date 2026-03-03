@@ -166,7 +166,7 @@ export class PluginLoader {
 
     if (components.commandDirs.length > 0) {
       const existingSlashCommand = plugin.slashCommand;
-      plugin.slashCommand = async function (this: any) {
+      plugin.slashCommand = async function (this) {
         const base = existingSlashCommand
           ? await existingSlashCommand.call(this)
           : [];
@@ -181,7 +181,7 @@ export class PluginLoader {
 
     if (components.agentPaths.length > 0) {
       const existingAgent = plugin.agent;
-      plugin.agent = async function (this: any) {
+      plugin.agent = async function (this) {
         const base = existingAgent ? await existingAgent.call(this) : [];
         return [...base, ...components.agentPaths];
       };
@@ -189,7 +189,7 @@ export class PluginLoader {
 
     if (components.skillPaths.length > 0) {
       const existingSkill = plugin.skill;
-      plugin.skill = async function (this: any) {
+      plugin.skill = async function (this) {
         const base = existingSkill ? await existingSkill.call(this) : [];
         return [...base, ...components.skillPaths];
       };
@@ -200,7 +200,7 @@ export class PluginLoader {
         path.resolve(pluginRoot, s),
       );
       const existingOutputStyle = plugin.outputStyle;
-      plugin.outputStyle = async function (this: any) {
+      plugin.outputStyle = async function (this) {
         const base = existingOutputStyle
           ? await existingOutputStyle.call(this)
           : [];
@@ -221,14 +221,14 @@ export class PluginLoader {
     if (components.mcpConfig) {
       const mcpConfig = replacePluginRoot(components.mcpConfig, pluginRoot);
       const existingConfig = plugin.config;
-      plugin.config = async function (this: any, opts) {
+      plugin.config = async function (this, opts) {
         const base = existingConfig
           ? await existingConfig.call(this, opts)
           : {};
         return {
           ...base,
           mcpServers: {
-            ...((base as any).mcpServers || {}),
+            ...(base.mcpServers || {}),
             ...mcpConfig,
           },
         };
