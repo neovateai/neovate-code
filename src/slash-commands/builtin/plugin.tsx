@@ -179,6 +179,46 @@ const DiscoverView: React.FC<{
   const [searchQuery, setSearchQuery] = useState('');
   const [installing, setInstalling] = useState<string | null>(null);
   const [detailPlugin, setDetailPlugin] = useState<DiscoverPlugin | null>(null);
+  const [selectedSet, setSelectedSet] = useState<Set<string>>(new Set());
+
+  const pluginKey = (p: DiscoverPlugin) => `${p.name}@${p.marketplace}`;
+
+  const toggleSelect = (p: DiscoverPlugin) => {
+    setSelectedSet((prev) => {
+      const next = new Set(prev);
+      const key = pluginKey(p);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const installSelected = async () => {
+    const toInstall = filtered.filter(
+      (p) => selectedSet.has(pluginKey(p)) && !p.installed,
+    );
+    if (toInstall.length === 0) return;
+    for (const p of toInstall) {
+      setInstalling(pluginKey(p));
+      try {
+        await bridge.request('plugin.install', {
+          cwd,
+          pluginName: p.name,
+          marketplaceName: p.marketplace,
+          scope: 'user',
+        });
+      } catch {
+        // ignore
+      }
+    }
+    setInstalling(null);
+    setSelectedSet(new Set());
+    loadPlugins();
+    onPluginChange?.();
+  };
 
   const openDetail = (plugin: DiscoverPlugin) => {
     setDetailPlugin(plugin);
@@ -239,6 +279,14 @@ const DiscoverView: React.FC<{
           setSelectedIndex(-1);
         }
       }
+      if (input === ' ' && selectedIndex >= 0 && filtered.length > 0) {
+        toggleSelect(filtered[selectedIndex]);
+        return;
+      }
+      if (input === 'i' && selectedSet.size > 0) {
+        installSelected();
+        return;
+      }
       if (key.return && filtered.length > 0) {
         if (selectedIndex === -1) {
           // focus search input
@@ -252,6 +300,7 @@ const DiscoverView: React.FC<{
         input &&
         input.length === 1 &&
         input !== ' ' &&
+        input !== 'i' &&
         input.charCodeAt(0) >= 32 &&
         input.charCodeAt(0) <= 126
       ) {
@@ -342,11 +391,13 @@ const DiscoverView: React.FC<{
           const actualIndex = scrollOffset + i;
           const isSelected = actualIndex === selectedIndex;
           const indicator =
-            installing === `${p.name}@${p.marketplace}`
+            installing === pluginKey(p)
               ? pc.yellow('\u25D0')
               : p.installed
                 ? pc.white('\u25CF')
-                : '\u25CB';
+                : selectedSet.has(pluginKey(p))
+                  ? pc.magenta('\u25C9')
+                  : '\u25CB';
           return (
             <Box
               key={`${p.name}-${p.marketplace}`}
@@ -381,7 +432,13 @@ const DiscoverView: React.FC<{
       </Box>
       <Box marginTop={1}>
         <Text dimColor>
-          Type to search · Enter: details/install · Esc: back
+          {selectedSet.size > 0 && (
+            <Text color={UI_COLORS.ASK_PRIMARY} italic>
+              Press i to install
+            </Text>
+          )}
+          {selectedSet.size > 0 && ' · '}
+          Type to search · Space: (de)select · Enter: details · Esc: back
         </Text>
       </Box>
     </Box>
