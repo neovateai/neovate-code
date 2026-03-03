@@ -157,6 +157,26 @@ export class Context {
       ...(initialConfig.plugins || []),
       ...(opts.plugins || []),
     ];
+
+    const pluginDirs: string[] = opts.argvConfig.pluginDirs || [];
+    for (const dir of pluginDirs) {
+      const absDir = path.resolve(cwd, dir);
+      try {
+        const plugin = await pluginLoader.loadInstalled({
+          name: path.basename(absDir),
+          source: { type: 'local', path: absDir },
+          scope: 'local',
+          installPath: absDir,
+          installedAt: new Date().toISOString(),
+        });
+        pluginsConfigs.push(plugin);
+      } catch (error) {
+        throw new Error(
+          `Failed to load plugin from directory "${absDir}": ${error instanceof Error ? error.message : error}`,
+        );
+      }
+    }
+
     const plugins = await normalizePlugins(opts.cwd, pluginsConfigs);
     const pluginManager = new PluginManager(plugins);
     const apply = async (hookOpts: any) => {
