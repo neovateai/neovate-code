@@ -100,6 +100,7 @@ const PluginDetailView: React.FC<{
   onInstall: (scope: 'user' | 'project' | 'local') => void;
 }> = ({ plugin, onBack, onInstall }) => {
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const { productName } = useAppStore();
 
   useInput((_input, key) => {
     if (key.escape) {
@@ -139,10 +140,10 @@ const PluginDetailView: React.FC<{
       <Box flexDirection="column" marginBottom={1}>
         <Text color="yellow">
           {'\u26A0'}Make sure you trust a plugin before installing, updating, or
-          using it. Anthropic does not control what MCP servers, files, or other
-          software are included in plugins and cannot verify that they will work
-          as intended or that they won't change. See each plugin's homepage for
-          more information.
+          using it. {productName.toLowerCase()} does not control what MCP
+          servers, files, or other software are included in plugins and cannot
+          verify that they will work as intended or that they won't change. See
+          each plugin's homepage for more information.
         </Text>
       </Box>
       <Box flexDirection="column">
