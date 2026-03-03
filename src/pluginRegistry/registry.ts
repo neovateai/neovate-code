@@ -33,10 +33,6 @@ export class PluginRegistry {
     return this.#data.plugins[name];
   }
 
-  getEnabled(): InstalledPlugin[] {
-    return Object.values(this.#data.plugins).filter((p) => p.enabled);
-  }
-
   register(plugin: InstalledPlugin) {
     this.#data.plugins[this.#pluginKey(plugin)] = plugin;
     this.#save();
@@ -46,15 +42,6 @@ export class PluginRegistry {
     const key = marketplace ? `${name}@${marketplace}` : name;
     delete this.#data.plugins[key];
     this.#save();
-  }
-
-  setEnabled(name: string, enabled: boolean, marketplace?: string) {
-    const key = marketplace ? `${name}@${marketplace}` : name;
-    const plugin = this.#data.plugins[key];
-    if (plugin) {
-      plugin.enabled = enabled;
-      this.#save();
-    }
   }
 
   updateEntry(

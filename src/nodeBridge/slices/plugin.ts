@@ -4,6 +4,7 @@ import { promisify } from 'util';
 const execAsync = promisify(exec);
 import fs from 'fs';
 import path from 'pathe';
+import { ConfigManager } from '../../config';
 import type { Context } from '../../context';
 import type { MessageBus } from '../../messageBus';
 import { PluginInstaller } from '../../pluginRegistry/installer';
@@ -31,6 +32,10 @@ function getInstaller(context: Context): PluginInstaller {
   });
 }
 
+function getConfigManager(context: Context): ConfigManager {
+  return new ConfigManager(context.cwd, context.productName, {});
+}
+
 export function registerPluginHandlers(
   messageBus: MessageBus,
   getContext: (cwd: string) => Promise<Context>,
@@ -39,15 +44,17 @@ export function registerPluginHandlers(
     const { cwd } = data;
     const context = await getContext(cwd);
     const registry = getRegistry(context);
+    const configManager = getConfigManager(context);
+    const enabledPlugins = configManager.config.enabledPlugins || {};
     const all = registry.getAll();
     return {
       success: true,
       data: {
-        plugins: Object.values(all).map((p) => ({
+        plugins: Object.entries(all).map(([key, p]) => ({
           name: p.name,
           version: p.version,
           scope: p.scope,
-          enabled: p.enabled,
+          enabled: enabledPlugins[key] === true,
           installedAt: p.installedAt,
           marketplace: p.marketplace,
         })),
@@ -140,6 +147,10 @@ export function registerPluginHandlers(
         installPath = result.installPath;
       }
 
+      const pluginKey = marketplaceName
+        ? `${pluginName}@${marketplaceName}`
+        : pluginName;
+
       registry.register({
         name: pluginName,
         source: { type: 'local', path: installPath },
@@ -148,8 +159,10 @@ export function registerPluginHandlers(
         version: pluginDef.version,
         marketplace: marketplaceName,
         installedAt: new Date().toISOString(),
-        enabled: true,
       });
+
+      const configManager = getConfigManager(context);
+      configManager.setPluginEnabled(resolvedScope, pluginKey, true);
 
       return {
         success: true,
@@ -172,9 +185,14 @@ export function registerPluginHandlers(
       if (!installed) {
         return { success: false, error: `Plugin "${pluginName}" not found.` };
       }
+      const pluginKey = marketplace
+        ? `${pluginName}@${marketplace}`
+        : pluginName;
       const installer = getInstaller(context);
       await installer.uninstall(installed.installPath);
       registry.unregister(pluginName, marketplace);
+      const configManager = getConfigManager(context);
+      configManager.removePluginEnabled(pluginKey);
       return { success: true };
     } catch (error) {
       return {
@@ -188,10 +206,13 @@ export function registerPluginHandlers(
     const { cwd, pluginName, marketplace } = data;
     const context = await getContext(cwd);
     const registry = getRegistry(context);
-    if (!registry.get(pluginName, marketplace)) {
+    const installed = registry.get(pluginName, marketplace);
+    if (!installed) {
       return { success: false, error: `Plugin "${pluginName}" not found.` };
     }
-    registry.setEnabled(pluginName, true, marketplace);
+    const pluginKey = marketplace ? `${pluginName}@${marketplace}` : pluginName;
+    const configManager = getConfigManager(context);
+    configManager.setPluginEnabled(installed.scope, pluginKey, true);
     return { success: true };
   });
 
@@ -199,10 +220,13 @@ export function registerPluginHandlers(
     const { cwd, pluginName, marketplace } = data;
     const context = await getContext(cwd);
     const registry = getRegistry(context);
-    if (!registry.get(pluginName, marketplace)) {
+    const installed = registry.get(pluginName, marketplace);
+    if (!installed) {
       return { success: false, error: `Plugin "${pluginName}" not found.` };
     }
-    registry.setEnabled(pluginName, false, marketplace);
+    const pluginKey = marketplace ? `${pluginName}@${marketplace}` : pluginName;
+    const configManager = getConfigManager(context);
+    configManager.setPluginEnabled(installed.scope, pluginKey, false);
     return { success: true };
   });
 
@@ -211,6 +235,8 @@ export function registerPluginHandlers(
     const context = await getContext(cwd);
     const manager = getMarketplaceManager(context);
     const registry = getRegistry(context);
+    const configManager = getConfigManager(context);
+    const enabledPlugins = configManager.config.enabledPlugins || {};
     const installedPlugins = registry.getAll();
 
     const known = manager.getKnownMarketplaces();
@@ -235,17 +261,21 @@ export function registerPluginHandlers(
       if (!mktJson) continue;
 
       for (const p of mktJson.plugins) {
-        const installedPlugin = Object.values(installedPlugins).find(
-          (ip) => ip.name === p.name && ip.marketplace === mktName,
-        );
+        const installedKey = Object.keys(installedPlugins).find((key) => {
+          const ip = installedPlugins[key];
+          return ip.name === p.name && ip.marketplace === mktName;
+        });
+        const isInstalled = !!installedKey;
         plugins.push({
           name: p.name,
           description: p.description,
           marketplace: mktName,
           category: p.category,
           tags: p.tags,
-          installed: !!installedPlugin,
-          enabled: installedPlugin?.enabled,
+          installed: isInstalled,
+          enabled: installedKey
+            ? enabledPlugins[installedKey] === true
+            : undefined,
         });
       }
     }

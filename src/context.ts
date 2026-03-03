@@ -136,8 +136,11 @@ export class Context {
     );
     const pluginRegistry = new PluginRegistry({ registryPath });
     const pluginLoader = new PluginLoader();
+    const enabledPlugins = initialConfig.enabledPlugins || {};
+    const allInstalled = pluginRegistry.getAll();
     const registeredPlugins: Plugin[] = [];
-    for (const installed of pluginRegistry.getEnabled()) {
+    for (const [key, installed] of Object.entries(allInstalled)) {
+      if (enabledPlugins[key] !== true) continue;
       try {
         const plugin = await pluginLoader.loadInstalled(installed);
         registeredPlugins.push(plugin);
@@ -145,6 +148,8 @@ export class Context {
         // skip failed plugins silently
       }
     }
+
+    console.log('registeredPlugins', registeredPlugins);
 
     const pluginsConfigs: (string | Plugin)[] = [
       ...buildInPlugins,

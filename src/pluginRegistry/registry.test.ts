@@ -14,7 +14,6 @@ function createPlugin(
     scope: 'global' as const,
     installPath: '/tmp/test-plugin',
     installedAt: '2026-01-01T00:00:00.000Z',
-    enabled: true,
     ...overrides,
   };
 }
@@ -61,27 +60,6 @@ describe('PluginRegistry', () => {
     registry.unregister('test-plugin');
 
     expect(registry.get('test-plugin')).toBeUndefined();
-  });
-
-  test('getEnabled returns only enabled plugins', () => {
-    const registry = new PluginRegistry({ registryPath });
-    registry.register(createPlugin({ name: 'enabled-one' }));
-    registry.register(createPlugin({ name: 'disabled-one', enabled: false }));
-
-    const enabled = registry.getEnabled();
-    expect(enabled).toHaveLength(1);
-    expect(enabled[0].name).toBe('enabled-one');
-  });
-
-  test('setEnabled toggles plugin state', () => {
-    const registry = new PluginRegistry({ registryPath });
-    registry.register(createPlugin());
-    registry.setEnabled('test-plugin', false);
-
-    expect(registry.get('test-plugin')!.enabled).toBe(false);
-
-    registry.setEnabled('test-plugin', true);
-    expect(registry.get('test-plugin')!.enabled).toBe(true);
   });
 
   test('getByScope filters by scope', () => {

@@ -1,6 +1,6 @@
 import defu from 'defu';
 import fs from 'fs';
-import { homedir } from 'os';
+import os from 'os';
 import path from 'pathe';
 import type { Provider } from './provider/model';
 
@@ -201,11 +201,14 @@ export class ConfigManager {
   argvConfig: Partial<Config>;
   globalConfigPath: string;
   projectConfigPath: string;
+  projectLocalConfigPath: string;
+  #projectFileConfig: Partial<Config>;
+  #localFileConfig: Partial<Config>;
 
   constructor(cwd: string, productName: string, argvConfig: Partial<Config>) {
     const lowerProductName = productName.toLowerCase();
     const globalConfigPath = path.join(
-      homedir(),
+      os.homedir(),
       `.${lowerProductName}`,
       'config.json',
     );
@@ -221,11 +224,11 @@ export class ConfigManager {
     );
     this.globalConfigPath = globalConfigPath;
     this.projectConfigPath = projectConfigPath;
+    this.projectLocalConfigPath = projectLocalConfigPath;
     this.globalConfig = loadConfig(globalConfigPath);
-    this.projectConfig = defu(
-      loadConfig(projectConfigPath),
-      loadConfig(projectLocalConfigPath),
-    );
+    this.#projectFileConfig = loadConfig(projectConfigPath);
+    this.#localFileConfig = loadConfig(projectLocalConfigPath);
+    this.projectConfig = defu(this.#projectFileConfig, this.#localFileConfig);
     this.argvConfig = argvConfig;
   }
 
@@ -234,6 +237,12 @@ export class ConfigManager {
       this.argvConfig,
       defu(this.projectConfig, defu(this.globalConfig, DEFAULT_CONFIG)),
     ) as Config;
+    config.enabledPlugins = mergeEnabledPlugins(
+      this.globalConfig.enabledPlugins,
+      this.#projectFileConfig.enabledPlugins,
+      this.#localFileConfig.enabledPlugins,
+      this.argvConfig.enabledPlugins,
+    );
     config.planModel = config.planModel || config.model;
     config.smallModel = config.smallModel || config.model;
     config.visionModel = config.visionModel || config.model;
@@ -421,6 +430,57 @@ export class ConfigManager {
     saveConfig(configPath, config, DEFAULT_CONFIG);
   }
 
+  setPluginEnabled(
+    scope: 'global' | 'project' | 'local',
+    pluginId: string,
+    enabled: boolean,
+  ) {
+    const configPath =
+      scope === 'global'
+        ? this.globalConfigPath
+        : scope === 'project'
+          ? this.projectConfigPath
+          : this.projectLocalConfigPath;
+
+    const source =
+      scope === 'global'
+        ? this.globalConfig
+        : scope === 'project'
+          ? this.#projectFileConfig
+          : this.#localFileConfig;
+
+    if (!source.enabledPlugins) {
+      source.enabledPlugins = {};
+    }
+    source.enabledPlugins[pluginId] = enabled;
+    saveConfig(configPath, source, DEFAULT_CONFIG);
+  }
+
+  removePluginEnabled(pluginId: string) {
+    for (const source of [
+      this.globalConfig,
+      this.#projectFileConfig,
+      this.#localFileConfig,
+    ]) {
+      if (source.enabledPlugins?.[pluginId] !== undefined) {
+        delete source.enabledPlugins[pluginId];
+      }
+    }
+    for (const configPath of [
+      this.globalConfigPath,
+      this.projectConfigPath,
+      this.projectLocalConfigPath,
+    ]) {
+      const source =
+        configPath === this.globalConfigPath
+          ? this.globalConfig
+          : configPath === this.projectConfigPath
+            ? this.#projectFileConfig
+            : this.#localFileConfig;
+      saveConfig(configPath, source, DEFAULT_CONFIG);
+    }
+  }
+
   updateConfig(global: boolean, newConfig: Partial<Config>) {
     Object.keys(newConfig).forEach((key) => {
       if (!VALID_CONFIG_KEYS.includes(key)) {
@@ -468,4 +528,19 @@ function saveConfig(
     fs.mkdirSync(dir, { recursive: true });
   }
   fs.writeFileSync(file, JSON.stringify(filteredConfig, null, 2), 'utf-8');
+}
+
+function mergeEnabledPlugins(
+  ...layers: (Record<string, boolean> | undefined)[]
+): Record<string, boolean> {
+  const result: Record<string, boolean> = {};
+  for (const layer of layers) {
+    if (!layer) continue;
+    for (const [key, value] of Object.entries(layer)) {
+      if (typeof value === 'boolean') {
+        result[key] = value;
+      }
+    }
+  }
+  return result;
 }

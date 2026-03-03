@@ -157,20 +157,8 @@ describe('InstalledPluginSchema', () => {
       scope: 'global',
       installPath: '/home/user/.neovate/installed/my-plugin',
       installedAt: '2026-01-01T00:00:00.000Z',
-      enabled: true,
     });
     expect(result.success).toBe(true);
-  });
-
-  test('enabled defaults to true', () => {
-    const result = InstalledPluginSchema.parse({
-      name: 'my-plugin',
-      source: { type: 'local', path: './foo' },
-      scope: 'global',
-      installPath: '/tmp/foo',
-      installedAt: '2026-01-01T00:00:00.000Z',
-    });
-    expect(result.enabled).toBe(true);
   });
 
   test('invalid scope', () => {
@@ -196,7 +184,6 @@ describe('PluginRegistryFileSchema', () => {
           scope: 'global',
           installPath: '/tmp/foo',
           installedAt: '2026-01-01T00:00:00.000Z',
-          enabled: true,
         },
       },
     });
