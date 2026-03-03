@@ -36,6 +36,24 @@ function getConfigManager(context: Context): ConfigManager {
   return new ConfigManager(context.cwd, context.productName, {});
 }
 
+async function getMdFileNames(dir: string): Promise<string[]> {
+  try {
+    const exists = await fs.promises
+      .access(dir)
+      .then(() => true)
+      .catch(() => false);
+    if (!exists) return [];
+
+    const files = await fs.promises.readdir(dir);
+    return files
+      .filter((f) => f.endsWith('.md'))
+      .map((f) => f.replace(/\.md$/, ''));
+  } catch (error) {
+    console.warn(`Failed to read directory ${dir}: ${error}`);
+    return [];
+  }
+}
+
 export function registerPluginHandlers(
   messageBus: MessageBus,
   getContext: (cwd: string) => Promise<Context>,
@@ -194,6 +212,189 @@ export function registerPluginHandlers(
       const configManager = getConfigManager(context);
       configManager.removePluginEnabled(pluginKey);
       return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  });
+
+  messageBus.registerHandler('plugin.detail', async (data) => {
+    const { cwd, pluginName, marketplace } = data;
+    try {
+      const context = await getContext(cwd);
+      const registry = getRegistry(context);
+      const configManager = getConfigManager(context);
+      const enabledPlugins = configManager.config.enabledPlugins || {};
+      const installed = registry.get(pluginName, marketplace);
+      if (!installed) {
+        return { success: false, error: `Plugin "${pluginName}" not found.` };
+      }
+
+      const pluginKey = marketplace
+        ? `${pluginName}@${marketplace}`
+        : pluginName;
+
+      let description: string | undefined;
+      let author: string | undefined;
+      if (marketplace) {
+        const manager = getMarketplaceManager(context);
+        const known = manager.getKnownMarketplaces();
+        const entry = known[marketplace];
+        if (entry) {
+          const mktJson = manager.readMarketplaceJson(entry.installLocation);
+          const pluginDef = mktJson?.plugins.find((p) => p.name === pluginName);
+          if (pluginDef) {
+            description = pluginDef.description;
+            author =
+              typeof pluginDef.author === 'string'
+                ? pluginDef.author
+                : pluginDef.author?.name;
+          }
+        }
+      }
+
+      const components = {
+        commands: [] as string[],
+        agents: [] as string[],
+        skills: [] as string[],
+        mcpServers: [] as string[],
+      };
+
+      const manifestPath = path.join(
+        installed.installPath,
+        '.claude-plugin',
+        'plugin.json',
+      );
+
+      const manifestExists = await fs.promises
+        .access(manifestPath)
+        .then(() => true)
+        .catch(() => false);
+
+      if (manifestExists) {
+        try {
+          const manifestContent = await fs.promises.readFile(
+            manifestPath,
+            'utf-8',
+          );
+          const manifest = JSON.parse(manifestContent);
+
+          if (!description && manifest.description) {
+            description = manifest.description;
+          }
+          if (!author && manifest.author) {
+            author =
+              typeof manifest.author === 'string'
+                ? manifest.author
+                : manifest.author?.name;
+          }
+
+          const commandsDir = path.join(installed.installPath, 'commands');
+          components.commands = await getMdFileNames(commandsDir);
+
+          if (manifest.commands) {
+            const dirs = Array.isArray(manifest.commands)
+              ? manifest.commands
+              : [manifest.commands];
+            for (const d of dirs) {
+              const absDir = path.resolve(installed.installPath, d);
+
+              if (!absDir.startsWith(installed.installPath)) {
+                console.warn(
+                  `Skipping unsafe command directory path: ${d} (resolved to ${absDir})`,
+                );
+                continue;
+              }
+
+              if (absDir === path.join(installed.installPath, 'commands')) {
+                continue;
+              }
+
+              const dirExists = await fs.promises
+                .access(absDir)
+                .then(() => true)
+                .catch(() => false);
+
+              if (dirExists) {
+                const mdFiles = await getMdFileNames(absDir);
+                for (const cmdName of mdFiles) {
+                  if (!components.commands.includes(cmdName)) {
+                    components.commands.push(cmdName);
+                  }
+                }
+              }
+            }
+          }
+
+          const agentsDir = path.join(installed.installPath, 'agents');
+          components.agents = await getMdFileNames(agentsDir);
+
+          const skillsDir = path.join(installed.installPath, 'skills');
+          const skillsDirExists = await fs.promises
+            .access(skillsDir)
+            .then(() => true)
+            .catch(() => false);
+
+          if (skillsDirExists) {
+            const entries = await fs.promises.readdir(skillsDir, {
+              withFileTypes: true,
+            });
+            components.skills = entries
+              .filter((e) => e.isDirectory())
+              .map((e) => e.name);
+          }
+
+          if (manifest.mcpServers) {
+            if (typeof manifest.mcpServers === 'object') {
+              components.mcpServers = Object.keys(manifest.mcpServers);
+            }
+          }
+
+          const mcpPath = path.join(installed.installPath, '.mcp.json');
+          const mcpExists = await fs.promises
+            .access(mcpPath)
+            .then(() => true)
+            .catch(() => false);
+
+          if (mcpExists) {
+            try {
+              const mcpContent = await fs.promises.readFile(mcpPath, 'utf-8');
+              const content = JSON.parse(mcpContent);
+              const servers = content.mcpServers || content;
+              for (const key of Object.keys(servers)) {
+                if (!components.mcpServers.includes(key)) {
+                  components.mcpServers.push(key);
+                }
+              }
+            } catch (error) {
+              console.warn(
+                `Failed to read .mcp.json for plugin "${pluginName}": ${error instanceof Error ? error.message : String(error)}`,
+              );
+            }
+          }
+        } catch (error) {
+          console.warn(
+            `Failed to parse plugin manifest for "${pluginName}": ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      }
+
+      return {
+        success: true,
+        data: {
+          name: pluginName,
+          version: installed.version,
+          scope: installed.scope,
+          enabled: enabledPlugins[pluginKey] === true,
+          marketplace,
+          description,
+          author,
+          installedAt: installed.installedAt,
+          components,
+        },
+      };
     } catch (error) {
       return {
         success: false,

@@ -456,14 +456,273 @@ const DiscoverView: React.FC<{
   );
 };
 
-const InstalledView: React.FC<{
+interface PluginDetail {
+  name: string;
+  version?: string;
+  scope: 'global' | 'project' | 'local';
+  enabled: boolean;
+  marketplace?: string;
+  description?: string;
+  author?: string;
+  installedAt: string;
+  components: {
+    commands: string[];
+    agents: string[];
+    skills: string[];
+    mcpServers: string[];
+  };
+}
+
+const InstalledPluginDetailView: React.FC<{
+  plugin: InstalledPlugin;
+  onBack: () => void;
   onExit: (msg: string) => void;
   onPluginChange?: () => void;
-}> = ({ onExit, onPluginChange }) => {
+}> = ({ plugin, onBack, onExit, onPluginChange }) => {
+  const { bridge, cwd, productName } = useAppStore();
+  const [detail, setDetail] = useState<PluginDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [operating, setOperating] = useState(false);
+
+  const menuItems = [
+    {
+      key: 'toggle',
+      label: detail?.enabled ? 'Disable plugin' : 'Enable plugin',
+    },
+    { key: 'mark-update', label: 'Mark for update' },
+    { key: 'update', label: 'Update now', color: 'yellow' },
+    { key: 'uninstall', label: 'Uninstall', color: 'red' },
+    { key: 'back', label: 'Back to plugin list' },
+  ];
+
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    bridge
+      .request('plugin.detail', {
+        cwd,
+        pluginName: plugin.name,
+        marketplace: plugin.marketplace,
+      })
+      .then((result) => {
+        if (result.success && result.data) {
+          setDetail(result.data);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [bridge, cwd, plugin.name, plugin.marketplace]);
+
+  useInput((_input, key) => {
+    if (operating) return;
+    if (key.escape) {
+      onBack();
+      return;
+    }
+    if (key.upArrow && selectedIndex > 0) {
+      setSelectedIndex(selectedIndex - 1);
+    }
+    if (key.downArrow && selectedIndex < menuItems.length - 1) {
+      setSelectedIndex(selectedIndex + 1);
+    }
+    if (key.return) {
+      const item = menuItems[selectedIndex];
+      if (item.key === 'back') {
+        onBack();
+      } else if (item.key === 'toggle') {
+        const method = detail?.enabled ? 'plugin.disable' : 'plugin.enable';
+        const verb = detail?.enabled ? 'Disabled' : 'Enabled';
+        setOperating(true);
+        bridge
+          .request(method, {
+            cwd,
+            pluginName: plugin.name,
+            marketplace: plugin.marketplace,
+          })
+          .then(() => {
+            onExit(
+              `${verb} ${plugin.name}. Restart ${productName} to apply changes.`,
+            );
+          })
+          .catch(() => {
+            setOperating(false);
+          });
+      } else if (item.key === 'uninstall') {
+        setOperating(true);
+        bridge
+          .request('plugin.uninstall', {
+            cwd,
+            pluginName: plugin.name,
+            marketplace: plugin.marketplace,
+          })
+          .then(() => {
+            onExit(
+              `Uninstalled ${plugin.name}. Restart ${productName} to apply changes.`,
+            );
+          })
+          .catch(() => {
+            setOperating(false);
+          });
+      } else if (item.key === 'update') {
+        setOperating(true);
+        bridge
+          .request('plugin.uninstall', {
+            cwd,
+            pluginName: plugin.name,
+            marketplace: plugin.marketplace,
+          })
+          .then(() =>
+            bridge.request('plugin.install', {
+              cwd,
+              pluginName: plugin.name,
+              marketplaceName: plugin.marketplace || '',
+              scope:
+                plugin.scope === 'global'
+                  ? 'user'
+                  : plugin.scope === 'project'
+                    ? 'project'
+                    : 'local',
+            }),
+          )
+          .then(() => {
+            onExit(
+              `Updated ${plugin.name}. Restart ${productName} to apply changes.`,
+            );
+          })
+          .catch(() => {
+            setOperating(false);
+          });
+      }
+    }
+  });
+
+  const scopeLabel: Record<string, string> = {
+    global: 'user',
+    project: 'project',
+    local: 'local',
+  };
+
+  if (loading) {
+    return (
+      <Box>
+        <Spinner type="dots" />
+        <Text> Loading plugin details...</Text>
+      </Box>
+    );
+  }
+
+  return (
+    <Box flexDirection="column">
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold>
+          {plugin.name}
+          {plugin.marketplace ? ` @ ${plugin.marketplace}` : ''}
+        </Text>
+        <Text dimColor>Scope: {scopeLabel[plugin.scope] || plugin.scope}</Text>
+        {detail?.description && <Text>{detail.description}</Text>}
+      </Box>
+      {detail && (
+        <Box flexDirection="column" marginBottom={1}>
+          {detail.author && (
+            <Text>
+              <Text dimColor>Author: </Text>
+              {detail.author}
+            </Text>
+          )}
+          <Text>
+            <Text dimColor>Status: </Text>
+            {detail.enabled ? (
+              <Text color="green">Enabled</Text>
+            ) : (
+              <Text color="red">Disabled</Text>
+            )}
+          </Text>
+        </Box>
+      )}
+      {detail &&
+        (detail.components.commands.length > 0 ||
+          detail.components.agents.length > 0 ||
+          detail.components.skills.length > 0 ||
+          detail.components.mcpServers.length > 0) && (
+          <Box flexDirection="column" marginBottom={1}>
+            <Text bold>Installed components:</Text>
+            {detail.components.commands.length > 0 && (
+              <Text dimColor>
+                {' '}
+                {'\u2022'} Commands: {detail.components.commands.join(', ')}
+              </Text>
+            )}
+            {detail.components.agents.length > 0 && (
+              <Text dimColor>
+                {' '}
+                {'\u2022'} Agents: {detail.components.agents.join(', ')}
+              </Text>
+            )}
+            {detail.components.skills.length > 0 && (
+              <Text dimColor>
+                {' '}
+                {'\u2022'} Skills: {detail.components.skills.join(', ')}
+              </Text>
+            )}
+            {detail.components.mcpServers.length > 0 && (
+              <Text dimColor>
+                {' '}
+                {'\u2022'} MCP Servers:{' '}
+                {detail.components.mcpServers.join(', ')}
+              </Text>
+            )}
+          </Box>
+        )}
+      <Box flexDirection="column" marginBottom={1}>
+        {menuItems.map((item, i) => {
+          const isSelected = i === selectedIndex;
+          return (
+            <Box key={item.key}>
+              <Text
+                bold={isSelected}
+                color={
+                  isSelected
+                    ? UI_COLORS.ASK_PRIMARY
+                    : (item.color as any) || 'white'
+                }
+              >
+                {isSelected ? '\u276F ' : '  '}
+                {item.label}
+              </Text>
+            </Box>
+          );
+        })}
+      </Box>
+      <Box>
+        <Text dimColor>
+          Navigate: {'\u2191\u2193'} · Select: Enter · Back: Esc
+        </Text>
+      </Box>
+    </Box>
+  );
+};
+
+const InstalledView: React.FC<{
+  onExit: (msg: string) => void;
+  onSubViewChange?: (active: boolean) => void;
+  onPluginChange?: () => void;
+}> = ({ onExit, onSubViewChange, onPluginChange }) => {
   const { bridge, cwd } = useAppStore();
   const [plugins, setPlugins] = useState<InstalledPlugin[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [detailPlugin, setDetailPlugin] = useState<InstalledPlugin | null>(
+    null,
+  );
+
+  const openDetail = (plugin: InstalledPlugin) => {
+    setDetailPlugin(plugin);
+    onSubViewChange?.(true);
+  };
+
+  const closeDetail = () => {
+    setDetailPlugin(null);
+    onSubViewChange?.(false);
+  };
 
   const loadPlugins = useCallback(async () => {
     try {
@@ -482,42 +741,62 @@ const InstalledView: React.FC<{
     loadPlugins();
   }, [loadPlugins]);
 
-  useInput((input, key) => {
-    if (key.upArrow && selectedIndex > 0) {
-      setSelectedIndex(selectedIndex - 1);
-    }
-    if (key.downArrow && selectedIndex < plugins.length - 1) {
-      setSelectedIndex(selectedIndex + 1);
-    }
-    if (input === ' ' && plugins.length > 0) {
-      const plugin = plugins[selectedIndex];
-      const method = plugin.enabled ? 'plugin.disable' : 'plugin.enable';
-      bridge
-        .request(method, {
-          cwd,
-          pluginName: plugin.name,
-          marketplace: plugin.marketplace,
-        })
-        .then(() => {
+  useInput(
+    (input, key) => {
+      if (key.upArrow && selectedIndex > 0) {
+        setSelectedIndex(selectedIndex - 1);
+      }
+      if (key.downArrow && selectedIndex < plugins.length - 1) {
+        setSelectedIndex(selectedIndex + 1);
+      }
+      if (input === ' ' && plugins.length > 0) {
+        const plugin = plugins[selectedIndex];
+        const method = plugin.enabled ? 'plugin.disable' : 'plugin.enable';
+        bridge
+          .request(method, {
+            cwd,
+            pluginName: plugin.name,
+            marketplace: plugin.marketplace,
+          })
+          .then(() => {
+            loadPlugins();
+            onPluginChange?.();
+          });
+      }
+      if (key.return && plugins.length > 0) {
+        openDetail(plugins[selectedIndex]);
+      }
+      if (input === 'r' && plugins.length > 0) {
+        const p = plugins[selectedIndex];
+        bridge
+          .request('plugin.uninstall', {
+            cwd,
+            pluginName: p.name,
+            marketplace: p.marketplace,
+          })
+          .then(() => {
+            loadPlugins();
+            setSelectedIndex(Math.max(0, selectedIndex - 1));
+            onPluginChange?.();
+          });
+      }
+    },
+    { isActive: !detailPlugin },
+  );
+
+  if (detailPlugin) {
+    return (
+      <InstalledPluginDetailView
+        plugin={detailPlugin}
+        onBack={() => {
+          closeDetail();
           loadPlugins();
-          onPluginChange?.();
-        });
-    }
-    if (input === 'r' && plugins.length > 0) {
-      const plugin = plugins[selectedIndex];
-      bridge
-        .request('plugin.uninstall', {
-          cwd,
-          pluginName: plugin.name,
-          marketplace: plugin.marketplace,
-        })
-        .then(() => {
-          loadPlugins();
-          setSelectedIndex(Math.max(0, selectedIndex - 1));
-          onPluginChange?.();
-        });
-    }
-  });
+        }}
+        onExit={onExit}
+        onPluginChange={onPluginChange}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -597,7 +876,7 @@ const InstalledView: React.FC<{
       <Box marginTop={1}>
         <Text dimColor>
           {selectedIndex + 1}/{plugins.length} · Space: toggle · Enter: details
-          · Esc: back
+          · r: remove · Esc: back
         </Text>
       </Box>
     </Box>
@@ -921,7 +1200,11 @@ const PluginManagerComponent: React.FC<PluginManagerProps> = ({ onExit }) => {
           />
         )}
         {activeTab === 'Installed' && (
-          <InstalledView onExit={onExit} onPluginChange={handlePluginChange} />
+          <InstalledView
+            onExit={onExit}
+            onSubViewChange={setSubViewActive}
+            onPluginChange={handlePluginChange}
+          />
         )}
         {activeTab === 'Marketplaces' && (
           <MarketplacesView

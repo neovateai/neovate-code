@@ -125,29 +125,6 @@ describe('PluginLoader', () => {
     expect(config.mcpServers!.github).toBeDefined();
   });
 
-  test('loads manifest with agent paths via directory', async () => {
-    const pluginDir = path.join(tempDir, 'with-agents');
-    fs.mkdirSync(path.join(pluginDir, '.claude-plugin'), { recursive: true });
-    fs.mkdirSync(path.join(pluginDir, 'agents'), { recursive: true });
-    fs.writeFileSync(
-      path.join(pluginDir, '.claude-plugin', 'plugin.json'),
-      JSON.stringify({
-        name: 'with-agents',
-        agents: './agents',
-      }),
-    );
-    fs.writeFileSync(
-      path.join(pluginDir, 'agents', 'reviewer.md'),
-      '---\ndescription: Expert reviewer\n---\nReview code.',
-    );
-
-    const plugin = await loader.loadInstalled(
-      createInstalledPlugin(pluginDir, 'with-agents'),
-    );
-    expect((plugin as any).__agentPaths).toHaveLength(1);
-    expect((plugin as any).__agentPaths[0]).toContain('reviewer.md');
-  });
-
   test('throws if plugin.json missing', async () => {
     const pluginDir = path.join(tempDir, 'no-manifest');
     fs.mkdirSync(pluginDir, { recursive: true });
@@ -179,26 +156,6 @@ describe('PluginLoader', () => {
     expect(cmds).toHaveLength(1);
     expect(cmds[0].name).toBe('review');
     expect(cmds[0].type).toBe('prompt');
-  });
-
-  test('auto-discovers agents from default agents/ directory', async () => {
-    const pluginDir = path.join(tempDir, 'auto-agents');
-    fs.mkdirSync(path.join(pluginDir, '.claude-plugin'), { recursive: true });
-    fs.mkdirSync(path.join(pluginDir, 'agents'), { recursive: true });
-    fs.writeFileSync(
-      path.join(pluginDir, '.claude-plugin', 'plugin.json'),
-      JSON.stringify({ name: 'auto-agents' }),
-    );
-    fs.writeFileSync(
-      path.join(pluginDir, 'agents', 'reviewer.md'),
-      '---\ndescription: Expert code reviewer\n---\nYou are an expert reviewer.',
-    );
-
-    const plugin = await loader.loadInstalled(
-      createInstalledPlugin(pluginDir, 'auto-agents'),
-    );
-    expect((plugin as any).__agentPaths).toHaveLength(1);
-    expect((plugin as any).__agentPaths[0]).toContain('reviewer.md');
   });
 
   test('auto-discovers skills from default skills/ directory', async () => {

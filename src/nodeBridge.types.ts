@@ -1086,6 +1086,32 @@ type PluginUninstallInput = {
 };
 type PluginUninstallOutput = { success: boolean; error?: string };
 
+type PluginDetailInput = {
+  cwd: string;
+  pluginName: string;
+  marketplace?: string;
+};
+type PluginDetailOutput = {
+  success: boolean;
+  data?: {
+    name: string;
+    version?: string;
+    scope: 'global' | 'project' | 'local';
+    enabled: boolean;
+    marketplace?: string;
+    description?: string;
+    author?: string;
+    installedAt: string;
+    components: {
+      commands: string[];
+      agents: string[];
+      skills: string[];
+      mcpServers: string[];
+    };
+  };
+  error?: string;
+};
+
 type PluginEnableInput = {
   cwd: string;
   pluginName: string;
@@ -1707,6 +1733,7 @@ export type HandlerMap = {
     input: PluginUninstallInput;
     output: PluginUninstallOutput;
   };
+  'plugin.detail': { input: PluginDetailInput; output: PluginDetailOutput };
   'plugin.enable': { input: PluginEnableInput; output: PluginEnableOutput };
   'plugin.disable': { input: PluginDisableInput; output: PluginDisableOutput };
   'plugin.discover': {
