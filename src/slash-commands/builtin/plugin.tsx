@@ -89,7 +89,7 @@ const DETAIL_MENU_ITEMS = [
     label: 'Install for all collaborators on this repository (project scope)',
   },
   { key: 'local', label: 'Install for you, in this repo only (local scope)' },
-  { key: 'homepage', label: 'Open homepage' },
+  // { key: 'homepage', label: 'Open homepage' },
   { key: 'back', label: 'Back to plugin list' },
 ] as const;
 
@@ -115,8 +115,6 @@ const PluginDetailView: React.FC<{
       const item = DETAIL_MENU_ITEMS[selectedIndex];
       if (item.key === 'back') {
         onBack();
-      } else if (item.key === 'homepage') {
-        // TODO: open homepage
       } else {
         onInstall(item.key);
       }
