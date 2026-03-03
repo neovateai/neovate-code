@@ -1,5 +1,11 @@
 export { PluginInstaller } from './installer';
 export { PluginLoader } from './loader';
+export {
+  getPluginDirName,
+  resolveManifestPath,
+  resolveMarketplacePath,
+  resolvePluginMetaDir,
+} from './pluginDirResolver';
 export { PluginRegistry } from './registry';
 export type {
   InstalledPlugin,

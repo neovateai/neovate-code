@@ -135,7 +135,7 @@ export class Context {
       'installed_plugins.json',
     );
     const pluginRegistry = new PluginRegistry({ registryPath });
-    const pluginLoader = new PluginLoader();
+    const pluginLoader = new PluginLoader(productName);
     const enabledPlugins = initialConfig.enabledPlugins || {};
     const allInstalled = pluginRegistry.getAll();
     const registeredPlugins: Plugin[] = [];

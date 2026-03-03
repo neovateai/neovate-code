@@ -10,6 +10,7 @@ import type { MessageBus } from '../../messageBus';
 import { PluginInstaller } from '../../pluginRegistry/installer';
 import type { MarketplaceSource } from '../../pluginRegistry/marketplace';
 import { MarketplaceManager } from '../../pluginRegistry/marketplace';
+import { resolvePluginMetaDir } from '../../pluginRegistry/pluginDirResolver';
 import { PluginRegistry } from '../../pluginRegistry/registry';
 
 function getPluginsDir(context: Context): string {
@@ -17,7 +18,10 @@ function getPluginsDir(context: Context): string {
 }
 
 function getMarketplaceManager(context: Context): MarketplaceManager {
-  return new MarketplaceManager({ pluginsDir: getPluginsDir(context) });
+  return new MarketplaceManager({
+    pluginsDir: getPluginsDir(context),
+    productName: context.productName,
+  });
 }
 
 function getRegistry(context: Context): PluginRegistry {
@@ -287,18 +291,20 @@ export function registerPluginHandlers(
         mcpServers: [] as string[],
       };
 
-      const manifestPath = path.join(
+      const metaDir = resolvePluginMetaDir(
         installed.installPath,
-        '.claude-plugin',
-        'plugin.json',
+        context.productName,
       );
+      const manifestPath = metaDir ? path.join(metaDir, 'plugin.json') : null;
 
-      const manifestExists = await fs.promises
-        .access(manifestPath)
-        .then(() => true)
-        .catch(() => false);
+      const manifestExists = manifestPath
+        ? await fs.promises
+            .access(manifestPath)
+            .then(() => true)
+            .catch(() => false)
+        : false;
 
-      if (manifestExists) {
+      if (manifestExists && manifestPath) {
         try {
           const manifestContent = await fs.promises.readFile(
             manifestPath,

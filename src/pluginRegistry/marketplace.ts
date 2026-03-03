@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'pathe';
 import { z } from 'zod';
+import { resolveMarketplacePath } from './pluginDirResolver';
 
 export const MarketplaceSourceSchema = z.discriminatedUnion('source', [
   z.object({ source: z.literal('git'), url: z.string() }),
@@ -75,9 +76,11 @@ export type InstallCountsCache = z.infer<typeof InstallCountsCacheSchema>;
 
 export class MarketplaceManager {
   #pluginsDir: string;
+  #productName: string;
 
-  constructor(opts: { pluginsDir: string }) {
+  constructor(opts: { pluginsDir: string; productName: string }) {
     this.#pluginsDir = opts.pluginsDir;
+    this.#productName = opts.productName;
   }
 
   get knownMarketplacesPath(): string {
@@ -143,25 +146,14 @@ export class MarketplaceManager {
   }
 
   readMarketplaceJson(marketplaceDir: string): MarketplaceJson | null {
-    const candidates = [
-      path.join(marketplaceDir, '.claude-plugin', 'marketplace.json'),
-      path.join(
-        marketplaceDir,
-        `.${path.basename(this.#pluginsDir)}-plugin`,
-        'marketplace.json',
-      ),
-    ];
-    for (const candidate of candidates) {
-      if (fs.existsSync(candidate)) {
-        try {
-          const raw = JSON.parse(fs.readFileSync(candidate, 'utf-8'));
-          return MarketplaceJsonSchema.parse(raw);
-        } catch {
-          return null;
-        }
-      }
+    const mpPath = resolveMarketplacePath(marketplaceDir, this.#productName);
+    if (!mpPath) return null;
+    try {
+      const raw = JSON.parse(fs.readFileSync(mpPath, 'utf-8'));
+      return MarketplaceJsonSchema.parse(raw);
+    } catch {
+      return null;
     }
-    return null;
   }
 
   getInstallCounts(): Map<string, number> {

@@ -7,6 +7,7 @@ import type { Plugin } from '../plugin';
 import { fileToPromptCommand } from '../slashCommand';
 import type { InstalledPlugin, PluginManifest } from './types';
 import { PluginManifestSchema } from './types';
+import { resolveManifestPath } from './pluginDirResolver';
 
 interface DiscoveredComponents {
   commandDirs: string[];
@@ -16,14 +17,19 @@ interface DiscoveredComponents {
 }
 
 export class PluginLoader {
+  #productName: string;
+
+  constructor(productName: string) {
+    this.#productName = productName;
+  }
+
   async loadInstalled(installed: InstalledPlugin): Promise<Plugin> {
-    const manifestPath = path.join(
+    const manifestPath = resolveManifestPath(
       installed.installPath,
-      '.claude-plugin',
-      'plugin.json',
+      this.#productName,
     );
-    if (!fs.existsSync(manifestPath)) {
-      throw new Error(`Plugin manifest not found: ${manifestPath}`);
+    if (!manifestPath) {
+      throw new Error(`Plugin manifest not found at: ${installed.installPath}`);
     }
     const manifest = PluginManifestSchema.parse(
       JSON.parse(fs.readFileSync(manifestPath, 'utf-8')),
@@ -241,7 +247,9 @@ export class PluginLoader {
 
 function replacePluginRoot(obj: any, pluginRoot: string): any {
   if (typeof obj === 'string') {
-    return obj.replace(/\$\{CLAUDE_PLUGIN_ROOT\}/g, pluginRoot);
+    return obj
+      .replace(/\$\{PLUGIN_ROOT\}/g, pluginRoot)
+      .replace(/\$\{CLAUDE_PLUGIN_ROOT\}/g, pluginRoot);
   }
   if (Array.isArray(obj)) {
     return obj.map((item) => replacePluginRoot(item, pluginRoot));
