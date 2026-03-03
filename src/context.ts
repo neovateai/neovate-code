@@ -149,8 +149,6 @@ export class Context {
       }
     }
 
-    console.log('registeredPlugins', registeredPlugins);
-
     const pluginsConfigs: (string | Plugin)[] = [
       ...buildInPlugins,
       ...registeredPlugins,

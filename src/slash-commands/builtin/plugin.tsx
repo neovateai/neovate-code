@@ -98,7 +98,7 @@ const PluginDetailView: React.FC<{
   onBack: () => void;
   onInstall: (scope: 'user' | 'project' | 'local') => void;
 }> = ({ plugin, onBack, onInstall }) => {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   useInput((_input, key) => {
     if (key.escape) {
@@ -226,18 +226,25 @@ const DiscoverView: React.FC<{
 
   useInput(
     (input, key) => {
-      if (key.upArrow && selectedIndex > 0) {
+      if (key.upArrow && selectedIndex > -1) {
         setSelectedIndex(selectedIndex - 1);
       }
       if (key.downArrow && selectedIndex < filtered.length - 1) {
         setSelectedIndex(selectedIndex + 1);
       }
       if (key.backspace || key.delete) {
-        setSearchQuery(searchQuery.slice(0, -1));
-        setSelectedIndex(0);
+        if (selectedIndex === -1) {
+          setSearchQuery(searchQuery.slice(0, -1));
+        } else {
+          setSelectedIndex(-1);
+        }
       }
       if (key.return && filtered.length > 0) {
-        openDetail(filtered[selectedIndex]);
+        if (selectedIndex === -1) {
+          // focus search input
+        } else {
+          openDetail(filtered[selectedIndex]);
+        }
       }
       if (
         !key.ctrl &&
@@ -248,8 +255,12 @@ const DiscoverView: React.FC<{
         input.charCodeAt(0) >= 32 &&
         input.charCodeAt(0) <= 126
       ) {
-        setSearchQuery(searchQuery + input);
-        setSelectedIndex(0);
+        if (selectedIndex === -1) {
+          setSearchQuery(searchQuery + input);
+        } else {
+          setSearchQuery(searchQuery + input);
+          setSelectedIndex(-1);
+        }
       }
     },
     { isActive: !detailPlugin },
@@ -293,19 +304,36 @@ const DiscoverView: React.FC<{
   return (
     <Box flexDirection="column">
       <Box marginBottom={1}>
-        <Text bold>
-          Discover plugins ({selectedIndex + 1}/{filtered.length})
+        <Text bold>Discover plugins </Text>
+        <Text dimColor>
+          ({Math.max(0, selectedIndex) + 1}/{filtered.length})
         </Text>
       </Box>
       <Box
         borderStyle="round"
-        borderColor="gray"
+        borderColor={selectedIndex === -1 ? UI_COLORS.ASK_PRIMARY : 'gray'}
         paddingLeft={1}
         paddingRight={1}
       >
-        <Text color="gray">{'\u{2315}'} </Text>
-        <Text color={searchQuery ? 'white' : 'gray'}>
-          {searchQuery || 'Search\u2026'}
+        <Text color={selectedIndex === -1 ? UI_COLORS.ASK_PRIMARY : 'gray'}>
+          {selectedIndex === -1 ? '\u276F ' : '\u2315 '}
+        </Text>
+        <Text color={selectedIndex === -1 ? 'white' : 'gray'}>
+          {searchQuery}
+          {selectedIndex === -1 && searchQuery && (
+            <Text backgroundColor="white" color="black">
+              {' '}
+            </Text>
+          )}
+          {selectedIndex === -1 && !searchQuery ? (
+            <Text>
+              <Text backgroundColor="white" color="black">
+                S
+              </Text>
+              <Text color="gray">{'earch\u2026'}</Text>
+            </Text>
+          ) : null}
+          {!searchQuery && selectedIndex !== -1 && 'Search\u2026'}
         </Text>
       </Box>
       <Box flexDirection="column" marginTop={1}>
