@@ -60,7 +60,7 @@ const Divider: React.FC = () => {
 const TabBar: React.FC<{ activeTab: Tab }> = ({ activeTab }) => (
   <Box flexDirection="column">
     <Divider />
-    <Box marginTop={1}>
+    <Box>
       <Text bold color={UI_COLORS.ASK_PRIMARY}>
         Plugins
       </Text>
@@ -303,7 +303,7 @@ const DiscoverView: React.FC<{
 
   return (
     <Box flexDirection="column">
-      <Box marginBottom={1}>
+      <Box>
         <Text bold>Discover plugins </Text>
         <Text dimColor>
           ({Math.max(0, selectedIndex) + 1}/{filtered.length})
@@ -634,8 +634,6 @@ const MarketplacesView: React.FC<{
           borderColor="gray"
           paddingLeft={1}
           paddingRight={1}
-          paddingTop={1}
-          paddingBottom={1}
           width="100%"
         >
           <Text bold>Add Marketplace</Text>
