@@ -32,6 +32,28 @@ function getInstaller(context: Context): PluginInstaller {
   });
 }
 
+function isSymbolicLink(targetPath: string): boolean {
+  try {
+    return (
+      fs.existsSync(targetPath) && fs.lstatSync(targetPath).isSymbolicLink()
+    );
+  } catch {
+    return false;
+  }
+}
+
+function validateSymlinkPath(targetPath: string, allowedBaseDir: string): void {
+  const resolvedPath = path.resolve(targetPath);
+  if (!resolvedPath.startsWith(allowedBaseDir)) {
+    throw new Error(
+      `Invalid symlink target path: ${targetPath} (resolved to ${resolvedPath})`,
+    );
+  }
+  if (!fs.existsSync(resolvedPath)) {
+    throw new Error(`Source path not found: ${resolvedPath}`);
+  }
+}
+
 function getConfigManager(context: Context): ConfigManager {
   return new ConfigManager(context.cwd, context.productName, {});
 }
@@ -75,6 +97,7 @@ export function registerPluginHandlers(
           enabled: enabledPlugins[key] === true,
           installedAt: p.installedAt,
           marketplace: p.marketplace,
+          pendingUpdate: p.pendingUpdate,
         })),
       },
     };
@@ -140,6 +163,8 @@ export function registerPluginHandlers(
           marketplaceEntry.installLocation,
           pluginDef.source,
         );
+        validateSymlinkPath(sourcePath, marketplaceEntry.installLocation);
+
         installPath = path.join(
           getPluginsDir(context),
           'installed',
@@ -392,6 +417,7 @@ export function registerPluginHandlers(
           description,
           author,
           installedAt: installed.installedAt,
+          pendingUpdate: installed.pendingUpdate,
           components,
         },
       };
@@ -401,6 +427,18 @@ export function registerPluginHandlers(
         error: error instanceof Error ? error.message : String(error),
       };
     }
+  });
+
+  messageBus.registerHandler('plugin.markForUpdate', async (data) => {
+    const { cwd, pluginName, marketplace, pending } = data;
+    const context = await getContext(cwd);
+    const registry = getRegistry(context);
+    const installed = registry.get(pluginName, marketplace);
+    if (!installed) {
+      return { success: false, error: `Plugin "${pluginName}" not found.` };
+    }
+    registry.updateEntry(pluginName, { pendingUpdate: pending }, marketplace);
+    return { success: true };
   });
 
   messageBus.registerHandler('plugin.enable', async (data) => {
@@ -550,6 +588,7 @@ export function registerPluginHandlers(
         }
 
         fs.mkdirSync(path.dirname(installLocation), { recursive: true });
+        validateSymlinkPath(resolvedPath, path.dirname(resolvedPath));
         fs.symlinkSync(resolvedPath, installLocation);
 
         const marketplaceSource: MarketplaceSource = {
@@ -676,14 +715,116 @@ export function registerPluginHandlers(
           error: `Marketplace "${name}" not found.`,
         };
       }
-      await execAsync('git pull', {
-        cwd: entry.installLocation,
-      });
+
+      const isSymlink = isSymbolicLink(entry.installLocation);
+
+      if (!isSymlink) {
+        await execAsync('git pull', {
+          cwd: entry.installLocation,
+        });
+      }
+
       manager.updateMarketplaceTimestamp(name);
       const mktJson = manager.readMarketplaceJson(entry.installLocation);
+
+      const registry = getRegistry(context);
+      const installer = getInstaller(context);
+      const allInstalled = registry.getAll();
+      const updatedPlugins: string[] = [];
+      const failedPlugins: Array<{ name: string; error: string }> = [];
+
+      const installedFromMarketplace = Object.values(allInstalled).filter(
+        (p) => p.marketplace === name,
+      );
+
+      const updateTasks = installedFromMarketplace.map(async (installed) => {
+        try {
+          const isPluginSymlink = isSymbolicLink(installed.installPath);
+
+          if (isPluginSymlink) {
+            const pluginDef = mktJson?.plugins.find(
+              (p) => p.name === installed.name,
+            );
+            if (pluginDef && typeof pluginDef.source === 'string') {
+              const newSourcePath = path.resolve(
+                entry.installLocation,
+                pluginDef.source,
+              );
+              validateSymlinkPath(newSourcePath, entry.installLocation);
+
+              const currentTarget = fs.readlinkSync(installed.installPath);
+              if (currentTarget !== newSourcePath) {
+                fs.unlinkSync(installed.installPath);
+                fs.symlinkSync(newSourcePath, installed.installPath);
+              }
+            }
+            updatedPlugins.push(installed.name);
+          } else if (
+            installed.source.type === 'git' ||
+            installed.source.type === 'github'
+          ) {
+            await installer.update({
+              name: installed.name,
+              source: installed.source,
+              installPath: installed.installPath,
+            });
+            updatedPlugins.push(installed.name);
+          } else {
+            const pluginDef = mktJson?.plugins.find(
+              (p) => p.name === installed.name,
+            );
+            if (pluginDef) {
+              if (typeof pluginDef.source === 'string') {
+                const sourcePath = path.resolve(
+                  entry.installLocation,
+                  pluginDef.source,
+                );
+                validateSymlinkPath(sourcePath, entry.installLocation);
+
+                await installer.uninstall(installed.installPath);
+                fs.mkdirSync(path.dirname(installed.installPath), {
+                  recursive: true,
+                });
+                fs.symlinkSync(sourcePath, installed.installPath);
+                updatedPlugins.push(installed.name);
+              } else {
+                await installer.update({
+                  name: installed.name,
+                  source: { type: 'git', url: pluginDef.source.url },
+                  installPath: installed.installPath,
+                });
+                updatedPlugins.push(installed.name);
+              }
+            }
+          }
+
+          if (installed.pendingUpdate) {
+            registry.updateEntry(
+              installed.name,
+              { pendingUpdate: false },
+              installed.marketplace,
+            );
+          }
+        } catch (error) {
+          const errorMsg =
+            error instanceof Error ? error.message : String(error);
+          failedPlugins.push({ name: installed.name, error: errorMsg });
+          console.warn(
+            `Failed to update plugin "${installed.name}": ${errorMsg}`,
+          );
+        }
+      });
+
+      await Promise.allSettled(updateTasks);
+
       return {
         success: true,
-        data: { name, pluginCount: mktJson?.plugins.length || 0 },
+        data: {
+          name,
+          pluginCount: mktJson?.plugins.length || 0,
+          updatedPlugins,
+          failedPlugins: failedPlugins.length > 0 ? failedPlugins : undefined,
+        },
       };
     } catch (error) {
       return {

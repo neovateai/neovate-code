@@ -1102,6 +1102,7 @@ type PluginDetailOutput = {
     description?: string;
     author?: string;
     installedAt: string;
+    pendingUpdate?: boolean;
     components: {
       commands: string[];
       agents: string[];
@@ -1125,6 +1126,14 @@ type PluginDisableInput = {
   marketplace?: string;
 };
 type PluginDisableOutput = { success: boolean; error?: string };
+
+type PluginMarkForUpdateInput = {
+  cwd: string;
+  pluginName: string;
+  marketplace?: string;
+  pending: boolean;
+};
+type PluginMarkForUpdateOutput = { success: boolean; error?: string };
 
 type PluginDiscoverInput = {
   cwd: string;
@@ -1179,7 +1188,12 @@ type PluginMarketplaceRemoveOutput = { success: boolean; error?: string };
 type PluginMarketplaceUpdateInput = { cwd: string; name: string };
 type PluginMarketplaceUpdateOutput = {
   success: boolean;
-  data?: { name: string; pluginCount: number };
+  data?: {
+    name: string;
+    pluginCount: number;
+    updatedPlugins?: string[];
+    failedPlugins?: Array<{ name: string; error: string }>;
+  };
   error?: string;
 };
 
@@ -1736,6 +1750,10 @@ export type HandlerMap = {
   'plugin.detail': { input: PluginDetailInput; output: PluginDetailOutput };
   'plugin.enable': { input: PluginEnableInput; output: PluginEnableOutput };
   'plugin.disable': { input: PluginDisableInput; output: PluginDisableOutput };
+  'plugin.markForUpdate': {
+    input: PluginMarkForUpdateInput;
+    output: PluginMarkForUpdateOutput;
+  };
   'plugin.discover': {
     input: PluginDiscoverInput;
     output: PluginDiscoverOutput;

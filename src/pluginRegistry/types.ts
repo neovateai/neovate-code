@@ -77,6 +77,7 @@ export const InstalledPluginSchema = z.object({
   installedAt: z.string(),
   lastUpdated: z.string().optional(),
   gitCommitSha: z.string().optional(),
+  pendingUpdate: z.boolean().optional(),
 });
 export type InstalledPlugin = z.infer<typeof InstalledPluginSchema>;
 

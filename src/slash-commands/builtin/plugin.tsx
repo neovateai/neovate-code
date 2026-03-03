@@ -29,6 +29,7 @@ interface InstalledPlugin {
   enabled: boolean;
   installedAt: string;
   marketplace?: string;
+  pendingUpdate?: boolean;
 }
 
 interface MarketplaceInfo {
@@ -465,6 +466,7 @@ interface PluginDetail {
   description?: string;
   author?: string;
   installedAt: string;
+  pendingUpdate?: boolean;
   components: {
     commands: string[];
     agents: string[];
@@ -489,7 +491,10 @@ const InstalledPluginDetailView: React.FC<{
       key: 'toggle',
       label: detail?.enabled ? 'Disable plugin' : 'Enable plugin',
     },
-    { key: 'mark-update', label: 'Mark for update' },
+    {
+      key: 'mark-update',
+      label: detail?.pendingUpdate ? 'Unmark for update' : 'Mark for update',
+    },
     { key: 'update', label: 'Update now', color: 'yellow' },
     { key: 'uninstall', label: 'Uninstall', color: 'red' },
     { key: 'back', label: 'Back to plugin list' },
@@ -539,6 +544,27 @@ const InstalledPluginDetailView: React.FC<{
             marketplace: plugin.marketplace,
           })
           .then(() => {
+            onExit(
+              `${verb} ${plugin.name}. Restart ${productName} to apply changes.`,
+            );
+          })
+          .catch(() => {
+            setOperating(false);
+          });
+      } else if (item.key === 'mark-update') {
+        const newPending = !detail?.pendingUpdate;
+        setOperating(true);
+        bridge
+          .request('plugin.markForUpdate', {
+            cwd,
+            pluginName: plugin.name,
+            marketplace: plugin.marketplace,
+            pending: newPending,
+          })
+          .then(() => {
+            const verb = newPending
+              ? 'Marked for update'
+              : 'Unmarked for update';
             onExit(
               `${verb} ${plugin.name}. Restart ${productName} to apply changes.`,
             );
@@ -636,6 +662,11 @@ const InstalledPluginDetailView: React.FC<{
               <Text color="red">Disabled</Text>
             )}
           </Text>
+          {detail.pendingUpdate && (
+            <Text color="yellow">
+              {'\u2191'} Update pending (will update on next restart)
+            </Text>
+          )}
         </Box>
       )}
       {detail &&
@@ -867,6 +898,9 @@ const InstalledView: React.FC<{
                   ) : (
                     <Text dimColor>{'\u25CB'} disabled</Text>
                   )}
+                  {p.pendingUpdate && (
+                    <Text color="yellow"> {'\u2191'} update pending</Text>
+                  )}
                 </Box>
               );
             })}
@@ -886,8 +920,9 @@ const InstalledView: React.FC<{
 const MarketplacesView: React.FC<{
   onExit: (msg: string) => void;
   onSubViewChange?: (active: boolean) => void;
-}> = ({ onExit, onSubViewChange }) => {
-  const { bridge, cwd } = useAppStore();
+  onPluginChange?: () => void;
+}> = ({ onExit, onSubViewChange, onPluginChange }) => {
+  const { bridge, cwd, productName } = useAppStore();
   const [marketplaces, setMarketplaces] = useState<MarketplaceInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -895,6 +930,7 @@ const MarketplacesView: React.FC<{
   const [addInput, setAddInput] = useState('');
   const [addError, setAddError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [updating, setUpdating] = useState<string | null>(null);
 
   const items = [
     { type: 'add' as const },
@@ -945,15 +981,40 @@ const MarketplacesView: React.FC<{
           enterAddMode();
         }
       }
-      if (input === 'u' && selectedIndex > 0) {
+      if (input === 'u' && selectedIndex > 0 && !updating) {
         const item = items[selectedIndex];
         if (item.type === 'marketplace') {
+          setUpdating(item.data.name);
           bridge
             .request('plugin.marketplace.update', {
               cwd,
               name: item.data.name,
             })
-            .then(() => loadMarketplaces());
+            .then((result) => {
+              setUpdating(null);
+              if (result.success && result.data) {
+                const updated = result.data.updatedPlugins || [];
+                const failed = result.data.failedPlugins || [];
+
+                if (updated.length > 0 || failed.length > 0) {
+                  onPluginChange?.();
+                  let message = `Updated marketplace ${item.data.name}`;
+                  if (updated.length > 0) {
+                    message += ` - ${updated.length} plugin(s) updated: ${updated.join(', ')}`;
+                  }
+                  if (failed.length > 0) {
+                    message += ` - ${failed.length} plugin(s) failed: ${failed.map((f) => f.name).join(', ')}`;
+                  }
+                  message += `. Restart ${productName} to apply changes.`;
+                  onExit(message);
+                } else {
+                  loadMarketplaces();
+                }
+              }
+            })
+            .catch(() => {
+              setUpdating(null);
+            });
         }
       }
       if (input === 'r' && selectedIndex > 0) {
@@ -1138,6 +1199,15 @@ const MarketplacesView: React.FC<{
                   {m.pluginCount} available · Updated{' '}
                   {formatDate(m.lastUpdated)}
                 </Text>
+                {updating === m.name && (
+                  <Box>
+                    <Spinner type="dots" />
+                    <Text color="yellow">
+                      {' '}
+                      Updating marketplace and plugins...
+                    </Text>
+                  </Box>
+                )}
               </Box>
             </Box>
           );
@@ -1210,6 +1280,7 @@ const PluginManagerComponent: React.FC<PluginManagerProps> = ({ onExit }) => {
           <MarketplacesView
             onExit={onExit}
             onSubViewChange={setSubViewActive}
+            onPluginChange={handlePluginChange}
           />
         )}
       </Box>
