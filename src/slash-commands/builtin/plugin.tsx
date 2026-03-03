@@ -530,43 +530,63 @@ const InstalledView: React.FC<{
     );
   }
 
+  const scopeLabel: Record<string, string> = {
+    global: 'User',
+    project: 'Project',
+    local: 'Local',
+  };
+
+  const scopeOrder = ['global', 'project', 'local'] as const;
+  const grouped = scopeOrder
+    .map((s) => ({
+      scope: s,
+      label: scopeLabel[s],
+      items: plugins.filter((p) => p.scope === s),
+    }))
+    .filter((g) => g.items.length > 0);
+
   return (
     <Box flexDirection="column">
-      <Box marginBottom={1}>
-        <Text bold>Installed plugins ({plugins.length})</Text>
-      </Box>
-      <Box flexDirection="column">
-        {plugins.map((p, i) => {
-          const isSelected = i === selectedIndex;
-          const indicator = p.enabled ? pc.white('\u25CF') : pc.gray('\u25CB');
-          return (
-            <Box
-              key={`${p.name}-${p.marketplace || ''}`}
-              flexDirection="column"
-              marginTop={i > 0 ? 1 : 0}
-            >
-              <Box>
-                <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
-                  {isSelected ? '\u276F ' : '  '}
-                </Text>
-                <Text>{indicator} </Text>
-                <Text bold color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
-                  {p.name}
-                </Text>
-                <Text dimColor>
-                  {p.marketplace ? ` · ${p.marketplace}` : ''}
-                  {p.version ? ` · v${p.version}` : ''}
-                  {` · ${p.scope}`}
-                  {!p.enabled ? ' (disabled)' : ''}
-                </Text>
-              </Box>
+      {(() => {
+        let idx = 0;
+        return grouped.map((g, gi) => (
+          <Box key={g.scope} flexDirection="column" marginTop={gi > 0 ? 1 : 0}>
+            <Box>
+              <Text dimColor> {g.label}</Text>
             </Box>
-          );
-        })}
-      </Box>
+            {g.items.map((p) => {
+              const currentIdx = idx++;
+              const isSelected = currentIdx === selectedIndex;
+              return (
+                <Box key={`${p.name}-${p.marketplace || ''}`}>
+                  <Text color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}>
+                    {isSelected ? '\u276F ' : '  '}
+                  </Text>
+                  <Text
+                    bold
+                    color={isSelected ? UI_COLORS.ASK_PRIMARY : 'white'}
+                  >
+                    {p.name}
+                  </Text>
+                  <Text dimColor>
+                    {p.marketplace ? ` · ${p.marketplace}` : ''}
+                  </Text>
+                  <Text> · </Text>
+                  {p.enabled ? (
+                    <Text color="green">{'\u2714'} enabled</Text>
+                  ) : (
+                    <Text dimColor>{'\u25CB'} disabled</Text>
+                  )}
+                </Box>
+              );
+            })}
+          </Box>
+        ));
+      })()}
       <Box marginTop={1}>
         <Text dimColor>
-          ↑↓ navigate · Space: enable/disable · r: remove · Esc: back
+          {selectedIndex + 1}/{plugins.length} · Space: toggle · Enter: details
+          · Esc: back
         </Text>
       </Box>
     </Box>
