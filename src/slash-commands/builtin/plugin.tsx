@@ -170,7 +170,7 @@ const DiscoverView: React.FC<{
   refreshTrigger?: number;
   onPluginChange?: () => void;
 }> = ({ onExit, onSubViewChange, refreshTrigger, onPluginChange }) => {
-  const { bridge, cwd } = useAppStore();
+  const { bridge, cwd, productName } = useAppStore();
   const [plugins, setPlugins] = useState<DiscoverPlugin[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -199,6 +199,7 @@ const DiscoverView: React.FC<{
       (p) => selectedSet.has(pluginKey(p)) && !p.installed,
     );
     if (toInstall.length === 0) return;
+    const installed: string[] = [];
     for (const p of toInstall) {
       setInstalling(pluginKey(p));
       try {
@@ -208,12 +209,19 @@ const DiscoverView: React.FC<{
           marketplaceName: p.marketplace,
           scope: 'user',
         });
+        installed.push(p.name);
       } catch {
         // ignore
       }
     }
     setInstalling(null);
     setSelectedSet(new Set());
+    if (installed.length > 0) {
+      onExit(
+        `Installed ${installed.join(', ')}. Restart ${productName} to load new plugins.`,
+      );
+      return;
+    }
     loadPlugins();
     onPluginChange?.();
   };
@@ -232,7 +240,9 @@ const DiscoverView: React.FC<{
     try {
       const result = await bridge.request('plugin.discover', { cwd });
       if (result.success) {
-        setPlugins(result.data.plugins);
+        setPlugins(
+          result.data.plugins.filter((p: DiscoverPlugin) => !p.installed),
+        );
       }
     } catch {
       // ignore
@@ -339,10 +349,13 @@ const DiscoverView: React.FC<{
               scope,
             })
             .then(() => {
-              loadPlugins();
-              onPluginChange?.();
+              onExit(
+                `Installed ${detailPlugin.name}. Restart ${productName} to load new plugins.`,
+              );
             })
-            .finally(() => setInstalling(null));
+            .catch(() => {
+              setInstalling(null);
+            });
         }}
       />
     );
