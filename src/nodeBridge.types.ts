@@ -1058,11 +1058,11 @@ type PluginListOutput = {
     plugins: Array<{
       name: string;
       version?: string;
-      source: any;
       scope: 'global' | 'project' | 'local';
       enabled: boolean;
       installedAt: string;
       marketplace?: string;
+      pendingUpdate?: boolean;
     }>;
   };
 };
@@ -1162,7 +1162,7 @@ type PluginMarketplaceListOutput = {
   data: {
     marketplaces: Array<{
       name: string;
-      source: any;
+      source: { source: 'git' | 'url'; url: string };
       installLocation: string;
       lastUpdated: string;
       pluginCount: number;

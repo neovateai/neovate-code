@@ -457,27 +457,18 @@ export class ConfigManager {
   }
 
   removePluginEnabled(pluginId: string) {
-    for (const source of [
-      this.globalConfig,
-      this.#projectFileConfig,
-      this.#localFileConfig,
-    ]) {
+    const entries: Array<[Partial<Config>, string]> = [
+      [this.globalConfig, this.globalConfigPath],
+      [this.#projectFileConfig, this.projectConfigPath],
+      [this.#localFileConfig, this.projectLocalConfigPath],
+    ];
+    for (const [source, configPath] of entries) {
       if (source.enabledPlugins?.[pluginId] !== undefined) {
         delete source.enabledPlugins[pluginId];
+        if (fs.existsSync(configPath)) {
+          saveConfig(configPath, source, DEFAULT_CONFIG);
+        }
       }
-    }
-    for (const configPath of [
-      this.globalConfigPath,
-      this.projectConfigPath,
-      this.projectLocalConfigPath,
-    ]) {
-      const source =
-        configPath === this.globalConfigPath
-          ? this.globalConfig
-          : configPath === this.projectConfigPath
-            ? this.#projectFileConfig
-            : this.#localFileConfig;
-      saveConfig(configPath, source, DEFAULT_CONFIG);
     }
   }
 

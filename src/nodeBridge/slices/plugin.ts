@@ -1,6 +1,5 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
-
 const execAsync = promisify(exec);
 import fs from 'fs';
 import path from 'pathe';
@@ -47,14 +46,20 @@ function isSymbolicLink(targetPath: string): boolean {
 }
 
 function validateSymlinkPath(targetPath: string, allowedBaseDir: string): void {
-  const resolvedPath = path.resolve(targetPath);
-  if (!resolvedPath.startsWith(allowedBaseDir)) {
+  if (!fs.existsSync(targetPath)) {
+    throw new Error(`Source path not found: ${targetPath}`);
+  }
+  const resolvedPath = fs.realpathSync(targetPath);
+  const resolvedBase = fs.existsSync(allowedBaseDir)
+    ? fs.realpathSync(allowedBaseDir)
+    : path.resolve(allowedBaseDir);
+  if (
+    !resolvedPath.startsWith(resolvedBase + path.sep) &&
+    resolvedPath !== resolvedBase
+  ) {
     throw new Error(
       `Invalid symlink target path: ${targetPath} (resolved to ${resolvedPath})`,
     );
-  }
-  if (!fs.existsSync(resolvedPath)) {
-    throw new Error(`Source path not found: ${resolvedPath}`);
   }
 }
 
@@ -329,17 +334,33 @@ export function registerPluginHandlers(
             const dirs = Array.isArray(manifest.commands)
               ? manifest.commands
               : [manifest.commands];
+            const resolvedInstallPath = fs.existsSync(installed.installPath)
+              ? fs.realpathSync(installed.installPath)
+              : path.resolve(installed.installPath);
             for (const d of dirs) {
               const absDir = path.resolve(installed.installPath, d);
+              let resolvedAbsDir: string;
+              try {
+                resolvedAbsDir = fs.existsSync(absDir)
+                  ? fs.realpathSync(absDir)
+                  : path.resolve(absDir);
+              } catch {
+                resolvedAbsDir = path.resolve(absDir);
+              }
 
-              if (!absDir.startsWith(installed.installPath)) {
+              if (
+                !resolvedAbsDir.startsWith(resolvedInstallPath + path.sep) &&
+                resolvedAbsDir !== resolvedInstallPath
+              ) {
                 console.warn(
-                  `Skipping unsafe command directory path: ${d} (resolved to ${absDir})`,
+                  `Skipping unsafe command directory path: ${d} (resolved to ${resolvedAbsDir})`,
                 );
                 continue;
               }
 
-              if (absDir === path.join(installed.installPath, 'commands')) {
+              if (
+                resolvedAbsDir === path.join(resolvedInstallPath, 'commands')
+              ) {
                 continue;
               }
 

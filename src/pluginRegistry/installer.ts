@@ -4,6 +4,23 @@ import path from 'pathe';
 import type { PluginManifest, PluginScope, PluginSource } from './types';
 import { PluginManifestSchema } from './types';
 
+function detectPackageManager(dir: string): string {
+  let current = path.resolve(dir);
+  while (true) {
+    if (fs.existsSync(path.join(current, 'pnpm-lock.yaml'))) return 'pnpm';
+    if (fs.existsSync(path.join(current, 'yarn.lock'))) return 'yarn';
+    if (
+      fs.existsSync(path.join(current, 'bun.lock')) ||
+      fs.existsSync(path.join(current, 'bun.lockb'))
+    )
+      return 'bun';
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  return 'npm';
+}
+
 export class PluginInstaller {
   #pluginsRoot: string;
 
@@ -100,13 +117,19 @@ export class PluginInstaller {
   ) {
     fs.mkdirSync(installPath, { recursive: true });
     const spec = version ? `${pkg}@${version}` : pkg;
-    execSync(`npm install ${spec}`, { cwd: installPath, stdio: 'pipe' });
+    const pm = detectPackageManager(installPath);
+    const installCmd =
+      pm === 'npm' ? `npm install ${spec}` : `${pm} add ${spec}`;
+    execSync(installCmd, { cwd: installPath, stdio: 'pipe' });
     return { installPath, manifest: this.#readManifest(installPath) };
   }
 
   #installDeps(dir: string) {
     if (fs.existsSync(path.join(dir, 'package.json'))) {
-      execSync('npm install --production', { cwd: dir, stdio: 'pipe' });
+      const pm = detectPackageManager(dir);
+      const prodFlag =
+        pm === 'pnpm' || pm === 'bun' ? '--prod' : '--production';
+      execSync(`${pm} install ${prodFlag}`, { cwd: dir, stdio: 'pipe' });
     }
   }
 
