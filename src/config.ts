@@ -122,6 +122,7 @@ export type Config = {
   checkpoints?: boolean;
   recentModels?: number;
   enabledPlugins?: Record<string, boolean>;
+  marketplaces?: Array<{ name: string; source: string }>;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -141,6 +142,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   agent: {},
   checkpoints: true,
   recentModels: 10,
+  marketplaces: [],
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -167,8 +169,9 @@ const VALID_CONFIG_KEYS = [
   'checkpoints',
   'recentModels',
   'enabledPlugins',
+  'marketplaces',
 ];
-const ARRAY_CONFIG_KEYS = ['plugins', 'skills'];
+const ARRAY_CONFIG_KEYS = ['plugins', 'skills', 'marketplaces'];
 const OBJECT_CONFIG_KEYS = [
   'mcpServers',
   'commit',

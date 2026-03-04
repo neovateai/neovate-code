@@ -1,7 +1,11 @@
+import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'pathe';
+import { promisify } from 'util';
 import { z } from 'zod';
 import { resolveMarketplacePath } from './pluginDirResolver';
+
+const execAsync = promisify(exec);
 
 export const MarketplaceSourceSchema = z.discriminatedUnion('source', [
   z.object({ source: z.literal('git'), url: z.string() }),
@@ -73,6 +77,11 @@ export const InstallCountsCacheSchema = z.object({
   ),
 });
 export type InstallCountsCache = z.infer<typeof InstallCountsCacheSchema>;
+
+export type MarketplaceDeclaration = {
+  name: string;
+  source: string;
+};
 
 export class MarketplaceManager {
   #pluginsDir: string;
@@ -171,5 +180,109 @@ export class MarketplaceManager {
       // ignore
     }
     return counts;
+  }
+
+  async addFromSource(
+    name: string,
+    source: string,
+  ): Promise<{ name: string; pluginCount: number }> {
+    const isLocalPath =
+      source.startsWith('/') ||
+      source.startsWith('./') ||
+      source.startsWith('../') ||
+      source.startsWith('~');
+
+    if (isLocalPath) {
+      const resolvedPath = path.resolve(source);
+      if (!fs.existsSync(resolvedPath)) {
+        throw new Error(`Path not found: ${resolvedPath}`);
+      }
+
+      const mktJson = this.readMarketplaceJson(resolvedPath);
+      if (!mktJson) {
+        throw new Error('Directory does not contain a valid marketplace.json.');
+      }
+
+      const installLocation = path.join(this.marketplacesDir, name);
+      if (fs.existsSync(installLocation)) {
+        throw new Error(`Marketplace "${name}" already exists.`);
+      }
+
+      fs.mkdirSync(path.dirname(installLocation), { recursive: true });
+      fs.symlinkSync(resolvedPath, installLocation);
+
+      const marketplaceSource: MarketplaceSource = {
+        source: 'url',
+        url: resolvedPath,
+      };
+      this.addMarketplace(name, marketplaceSource, installLocation);
+
+      return { name, pluginCount: mktJson.plugins.length };
+    }
+
+    let gitUrl: string;
+    if (/^(https?:\/\/|git@|git:\/\/|ssh:\/\/)/.test(source)) {
+      gitUrl = source;
+    } else if (/^[^/]+\/[^/]+$/.test(source)) {
+      gitUrl = `https://github.com/${source}.git`;
+    } else {
+      throw new Error(
+        `Invalid source format: "${source}". Use owner/repo, a git URL, or a local path.`,
+      );
+    }
+
+    const installLocation = path.join(this.marketplacesDir, name);
+    if (fs.existsSync(installLocation)) {
+      throw new Error(`Marketplace "${name}" already exists.`);
+    }
+
+    fs.mkdirSync(path.dirname(installLocation), { recursive: true });
+    await execAsync(
+      `git clone --depth 1 ${gitUrl} ${installLocation}`.replace(/\s+/g, ' '),
+    );
+
+    const mktJson = this.readMarketplaceJson(installLocation);
+    if (!mktJson) {
+      fs.rmSync(installLocation, { recursive: true, force: true });
+      throw new Error('Cloned repo does not contain a valid marketplace.json.');
+    }
+
+    const marketplaceSource: MarketplaceSource = {
+      source: 'git',
+      url: gitUrl,
+    };
+    this.addMarketplace(name, marketplaceSource, installLocation);
+
+    return { name, pluginCount: mktJson.plugins.length };
+  }
+
+  async ensureMarketplaces(declarations: MarketplaceDeclaration[]): Promise<{
+    added: string[];
+    skipped: string[];
+    failed: Array<{ name: string; error: string }>;
+  }> {
+    const added: string[] = [];
+    const skipped: string[] = [];
+    const failed: Array<{ name: string; error: string }> = [];
+
+    const known = this.getKnownMarketplaces();
+
+    for (const decl of declarations) {
+      if (known[decl.name]) {
+        skipped.push(decl.name);
+        continue;
+      }
+      try {
+        await this.addFromSource(decl.name, decl.source);
+        added.push(decl.name);
+      } catch (error) {
+        failed.push({
+          name: decl.name,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    return { added, skipped, failed };
   }
 }

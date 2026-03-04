@@ -7,7 +7,6 @@ import { ConfigManager } from '../../config';
 import type { Context } from '../../context';
 import type { MessageBus } from '../../messageBus';
 import { PluginInstaller } from '../../pluginRegistry/installer';
-import type { MarketplaceSource } from '../../pluginRegistry/marketplace';
 import { MarketplaceManager } from '../../pluginRegistry/marketplace';
 import { resolvePluginMetaDir } from '../../pluginRegistry/pluginDirResolver';
 import { PluginRegistry } from '../../pluginRegistry/registry';
@@ -500,8 +499,12 @@ export function registerPluginHandlers(
     const { cwd, marketplaceName } = data;
     const context = await getContext(cwd);
     const manager = getMarketplaceManager(context);
-    const registry = getRegistry(context);
     const configManager = getConfigManager(context);
+    const configuredMarketplaces = configManager.config.marketplaces || [];
+    if (configuredMarketplaces.length > 0) {
+      await manager.ensureMarketplaces(configuredMarketplaces);
+    }
+    const registry = getRegistry(context);
     const enabledPlugins = configManager.config.enabledPlugins || {};
     const installedPlugins = registry.getAll();
 
@@ -556,6 +559,11 @@ export function registerPluginHandlers(
     const { cwd } = data;
     const context = await getContext(cwd);
     const manager = getMarketplaceManager(context);
+    const configManager = getConfigManager(context);
+    const configuredMarketplaces = configManager.config.marketplaces || [];
+    if (configuredMarketplaces.length > 0) {
+      await manager.ensureMarketplaces(configuredMarketplaces);
+    }
     const known = manager.getKnownMarketplaces();
 
     const marketplaces = Object.entries(known).map(([name, entry]) => {
@@ -580,6 +588,7 @@ export function registerPluginHandlers(
       const context = await getContext(cwd);
       const manager = getMarketplaceManager(context);
 
+      let name: string;
       const isLocalPath =
         source.startsWith('/') ||
         source.startsWith('./') ||
@@ -587,63 +596,10 @@ export function registerPluginHandlers(
         source.startsWith('~');
 
       if (isLocalPath) {
-        const resolvedPath = path.resolve(source);
-        if (!fs.existsSync(resolvedPath)) {
-          return {
-            success: false,
-            error: `Path not found: ${resolvedPath}`,
-          };
-        }
-
-        const mktJson = manager.readMarketplaceJson(resolvedPath);
-        if (!mktJson) {
-          return {
-            success: false,
-            error: 'Directory does not contain a valid marketplace.json.',
-          };
-        }
-
-        const name =
-          path.basename(resolvedPath).replace(/\.git$/, '') || 'unknown';
-        const installLocation = path.join(manager.marketplacesDir, name);
-
-        if (fs.existsSync(installLocation)) {
-          return {
-            success: false,
-            error: `Marketplace "${name}" already exists.`,
-          };
-        }
-
-        fs.mkdirSync(path.dirname(installLocation), { recursive: true });
-        validateSymlinkPath(resolvedPath, path.dirname(resolvedPath));
-        fs.symlinkSync(resolvedPath, installLocation);
-
-        const marketplaceSource: MarketplaceSource = {
-          source: 'url',
-          url: resolvedPath,
-        };
-        manager.addMarketplace(name, marketplaceSource, installLocation);
-
-        return {
-          success: true,
-          data: { name, pluginCount: mktJson.plugins.length },
-        };
-      }
-
-      let gitUrl: string;
-      if (/^(https?:\/\/|git@|git:\/\/|ssh:\/\/)/.test(source)) {
-        gitUrl = source;
-      } else if (/^[^/]+\/[^/]+$/.test(source)) {
-        gitUrl = `https://github.com/${source}.git`;
-      } else {
-        return {
-          success: false,
-          error: `Invalid source format: "${source}". Use owner/repo, a git URL, or a local path.`,
-        };
-      }
-
-      let name: string;
-      if (source.startsWith('git@')) {
+        name =
+          path.basename(path.resolve(source)).replace(/\.git$/, '') ||
+          'unknown';
+      } else if (source.startsWith('git@')) {
         const colonPath = source.split(':').pop() || '';
         name =
           colonPath
@@ -658,40 +614,8 @@ export function registerPluginHandlers(
             ?.replace(/\.git$/, '') || 'unknown';
       }
 
-      const installLocation = path.join(manager.marketplacesDir, name);
-
-      if (fs.existsSync(installLocation)) {
-        return {
-          success: false,
-          error: `Marketplace "${name}" already exists.`,
-        };
-      }
-
-      fs.mkdirSync(path.dirname(installLocation), { recursive: true });
-      await execAsync(
-        `git clone --depth 1 ${gitUrl} ${installLocation}`.replace(/\s+/g, ' '),
-      );
-
-      const mktJson = manager.readMarketplaceJson(installLocation);
-      if (!mktJson) {
-        fs.rmSync(installLocation, { recursive: true, force: true });
-        return {
-          success: false,
-          error: 'Cloned repo does not contain a valid marketplace.json.',
-        };
-      }
-
-      const marketplaceSource: MarketplaceSource = {
-        source: 'git',
-        url: gitUrl,
-      };
-
-      manager.addMarketplace(name, marketplaceSource, installLocation);
-
-      return {
-        success: true,
-        data: { name, pluginCount: mktJson.plugins.length },
-      };
+      const result = await manager.addFromSource(name, source);
+      return { success: true, data: result };
     } catch (error) {
       return {
         success: false,
