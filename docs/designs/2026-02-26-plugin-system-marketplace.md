@@ -145,25 +145,52 @@ Neovate Code 已有一套成熟的 Plugin hooks 系统（25+ hooks，5 种执行
 - 第一期: 新增 `enabledPlugins?: Record<string, boolean>` — 可覆盖 installed_plugins.json 中的 enabled 状态
 - 第二期: 新增 `extraKnownMarketplaces` — 团队项目确保成员访问必要插件市场
 
-#### 7. `/plugin` 命令 (`src/slash-commands/builtin/plugin.ts`)
+#### 7. `/plugin` 命令 (`src/slash-commands/builtin/plugin.tsx`)
 
-第一期:
+已实现为 `LocalJSXCommand` 类型，采用 **CLI + 回退 UI** 模式：
+- 带参数时（如 `/plugin install xxx`）→ 直接执行 CLI 命令，返回文本结果
+- 无参数时（`/plugin`）→ 渲染交互式 UI（Discover / Installed / Marketplaces 三个 Tab）
 
-```
-/plugin install <source>    /plugin uninstall <name>
-/plugin list                /plugin enable <name>
-/plugin disable <name>      /plugin update [name]
-```
+**实现架构**：`createPluginCommand.call()` 中根据 `args` 是否存在做路由，有 args 时委托给独立的 `handlePluginCliCommand()` 函数处理所有子命令解析和 bridge API 调用。
 
-第二期新增:
+##### 插件管理命令
 
 ```
-/plugin marketplace add|remove|list|update
-/plugin search [query]
-/plugin install <plugin>@<marketplace>
+/plugin install <name@marketplace> [--scope user|project|local]
+/plugin uninstall <name@marketplace>
+/plugin enable <name@marketplace>
+/plugin disable <name@marketplace>
 ```
 
-Source 格式: `github:owner/repo`, `git:url`, `npm:package`, `/local/path`, `owner/repo`（自动识别 GitHub）
+- 插件标识符格式为 `plugin-name@marketplace-name`，使用 `lastIndexOf('@')` 解析
+- `--scope` 默认 `user`，支持 `user | project | local` 三个值
+- 通过 `parsePluginIdentifier()` 和 `extractScope()` 辅助函数解析参数
+
+##### Marketplace 管理命令
+
+```
+/plugin marketplace add <source>       # 添加市场（别名: /plugin market add）
+/plugin marketplace list               # 列出已配置市场
+/plugin marketplace update <name>      # 更新市场插件列表
+/plugin marketplace remove <name>      # 删除市场（别名: rm）
+```
+
+- `marketplace` 可简写为 `market`
+- `remove` 可简写为 `rm`
+- Source 支持多种格式：`owner/repo`（GitHub）、Git URL（HTTPS/SSH）、本地路径、远程 marketplace.json URL
+
+##### 错误处理
+
+- 缺少必要参数 → 返回 Usage 提示信息
+- 无效的 `name@marketplace` 格式 → 返回格式说明
+- Bridge API 调用失败 → try/catch 返回 `"Failed to <action>: <error message>"`
+- 未知子命令 → 返回完整的命令帮助信息
+
+##### 关键实现细节
+
+- 非 React 组件上下文中通过 `useAppStore.getState()` 获取 `bridge`、`cwd`、`productName`
+- 所有 bridge 调用均为 typed（`plugin.install`、`plugin.marketplace.add` 等），类型定义在 `src/nodeBridge.types.ts`
+- CLI 命令返回 `null`（不渲染 JSX），通过 `onDone(result)` 回调传递文本结果
 
 #### 8. MarketplaceManager (第二期, `src/pluginRegistry/marketplace.ts`)
 

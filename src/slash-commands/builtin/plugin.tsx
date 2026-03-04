@@ -7,6 +7,7 @@ import { UI_COLORS } from '../../ui/constants';
 import TextInput from '../../ui/TextInput/index.js';
 import { useTerminalSize } from '../../ui/useTerminalSize';
 import { useAppStore } from '../../ui/store';
+import type { UIBridge } from '../../uiBridge';
 import type { LocalJSXCommand } from '../types';
 
 const TABS = ['Discover', 'Installed', 'Marketplaces'] as const;
@@ -1289,12 +1290,259 @@ const PluginManagerComponent: React.FC<PluginManagerProps> = ({ onExit }) => {
   );
 };
 
+function parsePluginIdentifier(identifier: string): {
+  pluginName: string;
+  marketplace: string;
+} | null {
+  const atIndex = identifier.lastIndexOf('@');
+  if (atIndex <= 0 || atIndex === identifier.length - 1) return null;
+  return {
+    pluginName: identifier.slice(0, atIndex),
+    marketplace: identifier.slice(atIndex + 1),
+  };
+}
+
+function extractScope(tokens: string[]): {
+  remaining: string[];
+  scope: 'user' | 'project' | 'local';
+} {
+  const scopeIndex = tokens.indexOf('--scope');
+  if (scopeIndex === -1 || scopeIndex >= tokens.length - 1) {
+    return { remaining: tokens.filter((t) => t !== '--scope'), scope: 'user' };
+  }
+  const scopeValue = tokens[scopeIndex + 1] as 'user' | 'project' | 'local';
+  const validScopes = ['user', 'project', 'local'];
+  const remaining = [
+    ...tokens.slice(0, scopeIndex),
+    ...tokens.slice(scopeIndex + 2),
+  ];
+  if (!validScopes.includes(scopeValue)) {
+    return { remaining, scope: 'user' };
+  }
+  return { remaining, scope: scopeValue };
+}
+
+async function handleMarketplaceCommand(
+  tokens: string[],
+  bridge: UIBridge,
+  cwd: string,
+): Promise<string> {
+  const action = tokens[0];
+  const target = tokens.slice(1).join(' ');
+
+  switch (action) {
+    case 'add': {
+      if (!target) {
+        return 'Usage: /plugin marketplace add <source>\n\nExamples:\n  /plugin marketplace add owner/repo\n  /plugin marketplace add https://gitlab.com/company/plugins.git\n  /plugin marketplace add ./my-marketplace';
+      }
+      try {
+        const result = await bridge.request('plugin.marketplace.add', {
+          cwd,
+          source: target,
+        });
+        if (result.success && result.data) {
+          return `Added marketplace "${result.data.name}" with ${result.data.pluginCount} plugin(s).`;
+        }
+        return result.error || 'Failed to add marketplace.';
+      } catch (err) {
+        return `Failed to add marketplace: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    }
+    case 'list': {
+      try {
+        const result = await bridge.request('plugin.marketplace.list', {
+          cwd,
+        });
+        if (result.success && result.data.marketplaces.length > 0) {
+          const lines = result.data.marketplaces.map(
+            (m) =>
+              `  \u2022 ${m.name} (${m.source?.url || 'unknown'}) - ${m.pluginCount} plugin(s)`,
+          );
+          return `Marketplaces:\n${lines.join('\n')}`;
+        }
+        return 'No marketplaces configured.';
+      } catch (err) {
+        return `Failed to list marketplaces: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    }
+    case 'update': {
+      if (!target) {
+        return 'Usage: /plugin marketplace update <marketplace-name>';
+      }
+      try {
+        const result = await bridge.request('plugin.marketplace.update', {
+          cwd,
+          name: target,
+        });
+        if (result.success && result.data) {
+          const updated = result.data.updatedPlugins || [];
+          if (updated.length > 0) {
+            return `Updated marketplace "${result.data.name}" - ${updated.length} plugin(s) updated: ${updated.join(', ')}.`;
+          }
+          return `Marketplace "${result.data.name}" is up to date.`;
+        }
+        return 'Failed to update marketplace.';
+      } catch (err) {
+        return `Failed to update marketplace: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    }
+    case 'remove':
+    case 'rm': {
+      if (!target) {
+        return 'Usage: /plugin marketplace remove <marketplace-name>';
+      }
+      try {
+        const result = await bridge.request('plugin.marketplace.remove', {
+          cwd,
+          name: target,
+        });
+        if (result.success) {
+          return `Removed marketplace "${target}".`;
+        }
+        return result.error || `Failed to remove marketplace "${target}".`;
+      } catch (err) {
+        return `Failed to remove marketplace: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    }
+    default:
+      return 'Usage: /plugin marketplace <add|list|update|remove> [args]\n\nCommands:\n  add <source>       Add a marketplace\n  list               List configured marketplaces\n  update <name>      Update a marketplace\n  remove <name>      Remove a marketplace';
+  }
+}
+
+async function handlePluginCliCommand(
+  args: string,
+  bridge: UIBridge,
+  cwd: string,
+  productName: string,
+): Promise<string> {
+  const tokens = args.trim().split(/\s+/);
+  const subcommand = tokens[0]?.toLowerCase();
+
+  switch (subcommand) {
+    case 'install': {
+      const { remaining, scope } = extractScope(tokens.slice(1));
+      const identifier = remaining[0];
+      if (!identifier) {
+        return 'Usage: /plugin install <name@marketplace> [--scope user|project|local]';
+      }
+      const parsed = parsePluginIdentifier(identifier);
+      if (!parsed) {
+        return 'Invalid plugin identifier. Expected format: plugin-name@marketplace-name';
+      }
+      try {
+        const result = await bridge.request('plugin.install', {
+          cwd,
+          pluginName: parsed.pluginName,
+          marketplaceName: parsed.marketplace,
+          scope,
+        });
+        if (result.success) {
+          return `Installed ${parsed.pluginName} from ${parsed.marketplace}. Restart ${productName} to load new plugins.`;
+        }
+        return result.error || `Failed to install ${identifier}.`;
+      } catch (err) {
+        return `Failed to install ${identifier}: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    }
+    case 'uninstall': {
+      const identifier = tokens[1];
+      if (!identifier) {
+        return 'Usage: /plugin uninstall <name@marketplace>';
+      }
+      const parsed = parsePluginIdentifier(identifier);
+      if (!parsed) {
+        return 'Invalid plugin identifier. Expected format: plugin-name@marketplace-name';
+      }
+      try {
+        const result = await bridge.request('plugin.uninstall', {
+          cwd,
+          pluginName: parsed.pluginName,
+          marketplace: parsed.marketplace,
+        });
+        if (result.success) {
+          return `Uninstalled ${parsed.pluginName}@${parsed.marketplace}. Restart ${productName} to apply changes.`;
+        }
+        return result.error || `Failed to uninstall ${identifier}.`;
+      } catch (err) {
+        return `Failed to uninstall ${identifier}: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    }
+    case 'enable': {
+      const identifier = tokens[1];
+      if (!identifier) {
+        return 'Usage: /plugin enable <name@marketplace>';
+      }
+      const parsed = parsePluginIdentifier(identifier);
+      if (!parsed) {
+        return 'Invalid plugin identifier. Expected format: plugin-name@marketplace-name';
+      }
+      try {
+        const result = await bridge.request('plugin.enable', {
+          cwd,
+          pluginName: parsed.pluginName,
+          marketplace: parsed.marketplace,
+        });
+        if (result.success) {
+          return `Enabled ${parsed.pluginName}@${parsed.marketplace}. Restart ${productName} to apply changes.`;
+        }
+        return result.error || `Failed to enable ${identifier}.`;
+      } catch (err) {
+        return `Failed to enable ${identifier}: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    }
+    case 'disable': {
+      const identifier = tokens[1];
+      if (!identifier) {
+        return 'Usage: /plugin disable <name@marketplace>';
+      }
+      const parsed = parsePluginIdentifier(identifier);
+      if (!parsed) {
+        return 'Invalid plugin identifier. Expected format: plugin-name@marketplace-name';
+      }
+      try {
+        const result = await bridge.request('plugin.disable', {
+          cwd,
+          pluginName: parsed.pluginName,
+          marketplace: parsed.marketplace,
+        });
+        if (result.success) {
+          return `Disabled ${parsed.pluginName}@${parsed.marketplace}. Restart ${productName} to apply changes.`;
+        }
+        return result.error || `Failed to disable ${identifier}.`;
+      } catch (err) {
+        return `Failed to disable ${identifier}: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    }
+    case 'marketplace':
+    case 'market': {
+      return handleMarketplaceCommand(tokens.slice(1), bridge, cwd);
+    }
+    default:
+      return 'Usage: /plugin <command> [args]\n\nCommands:\n  install <name@market> [--scope user|project|local]\n  uninstall <name@market>\n  enable <name@market>\n  disable <name@market>\n  marketplace add <source>\n  marketplace list\n  marketplace update <name>\n  marketplace remove <name>\n\nRun /plugin without arguments for interactive UI.';
+  }
+}
+
 export function createPluginCommand(): LocalJSXCommand {
   return {
     type: 'local-jsx',
     name: 'plugin',
     description: 'Manage plugins: discover, install, and configure',
-    async call(onDone: (result: string) => void) {
+    async call(
+      onDone: (result: string) => void,
+      _context: unknown,
+      args?: string,
+    ) {
+      if (args?.trim()) {
+        const { bridge, cwd, productName } = useAppStore.getState();
+        const result = await handlePluginCliCommand(
+          args,
+          bridge,
+          cwd,
+          productName,
+        );
+        onDone(result);
+        return null;
+      }
       return <PluginManagerComponent onExit={onDone} />;
     },
   };
