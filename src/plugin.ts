@@ -17,6 +17,7 @@ import type {
   ProvidersMap,
 } from './provider/model';
 import type { NodeBridgeHandlers } from './nodeBridge.types';
+import type { ScopedSkillPath } from './pluginRegistry/scopedTypes';
 import type { OutputStyle } from './outputStyle';
 import type { SlashCommand } from './slash-commands/types';
 import type { Tool, ToolResult, ToolUse } from './tool';
@@ -153,7 +154,9 @@ export type Plugin = {
   slashCommand?: (
     this: PluginContext,
   ) => Promise<SlashCommand[]> | SlashCommand[];
-  skill?: (this: PluginContext) => Promise<string[]> | string[];
+  skill?: (
+    this: PluginContext,
+  ) => Promise<(string | ScopedSkillPath)[]> | (string | ScopedSkillPath)[];
   outputStyle?: (this: PluginContext) => Promise<OutputStyle[]> | OutputStyle[];
   provider?: (
     this: PluginContext,

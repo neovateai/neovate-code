@@ -1,5 +1,6 @@
 import type { Context } from '../context';
 import type { NormalizedMessage } from '../message';
+import type { ScopedAgentPath } from '../pluginRegistry/scopedTypes';
 import type {
   ApprovalCategory,
   Tool,
@@ -33,7 +34,10 @@ export type PluginAgentDefinition = Omit<
   model?: string;
 };
 
-export type PluginAgentDefinitionOrPath = PluginAgentDefinition | string;
+export type PluginAgentDefinitionOrPath =
+  | PluginAgentDefinition
+  | string
+  | ScopedAgentPath;
 
 export interface TaskToolInput {
   description: string;

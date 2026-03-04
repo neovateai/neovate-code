@@ -8,6 +8,7 @@ import { fileToPromptCommand } from '../slashCommand';
 import type { InstalledPlugin, PluginManifest } from './types';
 import { PluginManifestSchema } from './types';
 import { resolveManifestPath } from './pluginDirResolver';
+import type { ScopedAgentPath, ScopedSkillPath } from './scopedTypes';
 
 interface DiscoveredComponents {
   commandDirs: string[];
@@ -176,12 +177,17 @@ export class PluginLoader {
         const base = existingSlashCommand
           ? await existingSlashCommand.call(this)
           : [];
+        const scopedBase = base.map((cmd) => ({
+          ...cmd,
+          name: `${manifest.name}:${cmd.name}`,
+        }));
         const cmds = components.commandDirs.flatMap((dir) =>
-          loadPolishedMarkdownFiles(dir).map((f) =>
-            fileToPromptCommand(f, manifest.name),
-          ),
+          loadPolishedMarkdownFiles(dir).map((f) => {
+            const cmd = fileToPromptCommand(f, manifest.name);
+            return { ...cmd, name: `${manifest.name}:${cmd.name}` };
+          }),
         );
-        return [...base, ...cmds];
+        return [...scopedBase, ...cmds];
       };
     }
 
@@ -189,7 +195,19 @@ export class PluginLoader {
       const existingAgent = plugin.agent;
       plugin.agent = async function (this) {
         const base = existingAgent ? await existingAgent.call(this) : [];
-        return [...base, ...components.agentPaths];
+        const scopedBase = base.map((item) => {
+          if (typeof item === 'string')
+            return { path: item, pluginName: manifest.name } as ScopedAgentPath;
+          if ('path' in item && 'pluginName' in item) return item;
+          return { ...item, agentType: `${manifest.name}:${item.agentType}` };
+        });
+        const scopedPaths: ScopedAgentPath[] = components.agentPaths.map(
+          (p) => ({
+            path: p,
+            pluginName: manifest.name,
+          }),
+        );
+        return [...scopedBase, ...scopedPaths];
       };
     }
 
@@ -197,7 +215,18 @@ export class PluginLoader {
       const existingSkill = plugin.skill;
       plugin.skill = async function (this) {
         const base = existingSkill ? await existingSkill.call(this) : [];
-        return [...base, ...components.skillPaths];
+        const scopedBase = base.map((item) =>
+          typeof item === 'string'
+            ? { path: item, pluginName: manifest.name }
+            : item,
+        );
+        const scopedPaths: ScopedSkillPath[] = components.skillPaths.map(
+          (p) => ({
+            path: p,
+            pluginName: manifest.name,
+          }),
+        );
+        return [...scopedBase, ...scopedPaths];
       };
     }
 

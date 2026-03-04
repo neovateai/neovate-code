@@ -73,7 +73,10 @@ describe('PluginLoader', () => {
 
     const skills = await plugin.skill!.call({} as any);
     expect(skills).toHaveLength(1);
-    expect(skills[0]).toContain('SKILL.md');
+    expect(skills[0]).toEqual({
+      path: expect.stringContaining('SKILL.md'),
+      pluginName: 'with-skills',
+    });
   });
 
   test('loads manifest with outputStyles', async () => {
@@ -158,7 +161,7 @@ describe('PluginLoader', () => {
 
     const cmds = await plugin.slashCommand!.call({} as any);
     expect(cmds).toHaveLength(1);
-    expect(cmds[0].name).toBe('review');
+    expect(cmds[0].name).toBe('auto-commands:review');
     expect(cmds[0].type).toBe('prompt');
   });
 
@@ -184,7 +187,10 @@ describe('PluginLoader', () => {
 
     const skills = await plugin.skill!.call({} as any);
     expect(skills).toHaveLength(1);
-    expect(skills[0]).toContain('SKILL.md');
+    expect(skills[0]).toEqual({
+      path: expect.stringContaining('SKILL.md'),
+      pluginName: 'auto-skills',
+    });
   });
 
   test('auto-discovers mcpServers from .mcp.json', async () => {
@@ -242,7 +248,7 @@ describe('PluginLoader', () => {
     const cmds = await plugin.slashCommand!.call({} as any);
     expect(cmds).toHaveLength(2);
     const names = cmds.map((c: any) => c.name).sort();
-    expect(names).toEqual(['admin', 'review']);
+    expect(names).toEqual(['merge-commands:admin', 'merge-commands:review']);
   });
 
   test('replaces ${PLUGIN_ROOT} in mcpServers', async () => {
@@ -332,5 +338,103 @@ describe('PluginLoader', () => {
       createInstalledPlugin(pluginDir, 'prefer-product'),
     );
     expect(plugin.name).toBe('from-product-dir');
+  });
+
+  test('scopes slash command names with plugin name prefix', async () => {
+    const pluginDir = path.join(tempDir, 'scoped-commands');
+    fs.mkdirSync(path.join(pluginDir, PLUGIN_DIR), { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'commands'), { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, PLUGIN_DIR, 'plugin.json'),
+      JSON.stringify({ name: 'my-plugin' }),
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, 'commands', 'review.md'),
+      '---\ndescription: Review code\n---\nReview the code carefully.',
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'my-plugin'),
+    );
+    const cmds = await plugin.slashCommand!.call({} as any);
+    expect(cmds).toHaveLength(1);
+    expect(cmds[0].name).toBe('my-plugin:review');
+  });
+
+  test('scopes merged command names from multiple dirs', async () => {
+    const pluginDir = path.join(tempDir, 'merged-scoped');
+    fs.mkdirSync(path.join(pluginDir, PLUGIN_DIR), { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'commands'), { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'extra-commands'), { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, PLUGIN_DIR, 'plugin.json'),
+      JSON.stringify({ name: 'multi-cmd', commands: './extra-commands' }),
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, 'commands', 'review.md'),
+      '---\ndescription: Review\n---\nReview.',
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, 'extra-commands', 'deploy.md'),
+      '---\ndescription: Deploy\n---\nDeploy.',
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'multi-cmd'),
+    );
+    const cmds = await plugin.slashCommand!.call({} as any);
+    expect(cmds).toHaveLength(2);
+    const names = cmds.map((c: any) => c.name).sort();
+    expect(names).toEqual(['multi-cmd:deploy', 'multi-cmd:review']);
+  });
+
+  test('returns ScopedAgentPath objects for agents', async () => {
+    const pluginDir = path.join(tempDir, 'scoped-agents');
+    fs.mkdirSync(path.join(pluginDir, PLUGIN_DIR), { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'agents'), { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, PLUGIN_DIR, 'plugin.json'),
+      JSON.stringify({ name: 'my-plugin' }),
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, 'agents', 'reviewer.md'),
+      '---\nname: code-reviewer\ndescription: Reviews code\n---\nYou are a code reviewer.',
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'my-plugin'),
+    );
+    const agents = await plugin.agent!.call({} as any);
+    expect(agents).toHaveLength(1);
+    expect(typeof agents[0]).toBe('object');
+    expect(agents[0]).toEqual({
+      path: expect.stringContaining('reviewer.md'),
+      pluginName: 'my-plugin',
+    });
+  });
+
+  test('returns ScopedSkillPath objects for skills', async () => {
+    const pluginDir = path.join(tempDir, 'scoped-skills');
+    fs.mkdirSync(path.join(pluginDir, PLUGIN_DIR), { recursive: true });
+    fs.mkdirSync(path.join(pluginDir, 'skills', 'greet'), { recursive: true });
+    fs.writeFileSync(
+      path.join(pluginDir, PLUGIN_DIR, 'plugin.json'),
+      JSON.stringify({ name: 'my-plugin' }),
+    );
+    fs.writeFileSync(
+      path.join(pluginDir, 'skills', 'greet', 'SKILL.md'),
+      '---\nname: hello\ndescription: Say hello\n---\nSay hello to the user.',
+    );
+
+    const plugin = await loader.loadInstalled(
+      createInstalledPlugin(pluginDir, 'my-plugin'),
+    );
+    const skills = await plugin.skill!.call({} as any);
+    expect(skills).toHaveLength(1);
+    expect(typeof skills[0]).toBe('object');
+    expect(skills[0]).toEqual({
+      path: expect.stringContaining('SKILL.md'),
+      pluginName: 'my-plugin',
+    });
   });
 });

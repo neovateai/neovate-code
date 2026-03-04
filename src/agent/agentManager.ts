@@ -21,6 +21,7 @@ import type {
   TaskToolInput,
 } from './types';
 import { AgentSource } from './types';
+import type { ScopedAgentPath } from '../pluginRegistry/scopedTypes';
 
 const MAX_NAME_LENGTH = 64;
 const MAX_DESCRIPTION_LENGTH = 1024;
@@ -201,6 +202,9 @@ export class AgentManager {
     for (const agent of pluginAgents) {
       if (typeof agent === 'string') {
         this.loadAgentFile(agent, AgentSource.Plugin);
+      } else if ('path' in agent && 'pluginName' in agent) {
+        const scoped = agent as ScopedAgentPath;
+        this.loadAgentFile(scoped.path, AgentSource.Plugin, scoped.pluginName);
       } else {
         this.agents.set(agent.agentType, {
           ...agent,
@@ -244,7 +248,11 @@ export class AgentManager {
     }
   }
 
-  private loadAgentFile(filePath: string, source: AgentSource): void {
+  private loadAgentFile(
+    filePath: string,
+    source: AgentSource,
+    pluginName?: string,
+  ): void {
     try {
       const content = fs.readFileSync(filePath, 'utf-8');
       const parsed = this.parseAgentFile(content, filePath);
@@ -260,8 +268,12 @@ export class AgentManager {
             filePath,
           );
         }
-        this.agents.set(parsed.agentType, {
+        const agentType = pluginName
+          ? `${pluginName}:${parsed.agentType}`
+          : parsed.agentType;
+        this.agents.set(agentType, {
           ...parsed,
+          agentType,
           source,
           path: filePath,
         });

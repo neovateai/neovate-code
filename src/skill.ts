@@ -5,6 +5,7 @@ import path from 'pathe';
 import type { Context } from './context';
 import type { Paths } from './paths';
 import { PluginHookType } from './plugin';
+import type { ScopedSkillPath } from './pluginRegistry/scopedTypes';
 import { safeFrontMatter } from './utils/safeFrontMatter';
 
 export enum SkillSource {
@@ -114,11 +115,18 @@ export class SkillManager {
     });
 
     if (Array.isArray(pluginSkills)) {
-      for (const skillPath of pluginSkills) {
-        if (typeof skillPath !== 'string') {
+      for (const item of pluginSkills) {
+        const skillPath =
+          typeof item === 'string' ? item : (item as ScopedSkillPath).path;
+        const pluginName =
+          typeof item === 'string'
+            ? undefined
+            : (item as ScopedSkillPath).pluginName;
+        if (!skillPath || typeof skillPath !== 'string') {
           this.errors.push({
-            path: String(skillPath),
-            message: 'Invalid skill path type: expected string',
+            path: String(item),
+            message:
+              'Invalid skill path type: expected string or ScopedSkillPath',
           });
           continue;
         }
@@ -129,7 +137,7 @@ export class SkillManager {
           });
           continue;
         }
-        this.loadSkillFile(skillPath, SkillSource.Plugin);
+        this.loadSkillFile(skillPath, SkillSource.Plugin, pluginName);
       }
     }
 
@@ -207,13 +215,18 @@ export class SkillManager {
     }
   }
 
-  private loadSkillFile(skillPath: string, source: SkillSource): void {
+  private loadSkillFile(
+    skillPath: string,
+    source: SkillSource,
+    pluginName?: string,
+  ): void {
     try {
       const content = fs.readFileSync(skillPath, 'utf-8');
       const parsed = this.parseSkillFile(content, skillPath);
 
       if (parsed) {
-        this.skillsMap.set(parsed.name, { ...parsed, source });
+        const name = pluginName ? `${pluginName}:${parsed.name}` : parsed.name;
+        this.skillsMap.set(name, { ...parsed, name, source });
       }
     } catch (error) {
       const message =
