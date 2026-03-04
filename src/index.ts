@@ -27,9 +27,12 @@ export { ConfigManager as _ConfigManager } from './config';
 export { query as _query } from './query';
 // SDK exports for programmatic usage
 export {
+  createClient,
   createSession,
   prompt,
   resumeSession,
+  type SDKClient,
+  type SDKClientOptions,
   type SDKMessage,
   type SDKSession,
   type SDKSessionOptions,
@@ -164,6 +167,7 @@ Examples:
 
 Commands:
   acp                           Run as ACP (Agent Client Protocol) agent
+  call                          Call NodeBridge handlers directly
   config                        Manage configuration
   commit                        Commit changes to the repository
   log [file]                    View session logs in HTML (optional file path)
@@ -254,7 +258,7 @@ async function runQuiet(argv: Argv, contextCreateOpts: any, cwd: string) {
       return Session.createSessionId();
     })();
 
-    await messageBus.request('session.initialize', {
+    const response = await messageBus.request('session.initialize', {
       cwd,
       sessionId,
     });
@@ -264,6 +268,9 @@ async function runQuiet(argv: Argv, contextCreateOpts: any, cwd: string) {
       cwd,
       sessionId,
       model,
+      thinking: response.data.thinkingLevel
+        ? { effort: response.data.thinkingLevel }
+        : undefined,
     });
 
     process.exit(0);
@@ -417,9 +424,15 @@ export async function runNeovate(opts: {
     });
     return {};
   }
+  if (command === 'call') {
+    const { runCall } = await import('./commands/call');
+    await runCall({ cwd, contextCreateOpts });
+    return {};
+  }
   const validCommands = [
     '__test',
     'acp',
+    'call',
     'config',
     'commit',
     'mcp',
