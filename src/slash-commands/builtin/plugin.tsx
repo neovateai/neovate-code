@@ -791,11 +791,11 @@ const InstalledView: React.FC<{
       if (key.upArrow && selectedIndex > 0) {
         setSelectedIndex(selectedIndex - 1);
       }
-      if (key.downArrow && selectedIndex < plugins.length - 1) {
+      if (key.downArrow && selectedIndex < sortedPlugins.length - 1) {
         setSelectedIndex(selectedIndex + 1);
       }
-      if (input === ' ' && plugins.length > 0) {
-        const plugin = plugins[selectedIndex];
+      if (input === ' ' && sortedPlugins.length > 0) {
+        const plugin = sortedPlugins[selectedIndex];
         const method = plugin.enabled ? 'plugin.disable' : 'plugin.enable';
         bridge
           .request(method, {
@@ -808,11 +808,11 @@ const InstalledView: React.FC<{
             onPluginChange?.();
           });
       }
-      if (key.return && plugins.length > 0) {
-        openDetail(plugins[selectedIndex]);
+      if (key.return && sortedPlugins.length > 0) {
+        openDetail(sortedPlugins[selectedIndex]);
       }
-      if (input === 'r' && plugins.length > 0) {
-        const p = plugins[selectedIndex];
+      if (input === 'r' && sortedPlugins.length > 0) {
+        const p = sortedPlugins[selectedIndex];
         bridge
           .request('plugin.uninstall', {
             cwd,
@@ -872,11 +872,14 @@ const InstalledView: React.FC<{
   };
 
   const scopeOrder = ['global', 'project', 'local'] as const;
+  const sortedPlugins = scopeOrder.flatMap((s) =>
+    plugins.filter((p) => p.scope === s),
+  );
   const grouped = scopeOrder
     .map((s) => ({
       scope: s,
       label: scopeLabel[s],
-      items: plugins.filter((p) => p.scope === s),
+      items: sortedPlugins.filter((p) => p.scope === s),
     }))
     .filter((g) => g.items.length > 0);
 
@@ -923,8 +926,8 @@ const InstalledView: React.FC<{
       })()}
       <Box marginTop={1}>
         <Text dimColor>
-          {selectedIndex + 1}/{plugins.length} · Space: toggle · Enter: details
-          · r: remove · Esc: back
+          {selectedIndex + 1}/{sortedPlugins.length} · Space: toggle · Enter:
+          details · r: remove · Esc: back
         </Text>
       </Box>
     </Box>

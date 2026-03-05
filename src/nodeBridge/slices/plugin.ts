@@ -93,7 +93,8 @@ export function registerPluginHandlers(
     const { cwd } = data;
     const context = await getContext(cwd);
     const registry = getRegistry(context);
-    const enabledPlugins = context.config.enabledPlugins || {};
+    const configManager = getConfigManager(context);
+    const enabledPlugins = configManager.config.enabledPlugins || {};
     const all = registry.getAll();
     return {
       success: true,
