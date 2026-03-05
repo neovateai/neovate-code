@@ -29,8 +29,8 @@ export class PluginLoader {
       installed.installPath,
       this.#productName,
     );
-    if (!manifestPath) {
-      throw new Error(`Plugin manifest not found at: ${installed.installPath}`);
+    if (!fs.existsSync(manifestPath)) {
+      throw new Error(`Plugin manifest not found at: ${manifestPath}`);
     }
     const manifest = PluginManifestSchema.parse(
       JSON.parse(fs.readFileSync(manifestPath, 'utf-8')),

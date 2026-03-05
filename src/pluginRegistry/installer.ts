@@ -1,8 +1,10 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'pathe';
+import { resolveManifestPath } from './pluginDirResolver';
 import type { PluginManifest, PluginScope, PluginSource } from './types';
 import { PluginManifestSchema } from './types';
+import { PRODUCT_NAME } from '../constants';
 
 function detectPackageManager(dir: string): string {
   let current = path.resolve(dir);
@@ -23,9 +25,11 @@ function detectPackageManager(dir: string): string {
 
 export class PluginInstaller {
   #pluginsRoot: string;
+  #productName: string;
 
-  constructor(opts: { pluginsRoot: string }) {
+  constructor(opts: { pluginsRoot: string; productName?: string }) {
     this.#pluginsRoot = opts.pluginsRoot;
+    this.#productName = opts.productName || PRODUCT_NAME;
   }
 
   async install(opts: {
@@ -134,7 +138,7 @@ export class PluginInstaller {
   }
 
   #readManifest(pluginDir: string): PluginManifest {
-    const manifestPath = path.join(pluginDir, 'plugin.json');
+    const manifestPath = resolveManifestPath(pluginDir, this.#productName);
     if (!fs.existsSync(manifestPath)) {
       throw new Error(`Missing plugin.json: ${manifestPath}`);
     }

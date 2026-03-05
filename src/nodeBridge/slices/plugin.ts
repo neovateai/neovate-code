@@ -31,6 +31,7 @@ function getRegistry(context: Context): PluginRegistry {
 function getInstaller(context: Context): PluginInstaller {
   return new PluginInstaller({
     pluginsRoot: path.join(getPluginsDir(context), 'installed'),
+    productName: context.productName,
   });
 }
 
@@ -92,8 +93,7 @@ export function registerPluginHandlers(
     const { cwd } = data;
     const context = await getContext(cwd);
     const registry = getRegistry(context);
-    const configManager = getConfigManager(context);
-    const enabledPlugins = configManager.config.enabledPlugins || {};
+    const enabledPlugins = context.config.enabledPlugins || {};
     const all = registry.getAll();
     return {
       success: true,
@@ -558,8 +558,7 @@ export function registerPluginHandlers(
     const { cwd } = data;
     const context = await getContext(cwd);
     const manager = getMarketplaceManager(context);
-    const configManager = getConfigManager(context);
-    const configuredMarketplaces = configManager.config.marketplaces || [];
+    const configuredMarketplaces = context.config.marketplaces || [];
     if (configuredMarketplaces.length > 0) {
       await manager.ensureMarketplaces(configuredMarketplaces);
     }

@@ -351,13 +351,20 @@ const DiscoverView: React.FC<{
               marketplaceName: detailPlugin.marketplace,
               scope,
             })
-            .then(() => {
-              onExit(
-                `Installed ${detailPlugin.name}. Restart ${productName} to load new plugins.`,
-              );
+            .then((result) => {
+              if (result.success) {
+                onExit(
+                  `Installed ${detailPlugin.name}. Restart ${productName} to load new plugins.`,
+                );
+              } else {
+                onExit(
+                  result.error || `Failed to install ${detailPlugin.name}.`,
+                );
+              }
             })
-            .catch(() => {
+            .catch((err: Error) => {
               setInstalling(null);
+              onExit(err?.message || `Failed to install ${detailPlugin.name}.`);
             });
         }}
       />
@@ -550,8 +557,9 @@ const InstalledPluginDetailView: React.FC<{
               `${verb} ${plugin.name}. Restart ${productName} to apply changes.`,
             );
           })
-          .catch(() => {
+          .catch((err: Error) => {
             setOperating(false);
+            onExit(err?.message || `Failed to update ${plugin.name}.`);
           });
       } else if (item.key === 'mark-update') {
         const newPending = !detail?.pendingUpdate;
@@ -611,10 +619,14 @@ const InstalledPluginDetailView: React.FC<{
                     : 'local',
             }),
           )
-          .then(() => {
-            onExit(
-              `Updated ${plugin.name}. Restart ${productName} to apply changes.`,
-            );
+          .then((result) => {
+            if (result.success) {
+              onExit(
+                `Updated ${plugin.name}. Restart ${productName} to apply changes.`,
+              );
+            } else {
+              onExit(result.error || `Failed to update ${plugin.name}.`);
+            }
           })
           .catch(() => {
             setOperating(false);

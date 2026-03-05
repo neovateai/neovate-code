@@ -23,11 +23,13 @@ export function resolvePluginMetaDir(
 export function resolveManifestPath(
   pluginRoot: string,
   productName: string,
-): string | null {
+): string {
   const metaDir = resolvePluginMetaDir(pluginRoot, productName);
-  if (!metaDir) return null;
-  const manifestPath = path.join(metaDir, 'plugin.json');
-  return fs.existsSync(manifestPath) ? manifestPath : null;
+  if (metaDir) {
+    const manifestPath = path.join(metaDir, 'plugin.json');
+    if (fs.existsSync(manifestPath)) return manifestPath;
+  }
+  return path.join(pluginRoot, 'plugin.json');
 }
 
 export function resolveMarketplacePath(
