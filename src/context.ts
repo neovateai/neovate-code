@@ -21,6 +21,9 @@ import { PluginLoader } from './pluginRegistry/loader';
 import { PluginRegistry } from './pluginRegistry/registry';
 import { SkillManager } from './skill';
 import { FileHistoryManager } from './snapshot/FileHistoryManager';
+import createDebug from 'debug';
+
+const debug = createDebug('neovate:context');
 
 type ContextOpts = {
   cwd: string;
@@ -149,6 +152,8 @@ export class Context {
       }
     }
 
+    debug('registeredPlugins', registeredPlugins);
+
     const pluginsConfigs: (string | Plugin)[] = [
       ...buildInPlugins,
       ...registeredPlugins,
@@ -229,11 +234,15 @@ export class Context {
     await skillManager.loadSkills();
     context.skillManager = skillManager;
 
+    debug('skillManager errors', skillManager.getErrors());
+
     // Create and attach AgentManager
     const agentManager = new AgentManager({ context });
     // Load agents from files
     await agentManager.loadAgents();
     context.agentManager = agentManager;
+
+    debug('agentManager errors', agentManager.getErrors());
 
     return context;
   }
