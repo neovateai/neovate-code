@@ -519,6 +519,7 @@ export function registerPluginHandlers(
       marketplace: string;
       category?: string;
       tags?: string[];
+      homepage?: string;
       installed: boolean;
       enabled?: boolean;
     }> = [];
@@ -541,6 +542,7 @@ export function registerPluginHandlers(
           marketplace: mktName,
           category: p.category,
           tags: p.tags,
+          homepage: p.homepage,
           installed: isInstalled,
           enabled: installedKey
             ? enabledPlugins[installedKey] === true

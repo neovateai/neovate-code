@@ -1168,6 +1168,7 @@ type PluginDiscoverOutput = {
       installs: number;
       category?: string;
       tags?: string[];
+      homepage?: string;
       installed: boolean;
       enabled?: boolean;
     }>;

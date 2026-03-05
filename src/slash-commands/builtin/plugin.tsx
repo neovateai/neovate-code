@@ -1,8 +1,9 @@
+import open from 'open';
 import { Box, Text, useInput } from 'ink';
 import Spinner from 'ink-spinner';
 import pc from 'picocolors';
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { UI_COLORS } from '../../ui/constants';
 import TextInput from '../../ui/TextInput/index.js';
 import { useTerminalSize } from '../../ui/useTerminalSize';
@@ -19,6 +20,7 @@ interface DiscoverPlugin {
   marketplace: string;
   category?: string;
   tags?: string[];
+  homepage?: string;
   installed: boolean;
   enabled?: boolean;
 }
@@ -84,15 +86,13 @@ const TabBar: React.FC<{ activeTab: Tab }> = ({ activeTab }) => (
   </Box>
 );
 
-const DETAIL_MENU_ITEMS = [
+const DETAIL_MENU_ITEMS_BASE = [
   { key: 'user', label: 'Install for you (user scope)' },
   {
     key: 'project',
     label: 'Install for all collaborators on this repository (project scope)',
   },
   { key: 'local', label: 'Install for you, in this repo only (local scope)' },
-  // { key: 'homepage', label: 'Open homepage' },
-  { key: 'back', label: 'Back to plugin list' },
 ] as const;
 
 const PluginDetailView: React.FC<{
@@ -103,6 +103,17 @@ const PluginDetailView: React.FC<{
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const { productName } = useAppStore();
 
+  const menuItems = useMemo(
+    () => [
+      ...DETAIL_MENU_ITEMS_BASE,
+      ...(plugin.homepage
+        ? [{ key: 'homepage' as const, label: 'Open homepage' }]
+        : []),
+      { key: 'back' as const, label: 'Back to plugin list' },
+    ],
+    [plugin.homepage],
+  );
+
   useInput((_input, key) => {
     if (key.escape) {
       onBack();
@@ -111,14 +122,20 @@ const PluginDetailView: React.FC<{
     if (key.upArrow && selectedIndex > 0) {
       setSelectedIndex(selectedIndex - 1);
     }
-    if (key.downArrow && selectedIndex < DETAIL_MENU_ITEMS.length - 1) {
+    if (key.downArrow && selectedIndex < menuItems.length - 1) {
       setSelectedIndex(selectedIndex + 1);
     }
-    if (key.return) {
-      const item = DETAIL_MENU_ITEMS[selectedIndex];
+    if (key.return && selectedIndex >= 0) {
+      const item = menuItems[selectedIndex];
       if (item.key === 'back') {
         onBack();
-      } else {
+      } else if (item.key === 'homepage' && plugin.homepage) {
+        open(plugin.homepage);
+      } else if (
+        item.key === 'user' ||
+        item.key === 'project' ||
+        item.key === 'local'
+      ) {
         onInstall(item.key);
       }
     }
@@ -148,7 +165,7 @@ const PluginDetailView: React.FC<{
         </Text>
       </Box>
       <Box flexDirection="column">
-        {DETAIL_MENU_ITEMS.map((item, i) => {
+        {menuItems.map((item, i) => {
           const isSelected = i === selectedIndex;
           return (
             <Box key={item.key}>
