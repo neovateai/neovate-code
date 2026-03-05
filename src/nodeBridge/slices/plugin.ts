@@ -499,13 +499,12 @@ export function registerPluginHandlers(
     const { cwd, marketplaceName } = data;
     const context = await getContext(cwd);
     const manager = getMarketplaceManager(context);
-    const configManager = getConfigManager(context);
-    const configuredMarketplaces = configManager.config.marketplaces || [];
+    const configuredMarketplaces = context.config.marketplaces || [];
     if (configuredMarketplaces.length > 0) {
       await manager.ensureMarketplaces(configuredMarketplaces);
     }
     const registry = getRegistry(context);
-    const enabledPlugins = configManager.config.enabledPlugins || {};
+    const enabledPlugins = context.config.enabledPlugins || {};
     const installedPlugins = registry.getAll();
 
     const known = manager.getKnownMarketplaces();
