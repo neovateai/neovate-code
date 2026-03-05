@@ -163,9 +163,12 @@ export class Context {
       ...(opts.plugins || []),
     ];
 
-    const pluginDirs: string[] = opts.argvConfig.pluginDirs || [];
+    const pluginDirs: string[] =
+      typeof opts.argvConfig.pluginDirs === 'string'
+        ? [opts.argvConfig.pluginDirs]
+        : opts.argvConfig.pluginDirs || [];
     for (const dir of pluginDirs) {
-      const absDir = path.resolve(cwd, dir);
+      const absDir = path.isAbsolute(dir) ? dir : path.resolve(cwd, dir);
       try {
         const plugin = await pluginLoader.loadInstalled({
           name: path.basename(absDir),
