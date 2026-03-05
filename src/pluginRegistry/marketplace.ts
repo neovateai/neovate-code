@@ -190,7 +190,8 @@ export class MarketplaceManager {
       source.startsWith('/') ||
       source.startsWith('./') ||
       source.startsWith('../') ||
-      source.startsWith('~');
+      source.startsWith('~') ||
+      /^[a-zA-Z]:[\/]/.test(source);
 
     if (isLocalPath) {
       const resolvedPath = path.resolve(source);
