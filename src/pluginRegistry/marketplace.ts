@@ -154,6 +154,22 @@ export class MarketplaceManager {
     }
   }
 
+  private cleanInstallLocationIfOrphan(
+    installLocation: string,
+    name: string,
+  ): void {
+    if (!fs.existsSync(installLocation)) return;
+    const known = this.getKnownMarketplaces();
+    if (known[name]) {
+      throw new Error(`Marketplace "${name}" already exists.`);
+    }
+    if (fs.lstatSync(installLocation).isSymbolicLink()) {
+      fs.unlinkSync(installLocation);
+    } else {
+      fs.rmSync(installLocation, { recursive: true, force: true });
+    }
+  }
+
   readMarketplaceJson(marketplaceDir: string): MarketplaceJson | null {
     const mpPath = resolveMarketplacePath(marketplaceDir, this.#productName);
     if (!mpPath) return null;
@@ -205,9 +221,7 @@ export class MarketplaceManager {
       }
 
       const installLocation = path.join(this.marketplacesDir, name);
-      if (fs.existsSync(installLocation)) {
-        throw new Error(`Marketplace "${name}" already exists.`);
-      }
+      this.cleanInstallLocationIfOrphan(installLocation, name);
 
       fs.mkdirSync(path.dirname(installLocation), { recursive: true });
       fs.symlinkSync(resolvedPath, installLocation);
@@ -233,9 +247,7 @@ export class MarketplaceManager {
     }
 
     const installLocation = path.join(this.marketplacesDir, name);
-    if (fs.existsSync(installLocation)) {
-      throw new Error(`Marketplace "${name}" already exists.`);
-    }
+    this.cleanInstallLocationIfOrphan(installLocation, name);
 
     fs.mkdirSync(path.dirname(installLocation), { recursive: true });
     await execAsync(

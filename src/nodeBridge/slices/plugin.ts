@@ -638,11 +638,12 @@ export function registerPluginHandlers(
           error: `Marketplace "${name}" not found.`,
         };
       }
-      if (
-        fs.existsSync(entry.installLocation) &&
-        !fs.lstatSync(entry.installLocation).isSymbolicLink()
-      ) {
-        fs.rmSync(entry.installLocation, { recursive: true, force: true });
+      if (fs.existsSync(entry.installLocation)) {
+        if (fs.lstatSync(entry.installLocation).isSymbolicLink()) {
+          fs.unlinkSync(entry.installLocation);
+        } else {
+          fs.rmSync(entry.installLocation, { recursive: true, force: true });
+        }
       }
       manager.removeMarketplace(name);
       return { success: true };
