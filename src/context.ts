@@ -148,8 +148,7 @@ export class Context {
         const plugin = await pluginLoader.loadInstalled(installed);
         registeredPlugins.push(plugin);
       } catch (_error) {
-        console.error('failed to load plugin', key, _error);
-        // skip failed plugins silently
+        debug('failed to load plugin', key, _error);
       }
     }
 

@@ -220,8 +220,16 @@ export class MarketplaceManager {
         throw new Error('Directory does not contain a valid marketplace.json.');
       }
 
+      const registryName = mktJson.name || name;
       const installLocation = path.join(this.marketplacesDir, name);
-      this.cleanInstallLocationIfOrphan(installLocation, name);
+      this.cleanInstallLocationIfOrphan(installLocation, registryName);
+
+      if (registryName !== name) {
+        const known = this.getKnownMarketplaces();
+        if (known[registryName]) {
+          throw new Error(`Marketplace "${registryName}" already exists.`);
+        }
+      }
 
       fs.mkdirSync(path.dirname(installLocation), { recursive: true });
       fs.symlinkSync(resolvedPath, installLocation);
@@ -230,9 +238,9 @@ export class MarketplaceManager {
         source: 'url',
         url: resolvedPath,
       };
-      this.addMarketplace(name, marketplaceSource, installLocation);
+      this.addMarketplace(registryName, marketplaceSource, installLocation);
 
-      return { name, pluginCount: mktJson.plugins.length };
+      return { name: registryName, pluginCount: mktJson.plugins.length };
     }
 
     let gitUrl: string;
@@ -260,13 +268,21 @@ export class MarketplaceManager {
       throw new Error('Cloned repo does not contain a valid marketplace.json.');
     }
 
+    const registryName = mktJson.name || name;
+    if (registryName !== name) {
+      const known = this.getKnownMarketplaces();
+      if (known[registryName]) {
+        fs.rmSync(installLocation, { recursive: true, force: true });
+        throw new Error(`Marketplace "${registryName}" already exists.`);
+      }
+    }
     const marketplaceSource: MarketplaceSource = {
       source: 'git',
       url: gitUrl,
     };
-    this.addMarketplace(name, marketplaceSource, installLocation);
+    this.addMarketplace(registryName, marketplaceSource, installLocation);
 
-    return { name, pluginCount: mktJson.plugins.length };
+    return { name: registryName, pluginCount: mktJson.plugins.length };
   }
 
   async ensureMarketplaces(declarations: MarketplaceDeclaration[]): Promise<{
