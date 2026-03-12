@@ -7,11 +7,15 @@ import { AgentSource } from './types';
 // Mock fs to avoid actual file system access and errors during directory scanning
 vi.mock('fs', async () => {
   const actual = await vi.importActual<typeof import('fs')>('fs');
-  return {
-    ...actual,
+  const mocks = {
     existsSync: vi.fn().mockReturnValue(false),
     readdirSync: vi.fn().mockReturnValue([]),
     readFileSync: vi.fn(),
+  };
+  return {
+    ...actual,
+    ...mocks,
+    default: { ...(actual as any).default, ...mocks },
   };
 });
 
@@ -119,6 +123,39 @@ describe('AgentManager', () => {
       expect(overriddenExplore).toBeDefined();
       expect(overriddenExplore?.source).toBe(AgentSource.Plugin);
       expect(overriddenExplore?.whenToUse).toBe('Plugin overridden explore');
+    });
+
+    test('should scope plugin agent names with pluginName prefix via ScopedAgentPath', async () => {
+      const scopedAgents = [
+        {
+          path: '/mock/agents/reviewer.md',
+          pluginName: 'my-plugin',
+        },
+      ];
+
+      (context.apply as any).mockResolvedValue(scopedAgents);
+
+      const mockFs = await import('fs');
+      const originalExistsSyncMock = mockFs.existsSync as any;
+      originalExistsSyncMock.mockImplementation((p: string) => {
+        if (p === '/mock/agents/reviewer.md') return true;
+        return false;
+      });
+      (mockFs.readFileSync as any).mockImplementation((p: string) => {
+        if (p === '/mock/agents/reviewer.md') {
+          return '---\nname: code-reviewer\ndescription: Reviews code\n---\nYou are a code reviewer.';
+        }
+        throw new Error('File not found');
+      });
+
+      await agentManager.loadAgents();
+
+      const loadedAgent = agentManager.getAgent('my-plugin:code-reviewer');
+      expect(loadedAgent).toBeDefined();
+      expect(loadedAgent?.agentType).toBe('my-plugin:code-reviewer');
+      expect(loadedAgent?.source).toBe(AgentSource.Plugin);
+
+      originalExistsSyncMock.mockReturnValue(false);
     });
   });
 });

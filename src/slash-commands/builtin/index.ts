@@ -12,6 +12,7 @@ import { createLogoutCommand } from './logout';
 import { createMcpCommand } from './mcp';
 import { createModelCommand } from './model';
 import { createOutputStyleCommand } from './output-style';
+import { createPluginCommand } from './plugin';
 import { createResumeCommand } from './resume';
 import { createReviewCommand } from './review';
 import { createRewindCommand } from './rewind';
@@ -53,5 +54,6 @@ export function createBuiltinCommands(opts: {
     writePlanCommand(opts.language),
     executePlanCommand(opts.language),
     saveDesignCommand(opts.language),
+    createPluginCommand(),
   ];
 }

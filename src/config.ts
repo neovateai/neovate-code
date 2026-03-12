@@ -1,6 +1,6 @@
 import defu from 'defu';
 import fs from 'fs';
-import { homedir } from 'os';
+import os from 'os';
 import path from 'pathe';
 import type { Provider } from './provider/model';
 
@@ -121,6 +121,8 @@ export type Config = {
    */
   checkpoints?: boolean;
   recentModels?: number;
+  enabledPlugins?: Record<string, boolean>;
+  marketplaces?: Array<{ name: string; source: string }>;
 };
 
 const DEFAULT_CONFIG: Partial<Config> = {
@@ -140,6 +142,7 @@ const DEFAULT_CONFIG: Partial<Config> = {
   agent: {},
   checkpoints: true,
   recentModels: 10,
+  marketplaces: [],
 };
 const VALID_CONFIG_KEYS = [
   ...Object.keys(DEFAULT_CONFIG),
@@ -165,8 +168,10 @@ const VALID_CONFIG_KEYS = [
   'thinkingLevel',
   'checkpoints',
   'recentModels',
+  'enabledPlugins',
+  'marketplaces',
 ];
-const ARRAY_CONFIG_KEYS = ['plugins', 'skills'];
+const ARRAY_CONFIG_KEYS = ['plugins', 'skills', 'marketplaces'];
 const OBJECT_CONFIG_KEYS = [
   'mcpServers',
   'commit',
@@ -174,6 +179,7 @@ const OBJECT_CONFIG_KEYS = [
   'extensions',
   'tools',
   'agent',
+  'enabledPlugins',
 ];
 const BOOLEAN_CONFIG_KEYS = [
   'quiet',
@@ -198,11 +204,14 @@ export class ConfigManager {
   argvConfig: Partial<Config>;
   globalConfigPath: string;
   projectConfigPath: string;
+  projectLocalConfigPath: string;
+  #projectFileConfig: Partial<Config>;
+  #localFileConfig: Partial<Config>;
 
   constructor(cwd: string, productName: string, argvConfig: Partial<Config>) {
     const lowerProductName = productName.toLowerCase();
     const globalConfigPath = path.join(
-      homedir(),
+      os.homedir(),
       `.${lowerProductName}`,
       'config.json',
     );
@@ -218,11 +227,11 @@ export class ConfigManager {
     );
     this.globalConfigPath = globalConfigPath;
     this.projectConfigPath = projectConfigPath;
+    this.projectLocalConfigPath = projectLocalConfigPath;
     this.globalConfig = loadConfig(globalConfigPath);
-    this.projectConfig = defu(
-      loadConfig(projectConfigPath),
-      loadConfig(projectLocalConfigPath),
-    );
+    this.#projectFileConfig = loadConfig(projectConfigPath);
+    this.#localFileConfig = loadConfig(projectLocalConfigPath);
+    this.projectConfig = defu(this.#projectFileConfig, this.#localFileConfig);
     this.argvConfig = argvConfig;
   }
 
@@ -231,6 +240,12 @@ export class ConfigManager {
       this.argvConfig,
       defu(this.projectConfig, defu(this.globalConfig, DEFAULT_CONFIG)),
     ) as Config;
+    config.enabledPlugins = mergeEnabledPlugins(
+      this.globalConfig.enabledPlugins,
+      this.#projectFileConfig.enabledPlugins,
+      this.#localFileConfig.enabledPlugins,
+      this.argvConfig.enabledPlugins,
+    );
     config.planModel = config.planModel || config.model;
     config.smallModel = config.smallModel || config.model;
     config.visionModel = config.visionModel || config.model;
@@ -418,6 +433,48 @@ export class ConfigManager {
     saveConfig(configPath, config, DEFAULT_CONFIG);
   }
 
+  setPluginEnabled(
+    scope: 'global' | 'project' | 'local',
+    pluginId: string,
+    enabled: boolean,
+  ) {
+    const configPath =
+      scope === 'global'
+        ? this.globalConfigPath
+        : scope === 'project'
+          ? this.projectConfigPath
+          : this.projectLocalConfigPath;
+
+    const source =
+      scope === 'global'
+        ? this.globalConfig
+        : scope === 'project'
+          ? this.#projectFileConfig
+          : this.#localFileConfig;
+
+    if (!source.enabledPlugins) {
+      source.enabledPlugins = {};
+    }
+    source.enabledPlugins[pluginId] = enabled;
+    saveConfig(configPath, source, DEFAULT_CONFIG);
+  }
+
+  removePluginEnabled(pluginId: string) {
+    const entries: Array<[Partial<Config>, string]> = [
+      [this.globalConfig, this.globalConfigPath],
+      [this.#projectFileConfig, this.projectConfigPath],
+      [this.#localFileConfig, this.projectLocalConfigPath],
+    ];
+    for (const [source, configPath] of entries) {
+      if (source.enabledPlugins?.[pluginId] !== undefined) {
+        delete source.enabledPlugins[pluginId];
+        if (fs.existsSync(configPath)) {
+          saveConfig(configPath, source, DEFAULT_CONFIG);
+        }
+      }
+    }
+  }
+
   updateConfig(global: boolean, newConfig: Partial<Config>) {
     Object.keys(newConfig).forEach((key) => {
       if (!VALID_CONFIG_KEYS.includes(key)) {
@@ -465,4 +522,19 @@ function saveConfig(
     fs.mkdirSync(dir, { recursive: true });
   }
   fs.writeFileSync(file, JSON.stringify(filteredConfig, null, 2), 'utf-8');
+}
+
+function mergeEnabledPlugins(
+  ...layers: (Record<string, boolean> | undefined)[]
+): Record<string, boolean> {
+  const result: Record<string, boolean> = {};
+  for (const layer of layers) {
+    if (!layer) continue;
+    for (const [key, value] of Object.entries(layer)) {
+      if (typeof value === 'boolean') {
+        result[key] = value;
+      }
+    }
+  }
+  return result;
 }

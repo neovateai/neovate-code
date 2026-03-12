@@ -177,38 +177,7 @@ export class SlashCommandManager {
     file: NormalizedMarkdownFile,
     descriptionPostfix: string,
   ): PromptCommand {
-    const command: PromptCommand = {
-      type: 'prompt',
-      name: file.name,
-      description: file.description + ' (' + descriptionPostfix + ')',
-      model: file.attributes.model,
-      progressMessage:
-        file.attributes.progressMessage || 'Executing command...',
-      getPromptForCommand: async (args) => {
-        let prompt = file.body.trim();
-        // Check if prompt contains positional parameters ($1, $2, etc.)
-        const hasPositionalParams = /\$[1-9]\d*/.test(prompt);
-
-        if (hasPositionalParams) {
-          // Replace positional parameters
-          prompt = replaceParameterPlaceholders(prompt, args);
-        } else if (prompt.includes('$ARGUMENTS')) {
-          // Legacy $ARGUMENTS support
-          prompt = prompt.replace(/\$ARGUMENTS/g, args || '');
-        } else if (args.trim()) {
-          // If no placeholders but args provided, append them
-          prompt += `\n\nArguments: ${args}`;
-        }
-
-        return [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ];
-      },
-    };
-    return command;
+    return fileToPromptCommand(file, descriptionPostfix);
   }
 
   #skillToCommandEntry(
@@ -289,6 +258,39 @@ export function parseSlashCommand(input: string): {
     command: trimmed.slice(1, separatorIndex),
     args: trimmed.slice(separatorIndex + 1).trim(),
   };
+}
+
+export function fileToPromptCommand(
+  file: NormalizedMarkdownFile,
+  descriptionPostfix: string,
+): PromptCommand {
+  const command: PromptCommand = {
+    type: 'prompt',
+    name: file.name,
+    description: file.description + ' (' + descriptionPostfix + ')',
+    model: file.attributes.model,
+    progressMessage: file.attributes.progressMessage || 'Executing command...',
+    getPromptForCommand: async (args) => {
+      let prompt = file.body.trim();
+      const hasPositionalParams = /\$[1-9]\d*/.test(prompt);
+
+      if (hasPositionalParams) {
+        prompt = replaceParameterPlaceholders(prompt, args);
+      } else if (prompt.includes('$ARGUMENTS')) {
+        prompt = prompt.replace(/\$ARGUMENTS/g, args || '');
+      } else if (args.trim()) {
+        prompt += `\n\nArguments: ${args}`;
+      }
+
+      return [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ];
+    },
+  };
+  return command;
 }
 
 export function replaceParameterPlaceholders(

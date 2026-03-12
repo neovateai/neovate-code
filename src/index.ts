@@ -74,6 +74,7 @@ export type Argv = {
   port?: number;
   // array
   plugin: string[];
+  pluginDir: string[];
   mcpConfig: string[];
   extensions: Record<string, any>;
 };
@@ -93,7 +94,7 @@ export async function parseArgs(argv: any) {
       mcp: true,
       mcpConfig: [],
     },
-    array: ['plugin', 'mcpConfig'],
+    array: ['plugin', 'pluginDir', 'mcpConfig'],
     boolean: [
       'help',
       'mcp',
@@ -391,6 +392,7 @@ export async function runNeovate(opts: {
       quiet: argv.quiet,
       outputFormat: argv.outputFormat,
       plugins: argv.plugin,
+      pluginDirs: argv.pluginDir,
       systemPrompt: argv.systemPrompt,
       appendSystemPrompt: argv.appendSystemPrompt,
       language: argv.language,

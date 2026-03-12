@@ -17,6 +17,7 @@ import { registerAgentsHandlers } from './nodeBridge/slices/agents';
 import { registerSlashCommandHandlers } from './nodeBridge/slices/slashCommand';
 import { registerSnapshotHandlers } from './nodeBridge/slices/snapshot';
 import { registerStatusHandlers } from './nodeBridge/slices/status';
+import { registerPluginHandlers } from './nodeBridge/slices/plugin';
 import { registerUtilsHandlers } from './nodeBridge/slices/utils';
 
 type NodeBridgeOpts = {
@@ -111,5 +112,6 @@ class NodeHandlerRegistry {
     registerSnapshotHandlers(this.messageBus, getContext, clearContext);
     registerStatusHandlers(this.messageBus, getContext);
     registerUtilsHandlers(this.messageBus, getContext);
+    registerPluginHandlers(this.messageBus, getContext);
   }
 }

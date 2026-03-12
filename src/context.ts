@@ -17,8 +17,13 @@ import {
 } from './plugin';
 import { truncationPlugin } from './plugins/truncation';
 import { checkpointPlugin } from './plugins/checkpoint';
+import { PluginLoader } from './pluginRegistry/loader';
+import { PluginRegistry } from './pluginRegistry/registry';
 import { SkillManager } from './skill';
 import { FileHistoryManager } from './snapshot/FileHistoryManager';
+import createDebug from 'debug';
+
+const debug = createDebug('neovate:context');
 
 type ContextOpts = {
   cwd: string;
@@ -127,13 +132,59 @@ export class Context {
     const projectPlugins = scanPlugins(
       path.join(paths.projectConfigDir, 'plugins'),
     );
+    const registryPath = path.join(
+      paths.globalConfigDir,
+      'plugins',
+      'installed_plugins.json',
+    );
+    const pluginRegistry = new PluginRegistry({ registryPath });
+    const pluginLoader = new PluginLoader(productName);
+    const enabledPlugins = initialConfig.enabledPlugins || {};
+    const allInstalled = pluginRegistry.getAll();
+    const registeredPlugins: Plugin[] = [];
+    for (const [key, installed] of Object.entries(allInstalled)) {
+      if (enabledPlugins[key] !== true) continue;
+      try {
+        const plugin = await pluginLoader.loadInstalled(installed);
+        registeredPlugins.push(plugin);
+      } catch (_error) {
+        debug('failed to load plugin', key, _error);
+      }
+    }
+
+    debug('registeredPlugins', registeredPlugins);
+
     const pluginsConfigs: (string | Plugin)[] = [
       ...buildInPlugins,
+      ...registeredPlugins,
       ...globalPlugins,
       ...projectPlugins,
       ...(initialConfig.plugins || []),
       ...(opts.plugins || []),
     ];
+
+    const pluginDirs: string[] =
+      typeof opts.argvConfig.pluginDirs === 'string'
+        ? [opts.argvConfig.pluginDirs]
+        : opts.argvConfig.pluginDirs || [];
+    for (const dir of pluginDirs) {
+      const absDir = path.isAbsolute(dir) ? dir : path.resolve(cwd, dir);
+      try {
+        const plugin = await pluginLoader.loadInstalled({
+          name: path.basename(absDir),
+          source: { type: 'local', path: absDir },
+          scope: 'local',
+          installPath: absDir,
+          installedAt: new Date().toISOString(),
+        });
+        pluginsConfigs.push(plugin);
+      } catch (error) {
+        throw new Error(
+          `Failed to load plugin from directory "${absDir}": ${error instanceof Error ? error.message : error}`,
+        );
+      }
+    }
+
     const plugins = await normalizePlugins(opts.cwd, pluginsConfigs);
     const pluginManager = new PluginManager(plugins);
     const apply = async (hookOpts: any) => {
@@ -186,11 +237,15 @@ export class Context {
     await skillManager.loadSkills();
     context.skillManager = skillManager;
 
+    debug('skillManager errors', skillManager.getErrors());
+
     // Create and attach AgentManager
     const agentManager = new AgentManager({ context });
     // Load agents from files
     await agentManager.loadAgents();
     context.agentManager = agentManager;
+
+    debug('agentManager errors', agentManager.getErrors());
 
     return context;
   }
