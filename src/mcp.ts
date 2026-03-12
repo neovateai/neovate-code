@@ -457,8 +457,11 @@ export class MCPManager {
     serverName: string,
     config: MCPConfig,
   ): Tool {
+    const safeServerName = serverName.replace(/[^a-zA-Z0-9_-]/g, '');
+    const safeToolName = toolName.replace(/[^a-zA-Z0-9_-]/g, '_');
+
     return {
-      name: `mcp__${serverName.replace(/[^a-zA-Z0-9_-]/g, '')}__${toolName}`,
+      name: `mcp__${safeServerName}__${safeToolName}`,
       description: toolDef.description,
       getDescription: ({ params }) => {
         return formatParamsDescription(params as Record<string, any>);
