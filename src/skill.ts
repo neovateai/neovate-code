@@ -178,12 +178,13 @@ export class SkillManager {
       }
     }
 
-    const globalClaudeDir = path.join(
+    // Load global claude skills (~/.claude/skills)
+    const globalClaudeDirPath = path.join(
       path.dirname(this.paths.globalConfigDir),
       '.claude',
       'skills',
     );
-    this.loadSkillsFromDirectory(globalClaudeDir, SkillSource.GlobalClaude);
+    this.loadSkillsFromDirectory(globalClaudeDirPath, SkillSource.GlobalClaude);
 
     const globalDir = path.join(this.paths.globalConfigDir, 'skills');
     this.loadSkillsFromDirectory(globalDir, SkillSource.Global);
@@ -193,10 +194,21 @@ export class SkillManager {
       '.claude',
       'skills',
     );
-    this.loadSkillsFromDirectory(projectClaudeDir, SkillSource.ProjectClaude);
+    // Only load project claude skills if different from global claude skills directory
+    if (
+      path.normalize(projectClaudeDir) !== path.normalize(globalClaudeDirPath)
+    ) {
+      this.loadSkillsFromDirectory(projectClaudeDir, SkillSource.ProjectClaude);
+    }
 
     const projectDir = path.join(this.paths.projectConfigDir, 'skills');
-    this.loadSkillsFromDirectory(projectDir, SkillSource.Project);
+
+    // Only load project skills if the project directory is different from global directory.
+    // When cwd equals home directory, projectConfigDir equals globalConfigDir,
+    // causing global skills to be incorrectly marked as project skills.
+    if (path.normalize(projectDir) !== path.normalize(globalDir)) {
+      this.loadSkillsFromDirectory(projectDir, SkillSource.Project);
+    }
   }
 
   private loadSkillsFromDirectory(
