@@ -12,6 +12,7 @@ import {
   formatDuration,
   formatTokens,
   groupMessages,
+  truncateLine,
 } from './utils';
 
 const VISIBLE_MESSAGE_LIMIT = 3;
@@ -130,8 +131,11 @@ export function AgentInProgress({
   // Calculate statistics
   const stats = useMemo(() => calculateStats(messages), [messages]);
 
-  // Group messages into LogItems
-  const logItems = useMemo(() => groupMessages(messages), [messages]);
+  // Group messages into LogItems, filter out user messages (prompt shown separately)
+  const logItems = useMemo(
+    () => groupMessages(messages).filter((item) => item.type !== 'user'),
+    [messages],
+  );
 
   // Smart truncation: show only last N items by default
   const visibleItems = transcriptMode
@@ -172,6 +176,14 @@ export function AgentInProgress({
               </Box>
               <Text color="gray">{prompt}</Text>
             </Box>
+          </Box>
+        )}
+
+        {!transcriptMode && prompt && (
+          <Box paddingLeft={1}>
+            <Text color="gray">
+              {'>'} {truncateLine(prompt)}
+            </Text>
           </Box>
         )}
 
