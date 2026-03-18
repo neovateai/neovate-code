@@ -2,6 +2,7 @@ import { Box, Text } from 'ink';
 import type { ToolResultPart, ToolResultPart2 } from '../../message';
 import { useAppStore } from '../store';
 import type { LogItem } from './utils';
+import { truncateLine } from './utils';
 
 // Helper to extract text from ToolResult
 function extractResultText(
@@ -107,10 +108,13 @@ export function LogItemRenderer({ item }: LogItemRendererProps) {
 
   // User message
   if (item.type === 'user') {
+    const displayContent = transcriptMode
+      ? item.content
+      : truncateLine(item.content);
     return (
       <Box paddingLeft={1}>
         <Text color="gray">
-          {'>'} {item.content}
+          {'>'} {displayContent}
         </Text>
       </Box>
     );
@@ -126,32 +130,18 @@ export function LogItemRenderer({ item }: LogItemRendererProps) {
       : toolUse.description ||
         formatToolArgs(toolUse.name, toolUse.input, false);
 
-    // Final args length protection for normal mode (handle description case)
-    // Also ensure single line display by taking only first line
     let displayArgs = args;
     if (!transcriptMode) {
-      const firstLine = args.split('\n')[0];
-      displayArgs =
-        firstLine.length > 200
-          ? `${firstLine.substring(0, 200)}...`
-          : firstLine;
+      displayArgs = truncateLine(args, 200);
     }
 
     const resultText = toolResult
       ? extractResultText(toolResult).trim()
       : '...';
 
-    // Split result into lines to handle multiline output gracefully
-    const resultLines = resultText.split('\n');
-    const firstLine = resultLines[0];
-    const hasMore = resultLines.length > 1;
-
-    // Truncate first line if too long (unless in transcript mode)
     const displayResult = transcriptMode
       ? resultText
-      : firstLine.length > 200
-        ? `${firstLine.substring(0, 200)}...`
-        : firstLine + (hasMore ? '...' : '');
+      : truncateLine(resultText, 200);
 
     const isError = toolResult?.result?.isError;
 
@@ -177,9 +167,13 @@ export function LogItemRenderer({ item }: LogItemRendererProps) {
     const trimmedContent = item.content.trim();
     if (!trimmedContent) return null;
 
+    const displayContent = transcriptMode
+      ? trimmedContent
+      : truncateLine(trimmedContent, 200);
+
     return (
       <Box paddingLeft={1}>
-        <Text color="gray"> {trimmedContent}</Text>
+        <Text color="gray"> {displayContent}</Text>
       </Box>
     );
   }

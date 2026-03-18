@@ -137,3 +137,17 @@ export function formatTokens(count: number): string {
   }
   return `${(count / 1000).toFixed(1)}k`;
 }
+
+const DEFAULT_MAX_LENGTH = 80;
+
+export function truncateLine(
+  text: string,
+  maxLength = DEFAULT_MAX_LENGTH,
+): string {
+  const firstLine = text.split('\n')[0];
+  const hasMore = text.includes('\n');
+  if (firstLine.length > maxLength) {
+    return `${firstLine.substring(0, maxLength)}...`;
+  }
+  return hasMore ? `${firstLine}...` : firstLine;
+}
