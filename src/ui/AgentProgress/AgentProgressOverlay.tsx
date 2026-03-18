@@ -18,7 +18,7 @@ const VISIBLE_MESSAGE_LIMIT = 3;
 
 const COLORS = {
   RUNNING: 'gray',
-  COMPLETED: 'green',
+  COMPLETED: UI_COLORS.TOOL,
   FAILED: 'red',
   AGENT_TYPE: 'cyan',
   HINT: 'gray',
@@ -98,7 +98,7 @@ export function AgentStarting({ toolUse }: AgentProgressOverlayProps) {
   }, [waitingForApproval]);
 
   return (
-    <Box flexDirection="column" paddingX={1}>
+    <Box flexDirection="column">
       <AgentToolUse toolUse={toolUse} status="running" />
       <Box marginTop={SPACING.MESSAGE_MARGIN_TOP_TOOL_RESULT} paddingLeft={1}>
         <Text color={UI_COLORS.TOOL_RESULT}>
@@ -260,7 +260,7 @@ export function AgentCompletedResult({
   }, [stats, isError, content]);
 
   return (
-    <Box flexDirection="column" marginTop={1}>
+    <Box flexDirection="column">
       <AgentToolUse
         toolUse={toolUse}
         status={isError ? 'failed' : 'completed'}
