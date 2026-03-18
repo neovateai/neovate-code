@@ -1130,6 +1130,19 @@ const baseModels: ModelMap = {
     open_weights: true,
     limit: { context: 204800, output: 131072 },
   },
+  'minimax-m2.7': {
+    name: 'MiniMax M2.7',
+    attachment: false,
+    reasoning: true,
+    temperature: true,
+    tool_call: true,
+    knowledge: '',
+    release_date: '2026-03-18',
+    last_updated: '2026-03-18',
+    modalities: { input: ['text'], output: ['text'] },
+    open_weights: true,
+    limit: { context: 204800, output: 131072 },
+  },
 };
 
 export const models = (() => {
