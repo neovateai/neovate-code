@@ -67,11 +67,13 @@ export async function processImage(
     const stats = fs.statSync(filePath);
     const ext = path.extname(filePath).toLowerCase();
 
-    const resolvedPath = path.resolve(filePath);
-    const normalizedCwd = path.resolve(cwd);
-    if (!resolvedPath.startsWith(normalizedCwd)) {
-      throw new Error('Invalid file path: path traversal detected');
-    }
+    // Why? The image directory validation was originally placed outside for agent-browser.
+    // The check has been temporarily removed for adjustment.
+    // const resolvedPath = path.resolve(filePath);
+    // const normalizedCwd = path.resolve(cwd);
+    // if (!resolvedPath.startsWith(normalizedCwd)) {
+    //   throw new Error('Invalid file path: path traversal detected');
+    // }
 
     const buffer = fs.readFileSync(filePath);
 
