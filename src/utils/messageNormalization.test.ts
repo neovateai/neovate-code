@@ -366,6 +366,76 @@ describe('normalizeMessagesForCompact', () => {
     expect(result[0].content).toBe('Valid message');
   });
 
+  test('should filter out image parts from user messages', () => {
+    const messages: NormalizedMessage[] = [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Please analyze this image' },
+          { type: 'image', data: 'base64data', mimeType: 'image/png' },
+        ],
+        type: 'message',
+        timestamp: '2024-01-01',
+        uuid: 'uuid-1',
+        parentUuid: null,
+      },
+    ];
+
+    const result = normalizeMessagesForCompact(messages);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].role).toBe('user');
+    expect(result[0].content).toEqual([
+      { type: 'text', text: 'Please analyze this image' },
+    ]);
+  });
+
+  test('should keep original content when user message contains only images', () => {
+    const messages: NormalizedMessage[] = [
+      {
+        role: 'user',
+        content: [{ type: 'image', data: 'base64data', mimeType: 'image/png' }],
+        type: 'message',
+        timestamp: '2024-01-01',
+        uuid: 'uuid-1',
+        parentUuid: null,
+      },
+    ];
+
+    const result = normalizeMessagesForCompact(messages);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].content).toEqual([
+      { type: 'image', data: 'base64data', mimeType: 'image/png' },
+    ]);
+  });
+
+  test('should filter images from user message with multiple content parts', () => {
+    const messages: NormalizedMessage[] = [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'First message' },
+          { type: 'image', data: 'img1', mimeType: 'image/jpeg' },
+          { type: 'text', text: 'Second message' },
+          { type: 'image', data: 'img2', mimeType: 'image/png' },
+        ],
+        type: 'message',
+        timestamp: '2024-01-01',
+        uuid: 'uuid-1',
+        parentUuid: null,
+      },
+    ];
+
+    const result = normalizeMessagesForCompact(messages);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].content).toEqual([
+      { type: 'text', text: 'First message' },
+      { type: 'text', text: 'Second message' },
+    ]);
+  });
+
   test('should handle tool results with array llmContent', () => {
     const messages: NormalizedMessage[] = [
       {
