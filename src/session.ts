@@ -247,6 +247,7 @@ export function filterMessages(
 
 export function loadSessionMessages(opts: {
   logPath: string;
+  raw?: boolean;
 }): NormalizedMessage[] {
   if (!fs.existsSync(opts.logPath)) {
     return [];
@@ -266,6 +267,11 @@ export function loadSessionMessages(opts: {
         );
       }
     });
+  if (opts.raw) {
+    return messages.filter(
+      (message: NormalizedMessage) => message.type === 'message',
+    );
+  }
   return filterMessages(messages);
 }
 

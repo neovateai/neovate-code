@@ -626,6 +626,9 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         }
       };
 
+      const approvedToolUses: ToolUse[] = [];
+      let earlyReturn: LoopResult | null = null;
+
       for (const toolCall of toolCalls) {
         let toolUse: ToolUse = {
           name: toolCall.toolName,
@@ -651,26 +654,10 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
         }
 
         if (approved) {
-          toolCallsCount++;
           if (updatedParams) {
             toolUse.params = { ...toolUse.params, ...updatedParams };
           }
-          let toolResult = await opts.tools.invoke(
-            toolUse.name,
-            JSON.stringify(toolUse.params),
-            toolUse.callId,
-          );
-          if (opts.onToolResult) {
-            toolResult = await opts.onToolResult(toolUse, toolResult, approved);
-          }
-          toolResults.push({
-            toolCallId: toolUse.callId,
-            toolName: toolUse.name,
-            input: toolUse.params,
-            result: toolResult,
-          });
-          // Prevent normal turns from being terminated due to exceeding the limit
-          turnsCount--;
+          approvedToolUses.push(toolUse);
         } else {
           let message = 'Error: Tool execution was denied by user.';
           if (denyReason) {
@@ -681,7 +668,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
             isError: true,
           };
           if (opts.onToolResult) {
-            toolResult = await opts.onToolResult(toolUse, toolResult, approved);
+            toolResult = await opts.onToolResult(toolUse, toolResult, false);
           }
           toolResults.push({
             toolCallId: toolUse.callId,
@@ -690,10 +677,8 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
             result: toolResult,
           });
 
-          // Add denied results for remaining unprocessed tools
-          await addDeniedResultsForRemainingTools();
-
           if (!denyReason) {
+            await addDeniedResultsForRemainingTools();
             await history.addMessage({
               role: 'tool',
               content: toolResults.map((tr) =>
@@ -705,7 +690,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
                 ),
               ),
             });
-            return {
+            earlyReturn = {
               success: false,
               error: {
                 type: 'tool_denied',
@@ -717,10 +702,63 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
                 },
               },
             };
-          } else {
-            // When denyReason is provided, we should break out of the tool loop
-            // to let the model react to the rejection before continuing
             break;
+          }
+          await addDeniedResultsForRemainingTools();
+          break;
+        }
+      }
+
+      if (earlyReturn) {
+        return earlyReturn;
+      }
+
+      if (approvedToolUses.length > 0) {
+        const executionResults = await Promise.allSettled(
+          approvedToolUses.map(async (toolUse) => {
+            let toolResult = await opts.tools.invoke(
+              toolUse.name,
+              JSON.stringify(toolUse.params),
+              toolUse.callId,
+            );
+            if (opts.onToolResult) {
+              toolResult = await opts.onToolResult(toolUse, toolResult, true);
+            }
+            return {
+              toolCallId: toolUse.callId,
+              toolName: toolUse.name,
+              input: toolUse.params,
+              result: toolResult,
+            };
+          }),
+        );
+
+        toolCallsCount += approvedToolUses.length;
+        turnsCount -= approvedToolUses.length;
+
+        for (const settledResult of executionResults) {
+          if (settledResult.status === 'fulfilled') {
+            toolResults.push(settledResult.value);
+          } else {
+            const failedIndex = executionResults.indexOf(settledResult);
+            const failedToolUse = approvedToolUses[failedIndex];
+            let errorResult: ToolResult = {
+              llmContent: `Tool execution error: ${settledResult.reason instanceof Error ? settledResult.reason.message : String(settledResult.reason)}`,
+              isError: true,
+            };
+            if (opts.onToolResult) {
+              errorResult = await opts.onToolResult(
+                failedToolUse,
+                errorResult,
+                true,
+              );
+            }
+            toolResults.push({
+              toolCallId: failedToolUse.callId,
+              toolName: failedToolUse.name,
+              input: failedToolUse.params,
+              result: errorResult,
+            });
           }
         }
       }
