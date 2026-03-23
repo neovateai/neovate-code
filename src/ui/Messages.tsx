@@ -592,14 +592,38 @@ function AssistantWithTools({
 }
 
 function Thinking({ text }: { text: string }) {
+  const { transcriptMode } = useAppStore();
+
+  const { displayText, hiddenCount, shouldTruncate } = useMemo(() => {
+    const lines = text.split('\n');
+    const maxLines = 2;
+    const shouldTruncate = !transcriptMode && lines.length > maxLines;
+
+    if (!shouldTruncate) {
+      return { displayText: text, hiddenCount: 0, shouldTruncate: false };
+    }
+
+    return {
+      displayText: lines.slice(0, maxLines).join('\n'),
+      hiddenCount: lines.length - maxLines,
+      shouldTruncate: true,
+    };
+  }, [text, transcriptMode]);
+
   return (
     <Box flexDirection="column" marginTop={SPACING.MESSAGE_MARGIN_TOP}>
       <Text bold color="gray">
         thinking
       </Text>
       <Text color="gray" italic>
-        {text}
+        {displayText}
       </Text>
+      {shouldTruncate && (
+        <Text color="gray" dimColor>
+          ... {hiddenCount} more line{hiddenCount === 1 ? '' : 's'} hidden
+          (Press ctrl+o to expand) ...
+        </Text>
+      )}
     </Box>
   );
 }
