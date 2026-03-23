@@ -421,6 +421,53 @@ export function registerSessionHandlers(
     });
     abortControllers.delete(key);
 
+    if (!result.success && result.error?.type === 'canceled' && sessionId) {
+      const { loadSessionMessages } = await import('../../session');
+      const { findIncompleteToolUses } = await import('../../message');
+      const logPath = context.paths.getSessionLogPath(sessionId);
+      const jsonlLogger = new JsonlLogger({
+        filePath: logPath,
+      });
+      const messages = loadSessionMessages({
+        logPath,
+        raw: true,
+      });
+      const incompleteResult = findIncompleteToolUses(messages);
+      if (incompleteResult) {
+        const { assistantMessage, incompleteToolUses } = incompleteResult;
+        for (const toolUse of incompleteToolUses) {
+          const normalizedToolResultMessage: NormalizedMessage & {
+            sessionId: string;
+          } = {
+            parentUuid: assistantMessage.uuid,
+            uuid: randomUUID(),
+            role: 'tool',
+            content: [
+              {
+                type: 'tool-result',
+                toolCallId: toolUse.id,
+                toolName: toolUse.name,
+                input: toolUse.input,
+                result: {
+                  llmContent: CANCELED_MESSAGE_TEXT,
+                  returnDisplay: 'Tool execution was canceled by user.',
+                  isError: true,
+                },
+              },
+            ],
+            type: 'message',
+            timestamp: new Date().toISOString(),
+            sessionId,
+          };
+          await messageBus.emitEvent('message', {
+            message: jsonlLogger.addMessage({
+              message: normalizedToolResultMessage,
+            }),
+          });
+        }
+      }
+    }
+
     messageBus.emitEvent('session.done', {
       sessionId,
       result: {
@@ -454,6 +501,7 @@ export function registerSessionHandlers(
 
     const messages = loadSessionMessages({
       logPath: context.paths.getSessionLogPath(sessionId),
+      raw: true,
     });
 
     const incompleteResult = findIncompleteToolUses(messages);
