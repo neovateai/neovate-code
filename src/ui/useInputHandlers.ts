@@ -269,14 +269,14 @@ export function useInputHandlers() {
       reverseSearch.navigatePrevious();
       return;
     }
-    // 1. auto suggest
+    // 1. auto suggest (only when not already in history navigation mode)
     // 1.1 slash command suggestions
-    if (slashCommands.suggestions.length > 0) {
+    if (historyIndex === null && slashCommands.suggestions.length > 0) {
       slashCommands.navigatePrevious();
       return;
     }
     // 1.2 file suggestions
-    if (fileSuggestion.matchedPaths.length > 0) {
+    if (historyIndex === null && fileSuggestion.matchedPaths.length > 0) {
       fileSuggestion.navigatePrevious();
       return;
     }
@@ -315,14 +315,14 @@ export function useInputHandlers() {
       reverseSearch.navigateNext();
       return;
     }
-    // 1. auto suggest
+    // 1. auto suggest (only when not already in history navigation mode)
     // 1.1 slash command suggestions
-    if (slashCommands.suggestions.length > 0) {
+    if (historyIndex === null && slashCommands.suggestions.length > 0) {
       slashCommands.navigateNext();
       return;
     }
     // 1.2 file suggestions
-    if (fileSuggestion.matchedPaths.length > 0) {
+    if (historyIndex === null && fileSuggestion.matchedPaths.length > 0) {
       fileSuggestion.navigateNext();
       return;
     }
