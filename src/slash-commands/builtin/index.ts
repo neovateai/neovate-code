@@ -13,6 +13,7 @@ import { createMcpCommand } from './mcp';
 import { createModelCommand } from './model';
 import { createOutputStyleCommand } from './output-style';
 import { createPluginCommand } from './plugin';
+import { skillsCommand } from './skills';
 import { createResumeCommand } from './resume';
 import { createReviewCommand } from './review';
 import { createRewindCommand } from './rewind';
@@ -55,5 +56,6 @@ export function createBuiltinCommands(opts: {
     executePlanCommand(opts.language),
     saveDesignCommand(opts.language),
     createPluginCommand(),
+    skillsCommand,
   ];
 }
