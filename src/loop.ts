@@ -341,6 +341,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
             response: result.response,
           });
 
+          let finishChunkReceived = false;
           for await (const chunk of result.stream) {
             if (opts.signal?.aborted) {
               return createCancelError();
@@ -372,6 +373,7 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
                 });
                 break;
               case 'finish':
+                finishChunkReceived = true;
                 lastUsage = Usage.fromEventUsage(chunk.usage);
                 totalUsage.add(lastUsage);
                 if (toolCalls.length === 0 && text.trim() === '') {
@@ -408,6 +410,18 @@ export async function runLoop(opts: RunLoopOpts): Promise<LoopResult> {
               default:
                 break;
             }
+          }
+
+          if (
+            !finishChunkReceived &&
+            toolCalls.length === 0 &&
+            text.trim() === ''
+          ) {
+            const error = new Error(
+              'Empty response: stream ended without any chunks',
+            );
+            (error as any).isRetryable = true;
+            throw error;
           }
 
           break;
