@@ -60,6 +60,52 @@ const ELLIPSIS_WIDTH = 3;
 const MIN_DESC_WIDTH = 20;
 const MIN_MAIN_DESC_WIDTH = 10;
 
+function getCharDisplayWidth(code: number): number {
+  if (
+    (code >= 0x1100 && code <= 0x115f) ||
+    (code >= 0x2e80 && code <= 0x303e) ||
+    (code >= 0x3040 && code <= 0xa4cf) ||
+    (code >= 0xac00 && code <= 0xd7af) ||
+    (code >= 0xf900 && code <= 0xfaff) ||
+    (code >= 0xfe10 && code <= 0xfe1f) ||
+    (code >= 0xfe30 && code <= 0xfe6f) ||
+    (code >= 0xff00 && code <= 0xff60) ||
+    (code >= 0xffe0 && code <= 0xffe6) ||
+    (code >= 0x1b000 && code <= 0x1b77f) ||
+    (code >= 0x1f300 && code <= 0x1f64f) ||
+    (code >= 0x1f900 && code <= 0x1f9ff) ||
+    (code >= 0x20000 && code <= 0x2a6df) ||
+    (code >= 0x2a700 && code <= 0x2ceaf) ||
+    (code >= 0x2ceb0 && code <= 0x2ebef) ||
+    (code >= 0x30000 && code <= 0x3134f)
+  ) {
+    return 2;
+  }
+  return 1;
+}
+
+function getStringDisplayWidth(str: string): number {
+  let width = 0;
+  for (const char of str) {
+    const code = char.codePointAt(0) ?? 0;
+    width += getCharDisplayWidth(code);
+  }
+  return width;
+}
+
+function truncateToDisplayWidth(str: string, maxWidth: number): string {
+  let width = 0;
+  let i = 0;
+  for (const char of str) {
+    const code = char.codePointAt(0) ?? 0;
+    const charWidth = getCharDisplayWidth(code);
+    if (width + charWidth > maxWidth) break;
+    width += charWidth;
+    i += char.length;
+  }
+  return str.slice(0, i);
+}
+
 export function SuggestionItem({
   name,
   description,
@@ -67,8 +113,6 @@ export function SuggestionItem({
   firstColumnWidth,
   maxWidth,
 }: SuggestionItemProps) {
-  // Calculate available width for description
-  // Account for: margin + firstColumnWidth + spacing + ellipsis reserve
   const reservedWidth =
     MARGIN_LEFT + firstColumnWidth + SPACING + ELLIPSIS_WIDTH;
   const maxDescriptionWidth = Math.max(
@@ -76,24 +120,22 @@ export function SuggestionItem({
     maxWidth - reservedWidth,
   );
 
-  // Extract source suffix (content in the last parentheses, e.g., "(global)")
   const sourceMatch = description.match(/\(([^)]+)\)$/);
   const sourceSuffix = sourceMatch ? ` ${sourceMatch[0]}` : '';
   const mainDescription = sourceMatch
     ? description.slice(0, sourceMatch.index).trim()
     : description;
 
-  // Truncate description if it exceeds max width, but preserve source suffix
   let truncatedDescription: string;
-  if (description.length > maxDescriptionWidth) {
+  const descDisplayWidth = getStringDisplayWidth(description);
+  if (descDisplayWidth > maxDescriptionWidth) {
+    const sourceSuffixWidth = getStringDisplayWidth(sourceSuffix);
     const availableForMain =
-      maxDescriptionWidth - sourceSuffix.length - ELLIPSIS_WIDTH; // Reserve space for "..." and source
+      maxDescriptionWidth - sourceSuffixWidth - ELLIPSIS_WIDTH;
     if (availableForMain > MIN_MAIN_DESC_WIDTH) {
-      // If we have enough space, truncate main description and append source
-      truncatedDescription = `${mainDescription.slice(0, availableForMain)}...${sourceSuffix}`;
+      truncatedDescription = `${truncateToDisplayWidth(mainDescription, availableForMain)}...${sourceSuffix}`;
     } else {
-      // If space is too tight, just truncate everything
-      truncatedDescription = `${description.slice(0, maxDescriptionWidth - ELLIPSIS_WIDTH)}...`;
+      truncatedDescription = `${truncateToDisplayWidth(description, maxDescriptionWidth - ELLIPSIS_WIDTH)}...`;
     }
   } else {
     truncatedDescription = description;
