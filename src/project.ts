@@ -1,6 +1,7 @@
 import { TOOL_NAMES } from './constants';
 import type { Context } from './context';
 import { JsonlLogger, RequestLogger } from './jsonl';
+import { getCurrentBranch } from './utils/git';
 import { LlmsContext } from './llmsContext';
 import { runLoop, type StreamResult, type ThinkingConfig } from './loop';
 import type { ImagePart, NormalizedMessage, UserContent } from './message';
@@ -130,6 +131,7 @@ export class Project {
     const requestLogger = new RequestLogger({
       globalProjectDir: this.context.paths.globalProjectDir,
     });
+    const gitBranch = await getCurrentBranch(this.context.cwd);
     if (message !== null) {
       message = await this.context.apply({
         hook: 'userPrompt',
@@ -185,6 +187,7 @@ export class Project {
       const userMessageWithSessionId = {
         ...userMessage,
         sessionId: this.session.id,
+        ...(gitBranch ? { gitBranch } : {}),
       };
       jsonlLogger.addMessage({
         message: userMessageWithSessionId,
@@ -263,6 +266,7 @@ export class Project {
         const normalizedMessage = {
           ...message,
           sessionId: this.session.id,
+          ...(gitBranch ? { gitBranch } : {}),
         };
         outputFormat.onMessage({
           message: normalizedMessage,
