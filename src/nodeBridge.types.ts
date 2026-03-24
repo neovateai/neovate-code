@@ -881,6 +881,21 @@ type SessionsResumeOutput = {
   };
 };
 
+type SessionsForkInput = {
+  cwd: string;
+  sessionId: string;
+  customTitle?: string;
+};
+type SessionsForkOutput = {
+  success: boolean;
+  data?: {
+    sessionId: string;
+    logFile: string;
+    title: string;
+  };
+  error?: string;
+};
+
 // ============================================================================
 // Skills Handlers
 // ============================================================================
@@ -1753,6 +1768,10 @@ export type HandlerMap = {
   'sessions.resume': {
     input: SessionsResumeInput;
     output: SessionsResumeOutput;
+  };
+  'sessions.fork': {
+    input: SessionsForkInput;
+    output: SessionsForkOutput;
   };
 
   // Skills handlers
