@@ -4,8 +4,13 @@ import { createTwoFilesPatch } from 'diff';
 import { Box, Text } from 'ink';
 import type React from 'react';
 import { useMemo } from 'react';
+import { Markdown } from './Markdown';
 import { useAppStore } from './store';
 import { useTerminalSize } from './useTerminalSize';
+
+function isMarkdownFile(fileName?: string): boolean {
+  return fileName?.toLowerCase().endsWith('.md') ?? false;
+}
 
 interface DiffProps {
   originalContent: string;
@@ -269,6 +274,64 @@ function CodeHighlightRenderer({
   );
 }
 
+function MarkdownRenderer({
+  content,
+  fileName,
+  maxHeight,
+  terminalWidth,
+}: {
+  content: string;
+  fileName?: string;
+  maxHeight: number;
+  terminalWidth: number;
+}): React.ReactNode {
+  if (!content || content.trim() === '') {
+    return (
+      <Box paddingX={1}>
+        <Text dimColor>Empty file</Text>
+      </Box>
+    );
+  }
+
+  const lines = content.split('\n');
+  const effectiveMaxLines =
+    maxHeight === Infinity ? Infinity : Math.max(5, maxHeight - 2);
+  const shouldTruncate = lines.length > effectiveMaxLines;
+  const visibleLines = shouldTruncate
+    ? lines.slice(0, effectiveMaxLines)
+    : lines;
+  const hiddenCount = lines.length - visibleLines.length;
+
+  return (
+    <Box
+      flexDirection="column"
+      width={Math.min(terminalWidth, DEFAULT_TERMINAL_WIDTH)}
+    >
+      {fileName && (
+        <Box paddingX={1} justifyContent="space-between">
+          <Box>
+            <Text bold>{fileName}</Text>
+            <Text color="green"> (new file +{lines.length})</Text>
+          </Box>
+        </Box>
+      )}
+
+      <Box paddingX={1}>
+        <Markdown>{visibleLines.join('\n')}</Markdown>
+      </Box>
+
+      {shouldTruncate && (
+        <Box paddingX={1}>
+          <Text color="gray">
+            ... {hiddenCount} more line{hiddenCount === 1 ? '' : 's'} hidden
+            (Press ctrl+o to expand) ...
+          </Text>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 function RenderDiffContent(
   parsedLines: DiffLine[],
   fileName: string | undefined,
@@ -477,6 +540,18 @@ export function DiffViewer({
 
   if (isNewFile(diffLines) && useCodeHighlight) {
     const content = extractNewFileContent(diffLines);
+
+    if (isMarkdownFile(fileName)) {
+      return (
+        <MarkdownRenderer
+          content={content}
+          fileName={fileName}
+          maxHeight={effectiveMaxHeight}
+          terminalWidth={terminalWidth}
+        />
+      );
+    }
+
     return (
       <CodeHighlightRenderer
         content={content}
