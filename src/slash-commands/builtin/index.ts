@@ -1,3 +1,4 @@
+import { createBranchCommand } from './branch';
 import type { SlashCommand } from '../types';
 import { createAddDirCommand } from './add-dir';
 import { createBugCommand } from './bug';
@@ -34,6 +35,7 @@ export function createBuiltinCommands(opts: {
   askUserQuestion?: boolean;
 }): SlashCommand[] {
   return [
+    createBranchCommand(),
     clearCommand,
     contextCommand,
     exitCommand,

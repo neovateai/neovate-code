@@ -907,4 +907,79 @@ export function registerSessionHandlers(
       },
     };
   });
+
+  messageBus.registerHandler('sessions.fork', async (data) => {
+    const { cwd, sessionId, customTitle } = data;
+    try {
+      const context = await getContext(cwd);
+      const { existsSync, writeFileSync, appendFileSync } = await import('fs');
+      const { readFile } = await import('fs/promises');
+
+      const srcLogPath = context.paths.getSessionLogPath(sessionId);
+
+      if (!existsSync(srcLogPath)) {
+        return {
+          success: false,
+          error: `Session "${sessionId}" not found`,
+        };
+      }
+
+      const newSessionId = randomUUID().slice(0, 8);
+      const destLogPath = context.paths.getSessionLogPath(newSessionId);
+
+      const content = await readFile(srcLogPath, 'utf-8');
+      const lines = content.split('\n').filter(Boolean);
+
+      const newLines = lines.map((line) => {
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.type === 'message') {
+            return JSON.stringify({
+              ...parsed,
+              sessionId: newSessionId,
+              forkedFrom: { sessionId, messageUuid: parsed.uuid },
+            });
+          }
+        } catch {}
+        return line;
+      });
+
+      writeFileSync(destLogPath, `${newLines.join('\n')}\n`, { mode: 0o600 });
+
+      let title: string;
+      if (customTitle) {
+        title = customTitle;
+      } else {
+        const sessionConfigManager = new SessionConfigManager({
+          logPath: srcLogPath,
+        });
+        const originalTitle = await getSessionTitle(
+          srcLogPath,
+          sessionConfigManager.config.summary,
+        );
+        title = originalTitle ? `${originalTitle} (branch)` : '(branch)';
+      }
+
+      const titleLine = JSON.stringify({
+        type: 'custom-title',
+        customTitle: title,
+        sessionId: newSessionId,
+      });
+      appendFileSync(destLogPath, `${titleLine}\n`);
+
+      return {
+        success: true,
+        data: {
+          sessionId: newSessionId,
+          logFile: destLogPath,
+          title,
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to fork session',
+      };
+    }
+  });
 }
