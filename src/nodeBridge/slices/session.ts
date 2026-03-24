@@ -17,6 +17,43 @@ import type { ApprovalCategory, ToolUse } from '../../tool';
 import { randomUUID } from '../../utils/randomUUID';
 import { normalizeProviders } from './providers';
 
+async function getSessionTitle(
+  logPath: string,
+  defaultTitle?: string,
+): Promise<string | undefined> {
+  const { existsSync } = await import('fs');
+  const { readFile } = await import('fs/promises');
+
+  if (!existsSync(logPath)) {
+    return defaultTitle;
+  }
+
+  try {
+    const content = await readFile(logPath, 'utf-8');
+    const lines = content.split('\n');
+
+    // Iterate backwards to find the most recent custom-title
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      // Fast check to avoid parsing every line
+      if (line.includes('"custom-title"')) {
+        try {
+          const entry = JSON.parse(line);
+          if (entry.type === 'custom-title' && entry.customTitle) {
+            return entry.customTitle;
+          }
+        } catch {}
+      }
+    }
+  } catch {
+    // Silently ignore file read errors
+  }
+
+  return defaultTitle;
+}
+
 function buildSignalKey(cwd: string, sessionId: string) {
   return `${cwd}/${sessionId}`;
 }
@@ -71,10 +108,12 @@ export function registerSessionHandlers(
     let pastedImageMap: Record<string, string> = {};
     if (data.sessionId) {
       try {
-        const sessionConfigManager = new SessionConfigManager({
-          logPath: context.paths.getSessionLogPath(data.sessionId),
-        });
-        sessionSummary = sessionConfigManager.config.summary;
+        const logPath = context.paths.getSessionLogPath(data.sessionId);
+        const sessionConfigManager = new SessionConfigManager({ logPath });
+        sessionSummary = await getSessionTitle(
+          logPath,
+          sessionConfigManager.config.summary,
+        );
         pastedTextMap = sessionConfigManager.config.pastedTextMap || {};
         pastedImageMap = sessionConfigManager.config.pastedImageMap || {};
       } catch {
@@ -851,11 +890,20 @@ export function registerSessionHandlers(
   messageBus.registerHandler('sessions.resume', async (data) => {
     const { cwd, sessionId } = data;
     const context = await getContext(cwd);
+    const logFile = context.paths.getSessionLogPath(sessionId);
+
+    const sessionConfigManager = new SessionConfigManager({ logPath: logFile });
+    const title = await getSessionTitle(
+      logFile,
+      sessionConfigManager.config.summary,
+    );
+
     return {
       success: true,
       data: {
         sessionId,
-        logFile: context.paths.getSessionLogPath(sessionId),
+        logFile,
+        title,
       },
     };
   });
