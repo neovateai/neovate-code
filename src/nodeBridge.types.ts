@@ -877,6 +877,7 @@ type SessionsResumeOutput = {
   data: {
     sessionId: string;
     logFile: string;
+    title?: string;
   };
 };
 

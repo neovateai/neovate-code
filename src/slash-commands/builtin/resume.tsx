@@ -5,6 +5,7 @@ import { Divider } from '../../ui/Divider';
 import { UI_COLORS } from '../../ui/constants';
 import TextInput from '../../ui/TextInput/index.js';
 import { useAppStore } from '../../ui/store';
+import { setTerminalTitle } from '../../utils/setTerminalTitle';
 import type { LocalJSXCommand } from '../types';
 
 interface SessionInfo {
@@ -197,8 +198,11 @@ const ResumeSelect: React.FC<ResumeSelectProps> = ({ onExit, onSelect }) => {
           .request('sessions.resume', { cwd, sessionId: session.sessionId })
           .then(async (result) => {
             if (result.success) {
-              const { sessionId, logFile } = result.data;
+              const { sessionId, logFile, title } = result.data;
               await resumeSession(sessionId, logFile);
+              if (title) {
+                setTerminalTitle(title);
+              }
               onSelect(session.sessionId);
             }
           })
