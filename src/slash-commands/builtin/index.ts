@@ -14,6 +14,7 @@ import { createModelCommand } from './model';
 import { createOutputStyleCommand } from './output-style';
 import { createPluginCommand } from './plugin';
 import { skillsCommand } from './skills';
+import { createRenameCommand } from './rename';
 import { createResumeCommand } from './resume';
 import { createReviewCommand } from './review';
 import { createRewindCommand } from './rewind';
@@ -42,6 +43,7 @@ export function createBuiltinCommands(opts: {
     createMcpCommand(opts),
     createModelCommand(opts),
     createOutputStyleCommand(),
+    createRenameCommand(),
     createResumeCommand(),
     createReviewCommand(opts.language),
     createRewindCommand(),
