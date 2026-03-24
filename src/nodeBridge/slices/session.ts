@@ -779,6 +779,36 @@ export function registerSessionHandlers(
     };
   });
 
+  messageBus.registerHandler('sessions.rename', async (data) => {
+    const { cwd, sessionId, title } = data;
+    try {
+      const context = await getContext(cwd);
+      const { appendFileSync, existsSync } = await import('fs');
+      const logPath = context.paths.getSessionLogPath(sessionId);
+
+      if (!existsSync(logPath)) {
+        return {
+          success: false,
+          error: `Session "${sessionId}" not found`,
+        };
+      }
+
+      const line = JSON.stringify({
+        type: 'custom-title',
+        customTitle: title,
+        sessionId,
+      });
+      appendFileSync(logPath, `${line}\n`);
+
+      return { success: true };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to rename session',
+      };
+    }
+  });
+
   messageBus.registerHandler('sessions.remove', async (data) => {
     const { cwd, sessionId } = data;
     try {

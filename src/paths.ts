@@ -76,6 +76,10 @@ export class Paths {
     const jsonlFiles = fs
       .readdirSync(this.globalProjectDir)
       .filter((file) => file.endsWith('.jsonl'))
+      .filter((file) => {
+        const sessionId = path.basename(file, '.jsonl');
+        return !sessionId.startsWith('agent-');
+      })
       .map((file) => {
         const filePath = path.join(this.globalProjectDir, file);
         const stats = fs.statSync(filePath);
@@ -84,12 +88,15 @@ export class Paths {
         // Read message count and summary
         let messageCount = 0;
         let summary = '';
+        let gitBranch: string | undefined;
+        let customTitle: string | undefined;
         try {
           const content = fs.readFileSync(filePath, 'utf-8');
           const lines = content.split('\n').filter(Boolean);
           messageCount = lines.length;
 
           // Extract summary: prioritize config.summary, fallback to first user message
+          // Also scan all lines for custom-title and gitBranch
           if (lines.length > 0) {
             try {
               const firstEntry: LogEntry = JSON.parse(lines[0]);
@@ -101,6 +108,20 @@ export class Paths {
             } catch (e) {
               summary = extractFirstUserMessageSummary(lines);
             }
+
+            for (const line of lines) {
+              try {
+                const entry = JSON.parse(line);
+                if (entry.type === 'custom-title' && entry.customTitle) {
+                  customTitle = entry.customTitle;
+                }
+                if (entry.gitBranch) {
+                  gitBranch = entry.gitBranch;
+                }
+              } catch (e) {
+                // ignore parse error
+              }
+            }
           }
         } catch (e) {
           // ignore read error, message count is 0
@@ -111,7 +132,8 @@ export class Paths {
           modified: stats.mtime,
           created: stats.birthtime,
           messageCount,
-          summary: normalizeSummary(summary),
+          gitBranch,
+          summary: normalizeSummary(customTitle ?? summary),
         };
       })
       .sort((a, b) => b.modified.getTime() - a.modified.getTime())

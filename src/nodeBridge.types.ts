@@ -836,6 +836,17 @@ type SessionsRemoveOutput = {
   error?: string;
 };
 
+type SessionsRenameInput = {
+  cwd: string;
+  sessionId: string;
+  title: string;
+};
+
+type SessionsRenameOutput = {
+  success: boolean;
+  error?: string;
+};
+
 // ============================================================================
 // Sessions Handlers
 // ============================================================================
@@ -851,6 +862,7 @@ type SessionsListOutput = {
       modified: Date;
       created: Date;
       messageCount: number;
+      gitBranch?: string;
       summary: string;
     }>;
   };
@@ -1729,6 +1741,10 @@ export type HandlerMap = {
   'sessions.remove': {
     input: SessionsRemoveInput;
     output: SessionsRemoveOutput;
+  };
+  'sessions.rename': {
+    input: SessionsRenameInput;
+    output: SessionsRenameOutput;
   };
 
   // Sessions handlers

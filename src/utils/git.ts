@@ -358,6 +358,26 @@ export async function createAndCheckoutBranch(
 // Composite Functions
 // ============================================================================
 
+export async function getCurrentBranch(
+  cwd: string,
+): Promise<string | undefined> {
+  try {
+    const { code, stdout } = await execFileNoThrow(
+      cwd,
+      'git',
+      ['rev-parse', '--abbrev-ref', 'HEAD'],
+      undefined,
+      undefined,
+      false,
+    );
+    if (code !== 0) return undefined;
+    const branch = stdout.trim();
+    return branch || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function getGitStatus(opts: { cwd: string }) {
   const { cwd } = opts;
   if (!(await isGitRepository(cwd))) {
