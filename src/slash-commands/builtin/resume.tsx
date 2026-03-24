@@ -319,15 +319,18 @@ const ResumeSelect: React.FC<ResumeSelectProps> = ({ onExit, onSelect }) => {
                     {isSelected ? '❯ ' : '  '}
                   </Text>
                   {isRenaming ? (
-                    <TextInput
-                      focus={true}
-                      multiline={false}
-                      value={renameText}
-                      onChange={setRenameText}
-                      onSubmit={handleRenameSubmit}
-                      onEscape={handleRenameEscape}
-                      onReverseSearch={() => {}}
-                    />
+                    <Box>
+                      <Text color="yellow">{'✎ Renaming: '}</Text>
+                      <TextInput
+                        focus={true}
+                        multiline={false}
+                        value={renameText}
+                        onChange={setRenameText}
+                        onSubmit={handleRenameSubmit}
+                        onEscape={handleRenameEscape}
+                        onReverseSearch={() => {}}
+                      />
+                    </Box>
                   ) : (
                     <Text
                       bold={isSelected}
