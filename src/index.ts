@@ -181,6 +181,22 @@ Commands:
 }
 
 async function runQuiet(argv: Argv, contextCreateOpts: any, cwd: string) {
+  const exitAfterDrain = (code: number) => {
+    const done = () => process.exit(code);
+    const drainStderr = () => {
+      if (!process.stderr.writable || process.stderr.destroyed) {
+        done();
+        return;
+      }
+      process.stderr.write('', done);
+    };
+    if (!process.stdout.writable || process.stdout.destroyed) {
+      drainStderr();
+      return;
+    }
+    process.stdout.write('', drainStderr);
+  };
+
   try {
     // Create MessageBus for event-driven architecture in quiet mode
     const nodeBridge = new NodeBridge({
@@ -273,11 +289,11 @@ async function runQuiet(argv: Argv, contextCreateOpts: any, cwd: string) {
         : undefined,
     });
 
-    process.exit(0);
+    exitAfterDrain(0);
   } catch (e: any) {
     console.error(`Error: ${e.message}`);
     console.error(e.stack);
-    process.exit(1);
+    exitAfterDrain(1);
   }
 }
 
