@@ -2,6 +2,7 @@ import { createBranchCommand } from './branch';
 import type { SlashCommand } from '../types';
 import { createAddDirCommand } from './add-dir';
 import { createBugCommand } from './bug';
+import { createCheckProviderCommand } from './check-provider';
 import { clearCommand } from './clear';
 import { compactCommand } from './compact';
 import { contextCommand } from './context';
@@ -43,6 +44,7 @@ export function createBuiltinCommands(opts: {
     createInitCommand(opts),
     createLoginCommand(),
     createLogoutCommand(),
+    createCheckProviderCommand(),
     createMcpCommand(opts),
     createModelCommand(opts),
     createOutputStyleCommand(),
