@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'pathe';
-import { platform } from 'process';
 import type { Context } from './context';
 import { PluginHookType } from './plugin';
 import { getLlmsRules } from './rules';
 import { createLSTool } from './tools/ls';
+import { getTerminal } from './utils/env';
 import { getGitStatus, getLlmGitStatus } from './utils/git';
 import { isProjectDirectory } from './utils/project';
 
@@ -90,7 +90,16 @@ ${Object.entries(llmsContext)
             opts.additionalDirectories.join(', '),
         }),
       'Is directory a git repo': gitStatus ? 'YES' : 'NO',
-      Platform: platform,
+      Platform:
+        process.platform === 'win32'
+          ? 'windows'
+          : process.platform === 'darwin'
+            ? 'macos'
+            : 'linux',
+      Terminal: getTerminal() || 'unknown',
+      Shell: process.platform === 'win32' ? 'PowerShell' : 'Bash',
+      'Node Version': process.version,
+      Architecture: process.arch,
       "Today's date": new Date().toLocaleDateString(),
     };
     llmsEnv = await opts.context.apply({
