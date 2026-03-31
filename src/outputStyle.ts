@@ -150,7 +150,13 @@ export class OutputStyleManager {
       const outputStyle = this.outputStyles.find(
         (style) => style.name === name,
       );
-      assert(outputStyle, `Output style ${name} not found`);
+      if (!outputStyle) {
+        const availableStyles = this.outputStyles.map((style) => style.name);
+        console.warn(
+          `\nOutput style "${name}" not found, will use default style. Available styles: ${availableStyles.join(', ')}\n`,
+        );
+        return defaultOutputStyle;
+      }
       return outputStyle;
     } else {
       return defaultOutputStyle;
