@@ -172,6 +172,7 @@ Commands:
   commit                        Commit changes to the repository
   log [file]                    View session logs in HTML (optional file path)
   mcp                           Manage MCP servers
+  recap                         Show usage statistics and code changes
   run                           Run a command
   skill                         Manage skills
   update                        Check for and apply updates
@@ -437,6 +438,7 @@ export async function runNeovate(opts: {
     'commit',
     'mcp',
     'log',
+    'recap',
     'run',
     'server',
     'skill',
@@ -463,6 +465,22 @@ export async function runNeovate(opts: {
         const { runLog } = await import('./commands/log');
         const logFilePath = argv._[1] ? String(argv._[1]) : undefined;
         await runLog(context, logFilePath);
+        break;
+      }
+      case 'recap': {
+        const { runRecap } = await import('./commands/recap');
+        const recapArgs = process.argv.slice(2);
+        await runRecap(context, {
+          project: recapArgs.includes('--project'),
+          year: (() => {
+            const yearIdx = recapArgs.indexOf('--year');
+            if (yearIdx !== -1 && recapArgs[yearIdx + 1]) {
+              return parseInt(String(recapArgs[yearIdx + 1]), 10);
+            }
+            return undefined;
+          })(),
+          json: recapArgs.includes('--json'),
+        });
         break;
       }
       case 'run': {
