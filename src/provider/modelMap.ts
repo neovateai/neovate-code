@@ -71,7 +71,7 @@ const baseModels: ModelMap = {
     modalities: { input: ['text'], output: ['text'] },
     open_weights: true,
     limit: { context: 131072, output: 65536 },
-    aliases: ['deepseek-chat', 'deepseek-chat-v3.2'],
+    aliases: ['deepseek-chat-v3.2'],
   },
   'deepseek-v3.2-speciale': {
     name: 'DeepSeek V3.2 Speciale',
@@ -98,9 +98,12 @@ const baseModels: ModelMap = {
     release_date: '2026-04-24',
     last_updated: '2026-04-24',
     modalities: { input: ['text'], output: ['text'] },
-    open_weights: false,
+    open_weights: true,
     limit: { context: 1000000, output: 384000 },
-    aliases: ['deepseek-v4', 'deepseek-chat', 'deepseek-reasoner'],
+    // `deepseek-chat`/`deepseek-reasoner` are DeepSeek's non-thinking/thinking
+    // entry points; they currently route to V4 Flash and are slated for
+    // deprecation on 2026-07-24 (see api-docs.deepseek.com pricing).
+    aliases: ['deepseek-chat', 'deepseek-reasoner'],
   },
   'deepseek-v4-pro': {
     name: 'DeepSeek V4 Pro',
@@ -114,9 +117,8 @@ const baseModels: ModelMap = {
     release_date: '2026-04-24',
     last_updated: '2026-04-24',
     modalities: { input: ['text'], output: ['text'] },
-    open_weights: false,
+    open_weights: true,
     limit: { context: 1000000, output: 384000 },
-    aliases: ['deepseek-v4-pro'],
   },
   'deepseek-r1-0528': {
     name: 'DeepSeek-R1-0528',
@@ -131,7 +133,7 @@ const baseModels: ModelMap = {
     modalities: { input: ['text'], output: ['text'] },
     open_weights: true,
     limit: { context: 65536, output: 8192 },
-    aliases: ['deepseek-reasoner', 'deepseek-r1'],
+    aliases: ['deepseek-r1'],
   },
   'doubao-seed-1.6': {
     name: 'Doubao Seed 1.6',
