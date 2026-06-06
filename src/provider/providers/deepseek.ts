@@ -9,6 +9,8 @@ export const deepseekProvider: Provider = {
   apiEnv: ['DEEPSEEK_API_BASE'],
   doc: 'https://platform.deepseek.com/api-docs/pricing',
   models: {
+    'deepseek-v4-pro': {},
+    'deepseek-v4-flash': {},
     'deepseek-chat': {},
     'deepseek-reasoner': {},
   },
