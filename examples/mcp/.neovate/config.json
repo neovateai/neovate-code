@@ -2,7 +2,10 @@
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": ["-y", "@executeautomation/playwright-mcp-server"]
+      "args": [
+        "-y",
+        "@executeautomation/playwright-mcp-server"
+      ]
     },
     "context7": {
       "url": "https://mcp.context7.com/mcp"
@@ -10,6 +13,12 @@
     "cloudflare": {
       "type": "sse",
       "url": "https://docs.mcp.cloudflare.com/sse"
+    },
+    "gbr": {
+      "command": "node",
+      "args": [
+        "GrokBuildRemote-Agents/mcp/gbr-mcp/bin/gbr-mcp.js"
+      ]
     }
   }
 }
